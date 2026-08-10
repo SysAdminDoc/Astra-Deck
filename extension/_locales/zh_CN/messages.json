@@ -3746,6 +3746,12 @@
   "playerGearTitleTpl": {
     "message": "{brand} 设置"
   },
+  "playerCcAria": {
+    "message": "切换字幕"
+  },
+  "playerCcTitle": {
+    "message": "字幕"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

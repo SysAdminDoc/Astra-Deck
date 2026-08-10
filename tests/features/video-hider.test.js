@@ -154,6 +154,99 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
     }
 });
 
+test('Video Hider processes current card hosts and keeps the red thumbnail control visible', () => {
+    for (const [label, source] of [
+        ['module', MODULE_SOURCE],
+        ['monolith', sources.ytkit],
+        ['userscript', sources.userscript]
+    ]) {
+        const cardSelector = source.match(/(?:_VIDEO_SELECTORS:\s*'|const selectors = ')([^']*)'/)?.[1] || '';
+        assert.match(cardSelector, /yt-lockup-view-model/, `${label} should scan modern lockup cards`);
+        assert.match(cardSelector, /ytd-rich-grid-media/, `${label} should scan rich-grid media cards`);
+        assert.match(cardSelector, /ytd-playlist-video-renderer/, `${label} should scan playlist video cards`);
+        assert.match(
+            source,
+            /a\.ytLockupViewModelContentImage/,
+            `${label} should recognize the modern lockup thumbnail anchor`
+        );
+
+        const styleStart = source.indexOf('.ytkit-video-hide-btn {');
+        const buttonStyle = source.slice(styleStart, styleStart + 1600);
+        assert.match(buttonStyle, /background:\s*rgba\(220,\s*38,\s*38,\s*0\.96\)\s*!important/,
+            `${label} should render the hide control red without waiting for hover`);
+        assert.match(buttonStyle, /opacity:\s*1\s*!important/,
+            `${label} should keep the hide control visibly mounted`);
+    }
+});
+
+test('Video Hider injects one top-right hide button into a modern thumbnail', () => {
+    const { mod } = loadModule();
+    const originalDocument = globalThis.document;
+    const originalWindow = globalThis.window;
+
+    const makeNode = (tagName) => ({
+        tagName,
+        type: '',
+        className: '',
+        title: '',
+        dataset: {},
+        style: {},
+        children: [],
+        attributes: new Map(),
+        listeners: new Map(),
+        appendChild(child) { this.children.push(child); return child; },
+        setAttribute(name, value) { this.attributes.set(name, String(value)); },
+        addEventListener(name, handler) { this.listeners.set(name, handler); },
+        querySelector(selector) {
+            if (selector === '.ytkit-video-hide-btn') {
+                return this.children.find(child => child.className === 'ytkit-video-hide-btn') || null;
+            }
+            return null;
+        }
+    });
+
+    const thumbnail = makeNode('yt-thumbnail-view-model');
+    thumbnail.matches = selector => selector === 'yt-thumbnail-view-model';
+    const card = {
+        dataset: {},
+        matches: () => false,
+        querySelector(selector) {
+            return selector === 'yt-thumbnail-view-model' ? thumbnail : null;
+        }
+    };
+
+    globalThis.document = { createElement: makeNode };
+    globalThis.window = {
+        location: { pathname: '/' },
+        getComputedStyle: () => ({ position: 'static' })
+    };
+
+    try {
+        const feature = mod.createHideVideosFromHomeFeature({
+            appState: {
+                settings: {
+                    hideVideosShowQuickHideButton: true,
+                    hideVideosAllowChannelBlock: false
+                }
+            },
+            createSVG: () => makeNode('svg')
+        });
+        feature._isScopeEnabledForPath = () => true;
+
+        feature._syncQuickHideButton(card, 'A1234567890');
+        feature._syncQuickHideButton(card, 'A1234567890');
+
+        const controls = thumbnail.children.filter(child => child.className === 'ytkit-video-hide-btn');
+        assert.equal(controls.length, 1, 'reprocessing must not duplicate the hide control');
+        assert.equal(controls[0].type, 'button');
+        assert.equal(thumbnail.style.position, 'relative');
+        assert.ok(controls[0].listeners.has('click'));
+    } finally {
+        globalThis.document = originalDocument;
+        globalThis.window = originalWindow;
+    }
+});
+
 test('Video Hider records explainable reasons for automatic hide rules in both runtimes', () => {
     const { mod } = loadModule();
     const appState = {

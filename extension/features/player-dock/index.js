@@ -52,7 +52,52 @@
             icon: 'layout',
             _ruleId: 'floatingLogoRule',
             _styleEl: null,
+            _ccObserver: null,
+            _ccButton: null,
+            _getNativeCcButton() {
+                if (typeof document === 'undefined') return null;
+                return document.querySelector('#movie_player .ytp-subtitles-button, .ytp-subtitles-button');
+            },
+            _syncCcButton() {
+                const button = this._ccButton;
+                if (!button) return;
+                const nativeButton = this._getNativeCcButton();
+                const isActive = !!nativeButton && (
+                    nativeButton.getAttribute('aria-pressed') === 'true'
+                    || nativeButton.classList.contains('ytp-button-active')
+                    || nativeButton.classList.contains('ytp-subtitles-button-active')
+                );
+                button.classList.toggle('ytkit-po-cc--active', isActive);
+                if (button.getAttribute('aria-pressed') !== String(isActive)) {
+                    button.setAttribute('aria-pressed', String(isActive));
+                }
+                button.title = t('playerCcTitle', 'Closed captions');
+                button.setAttribute('aria-label', t('playerCcAria', 'Toggle closed captions'));
+            },
+            _watchCcState() {
+                this._ccObserver?.disconnect();
+                this._ccObserver = null;
+                const rightControls = typeof document !== 'undefined'
+                    ? document.querySelector('.ytp-right-controls')
+                    : null;
+                if (!rightControls || typeof MutationObserver !== 'function') return;
+                this._ccObserver = new MutationObserver((records) => {
+                    // Ignore attribute changes made to our mirror button so
+                    // syncing its state cannot create an observer loop.
+                    if (records.length > 0 && records.every(record => this._ccButton?.contains(record.target))) return;
+                    this._syncCcButton();
+                });
+                this._ccObserver.observe(rightControls, {
+                    subtree: true,
+                    childList: true,
+                    attributes: true,
+                    attributeFilter: ['class', 'aria-pressed']
+                });
+            },
             _cleanup() {
+                this._ccObserver?.disconnect();
+                this._ccObserver = null;
+                this._ccButton = null;
                 const quickLinks = getFeatureById('quickLinkMenu');
                 const logoWrap = document.getElementById('ytkit-po-logo-wrap');
                 quickLinks?._teardownMenuInteractions?.(logoWrap);
@@ -65,9 +110,22 @@
                 return appState.settings.logoToSubscriptions ? '/feed/subscriptions' : '/';
             },
             _inject() {
-                if (!window.location.pathname.startsWith('/watch')) { document.getElementById('ytkit-player-controls')?.remove(); return; }
+                if (!window.location.pathname.startsWith('/watch')) {
+                    document.getElementById('ytkit-player-controls')?.remove();
+                    this._ccObserver?.disconnect();
+                    this._ccObserver = null;
+                    this._ccButton = null;
+                    return;
+                }
                 const rightControls = document.querySelector('.ytp-right-controls');
-                if (!rightControls || document.getElementById('ytkit-player-controls')) return;
+                if (!rightControls) return;
+                const existingControls = document.getElementById('ytkit-player-controls');
+                if (existingControls) {
+                    this._ccButton = existingControls.querySelector('.ytkit-po-cc') || this._ccButton;
+                    this._watchCcState();
+                    this._syncCcButton();
+                    return;
+                }
 
                 const wrap = document.createElement('div');
                 wrap.id = 'ytkit-player-controls';
@@ -111,6 +169,27 @@
                     dlBtn.addEventListener('click', (e) => { e.stopPropagation(); showDownloadPopup(dlBtn); });
                     wrap.appendChild(dlBtn);
                 }
+
+                // Mirror YouTube's native subtitles control, which may be
+                // hidden by the consolidated player-control preferences.
+                const ccBtn = document.createElement('button');
+                ccBtn.type = 'button';
+                ccBtn.className = 'ytp-button ytkit-player-btn ytkit-po-cc';
+                // i18n-static: closed-caption technical abbreviation
+                ccBtn.textContent = 'CC';
+                ccBtn.setAttribute('aria-pressed', 'false');
+                ccBtn.title = t('playerCcTitle', 'Closed captions');
+                ccBtn.setAttribute('aria-label', t('playerCcAria', 'Toggle closed captions'));
+                ccBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const nativeButton = this._getNativeCcButton();
+                    if (!nativeButton || nativeButton.disabled || nativeButton.getAttribute('aria-disabled') === 'true') return;
+                    nativeButton.click();
+                    this._syncCcButton();
+                    setTimeout(() => this._syncCcButton(), 0);
+                });
+                this._ccButton = ccBtn;
+                wrap.appendChild(ccBtn);
 
                 // Speed control — sits between Download and Settings.
                 // Drives the existing persistentSpeed feature so the chosen
@@ -357,8 +436,27 @@
                     }
 
                     #ytkit-player-controls .ytkit-po-dl,
+                    #ytkit-player-controls .ytkit-po-cc,
                     #ytkit-player-controls .ytkit-po-gear {
                         border-radius: 11px !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-cc {
+                        color: rgba(191, 219, 254, 0.94) !important;
+                        font: 700 10px/1 Arial, sans-serif !important;
+                        letter-spacing: -0.04em !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-cc--active {
+                        color: #fff !important;
+                        border-color: rgba(96, 165, 250, 0.42) !important;
+                        background:
+                            linear-gradient(180deg, rgba(96, 165, 250, 0.24), rgba(96, 165, 250, 0.08)),
+                            rgba(255, 255, 255, 0.045) !important;
+                    }
+
+                    html:not([dark]) #ytkit-player-controls .ytkit-po-cc--active {
+                        color: var(--yt-spec-text-primary, #0f0f0f) !important;
                     }
 
                     #ytkit-player-controls .ytkit-po-dl {
@@ -573,7 +671,11 @@
                 `);
 
                 const self = this;
-                addNavigateRule(this._ruleId, () => self._inject());
+                addNavigateRule(this._ruleId, () => {
+                    self._inject();
+                    self._watchCcState();
+                    self._syncCcButton();
+                });
             },
             destroy() {
                 removeNavigateRule(this._ruleId);

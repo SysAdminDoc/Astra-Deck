@@ -28,6 +28,21 @@ test('Player Dock creates player controls container', () => {
         'Player Dock must create a player controls container');
 });
 
+test('Player Dock exposes a CC mirror for the hidden native subtitles control', () => {
+    const modSrc = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
+    for (const [label, source] of [
+        ['module', modSrc],
+        ['monolith', sources.ytkit],
+        ['userscript', sources.userscript]
+    ]) {
+        assert.match(source, /ytkit-po-cc/, `${label} must render the CC button`);
+        assert.match(source, /\.ytp-subtitles-button/, `${label} must target YouTube's native subtitles button`);
+        assert.match(source, /nativeButton\.click\(\)/, `${label} must delegate CC clicks to YouTube`);
+        assert.match(source, /aria-pressed/, `${label} must expose the captions state accessibly`);
+    }
+});
+
 test('Player Dock speed picker wakes persistent speed reapply task', () => {
     assert.match(sources.ytkit, /f\._scheduleApply\?\.\(0,\s*'player-dock'\)/,
         'speed popup must wake persistentSpeed after changing the default speed');

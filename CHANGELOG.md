@@ -8,6 +8,48 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [4.58.6] - 2026-08-10
+
+### Fixed
+
+- Video Hider now renders an always-visible red hide button in the top-right
+  corner of supported thumbnails instead of keeping the control transparent
+  until a card-specific hover rule matches.
+- Quick-hide discovery now also covers current rich-grid and playlist card
+  hosts, and recognizes a thumbnail element when it is itself the scan target.
+
+---
+
+## [4.58.5] - 2026-08-10
+
+### Fixed
+
+- Video Hider thumbnail hide buttons now work with YouTube's modern
+  `yt-lockup-view-model` cards, including hover visibility and thumbnail
+  placement.
+
+---
+
+## [4.58.4] - 2026-08-10
+
+### Fixed
+
+- Video Hider quick controls now persist and remain enabled instead of reverting after the setting is applied.
+
+---
+
+## [4.58.3] - 2026-08-10
+
+### Added
+
+- Added a **CC** control to the video player menu for toggling closed captions.
+
+### Fixed
+
+- Video Hider can now be enabled and remains enabled after its settings are saved.
+
+---
+
 ## [4.58.2] - 2026-08-09
 
 ### Fixed
@@ -7505,3 +7547,228 @@ v0.1.0 initial release, see [CHANGELOG-v3-archive.md](CHANGELOG-v3-archive.md).
 The archive carries the full v3.x hardening-pass history, the v3.21.0
 i18n foundation, the iter-N research-loop pre-cursor work, and the
 original YouTube-Kit-era entries before the Astra Deck rebrand.
+
+## Roadmap archive — 2026-08-10 — ROADMAP.md
+
+<details>
+<summary>Original roadmap snapshot</summary>
+
+```markdown
+# Roadmap - Astra Deck
+
+Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
+
+### Notes on existing tracked items
+
+- `Roadmap_Blocked.md` "P2 — Side-panel toggles bypass optional-host permission + profile gating" is **partly stale**: `extension/sidepanel.js` now implements the gating (`requestOptionalHostsForToggle` at `:616-637`, called from the toggle handler at `:818`, which only writes when the grant succeeds). What remains blocked is the live-browser half — verifying that `chrome.permissions.request()` actually resolves from the side panel's user-gesture context. Narrow the item to that verification rather than re-implementing the gating.
+
+- `Roadmap_Blocked.md` "P1 — Companion release EXE + SHA256 sidecar + clean-machine verification" is **half-unblocked as of 2026-08-02**: its stated blocker includes "maintainer GitHub authentication ... `gh auth status` reports the SysAdminDoc token is invalid", but `gh auth status` now reports a valid `SysAdminDoc` token with `repo` scope. Only the clean-Windows-machine verification half remains blocked, and the asset itself now ships from `SysAdminDoc/AstraDownloader`. Rewrite the blocker accordingly.
+
+- `Roadmap_Blocked.md` "P2 — Competitor migration documentation" is **better supported now, not stale**: Iridium was archived 2026-01-31 (last real commit 2024-09-18) and its users are being routed to Enhancer, Unhook and Zenith — none of which is OSS-and-maintained, so there is no OSS successor. BlockTube is stalled (last push 2026-02-07, 484 open issues). A BlockTube migration guide plus an Iridium-successor note is the highest-yield addition to that item. No separate roadmap entry — extend the blocked one.
+
+- `Roadmap_Blocked.md` "P0 — Tag and publish the v4.51.1 release" was **version-stale and mis-blocked**. **Rewritten in place 2026-08-06** — retargeted to v4.56.0 and its blocker corrected. For the record: the CRX-key framing was wrong, because self-hosted CRX installs are Linux-only on modern Chrome and the last two published releases (v4.50.2, v4.50.7) shipped **no CRX at all**, so the missing `ytkit.pem` never gated a ZIP/XPI/userscript release. What actually fails is `node scripts/generate-release-readiness.js`, on three checks only (missing `build/release-manifest.json`, `build/astra-deck-npm-sbom.cdx.json`, `build/SHA256SUMS`) — all produced by `npm run build:userscript`, and the CRX check is not among them. See "Cut a release without a CRX" below for the code change that makes this a one-command path.
+
+- `Roadmap_Blocked.md` "P2 — Userscript bundle is stale; next sync will break Import" had **already materialised** — the bundle was resynced and the breakage shipped. **Narrowed in place 2026-08-06** to the Tampermonkey verification half and retitled; the porting half is programmatic and is tracked below as a P0. The two are no longer duplicates: do the P0 here, confirm it there.
+
+- `Roadmap_Blocked.md` "P2 — Audio auto-gain / high-pass chain" should **absorb multi-band EQ** rather than spawning a second item: `BiquadFilterNode` stages sit on the same MAIN-world audio graph the item already covers, and a 5-band EQ is the specific thing Enhancer's users ask for and Zenith paywalls. Its stated blocker is the stale "this run forbids staging Markdown" session constraint, which does not apply now.
+
+- `Roadmap_Blocked.md` "P3 — Chrome Writer/Rewriter API" is correctly blocked (still Developer Trial), but it should **not** be read as covering Chrome's built-in AI generally: Translator, Language Detector, Summarizer and the Prompt API have been **stable in extensions since Chrome 138**. That lane is unblocked and is tracked separately below.
+
+- Six `Roadmap_Blocked.md` items (Force DVR, replay chat-density chart, opt-in settings sync, logarithmic volume curve, volatile-project-facts gate, immutable build-profile ceilings) cite a self-imposed "this run forbids staging Markdown other than README/CHANGELOG" constraint as their blocker. That is not an external blocker. Move them back to this file on the next pass.
+
+- `Roadmap_Blocked.md:314` "P2 — Opt-in settings/blocklist sync (`storage.sync`)" and "Subscribable and exportable filter lists" below are **adjacent, not duplicates** — do not build both without deciding which. Sync moves a user's own rules between their own devices; subscribable lists move *other people's* rules to everyone. Note also that `chrome.storage.sync` caps at 102,400 B total / 8,192 B per item / 512 items, which the 446-key settings bag cannot fit — only a diff-from-default could, which the sync item does not currently say.
+
+- `Roadmap_Blocked.md:419,427` "P3 — Userscript-tier survey (Greasy Fork)" (filed twice, near-duplicates — merge them) is **partly unblocked**: Greasy Fork still 403s automated fetches, but the same Rails application serves its help and CDN-allowlist pages at `sleazyfork.org`, which does not, and the rules themselves are readable in `greasyfork-org/greasyfork` (`app/models/script_version.rb`, `config/locales/en.yml`). Install counts still need a manual paste. That is enough to have settled the listing mechanics this pass — see "List the userscript on Greasy Fork" below.
+
+## Status
+
+Open items below are from the 2026-08-06 research pass. Earlier backlogs
+(competitive-feature additions, audit drains, research and hardening waves) are
+drained — shipped work lives in git history and `CHANGELOG.md`.
+
+## Research-Driven Additions
+
+### P0 — Shipped defects and delivery
+
+### P1 — Trust, correctness, and distribution mechanics
+
+### P2 — Quick wins with direct demand evidence
+
+### P2 — Features with strong external demand
+
+- [ ] P2 — Local AI lane on Chrome's built-in APIs
+  Why: Translator, Language Detector, Summarizer and the Prompt API have been stable in extensions since Chrome 138. A local lane makes summaries and translation work offline with no key, and removes three high-risk remote hosts from the GitHub-full permission string.
+  Evidence: `extension/manifest.json:45-47` declares `api.openai.com`, `api.anthropic.com`, `generativelanguage.googleapis.com`; the on-device comment translator shipped in v4.54.0 already proves the pattern. Not covered by the blocked Writer/Rewriter item, which tracks a Developer-Trial API.
+  Touches: `extension/core/userscript-ai-summary.js`, the AI-summary feature path in `extension/ytkit.js`, `extension/core/capability-probe.js`, `extension/core/data-flow.js`
+  Acceptance: with a supported device the summary and transcript-translation paths run with no host permission and no key; without one they fall back to the existing BYO-key lane and say so; the capability probe reports which lane is active.
+  Complexity: M
+
+- [ ] P2 — Live-stream latency catch-up
+  Why: a single-idea extension took 433 stars in six weeks doing only this, and Astra already ships both halves — a configurable buffer target and programmatic playback-rate control.
+  Evidence: `joaogfc/ZeroDelay`; ImprovedTube #4090.
+  Touches: `extension/ytkit.js` (live-stream player features), `extension/core/player.js`
+  Acceptance: on a live stream, latency above a configurable threshold raises playback rate within bounds until the edge is reached, with a latency/buffer readout in the player chrome; writes go through `setProgrammaticPlaybackRate()` so per-channel saved speeds survive.
+  Complexity: M
+
+- [ ] P2 — Local AI-slop / low-signal filtering
+  Why: the one 2026 demand wave with clear volume and no incumbent coverage, and it composes with filters Astra already has rather than needing a server.
+  Evidence: SponsorBlock #1963 (22 👍), #2317, #2429; ImprovedTube #3150 (8 👍), #1833; FilterTube #22; the 2026 `combatslop-yt` extension.
+  Touches: `extension/features/video-hider/index.js`, `extension/core/predicate-sandbox.js`, `extension/core/settings-schema.js`
+  Acceptance: local heuristics (synthetic-narration markers in title/description/channel patterns, view-count and age thresholds, upload cadence) expose new predicate fields usable from the existing DSL, each independently toggleable, with the hidden-card reason naming which heuristic fired. No network call and no crowd database.
+  Complexity: L
+
+- [ ] P2 — Subscribable and exportable filter lists
+  Why: BlockTube is stalled with its users asking for exactly this, and it is the in-policy substitute for the cloud sync this project rejects.
+  Evidence: BlockTube #508, #384 (16 👍), #59 (11 👍); FilterTube #62. Astra's predicate DSL and keyword rules are strictly local.
+  Touches: `extension/core/persisted-domains.js`, `extension/features/video-hider/index.js`, `extension/popup.js`
+  Acceptance: rules export to and import from a versioned file; an optional HTTPS list URL refreshes on a bounded schedule through the `EXT_FETCH` bridge with the origin under the existing allowlist; import is transactional and reversible through the existing undo path.
+  Complexity: M
+
+- [ ] P2 — Timestamped-highlight export loop
+  Why: this is what the commercial tier actually paywalls — Glasp gates auto-sync to Notion at $12.50–$30/mo and Readwise Reader's $9.99/mo is the highlight→export loop — while Astra already owns transcripts, bookmarks, notes and AI artifacts and gives them no coherent way out.
+  Evidence: `glasp.co/pricing`; Astra ships `researchTranscriptIndex`, timestamp bookmarks, video notes and `ytkit-ai-summaries` as separate stores with separate exports.
+  Touches: `extension/core/transcript-service.js`, `extension/core/ai-summary-artifacts.js`, the notes and bookmarks features in `extension/ytkit.js`, `extension/core/persisted-domains.js`
+  Acceptance: one action exports a video's highlights, notes, bookmarks and summary as Markdown with clickable timestamps (Obsidian-compatible) and as JSON; round-trips through the existing schema-versioned import.
+  Complexity: M
+
+- [ ] P2 — Per-quality data-usage estimate before playback
+  Why: a dedicated extension took 256 stars since 2026-02 on this alone, and the companion already enumerates formats with their sizes.
+  Evidence: `MohamedSayed0573/TubeSize_Extension`; ImprovedTube #566 (5 👍); the `/formats` path in `extension/features/download-ui/index.js`.
+  Touches: `extension/features/download-ui/index.js`, `extension/ytkit.js` (playback-stats overlay)
+  Acceptance: the quality picker and stats overlay show an estimated size per quality for the current video; the estimate degrades to "unavailable" rather than guessing when the companion is offline.
+  Complexity: S
+
+- [ ] P2 — Restore dislikes on Shorts
+  Why: YouTube removed the Shorts dislike button, Return YouTube Dislike has not restored it and has not committed since 2026-05-02, and Astra's own module is watch-page and thumbnail scoped.
+  Evidence: RYD #1294 (27 👍, filed 2026-06-29, open); `extension/features/return-dislike/index.js:383,522` covers cards and the watch page only.
+  Touches: `extension/features/return-dislike/index.js`, `extension/core/selector-packs/` (Shorts surfaces)
+  Acceptance: the estimated dislike count renders on the Shorts player with the same `est.` disclosure as the watch page, and survives Shorts navigation.
+  Complexity: M
+
+- [ ] P2 — Filter sponsored and affiliate content out of comments and descriptions
+  Why: the second-highest single feature request in the landscape, and Astra already ships both halves — comment filtering and SponsorBlock reads.
+  Evidence: SponsorBlock #649 (40 👍).
+  Touches: `extension/ytkit.js` (comment filter manager, description handling), `extension/core/settings-schema.js`
+  Acceptance: an opt-in filter collapses comments and description blocks matching affiliate/sponsor patterns, shows the reason, and is reversible per item.
+  Complexity: M
+
+- [ ] P2 — Watch Later bulk management
+  Why: repeatedly requested across trackers, and Astra already has the bounded-session + Undo `bulkCardActions` pattern and a Watch Later workbench to host it.
+  Evidence: ImprovedTube #231 (6 👍), #652 (6 👍), #4085; the existing workbench in `extension/ytkit.js:33087-33610`.
+  Touches: `extension/ytkit.js` (Watch Later workbench)
+  Acceptance: bulk remove by age, duration, watched state and channel runs inside the existing bounded-session cap with per-item and "undo all" recovery.
+  Complexity: M
+
+### P2 — Platform and delivery engineering
+
+- [ ] P2 — Move YouTube selectors into a hot-updatable rule asset
+  Why: DOM knowledge is compiled into releases, so a YouTube change costs a release cycle on a channel whose last release is 174 commits old. This is the failure mode killing every competitor: Control Panel for YouTube spent eight of eleven 2026 releases on breakage repair, DeArrow shipped seven emergency fixes, and YouTube changed CSS variables twice in May 2026.
+  Evidence: 33 packs under `extension/core/selector-packs/` plus inline selectors ship frozen; uBlock Origin solves the same problem with versioned assets, differential updates (`Diff-Path`/`Diff-Expires`, per-block SHA-1) and randomised multi-CDN fetch (`gorhill/uBlock` `assets/assets.json`, `uBlockOrigin/uAssetsCDN`).
+  Touches: `extension/core/selector-packs/`, `extension/core/selectors.js`, `extension/core/selector-health.js`, `extension/background.js`, `scripts/build-selector-fixtures.js`
+  Acceptance: selector packs load from a signed, versioned asset with the shipped copy as the offline default; updates verify a digest before applying, are bounded in size, roll back on parse failure, and are visible in the diagnostics panel. No new origin outside the existing allowlist.
+  Complexity: XL
+
+- [ ] P2 — List the userscript on Greasy Fork, under the 2 MB cap
+  Why: Greasy Fork is the only channel that will carry this product **intact** — it has no downloader prohibition, unlike CWS and Edge — it is the only tier with working auto-update, and listing there auto-feeds userscript.zone and Tampermonkey's script index. The file is 30.2% over the hard limit and the rules forbid minifying to fit.
+  Evidence: `YTKit.user.js` is 2,729,479 B against `MAX_CODE_LENGTH = 2.megabytes` (2,097,152 B), enforced on create in `greasyfork-org/greasyfork` `app/models/script_version.rb`. Two compliant mechanisms: **libraries** are separate script records with their own 2 MB budget and are on the `@require` allowlist (`update.greasyfork.org/scripts/…`), keeping the code on Greasy Fork as `code_rules.hosting` demands; and **`@resource` is exempt from the CDN allowlist** — "these rules only apply to external, executable code. Loading non-executable code, for example JSON or CSS, is not restricted." That covers the 644 KB (23.7%) of CSS in template literals, the locale catalogues and the SVG icons. `raw.githubusercontent.com` is not on the `@require` allowlist; jsDelivr is, only with a 40-hex commit SHA, and would still violate the hosting rule. Greasy Fork has no antifeature category for local-companion traffic or media downloading — it needs only an accurate description and `@connect 127.0.0.1`, which the header already has.
+  Touches: `sync-userscript.js`, `YTKit.user.js` header (`@resource`, `@require`, plus the missing `@homepageURL`/`@supportURL`/`@license`/`@icon`, and a `@description` that still says "115+ features"), the CSS template literals in `extension/ytkit.js` and `extension/core/settings-visual-system.js`, `scripts/check-userscript-drift.js`
+  Acceptance: the generated `YTKit.user.js` is under 2,097,152 B with no minification; feature parity is unchanged at 159/270; the drift and symbol gates pass; the listing is live with the companion dependency stated in the description. Cheaper if the lazy-injection refactor lands first.
+  Complexity: L
+
+- [ ] P2 — Prepare a download-free build for the Chromium stores
+  Why: CWS and Edge are the only discovery surfaces with real volume, and both reject the download capability — but not the rest of the product. Edge is the cheaper door: $0 (versus $5) and its §1.2.3 explicitly permits a non-integrated companion app when disclosed in the description, while Google's own 2026-04-23 PSA reports a submission surge and ~28 business-day queues.
+  Evidence: CWS program policies prohibit extensions that "encourage, facilitate, or enable the unauthorized access, download, or streaming of copyrighted content or media"; Edge §2.8 is verbatim the same. Video Downloader Ultimate states publicly that it removed YouTube downloading from its Chrome build to stay listed. Three manifest facts drive the risk: `https://api.cobalt.tools/*` in `host_permissions`, **seven** `http://127.0.0.1:*` origins against the "narrowest permissions necessary" rule, and a `features/download-ui/` module beside the `downloads` permission. `docs/cws-submission-checklist.md` and `docs/store-permission-rationale.md` already exist.
+  Touches: `build-extension.js` (a third profile), `extension/core/data-flow.js`, `extension/manifest.json`, `docs/cws-submission-checklist.md`, `docs/store-permission-rationale.md`
+  Acceptance: a store profile builds with no `downloads` permission, no `api.cobalt.tools` host, no loopback origins and no download feature module or naming, and passes `npm run check`. Submission itself is an operator action — Edge additionally requires government-ID verification — so track that half in `Roadmap_Blocked.md` alongside the existing CWS/AMO submission items.
+  Complexity: M
+
+- [ ] P2 — Emit a Firefox update manifest from the release pipeline
+  Why: Firefox is the only target where silent auto-update is achievable outside a store, and the release tooling that would produce the manifest already exists. Chrome self-hosted CRX installs are Linux-only, so this is the one auto-update lever the project has.
+  Evidence: `scripts/generate-release-manifest.js` and `scripts/generate-release-sbom.js` already run per release; `browser_specific_settings.gecko.update_url` requires an HTTPS JSON manifest of `{version, update_link, update_hash}`.
+  Touches: `scripts/generate-release-manifest.js` (or a new emitter), `scripts/manifest-patch.js`, `build-extension.js`, `docs/hosted-policy-closure.md`
+  Acceptance: a release emits `updates.json` with the version, an HTTPS `update_link` to the release asset and a `update_hash` matching `SHA256SUMS`; the patched Firefox manifest points `gecko.update_url` at it. Effective only once the XPI is signed — track the signing decision separately.
+  Complexity: M
+
+- [ ] P2 — Adopt the platform APIs that replace hand-rolled machinery
+  Why: several long-standing sources of breakage now have first-class platform answers on both targets.
+  Evidence: Chrome 148 makes `browser` native and lets `runtime.onMessage` return a Promise; Firefox 153 adds `runtime.getDocumentId()` and content-script `adoptedStyleSheets`; Popover, `@scope`, `::highlight`, the Navigation API, `Intl.DurationFormat` and `RegExp.escape()` all reached Baseline in 2025–2026; Document Picture-in-Picture is Chrome 130+ and **Firefox 151+**.
+  Touches: `extension/core/browser-api.js`, `extension/core/navigation.js`, `extension/core/toast-dom.js`, `extension/core/text-metrics.js`, `extension/core/date-time.js`, the transcript search path in `extension/ytkit.js`
+  Acceptance: taken one API at a time behind `extension/core/capability-probe.js` — `@scope` around injected CSS, `::highlight` for transcript and segment marking (no DOM mutation), `Intl.DurationFormat` for durations across all 11 locales, `RegExp.escape()` on every user-supplied filter string. Each lands with a fallback and a test; none regresses `npm run check:startup`.
+  Note: `Roadmap_Blocked.md` already holds three items of this same family, blocked on live-browser verification — `appearance: base-select`, `@starting-style`, and `<details name>` exclusive accordion. Deliberately excluded here: the four APIs above are verifiable against the existing fixture and headless lanes, those three are not. Do not re-file them.
+  Complexity: L
+
+### P3 — Debt burn-down and tooling honesty
+
+- [ ] P3 — Start burning down the 1,604 grandfathered English literals
+  Why: the copy gate passes because the debt is fingerprinted as accepted, not because it is fixed, so 11 locales ship large English surfaces.
+  Evidence: `scripts/i18n-ui-copy-baseline.json` grandfathers 1,604 literals across 20 files — 1,273 in `extension/ytkit.js`, 134 in `settings-panel`, 40 in `subscription-groups`, 30 in `download-ui`, 28 in `video-hider`, 26 in `popup.js`. The Video Notes panel (`extension/ytkit.js:22902-22942`) is entirely unwrapped while siblings in the same file use `t()`.
+  Touches: `extension/ytkit.js`, `extension/features/**`, `extension/_locales/**`, `scripts/i18n-ui-copy-baseline.json`, `scripts/generate-locales.js`
+  Acceptance: the baseline count only ever decreases; a per-pass target is recorded and the highest-traffic surfaces (Video Notes, settings-panel, download-ui) go first. Translations go into the `generate-locales.js` tables before regenerating so the placeholder ratchet does not move.
+  Complexity: L
+
+- [ ] P3 — Start burning down the 277 light-theme-blind surfaces
+  Why: the gate accepts 277 legacy surfaces against 89 that carry a light lane, so YouTube light-theme users still meet near-white text on near-white backgrounds on surfaces nothing flags.
+  Evidence: `npm run audit:light-theme` reports 89 covered / 277 accepted; `scripts/light-theme-baseline.json`.
+  Touches: `extension/ytkit.js`, `extension/features/**`, `scripts/light-theme-baseline.json`
+  Acceptance: the accepted count only ever decreases; default-ON surfaces are cleared first; a light-fixture render lane confirms the fixes rather than a source-text rule.
+  Complexity: L
+
+- [ ] P3 — Make the accessibility and contrast audits see real rendered output
+  Why: all four audits are static string-presence checks over source text, so they only catch regressions of already-fixed patterns — which is exactly how the watch-time dialog shipped with no dialog semantics.
+  Evidence: `scripts/audit-overlays-a11y.js:7` states "This is intentionally static"; `scripts/check-contrast.js:37-56` hardcodes six colour pairs from `popup.css` and reads no stylesheet; `docs/screen-reader-smoke.md` is a manual checklist outside `npm run check`.
+  Touches: `scripts/audit-overlays-a11y.js`, `scripts/check-contrast.js`, `scripts/smoke-headless-a11y.js`
+  Acceptance: contrast is computed from the actual custom-property values in `popup.css`/`sidepanel.css` rather than a literal list; the headless a11y smoke asserts focus order and focus-trap behaviour on at least the settings panel and one injected overlay against a real DOM.
+  Note: distinct from `Roadmap_Blocked.md` "P2 — Visual regression testing for popup" — that item compares screenshots against a committed baseline and is blocked on browser binaries; this one computes contrast and asserts focus behaviour, and runs in the headless lane `npm run smoke:settings-overlay` already uses. The rendered light-theme lane the P3 above wants is the natural place to host both.
+  Complexity: M
+
+- [ ] P3 — Show which settings differ from their defaults
+  Why: 446 keys with per-key reset but no aggregate view of what a user changed, which is the first thing anyone needs when a feature misbehaves or before filing a bug.
+  Evidence: `extension/popup.js:2588-2920` renders the Schema Overview key-by-key with a per-key reset (`:3167`) and no diff view; settings are stored sparsely so the data is already exactly the diff.
+  Touches: `extension/popup.js`, `extension/core/settings-schema.js`
+  Acceptance: a "changed from defaults" view lists every non-default key with its current and default value, is copyable into a bug report, and is included in the diagnostics bundle.
+  Complexity: S
+
+- [ ] P3 — Clear the references the companion split left behind
+  Why: a published design doc and a local audit-tooling config both point at code that no longer exists, so the doc misinforms the next reader and two audit tasks silently scan nothing.
+  Evidence: `docs/predicate-sandbox-investigation.md` says the sandbox is "not yet enabled in any shipped feature" while `extension/core/predicate-sandbox.js` is the live DSL evaluator behind Video Hider; `.factory/audit-workflow.js:94-100` (gitignored, local tooling) still targets `astra_downloader/astra_downloader.py` for its security and threading audits.
+  Touches: `docs/predicate-sandbox-investigation.md`, `.factory/audit-workflow.js`
+  Acceptance: the predicate-sandbox doc describes the shipped wiring; no file in `docs/` or `extension/` references a path that left in `a6bb685f` as if it were current; the two audit tasks target extension paths.
+  Complexity: S
+
+- [ ] P1 — Restore a clean dependency-security gate for Firefox tooling
+  Why: npm run check is not green even though production dependencies pass audit. The failing chain is development-only, but it is part of the release and verification path.
+  Evidence: [image-size ICNS advisory](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr), [image-size JXL/HEIF advisory](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq), and the verified local graph web-ext 10.6.0 → addons-linter 10.10.0 → image-size 2.0.2; npm audit fix --force proposes a breaking web-ext 5.5.0 downgrade.
+  Touches: package.json and lockfile, Firefox lint/build scripts, check orchestration, and release/security documentation if a bounded exception is unavoidable.
+  Acceptance: npm run check passes without high-severity findings, or emits a machine-readable, narrowly scoped exception naming the exact transitive package, advisory, reachability, and upstream status; Firefox lint/build coverage still runs; production bundles and the production-only audit remain unchanged.
+  Complexity: M
+
+- [ ] P1 — Maintain a browser capability matrix and fallback contract
+  Why: optional APIs span Chrome-only, Chrome-conditional, and Firefox-different behaviour. A feature can pass static checks while silently losing a fallback on a supported browser.
+  Evidence: [Chrome scripting and userScripts conditions](https://developer.chrome.com/docs/extensions/reference/api/scripting), [Chrome userScripts](https://developer.chrome.com/docs/extensions/reference/api/userScripts), [Chrome built-in AI availability](https://developer.chrome.com/docs/ai/built-in-apis), and [Firefox content-script timing/world differences](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts).
+  Touches: extension/core/capability-probe.js, browser-api and permission helpers, scripts/check-firefox-webext.js, headless tests, and the supported-browser section of README.md.
+  Acceptance: a generated matrix records API availability, required permission, execution world, minimum browser, fallback, and user-visible degradation for each adopted optional API; Chrome and Firefox lanes test both available and unavailable branches; no unsupported API is called before its capability probe.
+  Complexity: M
+
+- [ ] P1 — Prove idempotent injection across SPA navigation and extension updates
+  Why: YouTube is a long-lived SPA, and extension updates can leave already injected code in tabs. A second bootstrap must not create duplicate observers, listeners, styles, feature registrations, or top-level declarations.
+  Evidence: [Chrome scripting documentation](https://developer.chrome.com/docs/extensions/reference/api/scripting) states that unregistering a content script does not remove code already injected into a page; [FilterTube](https://github.com/varshneydevansh/FilterTube) identifies duplicate runtime injection in its recent fix history; [ImprovedTube’s active breakage queue](https://github.com/code-charity/youtube/pulls) shows the practical cost of lifecycle drift.
+  Touches: content-script bootstrap and feature registry, lifecycle cleanup, navigation/update test fixtures, and the existing startup/long-session test lanes.
+  Acceptance: repeated bootstrap, client-side navigation, iframe recreation, and extension-update simulation produce one active registry per tab; no duplicate CSS, observer, message listener, or global declaration is created; tests cover Chrome and Firefox injection paths and expose a diagnostic failure rather than silently degrading.
+  Complexity: M
+
+- [ ] P2 — Make external enrichment provenance and rate limits visible
+  Why: Sponsor, dislike, title, and related enrichment can be stale, unavailable, rate-limited, or privacy-sensitive. Silent fallbacks make a correct "no result" indistinguishable from a broken feature.
+  Evidence: [SponsorBlock’s API/database model](https://github.com/ajayyy/SponsorBlock/wiki) and [Return YouTube Dislike’s API](https://github.com/Anarios/return-youtube-dislike), including its [privacy discussion](https://github.com/Anarios/return-youtube-dislike/issues/344).
+  Touches: external service adapters, cache metadata, popup/diagnostics status surfaces, settings copy, and tests for 200/empty/304/429/timeout responses.
+  Acceptance: each external enrichment reports source, last-refresh age, availability, and cooldown/retry state; a user can disable each source and understand what local fallback remains; cached data is visibly stale after its TTL; identifiers are not sent to an optional service without the existing user-facing opt-in/permission contract.
+  Complexity: M
+
+- [ ] P2 — Add rollback-safe release channels and artifact health checks
+  Why: a selector or browser-specific release can fail after static build gates pass. The project needs a bounded way to stop propagation and return to the last known-good artifact across extension and userscript channels.
+  Evidence: [uBlock’s versioned filter assets](https://github.com/gorhill/uBlock/wiki/Dashboard%3A-Filter-lists/b902569784469ad2bf326efb82d9fd3f92f2fe8d), [yt-dlp’s release cadence](https://github.com/yt-dlp/yt-dlp/releases), and [Firefox’s update-link/hash model](https://extensionworkshop.com/documentation/manage/updating-your-extension/).
+  Touches: release manifest/SBOM/digest scripts, GitHub release workflow, selector-asset metadata, userscript metadata, and release documentation.
+  Acceptance: every channel identifies a last-known-good artifact and a rollback target; a release health check validates manifest/version/digest, selector-pack parse, startup budget, and a smoke fixture before promotion; a failed health result prevents promotion and a documented rollback restores the previous artifact without rebuilding it.
+  Complexity: L
+```
+
+</details>

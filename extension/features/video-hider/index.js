@@ -118,7 +118,7 @@
             _MARKED_WATCHED_KEY: 'ytkit-marked-watched-videos',
             _CHANNELS_KEY: 'ytkit-blocked-channels',
             _ALLOWED_CHANNELS_KEY: 'ytkit-allowed-channels',
-            _VIDEO_SELECTORS: 'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer',
+            _VIDEO_SELECTORS: 'yt-lockup-view-model, ytd-rich-item-renderer, ytd-rich-grid-media, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer, ytd-playlist-video-renderer',
             _hiddenSet: null,
             _hiddenList: null,
             _allowedSet: null,
@@ -1312,8 +1312,12 @@
             },
 
             _findThumbnailContainer(element) {
-                const selectors = ['a.yt-lockup-view-model__content-image', 'yt-thumbnail-view-model', '#thumbnail', 'ytd-thumbnail'];
-                for (const sel of selectors) { const c = element.querySelector(sel); if (c) return c; }
+                const selectors = ['a.yt-lockup-view-model__content-image', 'a.ytLockupViewModelContentImage', 'yt-thumbnail-view-model', '#thumbnail', 'ytd-thumbnail'];
+                for (const sel of selectors) {
+                    if (element.matches?.(sel)) return element;
+                    const candidate = element.querySelector?.(sel);
+                    if (candidate) return candidate;
+                }
                 return null;
             },
 
@@ -1326,6 +1330,7 @@
 
             _createHideButton() {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.className = 'ytkit-video-hide-btn';
                 btn.title = appState.settings.hideVideosAllowChannelBlock === false
                     ? 'Hide this video'
@@ -2142,20 +2147,23 @@
             init() {
                 const css = `
                     .ytkit-video-hide-btn {
-                        position: absolute;
-                        top: 8px;
-                        right: 8px;
+                        position: absolute !important;
+                        top: 8px !important;
+                        right: 8px !important;
                         width: 28px;
                         height: 28px;
-                        background: rgba(8, 11, 16, 0.72);
-                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        background: rgba(220, 38, 38, 0.96) !important;
+                        border: 1px solid rgba(255, 255, 255, 0.32) !important;
                         border-radius: 50%;
                         cursor: pointer;
-                        display: flex;
+                        display: flex !important;
                         align-items: center;
                         justify-content: center;
-                        z-index: ${Z.HIDE_BTN};
-                        opacity: 0;
+                        z-index: ${Z.HIDE_BTN} !important;
+                        opacity: 1 !important;
+                        visibility: visible !important;
+                        pointer-events: auto !important;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45) !important;
                         /* Enumerate specific properties instead of \`all\` so we
                            don't accidentally animate layout-affecting props on
                            YouTube's thumbnail cards (which trigger reflow
@@ -2170,8 +2178,8 @@
                         backdrop-filter: none;
                     }
                     .ytkit-video-hide-btn:hover {
-                        background: rgba(224, 40, 40, 0.92);
-                        border-color: rgba(255, 255, 255, 0.18);
+                        background: rgba(185, 28, 28, 1) !important;
+                        border-color: rgba(255, 255, 255, 0.5) !important;
                         transform: scale(1.08);
                     }
                     .ytkit-video-hide-btn:focus-visible {
@@ -2179,11 +2187,12 @@
                         outline: none;
                         box-shadow: var(--ytkit-focus-ring);
                     }
-                    .ytkit-video-hide-btn svg { width: 14px; height: 14px; fill: #fff; pointer-events: none; }
+                    .ytkit-video-hide-btn svg { width: 14px; height: 14px; fill: #fff !important; pointer-events: none; }
                     ytd-rich-item-renderer:hover .ytkit-video-hide-btn,
                     ytd-video-renderer:hover .ytkit-video-hide-btn,
                     ytd-grid-video-renderer:hover .ytkit-video-hide-btn,
-                    ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity: 1; }
+                    ytd-compact-video-renderer:hover .ytkit-video-hide-btn,
+                    yt-lockup-view-model:hover .ytkit-video-hide-btn { opacity: 1; }
                     .ytkit-video-mark-watched-btn {
                         position: absolute;
                         top: 8px;
@@ -2210,7 +2219,8 @@
                     ytd-rich-item-renderer:hover .ytkit-video-mark-watched-btn,
                     ytd-video-renderer:hover .ytkit-video-mark-watched-btn,
                     ytd-grid-video-renderer:hover .ytkit-video-mark-watched-btn,
-                    ytd-compact-video-renderer:hover .ytkit-video-mark-watched-btn { opacity: 1; }
+                    ytd-compact-video-renderer:hover .ytkit-video-mark-watched-btn,
+                    yt-lockup-view-model:hover .ytkit-video-mark-watched-btn { opacity: 1; }
                     .ytkit-video-marked-watched { opacity: 0.48 !important; filter: saturate(0.72); }
                     .ytkit-video-hidden { display: none !important; }
                     .ytkit-video-hidden-placeholder {

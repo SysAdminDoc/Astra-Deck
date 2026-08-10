@@ -3746,6 +3746,12 @@
   "playerGearTitleTpl": {
     "message": "{brand} 설정"
   },
+  "playerCcAria": {
+    "message": "자막 켜기 또는 끄기"
+  },
+  "playerCcTitle": {
+    "message": "자막"
+  },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
   },

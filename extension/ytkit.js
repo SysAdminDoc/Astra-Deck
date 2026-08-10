@@ -970,7 +970,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.58.2';
+    const YTKIT_VERSION = '4.58.6';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -5426,6 +5426,7 @@ return response;
                 YTKIT_VERSION,
                 _i18n,
                 appState,
+                applyExternalSettingsUpdate,
                 createBrandImage,
                 createToast,
                 destroyFeatureLifecycle,
@@ -9175,7 +9176,52 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'layout',
             _ruleId: 'floatingLogoRule',
             _styleEl: null,
+            _ccObserver: null,
+            _ccButton: null,
+            _getNativeCcButton() {
+                if (typeof document === 'undefined') return null;
+                return document.querySelector('#movie_player .ytp-subtitles-button, .ytp-subtitles-button');
+            },
+            _syncCcButton() {
+                const button = this._ccButton;
+                if (!button) return;
+                const nativeButton = this._getNativeCcButton();
+                const isActive = !!nativeButton && (
+                    nativeButton.getAttribute('aria-pressed') === 'true'
+                    || nativeButton.classList.contains('ytp-button-active')
+                    || nativeButton.classList.contains('ytp-subtitles-button-active')
+                );
+                button.classList.toggle('ytkit-po-cc--active', isActive);
+                if (button.getAttribute('aria-pressed') !== String(isActive)) {
+                    button.setAttribute('aria-pressed', String(isActive));
+                }
+                button.title = t('playerCcTitle', 'Closed captions');
+                button.setAttribute('aria-label', t('playerCcAria', 'Toggle closed captions'));
+            },
+            _watchCcState() {
+                this._ccObserver?.disconnect();
+                this._ccObserver = null;
+                const rightControls = typeof document !== 'undefined'
+                    ? document.querySelector('.ytp-right-controls')
+                    : null;
+                if (!rightControls || typeof MutationObserver !== 'function') return;
+                this._ccObserver = new MutationObserver((records) => {
+                    // Ignore attribute changes made to our mirror button so
+                    // syncing its state cannot create an observer loop.
+                    if (records.length > 0 && records.every(record => this._ccButton?.contains(record.target))) return;
+                    this._syncCcButton();
+                });
+                this._ccObserver.observe(rightControls, {
+                    subtree: true,
+                    childList: true,
+                    attributes: true,
+                    attributeFilter: ['class', 'aria-pressed']
+                });
+            },
             _cleanup() {
+                this._ccObserver?.disconnect();
+                this._ccObserver = null;
+                this._ccButton = null;
                 const quickLinks = getFeatureById('quickLinkMenu');
                 const logoWrap = document.getElementById('ytkit-po-logo-wrap');
                 quickLinks?._teardownMenuInteractions?.(logoWrap);
@@ -9188,9 +9234,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return appState.settings.logoToSubscriptions ? '/feed/subscriptions' : '/';
             },
             _inject() {
-                if (!window.location.pathname.startsWith('/watch')) { document.getElementById('ytkit-player-controls')?.remove(); return; }
+                if (!window.location.pathname.startsWith('/watch')) {
+                    document.getElementById('ytkit-player-controls')?.remove();
+                    this._ccObserver?.disconnect();
+                    this._ccObserver = null;
+                    this._ccButton = null;
+                    return;
+                }
                 const rightControls = document.querySelector('.ytp-right-controls');
-                if (!rightControls || document.getElementById('ytkit-player-controls')) return;
+                if (!rightControls) return;
+                const existingControls = document.getElementById('ytkit-player-controls');
+                if (existingControls) {
+                    this._ccButton = existingControls.querySelector('.ytkit-po-cc') || this._ccButton;
+                    this._watchCcState();
+                    this._syncCcButton();
+                    return;
+                }
 
                 const wrap = document.createElement('div');
                 wrap.id = 'ytkit-player-controls';
@@ -9234,6 +9293,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     dlBtn.addEventListener('click', (e) => { e.stopPropagation(); showDownloadPopup(dlBtn); });
                     wrap.appendChild(dlBtn);
                 }
+
+                // Mirror YouTube's native subtitles control, which may be
+                // hidden by the consolidated player-control preferences.
+                const ccBtn = document.createElement('button');
+                ccBtn.type = 'button';
+                ccBtn.className = 'ytp-button ytkit-player-btn ytkit-po-cc';
+                // i18n-static: closed-caption technical abbreviation
+                ccBtn.textContent = 'CC';
+                ccBtn.setAttribute('aria-pressed', 'false');
+                ccBtn.title = t('playerCcTitle', 'Closed captions');
+                ccBtn.setAttribute('aria-label', t('playerCcAria', 'Toggle closed captions'));
+                ccBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const nativeButton = this._getNativeCcButton();
+                    if (!nativeButton || nativeButton.disabled || nativeButton.getAttribute('aria-disabled') === 'true') return;
+                    nativeButton.click();
+                    this._syncCcButton();
+                    setTimeout(() => this._syncCcButton(), 0);
+                });
+                this._ccButton = ccBtn;
+                wrap.appendChild(ccBtn);
 
                 // Speed control — sits between Download and Settings.
                 // Drives the existing persistentSpeed feature so the chosen
@@ -9480,8 +9560,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     #ytkit-player-controls .ytkit-po-dl,
+                    #ytkit-player-controls .ytkit-po-cc,
                     #ytkit-player-controls .ytkit-po-gear {
                         border-radius: 11px !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-cc {
+                        color: rgba(191, 219, 254, 0.94) !important;
+                        font: 700 10px/1 Arial, sans-serif !important;
+                        letter-spacing: -0.04em !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-cc--active {
+                        color: #fff !important;
+                        border-color: rgba(96, 165, 250, 0.42) !important;
+                        background:
+                            linear-gradient(180deg, rgba(96, 165, 250, 0.24), rgba(96, 165, 250, 0.08)),
+                            rgba(255, 255, 255, 0.045) !important;
+                    }
+
+                    html:not([dark]) #ytkit-player-controls .ytkit-po-cc--active {
+                        color: var(--yt-spec-text-primary, #0f0f0f) !important;
                     }
 
                     #ytkit-player-controls .ytkit-po-dl {
@@ -9696,7 +9795,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `);
 
                 const self = this;
-                addNavigateRule(this._ruleId, () => self._inject());
+                addNavigateRule(this._ruleId, () => {
+                    self._inject();
+                    self._watchCcState();
+                    self._syncCcButton();
+                });
             },
             destroy() {
                 removeNavigateRule(this._ruleId);
@@ -17186,7 +17289,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _ALLOWLIST_KEY: 'ytkit-video-hider-allowed-videos',
             _CHANNELS_KEY: 'ytkit-blocked-channels',
             _ALLOWED_CHANNELS_KEY: 'ytkit-allowed-channels',
-            _VIDEO_SELECTORS: 'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer',
+            _VIDEO_SELECTORS: 'yt-lockup-view-model, ytd-rich-item-renderer, ytd-rich-grid-media, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer, ytd-playlist-video-renderer',
             _hiddenSet: null,
             _hiddenList: null,
             _allowedSet: null,
@@ -18045,8 +18148,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _findThumbnailContainer(element) {
-                const selectors = ['a.yt-lockup-view-model__content-image', 'yt-thumbnail-view-model', '#thumbnail', 'ytd-thumbnail'];
-                for (const sel of selectors) { const c = element.querySelector(sel); if (c) return c; }
+                const selectors = ['a.yt-lockup-view-model__content-image', 'a.ytLockupViewModelContentImage', 'yt-thumbnail-view-model', '#thumbnail', 'ytd-thumbnail'];
+                for (const sel of selectors) {
+                    if (element.matches?.(sel)) return element;
+                    const candidate = element.querySelector?.(sel);
+                    if (candidate) return candidate;
+                }
                 return null;
             },
 
@@ -18059,6 +18166,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _createHideButton() {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.className = 'ytkit-video-hide-btn';
                 btn.title = appState.settings.hideVideosAllowChannelBlock === false
                     ? 'Hide this video'
@@ -18754,20 +18862,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 const css = `
                     .ytkit-video-hide-btn {
-                        position: absolute;
-                        top: 8px;
-                        right: 8px;
+                        position: absolute !important;
+                        top: 8px !important;
+                        right: 8px !important;
                         width: 28px;
                         height: 28px;
-                        background: rgba(8, 11, 16, 0.72);
-                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        background: rgba(220, 38, 38, 0.96) !important;
+                        border: 1px solid rgba(255, 255, 255, 0.32) !important;
                         border-radius: 50%;
                         cursor: pointer;
-                        display: flex;
+                        display: flex !important;
                         align-items: center;
                         justify-content: center;
-                        z-index: ${Z.HIDE_BTN};
-                        opacity: 0;
+                        z-index: ${Z.HIDE_BTN} !important;
+                        opacity: 1 !important;
+                        visibility: visible !important;
+                        pointer-events: auto !important;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45) !important;
                         /* Enumerate specific properties instead of \`all\` so we
                            don't accidentally animate layout-affecting props on
                            YouTube's thumbnail cards (which trigger reflow
@@ -18782,8 +18893,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         backdrop-filter: none;
                     }
                     .ytkit-video-hide-btn:hover {
-                        background: rgba(224, 40, 40, 0.92);
-                        border-color: rgba(255, 255, 255, 0.18);
+                        background: rgba(185, 28, 28, 1) !important;
+                        border-color: rgba(255, 255, 255, 0.5) !important;
                         transform: scale(1.08);
                     }
                     .ytkit-video-hide-btn:focus-visible {
@@ -18791,11 +18902,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         outline: none;
                         box-shadow: var(--ytkit-focus-ring);
                     }
-                    .ytkit-video-hide-btn svg { width: 14px; height: 14px; fill: #fff; pointer-events: none; }
+                    .ytkit-video-hide-btn svg { width: 14px; height: 14px; fill: #fff !important; pointer-events: none; }
                     ytd-rich-item-renderer:hover .ytkit-video-hide-btn,
                     ytd-video-renderer:hover .ytkit-video-hide-btn,
                     ytd-grid-video-renderer:hover .ytkit-video-hide-btn,
-                    ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity: 1; }
+                    ytd-compact-video-renderer:hover .ytkit-video-hide-btn,
+                    yt-lockup-view-model:hover .ytkit-video-hide-btn { opacity: 1; }
                     .ytkit-video-hidden { display: none !important; }
                     .ytkit-video-hidden-placeholder {
                         box-sizing: border-box;
@@ -45753,17 +45865,47 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             toggleSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosFromHome ? ' active' : '');
             const toggleInput = document.createElement('input');
             toggleInput.type = 'checkbox';
-            toggleInput.id = 'ytkit-toggle-hideVideosFromHome';
+            // Keep this pane control distinct from the generic feature card
+            // toggle, which uses the setting-derived id.
+            toggleInput.id = 'ytkit-video-hider-enabled';
             toggleInput.name = 'hideVideosFromHome';
             toggleInput.setAttribute('aria-label', 'Enable Video Hider');
             toggleInput.checked = appState.settings.hideVideosFromHome;
-            toggleInput.onchange = async () => {
-                appState.settings.hideVideosFromHome = toggleInput.checked;
-                toggleSwitch.classList.toggle('active', toggleInput.checked);
-                settingsManager.save(appState.settings);
-                if (toggleInput.checked) safeInitFeature(videoHiderFeature, 'video-hider-pane');
-                else safeDestroyFeature(videoHiderFeature, 'video-hider-pane');
+            const reconcileVideoHiderSetting = (nextSettings, source) => {
+                if (typeof applyExternalSettingsUpdate === 'function') {
+                    applyExternalSettingsUpdate({ source, nextSettings });
+                    return;
+                }
+                appState.settings = nextSettings;
+                if (nextSettings.hideVideosFromHome) safeInitFeature(videoHiderFeature, source);
+                else safeDestroyFeature(videoHiderFeature, source);
+            };
+            const syncVideoHiderToggle = () => {
+                const isEnabled = appState.settings.hideVideosFromHome === true;
+                toggleInput.checked = isEnabled;
+                toggleSwitch.classList.toggle('active', isEnabled);
                 updateVideoHiderMeta();
+            };
+            toggleInput.onchange = async () => {
+                const previousSettings = { ...appState.settings };
+                const nextSettings = {
+                    ...previousSettings,
+                    hideVideosFromHome: toggleInput.checked
+                };
+                try {
+                    const saveResult = settingsManager.save(nextSettings);
+                    // Replace the settings object before the async storage
+                    // echo arrives so feature lifecycle and UI use one path.
+                    reconcileVideoHiderSetting(nextSettings, 'video-hider-pane');
+                    const result = await saveResult;
+                    if (result?.ok === false) {
+                        reconcileVideoHiderSetting(result.settings || previousSettings, 'video-hider-pane-rollback');
+                    }
+                } catch (error) {
+                    DebugManager?.log?.('Settings', `Video Hider setting update failed: ${error?.message || 'unknown error'}`);
+                    reconcileVideoHiderSetting(previousSettings, 'video-hider-pane-rollback');
+                }
+                syncVideoHiderToggle();
                 updateAllToggleStates();
             };
             const toggleTrack = document.createElement('span');
@@ -46968,6 +47110,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // stale the moment anything is hidden on the page. The nav handler
             // re-renders the open tab whenever the pane is selected.
             pane._ytkitRefresh = () => renderTabContent(activeTabId);
+            pane._ytkitSyncVideoHiderToggle = syncVideoHiderToggle;
             return pane;
         }
 
@@ -48052,6 +48195,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         });
 
+        document.getElementById('ytkit-pane-Video-Hider')?._ytkitSyncVideoHiderToggle?.();
+
         // Update nav counts
         document.querySelectorAll('.ytkit-nav-btn').forEach(btn => {
             const catId = btn.dataset.tab;
@@ -48582,6 +48727,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     contextValue.title = contextValue.textContent;
                 }
 
+                let finalEnabled = isEnabled;
                 // Array-toggle sub-features: modify parent array instead of boolean
                 if (feature?._arrayKey) {
                     let arr = appState.settings[feature._arrayKey] || [];
@@ -48606,8 +48752,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                     }
                 } else {
-                    appState.settings[featureId] = isEnabled;
-                    settingsManager.save(appState.settings);
+                    const useSharedVideoHiderReconciliation = featureId === 'hideVideosFromHome'
+                        && typeof applyExternalSettingsUpdate === 'function';
+                    if (useSharedVideoHiderReconciliation) {
+                        const previousSettings = { ...appState.settings };
+                        const nextSettings = {
+                            ...previousSettings,
+                            hideVideosFromHome: isEnabled
+                        };
+                        try {
+                            const saveResult = settingsManager.save(nextSettings);
+                            applyExternalSettingsUpdate({ source: 'toggle', nextSettings });
+                            const result = await saveResult;
+                            if (result?.ok === false) {
+                                applyExternalSettingsUpdate({
+                                    source: 'toggle-rollback',
+                                    nextSettings: result.settings || previousSettings
+                                });
+                                input.checked = appState.settings.hideVideosFromHome === true;
+                            }
+                        } catch (error) {
+                            DebugManager?.log?.('Settings', `Video Hider toggle failed: ${error?.message || 'unknown error'}`);
+                            applyExternalSettingsUpdate({
+                                source: 'toggle-rollback',
+                                nextSettings: previousSettings
+                            });
+                            input.checked = appState.settings.hideVideosFromHome === true;
+                        }
+                        finalEnabled = appState.settings.hideVideosFromHome === true;
+                    } else {
+                        appState.settings[featureId] = isEnabled;
+                        settingsManager.save(appState.settings);
+                    }
 
                     // Conflict enforcement — auto-disable conflicting features
                     if (isEnabled && CONFLICT_MAP[featureId]) {
@@ -48639,7 +48815,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                     }
 
-                    if (feature) {
+                    if (feature && !useSharedVideoHiderReconciliation) {
                         if (isEnabled) {
                             // Reset crash counter on manual toggle-on
                             delete _featureCrashCounts[featureId]; _persistCrashCounts();
@@ -48676,7 +48852,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 updateAllToggleStates();
-                setPanelStatus(`${getFeatureName(feature) || featureId} ${isEnabled ? 'enabled' : 'disabled'}.`, 'success');
+                setPanelStatus(`${getFeatureName(feature) || featureId} ${finalEnabled ? 'enabled' : 'disabled'}.`, 'success');
             }
 
             // Toggle all
@@ -50615,25 +50791,50 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             card.appendChild(textWrap);
             card.appendChild(toggle);
 
-            card.addEventListener('click', () => {
-                const newVal = !appState.settings[fid];
-                appState.settings[fid] = newVal;
-                settingsManager.save(appState.settings);
+            card.addEventListener('click', async () => {
+                if (card.disabled) return;
+                card.disabled = true;
+                const previousSettings = { ...appState.settings };
+                const nextSettings = {
+                    ...previousSettings,
+                    [fid]: !previousSettings[fid]
+                };
+                const useSharedReconciliation = typeof applyExternalSettingsUpdate === 'function';
+                const reconcile = (settings, source) => {
+                    if (useSharedReconciliation) {
+                        applyExternalSettingsUpdate({ source, nextSettings: settings });
+                        return;
+                    }
+                    appState.settings = settings;
+                    try {
+                        if (settings[fid]) initFeatureLifecycle(feat, source);
+                        else destroyFeatureLifecycle(feat, source);
+                    } catch (err) {
+                        DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
+                    }
+                };
                 try {
-                    if (newVal) initFeatureLifecycle(feat, 'quick-settings');
-                    else destroyFeatureLifecycle(feat, 'quick-settings');
-                } catch(err) {
+                    const saveResult = settingsManager.save(nextSettings);
+                    reconcile(nextSettings, 'quick-settings');
+                    const result = await Promise.resolve(saveResult);
+                    if (result?.ok === false) {
+                        reconcile(result.settings || previousSettings, 'quick-settings-rollback');
+                    }
+                } catch (err) {
                     DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
+                    reconcile(previousSettings, 'quick-settings-rollback');
                 }
-                card.classList.toggle('on', newVal);
-                card.setAttribute('aria-checked', String(newVal));
-                card.setAttribute('aria-label', `${featureName}. ${newVal ? 'Enabled' : 'Disabled'}.`);
-                cardState.classList.toggle('on', newVal);
-                cardState.textContent = newVal ? 'On' : 'Off';
+                const finalValue = appState.settings[fid] === true;
+                card.classList.toggle('on', finalValue);
+                card.setAttribute('aria-checked', String(finalValue));
+                card.setAttribute('aria-label', `${featureName}. ${finalValue ? 'Enabled' : 'Disabled'}.`);
+                cardState.classList.toggle('on', finalValue);
+                cardState.textContent = finalValue ? 'On' : 'Off';
                 const nextEnabledCount = availableFeatures.filter(({ id }) => !!appState.settings[id]).length;
                 updatePageModalEnabledCount(nextEnabledCount);
                 // Update all matching dock pills if any remain
-                document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', newVal));
+                document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', finalValue));
+                card.disabled = false;
             });
 
             grid.appendChild(card);
@@ -53158,6 +53359,25 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             transform: none !important;
         }
 
+        .ytkit-video-hide-btn {
+            position: absolute !important;
+            top: 8px !important;
+            right: 8px !important;
+            z-index: 1000 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            background: rgba(220,38,38,0.96) !important;
+            border-color: rgba(255,255,255,0.32) !important;
+            border-radius: 50% !important;
+            color: #fff !important;
+        }
+
+        .ytkit-video-hide-btn:hover {
+            background: rgba(185,28,28,1) !important;
+            border-color: rgba(255,255,255,0.5) !important;
+        }
+
         .ytkit-wl-btn:hover {
             background: rgba(var(--ytkit-accent-rgb),0.18) !important;
             border-color: rgba(var(--ytkit-accent-rgb),0.32) !important;
@@ -53289,6 +53509,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         ytd-video-renderer:hover .ytkit-video-hide-btn,
         ytd-grid-video-renderer:hover .ytkit-video-hide-btn,
         ytd-compact-video-renderer:hover .ytkit-video-hide-btn,
+        yt-lockup-view-model:hover .ytkit-video-hide-btn,
         ytd-rich-item-renderer:hover .ytkit-not-interested-btn,
         ytd-video-renderer:hover .ytkit-not-interested-btn,
         ytd-grid-video-renderer:hover .ytkit-not-interested-btn,
