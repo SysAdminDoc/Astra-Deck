@@ -4914,8 +4914,8 @@
   "statusOpenWorkspaceFail": {
     "message": "Не удалось открыть полную рабочую область. Попробуйте ещё раз."
   },
-  "statusPerKeyReset": {
-    "message": "… reset to default."
+  "statusPerKeyResetTpl": {
+    "message": "{key} сброшен к значению по умолчанию."
   },
   "statusPerKeyResetFail": {
     "message": "Could not reset"
