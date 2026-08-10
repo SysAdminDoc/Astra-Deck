@@ -189,6 +189,7 @@
         function restorePremiumMessages() {
             doc.querySelectorAll('[data-ytkit-livechat-enhanced]').forEach((message) => {
                 delete message.dataset.ytkitLivechatEnhanced;
+                delete message.dataset.ytkitLivechatAuthor;
                 delete message.dataset.ytkitLivechatAvatarFallback;
                 delete message.dataset.ytkitLivechatAvatarMissing;
                 delete message.dataset.ytkitAuthorInitial;
@@ -197,9 +198,17 @@
 
         function scanPremiumMessages() {
             if (!settings.premiumLiveChat) return;
-            doc.querySelectorAll('yt-live-chat-text-message-renderer:not([data-ytkit-livechat-enhanced])')
+            doc.querySelectorAll('yt-live-chat-text-message-renderer')
                 .forEach((message) => {
                     const author = message.querySelector?.('#author-name')?.textContent?.trim().replace(/^@+/, '') || '';
+                    // Re-derive when the AUTHOR changed rather than skipping any
+                    // node already marked: chat recycles its renderers, so a
+                    // recycled node kept the previous author's fallback initial.
+                    if (message.dataset?.ytkitLivechatEnhanced === '1'
+                        && message.dataset?.ytkitLivechatAuthor === author) {
+                        return;
+                    }
+                    message.dataset.ytkitLivechatAuthor = author;
                     message.dataset.ytkitAuthorInitial = Array.from(author)[0]?.toUpperCase() || '?';
                     const photo = message.querySelector?.('#author-photo');
                     const image = photo?.matches?.('img') ? photo : photo?.querySelector?.('img');
@@ -231,11 +240,19 @@
             const hideBots = hidden.includes('bots');
             const keywords = String(settings.chatKeywordFilter || '').toLowerCase()
                 .split(',').map((value) => value.trim()).filter(Boolean);
-            const signature = `${hideBots}:${keywords.join('|')}`;
+            const settingsSignature = `${hideBots}:${keywords.join('|')}`;
             doc.querySelectorAll('yt-live-chat-text-message-renderer').forEach((message) => {
-                if (message.dataset?.ytkitChatFilterSignature === signature) return;
                 const author = message.querySelector?.('#author-name')?.textContent?.toLowerCase() || '';
                 const text = message.querySelector?.('#message')?.textContent?.toLowerCase() || '';
+                // The signature must cover the CONTENT, not just the settings.
+                // Live chat recycles its message renderers the same way the feed
+                // recycles card renderers, so a settings-only signature let a
+                // recycled node keep the verdict computed for the message it
+                // used to hold: a hidden node stayed hidden over innocent new
+                // text, and a cleared node stayed visible over text that should
+                // have been filtered.
+                const signature = `${settingsSignature}:${author.length}:${text.length}:${author}:${text.slice(0, 120)}`;
+                if (message.dataset?.ytkitChatFilterSignature === signature) return;
                 // Word-boundary/suffix match only: a bare substring test hid
                 // legitimate users like "Abbott" or "Botany" by default.
                 const reason = hideBots && /\bbot\b|bot$/.test(author)
