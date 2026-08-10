@@ -48,6 +48,16 @@ T.zh_CN = {};
 
 // ── German (de) ──
 T.de = {
+  "Cap Infinite Scroll": "Endloses Scrollen begrenzen",
+  "Diagnostic Logging": "Diagnoseprotokollierung",
+  "Disable Autoplay": "Autoplay deaktivieren",
+  "Auto Theater Mode": "Automatischer Kinomodus",
+  "Astra Deck is storing {size} of data on this device.": "Astra Deck speichert {size} an Daten auf diesem Gerät.",
+  "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast.": "Astra Deck speichert {size}. Das Kürzen der größten Listen unten hält es schnell.",
+  "API": "API",
+  "Watched mark removed": "Gesehen-Markierung entfernt",
+  "Paste your API key": "API-Schlüssel einfügen",
+  "Download the Astra Downloader setup file and reveal it in Downloads": "Astra Downloader-Installationsdatei herunterladen und in Downloads anzeigen",
   "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Video-Ausblender-Filter trafen {count} von {total} Karten und wurden daher sichtbar gelassen.",
   "Canonical — sponsor.ajay.app": "Kanonisch — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Spiegel — sponsorblock.kavin.rocks",
@@ -261,6 +271,16 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  "Cap Infinite Scroll": "Limitar el desplazamiento infinito",
+  "Diagnostic Logging": "Registro de diagnóstico",
+  "Disable Autoplay": "Desactivar la reproducción automática",
+  "Auto Theater Mode": "Modo cine automático",
+  "Astra Deck is storing {size} of data on this device.": "Astra Deck almacena {size} de datos en este dispositivo.",
+  "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast.": "Astra Deck almacena {size}. Recortar las listas más grandes de abajo lo mantiene rápido.",
+  "API": "API",
+  "Watched mark removed": "Marca de visto eliminada",
+  "Paste your API key": "Pega tu clave de API",
+  "Download the Astra Downloader setup file and reveal it in Downloads": "Descargar el instalador de Astra Downloader y mostrarlo en Descargas",
   "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Los filtros del ocultador de vídeos coincidieron con {count} de {total} tarjetas, por lo que se dejaron visibles.",
   "Canonical — sponsor.ajay.app": "Canónico — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Espejo — sponsorblock.kavin.rocks",
@@ -462,6 +482,16 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  "Cap Infinite Scroll": "Ограничить бесконечную прокрутку",
+  "Diagnostic Logging": "Диагностическое журналирование",
+  "Disable Autoplay": "Отключить автовоспроизведение",
+  "Auto Theater Mode": "Авторежим кинотеатра",
+  "Astra Deck is storing {size} of data on this device.": "Astra Deck хранит {size} данных на этом устройстве.",
+  "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast.": "Astra Deck хранит {size}. Сокращение самых больших списков ниже сохранит скорость.",
+  "API": "API",
+  "Watched mark removed": "Отметка о просмотре снята",
+  "Paste your API key": "Вставьте свой ключ API",
+  "Download the Astra Downloader setup file and reveal it in Downloads": "Скачать установщик Astra Downloader и показать его в Загрузках",
   "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Фильтры скрытия видео совпали с {count} из {total} карточек, поэтому они остались видимыми.",
   "Canonical — sponsor.ajay.app": "Канонический — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Зеркало — sponsorblock.kavin.rocks",
@@ -663,6 +693,16 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  "Cap Infinite Scroll": "Limiter le défilement infini",
+  "Diagnostic Logging": "Journalisation de diagnostic",
+  "Disable Autoplay": "Désactiver la lecture automatique",
+  "Auto Theater Mode": "Mode cinéma automatique",
+  "Astra Deck is storing {size} of data on this device.": "Astra Deck stocke {size} de données sur cet appareil.",
+  "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast.": "Astra Deck stocke {size}. Réduire les plus grandes listes ci-dessous préserve la rapidité.",
+  "API": "API",
+  "Watched mark removed": "Marque « vu » supprimée",
+  "Paste your API key": "Collez votre clé d’API",
+  "Download the Astra Downloader setup file and reveal it in Downloads": "Télécharger le fichier d’installation d’Astra Downloader et l’afficher dans Téléchargements",
   "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Les filtres du masqueur de vidéos ont ciblé {count} cartes sur {total} : elles restent visibles.",
   "Canonical — sponsor.ajay.app": "Canonique — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Miroir — sponsorblock.kavin.rocks",
@@ -862,6 +902,16 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  "Cap Infinite Scroll": "Limita lo scorrimento infinito",
+  "Diagnostic Logging": "Registrazione diagnostica",
+  "Disable Autoplay": "Disattiva la riproduzione automatica",
+  "Auto Theater Mode": "Modalità cinema automatica",
+  "Astra Deck is storing {size} of data on this device.": "Astra Deck memorizza {size} di dati su questo dispositivo.",
+  "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast.": "Astra Deck memorizza {size}. Ridurre gli elenchi più grandi qui sotto lo mantiene veloce.",
+  "API": "API",
+  "Watched mark removed": "Contrassegno Guardato rimosso",
+  "Paste your API key": "Incolla la tua chiave API",
+  "Download the Astra Downloader setup file and reveal it in Downloads": "Scarica il file di installazione di Astra Downloader e mostralo in Download",
   "Video Hider filters matched {count} of {total} cards, so they were left visible.": "I filtri di Video Hider hanno coinciso con {count} schede su {total}, quindi sono rimaste visibili.",
   "Canonical — sponsor.ajay.app": "Canonico — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Mirror — sponsorblock.kavin.rocks",
@@ -1054,6 +1104,16 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  "Cap Infinite Scroll": "Limitar rolagem infinita",
+  "Diagnostic Logging": "Registro de diagnóstico",
+  "Disable Autoplay": "Desativar reprodução automática",
+  "Auto Theater Mode": "Modo cinema automático",
+  "Astra Deck is storing {size} of data on this device.": "O Astra Deck está armazenando {size} de dados neste dispositivo.",
+  "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast.": "O Astra Deck está armazenando {size}. Reduzir as maiores listas abaixo mantém tudo rápido.",
+  "API": "API",
+  "Watched mark removed": "Marca de assistido removida",
+  "Paste your API key": "Cole sua chave de API",
+  "Download the Astra Downloader setup file and reveal it in Downloads": "Baixar o instalador do Astra Downloader e mostrá-lo em Downloads",
   "Video Hider filters matched {count} of {total} cards, so they were left visible.": "Os filtros do ocultador de vídeos corresponderam a {count} de {total} cards, então eles foram mantidos visíveis.",
   "Canonical — sponsor.ajay.app": "Canônico — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "Espelho — sponsorblock.kavin.rocks",
@@ -1246,6 +1306,16 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  "Cap Infinite Scroll": "無限スクロールを制限",
+  "Diagnostic Logging": "診断ログ",
+  "Disable Autoplay": "自動再生を無効化",
+  "Auto Theater Mode": "自動シアターモード",
+  "Astra Deck is storing {size} of data on this device.": "Astra Deck はこのデバイスに {size} のデータを保存しています。",
+  "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast.": "Astra Deck は {size} を保存しています。下の大きなリストを整理すると快適に保てます。",
+  "API": "API",
+  "Watched mark removed": "視聴済みマークを削除しました",
+  "Paste your API key": "API キーを貼り付け",
+  "Download the Astra Downloader setup file and reveal it in Downloads": "Astra Downloader のセットアップファイルをダウンロードし、ダウンロードで表示",
   "Video Hider filters matched {count} of {total} cards, so they were left visible.": "動画非表示のフィルターが {total} 件中 {count} 件に一致したため、表示を維持しました。",
   "Canonical — sponsor.ajay.app": "正規 — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "ミラー — sponsorblock.kavin.rocks",
@@ -1441,6 +1511,16 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  "Cap Infinite Scroll": "무한 스크롤 제한",
+  "Diagnostic Logging": "진단 로깅",
+  "Disable Autoplay": "자동 재생 끄기",
+  "Auto Theater Mode": "자동 극장 모드",
+  "Astra Deck is storing {size} of data on this device.": "Astra Deck가 이 기기에 {size}의 데이터를 저장하고 있습니다.",
+  "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast.": "Astra Deck가 {size}를 저장하고 있습니다. 아래의 큰 목록을 정리하면 빠르게 유지됩니다.",
+  "API": "API",
+  "Watched mark removed": "시청함 표시를 제거했습니다",
+  "Paste your API key": "API 키를 붙여넣으세요",
+  "Download the Astra Downloader setup file and reveal it in Downloads": "Astra Downloader 설치 파일을 다운로드하고 다운로드에서 표시",
   "Video Hider filters matched {count} of {total} cards, so they were left visible.": "동영상 숨기기 필터가 {total}개 중 {count}개에 일치하여 그대로 표시했습니다.",
   "Canonical — sponsor.ajay.app": "정규 — sponsor.ajay.app",
   "Mirror — sponsorblock.kavin.rocks": "미러 — sponsorblock.kavin.rocks",

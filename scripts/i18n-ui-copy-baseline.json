@@ -91,7 +91,7 @@
     },
     "extension/popup.js": {
       "count": 26,
-      "digest": "61de917573030d9f1450615b5b596b0409190c66fae6ebbc80b1ea327aa5bf30",
+      "digest": "699ece859c6ee81eeb7c9b30d7764c9d08b06fef77c17cf5b2cfe576c3c939c1",
       "strictCount": 8,
       "strictDigest": "72b9b8f631179b93ea06a79d854dbc436aae2c16f1ba36c60976ab73bd71e7b2"
     },
@@ -103,9 +103,9 @@
     },
     "extension/ytkit.js": {
       "count": 1273,
-      "digest": "5c7ec38bab877132a2cd4694c2e5511c15dfbd34c314137e5c6e92bf406ac53c",
+      "digest": "793de1cdccc32999c46bd327b4e22baa60221218e26c9361750dfd42bb64f2d7",
       "strictCount": 614,
-      "strictDigest": "5955eafdabcf58fbc87e73a4b49d09277968dedf856dfc609656df600fc91012"
+      "strictDigest": "dca66b2a5b66e64228e45f6a496175d0a7cad8d20624c7e4671e20ee6871c095"
     }
   }
 }

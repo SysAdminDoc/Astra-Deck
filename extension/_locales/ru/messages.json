@@ -6,7 +6,7 @@
     "message": "Учётные данные ИИ удалены."
   },
   "aiCredentialInputPlaceholder": {
-    "message": "Введите, чтобы задать или заменить"
+    "message": "Вставьте свой ключ API"
   },
   "aiCredentialInputRequired": {
     "message": "Введите учётные данные для сохранения."
@@ -3950,7 +3950,7 @@
     "message": "Записывать подробную локальную диагностику"
   },
   "qt_debugMode_name": {
-    "message": "Режим отладки"
+    "message": "Диагностическое журналирование"
   },
   "qt_digitalWellbeing_desc": {
     "message": "Отслеживать перерывы и дневной просмотр"
@@ -3962,13 +3962,13 @@
     "message": "Не запускать следующее видео автоматически"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "Без автовоспроизведения"
+    "message": "Отключить автовоспроизведение"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "Остановить бесконечную загрузку ленты"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "Ограничить прокрутку"
+    "message": "Ограничить бесконечную прокрутку"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "Очистить боковую панель страницы просмотра"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "Скачать установщик Astra Downloader и показать его в Загрузках"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -4774,7 +4774,7 @@
     "message": "Записывает подробную локальную диагностику для устранения неполадок."
   },
   "spq_debugMode_name": {
-    "message": "Диагностическое логирование"
+    "message": "Диагностическое журналирование"
   },
   "spq_digitalWellbeing_desc": {
     "message": "Отслеживает перерывы и ежедневное время просмотра."
@@ -5032,7 +5032,7 @@
     "message": "Данные хранилища повреждены — Сбросьте для восстановления."
   },
   "storageBannerHardTpl": {
-    "message": "Хранилище: {size} — рассмотрите Сброс."
+    "message": "Astra Deck хранит {size}. Сокращение самых больших списков ниже сохранит скорость."
   },
   "storageBannerReset": {
     "message": "Сбросить"
@@ -5041,7 +5041,7 @@
     "message": "Сбросить все локальные данные"
   },
   "storageBannerSoftTpl": {
-    "message": "Хранилище: {size} — приближается к пределу."
+    "message": "Astra Deck хранит {size} данных на этом устройстве."
   },
   "storageBannerTitle": {
     "message": "Высокий расход хранилища"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "Отметка о просмотре снята"
   },
   "videoInsightsCategory": {
     "message": "Категория"

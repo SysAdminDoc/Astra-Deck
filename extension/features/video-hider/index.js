@@ -1460,7 +1460,7 @@
                 if (!this._removeMarkedWatchedVideo(videoId)) return false;
                 this._lastMarkedWatched = { type: 'unmark', id: videoId, element };
                 this._processAllVideos();
-                this._showToast(t('videoHiderUnmarkedWatched', 'Mark removed'), [
+                this._showToast(t('videoHiderUnmarkedWatched', 'Watched mark removed'), [
                     { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoMarkWatched() }
                 ]);
                 return true;

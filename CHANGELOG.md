@@ -18,6 +18,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The storage notice now reports how much data Astra Deck is holding and
+  suggests trimming the largest lists, instead of warning about a ceiling
+  that does not exist and pointing at a full reset.
+- Cap Infinite Scroll, Disable Autoplay, Auto Theater Mode and Diagnostic
+  Logging now use one name each across the popup, side panel and settings.
+- The companion download button names Astra Downloader rather than Astra
+  Deck, and several small strings were clarified.
+- Schema Overview switches announce their visible label to screen readers and
+  voice control, and an invalid JSON edit is now announced rather than only
+  shown.
 - The companion and Ollama capability checks now require the service to
   identify itself instead of treating any answer on the port as proof it is
   there - the same false positive a co-installed legacy server caused before.

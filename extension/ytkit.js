@@ -47503,7 +47503,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         // "Install" button — downloads the setup file and copies the fallback command
                         const installBtn = makeBannerButton('Download setup', 'accent');
                         installBtn.textContent = 'Download setup';
-                        installBtn.title = 'Download the Astra Deck setup file and reveal it in Downloads';
+                        installBtn.title = 'Download the Astra Downloader setup file and reveal it in Downloads';
                         installBtn.onclick = async () => {
                             installBtn.textContent = 'Preparing…';
                             installBtn.disabled = true;

@@ -6,7 +6,7 @@
     "message": "KI-Anmeldedaten gelöscht."
   },
   "aiCredentialInputPlaceholder": {
-    "message": "Eingeben zum Festlegen oder Ersetzen"
+    "message": "API-Schlüssel einfügen"
   },
   "aiCredentialInputRequired": {
     "message": "Geben Sie Anmeldedaten zum Speichern ein."
@@ -3950,7 +3950,7 @@
     "message": "Detaillierte lokale Diagnose aufzeichnen"
   },
   "qt_debugMode_name": {
-    "message": "Debug-Modus"
+    "message": "Diagnoseprotokollierung"
   },
   "qt_digitalWellbeing_desc": {
     "message": "Pausen und tägliche Wiedergabe verfolgen"
@@ -3962,13 +3962,13 @@
     "message": "Automatischen Start des nächsten Videos verhindern"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "Keine automatische Wiedergabe"
+    "message": "Autoplay deaktivieren"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "Endloses Feed-Laden stoppen"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "Scrollen begrenzen"
+    "message": "Endloses Scrollen begrenzen"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "Seitenleiste der Wiedergabeseite leeren"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "Astra Downloader-Installationsdatei herunterladen und in Downloads anzeigen"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -4789,7 +4789,7 @@
     "message": "Verhindert endloses Laden der Feeds."
   },
   "spq_disableInfiniteScroll_name": {
-    "message": "Endlos-Scrollen begrenzen"
+    "message": "Endloses Scrollen begrenzen"
   },
   "spq_hideRelatedVideos_desc": {
     "message": "Leert die Seitenleiste der Wiedergabeseite."
@@ -5032,7 +5032,7 @@
     "message": "Speicherdaten beschädigt — Zurücksetzen zur Wiederherstellung."
   },
   "storageBannerHardTpl": {
-    "message": "Speicher bei {size} — Zurücksetzen erwägen."
+    "message": "Astra Deck speichert {size}. Das Kürzen der größten Listen unten hält es schnell."
   },
   "storageBannerReset": {
     "message": "Zurücksetzen"
@@ -5041,7 +5041,7 @@
     "message": "Alle lokalen Daten zurücksetzen"
   },
   "storageBannerSoftTpl": {
-    "message": "Speicher bei {size} — bewegt sich Richtung Grenze."
+    "message": "Astra Deck speichert {size} an Daten auf diesem Gerät."
   },
   "storageBannerTitle": {
     "message": "Speicher-Nutzung hoch"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "Gesehen-Markierung entfernt"
   },
   "videoInsightsCategory": {
     "message": "Kategorie"

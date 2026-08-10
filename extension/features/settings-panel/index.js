@@ -2254,7 +2254,7 @@ function buildSettingsPanel() {
 
                         // "Install" button — downloads the setup file and copies the fallback command
                         const installBtn = makeBannerButton(t('dlInstallDownloadSetup', 'Download setup'), 'accent');
-                        installBtn.title = t('settingsDlDownloadTitle', 'Download the Astra Deck setup file and reveal it in Downloads');
+                        installBtn.title = t('settingsDlDownloadTitle', 'Download the Astra Downloader setup file and reveal it in Downloads');
                         installBtn.onclick = async () => {
                             installBtn.textContent = t('commonPreparing', 'Preparing…');
                             installBtn.disabled = true;

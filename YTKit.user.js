@@ -19754,7 +19754,7 @@
                     if (!this._removeMarkedWatchedVideo(videoId)) return false;
                     this._lastMarkedWatched = { type: 'unmark', id: videoId, element };
                     this._processAllVideos();
-                    this._showToast(t('videoHiderUnmarkedWatched', 'Mark removed'), [
+                    this._showToast(t('videoHiderUnmarkedWatched', 'Watched mark removed'), [
                         { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoMarkWatched() }
                     ]);
                     return true;
@@ -26870,7 +26870,7 @@
 
                             // "Install" button — downloads the setup file and copies the fallback command
                             const installBtn = makeBannerButton(t('dlInstallDownloadSetup', 'Download setup'), 'accent');
-                            installBtn.title = t('settingsDlDownloadTitle', 'Download the Astra Deck setup file and reveal it in Downloads');
+                            installBtn.title = t('settingsDlDownloadTitle', 'Download the Astra Downloader setup file and reveal it in Downloads');
                             installBtn.onclick = async () => {
                                 installBtn.textContent = t('commonPreparing', 'Preparing…');
                                 installBtn.disabled = true;

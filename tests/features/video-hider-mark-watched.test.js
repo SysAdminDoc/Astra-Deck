@@ -117,7 +117,7 @@ test('mark and unmark actions expose an Undo toast that reverses either directio
     assert.equal(feature._addMarkedWatchedVideo(VIDEO_A), true);
     assert.equal(feature._unmarkWatchedVideo(VIDEO_A, element), true);
     assert.deepEqual(harness.getStored(), []);
-    assert.equal(toasts.at(-1).message, 'Mark removed');
+    assert.equal(toasts.at(-1).message, 'Watched mark removed');
     toasts.at(-1).options.actions[0].onClick();
     assert.deepEqual(harness.getStored(), [VIDEO_A]);
 });

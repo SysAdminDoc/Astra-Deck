@@ -6,7 +6,7 @@
     "message": "AI 資格情報を削除しました。"
   },
   "aiCredentialInputPlaceholder": {
-    "message": "入力して設定または置き換え"
+    "message": "API キーを貼り付け"
   },
   "aiCredentialInputRequired": {
     "message": "保存する資格情報を入力してください。"
@@ -3950,7 +3950,7 @@
     "message": "詳細なローカル診断を記録"
   },
   "qt_debugMode_name": {
-    "message": "デバッグモード"
+    "message": "診断ログ"
   },
   "qt_digitalWellbeing_desc": {
     "message": "休憩と1日の視聴時間を追跡"
@@ -3962,13 +3962,13 @@
     "message": "次の動画の開始を停止"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "自動再生なし"
+    "message": "自動再生を無効化"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "エンドレスなフィード読み込みを停止"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "スクロール制限"
+    "message": "無限スクロールを制限"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "視聴ページのサイドレールをクリア"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "Astra Downloader のセットアップファイルをダウンロードし、ダウンロードで表示"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -4783,7 +4783,7 @@
     "message": "次の動画が自動的に始まるのを止めます。"
   },
   "spq_disableAutoplayNext_name": {
-    "message": "自動再生をオフ"
+    "message": "自動再生を無効化"
   },
   "spq_disableInfiniteScroll_desc": {
     "message": "フィードが際限なく読み込まれるのを止めます。"
@@ -5032,7 +5032,7 @@
     "message": "ストレージデータが破損しています — リセットして復旧してください。"
   },
   "storageBannerHardTpl": {
-    "message": "ストレージは {size} です — リセットを検討してください。"
+    "message": "Astra Deck は {size} を保存しています。下の大きなリストを整理すると快適に保てます。"
   },
   "storageBannerReset": {
     "message": "リセット"
@@ -5041,7 +5041,7 @@
     "message": "すべてのローカルデータをリセット"
   },
   "storageBannerSoftTpl": {
-    "message": "ストレージは {size} です — 上限に近づいています。"
+    "message": "Astra Deck はこのデバイスに {size} のデータを保存しています。"
   },
   "storageBannerTitle": {
     "message": "ストレージ使用量が多い"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "視聴済みマークを削除しました"
   },
   "videoInsightsCategory": {
     "message": "カテゴリ"

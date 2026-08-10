@@ -6,7 +6,7 @@
     "message": "تم حذف بيانات اعتماد الذكاء الاصطناعي."
   },
   "aiCredentialInputPlaceholder": {
-    "message": "أدخل للتعيين أو الاستبدال"
+    "message": "الصق مفتاح API الخاص بك"
   },
   "aiCredentialInputRequired": {
     "message": "أدخل بيانات اعتماد للحفظ."
@@ -3950,7 +3950,7 @@
     "message": "تسجيل تشخيصات تفصيلية محلياً"
   },
   "qt_debugMode_name": {
-    "message": "وضع التصحيح"
+    "message": "تسجيل التشخيص"
   },
   "qt_digitalWellbeing_desc": {
     "message": "تتبع الاستراحات والمشاهدة اليومية"
@@ -3962,13 +3962,13 @@
     "message": "إيقاف تشغيل الفيديو التالي تلقائياً"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "بدون تشغيل تلقائي"
+    "message": "تعطيل التشغيل التلقائي"
   },
   "qt_disableInfiniteScroll_desc": {
     "message": "إيقاف تحميل الخلاصة اللانهائي"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "تحديد التمرير"
+    "message": "تقييد التمرير اللانهائي"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "إخفاء الشريط الجانبي في صفحة المشاهدة"
@@ -4229,7 +4229,7 @@
     "message": "Copy the fallback PowerShell install command"
   },
   "settingsDlDownloadTitle": {
-    "message": "Download the Astra Deck setup file and reveal it in Downloads"
+    "message": "تنزيل ملف تثبيت Astra Downloader وإظهاره في التنزيلات"
   },
   "settingsDlNotConnected": {
     "message": "Not connected. Local downloads need the setup helper."
@@ -5032,7 +5032,7 @@
     "message": "بيانات التخزين تالفة — أعِد التعيين للاسترداد."
   },
   "storageBannerHardTpl": {
-    "message": "التخزين عند {size} — ضع في اعتبارك إعادة التعيين."
+    "message": "يخزّن Astra Deck {size}. تقليص أكبر القوائم أدناه يحافظ على السرعة."
   },
   "storageBannerReset": {
     "message": "إعادة تعيين"
@@ -5041,7 +5041,7 @@
     "message": "إعادة تعيين جميع البيانات المحلية"
   },
   "storageBannerSoftTpl": {
-    "message": "التخزين عند {size} — يقترب من الحد الأقصى."
+    "message": "يخزّن Astra Deck {size} من البيانات على هذا الجهاز."
   },
   "storageBannerTitle": {
     "message": "استخدام التخزين مرتفع"
@@ -5782,7 +5782,7 @@
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
-    "message": "Mark removed"
+    "message": "تمت إزالة علامة المشاهدة"
   },
   "videoInsightsCategory": {
     "message": "الفئة"
