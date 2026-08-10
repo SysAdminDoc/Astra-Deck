@@ -160,6 +160,54 @@ function listBuildFiles(buildDir = BUILD_DIR) {
     }
 }
 
+function buildBundleParityCheck(repoRoot) {
+    const syncScriptPath = path.join(repoRoot, 'sync-userscript.js');
+    if (!fs.existsSync(syncScriptPath)) {
+        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'pass',
+            'no sync-userscript.js in this tree; bundle parity does not apply');
+    }
+    let buildBundleRegion;
+    let BUNDLE_BEGIN_RE;
+    try {
+        ({ buildBundleRegion, BUNDLE_BEGIN_RE } = require(syncScriptPath));
+    } catch (error) {
+        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
+            `could not load sync-userscript.js: ${error.message}`);
+    }
+    const userscriptPath = path.join(repoRoot, 'YTKit.user.js');
+    if (!fs.existsSync(userscriptPath)) {
+        // Nothing to be stale against. Real release trees always carry the
+        // userscript; a tree without one (a fixture) has no parity to assert.
+        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'pass',
+            'no YTKit.user.js in this tree; bundle parity does not apply');
+    }
+    let userscript;
+    try {
+        userscript = fs.readFileSync(userscriptPath, 'utf8');
+    } catch (error) {
+        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
+            `could not read YTKit.user.js: ${error.message}`);
+    }
+    let expected;
+    try {
+        expected = buildBundleRegion(repoRoot);
+    } catch (error) {
+        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
+            `could not rebuild the bundle region: ${error.message}`);
+    }
+    const match = userscript.match(BUNDLE_BEGIN_RE);
+    if (!match) {
+        return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
+            'bundle markers not found in YTKit.user.js');
+    }
+    const actual = match[0];
+    return check('userscript-bundle-parity', 'Userscript bundle matches its source modules',
+        actual === expected ? 'pass' : 'fail',
+        actual === expected
+            ? 'bundle region is byte-identical to its source modules'
+            : 'bundle region is STALE - run node sync-userscript.js and rebuild before releasing');
+}
+
 function buildReadinessReport(options = {}) {
     const repoRoot = options.repoRoot || REPO_ROOT;
     const buildDir = options.buildDir || path.join(repoRoot, 'build');
@@ -176,6 +224,13 @@ function buildReadinessReport(options = {}) {
         missingVersionSurfaces.length === 0 && versionValues.size === 1 ? 'pass' : 'fail',
         versionSurfaces.map((surface) => `${surface.name}=${surface.version || 'missing'}`).join('; ')
     ));
+
+    // Recompute the userscript bundle region and compare it to the file that
+    // will ship. Readiness otherwise verifies artifact METADATA only, so a
+    // bundled-module edit without `node sync-userscript.js` passed every
+    // release check and shipped a stale bundle to Tampermonkey installs
+    // through @updateURL - exactly what happened across v4.51.2-v4.51.4.
+    checks.push(buildBundleParityCheck(repoRoot));
 
     const buildFiles = listBuildFiles(buildDir);
     checks.push(check(

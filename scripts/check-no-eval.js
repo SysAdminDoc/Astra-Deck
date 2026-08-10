@@ -43,6 +43,10 @@ const SCAN_FILES = [
     'extension/sidebar.js',
     'extension/live-chat.js',
     'YTKit.user.js',
+    // Every root userscript ships to users with its own @updateURL, so the
+    // gate's scope must not stop at the flagship one.
+    'theater-split.user.js',
+    'YT_Reaction_Spammer.user.js',
     // Glob extension/core/**/*.js and extension/features/**/*.js
     ...walk(path.join(REPO_ROOT, 'extension', 'core'), '.js'),
     ...walk(path.join(REPO_ROOT, 'extension', 'features'), '.js'),

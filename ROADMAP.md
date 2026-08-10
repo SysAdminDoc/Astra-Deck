@@ -200,46 +200,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified (guard absence)
   Effort: M
 
-- [ ] P2 — Companion-port HTML load-order gate passes when the anchor script is deleted
-  Category: testing (gate integrity)
-  Where: `scripts/check-companion-port-catalogue.js:114-118`
-  Problem: `check(html.lastIndexOf('core/companion-ports.js') < html.lastIndexOf('core/data-flow.js'))` — if the companion-ports `<script>` tag is removed from popup/sidepanel/sidebar HTML, `lastIndexOf` returns -1 and the check passes — exactly the regression it guards. (The manifest-side check at :110-113 anchors `!== -1`; the HTML check does not.)
-  Evidence: source read; popup.html:383-384 currently carries both tags.
-  Fix: assert both `lastIndexOf(...) !== -1` before comparing, per page.
-  Acceptance: deleting the companion-ports tag from popup.html makes the gate fail (bait-verify, then restore).
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — check-userscript-symbols silently sheds scope one singleton at a time on formatting drift
-  Category: testing (gate integrity)
-  Where: `scripts/check-userscript-symbols.js:40-44,75-97`
-  Problem: The gate derives its singleton map by matching exactly `^ {4}const X = {$` and the exact close `    };`. Any formatting drift (trailing comment on the def line, `}; // end`, re-indent) silently drops that singleton, and every bundle call into it becomes unchecked — the only guard is `singletons.size === 0`. If `settingsManager` (whose missing members shipped the v4.50.7 five-dead-controls defect this gate exists for) drops out, the gate prints OK on 15 singletons.
-  Evidence: gate run (16 singletons / 521 members derived); regex read.
-  Fix: pin a minimum derived-singleton count and assert named critical singletons (`settingsManager`, at least) are present in the map.
-  Acceptance: adding a trailing comment to the `settingsManager` def line in a scratch copy makes the gate fail loudly instead of shrinking scope (bait-verify).
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — `release:prepare` certifies a release without running a single source gate
-  Category: testing (release integrity)
-  Where: `package.json` scripts `release:prepare`/`release:prepare:no-crx`; `scripts/generate-release-readiness.js`
-  Problem: The release path is build + sbom + manifest + readiness; readiness verifies artifact metadata only (versions, asset names, digest agreement, signing provenance). It never runs `npm run check` or `npm test`, and nothing recomputes the userscript bundle region — so the exact v4.51.2–v4.51.4 defect (edit a bundled module, forget `node sync-userscript.js`, ship a stale bundle to every Tampermonkey install via `@updateURL`) passes release readiness today. The store-safe permission pin also lives only in `npm test`.
-  Evidence: script chain read; readiness checks enumerated. Distinct from the tracked "rollback-safe release channels / artifact health checks" item above — that is post-publish asset health, this is pre-publish source-gate coverage.
-  Fix: add a readiness check that recomputes `buildBundleRegion()` (already exported by sync-userscript.js) against the packaged userscript, and chain `npm run check` (or at minimum drift+symbols+tests) into `release:prepare`.
-  Acceptance: a release build from a tree with an unsynced bundled-module edit fails readiness (bait-verify).
-  Confidence: Verified
-  Effort: M
-
-- [ ] P2 — Runtime module gating lists (`FEATURE_SETTINGS`/`FEATURE_ROUTES`) are hand-lists nothing validates
-  Category: testing (gate integrity)
-  Where: `scripts/generate-runtime-bootstrap.js:12-48` (source of the frozen lists in `extension/runtime-bootstrap.js:107-207`)
-  Problem: These lists decide which feature modules the extension loads at all (`shouldLoadFeature` skips a module when all its listed keys are explicitly false; routes gate initial load). No gate cross-checks the keys against `settings-schema.js` or against the module's actual feature set (grep: zero test references to FEATURE_SETTINGS). A new feature key added to a listed module without updating the list means a user who disabled the listed keys but enabled the new one gets the module skipped — feature silently dead in the extension while fine in the userscript; renamed schema keys rot fail-open (perf only).
-  Evidence: grep + sparse-settings semantics traced; monolith fallbacks blunt user impact for the peeled features that have them, but the lists also carry module-only surfaces.
-  Fix: a check asserting every FEATURE_SETTINGS key exists in SETTINGS_SCHEMA, plus (worth the effort) that every settings-gated feature id defined in a listed module appears in its key list.
-  Acceptance: adding a bogus key to FEATURE_SETTINGS fails the new check (bait-verify); suite green otherwise.
-  Confidence: Verified
-  Effort: M
-
 - [ ] P2 — The v4.58.3/4 persistence fixes and CC control are covered by source-text pins only
   Category: testing
   Where: `tests/features/settings-panel.test.js:178-227`, `tests/features/player-dock.test.js:31-45`
@@ -404,48 +364,12 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — Doc-version gate is phrase-anchored: rewording the claim exits the gate's scope forever
-  Category: testing (gate integrity)
-  Where: `scripts/check-versions.js:203-206,218-227`
-  Problem: The only current-version doc checks are the regexes `today,\s+at\s+vX` and `currently\s+agree\s+at\s+vX`. Rewording docs/architecture.md line 3 (e.g. "This document describes v4.58.6") makes the gate match zero claims and pass forever while the number rots. Zero matches is indistinguishable from all-current.
-  Fix: assert at least one claim-match per CURRENT_VERSION_TRUTH_FILE, or fail on any non-product `v\d+\.\d+\.\d+` in the file's head.
-  Acceptance: rewording the claim in a scratch copy fails the gate (bait-verify).
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — data-flow's swallowed `require('./companion-ports')` can strip loopback origins from a github-full build silently
-  Category: reliability (build)
-  Where: `extension/core/data-flow.js:67-76,188`; consumer `build-extension.js`
-  Problem: The companion origin entry is conditional on a require wrapped in a swallow-everything catch. If it ever throws (generator regression, path move), `node build-extension.js` succeeds and emits github-full artifacts with no loopback host permissions — downloads dead for every install. `check:companion-ports` would catch it, but the build is quiet and the release flow doesn't run that gate (see the release:prepare item).
-  Fix: in build-extension.js, assert the catalogue contains the companion origin before deriving permissions.
-  Acceptance: simulating the require failure makes the build exit non-zero (bait-verify).
-  Confidence: Verified (path); trigger is latent
-  Effort: S
-
-- [ ] P3 — check-no-eval scan list omits the two other shipped root userscripts
-  Category: testing (gate coverage)
-  Where: `scripts/check-no-eval.js:35-49`
-  Problem: SCAN_FILES covers YTKit.user.js but not `theater-split.user.js` (published, own @updateURL/@downloadURL) or `YT_Reaction_Spammer.user.js`; eslint doesn't cover them either. A `new Function`/string-timer added to either ships unflagged.
-  Fix: add both (or glob `*.user.js` at repo root, excluding `.bak`).
-  Acceptance: a string-timer planted in theater-split.user.js fails the gate (bait-verify, then remove).
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — audit-storage-size prints FAIL verdicts but always exits 0
   Category: testing (gate integrity)
   Where: `scripts/audit-storage-size.js:354-401`
   Problem: `formatAssessment` renders `storage.sync: FAIL` lines but `main()` has no failure path — `npm run audit:storage` exits success regardless. Anything scripted around it reads a false green; quota regressions are only caught by the separate totalBytes test pin.
   Fix: exit 1 when a must-be-sync-viable payload fails, or add `--check`.
   Acceptance: a forced-fail scenario exits non-zero.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — sync-userscript soft-skips the bundle refresh when markers are missing
-  Category: testing (release integrity)
-  Where: `sync-userscript.js:162-164`
-  Problem: Missing BEGIN/END markers → warn, still rewrite the header, print "synced", exit 0 — the one tool whose job is the bundle silently doesn't refresh it; only the separate drift gate catches it later.
-  Fix: exit non-zero when markers are missing.
-  Acceptance: a marker-stripped scratch copy makes the tool fail loudly.
   Confidence: Verified
   Effort: S
 

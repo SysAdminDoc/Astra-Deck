@@ -160,7 +160,11 @@ function main() {
         }
         userscriptText = userscriptText.replace(BUNDLE_BEGIN_RE, () => bundleRegion);
     } else {
-        console.warn('Userscript bundle markers not found — skipping bundle refresh.');
+        // Fail loudly: this tool's whole job is refreshing the bundle region, so
+        // silently rewriting only the header and reporting success let a stale
+        // bundle reach packaging with a green run.
+        console.error('Userscript bundle markers not found — cannot refresh the bundle region.');
+        process.exit(1);
     }
 
     if (userscriptText === before) {

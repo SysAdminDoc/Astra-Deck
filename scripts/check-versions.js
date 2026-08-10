@@ -42,8 +42,12 @@ const ACTIVE_DOC_TRUTH_FILES = Object.freeze([
 // asserts the current version twice and the release recipe expects it kept in
 // step — without it the gate printed a pass while that line named the previous
 // release. Retired-policy references remain checked in every active document.
+// README deliberately carries NO hardcoded version: its release badge is a
+// live shields.io lookup, and the retired-reference scan above forbids
+// hardcoding one. It stays in ACTIVE_DOC_TRUTH_FILES for that scan, but it has
+// no present-tense claim to verify, so listing it here made the
+// claim-must-exist assertion below fire on a file that is correct as written.
 const CURRENT_VERSION_TRUTH_FILES = new Set([
-    'README.md',
     path.join('docs', 'architecture.md'),
 ]);
 
@@ -216,13 +220,24 @@ function checkActiveDocumentationTruth(productVersion) {
             }
         }
         if (CURRENT_VERSION_TRUTH_FILES.has(relPath)) {
+            let claimMatches = 0;
             for (const { re, label } of currentVersionClaims) {
                 let match;
                 while ((match = re.exec(text)) !== null) {
+                    claimMatches += 1;
                     if (match[1] !== productVersion) {
                         failures.push(`${relPath}:${lineNumberForIndex(text, match.index)} stale ${label}: v${match[1]} (expected v${productVersion})`);
                     }
                 }
+            }
+            // Zero matches is indistinguishable from "everything is current":
+            // the claims are matched by phrase, so rewording the sentence used
+            // to drop the file out of scope silently and let its version rot.
+            if (claimMatches === 0) {
+                failures.push(
+                    `${relPath}: no current-version claim matched; the phrasing changed and this file `
+                    + 'is no longer version-checked. Restore a recognised claim or update currentVersionClaims.'
+                );
             }
         }
     }
