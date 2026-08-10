@@ -4068,14 +4068,33 @@
                 : 'store-safe';
         }
 
+        // This is the validation choke point for every cross-context settings
+        // write, but it bounded numbers and enums only: a single oversized string,
+        // array or object went straight into storage and left the quota failure to
+        // be discovered later, by which point every write was in backoff.
+        const MAX_SETTING_STRING_LENGTH = 256 * 1024;
+        const MAX_SETTING_ITEMS = 20000;
+        const MAX_SETTING_SERIALISED_BYTES = 1024 * 1024;
+
+        function withinSizeBudget(value) {
+            try {
+                const serialised = JSON.stringify(value);
+                return typeof serialised !== 'string' || serialised.length <= MAX_SETTING_SERIALISED_BYTES;
+            } catch (_) {
+                return false;
+            }
+        }
+
         function isValueValid(value, entry) {
             if (!entry) return false;
             switch (entry.type) {
             case 'boolean': return typeof value === 'boolean';
-            case 'string': return typeof value === 'string';
+            case 'string': return typeof value === 'string' && value.length <= MAX_SETTING_STRING_LENGTH;
             case 'number': return typeof value === 'number' && Number.isFinite(value);
-            case 'array': return Array.isArray(value);
-            case 'object': return isPlainObject(value);
+            case 'array': return Array.isArray(value)
+                && value.length <= MAX_SETTING_ITEMS
+                && withinSizeBudget(value);
+            case 'object': return isPlainObject(value) && withinSizeBudget(value);
             case 'null': return value === null || Array.isArray(value) || isPlainObject(value);
             default: return false;
             }

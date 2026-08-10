@@ -168,6 +168,44 @@ for (const k of defaultKeys) {
     if (lhs !== rhs) issues.push(`defaultValue drift for "${k}": defaults=${lhs} schema=${rhs}`);
 }
 
+// 6. Every schema key must be referenced by something that implements it.
+//
+// Parity with default-settings.json proves the two files agree, not that the
+// setting exists in the product: an orphaned key (implementation deleted, key
+// kept) satisfies every check above while doing nothing. Scan the shipped
+// source for each key.
+const REFERENCE_ROOTS = [
+    path.join(REPO_ROOT, 'extension'),
+];
+const REFERENCE_SKIP = new Set([
+    path.join(REPO_ROOT, 'extension', 'core', 'settings-schema.js'),
+    path.join(REPO_ROOT, 'extension', 'default-settings.json'),
+    path.join(REPO_ROOT, 'extension', '_locales'),
+]);
+
+function collectSourceText(dir, sink) {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
+    catch { return; }
+    for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (REFERENCE_SKIP.has(full)) continue;
+        if (entry.isDirectory()) { collectSourceText(full, sink); continue; }
+        if (!/\.(js|mjs|html|json)$/.test(entry.name)) continue;
+        try { sink.push(fs.readFileSync(full, 'utf8')); } catch { /* unreadable file is not a schema problem */ }
+    }
+}
+
+const referenceChunks = [];
+for (const root of REFERENCE_ROOTS) collectSourceText(root, referenceChunks);
+const referenceCorpus = referenceChunks.join(String.fromCharCode(10));
+const orphanKeys = SETTINGS_SCHEMA
+    .map((entry) => entry.key)
+    .filter((key) => !referenceCorpus.includes(key));
+if (orphanKeys.length) {
+    issues.push('schema key(s) referenced nowhere in extension/: ' + orphanKeys.join(', '));
+}
+
 // Final verdict
 if (issues.length === 0) {
     ok(`OK — ${SETTINGS_SCHEMA.length} schema entries match default-settings.json byte-for-byte`);
