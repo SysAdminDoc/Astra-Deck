@@ -253,6 +253,23 @@ function main() {
         }
     }
 
+    // A message whose TEXT contains a literal \\uXXXX sequence was
+    // double-escaped when it was authored: the catalogue wins over the inline
+    // fallback, so users read the escape itself. videoNotesSaveFailed shipped
+    // that way in all 11 locales.
+    const ESCAPE_LITERAL = /\\u[0-9a-fA-F]{4}/;
+    for (const locale of ['en', ...localeDirs]) {
+        const localeMessages = readLocale(locale);
+        if (!localeMessages) continue;
+        for (const [key, entry] of Object.entries(localeMessages)) {
+            const message = entry && entry.message;
+            if (typeof message !== 'string') continue;
+            if (ESCAPE_LITERAL.test(message)) {
+                errors.push(`_locales/${locale}/messages.json: "${key}" contains a literal \\uXXXX escape; write the character itself`);
+            }
+        }
+    }
+
     if (errors.length === 0) {
         const totalKeys = definedKeys.size;
         const scannedFiles = jsFiles.length;
