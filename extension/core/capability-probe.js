@@ -77,7 +77,16 @@
                 }, (resp) => {
                     clearTimeout(timer);
                     if (chrome.runtime.lastError) { resolve(false); return; }
-                    resolve(Boolean(resp && !resp.error && !resp.timeout));
+                    // A response is not a healthy response: an unrelated server
+                    // squatting the port answers 404/500 and used to count as
+                    // "companion available", which is the same false positive a
+                    // legacy server on 9751 caused in the field.
+                    const status = Number(resp && resp.status);
+                    const ok = Boolean(resp)
+                        && !resp.error
+                        && !resp.timeout
+                        && (!Number.isFinite(status) || (status >= 200 && status < 300));
+                    resolve(ok ? { ok: true, body: typeof resp.responseText === 'string' ? resp.responseText : '' } : false);
                 });
             } catch (_) {
                 clearTimeout(timer);
@@ -98,8 +107,11 @@
             }, ms);
             fetch(url, { signal: ctrl.signal, cache: 'no-store' })
                 .then((res) => {
-                    clearTimeout(timer);
-                    resolve(Boolean(res && res.ok));
+                    if (!res || !res.ok) { clearTimeout(timer); resolve(false); return; }
+                    return res.text().then((body) => {
+                        clearTimeout(timer);
+                        resolve({ ok: true, body: typeof body === 'string' ? body : '' });
+                    });
                 })
                 .catch(() => {
                     clearTimeout(timer);
@@ -108,15 +120,28 @@
         });
     }
 
+    // A /health response only proves SOMETHING answered. Astra Downloader
+    // identifies itself in the payload, and a co-installed legacy server on the
+    // same port has already been mistaken for it in the field, so require the
+    // identity before reporting the capability as available.
+    function looksLikeAstraCompanion(body) {
+        if (typeof body !== 'string' || !body) return false;
+        let payload;
+        try { payload = JSON.parse(body); } catch (_) { return false; }
+        if (!payload || typeof payload !== 'object') return false;
+        return typeof payload.ytDlp !== 'undefined'
+            || typeof payload.appVersion !== 'undefined'
+            || typeof payload.app === 'string'
+            || typeof payload.astra !== 'undefined';
+    }
+
     async function hasMediaDL() {
         // Astra Downloader exposes /health on each fallback port.
-        // Probe in declared order; first OK wins. Total worst case
-        // = ports.length * PROBE_TIMEOUT_MS but realistic case = one
-        // round trip on the canonical port.
+        // Probe in declared order; first identified companion wins.
         for (const port of MEDIA_DL_PORTS) {
             const host = companionPorts?.host || '127.0.0.1';
-            const ok = await fetchWithTimeout(`http://${host}:${port}/health`, PROBE_TIMEOUT_MS);
-            if (ok) return true;
+            const result = await fetchWithTimeout(`http://${host}:${port}/health`, PROBE_TIMEOUT_MS);
+            if (result && result.ok && looksLikeAstraCompanion(result.body)) return true;
         }
         return false;
     }
@@ -124,7 +149,16 @@
     async function hasOllama() {
         // Ollama exposes /api/version on its default port. /api/tags
         // would also work but version is the smaller payload.
-        return fetchWithTimeout(`http://127.0.0.1:${OLLAMA_PORT}/api/version`, PROBE_TIMEOUT_MS);
+        const result = await fetchWithTimeout(`http://127.0.0.1:${OLLAMA_PORT}/api/version`, PROBE_TIMEOUT_MS);
+        if (!result || !result.ok) return false;
+        // /api/version answers {"version":"..."} — anything else on this port
+        // is not Ollama.
+        try {
+            const payload = JSON.parse(result.body);
+            return !!payload && typeof payload.version === 'string';
+        } catch (_) {
+            return false;
+        }
     }
 
     function hasDocumentPip() {

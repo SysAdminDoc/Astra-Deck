@@ -18,6 +18,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The companion and Ollama capability checks now require the service to
+  identify itself instead of treating any answer on the port as proof it is
+  there - the same false positive a co-installed legacy server caused before.
+- Imported backups can no longer carry unbounded strings through sanitisation
+  and push every later save into a long retry backoff.
+- Reading a setting that has never been written no longer caches one call
+  site's fallback value for every other reader.
+- Transcript downloads take their filename from the video's own details
+  rather than the first title-like field on the page.
+- Diagnostics bundles record a fixed reason code when revealing a download
+  fails, instead of copying the browser's raw error text.
+- The update-recovery checkpoint is cleared once recovery completes rather
+  than being kept forever.
 - Video Hider's keyword, duration and predicate filters now refuse to hide
   more than a quarter of a feed. A rule that over-matches leaves the cards
   visible and says so instead of silently emptying the page. Hides you chose

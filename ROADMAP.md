@@ -219,15 +219,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Likely (interleaving traced; needs a UI-level race to trigger)
   Effort: M
 
-- [ ] P3 — Companion/Ollama capability probes accept any responder on the probed ports
-  Category: correctness
-  Where: `extension/core/capability-probe.js:71-88` (fetchViaBackground resolves on any non-error response, no status check), `:112-129` (no Astra identity check on either path)
-  Problem: An HTTP 404/500 from anything on ports 9751-9851 counts as "companion available" via the background path, and neither path validates the `/health` payload identity — re-opening (for the popup capability chips and `requires:['mediaDL']` gating only) the exact false-positive class the 2026-07-27 legacy-server port-squatting incident hardened `MediaDLManager._checkImpl` against.
-  Fix: check `resp.status` on the background path and validate Astra identity fields in both paths (reuse MediaDLManager's predicate).
-  Acceptance: a fake non-Astra responder on 9751 leaves the mediaDL chip unavailable (unit test with a stubbed fetch).
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — `toTrustedHTML` is a sanitization-free Trusted Types launderer exposed to all feature code
   Category: security (hardening, no current exploit)
   Where: `extension/core/trusted-html.js:9-33`; re-exposed via `extension/ytkit.js:1661-1673`
@@ -237,39 +228,12 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified
   Effort: M
 
-- [ ] P3 — `safeClone` never truncates strings: a crafted backup can bloat storage into permanent write backoff
-  Category: reliability
-  Where: `extension/core/persisted-domains.js:101-116`; only pre-parse gate is the 512 MB file check at `extension/popup.js:4097`
-  Problem: Array/key/depth caps exist but a row can carry multi-MB strings; with `unlimitedStorage` the write may persist hundreds of MB, or fail and put `flushPendingStorageWrites` into its 60 s exponential backoff for the session with all writes returning `{ok:false}`. Self-inflicted only (import path).
-  Fix: cap string length in `safeClone` (10-100 KB) and/or per-domain `estimateJsonBytes` ceilings in `sanitizeMigratedDomains`.
-  Acceptance: importing a backup with a 10 MB string field stores a truncated value and the import reports what was trimmed.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Predicate sandbox: eval budget is post-hoc, so a permitted polynomial regex gets one free slow eval
   Category: reliability
   Where: `extension/core/predicate-sandbox.js:66-78` (≤4 open-ended quantifiers allowed), `:384-403` (budget checked after eval)
   Problem: The 5 ms budget opens the circuit only after a synchronous `re.test()` returns; `.*.*.*.*x`-class patterns pass the quantifier screen, giving O(n⁴) backtracking for one eval — bounded to one-time main-thread jank (targets are short title/channel strings, pattern ≤200 chars). Containment otherwise verified sound (no escape found).
   Fix: lower the open-ended-quantifier allowance to 2-3, or cap the ctx string length fed to `test()`.
   Acceptance: the worst accepted pattern on the longest realistic ctx string completes under ~10 ms in a bench assertion.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — `StorageManager.get()` permanently latches the first caller's defaultValue
-  Category: maintainability
-  Where: `extension/core/storage-manager.js:110-117`
-  Problem: A miss caches `defaultVal`; a later call site with a different default silently receives the first caller's value, and the latch would mask a disk value if any `get()` ran before `preloadExtensionState()` resolves. Currently safe only because the monolith awaits preload before feature init — an ordering invariant this module doesn't enforce.
-  Fix: don't cache defaults (cache only real reads), or track was-default entries and re-resolve after preload.
-  Acceptance: unit test — two `get(key, a)` / `get(key, b)` calls on a missing key each receive their own default.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Transcript method-4 title extraction grabs the first `"title"` field anywhere in the page HTML
-  Category: correctness (minor path)
-  Where: `extension/core/transcript-service.js:286-289`
-  Problem: `html.match(/"title":"([^"]+)"/)` matches the first `"title"` JSON key in the whole watch page (often an unrelated config field) and only unescapes `&`/`\"`. Impact limited to the downloaded-transcript filename when methods 1-3 all failed.
-  Fix: anchor on `"videoDetails"` proximity or reuse method 4's brace-counting extraction.
-  Acceptance: a fixture where an earlier "title" key precedes videoDetails yields the video's real title.
   Confidence: Verified
   Effort: S
 
@@ -290,24 +254,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Acceptance: either per-hop validation with a test, or a documented accepted-residual entry.
   Confidence: Verified (code path); exploitability Low
   Effort: M
-
-- [ ] P3 — Raw browser error strings flow into the shareable bug-report bundle via the SW lifecycle ring
-  Category: reliability (privacy discipline)
-  Where: `extension/background.js:877` (`_recordSwLifecycle('reveal-failed:' + err.message)`) → `extension/popup.js:3449-3473` (bundle assembly)
-  Problem: The diagnostics bundle users attach to GitHub issues redacts everything else (`redactBugReportSettings`, URL redaction), but SW lifecycle event names embed raw browser error messages un-redacted — the one lane where an arbitrary environment/path-bearing string bypasses that discipline.
-  Fix: map to fixed error-class tokens before recording.
-  Acceptance: lifecycle entries in the bundle match a token allowlist (unit test).
-  Confidence: Verified (data flow); path-leak content browser-dependent
-  Effort: S
-
-- [ ] P3 — `_updateRecovery` checkpoint is never cleaned up after resume
-  Category: maintainability
-  Where: `extension/background.js:432-434`
-  Problem: The checkpoint transitions pending → resuming → resumed in `storage.local` but no path removes the key; a stale `resumed` object persists forever and rides along in full-storage reads and the popup's storage stats.
-  Fix: delete the key once resumed (or on next SW start when state is `resumed`).
-  Acceptance: after a simulated update-resume cycle, the key is absent.
-  Confidence: Verified
-  Effort: S
 
 - [ ] P3 — Three parallel CSS token systems across popup, sidepanel, and surface-system, already drifting
   Category: maintainability / visual
@@ -351,15 +297,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Problem: Screen readers hear "removeAllShorts (on)" while the visible label is the humanized string — a label-in-name mismatch that breaks voice-control targeting. The invalid-JSON pill has no `role="alert"`/`aria-describedby`, so the parse error is visual-only. Clearing a number field returns silently with no feedback.
   Fix: use the humanized label in aria-label; `role="alert"` + `aria-describedby` on the pill; hint or treat-clear-as-reset on the number editor. (Concrete instances — distinct from the tracked "make audits see rendered output" item.)
   Acceptance: the static a11y audit (extended) or a DOM unit test asserts the three behaviors.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — audit-storage-size prints FAIL verdicts but always exits 0
-  Category: testing (gate integrity)
-  Where: `scripts/audit-storage-size.js:354-401`
-  Problem: `formatAssessment` renders `storage.sync: FAIL` lines but `main()` has no failure path — `npm run audit:storage` exits success regardless. Anything scripted around it reads a false green; quota regressions are only caught by the separate totalBytes test pin.
-  Fix: exit 1 when a must-be-sync-viable payload fails, or add `--check`.
-  Acceptance: a forced-fail scenario exits non-zero.
   Confidence: Verified
   Effort: S
 

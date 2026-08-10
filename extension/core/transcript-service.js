@@ -283,9 +283,17 @@
                 const tracks = JSON.parse(captionJson);
 
                 let videoTitle = videoId;
-                const titleMatch = html.match(/"title":"([^"]+)"/);
+                // Anchor on videoDetails: the first "title" key in a watch
+                // page is usually an unrelated config or accessibility field,
+                // so the bare match named the download after the wrong string.
+                const detailsAt = html.indexOf('"videoDetails"');
+                const titleMatch = (detailsAt === -1 ? html : html.slice(detailsAt))
+                    .match(/"title":"([^"]+)"/);
                 if (titleMatch && titleMatch[1]) {
-                    videoTitle = titleMatch[1].replace(/\\u0026/g, '&').replace(/\\"/g, '"');
+                    videoTitle = titleMatch[1]
+                        .replace(/\\u0026/g, '&')
+                        .replace(/\\"/g, '"')
+                        .replace(/\\\//g, '/');
                 }
 
                 return {
