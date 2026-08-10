@@ -467,7 +467,24 @@ function getManifestProfilePermissions(profile, declaredPermissions) {
     return declared.filter((name) => !Object.hasOwn(GITHUB_FULL_ONLY_API_PERMISSIONS, name));
 }
 
+function assertCompanionOriginInCatalogue() {
+    // data-flow.js adds the companion origin behind a require() wrapped in a
+    // swallow-everything catch. If that require ever throws, the build still
+    // succeeds and emits artifacts with no loopback host permissions at all,
+    // i.e. downloads dead for every install, with no error anywhere.
+    const companionOrigin = COMPANION_PORT_CATALOGUE.origin;
+    const present = ORIGIN_CATALOGUE.some((entry) => entry.origin === companionOrigin);
+    if (!present) {
+        throw new Error(
+            `Origin catalogue is missing the companion origin (${companionOrigin}). `
+            + 'extension/core/data-flow.js could not load scripts/companion-port-catalogue; '
+            + 'refusing to emit artifacts without loopback host permissions.'
+        );
+    }
+}
+
 function getManifestProfileHostPermissions(profile) {
+    assertCompanionOriginInCatalogue();
     const normalized = normalizeBuildProfile(profile);
     const allowedCatalogueProfiles = new Set(BUILD_PROFILES[normalized].catalogueProfiles);
     const hosts = CONTENT_HOST_PERMISSIONS.slice();

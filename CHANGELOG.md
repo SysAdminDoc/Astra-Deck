@@ -18,6 +18,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Release preparation now runs the full verification suite and re-derives the
+  userscript bundle before certifying a release, so an unsynced module can no
+  longer ship a stale bundle to userscript installs.
+- Several verification gates could pass while silently covering less than they
+  claimed: the companion-port load-order check accepted a deleted script tag,
+  the userscript symbol check lost coverage if a definition was reformatted,
+  the documentation version check stopped applying when a sentence was
+  reworded, and the runtime module list never verified its setting keys exist.
+- The eval scan now covers every shipped userscript, not just the main one.
+- Syncing the userscript now fails loudly instead of reporting success when
+  the bundle markers are missing.
+- Building now refuses to emit artifacts if the companion origin is missing
+  from the permission catalogue.
 - The Video Notes save-failure message no longer prints raw escape codes
   instead of punctuation. It was double-escaped in every language.
 - Resetting a single setting from the Schema Overview now names the setting

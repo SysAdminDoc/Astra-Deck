@@ -218,7 +218,39 @@ function renderLoader(modules) {
         .join('\n')}\n`;
 }
 
+// FEATURE_SETTINGS decides which feature modules the extension loads AT ALL:
+// a module whose listed keys are all explicitly false is skipped. Nothing
+// validated those keys against the schema, so a renamed or mistyped key rotted
+// silently, and a new gating key added to a listed module could strand the
+// whole module for users who disabled only the older keys.
+function assertFeatureSettingsKeysExist() {
+    let schema;
+    try {
+        ({ SETTINGS_SCHEMA: schema } = require(path.join(ROOT, 'extension', 'core', 'settings-schema.js')));
+    } catch (error) {
+        throw new Error(`Could not load settings-schema.js to validate FEATURE_SETTINGS: ${error.message}`);
+    }
+    if (!Array.isArray(schema) || schema.length === 0) {
+        throw new Error('settings-schema.js exported no SETTINGS_SCHEMA array; cannot validate FEATURE_SETTINGS');
+    }
+    const known = new Set(schema.map((entry) => entry.key));
+    const unknown = [];
+    for (const [modulePath, keys] of Object.entries(FEATURE_SETTINGS)) {
+        for (const key of keys) {
+            if (!known.has(key)) unknown.push(`${modulePath} -> ${key}`);
+        }
+    }
+    if (unknown.length) {
+        throw new Error(
+            ['FEATURE_SETTINGS references setting keys that do not exist in SETTINGS_SCHEMA:']
+                .concat(unknown.map((item) => `  ${item}`))
+                .join(String.fromCharCode(10))
+        );
+    }
+}
+
 function main() {
+    assertFeatureSettingsKeysExist();
     const modules = readRuntimeModules();
     const expected = render(modules);
     const expectedLoader = renderLoader(modules);

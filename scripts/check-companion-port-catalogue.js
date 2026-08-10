@@ -113,7 +113,14 @@ check(companionIndex !== -1 && companionIndex < dataFlowIndex,
     'manifest must load companion-ports.js before data-flow.js');
 for (const page of ['extension/popup.html', 'extension/sidepanel.html', 'extension/sidebar.html']) {
     const html = read(page);
-    check(html.lastIndexOf('core/companion-ports.js') < html.lastIndexOf('core/data-flow.js'),
+    const companionAt = html.lastIndexOf('core/companion-ports.js');
+    const dataFlowAt = html.lastIndexOf('core/data-flow.js');
+    // Anchor BOTH operands: lastIndexOf returns -1 for a missing script, and
+    // -1 < anyPositive passes -- i.e. deleting the companion-ports tag, the
+    // regression this exists to catch, used to satisfy it.
+    check(companionAt !== -1, `${page} must load core/companion-ports.js`);
+    check(dataFlowAt !== -1, `${page} must load core/data-flow.js`);
+    check(companionAt < dataFlowAt,
         `${page} must load companion-ports.js before data-flow.js`);
 }
 

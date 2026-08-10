@@ -97,6 +97,22 @@ if (singletons.size === 0) {
     fail('Derived zero monolith singletons — the extraction is broken, not the code');
 }
 
+// Scope is DERIVED by matching a source shape, so drift in that shape (a
+// trailing comment on the definition line, a re-indented close) silently drops
+// a singleton and every bundle call into it goes unchecked. A zero-check alone
+// cannot see that. Pin the floor and the singletons whose missing members have
+// actually shipped dead controls before.
+const MIN_DERIVED_SINGLETONS = 12;
+if (singletons.size < MIN_DERIVED_SINGLETONS) {
+    fail(`Derived only ${singletons.size} monolith singletons (expected at least ${MIN_DERIVED_SINGLETONS}) — `
+        + 'the extraction lost scope; check for formatting drift on a singleton definition');
+}
+for (const required of ['settingsManager', 'StorageManager', 'DebugManager']) {
+    if (!singletons.has(required)) {
+        fail(`Singleton "${required}" fell out of the derived scope — its bundle calls would go unchecked`);
+    }
+}
+
 // ── 2. Fold in members attached dynamically anywhere in the file ──
 
 let dyn;
