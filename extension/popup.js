@@ -1123,7 +1123,21 @@ async function refreshOptionalHostGrantState(options = {}) {
     const nextMissingKeys = new Set();
     const nextMissingOrigins = new Set();
 
-    for (const [key, value] of Object.entries(settings)) {
+    // Iterate the SCHEMA, not the sparse settings bag: a default-on feature
+    // that was never toggled has no key in storage, so a bag-driven scan could
+    // never see it. sponsorBlock is exactly that case on a store-safe build —
+    // its origins are runtime-optional, the grant is only ever requested from a
+    // toggle the user never touches, and the banner built to surface the
+    // missing grant was structurally blind to it.
+    const schemaIndex = getSchemaIndex();
+    const candidateKeys = schemaIndex
+        ? Array.from(schemaIndex.keys())
+        : Object.keys(settings);
+    for (const key of candidateKeys) {
+        const entry = schemaIndex?.get(key);
+        const value = entry
+            ? resolveEffectiveSettingValue(entry, settings)
+            : settings[key];
         if (value !== true) continue;
         const origins = getDeclaredOptionalHostsForSetting(key, { directOnly: true });
         if (!origins.length) continue;
@@ -2884,7 +2898,12 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         btn.setAttribute('aria-label', entry.key + ' (' + (on ? 'on' : 'off') + ')');
         btn.dataset.key = entry.key;
         btn.addEventListener('click', async () => {
-            const next = !(popupState.settings[entry.key] === true);
+            // Settings persist sparsely, so an untouched default-on key is
+            // absent from the bag. Deriving `next` from the raw bag made the
+            // first click on such a row rewrite the value it already had: the
+            // row rendered on, stayed on, and only the second click did
+            // anything. Resolve through the schema, exactly as the row renders.
+            const next = resolveEffectiveSettingValue(entry, popupState.settings) !== true;
             btn.disabled = true;
             try {
                 await writeSetting(entry.key, next);
@@ -2911,7 +2930,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         input.dataset.key = entry.key;
         input.placeholder = String(entry.defaultValue);
         input.setAttribute('aria-label', entry.key);
-        const current = settings[entry.key];
+        const current = resolveEffectiveSettingValue(entry, settings);
         if (current !== undefined && current !== null) input.value = String(current);
         // Persist on every change/blur. We deliberately don't debounce
         // — typing in a number field implies a deliberate edit, and
@@ -2970,7 +2989,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             input.value = /^#[0-9a-fA-F]{6}$/.test(safe) ? safe : '#000000';
         } else {
             input.placeholder = def;
-            const current = settings[entry.key];
+            const current = resolveEffectiveSettingValue(entry, settings);
             if (typeof current === 'string') input.value = current;
         }
         const persist = async () => {
@@ -2990,7 +3009,10 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                     input.value = coerced;
                 }
             }
-            if (popupState.settings[entry.key] === raw) return;
+            // Compare against the EFFECTIVE value: a sparse key reads back as
+            // undefined, which never equals the field's text, so a focus and
+            // blur with no edit used to persist '' over a non-empty default.
+            if (resolveEffectiveSettingValue(entry, popupState.settings) === raw) return;
             input.disabled = true;
             try {
                 await writeSetting(entry.key, raw);
@@ -3018,7 +3040,8 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         grid.className = 'so-key-checks';
         grid.setAttribute('role', 'group');
         grid.setAttribute('aria-label', entry.key);
-        const seed = Array.isArray(settings[entry.key]) ? settings[entry.key] : [];
+        const effective = resolveEffectiveSettingValue(entry, settings);
+        const seed = Array.isArray(effective) ? effective : [];
         const seedSet = new Set(seed);
         const known = entry.knownValues;
         const inputs = [];
@@ -3074,7 +3097,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         textarea.setAttribute('aria-label', entry.key);
         textarea.spellcheck = false;
         textarea.rows = 4;
-        const seed = settings[entry.key];
+        const seed = resolveEffectiveSettingValue(entry, settings);
         const seedSafe = (seed === undefined || seed === null)
             ? (entry.type === 'array' ? [] : {})
             : seed;
@@ -3120,7 +3143,10 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             // two identical writeSetting calls (double storage write + tab
             // broadcast + re-render flicker). Mirrors the number editor's guard.
             let unchanged = false;
-            try { unchanged = JSON.stringify(popupState.settings[entry.key]) === JSON.stringify(parsed); } catch { unchanged = false; }
+            try {
+                unchanged = JSON.stringify(resolveEffectiveSettingValue(entry, popupState.settings))
+                    === JSON.stringify(parsed);
+            } catch { unchanged = false; }
             if (unchanged) return;
             textarea.disabled = true;
             try {

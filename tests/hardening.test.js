@@ -8084,9 +8084,12 @@ test('v4.27.0 string persist routes through writeSetting with no-op short-circui
         path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
     );
     // Equal-value short-circuit prevents needless writes when the user
-    // tabs through an input without changing it.
-    assert.match(src, /if \(popupState\.settings\[entry\.key\] === raw\) return;/,
-        'string persist must short-circuit when the value is unchanged');
+    // tabs through an input without changing it. The comparison must run
+    // against the EFFECTIVE value: settings persist sparsely, so an untouched
+    // key reads back as undefined, which never equals the field's seeded text
+    // and turned a blur-with-no-edit into a write of '' over the default.
+    assert.match(src, /if \(resolveEffectiveSettingValue\(entry, popupState\.settings\) === raw\) return;/,
+        'string persist must short-circuit against the effective value when unchanged');
     assert.match(src, /await writeSetting\(entry\.key, raw\)/,
         'string persist must use writeSetting');
 });

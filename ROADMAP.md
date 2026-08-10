@@ -180,26 +180,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.58.6 work): `npm test` 1514/1514 pass. `npm run check` FAILS at `i18n:copy:gate` (new, from the uncommitted work — item below). Pre-existing baseline failures, already tracked, not re-logged: `audit:deps` (web-ext → addons-linter → image-size advisories; tracked P1 above) and `i18n:coverage:gate` (every locale 16 placeholder-identical keys over baseline, from fa3ebfdd). One `lint` failure during a loaded parallel run did not reproduce on a clean re-run — machine load, not a defect. All other gates pass at the working tree.
 
-- [ ] P1 — Schema Overview string/JSON/checkbox editors seed and compare against raw sparse storage — focus+blur silently wipes non-empty defaults
-  Category: correctness (data safety)
-  Where: `extension/popup.js:2973-2993` (string editor), `:3021` (checkbox grid seed), `:3077-3087,3123,3135-3136` (JSON editor)
-  Problem: Settings are stored sparsely (only changed keys persist), but three editors ignore `entry.defaultValue` when the key is unset. String editor: sparse key → `input.value = ''`; blur fires `persist`; the no-change guard `popupState.settings[key] === raw` is `undefined === ''` → false → writes `''` over non-empty defaults (`quickLinkItems`, `autoSubtitleLang`, `downloadVideoFormat`, …). JSON editor: sparse seed renders `[]`/`{}`; the unchanged guard compares `JSON.stringify(undefined)` vs `"[]"` → never equal; blur (3136) persists `[]` over defaults — concrete casualty `syncSafePrefsAllowlist` (67-entry default, rendered in privacy-profiles). Checkbox grid: sparse seed `[]` renders `hiddenChatElements` (14-token default) etc. fully unchecked; checking one box persists an array of just that token, wiping the other 13. Tabbing through an expanded category mass-fires blur on every editor with no error or toast.
-  Evidence: traced end-to-end; `clampSettingValue` (core/settings-controller.js:86-97) only coerces enum/min-max, so `''`/`[]` pass validation; features read `settings[key] ?? default`, so the stored empty value overrides. Sidepanel does this correctly (`_settingsState[key] ?? entry.defaultValue` at sidepanel.js:711/765/772/818) — use it as the reference.
-  Fix: seed every editor from `resolveEffectiveSettingValue(entry, settings)` and run the no-change guard against the same effective value (string, JSON, and checkbox-grid paths).
-  Acceptance: a test (or manual repro) that focuses and blurs each editor type on a fresh profile writes nothing to storage; checking one box in `hiddenChatElements` persists the default 14 tokens ± the toggled one.
-  Confidence: Verified
-  Effort: M
-
-- [ ] P1 — Schema Overview boolean switch: first click on an untouched default-ON setting is a silent no-op
-  Category: correctness
-  Where: `extension/popup.js:2878` (render) vs `:2887` (click)
-  Problem: The row renders via `resolveEffectiveSettingValue(entry, settings) === true`, but the click handler computes `const next = !(popupState.settings[entry.key] === true)` from the raw sparse bag. For a default-ON key never written, the row shows ON, the first click computes `next = true` and writes the already-effective value — the row re-renders still ON with no feedback; only the second click turns it off.
-  Evidence: traced both paths; the quick-toggle handler in the same popup resolves correctly (`!isQuickToggleOn(...)`, popup.js:1848), so the two switch surfaces disagree.
-  Fix: `const next = resolveEffectiveSettingValue(entry, popupState.settings) !== true;`
-  Acceptance: on a fresh profile, one click on any default-ON schema-overview switch turns it off (storage gains `key: false`).
-  Confidence: Verified
-  Effort: S
-
 - [ ] P1 — Settings-panel module runtime never runs in the extension: the memoize-null latch fires before the deferred module registers
   Category: correctness (architecture)
   Where: `extension/ytkit.js:5406-5411` (`getSettingsPanelRuntime` latches `_settingsPanelRuntimeInitialized = true` before the `typeof factory !== 'function'` check), `:45187` (`_settingsPanelRuntimeReady = true` at monolith top-level), `extension/runtime-bootstrap.js:260-273` (deferred feature imports run after `runtime-core-loader.mjs`, which imports ytkit.js last)
@@ -209,16 +189,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Acceptance: a temporary `panelSource` stamp read by the smoke reports `module` in the extension lane; all settings-overlay smoke states and the full suite pass.
   Confidence: Verified (defect); the swap needs the described verification
   Effort: S code / M verification
-
-- [ ] P2 — Optional-host grant banner is blind to default-ON features: sparse bag iteration skips them
-  Category: correctness (store-safe builds)
-  Where: `extension/popup.js:1126-1131` (`refreshOptionalHostGrantState`)
-  Problem: The scan iterates `Object.entries(settings)` and skips values `!== true`. Default-ON features never toggled have no key in the sparse bag, so they are invisible. `sponsorBlock` defaults true (default-settings.json) and its origins are `hostGrant: 'runtime-optional'` under the store-safe profile — on a fresh store-safe install the grant was never requested (the only prompt path fires on a user toggle that never happens), SponsorBlock is dead, and the banner built to surface exactly that state can never see it. Inert in dev (repo manifest has no `optional_host_permissions`); live in the built store-safe artifact.
-  Evidence: traced the loop; `getDeclaredOptionalHostsForSetting` is only consulted for present-and-true keys. Distinct from the blocked "Side-panel toggles bypass optional-host gating" item (that is the sidepanel grant-request path; this is the popup missing-grant scan).
-  Fix: iterate schema boolean entries resolving `?? defaultValue` instead of the raw bag.
-  Acceptance: with a store-safe build, fresh profile, and no grants, the popup banner lists sponsorBlock's origins as missing.
-  Confidence: Verified
-  Effort: S
 
 - [ ] P2 — Summarizer capability probe checks an API shape the features never use — working features render "unavailable"
   Category: correctness
