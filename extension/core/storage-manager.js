@@ -112,7 +112,12 @@ const DEFAULT_ECHO_TTL_MS = 1500;
                     return this._cache[key];
                 }
                 const val = storageRead(key, defaultVal);
-                this._cache[key] = val;
+                // Only cache a REAL read. Caching a miss stored the first
+                // caller's fallback under the key, so a later call site with a
+                // different default silently received the first one's value,
+                // and a get() that ran before preload latched the default over
+                // whatever was actually on disk.
+                if (val !== defaultVal) this._cache[key] = val;
                 return val;
             },
 

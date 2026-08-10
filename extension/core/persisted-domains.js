@@ -98,11 +98,21 @@
         return proto === Object.prototype || proto === null;
     }
 
+    // Array length, key count and depth were all bounded; string length was
+    // not, so a crafted or corrupt backup could carry multi-megabyte strings
+    // through sanitisation and either bloat storage or push every later write
+    // into the 60s quota backoff for the rest of the session.
+    const MAX_CLONED_STRING_LENGTH = 64 * 1024;
+
     function safeClone(value, depth = 0) {
         if (depth > 24) return null;
         if (value === null || typeof value === 'boolean') return value;
         if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-        if (typeof value === 'string') return value;
+        if (typeof value === 'string') {
+            return value.length > MAX_CLONED_STRING_LENGTH
+                ? value.slice(0, MAX_CLONED_STRING_LENGTH)
+                : value;
+        }
         if (Array.isArray(value)) return value.slice(0, 10000).map((item) => safeClone(item, depth + 1));
         if (!isPlainObject(value)) return null;
         const out = {};

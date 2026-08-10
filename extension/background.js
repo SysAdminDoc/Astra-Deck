@@ -348,6 +348,18 @@ const SW_LIFECYCLE_CAP = 50;
 // a write rejects (storage quota, browser shutdown mid-write).
 let _swLifecycleChain = Promise.resolve();
 
+// Everything else in the diagnostics bundle is redacted before it is shared,
+// but lifecycle event names are copied verbatim. A browser-generated message
+// can carry environment or path detail, so map it to a fixed token instead.
+function _classifyRevealError(err) {
+    const message = String(err?.message || err || '').toLowerCase();
+    if (!message) return 'unknown';
+    if (message.includes('user') && message.includes('cancel')) return 'cancelled';
+    if (message.includes('not found') || message.includes('no such')) return 'missing-file';
+    if (message.includes('permission') || message.includes('denied')) return 'permission-denied';
+    return 'other';
+}
+
 function _recordSwLifecycle(event, operationId = '') {
     if (!ext.storage?.session) return Promise.resolve();
     _swLifecycleChain = _swLifecycleChain
@@ -430,7 +442,15 @@ const _updateRecoveryReady = (async () => {
     }
     await _recordSwLifecycle('update-recovery-resumed', checkpoint.id);
     const resumed = { ...resuming, state: 'resumed', completedAt: Date.now() };
-    await callExtensionApi(ext.storage.local, 'set', { [UPDATE_RECOVERY_KEY]: resumed });
+    // Drop the checkpoint once it has served its purpose. A 'resumed' record
+    // was kept forever, so every install accumulated a permanent object that
+    // rode along in full-storage reads and the popup's size stats.
+    try {
+        await callExtensionApi(ext.storage.local, 'remove', UPDATE_RECOVERY_KEY);
+    } catch (error) {
+        void error;
+        await callExtensionApi(ext.storage.local, 'set', { [UPDATE_RECOVERY_KEY]: resumed });
+    }
     return resumed;
 })().catch((error) => {
     void error;
@@ -874,7 +894,7 @@ if (ext.downloads?.onChanged?.addListener) {
                     // the failure from support diagnostics.
                     try { console.warn('[Astra Deck] downloads.show failed for id', delta.id, err); }
                     catch (_) { /* reason: console may be unavailable in some SW contexts */ }
-                    void _recordSwLifecycle('reveal-failed:' + (err?.message || 'unknown'));
+                    void _recordSwLifecycle('reveal-failed:' + _classifyRevealError(err));
                 });
             }
         })();
