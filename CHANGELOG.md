@@ -18,6 +18,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Popup Schema Overview editors now read a setting's effective value rather
+  than raw storage. Because only changed settings are stored, focusing and
+  blurring a text or JSON field on an untouched setting could save an empty
+  value over a non-empty default, and ticking one checkbox in a list could
+  drop every default entry it did not tick.
+- The first click on an untouched default-on switch in the Schema Overview
+  now turns it off instead of silently rewriting the value it already had.
+- The missing-permission banner now checks every feature in the schema, so a
+  default-on feature that needs an optional host grant is no longer invisible
+  to it.
 - The captions mirror in the player dock now binds the watch player's
   subtitles button instead of whichever player appears first in the
   document, so it can no longer toggle captions on the inline preview player.

@@ -622,3 +622,76 @@ test('settings import reports a readable error instead of the raw JSON parser me
             `${locale} statusImportNotBackup is still the English string — it fell through instead of being translated`);
     }
 });
+
+// The schema-overview editors read a SPARSE settings bag: only changed keys
+// are persisted. Any editor that seeds or compares against the raw bag treats
+// "never written" as "empty", so a focus and blur with no edit persists '' or
+// [] over a non-empty default — silent data loss on a keyboard pass through an
+// expanded category. These assert the editors resolve through the schema.
+test('schema-overview editors seed and compare against the effective value, not raw storage', () => {
+    const editorStart = popupSource.indexOf("if (entry.type === 'boolean') {");
+    const editorEnd = popupSource.indexOf('function resolveEffectiveSettingValue');
+    assert.ok(editorStart > -1 && editorEnd > editorStart,
+        'popup.js must declare the schema-overview editors before the resolver');
+    const editors = popupSource.slice(editorStart, editorEnd);
+
+    assert.doesNotMatch(editors, /const next = !\(popupState\.settings\[entry\.key\] === true\)/,
+        'the boolean switch must not derive its next value from the sparse bag');
+    assert.match(editors, /const next = resolveEffectiveSettingValue\(entry, popupState\.settings\) !== true/,
+        'the boolean switch must toggle the effective value');
+
+    assert.doesNotMatch(editors, /const seed = Array\.isArray\(settings\[entry\.key\]\)/,
+        'the checkbox grid must not seed from the sparse bag');
+    assert.doesNotMatch(editors, /const seed = settings\[entry\.key\];/,
+        'the JSON editor must not seed from the sparse bag');
+    assert.doesNotMatch(editors, /if \(popupState\.settings\[entry\.key\] === raw\) return;/,
+        'the string editor must not compare against the sparse bag');
+    assert.doesNotMatch(editors, /JSON\.stringify\(popupState\.settings\[entry\.key\]\) === JSON\.stringify\(parsed\)/,
+        'the JSON editor must not compare against the sparse bag');
+
+    // Every editor branch resolves through the shared helper.
+    const resolverUses = editors.match(/resolveEffectiveSettingValue\(entry, (?:settings|popupState\.settings)\)/g) || [];
+    assert.ok(resolverUses.length >= 6,
+        `every editor branch must resolve through the schema (found ${resolverUses.length})`);
+});
+
+test('a blur with no edit on an unwritten key persists nothing', () => {
+    const { resolveEffectiveSettingValue } = extractSchemaOverviewResolvers();
+
+    // String editor: the field is seeded from the effective value, so the
+    // no-change guard compares like with like.
+    const stringEntry = { key: 'autoSubtitleLang', type: 'string', defaultValue: 'en' };
+    const seeded = resolveEffectiveSettingValue(stringEntry, {});
+    assert.equal(seeded, 'en', 'the field seeds from the default, not an empty string');
+    assert.equal(resolveEffectiveSettingValue(stringEntry, {}) === seeded, true,
+        'a blur with no edit compares equal and must not write');
+
+    // JSON editor: same contract for an array-typed key with a large default.
+    const arrayEntry = { key: 'syncSafePrefsAllowlist', type: 'array', defaultValue: ['a', 'b', 'c'] };
+    const arraySeed = resolveEffectiveSettingValue(arrayEntry, {});
+    assert.deepEqual(arraySeed, ['a', 'b', 'c'],
+        'the textarea seeds from the default rather than an empty array');
+    assert.equal(
+        JSON.stringify(resolveEffectiveSettingValue(arrayEntry, {})) === JSON.stringify(arraySeed),
+        true,
+        'a blur with no edit compares equal and must not overwrite the default'
+    );
+
+    // Checkbox grid: the tokens of a 14-item default must render checked, so
+    // toggling one cannot silently drop the other thirteen.
+    const gridEntry = { key: 'hiddenChatElements', type: 'array', defaultValue: ['x', 'y', 'z'] };
+    const gridSeed = resolveEffectiveSettingValue(gridEntry, {});
+    assert.deepEqual(gridSeed, ['x', 'y', 'z']);
+});
+
+test('optional-host grant scan is driven by the schema, not the sparse settings bag', () => {
+    const start = popupSource.indexOf('async function refreshOptionalHostGrantState');
+    const end = popupSource.indexOf('\n}', popupSource.indexOf('renderOptionalHostBanner();', start));
+    const scan = popupSource.slice(start, end);
+    assert.doesNotMatch(scan, /for \(const \[key, value\] of Object\.entries\(settings\)\)/,
+        'a bag-driven scan is blind to default-on features that were never toggled');
+    assert.match(scan, /getSchemaIndex\(\)/,
+        'the scan must enumerate schema keys');
+    assert.match(scan, /resolveEffectiveSettingValue\(entry, settings\)/,
+        'the scan must resolve each key through its schema default');
+});
