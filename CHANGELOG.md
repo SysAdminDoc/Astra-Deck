@@ -18,6 +18,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The Video Notes save-failure message no longer prints raw escape codes
+  instead of punctuation. It was double-escaped in every language.
+- Resetting a single setting from the Schema Overview now names the setting
+  in the confirmation instead of showing a generic message.
+- Summaries and subscription tags no longer report themselves unavailable on
+  browsers that support them; the capability check looked for an API shape
+  neither the browser nor the features use.
+- Translated the sixteen strings recent features shipped in English only
+  across all ten translated languages.
 - The settings panel's Done button is legible again in YouTube's light
   theme. A light-theme rule for secondary buttons also matched the primary
   one, painting white text on a near-white fill.

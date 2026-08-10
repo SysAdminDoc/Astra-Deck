@@ -1320,22 +1320,22 @@
     "message": "Blue Light Intensity"
   },
   "feature_photosensitiveDimPercent_desc": {
-    "message": "How strongly to dim the player while flashing content is detected."
+    "message": "Wie stark der Player abgedunkelt wird, während blinkende Inhalte erkannt werden."
   },
   "feature_photosensitiveDimPercent_name": {
-    "message": "Dim Strength"
+    "message": "Abdunklungsstärke"
   },
   "feature_photosensitiveFlashProtection_desc": {
-    "message": "Sample video frames locally and briefly dim the player when a large luminance change is detected."
+    "message": "Analysiert Videobilder lokal und dunkelt den Player kurz ab, wenn ein starker Helligkeitssprung erkannt wird."
   },
   "feature_photosensitiveFlashProtection_name": {
-    "message": "Photosensitive Flash Protection"
+    "message": "Schutz vor Lichtblitzen"
   },
   "feature_photosensitiveFlashThreshold_desc": {
-    "message": "Minimum frame luminance change that triggers protection."
+    "message": "Minimale Helligkeitsänderung eines Bildes, die den Schutz auslöst."
   },
   "feature_photosensitiveFlashThreshold_name": {
-    "message": "Flash Sensitivity"
+    "message": "Blitzempfindlichkeit"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "Wie viele Sekunden eines Abrufvideos im Voraus gepuffert werden. Höhere Werte überstehen längere Verbindungsabbrüche; der Player kann sehr große Ziele bei langen Videos trotzdem begrenzen."
@@ -1680,10 +1680,10 @@
     "message": "Original bei Hover anzeigen"
   },
   "feature_daShowOriginalTitle_desc": {
-    "message": "Show the original title beneath the DeArrow replacement"
+    "message": "Zeigt den Originaltitel unter der DeArrow-Ersetzung an"
   },
   "feature_daShowOriginalTitle_name": {
-    "message": "Show Original Title"
+    "message": "Originaltitel anzeigen"
   },
   "feature_daTitleFormat_desc": {
     "message": "Wie Ersatztitel formatiert werden"
@@ -2964,25 +2964,25 @@
     "message": "SponsorBlock Pro-Kanal-Profile"
   },
   "feature_sponsorBlockBaseUrl_desc": {
-    "message": "Choose the primary HTTPS host used by SponsorBlock and DeArrow."
+    "message": "Wählt den primären HTTPS-Host für SponsorBlock und DeArrow."
   },
   "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API Host"
+    "message": "SponsorBlock-API-Host"
   },
   "feature_sponsorBlockCanonicalHost_label": {
-    "message": "Canonical — sponsor.ajay.app"
+    "message": "Kanonisch — sponsor.ajay.app"
   },
   "feature_sponsorBlockDisabled_label": {
     "message": "Deaktiviert"
   },
   "feature_sponsorBlockMirrorHost_label": {
-    "message": "Mirror — sponsorblock.kavin.rocks"
+    "message": "Spiegel — sponsorblock.kavin.rocks"
   },
   "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "Try this approved mirror once when the primary API host fails."
+    "message": "Versucht diesen freigegebenen Spiegel einmal, wenn der primäre API-Host ausfällt."
   },
   "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock Fallback Host"
+    "message": "SponsorBlock-Ausweichhost"
   },
   "feature_scrollToPlayer_desc": {
     "message": "Scrollt automatisch zum Seitenanfang, wenn zu einem neuen Video navigiert wird"
@@ -3852,7 +3852,7 @@
     "message": "{count} videos"
   },
   "photosensitiveFlashDetected": {
-    "message": "Flashing content detected — dimmed"
+    "message": "Blinkende Inhalte erkannt – abgedunkelt"
   },
   "popupTitle": {
     "message": "Astra Deck"
@@ -4468,7 +4468,7 @@
     "message": "Fallback {state}"
   },
   "spExternalHostTpl": {
-    "message": "host {host}"
+    "message": "Host {host}"
   },
   "spExternalKicker": {
     "message": "Integrationen"
