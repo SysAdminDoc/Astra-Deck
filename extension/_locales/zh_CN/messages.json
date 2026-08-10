@@ -5866,7 +5866,7 @@
     "message": "Video note restored"
   },
   "videoNotesSaveFailed": {
-    "message": "Couldn\\u2019t save \\u2014 storage full or unavailable."
+    "message": "无法保存 — 存储空间已满或不可用。"
   },
   "videoNotesSaved": {
     "message": "Saved locally."

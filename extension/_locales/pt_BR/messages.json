@@ -5866,7 +5866,7 @@
     "message": "Video note restored"
   },
   "videoNotesSaveFailed": {
-    "message": "Couldn\\u2019t save \\u2014 storage full or unavailable."
+    "message": "Não foi possível salvar — armazenamento cheio ou indisponível."
   },
   "videoNotesSaved": {
     "message": "Saved locally."

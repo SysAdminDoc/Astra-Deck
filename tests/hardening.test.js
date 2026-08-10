@@ -10340,11 +10340,18 @@ test('v4.47.0 NF10 — capability-probe module covers every CAPABILITIES enum en
     delete globalThis.ai;
     assert.equal(probe.PROBES.summarizerApi.run(), false,
         'summarizerApi must return false when window.ai is absent');
-    globalThis.ai = { Summarizer: function () {} };
+    globalThis.ai = { summarizer: function () {} };
     assert.equal(probe.PROBES.summarizerApi.run(), true,
-        'summarizerApi must return true when window.ai.Summarizer is a function');
+        'summarizerApi must return true when window.ai.summarizer is present (retired origin-trial shape)');
     if (savedAi === undefined) delete globalThis.ai;
     else globalThis.ai = savedAi;
+    const savedSummarizer = globalThis.Summarizer;
+    delete globalThis.Summarizer;
+    globalThis.Summarizer = function () {};
+    assert.equal(probe.PROBES.summarizerApi.run(), true,
+        'summarizerApi must return true when the stable global Summarizer is present');
+    if (savedSummarizer === undefined) delete globalThis.Summarizer;
+    else globalThis.Summarizer = savedSummarizer;
 
     // 5. The Media-DL probe walks the documented six fallback ports.
     assert.deepEqual(

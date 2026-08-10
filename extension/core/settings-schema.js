@@ -53,7 +53,8 @@ const TYPES = Object.freeze(['boolean', 'string', 'number', 'array', 'object', '
 // requires it, and (c) wiring the future capability-probe module
 // (extension/core/capability-probe.js — see RESEARCH_FEATURE_PLAN NF10).
 const CAPABILITIES = Object.freeze([
-    // Chrome 138+ built-in window.ai.Summarizer (origin trial gated).
+    // Chrome 138+ built-in Summarizer (global Summarizer, or the retired
+    // origin-trial ai.summarizer shape).
     // Used by localAiSummary and subscriptionAiTags. Firefox + Safari +
     // older Chrome lack this API; the popup chip should render
     // "Unavailable in this browser" when probe returns false.

@@ -2560,7 +2560,8 @@
     // requires it, and (c) wiring the future capability-probe module
     // (extension/core/capability-probe.js — see RESEARCH_FEATURE_PLAN NF10).
     const CAPABILITIES = Object.freeze([
-        // Chrome 138+ built-in window.ai.Summarizer (origin trial gated).
+        // Chrome 138+ built-in Summarizer (global Summarizer, or the retired
+        // origin-trial ai.summarizer shape).
         // Used by localAiSummary and subscriptionAiTags. Firefox + Safari +
         // older Chrome lack this API; the popup chip should render
         // "Unavailable in this browser" when probe returns false.
@@ -9794,16 +9795,15 @@
         const PROBE_TIMEOUT_MS = 1500;
 
         function hasSummarizerApi() {
-            // Chrome 138+ origin-trial built-in summarizer. The API surface
-            // is `window.ai.Summarizer` (Capability detection via
-            // `availability()` would be more rigorous but requires an
-            // async call; existence of the constructor is sufficient for
-            // the popup chip rendering, which is the only consumer today).
-            return Boolean(
-                typeof globalThis !== 'undefined'
-                && globalThis.ai
-                && typeof globalThis.ai.Summarizer === 'function'
-            );
+            // Match the shapes the FEATURES actually detect. Chrome stable ships a
+            // global Summarizer; the retired origin-trial shape was a lowercase
+            // ai.summarizer. The probe previously required ai.Summarizer, which is
+            // neither, so it could never agree with the code it gates and both
+            // summarizer-backed features rendered a permanent "unavailable" chip on
+            // browsers where they worked.
+            if (typeof globalThis === 'undefined') return false;
+            return typeof globalThis.Summarizer !== 'undefined'
+                || typeof globalThis.ai?.summarizer !== 'undefined';
         }
 
         // Detect whether we're in an extension popup/sidepanel context where
