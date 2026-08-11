@@ -7396,5 +7396,17 @@
   },
   "videoHiderSubscriptionLoadLimiterDesc": {
     "message": "إيقاف التحميل المستمر في الاشتراكات عند إخفاء عدد كبير من الدفعات المتتالية بالكامل."
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "يحتاج إلى انتباه"
+  },
+  "settingsImportReadFailed": {
+    "message": "تعذّر قراءة ملف الاستيراد"
+  },
+  "selectorHealthExportAria": {
+    "message": "تصدير صحة المحددات بصيغة JSON"
   }
 }

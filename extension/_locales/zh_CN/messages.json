@@ -7396,5 +7396,17 @@
   },
   "videoHiderSubscriptionLoadLimiterDesc": {
     "message": "连续多个批次全部隐藏时，停止订阅页的无限加载。"
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "需要注意"
+  },
+  "settingsImportReadFailed": {
+    "message": "无法读取导入文件"
+  },
+  "selectorHealthExportAria": {
+    "message": "导出选择器健康状态 JSON"
   }
 }

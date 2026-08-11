@@ -7396,5 +7396,17 @@
   },
   "videoHiderSubscriptionLoadLimiterDesc": {
     "message": "Interrompa o carregamento infinito em Inscrições quando muitos lotes consecutivos forem totalmente ocultados."
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "Requer atenção"
+  },
+  "settingsImportReadFailed": {
+    "message": "Não foi possível ler o arquivo de importação"
+  },
+  "selectorHealthExportAria": {
+    "message": "Exportar a integridade dos seletores como JSON"
   }
 }

@@ -41,7 +41,7 @@ test('settings cards expose runtime degradation as an accessible warning badge',
     const cardBlock = source.slice(cardStart, cardEnd);
     assert.match(cardBlock, /getFeatureHealthSnapshot\(\)\.find/);
     assert.match(cardBlock, /card\.classList\.add\('ytkit-feature-card--degraded'\)/);
-    assert.match(cardBlock, /healthBadge\.textContent = 'Needs attention'/);
+  assert.match(cardBlock, /healthBadge\.textContent = t\('settingsHealthNeedsAttention', 'Needs attention'\)/);
     assert.match(cardBlock, /healthBadge\.setAttribute\('aria-label'/);
 });
 

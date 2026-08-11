@@ -7396,5 +7396,17 @@
   },
   "videoHiderSubscriptionLoadLimiterDesc": {
     "message": "Stop endless loading on Subscriptions when too many consecutive batches are fully hidden."
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "Needs attention"
+  },
+  "settingsImportReadFailed": {
+    "message": "Could not read import file"
+  },
+  "selectorHealthExportAria": {
+    "message": "Export selector health JSON"
   }
 }

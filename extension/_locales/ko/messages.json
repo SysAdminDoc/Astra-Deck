@@ -7396,5 +7396,17 @@
   },
   "videoHiderSubscriptionLoadLimiterDesc": {
     "message": "연속된 배치가 너무 많이 모두 숨겨지면 구독 피드의 무한 로드를 중지합니다."
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "주의 필요"
+  },
+  "settingsImportReadFailed": {
+    "message": "가져오기 파일을 읽을 수 없습니다"
+  },
+  "selectorHealthExportAria": {
+    "message": "선택기 상태를 JSON으로 내보내기"
   }
 }
