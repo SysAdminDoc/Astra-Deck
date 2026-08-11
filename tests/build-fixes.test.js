@@ -281,6 +281,25 @@ test('check-contrast rejects non-#rrggbb input and passes legitimately', () => {
         'contrast audit must pass with the corrected composited button background: ' + String(result.stdout));
 });
 
+test('check-contrast computes every audit from resolved popup and sidepanel tokens', () => {
+    const { buildChecks, contrast, loadSurfaceTokens } = require('../scripts/check-contrast');
+    const checks = buildChecks();
+    assert.equal(checks.length, 12,
+        'the audit must cover six rendered token lanes on both surfaces');
+    for (const surface of ['popup', 'sidepanel']) {
+        const tokens = loadSurfaceTokens(surface);
+        assert.ok(tokens['--text-primary'], `${surface} must resolve --text-primary from CSS`);
+        assert.ok(tokens[surface === 'popup' ? '--page-bg' : '--bg'],
+            `${surface} must resolve its page background from CSS`);
+    }
+    for (const check of checks) {
+        assert.ok(
+            contrast(check.foregroundValue, check.backgroundValue) >= check.minimum,
+            `${check.surface} ${check.name} must meet its rendered ratio`
+        );
+    }
+});
+
 // ── 10. profile ceilings keep the authenticated companion available ──
 
 test('profile manifests retain the companion handoff and carry an immutable ceiling', () => {
