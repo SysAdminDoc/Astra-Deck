@@ -2344,6 +2344,150 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(DOWNLOAD_UI_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const SETTINGS_PANEL_TRANSLATIONS = {
+  de: {
+    'Content Controls': 'Inhaltssteuerung',
+    'Enable Video Hider': 'Video Hider aktivieren',
+    'Video Hider Sections': 'Bereiche des Video Hider',
+    'Hidden Videos': 'Ausgeblendete Videos',
+    'Allowed Videos': 'Erlaubte Videos',
+    'Keyword Rules': 'Schlüsselwortregeln',
+    'Filters & Limits': 'Filter und Grenzen',
+    'Feature On': 'Funktion aktiv',
+    'Feature Off': 'Funktion inaktiv',
+    '{count} videos hidden': '{count} Videos ausgeblendet',
+    '{count} videos allowed': '{count} Videos erlaubt',
+    '{count} channels blocked': '{count} Kanäle blockiert'
+  },
+  es: {
+    'Content Controls': 'Controles de contenido',
+    'Enable Video Hider': 'Activar Video Hider',
+    'Video Hider Sections': 'Secciones de Video Hider',
+    'Hidden Videos': 'Videos ocultos',
+    'Allowed Videos': 'Videos permitidos',
+    'Keyword Rules': 'Reglas de palabras clave',
+    'Filters & Limits': 'Filtros y límites',
+    'Feature On': 'Función activada',
+    'Feature Off': 'Función desactivada',
+    '{count} videos hidden': '{count} videos ocultos',
+    '{count} videos allowed': '{count} videos permitidos',
+    '{count} channels blocked': '{count} canales bloqueados'
+  },
+  fr: {
+    'Content Controls': 'Contrôles du contenu',
+    'Enable Video Hider': 'Activer Video Hider',
+    'Video Hider Sections': 'Sections de Video Hider',
+    'Hidden Videos': 'Vidéos masquées',
+    'Allowed Videos': 'Vidéos autorisées',
+    'Keyword Rules': 'Règles de mots-clés',
+    'Filters & Limits': 'Filtres et limites',
+    'Feature On': 'Fonction activée',
+    'Feature Off': 'Fonction désactivée',
+    '{count} videos hidden': '{count} vidéos masquées',
+    '{count} videos allowed': '{count} vidéos autorisées',
+    '{count} channels blocked': '{count} chaînes bloquées'
+  },
+  it: {
+    'Content Controls': 'Controlli dei contenuti',
+    'Enable Video Hider': 'Attiva Video Hider',
+    'Video Hider Sections': 'Sezioni di Video Hider',
+    'Hidden Videos': 'Video nascosti',
+    'Allowed Videos': 'Video consentiti',
+    'Keyword Rules': 'Regole per parole chiave',
+    'Filters & Limits': 'Filtri e limiti',
+    'Feature On': 'Funzione attiva',
+    'Feature Off': 'Funzione disattivata',
+    '{count} videos hidden': '{count} video nascosti',
+    '{count} videos allowed': '{count} video consentiti',
+    '{count} channels blocked': '{count} canali bloccati'
+  },
+  pt_BR: {
+    'Content Controls': 'Controles de conteúdo',
+    'Enable Video Hider': 'Ativar Video Hider',
+    'Video Hider Sections': 'Seções do Video Hider',
+    'Hidden Videos': 'Vídeos ocultos',
+    'Allowed Videos': 'Vídeos permitidos',
+    'Keyword Rules': 'Regras de palavras-chave',
+    'Filters & Limits': 'Filtros e limites',
+    'Feature On': 'Recurso ativado',
+    'Feature Off': 'Recurso desativado',
+    '{count} videos hidden': '{count} vídeos ocultos',
+    '{count} videos allowed': '{count} vídeos permitidos',
+    '{count} channels blocked': '{count} canais bloqueados'
+  },
+  ru: {
+    'Content Controls': 'Управление контентом',
+    'Enable Video Hider': 'Включить Video Hider',
+    'Video Hider Sections': 'Разделы Video Hider',
+    'Hidden Videos': 'Скрытые видео',
+    'Allowed Videos': 'Разрешённые видео',
+    'Keyword Rules': 'Правила ключевых слов',
+    'Filters & Limits': 'Фильтры и ограничения',
+    'Feature On': 'Функция включена',
+    'Feature Off': 'Функция выключена',
+    '{count} videos hidden': 'Скрыто видео: {count}',
+    '{count} videos allowed': 'Разрешено видео: {count}',
+    '{count} channels blocked': 'Заблокировано каналов: {count}'
+  },
+  ja: {
+    'Content Controls': 'コンテンツ管理',
+    'Enable Video Hider': 'Video Hider を有効化',
+    'Video Hider Sections': 'Video Hider のセクション',
+    'Hidden Videos': '非表示の動画',
+    'Allowed Videos': '許可した動画',
+    'Keyword Rules': 'キーワードルール',
+    'Filters & Limits': 'フィルターと上限',
+    'Feature On': '機能オン',
+    'Feature Off': '機能オフ',
+    '{count} videos hidden': '{count}本の動画を非表示',
+    '{count} videos allowed': '{count}本の動画を許可',
+    '{count} channels blocked': '{count}チャンネルをブロック'
+  },
+  ko: {
+    'Content Controls': '콘텐츠 제어',
+    'Enable Video Hider': 'Video Hider 활성화',
+    'Video Hider Sections': 'Video Hider 섹션',
+    'Hidden Videos': '숨긴 동영상',
+    'Allowed Videos': '허용한 동영상',
+    'Keyword Rules': '키워드 규칙',
+    'Filters & Limits': '필터 및 제한',
+    'Feature On': '기능 켜짐',
+    'Feature Off': '기능 꺼짐',
+    '{count} videos hidden': '동영상 {count}개 숨김',
+    '{count} videos allowed': '동영상 {count}개 허용',
+    '{count} channels blocked': '채널 {count}개 차단'
+  },
+  ar: {
+    'Content Controls': 'عناصر التحكم بالمحتوى',
+    'Enable Video Hider': 'تفعيل Video Hider',
+    'Video Hider Sections': 'أقسام Video Hider',
+    'Hidden Videos': 'الفيديوهات المخفية',
+    'Allowed Videos': 'الفيديوهات المسموح بها',
+    'Keyword Rules': 'قواعد الكلمات المفتاحية',
+    'Filters & Limits': 'الفلاتر والحدود',
+    'Feature On': 'الميزة مفعّلة',
+    'Feature Off': 'الميزة متوقفة',
+    '{count} videos hidden': '{count} فيديو مخفي',
+    '{count} videos allowed': '{count} فيديو مسموح',
+    '{count} channels blocked': '{count} قناة محظورة'
+  },
+  zh_CN: {
+    'Content Controls': '内容控制',
+    'Enable Video Hider': '启用 Video Hider',
+    'Video Hider Sections': 'Video Hider 分区',
+    'Hidden Videos': '隐藏的视频',
+    'Allowed Videos': '允许的视频',
+    'Keyword Rules': '关键词规则',
+    'Filters & Limits': '筛选器和限制',
+    'Feature On': '功能已开启',
+    'Feature Off': '功能已关闭',
+    '{count} videos hidden': '已隐藏 {count} 个视频',
+    '{count} videos allowed': '已允许 {count} 个视频',
+    '{count} channels blocked': '已屏蔽 {count} 个频道'
+  }
+};
+for (const [locale, messages] of Object.entries(SETTINGS_PANEL_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AI_SUMMARY_TRANSLATIONS = {
   de: {
     'AI Summary': 'KI-Zusammenfassung', 'AI video summary': 'KI-Videozusammenfassung', 'Calling AI provider…': 'KI-Anbieter wird aufgerufen…',

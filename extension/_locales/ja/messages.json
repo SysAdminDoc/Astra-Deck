@@ -5926,6 +5926,42 @@
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
+  "settingsPanelContentControls": {
+    "message": "コンテンツ管理"
+  },
+  "videoHiderEnableAria": {
+    "message": "Video Hider を有効化"
+  },
+  "videoHiderTabsAria": {
+    "message": "Video Hider のセクション"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "非表示の動画"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "許可した動画"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "キーワードルール"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "フィルターと上限"
+  },
+  "videoHiderFeatureOn": {
+    "message": "機能オン"
+  },
+  "videoHiderFeatureOff": {
+    "message": "機能オフ"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "{count}本の動画を非表示"
+  },
+  "videoHiderAllowedCountTpl": {
+    "message": "{count}本の動画を許可"
+  },
+  "videoHiderBlockedCountTpl": {
+    "message": "{count}チャンネルをブロック"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

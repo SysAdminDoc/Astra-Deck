@@ -229,11 +229,12 @@ function updatePanelInsightState() {
         const profileValue = document.getElementById('ytkit-insight-profile-name');
         const savedValue = document.getElementById('ytkit-insight-saved-state');
 
+        // i18n-static: numeric enabled/total summary, not user-facing copy.
         if (enabledValue) enabledValue.textContent = `${enabledCount}/${topLevelFeatures.length}`;
         if (sectionValue) sectionValue.textContent = String(document.querySelectorAll('.ytkit-pane').length);
         if (activeSectionValue) activeSectionValue.textContent = activeNav?.textContent || 'Video Player';
         if (profileValue) profileValue.textContent = getActiveSettingsProfileLabel();
-        if (savedValue) savedValue.textContent = 'Saved locally';
+        if (savedValue) savedValue.textContent = t('settingsInsightsSavedLocally', 'Saved locally');
     }
 
 function buildSettingsPanel() {
@@ -736,9 +737,9 @@ function buildSettingsPanel() {
             paneTitle.className = 'ytkit-pane-title';
             const paneEyebrow = document.createElement('span');
             paneEyebrow.className = 'ytkit-pane-eyebrow';
-            paneEyebrow.textContent = 'Content Controls';
+            paneEyebrow.textContent = t('settingsPanelContentControls', 'Content Controls');
             const paneTitleH2 = document.createElement('h2');
-            paneTitleH2.textContent = 'Video Hider';
+            paneTitleH2.textContent = t('feature_hideVideosFromHome_name', 'Video Hider');
             const paneDescription = document.createElement('p');
             paneDescription.className = 'ytkit-pane-description';
             paneDescription.textContent = 'Review hidden videos, manage blocked channels, and tune automatic filters without leaving the page.';
@@ -766,7 +767,7 @@ function buildSettingsPanel() {
             toggleLabel.className = 'ytkit-toggle-all';
             toggleLabel.style.marginLeft = 'auto';
             const toggleText = document.createElement('span');
-            toggleText.textContent = 'Enabled';
+            toggleText.textContent = t('settingsInsightsEnabled', 'Enabled');
             const toggleSwitch = document.createElement('div');
             toggleSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosFromHome ? ' active' : '');
             const toggleInput = document.createElement('input');
@@ -775,7 +776,7 @@ function buildSettingsPanel() {
             // toggle, which uses the setting-derived id.
             toggleInput.id = 'ytkit-video-hider-enabled';
             toggleInput.name = 'hideVideosFromHome';
-            toggleInput.setAttribute('aria-label', 'Enable Video Hider');
+            toggleInput.setAttribute('aria-label', t('videoHiderEnableAria', 'Enable Video Hider'));
             toggleInput.checked = appState.settings.hideVideosFromHome;
             const reconcileVideoHiderSetting = (nextSettings, source) => {
                 if (typeof applyExternalSettingsUpdate === 'function') {
@@ -832,18 +833,18 @@ function buildSettingsPanel() {
             tabNav.className = 'ytkit-vh-tabs';
             tabNav.style.setProperty('--ytkit-vh-accent', config.color);
             tabNav.setAttribute('role', 'tablist');
-            tabNav.setAttribute('aria-label', 'Video Hider Sections');
+            tabNav.setAttribute('aria-label', t('videoHiderTabsAria', 'Video Hider Sections'));
             const tabContent = document.createElement('div');
             tabContent.id = 'ytkit-vh-content';
             tabContent.setAttribute('role', 'tabpanel');
             tabContent.setAttribute('aria-live', 'polite');
             tabContent.tabIndex = -1;
             const tabs = [
-                { id: 'videos', label: 'Hidden Videos' },
-                { id: 'allowed', label: 'Allowed Videos' },
-                { id: 'channels', label: 'Blocked Channels' },
-                { id: 'keywords', label: 'Keyword Rules' },
-                { id: 'settings', label: 'Filters & Limits' }
+                { id: 'videos', label: t('videoHiderHiddenVideosTab', 'Hidden Videos') },
+                { id: 'allowed', label: t('videoHiderAllowedVideosTab', 'Allowed Videos') },
+                { id: 'channels', label: t('videoHiderBlockedChannelsTab', 'Blocked Channels') },
+                { id: 'keywords', label: t('videoHiderKeywordRulesTab', 'Keyword Rules') },
+                { id: 'settings', label: t('videoHiderFiltersLimitsTab', 'Filters & Limits') }
             ];
             const tabButtons = new Map();
             let activeTabId = tabs[0].id;
@@ -900,10 +901,15 @@ function buildSettingsPanel() {
                 const isEnabled = !!appState.settings.hideVideosFromHome;
                 pane.dataset.state = isEnabled ? 'active' : 'paused';
                 paneStateChip.dataset.state = isEnabled ? 'active' : 'paused';
-                paneStateChip.textContent = isEnabled ? 'Feature On' : 'Feature Off';
-                paneHiddenChip.textContent = `${countLabel(getVideoCount(), 'Video')} Hidden`;
-                paneAllowedChip.textContent = `${countLabel(getAllowedCount(), 'Video')} Allowed`;
-                paneChannelsChip.textContent = `${countLabel(getChannelCount(), 'Channel')} Blocked`;
+                paneStateChip.textContent = isEnabled
+                    ? t('videoHiderFeatureOn', 'Feature On')
+                    : t('videoHiderFeatureOff', 'Feature Off');
+                paneHiddenChip.textContent = t('videoHiderHiddenCountTpl', '{count} videos hidden')
+                    .replace('{count}', getVideoCount());
+                paneAllowedChip.textContent = t('videoHiderAllowedCountTpl', '{count} videos allowed')
+                    .replace('{count}', getAllowedCount());
+                paneChannelsChip.textContent = t('videoHiderBlockedCountTpl', '{count} channels blocked')
+                    .replace('{count}', getChannelCount());
 
                 const videoBadge = tabButtons.get('videos')?.querySelector('.ytkit-vh-tab__badge');
                 const allowedBadge = tabButtons.get('allowed')?.querySelector('.ytkit-vh-tab__badge');

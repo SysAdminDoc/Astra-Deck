@@ -5926,6 +5926,42 @@
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
+  "settingsPanelContentControls": {
+    "message": "Управление контентом"
+  },
+  "videoHiderEnableAria": {
+    "message": "Включить Video Hider"
+  },
+  "videoHiderTabsAria": {
+    "message": "Разделы Video Hider"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "Скрытые видео"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "Разрешённые видео"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "Правила ключевых слов"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "Фильтры и ограничения"
+  },
+  "videoHiderFeatureOn": {
+    "message": "Функция включена"
+  },
+  "videoHiderFeatureOff": {
+    "message": "Функция выключена"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "Скрыто видео: {count}"
+  },
+  "videoHiderAllowedCountTpl": {
+    "message": "Разрешено видео: {count}"
+  },
+  "videoHiderBlockedCountTpl": {
+    "message": "Заблокировано каналов: {count}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

@@ -5926,6 +5926,42 @@
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
+  "settingsPanelContentControls": {
+    "message": "عناصر التحكم بالمحتوى"
+  },
+  "videoHiderEnableAria": {
+    "message": "تفعيل Video Hider"
+  },
+  "videoHiderTabsAria": {
+    "message": "أقسام Video Hider"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "الفيديوهات المخفية"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "الفيديوهات المسموح بها"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "قواعد الكلمات المفتاحية"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "الفلاتر والحدود"
+  },
+  "videoHiderFeatureOn": {
+    "message": "الميزة مفعّلة"
+  },
+  "videoHiderFeatureOff": {
+    "message": "الميزة متوقفة"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "{count} فيديو مخفي"
+  },
+  "videoHiderAllowedCountTpl": {
+    "message": "{count} فيديو مسموح"
+  },
+  "videoHiderBlockedCountTpl": {
+    "message": "{count} قناة محظورة"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

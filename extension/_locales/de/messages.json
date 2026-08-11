@@ -5926,6 +5926,42 @@
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
+  "settingsPanelContentControls": {
+    "message": "Inhaltssteuerung"
+  },
+  "videoHiderEnableAria": {
+    "message": "Video Hider aktivieren"
+  },
+  "videoHiderTabsAria": {
+    "message": "Bereiche des Video Hider"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "Ausgeblendete Videos"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "Erlaubte Videos"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "Schlüsselwortregeln"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "Filter und Grenzen"
+  },
+  "videoHiderFeatureOn": {
+    "message": "Funktion aktiv"
+  },
+  "videoHiderFeatureOff": {
+    "message": "Funktion inaktiv"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "{count} Videos ausgeblendet"
+  },
+  "videoHiderAllowedCountTpl": {
+    "message": "{count} Videos erlaubt"
+  },
+  "videoHiderBlockedCountTpl": {
+    "message": "{count} Kanäle blockiert"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },
