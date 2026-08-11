@@ -10,6 +10,11 @@
     const BACKUP_SCHEMA_VERSION = 2;
     const MAX_BACKUP_BYTES = 512 * 1024 * 1024;
     const MAX_MESSAGE_BYTES = 1024 * 1024;
+    const FILTER_LIST_VERSION = 1;
+    const FILTER_LIST_KIND = 'video-hider-rules';
+    const FILTER_LIST_MAX_BYTES = 1024 * 1024;
+    const FILTER_LIST_MAX_KEYWORD_CHARS = 20000;
+    const FILTER_LIST_SUBSCRIPTION_KEY = 'ytkit-video-filter-list-subscription';
     const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
     const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
     const SENSITIVE_KEYS = new Set([
@@ -41,6 +46,7 @@
         { id: 'markedWatchedVideos', location: 'extension-local', key: 'ytkit-marked-watched-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list-lru' },
         { id: 'blockedChannels', location: 'extension-local', key: 'ytkit-blocked-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'blocked-channel-list' },
         { id: 'allowedChannels', location: 'extension-local', key: 'ytkit-allowed-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'allowed-channel-list' },
+        { id: 'videoFilterListSubscription', location: 'extension-local', key: FILTER_LIST_SUBSCRIPTION_KEY, backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-filter-list-subscription-v1' },
         { id: 'bookmarks', location: 'extension-local', key: 'ytkit-bookmarks', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'timestamp-bookmarks' },
         { id: 'watchProgress', location: 'extension-local', key: 'ytkit-watch-progress', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'watch-progress-v1' },
         { id: 'watchTime', location: 'extension-local', key: 'ytkit-watch-time', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'watch-time-v1' },
@@ -144,6 +150,92 @@
             if (out.length >= 2000) break;
         }
         return out;
+    }
+
+    function normalizeFilterListUrl(value) {
+        const raw = typeof value === 'string' ? value.trim() : '';
+        if (!raw || raw.length > 2048) return '';
+        try {
+            const parsed = new URL(raw);
+            if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.hash) return '';
+            parsed.hash = '';
+            return parsed.href.slice(0, 2048);
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function sanitizeFilterListRules(value) {
+        const raw = isPlainObject(value) ? value : {};
+        const keywordFilter = typeof raw.keywordFilter === 'string'
+            ? raw.keywordFilter.trim().slice(0, FILTER_LIST_MAX_KEYWORD_CHARS)
+            : '';
+        const predicateCode = typeof raw.predicateCode === 'string'
+            ? raw.predicateCode.slice(0, FILTER_LIST_MAX_KEYWORD_CHARS)
+            : '';
+        return {
+            keywordFilter,
+            predicateEnabled: raw.predicateEnabled === true && !!predicateCode,
+            predicateCode,
+            hiddenVideos: sanitizeVideoIds(raw.hiddenVideos, 5000),
+            allowedVideos: sanitizeVideoIds(raw.allowedVideos, 5000),
+            blockedChannels: sanitizeBlockedChannels(raw.blockedChannels),
+            allowedChannels: sanitizeBlockedChannels(raw.allowedChannels)
+        };
+    }
+
+    function sanitizeVideoFilterListSubscription(value) {
+        const raw = isPlainObject(value) ? value : {};
+        const attemptedAt = Number(raw.attemptedAt);
+        const fetchedAt = Number(raw.fetchedAt);
+        return {
+            version: FILTER_LIST_VERSION,
+            url: normalizeFilterListUrl(raw.url),
+            attemptedAt: Number.isFinite(attemptedAt) && attemptedAt > 0 ? Math.floor(attemptedAt) : 0,
+            fetchedAt: Number.isFinite(fetchedAt) && fetchedAt > 0 ? Math.floor(fetchedAt) : 0,
+            rules: sanitizeFilterListRules(raw.rules),
+            error: typeof raw.error === 'string' ? raw.error.slice(0, 240) : ''
+        };
+    }
+
+    function buildVideoFilterListRules(source = {}) {
+        const raw = isPlainObject(source) ? source : {};
+        const settings = isPlainObject(raw.settings) ? raw.settings : raw;
+        return sanitizeFilterListRules({
+            keywordFilter: settings.hideVideosKeywordFilter,
+            predicateEnabled: settings.advancedLocalPredicate,
+            predicateCode: settings.advancedLocalPredicateCode,
+            hiddenVideos: raw.hiddenVideos,
+            allowedVideos: raw.allowedVideos,
+            blockedChannels: raw.blockedChannels,
+            allowedChannels: raw.allowedChannels
+        });
+    }
+
+    function createVideoFilterList(rules, options = {}) {
+        return {
+            astraDeckFilterList: true,
+            filterListVersion: FILTER_LIST_VERSION,
+            kind: FILTER_LIST_KIND,
+            exportedAt: typeof options.exportedAt === 'string' ? options.exportedAt : new Date().toISOString(),
+            rules: sanitizeFilterListRules(rules)
+        };
+    }
+
+    function parseVideoFilterList(value) {
+        if (!isPlainObject(value)
+            || value.astraDeckFilterList !== true
+            || value.kind !== FILTER_LIST_KIND
+            || Number(value.filterListVersion) !== FILTER_LIST_VERSION
+            || !isPlainObject(value.rules)) {
+            throw new Error('Unsupported or invalid Astra Deck filter-list format');
+        }
+        return {
+            version: FILTER_LIST_VERSION,
+            kind: FILTER_LIST_KIND,
+            exportedAt: typeof value.exportedAt === 'string' ? value.exportedAt.slice(0, 64) : '',
+            rules: sanitizeFilterListRules(value.rules)
+        };
     }
 
     function sanitizeBookmarks(value) {
@@ -318,6 +410,7 @@
         case 'markedWatchedVideos': return sanitizeVideoIds(Array.isArray(value) ? value.slice(-5000) : value, 5000);
         case 'blockedChannels': return sanitizeBlockedChannels(value);
         case 'allowedChannels': return sanitizeBlockedChannels(value);
+        case 'videoFilterListSubscription': return sanitizeVideoFilterListSubscription(value);
         case 'bookmarks': return sanitizeBookmarks(value);
         case 'watchProgress': return sanitizeWatchProgress(value);
         case 'watchTime': return sanitizeWatchTime(value);
@@ -357,6 +450,7 @@
 
     function defaultDomainValue(id) {
         if (['hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'transcriptIndex'].includes(id)) return [];
+        if (id === 'videoFilterListSubscription') return sanitizeVideoFilterListSubscription({});
         if (id === 'persistentQueue') return { v: 1, items: [] };
         if (id === 'reactionSpammerState') return sanitizeReactionState({});
         if (id === 'localeOverride' || id === 'digitalWellbeingDismissal') return '';
@@ -764,6 +858,10 @@
         BACKUP_SCHEMA_VERSION,
         MAX_BACKUP_BYTES,
         MAX_MESSAGE_BYTES,
+        FILTER_LIST_VERSION,
+        FILTER_LIST_KIND,
+        FILTER_LIST_MAX_BYTES,
+        FILTER_LIST_SUBSCRIPTION_KEY,
         DURABLE_DOMAIN_REGISTRY,
         INCLUDED_DOMAINS,
         EXCLUDED_DOMAINS,
@@ -775,6 +873,12 @@
         migrateBackup,
         sanitizeMigratedDomains,
         sanitizeDomainValue,
+        normalizeFilterListUrl,
+        sanitizeFilterListRules,
+        sanitizeVideoFilterListSubscription,
+        buildVideoFilterListRules,
+        createVideoFilterList,
+        parseVideoFilterList,
         sanitizeTranscriptRecords,
         buildImportPreview,
         formatImportPreview,

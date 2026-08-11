@@ -117,6 +117,7 @@
   "hideCollaborations": true,
   "hideVideosFromHome": true,
   "hideVideosKeywordFilter": "",
+  "hideVideosFilterListUrl": "",
   "hideVideosDurationFilter": 0,
   "hideVideosSubsLoadLimit": true,
   "hideVideosSubsLoadThreshold": 3,

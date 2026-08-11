@@ -385,6 +385,7 @@ const STORAGE_KEYS = {
     markedWatchedVideos: 'ytkit-marked-watched-videos',
     blockedChannels: 'ytkit-blocked-channels',
     allowedChannels: 'ytkit-allowed-channels',
+    filterListSubscription: 'ytkit-video-filter-list-subscription',
     bookmarks: 'ytkit-bookmarks',
     watchProgress: 'ytkit-watch-progress',
     watchTime: 'ytkit-watch-time',
@@ -492,6 +493,12 @@ const exportButton = $('#export-btn');
 const importButton = $('#import-btn');
 const importFileInput = $('#import-file');
 const undoImportButton = $('#undo-import-btn');
+const exportFilterListButton = $('#export-filter-list-btn');
+const importFilterListButton = $('#import-filter-list-btn');
+const importFilterListFileInput = $('#import-filter-list-file');
+const filterListUrlInput = $('#filter-list-url');
+const refreshFilterListButton = $('#refresh-filter-list-btn');
+const filterListStatus = $('#filter-list-status');
 const resetButton = $('#reset-btn');
 const resetYoutubeStateButton = $('#reset-youtube-state-btn');
 const undoYoutubeStateButton = $('#undo-youtube-state-btn');
@@ -1711,6 +1718,7 @@ function createSchemaRiskBadge(key) {
 
 function render(settings, filter) {
     list.setAttribute('aria-busy', 'false');
+    syncFilterListUrlInput(settings);
     // The Astra Downloader companion is a github-full-only feature. Hide the
     // "Update Companion" / "Update yt-dlp" actions for store-safe users instead
     // of surfacing buttons that only error ("open a YouTube tab first") against
@@ -4141,6 +4149,171 @@ async function exportSettings() {
     }
 }
 
+function setFilterListStatus(messageKey, fallback, type = 'info') {
+    if (!filterListStatus) return;
+    filterListStatus.textContent = t(messageKey, fallback);
+    filterListStatus.dataset.state = type;
+}
+
+function syncFilterListUrlInput(settings = popupState.settings) {
+    if (!filterListUrlInput) return;
+    filterListUrlInput.value = typeof settings?.hideVideosFilterListUrl === 'string'
+        ? settings.hideVideosFilterListUrl
+        : '';
+}
+
+async function exportFilterList() {
+    if (!exportFilterListButton) return;
+    exportFilterListButton.setAttribute('aria-busy', 'true');
+    exportFilterListButton.disabled = true;
+    try {
+        if (!persistedDomains?.buildVideoFilterListRules || !persistedDomains?.createVideoFilterList) {
+            throw new Error('Filter-list service unavailable');
+        }
+        const allStorage = await callExtensionApi(ext?.storage?.local, 'get', null);
+        const rules = persistedDomains.buildVideoFilterListRules({
+            settings: allStorage?.[STORAGE_KEYS.settings] || {},
+            hiddenVideos: allStorage?.[STORAGE_KEYS.hiddenVideos],
+            allowedVideos: allStorage?.[STORAGE_KEYS.allowedVideos],
+            blockedChannels: allStorage?.[STORAGE_KEYS.blockedChannels],
+            allowedChannels: allStorage?.[STORAGE_KEYS.allowedChannels]
+        });
+        const payload = persistedDomains.createVideoFilterList(rules);
+        const json = JSON.stringify(payload, null, 2);
+        const maxBytes = persistedDomains.FILTER_LIST_MAX_BYTES || 1024 * 1024;
+        if (estimateSerializedBytes(payload) > maxBytes) throw new Error('Filter list exceeds the 1 MiB safety limit');
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const filename = `astra_deck_video_filter_rules_${new Date().toISOString().slice(0, 10)}.json`;
+        if (ext.downloads?.download) {
+            await callExtensionApi(ext.downloads, 'download', { url, filename, saveAs: false });
+        } else {
+            const anchor = Object.assign(document.createElement('a'), { href: url, download: filename, rel: 'noopener' });
+            document.body.appendChild(anchor);
+            try { anchor.click(); } finally { anchor.remove(); }
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        setFilterListStatus('filterListStatusExported', 'Local filter rules exported.', 'success');
+        showStatus(t('filterListExported', 'Video Hider rules exported.'), 'success', 3200);
+    } catch (error) {
+        setFilterListStatus('filterListStatusFail', 'Filter-list operation failed.', 'error');
+        showStatus(t('filterListExportFail', 'Filter-list export failed') + ': ' + error.message, 'error', 4200);
+    } finally {
+        exportFilterListButton.removeAttribute('aria-busy');
+        exportFilterListButton.disabled = false;
+    }
+}
+
+async function importFilterList(file) {
+    if (!file || !importFilterListButton) return;
+    importFilterListButton.setAttribute('aria-busy', 'true');
+    importFilterListButton.disabled = true;
+    try {
+        if (!persistedDomains?.parseVideoFilterList || !persistedDomains?.sanitizeDomainValue) {
+            throw new Error('Filter-list service unavailable');
+        }
+        const maxBytes = persistedDomains.FILTER_LIST_MAX_BYTES || 1024 * 1024;
+        if (file.size > maxBytes) throw new Error('Filter list exceeds the 1 MiB safety limit');
+        let data;
+        try {
+            data = JSON.parse(await file.text());
+        } catch (_) {
+            throw new Error(t('filterListImportNotJson', 'That file is not valid JSON.'));
+        }
+        // Parse and validate the versioned format before reading a snapshot or
+        // writing any storage. Future formats are a strict no-op.
+        const parsed = persistedDomains.parseVideoFilterList(data);
+        const rules = parsed.rules;
+        const importCatalog = await loadSettingsImportCatalog();
+        const currentLocal = await readLocalStorageSnapshot();
+        const currentSettings = isPlainObject(currentLocal[STORAGE_KEYS.settings])
+            ? currentLocal[STORAGE_KEYS.settings]
+            : popupState.settings;
+        const importedSettings = mergeImportedSettingsWithDefaults({
+            ...currentSettings,
+            hideVideosKeywordFilter: rules.keywordFilter,
+            advancedLocalPredicate: rules.predicateEnabled,
+            advancedLocalPredicateCode: rules.predicateCode
+        }, importCatalog.defaults, importCatalog.settingsVersion, 'filter-list-import');
+        const nonSettingWrites = {
+            [STORAGE_KEYS.hiddenVideos]: persistedDomains.sanitizeDomainValue('hiddenVideos', rules.hiddenVideos),
+            [STORAGE_KEYS.allowedVideos]: persistedDomains.sanitizeDomainValue('allowedVideos', rules.allowedVideos),
+            [STORAGE_KEYS.blockedChannels]: persistedDomains.sanitizeDomainValue('blockedChannels', rules.blockedChannels),
+            [STORAGE_KEYS.allowedChannels]: persistedDomains.sanitizeDomainValue('allowedChannels', rules.allowedChannels)
+        };
+        if (estimateSerializedBytes({ ...nonSettingWrites, [STORAGE_KEYS.settings]: importedSettings }) > 64 * 1024 * 1024) {
+            throw new Error('Filter-list import data exceeds the 64 MB safety limit');
+        }
+
+        const snapshot = await createCoordinatedSnapshot('filter-list-import', { localSnapshot: currentLocal });
+        const snapped = await writeImportSnapshot(snapshot);
+        if (!snapped) {
+            await discardCoordinatedSnapshot(snapshot);
+            throw new Error(t('statusImportSnapshotFail', 'Could not stage an undo snapshot.'));
+        }
+        try {
+            await storageSet(nonSettingWrites);
+            const result = await replaceSettings(importedSettings);
+            await renderStorageInfo();
+            await loadSettings();
+            render(popupState.settings, q.value);
+            setUndoImportVisible(true);
+            setFilterListStatus('filterListStatusImported', 'Filter rules imported. Undo Import is available.', 'success');
+            showStatus(t('filterListImported', 'Video Hider rules imported. Undo Import is available.'), 'success', 5200);
+            void result;
+        } catch (error) {
+            try { await restoreCoordinatedSnapshot(snapshot); } finally {
+                await clearImportSnapshot();
+                await discardCoordinatedSnapshot(snapshot);
+            }
+            throw new Error(t('filterListImportRollback', 'Filter-list import failed; previous data was restored.'));
+        }
+    } catch (error) {
+        setFilterListStatus('filterListStatusFail', 'Filter-list operation failed.', 'error');
+        showStatus(t('filterListImportFail', 'Filter-list import failed') + ': ' + error.message, 'error', 5200);
+    } finally {
+        importFilterListFileInput.value = '';
+        importFilterListButton.removeAttribute('aria-busy');
+        importFilterListButton.disabled = false;
+        try { await refreshUndoImportVisibility(); } catch (_) { /* reason: popup teardown or storage failure */ }
+    }
+}
+
+async function refreshFilterList() {
+    if (!refreshFilterListButton || !filterListUrlInput) return;
+    refreshFilterListButton.setAttribute('aria-busy', 'true');
+    refreshFilterListButton.disabled = true;
+    try {
+        if (!persistedDomains?.normalizeFilterListUrl) throw new Error('Filter-list service unavailable');
+        const normalizedUrl = persistedDomains.normalizeFilterListUrl(filterListUrlInput.value);
+        if (!normalizedUrl) {
+            setFilterListStatus('filterListStatusInvalidUrl', 'Enter an HTTPS URL without credentials or a fragment.', 'error');
+            return;
+        }
+        if (popupState.settings.hideVideosFilterListUrl !== normalizedUrl) {
+            await writeSetting('hideVideosFilterListUrl', normalizedUrl);
+            syncFilterListUrlInput(popupState.settings);
+        }
+        const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_REFRESH_FILTER_LIST');
+        if (result?.noYouTubeTab) {
+            setFilterListStatus('filterListStatusNoTab', 'Open a YouTube tab to refresh the remote list.', 'error');
+            return;
+        }
+        if (!result?.ok) {
+            setFilterListStatus('filterListStatusFail', result?.error || 'Remote list refresh failed.', 'error');
+            return;
+        }
+        setFilterListStatus('filterListStatusRefreshed', 'Remote filter list refreshed.', 'success');
+        showStatus(t('filterListRefreshed', 'Video Hider filter list refreshed.'), 'success', 3200);
+    } catch (error) {
+        setFilterListStatus('filterListStatusFail', 'Remote list refresh failed.', 'error');
+        showStatus(t('filterListRefreshFail', 'Filter-list refresh failed') + ': ' + error.message, 'error', 5200);
+    } finally {
+        refreshFilterListButton.removeAttribute('aria-busy');
+        refreshFilterListButton.disabled = false;
+    }
+}
+
 async function importSettings(file) {
     if (!file) return;
     importButton.setAttribute('aria-busy', 'true');
@@ -5136,6 +5309,7 @@ function installWheelScrolling() {
             || changes[STORAGE_KEYS.allowedVideos]
             || changes[STORAGE_KEYS.blockedChannels]
             || changes[STORAGE_KEYS.allowedChannels]
+            || changes[STORAGE_KEYS.filterListSubscription]
             || changes[STORAGE_KEYS.bookmarks];
         if (!relevant) return;
         void loadSettings().then((settings) => {
@@ -5234,6 +5408,20 @@ function installWheelScrolling() {
         const file = event.target.files?.[0];
         if (file) void importSettings(file);
     });
+    if (exportFilterListButton) exportFilterListButton.addEventListener('click', () => { void exportFilterList(); });
+    if (importFilterListButton) importFilterListButton.addEventListener('click', () => { importFilterListFileInput?.click(); });
+    if (importFilterListFileInput) {
+        importFilterListFileInput.addEventListener('change', (event) => {
+            const file = event.target.files?.[0];
+            if (file) void importFilterList(file);
+        });
+    }
+    if (refreshFilterListButton) refreshFilterListButton.addEventListener('click', () => { void refreshFilterList(); });
+    if (filterListUrlInput) {
+        filterListUrlInput.addEventListener('change', () => {
+            syncFilterListUrlInput({ hideVideosFilterListUrl: filterListUrlInput.value });
+        });
+    }
     if (undoImportButton) {
         undoImportButton.addEventListener('click', () => { void undoImportSettings(); });
         void refreshUndoImportVisibility();

@@ -200,6 +200,50 @@ test('popup import stages a session undo snapshot before applying backup data', 
     }
 });
 
+test('popup exposes transactional filter-list import/export and bounded refresh controls', () => {
+    for (const id of [
+        'export-filter-list-btn',
+        'import-filter-list-btn',
+        'import-filter-list-file',
+        'filter-list-url',
+        'refresh-filter-list-btn',
+        'filter-list-status'
+    ]) {
+        assert.match(popupHtmlSource, new RegExp(`id="${id}"`),
+            `popup.html must expose ${id}`);
+    }
+
+    const importStart = popupSource.indexOf('async function importFilterList(file)');
+    const importEnd = popupSource.indexOf('\n}\n\nasync function refreshFilterList', importStart);
+    assert.ok(importStart > -1 && importEnd > importStart,
+        'importFilterList block must be found');
+    const importBlock = popupSource.slice(importStart, importEnd);
+    const parsePos = importBlock.indexOf('parseVideoFilterList(data)');
+    const snapshotPos = importBlock.indexOf('createCoordinatedSnapshot');
+    const writePos = importBlock.indexOf('storageSet(nonSettingWrites)');
+    assert.ok(parsePos > -1 && snapshotPos > parsePos && writePos > snapshotPos,
+        'filter-list imports must validate, snapshot, then write');
+    assert.match(importBlock, /restoreCoordinatedSnapshot\(snapshot\)/,
+        'filter-list import failures must restore the prior snapshot');
+    assert.match(popupSource, /YTKIT_REFRESH_FILTER_LIST/,
+        'popup refresh must use the YouTube tab bridge');
+
+    const enMessages = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    for (const key of [
+        'exportFilterListBtn',
+        'importFilterListBtn',
+        'refreshFilterListBtn',
+        'filterListUrlLabel',
+        'filterListStatusReady',
+        'filterListStatusImported',
+        'filterListStatusRefreshed'
+    ]) {
+        assert.ok(enMessages[key]?.message, `EN locale must declare ${key}`);
+    }
+});
+
 test('import and reset keep only reachable undo status copy', () => {
     assert.doesNotMatch(popupSource, /undoAvailable/,
         'import and reset must not carry a hardcoded undo availability branch');

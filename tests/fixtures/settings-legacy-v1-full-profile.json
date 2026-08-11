@@ -479,6 +479,7 @@
     "hidePlannedLivestreams",
     "hideSearchSidebar",
     "hideVideosChannelAllowlist",
+    "hideVideosFilterListUrl",
     "hideVideosSyntheticNarrationFilter",
     "hideVideosLowSignalFilter",
     "hideVideosLowSignalMinViews",

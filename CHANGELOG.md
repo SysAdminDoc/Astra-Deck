@@ -35,6 +35,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   cadence. Each lane is opt-in, fails open without card metadata, exposes
   `syntheticNarration`, `descriptionText`, `channelText`, and
   `uploadCadencePerDay` to the predicate DSL, and records the matching reason.
+- Video Hider rules can now be exported and imported as a versioned JSON file,
+  with transactional Undo Import recovery, or refreshed from an optional HTTPS
+  list through the bounded extension fetch bridge. Remote lists remain
+  data-only and never execute predicate code.
 
 ---
 
@@ -7763,13 +7767,6 @@ drained — shipped work lives in git history and `CHANGELOG.md`.
   Touches: `extension/features/video-hider/index.js`, `extension/core/predicate-sandbox.js`, `extension/core/settings-schema.js`
   Acceptance: local heuristics (synthetic-narration markers in title/description/channel patterns, view-count and age thresholds, upload cadence) expose new predicate fields usable from the existing DSL, each independently toggleable, with the hidden-card reason naming which heuristic fired. No network call and no crowd database.
   Complexity: L
-
-- [ ] P2 — Subscribable and exportable filter lists
-  Why: BlockTube is stalled with its users asking for exactly this, and it is the in-policy substitute for the cloud sync this project rejects.
-  Evidence: BlockTube #508, #384 (16 👍), #59 (11 👍); FilterTube #62. Astra's predicate DSL and keyword rules are strictly local.
-  Touches: `extension/core/persisted-domains.js`, `extension/features/video-hider/index.js`, `extension/popup.js`
-  Acceptance: rules export to and import from a versioned file; an optional HTTPS list URL refreshes on a bounded schedule through the `EXT_FETCH` bridge with the origin under the existing allowlist; import is transactional and reversible through the existing undo path.
-  Complexity: M
 
 - [ ] P2 — Timestamped-highlight export loop
   Why: this is what the commercial tier actually paywalls — Glasp gates auto-sync to Notion at $12.50–$30/mo and Readwise Reader's $9.99/mo is the highlight→export loop — while Astra already owns transcripts, bookmarks, notes and AI artifacts and gives them no coherent way out.
