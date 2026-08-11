@@ -1048,73 +1048,79 @@
     "message": "تصدير"
   },
   "exportFilterListBtn": {
-    "message": "Export rules"
+    "message": "تصدير القواعد"
   },
   "filterListExportFail": {
-    "message": "Filter-list export failed"
+    "message": "فشل تصدير قائمة التصفية"
   },
   "filterListExported": {
-    "message": "Video Hider rules exported."
+    "message": "تم تصدير قواعد Video Hider."
   },
   "filterListImportFail": {
-    "message": "Filter-list import failed"
+    "message": "فشل استيراد قائمة التصفية"
   },
   "filterListImportNotJson": {
-    "message": "That file is not valid JSON."
+    "message": "هذا الملف ليس JSON صالحًا."
   },
   "filterListImportRollback": {
-    "message": "Filter-list import failed; previous data was restored."
+    "message": "فشل استيراد قائمة التصفية؛ تمت استعادة البيانات السابقة."
   },
   "filterListImported": {
-    "message": "Video Hider rules imported. Undo Import is available."
+    "message": "تم استيراد قواعد Video Hider. يمكن التراجع عن الاستيراد."
   },
   "filterListStatusExported": {
-    "message": "Local filter rules exported."
+    "message": "تم تصدير قواعد التصفية المحلية."
   },
   "filterListStatusFail": {
-    "message": "Filter-list operation failed."
+    "message": "فشلت عملية قائمة التصفية."
   },
   "filterListStatusImported": {
-    "message": "Filter rules imported. Undo Import is available."
+    "message": "تم استيراد قواعد التصفية. يمكن التراجع عن الاستيراد."
   },
   "filterListStatusInvalidUrl": {
-    "message": "Enter an HTTPS URL without credentials or a fragment."
+    "message": "أدخل عنوان HTTPS كاملاً بدون اسم مستخدم أو كلمة مرور أو جزء #."
   },
   "filterListStatusNoTab": {
-    "message": "Open a YouTube tab to refresh the remote list."
+    "message": "افتح علامة تبويب YouTube لتحديث القائمة البعيدة."
+  },
+  "filterListStatusPrivateHost": {
+    "message": "هذا العنوان على شبكة خاصة أو محلية. يجب تقديم قوائم التصفية من موقع HTTPS عام."
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "يحتاج Astra Deck إلى إذنك للقراءة من ذلك الموقع. اختر «سماح» عندما يسألك المتصفح."
   },
   "filterListStatusReady": {
-    "message": "No remote list configured."
+    "message": "لا يتم اتباع أي قائمة تصفية."
   },
   "filterListStatusRefreshed": {
-    "message": "Remote filter list refreshed."
+    "message": "تم تحديث قائمة التصفية البعيدة."
   },
   "filterListToolsDesc": {
-    "message": "Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge."
+    "message": "أنشئ نسخة احتياطية من قواعد Video Hider، أو استعدها من ملف، أو تابع قائمة تصفية منشورة على موقع تثق به."
   },
   "filterListToolsEyebrow": {
     "message": "Video Hider"
   },
   "filterListToolsTitle": {
-    "message": "Local filter lists"
+    "message": "قوائم التصفية"
   },
   "filterListUrlLabel": {
-    "message": "Optional HTTPS list URL"
+    "message": "رابط قائمة التصفية (اختياري)"
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
   },
   "filterListRefreshFail": {
-    "message": "Filter-list refresh failed"
+    "message": "فشل تحديث قائمة التصفية"
   },
   "filterListRefreshed": {
-    "message": "Video Hider filter list refreshed."
+    "message": "تم تحديث قائمة تصفية Video Hider."
   },
   "importFilterListBtn": {
-    "message": "Import rules"
+    "message": "استيراد القواعد"
   },
   "refreshFilterListBtn": {
-    "message": "Refresh list now"
+    "message": "تحديث القائمة الآن"
   },
   "extActionTitle": {
     "message": "Astra Deck",

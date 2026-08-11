@@ -1048,73 +1048,79 @@
     "message": "내보내기"
   },
   "exportFilterListBtn": {
-    "message": "Export rules"
+    "message": "규칙 내보내기"
   },
   "filterListExportFail": {
-    "message": "Filter-list export failed"
+    "message": "필터 목록 내보내기 실패"
   },
   "filterListExported": {
-    "message": "Video Hider rules exported."
+    "message": "Video Hider 규칙을 내보냈습니다."
   },
   "filterListImportFail": {
-    "message": "Filter-list import failed"
+    "message": "필터 목록 가져오기 실패"
   },
   "filterListImportNotJson": {
-    "message": "That file is not valid JSON."
+    "message": "이 파일은 올바른 JSON이 아닙니다."
   },
   "filterListImportRollback": {
-    "message": "Filter-list import failed; previous data was restored."
+    "message": "필터 목록 가져오기에 실패했습니다. 이전 데이터를 복원했습니다."
   },
   "filterListImported": {
-    "message": "Video Hider rules imported. Undo Import is available."
+    "message": "Video Hider 규칙을 가져왔습니다. 가져오기 실행 취소를 사용할 수 있습니다."
   },
   "filterListStatusExported": {
-    "message": "Local filter rules exported."
+    "message": "로컬 필터 규칙을 내보냈습니다."
   },
   "filterListStatusFail": {
-    "message": "Filter-list operation failed."
+    "message": "필터 목록 작업에 실패했습니다."
   },
   "filterListStatusImported": {
-    "message": "Filter rules imported. Undo Import is available."
+    "message": "필터 규칙을 가져왔습니다. 가져오기 실행 취소를 사용할 수 있습니다."
   },
   "filterListStatusInvalidUrl": {
-    "message": "Enter an HTTPS URL without credentials or a fragment."
+    "message": "사용자 이름, 비밀번호, # 프래그먼트가 없는 전체 HTTPS 주소를 입력하세요."
   },
   "filterListStatusNoTab": {
-    "message": "Open a YouTube tab to refresh the remote list."
+    "message": "원격 목록을 새로 고치려면 YouTube 탭을 여세요."
+  },
+  "filterListStatusPrivateHost": {
+    "message": "해당 주소는 사설 또는 로컬 네트워크에 있습니다. 필터 목록은 공개 HTTPS 사이트에서 제공해야 합니다."
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "해당 사이트를 읽으려면 Astra Deck의 권한이 필요합니다. 브라우저가 물어보면 '허용'을 선택하세요."
   },
   "filterListStatusReady": {
-    "message": "No remote list configured."
+    "message": "구독 중인 필터 목록이 없습니다."
   },
   "filterListStatusRefreshed": {
-    "message": "Remote filter list refreshed."
+    "message": "원격 필터 목록을 새로 고쳤습니다."
   },
   "filterListToolsDesc": {
-    "message": "Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge."
+    "message": "Video Hider 규칙을 백업하거나 파일에서 복원하거나 신뢰하는 사이트에 게시된 필터 목록을 구독할 수 있습니다."
   },
   "filterListToolsEyebrow": {
     "message": "Video Hider"
   },
   "filterListToolsTitle": {
-    "message": "Local filter lists"
+    "message": "필터 목록"
   },
   "filterListUrlLabel": {
-    "message": "Optional HTTPS list URL"
+    "message": "필터 목록 URL(선택 사항)"
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
   },
   "filterListRefreshFail": {
-    "message": "Filter-list refresh failed"
+    "message": "필터 목록 새로 고침 실패"
   },
   "filterListRefreshed": {
-    "message": "Video Hider filter list refreshed."
+    "message": "Video Hider 필터 목록을 새로 고쳤습니다."
   },
   "importFilterListBtn": {
-    "message": "Import rules"
+    "message": "규칙 가져오기"
   },
   "refreshFilterListBtn": {
-    "message": "Refresh list now"
+    "message": "지금 목록 새로 고침"
   },
   "extActionTitle": {
     "message": "Astra Deck",

@@ -213,8 +213,12 @@ test('popup exposes transactional filter-list import/export and bounded refresh 
             `popup.html must expose ${id}`);
     }
 
+    // Slice on the function's own closing brace rather than on whatever
+    // happens to be declared next. Anchoring on the following declaration
+    // made this assertion fail the moment an unrelated const was added
+    // between the two, which is a test defect, not a regression.
     const importStart = popupSource.indexOf('async function importFilterList(file)');
-    const importEnd = popupSource.indexOf('\n}\n\nasync function refreshFilterList', importStart);
+    const importEnd = popupSource.indexOf('\n}\n', importStart);
     assert.ok(importStart > -1 && importEnd > importStart,
         'importFilterList block must be found');
     const importBlock = popupSource.slice(importStart, importEnd);

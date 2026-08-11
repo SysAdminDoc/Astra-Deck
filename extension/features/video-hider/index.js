@@ -71,16 +71,13 @@
             ? value => deps.sanitizeImportedBlockedChannels(value)
             : value => (Array.isArray(value) ? value.slice(0, 2000) : []);
 
+        // Same rules as core/persisted-domains.js, by delegation rather than by
+        // a second copy that could drift. Fails closed without the scope module.
         const normalizeFilterListUrl = value => {
-            const raw = typeof value === 'string' ? value.trim() : '';
-            if (!raw || raw.length > 2048) return '';
-            try {
-                const parsed = new URL(raw);
-                if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.hash) return '';
-                return parsed.href.slice(0, 2048);
-            } catch (_) {
-                return '';
-            }
+            const describe = globalThis.YTKitCore?.describeRemoteListUrl;
+            if (typeof describe !== 'function') return '';
+            const described = describe(value);
+            return described.ok === true ? described.url : '';
         };
         const sanitizeFilterListRules = value => {
             const raw = isPlainObject(value) ? value : {};

@@ -20,14 +20,16 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.locales.length, 11);
     assert.equal(facts.schemaEntries, 468);
     assert.equal(facts.schemaCategories, 18);
-    assert.equal(facts.runtimeModules, 99);
+    // 100 since core/remote-list-scope.js joined the ISOLATED-world graph.
+    assert.equal(facts.runtimeModules, 100);
     assert.equal(facts.featureModules.length, 26);
     assert.equal(facts.featureIds.length, 286);
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);
     assert.deepEqual(facts.buildProfiles, ['store-safe', 'chromium-store', 'github-full']);
-    assert.equal(facts.fullOnlyOrigins.length, 5);
+    // 6 since the user-configured filter-list origin pattern is github-full only.
+    assert.equal(facts.fullOnlyOrigins.length, 6);
     assert.equal(facts.colorThemes.length, 7);
     assert.deepEqual(facts.themeControls, ['oledTheme', 'denseMode', 'tokenThemeBridge']);
     assert.match(facts.compatibility.music, /bounded YouTube Music/);

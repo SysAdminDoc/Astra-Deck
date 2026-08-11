@@ -10,6 +10,10 @@ const {
     createCredentialVault,
     validateProviderEndpoint
 } = require('../extension/core/credential-vault');
+// background.js pulls this in through importScripts in the browser. The vm
+// context has no importScripts, so hand it the real module rather than a stub:
+// the filter-list door is only as good as these rules.
+const remoteListScope = require('../extension/core/remote-list-scope');
 
 const repoRoot = path.join(__dirname, '..');
 const backgroundSource = fs.readFileSync(path.join(repoRoot, 'extension', 'background.js'), 'utf8');
@@ -153,7 +157,10 @@ function loadBackground({
         YTKitCore: {
             createSettingsMutationController,
             createCredentialVault: (options) => createCredentialVault({ ...options, persistentStore }),
-            validateAiProviderEndpoint: validateProviderEndpoint
+            validateAiProviderEndpoint: validateProviderEndpoint,
+            REMOTE_LIST_HOST_PATTERN: remoteListScope.REMOTE_LIST_HOST_PATTERN,
+            describeRemoteListUrl: remoteListScope.describeRemoteListUrl,
+            remoteListOriginPattern: remoteListScope.remoteListOriginPattern
         },
         setTimeout
     };
@@ -943,4 +950,173 @@ test('the onboarding sentinel key names match between background and popup', () 
     }
     assert.match(popupSource, /clearFirstRunPending/,
         'the popup must clear the pending sentinel it consumes');
+});
+
+// ── v4.60.0: the user-configured filter-list door ──
+//
+// Every other proxied origin is a literal in ALLOWED_FETCH_ORIGINS. A filter
+// list is the one destination the user picks, so it is admitted through a
+// separate path: the build must declare the broad optional pattern, the URL
+// must survive the public-host denylist, and the user must have granted that
+// exact origin. These tests exist because the first implementation of this
+// feature shipped a Refresh button that could never succeed — the tests faked
+// the fetch bridge and so never met the allowlist that rejected every URL.
+
+const FILTER_LIST_DECLARED = ['https://*/*'];
+
+test('a filter-list URL is refused when the build does not declare the broad optional pattern', async () => {
+    let fetchCalled = false;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: [],
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('{}', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://lists.example.com/rules.json' }
+    });
+
+    assert.match(response.error, /not in allowlist/i);
+    assert.equal(fetchCalled, false, 'store-safe builds must not reach a user-configured host');
+});
+
+test('a declared filter-list host is still fetched only after the user grants that exact origin', async () => {
+    let capturedOrigins = null;
+    let fetchCalled = false;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        permissionsContainsImpl: (payload, callback) => {
+            // Array.from re-homes the vm context's array into this realm;
+            // deepEqual is prototype-sensitive across realms.
+            capturedOrigins = Array.from(payload.origins || []);
+            callback(false);
+        },
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('{}', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://lists.example.com/rules.json' }
+    });
+
+    assert.deepEqual(capturedOrigins, ['https://lists.example.com/*'],
+        'the grant is checked for the configured host alone, never the broad pattern');
+    assert.match(response.error, /Runtime host permission not granted/);
+    assert.equal(fetchCalled, false);
+});
+
+test('a granted filter-list host is proxied anonymously', async () => {
+    let capturedUrl = null;
+    let capturedInit = null;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        permissionsContainsImpl: (_payload, callback) => callback(true),
+        fetchImpl: async (url, init) => {
+            capturedUrl = url;
+            capturedInit = init;
+            return new Response('{"astraDeckFilterList":true}', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://lists.example.com/rules.json' }
+    });
+
+    assert.equal(response.status, 200);
+    assert.equal(capturedUrl, 'https://lists.example.com/rules.json');
+    assert.equal(capturedInit.credentials, 'omit',
+        'a user-configured host must never receive the YouTube session');
+});
+
+test('private-network filter-list hosts are refused even when the pattern is declared and granted', async () => {
+    for (const url of [
+        'https://169.254.169.254/latest/meta-data',
+        'https://127.0.0.1/rules.json',
+        'https://192.168.1.1/rules.json',
+        'https://2130706433/rules.json',
+        'https://[::ffff:127.0.0.1]/rules.json',
+        'https://nas.local/rules.json',
+        'https://intranet/rules.json'
+    ]) {
+        let fetchCalled = false;
+        const { messageListener } = loadBackground({
+            optionalHostPermissions: FILTER_LIST_DECLARED,
+            permissionsContainsImpl: (_payload, callback) => callback(true),
+            fetchImpl: async () => {
+                fetchCalled = true;
+                return new Response('{}', { status: 200 });
+            }
+        });
+
+        const response = await dispatchMessage(messageListener, {
+            type: 'EXT_FETCH',
+            details: { method: 'GET', url }
+        });
+
+        assert.match(response.error, /not in allowlist/i, `${url} must not be proxied`);
+        assert.equal(fetchCalled, false, `${url} must not reach fetch`);
+    }
+});
+
+test('declaring the broad pattern does not make allowlisted origins require a grant', async () => {
+    // The broad pattern matches every https URL. If it were fed through the
+    // generic optional-host matcher, youtube.com would suddenly need a runtime
+    // grant and the whole extension would stop working on a denied prompt.
+    let containsCalled = false;
+    let capturedUrl = null;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        permissionsContainsImpl: (_payload, callback) => {
+            containsCalled = true;
+            callback(false);
+        },
+        fetchImpl: async (url) => {
+            capturedUrl = url;
+            return new Response('{}', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://www.youtube.com/youtubei/v1/player' }
+    });
+
+    assert.equal(response.status, 200);
+    assert.equal(capturedUrl, 'https://www.youtube.com/youtubei/v1/player');
+    assert.equal(containsCalled, false,
+        'statically allowlisted origins must not consult the optional-grant path');
+});
+
+test('a page-driven request cannot escalate the filter-list door into blanket web access', async () => {
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        permissionsRequestImpl: (_payload, callback) => callback(true)
+    });
+
+    const broad = await dispatchMessage(messageListener, {
+        type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+        origins: ['https://*/*']
+    });
+    assert.match(broad.error, /not declared by this extension build/,
+        'the broad pattern is a declared capability, never a grantable request');
+
+    const privateHost = await dispatchMessage(messageListener, {
+        type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+        origins: ['https://192.168.1.1/*']
+    });
+    assert.match(privateHost.error, /not declared by this extension build/,
+        'a private-network origin is not grantable through the filter-list door');
+
+    const specific = await dispatchMessage(messageListener, {
+        type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+        origins: ['https://lists.example.com/*']
+    });
+    assert.equal(specific.granted, true);
 });

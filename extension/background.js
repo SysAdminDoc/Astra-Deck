@@ -72,6 +72,7 @@ function callExtensionApi(target, method, ...args) {
 if (typeof importScripts === 'function') {
     importScripts(
         'core/companion-ports.js',
+        'core/remote-list-scope.js',
         'core/settings-schema.js',
         'core/persisted-domains.js',
         'core/policy-profile.js',
@@ -653,7 +654,18 @@ async function readTextBounded(response, maxBytes, label) {
     return { text, bytes };
 }
 
-function isUrlAllowed(url) {
+// The broad optional pattern that makes user-chosen filter-list origins
+// grantable. It is declared only by the github-full build; store-safe strips
+// it, so the remote-list door does not exist in store artifacts at all.
+const REMOTE_LIST_HOST_PATTERN = globalThis.YTKitCore?.REMOTE_LIST_HOST_PATTERN || 'https://*/*';
+
+function describeRemoteListUrl(url) {
+    const describe = globalThis.YTKitCore?.describeRemoteListUrl;
+    if (typeof describe !== 'function') return { ok: false, reason: 'scope-service-unavailable' };
+    return describe(url);
+}
+
+function isStaticAllowlistedUrl(url) {
     try {
         const parsed = new URL(url);
         return ALLOWED_FETCH_ORIGINS.some(origin => {
@@ -665,6 +677,19 @@ function isUrlAllowed(url) {
     } catch {
         return false;
     }
+}
+
+// A user-configured filter-list URL is admissible only when the build declares
+// the broad optional pattern AND the URL survives the public-host denylist.
+// Admissible is not the same as permitted: requireRuntimeOptionalHostGrant
+// still demands that the user actually granted this exact origin.
+function isRemoteListUrlAdmissible(url) {
+    if (!getRuntimeOptionalHostPermissions().includes(REMOTE_LIST_HOST_PATTERN)) return false;
+    return describeRemoteListUrl(url).ok === true;
+}
+
+function isUrlAllowed(url) {
+    return isStaticAllowlistedUrl(url) || isRemoteListUrlAdmissible(url);
 }
 
 function getRuntimeOptionalHostPermissions() {
@@ -703,9 +728,31 @@ function hostPermissionMatchesUrl(pattern, url) {
     }
 }
 
+// Specific declared patterns only; the broad remote-list pattern is handled
+// separately below.
+//
+// Belt-and-braces, not load-bearing today: hostPermissionMatchesUrl cannot
+// match `https://*/*` anyway, because its wildcard branch requires a `*.host`
+// shape and the literal branch compares hostnames. Removing this filter
+// changes no current behaviour and no test — verified by mutation. It stays
+// because the day someone teaches that matcher to understand a bare `*`, this
+// list would start matching every https URL and youtube.com itself would
+// begin demanding a runtime grant.
 function getRuntimeOptionalHostPermissionsForUrl(url) {
     return getRuntimeOptionalHostPermissions()
+        .filter((pattern) => pattern !== REMOTE_LIST_HOST_PATTERN)
         .filter((pattern) => hostPermissionMatchesUrl(pattern, url));
+}
+
+// `https://example.com/*` is not itself declared — the build declares the
+// broad `https://*/*` pattern that covers it. Accept a requested origin when
+// it is exactly the pattern a permitted filter-list URL would produce, so a
+// caller cannot widen the request into `https://*/*` itself.
+function isGrantableRemoteListOrigin(origin) {
+    if (!getRuntimeOptionalHostPermissions().includes(REMOTE_LIST_HOST_PATTERN)) return false;
+    if (typeof origin !== 'string' || !origin.endsWith('/*')) return false;
+    const described = describeRemoteListUrl(origin.slice(0, -2) + '/');
+    return described.ok === true && described.originPattern === origin;
 }
 
 function validateRuntimeOptionalHostRequest(origins) {
@@ -715,7 +762,13 @@ function validateRuntimeOptionalHostRequest(origins) {
     const declared = new Set(getRuntimeOptionalHostPermissions());
     const normalized = Array.from(new Set(origins.map((origin) =>
         typeof origin === 'string' ? origin.trim() : '')));
-    if (normalized.some((origin) => !origin || !declared.has(origin))) {
+    if (normalized.some((origin) => !origin
+        || (!declared.has(origin) && !isGrantableRemoteListOrigin(origin)))) {
+        throw new Error('Optional host permission was not declared by this extension build.');
+    }
+    // The broad pattern is a capability the build declares, never something a
+    // page-driven request may ask the user to grant wholesale.
+    if (normalized.includes(REMOTE_LIST_HOST_PATTERN)) {
         throw new Error('Optional host permission was not declared by this extension build.');
     }
     return normalized;
@@ -749,10 +802,24 @@ function permissionsContainsOrigins(origins) {
 
 async function requireRuntimeOptionalHostGrant(url) {
     const origins = getRuntimeOptionalHostPermissionsForUrl(url);
-    if (!origins.length) return;
-    const granted = await permissionsContainsOrigins(origins);
-    if (!granted) {
-        throw new Error('Runtime host permission not granted: ' + origins.join(', '));
+    if (origins.length) {
+        const granted = await permissionsContainsOrigins(origins);
+        if (!granted) {
+            throw new Error('Runtime host permission not granted: ' + origins.join(', '));
+        }
+    }
+
+    // Statically allowlisted origins are governed entirely by the check above.
+    // Anything still here reached isUrlAllowed through the remote-list door,
+    // so re-derive its scope and require the user's own per-origin grant.
+    if (isStaticAllowlistedUrl(url)) return;
+    const described = describeRemoteListUrl(url);
+    if (!described.ok) {
+        throw new Error('Remote list host is not permitted: ' + described.reason);
+    }
+    const remoteGranted = await permissionsContainsOrigins([described.originPattern]);
+    if (!remoteGranted) {
+        throw new Error('Runtime host permission not granted: ' + described.originPattern);
     }
 }
 

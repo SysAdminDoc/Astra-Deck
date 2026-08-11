@@ -347,22 +347,22 @@
       <div class="section-head">
         <div class="section-head-copy">
           <span class="section-eyebrow" data-i18n="filterListToolsEyebrow">Video Hider</span>
-          <h2 class="section-title" id="filter-list-tools-title" data-i18n="filterListToolsTitle">Local filter lists</h2>
+          <h2 class="section-title" id="filter-list-tools-title" data-i18n="filterListToolsTitle">Filter lists</h2>
         </div>
       </div>
-      <p class="filter-list-tools__description" data-i18n="filterListToolsDesc">Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge.</p>
+      <p class="filter-list-tools__description" data-i18n="filterListToolsDesc">Back up your Video Hider rules, restore them from a file, or follow a filter list published on a site you trust.</p>
       <div class="button-row filter-list-tools__actions">
         <button id="export-filter-list-btn" type="button" data-i18n="exportFilterListBtn">Export rules</button>
         <button id="import-filter-list-btn" type="button" data-i18n="importFilterListBtn">Import rules</button>
         <input type="file" id="import-filter-list-file" accept=".json,application/json" hidden>
       </div>
       <label class="filter-list-tools__url-label" for="filter-list-url">
-        <span data-i18n="filterListUrlLabel">Optional HTTPS list URL</span>
+        <span data-i18n="filterListUrlLabel">Filter list URL (optional)</span>
         <input id="filter-list-url" name="hideVideosFilterListUrl" type="url" inputmode="url" maxlength="2048" autocomplete="off" spellcheck="false" data-i18n-attr-placeholder="filterListUrlPlaceholder" placeholder="https://example.com/astra-deck-rules.json">
       </label>
       <div class="filter-list-tools__footer">
         <button id="refresh-filter-list-btn" type="button" data-i18n="refreshFilterListBtn">Refresh list now</button>
-        <span id="filter-list-status" class="filter-list-tools__status" role="status" aria-live="polite" data-i18n="filterListStatusReady">No remote list configured.</span>
+        <span id="filter-list-status" class="filter-list-tools__status" role="status" aria-live="polite" data-i18n="filterListStatusReady">No filter list is being followed.</span>
       </div>
     </section>
 
@@ -418,6 +418,7 @@
 <script src="core/companion-ports.js"></script>
 <script src="core/data-flow.js"></script>
 <script src="core/persisted-domains.js"></script>
+<script src="core/remote-list-scope.js"></script>
 <script src="core/optional-host-permissions.js"></script>
 <!-- v4.47.0: selector-health bundled into the popup so the "Copy
      report" button can format the diagnostic payload locally without
