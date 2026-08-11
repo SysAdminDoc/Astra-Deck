@@ -3686,6 +3686,7 @@ return response;
             _profiles: {},                   // { profileName: { settingKey: value, ... } }
             _activeProfile: 'default',
             privacyDataFlowPanel: false,
+            syncSettings: false,
             safeStoreProfile: true,
             githubFullProfile: false,
             syncSafePrefs: true,

@@ -117,7 +117,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // (26 bytes).
     // Local low-signal heuristics add 410 bytes to the typical settings payload.
     // The extension-only filter-list URL adds one empty string setting (29 B).
-    assert.equal(assessment.totalBytes, 185864);
+    // Browser-account sync adds one extension-only false-by-default boolean
+    // (21 B) while remaining opt-in and local by default.
+    assert.equal(assessment.totalBytes, 185885);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -34,6 +34,7 @@ const QUICK_TOGGLES = [
     // actually discoverable. safeStoreProfile stays on by default; the
     // others are off and become opt-in via the popup.
     { key: 'privacyDataFlowPanel',   group: 'Privacy',           name: 'Data-Flow Panel',        desc: 'Show every API origin Astra Deck can contact' },
+    { key: 'syncSettings',           group: 'Privacy',           name: 'Browser Sync',           desc: 'Opt in to sync safe preferences and Video Hider blocklists' },
     { key: 'safeStoreProfile',       group: 'Privacy',           name: 'Store-Safe Profile',     desc: 'Hide github-full toggles + scrub keys on export' },
     { key: 'githubFullProfile',      group: 'Privacy',           name: 'GitHub-Full Profile',    desc: 'Unlock github-full toggles (e.g. Cobalt, AI keys)' },
 ];
@@ -507,6 +508,9 @@ const statSize = $('#stat-size');
 const statHidden = $('#stat-hidden-videos');
 const statBlocked = $('#stat-blocked-channels');
 const statBookmarks = $('#stat-bookmarks');
+const settingsSyncCard = $('#settings-sync-card');
+const settingsSyncStatus = $('#settings-sync-status');
+const settingsSyncUndoButton = $('#settings-sync-undo');
 
 const healthBanner = $('#health-banner');
 const healthDetail = $('#health-detail');
@@ -2018,6 +2022,62 @@ async function renderStorageInfo() {
             detail: String(error && error.message || error).slice(0, 200)
         }]);
         showStatus(t('statusStorageReadFail', 'Storage read failed') + ': ' + error.message, 'error', 4200);
+    }
+}
+
+async function renderSettingsSyncStatus() {
+    if (!settingsSyncCard || !settingsSyncStatus) return;
+    try {
+        const result = await callExtensionApi(ext?.runtime, 'sendMessage', { type: 'YTKIT_SYNC_STATUS' });
+        settingsSyncCard.hidden = false;
+        if (!result?.ok || result.available === false) {
+            settingsSyncStatus.textContent = t(
+                'settingsSyncUnavailable',
+                'Browser sync is unavailable in this browser.'
+            );
+            if (settingsSyncUndoButton) settingsSyncUndoButton.hidden = true;
+            return;
+        }
+        settingsSyncStatus.textContent = result.enabled
+            ? t('settingsSyncOn', 'On — preferences and blocklists sync through your browser account.')
+            : t('settingsSyncOff', 'Off — this device only.');
+        if (settingsSyncUndoButton) settingsSyncUndoButton.hidden = result.hasUndo !== true;
+    } catch (error) {
+        settingsSyncCard.hidden = false;
+        settingsSyncStatus.textContent = t(
+            'settingsSyncUnavailable',
+            'Browser sync is unavailable in this browser.'
+        );
+        if (settingsSyncUndoButton) settingsSyncUndoButton.hidden = true;
+        void error;
+    }
+}
+
+async function undoSettingsSync() {
+    if (!settingsSyncUndoButton) return;
+    settingsSyncUndoButton.disabled = true;
+    settingsSyncUndoButton.setAttribute('aria-busy', 'true');
+    try {
+        const result = await callExtensionApi(ext?.runtime, 'sendMessage', { type: 'YTKIT_SYNC_UNDO' });
+        if (!result?.ok) {
+            throw new Error(result?.error?.message || t(
+                'settingsSyncUndoFailed',
+                'Could not undo the last browser sync.'
+            ));
+        }
+        const settings = await loadSettings();
+        render(settings, q.value);
+        renderDataFlowPanel();
+        renderSchemaOverview();
+        await renderSettingsSyncStatus();
+        await renderStorageInfo();
+        showStatus(t('settingsSyncUndoDone', 'Last browser sync undone locally.'), 'success', 3600);
+    } catch (error) {
+        showStatus(t('settingsSyncUndoFailed', 'Could not undo the last browser sync.') + ' ' + error.message, 'error', 4600);
+        await renderSettingsSyncStatus();
+    } finally {
+        settingsSyncUndoButton.removeAttribute('aria-busy');
+        settingsSyncUndoButton.disabled = false;
     }
 }
 
@@ -5208,6 +5268,7 @@ function installWheelScrolling() {
     }
 
     void renderStorageInfo();
+    void renderSettingsSyncStatus();
     // best-effort selector-health snapshot from the active tab.
     // Hides the section if the user isn't on a YouTube page or if the
     // content script doesn't respond in time.
@@ -5333,10 +5394,12 @@ function installWheelScrolling() {
             if (!schemaOverviewList || !schemaOverviewList.contains(document.activeElement)) {
                 renderSchemaOverview();
             }
+            void renderSettingsSyncStatus();
         }).catch((error) => {
             console.warn('[Astra Deck popup] Failed to refresh settings:', error);
         });
         void renderStorageInfo();
+        void renderSettingsSyncStatus();
     };
     // `ext` is null (not undefined) in preview mode — a bare
     // `ext.storage` here threw and killed every listener wired after
@@ -5425,6 +5488,9 @@ function installWheelScrolling() {
     if (undoImportButton) {
         undoImportButton.addEventListener('click', () => { void undoImportSettings(); });
         void refreshUndoImportVisibility();
+    }
+    if (settingsSyncUndoButton) {
+        settingsSyncUndoButton.addEventListener('click', () => { void undoSettingsSync(); });
     }
     resetButton.addEventListener('click', () => { void resetAllData(); });
     if (undoResetButton) {
