@@ -176,6 +176,7 @@
   "liveLatencyTargetSeconds": 8,
   "liveLatencyMaxRate": 1.25,
   "forceDvr": false,
+  "replayChatDensity": false,
   "showPlaylistDuration": false,
   "showTimeInTabTitle": false,
   "customProgressBarColor": "#ff0000",

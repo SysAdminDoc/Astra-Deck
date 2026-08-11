@@ -57,6 +57,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   patches recognized live player responses from the initial page and SPA JSON
   paths, fails closed on response-shape drift, and records a degraded health
   status instead of guessing at a new YouTube contract.
+- Added the opt-in Replay Chat Density chart for finite VODs with replay chat;
+  its bounded sampler draws a seekable progress-bar sparkline and tears down
+  iframe observers, timers, and chart state on SPA navigation.
 
 ---
 

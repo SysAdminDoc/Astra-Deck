@@ -95,6 +95,7 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     'core/selector-packs/searchResults.js': 'intentional-extension-only',
     'core/selector-packs/subscriptions.js': 'intentional-extension-only',
     'features/video-insights/index.js': 'intentional-extension-only',
+    'features/replay-chat-density/index.js': 'intentional-extension-only',
     // The extension loads this minimal frame runtime instead of the normal-page
     // monolith. The userscript keeps its existing live-chat implementation.
     'features/live-chat/index.js': 'intentional-extension-only',
@@ -181,6 +182,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     liveLatencyTargetSeconds: 'intentional-extension-only',
     liveLatencyMaxRate: 'intentional-extension-only',
     forceDvr: 'intentional-extension-only',
+    replayChatDensity: 'intentional-extension-only',
     // The userscript keeps the inline Video Hider runtime and custom pane,
     // while the extension-only registry cards remain intentionally absent.
     hideVideosSyntheticNarrationFilter: 'intentional-extension-only',

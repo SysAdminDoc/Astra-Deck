@@ -2580,6 +2580,18 @@
   "forceDvrDegraded": {
     "message": "DVR could not be enabled because the live player response changed."
   },
+  "feature_replayChatDensity_desc": {
+    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
+  },
+  "feature_replayChatDensity_name": {
+    "message": "Replay Chat Density"
+  },
+  "replayChatDensityAria": {
+    "message": "Chat activity across this video. Click the chart to seek."
+  },
+  "replayChatDensityTitle": {
+    "message": "Chat activity — click to seek"
+  },
   "feature_localAiSummary_desc": {
     "message": "Utiliser l'API Summarizer intégrée de Chrome lorsque disponible. Se rabat sur un message clair \"non disponible\" — ne redirige jamais silencieusement vers un fournisseur distant. Ajoute un bouton \"Résumé local\" à côté du bouton résumé IA existant."
   },
