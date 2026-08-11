@@ -90,7 +90,67 @@
         }).format(date);
     }
 
+    function durationParts(seconds) {
+        const total = Math.max(0, Math.floor(Number(seconds) || 0));
+        return {
+            hours: Math.floor(total / 3600),
+            minutes: Math.floor((total % 3600) / 60),
+            seconds: total % 60
+        };
+    }
+
+    function formatDurationFallback(seconds, options = {}) {
+        const { hours, minutes, seconds: remainder } = durationParts(seconds);
+        if (options.style === 'digital') {
+            const clock = `${minutes}:${String(remainder).padStart(2, '0')}`;
+            return hours > 0 ? `${hours}:${clock}` : clock;
+        }
+        const includeSeconds = options.includeSeconds !== false;
+        const includeHours = hours > 0;
+        const parts = [];
+        if (includeHours) parts.push(`${hours}h`);
+        if (minutes > 0 || includeHours || !includeSeconds) parts.push(`${minutes}m`);
+        if (includeSeconds && (remainder > 0 || parts.length === 0)) parts.push(`${remainder}s`);
+        return parts.join(' ');
+    }
+
+    function formatDuration(seconds, options = {}) {
+        const parts = durationParts(seconds);
+        const style = ['long', 'short', 'narrow', 'digital'].includes(options.style)
+            ? options.style
+            : 'short';
+        const includeSeconds = options.includeSeconds !== false;
+        const duration = {};
+
+        if (parts.hours > 0) duration.hours = parts.hours;
+        if (parts.minutes > 0 || parts.hours > 0 || (!includeSeconds && !Object.keys(duration).length)) {
+            duration.minutes = parts.minutes;
+        }
+        if (includeSeconds && (parts.seconds > 0 || !Object.keys(duration).length)) {
+            duration.seconds = parts.seconds;
+        }
+
+        const IntlObject = typeof globalThis !== 'undefined' ? globalThis.Intl : null;
+        if (typeof IntlObject?.DurationFormat === 'function') {
+            try {
+                const formatted = new IntlObject.DurationFormat(options.locale, { style }).format(duration);
+                if (style === 'digital' && parts.hours === 0) {
+                    const clock = formatted.split(':');
+                    if (clock.length >= 3) clock.shift();
+                    if (clock.length >= 2) clock[0] = clock[0].replace(/^0(?=\d)/, '');
+                    return clock.join(':');
+                }
+                return formatted;
+            } catch (_) {
+                // reason: older engines or an invalid locale fall back to the
+                // compact, deterministic formatter below.
+            }
+        }
+        return formatDurationFallback(seconds, options);
+    }
+
     Object.assign(core, {
+        formatDuration,
         formatAbsoluteYouTubeDate,
         formatApproximateYouTubeDate,
         hasExplicitTime,
