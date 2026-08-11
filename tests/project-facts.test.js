@@ -18,11 +18,11 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.nodeFloor, '>=22');
     assert.deepEqual(facts.firefoxFloor, 'Firefox 142+');
     assert.equal(facts.locales.length, 11);
-    assert.equal(facts.schemaEntries, 463);
+    assert.equal(facts.schemaEntries, 464);
     assert.equal(facts.schemaCategories, 18);
     assert.equal(facts.runtimeModules, 98);
     assert.equal(facts.featureModules.length, 25);
-    assert.equal(facts.featureIds.length, 282);
+    assert.equal(facts.featureIds.length, 283);
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);
@@ -40,7 +40,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('463', '462')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('464', '463')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);

@@ -113,6 +113,216 @@
     _syncResourceUnlock();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature: Force DVR (data-ytkit-force-dvr)
+    // ──────────────────────────────────────────────────────────────────
+    // YouTube decides whether a live seekbar can rewind from the player
+    // response, before the HTML5 player exposes a useful control surface.
+    // This bridge stays off unless the isolated-world feature explicitly
+    // sets the opt-in attribute. It patches both the initial global response
+    // and SPA JSON.parse results, while leaving unrelated JSON untouched.
+    (function() {
+        'use strict';
+        if (typeof document === 'undefined' || !document.documentElement
+            || typeof JSON === 'undefined') return;
+
+        var root = document.documentElement;
+        var ENABLE_ATTR = 'data-ytkit-force-dvr';
+        var STATUS_ATTR = 'data-ytkit-force-dvr-status';
+        var REASON_ATTR = 'data-ytkit-force-dvr-reason';
+        var enabled = false;
+        var jsonParseInstalled = false;
+        var responseHookInstalled = false;
+        var originalJsonParse = null;
+
+        function writeStatus(status, reason) {
+            var next = String(status || 'off');
+            if (root.getAttribute(STATUS_ATTR) !== next) {
+                root.setAttribute(STATUS_ATTR, next);
+            }
+            if (reason) {
+                if (root.getAttribute(REASON_ATTR) !== String(reason)) {
+                    root.setAttribute(REASON_ATTR, String(reason));
+                }
+            } else {
+                root.removeAttribute(REASON_ATTR);
+            }
+        }
+
+        function findPlayerResponse(value) {
+            if (!value || typeof value !== 'object') return null;
+            if (value.videoDetails && typeof value.videoDetails === 'object') {
+                return value;
+            }
+            if (value.playerResponse && typeof value.playerResponse === 'object'
+                && value.playerResponse.videoDetails
+                && typeof value.playerResponse.videoDetails === 'object') {
+                return value.playerResponse;
+            }
+            return null;
+        }
+
+        function hasOwn(object, key) {
+            return Object.prototype.hasOwnProperty.call(object, key);
+        }
+
+        function patchResponse(value) {
+            var response = findPlayerResponse(value);
+            if (!response) return 'ignored';
+
+            var details = response.videoDetails;
+            var isLive = details.isLive === true || details.isLive === 'true'
+                || details.isLiveContent === true || details.isLiveContent === 'true'
+                || details.isLivePlayback === true || details.isLivePlayback === 'true';
+            if (!isLive) return 'not-live';
+
+            // This boolean is the stable contract that makes the seekbar
+            // scrubable. If YouTube removes or renames it, fail closed and
+            // surface the drift instead of guessing at a new response shape.
+            if (typeof details.isLiveDvrEnabled !== 'boolean') {
+                return 'shape-drift';
+            }
+
+            details.isLiveDvrEnabled = true;
+
+            var playerConfig = response.playerConfig;
+            if (playerConfig && typeof playerConfig === 'object') {
+                var mediaCommon = playerConfig.mediaCommonConfig;
+                if (mediaCommon && typeof mediaCommon === 'object'
+                    && hasOwn(mediaCommon, 'useServerDrivenAbr')) {
+                    mediaCommon.useServerDrivenAbr = false;
+                }
+                var startConfig = playerConfig.serverPlaybackStartConfig;
+                if (!startConfig && mediaCommon && typeof mediaCommon === 'object') {
+                    startConfig = mediaCommon.serverPlaybackStartConfig;
+                }
+                if (startConfig && typeof startConfig === 'object'
+                    && hasOwn(startConfig, 'enable')) {
+                    startConfig.enable = false;
+                }
+            }
+
+            // A server-driven ABR manifest can keep the player on a path that
+            // ignores the DVR flag. Remove it only when a normal HLS/DASH
+            // manifest is present, preserving malformed/incomplete payloads.
+            var streamingData = response.streamingData;
+            if (streamingData && typeof streamingData === 'object') {
+                var hasManifest = (typeof streamingData.hlsManifestUrl === 'string'
+                    && streamingData.hlsManifestUrl.length > 0)
+                    || (typeof streamingData.dashManifestUrl === 'string'
+                        && streamingData.dashManifestUrl.length > 0);
+                if (hasManifest && hasOwn(streamingData, 'serverAbrStreamingUrl')) {
+                    delete streamingData.serverAbrStreamingUrl;
+                }
+            }
+            return 'applied';
+        }
+
+        function applyResponse(value) {
+            if (!enabled) return;
+            var result = 'ignored';
+            try {
+                result = patchResponse(value);
+            } catch (error) {
+                writeStatus('degraded', 'runtime-error');
+                return;
+            }
+            if (result === 'applied') {
+                writeStatus('applied', 'dvr-enabled');
+            } else if (result === 'shape-drift') {
+                writeStatus('degraded', 'response-shape-drift');
+            } else if (result === 'not-live') {
+                writeStatus('skipped', 'not-live');
+            }
+        }
+
+        function installJsonParseHook() {
+            if (jsonParseInstalled) return;
+            var jsonObject = (typeof window !== 'undefined' && window.JSON) || JSON;
+            if (!jsonObject || typeof jsonObject.parse !== 'function') return;
+            originalJsonParse = jsonObject.parse;
+            try {
+                jsonObject.parse = function() {
+                    var parsed = originalJsonParse.apply(this, arguments);
+                    if (enabled) applyResponse(parsed);
+                    return parsed;
+                };
+                jsonParseInstalled = true;
+            } catch (error) {
+                originalJsonParse = null;
+            }
+        }
+
+        function installInitialResponseHook() {
+            if (responseHookInstalled || typeof window === 'undefined') return;
+            var descriptor = null;
+            var current;
+            try {
+                descriptor = Object.getOwnPropertyDescriptor(window, 'ytInitialPlayerResponse');
+                current = descriptor && hasOwn(descriptor, 'value')
+                    ? descriptor.value : window.ytInitialPlayerResponse;
+            } catch (error) {
+                current = undefined;
+            }
+
+            try {
+                Object.defineProperty(window, 'ytInitialPlayerResponse', {
+                    configurable: descriptor ? descriptor.configurable : true,
+                    enumerable: descriptor ? descriptor.enumerable : true,
+                    get: function() {
+                        if (descriptor && typeof descriptor.get === 'function') {
+                            try {
+                                return descriptor.get.call(this);
+                            } catch (error) {
+                                // reason: a page getter can throw during teardown; retain the cached response.
+                            }
+                        }
+                        return current;
+                    },
+                    set: function(value) {
+                        if (descriptor && typeof descriptor.set === 'function') {
+                            try { descriptor.set.call(this, value); } catch (error) { current = value; }
+                            try {
+                                current = typeof descriptor.get === 'function'
+                                    ? descriptor.get.call(this) : value;
+                            } catch (error) { current = value; }
+                        } else {
+                            current = value;
+                        }
+                        if (enabled) applyResponse(value);
+                    }
+                });
+                responseHookInstalled = true;
+            } catch (error) {
+                // reason: a non-configurable page property cannot be wrapped;
+                // JSON.parse remains active and syncFromAttributes still
+                // patches a current response when the user enables the feature.
+            }
+        }
+
+        function syncFromAttributes() {
+            var next = root.getAttribute(ENABLE_ATTR) === 'on';
+            if (!next) {
+                enabled = false;
+                writeStatus('off');
+                return;
+            }
+            enabled = true;
+            var initial = null;
+            try { initial = window.ytInitialPlayerResponse; } catch (error) { initial = null; }
+            if (initial && typeof initial === 'object') {
+                applyResponse(initial);
+            } else {
+                writeStatus('waiting', 'player-response');
+            }
+        }
+
+        installJsonParseHook();
+        installInitialResponseHook();
+        _obsRegister([ENABLE_ATTR], syncFromAttributes);
+        syncFromAttributes();
+    })();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature 1: codec blocker (data-ytkit-codec)
     // ──────────────────────────────────────────────────────────────────
 (function() {

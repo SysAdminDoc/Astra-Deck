@@ -112,9 +112,10 @@ test('typical local payload is not storage.sync eligible', () => {
     // Photosensitive protection adds 103 bytes for its toggle and two bounded
     // local controls.
     // Live latency catch-up adds 151 bytes to the local settings payload.
+    // Force DVR adds one extension-only false-by-default preference (17 bytes).
     // Local low-signal heuristics add 410 bytes to the typical settings payload.
     // The extension-only filter-list URL adds one empty string setting (29 B).
-    assert.equal(assessment.totalBytes, 185821);
+    assert.equal(assessment.totalBytes, 185838);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

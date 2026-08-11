@@ -2571,6 +2571,15 @@
   "feature_liveLatencyTargetSeconds_name": {
     "message": "Live Latency Target"
   },
+  "feature_forceDvr_desc": {
+    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+  },
+  "feature_forceDvr_name": {
+    "message": "Force DVR for Live Streams"
+  },
+  "forceDvrDegraded": {
+    "message": "DVR could not be enabled because the live player response changed."
+  },
   "feature_localAiSummary_desc": {
     "message": "استخدام واجهة Summarizer المدمجة في Chrome عند توفرها. يعود إلى رسالة \"غير متاح\" واضحة — لا يوجّه بصمت إلى مزود بعيد. يضيف زر \"ملخص محلي\" بجانب زر ملخص الذكاء الاصطناعي الحالي."
   },
