@@ -458,7 +458,8 @@ test('background EXT_FETCH blocks an opaqueredirect on a credentialed request', 
     const { messageListener } = loadBackground({
         fetchImpl: async () => ({
             type: 'opaqueredirect',
-            url: 'https://attacker.example/',
+            // Real opaque redirect responses do not expose the target URL.
+            url: '',
             status: 0,
             headers: new Headers()
         })
@@ -518,7 +519,7 @@ test('background EXT_FETCH strips BYO key headers when the origin is not an allo
     assert.equal(capturedOptions?.headers?.['x-api-key'], undefined);
 });
 
-test('background EXT_FETCH still follows redirects for non-credentialed requests', async () => {
+test('background EXT_FETCH uses manual redirects for non-credentialed requests too', async () => {
     let capturedOptions = null;
     const { messageListener } = loadBackground({
         fetchImpl: async (_url, options) => {
@@ -533,8 +534,40 @@ test('background EXT_FETCH still follows redirects for non-credentialed requests
     });
 
     assert.equal(capturedOptions?.credentials, 'omit');
-    // No manual redirect forced — nothing sensitive to leak.
-    assert.notEqual(capturedOptions?.redirect, 'manual');
+    // Anonymous requests still need manual redirects so every Location can be
+    // checked before the next hop is contacted.
+    assert.equal(capturedOptions?.redirect, 'manual');
+});
+
+test('background EXT_FETCH validates each redirect hop before contacting it', async () => {
+    const calls = [];
+    const { messageListener } = loadBackground({
+        fetchImpl: async (url, options) => {
+            calls.push({ url, options });
+            if (calls.length === 1) {
+                return new Response(null, {
+                    status: 302,
+                    headers: { location: 'https://sponsor.ajay.app/allowed' }
+                });
+            }
+            return new Response(null, {
+                status: 302,
+                headers: { location: 'https://attacker.example/internal' }
+            });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://sponsor.ajay.app/api/skipSegments' }
+    });
+
+    assert.match(response.error, /Redirect URL not in allowlist/);
+    assert.deepEqual(calls.map((call) => call.url), [
+        'https://sponsor.ajay.app/api/skipSegments',
+        'https://sponsor.ajay.app/allowed'
+    ]);
+    assert.deepEqual(calls.map((call) => call.options.redirect), ['manual', 'manual']);
 });
 
 test('background EXT_FETCH rejects runtime optional hosts before fetch when grant is missing', async () => {

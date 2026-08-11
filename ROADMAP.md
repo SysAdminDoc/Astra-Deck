@@ -37,15 +37,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.58.6 work): `npm test` 1514/1514 pass. `npm run check` FAILS at `i18n:copy:gate` (new, from the uncommitted work — item below). Pre-existing baseline failures, already tracked, not re-logged: `audit:deps` (web-ext → addons-linter → image-size advisories; tracked P1 above) and `i18n:coverage:gate` (every locale 16 placeholder-identical keys over baseline, from fa3ebfdd). One `lint` failure during a loaded parallel run did not reproduce on a clean re-run — machine load, not a defect. All other gates pass at the working tree.
 
-- [ ] P3 — EXT_FETCH validates only the final redirect hop on non-credentialed requests
-  Category: security (residual, low exploitability)
-  Where: `extension/background.js:1210-1223`
-  Problem: Non-credentialed requests keep `redirect: 'follow'` and the allowlist re-check inspects only `resp.url` — an open redirect on an allowlisted origin can bounce a blind GET through an internal host mid-chain; only the final URL is validated. No response readback from intermediate hops (blind-SSRF probing only). Credentialed/auth requests already use `redirect: 'manual'`.
-  Fix: if hardening further, a `redirect:'manual'` loop with per-hop allowlist validation; otherwise record as accepted residual in HARDENING.md.
-  Acceptance: either per-hop validation with a test, or a documented accepted-residual entry.
-  Confidence: Verified (code path); exploitability Low
-  Effort: M
-
 - [ ] P3 — Three parallel CSS token systems across popup, sidepanel, and surface-system, already drifting
   Category: maintainability / visual
   Where: `extension/popup.css:10-80`, `extension/sidepanel.css:1-45`, `extension/surface-system.css:1-21`
