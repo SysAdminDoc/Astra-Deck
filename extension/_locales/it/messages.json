@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "Il rapporto Mi piace usa i conteggi stimati di Return YouTube Dislike. {estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "Vai alle iscrizioni"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "Collegamenti rapidi"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "Video in diretta"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "Informazioni sul video in diretta"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "DAL VIVO"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "Azioni del video in diretta"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "Azioni video"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "Chiudi pannello laterale"
   }
 }

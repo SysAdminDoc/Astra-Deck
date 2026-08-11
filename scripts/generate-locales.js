@@ -4408,6 +4408,110 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(RETURN_DISLIKE_RUNTIME_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const STICKY_VIDEO_RUNTIME_TRANSLATIONS = {
+  de: {
+    'Go to subscriptions': 'Zu den Abos',
+    'Quick links': 'Schnellzugriffe',
+    'Live video': 'Live-Video',
+    'Live video information': 'Informationen zum Live-Video',
+    'LIVE': 'LIVE',
+    'Live video actions': 'Live-Video-Aktionen',
+    'Video actions': 'Videoaktionen',
+    'Close side panel': 'Seitenleiste schließen'
+  },
+  es: {
+    'Go to subscriptions': 'Ir a suscripciones',
+    'Quick links': 'Enlaces rápidos',
+    'Live video': 'Vídeo en directo',
+    'Live video information': 'Información del vídeo en directo',
+    'LIVE': 'EN DIRECTO',
+    'Live video actions': 'Acciones del vídeo en directo',
+    'Video actions': 'Acciones del vídeo',
+    'Close side panel': 'Cerrar panel lateral'
+  },
+  fr: {
+    'Go to subscriptions': 'Accéder aux abonnements',
+    'Quick links': 'Liens rapides',
+    'Live video': 'Vidéo en direct',
+    'Live video information': 'Informations sur la vidéo en direct',
+    'LIVE': 'EN DIRECT',
+    'Live video actions': 'Actions de la vidéo en direct',
+    'Video actions': 'Actions vidéo',
+    'Close side panel': 'Fermer le panneau latéral'
+  },
+  it: {
+    'Go to subscriptions': 'Vai alle iscrizioni',
+    'Quick links': 'Collegamenti rapidi',
+    'Live video': 'Video in diretta',
+    'Live video information': 'Informazioni sul video in diretta',
+    'LIVE': 'DAL VIVO',
+    'Live video actions': 'Azioni del video in diretta',
+    'Video actions': 'Azioni video',
+    'Close side panel': 'Chiudi pannello laterale'
+  },
+  pt_BR: {
+    'Go to subscriptions': 'Ir para inscrições',
+    'Quick links': 'Links rápidos',
+    'Live video': 'Vídeo ao vivo',
+    'Live video information': 'Informações do vídeo ao vivo',
+    'LIVE': 'AO VIVO',
+    'Live video actions': 'Ações do vídeo ao vivo',
+    'Video actions': 'Ações do vídeo',
+    'Close side panel': 'Fechar painel lateral'
+  },
+  ru: {
+    'Go to subscriptions': 'Перейти к подпискам',
+    'Quick links': 'Быстрые ссылки',
+    'Live video': 'Прямая трансляция',
+    'Live video information': 'Информация о прямой трансляции',
+    'LIVE': 'В ЭФИРЕ',
+    'Live video actions': 'Действия прямой трансляции',
+    'Video actions': 'Действия видео',
+    'Close side panel': 'Закрыть боковую панель'
+  },
+  ja: {
+    'Go to subscriptions': '登録チャンネルに移動',
+    'Quick links': 'クイックリンク',
+    'Live video': 'ライブ動画',
+    'Live video information': 'ライブ動画情報',
+    'LIVE': 'ライブ',
+    'Live video actions': 'ライブ動画の操作',
+    'Video actions': '動画の操作',
+    'Close side panel': 'サイドパネルを閉じる'
+  },
+  ko: {
+    'Go to subscriptions': '구독으로 이동',
+    'Quick links': '빠른 링크',
+    'Live video': '라이브 동영상',
+    'Live video information': '라이브 동영상 정보',
+    'LIVE': '실시간',
+    'Live video actions': '라이브 동영상 작업',
+    'Video actions': '동영상 작업',
+    'Close side panel': '사이드 패널 닫기'
+  },
+  ar: {
+    'Go to subscriptions': 'الانتقال إلى الاشتراكات',
+    'Quick links': 'روابط سريعة',
+    'Live video': 'فيديو مباشر',
+    'Live video information': 'معلومات الفيديو المباشر',
+    'LIVE': 'بث مباشر',
+    'Live video actions': 'إجراءات الفيديو المباشر',
+    'Video actions': 'إجراءات الفيديو',
+    'Close side panel': 'إغلاق اللوحة الجانبية'
+  },
+  zh_CN: {
+    'Go to subscriptions': '前往订阅',
+    'Quick links': '快速链接',
+    'Live video': '直播视频',
+    'Live video information': '直播视频信息',
+    'LIVE': '直播',
+    'Live video actions': '直播视频操作',
+    'Video actions': '视频操作',
+    'Close side panel': '关闭侧边栏'
+  }
+};
+for (const [locale, messages] of Object.entries(STICKY_VIDEO_RUNTIME_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AUDIO_TRACK_TRANSLATIONS = {
   de: {
     'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Wählen Sie Ihre bevorzugte Audiosprache über die Player-Brücke aus, ohne die YouTube-Einstellungen zu öffnen oder anzuklicken.',

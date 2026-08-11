@@ -2738,13 +2738,14 @@
             injectStyle = () => ({ remove() {} }),
             stripCommentRestyleCss = value => value,
             addNavigateRule = () => {},
-            removeNavigateRule = () => {}
+            removeNavigateRule = () => {},
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
             id: 'stickyVideo',
-            name: 'Theater Split',
-            description: 'Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen.',
+            name: t('feature_stickyVideo_name', 'Theater Split'),
+            description: t('feature_stickyVideo_desc', 'Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen.'),
             group: 'Watch Page',
             icon: 'picture-in-picture-2',
             pages: [PageTypes.WATCH],
@@ -3122,14 +3123,14 @@
                     const homeLink = document.createElement('a');
                     homeLink.className = 'ytkit-split-youtube-link';
                     homeLink.href = 'https://www.youtube.com/feed/subscriptions';
-                    homeLink.title = 'Go to subscriptions';
-                    homeLink.setAttribute('aria-label', 'Go to subscriptions');
+                    homeLink.title = t('stickyVideoSubscriptionsLink', 'Go to subscriptions');
+                    homeLink.setAttribute('aria-label', t('stickyVideoSubscriptionsLink', 'Go to subscriptions'));
                     homeLink.appendChild(this._createSplitYoutubeIcon());
                     bar.appendChild(homeLink);
 
                     const actions = document.createElement('div');
                     actions.className = 'ytkit-split-header-actions';
-                    actions.setAttribute('aria-label', 'Quick links');
+                    actions.setAttribute('aria-label', t('stickyVideoQuickLinksAria', 'Quick links'));
                     bar.appendChild(actions);
 
                     const meta = document.createElement('span');
@@ -3269,7 +3270,8 @@
                     const title = _rw.ytInitialPlayerResponse?.videoDetails?.title;
                     if (title) return String(title).replace(/\s+/g, ' ').trim();
                 } catch { /* reason: player response title unavailable; fallback to document title */ }
-                return document.title.replace(/\s+-\s+YouTube\s*$/i, '').trim() || 'Live video';
+                return document.title.replace(/\s+-\s+YouTube\s*$/i, '').trim()
+                    || t('stickyVideoLiveVideoFallback', 'Live video');
             },
 
             _formatSplitLiveTitleText(title) {
@@ -3279,7 +3281,8 @@
                     .replace(/^[\s\u{1F534}\u{1F7E0}\u{1F7E1}\u{1F7E2}\u{1F7E3}\u{1F7E4}\u{26AB}\u{26AA}\u{25CF}\u{2B24}]+/u, '')
                     .replace(/^(?:LIVE(?:\s+NOW|\s+STREAM)?|WATCHING\s+LIVE)\s*[-:|\u2022]\s*/i, '')
                     .trim();
-                return cleaned || String(title || '').replace(/\s+/g, ' ').trim() || 'Live video';
+                return cleaned || String(title || '').replace(/\s+/g, ' ').trim()
+                    || t('stickyVideoLiveVideoFallback', 'Live video');
             },
 
             _getSplitChannelText() {
@@ -3350,7 +3353,7 @@
             _createSplitLiveHeaderNode() {
                 const header = document.createElement('section');
                 header.className = 'ytkit-split-live-header';
-                header.setAttribute('aria-label', 'Live video information');
+                header.setAttribute('aria-label', t('stickyVideoLiveInfoAria', 'Live video information'));
                 header.style.cssText = [
                     'position:fixed',
                     'top:0',
@@ -3405,7 +3408,7 @@
 
                 const liveBadge = document.createElement('span');
                 liveBadge.className = 'ytkit-split-live-badge';
-                liveBadge.textContent = 'LIVE';
+                liveBadge.textContent = t('stickyVideoLiveBadge', 'LIVE');
                 liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:800 11px/1.2 Arial,sans-serif;letter-spacing:0;color:#fff;background:#dc2626;border-radius: 10px;padding:5px 9px;box-shadow:0 8px 18px rgba(220,38,38,0.22);';
                 meta.appendChild(liveBadge);
 
@@ -3449,7 +3452,7 @@
 
                 const actions = document.createElement('div');
                 actions.className = 'ytkit-split-live-actions';
-                actions.setAttribute('aria-label', 'Live video actions');
+                actions.setAttribute('aria-label', t('stickyVideoLiveActionsAria', 'Live video actions'));
                 actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px;min-width:0;width:100%;max-width:100%;contain:inline-size;overflow:hidden;';
                 card.appendChild(actions);
 
@@ -3523,7 +3526,7 @@
                     if (dateInfo) dateEl.title = dateInfo;
                     else dateEl.removeAttribute('title');
                 }
-                header.setAttribute('aria-label', ['Live video', channel, viewText, title].filter(Boolean).join(' | '));
+                header.setAttribute('aria-label', [t('stickyVideoLiveVideoFallback', 'Live video'), channel, viewText, title].filter(Boolean).join(' | '));
                 this._dockSplitLiveHeaderActions();
                 const card = header.querySelector('.ytkit-split-live-card');
                 const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);
@@ -3616,7 +3619,7 @@
                 if (!dock) {
                     dock = document.createElement('div');
                     dock.className = 'ytkit-split-owner-actions';
-                    dock.setAttribute('aria-label', 'Video actions');
+                    dock.setAttribute('aria-label', t('stickyVideoVideoActionsAria', 'Video actions'));
                     const subscribe = owner.querySelector('#subscribe-button');
                     if (subscribe?.nextSibling) owner.insertBefore(dock, subscribe.nextSibling);
                     else owner.appendChild(dock);
@@ -4078,7 +4081,7 @@
                 // CLOSE button — low opacity, top-right of left panel
                 const closeBtn = document.createElement('button');
                 closeBtn.id = 'ytkit-split-close';
-                closeBtn.title = 'Close side panel';
+                closeBtn.title = t('stickyVideoCloseSidePanelTitle', 'Close side panel');
                 const svgNS = 'http://www.w3.org/2000/svg';
                 const cs = document.createElementNS(svgNS,'svg');
                 cs.setAttribute('viewBox','0 0 24 24'); cs.setAttribute('width','13'); cs.setAttribute('height','13');

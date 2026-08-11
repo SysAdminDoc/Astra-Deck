@@ -48,6 +48,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Return YouTube Dislike status, estimate disclosure, cache/live titles, ratios,
   and feature metadata now use locale keys, removing 13 more grandfathered
   literals from the modular runtime and its mirrored fallback.
+- Sticky Video navigation, live-header, action, close-panel, and fallback labels
+  now use locale keys, removing its remaining rendered-sink literals from both
+  runtime copies.
 - Subscription-group badges, stale-channel dates, staged-unsubscribe labels,
   and persisted default group names now use locale keys, removing 9 more
   grandfathered literals.

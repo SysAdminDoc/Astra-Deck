@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "Like ratio uses estimated Return YouTube Dislike counts. {estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "Go to subscriptions"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "Quick links"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "Live video"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "Live video information"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "LIVE"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "Live video actions"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "Video actions"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "Close side panel"
   }
 }

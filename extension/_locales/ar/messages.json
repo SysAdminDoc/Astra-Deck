@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "تستخدم نسبة الإعجاب أعداد Return YouTube Dislike التقديرية. {estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "الانتقال إلى الاشتراكات"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "روابط سريعة"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "فيديو مباشر"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "معلومات الفيديو المباشر"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "بث مباشر"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "إجراءات الفيديو المباشر"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "إجراءات الفيديو"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "إغلاق اللوحة الجانبية"
   }
 }

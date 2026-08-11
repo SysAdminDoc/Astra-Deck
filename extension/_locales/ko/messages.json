@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "좋아요 비율은 Return YouTube Dislike 추정 수치를 사용합니다. {estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "구독으로 이동"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "빠른 링크"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "라이브 동영상"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "라이브 동영상 정보"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "실시간"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "라이브 동영상 작업"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "동영상 작업"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "사이드 패널 닫기"
   }
 }

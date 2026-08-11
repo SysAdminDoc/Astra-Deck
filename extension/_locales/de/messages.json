@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "Das Like-Verhältnis verwendet geschätzte Return-YouTube-Dislike-Zahlen. {estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "Zu den Abos"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "Schnellzugriffe"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "Live-Video"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "Informationen zum Live-Video"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "LIVE"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "Live-Video-Aktionen"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "Videoaktionen"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "Seitenleiste schließen"
   }
 }

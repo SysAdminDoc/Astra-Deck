@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "高評価率は Return YouTube Dislike の推定件数を使用します。{estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "登録チャンネルに移動"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "クイックリンク"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "ライブ動画"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "ライブ動画情報"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "ライブ"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "ライブ動画の操作"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "動画の操作"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "サイドパネルを閉じる"
   }
 }

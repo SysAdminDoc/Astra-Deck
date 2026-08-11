@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "Соотношение лайков использует оценочные значения Return YouTube Dislike. {estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "Перейти к подпискам"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "Быстрые ссылки"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "Прямая трансляция"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "Информация о прямой трансляции"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "В ЭФИРЕ"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "Действия прямой трансляции"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "Действия видео"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "Закрыть боковую панель"
   }
 }
