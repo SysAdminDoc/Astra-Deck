@@ -1021,22 +1021,48 @@ test('remainingTimeDisplay + showTimeInTabTitle use timeupdate, not setInterval'
         'showTimeInTabTitle must bind to the video `timeupdate` event');
 });
 
-// ── Audit pass: EXT_FETCH SSRF post-redirect validation ──
+// ── Audit pass: EXT_FETCH per-hop redirect validation ──
 
-test('EXT_FETCH rejects responses whose final URL escapes the origin allowlist', () => {
-    // A 30x from an allowed origin (e.g. api.openai.com) to an internal IP
-    // would otherwise smuggle an arbitrary host into the response because
-    // fetch() defaults to `redirect: 'follow'`. The guard must re-check
-    // `resp.url` against isUrlAllowed before the body is streamed back.
+test('EXT_FETCH validates every redirect hop before following it', () => {
+    const fetchStart = backgroundSource.indexOf("if (msg.type === 'EXT_FETCH')");
+    const fetchEnd = backgroundSource.indexOf("if (msg.type === 'DOWNLOAD_FILE')", fetchStart);
+    assert.ok(fetchStart > -1 && fetchEnd > fetchStart, 'EXT_FETCH handler must be extractable');
+    const fetchBlock = backgroundSource.slice(fetchStart, fetchEnd);
+
     assert.match(
         backgroundSource,
-        /resp\.url\s*!==\s*url\s*&&\s*!isUrlAllowed\(resp\.url\)/,
-        'background.js must re-check the post-redirect URL against the allowlist'
+        /const MAX_EXT_FETCH_REDIRECTS = \d+;/,
+        'background.js must bound the number of manually followed redirects'
+    );
+    assert.match(
+        backgroundSource,
+        /const location = response\.headers\?\.get\?\.\('location'\)/,
+        'redirect handling must read the next hop from the response Location header'
+    );
+    assert.match(
+        backgroundSource,
+        /nextUrl = new URL\(location, currentUrl\)\.toString\(\)/,
+        'redirect locations must resolve against the current hop'
+    );
+    assert.match(
+        backgroundSource,
+        /if \(!isUrlAllowed\(nextUrl\)\)/,
+        'each redirect target must be checked against the origin allowlist'
+    );
+    assert.match(
+        fetchBlock,
+        /fetchWithValidatedRedirects\(url, fetchOpts\)/,
+        'EXT_FETCH must use the per-hop redirect helper'
+    );
+    assert.doesNotMatch(
+        fetchBlock,
+        /redirect:\s*'follow'/,
+        'EXT_FETCH must not delegate redirect validation to fetch()'
     );
     assert.match(
         backgroundSource,
         /Response URL not in allowlist after redirect/,
-        'Rejection must carry a descriptive error so callers can surface it'
+        'unexpected response URL changes must carry a descriptive error'
     );
 });
 

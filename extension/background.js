@@ -792,8 +792,8 @@ function canForwardAuthorizationHeader(url) {
 // the BYO AI providers authenticate with vendor-specific key headers instead
 // (Anthropic: x-api-key; Google Gemini: x-goog-api-key; some proxies: api-key).
 // These must be treated exactly like Authorization for both origin scoping and
-// the redirect-leak guard — otherwise a 3xx from an allowlisted API host would
-// resend the key to every hop under the default redirect:'follow'.
+// the redirect-leak guard — the manual redirect loop re-evaluates them at
+// every hop instead of letting fetch() forward them implicitly.
 const SENSITIVE_AUTH_HEADERS = new Set([
     'authorization', 'x-api-key', 'x-goog-api-key', 'api-key'
 ]);
@@ -813,6 +813,104 @@ function filterRequestHeaders(headers, url) {
         }
     }
     return filtered;
+}
+
+const EXT_FETCH_REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const MAX_EXT_FETCH_REDIRECTS = 5;
+const EXT_FETCH_BODY_HEADERS = new Set([
+    'content-length', 'content-type', 'transfer-encoding'
+]);
+
+function getExtFetchRedirectMethod(status, method) {
+    if (status === 303 && method !== 'GET' && method !== 'HEAD') return 'GET';
+    if ((status === 301 || status === 302) && method === 'POST') return 'GET';
+    return method;
+}
+
+function normalizeExtFetchUrl(url) {
+    try {
+        return new URL(url).toString();
+    } catch (_) {
+        return '';
+    }
+}
+
+async function fetchWithValidatedRedirects(url, options) {
+    let currentUrl = normalizeExtFetchUrl(url);
+    if (!currentUrl || !isUrlAllowed(currentUrl)) {
+        throw new Error(`URL not in allowlist: ${url}`);
+    }
+
+    let currentMethod = options.method;
+    let currentBody = options.body ?? null;
+    const baseHeaders = options.headers || {};
+    const requestedCredentials = options.credentials;
+
+    for (let redirectCount = 0; ; redirectCount++) {
+        const hopHeaders = filterRequestHeaders(baseHeaders, currentUrl);
+        if (currentBody === null || currentMethod === 'GET' || currentMethod === 'HEAD') {
+            for (const key of Object.keys(hopHeaders)) {
+                if (EXT_FETCH_BODY_HEADERS.has(key.toLowerCase())) delete hopHeaders[key];
+            }
+        }
+
+        const hopOptions = {
+            ...options,
+            method: currentMethod,
+            credentials: requestedCredentials === 'include' && shouldSendCredentials(currentUrl)
+                ? 'include'
+                : 'omit',
+            redirect: 'manual'
+        };
+        delete hopOptions.headers;
+        delete hopOptions.body;
+        if (Object.keys(hopHeaders).length > 0) hopOptions.headers = hopHeaders;
+        if (currentBody !== null && currentMethod !== 'GET' && currentMethod !== 'HEAD') {
+            hopOptions.body = currentBody;
+        }
+
+        const response = await fetch(currentUrl, hopOptions);
+        const observedUrl = response.url ? normalizeExtFetchUrl(response.url) : '';
+        if (observedUrl && observedUrl !== currentUrl) {
+            if (!isUrlAllowed(observedUrl)) {
+                throw new Error(`Response URL not in allowlist after redirect: ${observedUrl}`);
+            }
+            throw new Error('Response URL changed before redirect validation.');
+        }
+
+        if (response.type === 'opaqueredirect') {
+            if (hopOptions.credentials === 'include' || hasSensitiveAuthHeader(hopHeaders)) {
+                throw new Error('Blocked redirect on a credentialed request (possible cross-origin credential leak)');
+            }
+            throw new Error('Blocked opaque redirect because its target could not be validated.');
+        }
+
+        if (!EXT_FETCH_REDIRECT_STATUSES.has(response.status)) {
+            return { response, finalUrl: currentUrl };
+        }
+
+        if (redirectCount >= MAX_EXT_FETCH_REDIRECTS) {
+            throw new Error(`Too many redirects (maximum ${MAX_EXT_FETCH_REDIRECTS})`);
+        }
+
+        const location = response.headers?.get?.('location');
+        if (!location) throw new Error('Redirect response did not expose a Location header.');
+
+        let nextUrl;
+        try {
+            nextUrl = new URL(location, currentUrl).toString();
+        } catch (_) {
+            throw new Error('Redirect location is invalid.');
+        }
+        if (!isUrlAllowed(nextUrl)) {
+            throw new Error(`Redirect URL not in allowlist: ${nextUrl}`);
+        }
+
+        const nextMethod = getExtFetchRedirectMethod(response.status, currentMethod);
+        if (nextMethod !== currentMethod) currentBody = null;
+        currentMethod = nextMethod;
+        currentUrl = nextUrl;
+    }
 }
 
 function isJsonLikePayload(data) {
@@ -1282,23 +1380,11 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 fetchOpts.headers = filteredHeaders;
             }
 
-            // Credential-leak hardening: when this request carries cookies
-            // (credentials: 'include') or an Authorization header, do NOT let the
-            // browser silently auto-follow cross-origin redirects. With the
-            // default `redirect: 'follow'`, a 3xx from an allowlisted origin
-            // would resend those secrets to every redirect hop *before* the
-            // post-redirect allowlist check below ever runs. `redirect: 'manual'`
-            // surfaces a 3xx as an opaqueredirect we reject outright, so secrets
-            // never reach an unvalidated host. Non-credentialed requests keep
-            // following redirects (no secret to leak).
-            if (sendsCredentials || hasSensitiveAuthHeader(filteredHeaders)) {
-                fetchOpts.redirect = 'manual';
-            }
             if (requestBody !== null) {
                 fetchOpts.body = requestBody;
             }
 
-            fetch(url, fetchOpts).then(async (resp) => {
+            fetchWithValidatedRedirects(url, fetchOpts).then(async ({ response: resp, finalUrl }) => {
             // NOTE: the clampedTimeout deadline intentionally spans the entire
             // connect + headers + body-drain lifecycle. We do NOT clear the
             // timer here on headers arrival — a slowloris upstream that trickles
@@ -1308,35 +1394,6 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             // cleared only on terminal paths below (success / early returns /
             // catch).
             if (responded) return;
-
-            // A credentialed/auth request hit a redirect (see redirect:'manual'
-            // above). The browser stopped without following it, so no secret
-            // leaked — reject so the content script never receives a body from
-            // an unvalidated hop.
-            if (resp.type === 'opaqueredirect') {
-                responded = true;
-                if (timer) { clearTimeout(timer); timer = null; }
-                sendResponse({ error: 'Blocked redirect on a credentialed request (possible cross-origin credential leak)' });
-                try { controller.abort(); } catch (_) {
-                    // reason: controller may already be aborted
-                }
-                return;
-            }
-
-            // SSRF hardening: if redirects followed us to an origin that is NOT
-            // in the allowlist, reject the response before the body leaks back
-            // to the content script. `fetch` defaults to `redirect: 'follow'`,
-            // so an allowlisted origin that 302s to an internal IP or an
-            // arbitrary host would otherwise bypass the origin allowlist.
-            if (resp.url && resp.url !== url && !isUrlAllowed(resp.url)) {
-                responded = true;
-                if (timer) { clearTimeout(timer); timer = null; }
-                sendResponse({ error: `Response URL not in allowlist after redirect: ${resp.url}` });
-                try { controller.abort(); } catch (_) {
-                    // reason: controller may already be aborted
-                }
-                return;
-            }
 
             const contentLengthHeader = resp.headers.get('content-length');
             if (contentLengthHeader !== null) {
@@ -1425,12 +1482,15 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 statusText: resp.statusText,
                 responseText: text,
                 responseHeaders: responseHeaders,
-                finalUrl: resp.url
+                finalUrl
             });
         }).catch((err) => {
             if (timer) clearTimeout(timer);
             if (responded) return;
             responded = true;
+            try { controller.abort(); } catch (_) {
+                // reason: controller may already be aborted
+            }
             sendResponse({ error: err.name === 'AbortError' ? 'Request aborted' : err.message });
         });
         };
