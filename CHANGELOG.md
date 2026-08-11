@@ -15,6 +15,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Added a `chromium-store` extension profile for Chrome Web Store and Edge
+  submissions. It removes the downloader runtime, Cobalt and loopback access,
+  and companion-only permissions while preserving the core YouTube features;
+  `store-safe` and `github-full` remain the companion-capable profiles.
 - The userscript distribution now keeps the main artifact and its generated
   Greasy Fork core library as separate records, leaving both below the 2 MiB
   per-record limit without minification. Metadata now declares the project

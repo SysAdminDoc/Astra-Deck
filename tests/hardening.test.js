@@ -2070,8 +2070,8 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     assert.deepEqual(unexpectedReleaseNames(['AstraDownloader.exe'], '1.2.3'), ['AstraDownloader.exe'],
         'a staged companion exe must be reported as an unexpected asset');
     const expected = expectedReleaseNames(pkg.version);
-    assert.equal(expected.filter((name) => name.includes(`-v${pkg.version}.`)).length, 9,
-        'expected release set must include eight extension artifacts plus userscript');
+    assert.equal(expected.filter((name) => name.includes(`-v${pkg.version}.`)).length, 13,
+        'expected release set must include twelve extension artifacts plus userscript');
     assert.ok(expected.includes('astra-deck-npm-sbom.cdx.json'),
         'expected release set must include the npm SBOM asset');
     assert.ok(expected.includes('browser-capability-matrix.json'),
@@ -2851,14 +2851,14 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
         'connect-src must not be a wildcard — defeats the purpose');
 });
 
-test('build-extension emits distinct store-safe and github-full manifest profiles', () => {
+test('build-extension emits distinct store-safe, chromium-store, and github-full manifest profiles', () => {
     const builder = require('../build-extension.js');
     const baseManifest = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'manifest.json'),
         'utf8',
     ));
 
-    assert.deepEqual(builder.expandBuildProfileSelection('both'), ['store-safe', 'github-full']);
+    assert.deepEqual(builder.expandBuildProfileSelection('both'), ['store-safe', 'chromium-store', 'github-full']);
     assert.equal(builder.getArtifactBaseName('store-safe', 'chrome', '4.46.0'),
         'astra-deck-store-safe-chrome-v4.46.0');
     assert.equal(builder.getArtifactBaseName('github-full', 'firefox', '4.46.0'),
@@ -2866,8 +2866,28 @@ test('build-extension emits distinct store-safe and github-full manifest profile
 
     const storeManifest = builder.patchManifestForBuildProfile(
         JSON.parse(JSON.stringify(baseManifest)), 'store-safe');
+    const chromiumStoreManifest = builder.patchManifestForBuildProfile(
+        JSON.parse(JSON.stringify(baseManifest)), 'chromium-store');
     const fullManifest = builder.patchManifestForBuildProfile(
         JSON.parse(JSON.stringify(baseManifest)), 'github-full');
+
+    assert.equal(chromiumStoreManifest.permissions.includes('downloads'), false,
+        'chromium-store manifest must not request downloads');
+    assert.equal(chromiumStoreManifest.permissions.includes('cookies'), false,
+        'chromium-store manifest must not request cookies without the companion');
+    assert.equal(chromiumStoreManifest.permissions.includes('nativeMessaging'), false,
+        'chromium-store manifest must not request nativeMessaging without the companion');
+    const chromiumStoreResources = [
+        ...(chromiumStoreManifest.host_permissions || []),
+        ...(chromiumStoreManifest.optional_host_permissions || []),
+        ...(chromiumStoreManifest.content_security_policy?.extension_pages || '').split(/\s+/),
+        ...chromiumStoreManifest.content_scripts.flatMap((entry) => [
+            ...(entry.js || []), ...(entry['x-ytkit-runtime-modules'] || [])
+        ]),
+        ...chromiumStoreManifest.web_accessible_resources.flatMap((entry) => entry.resources || [])
+    ];
+    assert.equal(chromiumStoreResources.some((value) => /api\.cobalt\.tools|127\.0\.0\.1|download-ui/i.test(value)), false,
+        'chromium-store manifest must omit Cobalt, loopback, and downloader module names');
 
     const storeHosts = storeManifest.host_permissions || [];
     const storeOptionalHosts = storeManifest.optional_host_permissions || [];
@@ -2982,22 +3002,31 @@ test('build-extension gates web_accessible_resources policy for every profile', 
     assert.deepEqual(baseManifest.web_accessible_resources, expectedChromiumWar,
         'source manifest WAR must match the reviewed build policy exactly');
 
-    for (const profile of ['store-safe', 'github-full']) {
+    for (const profile of ['store-safe', 'chromium-store', 'github-full']) {
+        const profileRuntimeResources = builder.getRuntimeModuleResources(
+            path.join(__dirname, '..'), profile
+        );
+        const expectedProfileChromiumWar = profile === 'chromium-store'
+            ? builder.getManifestWebAccessibleResources('chromium', path.join(__dirname, '..'), profile)
+            : expectedChromiumWar;
+        const expectedProfileFirefoxWar = profile === 'chromium-store'
+            ? builder.getManifestWebAccessibleResources('firefox', path.join(__dirname, '..'), profile)
+            : expectedFirefoxWar;
         const manifest = builder.patchManifestForBuildProfile(
             JSON.parse(JSON.stringify(baseManifest)), profile);
-        assert.deepEqual(manifest.web_accessible_resources, expectedChromiumWar,
+        assert.deepEqual(manifest.web_accessible_resources, expectedProfileChromiumWar,
             `${profile} manifest must keep the exact WAR allowlist`);
         const resources = manifest.web_accessible_resources.flatMap((entry) => entry.resources || []);
         assert.equal(resources.some((resource) => resource.includes('*')), false,
             `${profile} manifest must not expose directory wildcards`);
         assert.equal(resources.some((resource) =>
             (/\.(?:mjs|css|html|map|json)$/i.test(resource) && resource !== 'runtime-core-loader.mjs')
-            || (resource.endsWith('.js') && !runtimeResources.includes(resource))
+            || (resource.endsWith('.js') && !profileRuntimeResources.includes(resource))
         ), false, `${profile} manifest must not expose unapproved source, style, map, or data files`);
 
         const firefoxManifest = builder.patchManifestForBuildProfile(
             JSON.parse(JSON.stringify(baseManifest)), profile, 'firefox');
-        assert.deepEqual(firefoxManifest.web_accessible_resources, expectedFirefoxWar,
+        assert.deepEqual(firefoxManifest.web_accessible_resources, expectedProfileFirefoxWar,
             `${profile} Firefox manifest must keep resources exact without use_dynamic_url`);
     }
 });
@@ -3035,7 +3064,7 @@ test('store permission rationale covers live manifest permissions and profile ho
             'rationale doc must mention manifest permission ' + permission);
     }
 
-    for (const profile of ['store-safe', 'github-full']) {
+    for (const profile of ['store-safe', 'chromium-store', 'github-full']) {
         const hosts = [
             ...builder.getManifestProfileHostPermissions(profile),
             ...builder.getManifestProfileOptionalHostPermissions(profile)
@@ -5745,6 +5774,26 @@ test('v5.0.0 policy-profile enforces a staged store-safe artifact ceiling', () =
     }, { effective: 'github-full' });
     assert.equal(exported.effective, 'store-safe');
     assert.equal(exported.settings.ageRestrictionBypass, false);
+});
+
+test('policy-profile enforces the download-free Chromium store ceiling', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile({ buildProfile: 'chromium-store' });
+    assert.equal(pp.getArtifactProfile(), 'chromium-store');
+    assert.equal(pp.isDownloadFreeArtifact(), true);
+    assert.equal(pp.resolveEffectiveProfile({ githubFullProfile: true }), 'store-safe');
+    assert.equal(pp.isKeyAllowedInProfile('showLocalDownloadButton', 'store-safe'), false);
+    const exported = pp.buildExportSnapshot({
+        showLocalDownloadButton: true,
+        downloadThumbnail: true,
+        sponsorBlock: true
+    }, { effective: 'github-full' });
+    assert.equal(exported.settings.showLocalDownloadButton, false,
+        'download-free artifacts must default the companion entry out of exports');
+    assert.equal(exported.settings.downloadThumbnail, false,
+        'download-free artifacts must default thumbnail-download settings out of exports');
+    assert.equal(exported.settings.sponsorBlock, true,
+        'download-free artifacts must retain unrelated store-safe settings');
 });
 
 test('v5.0.0 policy-profile: github-full-only schema entries are hidden under store-safe', () => {

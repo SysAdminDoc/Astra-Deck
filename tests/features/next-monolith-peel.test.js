@@ -527,15 +527,15 @@ test('downloadUI module loads before ytkit.js in content scripts', () => {
     }
 });
 
-test('downloadUI monolith requires the canonical module factory', () => {
+test('downloadUI monolith uses the canonical factory with an artifact-safe fallback', () => {
     const factoryLookup = 'const createDownloadUIFeature = globalThis.YTKitFeatures?.createDownloadUIFeature;';
     assert.ok(sources.ytkit.includes(factoryLookup),
         'ytkit.js must resolve the preloaded downloadUI factory explicitly');
-    assert.ok(sources.ytkit.includes('Download UI module is unavailable; aborting ytkit initialization.'),
-        'ytkit.js must fail closed when the required module is unavailable');
+    assert.ok(sources.ytkit.includes('createUnavailableDownloadUIFeature'),
+        'ytkit.js must keep the rest of the runtime alive when the store artifact omits the module');
 
     // Verify the monolith constructs _downloadUI from the required module factory.
-    const factoryNeedle = 'const _downloadUI = createDownloadUIFeature({';
+    const factoryNeedle = 'const _downloadUI = typeof createDownloadUIFeature === \'function\'';
     const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
     assert.ok(factoryIndex > -1, 'ytkit.js must construct _downloadUI through the module factory');
 

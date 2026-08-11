@@ -26,7 +26,7 @@
 | Settings schema | `468` entries across `18` categories |
 | Runtime graph | `99` modules, including `26` peeled feature modules and `286` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
-| Build profiles | `store-safe`, `github-full`; github-full adds 5 full-only origins |
+| Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 5 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
 | Compatibility modes | Desktop YouTube extension; bounded YouTube Music theme/OLED/density compatibility; bounded /embed/:id player mode; mobile browsers and YouTube Studio; userscript follows the host desktop browser |
 <!-- END GENERATED PROJECT FACTS -->
@@ -46,7 +46,7 @@
 ### Chrome / Edge / Brave
 
 **Option A — Load unpacked from ZIP:**
-1. Download `astra-deck-store-safe-chrome-v*.zip` or `astra-deck-github-full-chrome-v*.zip` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+1. Download `astra-deck-chromium-store-chrome-v*.zip` for a download-free Chrome Web Store/Edge-compatible package, or choose `astra-deck-store-safe-chrome-v*.zip` / `astra-deck-github-full-chrome-v*.zip` for companion-capable self-hosted installs, from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
 2. Extract it to a permanent folder
 3. Open `chrome://extensions/`, enable **Developer mode**
 4. Click **Load unpacked** and select the extracted folder
@@ -72,7 +72,7 @@ below.
 
 **Temporary — any Firefox edition.** The add-on is removed when Firefox restarts.
 
-1. Download `astra-deck-store-safe-firefox-v*.xpi` or `astra-deck-github-full-firefox-v*.xpi` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+1. Download `astra-deck-chromium-store-firefox-v*.xpi` for the download-free package, or `astra-deck-store-safe-firefox-v*.xpi` / `astra-deck-github-full-firefox-v*.xpi` for companion-capable installs, from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
 2. Open `about:debugging#/runtime/this-firefox`
 3. Click **Load Temporary Add-on…** and select the `.xpi`
 
@@ -91,7 +91,7 @@ data-consent permissions cover the documented collection categories).
 
 A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then install the **[Greasy Fork listing](https://greasyfork.org/)**. The generated `YTKit.user.js` declares the separately hosted Astra Deck YTKit Core Library dependency; the core library must be published on Greasy Fork before installing the generated artifact directly from GitHub.
 
-> SharedAudio remains userscript-only. Both extension profiles can use Astra Downloader; the GitHub-full artifact can also expose the optional Cobalt fallback when the local companion is offline.
+> SharedAudio remains userscript-only. The `store-safe` and `github-full` extension profiles can use Astra Downloader; the `chromium-store` artifact is download-free, and the GitHub-full artifact can also expose the optional Cobalt fallback when the local companion is offline.
 
 ### Astra Downloader Companion Setup
 
@@ -483,7 +483,7 @@ npm ci
 npm test
 npm run check
 # Python dependency auditing lives in the Astra Downloader repository
-npm run build                             # Build store-safe + GitHub-full artifacts
+npm run build                             # Build store-safe + Chromium-store + GitHub-full artifacts
 npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
 npm run release:prepare                   # Build userscript artifacts and require readiness pass
 npm run release:prepare:no-crx            # Same, without any CRX — needs no maintainer key
@@ -492,6 +492,7 @@ npm run release:manifest                  # Regenerate release-manifest.json + S
 npm run release:readiness -- --require-pass # Generate release readiness JSON/Markdown
 npm run release:verify-digests -- --tag vX.Y.Z # Compare uploaded asset digests after release upload
 node build-extension.js --profile store-safe
+node build-extension.js --profile chromium-store
 node build-extension.js --profile github-full
 node build-extension.js --bump patch      # Bump and build
 node build-extension.js --bump minor --with-userscript
@@ -521,7 +522,9 @@ Release readiness records the build as `crxSigningMode: "none"` and verifies
 that `build/` really contains no CRX before accepting it.
 
 Outputs in `build/` (the `.crx` files only when the build was not run with `--no-crx`):
-- `astra-deck-store-safe-chrome-v*.zip` + `.crx` (Chrome Web Store posture)
+- `astra-deck-chromium-store-chrome-v*.zip` (download-free Chrome Web Store / Edge posture)
+- `astra-deck-chromium-store-firefox-v*.zip` + `.xpi`
+- `astra-deck-store-safe-chrome-v*.zip` + `.crx` (companion-capable self-hosted posture)
 - `astra-deck-store-safe-firefox-v*.zip` + `.xpi`
 - `astra-deck-github-full-chrome-v*.zip` + `.crx` (AI, local companion, Cobalt)
 - `astra-deck-github-full-firefox-v*.zip` + `.xpi`

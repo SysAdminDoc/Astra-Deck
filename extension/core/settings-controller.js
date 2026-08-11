@@ -70,6 +70,19 @@
             : 'store-safe';
     }
 
+    function isEntryBlockedByArtifact(entry) {
+        const factory = root.YTKitCore?.createPolicyProfile;
+        if (!entry || typeof factory !== 'function') return false;
+        try {
+            const policy = factory();
+            return policy.getArtifactProfile?.() === 'chromium-store'
+                && (policy.isDownloadEntry?.(entry)
+                    || entry.category === 'downloads' || entry.scope === 'downloads');
+        } catch (_) {
+            return false;
+        }
+    }
+
     // This is the validation choke point for every cross-context settings
     // write, but it bounded numbers and enums only: a single oversized string,
     // array or object went straight into storage and left the quota failure to
@@ -205,6 +218,13 @@
             for (const [key, value] of Object.entries(next)) {
                 const entry = findEntry(key);
                 if (!entry || sameValue(current[key], value)) continue;
+                const blockedDefault = entry.type === 'boolean' ? false : entry.defaultValue;
+                if (isEntryBlockedByArtifact(entry)
+                    && !sameValue(value, blockedDefault)) {
+                    return failure('PROFILE_BLOCKED', `${key} is not included in the Chromium store build.`, {
+                        key, previous: current[key], value, settings: current
+                    });
+                }
                 if (entry.profile === 'github-full' && profile !== 'github-full'
                     && !sameValue(value, entry.defaultValue)) {
                     return failure('PROFILE_BLOCKED', `${key} requires the GitHub-full profile.`, {
@@ -238,6 +258,13 @@
                 const value = clampValue(requestedValue, entry);
                 let next = { ...current, [key]: value };
                 next = normalizeProfileModel(next, key, value);
+                const blockedDefault = entry.type === 'boolean' ? false : entry.defaultValue;
+                if (isEntryBlockedByArtifact(entry)
+                    && !sameValue(value, blockedDefault)) {
+                    return failure('PROFILE_BLOCKED', `${key} is not included in the Chromium store build.`, {
+                        key, previous: current[key], value, settings: current
+                    });
+                }
                 if (entry.profile === 'github-full' && effectiveProfile(next) !== 'github-full'
                     && !sameValue(value, entry.defaultValue)) {
                     return failure('PROFILE_BLOCKED', `${key} requires the GitHub-full profile.`, {

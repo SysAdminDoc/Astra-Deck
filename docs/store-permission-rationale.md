@@ -15,17 +15,18 @@ Source check 2026-06-04:
 - Firefox built-in consent for data collection and transmission:
   https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/
 
-## Submission Profile
+## Submission Profiles
 
-Submit the `store-safe` package to public stores:
+Submit the download-free `chromium-store` package to Chrome Web Store or Edge:
 
-- `astra-deck-store-safe-chrome-v*.zip` for Chrome Web Store.
-- `astra-deck-store-safe-firefox-v*.xpi` for AMO if using the same public-store
-  posture.
+- `astra-deck-chromium-store-chrome-v*.zip` for Chrome Web Store and Edge.
+- `astra-deck-chromium-store-firefox-v*.xpi` only when a Firefox submission
+  also needs the same no-companion posture.
 
-Use the `github-full` package only for GitHub/self-hosted installs. It keeps
-optional BYO-key AI, Cobalt, local Ollama, and Astra Downloader loopback hosts
-that the public-store package strips from `host_permissions` and CSP.
+The companion-capable `store-safe` package remains available for self-hosted
+installs or a store review that explicitly allows the local handoff. Use the
+`github-full` package only for GitHub/self-hosted installs. It keeps optional
+BYO-key AI, Cobalt, local Ollama, and the Astra Downloader loopback hosts.
 
 The `store-safe` package keeps only core YouTube access as install-time host
 permissions. Enrichment hosts for SponsorBlock/DeArrow, YouTube thumbnails,
@@ -38,8 +39,10 @@ feature such as default-on SponsorBlock.
 
 Astra Deck has one purpose: it turns YouTube into a local, privacy-first media
 workstation by improving playback controls, feed layout, comments, transcripts,
-research notes, local exports, and explicit user-initiated download handoff.
-Every permission supports that YouTube workstation purpose. Astra Deck does not
+research notes, and local exports. Companion-capable builds additionally support
+an explicit user-initiated local handoff; the `chromium-store` build does not
+ship that capability. Every permission supports that YouTube workstation
+purpose. Astra Deck does not
 track users, inject ads, sell or broker data, run remotely hosted code, or read
 unrelated browsing surfaces.
 
@@ -94,12 +97,12 @@ support bundle.
 
 ## Manifest Permissions
 
-Both profiles can use the authenticated local companion. The build split keeps
-the companion's cookie and native-messaging handoff in store-safe while the
-profile ceiling still excludes AI, Ollama, and Cobalt capabilities. The
-profile marker is stamped into each staged manifest and enforced by the runtime
-policy resolver, so settings imports cannot turn a store-safe artifact into a
-GitHub-full one.
+Both profiles can use the authenticated local companion: `store-safe` and
+`github-full`. The separate `chromium-store` build removes the companion's cookie,
+native-messaging, downloads, and loopback surface entirely; its profile marker
+and runtime policy also hide the companion settings. Every profile marker is
+stamped into its staged manifest and enforced by the runtime policy resolver, so
+settings imports cannot turn a restricted artifact into a broader one.
 
 | Permission | Store justification |
 | --- | --- |
@@ -132,6 +135,11 @@ the runtime still requires the companion service identity and bearer token.
 | `http://127.0.0.1:9781/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
 | `http://127.0.0.1:9791/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
 | `http://127.0.0.1:9851/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
+
+The `chromium-store` profile has no companion host permissions and no loopback
+origins in its extension-pages CSP. Its staged runtime graph omits
+`features/download-ui/index.js`; companion settings are unavailable even if an
+older settings backup contains downloader keys.
 
 ## Store-Safe Runtime Optional Host Permissions
 

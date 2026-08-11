@@ -38,7 +38,8 @@
             try { return require('./settings-schema'); } catch (_) { return null; }
         })());
 
-    const VALID_ARTIFACT_PROFILES = new Set(['store-safe', 'github-full']);
+    const VALID_ARTIFACT_PROFILES = new Set(['store-safe', 'chromium-store', 'github-full']);
+    const DOWNLOAD_FREE_ARTIFACT_PROFILE = 'chromium-store';
     // Browser-account sync consent is installation-local. A backup may be
     // copied to another machine, but importing it must never silently opt that
     // machine into account storage.
@@ -89,19 +90,32 @@
             const safe = settings.safeStoreProfile !== false;          // default true
             const full = settings.githubFullProfile === true;          // default false
             const requested = full || !safe ? 'github-full' : 'store-safe';
-            return artifactProfile === 'store-safe' ? 'store-safe' : requested;
+            return artifactProfile === 'store-safe' || artifactProfile === DOWNLOAD_FREE_ARTIFACT_PROFILE
+                ? 'store-safe'
+                : requested;
         }
 
         function normalizeEffectiveProfile(effective, settings = {}) {
             const requested = effective === 'github-full'
                 ? 'github-full'
                 : (effective === 'store-safe' ? 'store-safe' : resolveEffectiveProfile(settings));
-            return artifactProfile === 'store-safe' ? 'store-safe' : requested;
+            return artifactProfile === 'store-safe' || artifactProfile === DOWNLOAD_FREE_ARTIFACT_PROFILE
+                ? 'store-safe'
+                : requested;
+        }
+
+        function isDownloadFreeArtifact() {
+            return artifactProfile === DOWNLOAD_FREE_ARTIFACT_PROFILE;
+        }
+
+        function isDownloadEntry(entry) {
+            return entry?.category === 'downloads' || entry?.scope === 'downloads';
         }
 
         function isEntryAllowedInProfile(entry, effective) {
             if (!entry) return false;
             effective = normalizeEffectiveProfile(effective);
+            if (isDownloadFreeArtifact() && isDownloadEntry(entry)) return false;
             // Internal storage-only keys are always permitted — they
             // travel through import/export but are never surfaced as
             // user-visible toggles.
@@ -310,6 +324,11 @@
                     defaultedKeys.push(key);
                     continue;
                 }
+                if (isDownloadFreeArtifact() && isDownloadEntry(entry)) {
+                    out[key] = entry.type === 'boolean' ? false : entry.defaultValue;
+                    defaultedKeys.push(key);
+                    continue;
+                }
                 if (entry.profile === 'github-full' && effective === 'store-safe') {
                     out[key] = entry.defaultValue;
                     defaultedKeys.push(key);
@@ -336,6 +355,8 @@
 
         return {
             getArtifactProfile: () => artifactProfile,
+            isDownloadFreeArtifact,
+            isDownloadEntry,
             resolveEffectiveProfile,
             isEntryAllowedInProfile,
             isKeyAllowedInProfile,

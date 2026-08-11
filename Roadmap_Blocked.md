@@ -36,6 +36,23 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   `ASTRA_GREASY_FORK_CORE_URL=<update.greasyfork.org URL> node sync-userscript.js`,
   publish `YTKit.user.js`, and verify the live listing/auto-update path.
 
+## P2 — Chromium store publication (2026-08-11)
+
+- [ ] P2 — Submit the download-free Chromium artifact to Chrome Web Store and Edge
+  Why: the repository now emits `astra-deck-chromium-store-chrome-v*.zip`,
+  which removes the downloader module, `downloads`/companion permissions,
+  Cobalt access, and loopback origins while retaining the core YouTube
+  workstation features. The build and static store-profile gates pass.
+  Blocker: creating or updating live Chrome Web Store and Edge listings
+  requires the maintainer's store accounts, listing assets, authentication,
+  and review submission authority; Edge additionally requires government-ID
+  verification. Those external credentials and decisions are unavailable to
+  an autonomous coding agent.
+  Needs: submit the `chromium-store` ZIP, complete the CWS/Edge privacy and
+  permission forms using `docs/cws-submission-checklist.md` and
+  `docs/store-permission-rationale.md`, then record the live listing URLs and
+  review outcomes.
+
 - [ ] P3 — aria2c external-downloader option
   Why: parallel external downloading could improve throughput for some large media, but the requested integration contradicts the repository's active security invariant.
   Evidence: `astra_downloader/test_astra_downloader.py` (`Aria2cExternalDownloaderBanTests`); `CHANGELOG.md` (CVE-2026-50574 external-downloader ban).

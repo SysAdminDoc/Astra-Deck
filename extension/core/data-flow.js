@@ -16,6 +16,7 @@
     //     requiredByFeatures:   string[],                     // schema keys
     //     credentialsPolicy:    'no-cookies' | 'byo-key' | 'local-loopback' | 'none',
     //     profile:              'store-safe' | 'github-full', // resolved gate
+    //     excludedProfiles:     string[],                    // artifact-specific exclusions
     //     hostGrant:            'required' | 'runtime-optional',
     //     manifestPermission:   string | null,                // matching host_permission, if present
     //     optionalManifestPermission: string | null,           // matching optional_host_permissions, if present
@@ -87,6 +88,10 @@
         // The companion remains available in store-safe builds. The profile
         // ceiling blocks AI/Cobalt/Ollama, not the authenticated local handoff.
         profile: 'store-safe',
+        // Chromium public-store artifacts deliberately remove the downloader
+        // module and all loopback grants. Keep the catalogue entry visible for
+        // diagnostics, but make the build-time exclusion explicit and shared.
+        excludedProfiles: Object.freeze(['chromium-store']),
         hostGrant: 'required',
         riskBand: 'local-companion'
     }) : null;
@@ -220,6 +225,15 @@
         const alias = ORIGIN_HOST_PERMISSION_ALIASES[origin];
         if (alias) return alias.slice();
         return [origin.replace(/\/+$/, '') + '/*'];
+    }
+
+    function isOriginAvailableForProfile(entry, profile) {
+        if (!entry || !profile) return false;
+        if (Array.isArray(entry.excludedProfiles)
+            && entry.excludedProfiles.includes(profile)) return false;
+        return entry.profile === profile
+            || ((profile === 'chromium-store' || profile === 'github-full')
+                && entry.profile === 'store-safe');
     }
 
     // Sub-toggle inheritance map. Some schema entries are pure sub-knobs
@@ -390,7 +404,7 @@
         }
 
         function getOriginsByProfile(profile, settings = {}) {
-            return getOrigins(settings).filter((entry) => entry.profile === profile);
+            return getOrigins(settings).filter((entry) => isOriginAvailableForProfile(entry, profile));
         }
 
         function summarise(settings = {}) {
@@ -430,6 +444,7 @@
     core.getSponsorBlockApiOrigins = getSponsorBlockApiOrigins;
     core.findDataFlowCoverageGaps = findCoverageGaps;
     core.hostPermissionsForDataFlowOrigin = hostPermissionsForOrigin;
+    core.isOriginAvailableForProfile = isOriginAvailableForProfile;
     core.getOptionalHostPermissionsForFeature = getOptionalHostPermissionsForFeature;
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -444,7 +459,8 @@
             SPONSORBLOCK_MIRROR_ORIGIN,
             SPONSORBLOCK_ALLOWED_ORIGINS,
             normalizeSponsorBlockOrigin,
-            getSponsorBlockApiOrigins
+            getSponsorBlockApiOrigins,
+            isOriginAvailableForProfile
         };
     }
 })();
