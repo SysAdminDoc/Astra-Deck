@@ -103,7 +103,10 @@
     }
 
     function createAbortError() {
-        return core.transcriptIndex?.createAbortError?.() || Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
+        return core.transcriptIndex?.createAbortError?.() || Object.assign(new Error('Operation cancelled'), {
+            // i18n-static: standard DOMException-style error name.
+            name: 'AbortError'
+        });
     }
 
     function throwIfAborted(signal) {
@@ -127,6 +130,7 @@
         const extensionFetchText = typeof options.extensionFetchText === 'function'
             ? options.extensionFetchText
             : async () => { throw new Error('extensionFetchText not provided'); };
+        const t = typeof options.t === 'function' ? options.t : (_key, fallback) => fallback;
 
         const service = {
             config: { ...DEFAULT_CONFIG, ...(options.config || {}) },
@@ -135,18 +139,18 @@
             async downloadTranscript() {
                 const videoId = getVideoId();
                 if (!videoId) {
-                    showToast('No video ID found', '#ef4444');
+                    showToast(t('transcriptNoVideoId', 'No video ID found'), '#ef4444');
                     return { success: false, error: 'No video ID' };
                 }
 
-                showToast('Fetching transcript…', '#3b82f6');
+                showToast(t('transcriptFetching', 'Fetching transcript…'), '#3b82f6');
                 this._log('Starting transcript fetch for:', videoId);
 
                 try {
                     const transcript = await this.fetchTranscript(videoId);
 
                     if (transcript.status === 'captionless') {
-                        showToast('No transcript available for this video', '#ef4444');
+                        showToast(t('transcriptUnavailable', 'No transcript available for this video'), '#ef4444');
                         return { success: false, error: 'No captions available' };
                     }
 
@@ -155,14 +159,15 @@
 
                     this._downloadFile(content, `${videoTitle}_transcript.txt`);
 
-                    showToast(`Transcript downloaded! (${transcript.segments.length} segments)`, '#22c55e');
+                    showToast(t('transcriptDownloadedTpl', 'Transcript downloaded! ({count} segments)')
+                        .replace('{count}', String(transcript.segments.length)), '#22c55e');
                     return { success: true, segments: transcript.segments.length, language: transcript.language };
 
                 } catch (error) {
                     if (typeof console !== 'undefined') {
                         console.error('[YTKit TranscriptService] Error:', error);
                     }
-                    showToast('Failed to download transcript', '#ef4444');
+                    showToast(t('transcriptDownloadFailed', 'Failed to download transcript'), '#ef4444');
                     return { success: false, error: error.message };
                 }
             },
@@ -200,10 +205,15 @@
             async _getCaptionTracks(videoId, options = {}) {
                 const signal = options.signal;
                 const methods = [
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'ytInitialPlayerResponse', fn: () => this._method1_WindowVariable(videoId) },
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'Innertube API', fn: () => this._method2_InnertubeAPI(videoId, { signal }) },
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'HTML Page Fetch', fn: () => this._method3_HTMLPageFetch(videoId, { signal }) },
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'captionTracks Regex', fn: () => this._method4_CaptionTracksRegex(videoId, { signal }) },
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'DOM Panel Scrape', fn: () => this._method5_DOMPanelScrape(videoId, { signal }) }
                 ];
 

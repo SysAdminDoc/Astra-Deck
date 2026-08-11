@@ -7183,5 +7183,32 @@
   },
   "qtGroup_Privacy": {
     "message": "개인정보 보호"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
+  },
+  "aiCredentialReplaceHint": {
+    "message": "자격 증명이 설정되어 있습니다. 바꿀 새 값을 입력하세요. 저장된 값은 표시되지 않습니다."
+  },
+  "aiCredentialStoreHint": {
+    "message": "userscript 관리자에만 저장되며 Astra Deck 설정 및 내보내기에는 포함되지 않습니다."
+  },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
+  "transcriptNoVideoId": {
+    "message": "동영상 ID를 찾을 수 없습니다"
+  },
+  "transcriptFetching": {
+    "message": "스크립트를 가져오는 중…"
+  },
+  "transcriptUnavailable": {
+    "message": "이 동영상에는 사용할 수 있는 스크립트가 없습니다"
+  },
+  "transcriptDownloadedTpl": {
+    "message": "스크립트를 다운로드했습니다! ({count}개 세그먼트)"
   }
 }

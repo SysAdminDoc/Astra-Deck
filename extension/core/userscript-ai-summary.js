@@ -250,7 +250,9 @@
                     const open = doc.createElement('button');
                     open.type = 'button';
                     const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(artifact.generatedAt));
-                    open.textContent = `${artifact.title} · ${date}`;
+                    open.textContent = t('aiSummaryArtifactTpl', '{title} · {date}')
+                        .replace('{title}', artifact.title)
+                        .replace('{date}', date);
                     open.addEventListener('click', () => feature._renderArtifact(artifact));
                     const remove = doc.createElement('button');
                     remove.type = 'button';
@@ -302,14 +304,14 @@
                 form.className = 'ytkit-us-ai-credential-card';
                 const title = doc.createElement('h3');
                 title.id = 'ytkit-us-ai-credential-title';
-                title.textContent = `${provider[0].toUpperCase()}${provider.slice(1)} credential`;
+                title.textContent = t('aiCredentialTitle', 'AI provider credential');
                 const note = doc.createElement('p');
                 note.textContent = state.configured
-                    ? 'A credential is configured. Enter a new value to replace it; the stored value is never shown.'
-                    : 'Stored only in your userscript manager, outside Astra Deck settings and exports.';
+                    ? t('aiCredentialReplaceHint', 'A credential is configured. Enter a new value to replace it; the stored value is never shown.')
+                    : t('aiCredentialStoreHint', 'Stored only in your userscript manager, outside Astra Deck settings and exports.');
                 const label = doc.createElement('label');
                 label.htmlFor = 'ytkit-us-ai-credential-input';
-                label.textContent = 'New credential';
+                label.textContent = t('aiCredentialNewLabel', 'New credential');
                 const input = doc.createElement('input');
                 input.id = 'ytkit-us-ai-credential-input';
                 input.type = 'password';
@@ -321,14 +323,16 @@
                 actions.className = 'ytkit-us-ai-credential-actions';
                 const save = doc.createElement('button');
                 save.type = 'submit';
-                save.textContent = state.configured ? 'Replace' : 'Save';
+                save.textContent = state.configured
+                    ? t('aiCredentialReplaceBtn', 'Replace credential')
+                    : t('aiCredentialSaveBtn', 'Save credential');
                 const remove = doc.createElement('button');
                 remove.type = 'button';
-                remove.textContent = 'Delete';
+                remove.textContent = t('aiSummaryDelete', 'Delete');
                 remove.disabled = !state.configured;
                 const cancel = doc.createElement('button');
                 cancel.type = 'button';
-                cancel.textContent = 'Cancel';
+                cancel.textContent = t('subscriptionDialogCancel', 'Cancel');
                 actions.append(save, remove, cancel);
                 form.append(title, note, label, input, actions);
                 shell.appendChild(form);
@@ -371,7 +375,7 @@
 
         return {
             id: 'aiVideoSummary',
-            name: 'AI Video Summary',
+            name: t('feature_aiVideoSummary_name', 'AI Video Summary'),
             description: t('feature_aiVideoSummary_desc', 'Prefer the browser on-device Summarizer; fall back explicitly to the userscript-manager-isolated BYO-key provider'),
             group: 'Watch Page',
             icon: 'sparkles',
@@ -430,11 +434,11 @@
                 const panel = doc.createElement('section');
                 panel.className = 'ytkit-us-ai-panel';
                 panel.setAttribute('role', 'dialog');
-                panel.setAttribute('aria-label', 'AI video summary');
+                panel.setAttribute('aria-label', t('aiSummaryDialogLabel', 'AI video summary'));
                 const close = doc.createElement('button');
                 close.type = 'button';
                 close.className = 'ytkit-us-ai-close';
-                close.setAttribute('aria-label', 'Close AI summary');
+                close.setAttribute('aria-label', t('aiSummaryClose', 'Close AI summary'));
                 close.textContent = '×';
                 close.addEventListener('click', () => { this._runToken += 1; panel.remove(); this._panel = null; });
                 const body = doc.createElement('div');
@@ -591,8 +595,8 @@
                     event.stopPropagation();
                     const provider = getSettings()?.aiSummaryProvider || 'openai';
                     void manageCredential(provider).then(
-                        () => showToast('AI credential updated', '#22c55e'),
-                        (error) => showToast(error.message || 'AI credential update failed', '#ef4444')
+                        () => showToast(t('aiCredentialSaved', 'AI credential saved without exposing its value.'), '#22c55e'),
+                        (error) => showToast(error.message || t('aiCredentialSaveFailed', 'Credential could not be saved.'), '#ef4444')
                     );
                 });
                 controls.insertBefore(button, controls.firstChild);

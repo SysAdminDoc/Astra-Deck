@@ -7183,5 +7183,32 @@
   },
   "qtGroup_Privacy": {
     "message": "隐私"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
+  },
+  "aiCredentialReplaceHint": {
+    "message": "凭据已配置。输入新值即可替换；不会显示已存储的值。"
+  },
+  "aiCredentialStoreHint": {
+    "message": "仅存储在用户脚本管理器中，不会进入 Astra Deck 设置和导出内容。"
+  },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
+  "transcriptNoVideoId": {
+    "message": "未找到视频 ID"
+  },
+  "transcriptFetching": {
+    "message": "正在获取转录文本…"
+  },
+  "transcriptUnavailable": {
+    "message": "此视频没有可用字幕"
+  },
+  "transcriptDownloadedTpl": {
+    "message": "字幕已下载！（{count} 个片段）"
   }
 }

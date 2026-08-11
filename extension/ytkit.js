@@ -1844,7 +1844,8 @@ return response;
             showToast: (...args) => showToast(...args),
             getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
             extensionFetchJson: (...args) => extensionFetchJson(...args),
-            extensionFetchText: (...args) => extensionFetchText(...args)
+            extensionFetchText: (...args) => extensionFetchText(...args),
+            t
         })
         : (() => {
             // Defensive fallback if core/transcript-service.js failed to load:

@@ -7183,5 +7183,32 @@
   },
   "qtGroup_Privacy": {
     "message": "Confidentialité"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
+  },
+  "aiCredentialReplaceHint": {
+    "message": "Un identifiant est configuré. Saisissez une nouvelle valeur pour le remplacer ; la valeur enregistrée n’est jamais affichée."
+  },
+  "aiCredentialStoreHint": {
+    "message": "Stocké uniquement dans votre gestionnaire de userscript, en dehors des paramètres et exports d’Astra Deck."
+  },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
+  "transcriptNoVideoId": {
+    "message": "ID vidéo introuvable"
+  },
+  "transcriptFetching": {
+    "message": "Récupération de la transcription…"
+  },
+  "transcriptUnavailable": {
+    "message": "Aucune transcription disponible pour cette vidéo"
+  },
+  "transcriptDownloadedTpl": {
+    "message": "Transcription téléchargée ! ({count} segments)"
   }
 }
