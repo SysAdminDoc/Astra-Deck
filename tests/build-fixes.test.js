@@ -281,36 +281,37 @@ test('check-contrast rejects non-#rrggbb input and passes legitimately', () => {
         'contrast audit must pass with the corrected composited button background: ' + String(result.stdout));
 });
 
-// ── 10. store-safe strips the companion-only API permissions ──
+// ── 10. profile ceilings keep the authenticated companion available ──
 
-test('store-safe manifest omits the API permissions that only serve the companion', () => {
+test('profile manifests retain the companion handoff and carry an immutable ceiling', () => {
     const {
         patchManifestForBuildProfile,
         getManifestProfilePermissions,
-        GITHUB_FULL_ONLY_API_PERMISSIONS
+        GITHUB_FULL_ONLY_API_PERMISSIONS,
+        BUILD_PROFILE_MANIFEST_KEY
     } = require(path.join(REPO_ROOT, 'build-extension.js'));
 
     const sourceManifest = JSON.parse(
         fs.readFileSync(path.join(REPO_ROOT, 'extension', 'manifest.json'), 'utf8')
     );
 
-    // The profile split rewrote hosts, CSP and web-accessible resources but not
-    // `permissions`, so store-safe declared cookies + nativeMessaging while
-    // stripping every loopback origin that consumes them.
     const storeSafe = patchManifestForBuildProfile(
         JSON.parse(JSON.stringify(sourceManifest)), 'store-safe', 'chromium'
     );
-    assert.deepEqual(storeSafe.permissions, ['storage', 'unlimitedStorage', 'downloads', 'sidePanel'],
-        'store-safe permissions are pinned — adding one is a store-review decision, not a drive-by');
+    assert.deepEqual(storeSafe.permissions, sourceManifest.permissions,
+        'store-safe must retain cookies/nativeMessaging for the authenticated companion handoff');
+    assert.equal(storeSafe[BUILD_PROFILE_MANIFEST_KEY], 'store-safe',
+        'store-safe artifact must carry its immutable profile ceiling');
     for (const name of Object.keys(GITHUB_FULL_ONLY_API_PERMISSIONS)) {
         assert.equal(storeSafe.permissions.includes(name), false,
-            `store-safe must not declare ${name}: it strips the github-full origins that consume it`);
+            `store-safe must not declare unrelated github-full-only permission ${name}`);
     }
 
-    // github-full is the profile that actually talks to the companion.
     const githubFull = patchManifestForBuildProfile(
         JSON.parse(JSON.stringify(sourceManifest)), 'github-full', 'chromium'
     );
+    assert.equal(githubFull[BUILD_PROFILE_MANIFEST_KEY], 'github-full',
+        'github-full artifact must carry its immutable profile ceiling');
     for (const name of Object.keys(GITHUB_FULL_ONLY_API_PERMISSIONS)) {
         assert.equal(githubFull.permissions.includes(name), true,
             `github-full must keep ${name} — the companion path depends on it`);
@@ -325,24 +326,25 @@ test('store-safe manifest omits the API permissions that only serve the companio
             `GITHUB_FULL_ONLY_API_PERMISSIONS lists ${name}, which extension/manifest.json does not declare`);
     }
 
-    // The helper is pure: it must not mutate the array it is handed.
     const declared = ['storage', 'cookies'];
     const filtered = getManifestProfilePermissions('store-safe', declared);
     assert.deepEqual(declared, ['storage', 'cookies'], 'input array must not be mutated');
-    assert.deepEqual(filtered, ['storage']);
+    assert.deepEqual(filtered, ['storage', 'cookies'],
+        'store-safe must retain companion permissions');
 });
 
-test('the store permission rationale scopes the companion-only permissions to github-full', () => {
+test('the store permission rationale documents the shared companion permissions', () => {
     const { GITHUB_FULL_ONLY_API_PERMISSIONS } = require(path.join(REPO_ROOT, 'build-extension.js'));
     const doc = fs.readFileSync(
         path.join(REPO_ROOT, 'docs', 'store-permission-rationale.md'), 'utf8'
     );
-    // A reviewer reads this doc against the artifact they were sent. It must not
-    // justify a permission the store-safe build does not ship.
     for (const name of Object.keys(GITHUB_FULL_ONLY_API_PERMISSIONS)) {
         const row = doc.split('\n').find((line) => line.startsWith(`| \`${name}\``));
         assert.ok(row, `rationale doc must document ${name}`);
         assert.match(row, /GitHub-full builds only/,
             `the ${name} row must say it is absent from the store-safe artifact`);
     }
+    assert.match(doc, /both profiles can use the authenticated local companion/i);
+    assert.match(doc, /`http:\/\/127\.0\.0\.1:9751\/\*`/,
+        'rationale must document the shared companion loopback grant');
 });

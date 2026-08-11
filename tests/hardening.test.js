@@ -2907,7 +2907,6 @@ test('build-extension emits distinct store-safe and github-full manifest profile
 
     for (const fullOnly of [
         'https://api.cobalt.tools/*',
-        'http://127.0.0.1:9751/*',
         'http://127.0.0.1:11434/*'
     ]) {
         assert.ok(!storeHosts.includes(fullOnly),
@@ -2915,6 +2914,8 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         assert.ok(fullHosts.includes(fullOnly),
             'github-full manifest must include ' + fullOnly);
     }
+    assert.ok(storeHosts.includes('http://127.0.0.1:9751/*'),
+        'store-safe manifest must retain the authenticated companion origin');
 
     const storeCsp = storeManifest.content_security_policy?.extension_pages || '';
     const fullCsp = fullManifest.content_security_policy?.extension_pages || '';
@@ -2922,8 +2923,8 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         'store-safe CSP must exclude OpenAI');
     assert.ok(!cspAllowsConnect(storeCsp, 'https://api.cobalt.tools'),
         'store-safe CSP must exclude Cobalt');
-    assert.ok(!cspAllowsConnect(storeCsp, 'http://127.0.0.1:9751'),
-        'store-safe CSP must exclude local downloader loopback');
+    assert.ok(cspAllowsConnect(storeCsp, 'http://127.0.0.1:9751'),
+        'store-safe CSP must retain the authenticated local companion');
     assert.ok(cspAllowsConnect(storeCsp, 'https://i.ytimg.com'),
         'store-safe CSP must keep optional thumbnail host connect-src eligible');
     assert.ok(cspAllowsConnect(storeCsp, 'https://sponsor.ajay.app'),
@@ -5719,6 +5720,22 @@ test('v5.0.0 policy-profile: effective profile resolution honours both flags', (
     assert.equal(pp.resolveEffectiveProfile({ safeStoreProfile: false }), 'github-full');
     assert.equal(pp.resolveEffectiveProfile({ safeStoreProfile: true, githubFullProfile: true }),
         'github-full');
+});
+
+test('v5.0.0 policy-profile enforces a staged store-safe artifact ceiling', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile({ buildProfile: 'store-safe' });
+    assert.equal(pp.getArtifactProfile(), 'store-safe');
+    assert.equal(pp.resolveEffectiveProfile({ githubFullProfile: true }), 'store-safe');
+    assert.equal(pp.resolveEffectiveProfile({ safeStoreProfile: false }), 'store-safe');
+    assert.equal(pp.isKeyAllowedInProfile('ageRestrictionBypass', 'github-full'), false,
+        'a caller-provided github-full mode must not bypass the staged ceiling');
+    const exported = pp.buildExportSnapshot({
+        ageRestrictionBypass: true,
+        githubFullProfile: true
+    }, { effective: 'github-full' });
+    assert.equal(exported.effective, 'store-safe');
+    assert.equal(exported.settings.ageRestrictionBypass, false);
 });
 
 test('v5.0.0 policy-profile: github-full-only schema entries are hidden under store-safe', () => {

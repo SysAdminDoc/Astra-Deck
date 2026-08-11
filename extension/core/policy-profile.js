@@ -38,11 +38,37 @@
             try { return require('./settings-schema'); } catch (_) { return null; }
         })());
 
+    const VALID_ARTIFACT_PROFILES = new Set(['store-safe', 'github-full']);
+
+    function readRuntimeManifest() {
+        const runtimes = [
+            globalThis.YTKitBrowser?.runtime,
+            globalThis.chrome?.runtime,
+            globalThis.browser?.runtime
+        ];
+        for (const runtime of runtimes) {
+            try {
+                const manifest = runtime?.getManifest?.();
+                if (manifest && typeof manifest === 'object') return manifest;
+            } catch (_) {
+                // reason: userscript and test runtimes may not expose a manifest API
+            }
+        }
+        return null;
+    }
+
+    function normalizeArtifactProfile(value) {
+        const profile = String(value || '').trim();
+        return VALID_ARTIFACT_PROFILES.has(profile) ? profile : null;
+    }
+
     function createPolicyProfile(options = {}) {
         const schema = options.schema || (schemaScope ? schemaScope.SETTINGS_SCHEMA : []);
         const findEntry = options.findSettingEntry
             || (schemaScope && schemaScope.findSettingEntry)
             || ((key) => schema.find((e) => e.key === key) || null);
+        const artifactProfile = normalizeArtifactProfile(options.buildProfile)
+            || normalizeArtifactProfile(readRuntimeManifest()?.['x-ytkit-build-profile']);
 
         function isPlainObject(value) {
             return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -58,13 +84,20 @@
         function resolveEffectiveProfile(settings = {}) {
             const safe = settings.safeStoreProfile !== false;          // default true
             const full = settings.githubFullProfile === true;          // default false
-            if (full) return 'github-full';
-            if (!safe) return 'github-full';
-            return 'store-safe';
+            const requested = full || !safe ? 'github-full' : 'store-safe';
+            return artifactProfile === 'store-safe' ? 'store-safe' : requested;
+        }
+
+        function normalizeEffectiveProfile(effective, settings = {}) {
+            const requested = effective === 'github-full'
+                ? 'github-full'
+                : (effective === 'store-safe' ? 'store-safe' : resolveEffectiveProfile(settings));
+            return artifactProfile === 'store-safe' ? 'store-safe' : requested;
         }
 
         function isEntryAllowedInProfile(entry, effective) {
             if (!entry) return false;
+            effective = normalizeEffectiveProfile(effective);
             // Internal storage-only keys are always permitted — they
             // travel through import/export but are never surfaced as
             // user-visible toggles.
@@ -83,7 +116,7 @@
         // current profile. Used by the popup's visible-toggle list and by
         // the export scrubber when generating a store-safe snapshot.
         function filterSettingsForProfile(settings = {}, effective) {
-            const eff = effective || resolveEffectiveProfile(settings);
+            const eff = normalizeEffectiveProfile(effective, settings);
             const out = {};
             for (const key of Object.keys(settings)) {
                 if (isKeyAllowedInProfile(key, eff)) out[key] = settings[key];
@@ -237,7 +270,7 @@
         // always-scrub keys and replaces github-full-only entries with
         // their schema default when exporting under store-safe.
         function buildExportSnapshot(settings = {}, options = {}) {
-            const effective = options.effective || resolveEffectiveProfile(settings);
+            const effective = normalizeEffectiveProfile(options.effective, settings);
             const schemaOnly = options.schemaOnly === true;
             const out = {};
             const scrubbedKeys = [];
@@ -269,6 +302,7 @@
         // Compute counts for the data-flow panel: how many keys are
         // visible vs hidden under the current profile.
         function countByProfile(effective) {
+            effective = normalizeEffectiveProfile(effective);
             const visible = [];
             const hidden = [];
             for (const entry of schema) {
@@ -280,6 +314,7 @@
         }
 
         return {
+            getArtifactProfile: () => artifactProfile,
             resolveEffectiveProfile,
             isEntryAllowedInProfile,
             isKeyAllowedInProfile,

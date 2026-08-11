@@ -94,19 +94,20 @@ support bundle.
 
 ## Manifest Permissions
 
-The store-safe artifact strips the two permissions that exist solely to serve
-the local companion, because it also strips every loopback origin they would
-talk to. `build-extension.js` derives that from
-`GITHUB_FULL_ONLY_API_PERMISSIONS`, and `tests/build-fixes.test.js` pins the
-resulting store-safe array — so this table cannot drift from what ships.
+Both profiles can use the authenticated local companion. The build split keeps
+the companion's cookie and native-messaging handoff in store-safe while the
+profile ceiling still excludes AI, Ollama, and Cobalt capabilities. The
+profile marker is stamped into each staged manifest and enforced by the runtime
+policy resolver, so settings imports cannot turn a store-safe artifact into a
+GitHub-full one.
 
 | Permission | Store justification |
 | --- | --- |
 | `storage` | Saves Astra Deck settings, local feature state, local caches, notes, watch-progress data, and user-created exports in the browser profile. |
 | `unlimitedStorage` | Prevents silent quota failure for local YouTube caches and long-term user data; bounded LRU cleanup still trims large stores. |
-| `cookies` | **GitHub-full builds only — not present in the store-safe artifact.** Reads YouTube cookies only when the user starts an authenticated local download flow so yt-dlp can access media the user can already view. Cookies are not sent to Astra Deck servers. |
+| `cookies` | Reads YouTube cookies only when the user starts an authenticated local download flow so yt-dlp can access media the user can already view. Cookies are not sent to Astra Deck servers. |
 | `downloads` | Saves user-requested exports, thumbnails, transcript files, diagnostic bundles, and media handoff files to the user's Downloads folder. |
-| `nativeMessaging` | **GitHub-full builds only — not present in the store-safe artifact.** Enables secure token exchange with the optional local Astra Downloader companion via a browser-pinned stdio pipe, replacing the HTTP `/health` token disclosure path. Only activates when the companion registers its native host manifest. |
+| `nativeMessaging` | Enables secure token exchange with the optional local Astra Downloader companion via a browser-pinned stdio pipe, replacing the HTTP `/health` token disclosure path. Only activates when the companion registers its native host manifest. |
 | `sidePanel` | Provides an optional persistent dashboard panel (Chrome only) for diagnostics, selector health, storage stats, and settings so the popup stays compact. |
 
 ## Store-Safe Host Permissions
@@ -116,6 +117,21 @@ resulting store-safe array — so this table cannot drift from what ships.
 | `https://*.youtube.com/*` | Runs the content script on YouTube pages and reads YouTube page data needed for playback, layout, transcript, comment, and feed features. |
 | `https://*.youtube-nocookie.com/*` | Supports YouTube's privacy-enhanced embed origin with the same bounded playback/layout controls as standard YouTube pages. |
 | `https://youtu.be/*` | Recognizes and normalizes YouTube short links so features and exports attach to the correct video. |
+
+## Store-Safe Companion Host Permissions
+
+The authenticated local companion is available in both profiles. These literal
+loopback grants are limited to the companion's six documented discovery ports;
+the runtime still requires the companion service identity and bearer token.
+
+| Host permission | Store justification |
+| --- | --- |
+| `http://127.0.0.1:9751/*` | Talks to the local Astra Downloader companion for explicit user-started downloads. |
+| `http://127.0.0.1:9761/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
+| `http://127.0.0.1:9771/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
+| `http://127.0.0.1:9781/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
+| `http://127.0.0.1:9791/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
+| `http://127.0.0.1:9851/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
 
 ## Store-Safe Runtime Optional Host Permissions
 
@@ -147,12 +163,6 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 | `https://generativelanguage.googleapis.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to Gemini only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
 | `https://api.cobalt.tools/*` | Contacts a user-configurable Cobalt endpoint only when the GitHub-full Cobalt fallback is enabled and Astra Downloader is offline. |
 | `http://127.0.0.1:11434/*` | Talks to the user's local Ollama runtime for offline AI summaries; no remote host is contacted. |
-| `http://127.0.0.1:9751/*` | Talks to the local Astra Downloader companion for explicit user-started downloads. |
-| `http://127.0.0.1:9761/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
-| `http://127.0.0.1:9771/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
-| `http://127.0.0.1:9781/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
-| `http://127.0.0.1:9791/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
-| `http://127.0.0.1:9851/*` | Fallback local Astra Downloader port for explicit user-started downloads. |
 
 ## Reviewer Notes
 
@@ -160,8 +170,9 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
   `assets/*`. The latter exists only for bundled theme media such as
   `assets/cat.gif`; JavaScript, HTML, CSS, source maps, and data exports are not
   web-accessible in any build profile.
-- Store-safe excludes AI provider, Cobalt, Ollama, and Astra Downloader loopback
-  host grants from the packaged manifest and CSP.
+- Store-safe excludes AI provider, Cobalt, and Ollama grants from the packaged
+  manifest and CSP, while retaining the authenticated Astra Downloader
+  loopback contract.
 - Store-safe declares SponsorBlock/DeArrow, thumbnail, Return YouTube Dislike,
   and Reddit hosts as runtime optional grants instead of install-time host
   permissions, and the background fetch proxy checks the current grant before
