@@ -99,7 +99,7 @@ test('Return Dislike feature block is reachable via the shared helper', () => {
     const [block] = extractFeatureBlock(sources.ytkit, 'returnDislike');
     assert.ok(block.length > 100,
         'returnDislike feature block must contain non-trivial source');
-    assert.match(block, /name:\s*['"]Return YouTube Dislike['"]/,
+    assert.match(block, /name:\s*(?:t\(['"]feature_returnDislike_name['"],\s*)?['"]Return YouTube Dislike['"]/,
         'returnDislike feature block must carry the user-facing name');
 });
 

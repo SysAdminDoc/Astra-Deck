@@ -3843,7 +3843,7 @@ test('returnDislike discloses estimated accuracy in the rendered count UI', () =
     // request dedupe before teardown, so keep the static window wide enough
     // to cover the cleanup assertions as the feature grows.
     const block = ytkitSource.slice(start, start + 18000);
-    assert.match(block, /description: 'Restore an estimated dislike count/,
+    assert.match(block, /description: t\(['"]feature_returnDislike_desc['"],\s*['"]Restore an estimated dislike count/,
         'feature description must name the restored count as estimated');
     assert.match(block, /_estimateDisclosureText\(\)/,
         'render path must centralize the estimate disclosure copy');
@@ -3851,11 +3851,11 @@ test('returnDislike discloses estimated accuracy in the rendered count UI', () =
         'estimate copy must disclose the low-traffic accuracy caveat');
     assert.match(block, /\.ytkit-ryd-estimate/,
         'rendered UI must include a dedicated estimate affordance');
-    assert.match(block, /estimateEl\.textContent = 'est\.'/,
+    assert.match(block, /estimateEl\.textContent = t\(['"]ui_rydEstimateShort['"],\s*['"]est\.['"]\)/,
         'successful count render must show a compact estimate label');
-    assert.match(block, /pill\.setAttribute\('aria-label', `\$\{countLabel\} estimated dislikes\./,
+    assert.match(block, /pill\.setAttribute\('aria-label', t\(['"]ui_rydCountAriaTpl['"],\s*['"]\{count\} estimated dislikes/,
         'count pill must expose the estimate caveat to assistive tech');
-    assert.match(block, /ratioEl\.title = `Like ratio uses estimated Return YouTube Dislike counts/,
+    assert.match(block, /ratioEl\.title = t\(['"]ui_rydRatioTitleTpl['"],\s*['"]Like ratio uses estimated Return YouTube Dislike counts/,
         'like-ratio helper must also disclose that it uses estimated counts');
     assert.match(block, /document\.querySelectorAll\('\.ytkit-ryd-pill, \.ytkit-ryd-estimate, \.ytkit-ryd-ratio'\)/,
         'destroy cleanup must remove every RYD-owned render node');
@@ -11141,20 +11141,20 @@ test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age t
     assert.match(slice, /windowAge < 60000/,
         'render must respect the 60s sliding window for rate-limit detection');
     // Rate-limited branch surfaces a "RYD paused" pill with countdown.
-    assert.match(slice, /offline\.textContent = 'RYD paused'/,
+    assert.match(slice, /offline\.textContent = t\(['"]ui_rydPaused['"],\s*['"]RYD paused['"]\)/,
         'rate-limited path must show "RYD paused" pill');
-    assert.match(slice, /Resumes in \$\{remainingSec\}s/,
+    assert.match(slice, /ui_rydPausedTitleTpl/,
         'rate-limited title must include the seconds-until-reset countdown');
     // Network-error branch keeps the old "RYD off" pill but with copy.
-    assert.match(slice, /offline\.textContent = 'RYD off'/,
+    assert.match(slice, /offline\.textContent = t\(['"]ui_rydOff['"],\s*['"]RYD off['"]\)/,
         'network-error path must still surface "RYD off" pill');
     assert.match(slice, /API did not return a usable response/,
         'network-error title must explain the cause');
     // Cached-data path surfaces age in hours.
-    assert.match(slice, /Cached dislike count from Return YouTube Dislike \(\$\{ageH\}h old\)/,
+    assert.match(slice, /ui_rydCachedTitleHoursTpl/,
         'cached-data title must include the entry age in hours');
     // Live-fetch path shows running quota counter.
-    assert.match(slice, /\$\{this\._budgetWindow\.count\}\/\$\{this\._BUDGET_PER_MIN\}\/min used/,
+    assert.match(slice, /ui_rydLiveTitleTpl/,
         'live-fetch title must show running quota counter');
 });
 

@@ -4264,6 +4264,150 @@ const SPONSOR_RUNTIME_COPY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(SPONSOR_RUNTIME_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
+  de: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Die Return YouTube Dislike-Zahlen sind Schätzungen, nachdem YouTube öffentliche Dislike-Summen entfernt hat; Videos mit wenig Traffic können ungenauer sein.',
+    'RYD paused': 'RYD pausiert',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike pausiert — Rate-Limit ({used}/{limit}/Min.). Fortsetzung in {seconds} s.',
+    'RYD off': 'RYD aus',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike nicht verfügbar — die API lieferte keine verwendbare Antwort. Prüfen Sie Ihr Netzwerk oder versuchen Sie es später erneut.',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Geschätzte Dislike-Zahl aus Return YouTube Dislike (vor {hours} Std. zwischengespeichert).',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Geschätzte Dislike-Zahl aus Return YouTube Dislike (weniger als 1 Std. alt).',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Live-Dislike-Zahl aus Return YouTube Dislike ({used}/{limit}/Min. verwendet). {estimate}',
+    '{count} estimated dislikes. {estimate}': '{count} geschätzte Dislikes. {estimate}',
+    'est.': 'gesch.',
+    '{ratio}% liked': '{ratio}% gefällt',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': 'Das Like-Verhältnis verwendet geschätzte Return-YouTube-Dislike-Zahlen. {estimate}'
+  },
+  es: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Los recuentos de Return YouTube Dislike son estimaciones desde que YouTube retiró los totales públicos de dislikes; los videos con poco tráfico pueden ser menos precisos.',
+    'RYD paused': 'RYD pausado',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike pausado — límite de solicitudes ({used}/{limit}/min). Se reanuda en {seconds} s.',
+    'RYD off': 'RYD desactivado',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike no está disponible; la API no devolvió una respuesta utilizable. Comprueba la red o inténtalo más tarde.',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Recuento de dislikes en caché de Return YouTube Dislike (hace {hours} h).',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Recuento de dislikes en caché de Return YouTube Dislike (menos de 1 h).',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Recuento de dislikes en directo de Return YouTube Dislike ({used}/{limit}/min usados). {estimate}',
+    '{count} estimated dislikes. {estimate}': '{count} dislikes estimados. {estimate}',
+    'est.': 'est.',
+    '{ratio}% liked': '{ratio}% con Me gusta',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': 'La proporción de Me gusta usa recuentos estimados de Return YouTube Dislike. {estimate}'
+  },
+  fr: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Les nombres de Return YouTube Dislike sont des estimations depuis que YouTube a supprimé les totaux publics de dislikes ; les vidéos peu vues peuvent être moins précises.',
+    'RYD paused': 'RYD en pause',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike en pause — limite de requêtes ({used}/{limit}/min). Reprise dans {seconds} s.',
+    'RYD off': 'RYD désactivé',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike indisponible — l’API n’a pas renvoyé de réponse utilisable. Vérifiez votre réseau ou réessayez plus tard.',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Nombre de dislikes en cache de Return YouTube Dislike (il y a {hours} h).',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Nombre de dislikes en cache de Return YouTube Dislike (moins d’1 h).',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Nombre de dislikes en direct de Return YouTube Dislike ({used}/{limit}/min utilisés). {estimate}',
+    '{count} estimated dislikes. {estimate}': '{count} dislikes estimés. {estimate}',
+    'est.': 'est.',
+    '{ratio}% liked': '{ratio}% de mentions J’aime',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': 'Le ratio de mentions J’aime utilise les nombres estimés de Return YouTube Dislike. {estimate}'
+  },
+  it: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'I conteggi di Return YouTube Dislike sono stime dopo che YouTube ha rimosso i totali pubblici dei dislike; i video con poco traffico possono essere meno accurati.',
+    'RYD paused': 'RYD in pausa',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike in pausa — limite di richieste ({used}/{limit}/min). Riprende tra {seconds} s.',
+    'RYD off': 'RYD disattivato',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike non disponibile: l’API non ha restituito una risposta utilizzabile. Controlla la rete o riprova più tardi.',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Conteggio dislike in cache da Return YouTube Dislike ({hours} ore fa).',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Conteggio dislike in cache da Return YouTube Dislike (meno di 1 ora fa).',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Conteggio dislike live da Return YouTube Dislike ({used}/{limit}/min utilizzati). {estimate}',
+    '{count} estimated dislikes. {estimate}': '{count} dislike stimati. {estimate}',
+    'est.': 'stim.',
+    '{ratio}% liked': '{ratio}% Mi piace',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': 'Il rapporto Mi piace usa i conteggi stimati di Return YouTube Dislike. {estimate}'
+  },
+  pt_BR: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'As contagens do Return YouTube Dislike são estimativas depois que o YouTube removeu os totais públicos de dislikes; vídeos com pouco tráfego podem ser menos precisos.',
+    'RYD paused': 'RYD pausado',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike pausado — limite de requisições ({used}/{limit}/min). Retoma em {seconds}s.',
+    'RYD off': 'RYD desativado',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike indisponível — a API não retornou uma resposta utilizável. Verifique sua rede ou tente novamente mais tarde.',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Contagem de dislikes em cache do Return YouTube Dislike (há {hours} h).',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Contagem de dislikes em cache do Return YouTube Dislike (há menos de 1 h).',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Contagem de dislikes ao vivo do Return YouTube Dislike ({used}/{limit}/min usados). {estimate}',
+    '{count} estimated dislikes. {estimate}': '{count} dislikes estimados. {estimate}',
+    'est.': 'est.',
+    '{ratio}% liked': '{ratio}% curtido',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': 'A proporção de curtidas usa contagens estimadas do Return YouTube Dislike. {estimate}'
+  },
+  ru: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Счетчики Return YouTube Dislike являются оценочными после того, как YouTube убрал общедоступные значения дизлайков; для видео с низким трафиком точность может быть ниже.',
+    'RYD paused': 'RYD приостановлен',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike приостановлен — ограничение запросов ({used}/{limit}/мин). Возобновится через {seconds} с.',
+    'RYD off': 'RYD выключен',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike недоступен — API не вернул пригодный ответ. Проверьте сеть или повторите попытку позже.',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Кэшированное число дизлайков Return YouTube Dislike (возраст {hours} ч).',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Кэшированное число дизлайков Return YouTube Dislike (меньше часа).',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Текущее число дизлайков Return YouTube Dislike ({used}/{limit}/мин использовано). {estimate}',
+    '{count} estimated dislikes. {estimate}': '{count} оценочных дизлайков. {estimate}',
+    'est.': 'оцен.',
+    '{ratio}% liked': '{ratio}% лайков',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': 'Соотношение лайков использует оценочные значения Return YouTube Dislike. {estimate}'
+  },
+  ja: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Return YouTube Dislike の件数は、YouTube が公開の低評価数を削除した後の推定値です。視聴数の少ない動画では精度が下がる場合があります。',
+    'RYD paused': 'RYD 一時停止',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike はレート制限中（{used}/{limit}/分）。{seconds}秒後に再開します。',
+    'RYD off': 'RYD オフ',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike は利用できません。API が有効な応答を返しませんでした。ネットワークを確認して、後でもう一度お試しください。',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Return YouTube Dislike の低評価数（{hours}時間前のキャッシュ）。',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Return YouTube Dislike の低評価数（1時間未満前のキャッシュ）。',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Return YouTube Dislike の現在の低評価数（{used}/{limit}/分を使用）。{estimate}',
+    '{count} estimated dislikes. {estimate}': '推定低評価 {count} 件。{estimate}',
+    'est.': '推定',
+    '{ratio}% liked': '{ratio}% が高評価',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': '高評価率は Return YouTube Dislike の推定件数を使用します。{estimate}'
+  },
+  ko: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Return YouTube Dislike 수치는 YouTube가 공개 싫어요 총계를 제거한 후의 추정치이며, 조회수가 적은 동영상에서는 정확도가 낮을 수 있습니다.',
+    'RYD paused': 'RYD 일시중지',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike 일시중지 — 요청 제한됨({used}/{limit}/분). {seconds}초 후 재개됩니다.',
+    'RYD off': 'RYD 꺼짐',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike를 사용할 수 없습니다. API가 유효한 응답을 반환하지 않았습니다. 네트워크를 확인하거나 나중에 다시 시도하세요.',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Return YouTube Dislike 싫어요 수 캐시됨({hours}시간 전).',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Return YouTube Dislike 싫어요 수 캐시됨(1시간 이내).',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Return YouTube Dislike 실시간 싫어요 수({used}/{limit}/분 사용). {estimate}',
+    '{count} estimated dislikes. {estimate}': '싫어요 약 {count}개. {estimate}',
+    'est.': '추정',
+    '{ratio}% liked': '좋아요 {ratio}%',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': '좋아요 비율은 Return YouTube Dislike 추정 수치를 사용합니다. {estimate}'
+  },
+  ar: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'أعداد Return YouTube Dislike تقديرية بعد أن أزالت YouTube إجمالي عدم الإعجاب العام؛ قد تكون أقل دقة للفيديوهات منخفضة التفاعل.',
+    'RYD paused': 'تم إيقاف RYD مؤقتًا',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'تم إيقاف Return YouTube Dislike مؤقتًا — تم بلوغ حد الطلبات ({used}/{limit}/دقيقة). يُستأنف خلال {seconds} ث.',
+    'RYD off': 'RYD متوقف',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike غير متاح — لم تُرجع الواجهة استجابة قابلة للاستخدام. تحقق من الشبكة وحاول لاحقًا.',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'عدد عدم الإعجاب المخزن من Return YouTube Dislike (منذ {hours} ساعة).',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'عدد عدم الإعجاب المخزن من Return YouTube Dislike (أقل من ساعة).',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'عدد عدم الإعجاب المباشر من Return YouTube Dislike (استخدم {used}/{limit} في الدقيقة). {estimate}',
+    '{count} estimated dislikes. {estimate}': '{count} من عدم الإعجاب التقديري. {estimate}',
+    'est.': 'تقديري',
+    '{ratio}% liked': '{ratio}% إعجاب',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': 'تستخدم نسبة الإعجاب أعداد Return YouTube Dislike التقديرية. {estimate}'
+  },
+  zh_CN: {
+    'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Return YouTube Dislike 数量是估算值，因为 YouTube 已移除公开的点踩总数；低流量视频的准确度可能较低。',
+    'RYD paused': 'RYD 已暂停',
+    'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike 已暂停——达到速率限制（{used}/{limit}/分钟）。将在 {seconds} 秒后恢复。',
+    'RYD off': 'RYD 已关闭',
+    'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.': 'Return YouTube Dislike 不可用——API 未返回可用响应。请检查网络后重试。',
+    'Cached dislike count from Return YouTube Dislike ({hours}h old).': 'Return YouTube Dislike 点踩数已缓存（{hours} 小时前）。',
+    'Cached dislike count from Return YouTube Dislike (<1h old).': 'Return YouTube Dislike 点踩数已缓存（不到 1 小时前）。',
+    'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}': 'Return YouTube Dislike 实时点踩数（已使用 {used}/{limit} 次/分钟）。{estimate}',
+    '{count} estimated dislikes. {estimate}': '估算点踩数 {count}。{estimate}',
+    'est.': '估算',
+    '{ratio}% liked': '{ratio}% 喜欢',
+    'Like ratio uses estimated Return YouTube Dislike counts. {estimate}': '喜欢比例使用 Return YouTube Dislike 估算数量。{estimate}'
+  }
+};
+for (const [locale, messages] of Object.entries(RETURN_DISLIKE_RUNTIME_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AUDIO_TRACK_TRANSLATIONS = {
   de: {
     'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Wählen Sie Ihre bevorzugte Audiosprache über die Player-Brücke aus, ohne die YouTube-Einstellungen zu öffnen oder anzuklicken.',

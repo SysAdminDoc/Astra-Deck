@@ -41052,11 +41052,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             addNavigateRule,
             removeNavigateRule,
             injectStyle,
-            PageTypes
+            PageTypes,
+            t
         }) || {
             id: 'returnDislike',
-            name: 'Return YouTube Dislike',
-            description: 'Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
+            name: t('feature_returnDislike_name', 'Return YouTube Dislike'),
+            description: t('feature_returnDislike_desc', 'Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.'),
             group: 'Ratings',
             icon: 'thumbs-down',
             pages: [PageTypes.WATCH, PageTypes.SHORTS || 'shorts'],
@@ -41093,7 +41094,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _estimateDisclosureText() {
-                return 'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.';
+                return t('ui_rydEstimateDisclosure', 'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.');
             },
 
             _isPlayerPage() {
@@ -41251,11 +41252,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         && windowAge < 60000;
                     if (rateLimited) {
                         const remainingSec = Math.max(1, Math.ceil((60000 - windowAge) / 1000));
-                        offline.textContent = 'RYD paused';
-                        offline.title = `Return YouTube Dislike paused — rate-limited (${this._budgetWindow.count}/${this._BUDGET_PER_MIN}/min). Resumes in ${remainingSec}s.`;
+                        offline.textContent = t('ui_rydPaused', 'RYD paused');
+                        offline.title = t('ui_rydPausedTitleTpl', 'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.')
+                            .replace('{used}', String(this._budgetWindow.count))
+                            .replace('{limit}', String(this._BUDGET_PER_MIN))
+                            .replace('{seconds}', String(remainingSec));
                     } else {
-                        offline.textContent = 'RYD off';
-                        offline.title = 'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.';
+                        offline.textContent = t('ui_rydOff', 'RYD off');
+                        offline.title = t('ui_rydUnavailableTitle', 'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.');
                     }
                     dislikeButton.appendChild(offline);
                     this._pillEl = offline;
@@ -41275,19 +41279,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const ageMs = Date.now() - (this._cache?.[videoId]?.ts || Date.now());
                     const ageH = Math.floor(ageMs / 3600000);
                     const cacheTitle = ageH >= 1
-                        ? `Cached dislike count from Return YouTube Dislike (${ageH}h old).`
-                        : `Cached dislike count from Return YouTube Dislike (<1h old).`;
+                        ? t('ui_rydCachedTitleHoursTpl', 'Cached dislike count from Return YouTube Dislike ({hours}h old).')
+                            .replace('{hours}', String(ageH))
+                        : t('ui_rydCachedTitleRecent', 'Cached dislike count from Return YouTube Dislike (<1h old).');
                     pill.title = `${cacheTitle} ${estimateCopy}`;
                 } else {
-                    pill.title = `Live dislike count from Return YouTube Dislike (${this._budgetWindow.count}/${this._BUDGET_PER_MIN}/min used). ${estimateCopy}`;
+                    pill.title = t('ui_rydLiveTitleTpl', 'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}')
+                        .replace('{used}', String(this._budgetWindow.count))
+                        .replace('{limit}', String(this._BUDGET_PER_MIN))
+                        .replace('{estimate}', estimateCopy);
                 }
-                pill.setAttribute('aria-label', `${countLabel} estimated dislikes. ${estimateCopy}`);
+                pill.setAttribute('aria-label', t('ui_rydCountAriaTpl', '{count} estimated dislikes. {estimate}')
+                    .replace('{count}', countLabel)
+                    .replace('{estimate}', estimateCopy));
                 dislikeButton.appendChild(pill);
                 this._pillEl = pill;
 
                 const estimateEl = document.createElement('span');
                 estimateEl.className = 'ytkit-ryd-estimate';
-                estimateEl.textContent = 'est.';
+                estimateEl.textContent = t('ui_rydEstimateShort', 'est.');
                 estimateEl.title = estimateCopy;
                 estimateEl.setAttribute('aria-label', estimateCopy);
                 dislikeButton.appendChild(estimateEl);
@@ -41299,8 +41309,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const ratio = Math.round(((data.likes || 0) / total) * 100);
                         const ratioEl = document.createElement('span');
                         ratioEl.className = 'ytkit-ryd-ratio';
-                        ratioEl.textContent = `${ratio}% liked`;
-                        ratioEl.title = `Like ratio uses estimated Return YouTube Dislike counts. ${estimateCopy}`;
+                        ratioEl.textContent = t('ui_rydRatioTpl', '{ratio}% liked').replace('{ratio}', String(ratio));
+                        ratioEl.title = t('ui_rydRatioTitleTpl', 'Like ratio uses estimated Return YouTube Dislike counts. {estimate}')
+                            .replace('{estimate}', estimateCopy);
                         dislikeButton.appendChild(ratioEl);
                     }
                 }
@@ -41376,8 +41387,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             t
         }) || {
             id: 'returnDislikeOnCards',
-            name: 'Thumbnail Like-Ratio Bars',
-            description: 'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.',
+            name: t('feature_returnDislikeOnCards_name', 'Thumbnail Like-Ratio Bars'),
+            description: t('feature_returnDislikeOnCards_desc', 'Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache.'),
             group: 'Ratings',
             icon: 'thumbs-up',
             init() {},

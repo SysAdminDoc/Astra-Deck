@@ -118,6 +118,8 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         'SponsorBlock rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/features/youtube-music-compat/index.js'], undefined,
         'YouTube Music compatibility rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/features/return-dislike/index.js'], undefined,
+        'Return YouTube Dislike rendered sink copy should stay at zero after the burn-down pass');
 
     const downloadSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
@@ -181,7 +183,8 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         ['player-dock/index.js', 'playerDockHomeLink'],
         ['search-while-watching/index.js', 'feature_searchWhileWatching_desc'],
         ['sponsorblock/index.js', 'sponsorCachedSegmentTitleTpl'],
-        ['youtube-music-compat/index.js', 'feature_youtubeMusicCompat_desc']
+        ['youtube-music-compat/index.js', 'feature_youtubeMusicCompat_desc'],
+        ['return-dislike/index.js', 'ui_rydPausedTitleTpl']
     ]) {
         const source = fs.readFileSync(path.join(repoRoot, 'extension', 'features', file), 'utf8');
         assert.match(source, new RegExp(`t\\(['"]${key}`));

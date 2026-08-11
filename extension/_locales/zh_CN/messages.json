@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label}（缓存于 {time}）"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "Return YouTube Dislike 数量是估算值，因为 YouTube 已移除公开的点踩总数；低流量视频的准确度可能较低。"
+  },
+  "ui_rydPaused": {
+    "message": "RYD 已暂停"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike 已暂停——达到速率限制（{used}/{limit}/分钟）。将在 {seconds} 秒后恢复。"
+  },
+  "ui_rydOff": {
+    "message": "RYD 已关闭"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike 不可用——API 未返回可用响应。请检查网络后重试。"
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Return YouTube Dislike 点踩数已缓存（{hours} 小时前）。"
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Return YouTube Dislike 点踩数已缓存（不到 1 小时前）。"
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Return YouTube Dislike 实时点踩数（已使用 {used}/{limit} 次/分钟）。{estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "估算点踩数 {count}。{estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "估算"
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% 喜欢"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "喜欢比例使用 Return YouTube Dislike 估算数量。{estimate}"
   }
 }

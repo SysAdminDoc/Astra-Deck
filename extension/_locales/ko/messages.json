@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} ({time}에 캐시됨)"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "Return YouTube Dislike 수치는 YouTube가 공개 싫어요 총계를 제거한 후의 추정치이며, 조회수가 적은 동영상에서는 정확도가 낮을 수 있습니다."
+  },
+  "ui_rydPaused": {
+    "message": "RYD 일시중지"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike 일시중지 — 요청 제한됨({used}/{limit}/분). {seconds}초 후 재개됩니다."
+  },
+  "ui_rydOff": {
+    "message": "RYD 꺼짐"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike를 사용할 수 없습니다. API가 유효한 응답을 반환하지 않았습니다. 네트워크를 확인하거나 나중에 다시 시도하세요."
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Return YouTube Dislike 싫어요 수 캐시됨({hours}시간 전)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Return YouTube Dislike 싫어요 수 캐시됨(1시간 이내)."
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Return YouTube Dislike 실시간 싫어요 수({used}/{limit}/분 사용). {estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "싫어요 약 {count}개. {estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "추정"
+  },
+  "ui_rydRatioTpl": {
+    "message": "좋아요 {ratio}%"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "좋아요 비율은 Return YouTube Dislike 추정 수치를 사용합니다. {estimate}"
   }
 }

@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (в кэше с {time})"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "Счетчики Return YouTube Dislike являются оценочными после того, как YouTube убрал общедоступные значения дизлайков; для видео с низким трафиком точность может быть ниже."
+  },
+  "ui_rydPaused": {
+    "message": "RYD приостановлен"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike приостановлен — ограничение запросов ({used}/{limit}/мин). Возобновится через {seconds} с."
+  },
+  "ui_rydOff": {
+    "message": "RYD выключен"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike недоступен — API не вернул пригодный ответ. Проверьте сеть или повторите попытку позже."
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Кэшированное число дизлайков Return YouTube Dislike (возраст {hours} ч)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Кэшированное число дизлайков Return YouTube Dislike (меньше часа)."
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Текущее число дизлайков Return YouTube Dislike ({used}/{limit}/мин использовано). {estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "{count} оценочных дизлайков. {estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "оцен."
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% лайков"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "Соотношение лайков использует оценочные значения Return YouTube Dislike. {estimate}"
   }
 }
