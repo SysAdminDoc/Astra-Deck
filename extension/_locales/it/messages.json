@@ -3484,7 +3484,7 @@
     "message": "Pulsante loop video"
   },
   "feature_videoNotes_desc": {
-    "message": "Mantieni una nota locale per il video corrente, esporta l'archivio delle note e limita il deposito ai 1000 video modificati piu di recente."
+    "message": "Conserva una nota locale per il video corrente, esporta l’archivio delle note e limita l’archivio ai 1000 video modificati più di recente."
   },
   "feature_videoNotes_name": {
     "message": "Note per video"
@@ -6089,58 +6089,58 @@
     "message": "Elimina"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "Elimina la nota per questo video"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "Nessuna nota salvata per questo video."
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "Esporta note"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "Esporta tutte le note dei video"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "Nessuna nota video da esportare."
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "Esportate {count} note video"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "Note locali"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "ID video non disponibile"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "Note per questo video"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "Scrivi note per questo video…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "Note per video"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "Nota video rimossa"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "Nota video ripristinata"
   },
   "videoNotesSaveFailed": {
     "message": "Salvataggio non riuscito — spazio esaurito o non disponibile."
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "Salvato localmente."
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "Salvato in {videoId}"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "Salvataggio…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "Note video"
   },
   "watchLaterNotInMenu": {
     "message": "«Guarda più tardi» non è stato trovato in questo menu. Usa l’azione Salva nativa di questa scheda."

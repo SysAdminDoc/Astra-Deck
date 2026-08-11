@@ -76,8 +76,8 @@
       "strictDigest": "b5b07ed9a760074ba80e382bfa7f25fc45ba6c5ec9749c2a0c4f736ddd0a5e53"
     },
     "extension/features/video-notes/index.js": {
-      "count": 4,
-      "digest": "bbe4aeca4b14a3dba986d1c3be1bade4be2a48ad7515946b2eeffb6077fa8188",
+      "count": 2,
+      "digest": "dadde8c59c1fb580de8d9cd9b58d8da1f4a9fbae60e8c111e276b74a6dde735f",
       "strictCount": 2,
       "strictDigest": "dadde8c59c1fb580de8d9cd9b58d8da1f4a9fbae60e8c111e276b74a6dde735f"
     },
@@ -102,10 +102,10 @@
       "strictDigest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a"
     },
     "extension/ytkit.js": {
-      "count": 1270,
-      "digest": "e99945763a80b8ed3839fe76d8d2d7e37e14f3b4b408aa13e7e0d21dca5b24b8",
-      "strictCount": 613,
-      "strictDigest": "f7a2728dd0e242aca44ca3199fe5fcd8b32e74af5878eb24ac2e25565e6ce756"
+      "count": 1254,
+      "digest": "80933a87007c6a247c4fe174fbf89be450d7371c55a797e157af86f4aed2db1e",
+      "strictCount": 600,
+      "strictDigest": "531b2bebfc4309ba09d30a04e96d871bd9bb849b7559a737876f4b28e427f13d"
     }
   }
 }

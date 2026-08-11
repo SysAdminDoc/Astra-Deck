@@ -3484,10 +3484,10 @@
     "message": "Кнопка зацикливания видео"
   },
   "feature_videoNotes_desc": {
-    "message": "Вести локальную заметку для текущего видео, экспортировать архив заметок. Хранилище ограничено 1000 последних редактированных видео."
+    "message": "Хранит локальную заметку для текущего видео, экспортирует архив заметок и ограничивает хранилище 1000 недавно изменённых видео."
   },
   "feature_videoNotes_name": {
-    "message": "Заметки к видео"
+    "message": "Заметки для видео"
   },
   "feature_videoResolutionBadge_desc": {
     "message": "Показывает значок 4K, HD или SD на миниатюрах видео в зависимости от доступного качества"
@@ -6089,58 +6089,58 @@
     "message": "Удалить"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "Удалить заметку для этого видео"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "Для этого видео нет сохранённой заметки."
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "Экспортировать заметки"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "Экспортировать все заметки видео"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "Нет заметок видео для экспорта."
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "Экспортировано заметок видео: {count}"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "Локальные заметки"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "ID видео недоступен"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "Заметки для этого видео"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "Запишите заметки для этого видео…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "Заметки для каждого видео"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "Заметка видео удалена"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "Заметка видео восстановлена"
   },
   "videoNotesSaveFailed": {
     "message": "Не удалось сохранить — хранилище переполнено или недоступно."
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "Сохранено локально."
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "Сохранено для {videoId}"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "Сохранение…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "Заметки видео"
   },
   "watchLaterNotInMenu": {
     "message": "Не удалось найти «Смотреть позже» в этом меню. Воспользуйтесь штатным действием «Сохранить» на этой карточке."

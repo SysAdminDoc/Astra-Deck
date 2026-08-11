@@ -3484,10 +3484,10 @@
     "message": "Botón de bucle de video"
   },
   "feature_videoNotes_desc": {
-    "message": "Mantener una nota local para el video actual, exportar el archivo de notas y limitar el almacén a los 1000 videos editados más recientemente."
+    "message": "Guarda una nota local para el vídeo actual, exporta el archivo de notas y limita el almacenamiento a los 1000 vídeos editados más recientemente."
   },
   "feature_videoNotes_name": {
-    "message": "Notas por video"
+    "message": "Notas por vídeo"
   },
   "feature_videoResolutionBadge_desc": {
     "message": "Muestra un Badge de 4K, HD o SD en las Thumbnails de video según la calidad disponible"
@@ -6089,58 +6089,58 @@
     "message": "Eliminar"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "Eliminar la nota de este vídeo"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "No hay ninguna nota guardada para este vídeo."
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "Exportar notas"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "Exportar todas las notas de vídeo"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "No hay notas de vídeo para exportar."
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "Se exportaron {count} notas de vídeo"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "Notas locales"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "ID del vídeo no disponible"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "Notas de este vídeo"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "Escribe notas para este vídeo…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "Notas por vídeo"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "Nota de vídeo eliminada"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "Nota de vídeo restaurada"
   },
   "videoNotesSaveFailed": {
     "message": "No se pudo guardar: almacenamiento lleno o no disponible."
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "Guardado localmente."
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "Guardado en {videoId}"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "Guardando…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "Notas de vídeo"
   },
   "watchLaterNotInMenu": {
     "message": "No se encontró «Ver más tarde» en este menú. Prueba la acción Guardar nativa de esta tarjeta."
