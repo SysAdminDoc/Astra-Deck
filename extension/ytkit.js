@@ -24132,6 +24132,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _updateCount(value) {
                 const countEl = this._container?.querySelector('.ytkit-video-notes-count');
+                // i18n-static: numeric character-count display, not translatable copy.
                 if (countEl) countEl.textContent = `${String(value || '').length}/${this._MAX_NOTE_CHARS}`;
             },
 
@@ -24306,6 +24307,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 scope.setAttribute('translate', 'no');
                 const count = document.createElement('span');
                 count.className = 'ytkit-video-notes-count';
+                // i18n-static: numeric character-count display, not translatable copy.
                 count.textContent = `${textarea.value.length}/${this._MAX_NOTE_CHARS}`;
                 footer.append(scope, count);
 

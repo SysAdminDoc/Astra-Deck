@@ -82,6 +82,31 @@ test('strict UI-copy sink changes identify a new direct literal separately from 
     assert.ok(failures.some((failure) => /strict UI-copy sink changed/.test(failure)));
 });
 
+test('download and video-notes surfaces keep rendered copy behind locale keys', () => {
+    const repoRoot = path.join(__dirname, '..');
+    const baseline = JSON.parse(fs.readFileSync(
+        path.join(repoRoot, 'scripts', 'i18n-ui-copy-baseline.json'),
+        'utf8'
+    ));
+    assert.equal(baseline.entries['extension/features/download-ui/index.js'], undefined,
+        'download UI copy debt should stay at zero after the first burn-down pass');
+    assert.equal(baseline.entries['extension/features/video-notes/index.js'], undefined,
+        'video-notes copy debt should stay at zero after the first burn-down pass');
+
+    const downloadSource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
+        'utf8'
+    );
+    const notesSource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'features', 'video-notes', 'index.js'),
+        'utf8'
+    );
+    assert.match(downloadSource, /t\('dlCobaltProfileOnly'/);
+    assert.match(downloadSource, /t\('dlFailureTpl'/);
+    assert.match(downloadSource, /t\('feature_downloadHistoryPanel_name'/);
+    assert.match(notesSource, /i18n-static: numeric character-count display/);
+});
+
 test('generated pseudolocale expands copy and isolates interpolation tokens for RTL proofing', () => {
     const source = 'Downloaded {count} files for $USER$';
     const pseudo = pseudolocalizeMessage(source);

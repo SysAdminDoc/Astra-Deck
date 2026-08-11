@@ -404,6 +404,48 @@
   "dataMgmtAria": {
     "message": "数据管理"
   },
+  "dlCobaltButtonTitle": {
+    "message": "Astra Downloader 离线时尝试使用 cobalt.tools"
+  },
+  "dlCobaltFailedTpl": {
+    "message": "Cobalt 备用功能失败：{error}"
+  },
+  "dlCobaltOpened": {
+    "message": "Cobalt 备用功能：已在新标签页中打开媒体 URL。"
+  },
+  "dlCobaltProfileOnly": {
+    "message": "Cobalt 备用功能仅在 GitHub/full 配置中启用。"
+  },
+  "dlCobaltRunningSkip": {
+    "message": "Astra Downloader 正在运行；已跳过备用功能。"
+  },
+  "dlFailureTpl": {
+    "message": "Astra Downloader：{error} {advice}"
+  },
+  "dlFormatAudio320": {
+    "message": "320kbps，通用"
+  },
+  "dlFormatAudioAac": {
+    "message": "AAC，适配 Apple"
+  },
+  "dlFormatAudioLossless": {
+    "message": "无损音频"
+  },
+  "dlFormatAudioOpus": {
+    "message": "更小，质量高"
+  },
+  "dlFormatAudioPcm": {
+    "message": "未压缩 PCM"
+  },
+  "dlFormatVideoLossless": {
+    "message": "无损容器"
+  },
+  "dlFormatVideoUniversal": {
+    "message": "通用，兼容性最佳"
+  },
+  "dlFormatVideoWeb": {
+    "message": "针对 Web 优化"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -442,6 +484,12 @@
   },
   "dlHealthOffline": {
     "message": "offline"
+  },
+  "dlHealthPillAriaTpl": {
+    "message": "{label}，{value}"
+  },
+  "dlHealthPillTpl": {
+    "message": "{label}：{value}"
   },
   "dlHealthProvisioning": {
     "message": "Provisioning…"

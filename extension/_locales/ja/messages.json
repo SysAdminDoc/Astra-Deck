@@ -404,6 +404,48 @@
   "dataMgmtAria": {
     "message": "データ管理"
   },
+  "dlCobaltButtonTitle": {
+    "message": "Astra Downloader がオフラインのときに cobalt.tools を試す"
+  },
+  "dlCobaltFailedTpl": {
+    "message": "Cobalt フォールバックに失敗しました: {error}"
+  },
+  "dlCobaltOpened": {
+    "message": "Cobalt フォールバック: メディア URL を新しいタブで開きました。"
+  },
+  "dlCobaltProfileOnly": {
+    "message": "Cobalt フォールバックは GitHub/full プロファイルでのみ有効です。"
+  },
+  "dlCobaltRunningSkip": {
+    "message": "Astra Downloader が実行中のため、フォールバックをスキップしました。"
+  },
+  "dlFailureTpl": {
+    "message": "Astra Downloader: {error}。{advice}"
+  },
+  "dlFormatAudio320": {
+    "message": "320 kbps、汎用"
+  },
+  "dlFormatAudioAac": {
+    "message": "AAC、Apple 対応"
+  },
+  "dlFormatAudioLossless": {
+    "message": "可逆圧縮音声"
+  },
+  "dlFormatAudioOpus": {
+    "message": "小容量、高品質"
+  },
+  "dlFormatAudioPcm": {
+    "message": "非圧縮 PCM"
+  },
+  "dlFormatVideoLossless": {
+    "message": "可逆圧縮コンテナ"
+  },
+  "dlFormatVideoUniversal": {
+    "message": "汎用、最高の互換性"
+  },
+  "dlFormatVideoWeb": {
+    "message": "Web 向けに最適化"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -442,6 +484,12 @@
   },
   "dlHealthOffline": {
     "message": "offline"
+  },
+  "dlHealthPillAriaTpl": {
+    "message": "{label}、{value}"
+  },
+  "dlHealthPillTpl": {
+    "message": "{label}：{value}"
   },
   "dlHealthProvisioning": {
     "message": "Provisioning…"

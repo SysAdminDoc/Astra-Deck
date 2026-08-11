@@ -404,6 +404,48 @@
   "dataMgmtAria": {
     "message": "إدارة البيانات"
   },
+  "dlCobaltButtonTitle": {
+    "message": "جرّب cobalt.tools عندما يكون Astra Downloader غير متصل"
+  },
+  "dlCobaltFailedTpl": {
+    "message": "فشل البديل Cobalt: {error}"
+  },
+  "dlCobaltOpened": {
+    "message": "بديل Cobalt: فُتح عنوان الوسائط في علامة تبويب جديدة."
+  },
+  "dlCobaltProfileOnly": {
+    "message": "لا يتوفر البديل Cobalt إلا في ملف GitHub/full."
+  },
+  "dlCobaltRunningSkip": {
+    "message": "Astra Downloader قيد التشغيل؛ تم تخطي البديل."
+  },
+  "dlFailureTpl": {
+    "message": "Astra Downloader: {error}؛ {advice}"
+  },
+  "dlFormatAudio320": {
+    "message": "320 كيلوبت/ث، عام"
+  },
+  "dlFormatAudioAac": {
+    "message": "AAC، متوافق مع Apple"
+  },
+  "dlFormatAudioLossless": {
+    "message": "صوت بلا فقد"
+  },
+  "dlFormatAudioOpus": {
+    "message": "أصغر، جودة عالية"
+  },
+  "dlFormatAudioPcm": {
+    "message": "PCM غير مضغوط"
+  },
+  "dlFormatVideoLossless": {
+    "message": "حاوية بلا فقد"
+  },
+  "dlFormatVideoUniversal": {
+    "message": "عام، أفضل توافق"
+  },
+  "dlFormatVideoWeb": {
+    "message": "مُحسّن للويب"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -442,6 +484,12 @@
   },
   "dlHealthOffline": {
     "message": "offline"
+  },
+  "dlHealthPillAriaTpl": {
+    "message": "{label}، {value}"
+  },
+  "dlHealthPillTpl": {
+    "message": "{label} — {value}"
   },
   "dlHealthProvisioning": {
     "message": "Provisioning…"
