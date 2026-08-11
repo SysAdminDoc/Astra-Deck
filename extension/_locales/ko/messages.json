@@ -847,7 +847,7 @@
     "message": "Astra Downloader 실패"
   },
   "dlProgressInProgress": {
-    "message": "진행 중"
+    "message": "시청 중"
   },
   "dlProgressLocal": {
     "message": "로컬"
@@ -3568,7 +3568,7 @@
     "message": "나중에 보기 빠른 버튼"
   },
   "feature_watchLaterWorkbench_desc": {
-    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+    "message": "나중에 볼 동영상 재생목록 도구: 동영상 연령, 길이, 시청 상태, 채널 또는 제목으로 필터링하고 결과를 미리 보고 정렬하며 CSV/JSON으로 내보내고 복구 가능한 제한 세션에서 삭제합니다"
   },
   "feature_watchLaterWorkbench_name": {
     "message": "Watch Later Workbench"
@@ -5603,7 +5603,7 @@
     "message": "Open"
   },
   "toastActionUndo": {
-    "message": "Undo"
+    "message": "실행 취소"
   },
   "toastDismissAria": {
     "message": "Dismiss notification"
@@ -5780,7 +5780,7 @@
     "message": "좋아요 · Return YouTube Dislike 추정"
   },
   "undo": {
-    "message": "Undo"
+    "message": "실행 취소"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
@@ -6272,8 +6272,35 @@
   "wlwbChannelPlaceholder": {
     "message": "채널에 포함…"
   },
+  "wlwbAgeAria": {
+    "message": "동영상 최소 경과 일수"
+  },
+  "wlwbAgePlaceholder": {
+    "message": "이 일수보다 오래됨…"
+  },
+  "wlwbAgeUnavailableTpl": {
+    "message": "로드된 행 {count}개는 업로드 연령을 읽을 수 없어 연령 필터에서 제외됩니다."
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days}일"
+  },
+  "wlwbAgeLoading": {
+    "message": "업로드 날짜를 불러오는 중…"
+  },
   "wlwbCloseAria": {
     "message": "워크벤치 닫기"
+  },
+  "wlwbDurationMaxAria": {
+    "message": "최대 길이(분)"
+  },
+  "wlwbDurationMaxPlaceholder": {
+    "message": "길이 ≤ 분…"
+  },
+  "wlwbDurationMinAria": {
+    "message": "최소 길이(분)"
+  },
+  "wlwbDurationMinPlaceholder": {
+    "message": "길이 ≥ 분…"
   },
   "wlwbExportCsv": {
     "message": "CSV 내보내기"
@@ -6301,6 +6328,15 @@
   },
   "wlwbRemovalLogBtn": {
     "message": "제거 기록"
+  },
+  "wlwbRecoveryEmpty": {
+    "message": "복구를 기다리는 삭제된 동영상이 없습니다."
+  },
+  "wlwbRecoveryStatusTpl": {
+    "message": "복원할 수 있는 삭제된 동영상이 {count}개 있습니다."
+  },
+  "wlwbRecoveryTitle": {
+    "message": "복구"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "일치 항목 제거(실행당 최대 {limit}개)"
@@ -6341,11 +6377,53 @@
   "wlwbTitlePlaceholder": {
     "message": "제목에 포함…"
   },
+  "wlwbNothingToUndo": {
+    "message": "나중에 볼 동영상에서 삭제된 항목 중 실행 취소할 항목이 없습니다."
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "삭제된 동영상 {total}개 중 {restored}개를 나중에 볼 동영상으로 복원했습니다."
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "{title}을(를) 나중에 볼 동영상으로 복원했습니다"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "{title}을(를) 복원할 수 없습니다: {error}"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
+  },
+  "wlwbUndoAll": {
+    "message": "모두 실행 취소"
+  },
+  "wlwbUndoItem": {
+    "message": "실행 취소"
+  },
   "wlwbWatchedAria": {
     "message": "최소 시청 비율 필터"
   },
   "wlwbWatchedPlaceholder": {
     "message": "시청 ≥ %(예: 90)"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "시청 상태 필터"
+  },
+  "wlwbStateAny": {
+    "message": "모든 시청 상태"
+  },
+  "wlwbStateInProgress": {
+    "message": "시청 중"
+  },
+  "wlwbStateUnwatched": {
+    "message": "시청하지 않음"
+  },
+  "wlwbStateWatched": {
+    "message": "시청함(90% 이상)"
+  },
+  "wlwbUnknownAge": {
+    "message": "연령 ?"
+  },
+  "wlwbUnknownDuration": {
+    "message": "길이 ?"
   },
   "workspaceEyebrow": {
     "message": "설정 작업 공간"

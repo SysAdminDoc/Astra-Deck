@@ -847,7 +847,7 @@
     "message": "فشل Astra Downloader"
   },
   "dlProgressInProgress": {
-    "message": "قيد التنفيذ"
+    "message": "قيد المشاهدة"
   },
   "dlProgressLocal": {
     "message": "محلي"
@@ -3568,7 +3568,7 @@
     "message": "زر المشاهدة لاحقاً السريع"
   },
   "feature_watchLaterWorkbench_desc": {
-    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+    "message": "أدوات مجمعة لقائمة المشاهدة لاحقًا: التصفية حسب العمر أو المدة أو حالة المشاهدة أو القناة أو العنوان، ومعاينة النتائج وترتيبها وتصديرها واستبعادها في جلسات محدودة قابلة للاستعادة"
   },
   "feature_watchLaterWorkbench_name": {
     "message": "Watch Later Workbench"
@@ -5603,7 +5603,7 @@
     "message": "Open"
   },
   "toastActionUndo": {
-    "message": "Undo"
+    "message": "تراجع"
   },
   "toastDismissAria": {
     "message": "Dismiss notification"
@@ -5780,7 +5780,7 @@
     "message": "إعجاب · تقدير Return YouTube Dislike"
   },
   "undo": {
-    "message": "Undo"
+    "message": "تراجع"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
@@ -6272,8 +6272,35 @@
   "wlwbChannelPlaceholder": {
     "message": "القناة تحتوي على…"
   },
+  "wlwbAgeAria": {
+    "message": "الحد الأدنى لعمر الفيديو بالأيام"
+  },
+  "wlwbAgePlaceholder": {
+    "message": "أقدم من (بالأيام)…"
+  },
+  "wlwbAgeUnavailableTpl": {
+    "message": "لا يمكن قراءة عمر الرفع في {count} صفًا محمّلًا، لذلك استُبعدت من تصفية العمر."
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days} يوم"
+  },
+  "wlwbAgeLoading": {
+    "message": "جارٍ تحميل تواريخ الرفع…"
+  },
   "wlwbCloseAria": {
     "message": "إغلاق منضدة العمل"
+  },
+  "wlwbDurationMaxAria": {
+    "message": "المدة القصوى بالدقائق"
+  },
+  "wlwbDurationMaxPlaceholder": {
+    "message": "المدة ≤ دقائق…"
+  },
+  "wlwbDurationMinAria": {
+    "message": "المدة الدنيا بالدقائق"
+  },
+  "wlwbDurationMinPlaceholder": {
+    "message": "المدة ≥ دقائق…"
   },
   "wlwbExportCsv": {
     "message": "تصدير CSV"
@@ -6301,6 +6328,15 @@
   },
   "wlwbRemovalLogBtn": {
     "message": "سجل الإزالة"
+  },
+  "wlwbRecoveryEmpty": {
+    "message": "لا توجد فيديوهات محذوفة بانتظار الاستعادة."
+  },
+  "wlwbRecoveryStatusTpl": {
+    "message": "يمكن استعادة {count} فيديو محذوف."
+  },
+  "wlwbRecoveryTitle": {
+    "message": "استعادة الحذف"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "إزالة المطابقات (بحد أقصى {limit} لكل تشغيل)"
@@ -6341,11 +6377,53 @@
   "wlwbTitlePlaceholder": {
     "message": "العنوان يحتوي على…"
   },
+  "wlwbNothingToUndo": {
+    "message": "لا توجد فيديوهات محذوفة من المشاهدة لاحقًا بانتظار التراجع."
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "تمت استعادة {restored} من أصل {total} فيديو محذوف إلى المشاهدة لاحقًا."
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "تمت استعادة {title} إلى المشاهدة لاحقًا"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "تعذرت استعادة {title}: {error}"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
+  },
+  "wlwbUndoAll": {
+    "message": "التراجع عن الكل"
+  },
+  "wlwbUndoItem": {
+    "message": "تراجع"
+  },
   "wlwbWatchedAria": {
     "message": "عامل تصفية الحد الأدنى لنسبة المشاهدة"
   },
   "wlwbWatchedPlaceholder": {
     "message": "نسبة المشاهدة ≥ % (مثال: 90)"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "تصفية حالة المشاهدة"
+  },
+  "wlwbStateAny": {
+    "message": "أي حالة مشاهدة"
+  },
+  "wlwbStateInProgress": {
+    "message": "قيد المشاهدة"
+  },
+  "wlwbStateUnwatched": {
+    "message": "غير مشاهد"
+  },
+  "wlwbStateWatched": {
+    "message": "مشاهد (90%+)"
+  },
+  "wlwbUnknownAge": {
+    "message": "العمر ؟"
+  },
+  "wlwbUnknownDuration": {
+    "message": "المدة ؟"
   },
   "workspaceEyebrow": {
     "message": "مساحة عمل الإعدادات"

@@ -2524,6 +2524,174 @@ const WATCH_LATER_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(WATCH_LATER_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const WATCH_LATER_WORKBENCH_TRANSLATIONS = {
+  de: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': 'Werkzeuge für die Später-ansehen-Playlist: nach Alter, Dauer, Wiedergabestatus, Kanal oder Titel filtern, Treffer anzeigen und sortieren, als CSV/JSON exportieren und in begrenzten Sitzungen mit Wiederherstellung entfernen',
+    'Minimum video age in days': 'Mindestalter des Videos in Tagen', 'Older than days…': 'Älter als (Tage)…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': '{count} geladene Zeile(n) haben kein lesbares Uploadalter und werden aus dem Altersfilter ausgeschlossen.',
+    '{days}d': '{days} T.', 'Maximum duration in minutes': 'Maximale Dauer in Minuten', 'Duration ≤ minutes…': 'Dauer ≤ Minuten…',
+    'Minimum duration in minutes': 'Minimale Dauer in Minuten', 'Duration ≥ minutes…': 'Dauer ≥ Minuten…',
+    'No removed videos are waiting for recovery.': 'Keine entfernten Videos warten auf Wiederherstellung.',
+    '{count} removed video(s) are available to restore.': '{count} entfernte(s) Video(s) können wiederhergestellt werden.',
+    'Undo recovery': 'Wiederherstellung', 'No removed Watch Later videos are waiting for Undo.': 'Keine entfernten Später-ansehen-Videos warten auf Rückgängig.',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': '{restored} von {total} entfernten Video(s) zu Später ansehen wiederhergestellt.',
+    'Restored {title} to Watch Later': '{title} zu Später ansehen wiederhergestellt', 'Could not restore {title}: {error}': '{title} konnte nicht wiederhergestellt werden: {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': 'Alle rückgängig', 'Undo': 'Rückgängig',
+    'Watched state filter': 'Filter für Wiedergabestatus', 'Any watched state': 'Jeder Wiedergabestatus', 'In progress': 'In Bearbeitung',
+    'Unwatched': 'Nicht angesehen', 'Watched (90%+)': 'Angesehen (90%+)', 'age ?': 'Alter ?', 'duration ?': 'Dauer ?'
+  },
+  es: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': 'Herramientas para la lista Ver más tarde: filtra por antigüedad, duración, estado de visualización, canal o título, previsualiza y ordena coincidencias, exporta CSV/JSON y elimina en sesiones limitadas recuperables',
+    'Minimum video age in days': 'Antigüedad mínima del video en días', 'Older than days…': 'Más antiguo que (días)…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': '{count} fila(s) cargada(s) no tienen una antigüedad de subida legible y se excluyen del filtro de antigüedad.',
+    '{days}d': '{days} d', 'Maximum duration in minutes': 'Duración máxima en minutos', 'Duration ≤ minutes…': 'Duración ≤ minutos…',
+    'Minimum duration in minutes': 'Duración mínima en minutos', 'Duration ≥ minutes…': 'Duración ≥ minutos…',
+    'No removed videos are waiting for recovery.': 'No hay videos eliminados esperando recuperación.',
+    '{count} removed video(s) are available to restore.': 'Hay {count} video(s) eliminado(s) disponibles para restaurar.',
+    'Undo recovery': 'Recuperación', 'No removed Watch Later videos are waiting for Undo.': 'No hay videos eliminados de Ver más tarde esperando deshacer.',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': 'Se restauraron {restored} de {total} video(s) eliminado(s) en Ver más tarde.',
+    'Restored {title} to Watch Later': 'Se restauró {title} en Ver más tarde', 'Could not restore {title}: {error}': 'No se pudo restaurar {title}: {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': 'Deshacer todo', 'Undo': 'Deshacer',
+    'Watched state filter': 'Filtro de estado de visualización', 'Any watched state': 'Cualquier estado', 'In progress': 'En curso',
+    'Unwatched': 'No vistos', 'Watched (90%+)': 'Vistos (90%+)', 'age ?': 'antigüedad ?', 'duration ?': 'duración ?'
+  },
+  fr: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': 'Outils pour la playlist À regarder plus tard : filtrage par ancienneté, durée, état de visionnage, chaîne ou titre, aperçu et tri, export CSV/JSON et suppressions récupérables par sessions limitées',
+    'Minimum video age in days': 'Ancienneté minimale de la vidéo en jours', 'Older than days…': 'Plus ancienne que (jours)…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': '{count} ligne(s) chargée(s) n’ont pas d’ancienneté lisible et sont exclues du filtre d’ancienneté.',
+    '{days}d': '{days} j', 'Maximum duration in minutes': 'Durée maximale en minutes', 'Duration ≤ minutes…': 'Durée ≤ minutes…',
+    'Minimum duration in minutes': 'Durée minimale en minutes', 'Duration ≥ minutes…': 'Durée ≥ minutes…',
+    'No removed videos are waiting for recovery.': 'Aucune vidéo supprimée n’attend de récupération.',
+    '{count} removed video(s) are available to restore.': '{count} vidéo(s) supprimée(s) peuvent être restaurées.',
+    'Undo recovery': 'Récupération', 'No removed Watch Later videos are waiting for Undo.': 'Aucune vidéo supprimée de la playlist À regarder plus tard n’attend d’annulation.',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': '{restored} vidéo(s) supprimée(s) sur {total} restaurée(s) dans À regarder plus tard.',
+    'Restored {title} to Watch Later': '{title} restaurée dans À regarder plus tard', 'Could not restore {title}: {error}': 'Impossible de restaurer {title} : {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': 'Tout annuler', 'Undo': 'Annuler',
+    'Watched state filter': 'Filtre d’état de visionnage', 'Any watched state': 'Tous les états', 'In progress': 'En cours',
+    'Unwatched': 'Non regardées', 'Watched (90%+)': 'Regardées (90 %+)', 'age ?': 'ancienneté ?', 'duration ?': 'durée ?'
+  },
+  it: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': 'Strumenti per la playlist Guarda più tardi: filtra per età, durata, stato di visione, canale o titolo, visualizza e ordina i risultati, esporta CSV/JSON e rimuovi in sessioni limitate recuperabili',
+    'Minimum video age in days': 'Età minima del video in giorni', 'Older than days…': 'Più vecchio di (giorni)…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': '{count} riga/e caricata/e non ha/hanno un’età di caricamento leggibile e viene/vengono esclusa/e dal filtro per età.',
+    '{days}d': '{days} g', 'Maximum duration in minutes': 'Durata massima in minuti', 'Duration ≤ minutes…': 'Durata ≤ minuti…',
+    'Minimum duration in minutes': 'Durata minima in minuti', 'Duration ≥ minutes…': 'Durata ≥ minuti…',
+    'No removed videos are waiting for recovery.': 'Nessun video rimosso attende il ripristino.',
+    '{count} removed video(s) are available to restore.': '{count} video rimossi possono essere ripristinati.',
+    'Undo recovery': 'Ripristino', 'No removed Watch Later videos are waiting for Undo.': 'Nessun video rimosso da Guarda più tardi attende l’annullamento.',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': 'Ripristinati {restored} video rimossi su {total} in Guarda più tardi.',
+    'Restored {title} to Watch Later': '{title} ripristinato in Guarda più tardi', 'Could not restore {title}: {error}': 'Impossibile ripristinare {title}: {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': 'Annulla tutto', 'Undo': 'Annulla',
+    'Watched state filter': 'Filtro stato di visione', 'Any watched state': 'Qualsiasi stato', 'In progress': 'In corso',
+    'Unwatched': 'Non visti', 'Watched (90%+)': 'Visti (90%+)', 'age ?': 'età ?', 'duration ?': 'durata ?'
+  },
+  ja: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': '後で見るの一括ツール。動画の年齢、長さ、視聴状態、チャンネル、タイトルで絞り込み、結果をプレビュー・並べ替えし、CSV/JSONに書き出して、復元可能な上限付きセッションで削除します',
+    'Minimum video age in days': '動画の最小経過日数', 'Older than days…': '日数がこれより古い…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': '読み取れる公開時期がない読み込み済みの行が{count}件あり、年齢フィルターから除外されています。',
+    '{days}d': '{days}日', 'Maximum duration in minutes': '最大再生時間（分）', 'Duration ≤ minutes…': '再生時間 ≤ 分…',
+    'Minimum duration in minutes': '最小再生時間（分）', 'Duration ≥ minutes…': '再生時間 ≥ 分…',
+    'No removed videos are waiting for recovery.': '復元待ちの削除済み動画はありません。',
+    '{count} removed video(s) are available to restore.': '復元できる削除済み動画が{count}本あります。',
+    'Undo recovery': '復元', 'No removed Watch Later videos are waiting for Undo.': '後で見るから削除した動画に、取り消し待ちはありません。',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': '削除した{total}本中{restored}本を後で見るに復元しました。',
+    'Restored {title} to Watch Later': '{title}を後で見るに復元しました', 'Could not restore {title}: {error}': '{title}を復元できませんでした: {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': 'すべて取り消す', 'Undo': '取り消す',
+    'Watched state filter': '視聴状態フィルター', 'Any watched state': 'すべての視聴状態', 'In progress': '視聴中',
+    'Unwatched': '未視聴', 'Watched (90%+)': '視聴済み（90%以上）', 'age ?': '年齢 ?', 'duration ?': '長さ ?'
+  },
+  ko: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': '나중에 볼 동영상 재생목록 도구: 동영상 연령, 길이, 시청 상태, 채널 또는 제목으로 필터링하고 결과를 미리 보고 정렬하며 CSV/JSON으로 내보내고 복구 가능한 제한 세션에서 삭제합니다',
+    'Minimum video age in days': '동영상 최소 경과 일수', 'Older than days…': '이 일수보다 오래됨…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': '로드된 행 {count}개는 업로드 연령을 읽을 수 없어 연령 필터에서 제외됩니다.',
+    '{days}d': '{days}일', 'Maximum duration in minutes': '최대 길이(분)', 'Duration ≤ minutes…': '길이 ≤ 분…',
+    'Minimum duration in minutes': '최소 길이(분)', 'Duration ≥ minutes…': '길이 ≥ 분…',
+    'No removed videos are waiting for recovery.': '복구를 기다리는 삭제된 동영상이 없습니다.',
+    '{count} removed video(s) are available to restore.': '복원할 수 있는 삭제된 동영상이 {count}개 있습니다.',
+    'Undo recovery': '복구', 'No removed Watch Later videos are waiting for Undo.': '나중에 볼 동영상에서 삭제된 항목 중 실행 취소할 항목이 없습니다.',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': '삭제된 동영상 {total}개 중 {restored}개를 나중에 볼 동영상으로 복원했습니다.',
+    'Restored {title} to Watch Later': '{title}을(를) 나중에 볼 동영상으로 복원했습니다', 'Could not restore {title}: {error}': '{title}을(를) 복원할 수 없습니다: {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': '모두 실행 취소', 'Undo': '실행 취소',
+    'Watched state filter': '시청 상태 필터', 'Any watched state': '모든 시청 상태', 'In progress': '시청 중',
+    'Unwatched': '시청하지 않음', 'Watched (90%+)': '시청함(90% 이상)', 'age ?': '연령 ?', 'duration ?': '길이 ?'
+  },
+  pt_BR: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': 'Ferramentas da playlist Assistir mais tarde: filtre por idade, duração, estado de exibição, canal ou título, visualize e ordene resultados, exporte CSV/JSON e remova em sessões limitadas recuperáveis',
+    'Minimum video age in days': 'Idade mínima do vídeo em dias', 'Older than days…': 'Mais antigo que (dias)…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': '{count} linha(s) carregada(s) não têm idade de envio legível e foram excluída(s) do filtro de idade.',
+    '{days}d': '{days} d', 'Maximum duration in minutes': 'Duração máxima em minutos', 'Duration ≤ minutes…': 'Duração ≤ minutos…',
+    'Minimum duration in minutes': 'Duração mínima em minutos', 'Duration ≥ minutes…': 'Duração ≥ minutos…',
+    'No removed videos are waiting for recovery.': 'Nenhum vídeo removido aguarda recuperação.',
+    '{count} removed video(s) are available to restore.': '{count} vídeo(s) removido(s) disponível(is) para restauração.',
+    'Undo recovery': 'Recuperação', 'No removed Watch Later videos are waiting for Undo.': 'Nenhum vídeo removido de Assistir mais tarde aguarda desfazer.',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': '{restored} de {total} vídeo(s) removido(s) restaurado(s) em Assistir mais tarde.',
+    'Restored {title} to Watch Later': '{title} restaurado em Assistir mais tarde', 'Could not restore {title}: {error}': 'Não foi possível restaurar {title}: {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': 'Desfazer tudo', 'Undo': 'Desfazer',
+    'Watched state filter': 'Filtro de estado de exibição', 'Any watched state': 'Qualquer estado', 'In progress': 'Em andamento',
+    'Unwatched': 'Não assistidos', 'Watched (90%+)': 'Assistidos (90%+)', 'age ?': 'idade ?', 'duration ?': 'duração ?'
+  },
+  ru: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': 'Инструменты плейлиста «Смотреть позже»: фильтрация по возрасту, длительности, состоянию просмотра, каналу или названию, просмотр и сортировка результатов, экспорт CSV/JSON и удаление в ограниченных восстанавливаемых сеансах',
+    'Minimum video age in days': 'Минимальный возраст видео в днях', 'Older than days…': 'Старше (дней)…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': 'У {count} загруженных строк нет читаемого возраста публикации, поэтому они исключены из фильтра по возрасту.',
+    '{days}d': '{days} дн.', 'Maximum duration in minutes': 'Максимальная длительность в минутах', 'Duration ≤ minutes…': 'Длительность ≤ минут…',
+    'Minimum duration in minutes': 'Минимальная длительность в минутах', 'Duration ≥ minutes…': 'Длительность ≥ минут…',
+    'No removed videos are waiting for recovery.': 'Нет удалённых видео, ожидающих восстановления.',
+    '{count} removed video(s) are available to restore.': 'Доступно для восстановления удалённых видео: {count}.',
+    'Undo recovery': 'Восстановление', 'No removed Watch Later videos are waiting for Undo.': 'Нет удалённых видео из «Смотреть позже», ожидающих отмены.',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': 'В «Смотреть позже» восстановлено видео: {restored} из {total}.',
+    'Restored {title} to Watch Later': '«{title}» восстановлено в «Смотреть позже»', 'Could not restore {title}: {error}': 'Не удалось восстановить «{title}»: {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': 'Отменить всё', 'Undo': 'Отменить',
+    'Watched state filter': 'Фильтр состояния просмотра', 'Any watched state': 'Любое состояние', 'In progress': 'В процессе',
+    'Unwatched': 'Не просмотрено', 'Watched (90%+)': 'Просмотрено (90%+)', 'age ?': 'возраст ?', 'duration ?': 'длительность ?'
+  },
+  ar: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': 'أدوات مجمعة لقائمة المشاهدة لاحقًا: التصفية حسب العمر أو المدة أو حالة المشاهدة أو القناة أو العنوان، ومعاينة النتائج وترتيبها وتصديرها واستبعادها في جلسات محدودة قابلة للاستعادة',
+    'Minimum video age in days': 'الحد الأدنى لعمر الفيديو بالأيام', 'Older than days…': 'أقدم من (بالأيام)…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': 'لا يمكن قراءة عمر الرفع في {count} صفًا محمّلًا، لذلك استُبعدت من تصفية العمر.',
+    '{days}d': '{days} يوم', 'Maximum duration in minutes': 'المدة القصوى بالدقائق', 'Duration ≤ minutes…': 'المدة ≤ دقائق…',
+    'Minimum duration in minutes': 'المدة الدنيا بالدقائق', 'Duration ≥ minutes…': 'المدة ≥ دقائق…',
+    'No removed videos are waiting for recovery.': 'لا توجد فيديوهات محذوفة بانتظار الاستعادة.',
+    '{count} removed video(s) are available to restore.': 'يمكن استعادة {count} فيديو محذوف.',
+    'Undo recovery': 'استعادة الحذف', 'No removed Watch Later videos are waiting for Undo.': 'لا توجد فيديوهات محذوفة من المشاهدة لاحقًا بانتظار التراجع.',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': 'تمت استعادة {restored} من أصل {total} فيديو محذوف إلى المشاهدة لاحقًا.',
+    'Restored {title} to Watch Later': 'تمت استعادة {title} إلى المشاهدة لاحقًا', 'Could not restore {title}: {error}': 'تعذرت استعادة {title}: {error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': 'التراجع عن الكل', 'Undo': 'تراجع',
+    'Watched state filter': 'تصفية حالة المشاهدة', 'Any watched state': 'أي حالة مشاهدة', 'In progress': 'قيد المشاهدة',
+    'Unwatched': 'غير مشاهد', 'Watched (90%+)': 'مشاهد (90%+)', 'age ?': 'العمر ؟', 'duration ?': 'المدة ؟'
+  },
+  zh_CN: {
+    'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions': '“稍后观看”批量工具：按视频年龄、时长、观看状态、频道或标题筛选，预览并排序结果，导出 CSV/JSON，并在有上限且可恢复的会话中删除',
+    'Minimum video age in days': '视频最小年龄（天）', 'Older than days…': '早于指定天数…',
+    '{count} loaded row(s) have no readable upload age and are excluded from age filtering.': '已加载的 {count} 行无法读取上传年龄，已从年龄筛选中排除。',
+    '{days}d': '{days}天', 'Maximum duration in minutes': '最长时长（分钟）', 'Duration ≤ minutes…': '时长 ≤ 分钟…',
+    'Minimum duration in minutes': '最短时长（分钟）', 'Duration ≥ minutes…': '时长 ≥ 分钟…',
+    'No removed videos are waiting for recovery.': '没有等待恢复的已删除视频。',
+    '{count} removed video(s) are available to restore.': '有 {count} 个已删除视频可恢复。',
+    'Undo recovery': '恢复删除', 'No removed Watch Later videos are waiting for Undo.': '“稍后观看”中没有等待撤销的已删除视频。',
+    'Restored {restored} of {total} removed video(s) to Watch Later.': '已将 {total} 个已删除视频中的 {restored} 个恢复到“稍后观看”。',
+    'Restored {title} to Watch Later': '已将 {title} 恢复到“稍后观看”', 'Could not restore {title}: {error}': '无法恢复 {title}：{error}',
+    '{percent}% · {duration} · {age}': '{percent}% · {duration} · {age}', 'Undo all': '全部撤销', 'Undo': '撤销',
+    'Watched state filter': '观看状态筛选', 'Any watched state': '任意观看状态', 'In progress': '观看中',
+    'Unwatched': '未观看', 'Watched (90%+)': '已观看（90%+）', 'age ?': '年龄？', 'duration ?': '时长？'
+  }
+};
+for (const [locale, messages] of Object.entries(WATCH_LATER_WORKBENCH_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+const WATCH_LATER_AGE_TRANSLATIONS = {
+  de: { 'Loading upload dates…': 'Uploaddaten werden geladen…' },
+  es: { 'Loading upload dates…': 'Cargando fechas de subida…' },
+  fr: { 'Loading upload dates…': 'Chargement des dates de mise en ligne…' },
+  it: { 'Loading upload dates…': 'Caricamento delle date di caricamento…' },
+  ja: { 'Loading upload dates…': '公開日を読み込み中…' },
+  ko: { 'Loading upload dates…': '업로드 날짜를 불러오는 중…' },
+  pt_BR: { 'Loading upload dates…': 'Carregando datas de envio…' },
+  ru: { 'Loading upload dates…': 'Загрузка дат публикации…' },
+  ar: { 'Loading upload dates…': 'جارٍ تحميل تواريخ الرفع…' },
+  zh_CN: { 'Loading upload dates…': '正在加载上传日期…' }
+};
+for (const [locale, messages] of Object.entries(WATCH_LATER_AGE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const STRUCTURAL_MATCH_TRANSLATIONS = {
   de: {
     '{count} views': '{count} Aufrufe',
