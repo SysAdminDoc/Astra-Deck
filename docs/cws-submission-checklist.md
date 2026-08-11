@@ -7,6 +7,13 @@
 > ZIP) and is not listed on CWS today; this checklist captures what
 > would be required if the maintainer ever decides to submit.
 
+The public-store artifact is `chromium-store`: it keeps the YouTube
+enhancement surface but removes the `downloads`, `cookies`, and
+`nativeMessaging` permissions, all loopback origins, the Cobalt host, and the
+downloader runtime module. The companion-capable `store-safe` artifact remains
+available for self-hosted installs and any store submission whose policy
+allows the optional local handoff.
+
 ---
 
 ## 1. Manifest preflight
@@ -78,8 +85,12 @@ must use Google's standardized vocabulary to declare data categories.
 
 ## 3. Submission preflight
 
-- [ ] Build clean via `node build-extension.js --bump patch` —
-      version bumped, all four artifacts present in `build/`.
+- [ ] Build clean via `node build-extension.js --profile chromium-store` —
+      the CWS/Edge ZIP contains no downloader module, Cobalt host, loopback
+      origin, or download-related manifest permission.
+- [ ] Build the companion-capable profiles separately when required via
+      `node build-extension.js --profile store-safe` or
+      `node build-extension.js --profile github-full`.
 - [ ] Release package built locally with the external CRX key path
       (`ASTRA_CRX_KEY_PATH` or the default
       `%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem`) via
@@ -110,8 +121,9 @@ Each permission needs a one-paragraph justification in the CWS dashboard. The
 copy-paste source of truth is
 [store-permission-rationale.md](store-permission-rationale.md), which is pinned
 by `tests/hardening.test.js` against the live manifest and build-profile host
-grants. Submit the `store-safe` package to public stores; reserve `github-full`
-for GitHub/self-hosted installs.
+grants. Submit the `chromium-store` package to Chrome Web Store or Edge; use
+`store-safe` only where the companion handoff is allowed, and reserve
+`github-full` for GitHub/self-hosted installs.
 
 | Permission | Justification |
 |---|---|
@@ -125,6 +137,11 @@ for GitHub/self-hosted installs.
 | `host_permissions: api.cobalt.tools` | GitHub-full only. Optional Cobalt fallback when Astra Downloader is offline. |
 | `host_permissions: 127.0.0.1:9751-9851` | GitHub-full only. Astra Downloader local probe and explicit download handoff across six fallback ports. |
 | `host_permissions: 127.0.0.1:11434` | GitHub-full only. Optional local Ollama for AI summary. |
+
+For the `chromium-store` package, the `cookies`, `downloads`, and
+`nativeMessaging` rows above are absent rather than merely optional. The
+package also has no `api.cobalt.tools` or `127.0.0.1` host/CSP entries, and its
+staged runtime graph does not contain `features/download-ui/index.js`.
 
 ---
 
@@ -149,9 +166,10 @@ for GitHub/self-hosted installs.
 - **"YouTube" as the listing name.** Use "Astra Deck" or "Astra Deck
   for YouTube."
 - **Use of YouTube's official logo** in screenshots / icons.
-- **Auto-downloading anything without user action.** The
-  auto-download-on-visit feature is opt-in default-OFF; the
-  reaction-spammer is opt-in default-OFF; both must stay that way.
+- **Auto-downloading anything without user action.** The CWS/Edge
+  `chromium-store` package contains no downloader runtime or download
+  permission. Companion-capable profiles keep the auto-download-on-visit
+  feature opt-in default-OFF and are not the public-store artifact.
 - **Remote code execution.** The bundled `chrome.userScripts` API
   (we don't use it today; UC10 contemplates it) would require an
   additional dedicated justification.

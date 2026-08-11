@@ -5,11 +5,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { patchManifestForFirefox } = require('./manifest-patch');
 const {
     BUILD_PROFILE_IDS,
     copyDir,
-    patchManifestForBuildProfile,
+    patchStagedManifest,
     shouldStageEntry,
 } = require('../build-extension.js');
 
@@ -24,11 +23,7 @@ function createFirefoxStage(profile, stageRoot) {
     const stageDir = path.join(stageRoot, `${profile}-firefox-stage`);
     copyDir(EXT_DIR, stageDir);
 
-    const manifestPath = path.join(stageDir, 'manifest.json');
-    const stagedManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    patchManifestForBuildProfile(stagedManifest, profile);
-    patchManifestForFirefox(stagedManifest);
-    fs.writeFileSync(manifestPath, `${JSON.stringify(stagedManifest, null, 2)}\n`, 'utf8');
+    patchStagedManifest(stageDir, profile, 'firefox');
 
     return stageDir;
 }

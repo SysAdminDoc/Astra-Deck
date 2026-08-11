@@ -72,7 +72,11 @@ const manifestCompanionCsp = manifestLoopbackCsp
 sameArray(manifestCompanionCsp, COMPANION_PORT_CATALOGUE.cspOrigins,
     'base manifest companion CSP origins');
 
-const { buildExtensionPagesCsp, getManifestProfileHostPermissions } = require('../build-extension');
+const {
+    buildExtensionPagesCsp,
+    getManifestProfileHostPermissions,
+    getManifestProfileOptionalHostPermissions,
+} = require('../build-extension');
 const fullProfileLoopbackHosts = getManifestProfileHostPermissions('github-full')
     .filter((value) => value.startsWith(loopbackHostPrefix) && value !== ollamaHostPermission);
 check(fullProfileLoopbackHosts.every((value) => COMPANION_PORT_CATALOGUE.hostPermissions.includes(value)),
@@ -89,6 +93,15 @@ const fullProfileCsp = fullProfileLoopbackCsp
     .filter((value) => COMPANION_PORT_CATALOGUE.cspOrigins.includes(value));
 sameArray(fullProfileCsp, COMPANION_PORT_CATALOGUE.cspOrigins,
     'github-full companion CSP origins');
+
+const chromiumStoreHosts = [
+    ...getManifestProfileHostPermissions('chromium-store'),
+    ...getManifestProfileOptionalHostPermissions('chromium-store')
+];
+check(!chromiumStoreHosts.some((value) => value.startsWith(loopbackHostPrefix)),
+    'chromium-store profile must omit all companion loopback grants');
+check(!buildExtensionPagesCsp('chromium-store').includes(loopbackHostPrefix),
+    'chromium-store profile must omit companion loopback CSP origins');
 
 const downloadUi = read('extension/features/download-ui/index.js');
 check(downloadUi.includes('_PORT_CANDIDATES: COMPANION_PORTS'),
@@ -133,4 +146,4 @@ check(legacyUserscript.includes('USERSCRIPT_COMPANION_PORT_CATALOGUE'),
 check(!legacyUserscript.includes('_PORT_CANDIDATES: Object.freeze([9751, 9761, 9771, 9781, 9791, 9851])'),
     'userscript legacy companion manager must not redeclare fallback ports');
 
-console.log(`[check-companion-port-catalogue] OK — ${COMPANION_PORT_CATALOGUE.ports.length} ports align across the extension, both profiles, and the userscript`);
+console.log(`[check-companion-port-catalogue] OK — ${COMPANION_PORT_CATALOGUE.ports.length} ports align across the extension, download-capable profiles, and the userscript; chromium-store omits loopback`);

@@ -1742,13 +1742,20 @@ function render(settings, filter) {
     const hasFilters = Object.keys(parsed.filters).length > 0;
     const freeTerm = parsed.freeText;
     const schemaIdx = (hasFilters) ? getSchemaIndex() : null;
+    const policy = ensurePolicyProfile();
+    const effectiveProfile = policy
+        ? policy.resolveEffectiveProfile(settings || {})
+        : 'store-safe';
     const totalCount = QUICK_TOGGLES.length;
     const items = QUICK_TOGGLES.filter((item) => {
+        const entry = schemaIdx?.get(item.key)
+            || window.__YTKIT_SETTINGS_SCHEMA__?.findSettingEntry?.(item.key)
+            || null;
+        if (policy && entry && !policy.isEntryAllowedInProfile(entry, effectiveProfile)) return false;
         // v4.47.0: mini-DSL field filters (risk:/category:/scope:/profile:)
         // act as a hard AND gate on top of free-text matching. The
         // metadata lives on the schema entry, not the quick-toggle row.
         if (hasFilters) {
-            const entry = schemaIdx ? schemaIdx.get(item.key) : null;
             if (!entryPassesFilters(entry, parsed.filters)) return false;
         }
         if (!freeTerm) return true;
@@ -2782,10 +2789,15 @@ function renderSchemaOverview() {
     };
 
     const buckets = new Map();
+    const policy = ensurePolicyProfile();
+    const effectiveProfile = policy
+        ? policy.resolveEffectiveProfile(settings || {})
+        : 'store-safe';
     let nonInternalTotal = 0;
     let nonInternalEnabled = 0;
     for (const entry of scope.SETTINGS_SCHEMA) {
         if (entry.internal) continue;
+        if (policy && !policy.isEntryAllowedInProfile(entry, effectiveProfile)) continue;
         nonInternalTotal += 1;
         const isOn = isToggleEnabled(entry, settings);
         if (isOn) nonInternalEnabled += 1;
@@ -2864,7 +2876,10 @@ function renderSchemaOverview() {
             subList.className = 'so-key-list';
             subList.setAttribute('role', 'list');
             const entriesInCat = scope.SETTINGS_SCHEMA
-                .filter((entry) => entry.category === cat && !entry.internal && matchEntry(entry));
+                .filter((entry) => entry.category === cat
+                    && !entry.internal
+                    && (!policy || policy.isEntryAllowedInProfile(entry, effectiveProfile))
+                    && matchEntry(entry));
             for (const entry of entriesInCat) {
                 subList.appendChild(buildSchemaOverviewKeyRow(entry, settings));
             }

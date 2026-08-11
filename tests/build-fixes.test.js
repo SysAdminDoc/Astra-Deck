@@ -331,6 +331,22 @@ test('profile manifests retain the companion handoff and carry an immutable ceil
     assert.deepEqual(declared, ['storage', 'cookies'], 'input array must not be mutated');
     assert.deepEqual(filtered, ['storage', 'cookies'],
         'store-safe must retain companion permissions');
+
+    const chromiumStore = patchManifestForBuildProfile(
+        JSON.parse(JSON.stringify(sourceManifest)), 'chromium-store', 'chromium'
+    );
+    assert.equal(chromiumStore[BUILD_PROFILE_MANIFEST_KEY], 'chromium-store',
+        'chromium-store artifact must carry its immutable profile ceiling');
+    assert.equal(chromiumStore.permissions.includes('downloads'), false,
+        'chromium-store must not retain the downloads permission');
+    assert.equal(chromiumStore.host_permissions.some((host) => host.includes('127.0.0.1')), false,
+        'chromium-store must not retain loopback host permissions');
+    assert.equal(chromiumStore.content_security_policy.extension_pages.includes('127.0.0.1'), false,
+        'chromium-store must not retain loopback CSP origins');
+    assert.equal(chromiumStore.content_scripts.some((entry) =>
+        [...(entry.js || []), ...(entry['x-ytkit-runtime-modules'] || [])]
+            .includes('features/download-ui/index.js')), false,
+    'chromium-store must omit the downloader runtime module');
 });
 
 test('the store permission rationale documents the shared companion permissions', () => {

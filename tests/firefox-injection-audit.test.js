@@ -86,10 +86,10 @@ test('Firefox web-ext lint gate is pinned and wired into npm run check', () => {
     );
 });
 
-test('Firefox web-ext lint stages both profile manifests with Gecko patches', () => {
+test('Firefox web-ext lint stages all profile manifests with Gecko patches', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-firefox-stage-test-'));
     try {
-        assert.deepEqual(BUILD_PROFILE_IDS, ['store-safe', 'github-full']);
+        assert.deepEqual(BUILD_PROFILE_IDS, ['store-safe', 'chromium-store', 'github-full']);
         for (const profile of BUILD_PROFILE_IDS) {
             const stageDir = createFirefoxStage(profile, tmp);
             const manifest = JSON.parse(fs.readFileSync(path.join(stageDir, 'manifest.json'), 'utf8'));
@@ -131,6 +131,12 @@ test('Firefox web-ext lint stages both profile manifests with Gecko patches', ()
                 `${profile} staged source must include sidebar.html`);
             assert.equal(fs.existsSync(path.join(stageDir, 'sidebar.js')), true,
                 `${profile} staged source must include sidebar.js`);
+            if (profile === 'chromium-store') {
+                assert.equal(manifest.permissions.includes('downloads'), false,
+                    'chromium-store Firefox stage must omit downloads');
+                assert.equal(fs.existsSync(path.join(stageDir, 'features', 'download-ui')), false,
+                    'chromium-store Firefox stage must omit the downloader module directory');
+            }
         }
     } finally {
         fs.rmSync(tmp, { recursive: true, force: true });

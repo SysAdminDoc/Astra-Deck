@@ -17,7 +17,7 @@
     if (_runtimeGuard && !_runtimeGuard.claimed) return;
 
     // Keep the legacy settings-panel fallback aligned with the peeled
-    // Download UI module: a cold companion start needs the full 12-second
+    // companion module: a cold companion start needs the full 12-second
     // poll window (8 x 1.5 seconds).
     const AUTO_START_RETRY_BUDGET = 8;
 
@@ -5038,15 +5038,64 @@ return response;
     let _recordFeatureRuntimeFailure = () => {};
 
 
-    // Download UI is extension-only and preloaded by every normal-page manifest
-    // group. Keep one implementation in features/download-ui/index.js; a missing
-    // module is a load-order/build error, not a reason to revive a second copy.
+    // Companion UI is extension-only and preloaded by the companion-capable
+    // normal-page manifest group. Download-free Chromium store artifacts omit
+    // that module; the no-op surface below keeps the rest of the runtime
+    // healthy while policy-profile hides its settings and feature entries.
     const createDownloadUIFeature = globalThis.YTKitFeatures?.createDownloadUIFeature;
-    if (typeof createDownloadUIFeature !== 'function') {
-        console.error('[YTKit] Download UI module is unavailable; aborting ytkit initialization.');
-        return;
-    }
-    const _downloadUI = createDownloadUIFeature({
+    const createUnavailableDownloadUIFeature = () => {
+        const unavailableResult = async () => ({
+            ok: false,
+            unavailable: true,
+            error: 'artifact-profile-blocked'
+        });
+        const unavailableFeature = (id, name) => ({
+            id,
+            name,
+            description: '',
+            group: 'Downloads',
+            icon: 'download',
+            init() {},
+            destroy() {}
+        });
+        const manager = {
+            isRunning: false,
+            INSTALLER_URL: '',
+            check: unavailableResult,
+            copyInstallCommand: async () => false,
+            resetAutoStart() {},
+            runInstallAssist: unavailableResult,
+            showInstallPrompt() {},
+            tryAutoStart: unavailableResult,
+            updateCompanion: unavailableResult,
+            updateYtdlp: unavailableResult
+        };
+        return {
+            AUDIO_FORMATS: Object.freeze([]),
+            downloadFormatEstimates: null,
+            MediaDLManager: manager,
+            QUALITY_OPTIONS: Object.freeze([]),
+            VIDEO_FORMATS: Object.freeze([]),
+            _closeDlPopup() {},
+            _fetchServerConfig: unavailableResult,
+            _isDownloaderConnectionError: () => true,
+            _mediaDLSendDownload: unavailableResult,
+            classifyDownloaderFailureResponse: () => 'unavailable',
+            downloadCobaltFallback: unavailableFeature('downloadCobaltFallback', 'Cobalt fallback'),
+            downloadHealthPanel: unavailableFeature('downloadHealthPanel', 'Downloader health'),
+            downloadHistoryPanel: unavailableFeature('downloadHistoryPanel', 'Download history'),
+            downloadStreamLinksPanel: unavailableFeature('downloadStreamLinksPanel', 'Stream links'),
+            mediaDLDownload: unavailableResult,
+            normalizeCookieExpiry: value => value,
+            showDownloadPopup() {},
+            showDownloadProgress() {},
+            showDownloaderFailure() {},
+            showNativeChannelRequired() {},
+            ytKitDownload: unavailableResult
+        };
+    };
+    const _downloadUI = typeof createDownloadUIFeature === 'function'
+        ? createDownloadUIFeature({
         appState,
         extensionFetchJson,
         extensionFetchText,
@@ -5077,7 +5126,8 @@ return response;
         createCloseWatcher,
         destroyCloseWatcher,
         getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
-    });
+        })
+        : createUnavailableDownloadUIFeature();
     const {
         AUDIO_FORMATS,
         downloadFormatEstimates,
@@ -40845,7 +40895,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
         // ═══════════════════════════════════════════════════════════════════
-        //  DOWNLOAD FEATURES — delegated to features/download-ui/ peel
+        //  OPTIONAL COMPANION FEATURES — delegated to the peeled module
         // ═══════════════════════════════════════════════════════════════════
 
         _downloadUI.downloadHealthPanel,
@@ -46792,8 +46842,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         return !!featureId && RETIRED_COMMENT_FEATURE_IDS.has(featureId);
     }
 
+    function isFeatureAllowedByArtifact(feature) {
+        const policyFactory = globalThis.YTKitCore?.createPolicyProfile;
+        const findEntry = globalThis.YTKitCore?.findSettingEntry;
+        if (typeof policyFactory !== 'function' || typeof findEntry !== 'function') return true;
+        const entry = findEntry(getFeatureSettingKey(feature));
+        if (!entry) return true;
+        try {
+            const policy = policyFactory();
+            const effective = policy.resolveEffectiveProfile(appState.settings || {});
+            return policy.isEntryAllowedInProfile(entry, effective);
+        } catch (_) {
+            // reason: a missing or malformed manifest must fail open for the
+            // userscript and legacy test harnesses, never suppressing all UI.
+            return true;
+        }
+    }
+
     const featureIndex = new Map(features.map((feature) => [feature.id, feature]));
-    const liveFeatureList = features.filter((feature) => !isRetiredCommentFeature(feature));
+    const liveFeatureList = features.filter((feature) => !isRetiredCommentFeature(feature)
+        && isFeatureAllowedByArtifact(feature));
     const toggleFeatureList = liveFeatureList.filter((feature) => isToggleFeature(feature));
     const arraySettingKeysByParentId = new Map();
     for (const feature of features) {

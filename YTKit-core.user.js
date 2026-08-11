@@ -3816,7 +3816,8 @@ if (typeof globalThis !== "undefined") {
             try { return require('./settings-schema'); } catch (_) { return null; }
         })());
 
-    const VALID_ARTIFACT_PROFILES = new Set(['store-safe', 'github-full']);
+    const VALID_ARTIFACT_PROFILES = new Set(['store-safe', 'chromium-store', 'github-full']);
+    const DOWNLOAD_FREE_ARTIFACT_PROFILE = 'chromium-store';
     // Browser-account sync consent is installation-local. A backup may be
     // copied to another machine, but importing it must never silently opt that
     // machine into account storage.
@@ -3867,19 +3868,32 @@ if (typeof globalThis !== "undefined") {
             const safe = settings.safeStoreProfile !== false;          // default true
             const full = settings.githubFullProfile === true;          // default false
             const requested = full || !safe ? 'github-full' : 'store-safe';
-            return artifactProfile === 'store-safe' ? 'store-safe' : requested;
+            return artifactProfile === 'store-safe' || artifactProfile === DOWNLOAD_FREE_ARTIFACT_PROFILE
+                ? 'store-safe'
+                : requested;
         }
 
         function normalizeEffectiveProfile(effective, settings = {}) {
             const requested = effective === 'github-full'
                 ? 'github-full'
                 : (effective === 'store-safe' ? 'store-safe' : resolveEffectiveProfile(settings));
-            return artifactProfile === 'store-safe' ? 'store-safe' : requested;
+            return artifactProfile === 'store-safe' || artifactProfile === DOWNLOAD_FREE_ARTIFACT_PROFILE
+                ? 'store-safe'
+                : requested;
+        }
+
+        function isDownloadFreeArtifact() {
+            return artifactProfile === DOWNLOAD_FREE_ARTIFACT_PROFILE;
+        }
+
+        function isDownloadEntry(entry) {
+            return entry?.category === 'downloads' || entry?.scope === 'downloads';
         }
 
         function isEntryAllowedInProfile(entry, effective) {
             if (!entry) return false;
             effective = normalizeEffectiveProfile(effective);
+            if (isDownloadFreeArtifact() && isDownloadEntry(entry)) return false;
             // Internal storage-only keys are always permitted — they
             // travel through import/export but are never surfaced as
             // user-visible toggles.
@@ -4088,6 +4102,11 @@ if (typeof globalThis !== "undefined") {
                     defaultedKeys.push(key);
                     continue;
                 }
+                if (isDownloadFreeArtifact() && isDownloadEntry(entry)) {
+                    out[key] = entry.type === 'boolean' ? false : entry.defaultValue;
+                    defaultedKeys.push(key);
+                    continue;
+                }
                 if (entry.profile === 'github-full' && effective === 'store-safe') {
                     out[key] = entry.defaultValue;
                     defaultedKeys.push(key);
@@ -4114,6 +4133,8 @@ if (typeof globalThis !== "undefined") {
 
         return {
             getArtifactProfile: () => artifactProfile,
+            isDownloadFreeArtifact,
+            isDownloadEntry,
             resolveEffectiveProfile,
             isEntryAllowedInProfile,
             isKeyAllowedInProfile,
@@ -4206,6 +4227,19 @@ if (typeof globalThis !== "undefined") {
         return settings.githubFullProfile === true || settings.safeStoreProfile === false
             ? 'github-full'
             : 'store-safe';
+    }
+
+    function isEntryBlockedByArtifact(entry) {
+        const factory = root.YTKitCore?.createPolicyProfile;
+        if (!entry || typeof factory !== 'function') return false;
+        try {
+            const policy = factory();
+            return policy.getArtifactProfile?.() === 'chromium-store'
+                && (policy.isDownloadEntry?.(entry)
+                    || entry.category === 'downloads' || entry.scope === 'downloads');
+        } catch (_) {
+            return false;
+        }
     }
 
     // This is the validation choke point for every cross-context settings
@@ -4343,6 +4377,13 @@ if (typeof globalThis !== "undefined") {
             for (const [key, value] of Object.entries(next)) {
                 const entry = findEntry(key);
                 if (!entry || sameValue(current[key], value)) continue;
+                const blockedDefault = entry.type === 'boolean' ? false : entry.defaultValue;
+                if (isEntryBlockedByArtifact(entry)
+                    && !sameValue(value, blockedDefault)) {
+                    return failure('PROFILE_BLOCKED', `${key} is not included in the Chromium store build.`, {
+                        key, previous: current[key], value, settings: current
+                    });
+                }
                 if (entry.profile === 'github-full' && profile !== 'github-full'
                     && !sameValue(value, entry.defaultValue)) {
                     return failure('PROFILE_BLOCKED', `${key} requires the GitHub-full profile.`, {
@@ -4376,6 +4417,13 @@ if (typeof globalThis !== "undefined") {
                 const value = clampValue(requestedValue, entry);
                 let next = { ...current, [key]: value };
                 next = normalizeProfileModel(next, key, value);
+                const blockedDefault = entry.type === 'boolean' ? false : entry.defaultValue;
+                if (isEntryBlockedByArtifact(entry)
+                    && !sameValue(value, blockedDefault)) {
+                    return failure('PROFILE_BLOCKED', `${key} is not included in the Chromium store build.`, {
+                        key, previous: current[key], value, settings: current
+                    });
+                }
                 if (entry.profile === 'github-full' && effectiveProfile(next) !== 'github-full'
                     && !sameValue(value, entry.defaultValue)) {
                     return failure('PROFILE_BLOCKED', `${key} requires the GitHub-full profile.`, {
@@ -7759,6 +7807,7 @@ if (typeof globalThis !== "undefined") {
     //     requiredByFeatures:   string[],                     // schema keys
     //     credentialsPolicy:    'no-cookies' | 'byo-key' | 'local-loopback' | 'none',
     //     profile:              'store-safe' | 'github-full', // resolved gate
+    //     excludedProfiles:     string[],                    // artifact-specific exclusions
     //     hostGrant:            'required' | 'runtime-optional',
     //     manifestPermission:   string | null,                // matching host_permission, if present
     //     optionalManifestPermission: string | null,           // matching optional_host_permissions, if present
@@ -7830,6 +7879,10 @@ if (typeof globalThis !== "undefined") {
         // The companion remains available in store-safe builds. The profile
         // ceiling blocks AI/Cobalt/Ollama, not the authenticated local handoff.
         profile: 'store-safe',
+        // Chromium public-store artifacts deliberately remove the downloader
+        // module and all loopback grants. Keep the catalogue entry visible for
+        // diagnostics, but make the build-time exclusion explicit and shared.
+        excludedProfiles: Object.freeze(['chromium-store']),
         hostGrant: 'required',
         riskBand: 'local-companion'
     }) : null;
@@ -7963,6 +8016,15 @@ if (typeof globalThis !== "undefined") {
         const alias = ORIGIN_HOST_PERMISSION_ALIASES[origin];
         if (alias) return alias.slice();
         return [origin.replace(/\/+$/, '') + '/*'];
+    }
+
+    function isOriginAvailableForProfile(entry, profile) {
+        if (!entry || !profile) return false;
+        if (Array.isArray(entry.excludedProfiles)
+            && entry.excludedProfiles.includes(profile)) return false;
+        return entry.profile === profile
+            || ((profile === 'chromium-store' || profile === 'github-full')
+                && entry.profile === 'store-safe');
     }
 
     // Sub-toggle inheritance map. Some schema entries are pure sub-knobs
@@ -8133,7 +8195,7 @@ if (typeof globalThis !== "undefined") {
         }
 
         function getOriginsByProfile(profile, settings = {}) {
-            return getOrigins(settings).filter((entry) => entry.profile === profile);
+            return getOrigins(settings).filter((entry) => isOriginAvailableForProfile(entry, profile));
         }
 
         function summarise(settings = {}) {
@@ -8173,6 +8235,7 @@ if (typeof globalThis !== "undefined") {
     core.getSponsorBlockApiOrigins = getSponsorBlockApiOrigins;
     core.findDataFlowCoverageGaps = findCoverageGaps;
     core.hostPermissionsForDataFlowOrigin = hostPermissionsForOrigin;
+    core.isOriginAvailableForProfile = isOriginAvailableForProfile;
     core.getOptionalHostPermissionsForFeature = getOptionalHostPermissionsForFeature;
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -8187,7 +8250,8 @@ if (typeof globalThis !== "undefined") {
             SPONSORBLOCK_MIRROR_ORIGIN,
             SPONSORBLOCK_ALLOWED_ORIGINS,
             normalizeSponsorBlockOrigin,
-            getSponsorBlockApiOrigins
+            getSponsorBlockApiOrigins,
+            isOriginAvailableForProfile
         };
     }
 })();

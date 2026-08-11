@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // build-extension.js -- Packages extension/ into profile-split Chrome + Firefox artifacts
-// Usage: node build-extension.js [--profile store-safe|github-full|both] [--bump patch|minor|major] [--no-crx]
+// Usage: node build-extension.js [--profile store-safe|chromium-store|github-full|both] [--bump patch|minor|major] [--no-crx]
 //
 // --no-crx skips CRX production entirely. Self-hosted CRX installs are
 // Linux-only on modern Chrome and the last two published releases shipped no
@@ -22,7 +22,7 @@ const {
 const { patchManifestForFirefox } = require('./scripts/manifest-patch');
 const { COMPANION_PORT_CATALOGUE } = require('./scripts/companion-port-catalogue');
 const { buildDefaultsFromSchema } = require('./extension/core/settings-schema');
-const { ORIGIN_CATALOGUE } = require('./extension/core/data-flow');
+const { ORIGIN_CATALOGUE, isOriginAvailableForProfile } = require('./extension/core/data-flow');
 
 const EXT_DIR = path.join(__dirname, 'extension');
 const BUILD_DIR = path.join(__dirname, 'build');
@@ -42,18 +42,32 @@ const CRX_KEY_MODES = Object.freeze(['external', 'ephemeral']);
 // signing. Never uploaded as a release asset.
 const CRX_SIGNING_PROVENANCE_NAME = 'crx-signing-provenance.json';
 
-const BUILD_PROFILE_IDS = Object.freeze(['store-safe', 'github-full']);
+const DOWNLOAD_UI_MODULE = 'features/download-ui/index.js';
+const BUILD_PROFILE_IDS = Object.freeze(['store-safe', 'chromium-store', 'github-full']);
 const BUILD_PROFILE_MANIFEST_KEY = 'x-ytkit-build-profile';
 const BUILD_PROFILES = Object.freeze({
     'store-safe': Object.freeze({
         id: 'store-safe',
-        catalogueProfiles: Object.freeze(['store-safe'])
+        catalogueProfiles: Object.freeze(['store-safe']),
+        excludedRuntimeModules: Object.freeze([])
+    }),
+    'chromium-store': Object.freeze({
+        id: 'chromium-store',
+        catalogueProfiles: Object.freeze(['store-safe']),
+        excludedRuntimeModules: Object.freeze([DOWNLOAD_UI_MODULE])
     }),
     'github-full': Object.freeze({
         id: 'github-full',
-        catalogueProfiles: Object.freeze(['store-safe', 'github-full'])
+        catalogueProfiles: Object.freeze(['store-safe', 'github-full']),
+        excludedRuntimeModules: Object.freeze([])
     })
 });
+
+const CHROMIUM_STORE_REMOVED_PERMISSIONS = Object.freeze([
+    'cookies',
+    'downloads',
+    'nativeMessaging'
+]);
 
 function readUtf8IfPresent(filePath) {
     try {
@@ -104,7 +118,7 @@ function unique(values) {
 
 function normalizeBuildProfile(profile) {
     if (!BUILD_PROFILE_IDS.includes(profile)) {
-        throw new Error('Invalid build profile: ' + profile + ' (use store-safe, github-full, or both)');
+        throw new Error('Invalid build profile: ' + profile + ' (use store-safe, chromium-store, github-full, or both)');
     }
     return profile;
 }
@@ -202,11 +216,11 @@ let profileType = 'both';
 if (profileIndex !== -1) {
     profileType = args[profileIndex + 1];
     if (!profileType || profileType.startsWith('--')) {
-        console.error('--profile requires a type: store-safe | github-full | both');
+        console.error('--profile requires a type: store-safe | chromium-store | github-full | both');
         process.exit(1);
     }
     if (![...BUILD_PROFILE_IDS, 'both'].includes(profileType)) {
-        console.error('Invalid profile type: ' + profileType + ' (use store-safe, github-full, or both)');
+        console.error('Invalid profile type: ' + profileType + ' (use store-safe, chromium-store, github-full, or both)');
         process.exit(1);
     }
 }
@@ -453,9 +467,14 @@ function shouldUseRuntimeOptionalHostPermission(entry, profile) {
     const normalized = normalizeBuildProfile(profile);
     if (entry.hostGrant !== 'runtime-optional') return false;
     if (!Array.isArray(entry.runtimeOptionalProfiles)) {
-        return normalized === 'store-safe';
+        return normalized === 'store-safe' || normalized === 'chromium-store';
     }
     return entry.runtimeOptionalProfiles.includes(normalized);
+}
+
+function getExcludedRuntimeModules(profile) {
+    const normalized = normalizeBuildProfile(profile);
+    return new Set(BUILD_PROFILES[normalized].excludedRuntimeModules || []);
 }
 
 // API permissions that exist solely to serve a `profile: 'github-full'` origin.
@@ -466,6 +485,9 @@ const GITHUB_FULL_ONLY_API_PERMISSIONS = Object.freeze({});
 function getManifestProfilePermissions(profile, declaredPermissions) {
     const normalized = normalizeBuildProfile(profile);
     const declared = Array.isArray(declaredPermissions) ? declaredPermissions.slice() : [];
+    if (normalized === 'chromium-store') {
+        return declared.filter((name) => !CHROMIUM_STORE_REMOVED_PERMISSIONS.includes(name));
+    }
     if (normalized !== 'store-safe') return declared;
     return declared.filter((name) => !Object.hasOwn(GITHUB_FULL_ONLY_API_PERMISSIONS, name));
 }
@@ -493,6 +515,7 @@ function getManifestProfileHostPermissions(profile) {
     const hosts = CONTENT_HOST_PERMISSIONS.slice();
     for (const entry of ORIGIN_CATALOGUE) {
         if (!allowedCatalogueProfiles.has(entry.profile)) continue;
+        if (!isOriginAvailableForProfile(entry, normalized)) continue;
         if (shouldUseRuntimeOptionalHostPermission(entry, normalized)) continue;
         hosts.push(...hostPermissionsForOrigin(entry.origin));
     }
@@ -505,6 +528,7 @@ function getManifestProfileOptionalHostPermissions(profile) {
     const hosts = [];
     for (const entry of ORIGIN_CATALOGUE) {
         if (!allowedCatalogueProfiles.has(entry.profile)) continue;
+        if (!isOriginAvailableForProfile(entry, normalized)) continue;
         if (!shouldUseRuntimeOptionalHostPermission(entry, normalized)) continue;
         hosts.push(...hostPermissionsForOrigin(entry.origin));
     }
@@ -517,6 +541,7 @@ function getManifestProfileConnectHostPermissions(profile) {
     const hosts = CONTENT_HOST_PERMISSIONS.slice();
     for (const entry of ORIGIN_CATALOGUE) {
         if (!allowedCatalogueProfiles.has(entry.profile)) continue;
+        if (!isOriginAvailableForProfile(entry, normalized)) continue;
         hosts.push(...hostPermissionsForOrigin(entry.origin));
     }
     return unique(hosts);
@@ -564,7 +589,7 @@ function getPageAccessibleResourceInventory(repoRoot = __dirname) {
     });
 }
 
-function getRuntimeModuleResources(repoRoot = __dirname) {
+function getRuntimeModuleResources(repoRoot = __dirname, profile = null) {
     const manifestPath = path.join(repoRoot, 'extension', 'manifest.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     const runtimeEntry = (manifest.content_scripts || []).find((entry) => {
@@ -577,7 +602,9 @@ function getRuntimeModuleResources(repoRoot = __dirname) {
     }
 
     const seen = new Set();
+    const excluded = profile ? getExcludedRuntimeModules(profile) : new Set();
     for (const resource of modules) {
+        if (excluded.has(resource)) continue;
         if (!resource.endsWith('.js') || path.isAbsolute(resource)
                 || resource.includes('..') || resource.includes('*')) {
             throw new Error(`Invalid runtime module resource path: ${resource}`);
@@ -589,16 +616,16 @@ function getRuntimeModuleResources(repoRoot = __dirname) {
             throw new Error(`Runtime module resource is missing: ${resource}`);
         }
     }
-    return modules.slice();
+    return modules.filter((resource) => !excluded.has(resource));
 }
 
-function getManifestWebAccessibleResources(browser = 'chromium', repoRoot = __dirname) {
+function getManifestWebAccessibleResources(browser = 'chromium', repoRoot = __dirname, profile = null) {
     const pageResources = unique(
         getPageAccessibleResourceInventory(repoRoot).map((entry) => entry.resource)
     );
     const runtimeResources = unique([
         'runtime-core-loader.mjs',
-        ...getRuntimeModuleResources(repoRoot),
+        ...getRuntimeModuleResources(repoRoot, profile),
     ]);
     const entries = [
         {
@@ -633,16 +660,66 @@ function patchManifestForBuildProfile(profileManifest, profile, browser = 'chrom
     } else {
         delete profileManifest.optional_host_permissions;
     }
+    const excludedRuntimeModules = getExcludedRuntimeModules(normalized);
+    if (excludedRuntimeModules.size) {
+        for (const contentScript of profileManifest.content_scripts || []) {
+            for (const key of ['js', 'x-ytkit-runtime-modules']) {
+                if (Array.isArray(contentScript[key])) {
+                    contentScript[key] = contentScript[key]
+                        .filter((resource) => !excludedRuntimeModules.has(resource));
+                }
+            }
+        }
+    }
     profileManifest.content_security_policy = {
         ...(profileManifest.content_security_policy || {}),
         extension_pages: buildExtensionPagesCsp(normalized)
     };
-    profileManifest.web_accessible_resources = getManifestWebAccessibleResources(browser);
+    profileManifest.web_accessible_resources = getManifestWebAccessibleResources(browser, __dirname, normalized);
     return profileManifest;
 }
 
 function getArtifactBaseName(profile, browser, artifactVersion = version) {
     return 'astra-deck-' + normalizeBuildProfile(profile) + '-' + browser + '-v' + artifactVersion;
+}
+
+function patchStagedRuntimeGraph(stageDir, profile) {
+    const excluded = getExcludedRuntimeModules(profile);
+    if (!excluded.size) return;
+
+    const bootstrapPath = path.join(stageDir, 'runtime-bootstrap.js');
+    if (fs.existsSync(bootstrapPath)) {
+        let bootstrap = fs.readFileSync(bootstrapPath, 'utf8');
+        for (const resource of excluded) {
+            const escaped = resource.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            bootstrap = bootstrap
+                .replace(new RegExp(`^\\s*"${escaped}",?\\r?\\n`, 'gm'), '')
+                .replace(new RegExp(`\\s*modulePath !== '${escaped}'\\r?\\n\\s*&& `, 'g'), ' ');
+        }
+        fs.writeFileSync(bootstrapPath, bootstrap, 'utf8');
+    }
+
+    const loaderPath = path.join(stageDir, 'runtime-core-loader.mjs');
+    if (fs.existsSync(loaderPath)) {
+        let loader = fs.readFileSync(loaderPath, 'utf8');
+        for (const resource of excluded) {
+            loader = loader.replace(`import './${resource}';\n`, '');
+        }
+        fs.writeFileSync(loaderPath, loader, 'utf8');
+    }
+
+    for (const resource of excluded) {
+        const resourcePath = path.join(stageDir, resource);
+        if (fs.existsSync(resourcePath)) {
+            fs.rmSync(resourcePath, { recursive: true, force: true });
+        }
+        const parentDir = path.dirname(resourcePath);
+        if (fs.existsSync(parentDir)
+            && fs.statSync(parentDir).isDirectory()
+            && fs.readdirSync(parentDir).length === 0) {
+            fs.rmSync(parentDir, { recursive: true, force: true });
+        }
+    }
 }
 
 function patchStagedManifest(stageDir, profile, browser) {
@@ -651,6 +728,7 @@ function patchStagedManifest(stageDir, profile, browser) {
     patchManifestForBuildProfile(stagedManifest, profile, browser);
     if (browser === 'firefox') patchManifestForFirefox(stagedManifest);
     fs.writeFileSync(manifestPath, JSON.stringify(stagedManifest, null, 2) + '\n', 'utf8');
+    patchStagedRuntimeGraph(stageDir, profile);
 }
 
 // Collect all files in a directory recursively (relative paths)
@@ -897,6 +975,8 @@ module.exports = {
     BUILD_PROFILE_IDS,
     BUILD_PROFILE_MANIFEST_KEY,
     BUILD_PROFILES,
+    CHROMIUM_STORE_REMOVED_PERMISSIONS,
+    DOWNLOAD_UI_MODULE,
     buildExtensionPagesCsp,
     copyDir,
     CRX_SIGNING_PROVENANCE_NAME,
@@ -906,12 +986,15 @@ module.exports = {
     getManifestProfileHostPermissions,
     getManifestProfileOptionalHostPermissions,
     getManifestProfilePermissions,
+    getExcludedRuntimeModules,
     GITHUB_FULL_ONLY_API_PERMISSIONS,
     getManifestWebAccessibleResources,
     getPageAccessibleResourceInventory,
     getRuntimeModuleResources,
     listFiles,
     patchManifestForBuildProfile,
+    patchStagedManifest,
+    patchStagedRuntimeGraph,
     resolveCrxSigningConfig,
     shouldStageEntry,
     WEB_ACCESSIBLE_RESOURCE_CONSUMERS,

@@ -42,7 +42,7 @@ function sha256(filePath) {
 }
 
 function parseAssetName(name, version) {
-    const extensionMatch = name.match(/^astra-deck-(store-safe|github-full)-(chrome|firefox)-v([0-9]+\.[0-9]+\.[0-9]+)\.(zip|crx|xpi)$/);
+    const extensionMatch = name.match(/^astra-deck-(store-safe|chromium-store|github-full)-(chrome|firefox)-v([0-9]+\.[0-9]+\.[0-9]+)\.(zip|crx|xpi)$/);
     if (extensionMatch) {
         return {
             kind: 'extension',
@@ -91,7 +91,7 @@ function expectedReleaseNames(version, options = {}) {
     // is called from tests, and reading ambient build state would make its
     // answer depend on whatever the last local build happened to be.
     const includeCrx = (options.crxSigningMode || 'external') !== 'none';
-    for (const profile of ['store-safe', 'github-full']) {
+    for (const profile of ['store-safe', 'chromium-store', 'github-full']) {
         for (const browser of ['chrome', 'firefox']) {
             names.push(`astra-deck-${profile}-${browser}-v${version}.zip`);
         }

@@ -26,7 +26,7 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);
-    assert.deepEqual(facts.buildProfiles, ['store-safe', 'github-full']);
+    assert.deepEqual(facts.buildProfiles, ['store-safe', 'chromium-store', 'github-full']);
     assert.equal(facts.fullOnlyOrigins.length, 5);
     assert.equal(facts.colorThemes.length, 7);
     assert.deepEqual(facts.themeControls, ['oledTheme', 'denseMode', 'tokenThemeBridge']);
