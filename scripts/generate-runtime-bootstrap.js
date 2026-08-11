@@ -107,7 +107,47 @@ function render(modules) {
 (() => {
     'use strict';
 
-    if (globalThis.__ytkitRuntimePromise) return;
+    const BOOTSTRAP_STATE_KEY = '__ytkitRuntimeBootstrap';
+    const priorState = globalThis[BOOTSTRAP_STATE_KEY]
+        || (globalThis.__ytkitRuntimePromise ? {
+            schemaVersion: 1,
+            phase: 'starting',
+            active: true,
+            duplicateInjections: 0,
+            generation: 0,
+            startedAt: Date.now(),
+            failure: null
+        } : null);
+    if (priorState && !globalThis[BOOTSTRAP_STATE_KEY]) {
+        // A tab may still contain a runtime from the pre-state bootstrap. Make
+        // that legacy generation observable before declining re-entry.
+        globalThis[BOOTSTRAP_STATE_KEY] = priorState;
+    }
+    if (priorState && (priorState.phase === 'starting' || priorState.phase === 'ready')) {
+        priorState.duplicateInjections = Number(priorState.duplicateInjections || 0) + 1;
+        priorState.lastDuplicateAt = Date.now();
+        try {
+            console.warn('[YTKit] Duplicate runtime bootstrap ignored.', {
+                duplicateInjections: priorState.duplicateInjections,
+                phase: priorState.phase
+            });
+        } catch (_) {
+            // reason: diagnostics must not block the existing runtime
+        }
+        return;
+    }
+
+    const bootstrapState = {
+        schemaVersion: 1,
+        phase: 'starting',
+        active: true,
+        duplicateInjections: 0,
+        generation: Number(priorState?.generation || 0) + 1,
+        startedAt: Date.now(),
+        completedAt: null,
+        failure: null
+    };
+    globalThis[BOOTSTRAP_STATE_KEY] = bootstrapState;
 
     const RUNTIME_MODULES = Object.freeze(
 ${moduleLiteral}
@@ -122,6 +162,9 @@ ${routesLiteral}
     const getURL = extensionRuntime?.getURL;
 
     if (typeof getURL !== 'function') {
+        bootstrapState.phase = 'failed';
+        bootstrapState.active = false;
+        bootstrapState.failure = 'runtime-url-unavailable';
         console.error('[YTKit] Extension runtime URL API is unavailable');
         return;
     }
@@ -195,10 +238,22 @@ ${routesLiteral}
         Promise.resolve().then(run);
     });
 
-    globalThis.__ytkitRuntimePromise = scheduleRuntime().catch((error) => {
-        console.error('[YTKit] Runtime module load failed', error);
-        throw error;
-    });
+    globalThis.__ytkitRuntimePromise = scheduleRuntime().then(
+        (result) => {
+            bootstrapState.phase = 'ready';
+            bootstrapState.active = true;
+            bootstrapState.completedAt = Date.now();
+            return result;
+        },
+        (error) => {
+            bootstrapState.phase = 'failed';
+            bootstrapState.active = false;
+            bootstrapState.completedAt = Date.now();
+            bootstrapState.failure = String(error?.message || error || 'runtime-load-failed').slice(0, 240);
+            console.error('[YTKit] Runtime module load failed', error);
+            throw error;
+        }
+    );
 })();
 `;
 }

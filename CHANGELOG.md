@@ -20,6 +20,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   minimum browser, fallback, and user-visible degradation; the same contract
   is emitted as `build/browser-capability-matrix.json` and included in
   diagnostics.
+- Runtime bootstrap, isolated-world startup, and the MAIN-world bridge now
+  claim world-local injection guards, so repeated SPA/update injection keeps
+  one active registry and reports duplicate attempts through diagnostics.
 
 ---
 

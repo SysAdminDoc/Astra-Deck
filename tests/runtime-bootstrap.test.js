@@ -43,6 +43,12 @@ test('normal YouTube pages inject a thin generated bootstrap and defer the runti
         'deferred modules must use the settings and route gate');
     assert.match(bootstrapSource, /__ytkitRuntimePromise/,
         'duplicate bootstrap execution must be idempotent');
+    assert.match(bootstrapSource, /BOOTSTRAP_STATE_KEY/,
+        'bootstrap re-entry must expose a diagnostic state object');
+    assert.match(bootstrapSource, /duplicateInjections/,
+        'duplicate bootstrap attempts must be counted, not silently ignored');
+    assert.match(bootstrapSource, /phase = 'failed'/,
+        'a failed module load must be observable and retryable');
 });
 
 test('generated runtime order, manifest catalogue, and dynamic resource allowlist stay aligned', () => {

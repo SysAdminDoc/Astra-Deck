@@ -172,7 +172,7 @@ test('CPU Tamer owns the MAIN-world bridge opt-in in extension and userscript bu
     const mainEntry = manifest.content_scripts.find((entry) => entry.world === 'MAIN');
     assert.deepEqual(
         mainEntry.js.slice(0, 4),
-        ['core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'ytkit-main.js']
+        ['core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js']
     );
 
     const mainSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit-main.js'), 'utf8');

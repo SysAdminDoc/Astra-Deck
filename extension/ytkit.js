@@ -5,6 +5,17 @@
 (async function() {
     'use strict';
 
+    // A classic content script can be evaluated again after an extension
+    // update while the old isolated-world runtime is still alive. Claim the
+    // world before the first await so a second evaluation cannot add another
+    // storage listener, navigation observer, stylesheet, or feature set while
+    // the first boot is still hydrating.
+    const _createInjectionGuard = globalThis.YTKitCore?.createInjectionGuard;
+    const _runtimeGuard = typeof _createInjectionGuard === 'function'
+        ? _createInjectionGuard({ key: '__ytkitIsolatedRuntime', owner: 'isolated-runtime' })
+        : null;
+    if (_runtimeGuard && !_runtimeGuard.claimed) return;
+
     // Keep the legacy settings-panel fallback aligned with the peeled
     // Download UI module: a cold companion start needs the full 12-second
     // poll window (8 x 1.5 seconds).
@@ -133,6 +144,7 @@
         !waitForPageContent ||
         !RuntimeFlags
     ) {
+        _runtimeGuard?.markFailed('core-helpers-missing');
         console.error('[YTKit] Core helpers missing. Reload the extension.');
         return;
     }
@@ -637,6 +649,13 @@
         };
         return api;
     })();
+
+    _runtimeGuard?.onDuplicate?.((detail) => {
+        DiagnosticLog.record(
+            'injection-guard',
+            `Duplicate ${detail?.owner || 'runtime'} injection ignored (${detail?.duplicateInjections || 0})`
+        );
+    });
 
     const ExternalApiHealth = (function () {
         const factory = globalThis.YTKitCore && globalThis.YTKitCore.createExternalApiHealth;
@@ -50508,6 +50527,9 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
     function main() {
         if (_mainRan) return; // Guard against double-init (YouTube SPA can re-trigger)
         _mainRan = true;
+        _runtimeGuard?.markReady({
+            registrySize: getFeatureHealthSnapshot?.()?.length || 0
+        });
         appState.settings = settingsManager.load();
         appState.currentPage = getCurrentPage();
         cleanupRetiredCommentUi();
@@ -57123,6 +57145,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             get settings() { return appState.settings; },
             features: liveFeatureList,
             allFeatures: features,
+            injectionHealth() { return _runtimeGuard?.snapshot?.() || null; },
             featureHealth() { return getFeatureHealthSnapshot(); },
             categoryHealth() { return getCategoryHealthSnapshot(); },
             selectorHealth() { return getSelectorHealthSnapshot(); },
