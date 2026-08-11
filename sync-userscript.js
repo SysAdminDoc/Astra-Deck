@@ -37,6 +37,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/transcript-index.js',
     'extension/core/ai-summary-artifacts.js',
     'extension/core/credential-vault.js',
+    'extension/core/local-ai.js',
     'extension/core/userscript-ai-summary.js',
     'extension/core/external-api-health.js',
     'extension/core/selector-health.js',

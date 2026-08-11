@@ -12,8 +12,8 @@
       "strictDigest": "c08677aa26048a48949cb9d0c4b3a6baa420174d3428469e8bd144235aa54055"
     },
     "extension/core/userscript-ai-summary.js": {
-      "count": 10,
-      "digest": "b2b83b88af11f05d8ad6b3dd747d120eb2016989e7041155b932471caddcfb51",
+      "count": 9,
+      "digest": "f6a0a9a01b23b878bd253e26a7471cfc8822f3a3d9a16ef459fbe989f36b0d39",
       "strictCount": 8,
       "strictDigest": "77c0e426a260e3791b3f6d321c9bd57ecb17d035802136277d36bbd97dce3a46"
     },
@@ -102,8 +102,8 @@
       "strictDigest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a"
     },
     "extension/ytkit.js": {
-      "count": 1273,
-      "digest": "793de1cdccc32999c46bd327b4e22baa60221218e26c9361750dfd42bb64f2d7",
+      "count": 1271,
+      "digest": "550b0e1c2f8c78659f7a7b573231ddd61856dddbc0e288a19abbdf74c195e855",
       "strictCount": 614,
       "strictDigest": "dca66b2a5b66e64228e45f6a496175d0a7cad8d20624c7e4671e20ee6871c095"
     }

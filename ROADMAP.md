@@ -6,13 +6,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 - [ ] Six `Roadmap_Blocked.md` items (Force DVR, replay chat-density chart, opt-in settings sync, logarithmic volume curve, volatile-project-facts gate, immutable build-profile ceilings) cite a self-imposed "this run forbids staging Markdown other than README/CHANGELOG" constraint as their blocker. That is not an external blocker. Move them back to this file on the next pass.
 
-- [ ] P2 — Local AI lane on Chrome's built-in APIs
-  Why: Translator, Language Detector, Summarizer and the Prompt API have been stable in extensions since Chrome 138. A local lane makes summaries and translation work offline with no key, and removes three high-risk remote hosts from the GitHub-full permission string.
-  Evidence: `extension/manifest.json:45-47` declares `api.openai.com`, `api.anthropic.com`, `generativelanguage.googleapis.com`; the on-device comment translator shipped in v4.54.0 already proves the pattern. Not covered by the blocked Writer/Rewriter item, which tracks a Developer-Trial API.
-  Touches: `extension/core/userscript-ai-summary.js`, the AI-summary feature path in `extension/ytkit.js`, `extension/core/capability-probe.js`, `extension/core/data-flow.js`
-  Acceptance: with a supported device the summary and transcript-translation paths run with no host permission and no key; without one they fall back to the existing BYO-key lane and say so; the capability probe reports which lane is active.
-  Complexity: M
-
 - [ ] P2 — Live-stream latency catch-up
   Why: a single-idea extension took 433 stars in six weeks doing only this, and Astra already ships both halves — a configurable buffer target and programmatic playback-rate control.
   Evidence: `joaogfc/ZeroDelay`; ImprovedTube #4090.

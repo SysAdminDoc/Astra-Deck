@@ -2894,13 +2894,18 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         assert.ok(fullHosts.includes(optional),
             'github-full manifest keeps optional store-safe enrichment host as required: ' + optional);
     }
-    assert.equal(fullOptionalHosts.length, 0,
-        'github-full optional host decisions are deferred; generated full manifests should not declare optional hosts yet');
-
-    for (const fullOnly of [
+    for (const optional of [
         'https://api.openai.com/*',
         'https://api.anthropic.com/*',
-        'https://generativelanguage.googleapis.com/*',
+        'https://generativelanguage.googleapis.com/*'
+    ]) {
+        assert.ok(!fullHosts.includes(optional),
+            'github-full AI provider access must not be install-time granted: ' + optional);
+        assert.ok(fullOptionalHosts.includes(optional),
+            'github-full AI provider access must remain runtime-optional: ' + optional);
+    }
+
+    for (const fullOnly of [
         'https://api.cobalt.tools/*',
         'http://127.0.0.1:9751/*',
         'http://127.0.0.1:11434/*'
@@ -4190,7 +4195,7 @@ test('YouTube Takeout watch-history import feeds local analytics with dedupe led
         'Takeout merge must reject future-dated entries so they cannot evict genuine recent days');
 });
 
-test('localAiSummary checks for Chrome built-in Summarizer and never falls through to remote providers', () => {
+test('localAiSummary checks for Chrome built-in Summarizer and explicitly falls back to BYO providers', () => {
     const start = ytkitSource.indexOf("id: 'localAiSummary'");
     assert.ok(start > -1, 'localAiSummary must exist');
     const block = ytkitSource.slice(start, start + 12000);
@@ -4200,8 +4205,12 @@ test('localAiSummary checks for Chrome built-in Summarizer and never falls throu
         'must check for the window.ai.summarizer fallback');
     assert.match(block, /Local Summarizer not available/,
         'must surface an explicit "not available" message instead of falling through');
-    // The IIFE explicitly says "never silently routes to a remote provider".
-    // The simplest invariant: there is no fetch / xhr in the local-AI path.
+    assert.match(block, /_runByoFallback/,
+        'the local summary must hand off explicitly when its browser lane is unavailable');
+    assert.match(block, /BYO-key/,
+        'the fallback must tell the user which lane will receive the transcript');
+    // The local model path itself must not make a network request; the remote
+    // feature owns the separate, explicit BYO-key fallback.
     const summarizeIdx = block.indexOf('async _summarize()');
     const summarizeBlock = block.slice(summarizeIdx, summarizeIdx + 2500);
     assert.ok(!/fetch\(/.test(summarizeBlock),
@@ -7530,6 +7539,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/transcript-index.js',
         'extension/core/ai-summary-artifacts.js',
         'extension/core/credential-vault.js',
+        'extension/core/local-ai.js',
         'extension/core/userscript-ai-summary.js',
         'extension/core/external-api-health.js',
         'extension/core/selector-health.js',
@@ -10640,13 +10650,15 @@ test('v4.47.0 NF17 — schema exposes CAPABILITIES enum and requires: field is w
             seenCaps.add(cap);
         }
     }
-    // 4. Seed entries are present. These three keys are the initial
-    // NF17 plant; adding more is fine, removing without justification
-    // would weaken the future capability-probe surface.
-    for (const seededKey of ['localAiSummary', 'subscriptionAiTags', 'downloadHistoryPanel', 'downloadHealthPanel']) {
+    // 4. Seed entries are present. These capability-dependent features remain
+    // hard-gated; Local Summary is intentionally absent because it has an
+    // explicit BYO-key fallback when the browser model is unavailable.
+    for (const seededKey of ['subscriptionAiTags', 'downloadHistoryPanel', 'downloadHealthPanel']) {
         assert.ok(entriesWithRequires.includes(seededKey),
             `seed entry "${seededKey}" must declare a requires: field`);
     }
+    assert.equal(entriesWithRequires.includes('localAiSummary'), false,
+        'Local Summary must stay usable so it can hand off to the BYO-key lane');
 });
 
 test('v4.47.0 NF17 — check-settings.js validates the requires: field', () => {

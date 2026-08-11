@@ -138,3 +138,69 @@ test('userscript provider requests keep Gemini credentials in headers', async ()
     assert.equal(requestDetails.headers['x-goog-api-key'], 'gemini-manager-secret');
     assert.equal(requestDetails.data.includes('gemini-manager-secret'), false);
 });
+
+test('userscript AI summary uses the local browser lane without a provider request', async () => {
+    const makeNode = (tag) => {
+        const node = {
+            tagName: String(tag).toUpperCase(),
+            children: [],
+            textContent: '',
+            append(...items) { this.children.push(...items); },
+            appendChild(item) { this.children.push(item); },
+            setAttribute() {},
+            addEventListener() {},
+            remove() { this.removed = true; }
+        };
+        return node;
+    };
+    const doc = {
+        body: makeNode('body'),
+        createElement: makeNode,
+        querySelector: () => null
+    };
+    let created = 0;
+    let destroyed = 0;
+    let requests = 0;
+    const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+    core.localAi = {
+        getFactory: () => ({ create: async () => ({}) }),
+        availability: async () => 'available',
+        create: async () => {
+            created += 1;
+            return {
+                summarize: async () => 'A local summary.',
+                destroy: () => { destroyed += 1; }
+            };
+        }
+    };
+    try {
+        const feature = createUserscriptAiSummaryFeature({
+            document: doc,
+            getSettings: () => ({ aiSummaryProvider: 'openai' }),
+            getVideoId: () => 'abcdefghijk',
+            transcriptService: {
+                fetchTranscript: async () => ({
+                    status: 'ready',
+                    title: 'Local lane test',
+                    language: 'en',
+                    segments: [{ start: 0, end: 2, text: 'A sufficiently long transcript cue.' }]
+                })
+            },
+            addNavigateRule() {},
+            removeNavigateRule() {},
+            injectStyle() {},
+            credentialStore: {},
+            request() { requests += 1; }
+        });
+
+        await feature._run();
+
+        assert.equal(created, 1);
+        assert.equal(destroyed, 1);
+        assert.equal(requests, 0);
+        assert.match(feature._panel.children[1].textContent, /On-device summary/);
+        assert.match(feature._panel.children[1].textContent, /A local summary/);
+    } finally {
+        delete core.localAi;
+    }
+});

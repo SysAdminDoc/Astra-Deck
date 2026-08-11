@@ -151,29 +151,32 @@
         }),
         Object.freeze({
             origin: 'https://api.openai.com',
-            purpose: 'BYO-key OpenAI summarisation.',
-            requiredByFeatures: ['aiVideoSummary'],
+            purpose: 'BYO-key OpenAI summaries and transcript-translation fallback.',
+            requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
             credentialsPolicy: 'byo-key',
             profile: 'github-full',
-            hostGrant: 'required',
+            hostGrant: 'runtime-optional',
+            runtimeOptionalProfiles: Object.freeze(['github-full']),
             riskBand: 'api'
         }),
         Object.freeze({
             origin: 'https://api.anthropic.com',
-            purpose: 'BYO-key Anthropic summarisation.',
-            requiredByFeatures: ['aiVideoSummary'],
+            purpose: 'BYO-key Anthropic summaries and transcript-translation fallback.',
+            requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
             credentialsPolicy: 'byo-key',
             profile: 'github-full',
-            hostGrant: 'required',
+            hostGrant: 'runtime-optional',
+            runtimeOptionalProfiles: Object.freeze(['github-full']),
             riskBand: 'api'
         }),
         Object.freeze({
             origin: 'https://generativelanguage.googleapis.com',
-            purpose: 'BYO-key Gemini summarisation.',
-            requiredByFeatures: ['aiVideoSummary'],
+            purpose: 'BYO-key Gemini summaries and transcript-translation fallback.',
+            requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
             credentialsPolicy: 'byo-key',
             profile: 'github-full',
-            hostGrant: 'required',
+            hostGrant: 'runtime-optional',
+            runtimeOptionalProfiles: Object.freeze(['github-full']),
             riskBand: 'api'
         }),
         Object.freeze({
@@ -306,6 +309,8 @@
         for (const entry of catalogue) {
             if (entry.profile !== profile) continue;
             if (entry.hostGrant !== 'runtime-optional') continue;
+            if (Array.isArray(entry.runtimeOptionalProfiles)
+                && !entry.runtimeOptionalProfiles.includes(profile)) continue;
             if (!entryAppliesToFeature(entry, featureKey)) continue;
             hosts.push(...hostPermissionsForOrigin(entry.origin));
         }

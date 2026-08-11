@@ -372,7 +372,7 @@
         return {
             id: 'aiVideoSummary',
             name: 'AI Video Summary',
-            description: 'Summarize the current transcript with a userscript-manager-isolated provider credential',
+            description: t('feature_aiVideoSummary_desc', 'Prefer the browser on-device Summarizer; fall back explicitly to the userscript-manager-isolated BYO-key provider'),
             group: 'Watch Page',
             icon: 'sparkles',
             pages: [options.watchPage || 'watch'],
@@ -382,6 +382,35 @@
             _rule: null,
             _timer: null,
             _runToken: 0,
+            async _summarizeLocally(transcript) {
+                const localAi = core.localAi;
+                const factory = localAi?.getFactory?.('summarizer', root)
+                    || root.Summarizer || root.ai?.summarizer;
+                if (!factory?.create) return null;
+                const availability = localAi?.availability
+                    ? await localAi.availability('summarizer', {}, root)
+                    : 'unknown';
+                if (availability === 'unavailable') return null;
+                let summarizer = null;
+                try {
+                    summarizer = localAi?.create
+                        ? await localAi.create('summarizer', {
+                            type: 'tldr',
+                            length: 'medium',
+                            format: 'plain-text'
+                        }, root)
+                        : await factory.create({ type: 'tldr', length: 'medium', format: 'plain-text' });
+                    if (!summarizer?.summarize) return null;
+                    const source = String(transcript?.prepared?.transcript || '').slice(0, 12000);
+                    if (!source.trim()) return null;
+                    const result = await summarizer.summarize(source);
+                    return String(result || '').trim() || null;
+                } catch (_) {
+                    return null;
+                } finally {
+                    summarizer?.destroy?.();
+                }
+            },
             async _call(prompt) {
                 const details = providerRequest(getSettings() || {}, prompt);
                 let credential = await vault.get(details.provider);
@@ -392,6 +421,9 @@
                 if (details.provider === 'gemini') return data?.candidates?.[0]?.content?.parts?.[0]?.text || '[no content]';
                 if (details.provider === 'anthropic') return data?.content?.[0]?.text || '[no content]';
                 return data?.choices?.[0]?.message?.content || '[no content]';
+            },
+            async _callLLM(prompt) {
+                return this._call(prompt);
             },
             _showPanel(text, tone = 'normal') {
                 this._panel?.remove();
@@ -507,9 +539,17 @@
                 try {
                     const transcript = await fetchTranscript();
                     if (runToken !== this._runToken || getVideoId() !== transcript.videoId) return;
-                    this._showPanel(transcript.prepared.truncated
+                    const localSummary = await this._summarizeLocally(transcript);
+                    if (runToken !== this._runToken || getVideoId() !== transcript.videoId) return;
+                    if (localSummary) {
+                        this._showPanel(`On-device summary (no provider credential)\n\n${localSummary}`);
+                        return;
+                    }
+                    const fallbackNotice = t('feature_aiVideoSummary_desc', 'On-device Summarizer unavailable; using the configured BYO-key provider.');
+                    showToast(fallbackNotice, '#f59e0b', { tone: 'warning' });
+                    this._showPanel(`${fallbackNotice}\n\n${transcript.prepared.truncated
                         ? t('aiSummaryCallingTruncated', 'Calling AI provider with the first 120,000 transcript characters…')
-                        : t('aiSummaryCalling', 'Calling AI provider…'));
+                        : t('aiSummaryCalling', 'Calling AI provider…')}`);
                     const prompt = artifactService.buildPrompt({
                         title: transcript.title,
                         videoId: transcript.videoId,

@@ -632,7 +632,13 @@ async function requestOptionalHostsForToggle(key, value) {
         const declared = chrome?.runtime?.getManifest?.().optional_host_permissions || [];
         if (!Array.isArray(declared) || !declared.length) return true;
         const declaredSet = new Set(declared);
-        const origins = (core.getOptionalHostPermissionsForFeature(key) || [])
+        const policy = typeof core.createPolicyProfile === 'function'
+            ? core.createPolicyProfile()
+            : null;
+        const profile = policy
+            ? policy.resolveEffectiveProfile(_settingsState || {})
+            : 'store-safe';
+        const origins = (core.getOptionalHostPermissionsForFeature(key, { profile }) || [])
             .filter((origin) => declaredSet.has(origin));
         if (!origins.length) return true;
         const factory = core.createOptionalHostPermissions;

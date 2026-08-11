@@ -142,9 +142,9 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 
 | Host permission | Store justification |
 | --- | --- |
-| `https://api.openai.com/*` | Sends user-selected transcript/video context directly to OpenAI for the opt-in BYO-key AI summary feature. |
-| `https://api.anthropic.com/*` | Sends user-selected transcript/video context directly to Anthropic for the opt-in BYO-key AI summary feature. |
-| `https://generativelanguage.googleapis.com/*` | Sends user-selected transcript/video context directly to Gemini for the opt-in BYO-key AI summary feature. |
+| `https://api.openai.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to OpenAI only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
+| `https://api.anthropic.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to Anthropic only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
+| `https://generativelanguage.googleapis.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to Gemini only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
 | `https://api.cobalt.tools/*` | Contacts a user-configurable Cobalt endpoint only when the GitHub-full Cobalt fallback is enabled and Astra Downloader is offline. |
 | `http://127.0.0.1:11434/*` | Talks to the user's local Ollama runtime for offline AI summaries; no remote host is contacted. |
 | `http://127.0.0.1:9751/*` | Talks to the local Astra Downloader companion for explicit user-started downloads. |

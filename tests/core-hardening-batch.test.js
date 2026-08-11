@@ -63,6 +63,22 @@ test('summarizer probe matches the API shapes the features actually detect', asy
     delete globalThis.ai;
 });
 
+test('translator probe matches the current and legacy built-in API shapes', async () => {
+    for (const [label, setup, expected] of [
+        ['global Translator (Chrome stable)', () => { globalThis.Translator = function () {}; }, true],
+        ['legacy ai.translator', () => { globalThis.ai = { translator: {} }; }, true],
+        ['no Translator API', () => {}, false]
+    ]) {
+        delete globalThis.Translator;
+        delete globalThis.ai;
+        setup();
+        const core = loadFresh('../extension/core/capability-probe.js');
+        assert.equal(await core.capabilityProbe.probe('translatorApi'), expected, label);
+    }
+    delete globalThis.Translator;
+    delete globalThis.ai;
+});
+
 test('imported backups cannot smuggle unbounded strings through sanitisation', () => {
     const core = loadFresh('../extension/core/persisted-domains.js');
     const domains = core.persistedDomains || core.createPersistedDomains?.() || core;

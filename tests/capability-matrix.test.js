@@ -38,6 +38,19 @@ test('capability matrix is a frozen runtime contract for every probe', () => {
 
     assert.equal(Object.isFrozen(matrix.browsers), true);
     assert.equal(Object.isFrozen(matrix.capabilities), true);
+    assert.deepEqual(matrix.aiLanes, {
+        summary: {
+            localCapability: 'summarizerApi',
+            fallbackLane: 'byo-key',
+            localDataPolicy: 'No host permission or provider credential is used when the browser lane is active.'
+        },
+        transcriptTranslation: {
+            localCapability: 'translatorApi',
+            fallbackLane: 'byo-key',
+            localDataPolicy: 'Transcript text stays on-device when the browser lane is active; the fallback is explicit.'
+        }
+    });
+    assert.equal(matrix.capabilities.translatorApi.probe, 'hasTranslatorApi');
 });
 
 test('capability matrix generator emits the runtime contract without executable values', () => {

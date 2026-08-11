@@ -58,7 +58,7 @@ explicitly chooses the broader profile and enables the relevant feature:
 
 | Destination | Data sent | When |
 | --- | --- | --- |
-| OpenAI, Anthropic, Gemini, or user-configured AI endpoint | User-selected transcript/video context and the user's own API key or configured endpoint. | Only for opt-in BYO-key AI summary features. |
+| OpenAI, Anthropic, Gemini, or user-configured AI endpoint | User-selected transcript/video context and the user's own API key or configured endpoint. | Only for opt-in BYO-key AI summary or transcript-translation fallback features; Chrome's built-in AI lane does not contact these services. |
 | Local Ollama (`127.0.0.1:11434`) | Transcript/video context for local summarization. | Only when the local AI feature is enabled and Ollama is running locally. |
 | Astra Downloader (`127.0.0.1:9751-9851`) | Download request metadata, selected format/quality, health/history requests, and YouTube cookies for authenticated downloads. | Only for explicit local downloader actions or enabled download panels. |
 | Cobalt API | Video URL/context for fallback downloads. | Only when GitHub-full Cobalt fallback is enabled and Astra Downloader is offline. |

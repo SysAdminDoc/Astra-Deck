@@ -960,15 +960,17 @@ function uniqueOptionalOrigins(origins) {
         typeof origin === 'string' && origin.trim()).map((origin) => origin.trim())));
 }
 
-function getDirectOptionalHostsForSetting(key, declaredSet) {
+function getDirectOptionalHostsForSetting(key, declaredSet, profile = 'store-safe') {
     const core = window.YTKitCore || {};
     const catalogue = Array.isArray(core.ORIGIN_CATALOGUE) ? core.ORIGIN_CATALOGUE : [];
     const hostFactory = core.hostPermissionsForDataFlowOrigin;
     if (!catalogue.length || typeof hostFactory !== 'function') return [];
     const hosts = [];
     for (const entry of catalogue) {
-        if (entry?.profile !== 'store-safe') continue;
+        if (entry?.profile !== profile) continue;
         if (entry.hostGrant !== 'runtime-optional') continue;
+        if (Array.isArray(entry.runtimeOptionalProfiles)
+            && !entry.runtimeOptionalProfiles.includes(profile)) continue;
         if (!Array.isArray(entry.requiredByFeatures) || !entry.requiredByFeatures.includes(key)) continue;
         hosts.push(...hostFactory(entry.origin));
     }
@@ -981,10 +983,14 @@ function getDeclaredOptionalHostsForSetting(key, options = {}) {
     const declared = getManifestOptionalHostPermissions();
     if (!Array.isArray(declared) || !declared.length) return [];
     const declaredSet = new Set(declared);
+    const policy = ensurePolicyProfile();
+    const profile = options.profile || (policy
+        ? policy.resolveEffectiveProfile(popupState.settings || {})
+        : 'store-safe');
     if (options.directOnly) {
-        return getDirectOptionalHostsForSetting(key, declaredSet);
+        return getDirectOptionalHostsForSetting(key, declaredSet, profile);
     }
-    return uniqueOptionalOrigins(core.getOptionalHostPermissionsForFeature(key))
+    return uniqueOptionalOrigins(core.getOptionalHostPermissionsForFeature(key, { profile }))
         .filter((origin) => declaredSet.has(origin));
 }
 
@@ -2835,7 +2841,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
 
     // v4.47.0 NF10 follow-up: capability-probe chip. Schema entries
     // with a `requires:` array declare runtime browser capabilities
-    // (e.g. ['summarizerApi'] for localAiSummary, ['mediaDL'] for the
+    // (e.g. ['summarizerApi'] for subscriptionAiTags, ['mediaDL'] for the
     // download* family, ['ollama'] for the local-LLM provider). If
     // the capability map is populated and the entry's required set
     // is not satisfied, render an "Unavailable" chip with the missing
@@ -3481,6 +3487,10 @@ if (healthSaveBtn) {
             delete sanitized._errors;
             const capabilities = popupState._capabilities || null;
             const capabilityMatrix = window.YTKitCore?.capabilityProbe?.CAPABILITY_MATRIX || null;
+            const capabilityProbe = window.YTKitCore?.capabilityProbe;
+            const capabilityLanes = capabilityProbe?.resolveAiLaneStatus
+                ? await capabilityProbe.resolveAiLaneStatus()
+                : capabilityProbe?.getAiLaneStatus?.() || null;
             // v4.47.0 NEW-7: pull the SW lifecycle ring out of the
             // background script. Best-effort — if the SW is non-
             // responsive or the message handler is absent (older
@@ -3511,6 +3521,7 @@ if (healthSaveBtn) {
                 userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
                 capabilities,
                 capabilityMatrix,
+                capabilityLanes,
                 swLifecycle,
                 externalApiHealth,
                 settings: sanitized,

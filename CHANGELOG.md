@@ -23,6 +23,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Runtime bootstrap, isolated-world startup, and the MAIN-world bridge now
   claim world-local injection guards, so repeated SPA/update injection keeps
   one active registry and reports duplicate attempts through diagnostics.
+- Chrome's built-in Summarizer and Translator APIs now run the summary and
+  transcript-translation lanes without provider keys or remote host access
+  when available; unavailable models announce and hand off to the configured
+  BYO-key lane, whose GitHub-full provider hosts are runtime-optional.
 
 ---
 
