@@ -206,6 +206,31 @@ test('current backup payload represents every included domain and scrubs credent
     assert.equal(sanitized.domains.settings.aiSummaryApiKey, undefined);
 });
 
+test('highlight exports use the current backup schema and round-trip through the import boundary', () => {
+    const raw = persisted.createHighlightExport({
+        settings: { hideHomeFeed: true, apiKey: 'must not travel' },
+        bookmarks: { abcdefghijk: [{ t: 42, n: 'chapter', d: 1700000000000 }] },
+        aiSummaries: {}
+    }, {
+        kind: persisted.HIGHLIGHT_EXPORT_KIND,
+        video: { videoId: 'abcdefghijk', title: 'Fixture' }
+    }, { settingsSchemaVersion: 9, ytkitVersion: '4.59.1' });
+
+    assert.equal(raw.exportVersion, persisted.BACKUP_EXPORT_VERSION);
+    assert.equal(raw.backupSchemaVersion, persisted.BACKUP_SCHEMA_VERSION);
+    assert.equal(raw.highlightExportKind, persisted.HIGHLIGHT_EXPORT_KIND);
+    assert.equal(raw.domains.settings.apiKey, undefined);
+    assert.deepEqual(persisted.migrateBackup(raw).domains.bookmarks, raw.domains.bookmarks);
+    const parsed = persisted.parseHighlightExport(raw);
+    assert.equal(parsed.highlightExportVersion, persisted.HIGHLIGHT_EXPORT_VERSION);
+    assert.deepEqual(parsed.domains.settings, raw.domains.settings);
+    assert.deepEqual(parsed.highlightBundle.video, { videoId: 'abcdefghijk', title: 'Fixture' });
+    assert.throws(
+        () => persisted.parseHighlightExport({ ...raw, highlightExportVersion: persisted.HIGHLIGHT_EXPORT_VERSION + 1 }),
+        /Unsupported or invalid Astra Deck highlight export/
+    );
+});
+
 test('marked-watched domain keeps the newest valid IDs and migrates legacy exports', () => {
     const ids = Array.from({ length: 5002 }, (_, index) => String(index).padStart(11, '0'));
     const payload = persisted.buildIncludedDomainPayload({

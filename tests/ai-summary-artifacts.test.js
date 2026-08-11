@@ -62,6 +62,45 @@ test('artifacts preserve provenance, search locally, export timestamps, and dele
     assert.deepEqual(artifacts.deleteArtifact(store, artifact.artifactId), {});
 });
 
+test('video highlight bundles combine transcript, bookmarks, notes, and cited summaries into Obsidian links', () => {
+    const prepared = artifacts.prepareCues(segments);
+    const result = artifacts.parseSummaryResponse(JSON.stringify({
+        summary: 'A combined overview.',
+        bullets: [{ text: 'The central finding.', citations: ['C0002'] }],
+        tldr: { text: 'A short conclusion.', citations: ['C0003'] }
+    }), prepared.cues);
+    const summary = artifacts.createArtifact({
+        videoId: 'abc123DEF45', title: 'Research *Video*', language: 'en', provider: 'local', model: 'small',
+        generatedAt: '2026-07-14T12:00:00.000Z', result, cues: prepared.cues
+    });
+    const bundle = artifacts.createVideoHighlightBundle({
+        videoId: 'abc123DEF45',
+        title: 'Research *Video*',
+        exportedAt: '2026-07-14T13:00:00.000Z',
+        transcript: {
+            status: 'ready',
+            language: 'en',
+            segments: [
+                { startMs: 0, endMs: 3000, text: 'Opening context.' },
+                { startMs: 65000, endMs: 70000, text: 'The central finding.' }
+            ]
+        },
+        bookmarks: [{ t: 12, n: 'Review this *moment*', d: 1700000000000 }],
+        note: { videoId: 'abc123DEF45', title: 'Research *Video*', note: 'Follow up with the cited paper.' },
+        summary
+    });
+    assert.equal(bundle.kind, artifacts.HIGHLIGHT_EXPORT_KIND);
+    assert.equal(bundle.transcript.cues.length, 2);
+    assert.equal(bundle.highlights.some((item) => item.kind === 'bookmark'), true);
+    assert.equal(bundle.highlights.some((item) => item.kind === 'summary'), true);
+    const markdown = artifacts.videoHighlightBundleToMarkdown(bundle);
+    assert.match(markdown, /\[0:12\]\(https:\/\/www\.youtube\.com\/watch\?v=abc123DEF45&t=12s\)/);
+    assert.match(markdown, /\[1:05\]\(https:\/\/www\.youtube\.com\/watch\?v=abc123DEF45&t=65s\)/);
+    assert.match(markdown, /## Video note/);
+    assert.match(markdown, /## AI summary/);
+    assert.ok(markdown.includes('# Research \\*Video\\*'));
+});
+
 test('store sanitation rejects malformed imports and enforces the archive cap', () => {
     const prepared = artifacts.prepareCues(segments);
     const result = artifacts.parseSummaryResponse(JSON.stringify({

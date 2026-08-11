@@ -11,6 +11,11 @@
     const MAX_STORE_BYTES = 1_500_000;
     const MAX_SUMMARY_CHARS = 20000;
     const MAX_BULLETS = 12;
+    const HIGHLIGHT_EXPORT_VERSION = 1;
+    const HIGHLIGHT_EXPORT_KIND = 'video-highlight-bundle';
+    const MAX_HIGHLIGHT_CUES = 2500;
+    const MAX_HIGHLIGHT_CUE_CHARS = 220000;
+    const MAX_HIGHLIGHT_NOTE_CHARS = 5000;
 
     function cleanText(value, max = 2000) {
         return String(value || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
@@ -305,8 +310,243 @@
         };
     }
 
+    function highlightTimestampUrl(videoId, seconds) {
+        return `https://www.youtube.com/watch?v=${videoId}&t=${Math.max(0, Math.floor(Number(seconds) || 0))}s`;
+    }
+
+    function sanitizeHighlightBookmark(raw) {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+        const seconds = Math.floor(Number(raw.t ?? raw.startSeconds ?? raw.time));
+        if (!Number.isFinite(seconds) || seconds < 0 || seconds > 864000) return null;
+        const createdAt = Number(raw.d ?? raw.createdAt ?? 0);
+        return {
+            t: seconds,
+            timestamp: formatTimestamp(seconds),
+            note: cleanText(raw.n ?? raw.note, MAX_HIGHLIGHT_NOTE_CHARS),
+            createdAt: Number.isFinite(createdAt) && createdAt > 0 ? Math.floor(createdAt) : 0
+        };
+    }
+
+    function sanitizeHighlightNote(raw, videoId) {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+        const note = cleanText(raw.note ?? raw.text, MAX_HIGHLIGHT_NOTE_CHARS);
+        if (!note) return null;
+        const updatedAt = Number(raw.updatedAt ?? raw.createdAt ?? 0);
+        return {
+            videoId,
+            title: cleanText(raw.title, 300),
+            note,
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            createdAt: Number.isFinite(Number(raw.createdAt)) && Number(raw.createdAt) > 0
+                ? Math.floor(Number(raw.createdAt)) : 0,
+            updatedAt: Number.isFinite(updatedAt) && updatedAt > 0 ? Math.floor(updatedAt) : 0
+        };
+    }
+
+    function sanitizeHighlightTranscript(raw) {
+        const source = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+        const status = ['ready', 'captionless', 'unavailable'].includes(source.status)
+            ? source.status
+            : 'unavailable';
+        const sourceSegments = Array.isArray(source.segments)
+            ? source.segments
+            : (Array.isArray(source.cues) ? source.cues : []);
+        const cues = [];
+        let totalChars = 0;
+        let truncated = source.truncated === true;
+        for (const segment of sourceSegments) {
+            if (!segment || typeof segment !== 'object') continue;
+            const text = cleanText(segment.text, 1600);
+            if (!text) continue;
+            if (cues.length >= MAX_HIGHLIGHT_CUES || totalChars + text.length > MAX_HIGHLIGHT_CUE_CHARS) {
+                truncated = true;
+                break;
+            }
+            const startMs = Number.isFinite(Number(segment.startMs))
+                ? Number(segment.startMs)
+                : Number(segment.startSeconds ?? segment.start ?? 0) * 1000;
+            const endMs = Number.isFinite(Number(segment.endMs))
+                ? Number(segment.endMs)
+                : Number(segment.endSeconds ?? segment.end ?? segment.startSeconds ?? segment.start ?? 0) * 1000;
+            const startSeconds = Math.max(0, Math.floor(startMs / 1000));
+            const endSeconds = Math.max(startSeconds, Math.ceil(Math.max(startMs, endMs) / 1000));
+            const sourceId = String(segment.id || '');
+            const id = /^C\d{4,6}$/.test(sourceId)
+                ? sourceId
+                : `T${String(cues.length + 1).padStart(4, '0')}`;
+            cues.push({
+                id,
+                startSeconds,
+                endSeconds,
+                timestamp: formatTimestamp(startSeconds),
+                text
+            });
+            totalChars += text.length;
+        }
+        return {
+            status,
+            title: cleanText(source.title, 300),
+            language: cleanText(source.language, 40),
+            truncated,
+            error: cleanText(source.error, 240),
+            cues
+        };
+    }
+
+    function sanitizeVideoHighlightBundle(raw) {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+        const videoId = String(raw.video?.videoId || raw.videoId || '');
+        if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return null;
+        const summary = sanitizeArtifact(raw.summary);
+        const transcript = sanitizeHighlightTranscript(raw.transcript);
+        const rawBookmarks = Array.isArray(raw.bookmarks) ? raw.bookmarks : [];
+        const bookmarks = rawBookmarks.map(sanitizeHighlightBookmark).filter(Boolean).slice(0, 100);
+        const note = sanitizeHighlightNote(raw.note, videoId);
+        const exportedMs = Date.parse(String(raw.exportedAt || ''));
+        const title = cleanText(raw.video?.title || raw.title || transcript.title || summary?.title, 300) || videoId;
+        const highlights = [];
+        const seen = new Set();
+        const addHighlight = (item) => {
+            const seconds = Math.max(0, Math.floor(Number(item.seconds) || 0));
+            const text = cleanText(item.text, 2500);
+            if (!text) return;
+            const key = `${item.kind || 'highlight'}:${seconds}:${text}`;
+            if (seen.has(key) || highlights.length >= 300) return;
+            seen.add(key);
+            highlights.push({
+                kind: ['bookmark', 'summary'].includes(item.kind) ? item.kind : 'transcript',
+                startSeconds: seconds,
+                timestamp: formatTimestamp(seconds),
+                url: highlightTimestampUrl(videoId, seconds),
+                text,
+                note: cleanText(item.note, MAX_HIGHLIGHT_NOTE_CHARS),
+                sourceText: cleanText(item.sourceText, 1600),
+                citationId: /^C\d{4,6}$/.test(String(item.citationId || '')) ? String(item.citationId) : ''
+            });
+        };
+        for (const bookmark of bookmarks) {
+            addHighlight({
+                kind: 'bookmark',
+                seconds: bookmark.t,
+                text: bookmark.note || 'Saved bookmark',
+                note: bookmark.note
+            });
+        }
+        if (summary) {
+            const addSummaryHighlight = (text, citations) => {
+                for (const citationId of Array.isArray(citations) ? citations : []) {
+                    const cue = summary.citations[citationId];
+                    if (!cue) continue;
+                    addHighlight({
+                        kind: 'summary',
+                        seconds: cue.startSeconds,
+                        text,
+                        sourceText: cue.text,
+                        citationId
+                    });
+                }
+            };
+            for (const bullet of summary.bullets) addSummaryHighlight(bullet.text, bullet.citations);
+            if (summary.tldr.text) addSummaryHighlight(summary.tldr.text, summary.tldr.citations);
+        }
+        return {
+            kind: HIGHLIGHT_EXPORT_KIND,
+            version: HIGHLIGHT_EXPORT_VERSION,
+            exportedAt: Number.isFinite(exportedMs) ? new Date(exportedMs).toISOString() : new Date().toISOString(),
+            video: {
+                videoId,
+                title,
+                url: `https://www.youtube.com/watch?v=${videoId}`
+            },
+            transcript,
+            highlights,
+            bookmarks,
+            note,
+            summary
+        };
+    }
+
+    function createVideoHighlightBundle({
+        videoId,
+        title = '',
+        transcript = {},
+        bookmarks = [],
+        note = null,
+        summary = null,
+        exportedAt = new Date().toISOString()
+    } = {}) {
+        return sanitizeVideoHighlightBundle({
+            kind: HIGHLIGHT_EXPORT_KIND,
+            version: HIGHLIGHT_EXPORT_VERSION,
+            exportedAt,
+            video: { videoId, title },
+            transcript,
+            bookmarks,
+            note,
+            summary
+        });
+    }
+
+    function videoHighlightBundleToMarkdown(rawBundle) {
+        const bundle = sanitizeVideoHighlightBundle(rawBundle);
+        if (!bundle) throw new Error('Video highlight bundle is invalid.');
+        const lines = [
+            `# ${escapeMarkdown(bundle.video.title)}`,
+            '',
+            `[Open video](${bundle.video.url})`,
+            `Exported: ${bundle.exportedAt}`,
+            '',
+            '## Highlights',
+            ''
+        ];
+        if (!bundle.highlights.length) {
+            lines.push('_No saved bookmarks or cited summary highlights were available._', '');
+        } else {
+            for (const highlight of bundle.highlights) {
+                const kind = highlight.kind === 'bookmark' ? 'Bookmark' : 'Summary';
+                const source = highlight.sourceText ? ` — _Transcript:_ ${escapeMarkdown(highlight.sourceText)}` : '';
+                const note = highlight.note && highlight.note !== highlight.text
+                    ? ` — _Note:_ ${escapeMarkdown(highlight.note)}` : '';
+                lines.push(`- **${kind}** [${highlight.timestamp}](${highlight.url}) — ${escapeMarkdown(highlight.text)}${source}${note}`);
+            }
+            lines.push('');
+        }
+        if (bundle.note) {
+            lines.push('## Video note', '', escapeMarkdown(bundle.note.note), '');
+        }
+        if (bundle.summary) {
+            const linksFor = (ids) => (Array.isArray(ids) ? ids : []).map((id) => {
+                const cue = bundle.summary.citations[id];
+                return cue ? `[${cue.timestamp}](${timestampUrl(bundle.summary, cue)})` : '';
+            }).filter(Boolean).join(' ');
+            lines.push('## AI summary', '', escapeMarkdown(bundle.summary.summary), '');
+            for (const bullet of bundle.summary.bullets) {
+                lines.push(`- ${escapeMarkdown(bullet.text)} ${linksFor(bullet.citations)}`.trim());
+            }
+            if (bundle.summary.tldr.text) {
+                lines.push('', `**TL;DR:** ${escapeMarkdown(bundle.summary.tldr.text)} ${linksFor(bundle.summary.tldr.citations)}`.trim());
+            }
+            lines.push('');
+        }
+        lines.push('## Transcript', '');
+        if (bundle.transcript.cues.length) {
+            for (const cue of bundle.transcript.cues) {
+                lines.push(`- [${cue.timestamp}](${highlightTimestampUrl(bundle.video.videoId, cue.startSeconds)}) ${escapeMarkdown(cue.text)}`);
+            }
+            if (bundle.transcript.truncated) lines.push('', '_Transcript export was bounded; the source contained more caption text._');
+        } else {
+            const reason = bundle.transcript.status === 'captionless'
+                ? 'No captions were available for this video.'
+                : (bundle.transcript.error || 'Transcript retrieval was unavailable when this pack was created.');
+            lines.push(`_${escapeMarkdown(reason)}_`);
+        }
+        return `${lines.join('\n')}\n`;
+    }
+
     core.aiSummaryArtifacts = Object.freeze({
         ARTIFACT_SCHEMA_VERSION,
+        HIGHLIGHT_EXPORT_KIND,
+        HIGHLIGHT_EXPORT_VERSION,
         PROMPT_VERSION,
         MAX_ARTIFACTS,
         MAX_STORE_BYTES,
@@ -322,8 +562,11 @@
         prepareCues,
         sanitizeArtifact,
         sanitizeArtifactStore,
+        sanitizeVideoHighlightBundle,
         searchArtifacts,
-        timestampUrl
+        timestampUrl,
+        createVideoHighlightBundle,
+        videoHighlightBundleToMarkdown
     });
 
     if (typeof module !== 'undefined' && module.exports) module.exports = core.aiSummaryArtifacts;

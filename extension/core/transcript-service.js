@@ -36,6 +36,56 @@
         'ytd-transcript-renderer'
     ]);
 
+    function formatTranscriptSeconds(seconds) {
+        const total = Math.max(0, Math.floor(Number(seconds) || 0));
+        const hours = Math.floor(total / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const secs = total % 60;
+        return hours > 0
+            ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+            : `${minutes}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // Consumers that combine transcripts with bookmarks or citations need a
+    // bounded, deterministic shape rather than provider-specific raw
+    // segments. Keep this helper side-effect free so exports and tests can
+    // use it without opening YouTube's transcript panel.
+    function normalizeTranscriptSegments(segments, options = {}) {
+        const maxSegments = Math.max(1, Math.min(5000, Math.floor(Number(options.maxSegments) || 2500)));
+        const maxTextChars = Math.max(100, Math.min(5000, Math.floor(Number(options.maxTextChars) || 1600)));
+        const maxChars = Math.max(1000, Math.min(500000, Math.floor(Number(options.maxChars) || 220000)));
+        const cues = [];
+        let totalChars = 0;
+        let truncated = false;
+        for (const segment of Array.isArray(segments) ? segments : []) {
+            if (!segment || typeof segment !== 'object') continue;
+            const text = String(segment.text || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+                .replace(/\s+/g, ' ').trim().slice(0, maxTextChars);
+            if (!text) continue;
+            if (cues.length >= maxSegments || totalChars + text.length > maxChars) {
+                truncated = true;
+                break;
+            }
+            const startMs = Number.isFinite(Number(segment.startMs))
+                ? Number(segment.startMs)
+                : Number(segment.startSeconds ?? segment.start ?? 0) * 1000;
+            const endMs = Number.isFinite(Number(segment.endMs))
+                ? Number(segment.endMs)
+                : Number(segment.endSeconds ?? segment.end ?? segment.startSeconds ?? segment.start ?? 0) * 1000;
+            const startSeconds = Math.max(0, Math.floor(startMs / 1000));
+            const endSeconds = Math.max(startSeconds, Math.ceil(Math.max(startMs, endMs) / 1000));
+            cues.push({
+                id: `C${String(cues.length + 1).padStart(4, '0')}`,
+                startSeconds,
+                endSeconds,
+                timestamp: formatTranscriptSeconds(startSeconds),
+                text
+            });
+            totalChars += text.length;
+        }
+        return { cues, truncated };
+    }
+
     function getTranscriptPanelElement(root = typeof document !== 'undefined' ? document : null, options = {}) {
         if (!root?.querySelector) return null;
         if (typeof core.findSurfaceElement === 'function') {
@@ -550,6 +600,10 @@
                 return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             },
 
+            normalizeSegments(segments, options = {}) {
+                return normalizeTranscriptSegments(segments, options);
+            },
+
             _cachedApiKey: null,
             _cachedApiKeyAt: 0,
             _CACHE_TTL_MS: 10 * 60 * 1000,
@@ -641,6 +695,7 @@
     Object.assign(core, {
         createTranscriptService,
         getTranscriptPanelElement,
+        normalizeTranscriptSegments,
         TRANSCRIPT_PANEL_SELECTORS
     });
 })();

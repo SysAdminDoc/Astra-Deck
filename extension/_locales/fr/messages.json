@@ -5581,6 +5581,24 @@
   "toggleUpdateFailTpl": {
     "message": "Impossible de mettre à jour {name}. Réessayez."
   },
+  "timestampHighlightExport": {
+    "message": "Export Highlight Pack"
+  },
+  "timestampHighlightExportAria": {
+    "message": "Export this video’s highlights, notes, bookmarks, and summary"
+  },
+  "timestampHighlightExportFailed": {
+    "message": "Highlight export failed. Your saved data is unchanged."
+  },
+  "timestampHighlightExported": {
+    "message": "Highlight pack exported as Markdown and JSON."
+  },
+  "timestampHighlightExporting": {
+    "message": "Preparing highlight pack…"
+  },
+  "timestampHighlightNoVideo": {
+    "message": "No video is currently open."
+  },
   "transcriptCaptions": {
     "message": "Captions"
   },
