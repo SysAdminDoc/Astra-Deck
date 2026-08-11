@@ -2134,7 +2134,7 @@
     "message": "Hide the Home entry in the Guide"
   },
   "feature_guideHide_home_name": {
-    "message": "Home"
+    "message": "Главная"
   },
   "feature_guideHide_learning_desc": {
     "message": "Hide the Learning topic entry"
@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "Подписки"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "пачки"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "Автоматически удалять скрытые карточки"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "При включении подходящие видео удаляются из DOM ленты, а не просто скрываются с помощью CSS."
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "Показывать кнопку скрытия на миниатюрах"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "Показывать кнопку X на поддерживаемых миниатюрах для скрытия одним нажатием."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "Разрешить блокировку каналов правой кнопкой"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "Нажмите правой кнопкой по X на миниатюре, чтобы заблокировать весь канал."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "Запоминать восстановленные видео"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "Оставлять восстановленные видео видимыми, добавляя их в разрешённые, даже если другое правило всё ещё срабатывает."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "Главная"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "Скрывать совпадения в главной ленте YouTube."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "Подписки"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "Скрывать совпадения и показывать групповые элементы управления в ленте подписок."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "Результаты поиска"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "Применять правила видео и каналов на страницах результатов поиска."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "Страницы просмотра"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "Применять правила к рекомендациям рядом с проигрывателем и под ним."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "Страницы каналов"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "Применять правила на главной канала, видео-, прямых и плейлистовых поверхностях."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "Другие поверхности YouTube"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "Оставлять Video Hider активным на прочих поверхностях навигации."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "Скрывать прямые трансляции"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "Скрывать карточки текущих трансляций и прямые рекомендации в поддерживаемых лентах."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "Скрывать предстоящие премьеры"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "Скрывать карточки запланированных, предстоящих видео и видео с напоминаниями."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "Скрывать миксы YouTube"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "Скрывать миксы в стиле радио и автоматически созданные рекомендательные миксы."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "Скрывать карточки плейлистов"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "Скрывать карточки плейлистов и нескольких видео на поддерживаемых поверхностях ленты."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "Скрывать фильмы"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "Скрывать карточки аренды, покупки, бесплатных видео с рекламой и карточки с пометкой фильма."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "Скрывать видео с автодублированием"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "Скрывать карточки с пометкой о дубляже, автодубляже или альтернативной аудиодорожке."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "Скрывать видео с малым числом просмотров"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "Скрывать видео ниже порога просмотров, когда YouTube показывает число просмотров на карточке."
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"

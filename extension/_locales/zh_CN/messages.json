@@ -2134,7 +2134,7 @@
     "message": "Hide the Home entry in the Guide"
   },
   "feature_guideHide_home_name": {
-    "message": "Home"
+    "message": "首页"
   },
   "feature_guideHide_learning_desc": {
     "message": "Hide the Learning topic entry"
@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "订阅"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "批次"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "自动移除隐藏卡片"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "启用后，匹配的视频会从动态 DOM 中移除，而不只是通过 CSS 隐藏。"
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "显示缩略图隐藏按钮"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "在支持的视频缩略图上显示 X 按钮，可一键隐藏。"
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "允许右键屏蔽频道"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "右键点击缩略图上的 X 按钮即可屏蔽整个频道。"
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "记住恢复的视频"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "将恢复的视频加入允许的视频，即使仍匹配其他规则也保持显示。"
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "首页"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "隐藏 YouTube 首页动态中的匹配内容。"
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "订阅"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "隐藏订阅动态中的匹配内容并显示批量操作控件。"
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "搜索结果"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "在搜索结果页应用视频和频道规则。"
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "观看页"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "对播放器旁边和下方的推荐应用规则。"
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "频道页"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "在频道主页、视频、直播和播放列表界面应用规则。"
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "其他 YouTube 界面"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "在其他浏览界面保持 Video Hider 启用。"
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "隐藏直播"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "在支持的动态中隐藏正在直播的卡片和直播推荐。"
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "隐藏即将首映的视频"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "隐藏已安排、即将播放和由提醒触发的视频卡片。"
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "隐藏 YouTube Mix"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "隐藏广播风格的 Mix 和自动生成的推荐 Mix。"
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "隐藏播放列表卡片"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "从支持的动态界面隐藏播放列表和多视频卡片。"
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "隐藏电影"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "隐藏租借、购买、含广告免费以及标记为电影的卡片。"
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "隐藏自动配音视频"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "隐藏标记为配音、自动配音或备用音频的视频卡片。"
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "隐藏低观看数视频"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "当 YouTube 在卡片上显示观看数时，隐藏低于观看数阈值的视频。"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"

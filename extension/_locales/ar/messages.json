@@ -2134,7 +2134,7 @@
     "message": "Hide the Home entry in the Guide"
   },
   "feature_guideHide_home_name": {
-    "message": "Home"
+    "message": "الصفحة الرئيسية"
   },
   "feature_guideHide_learning_desc": {
     "message": "Hide the Learning topic entry"
@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "الاشتراكات"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "دفعات"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "إزالة البطاقات المخفية تلقائيًا"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "عند التفعيل، تتم إزالة الفيديوهات المطابقة من DOM الخاص بالخلاصة بدلًا من إخفائها باستخدام CSS فقط."
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "إظهار زر إخفاء الصورة المصغرة"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "إظهار زر X على الصور المصغرة المدعومة لإخفائها بنقرة واحدة."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "السماح بحظر القنوات بالنقر بزر الفأرة الأيمن"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "انقر بزر الفأرة الأيمن على زر X في الصورة المصغرة لحظر القناة بأكملها."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "تذكّر الفيديوهات المستعادة"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "أبقِ الفيديوهات المستعادة ظاهرة بإضافتها إلى الفيديوهات المسموح بها، حتى عند استمرار تطابق قاعدة أخرى."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "الصفحة الرئيسية"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "إخفاء التطابقات في خلاصة YouTube الرئيسية."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "الاشتراكات"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "إخفاء التطابقات وإظهار عناصر التحكم الجماعية في خلاصة الاشتراكات."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "نتائج البحث"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "تطبيق قواعد الفيديو والقناة على صفحات نتائج البحث."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "صفحات المشاهدة"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "تطبيق القواعد على الاقتراحات بجانب المشغّل وتحته."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "صفحات القنوات"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "تطبيق القواعد على أسطح الصفحة الرئيسية للقناة والفيديو والبث المباشر وقوائم التشغيل."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "أسطح YouTube الأخرى"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "إبقاء Video Hider مفعّلًا على أسطح التصفح المتنوعة."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "إخفاء البثوث المباشرة"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "إخفاء بطاقات البث الجاري والاقتراحات المباشرة عند ظهورها في الخلاصات المدعومة."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "إخفاء العروض الأولى القادمة"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "إخفاء بطاقات الفيديو المجدولة والقادمة والتي تعتمد على التذكيرات."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "إخفاء عمليات مزج YouTube"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "إخفاء عمليات المزج بنمط الراديو وعمليات مزج الاقتراحات المنشأة تلقائيًا."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "إخفاء بطاقات قوائم التشغيل"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "إخفاء بطاقات قوائم التشغيل وبطاقات الفيديوهات المتعددة من أسطح الخلاصة المدعومة."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "إخفاء الأفلام"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "إخفاء بطاقات الاستئجار والشراء والمجانية مع الإعلانات والبطاقات المصنفة كأفلام."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "إخفاء الفيديوهات المدبلجة تلقائيًا"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "إخفاء البطاقات المصنفة كفيديوهات مدبلجة أو مدبلجة تلقائيًا أو ذات صوت بديل."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "إخفاء الفيديوهات قليلة المشاهدات"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "إخفاء الفيديوهات التي تقل عن حد المشاهدات عندما يعرض YouTube عدد المشاهدات على البطاقة."
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"

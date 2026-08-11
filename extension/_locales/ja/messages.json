@@ -2134,7 +2134,7 @@
     "message": "Hide the Home entry in the Guide"
   },
   "feature_guideHide_home_name": {
-    "message": "Home"
+    "message": "ホーム"
   },
   "feature_guideHide_learning_desc": {
     "message": "Hide the Learning topic entry"
@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "登録チャンネル"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "バッチ"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "非表示カードを自動的に削除"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "有効にすると、一致する動画は CSS で隠すだけでなくフィードの DOM から削除されます。"
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "サムネイルの非表示ボタンを表示"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "対応する動画サムネイルに X ボタンを表示し、ワンクリックで非表示にします。"
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "右クリックでチャンネルをブロック"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "サムネイルの X ボタンを右クリックしてチャンネル全体をブロックします。"
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "復元した動画を記憶"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "復元した動画を許可した動画に追加し、別のルールに一致しても表示したままにします。"
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "ホーム"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "YouTube ホームフィードの一致項目を非表示にします。"
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "登録チャンネル"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "登録チャンネルフィードの一致項目を非表示にし、一括操作を表示します。"
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "検索結果"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "検索結果ページに動画とチャンネルのルールを適用します。"
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "再生ページ"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "プレーヤーの横と下のおすすめにルールを適用します。"
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "チャンネルページ"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "チャンネルホーム、動画、ライブ、再生リストの各画面にルールを適用します。"
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "その他の YouTube 画面"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "その他のブラウジング画面でも Video Hider を有効にします。"
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "ライブ配信を非表示"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "対応するフィードに表示された配信中カードとライブのおすすめを非表示にします。"
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "近日公開のプレミアを非表示"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "予定、近日公開、リマインダー付きの動画カードを非表示にします。"
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "YouTube Mix を非表示"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "ラジオ形式の Mix と自動生成されたおすすめ Mix を非表示にします。"
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "再生リストカードを非表示"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "対応するフィード画面の再生リストカードと複数動画カードを非表示にします。"
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "映画を非表示"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "レンタル、購入、広告付き無料、映画ラベルのカードを非表示にします。"
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "自動吹き替え動画を非表示"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "吹き替え、自動吹き替え、別音声と表示されたカードを非表示にします。"
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "再生数の少ない動画を非表示"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "YouTube がカードに再生数を表示している場合、しきい値未満の動画を非表示にします。"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"

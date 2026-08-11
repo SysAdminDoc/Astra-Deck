@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "Iscrizioni"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "blocchi"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "Rimuovi automaticamente le schede nascoste"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "Quando attivo, i video corrispondenti vengono rimossi dal DOM del feed invece di essere solo nascosti con CSS."
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "Mostra il pulsante per nascondere sulle miniature"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "Mostra il pulsante X sulle miniature supportate per nascondere con un clic."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "Consenti il blocco dei canali con il clic destro"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "Fai clic destro sul pulsante X della miniatura per bloccare l’intero canale."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "Ricorda i video ripristinati"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "Mantieni visibili i video ripristinati aggiungendoli ai video consentiti, anche quando un’altra regola continua a corrispondere."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "Home"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "Nascondi le corrispondenze nel feed Home di YouTube."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "Iscrizioni"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "Nascondi le corrispondenze e mostra i controlli multipli nel feed delle iscrizioni."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "Risultati di ricerca"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "Applica le regole per video e canali nelle pagine dei risultati di ricerca."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "Pagine di visione"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "Applica le regole ai consigli accanto e sotto il player."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "Pagine dei canali"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "Applica le regole alle superfici Home del canale, video, live e playlist."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "Altre superfici YouTube"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "Mantieni Video Hider attivo sulle altre superfici di navigazione."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "Nascondi le dirette"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "Nascondi le schede delle dirette in corso e i consigli live nei feed supportati."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "Nascondi le anteprime imminenti"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "Nascondi le schede dei video programmati, imminenti o con promemoria."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "Nascondi i Mix di YouTube"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "Nascondi i mix in stile radio e i mix di consigli generati automaticamente."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "Nascondi le schede delle playlist"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "Nascondi le schede di playlist e video multipli dalle superfici supportate."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "Nascondi i film"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "Nascondi le schede di noleggio, acquisto, gratuite con annunci e contrassegnate come film."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "Nascondi i video doppiati automaticamente"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "Nascondi le schede indicate come doppiate, doppiate automaticamente o con audio alternativo."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "Nascondi i video con poche visualizzazioni"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "Nascondi i video sotto la soglia di visualizzazioni quando YouTube mostra il conteggio sulla scheda."
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"

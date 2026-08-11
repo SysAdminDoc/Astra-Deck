@@ -2134,7 +2134,7 @@
     "message": "Hide the Home entry in the Guide"
   },
   "feature_guideHide_home_name": {
-    "message": "Home"
+    "message": "Accueil"
   },
   "feature_guideHide_learning_desc": {
     "message": "Hide the Learning topic entry"
@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "Abonnements"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "lots"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "Supprimer automatiquement les cartes masquées"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "Lorsque cette option est activée, les vidéos correspondantes sont retirées du DOM du flux au lieu d’être seulement masquées par CSS."
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "Afficher le bouton de masquage sur les miniatures"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "Afficher le bouton X sur les miniatures compatibles pour masquer en un clic."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "Autoriser le blocage des chaînes par clic droit"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "Faites un clic droit sur le bouton X de la miniature pour bloquer toute la chaîne."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "Mémoriser les vidéos restaurées"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "Gardez les vidéos restaurées visibles en les ajoutant aux vidéos autorisées, même si une autre règle correspond encore."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "Accueil"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "Masquer les correspondances dans le flux d’accueil YouTube."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "Abonnements"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "Masquer les correspondances et afficher les commandes groupées dans le flux des abonnements."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "Résultats de recherche"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "Appliquer les règles de vidéos et de chaînes sur les pages de résultats de recherche."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "Pages de lecture"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "Appliquer les règles aux recommandations à côté et sous le lecteur."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "Pages de chaînes"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "Appliquer les règles aux surfaces d’accueil de chaîne, de vidéo, de direct et de playlist."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "Autres surfaces YouTube"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "Garder Video Hider actif sur les autres surfaces de navigation."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "Masquer les directs"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "Masquer les cartes de directs en cours et les recommandations en direct dans les flux compatibles."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "Masquer les prochaines premières"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "Masquer les cartes de vidéos programmées, à venir ou associées à un rappel."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "Masquer les Mix YouTube"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "Masquer les mix de type radio et les mix de recommandations générés automatiquement."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "Masquer les cartes de playlists"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "Masquer les cartes de playlists et de vidéos multiples sur les surfaces compatibles."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "Masquer les films"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "Masquer les cartes de location, d’achat, gratuites avec publicité et identifiées comme films."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "Masquer les vidéos doublées automatiquement"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "Masquer les cartes indiquées comme doublées, doublées automatiquement ou avec une autre piste audio."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "Masquer les vidéos peu vues"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "Masquer les vidéos sous le seuil de vues lorsque YouTube affiche un nombre de vues sur la carte."
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"

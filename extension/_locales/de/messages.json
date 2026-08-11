@@ -2134,7 +2134,7 @@
     "message": "Hide the Home entry in the Guide"
   },
   "feature_guideHide_home_name": {
-    "message": "Home"
+    "message": "Startseite"
   },
   "feature_guideHide_learning_desc": {
     "message": "Hide the Learning topic entry"
@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "Abos"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "Stapel"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "Verborgene Karten automatisch entfernen"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "Wenn aktiviert, werden passende Videos aus dem Feed-DOM entfernt, statt nur per CSS ausgeblendet zu werden."
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "Schaltfläche zum Ausblenden auf Vorschaubildern anzeigen"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "X-Schaltfläche auf unterstützten Vorschaubildern zum Ausblenden mit einem Klick anzeigen."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "Kanalblockierung per Rechtsklick erlauben"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "Per Rechtsklick auf die X-Schaltfläche des Vorschaubilds den ganzen Kanal blockieren."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "Wiederhergestellte Videos merken"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "Wiederhergestellte Videos sichtbar halten, indem sie zu „Erlaubte Videos“ hinzugefügt werden, auch wenn eine andere Regel weiterhin zutrifft."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "Startseite"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "Treffer auf der YouTube-Startseite ausblenden."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "Abos"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "Treffer ausblenden und Sammelsteuerungen im Abofeed anzeigen."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "Suchergebnisse"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "Video- und Kanalregeln auf Suchergebnisseiten anwenden."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "Wiedergabeseiten"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "Regeln auf Empfehlungen neben und unter dem Player anwenden."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "Kanalseiten"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "Regeln auf Kanalstartseiten sowie Video-, Live- und Playlist-Oberflächen anwenden."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "Andere YouTube-Oberflächen"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "Video Hider auf verschiedenen Browse-Oberflächen aktiv halten."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "Livestreams ausblenden"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "Aktuelle Livestream-Karten und Live-Empfehlungen in unterstützten Feeds ausblenden."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "Bevorstehende Premieren ausblenden"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "Geplante, bevorstehende und erinnerungsbasierte Videokarten ausblenden."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "YouTube-Mixe ausblenden"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "Radioartige Mixe und automatisch erzeugte Empfehlung-mixe ausblenden."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "Playlist-Karten ausblenden"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "Playlist- und Mehrfachvideokarten auf unterstützten Feed-Oberflächen ausblenden."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "Filme ausblenden"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "Miet-, Kauf-, werbefinanzierte und als Film gekennzeichnete Karten ausblenden."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "Automatisch synchronisierte Videos ausblenden"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "Karten mit der Kennzeichnung synchronisiert, automatisch synchronisiert oder alternative Audiospur ausblenden."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "Videos mit wenigen Aufrufen ausblenden"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "Videos unter dem Aufrufschwellenwert ausblenden, wenn YouTube eine Aufrufzahl auf der Karte bereitstellt."
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
