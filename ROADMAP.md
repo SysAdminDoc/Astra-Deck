@@ -134,13 +134,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: a "changed from defaults" view lists every non-default key with its current and default value, is copyable into a bug report, and is included in the diagnostics bundle.
   Complexity: S
 
-- [ ] P1 — Maintain a browser capability matrix and fallback contract
-  Why: optional APIs span Chrome-only, Chrome-conditional, and Firefox-different behaviour. A feature can pass static checks while silently losing a fallback on a supported browser.
-  Evidence: [Chrome scripting and userScripts conditions](https://developer.chrome.com/docs/extensions/reference/api/scripting), [Chrome userScripts](https://developer.chrome.com/docs/extensions/reference/api/userScripts), [Chrome built-in AI availability](https://developer.chrome.com/docs/ai/built-in-apis), and [Firefox content-script timing/world differences](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts).
-  Touches: extension/core/capability-probe.js, browser-api and permission helpers, scripts/check-firefox-webext.js, headless tests, and the supported-browser section of README.md.
-  Acceptance: a generated matrix records API availability, required permission, execution world, minimum browser, fallback, and user-visible degradation for each adopted optional API; Chrome and Firefox lanes test both available and unavailable branches; no unsupported API is called before its capability probe.
-  Complexity: M
-
 - [ ] P1 — Prove idempotent injection across SPA navigation and extension updates
   Why: YouTube is a long-lived SPA, and extension updates can leave already injected code in tabs. A second bootstrap must not create duplicate observers, listeners, styles, feature registrations, or top-level declarations.
   Evidence: [Chrome scripting documentation](https://developer.chrome.com/docs/extensions/reference/api/scripting) states that unregistering a content script does not remove code already injected into a page; [FilterTube](https://github.com/varshneydevansh/FilterTube) identifies duplicate runtime injection in its recent fix history; [ImprovedTube’s active breakage queue](https://github.com/code-charity/youtube/pulls) shows the practical cost of lifecycle drift.

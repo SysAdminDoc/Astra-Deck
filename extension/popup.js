@@ -3480,6 +3480,7 @@ if (healthSaveBtn) {
             // above; carrying it twice would just bloat the bundle.
             delete sanitized._errors;
             const capabilities = popupState._capabilities || null;
+            const capabilityMatrix = window.YTKitCore?.capabilityProbe?.CAPABILITY_MATRIX || null;
             // v4.47.0 NEW-7: pull the SW lifecycle ring out of the
             // background script. Best-effort — if the SW is non-
             // responsive or the message handler is absent (older
@@ -3509,6 +3510,7 @@ if (healthSaveBtn) {
                 extensionVersion: manifestVersion,
                 userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
                 capabilities,
+                capabilityMatrix,
                 swLifecycle,
                 externalApiHealth,
                 settings: sanitized,

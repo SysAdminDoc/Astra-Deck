@@ -2547,8 +2547,8 @@
     // v4.47.0 NF17: well-known runtime capability names that an entry can
     // declare via an optional `requires:` array. Each name corresponds to a
     // platform/runtime affordance the feature *cannot* work without — the
-    // NF10 capability probe (still pending) will detect each at session
-    // start and gate the popup row from being enabled when missing. Keep
+    // NF10 capability probe detects each at session start and gates the popup
+    // row from being enabled when missing. Keep
     // this list narrow and well-grounded — only add a capability when the
     // feature has no graceful in-code fallback. Features that *do* fall
     // back (e.g. popOutPlayer's Document PiP → standard PiP cascade) stay
@@ -2557,8 +2557,8 @@
     //
     // Adding a capability name here requires (a) updating the well-known
     // allowlist below, (b) declaring it on every entry that strictly
-    // requires it, and (c) wiring the future capability-probe module
-    // (extension/core/capability-probe.js — see RESEARCH_FEATURE_PLAN NF10).
+    // requires it, and (c) wiring the capability-probe module
+    // (extension/core/capability-probe.js).
     const CAPABILITIES = Object.freeze([
         // Chrome 138+ built-in Summarizer (global Summarizer, or the retired
         // origin-trial ai.summarizer shape).
@@ -9795,6 +9795,10 @@
         //
         // v4.47.0 NF10 — runtime capability detection. Pairs with the
         // optional `requires:` field on settings-schema entries (NF17).
+        // Follow-up — the capability matrix below is the executable contract for
+        // every probe: where the affordance exists, what permission it needs, and
+        // what the feature promises when it is absent. Keep it in this module so
+        // the MV3 pages and the userscript share one source of truth.
         //
         // For every well-known capability name in
         // settings-schema.CAPABILITIES, this module exposes a probe that
@@ -9831,6 +9835,129 @@
         const OLLAMA_PORT = 11434;
         // Strict timeout so a hung probe never blocks the popup boot.
         const PROBE_TIMEOUT_MS = 1500;
+
+        function deepFreeze(value) {
+            if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+            for (const child of Object.values(value)) deepFreeze(child);
+            return Object.freeze(value);
+        }
+
+        // Browser capability matrix and fallback contract. The browser labels are
+        // deliberately descriptive instead of promises of availability: built-in
+        // AI APIs can be absent behind rollout, model, device, policy, or flag
+        // gates even on a browser version that exposes the global.
+        const CAPABILITY_MATRIX = deepFreeze({
+            schemaVersion: 1,
+            browsers: {
+                chromium: {
+                    // i18n-static: capability-matrix contract label
+                    label: 'Chrome / Edge / Brave',
+                    vehicle: 'MV3 extension or userscript',
+                    baseline: 'Chrome 120+ / equivalent Chromium release',
+                    note: 'Optional built-in AI APIs remain conditional on browser rollout, model readiness, device policy, and flags.'
+                },
+                firefox: {
+                    // i18n-static: capability-matrix contract label
+                    label: 'Firefox 142+',
+                    vehicle: 'MV3 extension',
+                    baseline: 'Firefox 142+',
+                    note: 'A standards-compatible fallback is required for every optional Chromium API in this matrix.'
+                },
+                userscript: {
+                    // i18n-static: capability-matrix contract label
+                    label: 'Tampermonkey / Violentmonkey',
+                    vehicle: 'Userscript on a supported desktop browser',
+                    baseline: 'The host browser decides which web APIs are exposed',
+                    note: 'Extension-only permissions and companion routing are unavailable unless the host exposes an equivalent bridge.'
+                }
+            },
+            capabilities: {
+                summarizerApi: {
+                    api: 'Built-in Summarizer API (global Summarizer or ai.summarizer)',
+                    availability: {
+                        chromium: 'Chrome 138+ when the on-device model is exposed and ready',
+                        firefox: 'Unavailable; use the remote/BYO summary path',
+                        userscript: 'Available only when the host browser exposes the same web API'
+                    },
+                    requiredPermission: [],
+                    executionWorld: 'YouTube page MAIN world',
+                    minimumBrowser: { chrome: '138+', edge: 'Chromium-equivalent; rollout-dependent', firefox: 'Not exposed' },
+                    probe: 'hasSummarizerApi',
+                    fallback: 'Keep the BYO-key summary feature available; do not route local-summary work to a remote provider implicitly.',
+                    userVisibleDegradation: 'Local Summary and AI subscription tags show an unavailable state.'
+                },
+                mediaDL: {
+                    api: 'Astra Downloader companion /health endpoint',
+                    availability: {
+                        chromium: 'Available when the companion is running and its loopback origin is reachable',
+                        firefox: 'Available under the same companion and optional-host-permission contract',
+                        userscript: 'Unavailable without an extension bridge; use Cobalt or transcript-only paths'
+                    },
+                    requiredPermission: ['loopback host permission', 'nativeMessaging for auto-start/update paths'],
+                    executionWorld: 'Extension popup/background or userscript bridge',
+                    minimumBrowser: { chrome: 'MV3 extension support', edge: 'MV3 extension support', firefox: '142+' },
+                    probe: 'hasMediaDL',
+                    fallback: 'Use the Cobalt download path when configured; otherwise hide companion-only download history and health controls.',
+                    userVisibleDegradation: 'Companion-backed controls show unavailable and downloads retain any explicitly configured fallback.'
+                },
+                ollama: {
+                    api: 'Ollama HTTP API at 127.0.0.1:11434',
+                    availability: {
+                        chromium: 'Available when Ollama is running and the extension profile grants loopback access',
+                        firefox: 'Available when Ollama is running and the extension profile grants loopback access',
+                        userscript: 'Available only if the userscript manager permits the loopback request'
+                    },
+                    requiredPermission: ['http://127.0.0.1:11434/*'],
+                    executionWorld: 'Extension background proxy or userscript request bridge',
+                    minimumBrowser: { chrome: 'MV3 host permission support', edge: 'MV3 host permission support', firefox: '142+' },
+                    probe: 'hasOllama',
+                    fallback: 'Fall back to the selected remote/BYO provider; never silently change a local request into a remote request.',
+                    userVisibleDegradation: 'Ollama is listed as unavailable while other configured AI providers remain usable.'
+                },
+                documentPip: {
+                    api: 'Document Picture-in-Picture API',
+                    availability: {
+                        chromium: 'Chrome 116+ and equivalent Chromium releases when exposed',
+                        firefox: 'Firefox 151+; project Firefox baseline uses standard video PiP before then',
+                        userscript: 'Available when the host page exposes documentPictureInPicture'
+                    },
+                    requiredPermission: [],
+                    executionWorld: 'YouTube page MAIN world',
+                    minimumBrowser: { chrome: '116+', edge: 'Chromium-equivalent', firefox: '151+' },
+                    probe: 'hasDocumentPip',
+                    fallback: 'Use HTMLVideoElement.requestPictureInPicture() with the browser-native player window.',
+                    userVisibleDegradation: 'Pop-out controls use standard video PiP instead of the richer custom PiP window.'
+                },
+                languageDetector: {
+                    api: 'Built-in Language Detector API',
+                    availability: {
+                        chromium: 'Chrome 138+ when the on-device model is exposed and ready',
+                        firefox: 'Unavailable; use conservative text comparison',
+                        userscript: 'Available only when the host browser exposes the same web API'
+                    },
+                    requiredPermission: [],
+                    executionWorld: 'YouTube page MAIN world',
+                    minimumBrowser: { chrome: '138+', edge: 'Chromium-equivalent; rollout-dependent', firefox: 'Not exposed' },
+                    probe: 'hasLanguageDetector',
+                    fallback: 'Compare normalized source and translated text without attempting an API call.',
+                    userVisibleDegradation: 'Automatic-translation filtering becomes conservative and may leave some translated labels visible.'
+                },
+                promptApi: {
+                    api: 'Built-in Prompt API (global LanguageModel or ai.languageModel)',
+                    availability: {
+                        chromium: 'Chrome 138+ when Gemini Nano and the Prompt API are enabled and ready',
+                        firefox: 'Unavailable; no remote fallback is implied for transcript Q&A',
+                        userscript: 'Not part of the userscript vehicle; extension-only feature remains unavailable'
+                    },
+                    requiredPermission: [],
+                    executionWorld: 'YouTube page MAIN world',
+                    minimumBrowser: { chrome: '138+', edge: 'Chromium-equivalent; rollout-dependent', firefox: 'Not exposed' },
+                    probe: 'hasPromptApi',
+                    fallback: 'Keep transcript export and local search available; do not send transcript text to a remote model implicitly.',
+                    userVisibleDegradation: 'On-device transcript Q&A is unavailable while transcript viewing and export continue to work.'
+                }
+            }
+        });
 
         function hasSummarizerApi() {
             // Match the shapes the FEATURES actually detect. Chrome stable ships a
@@ -10037,6 +10164,7 @@
 
         const surface = Object.freeze({
             PROBES,
+            CAPABILITY_MATRIX,
             probe,
             runAll,
             isEntryAvailable,

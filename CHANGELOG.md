@@ -13,6 +13,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `web-ext`/`addons-linter`) against a machine-readable, versioned policy. Any
   new package, advisory, version, or dependency path fails the gate.
 
+### Changed
+
+- Optional browser APIs now share a frozen capability matrix with the runtime
+  probes. It records browser availability, permissions, execution world,
+  minimum browser, fallback, and user-visible degradation; the same contract
+  is emitted as `build/browser-capability-matrix.json` and included in
+  diagnostics.
+
 ---
 
 ## [4.59.1] - 2026-08-10

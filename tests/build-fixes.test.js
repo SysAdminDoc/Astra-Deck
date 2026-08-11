@@ -254,7 +254,7 @@ test('local artifact commands replace remote build workflow attestations', () =>
         'GitHub build workflow must stay absent; releases are built locally'
     );
     const pkg = require('../package.json');
-    assert.equal(pkg.scripts.build, 'node build-extension.js');
+    assert.equal(pkg.scripts.build, 'node build-extension.js && npm run generate:capability-matrix');
     assert.equal(pkg.scripts['release:manifest'], 'node scripts/generate-release-manifest.js');
     assert.equal(pkg.scripts['release:readiness'], 'node scripts/generate-release-readiness.js');
 });
