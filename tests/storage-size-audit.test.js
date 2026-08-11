@@ -34,10 +34,12 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     // the two bounded URL values and their safe-sync allowlist entries.
     // Live latency catch-up adds a toggle, two bounded controls, and their
     // safe-sync allowlist entries for another 220 bytes.
-    assert.equal(assessment.totalBytes, 6483);
+    // Local low-signal heuristics add three toggles, three bounded controls,
+    // and six safe-sync allowlist entries for another 601 bytes.
+    assert.equal(assessment.totalBytes, 7084);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 6483);
+    assert.equal(assessment.largestItem.bytes, 7084);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -110,7 +112,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Photosensitive protection adds 103 bytes for its toggle and two bounded
     // local controls.
     // Live latency catch-up adds 151 bytes to the local settings payload.
-    assert.equal(assessment.totalBytes, 185382);
+    // Local low-signal heuristics add 410 bytes to the typical settings payload.
+    assert.equal(assessment.totalBytes, 185792);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

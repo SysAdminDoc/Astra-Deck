@@ -2385,6 +2385,42 @@
   "feature_hideVideosFromHome_name": {
     "message": "Video Hider"
   },
+  "feature_hideVideosSyntheticNarrationFilter_desc": {
+    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
+  },
+  "feature_hideVideosSyntheticNarrationFilter_name": {
+    "message": "Synthetic narration markers"
+  },
+  "feature_hideVideosLowSignalFilter_desc": {
+    "message": "Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open."
+  },
+  "feature_hideVideosLowSignalFilter_name": {
+    "message": "Hide low-signal videos"
+  },
+  "feature_hideVideosLowSignalMinViews_desc": {
+    "message": "Minimum views used by the low-signal heuristic. Set to 0 to disable its view side."
+  },
+  "feature_hideVideosLowSignalMinViews_name": {
+    "message": "Low-signal view threshold"
+  },
+  "feature_hideVideosLowSignalMinAgeDays_desc": {
+    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+  },
+  "feature_hideVideosLowSignalMinAgeDays_name": {
+    "message": "Low-signal age threshold"
+  },
+  "feature_hideVideosUploadCadenceFilter_desc": {
+    "message": "Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible."
+  },
+  "feature_hideVideosUploadCadenceFilter_name": {
+    "message": "Upload cadence filter"
+  },
+  "feature_hideVideosUploadCadencePerDay_desc": {
+    "message": "Maximum uploads per day accepted by the upload-cadence heuristic."
+  },
+  "feature_hideVideosUploadCadencePerDay_name": {
+    "message": "Upload cadence threshold"
+  },
   "feature_hideVoiceSearch_desc": {
     "message": "Remove the microphone icon from the search bar"
   },
@@ -5761,6 +5797,15 @@
   "videoHiderReasonLowView": {
     "message": "the low-view filter"
   },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
+  },
+  "videoHiderReasonLowSignal": {
+    "message": "the low-signal view/age filter"
+  },
+  "videoHiderReasonUploadCadence": {
+    "message": "the upload-cadence filter"
+  },
   "videoHiderReasonMarkedWatched": {
     "message": "your local watched marker"
   },
@@ -5796,6 +5841,21 @@
   },
   "videoHiderShowFilterReasonTitle": {
     "message": "Explain hidden cards"
+  },
+  "videoHiderLocalHeuristicsTitle": {
+    "message": "Local low-signal heuristics"
+  },
+  "videoHiderLocalHeuristicsDesc": {
+    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+  },
+  "videoHiderViewsSuffix": {
+    "message": "views"
+  },
+  "videoHiderDaysSuffix": {
+    "message": "days old"
+  },
+  "videoHiderUploadsPerDaySuffix": {
+    "message": "uploads/day"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"

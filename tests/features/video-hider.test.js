@@ -72,6 +72,38 @@ function predicateVideoCard({ title = 'Example video', rowText = '', short = fal
     };
 }
 
+function heuristicVideoCard({
+    title = 'Example video',
+    rowText = '450 views · 60 days ago · 14 uploads per week',
+    description = 'Automated narration generated with text to speech.',
+    channelName = 'AI Daily Facts',
+    channelHref = 'https://youtube.com/@ai-daily-facts'
+} = {}) {
+    const titleNode = { textContent: title };
+    const row = { textContent: rowText, getAttribute: () => null };
+    const descriptionNode = { textContent: description, getAttribute: () => null };
+    const channelNode = {
+        textContent: channelName,
+        getAttribute: key => key === 'href' ? channelHref : null
+    };
+    return {
+        textContent: `${title} ${rowText} ${description} ${channelName}`,
+        dataset: {},
+        querySelector(selector) {
+            if (selector.includes('#video-title') || selector.includes('.title')) return titleNode;
+            if (selector.includes('#description') || selector.includes('.description')) return descriptionNode;
+            if (selector.includes('a[href*="/@"]') || selector.includes('#channel-name')) return channelNode;
+            return null;
+        },
+        querySelectorAll(selector) {
+            if (selector === 'a[href]') return [channelNode];
+            if (selector.includes('#metadata-line')) return [row];
+            if (selector.includes('#channel-name') || selector.includes('a[href*="/@"]')) return [channelNode];
+            return [];
+        }
+    };
+}
+
 function channelVideoCard(href = null, channelName = '') {
     const channelLink = href
         ? {
@@ -577,6 +609,98 @@ test('Video Hider predicate context derives age, Shorts, and members-only fields
     } finally {
         globalThis.window = originalWindow;
     }
+});
+
+test('Video Hider local low-signal heuristics are independent and predicate-visible', () => {
+    const { mod } = loadModule();
+    const settings = {
+        hideVideosSyntheticNarrationFilter: false,
+        hideVideosLowSignalFilter: false,
+        hideVideosLowSignalMinViews: 1000,
+        hideVideosLowSignalMinAgeDays: 30,
+        hideVideosUploadCadenceFilter: false,
+        hideVideosUploadCadencePerDay: 1,
+        hideVideosLowViewFilter: false,
+        hideVideosWatchedRatio: 0,
+        hideVideosKeywordFilter: '',
+        advancedLocalPredicate: false,
+        advancedLocalPredicateCode: ''
+    };
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState: { settings },
+        PredicateSandbox: globalThis.YTKitCore.createPredicateSandbox()
+    });
+    const card = heuristicVideoCard();
+    const metadata = feature._extractVideoMetadata(card);
+
+    assert.equal(metadata.syntheticNarration, true);
+    assert.equal(metadata.uploadCadencePerDay, 2);
+    assert.equal(metadata.views, 450);
+    assert.equal(metadata.ageDays, 60);
+    assert.equal(feature._matchesMetadataFilters(card, metadata).hide, false,
+        'all new lanes must be opt-in');
+
+    settings.hideVideosSyntheticNarrationFilter = true;
+    assert.deepEqual(feature._matchesMetadataFilters(card, metadata), {
+        hide: true,
+        reason: 'synthetic-narration'
+    });
+    settings.hideVideosSyntheticNarrationFilter = false;
+
+    settings.hideVideosLowSignalFilter = true;
+    assert.deepEqual(feature._matchesMetadataFilters(card, metadata), {
+        hide: true,
+        reason: 'low-signal'
+    });
+    settings.hideVideosLowSignalFilter = false;
+
+    settings.hideVideosUploadCadenceFilter = true;
+    assert.deepEqual(feature._matchesMetadataFilters(card, metadata), {
+        hide: true,
+        reason: 'upload-cadence'
+    });
+    settings.hideVideosUploadCadenceFilter = false;
+
+    const sparse = heuristicVideoCard({
+        title: 'Ordinary upload',
+        rowText: '',
+        description: '',
+        channelName: 'Ordinary channel',
+        channelHref: 'https://youtube.com/@ordinary'
+    });
+    settings.hideVideosLowSignalFilter = true;
+    settings.hideVideosUploadCadenceFilter = true;
+    assert.equal(feature._matchesMetadataFilters(sparse).hide, false,
+        'missing view, age, and cadence metadata must fail open');
+
+    const originalWindow = globalThis.window;
+    globalThis.window = { location: { pathname: '/' } };
+    try {
+        const ctx = feature._buildPredicateCtx(card, 'abc12345678', {
+            id: 'UC123',
+            handle: '@ai-daily-facts',
+            name: 'AI Daily Facts'
+        });
+        assert.equal(ctx.syntheticNarration, true);
+        assert.equal(ctx.uploadCadencePerDay, 2);
+        assert.match(ctx.descriptionText, /automated narration/);
+        assert.ok(globalThis.YTKitCore.PREDICATE_CONTEXT_FIELDS.includes('syntheticNarration'));
+
+        const compiled = globalThis.YTKitCore.createPredicateSandbox().compile(
+            'ctx.syntheticNarration === true && ctx.descriptionText.includes("automated") && ctx.uploadCadencePerDay > 1 && ctx.viewCount < 1000 && ctx.ageDays > 30'
+        );
+        assert.equal(compiled.ok, true);
+        assert.equal(compiled.evaluator(ctx), true);
+    } finally {
+        globalThis.window = originalWindow;
+    }
+
+    settings.hideVideosLowSignalFilter = false;
+    settings.hideVideosUploadCadenceFilter = false;
+    settings.hideVideosSyntheticNarrationFilter = true;
+    assert.equal(feature._shouldHide(card), true);
+    assert.equal(card.dataset.ytkitFilterReason, 'synthetic-narration',
+        'hidden cards must name the heuristic that fired');
 });
 
 test('Video Hider channel allowlist is fail-open when empty and isolated from the blocklist', () => {
