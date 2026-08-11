@@ -5437,11 +5437,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // extension-only Force DVR toggle (456 → 457), plus the replay-chat
     // density toggle (457 → 458), six local Video Hider heuristic controls
     // (464), the extension-only filter-list URL (465), and the opt-in
-    // browser-account sync consent setting (466).
+    // browser-account sync consent setting (466), plus the opt-in logarithmic
+    // volume curve (467).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 466,
-        'SETTINGS_SCHEMA must cover all 466 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 467,
+        'SETTINGS_SCHEMA must cover all 467 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

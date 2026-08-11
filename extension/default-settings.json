@@ -242,6 +242,7 @@
   "fullscreenOnDoubleClick": false,
   "rememberVolume": false,
   "rememberVolumeLevel": 100,
+  "logarithmicVolume": false,
   "pipButton": false,
   "autoSubtitles": false,
   "autoSubtitleLang": "en",

@@ -83,6 +83,12 @@
     // on globalThis.YTKitCore.runtimeFlags.
     const RuntimeFlags = (globalThis.YTKitCore && globalThis.YTKitCore.runtimeFlags) || null;
 
+    // Shared logical-volume state used by the optional logarithmic curve,
+    // Remember Volume, and Volume Wheel. The controller only changes the
+    // native media-element gain; volumeBoost remains a separate MAIN-world
+    // Web Audio stage and therefore is never folded into persisted volume.
+    const VolumeCurveController = globalThis.YTKitCore?.volumeCurveController || null;
+
     // v4.47.0 NF5 wave 3: feature-lifecycle CSS ownership hook. Peel
     // modules in extension/features/*/index.js register CSS lifecycle
     // specs at module-eval via getLifecycle().defineFeature(spec). The
@@ -3567,6 +3573,7 @@ return response;
             // v3.2.0 wave 6
             rememberVolume: false,
             rememberVolumeLevel: 100,
+            logarithmicVolume: false,
             pipButton: false,
             autoSubtitles: false,
             autoSubtitleLang: 'en',
@@ -26959,6 +26966,62 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════
 
         {
+            id: 'logarithmicVolume',
+            name: t('feature_logarithmicVolume_name', 'Logarithmic Volume Curve'),
+            description: t('feature_logarithmicVolume_desc', 'Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels.'),
+            group: 'Playback',
+            icon: 'volume-2',
+            _volumeHandler: null,
+            _navRule: null,
+            _syncTimer: null,
+            _scheduleSync(delay = 650) {
+                if (this._syncTimer) clearTimeout(this._syncTimer);
+                this._syncTimer = setTimeout(() => {
+                    this._syncTimer = null;
+                    if (!VolumeCurveController) return;
+                    VolumeCurveController.sync(getMainVideoElement?.(), {
+                        player: getMoviePlayerElement?.()
+                    });
+                }, delay);
+            },
+            _onVolumeChange(event) {
+                if (!VolumeCurveController) return;
+                const eventVideo = event?.target?.volume !== undefined ? event.target : null;
+                const video = eventVideo || getMainVideoElement?.();
+                const mainVideo = getMainVideoElement?.();
+                if (mainVideo && video && mainVideo !== video) return;
+                VolumeCurveController.handleVolumeChange(video, {
+                    player: getMoviePlayerElement?.()
+                });
+            },
+            init() {
+                if (!VolumeCurveController) return;
+                VolumeCurveController.setEnabled(true, {
+                    player: getMoviePlayerElement?.()
+                });
+                this._volumeHandler = (event) => this._onVolumeChange(event);
+                document.addEventListener('volumechange', this._volumeHandler, true);
+                this._navRule = () => this._scheduleSync();
+                addNavigateRule(this.id, this._navRule);
+                this._scheduleSync(100);
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                if (this._volumeHandler) {
+                    document.removeEventListener('volumechange', this._volumeHandler, true);
+                    this._volumeHandler = null;
+                }
+                if (this._syncTimer) clearTimeout(this._syncTimer);
+                this._syncTimer = null;
+                if (VolumeCurveController) {
+                    VolumeCurveController.setEnabled(false, {
+                        player: getMoviePlayerElement?.()
+                    });
+                }
+                this._navRule = null;
+            }
+        },
+        {
             id: 'rememberVolume',
             name: 'Remember Volume',
             description: 'Persist your volume level across videos and sessions',
@@ -26977,9 +27040,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const level = appState.settings.rememberVolumeLevel ?? 100;
                 const video = document.querySelector('video');
                 if (!video) return;
+                const playerApi = document.querySelector('#movie_player');
+                if (VolumeCurveController) {
+                    VolumeCurveController.setLogicalVolume(video, Number(level) / 100, {
+                        player: playerApi
+                    });
+                    return;
+                }
                 video.volume = level / 100;
                 try {
-                    const playerApi = document.querySelector('#movie_player');
                     if (playerApi?.setVolume) playerApi.setVolume(level);
                 } catch(e) { /* reason: movie_player volume API is optional; HTMLMediaElement volume still applies */ }
             },
@@ -26994,7 +27063,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._saveHandler = () => {
                     const video = document.querySelector('video');
                     if (!video) return;
-                    const level = Math.round(video.volume * 100);
+                    const logicalVolume = VolumeCurveController
+                        ? VolumeCurveController.readLogicalVolume(video, video.volume)
+                        : video.volume;
+                    const level = Math.round(logicalVolume * 100);
                     if (level !== appState.settings.rememberVolumeLevel) {
                         appState.settings.rememberVolumeLevel = level;
                         settingsManager.save(appState.settings);
@@ -39523,24 +39595,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // on the first scroll. The media element is readable from here,
                 // so it is the baseline; the player API is preferred only when
                 // it genuinely answers (userscript / page-world contexts).
-                let current = Number.isFinite(video?.volume)
-                    ? Math.round(video.volume * 100)
-                    : 50;
-                try {
-                    const reported = movie?.getVolume?.();
-                    if (Number.isFinite(reported)) current = reported;
-                } catch { /* reason: movie_player not ready; media-element baseline stands */ }
+                let current = VolumeCurveController && video
+                    ? Math.round(VolumeCurveController.readLogicalVolume(video, 0.5) * 100)
+                    : (Number.isFinite(video?.volume) ? Math.round(video.volume * 100) : 50);
+                if (!VolumeCurveController || !video) {
+                    try {
+                        const reported = movie?.getVolume?.();
+                        if (Number.isFinite(reported)) current = reported;
+                    } catch { /* reason: movie_player not ready; media-element baseline stands */ }
+                }
                 const delta = e.deltaY > 0 ? -5 : 5;
                 const next = Math.max(0, Math.min(100, current + delta));
-                try {
-                    movie?.setVolume?.(next);
-                    if (next > 0 && movie?.unMute) movie.unMute();
-                } catch { /* reason: movie_player volume API unavailable; HTMLMediaElement fallback still runs */ }
-                if (video) {
-                    video.volume = Math.max(0, Math.min(1, next / 100));
-                    // Scrolling up past silence should be audible even when the
-                    // player API (which owns unMute) is out of reach.
-                    if (next > 0 && video.muted) video.muted = false;
+                if (VolumeCurveController && video) {
+                    VolumeCurveController.setLogicalVolume(video, next / 100, {
+                        player: movie,
+                        unmute: next > 0
+                    });
+                } else {
+                    try {
+                        movie?.setVolume?.(next);
+                        if (next > 0 && movie?.unMute) movie.unMute();
+                    } catch { /* reason: movie_player volume API unavailable; HTMLMediaElement fallback still runs */ }
+                    if (video) {
+                        video.volume = Math.max(0, Math.min(1, next / 100));
+                        // Scrolling up past silence should be audible even when the
+                        // player API (which owns unMute) is out of reach.
+                        if (next > 0 && video.muted) video.muted = false;
+                    }
                 }
                 this._showHud(next);
             },
