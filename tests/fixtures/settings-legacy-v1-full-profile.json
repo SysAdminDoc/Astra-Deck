@@ -494,6 +494,7 @@
     "liveLatencyCatchup",
     "liveLatencyTargetSeconds",
     "liveLatencyMaxRate",
+    "logarithmicVolume",
     "localAiTranscriptQa",
     "markWatchedVideos",
     "notificationHideRead",

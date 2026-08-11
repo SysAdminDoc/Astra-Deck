@@ -4,13 +4,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Actionable Items
 
-- [ ] P2 — Logarithmic volume curve
-  Why: A low-volume curve changes core playback semantics and must remain independently optional.
-  Evidence: Youtube Music fix volume ratio (Nemo64); Volume Curve Designer.
-  Touches: shared player/audio path, settings schema/locales, rememberVolume integration.
-  Acceptance: A toggle remaps native slider position to logarithmic gain without double-scaling volumeBoost or persisted volume.
-  Complexity: S
-
 - [ ] P2 — Restore dislikes on Shorts
   Why: YouTube removed the Shorts dislike button, Return YouTube Dislike has not restored it and has not committed since 2026-05-02, and Astra's own module is watch-page and thumbnail scoped.
   Evidence: RYD #1294 (27 👍, filed 2026-06-29, open); `extension/features/return-dislike/index.js:383,522` covers cards and the watch page only.

@@ -266,3 +266,45 @@ test('video frame sampler fails closed after three consecutive over-budget callb
     assert.equal(sampler.isRunning(), false);
     assert.equal(pending.size, 0);
 });
+
+test('volume curve maps slider positions through dB space and round-trips', () => {
+    const core = loadPlayerCore();
+    const { sliderToGain, gainToSlider } = core.volumeCurve;
+
+    assert.equal(sliderToGain(0), 0);
+    assert.equal(sliderToGain(1), 1);
+    assert.ok(sliderToGain(0.5) < 0.5, 'midpoint should be quieter than linear gain');
+    for (const position of [0.05, 0.25, 0.5, 0.75, 0.95]) {
+        assert.ok(Math.abs(gainToSlider(sliderToGain(position)) - position) < 1e-9);
+    }
+});
+
+test('volume curve preserves logical volume across native changes and disable', () => {
+    const core = loadPlayerCore();
+    const video = { volume: 0.5, muted: false };
+    const player = {
+        reported: null,
+        setVolume(value) { this.reported = value; },
+        unMute() { video.muted = false; }
+    };
+    const controller = core.createVolumeCurveController({
+        getVideo: () => video,
+        getPlayer: () => player
+    });
+
+    controller.setEnabled(true);
+    assert.ok(Math.abs(video.volume - controller.sliderToGain(0.5)) < 1e-9);
+    assert.equal(controller.readLogicalVolume(video), 0.5);
+    assert.equal(controller.handleVolumeChange(video).internal, true);
+
+    video.volume = 0.75;
+    const changed = controller.handleVolumeChange(video);
+    assert.equal(changed.remapped, true);
+    assert.equal(controller.readLogicalVolume(video), 0.75);
+    assert.ok(Math.abs(video.volume - controller.sliderToGain(0.75)) < 1e-9);
+    assert.equal(player.reported, Math.round(controller.sliderToGain(0.75) * 100));
+
+    controller.setEnabled(false);
+    assert.ok(Math.abs(video.volume - 0.75) < 1e-9);
+    assert.equal(controller.readLogicalVolume(video), 0.75);
+});

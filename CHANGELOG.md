@@ -64,6 +64,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   Hider blocklists. The diff-from-default payload is secret-scrubbed, chunked
   under storage.sync quotas, resolves newest-write-wins conflicts, and keeps a
   local Undo checkpoint; sync consent remains installation-local.
+- Added an opt-in logarithmic volume curve shared by the extension and
+  userscript. Native slider positions map through a bounded dB curve while
+  Remember Volume stays in logical slider units and volumeBoost remains a
+  separate Web Audio gain stage.
 
 ---
 

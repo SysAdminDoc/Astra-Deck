@@ -119,7 +119,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // The extension-only filter-list URL adds one empty string setting (29 B).
     // Browser-account sync adds one extension-only false-by-default boolean
     // (21 B) while remaining opt-in and local by default.
-    assert.equal(assessment.totalBytes, 185885);
+    // The logarithmic volume curve adds one opt-in false-by-default boolean
+    // (26 B) while keeping the persisted volume value logical.
+    assert.equal(assessment.totalBytes, 185911);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

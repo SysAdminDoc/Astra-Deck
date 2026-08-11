@@ -2954,6 +2954,7 @@
         Object.freeze({ key: "fullscreenOnDoubleClick", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "rememberVolume", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "rememberVolumeLevel", category: "playback-audio", type: "number", defaultValue: 100, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "logarithmicVolume", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
         Object.freeze({ key: "pipButton", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "autoSubtitles", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "autoSubtitleLang", category: "playback-audio", type: "string", defaultValue: "en", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
@@ -9472,6 +9473,182 @@
             return paddedBar || root.querySelector('.ytp-progress-bar') || null;
         }
 
+        // The native YouTube volume slider is linear in amplitude, which makes
+        // most of its travel feel compressed near the quiet end. Keep the curve
+        // in the shared player core so the extension and userscript use the same
+        // mapping and the persisted value remains the user-facing slider position.
+        const VOLUME_CURVE_MIN_DB = -40;
+        const VOLUME_CURVE_DB_RANGE = 0 - VOLUME_CURVE_MIN_DB;
+        // YouTube's player API reports integer percentages. This tolerance lets
+        // the controller recognise the rounded echo of its own write without
+        // swallowing a nearby user slider movement.
+        const VOLUME_CURVE_INTERNAL_EPSILON = 0.012;
+
+        function clampVolumeUnit(value, fallback = 0) {
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric)) return Math.min(1, Math.max(0, Number(fallback) || 0));
+            return Math.min(1, Math.max(0, numeric));
+        }
+
+        function sliderToVolumeGain(position) {
+            const normalized = clampVolumeUnit(position);
+            if (normalized <= 0) return 0;
+            const db = VOLUME_CURVE_MIN_DB + normalized * VOLUME_CURVE_DB_RANGE;
+            return Math.pow(10, db / 20);
+        }
+
+        function volumeGainToSlider(gain) {
+            const normalized = clampVolumeUnit(gain);
+            if (normalized <= 0) return 0;
+            const db = 20 * Math.log10(normalized);
+            return clampVolumeUnit((db - VOLUME_CURVE_MIN_DB) / VOLUME_CURVE_DB_RANGE);
+        }
+
+        function readVideoVolume(video, fallback = 1) {
+            return clampVolumeUnit(video?.volume, clampVolumeUnit(fallback, 1));
+        }
+
+        function createVolumeCurveController(options = {}) {
+            const root = options.document || getDefaultDocument();
+            const getVideo = options.getVideo || (() => getMainVideoElement(root));
+            const getPlayer = options.getPlayer || (() => getMoviePlayerElement(root));
+            const states = new WeakMap();
+            let enabled = Boolean(options.enabled);
+
+            function getState(video) {
+                if (!video) return null;
+                let state = states.get(video);
+                if (!state) {
+                    state = { logical: 1, gain: 1, hasWrite: false };
+                    states.set(video, state);
+                }
+                return state;
+            }
+
+            function isOwnWrite(video, observedGain) {
+                const state = video ? states.get(video) : null;
+                return !!state?.hasWrite
+                    && Math.abs(observedGain - state.gain) <= VOLUME_CURVE_INTERNAL_EPSILON;
+            }
+
+            function setLogicalVolume(video = getVideo(), position = 1, writeOptions = {}) {
+                if (!video) return { ok: false, logical: clampVolumeUnit(position, 1), gain: null };
+                const logical = clampVolumeUnit(position, 1);
+                const gain = enabled ? sliderToVolumeGain(logical) : logical;
+                const state = getState(video);
+                state.logical = logical;
+                state.gain = gain;
+                state.hasWrite = true;
+
+                const player = writeOptions.player || getPlayer();
+                try {
+                    if (typeof player?.setVolume === 'function') {
+                        player.setVolume(Math.round(gain * 100));
+                    }
+                } catch (_) {
+                    // reason: the optional player API may not be available yet
+                }
+                try {
+                    video.volume = gain;
+                } catch (_) {
+                    // reason: a replaced media element can reject a late write
+                }
+                if (writeOptions.unmute && logical > 0) {
+                    try { player?.unMute?.(); } catch (_) { /* reason: optional player API can reject before initialization */ }
+                    try { if (video.muted) video.muted = false; } catch (_) { /* reason: replaced video can reject a late mute write */ }
+                }
+
+                const appliedGain = readVideoVolume(video, gain);
+                state.gain = appliedGain;
+                return { ok: true, logical, gain, appliedGain };
+            }
+
+            function readLogicalVolume(video = getVideo(), fallback = 1) {
+                if (!video) return clampVolumeUnit(fallback, 1);
+                const observedGain = readVideoVolume(video, fallback);
+                const state = states.get(video);
+                if (isOwnWrite(video, observedGain)) return state.logical;
+                return observedGain;
+            }
+
+            function handleVolumeChange(video = getVideo(), changeOptions = {}) {
+                if (!video) return { ok: false, logical: 1, gain: null };
+                const observedGain = readVideoVolume(video);
+                const state = states.get(video);
+                if (isOwnWrite(video, observedGain)) {
+                    return { ok: true, internal: true, logical: state.logical, gain: observedGain };
+                }
+
+                // A native slider change is a logical position. Re-map that raw
+                // position once; never pass the already-remapped gain back through
+                // volumeBoost, which lives in the separate Web Audio graph.
+                const logical = observedGain;
+                if (!enabled) {
+                    const nextState = getState(video);
+                    nextState.logical = logical;
+                    nextState.gain = observedGain;
+                    nextState.hasWrite = false;
+                    return { ok: true, internal: false, logical, gain: observedGain };
+                }
+                return {
+                    ...setLogicalVolume(video, logical, changeOptions),
+                    internal: false,
+                    remapped: true
+                };
+            }
+
+            function sync(video = getVideo(), syncOptions = {}) {
+                if (!video) return { ok: false, logical: 1, gain: null };
+                const observedGain = readVideoVolume(video);
+                const state = states.get(video);
+                const logical = isOwnWrite(video, observedGain)
+                    ? state.logical
+                    : observedGain;
+                return setLogicalVolume(video, logical, syncOptions);
+            }
+
+            function setEnabled(nextValue, enableOptions = {}) {
+                const nextEnabled = Boolean(nextValue);
+                if (nextEnabled === enabled) return { changed: false, enabled };
+
+                const video = getVideo();
+                let logical = null;
+                if (video) {
+                    const observedGain = readVideoVolume(video);
+                    const state = states.get(video);
+                    if (isOwnWrite(video, observedGain)) {
+                        logical = state.logical;
+                    } else {
+                        // Enabling interprets the existing linear slider position
+                        // as logical. Disabling converts the current curved gain
+                        // back to the equivalent linear slider position.
+                        logical = nextEnabled ? observedGain : volumeGainToSlider(observedGain);
+                    }
+                }
+
+                enabled = nextEnabled;
+                if (video && logical !== null) {
+                    return {
+                        changed: true,
+                        enabled,
+                        ...setLogicalVolume(video, logical, enableOptions)
+                    };
+                }
+                return { changed: true, enabled };
+            }
+
+            return {
+                isEnabled: () => enabled,
+                setEnabled,
+                setLogicalVolume,
+                readLogicalVolume,
+                handleVolumeChange,
+                sync,
+                sliderToGain: sliderToVolumeGain,
+                gainToSlider: volumeGainToSlider
+            };
+        }
+
         function isMainVideoTarget(target, root = getDefaultDocument()) {
             const video = getMainVideoElement(root);
             if (video && target === video) return true;
@@ -9871,6 +10048,7 @@
             return { schedule, cancel, cancelOwner, notify, bumpRoute, destroy, snapshot };
         }
 
+        const volumeCurveController = core.volumeCurveController || createVolumeCurveController();
         const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 
         Object.assign(core, {
@@ -9878,6 +10056,7 @@
             createPlayerTaskManager,
             createVideoFrameSampler,
             computeFrameLuminance,
+            createVolumeCurveController,
             getLivePlaybackMetrics,
             getMainVideoElement,
             getMoviePlayerElement,
@@ -9886,7 +10065,16 @@
             playerTaskManager,
             schedulePlayerTask: playerTaskManager.schedule,
             cancelPlayerTask: playerTaskManager.cancel,
-            cancelPlayerTasksByOwner: playerTaskManager.cancelOwner
+            cancelPlayerTasksByOwner: playerTaskManager.cancelOwner,
+            volumeCurveController,
+            sliderToVolumeGain,
+            volumeCurve: Object.freeze({
+                minDb: VOLUME_CURVE_MIN_DB,
+                sliderToGain: sliderToVolumeGain,
+                gainToSlider: volumeGainToSlider,
+                createController: createVolumeCurveController,
+                controller: volumeCurveController
+            })
         });
     })();
 
@@ -32350,6 +32538,15 @@
 
     // ── END v5.0.0 bundled core modules ──
 
+    // Shared logical-volume state used by the optional logarithmic curve and
+    // Remember Volume. The controller only changes native media gain;
+    // extension-only Web Audio boost stages are never persisted as volume.
+    const VolumeCurveController = globalThis.YTKitCore?.volumeCurveController || null;
+    const getVolumeCurveVideo = () => globalThis.YTKitCore?.getMainVideoElement?.()
+        || document.querySelector('video.html5-main-video, #movie_player video, video');
+    const getVolumeCurvePlayer = () => globalThis.YTKitCore?.getMoviePlayerElement?.()
+        || document.querySelector('#movie_player');
+
     function setSafeBlankTarget(anchor) {
         if (!(anchor instanceof HTMLAnchorElement)) return anchor;
         anchor.target = '_blank';
@@ -35095,6 +35292,7 @@
             // v3.2.0 wave 6
             rememberVolume: false,
             rememberVolumeLevel: 100,
+            logarithmicVolume: false,
             pipButton: false,
             autoSubtitles: false,
             autoSubtitleLang: 'en',
@@ -43159,6 +43357,55 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════
 
         {
+            id: 'logarithmicVolume',
+            name: 'Logarithmic Volume Curve',
+            description: 'Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels.',
+            group: 'Playback',
+            icon: 'volume-2',
+            _volumeHandler: null,
+            _navRule: null,
+            _syncTimer: null,
+            _scheduleSync(delay = 650) {
+                if (this._syncTimer) clearTimeout(this._syncTimer);
+                this._syncTimer = setTimeout(() => {
+                    this._syncTimer = null;
+                    VolumeCurveController?.sync(getVolumeCurveVideo(), {
+                        player: getVolumeCurvePlayer()
+                    });
+                }, delay);
+            },
+            _onVolumeChange(event) {
+                if (!VolumeCurveController) return;
+                const eventVideo = event?.target?.volume !== undefined ? event.target : null;
+                const video = eventVideo || getVolumeCurveVideo();
+                const mainVideo = getVolumeCurveVideo();
+                if (mainVideo && video && mainVideo !== video) return;
+                VolumeCurveController.handleVolumeChange(video, {
+                    player: getVolumeCurvePlayer()
+                });
+            },
+            init() {
+                if (!VolumeCurveController) return;
+                VolumeCurveController.setEnabled(true, { player: getVolumeCurvePlayer() });
+                this._volumeHandler = (event) => this._onVolumeChange(event);
+                document.addEventListener('volumechange', this._volumeHandler, true);
+                this._navRule = () => this._scheduleSync();
+                addNavigateRule(this.id, this._navRule);
+                this._scheduleSync(100);
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                if (this._volumeHandler) {
+                    document.removeEventListener('volumechange', this._volumeHandler, true);
+                    this._volumeHandler = null;
+                }
+                if (this._syncTimer) clearTimeout(this._syncTimer);
+                this._syncTimer = null;
+                VolumeCurveController?.setEnabled(false, { player: getVolumeCurvePlayer() });
+                this._navRule = null;
+            }
+        },
+        {
             id: 'rememberVolume',
             name: 'Remember Volume',
             description: 'Persist your volume level across videos and sessions',
@@ -43169,9 +43416,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const level = appState.settings.rememberVolumeLevel ?? 100;
                 const video = document.querySelector('video');
                 if (!video) return;
+                const playerApi = getVolumeCurvePlayer();
+                if (VolumeCurveController) {
+                    VolumeCurveController.setLogicalVolume(video, Number(level) / 100, {
+                        player: playerApi
+                    });
+                    return;
+                }
                 video.volume = level / 100;
                 try {
-                    const playerApi = document.querySelector('#movie_player');
                     if (playerApi?.setVolume) playerApi.setVolume(level);
                 } catch(e) {}
             },
@@ -43186,7 +43439,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._saveHandler = () => {
                     const video = document.querySelector('video');
                     if (!video) return;
-                    const level = Math.round(video.volume * 100);
+                    const logicalVolume = VolumeCurveController
+                        ? VolumeCurveController.readLogicalVolume(video, video.volume)
+                        : video.volume;
+                    const level = Math.round(logicalVolume * 100);
                     if (level !== appState.settings.rememberVolumeLevel) {
                         appState.settings.rememberVolumeLevel = level;
                         settingsManager.save(appState.settings);

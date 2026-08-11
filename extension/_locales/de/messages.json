@@ -6361,5 +6361,11 @@
   },
   "youtubeStateRestoreToast": {
     "message": "YouTube state restored ({count}). Reload the page to apply it."
+  },
+  "feature_logarithmicVolume_desc": {
+    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
+  },
+  "feature_logarithmicVolume_name": {
+    "message": "Logarithmic Volume Curve"
   }
 }
