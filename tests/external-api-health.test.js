@@ -44,9 +44,12 @@ test('popup and sidepanel expose external API health snapshots and diagnostics e
     assert.match(popupJs, /YTKIT_GET_EXTERNAL_API_HEALTH/, 'popup must request the external API health snapshot');
     assert.match(popupJs, /externalApiHealth/, 'diagnostics save payload must include externalApiHealth');
     assert.match(popupJs, /lastHost/, 'popup health detail must expose the host that answered');
+    assert.match(popupJs, /lastSuccessSource/, 'popup health detail must expose data provenance');
+    assert.match(popupJs, /localFallback/, 'popup health detail must expose the local fallback');
     assert.match(sidepanelHtml, /id="sp-external"/, 'sidepanel must declare the external API health section');
     assert.match(sidepanelJs, /YTKIT_GET_EXTERNAL_API_HEALTH/, 'sidepanel must request the external API health snapshot');
     assert.match(sidepanelJs, /spExternalHostTpl/, 'sidepanel health detail must expose the host that answered');
+    assert.match(sidepanelJs, /lastRefreshAgeMs/, 'sidepanel health detail must expose refresh age');
 });
 
 test('ytkit exposes external API health message handler and passes tracker into crowd modules', () => {
@@ -154,6 +157,75 @@ test('external API health records the host that answered or failed', () => {
         host: 'https://sponsor.ajay.app'
     });
     assert.equal(failure.lastHost, 'https://sponsor.ajay.app');
+});
+
+test('external API health exposes provenance, TTL staleness, privacy, and cooldown state', () => {
+    const core = loadHealthCore();
+    let now = 1000;
+    const health = core.createExternalApiHealth({ now: () => now });
+
+    health.recordSuccess('sponsorBlock', {
+        source: 'cache',
+        cacheState: 'fresh',
+        ts: now,
+        cacheTtlMs: 1000
+    });
+    let sponsor = health.snapshot().find((entry) => entry.id === 'sponsorBlock');
+    assert.equal(sponsor.lastSuccessSource, 'cache');
+    assert.equal(sponsor.lastRefreshAgeMs, 0);
+    assert.equal(sponsor.availability, 'available');
+    assert.match(sponsor.privacy, /hashed video prefix/);
+    assert.match(sponsor.localFallback, /native playback/);
+
+    now = 2000;
+    sponsor = health.snapshot().find((entry) => entry.id === 'sponsorBlock');
+    assert.equal(sponsor.cacheState, 'stale', 'a cached result must become visibly stale after its TTL');
+    assert.equal(sponsor.availability, 'stale');
+    assert.equal(sponsor.lastRefreshAgeMs, 1000);
+
+    const rateLimited = new Error('HTTP 429');
+    rateLimited.response = { status: 429 };
+    health.recordFailure('returnDislike', rateLimited, {
+        requestBudget: { used: 100, limit: 100, resetMs: 5000 }
+    });
+    const ryd = health.snapshot().find((entry) => entry.id === 'returnDislike');
+    assert.equal(ryd.availability, 'cooldown');
+    assert.equal(ryd.cooldownRemainingMs, 5000);
+    assert.equal(ryd.cooldownReason, 'rate-limited');
+});
+
+test('external API health keeps empty, revalidated, and timeout outcomes distinguishable', () => {
+    const core = loadHealthCore();
+    let now = 1000;
+    const health = core.createExternalApiHealth({ now: () => now });
+
+    const empty = health.recordSuccess('sponsorBlock', {
+        source: 'network',
+        cacheState: 'refreshed',
+        status: 200,
+        itemCount: 0
+    });
+    assert.equal(empty.state, 'ok');
+    assert.equal(empty.cacheState, 'refreshed');
+    assert.equal(empty.lastSuccessSource, 'network');
+
+    now = 2000;
+    const revalidated = health.recordSuccess('sponsorBlock', {
+        source: 'revalidated-cache',
+        cacheState: 'fresh',
+        status: 304,
+        ts: 1000
+    });
+    assert.equal(revalidated.state, 'ok');
+    assert.equal(revalidated.lastSuccessSource, 'revalidated-cache');
+    assert.equal(revalidated.lastRefreshAgeMs, 1000);
+
+    const timeout = new Error('request timeout');
+    health.recordFailure('deArrow', timeout, { errorClass: 'network-error' });
+    const failed = health.snapshot().find((entry) => entry.id === 'deArrow');
+    assert.equal(failed.state, 'error');
+    assert.equal(failed.lastErrorClass, 'network-error');
+    assert.equal(failed.availability, 'unavailable');
 });
 
 test('ytkit renders the in-page degraded-state strip with theme and motion safeguards', () => {

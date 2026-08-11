@@ -443,6 +443,18 @@ function externalDetail(service) {
     if (service.lastSuccessTs) {
         parts.push(t('spExternalOkAgoTpl', 'ok {age} ago').replace('{age}', externalAge(service.lastSuccessTs)));
     }
+    if (service.lastSuccessSource) {
+        parts.push(t('externalHealthSourceTpl', 'source {source}')
+            .replace('{source}', String(service.lastSuccessSource)));
+    }
+    if (service.lastRefreshAgeMs !== null && service.lastRefreshAgeMs !== undefined) {
+        parts.push(t('externalHealthRefreshTpl', 'refreshed {age} ago')
+            .replace('{age}', externalAge(service.lastRefreshTs).replace(/\s+ago$/, '')));
+    }
+    if (service.availability && service.availability !== 'unknown') {
+        parts.push(t('externalHealthAvailabilityTpl', 'availability {state}')
+            .replace('{state}', String(service.availability)));
+    }
     if (service.lastHost) {
         parts.push(t('spExternalHostTpl', 'host {host}').replace('{host}', String(service.lastHost)));
     }
@@ -501,6 +513,7 @@ async function renderExternalHealth(tab) {
         const detail = document.createElement('span');
         detail.className = 'eh-detail';
         detail.textContent = externalDetail(service);
+        li.title = [service.privacy, service.localFallback].filter(Boolean).join(' · ');
         li.appendChild(name);
         li.appendChild(state);
         li.appendChild(detail);

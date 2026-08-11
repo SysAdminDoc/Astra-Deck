@@ -2446,6 +2446,16 @@ function formatExternalHealthBudget(budget) {
 function formatExternalHealthDetail(service) {
     const parts = [];
     if (service.lastSuccessTs) parts.push(`success ${formatExternalHealthAge(service.lastSuccessTs)}`);
+    if (service.lastSuccessSource) parts.push(t('externalHealthSourceTpl', 'source {source}')
+        .replace('{source}', String(service.lastSuccessSource)));
+    if (service.lastRefreshAgeMs !== null && service.lastRefreshAgeMs !== undefined) {
+        parts.push(t('externalHealthRefreshTpl', 'refreshed {age} ago')
+            .replace('{age}', formatExternalHealthAge(service.lastRefreshTs).replace(/\s+ago$/, '')));
+    }
+    if (service.availability && service.availability !== 'unknown') {
+        parts.push(t('externalHealthAvailabilityTpl', 'availability {state}')
+            .replace('{state}', String(service.availability)));
+    }
     if (service.lastHost) parts.push(`host ${service.lastHost}`);
     if (service.lastErrorClass) parts.push(`last error ${service.lastErrorClass}`);
     if (service.cacheState && service.cacheState !== 'unknown') parts.push(`cache ${service.cacheState}`);
@@ -2491,6 +2501,7 @@ function renderExternalHealthRows(services) {
         const detail = document.createElement('span');
         detail.className = 'external-health-detail';
         detail.textContent = formatExternalHealthDetail(service);
+        li.title = [service.privacy, service.localFallback].filter(Boolean).join(' · ');
         li.appendChild(name);
         li.appendChild(state);
         li.appendChild(detail);
@@ -2530,6 +2541,11 @@ function formatExternalApiHealthReport(services, meta = {}) {
         lines.push(`  origin: ${service.origin || 'unknown'}`);
         lines.push(`  host: ${service.lastHost || 'unknown'}`);
         lines.push(`  lastSuccess: ${formatExternalHealthAge(service.lastSuccessTs)}`);
+        lines.push(`  source: ${service.lastSuccessSource || 'unknown'}`);
+        lines.push(`  refreshAgeMs: ${service.lastRefreshAgeMs ?? 'unknown'}`);
+        lines.push(`  availability: ${service.availability || 'unknown'}`);
+        lines.push(`  privacy: ${service.privacy || 'unknown'}`);
+        lines.push(`  localFallback: ${service.localFallback || 'unknown'}`);
         lines.push(`  lastError: ${service.lastErrorClass || 'none'}`);
         if (service.lastErrorMessage) lines.push(`  message: ${service.lastErrorMessage}`);
         lines.push(`  cache: ${service.cacheState || 'unknown'}`);
