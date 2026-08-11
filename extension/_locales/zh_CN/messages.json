@@ -5926,6 +5926,42 @@
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
+  "settingsPanelContentControls": {
+    "message": "内容控制"
+  },
+  "videoHiderEnableAria": {
+    "message": "启用 Video Hider"
+  },
+  "videoHiderTabsAria": {
+    "message": "Video Hider 分区"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "隐藏的视频"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "允许的视频"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "关键词规则"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "筛选器和限制"
+  },
+  "videoHiderFeatureOn": {
+    "message": "功能已开启"
+  },
+  "videoHiderFeatureOff": {
+    "message": "功能已关闭"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "已隐藏 {count} 个视频"
+  },
+  "videoHiderAllowedCountTpl": {
+    "message": "已允许 {count} 个视频"
+  },
+  "videoHiderBlockedCountTpl": {
+    "message": "已屏蔽 {count} 个频道"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

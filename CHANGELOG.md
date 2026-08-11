@@ -24,6 +24,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The first English-copy debt burn-down pass routes Download UI and Video
   Notes sink copy through locale keys, adds translated downloader/format copy,
   and removes 34 grandfathered literals from the ratchet baseline.
+- A settings-panel shell pass localizes the Video Hider pane navigation and
+  status summary, removing 15 more grandfathered literals from the ratchet.
 - Accessibility and contrast audits now resolve the popup/side-panel CSS token
   cascade and exercise real keyboard focus order, focus traps, forced colors,
   and narrow settings reflow in a headless DOM.

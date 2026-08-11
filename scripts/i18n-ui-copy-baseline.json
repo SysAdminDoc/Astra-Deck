@@ -40,10 +40,10 @@
       "digest": "d0319ba4029625649258bf038b45490dc385c8ec44cf4f7fde2387dc41385ea2"
     },
     "extension/features/settings-panel/index.js": {
-      "count": 134,
-      "digest": "26872b8ea86a924aa49838afdf6caf127880c3ce6007ff3e52a1865f9a193ab7",
-      "strictCount": 79,
-      "strictDigest": "7f525bcd54bdef1377f0b1ef2c5d6c25364c91c631e7ee284204d725dd4c40f4"
+      "count": 119,
+      "digest": "103390b63e8d87b41930692d1b5ae6fe0e6a18f7ff804c547dbe86392bedc70a",
+      "strictCount": 69,
+      "strictDigest": "43c14d58506e3f2182407580308d3d61e778565468120cbfaf51403bc164fdc1"
     },
     "extension/features/sponsorblock/index.js": {
       "count": 2,

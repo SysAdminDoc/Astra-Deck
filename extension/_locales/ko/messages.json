@@ -5926,6 +5926,42 @@
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
+  "settingsPanelContentControls": {
+    "message": "콘텐츠 제어"
+  },
+  "videoHiderEnableAria": {
+    "message": "Video Hider 활성화"
+  },
+  "videoHiderTabsAria": {
+    "message": "Video Hider 섹션"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "숨긴 동영상"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "허용한 동영상"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "키워드 규칙"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "필터 및 제한"
+  },
+  "videoHiderFeatureOn": {
+    "message": "기능 켜짐"
+  },
+  "videoHiderFeatureOff": {
+    "message": "기능 꺼짐"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "동영상 {count}개 숨김"
+  },
+  "videoHiderAllowedCountTpl": {
+    "message": "동영상 {count}개 허용"
+  },
+  "videoHiderBlockedCountTpl": {
+    "message": "채널 {count}개 차단"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },
