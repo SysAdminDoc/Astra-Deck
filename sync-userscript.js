@@ -23,6 +23,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/styles.js',
     'extension/core/settings-visual-system.js',
     'extension/core/settings-schema.js',
+    'extension/core/injection-guard.js',
     'extension/core/feature-lifecycle.js',
     'extension/core/policy-profile.js',
     'extension/core/settings-controller.js',

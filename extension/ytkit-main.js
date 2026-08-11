@@ -19,6 +19,17 @@
 (function() {
     'use strict';
 
+    // MAIN-world classic scripts are re-evaluated by some extension update
+    // paths even though the document and its prior bridge remain alive. Claim
+    // this world before installing a patch or observer; a duplicate attempt
+    // is recorded by the guard instead of silently stacking listeners.
+    var _createInjectionGuard = globalThis.YTKitCore &&
+        globalThis.YTKitCore.createInjectionGuard;
+    var _mainRuntimeGuard = typeof _createInjectionGuard === 'function'
+        ? _createInjectionGuard({ key: '__ytkitMainRuntime', owner: 'main-world-bridge' })
+        : null;
+    if (_mainRuntimeGuard && !_mainRuntimeGuard.claimed) return;
+
     var _ObsHandlers = [];
     var _ObsAttrs = new Set();
     var _ObsInstance = null;
@@ -59,6 +70,10 @@
         if (!attrs || !attrs.length || typeof fn !== 'function') return;
         for (var i = 0; i < attrs.length; i++) _ObsAttrs.add(attrs[i]);
         _ObsHandlers.push({ attrs: attrs.slice(), fn: fn });
+        _mainRuntimeGuard && _mainRuntimeGuard.update({
+            observerHandlers: _ObsHandlers.length,
+            observerAttributes: _ObsAttrs.size
+        });
         _reobserve();
     }
 
@@ -1643,6 +1658,12 @@
 
     _obsRegister([ENABLE_ATTR, THRESHOLD_ATTR], syncFromAttributes);
     syncFromAttributes();
+
+    _mainRuntimeGuard && _mainRuntimeGuard.markReady({
+        observerHandlers: _ObsHandlers.length,
+        observerAttributes: _ObsAttrs.size,
+        observerActive: Boolean(_ObsInstance)
+    });
 
     window.addEventListener('yt-navigate-start', function() {
         if (!enabled) return;

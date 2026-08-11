@@ -12,6 +12,10 @@ const vm = require('node:vm');
 
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit-main.js'), 'utf8');
+const injectionGuardSource = fs.readFileSync(
+    path.join(repoRoot, 'extension', 'core', 'injection-guard.js'),
+    'utf8'
+);
 
 /**
  * Run ytkit-main.js against a stubbed page and return handles for driving the
@@ -21,6 +25,7 @@ const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit-main.js')
 function bootstrapBridge({ decodingInfo, codec = 'auto', hasMediaCapabilities = true } = {}) {
     const attributes = new Map();
     const attributeListeners = [];
+    const observers = [];
     if (codec) attributes.set('data-ytkit-codec', codec);
 
     const documentElement = {
@@ -35,9 +40,13 @@ function bootstrapBridge({ decodingInfo, codec = 'auto', hasMediaCapabilities = 
     };
 
     class FakeMutationObserver {
-        constructor(callback) { attributeListeners.push(callback); }
-        observe() {}
-        disconnect() {}
+        constructor(callback) {
+            this.active = false;
+            attributeListeners.push(callback);
+            observers.push(this);
+        }
+        observe() { this.active = true; }
+        disconnect() { this.active = false; }
     }
 
     const originalCanPlayType = function canPlayType(type) {
@@ -87,15 +96,31 @@ function bootstrapBridge({ decodingInfo, codec = 'auto', hasMediaCapabilities = 
     }
 
     vm.createContext(context);
+    vm.runInContext(injectionGuardSource, context, { filename: 'extension/core/injection-guard.js' });
     vm.runInContext(source, context, { filename: 'extension/ytkit-main.js' });
 
     return {
         context,
+        observerCount: () => observers.length,
+        activeObserverCount: () => observers.filter((observer) => observer.active).length,
         setCodec: (value) => documentElement.setAttribute('data-ytkit-codec', value),
         canPlayType: (type) => context.HTMLVideoElement.prototype.canPlayType.call({}, type),
         isPatched: () => context.HTMLVideoElement.prototype.canPlayType !== originalCanPlayType
-    };
+};
 }
+
+test('repeated MAIN-world injection keeps one bridge and records the duplicate', () => {
+    const bridge = bootstrapBridge({ codec: 'auto' });
+    const before = bridge.observerCount();
+    vm.runInContext(source, bridge.context, { filename: 'extension/ytkit-main.js' });
+
+    assert.equal(bridge.observerCount(), before,
+        'a second classic-script evaluation must not create another observer sequence');
+    assert.equal(bridge.activeObserverCount(), 1,
+        'the original MAIN-world bridge remains the only active observer');
+    assert.equal(bridge.context.__ytkitMainRuntime.duplicateInjections, 1,
+        'the guard must expose the rejected update re-entry');
+});
 
 const flush = async () => {
     for (let i = 0; i < 8; i += 1) await Promise.resolve();

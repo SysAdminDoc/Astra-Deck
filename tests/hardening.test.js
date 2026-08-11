@@ -377,7 +377,7 @@ test('player-state retry manager is loaded before MAIN-world quality bridge', ()
     assert.ok(mainEntry, 'manifest must declare a MAIN-world content script entry');
     assert.deepEqual(
         mainEntry.js,
-        ['core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'ytkit-main.js'],
+        ['core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'ytkit-main.js'],
         'resource unlock, player, and audio helpers must load before ytkit-main.js in MAIN world'
     );
 
@@ -7521,6 +7521,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/styles.js',
         'extension/core/settings-visual-system.js',
         'extension/core/settings-schema.js',
+        'extension/core/injection-guard.js',
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
         'extension/core/settings-controller.js',
@@ -10064,8 +10065,8 @@ test('v4.47.0 NF12 — runtime-flags module exposes typed accessors and ytkit.js
     // core helpers).
     assert.match(ytkitSrc, /const RuntimeFlags = \(globalThis\.YTKitCore && globalThis\.YTKitCore\.runtimeFlags\) \|\| null;/,
         'ytkit.js must capture RuntimeFlags from globalThis.YTKitCore.runtimeFlags');
-    assert.match(ytkitSrc, /!RuntimeFlags\s*\n?\s*\) \{\s*\n\s*console\.error\(\'\[YTKit\] Core helpers missing\./s,
-        'ytkit.js must include !RuntimeFlags in the missing-core-helpers guard');
+    assert.match(ytkitSrc, /!RuntimeFlags\s*\n?\s*\) \{\s*\n\s*_runtimeGuard\?\.markFailed\(\'core-helpers-missing\'\);\s*\n\s*console\.error\(\'\[YTKit\] Core helpers missing\./s,
+        'ytkit.js must fail the injection guard before reporting missing core helpers');
 
     // No raw `window.__ytkit_videoPopped = …` / `__ytkit_cpu_tamer = …` /
     // `__ytkit_debug = …` writes outside the runtime-flags module itself.

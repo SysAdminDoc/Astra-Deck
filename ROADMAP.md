@@ -134,13 +134,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: a "changed from defaults" view lists every non-default key with its current and default value, is copyable into a bug report, and is included in the diagnostics bundle.
   Complexity: S
 
-- [ ] P1 — Prove idempotent injection across SPA navigation and extension updates
-  Why: YouTube is a long-lived SPA, and extension updates can leave already injected code in tabs. A second bootstrap must not create duplicate observers, listeners, styles, feature registrations, or top-level declarations.
-  Evidence: [Chrome scripting documentation](https://developer.chrome.com/docs/extensions/reference/api/scripting) states that unregistering a content script does not remove code already injected into a page; [FilterTube](https://github.com/varshneydevansh/FilterTube) identifies duplicate runtime injection in its recent fix history; [ImprovedTube’s active breakage queue](https://github.com/code-charity/youtube/pulls) shows the practical cost of lifecycle drift.
-  Touches: content-script bootstrap and feature registry, lifecycle cleanup, navigation/update test fixtures, and the existing startup/long-session test lanes.
-  Acceptance: repeated bootstrap, client-side navigation, iframe recreation, and extension-update simulation produce one active registry per tab; no duplicate CSS, observer, message listener, or global declaration is created; tests cover Chrome and Firefox injection paths and expose a diagnostic failure rather than silently degrading.
-  Complexity: M
-
 - [ ] P2 — Make external enrichment provenance and rate limits visible
   Why: Sponsor, dislike, title, and related enrichment can be stale, unavailable, rate-limited, or privacy-sensitive. Silent fallbacks make a correct "no result" indistinguishable from a broken feature.
   Evidence: [SponsorBlock’s API/database model](https://github.com/ajayyy/SponsorBlock/wiki) and [Return YouTube Dislike’s API](https://github.com/Anarios/return-youtube-dislike), including its [privacy discussion](https://github.com/Anarios/return-youtube-dislike/issues/344).

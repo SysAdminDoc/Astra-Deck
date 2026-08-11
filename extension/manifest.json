@@ -87,6 +87,7 @@
         "https://*.youtube.com/live_chat*"
       ],
       "js": [
+        "core/injection-guard.js",
         "core/resource-unlock.js",
         "core/player.js",
         "core/audio-track.js",
@@ -111,6 +112,7 @@
       ],
       "x-ytkit-runtime-modules": [
         "core/browser-api.js",
+        "core/injection-guard.js",
         "core/env.js",
         "core/storage.js",
         "core/styles.js",
@@ -252,6 +254,7 @@
       "resources": [
         "runtime-core-loader.mjs",
         "core/browser-api.js",
+        "core/injection-guard.js",
         "core/env.js",
         "core/storage.js",
         "core/styles.js",
