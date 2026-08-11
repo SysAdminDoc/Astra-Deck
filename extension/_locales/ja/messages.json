@@ -6367,5 +6367,29 @@
   },
   "feature_logarithmicVolume_name": {
     "message": "Logarithmic Volume Curve"
+  },
+  "feature_sponsoredContentFilter_desc": {
+    "message": "スポンサーやアフィリエイト宣伝と思われるコメントと説明ブロックを折りたたみます。一致理由を表示し、項目ごとに復元できます。"
+  },
+  "feature_sponsoredContentFilter_name": {
+    "message": "スポンサーコンテンツフィルター"
+  },
+  "sponsoredFilterCommentLabel": {
+    "message": "スポンサーコメント"
+  },
+  "sponsoredFilterDescriptionLabel": {
+    "message": "スポンサー説明"
+  },
+  "sponsoredFilterHideTpl": {
+    "message": "{label}を非表示 — {reason}"
+  },
+  "sponsoredFilterShowTpl": {
+    "message": "{label}を表示 — {reason}"
+  },
+  "sponsoredFilterAffiliateReason": {
+    "message": "アフィリエイト宣伝"
+  },
+  "sponsoredFilterSponsorReason": {
+    "message": "スポンサー表記"
   }
 }

@@ -15,6 +15,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Added an opt-in sponsored-content filter for watch-page comments and
+  descriptions, with local sponsor/affiliate matching, visible reasons, and
+  per-item restore controls.
 - Return YouTube Dislike now restores estimated dislike counts on the Shorts
   action bar and follows counts across Shorts navigation.
 - Added a source-derived project-facts renderer and `npm run check` drift gate

@@ -6367,5 +6367,29 @@
   },
   "feature_logarithmicVolume_name": {
     "message": "Logarithmic Volume Curve"
+  },
+  "feature_sponsoredContentFilter_desc": {
+    "message": "Сворачивает блоки комментариев и описаний, похожие на спонсорские или партнёрские предложения. Для каждого элемента показывается причина, его можно восстановить."
+  },
+  "feature_sponsoredContentFilter_name": {
+    "message": "Фильтр спонсорского контента"
+  },
+  "sponsoredFilterCommentLabel": {
+    "message": "Спонсорский комментарий"
+  },
+  "sponsoredFilterDescriptionLabel": {
+    "message": "Спонсорское описание"
+  },
+  "sponsoredFilterHideTpl": {
+    "message": "Скрыть: {label} — {reason}"
+  },
+  "sponsoredFilterShowTpl": {
+    "message": "Показать: {label} — {reason}"
+  },
+  "sponsoredFilterAffiliateReason": {
+    "message": "партнёрское продвижение"
+  },
+  "sponsoredFilterSponsorReason": {
+    "message": "указание на спонсорство"
   }
 }

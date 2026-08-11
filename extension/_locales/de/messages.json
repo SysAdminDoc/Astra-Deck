@@ -6367,5 +6367,29 @@
   },
   "feature_logarithmicVolume_name": {
     "message": "Logarithmic Volume Curve"
+  },
+  "feature_sponsoredContentFilter_desc": {
+    "message": "Blendet Kommentar- und Beschreibungselemente aus, die wie Sponsoring oder Affiliate-Werbung wirken. Jedes Element erklärt den Treffer und kann wiederhergestellt werden."
+  },
+  "feature_sponsoredContentFilter_name": {
+    "message": "Filter für gesponserte Inhalte"
+  },
+  "sponsoredFilterCommentLabel": {
+    "message": "Gesponserter Kommentar"
+  },
+  "sponsoredFilterDescriptionLabel": {
+    "message": "Gesponserte Beschreibung"
+  },
+  "sponsoredFilterHideTpl": {
+    "message": "{label} ausblenden — {reason}"
+  },
+  "sponsoredFilterShowTpl": {
+    "message": "{label} anzeigen — {reason}"
+  },
+  "sponsoredFilterAffiliateReason": {
+    "message": "Affiliate-Werbung"
+  },
+  "sponsoredFilterSponsorReason": {
+    "message": "Sponsoring-Hinweis"
   }
 }

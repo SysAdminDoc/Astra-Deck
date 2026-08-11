@@ -3723,6 +3723,7 @@ return response;
                 'hideVideosHideLive', 'hideVideosHideUpcoming', 'hidePlannedLivestreams', 'hideVideosHideMixes',
                 'hideVideosHidePlaylists', 'hideVideosHideMovies', 'hideVideosHideAutoDubbed',
                 'hideVideosWatchedRatio',
+                'sponsoredContentFilter',
                 'hiddenActionButtonsManager', 'hiddenActionButtons', 'hiddenPlayerControlsManager',
                 'hiddenPlayerControls', 'hiddenWatchElementsManager', 'hiddenWatchElements',
                 'sponsorBlock', 'sponsorBlockBaseUrl', 'sponsorBlockMirrorUrl',
@@ -3740,6 +3741,7 @@ return response;
             commentFilterRules: '',
             commentLanguageAllowlist: '',
             commentDuplicateCollapse: false,
+            sponsoredContentFilter: false,
             bulkCardActions: false,
             feedTriageProfile: false,
             // v3.26.0 — Player control superset
@@ -17433,6 +17435,297 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll(`.${this._HIDDEN_CLASS}`)
                     .forEach(card => card.classList.remove(this._HIDDEN_CLASS));
                 this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        {
+            id: 'sponsoredContentFilter',
+            name: t('feature_sponsoredContentFilter_name', 'Sponsored Content Filter'),
+            description: t('feature_sponsoredContentFilter_desc', 'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.'),
+            group: 'Content',
+            icon: 'filter',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _scanTimer: null,
+            _navigateTimer: null,
+            _toggles: new Map(),
+            _nodes: new Set(),
+            _CANDIDATE_SELECTOR: [
+                'ytd-comment-thread-renderer',
+                'ytd-comment-view-model',
+                'ytd-comment-renderer',
+                '#description-inline-expander',
+                'ytd-text-inline-expander#description-inline-expander',
+                'ytd-video-meta-block #description',
+                'ytd-video-primary-info-renderer #description',
+                'ytd-watch-metadata #description',
+                '[id="description"]'
+            ].join(', '),
+            _PATTERNS: [
+                {
+                    reasonKey: 'sponsoredFilterSponsorReason',
+                    fallback: 'sponsor disclosure',
+                    pattern: /\b(?:sponsor(?:s|ed|ship)?|sponsored\s+by|paid\s+(?:partnership|promotion)|brought\s+to\s+you\s+by|advertisement|#ad)\b/i
+                },
+                {
+                    reasonKey: 'sponsoredFilterAffiliateReason',
+                    fallback: 'affiliate promotion',
+                    pattern: /\b(?:affiliate(?:\s+links?)?|commission(?:s)?|promo(?:tion)?\s+code|discount\s+code|coupon\s+code|use\s+(?:my\s+)?(?:code|link)|shop\s+(?:now|here)|save\s+\d{1,2}%|links?\s+in\s+(?:the\s+)?description)\b/i
+                }
+            ],
+
+            _selectorChain(surface, hook, fallback) {
+                const chain = globalThis.YTKitCore?.getSurfaceHookSelectorChain?.(surface, hook);
+                return Array.isArray(chain) && chain.length ? chain : fallback;
+            },
+
+            _queryAll(root, selector) {
+                try {
+                    return Array.from(root?.querySelectorAll?.(selector) || []);
+                } catch (_) {
+                    // reason: a stale YouTube selector must not disable local filtering
+                    return [];
+                }
+            },
+
+            _findCommentThreads() {
+                const rootSelectors = this._selectorChain('comments', 'root', [
+                    'ytd-comments#comments',
+                    'ytd-comments',
+                    '#comments'
+                ]);
+                let root = null;
+                for (const selector of rootSelectors) {
+                    try {
+                        root = document.querySelector?.(selector);
+                    } catch (_) {
+                        // reason: a stale comments selector must not disable filtering
+                    }
+                    if (root) break;
+                }
+                if (!root) return [];
+
+                const threadSelectors = this._selectorChain('comments', 'thread', [
+                    'ytd-comment-thread-renderer',
+                    'ytd-comment-view-model',
+                    'ytd-comment-renderer'
+                ]);
+                const threads = [];
+                const seen = new Set();
+                for (const selector of threadSelectors) {
+                    this._queryAll(root, selector).forEach((thread) => {
+                        if (!seen.has(thread)) {
+                            seen.add(thread);
+                            threads.push(thread);
+                        }
+                    });
+                }
+                return threads.filter((thread) => !thread.parentElement?.closest?.(
+                    'ytd-comment-thread-renderer, ytd-comment-view-model, ytd-comment-renderer'
+                ));
+            },
+
+            _findDescriptionBlocks() {
+                const selectors = [
+                    '#description-inline-expander',
+                    'ytd-text-inline-expander#description-inline-expander',
+                    'ytd-video-meta-block #description',
+                    'ytd-video-primary-info-renderer #description',
+                    'ytd-watch-metadata #description',
+                    '[id="description"]'
+                ];
+                const candidates = [];
+                const seen = new Set();
+                for (const selector of selectors) {
+                    this._queryAll(document, selector).forEach((node) => {
+                        if (!seen.has(node)) {
+                            seen.add(node);
+                            candidates.push(node);
+                        }
+                    });
+                }
+                return candidates.filter((node) => !candidates.some((other) => (
+                    other !== node && other.contains?.(node)
+                )));
+            },
+
+            _contentText(node) {
+                const parts = [node?.textContent || '', node?.getAttribute?.('aria-label') || ''];
+                this._queryAll(node, 'a[href]').forEach((link) => {
+                    parts.push(link.textContent || '', link.getAttribute?.('href') || '');
+                });
+                return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, 4000);
+            },
+
+            _detect(text) {
+                const normalized = String(text || '').normalize('NFKC');
+                for (const candidate of this._PATTERNS) {
+                    if (candidate.pattern.test(normalized)) return candidate;
+                }
+                return null;
+            },
+
+            _shortHash(text) {
+                let hash = 5381;
+                const value = String(text || '');
+                for (let index = 0; index < value.length; index += 1) {
+                    hash = ((hash << 5) + hash + value.charCodeAt(index)) | 0;
+                }
+                return ('00000000' + (hash >>> 0).toString(16)).slice(-8);
+            },
+
+            _ensureStyle() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-sponsored-filter-toggle{display:block!important;max-width:100%;margin:6px 0;padding:6px 9px;border:1px solid rgba(var(--ytkit-accent-rgb),.42);border-radius:6px;background:rgba(var(--ytkit-accent-rgb),.1);color:var(--ytkit-accent-light,#c4b5fd);font:500 12px/1.35 Roboto,Arial,sans-serif;text-align:start;cursor:pointer;}
+                    .ytkit-sponsored-filter-toggle:hover{background:rgba(var(--ytkit-accent-rgb),.18);}
+                    .ytkit-sponsored-filter-toggle:focus-visible{outline:2px solid var(--ytkit-accent-light,#c4b5fd);outline-offset:2px;}
+                    .ytkit-sponsored-filter-collapsed{display:none!important;}
+                    html:not([dark]) .ytkit-sponsored-filter-toggle{background:rgba(var(--ytkit-accent-rgb),.08);color:var(--yt-spec-text-primary,#0f0f0f);}
+                `, this.id, true);
+            },
+
+            _applyVisibility(node, hidden) {
+                if (node.classList?.toggle) {
+                    node.classList.toggle('ytkit-sponsored-filter-collapsed', hidden);
+                } else if (node.style) {
+                    const original = node.getAttribute?.('data-ytkit-sponsored-original-display') || '';
+                    node.style.display = hidden ? 'none' : original;
+                }
+                if (hidden) node.setAttribute?.('data-ytkit-sponsored-hidden', '1');
+                else node.removeAttribute?.('data-ytkit-sponsored-hidden');
+            },
+
+            _updateToggle(node, kind, match) {
+                const button = this._toggles.get(node);
+                if (!button) return;
+                const revealed = node.getAttribute?.('data-ytkit-sponsored-revealed') === '1';
+                const reasonKey = match?.reasonKey || node.getAttribute?.('data-ytkit-sponsored-reason-key');
+                const reason = reasonKey === 'sponsoredFilterSponsorReason'
+                    ? t('sponsoredFilterSponsorReason', 'sponsor disclosure')
+                    : t('sponsoredFilterAffiliateReason', 'affiliate promotion');
+                const label = kind === 'comment'
+                    ? t('sponsoredFilterCommentLabel', 'Sponsored comment')
+                    : t('sponsoredFilterDescriptionLabel', 'Sponsored description');
+                const template = revealed
+                    ? t('sponsoredFilterHideTpl', 'Hide {label} — {reason}')
+                    : t('sponsoredFilterShowTpl', 'Show {label} — {reason}');
+                const text = template.replace('{label}', label).replace('{reason}', reason);
+                button.textContent = text;
+                button.setAttribute('aria-label', text);
+                button.setAttribute('aria-expanded', String(revealed));
+            },
+
+            _ensureToggle(node, kind, match) {
+                let button = this._toggles.get(node);
+                if (button) {
+                    this._updateToggle(node, kind, match);
+                    return button;
+                }
+                const parent = node.parentElement;
+                if (!parent?.insertBefore) return null;
+                button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'ytkit-sponsored-filter-toggle';
+                button.addEventListener('click', () => {
+                    const revealed = node.getAttribute?.('data-ytkit-sponsored-revealed') === '1';
+                    if (revealed) node.removeAttribute?.('data-ytkit-sponsored-revealed');
+                    else node.setAttribute?.('data-ytkit-sponsored-revealed', '1');
+                    this._applyVisibility(node, revealed);
+                    this._updateToggle(node, kind, null);
+                });
+                parent.insertBefore(button, node);
+                this._toggles.set(node, button);
+                this._updateToggle(node, kind, match);
+                return button;
+            },
+
+            _restoreNode(node) {
+                this._applyVisibility(node, false);
+                this._toggles.get(node)?.remove?.();
+                this._toggles.delete(node);
+                node.removeAttribute?.('data-ytkit-sponsored-hidden');
+                node.removeAttribute?.('data-ytkit-sponsored-revealed');
+                node.removeAttribute?.('data-ytkit-sponsored-key');
+                node.removeAttribute?.('data-ytkit-sponsored-reason-key');
+                node.removeAttribute?.('data-ytkit-sponsored-reason-fallback');
+            },
+
+            _processNode(node, kind) {
+                if (!node) return;
+                const text = this._contentText(node);
+                const match = this._detect(text);
+                if (!match) {
+                    this._restoreNode(node);
+                    this._nodes.delete(node);
+                    return;
+                }
+                const key = `${kind}:${this._shortHash(text)}`;
+                if (node.getAttribute?.('data-ytkit-sponsored-key') !== key) {
+                    node.removeAttribute?.('data-ytkit-sponsored-revealed');
+                    node.setAttribute?.('data-ytkit-sponsored-key', key);
+                }
+                node.setAttribute?.('data-ytkit-sponsored-reason-key', match.reasonKey);
+                node.setAttribute?.('data-ytkit-sponsored-reason-fallback', match.fallback);
+                this._nodes.add(node);
+                if (!this._ensureToggle(node, kind, match)) return;
+                this._applyVisibility(
+                    node,
+                    node.getAttribute?.('data-ytkit-sponsored-revealed') !== '1'
+                );
+                this._updateToggle(node, kind, match);
+            },
+
+            _scanAll() {
+                if (!isWatchPagePath()) return;
+                const comments = this._findCommentThreads();
+                const descriptions = this._findDescriptionBlocks();
+                const active = new Set([...comments, ...descriptions]);
+                for (const node of this._nodes) {
+                    if (!active.has(node)) {
+                        this._restoreNode(node);
+                        this._nodes.delete(node);
+                    }
+                }
+                comments.forEach((node) => this._processNode(node, 'comment'));
+                descriptions.forEach((node) => this._processNode(node, 'description'));
+            },
+
+            _scheduleScan(delay = 180) {
+                clearTimeout(this._scanTimer);
+                this._scanTimer = setTimeout(() => {
+                    this._scanTimer = null;
+                    this._scanAll();
+                }, delay);
+            },
+
+            init() {
+                if (!isWatchPagePath()) return;
+                this._ensureStyle();
+                this._scanAll();
+                addScopedMutationRule(this.id, this._CANDIDATE_SELECTOR, (_targetNode, addedElements) => {
+                    if (Array.isArray(addedElements) && addedElements.length) this._scheduleScan();
+                });
+                addNavigateRule(this.id, () => {
+                    clearTimeout(this._navigateTimer);
+                    this._navigateTimer = setTimeout(() => {
+                        this._navigateTimer = null;
+                        this._scanAll();
+                    }, 800);
+                });
+            },
+
+            destroy() {
+                clearTimeout(this._scanTimer);
+                clearTimeout(this._navigateTimer);
+                this._scanTimer = null;
+                this._navigateTimer = null;
+                removeScopedMutationRule(this.id);
+                removeNavigateRule(this.id);
+                for (const node of this._nodes) this._restoreNode(node);
+                this._nodes.clear();
+                this._toggles.clear();
+                this._styleElement?.remove?.();
                 this._styleElement = null;
             }
         },

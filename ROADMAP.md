@@ -4,13 +4,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Actionable Items
 
-- [ ] P2 — Filter sponsored and affiliate content out of comments and descriptions
-  Why: the second-highest single feature request in the landscape, and Astra already ships both halves — comment filtering and SponsorBlock reads.
-  Evidence: SponsorBlock #649 (40 👍).
-  Touches: `extension/ytkit.js` (comment filter manager, description handling), `extension/core/settings-schema.js`
-  Acceptance: an opt-in filter collapses comments and description blocks matching affiliate/sponsor patterns, shows the reason, and is reversible per item.
-  Complexity: M
-
 - [ ] P2 — Watch Later bulk management
   Why: repeatedly requested across trackers, and Astra already has the bounded-session + Undo `bulkCardActions` pattern and a Watch Later workbench to host it.
   Evidence: ImprovedTube #231 (6 👍), #652 (6 👍), #4085; the existing workbench in `extension/ytkit.js:33087-33610`.
