@@ -113,6 +113,82 @@ console.log(`${hasFocusTrap ? '✓' : '✗'} Tab focus rotation on the popup bod
 if (!popupJs.includes('FOCUSABLE_SELECTOR')) issues.push('FOCUSABLE_SELECTOR is not defined');
 if (!hasEscapeClose) issues.push('Escape close handling is missing');
 
+// 5. Forced-colors focus lane.
+//
+// Every focus ring in popup.css is `outline: none` plus a box-shadow, and
+// Windows High Contrast does not paint box-shadow. A control whose focus rule
+// suppresses the outline therefore has NO focus indicator unless the
+// `@media (forced-colors: active)` block restores one for that same selector.
+//
+// The list of selectors to check is DERIVED from popup.css rather than
+// hand-maintained, so adding a new outline-suppressing focus rule fails this
+// gate until its forced-colors lane exists. Selectors are compared verbatim
+// because specificity decides the winner: a bare `input:focus-visible` in the
+// forced-colors block does not beat `.some-panel input:focus-visible`
+// declared earlier at higher specificity.
+const forcedColorsStart = popupCss.indexOf('@media (forced-colors: active) {');
+console.log('\nForced-colors focus lane:');
+if (forcedColorsStart === -1) {
+    issues.push('popup.css has no @media (forced-colors: active) block');
+} else {
+    let depth = 0;
+    let cursor = popupCss.indexOf('{', forcedColorsStart);
+    const blockStart = cursor;
+    for (; cursor < popupCss.length; cursor += 1) {
+        if (popupCss[cursor] === '{') depth += 1;
+        else if (popupCss[cursor] === '}') {
+            depth -= 1;
+            if (depth === 0) break;
+        }
+    }
+    const forcedColorsBlock = popupCss.slice(blockStart, cursor + 1);
+    const outsideForcedColors = popupCss.slice(0, forcedColorsStart) + popupCss.slice(cursor + 1);
+
+    // Whitespace inside a selector is significant (`.panel :focus-visible` is
+    // a descendant rule, `.panel:focus-visible` is not), but the amount of it
+    // is not. Normalise both sides the same way before comparing.
+    // Comments must go first: a `/* ... */` block sitting above a rule is
+    // otherwise glued onto its first selector by the matcher below.
+    const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, ' ');
+    const normalizeSelector = (value) => value.replace(/\s+/g, ' ').trim();
+    const focusSelectorsIn = (css) => {
+        const out = new Set();
+        const rule = /([^{}]+)\{([^}]*)\}/g;
+        let hit;
+        while ((hit = rule.exec(css)) !== null) {
+            for (const part of hit[1].split(',')) {
+                const selector = normalizeSelector(part);
+                if (selector.endsWith(':focus-visible')) out.add(selector);
+            }
+        }
+        return out;
+    };
+
+    const laneSelectors = focusSelectorsIn(stripComments(forcedColorsBlock));
+    const uncovered = [];
+    // Strip once: the loop below carries regex lastIndex across calls.
+    const atRiskCss = stripComments(outsideForcedColors);
+    const atRiskRule = /([^{}]+)\{([^}]*)\}/g;
+    let match;
+    while ((match = atRiskRule.exec(atRiskCss)) !== null) {
+        const body = match[2];
+        // Only rules that remove the outline AND rely on a shadow are at risk.
+        if (!/outline:\s*(none|0)\b/.test(body) || !/box-shadow/.test(body)) continue;
+        for (const part of match[1].split(',')) {
+            const selector = normalizeSelector(part);
+            if (!selector.endsWith(':focus-visible')) continue;
+            if (!laneSelectors.has(selector) && !uncovered.includes(selector)) {
+                uncovered.push(selector);
+            }
+        }
+    }
+
+    console.log(`${uncovered.length === 0 ? '\u2713' : '\u2717'} every outline-suppressing focus rule has a forced-colors lane`);
+    for (const selector of uncovered) {
+        issues.push(`No forced-colors focus lane for "${selector}" (its box-shadow ring is invisible in High Contrast)`);
+    }
+}
+
 console.log('\n' + (issues.length > 0 ? `⚠ ${issues.length} issue(s):` : '✓ No a11y issues found'));
 for (const issue of issues) console.log(`  - ${issue}`);
 

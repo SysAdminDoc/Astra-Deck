@@ -3076,8 +3076,30 @@ textarea:focus-visible {
   .toggle.on .switch { background: Highlight; }
   .switch::after { background: CanvasText; }
 
+  /* Every focus ring in this popup is drawn with box-shadow after an
+     `outline: none`, and forced-colors mode does not paint box-shadow — so
+     any control missing from this list has NO visible focus indicator in
+     Windows High Contrast. The generic `input:focus-visible` rule further up
+     applies to every text field, which is why the list below is by element
+     type rather than by class.
+
+     The four class selectors are not redundant: `.ai-credential-manager
+     :focus-visible`, the schema-overview editors and the filter-list URL
+     field all outrank a bare `input:focus-visible`, so they have to be
+     matched at their own specificity to win here. `npm run audit:a11y`
+     fails if a new outline-suppressing focus rule is added without a lane. */
   .toggle:focus-visible,
   [role="switch"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  .ai-credential-manager :focus-visible,
+  .schema-overview-list .so-key-number:focus-visible,
+  .schema-overview-list .so-key-text:focus-visible,
+  .schema-overview-list .so-key-color:focus-visible,
+  .schema-overview-list .so-row-head:focus-visible,
+  .schema-overview-list .so-key-switch:focus-visible,
+  .filter-list-tools__url-label input:focus-visible,
   .search-row input:focus-visible,
   summary:focus-visible,
   button:focus-visible {
