@@ -743,3 +743,75 @@ test('optional-host grant scan is driven by the schema, not the sparse settings 
     assert.match(scan, /resolveEffectiveSettingValue\(entry, settings\)/,
         'the scan must resolve each key through its schema default');
 });
+
+test('the filter-list status line reports stored subscription state, not the shipped default', () => {
+    // Regression: render() filled the URL input but never touched the status
+    // line, so a user who had configured and fetched a list still read "No
+    // filter list is being followed." on every popup open.
+    assert.match(popupSource, /async function refreshFilterListStatus\(\)/,
+        'popup.js must derive the filter-list status from stored state');
+    assert.match(popupSource, /syncFilterListUrlInput\(settings\);\s*\n\s*void refreshFilterListStatus\(\);/,
+        'render must refresh the status line alongside the URL input');
+
+    const start = popupSource.indexOf('async function refreshFilterListStatus()');
+    const end = popupSource.indexOf('\n}\n', start);
+    assert.ok(start > -1 && end > start, 'refreshFilterListStatus block must be found');
+    const block = popupSource.slice(start, end);
+
+    for (const key of [
+        'filterListStatusReady',
+        'filterListStatusLastFailedTpl',
+        'filterListStatusFollowingTpl',
+        'filterListStatusPendingTpl'
+    ]) {
+        assert.ok(block.includes(key), `status must cover the ${key} state`);
+    }
+    assert.match(block, /describeRemoteListUrl/,
+        'the status must resolve the configured URL through the shared scope rules');
+    assert.match(block, /const host = described\.hostname/,
+        'only the host may be written into the DOM, never the stored URL');
+    assert.match(block, /record\.url === described\.url/,
+        'a cached record for a different URL must not be reported as current');
+
+    // The token templates have to substitute at the call site or the
+    // check-i18n substitution gate cannot see them. Plain string pins, not a
+    // built regex: escaping a generated pattern is its own hazard.
+    for (const key of ['filterListStatusFollowingTpl', 'filterListStatusPendingTpl', 'filterListStatusLastFailedTpl']) {
+        const callIndex = block.indexOf("t('" + key + "'");
+        assert.ok(callIndex > -1, key + ' must be read through t()');
+        const tail = block.slice(callIndex, callIndex + 300);
+        assert.ok(tail.includes(".replace('{host}', host)"),
+            key + ' must substitute {host} next to its own t() call');
+    }
+});
+
+test('filter-list refresh failures do not echo the bridge error back into the popup', () => {
+    // t() resolves the key and drops the fallback, so passing result.error as
+    // a fallback displayed nothing while looking like it displayed something.
+    const start = popupSource.indexOf('async function refreshFilterList()');
+    const end = popupSource.indexOf('\n}\n', start);
+    const block = popupSource.slice(start, end);
+    assert.ok(start > -1 && end > start, 'refreshFilterList block must be found');
+    assert.doesNotMatch(block, /setFilterListStatus\([^)]*result\?\.error/,
+        'the raw bridge error must not be passed as status copy');
+    assert.match(block, /filterListStatusRefreshFail/,
+        'refresh failures need their own message, not the generic operation failure');
+    assert.match(block, /filterListStatusPermissionNeeded/,
+        'a denied host grant must be reported as a permission prompt, not a generic failure');
+    assert.match(block, /filterListStatusPrivateHost/,
+        'a private-network address must say so instead of failing generically');
+
+    const enMessages = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    for (const key of [
+        'filterListStatusRefreshFail',
+        'filterListStatusPermissionNeeded',
+        'filterListStatusPrivateHost',
+        'filterListStatusFollowingTpl',
+        'filterListStatusPendingTpl',
+        'filterListStatusLastFailedTpl'
+    ]) {
+        assert.ok(enMessages[key]?.message, `en/messages.json must define ${key}`);
+    }
+});

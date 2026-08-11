@@ -1072,7 +1072,19 @@
     "message": "Règles de filtre locales exportées."
   },
   "filterListStatusFail": {
-    "message": "L'opération sur la liste de filtres a échoué."
+    "message": "Une erreur s'est produite. Vos règles enregistrées n'ont pas été modifiées."
+  },
+  "filterListStatusRefreshFail": {
+    "message": "Impossible d'actualiser la liste. Vérifiez l'adresse, puis réessayez."
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "Liste de filtres suivie sur {host}."
+  },
+  "filterListStatusPendingTpl": {
+    "message": "Pas encore récupérée. Choisissez « Actualiser la liste » pour suivre {host}."
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "La dernière actualisation de {host} a échoué. Les règles en cache restent utilisées."
   },
   "filterListStatusImported": {
     "message": "Règles de filtre importées. Annuler l'importation est disponible."

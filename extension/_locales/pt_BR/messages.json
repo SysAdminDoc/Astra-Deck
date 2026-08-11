@@ -1072,7 +1072,19 @@
     "message": "Regras de filtro locais exportadas."
   },
   "filterListStatusFail": {
-    "message": "A operação da lista de filtros falhou."
+    "message": "Algo deu errado. Suas regras salvas não foram alteradas."
+  },
+  "filterListStatusRefreshFail": {
+    "message": "Não foi possível atualizar a lista. Verifique o endereço e tente novamente."
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "Seguindo a lista de filtros em {host}."
+  },
+  "filterListStatusPendingTpl": {
+    "message": "Ainda não baixada. Escolha Atualizar lista agora para seguir {host}."
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "A última atualização de {host} não foi concluída. As regras em cache continuam em uso."
   },
   "filterListStatusImported": {
     "message": "Regras de filtro importadas. Desfazer importação está disponível."

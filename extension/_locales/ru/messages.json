@@ -1072,7 +1072,19 @@
     "message": "Локальные правила фильтров экспортированы."
   },
   "filterListStatusFail": {
-    "message": "Операция со списком фильтров не удалась."
+    "message": "Что-то пошло не так. Сохранённые правила не изменены."
+  },
+  "filterListStatusRefreshFail": {
+    "message": "Не удалось обновить список. Проверьте адрес и повторите попытку."
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "Используется список фильтров с {host}."
+  },
+  "filterListStatusPendingTpl": {
+    "message": "Ещё не загружен. Нажмите «Обновить список», чтобы подписаться на {host}."
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "Последнее обновление {host} не удалось. Продолжают действовать кэшированные правила."
   },
   "filterListStatusImported": {
     "message": "Правила фильтров импортированы. Доступна отмена импорта."

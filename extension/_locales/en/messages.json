@@ -1072,7 +1072,19 @@
     "message": "Local filter rules exported."
   },
   "filterListStatusFail": {
-    "message": "Filter-list operation failed."
+    "message": "Something went wrong. Your saved rules were not changed."
+  },
+  "filterListStatusRefreshFail": {
+    "message": "Could not refresh the list. Check the address, then try again."
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "Following the filter list at {host}."
+  },
+  "filterListStatusPendingTpl": {
+    "message": "Not fetched yet. Choose Refresh list now to follow {host}."
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "The last refresh of {host} did not succeed. Cached rules are still in use."
   },
   "filterListStatusImported": {
     "message": "Filter rules imported. Undo Import is available."

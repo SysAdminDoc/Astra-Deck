@@ -1072,7 +1072,19 @@
     "message": "Lokale Filterregeln exportiert."
   },
   "filterListStatusFail": {
-    "message": "Filterlisten-Vorgang fehlgeschlagen."
+    "message": "Etwas ist schiefgelaufen. Ihre gespeicherten Regeln wurden nicht geändert."
+  },
+  "filterListStatusRefreshFail": {
+    "message": "Die Liste konnte nicht aktualisiert werden. Prüfen Sie die Adresse und versuchen Sie es erneut."
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "Die Filterliste unter {host} wird verwendet."
+  },
+  "filterListStatusPendingTpl": {
+    "message": "Noch nicht abgerufen. Wählen Sie „Liste jetzt aktualisieren“, um {host} zu folgen."
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "Die letzte Aktualisierung von {host} war nicht erfolgreich. Die zwischengespeicherten Regeln werden weiter verwendet."
   },
   "filterListStatusImported": {
     "message": "Filterregeln importiert. Import rückgängig machen ist verfügbar."

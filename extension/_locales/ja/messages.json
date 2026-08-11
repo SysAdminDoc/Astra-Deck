@@ -1072,7 +1072,19 @@
     "message": "ローカルのフィルタールールをエクスポートしました。"
   },
   "filterListStatusFail": {
-    "message": "フィルターリストの操作に失敗しました。"
+    "message": "問題が発生しました。保存済みのルールは変更されていません。"
+  },
+  "filterListStatusRefreshFail": {
+    "message": "リストを更新できませんでした。アドレスを確認してからもう一度お試しください。"
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "{host} のフィルターリストを使用しています。"
+  },
+  "filterListStatusPendingTpl": {
+    "message": "まだ取得していません。{host} を購読するには「今すぐリストを更新」を選択してください。"
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "{host} の最後の更新に失敗しました。キャッシュされたルールを引き続き使用します。"
   },
   "filterListStatusImported": {
     "message": "フィルタールールをインポートしました。インポートの取り消しが利用できます。"
