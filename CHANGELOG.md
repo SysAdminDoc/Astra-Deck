@@ -21,6 +21,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Accessibility and contrast audits now resolve the popup/side-panel CSS token
+  cascade and exercise real keyboard focus order, focus traps, forced colors,
+  and narrow settings reflow in a headless DOM.
 - English feature names and descriptions are resynced with the runtime
   definitions, and `check-i18n` now detects catalog drift or missing feature
   copy keys with a regression-tested bait case.

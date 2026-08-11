@@ -1387,6 +1387,19 @@
             box-shadow: inset 0 0 0 1px rgba(var(--ytkit-v3-accent-rgb),0.80), 0 0 0 3px rgba(var(--ytkit-v3-accent-rgb),0.14) !important;
         }
 
+        /* The command-center reset sheet clears button shadows with
+           !important. Keep the actual keyboard lane equally strong so
+           :focus-visible remains visible on actions, tabs, and links. */
+        #ytkit-settings-panel button:focus-visible,
+        #ytkit-settings-panel input:focus-visible,
+        #ytkit-settings-panel select:focus-visible,
+        #ytkit-settings-panel textarea:focus-visible,
+        #ytkit-settings-panel a:focus-visible {
+            outline: 0 !important;
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg), 0 0 0 4px rgba(var(--ytkit-v3-accent-rgb), 0.75) !important;
+            border-color: var(--ytkit-v3-accent) !important;
+        }
+
         #ytkit-settings-panel .ytkit-switch {
             position: relative !important;
             justify-self: end !important;
@@ -1845,6 +1858,17 @@
             #ytkit-settings-panel .ytkit-footer {
                 min-height: 68px !important;
                 padding: 10px 16px !important;
+            }
+        }
+
+        /* At narrow desktop zoom the content viewport can be shorter than
+           the command header. A sticky header that is taller than that
+           viewport becomes a permanent overlay over every focused control;
+           let the header scroll normally in this reflow lane. */
+        @media (max-width: 720px) {
+            #ytkit-settings-panel .ytkit-pane-header {
+                position: static !important;
+                min-height: 0 !important;
             }
         }
 
@@ -2683,12 +2707,70 @@
             }
         }
 
+        /* Keep this final focus lane after the footer, light-theme, and
+           breakpoint overrides above. Those rules intentionally use
+           !important for their visual contract, so focus must do the same. */
+        #ytkit-settings-panel button:focus-visible,
+        #ytkit-settings-panel input:focus-visible,
+        #ytkit-settings-panel select:focus-visible,
+        #ytkit-settings-panel textarea:focus-visible,
+        #ytkit-settings-panel a:focus-visible {
+            outline: 0 !important;
+            box-shadow: 0 0 0 2px #0b1421, 0 0 0 4px rgba(255,90,79,0.75) !important;
+            border-color: #ff5a4f !important;
+        }
+
+        #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn:focus-visible {
+            box-shadow: 0 0 0 2px #0b1421, 0 0 0 4px rgba(255,90,79,0.75) !important;
+            border-color: #ff5a4f !important;
+        }
+
+        #ytkit-settings-panel .ytkit-command-search .ytkit-search-input:focus-visible {
+            box-shadow: inset 0 0 0 1px rgba(255,90,79,0.80), 0 0 0 3px rgba(255,90,79,0.75) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn.active:focus-visible {
+            box-shadow: 0 0 0 2px #0b1421, 0 0 0 4px rgba(255,90,79,0.75) !important;
+        }
+
+        /* Author display rules can override the browser's hidden UA rule;
+           keep hidden dialog controls out of both sight and tab order. */
+        #ytkit-settings-panel [hidden] {
+            display: none !important;
+        }
+
         @media (forced-colors: active) {
             #ytkit-settings-panel,
             #ytkit-settings-panel .ytkit-command-search,
             #ytkit-settings-panel .ytkit-select,
             #ytkit-settings-panel .ytkit-input {
                 border-color: CanvasText !important;
+            }
+
+            #ytkit-settings-panel button:focus-visible,
+            #ytkit-settings-panel input:focus-visible,
+            #ytkit-settings-panel select:focus-visible,
+            #ytkit-settings-panel textarea:focus-visible,
+            #ytkit-settings-panel a:focus-visible,
+            #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn:focus-visible {
+                outline: 2px solid Highlight !important;
+                outline-offset: 2px !important;
+                box-shadow: none !important;
+            }
+
+            #ytkit-settings-panel .ytkit-command-search .ytkit-search-input:focus-visible,
+            #ytkit-settings-panel .ytkit-select:focus-visible,
+            #ytkit-settings-panel .ytkit-input:focus-visible,
+            #ytkit-settings-panel .ytkit-vh-number:focus-visible {
+                outline: 2px solid Highlight !important;
+                outline-offset: 2px !important;
+                box-shadow: none !important;
+            }
+
+            #ytkit-settings-panel .ytkit-switch:focus-within .ytkit-switch-track {
+                outline: 2px solid Highlight !important;
+                outline-offset: 2px !important;
+                box-shadow: none !important;
             }
 
             #ytkit-settings-panel .ytkit-nav-btn.active {

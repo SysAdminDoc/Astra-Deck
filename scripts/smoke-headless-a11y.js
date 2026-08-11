@@ -78,6 +78,7 @@ const SURFACES = Object.freeze([
         height: 860,
         settleMs: 500,
         themes: Object.freeze(['dark', 'light']),
+        focusTrap: Object.freeze({ root: '#ytkit-settings-panel' }),
     }),
     Object.freeze({
         name: 'transcript',
@@ -100,6 +101,7 @@ const SURFACES = Object.freeze([
         height: 700,
         settleMs: 300,
         themes: Object.freeze(['dark', 'light']),
+        focusTrap: Object.freeze({ root: '.ytkit-dl-popup' }),
     }),
 ]);
 
@@ -165,6 +167,8 @@ function httpGetJson(url, timeoutMs = 3000) {
 async function dispatchTab(client, shift = false) {
     const modifiers = shift ? 8 : 0;
     await client.send('Input.dispatchKeyEvent', {
+        // keyDown lets Chromium perform the browser's native Tab traversal;
+        // the resulting focus is still evaluated through :focus-visible.
         type: 'keyDown',
         key: 'Tab',
         code: 'Tab',
@@ -180,6 +184,9 @@ async function dispatchTab(client, shift = false) {
         nativeVirtualKeyCode: 9,
         modifiers,
     });
+    // CDP key dispatch can move focus without running the same scroll step
+    // that a physical Tab performs in a nested overflow container.
+    await client.evaluate('document.activeElement?.scrollIntoView({ block: "center", inline: "nearest" })');
 }
 
 function collectFocusableExpression(selector) {
@@ -284,8 +291,13 @@ function focusStateExpression(selector) {
             inside: true,
             token: active.dataset.astraA11yFocusId || '',
             label: active.getAttribute('aria-label') || active.textContent?.trim().slice(0, 60) || active.id || active.tagName,
+            activeId: active.id || '',
+            activeClass: active.className || '',
             focusVisible: active.matches(':focus-visible'),
             indicatorVisible: Boolean(outlineVisible || shadowVisible),
+            outlineStyle: style.outline,
+            boxShadow: style.boxShadow,
+            focusRing: getComputedStyle(document.documentElement).getPropertyValue('--ytkit-focus-ring').trim(),
             unobscured,
             rect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom }
         };
@@ -337,14 +349,20 @@ async function auditKeyboardPath(client, surface, stateName) {
             visited.add(state.token);
         }
         if (!state.focusVisible || !state.indicatorVisible) {
-            failures.push(`no visible keyboard focus indicator on ${state.label}`);
+            failures.push(
+                `no visible keyboard focus indicator on ${state.label} `
+                + `(focus-visible=${state.focusVisible}, computed-indicator=${state.indicatorVisible}, `
+                + `outline=${state.outlineStyle}, box-shadow=${state.boxShadow}, focus-ring=${state.focusRing}, `
+                + `active=${state.activeId}.${state.activeClass})`
+            );
         }
         if (!state.unobscured) {
             const rect = state.rect || {};
             failures.push(
                 `focused control is fully obscured or offscreen: ${state.label} `
                 + `(${Math.round(rect.left || 0)},${Math.round(rect.top || 0)}..`
-                + `${Math.round(rect.right || 0)},${Math.round(rect.bottom || 0)})`
+                + `${Math.round(rect.right || 0)},${Math.round(rect.bottom || 0)}; `
+                + `active=${state.activeId}.${state.activeClass})`
             );
         }
         if (visited.size === inventory.tokens.length) break;
@@ -365,6 +383,71 @@ async function auditKeyboardPath(client, surface, stateName) {
         throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
     }
     return visited.size;
+}
+
+function focusedTokenExpression(selector) {
+    return `(() => {
+        const root = document.querySelector(${JSON.stringify(selector)});
+        const active = document.activeElement;
+        return {
+            inside: Boolean(root && active && root.contains(active)),
+            token: active?.dataset?.astraA11yFocusId || '',
+            label: active?.getAttribute?.('aria-label') || active?.textContent?.trim().slice(0, 60) || active?.id || active?.tagName || '',
+        };
+    })()`;
+}
+
+async function auditFocusTrap(client, surface, stateName) {
+    const trap = surface.focusTrap;
+    if (!trap) return 0;
+    const inventory = await client.evaluate(collectFocusableExpression(trap.root));
+    if (inventory.error) throw new Error(`${surface.name}/${stateName}: ${inventory.error}`);
+    if (inventory.tokens.length < 2) {
+        throw new Error(`${surface.name}/${stateName}: focus trap needs at least two visible controls`);
+    }
+
+    const focusToken = async (token) => {
+        await client.evaluate(`(() => {
+            const root = document.querySelector(${JSON.stringify(trap.root)});
+            root?.querySelector('[data-astra-a11y-focus-id="${token}"]')?.focus();
+        })()`);
+    };
+    const readFocus = () => client.evaluate(focusedTokenExpression(trap.root));
+    const failures = [];
+    const first = inventory.tokens[0];
+    const second = inventory.tokens[1];
+    const last = inventory.tokens[inventory.tokens.length - 1];
+
+    // A real Tab from the first control must follow the rendered DOM order.
+    await focusToken(first);
+    await dispatchTab(client);
+    const forwardOrder = await readFocus();
+    if (!forwardOrder.inside || forwardOrder.token !== second) {
+        failures.push(
+            `Tab order left ${trap.root} or skipped the second control `
+            + `(expected=${second}:${inventory.labels[Number(second)]}, `
+            + `actual=${forwardOrder.token || 'none'}:${forwardOrder.label || 'no active control'})`
+        );
+    }
+
+    // The final and first controls are the two wrap points that distinguish a
+    // real modal focus trap from a source-only aria-modal declaration.
+    await focusToken(last);
+    await dispatchTab(client);
+    const forwardWrap = await readFocus();
+    if (!forwardWrap.inside || forwardWrap.token !== first) {
+        failures.push(`Tab from the final control did not wrap to ${first}`);
+    }
+
+    await focusToken(first);
+    await dispatchTab(client, true);
+    const backwardWrap = await readFocus();
+    if (!backwardWrap.inside || backwardWrap.token !== last) {
+        failures.push(`Shift+Tab from the first control did not wrap to ${last}`);
+    }
+
+    if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+    return 3;
 }
 
 async function configureRenderedState(client, surface, theme, mode) {
@@ -498,7 +581,10 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             }
             if (mode === 'normal') await captureSurface(client, surface, theme);
             const controls = await auditKeyboardPath(client, surface, `${theme}/${mode}`);
-            reports.push({ controls, mode, theme, viewport });
+            const focusTrapChecks = mode === 'normal'
+                ? await auditFocusTrap(client, surface, `${theme}/${mode}`)
+                : 0;
+            reports.push({ controls, focusTrapChecks, mode, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -600,7 +686,9 @@ async function main(argv = process.argv.slice(2)) {
             const total = reports.reduce((sum, report) => sum + report.controls, 0);
             console.log(
                 `[headless-a11y] ${surface.name}: ${reports.length} state(s), `
-                + `${total} keyboard focus visits, no obscuring/overflow failures`
+                + `${total} keyboard focus visits, `
+                + `${reports.reduce((sum, report) => sum + (report.focusTrapChecks || 0), 0)} focus-trap assertions, `
+                + 'no obscuring/overflow failures'
             );
         }
         console.log(`[headless-a11y] Captures saved to ${OUT_DIR}`);
@@ -638,6 +726,7 @@ if (require.main === module) {
 
 module.exports = {
     auditKeyboardPath,
+    auditFocusTrap,
     auditRtlLayout,
     collectFocusableExpression,
     configureRenderedState,

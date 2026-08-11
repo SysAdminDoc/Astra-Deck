@@ -46150,6 +46150,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             outline: 2px solid Highlight !important;
                             outline-offset: 2px !important;
                         }
+                        [class*="ytkit-"] input:focus-visible,
+                        [class*="ytkit-"] select:focus-visible,
+                        [class*="ytkit-"] textarea:focus-visible {
+                            outline: 2px solid Highlight !important;
+                            outline-offset: 2px !important;
+                        }
                     }
                 `, 'forced-colors');
             },
@@ -53968,6 +53974,10 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
         }
 
+        #ytkit-settings-panel [hidden] {
+            display: none !important;
+        }
+
         .ytkit-search-clear:hover {
             background: rgba(255,255,255,0.08);
             border-color: rgba(255,255,255,0.12);
@@ -55775,6 +55785,27 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             background: rgba(var(--ytkit-accent-rgb),0.24) !important;
             border-color: rgba(var(--ytkit-accent-rgb),0.34) !important;
             box-shadow: none !important;
+        }
+
+        /* Settings controls are reset by this sheet with !important. Keep
+           the keyboard lane later and equally strong so focus remains
+           visible on actions, tabs, links, and form fields. */
+        #ytkit-settings-panel button:focus-visible,
+        #ytkit-settings-panel input:focus-visible,
+        #ytkit-settings-panel select:focus-visible,
+        #ytkit-settings-panel textarea:focus-visible,
+        #ytkit-settings-panel a:focus-visible {
+            outline: 0 !important;
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg, #0b1421), 0 0 0 4px rgba(255,90,79,0.75) !important;
+            border-color: rgba(255,90,79,0.9) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-command-search .ytkit-search-input:focus-visible {
+            box-shadow: inset 0 0 0 1px rgba(255,90,79,0.8), 0 0 0 3px rgba(255,90,79,0.75) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn.active:focus-visible {
+            box-shadow: 0 0 0 2px var(--ytkit-v3-bg, #0b1421), 0 0 0 4px rgba(255,90,79,0.75) !important;
         }
 
         .ytkit-trigger-btn:hover .ytkit-trigger-btn__glyph svg,

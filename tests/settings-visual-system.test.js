@@ -18,6 +18,7 @@ const settingsPanel = fs.readFileSync(
 const shell = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
 const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const overlaySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
+const a11ySmoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-headless-a11y.js'), 'utf8');
 const commandDeckCss = visualSystemSource.slice(
     visualSystemSource.indexOf('/* v5 command-deck parity overrides')
 );
@@ -215,6 +216,56 @@ test('settings visual system covers light, mobile, forced-color, and reduced-mot
     assert.match(visualSystemSource, /@media \(max-width:\s*560px\)/);
     assert.match(visualSystemSource, /@media \(forced-colors:\s*active\)/);
     assert.match(visualSystemSource, /@media \(prefers-reduced-motion:\s*reduce\)/);
+});
+
+test('settings visual system restores focus rings after command-deck resets', () => {
+    assert.match(
+        visualSystemSource,
+        /#ytkit-settings-panel button:focus-visible,[\s\S]*?#ytkit-settings-panel input:focus-visible,[\s\S]*?box-shadow:[^;]+!important/,
+        'buttons and inputs must retain a visible focus ring after reset rules'
+    );
+    assert.match(
+        visualSystemSource,
+        /#ytkit-settings-panel a:focus-visible[\s\S]*?border-color:\s*var\(--ytkit-v3-accent\) !important/,
+        'links must retain a visible focus border after reset rules'
+    );
+});
+
+test('settings visual system covers hidden controls, narrow reflow, and forced-color focus', () => {
+    assert.match(
+        visualSystemSource,
+        /#ytkit-settings-panel \.ytkit-footer-actions \.ytkit-btn:focus-visible[\s\S]*?rgba\(255,90,79,0\.75\)/,
+        'footer actions must retain a visible focus ring after the late reset rules'
+    );
+    assert.match(
+        visualSystemSource,
+        /#ytkit-settings-panel \[hidden\]\s*\{\s*display:\s*none !important;/,
+        'hidden dialog controls must stay out of sight and keyboard traversal'
+    );
+    assert.match(
+        visualSystemSource,
+        /@media \(max-width:\s*720px\)[\s\S]*?#ytkit-settings-panel \.ytkit-pane-header[\s\S]*?position:\s*static !important;/,
+        'narrow settings layouts must release the oversized sticky header'
+    );
+    assert.match(
+        visualSystemSource,
+        /#ytkit-settings-panel \.ytkit-select:focus-visible,[\s\S]*?outline:\s*2px solid Highlight !important;/,
+        'forced colors must expose a system focus indicator on selects'
+    );
+});
+
+test('headless a11y smoke audits real focus traversal and the correct injected traps', () => {
+    const { SURFACES } = require('../scripts/smoke-headless-a11y');
+    assert.match(a11ySmoke, /Input\.dispatchKeyEvent/);
+    assert.match(a11ySmoke, /:focus-visible/);
+    assert.match(a11ySmoke, /async function auditFocusTrap\(/);
+    assert.match(a11ySmoke, /name: 'settings'[\s\S]*?focusTrap: Object\.freeze\(\{ root: '#ytkit-settings-panel' \}\)/);
+    assert.match(a11ySmoke, /name: 'download'[\s\S]*?focusTrap: Object\.freeze\(\{ root: '\.ytkit-dl-popup' \}\)/);
+    assert.equal(
+        SURFACES.find((surface) => surface.name === 'transcript')?.focusTrap,
+        undefined,
+        'transcript must not report the download overlay as its focus trap'
+    );
 });
 
 test('settings brand lockup cannot collapse into stacked oversized labels', () => {
