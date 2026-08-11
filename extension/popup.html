@@ -331,6 +331,29 @@
       </details>
     </nav>
 
+    <section class="filter-list-tools" aria-labelledby="filter-list-tools-title">
+      <div class="section-head">
+        <div class="section-head-copy">
+          <span class="section-eyebrow" data-i18n="filterListToolsEyebrow">Video Hider</span>
+          <h2 class="section-title" id="filter-list-tools-title" data-i18n="filterListToolsTitle">Local filter lists</h2>
+        </div>
+      </div>
+      <p class="filter-list-tools__description" data-i18n="filterListToolsDesc">Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge.</p>
+      <div class="button-row filter-list-tools__actions">
+        <button id="export-filter-list-btn" type="button" data-i18n="exportFilterListBtn">Export rules</button>
+        <button id="import-filter-list-btn" type="button" data-i18n="importFilterListBtn">Import rules</button>
+        <input type="file" id="import-filter-list-file" accept=".json,application/json" hidden>
+      </div>
+      <label class="filter-list-tools__url-label" for="filter-list-url">
+        <span data-i18n="filterListUrlLabel">Optional HTTPS list URL</span>
+        <input id="filter-list-url" name="hideVideosFilterListUrl" type="url" inputmode="url" maxlength="2048" autocomplete="off" spellcheck="false" data-i18n-attr-placeholder="filterListUrlPlaceholder" placeholder="https://example.com/astra-deck-rules.json">
+      </label>
+      <div class="filter-list-tools__footer">
+        <button id="refresh-filter-list-btn" type="button" data-i18n="refreshFilterListBtn">Refresh list now</button>
+        <span id="filter-list-status" class="filter-list-tools__status" role="status" aria-live="polite" data-i18n="filterListStatusReady">No remote list configured.</span>
+      </div>
+    </section>
+
     <div class="status" id="status" aria-live="polite"></div>
 
     <section class="quick-toggles-section" aria-labelledby="quick-toggles-title">

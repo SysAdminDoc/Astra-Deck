@@ -15,6 +15,7 @@ const MODULE_SOURCE = fs.readFileSync(
 require('../../extension/core/text-metrics.js');
 require('../../extension/core/date-time.js');
 require('../../extension/core/predicate-sandbox.js');
+require('../../extension/core/persisted-domains.js');
 
 function loadModule() {
     const originalFeatures = globalThis.YTKitFeatures;
@@ -184,6 +185,122 @@ test('hideVideosFromHome factory returns the Video Hider runtime surface', () =>
     ]) {
         assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
     }
+});
+
+test('Video Hider applies cached remote data rules but never executes remote predicates', () => {
+    const { mod } = loadModule();
+    const url = 'https://example.com/rules.json';
+    const subscription = {
+        url,
+        fetchedAt: 1000,
+        rules: {
+            keywordFilter: 'remote keyword',
+            predicateEnabled: true,
+            predicateCode: 'return true;',
+            hiddenVideos: ['abcdefghijk'],
+            allowedVideos: ['lmnopqrstuv'],
+            blockedChannels: [{ id: 'UC1234567890', name: 'Remote block' }],
+            allowedChannels: []
+        }
+    };
+    const appState = {
+        settings: {
+            hideVideosFilterListUrl: url,
+            hideVideosKeywordFilter: '',
+            hideVideosChannelAllowlist: false,
+            advancedLocalPredicate: false,
+            hideVideosDurationFilter: 0
+        }
+    };
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState,
+        storageReadJSON: (_key, fallback) => subscription || fallback,
+        getBlockedChannelIdentityKeys: channel => channel?.id ? [`legacy:${channel.id}`] : [],
+        normalizeBlockedChannelRecord: value => value
+    });
+    feature._extractVideoId = () => 'abcdefghijk';
+    feature._extractChannelInfos = () => [];
+    assert.equal(feature._isVideoIdHidden('abcdefghijk'), true);
+    assert.equal(feature._isVideoAllowed('lmnopqrstuv'), true);
+
+    feature._extractVideoId = () => null;
+    assert.equal(feature._shouldHide(fakeVideoCard('remote keyword review')), true);
+    const neutral = fakeVideoCard('ordinary review');
+    assert.equal(feature._shouldHide(neutral), false, 'remote predicate code must remain inert');
+
+    feature._extractChannelInfos = () => [{ id: 'UC1234567890', name: 'Remote block' }];
+    assert.equal(feature._isChannelBlocked(feature._extractChannelInfos()), true);
+});
+
+test('Video Hider refreshes filter lists anonymously and preserves stale cache on failure', async () => {
+    const { mod } = loadModule();
+    const url = 'https://example.com/rules.json';
+    const freshRules = {
+        keywordFilter: 'fresh',
+        predicateEnabled: true,
+        predicateCode: 'return true;',
+        hiddenVideos: ['abcdefghijk'],
+        allowedVideos: [],
+        blockedChannels: [],
+        allowedChannels: []
+    };
+    const writes = [];
+    const timers = [];
+    const appState = { settings: { hideVideosFilterListUrl: url } };
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState,
+        storageReadJSON: (_key, fallback) => fallback,
+        storageWriteJSON: async (_key, value) => {
+            writes.push(value);
+            return { ok: true };
+        },
+        extensionFetchJson: async details => {
+            assert.equal(details.credentials, 'omit');
+            assert.equal(details.method, 'GET');
+            assert.equal(details.timeout, 15000);
+            return { data: globalThis.YTKitCore.persistedDomains.createVideoFilterList(freshRules) };
+        },
+        nowFn: () => 1000000,
+        setTimeoutFn: (callback, delay) => {
+            timers.push({ callback, delay });
+            return timers.length;
+        },
+        clearTimeoutFn: () => {}
+    });
+    feature._processAllVideosDebounced = () => {};
+    const result = await feature._refreshFilterListNow();
+    assert.equal(result.ok, true);
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].url, url);
+    assert.equal(writes[0].fetchedAt, 1000000);
+    assert.equal(writes[0].rules.keywordFilter, 'fresh');
+    feature._scheduleFilterListRefresh();
+    assert.equal(timers.length, 1);
+    assert.ok(timers[0].delay >= 6 * 60 * 60 * 1000);
+    assert.ok(timers[0].delay <= 7 * 24 * 60 * 60 * 1000);
+
+    const stale = {
+        url,
+        attemptedAt: 1000,
+        fetchedAt: 900,
+        rules: { keywordFilter: 'stale', hiddenVideos: ['abcdefghijk'] }
+    };
+    let failedWrite;
+    const failedFeature = mod.createHideVideosFromHomeFeature({
+        appState: { settings: { hideVideosFilterListUrl: url } },
+        storageReadJSON: (_key, fallback) => stale || fallback,
+        storageWriteJSON: async (_key, value) => {
+            failedWrite = value;
+            return { ok: true };
+        },
+        extensionFetchJson: async () => { throw new Error('offline'); },
+        nowFn: () => 2000000
+    });
+    const failed = await failedFeature._refreshFilterListNow();
+    assert.equal(failed.ok, false);
+    assert.equal(failedWrite.rules.keywordFilter, 'stale');
+    assert.equal(failedWrite.fetchedAt, 900);
+    assert.match(failedWrite.error, /offline/);
 });
 
 test('Video Hider processes current card hosts and keeps the thumbnail control mounted', () => {
@@ -866,6 +983,9 @@ test('hideVideosFromHome monolith prefers the module runtime factory before inli
         'removeNavigateRule',
         'getVideoId',
         'getPlayerResponseGlobal',
+        'extensionFetchJson',
+        'storageWriteJSON',
+        'filterListCodec',
         't',
         'runBudgetedElementBatch',
         'injectStyle'
@@ -874,6 +994,26 @@ test('hideVideosFromHome monolith prefers the module runtime factory before inli
     }
     assert.ok(dependencyBag.includes('createSVG: globalThis.YTKitCore?.createSVG'),
         'factory dependency bag must avoid the later-declared local createSVG binding');
+});
+
+test('hideVideosFromHome inline fallback keeps filter-list refresh parity', () => {
+    for (const method of [
+        '_readFilterListSubscription',
+        '_refreshFilterList',
+        '_scheduleFilterListRefresh',
+        '_refreshFilterListNow',
+        '_initializeFilterListSubscription',
+        '_getEffectiveKeywordFilters'
+    ]) {
+        assert.ok(sources.ytkit.includes(`${method}(`),
+            `ytkit.js inline fallback must expose ${method}`);
+    }
+    assert.match(sources.ytkit, /MONOLITH_FILTER_LIST_CODEC = globalThis\.YTKitCore\?\.persistedDomains/,
+        'inline fallback must use the shared filter-list codec when available');
+    assert.match(sources.ytkit, /credentials: 'omit'/,
+        'inline fallback refreshes must omit ambient credentials');
+    assert.match(sources.ytkit, /predicateEnabled: false,\s*predicateCode: ''/,
+        'inline fallback must never execute predicate code received from a remote list');
 });
 
 test('hideVideosFromHome budgets large feed scans and cancels stale batches', () => {

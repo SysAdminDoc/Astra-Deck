@@ -2054,6 +2054,63 @@ body {
   flex-shrink: 0;
 }
 
+.filter-list-tools {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.filter-list-tools__description {
+  max-width: 720px;
+  margin: -2px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+.filter-list-tools__url-label {
+  display: grid;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.filter-list-tools__url-label input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-xs);
+}
+
+.filter-list-tools__url-label input:focus-visible {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: var(--focus-ring);
+}
+
+.filter-list-tools__footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-list-tools__status {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .actions-end { margin-left: auto; }
 
 .button-row {
@@ -3036,6 +3093,7 @@ textarea:focus-visible {
 .storage-overview,
 .schema-overview,
 .actions-row,
+.filter-list-tools,
 .quick-toggles-section {
   border-color: var(--astra-border);
   box-shadow: none;

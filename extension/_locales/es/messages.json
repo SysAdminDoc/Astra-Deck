@@ -990,6 +990,75 @@
   "exportBtn": {
     "message": "Exportar"
   },
+  "exportFilterListBtn": {
+    "message": "Export rules"
+  },
+  "filterListExportFail": {
+    "message": "Filter-list export failed"
+  },
+  "filterListExported": {
+    "message": "Video Hider rules exported."
+  },
+  "filterListImportFail": {
+    "message": "Filter-list import failed"
+  },
+  "filterListImportNotJson": {
+    "message": "That file is not valid JSON."
+  },
+  "filterListImportRollback": {
+    "message": "Filter-list import failed; previous data was restored."
+  },
+  "filterListImported": {
+    "message": "Video Hider rules imported. Undo Import is available."
+  },
+  "filterListStatusExported": {
+    "message": "Local filter rules exported."
+  },
+  "filterListStatusFail": {
+    "message": "Filter-list operation failed."
+  },
+  "filterListStatusImported": {
+    "message": "Filter rules imported. Undo Import is available."
+  },
+  "filterListStatusInvalidUrl": {
+    "message": "Enter an HTTPS URL without credentials or a fragment."
+  },
+  "filterListStatusNoTab": {
+    "message": "Open a YouTube tab to refresh the remote list."
+  },
+  "filterListStatusReady": {
+    "message": "No remote list configured."
+  },
+  "filterListStatusRefreshed": {
+    "message": "Remote filter list refreshed."
+  },
+  "filterListToolsDesc": {
+    "message": "Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge."
+  },
+  "filterListToolsEyebrow": {
+    "message": "Video Hider"
+  },
+  "filterListToolsTitle": {
+    "message": "Local filter lists"
+  },
+  "filterListUrlLabel": {
+    "message": "Optional HTTPS list URL"
+  },
+  "filterListUrlPlaceholder": {
+    "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListRefreshFail": {
+    "message": "Filter-list refresh failed"
+  },
+  "filterListRefreshed": {
+    "message": "Video Hider filter list refreshed."
+  },
+  "importFilterListBtn": {
+    "message": "Import rules"
+  },
+  "refreshFilterListBtn": {
+    "message": "Refresh list now"
+  },
   "extActionTitle": {
     "message": "Astra Deck",
     "description": "Tooltip text for the toolbar action button."

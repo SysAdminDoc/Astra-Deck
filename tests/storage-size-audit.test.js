@@ -113,7 +113,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // local controls.
     // Live latency catch-up adds 151 bytes to the local settings payload.
     // Local low-signal heuristics add 410 bytes to the typical settings payload.
-    assert.equal(assessment.totalBytes, 185792);
+    // The extension-only filter-list URL adds one empty string setting (29 B).
+    assert.equal(assessment.totalBytes, 185821);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

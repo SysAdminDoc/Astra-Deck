@@ -13,7 +13,7 @@ function fixture(version) {
 test('durable-domain registry explicitly classifies every known storage boundary', () => {
     const ids = new Set(persisted.DURABLE_DOMAIN_REGISTRY.map((entry) => entry.id));
     for (const required of [
-        'settings', 'hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'bookmarks',
+        'settings', 'hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'videoFilterListSubscription', 'bookmarks',
         'watchProgress', 'watchTime', 'channelSpeeds', 'resumePositions', 'playlistResume',
         'persistentQueue', 'reactionSpammerState', 'watchLaterRemovalLog',
         'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'localeOverride', 'debugPreference',
@@ -28,6 +28,67 @@ test('durable-domain registry explicitly classifies every known storage boundary
         assert.ok(domain.migration, `${domain.id} needs an explicit migration policy`);
         if (domain.backup === 'exclude') assert.ok(domain.reason, `${domain.id} exclusion needs a reason`);
     }
+});
+
+test('versioned Video Hider filter lists round-trip with bounded URL and rule sanitization', () => {
+    assert.equal(persisted.normalizeFilterListUrl('https://example.com/rules.json'), 'https://example.com/rules.json');
+    assert.equal(persisted.normalizeFilterListUrl('http://example.com/rules.json'), '');
+    assert.equal(persisted.normalizeFilterListUrl('https://user:pass@example.com/rules.json'), '');
+    assert.equal(persisted.normalizeFilterListUrl('https://example.com/rules.json#fragment'), '');
+
+    const payload = persisted.createVideoFilterList({
+        keywordFilter: `  ${'keyword,'.repeat(10000)}  `,
+        predicateEnabled: true,
+        predicateCode: 'return true;',
+        hiddenVideos: ['abcdefghijk', 'abcdefghijk', 'not-valid'],
+        allowedVideos: ['lmnopqrstuv'],
+        blockedChannels: [{ id: 'UC1234567890', name: 'Blocked' }],
+        allowedChannels: [{ id: 'UC0987654321', name: 'Allowed' }]
+    });
+    const parsed = persisted.parseVideoFilterList(payload);
+    assert.equal(parsed.version, persisted.FILTER_LIST_VERSION);
+    assert.equal(parsed.kind, persisted.FILTER_LIST_KIND);
+    assert.deepEqual(parsed.rules.hiddenVideos, ['abcdefghijk']);
+    assert.deepEqual(parsed.rules.allowedVideos, ['lmnopqrstuv']);
+    assert.equal(parsed.rules.blockedChannels[0].id, 'UC1234567890');
+    assert.equal(parsed.rules.allowedChannels[0].id, 'UC0987654321');
+    assert.ok(parsed.rules.keywordFilter.length <= 20000);
+
+    assert.throws(
+        () => persisted.parseVideoFilterList({ ...payload, filterListVersion: persisted.FILTER_LIST_VERSION + 1 }),
+        /Unsupported or invalid/
+    );
+    assert.throws(
+        () => persisted.parseVideoFilterList({ ...payload, rules: null }),
+        /Unsupported or invalid/
+    );
+});
+
+test('filter-list subscription sanitizer keeps cached rules while bounding timestamps and errors', () => {
+    const subscription = persisted.sanitizeVideoFilterListSubscription({
+        url: 'https://example.com/rules.json',
+        attemptedAt: 1234.9,
+        fetchedAt: 2345.8,
+        rules: { hiddenVideos: ['abcdefghijk'], predicateEnabled: true, predicateCode: 'return true;' },
+        error: 'x'.repeat(500)
+    });
+    assert.deepEqual(subscription, {
+        version: 1,
+        url: 'https://example.com/rules.json',
+        attemptedAt: 1234,
+        fetchedAt: 2345,
+        rules: {
+            keywordFilter: '',
+            predicateEnabled: true,
+            predicateCode: 'return true;',
+            hiddenVideos: ['abcdefghijk'],
+            allowedVideos: [],
+            blockedChannels: [],
+            allowedChannels: []
+        },
+        error: 'x'.repeat(240)
+    });
+    assert.equal(persisted.sanitizeDomainValue('videoFilterListSubscription', null).version, 1);
 });
 
 test('persisted-domain service loads before every consumer surface', () => {

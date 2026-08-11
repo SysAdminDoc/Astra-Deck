@@ -54,6 +54,112 @@
         return String(value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
     }
 
+    const FILTER_LIST_VERSION = 1;
+    const FILTER_LIST_KIND = 'video-hider-rules';
+    const FILTER_LIST_MAX_BYTES = 1024 * 1024;
+    const FILTER_LIST_MAX_KEYWORD_CHARS = 20000;
+    const FILTER_LIST_SUBSCRIPTION_KEY = 'ytkit-video-filter-list-subscription';
+
+    function createFallbackFilterListCodec(deps = {}) {
+        const isPlainObject = typeof deps.isPlainObject === 'function'
+            ? deps.isPlainObject
+            : value => !!value && typeof value === 'object' && !Array.isArray(value);
+        const sanitizeVideoIds = typeof deps.sanitizeImportedVideoIdList === 'function'
+            ? (value, limit) => deps.sanitizeImportedVideoIdList(value, limit)
+            : value => (Array.isArray(value) ? value.slice(0, 5000) : []);
+        const sanitizeChannels = typeof deps.sanitizeImportedBlockedChannels === 'function'
+            ? value => deps.sanitizeImportedBlockedChannels(value)
+            : value => (Array.isArray(value) ? value.slice(0, 2000) : []);
+
+        const normalizeFilterListUrl = value => {
+            const raw = typeof value === 'string' ? value.trim() : '';
+            if (!raw || raw.length > 2048) return '';
+            try {
+                const parsed = new URL(raw);
+                if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.hash) return '';
+                return parsed.href.slice(0, 2048);
+            } catch (_) {
+                return '';
+            }
+        };
+        const sanitizeFilterListRules = value => {
+            const raw = isPlainObject(value) ? value : {};
+            const keywordFilter = typeof raw.keywordFilter === 'string'
+                ? raw.keywordFilter.trim().slice(0, FILTER_LIST_MAX_KEYWORD_CHARS)
+                : '';
+            const predicateCode = typeof raw.predicateCode === 'string'
+                ? raw.predicateCode.slice(0, FILTER_LIST_MAX_KEYWORD_CHARS)
+                : '';
+            return {
+                keywordFilter,
+                predicateEnabled: raw.predicateEnabled === true && !!predicateCode,
+                predicateCode,
+                hiddenVideos: sanitizeVideoIds(raw.hiddenVideos, 5000),
+                allowedVideos: sanitizeVideoIds(raw.allowedVideos, 5000),
+                blockedChannels: sanitizeChannels(raw.blockedChannels),
+                allowedChannels: sanitizeChannels(raw.allowedChannels)
+            };
+        };
+        return {
+            FILTER_LIST_VERSION,
+            FILTER_LIST_KIND,
+            FILTER_LIST_MAX_BYTES,
+            FILTER_LIST_SUBSCRIPTION_KEY,
+            normalizeFilterListUrl,
+            sanitizeFilterListRules,
+            sanitizeVideoFilterListSubscription(value) {
+                const raw = isPlainObject(value) ? value : {};
+                const attemptedAt = Number(raw.attemptedAt);
+                const fetchedAt = Number(raw.fetchedAt);
+                return {
+                    version: FILTER_LIST_VERSION,
+                    url: normalizeFilterListUrl(raw.url),
+                    attemptedAt: Number.isFinite(attemptedAt) && attemptedAt > 0 ? Math.floor(attemptedAt) : 0,
+                    fetchedAt: Number.isFinite(fetchedAt) && fetchedAt > 0 ? Math.floor(fetchedAt) : 0,
+                    rules: sanitizeFilterListRules(raw.rules),
+                    error: typeof raw.error === 'string' ? raw.error.slice(0, 240) : ''
+                };
+            },
+            buildVideoFilterListRules(source = {}) {
+                const raw = isPlainObject(source) ? source : {};
+                const settings = isPlainObject(raw.settings) ? raw.settings : raw;
+                return sanitizeFilterListRules({
+                    keywordFilter: settings.hideVideosKeywordFilter,
+                    predicateEnabled: settings.advancedLocalPredicate,
+                    predicateCode: settings.advancedLocalPredicateCode,
+                    hiddenVideos: raw.hiddenVideos,
+                    allowedVideos: raw.allowedVideos,
+                    blockedChannels: raw.blockedChannels,
+                    allowedChannels: raw.allowedChannels
+                });
+            },
+            createVideoFilterList(rules, options = {}) {
+                return {
+                    astraDeckFilterList: true,
+                    filterListVersion: FILTER_LIST_VERSION,
+                    kind: FILTER_LIST_KIND,
+                    exportedAt: typeof options.exportedAt === 'string' ? options.exportedAt : new Date().toISOString(),
+                    rules: sanitizeFilterListRules(rules)
+                };
+            },
+            parseVideoFilterList(value) {
+                if (!isPlainObject(value)
+                    || value.astraDeckFilterList !== true
+                    || value.kind !== FILTER_LIST_KIND
+                    || Number(value.filterListVersion) !== FILTER_LIST_VERSION
+                    || !isPlainObject(value.rules)) {
+                    throw new Error('Unsupported or invalid Astra Deck filter-list format');
+                }
+                return {
+                    version: FILTER_LIST_VERSION,
+                    kind: FILTER_LIST_KIND,
+                    exportedAt: typeof value.exportedAt === 'string' ? value.exportedAt.slice(0, 64) : '',
+                    rules: sanitizeFilterListRules(value.rules)
+                };
+            }
+        };
+    }
+
     function extractUploadCadencePerDay(text) {
         const raw = normalizeHeuristicText(text);
         if (!raw) return null;
@@ -100,6 +206,10 @@
             },
             getCurrentPath = () => globalThis.location?.pathname || '',
             getPlayerResponseGlobal = () => globalThis.ytInitialPlayerResponse || null,
+            extensionFetchJson = null,
+            storageWriteJSON = storageWrite,
+            filterListCodec = null,
+            nowFn = () => Date.now(),
             documentRef = typeof document !== 'undefined' ? document : null,
             setTimeoutFn = (callback, delay) => setTimeout(callback, delay),
             clearTimeoutFn = timer => clearTimeout(timer),
@@ -128,6 +238,11 @@
         const sanitizeAllowedChannels = typeof sanitizeImportedAllowedChannels === 'function'
             ? sanitizeImportedAllowedChannels
             : sanitizeImportedBlockedChannels;
+        const codec = filterListCodec || globalThis.YTKitCore?.persistedDomains || createFallbackFilterListCodec({
+            isPlainObject,
+            sanitizeImportedVideoIdList,
+            sanitizeImportedBlockedChannels: sanitizeAllowedChannels
+        });
 
         return {
             id: 'hideVideosFromHome',
@@ -145,6 +260,10 @@
             _MARKED_WATCHED_KEY: 'ytkit-marked-watched-videos',
             _CHANNELS_KEY: 'ytkit-blocked-channels',
             _ALLOWED_CHANNELS_KEY: 'ytkit-allowed-channels',
+            _FILTER_LIST_SUBSCRIPTION_KEY: FILTER_LIST_SUBSCRIPTION_KEY,
+            _FILTER_LIST_REFRESH_MS: 24 * 60 * 60 * 1000,
+            _FILTER_LIST_REFRESH_MIN_MS: 6 * 60 * 60 * 1000,
+            _FILTER_LIST_REFRESH_MAX_MS: 7 * 24 * 60 * 60 * 1000,
             _VIDEO_SELECTORS: 'yt-lockup-view-model, ytd-rich-item-renderer, ytd-rich-grid-media, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer, ytd-playlist-video-renderer',
             _hiddenSet: null,
             _hiddenList: null,
@@ -156,6 +275,9 @@
             _channelKeyCache: null,
             _allowedChannelsCache: null,
             _allowedChannelKeyCache: null,
+            _filterListSubscription: null,
+            _filterListRefreshTimer: null,
+            _filterListRefreshInFlight: false,
             _directWatchRouteKey: null,
             _directWatchAllowedRouteKey: null,
             _directWatchTimer: null,
@@ -431,6 +553,139 @@
                 }
             },
 
+            _readFilterListSubscription() {
+                if (this._filterListSubscription === null) {
+                    let stored = {};
+                    try { stored = storageReadJSON(this._FILTER_LIST_SUBSCRIPTION_KEY, {}); } catch (_) { /* reason: malformed storage is treated as empty */ }
+                    this._filterListSubscription = codec.sanitizeVideoFilterListSubscription(stored);
+                }
+                return this._filterListSubscription;
+            },
+            _getConfiguredFilterListUrl() {
+                return codec.normalizeFilterListUrl(appState.settings.hideVideosFilterListUrl || '');
+            },
+            _getRemoteFilterRules() {
+                const configuredUrl = this._getConfiguredFilterListUrl();
+                const subscription = this._readFilterListSubscription();
+                if (!configuredUrl || subscription.url !== configuredUrl || !subscription.fetchedAt) return null;
+                return {
+                    ...subscription.rules,
+                    // Remote lists are data-only. Predicate code is exported
+                    // for local backups, but a fetched list must never turn
+                    // into executable code in a YouTube page.
+                    predicateEnabled: false,
+                    predicateCode: ''
+                };
+            },
+            _getEffectiveKeywordFilters() {
+                const filters = [];
+                const local = String(appState.settings.hideVideosKeywordFilter || '').trim();
+                if (local) filters.push(local);
+                const remote = this._getRemoteFilterRules()?.keywordFilter;
+                if (remote) filters.push(remote);
+                return filters;
+            },
+            async _refreshFilterList(url = appState.settings.hideVideosFilterListUrl, options = {}) {
+                const normalizedUrl = codec.normalizeFilterListUrl(url || '');
+                if (!normalizedUrl) return { ok: false, reason: 'invalid-url' };
+                if (this._filterListRefreshInFlight) return this._filterListRefreshInFlight;
+
+                const now = Math.max(0, Math.floor(Number(nowFn()) || 0));
+                const previous = this._readFilterListSubscription();
+                const force = options.force === true;
+                if (!force
+                    && previous.url === normalizedUrl
+                    && previous.attemptedAt > 0
+                    && now - previous.attemptedAt < this._FILTER_LIST_REFRESH_MIN_MS) {
+                    return { ok: false, skipped: true, reason: 'refresh-cooldown', subscription: previous };
+                }
+                if (typeof extensionFetchJson !== 'function') return { ok: false, reason: 'extension-bridge-unavailable' };
+
+                this._filterListRefreshInFlight = (async () => {
+                    try {
+                        const result = await extensionFetchJson({
+                            method: 'GET',
+                            url: normalizedUrl,
+                            timeout: 15000,
+                            credentials: 'omit',
+                            headers: { Accept: 'application/json' }
+                        });
+                        const serialized = JSON.stringify(result?.data);
+                        if (typeof serialized !== 'string' || new Blob([serialized]).size > (codec.FILTER_LIST_MAX_BYTES || FILTER_LIST_MAX_BYTES)) {
+                            throw new Error('Filter list exceeds the 1 MiB limit');
+                        }
+                        const parsed = codec.parseVideoFilterList(result?.data);
+                        const next = codec.sanitizeVideoFilterListSubscription({
+                            version: FILTER_LIST_VERSION,
+                            url: normalizedUrl,
+                            attemptedAt: now,
+                            fetchedAt: now,
+                            rules: parsed.rules,
+                            error: ''
+                        });
+                        const writeResult = await storageWriteJSON(this._FILTER_LIST_SUBSCRIPTION_KEY, next, { immediate: true });
+                        if (writeResult?.ok === false) throw writeResult.error || new Error('Filter list cache write failed');
+                        this._filterListSubscription = next;
+                        this._filterListRemoteRules = null;
+                        this._processAllVideosDebounced?.(0);
+                        return { ok: true, subscription: next };
+                    } catch (error) {
+                        const sameUrl = previous.url === normalizedUrl;
+                        const failed = codec.sanitizeVideoFilterListSubscription({
+                            version: FILTER_LIST_VERSION,
+                            url: normalizedUrl,
+                            attemptedAt: now,
+                            fetchedAt: sameUrl ? previous.fetchedAt : 0,
+                            rules: sameUrl ? previous.rules : {},
+                            error: String(error?.message || error || 'Refresh failed').slice(0, 240)
+                        });
+                        try {
+                            const writeResult = await storageWriteJSON(this._FILTER_LIST_SUBSCRIPTION_KEY, failed, { immediate: true });
+                            if (writeResult?.ok === false) throw writeResult.error || new Error('Filter list failure state write failed');
+                            this._filterListSubscription = failed;
+                            this._filterListRemoteRules = null;
+                        } catch (writeError) {
+                            DebugManager.log('VideoHider', 'Filter list cache write failed', writeError?.message || writeError);
+                        }
+                        DebugManager.log('VideoHider', 'Filter list refresh failed', failed.error);
+                        return { ok: false, reason: 'refresh-failed', error: failed.error, subscription: failed };
+                    } finally {
+                        this._filterListRefreshInFlight = null;
+                    }
+                })();
+                return this._filterListRefreshInFlight;
+            },
+            _scheduleFilterListRefresh() {
+                if (this._filterListRefreshTimer) {
+                    clearTimeoutFn(this._filterListRefreshTimer);
+                    this._filterListRefreshTimer = null;
+                }
+                const url = this._getConfiguredFilterListUrl();
+                if (!url || typeof extensionFetchJson !== 'function') return;
+                const subscription = this._readFilterListSubscription();
+                const now = Math.max(0, Math.floor(Number(nowFn()) || 0));
+                const elapsed = subscription.url === url && subscription.attemptedAt > 0
+                    ? Math.max(0, now - subscription.attemptedAt)
+                    : 0;
+                const delay = Math.max(
+                    this._FILTER_LIST_REFRESH_MIN_MS,
+                    Math.min(this._FILTER_LIST_REFRESH_MAX_MS, this._FILTER_LIST_REFRESH_MS - elapsed)
+                );
+                this._filterListRefreshTimer = setTimeoutFn(() => {
+                    this._filterListRefreshTimer = null;
+                    void this._refreshFilterList(url).then(() => this._scheduleFilterListRefresh());
+                }, delay);
+            },
+            _refreshFilterListNow() {
+                return this._refreshFilterList(undefined, { force: true });
+            },
+            _initializeFilterListSubscription() {
+                this._scheduleFilterListRefresh();
+                if (this._getConfiguredFilterListUrl() && typeof extensionFetchJson === 'function') {
+                    void this._refreshFilterList().then(() => this._scheduleFilterListRefresh());
+                }
+            },
+
             _getHiddenVideos() {
                 if (this._hiddenList === null) {
                     this._hiddenList = storageRead(this._STORAGE_KEY, []);
@@ -440,7 +695,8 @@
             },
             _isVideoIdHidden(videoId) {
                 if (this._hiddenSet === null) this._getHiddenVideos();
-                return this._hiddenSet.has(videoId);
+                const remote = this._getRemoteFilterRules();
+                return this._hiddenSet.has(videoId) || !!remote?.hiddenVideos?.includes(videoId);
             },
             _setHiddenVideos(videos) {
                 const sanitized = sanitizeImportedHiddenVideos(videos);
@@ -458,7 +714,8 @@
             _isVideoAllowed(videoId) {
                 if (!videoId) return false;
                 if (this._allowedSet === null) this._getAllowedVideos();
-                return this._allowedSet.has(videoId);
+                const remote = this._getRemoteFilterRules();
+                return this._allowedSet.has(videoId) || !!remote?.allowedVideos?.includes(videoId);
             },
             _setAllowedVideos(videos) {
                 const sanitized = sanitizeImportedVideoIdList(videos, IMPORT_LIMITS.allowedVideos);
@@ -607,7 +864,12 @@
             },
             _getBlockedChannelKeys() {
                 if (this._channelKeyCache === null) this._getBlockedChannels();
-                return this._channelKeyCache || new Set();
+                const localKeys = this._channelKeyCache || new Set();
+                const remote = this._getRemoteFilterRules();
+                if (!remote?.blockedChannels?.length) return localKeys;
+                const keys = new Set(localKeys);
+                remote.blockedChannels.forEach(channel => this._getChannelIdentityKeys(channel).forEach(key => keys.add(key)));
+                return keys;
             },
             _getChannelIdentityKeys(channelInfo) {
                 return getBlockedChannelIdentityKeys(channelInfo);
@@ -682,7 +944,12 @@
             },
             _getAllowedChannelKeys() {
                 if (this._allowedChannelKeyCache === null) this._getAllowedChannels();
-                return this._allowedChannelKeyCache || new Set();
+                const localKeys = this._allowedChannelKeyCache || new Set();
+                const remote = this._getRemoteFilterRules();
+                if (!remote?.allowedChannels?.length) return localKeys;
+                const keys = new Set(localKeys);
+                remote.allowedChannels.forEach(channel => this._getChannelIdentityKeys(channel).forEach(key => keys.add(key)));
+                return keys;
             },
             _isChannelAllowed(channelInfo) {
                 if (Array.isArray(channelInfo)) {
@@ -1684,49 +1951,62 @@
                     return hideForReason('blockedChannel');
                 }
 
-                const filterStr = (appState.settings.hideVideosKeywordFilter || '').trim();
-                if (filterStr) {
+                const filterStrings = this._getEffectiveKeywordFilters();
+                if (filterStrings.length) {
                     const title = this._extractTitle(element);
                     const channelName = channelInfos.map(info => info?.name || '').filter(Boolean).join(' ').toLowerCase();
                     const searchText = (title + ' ' + channelName).toLowerCase();
 
-                    if (filterStr.startsWith('/')) {
-                        try {
-                            const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
-                            if (regexMatch) {
-                                // Reject patterns with nested quantifiers (ReDoS risk).
-                                // Catches: a*+, a{2}*, (a+)+, (a|b*)+, (foo|bar*)+, ((a+)b)+, etc.
-                                // Any group whose body contains *any* quantifier and is itself
-                                // followed by another quantifier is rejected. This covers
-                                // alternation-wrapped quantifier stacks that the narrower
-                                // `(a+)+`-only guard used to miss.
-                                const pat = regexMatch[1];
-                                const adjacentQuantifiers = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat);
-                                const groupWithInnerQuantifier = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pat);
-                                // Overlapping-alternation backtracking: a group containing `|`, then
-                                // quantified by +/*/{n,} (e.g. (a|a|a)+, (a|aa)+). Overlapping branches
-                                // alone are exponential — no inner quantifier needed.
-                                const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pat);
-                                const hasNestedQuantifiers = adjacentQuantifiers || groupWithInnerQuantifier || altGroupQuantified;
-                                if (hasNestedQuantifiers) {
-                                    DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
-                                } else {
-                                    // Filtering is boolean and must not carry lastIndex
-                                    // across title/channel tests or repeated scans.
-                                    const regexFlags = regexMatch[2].replace(/[gy]/g, '');
-                                    const regex = new RegExp(regexMatch[1], regexFlags);
-                                    if (regex.test(title) || regex.test(channelName)) return hideForReason('keyword');
+                    // Negative keywords are exclusions across both local and
+                    // remote lists, so evaluate them before any positive rule.
+                    for (const filterStr of filterStrings) {
+                        if (filterStr.startsWith('/')) continue;
+                        const negativeKw = filterStr.toLowerCase().split(',')
+                            .map(k => k.trim())
+                            .filter(k => k.startsWith('!'))
+                            .map(k => k.slice(1))
+                            .filter(Boolean);
+                        if (negativeKw.some(k => searchText.includes(k))) return false;
+                    }
+
+                    for (const filterStr of filterStrings) {
+                        if (filterStr.startsWith('/')) {
+                            try {
+                                const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
+                                if (regexMatch) {
+                                    // Reject patterns with nested quantifiers (ReDoS risk).
+                                    // Catches: a*+, a{2}*, (a+)+, (a|b*)+, (foo|bar*)+, ((a+)b)+, etc.
+                                    // Any group whose body contains *any* quantifier and is itself
+                                    // followed by another quantifier is rejected. This covers
+                                    // alternation-wrapped quantifier stacks that the narrower
+                                    // `(a+)+`-only guard used to miss.
+                                    const pat = regexMatch[1];
+                                    const adjacentQuantifiers = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat);
+                                    const groupWithInnerQuantifier = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pat);
+                                    // Overlapping-alternation backtracking: a group containing `|`, then
+                                    // quantified by +/*/{n,} (e.g. (a|a|a)+, (a|aa)+). Overlapping branches
+                                    // alone are exponential — no inner quantifier needed.
+                                    const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pat);
+                                    const hasNestedQuantifiers = adjacentQuantifiers || groupWithInnerQuantifier || altGroupQuantified;
+                                    if (hasNestedQuantifiers) {
+                                        DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
+                                    } else {
+                                        // Filtering is boolean and must not carry lastIndex
+                                        // across title/channel tests or repeated scans.
+                                        const regexFlags = regexMatch[2].replace(/[gy]/g, '');
+                                        const regex = new RegExp(regexMatch[1], regexFlags);
+                                        if (regex.test(title) || regex.test(channelName)) return hideForReason('keyword');
+                                    }
                                 }
+                            } catch (e) {
+                                DebugManager.log('VideoHider', 'Invalid regex pattern', e.message);
                             }
-                        } catch (e) {
-                            DebugManager.log('VideoHider', 'Invalid regex pattern', e.message);
+                        } else {
+                            const positiveKw = filterStr.toLowerCase().split(',')
+                                .map(k => k.trim())
+                                .filter(k => k && !k.startsWith('!'));
+                            if (positiveKw.some(k => searchText.includes(k))) return hideForReason('keyword');
                         }
-                    } else {
-                        const keywords = filterStr.toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
-                        const positiveKw = keywords.filter(k => !k.startsWith('!'));
-                        const negativeKw = keywords.filter(k => k.startsWith('!')).map(k => k.slice(1));
-                        if (negativeKw.length && negativeKw.some(k => searchText.includes(k))) return false;
-                        if (positiveKw.length && positiveKw.some(k => searchText.includes(k))) return hideForReason('keyword');
                     }
                 }
 
@@ -2278,6 +2558,7 @@
             },
 
             init() {
+                this._initializeFilterListSubscription();
                 const css = `
                     /* Both overlay controls sit on the INLINE-END corner and
                        stay visible. That corner is also where YouTube mounts
@@ -2597,6 +2878,10 @@
             },
 
             destroy() {
+                if (this._filterListRefreshTimer) {
+                    clearTimeoutFn(this._filterListRefreshTimer);
+                    this._filterListRefreshTimer = null;
+                }
                 this._styleElement?.remove();
                 this._observer?.disconnect();
                 this._clearBatchBuffer?.();
