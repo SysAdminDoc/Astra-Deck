@@ -42,6 +42,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Timestamp Bookmarks now export a current video's transcript highlights,
   bookmarks, local note, and saved AI summary as both clickable Markdown and
   an import-compatible JSON highlight pack.
+- Download quality chips and the playback stats overlay now share a bounded
+  companion format probe, showing reported per-quality sizes and an explicit
+  unavailable state when the companion cannot provide a trustworthy size.
 
 ---
 

@@ -5005,6 +5005,7 @@ return response;
     });
     const {
         AUDIO_FORMATS,
+        downloadFormatEstimates,
         MediaDLManager,
         QUALITY_OPTIONS,
         VIDEO_FORMATS,
@@ -26280,6 +26281,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     `Playback: ${video.playbackRate}x`,
                     `Buffered: ${video.buffered.length > 0 ? Math.floor(video.buffered.end(video.buffered.length - 1) - video.currentTime) + 's ahead' : 'N/A'}`
                 ];
+                const estimateLabel = t('playbackStatsDataUsage', 'Download size estimates');
+                const unavailable = t('playbackStatsDataUnavailable', 'Unavailable');
+                const checking = t('playbackStatsDataChecking', 'Checking with Astra Downloader…');
+                const videoId = getVideoId();
+                const estimateStore = downloadFormatEstimates;
+                const estimateEntry = estimateStore?.get(videoId, window.location.href);
+                if (!estimateStore || !videoId) {
+                    lines.push(`${estimateLabel}: ${unavailable}`);
+                } else if (!estimateEntry) {
+                    lines.push(`${estimateLabel}: ${checking}`);
+                    void estimateStore.probe(videoId, window.location.href)
+                        .then(() => this._update())
+                        .catch(() => this._update());
+                } else if (estimateEntry.status !== 'ready') {
+                    lines.push(`${estimateLabel}: ${unavailable}`);
+                } else {
+                    lines.push(`${estimateLabel}:`);
+                    QUALITY_OPTIONS.forEach((option) => {
+                        const estimate = estimateEntry.summary?.qualitySizes?.[option.value];
+                        const size = estimate?.bytes ? estimateStore.formatBytes(estimate.bytes) : '';
+                        const sizeText = size
+                            ? `${estimate.approximate ? '~' : ''}${size}`
+                            : unavailable;
+                        lines.push(t('playbackStatsDataQualityTpl', '{quality}: {size}')
+                            .replace('{quality}', option.label)
+                            .replace('{size}', sizeText));
+                    });
+                }
                 this._overlay.textContent = lines.join('\n');
             },
 
