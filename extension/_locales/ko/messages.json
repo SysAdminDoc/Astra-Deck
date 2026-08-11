@@ -780,6 +780,15 @@
   "dlPopupQuality": {
     "message": "품질"
   },
+  "dlPopupQualitySizeTpl": {
+    "message": "{quality} · {size}"
+  },
+  "dlPopupQualitySizeTitleTpl": {
+    "message": "Estimated download size: {size}"
+  },
+  "dlPopupQualitySizeUnavailable": {
+    "message": "Size unavailable"
+  },
   "dlPopupReset": {
     "message": "재설정"
   },
@@ -3878,6 +3887,18 @@
   },
   "playerCcTitle": {
     "message": "자막"
+  },
+  "playbackStatsDataChecking": {
+    "message": "Checking with Astra Downloader…"
+  },
+  "playbackStatsDataQualityTpl": {
+    "message": "{quality}: {size}"
+  },
+  "playbackStatsDataUnavailable": {
+    "message": "Unavailable"
+  },
+  "playbackStatsDataUsage": {
+    "message": "Download size estimates"
   },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"

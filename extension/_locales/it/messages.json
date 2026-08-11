@@ -780,6 +780,15 @@
   "dlPopupQuality": {
     "message": "Qualità"
   },
+  "dlPopupQualitySizeTpl": {
+    "message": "{quality} · {size}"
+  },
+  "dlPopupQualitySizeTitleTpl": {
+    "message": "Estimated download size: {size}"
+  },
+  "dlPopupQualitySizeUnavailable": {
+    "message": "Size unavailable"
+  },
   "dlPopupReset": {
     "message": "Reimposta"
   },
@@ -3878,6 +3887,18 @@
   },
   "playerCcTitle": {
     "message": "Sottotitoli"
+  },
+  "playbackStatsDataChecking": {
+    "message": "Checking with Astra Downloader…"
+  },
+  "playbackStatsDataQualityTpl": {
+    "message": "{quality}: {size}"
+  },
+  "playbackStatsDataUnavailable": {
+    "message": "Unavailable"
+  },
+  "playbackStatsDataUsage": {
+    "message": "Download size estimates"
   },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"

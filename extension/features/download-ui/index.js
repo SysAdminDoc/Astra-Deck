@@ -66,6 +66,93 @@
         return seconds <= 86400 ? Math.round(seconds * 1000) / 1000 : null;
     }
 
+    const FORMAT_ESTIMATE_QUALITY_VALUES = Object.freeze([
+        'best', '2160', '1440', '1080', '720', '480'
+    ]);
+    const FORMAT_ESTIMATE_CACHE_TTL_MS = 5 * 60 * 1000;
+    const FORMAT_ESTIMATE_FAILURE_TTL_MS = 15 * 1000;
+    const FORMAT_ESTIMATE_CACHE_MAX_ENTRIES = 12;
+    const FORMAT_ESTIMATE_KEY_MAX_LENGTH = 256;
+
+    function normalizeFormatSize(value) {
+        const bytes = Number(value);
+        return Number.isFinite(bytes) && bytes > 0 && bytes <= Number.MAX_SAFE_INTEGER
+            ? Math.round(bytes)
+            : 0;
+    }
+
+    function formatByteSize(value) {
+        const bytes = normalizeFormatSize(value);
+        if (!bytes) return '';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let scaled = bytes;
+        let unitIndex = 0;
+        while (scaled >= 1024 && unitIndex < units.length - 1) {
+            scaled /= 1024;
+            unitIndex += 1;
+        }
+        if (unitIndex === 0) return `${bytes} B`;
+        const digits = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2;
+        return `${scaled.toFixed(digits)} ${units[unitIndex]}`;
+    }
+
+    function formatSizeCandidate(format) {
+        if (!format || typeof format !== 'object') return null;
+        const exact = normalizeFormatSize(format.filesize);
+        if (exact) return { bytes: exact, approximate: false };
+        const approximate = normalizeFormatSize(format.filesize_approx);
+        return approximate ? { bytes: approximate, approximate: true } : null;
+    }
+
+    function largerFormatSize(current, candidate) {
+        if (!candidate) return current;
+        if (!current || candidate.bytes > current.bytes) return candidate;
+        if (candidate.bytes === current.bytes && candidate.approximate) {
+            return { ...current, approximate: true };
+        }
+        return current;
+    }
+
+    function addFormatSizes(video, audio) {
+        if (!video || !audio) return null;
+        return {
+            bytes: video.bytes + audio.bytes,
+            approximate: video.approximate || audio.approximate
+        };
+    }
+
+    /**
+     * Mirror the companion's conservative format-size preflight. A quality
+     * estimate is only returned when yt-dlp reported a size for a muxed
+     * stream or for both sides of a separate video/audio pair. Bitrate and
+     * duration are deliberately ignored: they are not a trustworthy download
+     * size for the selected format.
+     */
+    function estimateFormatSize(formats, quality = 'best') {
+        const cap = quality === 'best' ? null : Number(quality);
+        const entries = (Array.isArray(formats) ? formats : [])
+            .map(format => ({
+                format,
+                size: formatSizeCandidate(format),
+                height: Number(format?.height)
+            }))
+            .filter(entry => entry.size && entry.format?.has_video && entry.height > 0)
+            .filter(entry => cap === null || (Number.isFinite(cap) && cap > 0 && entry.height <= cap));
+        if (!entries.length) return null;
+
+        const muxed = entries
+            .filter(entry => entry.format.has_audio)
+            .reduce((best, entry) => largerFormatSize(best, entry.size), null);
+        const videoOnly = entries
+            .filter(entry => !entry.format.has_audio)
+            .reduce((best, entry) => largerFormatSize(best, entry.size), null);
+        const audioOnly = (Array.isArray(formats) ? formats : [])
+            .filter(format => format?.has_audio && !format?.has_video)
+            .map(formatSizeCandidate)
+            .reduce((best, candidate) => largerFormatSize(best, candidate), null);
+        return largerFormatSize(muxed, addFormatSizes(videoOnly, audioOnly));
+    }
+
     /**
      * Reduce a companion `POST /formats` payload to what the quality ladder
      * needs to know.
@@ -84,17 +171,137 @@
         )).sort((a, b) => b - a);
         const maxHeight = heights[0] || 0;
         const minHeight = heights.length ? heights[heights.length - 1] : 0;
+        const qualitySizes = Object.fromEntries(
+            FORMAT_ESTIMATE_QUALITY_VALUES.map(value => [value, estimateFormatSize(formats, value)])
+        );
         return {
             heights,
             maxHeight,
             minHeight,
             formatCount: formats.length,
+            qualitySizes,
             canHonor(value) {
                 if (value === 'best') return true;
                 const rung = Number(value);
                 if (!Number.isFinite(rung) || rung <= 0 || !heights.length) return false;
                 return rung <= maxHeight && heights.some(height => height <= rung);
             }
+        };
+    }
+
+    function formatEstimateKey(videoId, url) {
+        const raw = String(videoId || url || '').trim();
+        return raw ? raw.slice(0, FORMAT_ESTIMATE_KEY_MAX_LENGTH) : '';
+    }
+
+    function createFormatEstimateStore({
+        check = async () => ({ ok: false }),
+        fetchJson = async () => ({ data: null }),
+        baseUrl = () => '',
+        now = () => Date.now(),
+    } = {}) {
+        const entries = new Map();
+        const pending = new Map();
+
+        function remember(key, entry) {
+            // Delete first so a refresh becomes the newest item in the small
+            // session cache; old video probes then fall out deterministically.
+            entries.delete(key);
+            entries.set(key, entry);
+            while (entries.size > FORMAT_ESTIMATE_CACHE_MAX_ENTRIES) {
+                entries.delete(entries.keys().next().value);
+            }
+        }
+
+        function get(videoId, url) {
+            const key = formatEstimateKey(videoId, url);
+            if (!key) return null;
+            const entry = entries.get(key);
+            if (!entry) return null;
+            if (entry.expiresAt <= now()) {
+                entries.delete(key);
+                return null;
+            }
+            return entry;
+        }
+
+        function setAvailable(videoId, url, probe) {
+            const key = formatEstimateKey(videoId, url);
+            if (!key) return null;
+            const entry = {
+                status: 'ready',
+                summary: summarizeFormatProbe(probe),
+                error: '',
+                expiresAt: now() + FORMAT_ESTIMATE_CACHE_TTL_MS
+            };
+            remember(key, entry);
+            return entry;
+        }
+
+        function setUnavailable(videoId, url, error) {
+            const key = formatEstimateKey(videoId, url);
+            if (!key) return null;
+            const entry = {
+                status: 'unavailable',
+                summary: null,
+                error: String(error?.message || error || 'Format sizes unavailable').slice(0, 160),
+                expiresAt: now() + FORMAT_ESTIMATE_FAILURE_TTL_MS
+            };
+            remember(key, entry);
+            return entry;
+        }
+
+        async function probe(videoId, url, { force = false } = {}) {
+            const key = formatEstimateKey(videoId, url);
+            if (!key) return setUnavailable('', '', 'Video unavailable');
+            if (pending.has(key)) return pending.get(key);
+            if (!force) {
+                const cached = get(videoId, url);
+                if (cached) return cached;
+            } else {
+                entries.delete(key);
+            }
+
+            const request = (async () => {
+                try {
+                    const status = await check();
+                    if (!status?.ok || !status.token) throw new Error('Downloader not running');
+                    const { response, data } = await fetchJson({
+                        method: 'POST',
+                        url: baseUrl() + '/formats',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Auth-Token': status.token,
+                        },
+                        data: JSON.stringify({ url }),
+                        timeout: 65000,
+                    });
+                    if (!response || response.status < 200 || response.status >= 300 || !Array.isArray(data?.formats)) {
+                        throw new Error(data?.error || 'Format list unavailable.');
+                    }
+                    return setAvailable(videoId, url, data);
+                } catch (error) {
+                    setUnavailable(videoId, url, error);
+                    throw error;
+                } finally {
+                    pending.delete(key);
+                }
+            })();
+            pending.set(key, request);
+            return request;
+        }
+
+        function clear(videoId, url) {
+            const key = formatEstimateKey(videoId, url);
+            if (key) entries.delete(key);
+        }
+
+        return {
+            get,
+            probe,
+            clear,
+            formatBytes: formatByteSize,
+            qualityValues: FORMAT_ESTIMATE_QUALITY_VALUES,
         };
     }
 
@@ -778,6 +985,15 @@
                 this._raiseOverlay(prompt);
             }
         };
+
+        const downloadFormatEstimates = createFormatEstimateStore({
+            check: () => MediaDLManager.check(),
+            fetchJson: extensionFetchJson,
+            baseUrl: () => MediaDLManager.baseUrl(),
+        });
+        if (globalThis.YTKitCore && typeof globalThis.YTKitCore === 'object') {
+            globalThis.YTKitCore.downloadFormatEstimates = downloadFormatEstimates;
+        }
 
         // Legacy wrapper
         function mediaDLDownload(videoUrl, audioOnly) {
@@ -1548,8 +1764,33 @@
             qualityRow.appendChild(qualityStatus);
 
             const chipFor = (value) => qualityChips.querySelector(`.ytkit-dl-popup__chip[data-value="${value}"]`);
+            const renderQualitySizeLabels = (summary) => {
+                QUALITY_OPTIONS.forEach((option) => {
+                    const chip = chipFor(option.value);
+                    if (!chip) return;
+                    const estimate = summary?.qualitySizes?.[option.value];
+                    const size = estimate?.bytes ? formatByteSize(estimate.bytes) : '';
+                    const sizeText = size
+                        ? `${estimate.approximate ? '~' : ''}${size}`
+                        : t('dlPopupQualitySizeUnavailable', 'Size unavailable');
+                    const label = t('dlPopupQualitySizeTpl', '{quality} · {size}')
+                        .replace('{quality}', option.label)
+                        .replace('{size}', sizeText);
+                    const title = size
+                        ? t('dlPopupQualitySizeTitleTpl', 'Estimated download size: {size}')
+                            .replace('{size}', sizeText)
+                        : t('dlPopupQualitySizeUnavailable', 'Size unavailable');
+                    chip.textContent = label;
+                    chip.title = title;
+                    chip.setAttribute('aria-label', label);
+                });
+            };
+            renderQualitySizeLabels(null);
             const applyFormatProbe = (probe) => {
-                const summary = summarizeFormatProbe(probe);
+                const summary = probe?.qualitySizes && typeof probe?.canHonor === 'function'
+                    ? probe
+                    : summarizeFormatProbe(probe);
+                renderQualitySizeLabels(summary);
                 if (!summary.heights.length) {
                     qualityStatus.textContent = t(
                         'dlPopupFormatsNone',
@@ -1595,28 +1836,46 @@
                     : summaryCopy;
             };
 
+            const runFormatProbe = async (force = false) => {
+                const videoId = typeof getVideoId === 'function' ? getVideoId() : '';
+                const videoUrl = window.location.href;
+                if (downloadFormatEstimates?.probe) {
+                    const entry = await downloadFormatEstimates.probe(videoId, videoUrl, { force });
+                    if (entry?.status !== 'ready') {
+                        throw new Error(entry?.error || t('dlPopupFormatsUnavailable', 'Format list unavailable.'));
+                    }
+                    applyFormatProbe(entry.summary);
+                    return;
+                }
+
+                // Compatibility fallback for direct module tests and older
+                // extension pages that did not create the shared store.
+                const status = await MediaDLManager.check();
+                if (!status.ok) throw new Error(t('dlPopupDownloaderOffline', 'Downloader not running'));
+                const { response, data } = await extensionFetchJson({
+                    method: 'POST',
+                    url: MediaDLManager.baseUrl() + '/formats',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Auth-Token': status.token,
+                    },
+                    data: JSON.stringify({ url: videoUrl }),
+                    timeout: 65000,
+                });
+                if (!response || response.status < 200 || response.status >= 300 || !Array.isArray(data?.formats)) {
+                    throw new Error(data?.error || t('dlPopupFormatsUnavailable', 'Format list unavailable.'));
+                }
+                applyFormatProbe(data);
+            };
+
             probeBtn.addEventListener('click', async () => {
                 probeBtn.disabled = true;
                 probeBtn.textContent = t('dlPopupFormatsLoading', 'Checking…');
                 qualityStatus.textContent = t('dlPopupFormatsLoading', 'Checking…');
                 try {
-                    const status = await MediaDLManager.check();
-                    if (!status.ok) throw new Error(t('dlPopupDownloaderOffline', 'Downloader not running'));
-                    const { response, data } = await extensionFetchJson({
-                        method: 'POST',
-                        url: MediaDLManager.baseUrl() + '/formats',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Auth-Token': status.token,
-                        },
-                        data: JSON.stringify({ url: window.location.href }),
-                        timeout: 65000,
-                    });
-                    if (!response || response.status < 200 || response.status >= 300 || !Array.isArray(data?.formats)) {
-                        throw new Error(data?.error || t('dlPopupFormatsUnavailable', 'Format list unavailable.'));
-                    }
-                    applyFormatProbe(data);
+                    await runFormatProbe(true);
                 } catch (error) {
+                    renderQualitySizeLabels(null);
                     qualityStatus.textContent = error.message || t('dlPopupFormatsUnavailable', 'Format list unavailable.');
                 } finally {
                     probeBtn.disabled = false;
@@ -2019,6 +2278,24 @@
                 };
             }
             queueMicrotask(() => { if (popup.isConnected) vidTab.focus(); });
+
+            // Populate the size labels as soon as the picker opens. The
+            // explicit button remains available for a fresh companion probe;
+            // both paths share the same per-video request and cache.
+            (async () => {
+                qualityStatus.textContent = t('dlPopupFormatsLoading', 'Checking…');
+                try {
+                    await runFormatProbe(false);
+                } catch (error) {
+                    renderQualitySizeLabels(null);
+                    if (qualityStatus.isConnected) {
+                        qualityStatus.textContent = error.message || t(
+                            'dlPopupFormatsUnavailable',
+                            'Format list unavailable.'
+                        );
+                    }
+                }
+            })();
 
             // Fetch server config to show current directory.
             (async () => {
@@ -2869,6 +3146,7 @@
             ytKitDownload,
             showDownloadProgress,
             MediaDLManager,
+            downloadFormatEstimates,
             mediaDLDownload,
             _closeDlPopup,
             _mediaDLSendDownload,
@@ -2897,6 +3175,9 @@
             createDownloadUIFeature,
             normalizeDownloadHealthSnapshot,
             summarizeFormatProbe,
+            estimateFormatSize,
+            formatByteSize,
+            createFormatEstimateStore,
             DOWNLOAD_HEALTH_SCHEMA_VERSION,
             AUTO_START_RETRY_BUDGET
         };

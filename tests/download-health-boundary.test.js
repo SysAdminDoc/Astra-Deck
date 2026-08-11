@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {
     createDownloadUIFeature,
+    formatByteSize,
     normalizeDownloadHealthSnapshot,
     summarizeFormatProbe,
     DOWNLOAD_HEALTH_SCHEMA_VERSION,
@@ -336,6 +337,56 @@ test('a probe with no video streams honors nothing but Best', () => {
     assert.equal(summarizeFormatProbe({ formats: 'nope' }).formatCount, 0);
 });
 
+test('quality size estimates use reported muxed or video-plus-audio sizes', () => {
+    const summary = summarizeFormatProbe({
+        formats: [
+            { format_id: '137', has_video: true, has_audio: false, height: 1080, filesize: 1000 },
+            { format_id: '136', has_video: true, has_audio: false, height: 720, filesize: 600 },
+            { format_id: '140', has_video: false, has_audio: true, height: 0, filesize: 200 },
+            { format_id: '18', has_video: true, has_audio: true, height: 480, filesize: 700 },
+        ],
+    });
+
+    assert.equal(summary.qualitySizes.best.bytes, 1200,
+        'Best should account for the largest separate video/audio path');
+    assert.equal(summary.qualitySizes['2160'].bytes, 1200);
+    assert.equal(summary.qualitySizes['1080'].bytes, 1200);
+    assert.equal(summary.qualitySizes['720'].bytes, 800,
+        '720p should use the largest eligible separate path');
+    assert.equal(summary.qualitySizes['480'].bytes, 700,
+        '480p should use the reported muxed stream');
+    assert.equal(summary.qualitySizes['480'].approximate, false);
+    assert.equal(formatByteSize(summary.qualitySizes.best.bytes), '1.17 KB');
+});
+
+test('quality size estimates stay unavailable when the companion reports no size', () => {
+    const summary = summarizeFormatProbe({
+        formats: [
+            { format_id: '137', has_video: true, has_audio: false, height: 1080, tbr: 4200 },
+            { format_id: '140', has_video: false, has_audio: true, height: 0, abr: 128 },
+        ],
+    });
+
+    for (const value of ['best', '2160', '1440', '1080', '720', '480']) {
+        assert.equal(summary.qualitySizes[value], null, `${value} must not be guessed from bitrate`);
+    }
+});
+
+test('format estimate cache reports companion failures as unavailable', async () => {
+    const feature = createDownloadUIFeature({
+        extensionFetchJson: async () => { throw new Error('connection refused'); },
+    });
+    feature.MediaDLManager.check = async () => ({ ok: false });
+
+    await assert.rejects(
+        feature.downloadFormatEstimates.probe('video-id', 'https://www.youtube.com/watch?v=video-id'),
+        /Downloader not running/
+    );
+    const entry = feature.downloadFormatEstimates.get('video-id');
+    assert.equal(entry.status, 'unavailable');
+    assert.equal(entry.summary, null);
+});
+
 test('the quality row probes the companion /formats endpoint', () => {
     const source = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'features', 'download-ui', 'index.js'),
@@ -350,4 +401,18 @@ test('the quality row probes the companion /formats endpoint', () => {
         'the probe must authenticate like every other companion call');
     assert.match(block, /summarizeFormatProbe\(probe\)/,
         'availability must come from the shared, tested helper');
+});
+
+test('playback stats consumes the shared per-video quality estimate cache', () => {
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'),
+        'utf8'
+    );
+    const start = source.indexOf("id: 'playbackStatsOverlay'");
+    assert.ok(start > -1, 'playbackStatsOverlay must exist');
+    const block = source.slice(start, start + 7000);
+    assert.match(block, /downloadFormatEstimates/);
+    assert.match(block, /qualitySizes/);
+    assert.match(block, /playbackStatsDataUnavailable/);
+    assert.match(block, /estimateStore\.probe/);
 });

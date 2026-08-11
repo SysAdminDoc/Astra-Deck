@@ -780,6 +780,15 @@
   "dlPopupQuality": {
     "message": "画质"
   },
+  "dlPopupQualitySizeTpl": {
+    "message": "{quality} · {size}"
+  },
+  "dlPopupQualitySizeTitleTpl": {
+    "message": "Estimated download size: {size}"
+  },
+  "dlPopupQualitySizeUnavailable": {
+    "message": "Size unavailable"
+  },
   "dlPopupReset": {
     "message": "重置"
   },
@@ -3878,6 +3887,18 @@
   },
   "playerCcTitle": {
     "message": "字幕"
+  },
+  "playbackStatsDataChecking": {
+    "message": "Checking with Astra Downloader…"
+  },
+  "playbackStatsDataQualityTpl": {
+    "message": "{quality}: {size}"
+  },
+  "playbackStatsDataUnavailable": {
+    "message": "Unavailable"
+  },
+  "playbackStatsDataUsage": {
+    "message": "Download size estimates"
   },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
