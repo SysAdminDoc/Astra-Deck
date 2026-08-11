@@ -3558,6 +3558,120 @@ const SETTINGS_PANEL_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(SETTINGS_PANEL_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
+  de: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: 'NEU',
+    STALE: 'VERALTET',
+    '{days} days since the newest rendered upload on this card': 'Seit {days} Tagen kein neuer Upload auf dieser Karte',
+    STAGED: 'VORGEMERKT',
+    'Unsubscribe staged. Undo window ends {date}.': 'Abmeldung vorgemerkt. Rückgängig bis {date}.',
+    'Unsubscribe staged for review.': 'Abmeldung zur Prüfung vorgemerkt.',
+    'All subscriptions': 'Alle Abos',
+    'Imported OPML': 'OPML importiert'
+  },
+  es: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: 'NUEVO',
+    STALE: 'ANTIGUO',
+    '{days} days since the newest rendered upload on this card': 'Han pasado {days} días desde la carga más reciente mostrada en esta tarjeta',
+    STAGED: 'PREPARADO',
+    'Unsubscribe staged. Undo window ends {date}.': 'Baja de suscripción preparada. Puedes deshacerla hasta {date}.',
+    'Unsubscribe staged for review.': 'Baja de suscripción preparada para revisión.',
+    'All subscriptions': 'Todas las suscripciones',
+    'Imported OPML': 'OPML importado'
+  },
+  fr: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: 'NOUVEAU',
+    STALE: 'ANCIEN',
+    '{days} days since the newest rendered upload on this card': '{days} jours depuis la mise en ligne la plus récente affichée sur cette carte',
+    STAGED: 'PRÉPARÉ',
+    'Unsubscribe staged. Undo window ends {date}.': 'Désabonnement préparé. Annulation possible jusqu’au {date}.',
+    'Unsubscribe staged for review.': 'Désabonnement préparé pour examen.',
+    'All subscriptions': 'Tous les abonnements',
+    'Imported OPML': 'OPML importé'
+  },
+  it: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: 'NUOVO',
+    STALE: 'VECCHIO',
+    '{days} days since the newest rendered upload on this card': '{days} giorni dall’ultimo caricamento mostrato su questa scheda',
+    STAGED: 'IN PREPARAZIONE',
+    'Unsubscribe staged. Undo window ends {date}.': 'Disiscrizione preparata. Puoi annullarla fino al {date}.',
+    'Unsubscribe staged for review.': 'Disiscrizione preparata per la revisione.',
+    'All subscriptions': 'Tutte le iscrizioni',
+    'Imported OPML': 'OPML importato'
+  },
+  pt_BR: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: 'NOVO',
+    STALE: 'ANTIGO',
+    '{days} days since the newest rendered upload on this card': '{days} dias desde o upload mais recente exibido neste cartão',
+    STAGED: 'PREPARADO',
+    'Unsubscribe staged. Undo window ends {date}.': 'Cancelamento preparado. Você pode desfazer até {date}.',
+    'Unsubscribe staged for review.': 'Cancelamento preparado para revisão.',
+    'All subscriptions': 'Todas as inscrições',
+    'Imported OPML': 'OPML importado'
+  },
+  ru: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: 'НОВОЕ',
+    STALE: 'НЕАКТУАЛЬНО',
+    '{days} days since the newest rendered upload on this card': 'Прошло дней с последней загрузки на этой карточке: {days}',
+    STAGED: 'ПОДГОТОВЛЕНО',
+    'Unsubscribe staged. Undo window ends {date}.': 'Отписка подготовлена. Отменить можно до {date}.',
+    'Unsubscribe staged for review.': 'Отписка подготовлена для проверки.',
+    'All subscriptions': 'Все подписки',
+    'Imported OPML': 'Импортированный OPML'
+  },
+  ja: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: '新着',
+    STALE: '古い',
+    '{days} days since the newest rendered upload on this card': 'このカードで最新のアップロードが表示されてから {days} 日',
+    STAGED: '準備済み',
+    'Unsubscribe staged. Undo window ends {date}.': '登録解除を準備しました。{date} まで取り消せます。',
+    'Unsubscribe staged for review.': '確認用に登録解除を準備しました。',
+    'All subscriptions': 'すべての登録チャンネル',
+    'Imported OPML': 'インポートした OPML'
+  },
+  ko: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: '새로움',
+    STALE: '오래됨',
+    '{days} days since the newest rendered upload on this card': '이 카드에 최신 업로드가 표시된 후 {days}일',
+    STAGED: '준비됨',
+    'Unsubscribe staged. Undo window ends {date}.': '구독 취소가 준비되었습니다. {date}까지 실행 취소할 수 있습니다.',
+    'Unsubscribe staged for review.': '검토할 구독 취소가 준비되었습니다.',
+    'All subscriptions': '모든 구독',
+    'Imported OPML': '가져온 OPML'
+  },
+  ar: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: 'جديد',
+    STALE: 'قديم',
+    '{days} days since the newest rendered upload on this card': '{days} يومًا منذ أحدث تحميل معروض على هذه البطاقة',
+    STAGED: 'مُجَهّز',
+    'Unsubscribe staged. Undo window ends {date}.': 'تم تجهيز إلغاء الاشتراك. يمكن التراجع حتى {date}.',
+    'Unsubscribe staged for review.': 'تم تجهيز إلغاء الاشتراك للمراجعة.',
+    'All subscriptions': 'كل الاشتراكات',
+    'Imported OPML': 'OPML مستورد'
+  },
+  zh_CN: {
+    'subscription-groups:fallback': 'subscription-groups:fallback',
+    NEW: '新',
+    STALE: '过时',
+    '{days} days since the newest rendered upload on this card': '此卡片显示的最新上传已过去 {days} 天',
+    STAGED: '已暂存',
+    'Unsubscribe staged. Undo window ends {date}.': '已暂存取消订阅，可在 {date} 前撤销。',
+    'Unsubscribe staged for review.': '已暂存取消订阅，等待审核。',
+    'All subscriptions': '所有订阅',
+    'Imported OPML': '已导入 OPML'
+  }
+};
+for (const [locale, messages] of Object.entries(SUBSCRIPTION_GROUPS_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AI_SUMMARY_TRANSLATIONS = {
   de: {
     'AI Summary': 'KI-Zusammenfassung', 'AI video summary': 'KI-Videozusammenfassung', 'Calling AI provider…': 'KI-Anbieter wird aufgerufen…',

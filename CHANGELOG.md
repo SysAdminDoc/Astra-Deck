@@ -36,6 +36,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Settings-panel footer, status, category, and recovery copy now use locale
   keys, removing the final 28 grandfathered rendered-sink literals in the
   module.
+- Subscription-group badges, stale-channel dates, staged-unsubscribe labels,
+  and persisted default group names now use locale keys, removing 9 more
+  grandfathered literals.
 - Accessibility and contrast audits now resolve the popup/side-panel CSS token
   cascade and exercise real keyboard focus order, focus traps, forced colors,
   and narrow settings reflow in a headless DOM.

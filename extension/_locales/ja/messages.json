@@ -5338,6 +5338,33 @@
   "subscriptionArchiveUnavailable": {
     "message": "The Astra Downloader companion is not available."
   },
+  "subscriptionBatchFallbackLabel": {
+    "message": "subscription-groups:fallback"
+  },
+  "subscriptionNewBadge": {
+    "message": "新着"
+  },
+  "subscriptionStaleBadge": {
+    "message": "古い"
+  },
+  "subscriptionStaleAgeTitleTpl": {
+    "message": "このカードで最新のアップロードが表示されてから {days} 日"
+  },
+  "subscriptionStagedBadge": {
+    "message": "準備済み"
+  },
+  "subscriptionStagedUndoTitleTpl": {
+    "message": "登録解除を準備しました。{date} まで取り消せます。"
+  },
+  "subscriptionStagedReviewTitle": {
+    "message": "確認用に登録解除を準備しました。"
+  },
+  "subscriptionAllSubscriptions": {
+    "message": "すべての登録チャンネル"
+  },
+  "subscriptionImportedOpml": {
+    "message": "インポートした OPML"
+  },
   "subscriptionDigestCloseAria": {
     "message": "Close group notifications digest"
   },
