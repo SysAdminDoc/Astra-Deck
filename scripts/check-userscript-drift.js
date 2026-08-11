@@ -149,7 +149,6 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     'core/selectors.js': 'intentional-extension-only',
     'core/storage-manager.js': 'intentional-extension-only',
     'core/storage.js': 'intentional-extension-only',
-    'core/trusted-html.js': 'intentional-extension-only',
     'core/url.js': 'intentional-extension-only',
     'core/video-type.js': 'intentional-extension-only',
 });

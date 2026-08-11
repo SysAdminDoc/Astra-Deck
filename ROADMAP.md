@@ -37,15 +37,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.58.6 work): `npm test` 1514/1514 pass. `npm run check` FAILS at `i18n:copy:gate` (new, from the uncommitted work — item below). Pre-existing baseline failures, already tracked, not re-logged: `audit:deps` (web-ext → addons-linter → image-size advisories; tracked P1 above) and `i18n:coverage:gate` (every locale 16 placeholder-identical keys over baseline, from fa3ebfdd). One `lint` failure during a loaded parallel run did not reproduce on a clean re-run — machine load, not a defect. All other gates pass at the working tree.
 
-- [ ] P3 — `toTrustedHTML` is a sanitization-free Trusted Types launderer exposed to all feature code
-  Category: security (hardening, no current exploit)
-  Where: `extension/core/trusted-html.js:9-33`; re-exposed via `extension/ytkit.js:1661-1673`
-  Problem: The policy's `createHTML` is `String(v)` — any string becomes TrustedHTML with zero sanitization, bypassing both the repo's own sanitizer and YouTube's TT enforcement in one step for any future caller. The safe entry points (`setTrustedHTML`/`parseTrustedHTML`) do sanitize, and zero core callers assign raw innerHTML today (verified), so this is exposure, not a live hole. Secondary: the DOMParser sanitizer leaves `<iframe src>`, `<object>`, `<embed>`, `style` attributes intact.
-  Fix: route `createHTML` through the sanitized-tree pass, or restrict `toTrustedHTML` visibility to the sanitizing wrappers; extend the sanitizer's tag strip list.
-  Acceptance: `el.innerHTML = toTrustedHTML('<img onerror=…>')` yields sanitized markup in a unit test.
-  Confidence: Verified
-  Effort: M
-
 - [ ] P3 — EXT_FETCH validates only the final redirect hop on non-credentialed requests
   Category: security (residual, low exploitability)
   Where: `extension/background.js:1210-1223`
