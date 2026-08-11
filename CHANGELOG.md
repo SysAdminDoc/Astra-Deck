@@ -8,6 +8,57 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **Video Hider filter lists can now actually be fetched, and only from a host
+  the user granted.** The remote-list URL field and Refresh button shipped
+  unable to succeed: `EXT_FETCH` validates every URL against a literal
+  allowlist, so a user-typed host was always rejected, and the userscript's
+  fixed `@connect` list blocked it too. A user-chosen destination cannot join
+  that allowlist, so it is admitted through a narrower door: the github-full
+  build declares the broad `https://*/*` optional host permission (store-safe
+  strips it, so store artifacts have no such door), the browser prompts for one
+  origin at a time, and `extension/core/remote-list-scope.js` rejects
+  non-HTTPS URLs, embedded credentials, fragments, bare address literals,
+  loopback/RFC1918/CGNAT/link-local/reserved ranges, and single-label plus
+  `.local`/`.internal`/`.lan`/`.home.arpa` names before any prompt is shown.
+  The background worker requires the exact origin grant for anything admitted
+  this way, and refuses a request for `https://*/*` itself so a page cannot
+  escalate one list into blanket web access. Statically allowlisted origins
+  keep their previous path unchanged. Fetches stay anonymous (`credentials:
+  'omit'`, no `Authorization`), `GET` only, 15 s timeout, 1 MiB cap, and a
+  fetched list can only ever supply data — never executable predicate code.
+- The persisted-domain sanitizer and both Video Hider fallback normalizers now
+  delegate to the shared scope rules instead of restating weaker copies, so a
+  settings import cannot persist a private-network filter-list URL.
+
+### Fixed
+
+- The filter-list status line now reports the stored subscription instead of
+  the text the markup shipped with. A configured, successfully fetched list
+  previously still read "No filter list is being followed." on every popup
+  open; it now distinguishes not configured, never fetched, following, and
+  last refresh failed, and reports only the host rather than echoing the
+  stored URL.
+- Filter-list refresh failures surfaced a generic message because the passed
+  error was silently discarded (`t()` resolves the key and drops the
+  fallback). Refresh now has its own message, and permission-needed and
+  private-address outcomes read as themselves.
+- **Focus rings are visible again in Windows High Contrast.** Every popup
+  focus ring is `outline: none` plus a box-shadow, which forced-colors mode
+  does not paint, and the forced-colors lane covered only toggles, switches,
+  summaries, buttons and the search field. The Schema Overview number/text/
+  colour editors, every textarea, the BYO-key credential fields, and the
+  filter-list URL field had no focus indicator at all. `npm run audit:a11y`
+  now derives the lane requirement from popup.css so a new outline-suppressing
+  focus rule fails the gate instead of shipping.
+
+### Changed
+
+- The filter-list surface is fully localized in all ten non-English locales;
+  it had shipped as English placeholders. Reviewer jargon is gone from the
+  copy — the panel no longer offers to "refresh an optional HTTPS list through
+  the reviewed extension network bridge".
+
+
 - TrustedHTML conversion now sanitizes parsed markup before policy creation,
   strips executable/embed/style surfaces and dangerous URLs, and shares the
   hardened helper with the userscript core.
