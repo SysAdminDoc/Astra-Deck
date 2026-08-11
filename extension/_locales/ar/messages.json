@@ -6836,7 +6836,7 @@
     "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
   "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
+    "message": "الخصوصية"
   },
   "welcomePresetResearcherDesc": {
     "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "إفصاح عن رعاية"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} متطابق"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "إعادة ضبط {key} إلى الإعداد الافتراضي ({value})"
+  },
+  "schemaResetAriaTpl": {
+    "message": "إعادة ضبط {key} إلى القيمة الافتراضية"
+  },
+  "whatsNewDetailTpl": {
+    "message": "تم التحديث إلى الإصدار v{version}. اعرض التغييرات."
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "تم التحديث من v{previous} إلى v{version}. اعرض التغييرات."
+  },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}."
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "فلاتر متقدمة"
+  },
+  "advancedFiltersHint": {
+    "message": "استخدم risk: أو category: أو scope: أو profile:. تجمع المسافات الفلاتر، وتطابق الفواصل البدائل."
+  },
+  "filterTogglesHelpTitle": {
+    "message": "يطابق النص الحر الأسماء والأوصاف والمفاتيح والتسميات المترجمة. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk، category:<name>، scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup، profile:store-safe|github-full|both. اجمع باستخدام المسافات (AND) والفواصل (OR داخل الحقل)."
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "لوحة تدفق البيانات"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "عرض كل مصدر API يمكن لـ Astra Deck الاتصال به"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "ملف Store-Safe"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "إخفاء مفاتيح github-full وتنظيف المفاتيح عند التصدير"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "ملف GitHub-Full"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "فتح مفاتيح github-full (مثل Cobalt ومفاتيح الذكاء الاصطناعي)"
+  },
+  "qtGroup_Privacy": {
+    "message": "الخصوصية"
   }
 }

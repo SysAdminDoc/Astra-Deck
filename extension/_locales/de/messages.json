@@ -6836,7 +6836,7 @@
     "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
   "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
+    "message": "Datenschutz"
   },
   "welcomePresetResearcherDesc": {
     "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "Sponsoring-Hinweis"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} Treffer"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "{key} auf Standard zurücksetzen ({value})"
+  },
+  "schemaResetAriaTpl": {
+    "message": "{key} auf Standardwert zurücksetzen"
+  },
+  "whatsNewDetailTpl": {
+    "message": "Auf v{version} aktualisiert. Änderungen anzeigen."
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "Auf v{version} aktualisiert (von v{previous}). Änderungen anzeigen."
+  },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}."
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "Erweiterte Filter"
+  },
+  "advancedFiltersHint": {
+    "message": "Verwende risk:, category:, scope: oder profile:. Leerzeichen kombinieren Filter; Kommas finden Alternativen."
+  },
+  "filterTogglesHelpTitle": {
+    "message": "Freitext findet Namen, Beschreibungen, Schlüssel und übersetzte Bezeichnungen. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. Mit Leerzeichen kombinieren (UND), Kommas finden Alternativen innerhalb eines Feldes."
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "Datenfluss-Panel"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Alle API-Ursprünge anzeigen, die Astra Deck kontaktieren kann"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Store-Safe-Profil"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "github-full-Schalter ausblenden und Schlüssel beim Export bereinigen"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "GitHub-Full-Profil"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "github-full-Schalter freischalten (z. B. Cobalt, KI-Schlüssel)"
+  },
+  "qtGroup_Privacy": {
+    "message": "Datenschutz"
   }
 }

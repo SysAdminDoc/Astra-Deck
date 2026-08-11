@@ -82,7 +82,7 @@ test('strict UI-copy sink changes identify a new direct literal separately from 
     assert.ok(failures.some((failure) => /strict UI-copy sink changed/.test(failure)));
 });
 
-test('download, video-notes, settings-panel, and video-hider surfaces keep rendered copy behind locale keys', () => {
+test('download, video-notes, settings-panel, video-hider, and popup surfaces keep rendered copy behind locale keys', () => {
     const repoRoot = path.join(__dirname, '..');
     const baseline = JSON.parse(fs.readFileSync(
         path.join(repoRoot, 'scripts', 'i18n-ui-copy-baseline.json'),
@@ -96,6 +96,10 @@ test('download, video-notes, settings-panel, and video-hider surfaces keep rende
         'settings-panel rendered sink copy should stay at zero after the burn-down passes');
     assert.equal(baseline.entries['extension/features/video-hider/index.js'], undefined,
         'video-hider rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/popup.js'], undefined,
+        'popup.js rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/popup.html'], undefined,
+        'popup.html rendered sink copy should stay at zero after the burn-down pass');
 
     const downloadSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
@@ -123,6 +127,18 @@ test('download, video-notes, settings-panel, and video-hider surfaces keep rende
     );
     assert.match(videoHiderSource, /t\('videoHiderSubsPauseReasonTpl'/);
     assert.match(videoHiderSource, /t\('videoHiderQuickActionsAria'/);
+    const popupSource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'popup.js'),
+        'utf8'
+    );
+    assert.match(popupSource, /t\('quickToggleAriaTpl'/);
+    assert.match(popupSource, /t\('schemaResetTitleTpl'/);
+    const popupHtmlSource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'popup.html'),
+        'utf8'
+    );
+    assert.match(popupHtmlSource, /data-i18n="advancedFiltersTitle"/);
+    assert.match(popupHtmlSource, /data-i18n-attr-title="filterTogglesHelpTitle"/);
 });
 
 test('generated pseudolocale expands copy and isolates interpolation tokens for RTL proofing', () => {

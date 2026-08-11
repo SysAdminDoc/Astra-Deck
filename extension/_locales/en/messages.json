@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "sponsor disclosure"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} matching"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "Reset {key} to default ({value})"
+  },
+  "schemaResetAriaTpl": {
+    "message": "Reset {key} to default value"
+  },
+  "whatsNewDetailTpl": {
+    "message": "Updated to v{version}. See what changed."
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "Updated to v{version} (from v{previous}). See what changed."
+  },
+  "toggleStatusTpl": {
+    "message": "{name} {state}."
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "Advanced filters"
+  },
+  "advancedFiltersHint": {
+    "message": "Use risk:, category:, scope:, or profile:. Spaces combine filters; commas match alternatives."
+  },
+  "filterTogglesHelpTitle": {
+    "message": "Free text matches names, descriptions, keys, and translated labels. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. Combine with spaces (AND) and commas (OR within field)."
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "Data-Flow Panel"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Show every API origin Astra Deck can contact"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Store-Safe Profile"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "Hide github-full toggles + scrub keys on export"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "GitHub-Full Profile"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "Unlock github-full toggles (e.g. Cobalt, AI keys)"
+  },
+  "qtGroup_Privacy": {
+    "message": "Privacy"
   }
 }

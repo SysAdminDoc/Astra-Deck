@@ -26,6 +26,7 @@
         <img class="brand-icon" src="icons/32.png" alt="" width="20" height="20">
       </div>
       <span class="brand-name" data-i18n="brandName">Astra Deck</span>
+      <!-- i18n-static: dynamic manifest-version placeholder. -->
       <span class="brand-version" id="version">v—</span>
     </div>
     <div class="app-status" id="contextState" data-i18n-attr-aria-label="contextStateAriaLabel" aria-label="Tab context" data-i18n="contextStateLocal">Local</div>
@@ -225,7 +226,7 @@
       </div>
     </section>
 
-    <section class="selector-health" id="selector-health" aria-label="Selector health snapshot" hidden>
+    <section class="selector-health" id="selector-health" data-i18n-attr-aria-label="selectorHealthTitle" aria-label="Selector health snapshot" hidden>
       <header class="selector-health-head">
         <strong class="selector-health-title" data-i18n="selectorHealthTitle">Selector health</strong>
         <span class="selector-health-total" id="selector-health-total" aria-live="polite"></span>
@@ -371,23 +372,23 @@
       <div class="section-head">
         <div class="section-head-copy">
           <span class="section-eyebrow" data-i18n="quickTogglesEyebrow">Quick toggles</span>
-          <h2 class="section-title" id="quick-toggles-title"><strong id="enabledCount">0</strong> <span id="enabledLabel" data-i18n="enabledLabel">enabled</span> · <span id="resultsState" role="status" aria-live="polite">19 controls</span></h2>
+          <h2 class="section-title" id="quick-toggles-title"><strong id="enabledCount">0</strong> <span id="enabledLabel" data-i18n="enabledLabel">enabled</span> · <span id="resultsState" role="status" aria-live="polite" data-i18n="loadingState">Loading</span></h2>
         </div>
       </div>
 
       <div class="search-row">
         <label class="sr-only" for="q" data-i18n="filterTogglesLabel">Filter quick toggles</label>
         <svg class="search-icon" aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="q" name="quick-toggle-filter" type="search" data-i18n-attr-placeholder="filterTogglesPlaceholder" placeholder="Filter controls..." data-i18n-attr-aria-label="filterTogglesLabel" aria-label="Filter quick toggles" aria-describedby="search-hint" autocomplete="off" spellcheck="false" title="Free text matches names, descriptions, keys, and translated labels. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:&lt;name&gt;, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. Combine with spaces (AND) and commas (OR within field).">
-        <button id="clearSearch" class="clear-search" type="button" data-i18n-attr-aria-label="clearFilterAria" aria-label="Clear quick toggle filter" hidden>&times;</button>
+        <input id="q" name="quick-toggle-filter" type="search" data-i18n-attr-placeholder="filterTogglesPlaceholder" placeholder="Filter controls..." data-i18n-attr-aria-label="filterTogglesLabel" aria-label="Filter quick toggles" data-i18n-attr-title="filterTogglesHelpTitle" aria-describedby="search-hint" autocomplete="off" spellcheck="false" title="Free text matches names, descriptions, keys, and translated labels. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:&lt;name&gt;, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. Combine with spaces (AND) and commas (OR within field).">
+        <button id="clearSearch" class="clear-search" type="button" data-i18n-attr-aria-label="clearFilterAria" aria-label="Clear quick toggle filter" hidden>×</button>
       </div>
       <!-- Persistent mini-DSL hint. The full grammar lives in the input's
            title attribute, but hover-only documentation is invisible to
            keyboard and touch users — this line keeps the filter fields
            discoverable and is wired to #q via aria-describedby. -->
       <details class="search-help">
-        <summary>Advanced filters</summary>
-        <p class="search-hint" id="search-hint">Use risk:, category:, scope:, or profile:. Spaces combine filters; commas match alternatives.</p>
+        <summary data-i18n="advancedFiltersTitle">Advanced filters</summary>
+        <p class="search-hint" id="search-hint" data-i18n="advancedFiltersHint">Use risk:, category:, scope:, or profile:. Spaces combine filters; commas match alternatives.</p>
       </details>
 
       <div id="toggles" class="toggles" data-i18n-attr-aria-label="quickTogglesAria" aria-label="Quick toggles"></div>

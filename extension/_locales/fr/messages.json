@@ -5051,7 +5051,7 @@
     "message": "Passez en revue chaque service que Astra Deck peut contacter."
   },
   "spq_privacyDataFlowPanel_name": {
-    "message": "Panneau des flux de données"
+    "message": "Panneau de flux de données"
   },
   "spq_removeAllShorts_desc": {
     "message": "Supprime les étagères Shorts et les liens de navigation."
@@ -6836,7 +6836,7 @@
     "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
   "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
+    "message": "Confidentialité"
   },
   "welcomePresetResearcherDesc": {
     "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "mention de parrainage"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} correspondances"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx} : {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "Réinitialiser {key} à la valeur par défaut ({value})"
+  },
+  "schemaResetAriaTpl": {
+    "message": "Réinitialiser {key} à la valeur par défaut"
+  },
+  "whatsNewDetailTpl": {
+    "message": "Mis à jour vers v{version}. Voir les changements."
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "Mis à jour vers v{version} (depuis v{previous}). Voir les changements."
+  },
+  "toggleStatusTpl": {
+    "message": "{name} : {state}."
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "Filtres avancés"
+  },
+  "advancedFiltersHint": {
+    "message": "Utilisez risk:, category:, scope: ou profile:. Les espaces combinent les filtres ; les virgules correspondent aux alternatives."
+  },
+  "filterTogglesHelpTitle": {
+    "message": "Le texte libre correspond aux noms, descriptions, clés et libellés traduits. Mini-DSL : risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. Combinez avec des espaces (ET) et des virgules (OU dans un champ)."
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "Panneau de flux de données"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Afficher toutes les origines API qu’Astra Deck peut contacter"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Profil Store-Safe"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "Masquer les options github-full et nettoyer les clés à l’export"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "Profil GitHub-Full"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "Déverrouiller les options github-full (par ex. Cobalt et les clés IA)"
+  },
+  "qtGroup_Privacy": {
+    "message": "Confidentialité"
   }
 }

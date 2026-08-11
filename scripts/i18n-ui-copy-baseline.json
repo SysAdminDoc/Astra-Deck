@@ -55,16 +55,6 @@
       "count": 2,
       "digest": "f5624ba6767b56881d967bfe8087ddc0b5c44586265ae9a599f2dfac82d4043f"
     },
-    "extension/popup.html": {
-      "count": 7,
-      "digest": "fbac5e5c153420d73fa0736099a774456f5389ae2a65b26298c65b4d071dd50b"
-    },
-    "extension/popup.js": {
-      "count": 27,
-      "digest": "0b8fbecafcbebdca580e27072026bbaf70e8e89edeb9fb1a022140fd016dcc4d",
-      "strictCount": 8,
-      "strictDigest": "72b9b8f631179b93ea06a79d854dbc436aae2c16f1ba36c60976ab73bd71e7b2"
-    },
     "extension/sidepanel.js": {
       "count": 3,
       "digest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a",

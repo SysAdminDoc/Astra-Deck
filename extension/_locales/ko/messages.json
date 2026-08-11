@@ -6836,7 +6836,7 @@
     "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
   "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
+    "message": "개인정보 보호"
   },
   "welcomePresetResearcherDesc": {
     "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "스폰서 표시"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count}개 일치"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "{key}을(를) 기본값으로 재설정({value})"
+  },
+  "schemaResetAriaTpl": {
+    "message": "{key}을(를) 기본값으로 재설정"
+  },
+  "whatsNewDetailTpl": {
+    "message": "v{version}(으)로 업데이트됨. 변경 사항 보기."
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "v{previous}에서 v{version}(으)로 업데이트됨. 변경 사항 보기."
+  },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}."
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "고급 필터"
+  },
+  "advancedFiltersHint": {
+    "message": "risk:, category:, scope: 또는 profile:을 사용하세요. 공백은 필터를 결합하고 쉼표는 대안을 찾습니다."
+  },
+  "filterTogglesHelpTitle": {
+    "message": "자유 텍스트는 이름, 설명, 키, 번역된 라벨과 일치합니다. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. 공백(AND)과 쉼표(필드 내 OR)로 결합하세요."
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "데이터 흐름 패널"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Astra Deck이 연결할 수 있는 모든 API 출처 표시"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Store-Safe 프로필"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "github-full 토글을 숨기고 내보낼 때 키 정리"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "GitHub-Full 프로필"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "github-full 토글 잠금 해제(Cobalt, AI 키 등)"
+  },
+  "qtGroup_Privacy": {
+    "message": "개인정보 보호"
   }
 }
