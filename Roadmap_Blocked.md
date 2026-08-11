@@ -58,16 +58,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: needs live-DOM verification of stable structural hooks on an actual YouTube live stream (the live-chat iframe cannot be reproduced from fixtures); changing the selectors blind risks silently breaking popout hiding for all locales.
 
-## P2 — Documentation Publication Constraint (2026-07-14)
-
-- [ ] P2 — Force DVR on live streams
-  Why: Streams with DVR disabled cannot rewind; a MAIN-world player-response interceptor can enable DVR when the expected response shape is present.
-  Evidence: DVR-chan 4.1 source; `extension/ytkit-main.js`; schema and i18n coverage gates.
-  Where: `extension/ytkit-main.js`, settings schema/defaults/locales, generated i18n coverage report, player-response fixtures.
-  Acceptance: On a DVR-disabled live fixture, the seekbar becomes scrubable; the feature is off by default and reports degradation when the player-response shape drifts.
-  Complexity: M
-  Blocker: A new off-by-default setting requires locale catalog changes, and the clean-clone i18n gate requires the tracked generated `docs/i18n-coverage.md` to change with them. This run forbids staging Markdown other than README/CHANGELOG, so the feature cannot be committed with a passing clean-clone check under the current file-hygiene constraint.
-
 ## P0 — Legal / Distribution Decision (2026-07-14)
 
 - [ ] P0 — Select and record the PyQt6/Qt companion redistribution route
@@ -342,46 +332,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   enabled and navigating between videos to verify audio continuity.
 
 ## P1 — Documentation Publication Constraint (2026-07-14)
-
-- [ ] P2 — Replay chat-density highlight chart
-  Why: Chat-activity spikes locate VOD highlights; the feature must remain optional because it observes and aggregates replay-chat activity.
-  Evidence: VOD Highlight Analyzer (SkAnon), Live Replay Comment Collector (yuyuyzl).
-  Touches: new `extension/features/` module, chat replay frame observation, canvas sparkline over progress bar, settings schema/locales.
-  Acceptance: On VODs with chat replay, an opt-in density sparkline renders above the progress bar; clicking a spike seeks there; sampling is budgeted and cancelled on navigation.
-  Complexity: L
-  Blocker: A truthful opt-in requires a new schema entry and localized setting copy. The clean-clone `npm run check` contract requires the tracked `docs/i18n-coverage.md` report to be regenerated with those locale changes, but this run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`.
-
-- [ ] P2 — Opt-in settings/blocklist sync (`storage.sync`)
-  Why: Browser-account sync must be a distinct default-off consent decision; the existing `syncSafePrefs` field only governs safe-profile export filtering and defaults on.
-  Evidence: BlockTube issue #59; `extension/ytkit.js:5528-5660`; no `storage.sync` runtime call sites.
-  Touches: storage layer, policy-profile scrub, popup settings/import recovery, settings schema/locales.
-  Acceptance: A default-off toggle syncs schema-validated, secret-scrubbed preferences and blocklists within quota, resolves newest-write-wins conflicts, and offers local Undo.
-  Complexity: L
-  Blocker: Reusing `syncSafePrefs` would silently change an existing export-policy setting; a truthful consent setting requires new localized copy and a committed `docs/i18n-coverage.md` update forbidden by this run.
-
-- [ ] P2 — Logarithmic volume curve
-  Why: A low-volume curve changes core playback semantics and must remain independently optional.
-  Evidence: Youtube Music fix volume ratio (Nemo64); Volume Curve Designer.
-  Touches: shared player/audio path, settings schema/locales, rememberVolume integration.
-  Acceptance: A toggle remaps native slider position to logarithmic gain without double-scaling volumeBoost or persisted volume.
-  Complexity: S
-  Blocker: No existing setting truthfully represents logarithmic remapping; adding the required opt-in and localized copy requires a committed `docs/i18n-coverage.md` update forbidden by this run.
-
-- [ ] P1 — Generate volatile project facts and fail documentation drift
-  Why: docs inspected on 2026-07-14 disagree with source on locale count, schema size, module count, extension surfaces, Firefox floor, themes, and bounded YouTube Music/embed behavior, which makes release and contributor guidance unreliable.
-  Evidence: `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/architecture.md`; `extension/core/settings-schema.js`; manifests; `scripts/check-versions.js`.
-  Touches: source-of-truth scripts/tests, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/architecture.md`, package check pipeline.
-  Acceptance: stale claims are corrected; generated/validated facts cover version, browser floors, locales, schema entries, peeled modules, shipped surfaces, profiles, themes, and compatibility modes; changing a source fact without its rendered documentation fails `npm run check`.
-  Complexity: M
-  Blocker: This run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`, but completion requires committed corrections in tracked `CONTRIBUTING.md` and `docs/architecture.md`; a code-only generator would fail in a clean clone while those verified stale claims remain.
-
-- [ ] P1 — Make build profiles immutable capability ceilings with a verified permission matrix
-  Why: staged artifacts are not stamped store-safe/GitHub-full and runtime settings can resolve a store-safe install to GitHub-full UI behavior; store-safe intentionally keeps the local companion, so its permissions must follow the documented capability matrix rather than an assumed blanket reduction.
-  Evidence: `build-extension.js:491-505`, `extension/core/policy-profile.js`, `extension/manifest.json`, `docs/store-permission-rationale.md:95-118`, `README.md:57,178`; Chrome permission-declaration guidance.
-  Touches: build-profile staging, schema/profile capability catalogue, manifest permission matrix, runtime flags/policy profile, onboarding/import gates, Chrome/Firefox build tests.
-  Acceptance: each artifact contains a tested immutable profile ceiling; imports and UI settings cannot exceed it; store-safe retains authenticated local-companion behavior but cannot activate any `profile: github-full` feature or host such as Cobalt/AI/Ollama; every required/optional API and host permission is generated from and tested against the documented per-profile rationale; the existing blocked side-panel permission-request verification remains separate.
-  Complexity: M
-  Blocker: The required store-safe companion matrix contradicts the tracked `docs/store-permission-rationale.md`, which currently assigns all six companion loopback hosts to GitHub-full and says store-safe excludes them. Completing the acceptance requires committing that Markdown correction, but this run explicitly forbids staging Markdown other than `README.md` and `CHANGELOG.md`.
 
 - [ ] P3 — Filmot deleted-video title restore (GitHub-full)
   Why: Restoring titles of deleted/private playlist entries is uniquely valuable for old playlists; external API so GitHub-full only.

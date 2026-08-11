@@ -4,7 +4,47 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Actionable Items
 
-- [ ] Six `Roadmap_Blocked.md` items (Force DVR, replay chat-density chart, opt-in settings sync, logarithmic volume curve, volatile-project-facts gate, immutable build-profile ceilings) cite a self-imposed "this run forbids staging Markdown other than README/CHANGELOG" constraint as their blocker. That is not an external blocker. Move them back to this file on the next pass.
+- [ ] P2 — Force DVR on live streams
+  Why: Streams with DVR disabled cannot rewind; a MAIN-world player-response interceptor can enable DVR when the expected response shape is present.
+  Evidence: DVR-chan 4.1 source; `extension/ytkit-main.js`; schema and i18n coverage gates.
+  Where: `extension/ytkit-main.js`, settings schema/defaults/locales, generated i18n coverage report, player-response fixtures.
+  Acceptance: On a DVR-disabled live fixture, the seekbar becomes scrubable; the feature is off by default and reports degradation when the player-response shape drifts.
+  Complexity: M
+
+- [ ] P2 — Replay chat-density highlight chart
+  Why: Chat-activity spikes locate VOD highlights; the feature must remain optional because it observes and aggregates replay-chat activity.
+  Evidence: VOD Highlight Analyzer (SkAnon), Live Replay Comment Collector (yuyuyzl).
+  Touches: new `extension/features/` module, chat replay frame observation, canvas sparkline over progress bar, settings schema/locales.
+  Acceptance: On VODs with chat replay, an opt-in density sparkline renders above the progress bar; clicking a spike seeks there; sampling is budgeted and cancelled on navigation.
+  Complexity: L
+
+- [ ] P2 — Opt-in settings/blocklist sync (`storage.sync`)
+  Why: Browser-account sync must be a distinct default-off consent decision; the existing `syncSafePrefs` field only governs safe-profile export filtering and defaults on.
+  Evidence: BlockTube issue #59; `extension/ytkit.js:5528-5660`; no `storage.sync` runtime call sites.
+  Touches: storage layer, policy-profile scrub, popup settings/import recovery, settings schema/locales.
+  Acceptance: A default-off toggle syncs schema-validated, secret-scrubbed preferences and blocklists within quota, resolves newest-write-wins conflicts, and offers local Undo.
+  Complexity: L
+
+- [ ] P2 — Logarithmic volume curve
+  Why: A low-volume curve changes core playback semantics and must remain independently optional.
+  Evidence: Youtube Music fix volume ratio (Nemo64); Volume Curve Designer.
+  Touches: shared player/audio path, settings schema/locales, rememberVolume integration.
+  Acceptance: A toggle remaps native slider position to logarithmic gain without double-scaling volumeBoost or persisted volume.
+  Complexity: S
+
+- [ ] P1 — Generate volatile project facts and fail documentation drift
+  Why: docs inspected on 2026-07-14 disagree with source on locale count, schema size, module count, extension surfaces, Firefox floor, themes, and bounded YouTube Music/embed behavior, which makes release and contributor guidance unreliable.
+  Evidence: `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/architecture.md`; `extension/core/settings-schema.js`; manifests; `scripts/check-versions.js`.
+  Touches: source-of-truth scripts/tests, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `docs/architecture.md`, package check pipeline.
+  Acceptance: stale claims are corrected; generated/validated facts cover version, browser floors, locales, schema entries, peeled modules, shipped surfaces, profiles, themes, and compatibility modes; changing a source fact without its rendered documentation fails `npm run check`.
+  Complexity: M
+
+- [ ] P1 — Make build profiles immutable capability ceilings with a verified permission matrix
+  Why: staged artifacts are not stamped store-safe/GitHub-full and runtime settings can resolve a store-safe install to GitHub-full UI behavior; store-safe intentionally keeps the local companion, so its permissions must follow the documented capability matrix rather than an assumed blanket reduction.
+  Evidence: `build-extension.js:491-505`, `extension/core/policy-profile.js`, `extension/manifest.json`, `docs/store-permission-rationale.md:95-118`, `README.md:57,178`; Chrome permission-declaration guidance.
+  Touches: build-profile staging, schema/profile capability catalogue, manifest permission matrix, runtime flags/policy profile, onboarding/import gates, Chrome/Firefox build tests.
+  Acceptance: each artifact contains a tested immutable profile ceiling; imports and UI settings cannot exceed it; store-safe retains authenticated local-companion behavior but cannot activate any `profile: github-full` feature or host such as Cobalt/AI/Ollama; every required/optional API and host permission is generated from and tested against the documented per-profile rationale; the existing blocked side-panel permission-request verification remains separate.
+  Complexity: M
 
 - [ ] P2 — Restore dislikes on Shorts
   Why: YouTube removed the Shorts dislike button, Return YouTube Dislike has not restored it and has not committed since 2026-05-02, and Astra's own module is watch-page and thumbnail scoped.
