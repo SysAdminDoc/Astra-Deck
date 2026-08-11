@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "Восстановлено скрытых видео: {count}"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "Открыть управление загрузкой подписок"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "Подписки приостановлены"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "Скрыто: {hidden} из {loaded} проверенных"
+  },
+  "videoHiderSubsResume": {
+    "message": "Продолжить"
+  },
+  "videoHiderSubsGuard": {
+    "message": "Защита подписок"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "Лента подписок приостановлена"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "Скрыто {percent} проверенных видео, поэтому Astra Deck приостановил автоматическую загрузку, прежде чем лента обработала новые пустые пакеты."
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "Продолжить загрузку"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "Проверить фильтры"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "Оставить на паузе"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "Проверено"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "Серия"
+  },
+  "videoHiderHiddenToast": {
+    "message": "Видео скрыто"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "Блокировка каналов отключена"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "Заблокировано: {name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} уже заблокирован"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "Восстановить скрытые видео на этой странице"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "На этой странице нет скрытых видео"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "Восстановить {count} скрытых видео на этой странице"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "На этой странице нет скрытых видео для удаления"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "Удалить {count} скрытых видео с этой страницы"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "Нет видимых видео для скрытия"
+  },
+  "videoHiderUndoAll": {
+    "message": "Отменить всё"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "Все видео восстановлены"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "Удалено скрытых видео на этой странице: {count}"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Быстрые действия Video Hider"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "Скрытые видео восстановлены"
   },

@@ -82,7 +82,7 @@ test('strict UI-copy sink changes identify a new direct literal separately from 
     assert.ok(failures.some((failure) => /strict UI-copy sink changed/.test(failure)));
 });
 
-test('download, video-notes, and settings-panel surfaces keep rendered copy behind locale keys', () => {
+test('download, video-notes, settings-panel, and video-hider surfaces keep rendered copy behind locale keys', () => {
     const repoRoot = path.join(__dirname, '..');
     const baseline = JSON.parse(fs.readFileSync(
         path.join(repoRoot, 'scripts', 'i18n-ui-copy-baseline.json'),
@@ -94,6 +94,8 @@ test('download, video-notes, and settings-panel surfaces keep rendered copy behi
         'video-notes copy debt should stay at zero after the first burn-down pass');
     assert.equal(baseline.entries['extension/features/settings-panel/index.js'], undefined,
         'settings-panel rendered sink copy should stay at zero after the burn-down passes');
+    assert.equal(baseline.entries['extension/features/video-hider/index.js'], undefined,
+        'video-hider rendered sink copy should stay at zero after the burn-down pass');
 
     const downloadSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
@@ -115,6 +117,12 @@ test('download, video-notes, and settings-panel surfaces keep rendered copy behi
     assert.match(settingsSource, /t\('videoHiderHiddenCountTpl'/);
     assert.match(settingsSource, /t\(\s*['"]videoHiderRestoreAllTpl/);
     assert.match(settingsSource, /t\(\s*['"]videoHiderOpenHiddenVideoAriaTpl/);
+    const videoHiderSource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'features', 'video-hider', 'index.js'),
+        'utf8'
+    );
+    assert.match(videoHiderSource, /t\('videoHiderSubsPauseReasonTpl'/);
+    assert.match(videoHiderSource, /t\('videoHiderQuickActionsAria'/);
 });
 
 test('generated pseudolocale expands copy and isolates interpolation tokens for RTL proofing', () => {

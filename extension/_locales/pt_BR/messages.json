@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "{count} vídeos ocultos restaurados"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "Abrir controles de carregamento das inscrições"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "Inscrições pausadas"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "{hidden} ocultos de {loaded} verificados"
+  },
+  "videoHiderSubsResume": {
+    "message": "Retomar"
+  },
+  "videoHiderSubsGuard": {
+    "message": "Proteção de inscrições"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "Feed de inscrições pausado"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "{percent} dos vídeos verificados foram ocultados, então o Astra Deck pausou o carregamento automático antes que o feed percorresse mais lotes vazios."
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "Retomar carregamento"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "Revisar filtros"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "Manter pausado"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "Verificados"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "Sequência"
+  },
+  "videoHiderHiddenToast": {
+    "message": "Vídeo ocultado"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "O bloqueio de canais está desativado"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "Bloqueado: {name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} já está bloqueado"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "Restaurar vídeos ocultos nesta página"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "Nenhum vídeo oculto nesta página"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "Restaurar {count} vídeos ocultos nesta página"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "Nenhum vídeo oculto para remover desta página"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "Remover {count} vídeos ocultos desta página"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "Nenhum vídeo visível para ocultar"
+  },
+  "videoHiderUndoAll": {
+    "message": "Desfazer tudo"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "Todos os vídeos restaurados"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "{count} vídeos ocultos removidos desta página"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Ações rápidas do Video Hider"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "Vídeos ocultos restaurados"
   },

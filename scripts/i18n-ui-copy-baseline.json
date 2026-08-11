@@ -51,12 +51,6 @@
       "strictCount": 8,
       "strictDigest": "a005f92ca3b32428cbc53eff4168905b73b29a536c9973e3633c58f92416c575"
     },
-    "extension/features/video-hider/index.js": {
-      "count": 28,
-      "digest": "87d289a5312fa087b4c6ed43009f720f3269df7be04947bb8189f0c35e84d926",
-      "strictCount": 23,
-      "strictDigest": "b5b07ed9a760074ba80e382bfa7f25fc45ba6c5ec9749c2a0c4f736ddd0a5e53"
-    },
     "extension/features/youtube-music-compat/index.js": {
       "count": 2,
       "digest": "f5624ba6767b56881d967bfe8087ddc0b5c44586265ae9a599f2dfac82d4043f"

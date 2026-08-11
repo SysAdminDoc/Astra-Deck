@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "Ripristinati {count} video nascosti"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "Apri i controlli del caricamento delle iscrizioni"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "Iscrizioni in pausa"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "{hidden} nascosti su {loaded} analizzati"
+  },
+  "videoHiderSubsResume": {
+    "message": "Riprendi"
+  },
+  "videoHiderSubsGuard": {
+    "message": "Protezione iscrizioni"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "Feed iscrizioni in pausa"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "Il {percent} dei video analizzati è stato nascosto, quindi Astra Deck ha messo in pausa il caricamento automatico prima che il feed attraversasse altri lotti vuoti."
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "Riprendi caricamento"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "Rivedi filtri"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "Mantieni in pausa"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "Analizzati"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "Serie"
+  },
+  "videoHiderHiddenToast": {
+    "message": "Video nascosto"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "Il blocco dei canali è disabilitato"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "Bloccato: {name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} è già bloccato"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "Ripristina i video nascosti in questa pagina"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "Nessun video nascosto in questa pagina"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "Ripristina {count} video nascosti in questa pagina"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "Nessun video nascosto da rimuovere da questa pagina"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "Rimuovi {count} video nascosti da questa pagina"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "Nessun video visibile da nascondere"
+  },
+  "videoHiderUndoAll": {
+    "message": "Annulla tutto"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "Tutti i video ripristinati"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "Rimossi {count} video nascosti da questa pagina"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Azioni rapide di Video Hider"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "Video nascosti ripristinati"
   },
