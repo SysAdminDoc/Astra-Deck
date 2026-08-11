@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "Включить {channel} в {group}"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": " (лимит: {count})"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "В этой группе нет видимых видео"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "Воспроизведение видео из {group}: {count}{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "Группы подписок экспортированы"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "Группы подписок экспортированы в CSV"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "Группы подписок экспортированы в OPML"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "Ошибка импорта: {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "отображённых подписок"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "Отмечено прочитанными: {count} {channels} для {group}"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "Сначала включите теги ИИ для групп подписок."
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "Локальный суммаризатор недоступен; включите пробную функцию Chrome AI."
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "Создание тегов для «{group}»…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "Подходящие карточки ещё не отображены — прокрутите ленту и повторите попытку."
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "Ошибка создания тегов: {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "Суммаризатор не вернул подходящих тегов."
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "Теги добавлены к «{group}»: {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "Предыдущие группы подписок восстановлены"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

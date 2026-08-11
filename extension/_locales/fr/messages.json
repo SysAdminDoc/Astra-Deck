@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "Inclure {channel} dans {group}"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": " (limite : {count})"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "Aucune vidéo visible dans ce groupe"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "Lecture de {count} vidéos de {group}{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "Groupes d’abonnements exportés"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "Groupes d’abonnements exportés au format CSV"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "Groupes d’abonnements exportés au format OPML"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "Échec de l’importation : {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "abonnements affichés"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "{count} {channels} marquées comme lues pour {group}"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "Activez d’abord les tags IA pour les groupes d’abonnements."
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "Le résumeur local est indisponible ; activez l’essai d’origine IA de Chrome."
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "Génération des tags pour « {group} »…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "Aucune carte correspondante affichée ; faites défiler le flux et réessayez."
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "Échec de la génération des tags : {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "Le résumeur n’a renvoyé aucun tag utilisable."
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "Tags ajoutés à « {group} » : {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "Groupes d’abonnements précédents restaurés"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

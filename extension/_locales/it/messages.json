@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "Includi {channel} in {group}"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": " (limite: {count})"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "Nessun video visibile in questo gruppo"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "Riproduzione di {count} video da {group}{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "Gruppi di iscrizioni esportati"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "Gruppi di iscrizioni esportati come CSV"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "Gruppi di iscrizioni esportati come OPML"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "Importazione non riuscita: {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "iscrizioni visualizzate"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "{count} {channels} segnati come letti per {group}"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "Attiva prima i tag IA per i gruppi di iscrizioni."
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "Il riepilogatore locale non è disponibile; abilita la prova dell’origine IA di Chrome."
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "Generazione dei tag per \"{group}\"…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "Nessuna scheda corrispondente visualizzata; scorri il feed e riprova."
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "Generazione dei tag non riuscita: {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "Il riepilogatore non ha restituito tag utilizzabili."
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "Tag aggiunti a \"{group}\": {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "Gruppi di iscrizioni precedenti ripristinati"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

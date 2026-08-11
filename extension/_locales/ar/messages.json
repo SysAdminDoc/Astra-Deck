@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "تضمين {channel} في {group}"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": " (بحد أقصى {count})"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "لا توجد فيديوهات ظاهرة في هذه المجموعة"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "تشغيل {count} من الفيديوهات من {group}{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "تم تصدير مجموعات الاشتراكات"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "تم تصدير مجموعات الاشتراكات بصيغة CSV"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "تم تصدير مجموعات الاشتراكات بصيغة OPML"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "فشل الاستيراد: {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "الاشتراكات المعروضة"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "تم وضع علامة مقروء على {count} {channels} في {group}"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "فعّل علامات الذكاء الاصطناعي لمجموعات الاشتراكات أولًا."
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "الملخّص المحلي غير متاح؛ فعّل الإصدار التجريبي لذكاء Chrome الاصطناعي."
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "جارٍ إنشاء العلامات لـ \"{group}\"…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "لم تُعرض بطاقات مطابقة بعد — مرّر الخلاصة وحاول مجددًا."
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "فشل إنشاء العلامات: {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "لم يُرجع الملخّص أي علامات قابلة للاستخدام."
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "تم وضع علامات على \"{group}\": {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "تمت استعادة مجموعات الاشتراكات السابقة"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

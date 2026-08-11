@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "Include {channel} in {group}"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": " (capped at {count})"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "No videos visible in this group"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "Playing {count} videos from {group}{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "Exported subscription groups"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "Exported subscription groups as CSV"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "Exported subscription groups as OPML"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "Import failed: {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "rendered subscriptions"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "Marked {count} {channels} read for {group}"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "Enable \"AI Tags For Subscription Groups\" first."
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "Local Summarizer not available; enable the Chrome AI origin trial."
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "Generating tags for \"{group}\"…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "No matching cards rendered yet — scroll the feed and try again."
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "Tag generation failed: {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "Summarizer returned no usable tags."
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "Tagged \"{group}\": {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "Restored previous subscription groups"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

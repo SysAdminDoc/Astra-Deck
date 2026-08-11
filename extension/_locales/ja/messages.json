@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "{channel} を {group} に含める"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": "（上限 {count}）"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "このグループに表示できる動画はありません"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "{group} の {count} 本の動画を再生中{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "登録チャンネルのグループをエクスポートしました"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "登録チャンネルのグループを CSV でエクスポートしました"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "登録チャンネルのグループを OPML でエクスポートしました"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "インポートに失敗しました: {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "表示された登録チャンネル"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "{group} の {count}{channels}を既読にしました"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "先に登録チャンネルのグループの AI タグを有効にしてください。"
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "ローカル要約機能を利用できません。Chrome AI のオリジントライアルを有効にしてください。"
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "「{group}」のタグを生成中…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "一致するカードはまだ表示されていません。フィードをスクロールして再試行してください。"
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "タグの生成に失敗しました: {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "要約機能から使用できるタグが返されませんでした。"
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "「{group}」にタグを付けました: {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "以前の登録チャンネルのグループを復元しました"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "Incluir {channel} en {group}"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": " (límite: {count})"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "No hay videos visibles en este grupo"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "Reproduciendo {count} videos de {group}{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "Grupos de suscripciones exportados"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "Grupos de suscripciones exportados como CSV"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "Grupos de suscripciones exportados como OPML"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "Error de importación: {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "suscripciones mostradas"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "{count} {channels} marcados como leídos para {group}"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "Activa primero las etiquetas de IA para grupos de suscripciones."
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "El resumidor local no está disponible; activa la prueba de origen de IA de Chrome."
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "Generando etiquetas para \"{group}\"…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "Aún no se han mostrado tarjetas coincidentes; desplázate por el feed e inténtalo de nuevo."
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "Error al generar etiquetas: {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "El resumidor no devolvió etiquetas utilizables."
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "Etiquetado \"{group}\": {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "Grupos de suscripciones anteriores restaurados"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "{channel} in {group} einschließen"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": " (begrenzt auf {count})"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "Keine Videos in dieser Gruppe sichtbar"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "{count} Videos aus {group} werden abgespielt{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "Abogruppen exportiert"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "Abogruppen als CSV exportiert"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "Abogruppen als OPML exportiert"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "Import fehlgeschlagen: {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "angezeigte Abos"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "{count} {channels} für {group} als gelesen markiert"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "Aktiviere zuerst „KI-Tags für Abogruppen“."
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "Lokale Zusammenfassung nicht verfügbar; aktiviere den Chrome-AI-Origin-Test."
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "Tags für „{group}“ werden erzeugt…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "Noch keine passenden Karten gerendert — scrolle im Feed und versuche es erneut."
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "Tag-Erstellung fehlgeschlagen: {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "Die Zusammenfassung lieferte keine verwendbaren Tags."
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "„{group}“ getaggt: {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "Vorherige Abogruppen wiederhergestellt"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
