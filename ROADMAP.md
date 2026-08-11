@@ -61,16 +61,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified
   Effort: M
 
-- [ ] P2 — The v4.58.3/4 persistence fixes and CC control are covered by source-text pins only
-  Category: testing
-  Where: `tests/features/settings-panel.test.js:178-227`, `tests/features/player-dock.test.js:31-45`
-  Problem: The headline fixes are asserted via regex presence (`/applyExternalSettingsUpdate/`, `/quick-settings-rollback/`, `doesNotMatch(/appState\.settings\[fid\] = newVal/)`). None dispatches a toggle, fakes a failing `settingsManager.save()`, or asserts rollback restores state — they pass against any implementation containing the strings. No test drives `_syncCcButton` or the CC click delegation. This is the repo's documented recurring defect class ("a lazy source pin is not a pin"). Only the video-hider quick-hide-injection test (tests/features/video-hider.test.js:191-249) is behavioral.
-  Evidence: tests read and run (they pass; the pinned code paths never execute).
-  Fix: use the `tests/helpers/monolith.js` slice-and-run harness: drive the change handler with a fake save resolving `{ok:false, settings}` and assert checkbox/appState roll back; drive `_syncCcButton` against a fake native button (aria-pressed both ways). Verify each new test fails against the pre-fix code shape.
-  Acceptance: the new tests fail when the rollback call or `_syncCcButton` state mirror is removed (bait-verify), pass at HEAD.
-  Confidence: Verified
-  Effort: M
-
 - [ ] P3 — `toTrustedHTML` is a sanitization-free Trusted Types launderer exposed to all feature code
   Category: security (hardening, no current exploit)
   Where: `extension/core/trusted-html.js:9-33`; re-exposed via `extension/ytkit.js:1661-1673`
