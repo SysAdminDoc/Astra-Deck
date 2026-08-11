@@ -7396,5 +7396,17 @@
   },
   "videoHiderSubscriptionLoadLimiterDesc": {
     "message": "Endloses Laden in den Abonnements stoppen, wenn zu viele aufeinanderfolgende Stapel vollständig ausgeblendet sind."
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "Aufmerksamkeit erforderlich"
+  },
+  "settingsImportReadFailed": {
+    "message": "Importdatei konnte nicht gelesen werden"
+  },
+  "selectorHealthExportAria": {
+    "message": "Selektor-Gesundheitsbericht als JSON exportieren"
   }
 }

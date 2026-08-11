@@ -4941,6 +4941,71 @@ const VIDEO_HIDER_FALLBACK_RUNTIME_TRANSLATIONS = {
 
 for (const [locale, messages] of Object.entries(VIDEO_HIDER_FALLBACK_RUNTIME_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const SETTINGS_FALLBACK_RUNTIME_TRANSLATIONS = {
+  de: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': 'Aufmerksamkeit erforderlich',
+    'Could not read import file': 'Importdatei konnte nicht gelesen werden',
+    'Export selector health JSON': 'Selektor-Gesundheitsbericht als JSON exportieren'
+  },
+  es: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': 'Se necesita atención',
+    'Could not read import file': 'No se pudo leer el archivo de importación',
+    'Export selector health JSON': 'Exportar el estado de los selectores como JSON'
+  },
+  fr: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': 'Attention requise',
+    'Could not read import file': 'Impossible de lire le fichier d’importation',
+    'Export selector health JSON': 'Exporter la santé des sélecteurs en JSON'
+  },
+  it: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': 'Richiede attenzione',
+    'Could not read import file': 'Impossibile leggere il file di importazione',
+    'Export selector health JSON': 'Esporta lo stato dei selettori in JSON'
+  },
+  pt_BR: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': 'Requer atenção',
+    'Could not read import file': 'Não foi possível ler o arquivo de importação',
+    'Export selector health JSON': 'Exportar a integridade dos seletores como JSON'
+  },
+  ru: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': 'Требует внимания',
+    'Could not read import file': 'Не удалось прочитать файл импорта',
+    'Export selector health JSON': 'Экспортировать состояние селекторов в JSON'
+  },
+  ja: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': '要対応',
+    'Could not read import file': 'インポートファイルを読み込めませんでした',
+    'Export selector health JSON': 'セレクターの状態を JSON でエクスポート'
+  },
+  ko: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': '주의 필요',
+    'Could not read import file': '가져오기 파일을 읽을 수 없습니다',
+    'Export selector health JSON': '선택기 상태를 JSON으로 내보내기'
+  },
+  ar: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': 'يحتاج إلى انتباه',
+    'Could not read import file': 'تعذّر قراءة ملف الاستيراد',
+    'Export selector health JSON': 'تصدير صحة المحددات بصيغة JSON'
+  },
+  zh_CN: {
+    'Astra Downloader': 'Astra Downloader',
+    'Needs attention': '需要注意',
+    'Could not read import file': '无法读取导入文件',
+    'Export selector health JSON': '导出选择器健康状态 JSON'
+  }
+};
+
+for (const [locale, messages] of Object.entries(SETTINGS_FALLBACK_RUNTIME_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AUDIO_TRACK_TRANSLATIONS = {
   de: {
     'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Wählen Sie Ihre bevorzugte Audiosprache über die Player-Brücke aus, ohne die YouTube-Einstellungen zu öffnen oder anzuklicken.',

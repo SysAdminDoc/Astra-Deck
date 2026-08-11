@@ -7396,5 +7396,17 @@
   },
   "videoHiderSubscriptionLoadLimiterDesc": {
     "message": "連続する複数のバッチが完全に非表示になったとき、登録チャンネルの無限読み込みを停止します。"
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "要対応"
+  },
+  "settingsImportReadFailed": {
+    "message": "インポートファイルを読み込めませんでした"
+  },
+  "selectorHealthExportAria": {
+    "message": "セレクターの状態を JSON でエクスポート"
   }
 }

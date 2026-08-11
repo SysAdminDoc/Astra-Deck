@@ -57,6 +57,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The monolith Video Hider fallback now localizes video lists, channel actions,
   keyword rules, thresholds, duration controls, and subscription-load settings,
   removing 102 grandfathered literals from the ratchet.
+- The monolith settings-panel fallback now localizes reset controls, downloader
+  health/setup actions, selector-health controls, import recovery, and search
+  state copy, removing 56 more grandfathered literals from the ratchet.
 - Subscription-group badges, stale-channel dates, staged-unsubscribe labels,
   and persisted default group names now use locale keys, removing 9 more
   grandfathered literals.

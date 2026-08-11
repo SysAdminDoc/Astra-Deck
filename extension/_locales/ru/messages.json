@@ -7396,5 +7396,17 @@
   },
   "videoHiderSubscriptionLoadLimiterDesc": {
     "message": "Останавливать бесконечную загрузку в подписках, если слишком много последовательных пакетов полностью скрыты."
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "Требует внимания"
+  },
+  "settingsImportReadFailed": {
+    "message": "Не удалось прочитать файл импорта"
+  },
+  "selectorHealthExportAria": {
+    "message": "Экспортировать состояние селекторов в JSON"
   }
 }
