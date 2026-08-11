@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "{count}チャンネルをブロック"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "有効な YouTube 動画 URL または 11 文字の動画 ID を入力してください。"
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "非表示動画を追加"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "YouTube URL または動画 ID を貼り付けて、非表示リストに直接追加します。"
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "動画を非表示"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "非表示動画 {videoId} を YouTube で開く"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "非表示動画 {videoId} のプレビューサムネイル"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "プレビューを利用できません"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "動画 ID"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "復元するまでおすすめから非表示にします。復元時に例外を追加すると、自動ルールで表示したままにできます。"
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "YouTube で開く"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "復元して許可"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "非表示動画 {videoId} を復元して許可例外を追加"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "リストから削除"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "非表示動画 {videoId} を例外を追加せずリストから削除"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "すべての非表示動画を復元して許可（{count}）"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "非表示リストだけを消去（{count}）"
+  },
+  "videoHiderRemovePage": {
+    "message": "このページの非表示動画を削除"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "許可する動画を追加"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "YouTube URL または動画 ID を貼り付けると、フィルターに一致しても表示できます。"
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "動画を許可"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "許可した動画 {videoId} を YouTube で開く"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "許可した動画 {videoId} のプレビューサムネイル"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "手動復元で許可されています。例外がある間、自動フィルターはこの動画をスキップします。"
+  },
+  "videoHiderRemoveException": {
+    "message": "例外を削除"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "許可した動画 {videoId} の例外を削除"
+  },
+  "videoHiderHideAgain": {
+    "message": "再び非表示"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "許可した動画 {videoId} を再び非表示"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "許可した動画を消去（{count}）"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

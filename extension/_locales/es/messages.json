@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "{count} canales bloqueados"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "Introduce una URL de video de YouTube válida o un ID de video de 11 caracteres."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "Añadir video oculto"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "Pega una URL de YouTube o un ID de video para añadirlo directamente a la lista de ocultos."
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "Ocultar video"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "Abrir el video oculto {videoId} en YouTube"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "Miniatura de vista previa del video oculto {videoId}"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "Vista previa no disponible"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "ID del video"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "Oculto de las recomendaciones hasta que lo restaures. Restaurarlo puede añadir una excepción para que las reglas automáticas lo dejen visible."
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "Abrir en YouTube"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "Restaurar y permitir"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "Restaurar el video oculto {videoId} y añadir una excepción de video permitido"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "Quitar de la lista"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "Quitar el video oculto {videoId} de la lista sin añadir una excepción"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "Restaurar y permitir todos los videos ocultos ({count})"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "Borrar solo la lista de ocultos ({count})"
+  },
+  "videoHiderRemovePage": {
+    "message": "Quitar videos ocultos de esta página"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "Añadir video permitido"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "Pega una URL de YouTube o un ID de video para mantenerlo visible aunque coincida con un filtro."
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "Permitir video"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "Abrir el video permitido {videoId} en YouTube"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "Miniatura de vista previa del video permitido {videoId}"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "Permitido mediante restauración manual. Los filtros automáticos omiten este video mientras exista la excepción."
+  },
+  "videoHiderRemoveException": {
+    "message": "Quitar excepción"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "Quitar la excepción del video permitido {videoId}"
+  },
+  "videoHiderHideAgain": {
+    "message": "Ocultar de nuevo"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "Ocultar de nuevo el video permitido {videoId}"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "Borrar videos permitidos ({count})"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

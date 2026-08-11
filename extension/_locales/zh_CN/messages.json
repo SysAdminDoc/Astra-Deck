@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "已屏蔽 {count} 个频道"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "请输入有效的 YouTube 视频网址或 11 位视频 ID。"
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "添加隐藏视频"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "粘贴 YouTube 网址或视频 ID，直接添加到隐藏列表。"
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "隐藏视频"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "在 YouTube 中打开隐藏视频 {videoId}"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "隐藏视频 {videoId} 的预览缩略图"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "预览不可用"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "视频 ID"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "在恢复前不会出现在推荐中。恢复时可以添加例外，让自动规则保持其可见。"
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "在 YouTube 中打开"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "恢复并允许"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "恢复隐藏视频 {videoId} 并添加允许视频例外"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "从列表中移除"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "从隐藏列表中移除视频 {videoId}，但不添加例外"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "恢复并允许所有隐藏视频（{count}）"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "仅清空隐藏列表（{count}）"
+  },
+  "videoHiderRemovePage": {
+    "message": "移除本页隐藏视频"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "添加允许的视频"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "粘贴 YouTube 网址或视频 ID，即使匹配筛选规则也保持可见。"
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "允许视频"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "在 YouTube 中打开允许的视频 {videoId}"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "允许的视频 {videoId} 的预览缩略图"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "通过手动恢复允许。例外存在时，自动筛选器会跳过此视频。"
+  },
+  "videoHiderRemoveException": {
+    "message": "移除例外"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "移除允许视频 {videoId} 的例外"
+  },
+  "videoHiderHideAgain": {
+    "message": "再次隐藏"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "再次隐藏允许的视频 {videoId}"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "清空允许的视频（{count}）"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

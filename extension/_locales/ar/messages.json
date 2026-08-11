@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "{count} قناة محظورة"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "أدخل عنوان فيديو صالحًا على YouTube أو معرّف فيديو من 11 حرفًا."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "إضافة فيديو مخفي"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "الصق عنوان YouTube أو معرّف الفيديو لإضافته مباشرة إلى قائمة المخفي."
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "إخفاء الفيديو"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "فتح الفيديو المخفي {videoId} على YouTube"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "صورة معاينة للفيديو المخفي {videoId}"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "المعاينة غير متاحة"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "معرّف الفيديو"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "مخفي من الاقتراحات حتى تستعيده. قد تضيف الاستعادة استثناءً لإبقائه ظاهرًا أمام القواعد التلقائية."
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "فتح على YouTube"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "استعادة وسماح"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "استعادة الفيديو المخفي {videoId} وإضافة استثناء للفيديو المسموح"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "إزالة من القائمة"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "إزالة الفيديو المخفي {videoId} من القائمة دون إضافة استثناء"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "استعادة والسماح بكل الفيديوهات المخفية ({count})"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "مسح قائمة المخفي فقط ({count})"
+  },
+  "videoHiderRemovePage": {
+    "message": "إزالة الفيديوهات المخفية في هذه الصفحة"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "إضافة فيديو مسموح"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "الصق عنوان YouTube أو معرّف الفيديو لإبقائه ظاهرًا حتى عند تطابق أحد الفلاتر."
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "السماح بالفيديو"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "فتح الفيديو المسموح {videoId} على YouTube"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "صورة معاينة للفيديو المسموح {videoId}"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "مسموح به بعد الاستعادة اليدوية. تتجاوز الفلاتر التلقائية هذا الفيديو ما دام الاستثناء قائمًا."
+  },
+  "videoHiderRemoveException": {
+    "message": "إزالة الاستثناء"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "إزالة استثناء الفيديو المسموح {videoId}"
+  },
+  "videoHiderHideAgain": {
+    "message": "إخفاء مجددًا"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "إخفاء الفيديو المسموح {videoId} مجددًا"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "مسح الفيديوهات المسموح بها ({count})"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

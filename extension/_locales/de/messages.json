@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "{count} Kanäle blockiert"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "Gib eine gültige YouTube-Video-URL oder eine 11-stellige Video-ID ein."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "Ausgeblendetes Video hinzufügen"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "Füge eine YouTube-URL oder Video-ID ein, um es direkt zur Ausblendliste hinzuzufügen."
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "Video ausblenden"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "Ausgeblendetes Video {videoId} auf YouTube öffnen"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "Vorschaubild für ausgeblendetes Video {videoId}"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "Vorschau nicht verfügbar"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "Video-ID"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "Bis zur Wiederherstellung aus Empfehlungen ausgeblendet. Eine Wiederherstellung kann eine Ausnahme hinzufügen, damit automatische Regeln es sichtbar lassen."
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "Auf YouTube öffnen"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "Wiederherstellen und erlauben"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "Ausgeblendetes Video {videoId} wiederherstellen und als Ausnahme erlauben"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "Aus Liste entfernen"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "Ausgeblendetes Video {videoId} ohne Ausnahme aus der Liste entfernen"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "Alle ausgeblendeten Videos wiederherstellen und erlauben ({count})"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "Nur Ausblendliste leeren ({count})"
+  },
+  "videoHiderRemovePage": {
+    "message": "Ausgeblendete Videos auf dieser Seite entfernen"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "Erlaubtes Video hinzufügen"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "Füge eine YouTube-URL oder Video-ID ein, damit das Video trotz eines passenden Filters sichtbar bleibt."
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "Video erlauben"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "Erlaubtes Video {videoId} auf YouTube öffnen"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "Vorschaubild für erlaubtes Video {videoId}"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "Durch manuelle Wiederherstellung erlaubt. Automatische Filter überspringen dieses Video, solange die Ausnahme besteht."
+  },
+  "videoHiderRemoveException": {
+    "message": "Ausnahme entfernen"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "Ausnahme für erlaubtes Video {videoId} entfernen"
+  },
+  "videoHiderHideAgain": {
+    "message": "Wieder ausblenden"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "Erlaubtes Video {videoId} wieder ausblenden"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "Erlaubte Videos leeren ({count})"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

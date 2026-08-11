@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "{count} channels blocked"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "Enter a valid YouTube video URL or 11-character video ID."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "Add Hidden Video"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "Paste a YouTube URL or video ID to add it directly to the hidden list."
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=..."
+  },
+  "videoHiderHideVideoButton": {
+    "message": "Hide Video"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "Open hidden video {videoId} on YouTube"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "Preview thumbnail for hidden video {videoId}"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "Preview unavailable"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "Video ID"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "Hidden from recommendations until you restore it. Restoring can add an exception so automatic rules leave it visible."
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "Open on YouTube"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "Restore & Allow"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "Restore hidden video {videoId} and add an allowed-video exception"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "Remove From List"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "Remove hidden video {videoId} from the hidden list without adding an exception"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "Restore & Allow All Hidden Videos ({count})"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "Clear Hidden List Only ({count})"
+  },
+  "videoHiderRemovePage": {
+    "message": "Remove Hidden Videos On This Page"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "Add Allowed Video"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "Paste a YouTube URL or video ID to keep it visible even when a filter still matches."
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "Allow Video"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "Open allowed video {videoId} on YouTube"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "Preview thumbnail for allowed video {videoId}"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "Allowed by manual restore. Automatic filters skip this video while the exception remains."
+  },
+  "videoHiderRemoveException": {
+    "message": "Remove Exception"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "Remove allowed-video exception for {videoId}"
+  },
+  "videoHiderHideAgain": {
+    "message": "Hide Again"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "Hide allowed video {videoId} again"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "Clear Allowed Videos ({count})"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

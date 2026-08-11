@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "{count} chaînes bloquées"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "Saisissez une URL vidéo YouTube valide ou un identifiant vidéo de 11 caractères."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "Ajouter une vidéo masquée"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "Collez une URL YouTube ou un identifiant vidéo pour l’ajouter directement à la liste masquée."
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=ID_VIDEO"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "Masquer la vidéo"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "Ouvrir la vidéo masquée {videoId} sur YouTube"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "Miniature de prévisualisation de la vidéo masquée {videoId}"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "Aperçu indisponible"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "Identifiant vidéo"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "Masquée des recommandations jusqu’à sa restauration. La restauration peut ajouter une exception pour que les règles automatiques la laissent visible."
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "Ouvrir sur YouTube"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "Restaurer et autoriser"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "Restaurer la vidéo masquée {videoId} et ajouter une exception d’autorisation"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "Retirer de la liste"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "Retirer la vidéo masquée {videoId} de la liste sans ajouter d’exception"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "Restaurer et autoriser toutes les vidéos masquées ({count})"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "Vider uniquement la liste masquée ({count})"
+  },
+  "videoHiderRemovePage": {
+    "message": "Retirer les vidéos masquées de cette page"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "Ajouter une vidéo autorisée"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "Collez une URL YouTube ou un identifiant vidéo pour la garder visible même si un filtre correspond."
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "Autoriser la vidéo"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "Ouvrir la vidéo autorisée {videoId} sur YouTube"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "Miniature de prévisualisation de la vidéo autorisée {videoId}"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "Autorisée par restauration manuelle. Les filtres automatiques ignorent cette vidéo tant que l’exception existe."
+  },
+  "videoHiderRemoveException": {
+    "message": "Supprimer l’exception"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "Supprimer l’exception de la vidéo autorisée {videoId}"
+  },
+  "videoHiderHideAgain": {
+    "message": "Masquer à nouveau"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "Masquer à nouveau la vidéo autorisée {videoId}"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "Vider les vidéos autorisées ({count})"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

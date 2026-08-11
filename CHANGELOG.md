@@ -26,6 +26,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and removes 34 grandfathered literals from the ratchet baseline.
 - A settings-panel shell pass localizes the Video Hider pane navigation and
   status summary, removing 15 more grandfathered literals from the ratchet.
+- The Video Hider list pass localizes hidden/allowed video forms, recovery
+  actions, summaries, thumbnails, and accessible labels, removing 32 more
+  grandfathered literals.
 - Accessibility and contrast audits now resolve the popup/side-panel CSS token
   cascade and exercise real keyboard focus order, focus traps, forced colors,
   and narrow settings reflow in a headless DOM.

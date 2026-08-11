@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "채널 {count}개 차단"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "유효한 YouTube 동영상 URL 또는 11자리 동영상 ID를 입력하세요."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "숨긴 동영상 추가"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "YouTube URL 또는 동영상 ID를 붙여 넣어 숨김 목록에 바로 추가하세요."
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "동영상 숨기기"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "숨긴 동영상 {videoId}을(를) YouTube에서 열기"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "숨긴 동영상 {videoId} 미리보기 썸네일"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "미리보기를 사용할 수 없음"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "동영상 ID"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "복원할 때까지 추천에서 숨깁니다. 복원하면 예외를 추가하여 자동 규칙에서도 표시할 수 있습니다."
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "YouTube에서 열기"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "복원 및 허용"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "숨긴 동영상 {videoId}을(를) 복원하고 허용 예외 추가"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "목록에서 삭제"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "예외를 추가하지 않고 숨긴 동영상 {videoId}을(를) 목록에서 삭제"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "숨긴 동영상 모두 복원 및 허용({count})"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "숨김 목록만 지우기({count})"
+  },
+  "videoHiderRemovePage": {
+    "message": "이 페이지의 숨긴 동영상 삭제"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "허용할 동영상 추가"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "필터에 계속 일치해도 표시하려면 YouTube URL 또는 동영상 ID를 붙여 넣으세요."
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "동영상 허용"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "허용한 동영상 {videoId}을(를) YouTube에서 열기"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "허용한 동영상 {videoId} 미리보기 썸네일"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "수동 복원으로 허용됨. 예외가 유지되는 동안 자동 필터가 이 동영상을 건너뜁니다."
+  },
+  "videoHiderRemoveException": {
+    "message": "예외 삭제"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "허용한 동영상 {videoId}의 예외 삭제"
+  },
+  "videoHiderHideAgain": {
+    "message": "다시 숨기기"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "허용한 동영상 {videoId} 다시 숨기기"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "허용한 동영상 지우기({count})"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

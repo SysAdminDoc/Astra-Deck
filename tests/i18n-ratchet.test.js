@@ -92,8 +92,8 @@ test('download, video-notes, and settings-panel surfaces keep rendered copy behi
         'download UI copy debt should stay at zero after the first burn-down pass');
     assert.equal(baseline.entries['extension/features/video-notes/index.js'], undefined,
         'video-notes copy debt should stay at zero after the first burn-down pass');
-    assert.equal(baseline.entries['extension/features/settings-panel/index.js'].count, 119,
-        'settings-panel shell pass should remove 15 grandfathered literals');
+    assert.equal(baseline.entries['extension/features/settings-panel/index.js'].count, 87,
+        'settings-panel list pass should remove 47 grandfathered literals');
 
     const downloadSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
@@ -113,6 +113,8 @@ test('download, video-notes, and settings-panel surfaces keep rendered copy behi
     );
     assert.match(settingsSource, /t\('settingsPanelContentControls'/);
     assert.match(settingsSource, /t\('videoHiderHiddenCountTpl'/);
+    assert.match(settingsSource, /t\(\s*['"]videoHiderRestoreAllTpl/);
+    assert.match(settingsSource, /t\(\s*['"]videoHiderOpenHiddenVideoAriaTpl/);
 });
 
 test('generated pseudolocale expands copy and isolates interpolation tokens for RTL proofing', () => {
