@@ -3484,10 +3484,10 @@
     "message": "视频循环按钮"
   },
   "feature_videoNotes_desc": {
-    "message": "为当前视频保存本地笔记、导出笔记存档，并将存储限制在最近编辑的 1000 个视频。"
+    "message": "为当前视频保存本地笔记，导出笔记存档，并将存储限制为最近编辑的 1000 个视频。"
   },
   "feature_videoNotes_name": {
-    "message": "逐视频笔记"
+    "message": "视频笔记"
   },
   "feature_videoResolutionBadge_desc": {
     "message": "根据可用画质在视频缩略图上显示 4K、HD 或 SD 徽章"
@@ -6089,58 +6089,58 @@
     "message": "Delete"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "删除此视频的笔记"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "此视频没有已保存的笔记。"
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "导出笔记"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "导出所有视频笔记"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "没有可导出的视频笔记。"
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "已导出 {count} 条视频笔记"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "本地笔记"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "视频 ID 不可用"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "此视频的笔记"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "为此视频写笔记…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "每个视频的笔记"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "视频笔记已删除"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "视频笔记已恢复"
   },
   "videoNotesSaveFailed": {
     "message": "无法保存 — 存储空间已满或不可用。"
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "已保存到本地。"
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "已保存于 {videoId}"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "正在保存…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "视频笔记"
   },
   "watchLaterNotInMenu": {
     "message": "在此菜单中未找到“稍后观看”。请改用该卡片自带的保存操作。"

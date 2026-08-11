@@ -15,6 +15,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Video Notes now uses the shared locale catalog in both the modular runtime and
+  inline fallback, with translations across all supported locales.
 - Transcript playback cues and local transcript-search excerpts now use named
   CSS Custom Highlights for range paint, with reversible line and mark
   fallbacks on older browsers.

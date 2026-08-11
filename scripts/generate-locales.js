@@ -2022,6 +2022,144 @@ const SPONSORED_FILTER_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(SPONSORED_FILTER_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// ── Video Notes ──
+// Keep the inline fallback and the separately loaded feature module aligned
+// with the catalog. These strings are also used by the userscript fallback,
+// so they must be translated before the locale artifacts are regenerated.
+const VIDEO_NOTES_TRANSLATIONS = {
+  de: {
+    'Per-Video Notes': 'Notizen pro Video',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': 'Speichert eine lokale Notiz für das aktuelle Video, exportiert das Notizenarchiv und begrenzt den Speicher auf die 1.000 zuletzt bearbeiteten Videos.',
+    'Delete the note for this video': 'Notiz für dieses Video löschen',
+    'No note saved for this video.': 'Keine Notiz für dieses Video gespeichert.',
+    'Export Notes': 'Notizen exportieren', 'Export all video notes': 'Alle Videonotizen exportieren',
+    'No video notes to export.': 'Keine Videonotizen zum Exportieren.', 'Exported {count} video notes': '{count} Videonotizen exportiert',
+    'Local Notes': 'Lokale Notizen', 'Video ID unavailable': 'Video-ID nicht verfügbar',
+    'Notes for this video': 'Notizen für dieses Video', 'Write notes for this video…': 'Notizen für dieses Video schreiben…',
+    'Per-video notes': 'Notizen pro Video', 'Removed video note': 'Videonotiz entfernt', 'Video note restored': 'Videonotiz wiederhergestellt',
+    'Saved locally.': 'Lokal gespeichert.', 'Saved under {videoId}': 'Gespeichert unter {videoId}', 'Saving…': 'Wird gespeichert…',
+    'Video Notes': 'Videonotizen'
+  },
+  es: {
+    'Per-Video Notes': 'Notas por vídeo',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': 'Guarda una nota local para el vídeo actual, exporta el archivo de notas y limita el almacenamiento a los 1000 vídeos editados más recientemente.',
+    'Delete the note for this video': 'Eliminar la nota de este vídeo',
+    'No note saved for this video.': 'No hay ninguna nota guardada para este vídeo.',
+    'Export Notes': 'Exportar notas', 'Export all video notes': 'Exportar todas las notas de vídeo',
+    'No video notes to export.': 'No hay notas de vídeo para exportar.', 'Exported {count} video notes': 'Se exportaron {count} notas de vídeo',
+    'Local Notes': 'Notas locales', 'Video ID unavailable': 'ID del vídeo no disponible',
+    'Notes for this video': 'Notas de este vídeo', 'Write notes for this video…': 'Escribe notas para este vídeo…',
+    'Per-video notes': 'Notas por vídeo', 'Removed video note': 'Nota de vídeo eliminada', 'Video note restored': 'Nota de vídeo restaurada',
+    'Saved locally.': 'Guardado localmente.', 'Saved under {videoId}': 'Guardado en {videoId}', 'Saving…': 'Guardando…',
+    'Video Notes': 'Notas de vídeo'
+  },
+  ru: {
+    'Per-Video Notes': 'Заметки для видео',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': 'Хранит локальную заметку для текущего видео, экспортирует архив заметок и ограничивает хранилище 1000 недавно изменённых видео.',
+    'Delete the note for this video': 'Удалить заметку для этого видео',
+    'No note saved for this video.': 'Для этого видео нет сохранённой заметки.',
+    'Export Notes': 'Экспортировать заметки', 'Export all video notes': 'Экспортировать все заметки видео',
+    'No video notes to export.': 'Нет заметок видео для экспорта.', 'Exported {count} video notes': 'Экспортировано заметок видео: {count}',
+    'Local Notes': 'Локальные заметки', 'Video ID unavailable': 'ID видео недоступен',
+    'Notes for this video': 'Заметки для этого видео', 'Write notes for this video…': 'Запишите заметки для этого видео…',
+    'Per-video notes': 'Заметки для каждого видео', 'Removed video note': 'Заметка видео удалена', 'Video note restored': 'Заметка видео восстановлена',
+    'Saved locally.': 'Сохранено локально.', 'Saved under {videoId}': 'Сохранено для {videoId}', 'Saving…': 'Сохранение…',
+    'Video Notes': 'Заметки видео'
+  },
+  fr: {
+    'Per-Video Notes': 'Notes par vidéo',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': 'Conserve une note locale pour la vidéo actuelle, exporte l’archive de notes et limite le stockage aux 1 000 vidéos modifiées le plus récemment.',
+    'Delete the note for this video': 'Supprimer la note de cette vidéo',
+    'No note saved for this video.': 'Aucune note enregistrée pour cette vidéo.',
+    'Export Notes': 'Exporter les notes', 'Export all video notes': 'Exporter toutes les notes vidéo',
+    'No video notes to export.': 'Aucune note vidéo à exporter.', 'Exported {count} video notes': '{count} notes vidéo exportées',
+    'Local Notes': 'Notes locales', 'Video ID unavailable': 'ID vidéo indisponible',
+    'Notes for this video': 'Notes pour cette vidéo', 'Write notes for this video…': 'Écrivez des notes pour cette vidéo…',
+    'Per-video notes': 'Notes par vidéo', 'Removed video note': 'Note vidéo supprimée', 'Video note restored': 'Note vidéo restaurée',
+    'Saved locally.': 'Enregistré localement.', 'Saved under {videoId}': 'Enregistré sous {videoId}', 'Saving…': 'Enregistrement…',
+    'Video Notes': 'Notes vidéo'
+  },
+  it: {
+    'Per-Video Notes': 'Note per video',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': 'Conserva una nota locale per il video corrente, esporta l’archivio delle note e limita l’archivio ai 1000 video modificati più di recente.',
+    'Delete the note for this video': 'Elimina la nota per questo video',
+    'No note saved for this video.': 'Nessuna nota salvata per questo video.',
+    'Export Notes': 'Esporta note', 'Export all video notes': 'Esporta tutte le note dei video',
+    'No video notes to export.': 'Nessuna nota video da esportare.', 'Exported {count} video notes': 'Esportate {count} note video',
+    'Local Notes': 'Note locali', 'Video ID unavailable': 'ID video non disponibile',
+    'Notes for this video': 'Note per questo video', 'Write notes for this video…': 'Scrivi note per questo video…',
+    'Per-video notes': 'Note per video', 'Removed video note': 'Nota video rimossa', 'Video note restored': 'Nota video ripristinata',
+    'Saved locally.': 'Salvato localmente.', 'Saved under {videoId}': 'Salvato in {videoId}', 'Saving…': 'Salvataggio…',
+    'Video Notes': 'Note video'
+  },
+  pt_BR: {
+    'Per-Video Notes': 'Notas por vídeo',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': 'Mantenha uma nota local para o vídeo atual, exporte o arquivo de notas e limite o armazenamento aos 1.000 vídeos editados mais recentemente.',
+    'Delete the note for this video': 'Excluir a nota deste vídeo',
+    'No note saved for this video.': 'Nenhuma nota salva para este vídeo.',
+    'Export Notes': 'Exportar notas', 'Export all video notes': 'Exportar todas as notas de vídeo',
+    'No video notes to export.': 'Nenhuma nota de vídeo para exportar.', 'Exported {count} video notes': '{count} notas de vídeo exportadas',
+    'Local Notes': 'Notas locais', 'Video ID unavailable': 'ID do vídeo indisponível',
+    'Notes for this video': 'Notas para este vídeo', 'Write notes for this video…': 'Escreva notas para este vídeo…',
+    'Per-video notes': 'Notas por vídeo', 'Removed video note': 'Nota de vídeo removida', 'Video note restored': 'Nota de vídeo restaurada',
+    'Saved locally.': 'Salvo localmente.', 'Saved under {videoId}': 'Salvo em {videoId}', 'Saving…': 'Salvando…',
+    'Video Notes': 'Notas de vídeo'
+  },
+  ja: {
+    'Per-Video Notes': '動画ごとのメモ',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': '現在の動画のローカルメモを保存し、メモのアーカイブをエクスポートし、保存領域を最近編集した動画1,000件に制限します。',
+    'Delete the note for this video': 'この動画のメモを削除',
+    'No note saved for this video.': 'この動画に保存されたメモはありません。',
+    'Export Notes': 'メモをエクスポート', 'Export all video notes': 'すべての動画メモをエクスポート',
+    'No video notes to export.': 'エクスポートする動画メモはありません。', 'Exported {count} video notes': '{count}件の動画メモをエクスポートしました',
+    'Local Notes': 'ローカルメモ', 'Video ID unavailable': '動画IDを取得できません',
+    'Notes for this video': 'この動画のメモ', 'Write notes for this video…': 'この動画のメモを書く…',
+    'Per-video notes': '動画ごとのメモ', 'Removed video note': '動画メモを削除しました', 'Video note restored': '動画メモを復元しました',
+    'Saved locally.': 'ローカルに保存しました。', 'Saved under {videoId}': '{videoId} に保存', 'Saving…': '保存中…',
+    'Video Notes': '動画メモ'
+  },
+  ko: {
+    'Per-Video Notes': '동영상별 메모',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': '현재 동영상의 로컬 메모를 보관하고 메모 보관함을 내보내며 저장 공간을 최근 편집한 동영상 1,000개로 제한합니다.',
+    'Delete the note for this video': '이 동영상의 메모 삭제',
+    'No note saved for this video.': '이 동영상에 저장된 메모가 없습니다.',
+    'Export Notes': '메모 내보내기', 'Export all video notes': '모든 동영상 메모 내보내기',
+    'No video notes to export.': '내보낼 동영상 메모가 없습니다.', 'Exported {count} video notes': '동영상 메모 {count}개를 내보냈습니다',
+    'Local Notes': '로컬 메모', 'Video ID unavailable': '동영상 ID를 사용할 수 없음',
+    'Notes for this video': '이 동영상의 메모', 'Write notes for this video…': '이 동영상의 메모 작성…',
+    'Per-video notes': '동영상별 메모', 'Removed video note': '동영상 메모 삭제됨', 'Video note restored': '동영상 메모 복원됨',
+    'Saved locally.': '로컬에 저장됨.', 'Saved under {videoId}': '{videoId}에 저장됨', 'Saving…': '저장 중…',
+    'Video Notes': '동영상 메모'
+  },
+  ar: {
+    'Per-Video Notes': 'ملاحظات لكل فيديو',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': 'احتفظ بملاحظة محلية للفيديو الحالي، وصدّر أرشيف الملاحظات، وحدد التخزين بـ1000 فيديو من الأحدث تعديلًا.',
+    'Delete the note for this video': 'حذف ملاحظة هذا الفيديو',
+    'No note saved for this video.': 'لا توجد ملاحظة محفوظة لهذا الفيديو.',
+    'Export Notes': 'تصدير الملاحظات', 'Export all video notes': 'تصدير جميع ملاحظات الفيديو',
+    'No video notes to export.': 'لا توجد ملاحظات فيديو لتصديرها.', 'Exported {count} video notes': 'تم تصدير {count} من ملاحظات الفيديو',
+    'Local Notes': 'ملاحظات محلية', 'Video ID unavailable': 'معرّف الفيديو غير متاح',
+    'Notes for this video': 'ملاحظات هذا الفيديو', 'Write notes for this video…': 'اكتب ملاحظات لهذا الفيديو…',
+    'Per-video notes': 'ملاحظات لكل فيديو', 'Removed video note': 'تمت إزالة ملاحظة الفيديو', 'Video note restored': 'تمت استعادة ملاحظة الفيديو',
+    'Saved locally.': 'تم الحفظ محليًا.', 'Saved under {videoId}': 'تم الحفظ تحت {videoId}', 'Saving…': 'جارٍ الحفظ…',
+    'Video Notes': 'ملاحظات الفيديو'
+  },
+  zh_CN: {
+    'Per-Video Notes': '视频笔记',
+    'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.': '为当前视频保存本地笔记，导出笔记存档，并将存储限制为最近编辑的 1000 个视频。',
+    'Delete the note for this video': '删除此视频的笔记',
+    'No note saved for this video.': '此视频没有已保存的笔记。',
+    'Export Notes': '导出笔记', 'Export all video notes': '导出所有视频笔记',
+    'No video notes to export.': '没有可导出的视频笔记。', 'Exported {count} video notes': '已导出 {count} 条视频笔记',
+    'Local Notes': '本地笔记', 'Video ID unavailable': '视频 ID 不可用',
+    'Notes for this video': '此视频的笔记', 'Write notes for this video…': '为此视频写笔记…',
+    'Per-video notes': '每个视频的笔记', 'Removed video note': '视频笔记已删除', 'Video note restored': '视频笔记已恢复',
+    'Saved locally.': '已保存到本地。', 'Saved under {videoId}': '已保存于 {videoId}', 'Saving…': '正在保存…',
+    'Video Notes': '视频笔记'
+  }
+};
+for (const [locale, messages] of Object.entries(VIDEO_NOTES_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AI_SUMMARY_TRANSLATIONS = {
   de: {
     'AI Summary': 'KI-Zusammenfassung', 'AI video summary': 'KI-Videozusammenfassung', 'Calling AI provider…': 'KI-Anbieter wird aufgerufen…',

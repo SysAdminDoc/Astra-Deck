@@ -26,8 +26,8 @@
 
         return {
             id: 'videoNotes',
-            name: 'Per-Video Notes',
-            description: 'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.',
+            name: t('feature_videoNotes_name', 'Per-Video Notes'),
+            description: t('feature_videoNotes_desc', 'Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos.'),
             group: 'Watch Page',
             icon: 'file-text',
             pages: [PageTypes.WATCH],

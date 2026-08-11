@@ -12361,7 +12361,10 @@ test('remaining in-page operations route visible copy through the shared locale 
     };
 
     const requiredKeys = {
-        videoNotes: ['videoNotesTitle', 'videoNotesPlaceholder', 'videoNotesExportedTpl'],
+        videoNotes: [
+            'feature_videoNotes_name', 'feature_videoNotes_desc',
+            'videoNotesTitle', 'videoNotesPlaceholder', 'videoNotesExportedTpl'
+        ],
         subscriptions: ['subscriptionDigestTitle', 'subscriptionHealthTitle', 'subscriptionHealthStagedCountTpl'],
         downloads: ['dlInstallSetupTitle', 'dlHealthRegionAria', 'dlHistoryTitle', 'dlStreamLinksTitle'],
         settings: ['settingsResetGroupTitle', 'settingsSearchNoMatches', 'settingsInsightsAria', 'settingsDlActionsAria'],

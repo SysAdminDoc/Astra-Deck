@@ -3484,7 +3484,7 @@
     "message": "زر تكرار الفيديو"
   },
   "feature_videoNotes_desc": {
-    "message": "احتفظ بملاحظة محلية للفيديو الحالي، صدّر أرشيف الملاحظات، وحدّد المخزن بآخر 1000 فيديو تم تحريرها مؤخراً."
+    "message": "احتفظ بملاحظة محلية للفيديو الحالي، وصدّر أرشيف الملاحظات، وحدد التخزين بـ1000 فيديو من الأحدث تعديلًا."
   },
   "feature_videoNotes_name": {
     "message": "ملاحظات لكل فيديو"
@@ -6089,58 +6089,58 @@
     "message": "Delete"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "حذف ملاحظة هذا الفيديو"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "لا توجد ملاحظة محفوظة لهذا الفيديو."
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "تصدير الملاحظات"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "تصدير جميع ملاحظات الفيديو"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "لا توجد ملاحظات فيديو لتصديرها."
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "تم تصدير {count} من ملاحظات الفيديو"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "ملاحظات محلية"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "معرّف الفيديو غير متاح"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "ملاحظات هذا الفيديو"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "اكتب ملاحظات لهذا الفيديو…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "ملاحظات لكل فيديو"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "تمت إزالة ملاحظة الفيديو"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "تمت استعادة ملاحظة الفيديو"
   },
   "videoNotesSaveFailed": {
     "message": "تعذر الحفظ — التخزين ممتلئ أو غير متاح."
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "تم الحفظ محليًا."
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "تم الحفظ تحت {videoId}"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "جارٍ الحفظ…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "ملاحظات الفيديو"
   },
   "watchLaterNotInMenu": {
     "message": "تعذر العثور على «المشاهدة لاحقًا» في هذه القائمة. جرّب إجراء الحفظ الأصلي في هذه البطاقة."

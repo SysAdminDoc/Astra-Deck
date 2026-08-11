@@ -3484,7 +3484,7 @@
     "message": "동영상 반복 버튼"
   },
   "feature_videoNotes_desc": {
-    "message": "현재 동영상에 대한 로컬 메모를 유지하고, 메모 아카이브를 내보내며, 최근 편집된 1000개 동영상으로 저장소를 제한합니다."
+    "message": "현재 동영상의 로컬 메모를 보관하고 메모 보관함을 내보내며 저장 공간을 최근 편집한 동영상 1,000개로 제한합니다."
   },
   "feature_videoNotes_name": {
     "message": "동영상별 메모"
@@ -6089,58 +6089,58 @@
     "message": "삭제"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "이 동영상의 메모 삭제"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "이 동영상에 저장된 메모가 없습니다."
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "메모 내보내기"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "모든 동영상 메모 내보내기"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "내보낼 동영상 메모가 없습니다."
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "동영상 메모 {count}개를 내보냈습니다"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "로컬 메모"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "동영상 ID를 사용할 수 없음"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "이 동영상의 메모"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "이 동영상의 메모 작성…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "동영상별 메모"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "동영상 메모 삭제됨"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "동영상 메모 복원됨"
   },
   "videoNotesSaveFailed": {
     "message": "저장하지 못했습니다 — 저장공간이 가득 차거나 사용할 수 없습니다."
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "로컬에 저장됨."
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "{videoId}에 저장됨"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "저장 중…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "동영상 메모"
   },
   "watchLaterNotInMenu": {
     "message": "이 메뉴에서 ‘나중에 볼 동영상’을 찾지 못했습니다. 이 카드의 기본 저장 기능을 사용하세요."

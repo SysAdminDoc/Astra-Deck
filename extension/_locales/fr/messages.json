@@ -3484,7 +3484,7 @@
     "message": "Bouton boucle vidéo"
   },
   "feature_videoNotes_desc": {
-    "message": "Garder une note locale pour la vidéo en cours, exporter l'archive de notes, et limiter le stockage aux 1000 vidéos les plus récemment modifiées."
+    "message": "Conserve une note locale pour la vidéo actuelle, exporte l’archive de notes et limite le stockage aux 1 000 vidéos modifiées le plus récemment."
   },
   "feature_videoNotes_name": {
     "message": "Notes par vidéo"
@@ -6089,58 +6089,58 @@
     "message": "Supprimer"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "Supprimer la note de cette vidéo"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "Aucune note enregistrée pour cette vidéo."
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "Exporter les notes"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "Exporter toutes les notes vidéo"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "Aucune note vidéo à exporter."
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "{count} notes vidéo exportées"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "Notes locales"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "ID vidéo indisponible"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "Notes pour cette vidéo"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "Écrivez des notes pour cette vidéo…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "Notes par vidéo"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "Note vidéo supprimée"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "Note vidéo restaurée"
   },
   "videoNotesSaveFailed": {
     "message": "Enregistrement impossible — stockage plein ou indisponible."
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "Enregistré localement."
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "Enregistré sous {videoId}"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "Enregistrement…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "Notes vidéo"
   },
   "watchLaterNotInMenu": {
     "message": "« À regarder plus tard » est introuvable dans ce menu. Utilisez l’action Enregistrer native de cette carte."

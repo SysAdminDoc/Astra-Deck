@@ -3484,10 +3484,10 @@
     "message": "Videoschleife-Schaltfläche"
   },
   "feature_videoNotes_desc": {
-    "message": "Lokale Notiz für das aktuelle Video führen, Notizarchiv exportieren und den Speicher auf die 1000 zuletzt bearbeiteten Videos begrenzen."
+    "message": "Speichert eine lokale Notiz für das aktuelle Video, exportiert das Notizenarchiv und begrenzt den Speicher auf die 1.000 zuletzt bearbeiteten Videos."
   },
   "feature_videoNotes_name": {
-    "message": "Pro-Video-Notizen"
+    "message": "Notizen pro Video"
   },
   "feature_videoResolutionBadge_desc": {
     "message": "Zeigt ein 4K-, HD- oder SD-Abzeichen auf Video-Thumbnails basierend auf der verfügbaren Qualität"
@@ -6089,58 +6089,58 @@
     "message": "Löschen"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "Notiz für dieses Video löschen"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "Keine Notiz für dieses Video gespeichert."
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "Notizen exportieren"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "Alle Videonotizen exportieren"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "Keine Videonotizen zum Exportieren."
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "{count} Videonotizen exportiert"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "Lokale Notizen"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "Video-ID nicht verfügbar"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "Notizen für dieses Video"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "Notizen für dieses Video schreiben…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "Notizen pro Video"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "Videonotiz entfernt"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "Videonotiz wiederhergestellt"
   },
   "videoNotesSaveFailed": {
     "message": "Speichern fehlgeschlagen — Speicher voll oder nicht verfügbar."
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "Lokal gespeichert."
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "Gespeichert unter {videoId}"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "Wird gespeichert…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "Videonotizen"
   },
   "watchLaterNotInMenu": {
     "message": "„Später ansehen“ wurde in diesem Menü nicht gefunden. Nutze die native Speichern-Aktion auf dieser Karte."

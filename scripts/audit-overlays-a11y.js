@@ -395,14 +395,14 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     // Video notes.
     add('Video notes panel is labelled and status is live',
         ytkit.includes("this._container.setAttribute('role', 'region')") &&
-        ytkit.includes("this._container.setAttribute('aria-label', 'Per-video notes')") &&
+        ytkit.includes("this._container.setAttribute('aria-label', t('videoNotesRegionAria', 'Per-video notes'))") &&
         ytkit.includes("status.setAttribute('role', 'status')") &&
         ytkit.includes("status.setAttribute('aria-live', 'polite')"),
         'Video notes must be a labelled region with a polite status');
     add('Video notes controls have names, focus-visible, and target size',
-        ytkit.includes("textarea.setAttribute('aria-label', 'Notes for this video')") &&
-        ytkit.includes("exportBtn.setAttribute('aria-label', 'Export all video notes')") &&
-        ytkit.includes("deleteBtn.setAttribute('aria-label', 'Delete the note for this video')") &&
+        ytkit.includes("textarea.setAttribute('aria-label', t('videoNotesInputAria', 'Notes for this video'))") &&
+        ytkit.includes("exportBtn.setAttribute('aria-label', t('videoNotesExportAria', 'Export all video notes'))") &&
+        ytkit.includes("deleteBtn.setAttribute('aria-label', t('videoNotesDeleteAria', 'Delete the note for this video'))") &&
         ytkit.includes('.ytkit-video-notes-actions button:focus-visible') &&
         ytkit.includes('.ytkit-video-notes-input:focus,.ytkit-video-notes-input:focus-visible') &&
         hasMinTarget(ytkit, '.ytkit-video-notes-actions button') &&

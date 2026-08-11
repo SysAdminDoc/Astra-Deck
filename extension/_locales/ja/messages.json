@@ -3484,10 +3484,10 @@
     "message": "動画ループボタン"
   },
   "feature_videoNotes_desc": {
-    "message": "現在の動画のローカルメモを保持し、メモアーカイブをエクスポート。最近編集された 1000 動画分を上限に保存。"
+    "message": "現在の動画のローカルメモを保存し、メモのアーカイブをエクスポートし、保存領域を最近編集した動画1,000件に制限します。"
   },
   "feature_videoNotes_name": {
-    "message": "動画別メモ"
+    "message": "動画ごとのメモ"
   },
   "feature_videoResolutionBadge_desc": {
     "message": "利用可能な画質に基づき、動画サムネイルに 4K、HD、SD バッジを表示"
@@ -6089,58 +6089,58 @@
     "message": "削除"
   },
   "videoNotesDeleteAria": {
-    "message": "Delete the note for this video"
+    "message": "この動画のメモを削除"
   },
   "videoNotesEmpty": {
-    "message": "No note saved for this video."
+    "message": "この動画に保存されたメモはありません。"
   },
   "videoNotesExport": {
-    "message": "Export Notes"
+    "message": "メモをエクスポート"
   },
   "videoNotesExportAria": {
-    "message": "Export all video notes"
+    "message": "すべての動画メモをエクスポート"
   },
   "videoNotesExportEmpty": {
-    "message": "No video notes to export."
+    "message": "エクスポートする動画メモはありません。"
   },
   "videoNotesExportedTpl": {
-    "message": "Exported {count} video notes"
+    "message": "{count}件の動画メモをエクスポートしました"
   },
   "videoNotesEyebrow": {
-    "message": "Local Notes"
+    "message": "ローカルメモ"
   },
   "videoNotesIdUnavailable": {
-    "message": "Video ID unavailable"
+    "message": "動画IDを取得できません"
   },
   "videoNotesInputAria": {
-    "message": "Notes for this video"
+    "message": "この動画のメモ"
   },
   "videoNotesPlaceholder": {
-    "message": "Write notes for this video…"
+    "message": "この動画のメモを書く…"
   },
   "videoNotesRegionAria": {
-    "message": "Per-video notes"
+    "message": "動画ごとのメモ"
   },
   "videoNotesRemoved": {
-    "message": "Removed video note"
+    "message": "動画メモを削除しました"
   },
   "videoNotesRestored": {
-    "message": "Video note restored"
+    "message": "動画メモを復元しました"
   },
   "videoNotesSaveFailed": {
     "message": "保存できません — ストレージが一杯であるか利用できません。"
   },
   "videoNotesSaved": {
-    "message": "Saved locally."
+    "message": "ローカルに保存しました。"
   },
   "videoNotesSavedUnderTpl": {
-    "message": "Saved under {videoId}"
+    "message": "{videoId} に保存"
   },
   "videoNotesSaving": {
-    "message": "Saving…"
+    "message": "保存中…"
   },
   "videoNotesTitle": {
-    "message": "Video Notes"
+    "message": "動画メモ"
   },
   "watchLaterNotInMenu": {
     "message": "このメニューで「後で見る」を見つけられませんでした。このカードの標準の保存操作をお試しください。"
