@@ -45,6 +45,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Download quality chips and the playback stats overlay now share a bounded
   companion format probe, showing reported per-quality sizes and an explicit
   unavailable state when the companion cannot provide a trustworthy size.
+- Profile-split artifacts now carry an immutable runtime ceiling; store-safe
+  builds retain the authenticated Astra Downloader handoff while excluding
+  GitHub-full AI, Ollama, and Cobalt capabilities, including on settings import.
 
 ---
 

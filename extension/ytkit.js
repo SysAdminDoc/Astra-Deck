@@ -4182,6 +4182,11 @@ return response;
             next.githubFullProfile = !!next.githubFullProfile;
             next.safeStoreProfile = next.githubFullProfile ? false : next.safeStoreProfile !== false;
             if (!next.safeStoreProfile && !next.githubFullProfile) next.safeStoreProfile = true;
+            const artifactProfile = this._getPolicyProfile()?.getArtifactProfile?.();
+            if (artifactProfile === 'store-safe') {
+                next.githubFullProfile = false;
+                next.safeStoreProfile = true;
+            }
             next.privacyDataFlowPanel = !!next.privacyDataFlowPanel;
             next.advancedLocalPredicate = !!next.advancedLocalPredicate;
             next.advancedLocalPredicateCode = typeof next.advancedLocalPredicateCode === 'string'
@@ -4779,6 +4784,11 @@ return response;
         next.githubFullProfile = !!next.githubFullProfile;
         next.safeStoreProfile = next.githubFullProfile ? false : next.safeStoreProfile !== false;
         if (!next.safeStoreProfile && !next.githubFullProfile) next.safeStoreProfile = true;
+        const artifactProfile = settingsManager?._getPolicyProfile?.()?.getArtifactProfile?.();
+        if (artifactProfile === 'store-safe') {
+            next.githubFullProfile = false;
+            next.safeStoreProfile = true;
+        }
         next.privacyDataFlowPanel = !!next.privacyDataFlowPanel;
         next.advancedLocalPredicate = !!next.advancedLocalPredicate;
         next.advancedLocalPredicateCode = typeof next.advancedLocalPredicateCode === 'string'

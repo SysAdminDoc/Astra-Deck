@@ -42,6 +42,7 @@ const CRX_KEY_MODES = Object.freeze(['external', 'ephemeral']);
 const CRX_SIGNING_PROVENANCE_NAME = 'crx-signing-provenance.json';
 
 const BUILD_PROFILE_IDS = Object.freeze(['store-safe', 'github-full']);
+const BUILD_PROFILE_MANIFEST_KEY = 'x-ytkit-build-profile';
 const BUILD_PROFILES = Object.freeze({
     'store-safe': Object.freeze({
         id: 'store-safe',
@@ -448,21 +449,9 @@ function shouldUseRuntimeOptionalHostPermission(entry, profile) {
 }
 
 // API permissions that exist solely to serve a `profile: 'github-full'` origin.
-//
-// The profile split rewrote host_permissions, optional_host_permissions, CSP and
-// web_accessible_resources but never `permissions`, so store-safe shipped two of
-// Chrome's most review-sensitive permissions while stripping the only origins
-// that consume them. The artifact asked for capability it could not exercise,
-// and docs/store-permission-rationale.md justified both to reviewers on that
-// false premise.
-//
-// Each value is the consumer chain, so a future reader can re-verify rather than
-// trust this list. Both terminate at the loopback companion, whose origin is
-// `profile: 'github-full'` in extension/core/data-flow.js.
-const GITHUB_FULL_ONLY_API_PERMISSIONS = Object.freeze({
-    cookies: 'EXT_COOKIE_LIST (background.js) -> browserCookies (ytkit.js) -> features/download-ui sends the YouTube jar to the companion',
-    nativeMessaging: "background.js connectNative('com.astra.deck.downloader') — companion token bootstrap"
-});
+// The authenticated local companion is deliberately available in both build
+// profiles, so cookies and nativeMessaging remain usable in store-safe artifacts.
+const GITHUB_FULL_ONLY_API_PERMISSIONS = Object.freeze({});
 
 function getManifestProfilePermissions(profile, declaredPermissions) {
     const normalized = normalizeBuildProfile(profile);
@@ -621,6 +610,11 @@ function getManifestWebAccessibleResources(browser = 'chromium', repoRoot = __di
 
 function patchManifestForBuildProfile(profileManifest, profile, browser = 'chromium') {
     const normalized = normalizeBuildProfile(profile);
+    // The staged artifact carries its immutable capability ceiling in a
+    // manifest extension key. Runtime policy reads this synchronously through
+    // runtime.getManifest(), so imported settings cannot opt a store-safe
+    // artifact into github-full behavior.
+    profileManifest[BUILD_PROFILE_MANIFEST_KEY] = normalized;
     profileManifest.permissions = getManifestProfilePermissions(normalized, profileManifest.permissions);
     profileManifest.host_permissions = getManifestProfileHostPermissions(normalized);
     const optionalHostPermissions = getManifestProfileOptionalHostPermissions(normalized);
@@ -891,6 +885,7 @@ if (IS_CLI) {
 
 module.exports = {
     BUILD_PROFILE_IDS,
+    BUILD_PROFILE_MANIFEST_KEY,
     BUILD_PROFILES,
     buildExtensionPagesCsp,
     copyDir,

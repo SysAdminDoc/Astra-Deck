@@ -84,7 +84,9 @@
             'autoDownloadOnVisit', 'vlcMpvHandoff'
         ],
         credentialsPolicy: 'local-loopback',
-        profile: 'github-full',
+        // The companion remains available in store-safe builds. The profile
+        // ceiling blocks AI/Cobalt/Ollama, not the authenticated local handoff.
+        profile: 'store-safe',
         hostGrant: 'required',
         riskBand: 'local-companion'
     }) : null;

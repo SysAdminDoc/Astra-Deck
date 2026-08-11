@@ -75,7 +75,7 @@ data-consent permissions cover the documented collection categories).
 
 A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then **[click here to install](https://github.com/SysAdminDoc/Astra-Deck/raw/refs/heads/main/YTKit.user.js)**.
 
-> SharedAudio remains userscript-only. Extension downloads use Astra Downloader first; the GitHub-full extension artifact can also expose the optional Cobalt fallback when the local companion is offline.
+> SharedAudio remains userscript-only. Both extension profiles can use Astra Downloader; the GitHub-full artifact can also expose the optional Cobalt fallback when the local companion is offline.
 
 ### Astra Downloader Companion Setup
 
@@ -189,7 +189,7 @@ are not browser extension install steps.
 | Auto-Download on Visit | Off |
 | Download Thumbnail (maxres) | Off |
 
-> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service. Store-safe artifacts stop there; GitHub-full artifacts can show the Cobalt fallback button when Astra Downloader is offline. See [Astra Downloader Companion Setup](#astra-downloader-companion-setup) for the current install and release-asset state.
+> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. Both profiles probe `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accept health responses that identify as the Astra downloader service. The store-safe ceiling keeps the companion handoff but excludes AI, Ollama, and Cobalt; GitHub-full can show the Cobalt fallback button when Astra Downloader is offline. See [Astra Downloader Companion Setup](#astra-downloader-companion-setup) for the current install and release-asset state.
 
 The GitHub-full popup maintenance actions are recoverable. yt-dlp updates run
 against a staged sibling executable; companion updates must pass checksum and
@@ -372,7 +372,7 @@ document_idle
 - **SBOM + attestation** on every release build — verifiable software bill of materials
 - **External CRX signing key** — maintainer-only, never in the repo or CI
 - **Credential scrub** on settings export — API keys, tokens, and secrets are automatically stripped
-- **Profile-split permissions** — store-safe builds strip AI, Cobalt, and loopback host grants; GitHub-full builds keep the full catalogue
+- **Profile-split permissions** — store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and Cobalt; GitHub-full builds keep the full catalogue
 - **26+ hardening passes** documented in CHANGELOG with per-fix CVE/audit traceability
 - **Privacy policy** covers data handling for every API origin the extension contacts
 
