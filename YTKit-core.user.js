@@ -28410,8 +28410,11 @@ function buildSettingsPanel() {
                     );
                     behaviorSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosRemoveHiddenCards',
-                        title: 'Remove hidden cards automatically',
-                        description: 'When enabled, matching videos are removed from the feed DOM instead of only being hidden with CSS.',
+                        title: t('videoHiderRemoveHiddenCardsTitle', 'Remove hidden cards automatically'),
+                        description: t(
+                            'videoHiderRemoveHiddenCardsDesc',
+                            'When enabled, matching videos are removed from the feed DOM instead of only being hidden with CSS.'
+                        ),
                         defaultChecked: false
                     }));
                     behaviorSection.appendChild(createVideoHiderToggle({
@@ -28438,8 +28441,11 @@ function buildSettingsPanel() {
                     );
                     controlsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosShowQuickHideButton',
-                        title: 'Show thumbnail hide button',
-                        description: 'Display the X button on supported video thumbnails for one-click hiding.'
+                        title: t('videoHiderShowThumbnailHideButtonTitle', 'Show thumbnail hide button'),
+                        description: t(
+                            'videoHiderShowThumbnailHideButtonDesc',
+                            'Display the X button on supported video thumbnails for one-click hiding.'
+                        )
                     }));
                     controlsSection.appendChild(createVideoHiderToggle({
                         key: 'markWatchedVideos',
@@ -28449,13 +28455,19 @@ function buildSettingsPanel() {
                     }));
                     controlsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosAllowChannelBlock',
-                        title: 'Allow right-click channel blocking',
-                        description: 'Use right-click on the thumbnail X button to block the whole channel.'
+                        title: t('videoHiderAllowRightClickBlockTitle', 'Allow right-click channel blocking'),
+                        description: t(
+                            'videoHiderAllowRightClickBlockDesc',
+                            'Use right-click on the thumbnail X button to block the whole channel.'
+                        )
                     }));
                     controlsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosRememberRestoredVideos',
-                        title: 'Remember restored videos',
-                        description: 'Keep restored videos visible by adding them to Allowed Videos, even when another rule still matches.'
+                        title: t('videoHiderRememberRestoredTitle', 'Remember restored videos'),
+                        description: t(
+                            'videoHiderRememberRestoredDesc',
+                            'Keep restored videos visible by adding them to Allowed Videos, even when another rule still matches.'
+                        )
                     }));
                     container.appendChild(controlsSection);
 
@@ -28465,12 +28477,36 @@ function buildSettingsPanel() {
                         'Limit where Video Hider evaluates videos and shows quick actions.'
                     );
                     [
-                        { key: 'hideVideosScopeHome', title: 'Home', description: 'Hide matches on the YouTube home feed.' },
-                        { key: 'hideVideosScopeSubscriptions', title: 'Subscriptions', description: 'Hide matches and show bulk controls on the subscriptions feed.' },
-                        { key: 'hideVideosScopeSearch', title: 'Search results', description: 'Apply video and channel rules on search result pages.' },
-                        { key: 'hideVideosScopeWatch', title: 'Watch pages', description: 'Apply rules to recommendations beside and below the player.' },
-                        { key: 'hideVideosScopeChannels', title: 'Channel pages', description: 'Apply rules on channel home, video, live, and playlist surfaces.' },
-                        { key: 'hideVideosScopeOther', title: 'Other YouTube surfaces', description: 'Keep Video Hider active on miscellaneous browse surfaces.' }
+                        {
+                            key: 'hideVideosScopeHome',
+                            title: t('videoHiderScopeHomeTitle', 'Home'),
+                            description: t('videoHiderScopeHomeDesc', 'Hide matches on the YouTube home feed.')
+                        },
+                        {
+                            key: 'hideVideosScopeSubscriptions',
+                            title: t('videoHiderScopeSubscriptionsTitle', 'Subscriptions'),
+                            description: t('videoHiderScopeSubscriptionsDesc', 'Hide matches and show bulk controls on the subscriptions feed.')
+                        },
+                        {
+                            key: 'hideVideosScopeSearch',
+                            title: t('videoHiderScopeSearchTitle', 'Search results'),
+                            description: t('videoHiderScopeSearchDesc', 'Apply video and channel rules on search result pages.')
+                        },
+                        {
+                            key: 'hideVideosScopeWatch',
+                            title: t('videoHiderScopeWatchTitle', 'Watch pages'),
+                            description: t('videoHiderScopeWatchDesc', 'Apply rules to recommendations beside and below the player.')
+                        },
+                        {
+                            key: 'hideVideosScopeChannels',
+                            title: t('videoHiderScopeChannelsTitle', 'Channel pages'),
+                            description: t('videoHiderScopeChannelsDesc', 'Apply rules on channel home, video, live, and playlist surfaces.')
+                        },
+                        {
+                            key: 'hideVideosScopeOther',
+                            title: t('videoHiderScopeOtherTitle', 'Other YouTube surfaces'),
+                            description: t('videoHiderScopeOtherDesc', 'Keep Video Hider active on miscellaneous browse surfaces.')
+                        }
                     ].forEach(toggleInfo => {
                         scopeSection.appendChild(createVideoHiderToggle(toggleInfo));
                     });
@@ -28482,20 +28518,47 @@ function buildSettingsPanel() {
                         'Opt into precise feed triage for low-view videos, live/upcoming items, mixes, playlists, movies, auto-dubbed videos, and mostly watched cards.'
                     );
                     [
-                        { key: 'hideVideosHideLive', title: 'Hide live streams', description: 'Hide live-now cards and live recommendations when they appear in supported feeds.' },
-                        { key: 'hideVideosHideUpcoming', title: 'Hide upcoming premieres', description: 'Hide scheduled, upcoming, and reminder-driven video cards.' },
-                        { key: 'hideVideosHideMixes', title: 'Hide YouTube Mixes', description: 'Hide radio-style mixes and auto-generated recommendation mixes.' },
-                        { key: 'hideVideosHidePlaylists', title: 'Hide playlist cards', description: 'Hide playlist and multi-video cards from supported feed surfaces.' },
-                        { key: 'hideVideosHideMovies', title: 'Hide movies', description: 'Hide rental, purchase, free-with-ads, and movie-labeled cards.' },
-                        { key: 'hideVideosHideAutoDubbed', title: 'Hide auto-dubbed videos', description: 'Hide cards labeled as dubbed, auto-dubbed, or alternate-audio videos.' }
+                        {
+                            key: 'hideVideosHideLive',
+                            title: t('videoHiderHideLiveTitle', 'Hide live streams'),
+                            description: t('videoHiderHideLiveDesc', 'Hide live-now cards and live recommendations when they appear in supported feeds.')
+                        },
+                        {
+                            key: 'hideVideosHideUpcoming',
+                            title: t('videoHiderHideUpcomingTitle', 'Hide upcoming premieres'),
+                            description: t('videoHiderHideUpcomingDesc', 'Hide scheduled, upcoming, and reminder-driven video cards.')
+                        },
+                        {
+                            key: 'hideVideosHideMixes',
+                            title: t('videoHiderHideMixesTitle', 'Hide YouTube Mixes'),
+                            description: t('videoHiderHideMixesDesc', 'Hide radio-style mixes and auto-generated recommendation mixes.')
+                        },
+                        {
+                            key: 'hideVideosHidePlaylists',
+                            title: t('videoHiderHidePlaylistsTitle', 'Hide playlist cards'),
+                            description: t('videoHiderHidePlaylistsDesc', 'Hide playlist and multi-video cards from supported feed surfaces.')
+                        },
+                        {
+                            key: 'hideVideosHideMovies',
+                            title: t('videoHiderHideMoviesTitle', 'Hide movies'),
+                            description: t('videoHiderHideMoviesDesc', 'Hide rental, purchase, free-with-ads, and movie-labeled cards.')
+                        },
+                        {
+                            key: 'hideVideosHideAutoDubbed',
+                            title: t('videoHiderHideAutoDubbedTitle', 'Hide auto-dubbed videos'),
+                            description: t('videoHiderHideAutoDubbedDesc', 'Hide cards labeled as dubbed, auto-dubbed, or alternate-audio videos.')
+                        }
                     ].forEach(toggleInfo => {
                         typeSection.appendChild(createVideoHiderToggle({ ...toggleInfo, defaultChecked: false }));
                     });
 
                     const lowViewToggle = createVideoHiderToggle({
                         key: 'hideVideosLowViewFilter',
-                        title: 'Hide low-view videos',
-                        description: 'Hide videos below the view-count threshold when YouTube exposes a view count on the card.',
+                        title: t('videoHiderHideLowViewTitle', 'Hide low-view videos'),
+                        description: t(
+                            'videoHiderHideLowViewDesc',
+                            'Hide videos below the view-count threshold when YouTube exposes a view count on the card.'
+                        ),
                         defaultChecked: false
                     });
                     typeSection.appendChild(lowViewToggle);

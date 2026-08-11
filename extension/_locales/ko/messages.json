@@ -2134,7 +2134,7 @@
     "message": "Hide the Home entry in the Guide"
   },
   "feature_guideHide_home_name": {
-    "message": "Home"
+    "message": "홈"
   },
   "feature_guideHide_learning_desc": {
     "message": "Hide the Learning topic entry"
@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "구독"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "배치"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "숨긴 카드 자동 삭제"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "사용하면 일치하는 동영상이 CSS로만 숨겨지지 않고 피드 DOM에서 삭제됩니다."
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "썸네일 숨기기 버튼 표시"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "지원되는 동영상 썸네일에 X 버튼을 표시하여 한 번에 숨깁니다."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "마우스 오른쪽 버튼으로 채널 차단 허용"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "썸네일 X 버튼을 마우스 오른쪽 버튼으로 클릭하여 채널 전체를 차단합니다."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "복원한 동영상 기억"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "복원한 동영상을 허용한 동영상에 추가하여 다른 규칙과 계속 일치해도 표시합니다."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "홈"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "YouTube 홈 피드의 일치 항목을 숨깁니다."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "구독"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "구독 피드의 일치 항목을 숨기고 일괄 제어를 표시합니다."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "검색 결과"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "검색 결과 페이지에 동영상 및 채널 규칙을 적용합니다."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "시청 페이지"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "플레이어 옆과 아래의 추천에 규칙을 적용합니다."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "채널 페이지"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "채널 홈, 동영상, 라이브 및 재생목록 화면에 규칙을 적용합니다."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "기타 YouTube 화면"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "기타 탐색 화면에서도 Video Hider를 활성화합니다."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "라이브 스트림 숨기기"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "지원되는 피드에 나타나는 현재 라이브 카드와 라이브 추천을 숨깁니다."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "예정된 프리미어 숨기기"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "예약됨, 예정됨 또는 알림이 설정된 동영상 카드를 숨깁니다."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "YouTube 믹스 숨기기"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "라디오 스타일 믹스와 자동 생성 추천 믹스를 숨깁니다."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "재생목록 카드 숨기기"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "지원되는 피드 화면에서 재생목록 및 여러 동영상 카드를 숨깁니다."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "영화 숨기기"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "대여, 구매, 광고 포함 무료 및 영화로 표시된 카드를 숨깁니다."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "자동 더빙 동영상 숨기기"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "더빙, 자동 더빙 또는 대체 오디오로 표시된 카드를 숨깁니다."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "조회수가 적은 동영상 숨기기"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "YouTube가 카드에 조회수를 표시할 때 기준 조회수보다 적은 동영상을 숨깁니다."
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"

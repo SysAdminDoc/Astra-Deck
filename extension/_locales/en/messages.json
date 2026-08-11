@@ -6115,6 +6115,108 @@
   "videoHiderBatchesSuffix": {
     "message": "batches"
   },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "Remove hidden cards automatically"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "When enabled, matching videos are removed from the feed DOM instead of only being hidden with CSS."
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "Show thumbnail hide button"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "Display the X button on supported video thumbnails for one-click hiding."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "Allow right-click channel blocking"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "Use right-click on the thumbnail X button to block the whole channel."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "Remember restored videos"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "Keep restored videos visible by adding them to Allowed Videos, even when another rule still matches."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "Home"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "Hide matches on the YouTube home feed."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "Subscriptions"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "Hide matches and show bulk controls on the subscriptions feed."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "Search results"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "Apply video and channel rules on search result pages."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "Watch pages"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "Apply rules to recommendations beside and below the player."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "Channel pages"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "Apply rules on channel home, video, live, and playlist surfaces."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "Other YouTube surfaces"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "Keep Video Hider active on miscellaneous browse surfaces."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "Hide live streams"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "Hide live-now cards and live recommendations when they appear in supported feeds."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "Hide upcoming premieres"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "Hide scheduled, upcoming, and reminder-driven video cards."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "Hide YouTube Mixes"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "Hide radio-style mixes and auto-generated recommendation mixes."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "Hide playlist cards"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "Hide playlist and multi-video cards from supported feed surfaces."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "Hide movies"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "Hide rental, purchase, free-with-ads, and movie-labeled cards."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "Hide auto-dubbed videos"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "Hide cards labeled as dubbed, auto-dubbed, or alternate-audio videos."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "Hide low-view videos"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "Hide videos below the view-count threshold when YouTube exposes a view count on the card."
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

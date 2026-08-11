@@ -2134,7 +2134,7 @@
     "message": "Hide the Home entry in the Guide"
   },
   "feature_guideHide_home_name": {
-    "message": "Home"
+    "message": "Início"
   },
   "feature_guideHide_learning_desc": {
     "message": "Hide the Learning topic entry"
@@ -2212,7 +2212,7 @@
     "message": "Hide the Subscriptions entry"
   },
   "feature_guideHide_subscriptions_name": {
-    "message": "Subscriptions"
+    "message": "Inscrições"
   },
   "feature_guideHide_trending_desc": {
     "message": "Hide the Trending entry"
@@ -6114,6 +6114,108 @@
   },
   "videoHiderBatchesSuffix": {
     "message": "lotes"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "Remover cartões ocultos automaticamente"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "Quando ativado, os vídeos correspondentes são removidos do DOM do feed em vez de apenas serem ocultados com CSS."
+  },
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "Mostrar botão de ocultar nas miniaturas"
+  },
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "Exibir o botão X nas miniaturas compatíveis para ocultar com um clique."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "Permitir bloqueio de canal com o botão direito"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "Clique com o botão direito no X da miniatura para bloquear o canal inteiro."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "Lembrar vídeos restaurados"
+  },
+  "videoHiderRememberRestoredDesc": {
+    "message": "Mantenha os vídeos restaurados visíveis adicionando-os aos vídeos permitidos, mesmo quando outra regra ainda corresponder."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "Início"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "Ocultar correspondências no feed inicial do YouTube."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "Inscrições"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "Ocultar correspondências e mostrar controles em massa no feed de inscrições."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "Resultados da pesquisa"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "Aplicar regras de vídeos e canais nas páginas de resultados da pesquisa."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "Páginas de exibição"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "Aplicar regras às recomendações ao lado e abaixo do player."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "Páginas de canais"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "Aplicar regras às superfícies de início de canal, vídeo, ao vivo e playlist."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "Outras superfícies do YouTube"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "Manter o Video Hider ativo em outras superfícies de navegação."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "Ocultar transmissões ao vivo"
+  },
+  "videoHiderHideLiveDesc": {
+    "message": "Ocultar cartões de transmissões ao vivo e recomendações ao vivo quando aparecerem em feeds compatíveis."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "Ocultar estreias próximas"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "Ocultar cartões de vídeos agendados, próximos e acionados por lembretes."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "Ocultar Mixes do YouTube"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "Ocultar mixes no estilo rádio e mixes de recomendações gerados automaticamente."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "Ocultar cartões de playlists"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "Ocultar cartões de playlists e vários vídeos nas superfícies de feed compatíveis."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "Ocultar filmes"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "Ocultar cartões de aluguel, compra, gratuitos com anúncios e identificados como filmes."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "Ocultar vídeos dublados automaticamente"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "Ocultar cartões identificados como dublados, dublados automaticamente ou com áudio alternativo."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "Ocultar vídeos com poucas visualizações"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "Ocultar vídeos abaixo do limite de visualizações quando o YouTube exibir uma contagem no cartão."
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
