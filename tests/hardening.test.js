@@ -3782,7 +3782,10 @@ test('returnDislike honors returnDislikeCacheHours TTL with a sane minimum', () 
 test('returnDislike discloses estimated accuracy in the rendered count UI', () => {
     const start = ytkitSource.indexOf("id: 'returnDislike'");
     assert.ok(start > -1, 'returnDislike feature must exist');
-    const block = ytkitSource.slice(start, start + 14000);
+    // The fallback now includes the Shorts surface resolver and in-flight
+    // request dedupe before teardown, so keep the static window wide enough
+    // to cover the cleanup assertions as the feature grows.
+    const block = ytkitSource.slice(start, start + 18000);
     assert.match(block, /description: 'Restore an estimated dislike count/,
         'feature description must name the restored count as estimated');
     assert.match(block, /_estimateDisclosureText\(\)/,
@@ -11044,7 +11047,9 @@ test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age t
     assert.ok(renderIdx > -1, 'returnDislike feature must exist');
     // Slice the whole feature block (up to next "id:" entry). Window widened
     // when the fallback gained the module's persist debounce/pagehide flush.
-    const slice = ytkitSrc.slice(renderIdx, renderIdx + 11500);
+    // Keep the whole fallback in view: the Shorts target resolver and
+    // in-flight dedupe add code before the cached-data branch.
+    const slice = ytkitSrc.slice(renderIdx, renderIdx + 18000);
 
     // The differentiation logic must check the budget window state.
     assert.match(slice, /const rateLimited = this\._budgetWindow\.count >= this\._BUDGET_PER_MIN/,
