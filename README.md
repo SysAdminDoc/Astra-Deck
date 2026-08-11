@@ -363,7 +363,7 @@ document_idle
 - HTTP methods validated, download URLs protocol-checked (HTTP/S only)
 - Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs and accepts
   only YouTube-owned destinations
-- Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists the documented host_permissions (AI providers, SponsorBlock, six Astra Downloader fallback ports, Ollama) — no wildcards
+- Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists the documented required and optional provider origins (AI providers, SponsorBlock, six Astra Downloader fallback ports, Ollama) — no wildcards
 
 ### Trust & Transparency
 
@@ -448,7 +448,8 @@ available capability and the promised fallback.
 
 | Capability | Chromium | Firefox | Fallback when absent |
 |------------|----------|---------|----------------------|
-| Built-in Summarizer | Chrome 138+ when the local model is exposed | Not exposed | Keep BYO-key summaries; local-only features show unavailable |
+| Built-in Summarizer | Chrome 138+ when the local model is exposed | Not exposed | Local Summary uses the configured BYO-key lane explicitly |
+| Built-in Translator | Chrome 138+ when the requested language pack is exposed | Not exposed | Transcript translation says so and uses the configured BYO-key lane |
 | Astra Downloader | Companion health endpoint reachable | Same companion contract | Cobalt path when configured; companion-only panels stay unavailable |
 | Ollama | Local server at `127.0.0.1:11434` | Same loopback contract | Selected remote/BYO provider, never an implicit provider switch |
 | Document PiP | Chrome 116+ | Firefox 151+ | Standard video PiP |

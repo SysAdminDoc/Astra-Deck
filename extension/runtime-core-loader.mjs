@@ -7,6 +7,7 @@ import './core/styles.js';
 import './core/settings-visual-system.js';
 import './core/registry.js';
 import './core/runtime-flags.js';
+import './core/local-ai.js';
 import './core/capability-probe.js';
 import './core/selector-packs/appShell.js';
 import './core/selector-packs/nav.js';

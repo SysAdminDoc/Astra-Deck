@@ -54,6 +54,7 @@
         "core/settings-visual-system.js",
         "core/registry.js",
         "core/runtime-flags.js",
+        "core/local-ai.js",
         "core/capability-probe.js",
         "core/selector-packs/appShell.js",
         "core/selector-packs/nav.js",

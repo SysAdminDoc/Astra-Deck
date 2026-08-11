@@ -81,6 +81,18 @@
                 note: 'Extension-only permissions and companion routing are unavailable unless the host exposes an equivalent bridge.'
             }
         },
+        aiLanes: {
+            summary: {
+                localCapability: 'summarizerApi',
+                fallbackLane: 'byo-key',
+                localDataPolicy: 'No host permission or provider credential is used when the browser lane is active.'
+            },
+            transcriptTranslation: {
+                localCapability: 'translatorApi',
+                fallbackLane: 'byo-key',
+                localDataPolicy: 'Transcript text stays on-device when the browser lane is active; the fallback is explicit.'
+            }
+        },
         capabilities: {
             summarizerApi: {
                 api: 'Built-in Summarizer API (global Summarizer or ai.summarizer)',
@@ -93,8 +105,22 @@
                 executionWorld: 'YouTube page MAIN world',
                 minimumBrowser: { chrome: '138+', edge: 'Chromium-equivalent; rollout-dependent', firefox: 'Not exposed' },
                 probe: 'hasSummarizerApi',
-                fallback: 'Keep the BYO-key summary feature available; do not route local-summary work to a remote provider implicitly.',
-                userVisibleDegradation: 'Local Summary and AI subscription tags show an unavailable state.'
+                fallback: 'Use the configured BYO-key summary lane only after telling the user that the on-device lane is unavailable.',
+                userVisibleDegradation: 'Local Summary explains the fallback and the BYO-key provider handles the request if configured.'
+            },
+            translatorApi: {
+                api: 'Built-in Translator API (global Translator or ai.translator)',
+                availability: {
+                    chromium: 'Chrome 138+ on desktop when the requested language pack is exposed and ready',
+                    firefox: 'Unavailable; use the explicit BYO-key translation fallback',
+                    userscript: 'Available only when the host browser exposes the same web API'
+                },
+                requiredPermission: [],
+                executionWorld: 'YouTube page MAIN world',
+                minimumBrowser: { chrome: '138+', edge: 'Chromium-equivalent; rollout-dependent', firefox: 'Not exposed' },
+                probe: 'hasTranslatorApi',
+                fallback: 'Translate through the configured BYO-key provider only after an explicit notice; preserve the original transcript if it fails.',
+                userVisibleDegradation: 'The transcript labels whether translation used the local browser model or the BYO-key fallback.'
             },
             mediaDL: {
                 api: 'Astra Downloader companion /health endpoint',
@@ -179,6 +205,12 @@
         if (typeof globalThis === 'undefined') return false;
         return typeof globalThis.Summarizer !== 'undefined'
             || typeof globalThis.ai?.summarizer !== 'undefined';
+    }
+
+    function hasTranslatorApi() {
+        if (typeof globalThis === 'undefined') return false;
+        return typeof globalThis.Translator !== 'undefined'
+            || typeof globalThis.ai?.translator !== 'undefined';
     }
 
     // Detect whether we're in an extension popup/sidepanel context where
@@ -311,10 +343,44 @@
         );
     }
 
+    function getAiLaneStatus(options = {}) {
+        const localAi = core.localAi;
+        if (localAi?.getLaneStatus) return localAi.getLaneStatus(options);
+        const summaryLocal = hasSummarizerApi();
+        const translationLocal = hasTranslatorApi();
+        const promptLocal = hasPromptApi();
+        return Object.freeze({
+            summary: Object.freeze({
+                capability: 'summarizerApi',
+                localAvailable: summaryLocal,
+                activeLane: summaryLocal ? 'local' : (options.summaryFallback || 'byo-key'),
+                fallbackLane: options.summaryFallback || 'byo-key'
+            }),
+            transcriptTranslation: Object.freeze({
+                capability: 'translatorApi',
+                localAvailable: translationLocal,
+                activeLane: translationLocal ? 'local' : (options.translationFallback || 'byo-key'),
+                fallbackLane: options.translationFallback || 'byo-key'
+            }),
+            transcriptQa: Object.freeze({
+                capability: 'promptApi',
+                localAvailable: promptLocal,
+                activeLane: promptLocal ? 'local' : (options.promptFallback || 'transcript-export'),
+                fallbackLane: options.promptFallback || 'transcript-export'
+            })
+        });
+    }
+
+    async function resolveAiLaneStatus(options = {}) {
+        if (core.localAi?.resolveLaneStatus) return core.localAi.resolveLaneStatus(options);
+        return getAiLaneStatus(options);
+    }
+
     // Probe table — keys MUST match the CAPABILITIES enum exported
     // by settings-schema.js. The hardening test pins that.
     const PROBES = Object.freeze({
         summarizerApi:    { async: false, run: hasSummarizerApi },
+        translatorApi:    { async: false, run: hasTranslatorApi },
         documentPip:      { async: false, run: hasDocumentPip },
         languageDetector: { async: false, run: hasLanguageDetector },
         promptApi:        { async: false, run: hasPromptApi },
@@ -375,7 +441,9 @@
     const surface = Object.freeze({
         PROBES,
         CAPABILITY_MATRIX,
+        getAiLaneStatus,
         probe,
+        resolveAiLaneStatus,
         runAll,
         isEntryAvailable,
         // Exposed for tests that need to monkey-patch a probe.

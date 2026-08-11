@@ -121,7 +121,7 @@ for GitHub/self-hosted installs.
 | `downloads` | Triggering thumbnail + transcript exports + diagnostic-log save from the popup to the user's Downloads folder. |
 | `host_permissions: youtube.com / youtu.be / youtube-nocookie.com` | Core content script attachment, YouTube page reads, and short-link/embed support. |
 | `optional_host_permissions: sponsor.ajay.app / i.ytimg.com / returnyoutubedislikeapi.com / reddit.com` | SponsorBlock/DeArrow, thumbnail upgrade/download, estimated Return YouTube Dislike counts, and Reddit discussion panel calls. Requested from the popup when the user enables a matching feature, or through the Grant access banner when an already-enabled feature such as default-on SponsorBlock needs the runtime grant; the background proxy checks the current grant before fetching. No cookies are sent. |
-| `host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | GitHub-full only. BYO-key AI summary feature; per-user opt-in and direct to provider. |
+| `optional_host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | GitHub-full only. BYO-key AI summary and transcript-translation fallback; the selected provider is requested at the user gesture, while Chrome's built-in AI lane uses no host permission or key. |
 | `host_permissions: api.cobalt.tools` | GitHub-full only. Optional Cobalt fallback when Astra Downloader is offline. |
 | `host_permissions: 127.0.0.1:9751-9851` | GitHub-full only. Astra Downloader local probe and explicit download handoff across six fallback ports. |
 | `host_permissions: 127.0.0.1:11434` | GitHub-full only. Optional local Ollama for AI summary. |

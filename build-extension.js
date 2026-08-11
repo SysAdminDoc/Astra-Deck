@@ -439,8 +439,12 @@ function hostPermissionsForOrigin(origin) {
 }
 
 function shouldUseRuntimeOptionalHostPermission(entry, profile) {
-    return normalizeBuildProfile(profile) === 'store-safe'
-        && entry.hostGrant === 'runtime-optional';
+    const normalized = normalizeBuildProfile(profile);
+    if (entry.hostGrant !== 'runtime-optional') return false;
+    if (!Array.isArray(entry.runtimeOptionalProfiles)) {
+        return normalized === 'store-safe';
+    }
+    return entry.runtimeOptionalProfiles.includes(normalized);
 }
 
 // API permissions that exist solely to serve a `profile: 'github-full'` origin.

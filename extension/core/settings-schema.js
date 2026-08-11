@@ -59,6 +59,10 @@ const CAPABILITIES = Object.freeze([
     // older Chrome lack this API; the popup chip should render
     // "Unavailable in this browser" when probe returns false.
     'summarizerApi',
+    // Chrome 138+ built-in Translator API. Transcript translation has an
+    // explicit BYO-key fallback, so this is reported but not a hard toggle
+    // requirement.
+    'translatorApi',
     // Astra Downloader companion service on 127.0.0.1:9751 (with 5
     // fallback ports). Probe is MediaDLManager.check(). Features that
     // *require* the companion (rather than degrade gracefully) gate on
@@ -701,7 +705,9 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "subscriptionFilterStreamed", category: "subscriptions", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
 
     // ─── research-ai ───
-    Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
+    // The local lane is preferred but the feature explicitly hands off to
+    // the configured BYO-key summary lane when the browser model is absent.
+    Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "localAiTranscriptQa", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["promptApi"]) }),
     Object.freeze({ key: "researchSpacedReview", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "researchTranscriptIndex", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

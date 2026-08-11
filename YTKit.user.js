@@ -2566,6 +2566,10 @@
         // older Chrome lack this API; the popup chip should render
         // "Unavailable in this browser" when probe returns false.
         'summarizerApi',
+        // Chrome 138+ built-in Translator API. Transcript translation has an
+        // explicit BYO-key fallback, so this is reported but not a hard toggle
+        // requirement.
+        'translatorApi',
         // Astra Downloader companion service on 127.0.0.1:9751 (with 5
         // fallback ports). Probe is MediaDLManager.check(). Features that
         // *require* the companion (rather than degrade gracefully) gate on
@@ -3208,7 +3212,9 @@
         Object.freeze({ key: "subscriptionFilterStreamed", category: "subscriptions", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
 
         // ─── research-ai ───
-        Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
+        // The local lane is preferred but the feature explicitly hands off to
+        // the configured BYO-key summary lane when the browser model is absent.
+        Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "localAiTranscriptQa", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["promptApi"]) }),
         Object.freeze({ key: "researchSpacedReview", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "researchTranscriptIndex", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -6062,6 +6068,137 @@
         }
     })();
 
+    // ── bundled module: extension/core/local-ai.js ──
+    (() => {
+        'use strict';
+
+        // Shared adapter for Chrome's built-in AI task APIs. Keep feature code
+        // independent from the legacy window.ai names so a browser rollout or a
+        // userscript host can expose either API generation without changing the
+        // lane-selection contract.
+        const root = globalThis;
+        const core = root.YTKitCore || (root.YTKitCore = {});
+        if (core.localAi) return;
+
+        const API_DEFINITIONS = Object.freeze({
+            summarizer: Object.freeze({ globalName: 'Summarizer', legacyName: 'summarizer' }),
+            translator: Object.freeze({ globalName: 'Translator', legacyName: 'translator' }),
+            languageDetector: Object.freeze({ globalName: 'LanguageDetector', legacyName: 'languageDetector' }),
+            prompt: Object.freeze({ globalName: 'LanguageModel', legacyName: 'languageModel' })
+        });
+        const AVAILABILITY_VALUES = new Set([
+            'available', 'downloadable', 'downloading', 'unavailable', 'unknown'
+        ]);
+
+        function getFactory(kind, scope = root) {
+            const definition = API_DEFINITIONS[kind];
+            if (!definition || !scope) return null;
+            try {
+                return scope[definition.globalName]
+                    || scope.ai?.[definition.legacyName]
+                    || null;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function has(kind, scope = root) {
+            return Boolean(getFactory(kind, scope));
+        }
+
+        function normalizeAvailability(value) {
+            if (value === true) return 'available';
+            if (value === false || value == null) return 'unavailable';
+            const normalized = String(value).trim().toLowerCase();
+            return AVAILABILITY_VALUES.has(normalized) ? normalized : 'unknown';
+        }
+
+        async function availability(kind, options = {}, scope = root) {
+            const factory = getFactory(kind, scope);
+            if (!factory) return 'unavailable';
+            if (typeof factory.availability !== 'function') return 'unknown';
+            try {
+                return normalizeAvailability(await factory.availability(options));
+            } catch (_) {
+                return 'unavailable';
+            }
+        }
+
+        async function create(kind, options = {}, scope = root) {
+            const factory = getFactory(kind, scope);
+            if (!factory || typeof factory.create !== 'function') {
+                throw new Error(`${kind} API is unavailable.`);
+            }
+            return factory.create(options);
+        }
+
+        function lane(localAvailable, fallbackLane) {
+            return Object.freeze({
+                localAvailable: Boolean(localAvailable),
+                activeLane: localAvailable ? 'local' : fallbackLane,
+                fallbackLane
+            });
+        }
+
+        function getLaneStatus(options = {}, scope = root) {
+            const summaryFallback = options.summaryFallback || 'byo-key';
+            const translationFallback = options.translationFallback || 'byo-key';
+            const promptFallback = options.promptFallback || 'transcript-export';
+            return Object.freeze({
+                summary: Object.freeze({
+                    capability: 'summarizerApi',
+                    ...lane(has('summarizer', scope), summaryFallback)
+                }),
+                transcriptTranslation: Object.freeze({
+                    capability: 'translatorApi',
+                    ...lane(has('translator', scope), translationFallback)
+                }),
+                transcriptQa: Object.freeze({
+                    capability: 'promptApi',
+                    ...lane(has('prompt', scope), promptFallback)
+                }),
+                languageDetection: Object.freeze({
+                    capability: 'languageDetector',
+                    ...lane(has('languageDetector', scope), 'conservative-text')
+                })
+            });
+        }
+
+        async function resolveLaneStatus(options = {}, scope = root) {
+            const status = getLaneStatus(options, scope);
+            const [summaryAvailability, translationAvailability, promptAvailability] = await Promise.all([
+                availability('summarizer', options.summaryOptions || {}, scope),
+                availability('translator', options.translationOptions || {}, scope),
+                availability('prompt', options.promptOptions || {}, scope)
+            ]);
+            const withAvailability = (entry, value) => Object.freeze({
+                ...entry,
+                availability: value,
+                activeLane: value === 'unavailable' ? entry.fallbackLane : 'local'
+            });
+            return Object.freeze({
+                ...status,
+                summary: withAvailability(status.summary, summaryAvailability),
+                transcriptTranslation: withAvailability(status.transcriptTranslation, translationAvailability),
+                transcriptQa: withAvailability(status.transcriptQa, promptAvailability)
+            });
+        }
+
+        const surface = Object.freeze({
+            API_DEFINITIONS,
+            availability,
+            create,
+            getFactory,
+            getLaneStatus,
+            has,
+            normalizeAvailability,
+            resolveLaneStatus
+        });
+        core.localAi = surface;
+
+        if (typeof module !== 'undefined' && module.exports) module.exports = surface;
+    })();
+
     // ── bundled module: extension/core/userscript-ai-summary.js ──
     (() => {
         'use strict';
@@ -6437,7 +6574,7 @@
             return {
                 id: 'aiVideoSummary',
                 name: 'AI Video Summary',
-                description: 'Summarize the current transcript with a userscript-manager-isolated provider credential',
+                description: t('feature_aiVideoSummary_desc', 'Prefer the browser on-device Summarizer; fall back explicitly to the userscript-manager-isolated BYO-key provider'),
                 group: 'Watch Page',
                 icon: 'sparkles',
                 pages: [options.watchPage || 'watch'],
@@ -6447,6 +6584,35 @@
                 _rule: null,
                 _timer: null,
                 _runToken: 0,
+                async _summarizeLocally(transcript) {
+                    const localAi = core.localAi;
+                    const factory = localAi?.getFactory?.('summarizer', root)
+                        || root.Summarizer || root.ai?.summarizer;
+                    if (!factory?.create) return null;
+                    const availability = localAi?.availability
+                        ? await localAi.availability('summarizer', {}, root)
+                        : 'unknown';
+                    if (availability === 'unavailable') return null;
+                    let summarizer = null;
+                    try {
+                        summarizer = localAi?.create
+                            ? await localAi.create('summarizer', {
+                                type: 'tldr',
+                                length: 'medium',
+                                format: 'plain-text'
+                            }, root)
+                            : await factory.create({ type: 'tldr', length: 'medium', format: 'plain-text' });
+                        if (!summarizer?.summarize) return null;
+                        const source = String(transcript?.prepared?.transcript || '').slice(0, 12000);
+                        if (!source.trim()) return null;
+                        const result = await summarizer.summarize(source);
+                        return String(result || '').trim() || null;
+                    } catch (_) {
+                        return null;
+                    } finally {
+                        summarizer?.destroy?.();
+                    }
+                },
                 async _call(prompt) {
                     const details = providerRequest(getSettings() || {}, prompt);
                     let credential = await vault.get(details.provider);
@@ -6457,6 +6623,9 @@
                     if (details.provider === 'gemini') return data?.candidates?.[0]?.content?.parts?.[0]?.text || '[no content]';
                     if (details.provider === 'anthropic') return data?.content?.[0]?.text || '[no content]';
                     return data?.choices?.[0]?.message?.content || '[no content]';
+                },
+                async _callLLM(prompt) {
+                    return this._call(prompt);
                 },
                 _showPanel(text, tone = 'normal') {
                     this._panel?.remove();
@@ -6572,9 +6741,17 @@
                     try {
                         const transcript = await fetchTranscript();
                         if (runToken !== this._runToken || getVideoId() !== transcript.videoId) return;
-                        this._showPanel(transcript.prepared.truncated
+                        const localSummary = await this._summarizeLocally(transcript);
+                        if (runToken !== this._runToken || getVideoId() !== transcript.videoId) return;
+                        if (localSummary) {
+                            this._showPanel(`On-device summary (no provider credential)\n\n${localSummary}`);
+                            return;
+                        }
+                        const fallbackNotice = t('feature_aiVideoSummary_desc', 'On-device Summarizer unavailable; using the configured BYO-key provider.');
+                        showToast(fallbackNotice, '#f59e0b', { tone: 'warning' });
+                        this._showPanel(`${fallbackNotice}\n\n${transcript.prepared.truncated
                             ? t('aiSummaryCallingTruncated', 'Calling AI provider with the first 120,000 transcript characters…')
-                            : t('aiSummaryCalling', 'Calling AI provider…'));
+                            : t('aiSummaryCalling', 'Calling AI provider…')}`);
                         const prompt = artifactService.buildPrompt({
                             title: transcript.title,
                             videoId: transcript.videoId,
@@ -7378,29 +7555,32 @@
             }),
             Object.freeze({
                 origin: 'https://api.openai.com',
-                purpose: 'BYO-key OpenAI summarisation.',
-                requiredByFeatures: ['aiVideoSummary'],
+                purpose: 'BYO-key OpenAI summaries and transcript-translation fallback.',
+                requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
                 credentialsPolicy: 'byo-key',
                 profile: 'github-full',
-                hostGrant: 'required',
+                hostGrant: 'runtime-optional',
+                runtimeOptionalProfiles: Object.freeze(['github-full']),
                 riskBand: 'api'
             }),
             Object.freeze({
                 origin: 'https://api.anthropic.com',
-                purpose: 'BYO-key Anthropic summarisation.',
-                requiredByFeatures: ['aiVideoSummary'],
+                purpose: 'BYO-key Anthropic summaries and transcript-translation fallback.',
+                requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
                 credentialsPolicy: 'byo-key',
                 profile: 'github-full',
-                hostGrant: 'required',
+                hostGrant: 'runtime-optional',
+                runtimeOptionalProfiles: Object.freeze(['github-full']),
                 riskBand: 'api'
             }),
             Object.freeze({
                 origin: 'https://generativelanguage.googleapis.com',
-                purpose: 'BYO-key Gemini summarisation.',
-                requiredByFeatures: ['aiVideoSummary'],
+                purpose: 'BYO-key Gemini summaries and transcript-translation fallback.',
+                requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
                 credentialsPolicy: 'byo-key',
                 profile: 'github-full',
-                hostGrant: 'required',
+                hostGrant: 'runtime-optional',
+                runtimeOptionalProfiles: Object.freeze(['github-full']),
                 riskBand: 'api'
             }),
             Object.freeze({
@@ -7533,6 +7713,8 @@
             for (const entry of catalogue) {
                 if (entry.profile !== profile) continue;
                 if (entry.hostGrant !== 'runtime-optional') continue;
+                if (Array.isArray(entry.runtimeOptionalProfiles)
+                    && !entry.runtimeOptionalProfiles.includes(profile)) continue;
                 if (!entryAppliesToFeature(entry, featureKey)) continue;
                 hosts.push(...hostPermissionsForOrigin(entry.origin));
             }
@@ -9982,6 +10164,18 @@
                     note: 'Extension-only permissions and companion routing are unavailable unless the host exposes an equivalent bridge.'
                 }
             },
+            aiLanes: {
+                summary: {
+                    localCapability: 'summarizerApi',
+                    fallbackLane: 'byo-key',
+                    localDataPolicy: 'No host permission or provider credential is used when the browser lane is active.'
+                },
+                transcriptTranslation: {
+                    localCapability: 'translatorApi',
+                    fallbackLane: 'byo-key',
+                    localDataPolicy: 'Transcript text stays on-device when the browser lane is active; the fallback is explicit.'
+                }
+            },
             capabilities: {
                 summarizerApi: {
                     api: 'Built-in Summarizer API (global Summarizer or ai.summarizer)',
@@ -9994,8 +10188,22 @@
                     executionWorld: 'YouTube page MAIN world',
                     minimumBrowser: { chrome: '138+', edge: 'Chromium-equivalent; rollout-dependent', firefox: 'Not exposed' },
                     probe: 'hasSummarizerApi',
-                    fallback: 'Keep the BYO-key summary feature available; do not route local-summary work to a remote provider implicitly.',
-                    userVisibleDegradation: 'Local Summary and AI subscription tags show an unavailable state.'
+                    fallback: 'Use the configured BYO-key summary lane only after telling the user that the on-device lane is unavailable.',
+                    userVisibleDegradation: 'Local Summary explains the fallback and the BYO-key provider handles the request if configured.'
+                },
+                translatorApi: {
+                    api: 'Built-in Translator API (global Translator or ai.translator)',
+                    availability: {
+                        chromium: 'Chrome 138+ on desktop when the requested language pack is exposed and ready',
+                        firefox: 'Unavailable; use the explicit BYO-key translation fallback',
+                        userscript: 'Available only when the host browser exposes the same web API'
+                    },
+                    requiredPermission: [],
+                    executionWorld: 'YouTube page MAIN world',
+                    minimumBrowser: { chrome: '138+', edge: 'Chromium-equivalent; rollout-dependent', firefox: 'Not exposed' },
+                    probe: 'hasTranslatorApi',
+                    fallback: 'Translate through the configured BYO-key provider only after an explicit notice; preserve the original transcript if it fails.',
+                    userVisibleDegradation: 'The transcript labels whether translation used the local browser model or the BYO-key fallback.'
                 },
                 mediaDL: {
                     api: 'Astra Downloader companion /health endpoint',
@@ -10080,6 +10288,12 @@
             if (typeof globalThis === 'undefined') return false;
             return typeof globalThis.Summarizer !== 'undefined'
                 || typeof globalThis.ai?.summarizer !== 'undefined';
+        }
+
+        function hasTranslatorApi() {
+            if (typeof globalThis === 'undefined') return false;
+            return typeof globalThis.Translator !== 'undefined'
+                || typeof globalThis.ai?.translator !== 'undefined';
         }
 
         // Detect whether we're in an extension popup/sidepanel context where
@@ -10212,10 +10426,44 @@
             );
         }
 
+        function getAiLaneStatus(options = {}) {
+            const localAi = core.localAi;
+            if (localAi?.getLaneStatus) return localAi.getLaneStatus(options);
+            const summaryLocal = hasSummarizerApi();
+            const translationLocal = hasTranslatorApi();
+            const promptLocal = hasPromptApi();
+            return Object.freeze({
+                summary: Object.freeze({
+                    capability: 'summarizerApi',
+                    localAvailable: summaryLocal,
+                    activeLane: summaryLocal ? 'local' : (options.summaryFallback || 'byo-key'),
+                    fallbackLane: options.summaryFallback || 'byo-key'
+                }),
+                transcriptTranslation: Object.freeze({
+                    capability: 'translatorApi',
+                    localAvailable: translationLocal,
+                    activeLane: translationLocal ? 'local' : (options.translationFallback || 'byo-key'),
+                    fallbackLane: options.translationFallback || 'byo-key'
+                }),
+                transcriptQa: Object.freeze({
+                    capability: 'promptApi',
+                    localAvailable: promptLocal,
+                    activeLane: promptLocal ? 'local' : (options.promptFallback || 'transcript-export'),
+                    fallbackLane: options.promptFallback || 'transcript-export'
+                })
+            });
+        }
+
+        async function resolveAiLaneStatus(options = {}) {
+            if (core.localAi?.resolveLaneStatus) return core.localAi.resolveLaneStatus(options);
+            return getAiLaneStatus(options);
+        }
+
         // Probe table — keys MUST match the CAPABILITIES enum exported
         // by settings-schema.js. The hardening test pins that.
         const PROBES = Object.freeze({
             summarizerApi:    { async: false, run: hasSummarizerApi },
+            translatorApi:    { async: false, run: hasTranslatorApi },
             documentPip:      { async: false, run: hasDocumentPip },
             languageDetector: { async: false, run: hasLanguageDetector },
             promptApi:        { async: false, run: hasPromptApi },
@@ -10276,7 +10524,9 @@
         const surface = Object.freeze({
             PROBES,
             CAPABILITY_MATRIX,
+            getAiLaneStatus,
             probe,
+            resolveAiLaneStatus,
             runAll,
             isEntryAvailable,
             // Exposed for tests that need to monkey-patch a probe.

@@ -43,9 +43,6 @@
     "https://returnyoutubedislikeapi.com/*",
     "https://www.reddit.com/*",
     "https://old.reddit.com/*",
-    "https://api.openai.com/*",
-    "https://api.anthropic.com/*",
-    "https://generativelanguage.googleapis.com/*",
     "https://api.cobalt.tools/*",
     "http://127.0.0.1:11434/*",
     "http://127.0.0.1:9751/*",
@@ -54,6 +51,11 @@
     "http://127.0.0.1:9781/*",
     "http://127.0.0.1:9791/*",
     "http://127.0.0.1:9851/*"
+  ],
+  "optional_host_permissions": [
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "https://generativelanguage.googleapis.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -119,6 +121,7 @@
         "core/settings-visual-system.js",
         "core/registry.js",
         "core/runtime-flags.js",
+        "core/local-ai.js",
         "core/capability-probe.js",
         "core/selector-packs/appShell.js",
         "core/selector-packs/nav.js",
@@ -261,6 +264,7 @@
         "core/settings-visual-system.js",
         "core/registry.js",
         "core/runtime-flags.js",
+        "core/local-ai.js",
         "core/capability-probe.js",
         "core/selector-packs/appShell.js",
         "core/selector-packs/nav.js",
