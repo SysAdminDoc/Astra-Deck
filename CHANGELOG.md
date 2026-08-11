@@ -15,6 +15,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Feature-owned lifecycle styles now opportunistically use native CSS `@scope`
+  containment, while document-root-sensitive rules retain the existing
+  unwrapped fallback.
 - Settings-panel literal filters now use `RegExp.escape()` when available,
   with a compatibility implementation that keeps punctuation and surrogate
   pairs literal on older browsers.
