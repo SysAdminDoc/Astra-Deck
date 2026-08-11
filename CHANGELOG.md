@@ -67,6 +67,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   accessibility names now use locale keys, removing 13 more literals.
 - Subscription-group queue, export/import, digest, AI-tag, and recovery
   feedback now use locale keys; the module’s rendered-sink debt is now zero.
+- The inline Subscription Groups fallback now mirrors localized health, digest,
+  toolbar, AI-tag, and membership-editor copy, removing 114 grandfathered
+  literals from the ratchet.
 - Video Hider subscription-guard banners, page actions, quick-action labels,
   and feedback now use locale keys, removing 28 grandfathered literals from
   the ratchet baseline.
