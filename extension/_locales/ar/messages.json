@@ -1072,7 +1072,19 @@
     "message": "تم تصدير قواعد التصفية المحلية."
   },
   "filterListStatusFail": {
-    "message": "فشلت عملية قائمة التصفية."
+    "message": "حدث خطأ ما. لم تتغير القواعد المحفوظة."
+  },
+  "filterListStatusRefreshFail": {
+    "message": "تعذّر تحديث القائمة. تحقق من العنوان ثم أعد المحاولة."
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "يتم اتباع قائمة التصفية على {host}."
+  },
+  "filterListStatusPendingTpl": {
+    "message": "لم يتم جلبها بعد. اختر «تحديث القائمة الآن» لمتابعة {host}."
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "لم ينجح آخر تحديث لـ {host}. لا تزال القواعد المخزنة مؤقتًا قيد الاستخدام."
   },
   "filterListStatusImported": {
     "message": "تم استيراد قواعد التصفية. يمكن التراجع عن الاستيراد."

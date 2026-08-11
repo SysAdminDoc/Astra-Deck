@@ -7011,6 +7011,66 @@ const FILTER_LIST_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(FILTER_LIST_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const FILTER_LIST_STATE_TRANSLATIONS = {
+  de: {
+    "Something went wrong. Your saved rules were not changed.": "Etwas ist schiefgelaufen. Ihre gespeicherten Regeln wurden nicht geändert.",
+    "Could not refresh the list. Check the address, then try again.": "Die Liste konnte nicht aktualisiert werden. Prüfen Sie die Adresse und versuchen Sie es erneut.",
+    "Following the filter list at {host}.": "Die Filterliste unter {host} wird verwendet.",
+    "Not fetched yet. Choose Refresh list now to follow {host}.": "Noch nicht abgerufen. Wählen Sie „Liste jetzt aktualisieren“, um {host} zu folgen.",
+    "The last refresh of {host} did not succeed. Cached rules are still in use.": "Die letzte Aktualisierung von {host} war nicht erfolgreich. Die zwischengespeicherten Regeln werden weiter verwendet."
+  },
+  es: {
+    "Something went wrong. Your saved rules were not changed.": "Algo salió mal. Tus reglas guardadas no se modificaron.",
+    "Could not refresh the list. Check the address, then try again.": "No se pudo actualizar la lista. Comprueba la dirección e inténtalo de nuevo.",
+    "Following the filter list at {host}.": "Siguiendo la lista de filtros de {host}.",
+    "Not fetched yet. Choose Refresh list now to follow {host}.": "Aún no se ha descargado. Elige «Actualizar lista ahora» para seguir {host}.",
+    "The last refresh of {host} did not succeed. Cached rules are still in use.": "La última actualización de {host} no se completó. Se siguen usando las reglas en caché."
+  },
+  ru: {
+    "Something went wrong. Your saved rules were not changed.": "Что-то пошло не так. Сохранённые правила не изменены.",
+    "Could not refresh the list. Check the address, then try again.": "Не удалось обновить список. Проверьте адрес и повторите попытку.",
+    "Following the filter list at {host}.": "Используется список фильтров с {host}.",
+    "Not fetched yet. Choose Refresh list now to follow {host}.": "Ещё не загружен. Нажмите «Обновить список», чтобы подписаться на {host}.",
+    "The last refresh of {host} did not succeed. Cached rules are still in use.": "Последнее обновление {host} не удалось. Продолжают действовать кэшированные правила."
+  },
+  fr: {
+    "Something went wrong. Your saved rules were not changed.": "Une erreur s'est produite. Vos règles enregistrées n'ont pas été modifiées.",
+    "Could not refresh the list. Check the address, then try again.": "Impossible d'actualiser la liste. Vérifiez l'adresse, puis réessayez.",
+    "Following the filter list at {host}.": "Liste de filtres suivie sur {host}.",
+    "Not fetched yet. Choose Refresh list now to follow {host}.": "Pas encore récupérée. Choisissez « Actualiser la liste » pour suivre {host}.",
+    "The last refresh of {host} did not succeed. Cached rules are still in use.": "La dernière actualisation de {host} a échoué. Les règles en cache restent utilisées."
+  },
+  it: {
+    "Something went wrong. Your saved rules were not changed.": "Qualcosa è andato storto. Le regole salvate non sono state modificate.",
+    "Could not refresh the list. Check the address, then try again.": "Impossibile aggiornare la lista. Controlla l'indirizzo e riprova.",
+    "Following the filter list at {host}.": "Lista di filtri seguita su {host}.",
+    "Not fetched yet. Choose Refresh list now to follow {host}.": "Non ancora scaricata. Scegli «Aggiorna lista ora» per seguire {host}.",
+    "The last refresh of {host} did not succeed. Cached rules are still in use.": "L'ultimo aggiornamento di {host} non è riuscito. Le regole memorizzate restano in uso."
+  },
+  pt_BR: {
+    "Something went wrong. Your saved rules were not changed.": "Algo deu errado. Suas regras salvas não foram alteradas.",
+    "Could not refresh the list. Check the address, then try again.": "Não foi possível atualizar a lista. Verifique o endereço e tente novamente.",
+    "Following the filter list at {host}.": "Seguindo a lista de filtros em {host}.",
+    "Not fetched yet. Choose Refresh list now to follow {host}.": "Ainda não baixada. Escolha Atualizar lista agora para seguir {host}.",
+    "The last refresh of {host} did not succeed. Cached rules are still in use.": "A última atualização de {host} não foi concluída. As regras em cache continuam em uso."
+  },
+  ja: {
+    "Something went wrong. Your saved rules were not changed.": "問題が発生しました。保存済みのルールは変更されていません。",
+    "Could not refresh the list. Check the address, then try again.": "リストを更新できませんでした。アドレスを確認してからもう一度お試しください。",
+    "Following the filter list at {host}.": "{host} のフィルターリストを使用しています。",
+    "Not fetched yet. Choose Refresh list now to follow {host}.": "まだ取得していません。{host} を購読するには「今すぐリストを更新」を選択してください。",
+    "The last refresh of {host} did not succeed. Cached rules are still in use.": "{host} の最後の更新に失敗しました。キャッシュされたルールを引き続き使用します。"
+  },
+  ko: {
+    "Something went wrong. Your saved rules were not changed.": "문제가 발생했습니다. 저장된 규칙은 변경되지 않았습니다.",
+    "Could not refresh the list. Check the address, then try again.": "목록을 새로 고칠 수 없습니다. 주소를 확인한 후 다시 시도하세요.",
+    "Following the filter list at {host}.": "{host}의 필터 목록을 사용 중입니다.",
+    "Not fetched yet. Choose Refresh list now to follow {host}.": "아직 가져오지 않았습니다. {host}을(를) 구독하려면 '지금 목록 새로 고침'을 선택하세요.",
+    "The last refresh of {host} did not succeed. Cached rules are still in use.": "{host}의 마지막 새로 고침에 실패했습니다. 캐시된 규칙이 계속 사용됩니다."
+  }
+};
+for (const [locale, messages] of Object.entries(FILTER_LIST_STATE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

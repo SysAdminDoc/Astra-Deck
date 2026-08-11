@@ -1730,6 +1730,7 @@ function createSchemaRiskBadge(key) {
 function render(settings, filter) {
     list.setAttribute('aria-busy', 'false');
     syncFilterListUrlInput(settings);
+    void refreshFilterListStatus();
     // The Astra Downloader companion is a github-full-only feature. Hide the
     // "Update Companion" / "Update yt-dlp" actions for store-safe users instead
     // of surfacing buttons that only error ("open a YouTube tab first") against
@@ -4323,11 +4324,65 @@ function setFilterListStatus(messageKey, fallback, type = 'info') {
     filterListStatus.dataset.state = type;
 }
 
+// For the {host} templates, which have to be substituted at the call site so
+// the check-i18n token gate can see the replace() next to its own t().
+function setFilterListStatusText(text, type = 'info') {
+    if (!filterListStatus) return;
+    filterListStatus.textContent = text;
+    filterListStatus.dataset.state = type;
+}
+
 function syncFilterListUrlInput(settings = popupState.settings) {
     if (!filterListUrlInput) return;
     filterListUrlInput.value = typeof settings?.hideVideosFilterListUrl === 'string'
         ? settings.hideVideosFilterListUrl
         : '';
+}
+
+// Report what the stored subscription actually says. Without this the status
+// line kept whatever the markup shipped with — so a user who had configured a
+// list and successfully fetched it still read "No filter list is being
+// followed." every time the popup opened, which is the one question this line
+// exists to answer.
+async function refreshFilterListStatus() {
+    if (!filterListStatus) return;
+    const describe = window.YTKitCore?.describeRemoteListUrl;
+    const configured = typeof popupState.settings?.hideVideosFilterListUrl === 'string'
+        ? popupState.settings.hideVideosFilterListUrl
+        : '';
+    const described = typeof describe === 'function' ? describe(configured) : { ok: false };
+    if (!described.ok) {
+        setFilterListStatus('filterListStatusReady', 'No filter list is being followed.');
+        return;
+    }
+
+    let record = null;
+    try {
+        const stored = await callExtensionApi(ext?.storage?.local, 'get', STORAGE_KEYS.filterListSubscription);
+        record = stored?.[STORAGE_KEYS.filterListSubscription] || null;
+    } catch (_) {
+        // reason: an unreadable cache is indistinguishable from "never fetched"
+    }
+
+    // Show only the host, never the stored URL: this line is written straight
+    // into the DOM and the value came from a text field.
+    const host = described.hostname;
+    const current = record && record.url === described.url ? record : null;
+    if (current?.error) {
+        setFilterListStatusText(
+            t('filterListStatusLastFailedTpl', 'The last refresh of {host} did not succeed. Cached rules are still in use.')
+                .replace('{host}', host), 'error');
+        return;
+    }
+    if (current?.fetchedAt > 0) {
+        setFilterListStatusText(
+            t('filterListStatusFollowingTpl', 'Following the filter list at {host}.')
+                .replace('{host}', host), 'success');
+        return;
+    }
+    setFilterListStatusText(
+        t('filterListStatusPendingTpl', 'Not fetched yet. Choose Refresh list now to follow {host}.')
+            .replace('{host}', host), 'info');
 }
 
 async function exportFilterList() {
@@ -4364,7 +4419,7 @@ async function exportFilterList() {
         setFilterListStatus('filterListStatusExported', 'Local filter rules exported.', 'success');
         showStatus(t('filterListExported', 'Video Hider rules exported.'), 'success', 3200);
     } catch (error) {
-        setFilterListStatus('filterListStatusFail', 'Filter-list operation failed.', 'error');
+        setFilterListStatus('filterListStatusFail', 'Something went wrong. Your saved rules were not changed.', 'error');
         showStatus(t('filterListExportFail', 'Filter-list export failed') + ': ' + error.message, 'error', 4200);
     } finally {
         exportFilterListButton.removeAttribute('aria-busy');
@@ -4437,7 +4492,7 @@ async function importFilterList(file) {
             throw new Error(t('filterListImportRollback', 'Filter-list import failed; previous data was restored.'));
         }
     } catch (error) {
-        setFilterListStatus('filterListStatusFail', 'Filter-list operation failed.', 'error');
+        setFilterListStatus('filterListStatusFail', 'Something went wrong. Your saved rules were not changed.', 'error');
         showStatus(t('filterListImportFail', 'Filter-list import failed') + ': ' + error.message, 'error', 5200);
     } finally {
         importFilterListFileInput.value = '';
@@ -4492,13 +4547,16 @@ async function refreshFilterList() {
             return;
         }
         if (!result?.ok) {
-            setFilterListStatus('filterListStatusFail', result?.error || 'Remote list refresh failed.', 'error');
+            // Deliberately not echoing result.error: t() resolves the key and
+            // ignores the fallback anyway, and the raw string carries the
+            // configured URL back into the DOM for no user benefit.
+            setFilterListStatus('filterListStatusRefreshFail', 'Could not refresh the list. Check the address, then try again.', 'error');
             return;
         }
         setFilterListStatus('filterListStatusRefreshed', 'Remote filter list refreshed.', 'success');
         showStatus(t('filterListRefreshed', 'Video Hider filter list refreshed.'), 'success', 3200);
     } catch (error) {
-        setFilterListStatus('filterListStatusFail', 'Remote list refresh failed.', 'error');
+        setFilterListStatus('filterListStatusRefreshFail', 'Could not refresh the list. Check the address, then try again.', 'error');
         showStatus(t('filterListRefreshFail', 'Filter-list refresh failed') + ': ' + error.message, 'error', 5200);
     } finally {
         refreshFilterListButton.removeAttribute('aria-busy');

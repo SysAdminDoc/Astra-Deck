@@ -1072,7 +1072,19 @@
     "message": "已导出本地过滤规则。"
   },
   "filterListStatusFail": {
-    "message": "过滤列表操作失败。"
+    "message": "出了点问题。已保存的规则未更改。"
+  },
+  "filterListStatusRefreshFail": {
+    "message": "无法刷新列表。请检查网址后重试。"
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "正在使用 {host} 上的过滤列表。"
+  },
+  "filterListStatusPendingTpl": {
+    "message": "尚未获取。选择“立即刷新列表”以订阅 {host}。"
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "{host} 的上次刷新未成功。仍在使用缓存的规则。"
   },
   "filterListStatusImported": {
     "message": "已导入过滤规则。可撤销导入。"
