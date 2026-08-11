@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "使用中"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "現在の時刻を保存"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "許可されたチャンネル {count} 件"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "使用中"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "空"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "動画を非表示リストに追加しました"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "動画はすでに非表示です"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "動画を非表示リストから削除しました"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "動画は非表示リストにありません"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "動画を許可リストに追加しました"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "動画を非表示リストから許可リストに移動しました"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "動画はすでに許可されています"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "タイトルまたはチャンネルのテキストで動画を非表示にします。カンマ区切りのキーワードを追加し、常に一致を許可するには !、正規表現には / で始めます。"
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "キーワードで一致を非表示"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!キーワードで一致を常に許可"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i で正規表現ルールを実行"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "動画の長さフィルター"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "選択した最小時間より短い動画を自動的に非表示にします。"
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "登録チャンネルの読み込み制限"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "連続する複数のバッチが完全に非表示になったとき、登録チャンネルの無限読み込みを停止します。"
   }
 }

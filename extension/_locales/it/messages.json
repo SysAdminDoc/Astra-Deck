@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "Attivo"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "Salva ora"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} canali consentiti"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "Attivo"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "Vuoto"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "Video aggiunto all’elenco dei video nascosti"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "Il video è già nascosto"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "Video rimosso dall’elenco dei video nascosti"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "Il video non era nell’elenco dei video nascosti"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "Video aggiunto all’elenco dei video consentiti"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "Video spostato dall’elenco nascosto a quello consentito"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "Il video è già consentito"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "Nascondi i video in base al titolo o al testo del canale. Aggiungi parole chiave separate da virgole, usa ! per consentire sempre una corrispondenza o inizia con / per una regex."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "la parola chiave nasconde le corrispondenze"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!parola chiave consente sempre le corrispondenze"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i esegue una regola regex"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "Filtro durata"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "Nascondi automaticamente i video più brevi della durata minima scelta."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "Limite di caricamento iscrizioni"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "Interrompi il caricamento infinito delle iscrizioni quando troppi batch consecutivi sono completamente nascosti."
   }
 }

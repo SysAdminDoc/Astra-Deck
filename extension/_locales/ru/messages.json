@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "Активно"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "Сохранить текущее время"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} разрешенных каналов"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "Активно"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "Пусто"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "Видео добавлено в список скрытых"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "Видео уже скрыто"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "Видео удалено из списка скрытых"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "Видео не было в списке скрытых"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "Видео добавлено в список разрешенных"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "Видео перемещено из скрытых в разрешенные"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "Видео уже разрешено"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "Скрывайте видео по названию или тексту канала. Добавляйте ключевые слова через запятую, используйте ! для разрешения совпадения или начинайте с / для регулярного выражения."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "ключевое слово скрывает совпадения"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!ключевое слово всегда разрешает совпадения"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i выполняет правило регулярного выражения"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "Фильтр длительности"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "Автоматически скрывать видео короче выбранной минимальной длительности."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "Ограничитель загрузки подписок"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "Останавливать бесконечную загрузку в подписках, если слишком много последовательных пакетов полностью скрыты."
   }
 }

@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "사용 중"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "현재 시간 저장"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "허용된 채널 {count}개"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "사용 중"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "비어 있음"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "동영상을 숨김 목록에 추가함"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "동영상이 이미 숨겨져 있습니다"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "동영상을 숨김 목록에서 삭제함"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "동영상이 숨김 목록에 없습니다"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "동영상을 허용 목록에 추가함"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "동영상을 숨김 목록에서 허용 목록으로 이동함"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "동영상이 이미 허용되어 있습니다"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "제목 또는 채널 텍스트로 동영상을 숨깁니다. 쉼표로 구분된 키워드를 추가하고, 항상 일치를 허용하려면 !로, 정규식은 /로 시작하세요."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "키워드가 일치 항목을 숨김"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!키워드가 일치를 항상 허용"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i가 정규식 규칙을 실행함"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "길이 필터"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "선택한 최소 길이보다 짧은 동영상을 자동으로 숨깁니다."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "구독 로드 제한기"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "연속된 배치가 너무 많이 모두 숨겨지면 구독 피드의 무한 로드를 중지합니다."
   }
 }

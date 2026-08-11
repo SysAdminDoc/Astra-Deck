@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "Save Current Time"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} channels allowed"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "Live"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "Empty"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "Video added to hidden list"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "Video is already hidden"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "Video removed from hidden list"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "Video was not in the hidden list"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "Video added to allowed list"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "Video moved from hidden to allowed"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "Video is already allowed"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "Hide videos by title or channel text. Add comma-separated keywords, use ! to always allow a match, or start with / for regex."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "keyword hides matches"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!keyword always allows matches"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i runs a regex rule"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "Duration Filter"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "Automatically hide videos shorter than your chosen minimum length."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "Subscription Load Limiter"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "Stop endless loading on Subscriptions when too many consecutive batches are fully hidden."
   }
 }

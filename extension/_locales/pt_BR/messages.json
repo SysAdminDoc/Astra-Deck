@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "Ativo"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "Salvar hora atual"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} canais permitidos"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "Ativo"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "Vazio"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "Vídeo adicionado à lista de ocultos"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "O vídeo já está oculto"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "Vídeo removido da lista de ocultos"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "O vídeo não estava na lista de ocultos"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "Vídeo adicionado à lista de permitidos"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "Vídeo movido de oculto para permitido"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "O vídeo já está permitido"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "Oculte vídeos pelo título ou texto do canal. Adicione palavras-chave separadas por vírgulas, use ! para sempre permitir uma correspondência ou comece com / para uma expressão regular."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "a palavra-chave oculta correspondências"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!palavra-chave sempre permite correspondências"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/padrão/i executa uma regra regex"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "Filtro de duração"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "Oculte automaticamente vídeos menores que a duração mínima escolhida."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "Limite de carregamento de inscrições"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "Interrompa o carregamento infinito em Inscrições quando muitos lotes consecutivos forem totalmente ocultados."
   }
 }

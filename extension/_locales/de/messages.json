@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "Aktuelle Zeit speichern"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} Kanäle erlaubt"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "Live"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "Leer"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "Video zur Liste ausgeblendeter Videos hinzugefügt"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "Video ist bereits ausgeblendet"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "Video aus der Liste ausgeblendeter Videos entfernt"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "Video war nicht in der Liste ausgeblendeter Videos"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "Video zur Liste erlaubter Videos hinzugefügt"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "Video von ausgeblendet zu erlaubt verschoben"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "Video ist bereits erlaubt"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "Videos nach Titel- oder Kanaltext ausblenden. Fügen Sie durch Kommas getrennte Schlüsselwörter hinzu, verwenden Sie !, um eine Übereinstimmung immer zu erlauben, oder beginnen Sie mit / für Regex."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "Schlüsselwort blendet Übereinstimmungen aus"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!Schlüsselwort erlaubt Übereinstimmungen immer"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i führt eine Regex-Regel aus"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "Dauerfilter"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "Videos, die kürzer als die gewählte Mindestlänge sind, automatisch ausblenden."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "Ladelimit für Abonnements"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "Endloses Laden in den Abonnements stoppen, wenn zu viele aufeinanderfolgende Stapel vollständig ausgeblendet sind."
   }
 }

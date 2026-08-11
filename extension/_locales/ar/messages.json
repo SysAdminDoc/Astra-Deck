@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "مباشر"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "حفظ الوقت الحالي"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} من القنوات المسموح بها"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "مباشر"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "فارغ"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "تمت إضافة الفيديو إلى قائمة المخفية"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "الفيديو مخفي بالفعل"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "تمت إزالة الفيديو من قائمة المخفية"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "لم يكن الفيديو في قائمة المخفية"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "تمت إضافة الفيديو إلى قائمة المسموح بها"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "تم نقل الفيديو من القائمة المخفية إلى المسموح بها"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "الفيديو مسموح به بالفعل"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "إخفاء الفيديوهات حسب العنوان أو نص القناة. أضف كلمات مفتاحية مفصولة بفواصل، واستخدم ! للسماح بالتطابق دائمًا أو ابدأ بـ / للتعبير النمطي."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "الكلمة المفتاحية تخفي التطابقات"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!الكلمة المفتاحية تسمح بالتطابقات دائمًا"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i يشغّل قاعدة تعبير نمطي"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "عامل تصفية المدة"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "إخفاء الفيديوهات الأقصر من الحد الأدنى المختار تلقائيًا."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "محدد تحميل الاشتراكات"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "إيقاف التحميل المستمر في الاشتراكات عند إخفاء عدد كبير من الدفعات المتتالية بالكامل."
   }
 }
