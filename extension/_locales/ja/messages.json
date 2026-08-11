@@ -5323,6 +5323,69 @@
   "settingsSyncUnavailable": {
     "message": "Browser sync is unavailable in this browser."
   },
+  "subscriptionAgeDaysShortTpl": {
+    "message": "{days}日"
+  },
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "登録チャンネルのサブグループを作成"
+  },
+  "subscriptionCreateGroupDialogAria": {
+    "message": "登録チャンネルのグループを作成"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "{group} の下にサブグループ名を付ける"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "このグループに名前を付ける"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "例: Frontend、DevOps、Jazz"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "例: プログラミング、音楽、ニュース"
+  },
+  "subscriptionGroupNameAria": {
+    "message": "グループ名"
+  },
+  "subscriptionDialogCancel": {
+    "message": "キャンセル"
+  },
+  "subscriptionDialogCreate": {
+    "message": "作成"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name}（{count}）{tags}"
+  },
+  "subscriptionChannelSingular": {
+    "message": "チャンネル"
+  },
+  "subscriptionChannelPlural": {
+    "message": "チャンネル"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": "。サブグループ"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}。{count}{channels}{subgroup}"
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "AI タグ: {tags} · Shift キーを押しながらクリックして再生成"
+  },
+  "subscriptionAiTagsGenerateTitle": {
+    "message": "Shift キーを押しながらクリックして AI タグを生成"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "{group} のすべての動画を再生"
+  },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "{channel} を {group} に含める"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
@@ -5603,13 +5666,13 @@
     "message": "+ Group"
   },
   "subscriptionToolbarNewGroupAria": {
-    "message": "Create subscription group"
+    "message": "登録チャンネルのグループを作成"
   },
   "subscriptionToolbarNewSubgroup": {
     "message": "+ Subgroup"
   },
   "subscriptionToolbarNewSubgroupAria": {
-    "message": "Create subscription subgroup"
+    "message": "登録チャンネルのサブグループを作成"
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"

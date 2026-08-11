@@ -915,7 +915,8 @@
                             name.textContent = candidate.channelName || candidate.channelId;
                             const age = document.createElement('div');
                             age.className = 'ytkit-sub-digest-muted';
-                            age.textContent = `${candidate.ageDays}d`;
+                    age.textContent = t('subscriptionAgeDaysShortTpl', '{days}d')
+                        .replace('{days}', candidate.ageDays);
                             const action = document.createElement('button');
                             action.type = 'button';
                             if (staged[candidate.channelId]) {
@@ -1868,28 +1869,35 @@
                 overlay.className = 'ytkit-sub-group-dialog';
                 overlay.setAttribute('role', 'dialog');
                 overlay.setAttribute('aria-modal', 'true');
-                overlay.setAttribute('aria-label', safeParentId ? 'Create subscription subgroup' : 'Create subscription group');
+                overlay.setAttribute('aria-label', safeParentId
+                    ? t('subscriptionCreateSubgroupDialogAria', 'Create subscription subgroup')
+                    : t('subscriptionCreateGroupDialogAria', 'Create subscription group'));
                 const card = document.createElement('div');
                 card.className = 'ytkit-sub-group-dialog__card';
                 const h = document.createElement('div');
                 h.className = 'ytkit-sub-group-dialog__title';
-                h.textContent = safeParentId ? `Name a subgroup under ${groups[safeParentId]?.name || safeParentId}` : 'Name this group';
+                h.textContent = safeParentId
+                    ? t('subscriptionSubgroupNameTpl', 'Name a subgroup under {group}')
+                        .replace('{group}', groups[safeParentId]?.name || safeParentId)
+                    : t('subscriptionGroupDialogTitle', 'Name this group');
                 const input = document.createElement('input');
                 input.className = 'ytkit-sub-group-dialog__input';
                 input.type = 'text';
                 input.maxLength = 80;
-                input.placeholder = safeParentId ? 'e.g. Frontend, DevOps, Jazz' : 'e.g. Coding, Music, News';
-                input.setAttribute('aria-label', 'Group name');
+                input.placeholder = safeParentId
+                    ? t('subscriptionSubgroupPlaceholder', 'e.g. Frontend, DevOps, Jazz')
+                    : t('subscriptionGroupPlaceholder', 'e.g. Coding, Music, News');
+                input.setAttribute('aria-label', t('subscriptionGroupNameAria', 'Group name'));
                 const actions = document.createElement('div');
                 actions.className = 'ytkit-sub-group-dialog__actions';
                 const cancel = document.createElement('button');
                 cancel.className = 'ytkit-sub-group-dialog__button';
                 cancel.type = 'button';
-                cancel.textContent = 'Cancel';
+                cancel.textContent = t('subscriptionDialogCancel', 'Cancel');
                 const create = document.createElement('button');
                 create.className = 'ytkit-sub-group-dialog__button ytkit-sub-group-dialog__button--primary';
                 create.type = 'button';
-                create.textContent = 'Create';
+                create.textContent = t('subscriptionDialogCreate', 'Create');
                 actions.append(cancel, create);
                 card.append(h, input, actions);
                 overlay.appendChild(card);
@@ -1984,12 +1992,28 @@
                     const groupName = group.name || id;
                     const tagSuffix = aiTagData[id]?.tags?.length ? ` · ${aiTagData[id].tags.slice(0, 3).join(' ')}` : '';
                     const prefix = depth ? '- ' : '';
-                    chip.textContent = `${prefix}${groupName} (${group.channelIds?.length || 0})${tagSuffix}`;
-                    chip.setAttribute('aria-label', `${groupName}. ${group.channelIds?.length || 0} channel${group.channelIds?.length === 1 ? '' : 's'}${depth ? '. Subgroup' : ''}`);
+                    const channelCount = group.channelIds?.length || 0;
+                    chip.textContent = t(
+                        'subscriptionGroupChipTpl',
+                        '{prefix}{name} ({count}){tags}'
+                    ).replace('{prefix}', prefix).replace('{name}', groupName)
+                        .replace('{count}', channelCount).replace('{tags}', tagSuffix);
+                    const channelLabel = channelCount === 1
+                        ? t('subscriptionChannelSingular', 'channel')
+                        : t('subscriptionChannelPlural', 'channels');
+                    const subgroupSuffix = depth ? t('subscriptionSubgroupSuffix', '. Subgroup') : '';
+                    chip.setAttribute('aria-label', t(
+                        'subscriptionGroupChipAriaTpl',
+                        '{name}. {count} {channels}{subgroup}'
+                    ).replace('{name}', groupName).replace('{count}', channelCount)
+                        .replace('{channels}', channelLabel).replace('{subgroup}', subgroupSuffix));
                     if (aiTagData[id]?.tags?.length) {
-                        chip.title = `AI tags: ${aiTagData[id].tags.join(', ')} · Shift+click to regenerate`;
+                        chip.title = t(
+                            'subscriptionAiTagsRegenerateTitleTpl',
+                            'AI tags: {tags} · Shift+click to regenerate'
+                        ).replace('{tags}', aiTagData[id].tags.join(', '));
                     } else if (appState?.settings?.subscriptionAiTags) {
-                        chip.title = 'Shift+click to generate AI tags';
+                        chip.title = t('subscriptionAiTagsGenerateTitle', 'Shift+click to generate AI tags');
                     }
                     chip.addEventListener('click', (e) => {
                         if (e.shiftKey && appState?.settings?.subscriptionAiTags) {
@@ -2033,7 +2057,10 @@
                     editBtn.type = 'button';
                     editBtn.dataset.action = 'edit-channels';
                     editBtn.textContent = t('subscriptionToolbarEditChannels', 'Edit Channels');
-                    editBtn.setAttribute('aria-label', `Edit channels in ${groups[activeGroupId].name || activeGroupId}`);
+                    editBtn.setAttribute('aria-label', t(
+                        'subscriptionMembersRegionAriaTpl',
+                        'Edit channels in {group}'
+                    ).replace('{group}', groups[activeGroupId].name || activeGroupId));
                     editBtn.setAttribute('aria-haspopup', 'dialog');
                     editBtn.addEventListener('click', () => this._toggleMembersPanel(activeGroupId));
                     bar.appendChild(editBtn);
@@ -2042,7 +2069,10 @@
                     playBtn.type = 'button';
                     playBtn.dataset.action = 'play-all';
                     playBtn.textContent = t('subscriptionToolbarPlayAll', 'Play All');
-                    playBtn.setAttribute('aria-label', `Play all videos from ${groups[activeGroupId].name || activeGroupId}`);
+                    playBtn.setAttribute('aria-label', t(
+                        'subscriptionToolbarPlayAllAriaTpl',
+                        'Play all videos from {group}'
+                    ).replace('{group}', groups[activeGroupId].name || activeGroupId));
                     playBtn.addEventListener('click', () => this._playGroupAsQueue(activeGroupId));
                     bar.appendChild(playBtn);
 
@@ -2120,7 +2150,7 @@
                 const csvBtn = document.createElement('button');
                 csvBtn.type = 'button';
                 csvBtn.dataset.action = 'export-csv';
-                csvBtn.textContent = 'CSV';
+                csvBtn.textContent = t('subscriptionExportCsvLabel', 'CSV');
                 csvBtn.setAttribute('aria-label', t('subscriptionExportCsvAria', 'Export subscription groups as CSV'));
                 csvBtn.addEventListener('click', () => this._exportGroupsCsv());
                 bar.appendChild(csvBtn);
@@ -2128,7 +2158,7 @@
                 const opmlBtn = document.createElement('button');
                 opmlBtn.type = 'button';
                 opmlBtn.dataset.action = 'export-opml';
-                opmlBtn.textContent = 'OPML';
+                opmlBtn.textContent = t('subscriptionExportOpmlLabel', 'OPML');
                 opmlBtn.setAttribute('aria-label', t('subscriptionExportOpmlAria', 'Export subscription groups as OPML'));
                 opmlBtn.addEventListener('click', () => this._exportGroupsOpml());
                 bar.appendChild(opmlBtn);
@@ -2441,7 +2471,10 @@
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = own.has(channelId);
-                    checkbox.setAttribute('aria-label', `Include ${channelName} in ${group.name || groupId}`);
+                    checkbox.setAttribute('aria-label', t(
+                        'subscriptionMembersIncludeChannelAriaTpl',
+                        'Include {channel} in {group}'
+                    ).replace('{channel}', channelName).replace('{group}', group.name || groupId));
                     checkbox.addEventListener('change', () => {
                         this._setGroupMembership(groupId, channelId, checkbox.checked);
                     });

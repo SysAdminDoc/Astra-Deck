@@ -5323,6 +5323,69 @@
   "settingsSyncUnavailable": {
     "message": "Browser sync is unavailable in this browser."
   },
+  "subscriptionAgeDaysShortTpl": {
+    "message": "{days}일"
+  },
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "구독 하위 그룹 만들기"
+  },
+  "subscriptionCreateGroupDialogAria": {
+    "message": "구독 그룹 만들기"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "{group} 아래 하위 그룹 이름 지정"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "이 그룹 이름 지정"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "예: Frontend, DevOps, Jazz"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "예: 코딩, 음악, 뉴스"
+  },
+  "subscriptionGroupNameAria": {
+    "message": "그룹 이름"
+  },
+  "subscriptionDialogCancel": {
+    "message": "취소"
+  },
+  "subscriptionDialogCreate": {
+    "message": "만들기"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name} ({count}){tags}"
+  },
+  "subscriptionChannelSingular": {
+    "message": "채널"
+  },
+  "subscriptionChannelPlural": {
+    "message": "채널"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": ". 하위 그룹"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}. {count} {channels}{subgroup}"
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "AI 태그: {tags} · Shift 클릭하여 다시 생성"
+  },
+  "subscriptionAiTagsGenerateTitle": {
+    "message": "Shift 클릭하여 AI 태그 생성"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "{group}의 모든 동영상 재생"
+  },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "{channel}을(를) {group}에 포함"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
@@ -5603,13 +5666,13 @@
     "message": "+ Group"
   },
   "subscriptionToolbarNewGroupAria": {
-    "message": "Create subscription group"
+    "message": "구독 그룹 만들기"
   },
   "subscriptionToolbarNewSubgroup": {
     "message": "+ Subgroup"
   },
   "subscriptionToolbarNewSubgroupAria": {
-    "message": "Create subscription subgroup"
+    "message": "구독 하위 그룹 만들기"
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"

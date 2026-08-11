@@ -39,6 +39,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Subscription-group badges, stale-channel dates, staged-unsubscribe labels,
   and persisted default group names now use locale keys, removing 9 more
   grandfathered literals.
+- Subscription-group creation, chips, export labels, and channel-management
+  accessibility names now use locale keys, removing 13 more literals.
 - Accessibility and contrast audits now resolve the popup/side-panel CSS token
   cascade and exercise real keyboard focus order, focus traps, forced colors,
   and narrow settings reflow in a headless DOM.

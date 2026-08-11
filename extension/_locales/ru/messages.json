@@ -5323,6 +5323,69 @@
   "settingsSyncUnavailable": {
     "message": "Browser sync is unavailable in this browser."
   },
+  "subscriptionAgeDaysShortTpl": {
+    "message": "{days} дн."
+  },
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "Создать подгруппу подписок"
+  },
+  "subscriptionCreateGroupDialogAria": {
+    "message": "Создать группу подписок"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "Назвать подгруппу в группе {group}"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "Назвать эту группу"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "например, Frontend, DevOps, Jazz"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "например, Программирование, Музыка, Новости"
+  },
+  "subscriptionGroupNameAria": {
+    "message": "Название группы"
+  },
+  "subscriptionDialogCancel": {
+    "message": "Отмена"
+  },
+  "subscriptionDialogCreate": {
+    "message": "Создать"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name} ({count}){tags}"
+  },
+  "subscriptionChannelSingular": {
+    "message": "канал"
+  },
+  "subscriptionChannelPlural": {
+    "message": "каналов"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": ". Подгруппа"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}. {count} {channels}{subgroup}"
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "Теги ИИ: {tags} · Shift+клик для обновления"
+  },
+  "subscriptionAiTagsGenerateTitle": {
+    "message": "Shift+клик для создания тегов ИИ"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "Воспроизвести все видео из группы {group}"
+  },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "Включить {channel} в {group}"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
@@ -5603,13 +5666,13 @@
     "message": "+ Group"
   },
   "subscriptionToolbarNewGroupAria": {
-    "message": "Create subscription group"
+    "message": "Создать группу подписок"
   },
   "subscriptionToolbarNewSubgroup": {
     "message": "+ Subgroup"
   },
   "subscriptionToolbarNewSubgroupAria": {
-    "message": "Create subscription subgroup"
+    "message": "Создать подгруппу подписок"
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"
