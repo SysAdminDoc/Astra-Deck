@@ -6836,7 +6836,7 @@
     "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
   "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
+    "message": "Конфиденциальность"
   },
   "welcomePresetResearcherDesc": {
     "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "указание на спонсорство"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "Совпадений: {count}"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "Сбросить {key} к значению по умолчанию ({value})"
+  },
+  "schemaResetAriaTpl": {
+    "message": "Сбросить {key} к значению по умолчанию"
+  },
+  "whatsNewDetailTpl": {
+    "message": "Обновлено до v{version}. Посмотреть изменения."
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "Обновлено до v{version} (с v{previous}). Посмотреть изменения."
+  },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}."
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "Расширенные фильтры"
+  },
+  "advancedFiltersHint": {
+    "message": "Используйте risk:, category:, scope: или profile:. Пробелы объединяют фильтры, запятые задают варианты."
+  },
+  "filterTogglesHelpTitle": {
+    "message": "Свободный текст ищет имена, описания, ключи и переведённые подписи. Мини-DSL: risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. Объединяйте пробелами (И) и запятыми (ИЛИ в поле)."
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "Панель потоков данных"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Показывать все источники API, с которыми может связаться Astra Deck"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Профиль Store-Safe"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "Скрывать переключатели github-full и очищать ключи при экспорте"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "Профиль GitHub-Full"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "Разблокировать переключатели github-full (например, Cobalt и ключи ИИ)"
+  },
+  "qtGroup_Privacy": {
+    "message": "Конфиденциальность"
   }
 }

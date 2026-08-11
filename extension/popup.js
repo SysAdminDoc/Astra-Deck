@@ -14,29 +14,29 @@ function callExtensionApi(target, method, ...args) {
 }
 
 const QUICK_TOGGLES = [
-    { key: 'removeAllShorts',        group: 'Feed Cleanup',      name: 'Hide Shorts',            desc: 'Remove Shorts shelves and links' },
-    { key: 'hideRelatedVideos',      group: 'Feed Cleanup',      name: 'Hide Related',           desc: 'Clear the watch-page side rail' },
-    { key: 'disableInfiniteScroll',  group: 'Feed Cleanup',      name: 'Cap Infinite Scroll',    desc: 'Stop endless feed loading' },
-    { key: 'sponsorBlock',           group: 'Watch Flow',        name: 'SponsorBlock',           desc: 'Skip crowd-marked sponsor segments' },
-    { key: 'deArrow',                group: 'Watch Flow',        name: 'DeArrow',                desc: 'Replace clickbait titles and thumbnails' },
-    { key: 'commentSearch',          group: 'Watch Flow',        name: 'Comment Search',         desc: 'Filter watch-page comments inline' },
-    { key: 'disableAutoplayNext',    group: 'Playback',          name: 'Disable Autoplay',       desc: 'Stop the next video from starting' },
-    { key: 'persistentSpeed',        group: 'Playback',          name: 'Persistent Speed',       desc: 'Keep playback speed consistent' },
-    { key: 'autoTheaterMode',        group: 'Playback',          name: 'Auto Theater Mode',      desc: 'Open videos in theater view' },
-    { key: 'blueLightFilter',        group: 'Focus',             name: 'Blue-Light Filter',      desc: 'Warm the player for late viewing' },
-    { key: 'miniPlayerBar',          group: 'Focus',             name: 'Mini Player Bar',        desc: 'Keep controls visible while scrolling' },
-    { key: 'digitalWellbeing',       group: 'Focus',             name: 'Digital Wellbeing',      desc: 'Track breaks and daily viewing' },
-    { key: 'cleanShareUrls',         group: 'Utilities',         name: 'Clean URLs',             desc: 'Remove tracking from share links' },
-    { key: 'transcriptViewer',       group: 'Utilities',         name: 'Transcript Sidebar',     desc: 'Read, jump, and export captions' },
-    { key: 'debugMode',              group: 'Utilities',         name: 'Diagnostic Logging',     desc: 'Record detailed local diagnostics' },
+    { key: 'removeAllShorts',        group: 'Feed Cleanup', nameKey: 'qt_removeAllShorts_name',        nameFallback: 'Hide Shorts',         descKey: 'qt_removeAllShorts_desc',        descFallback: 'Remove Shorts shelves and links' },
+    { key: 'hideRelatedVideos',      group: 'Feed Cleanup', nameKey: 'qt_hideRelatedVideos_name',     nameFallback: 'Hide Related',        descKey: 'qt_hideRelatedVideos_desc',     descFallback: 'Clear the watch-page side rail' },
+    { key: 'disableInfiniteScroll',  group: 'Feed Cleanup', nameKey: 'qt_disableInfiniteScroll_name', nameFallback: 'Cap Infinite Scroll', descKey: 'qt_disableInfiniteScroll_desc', descFallback: 'Stop endless feed loading' },
+    { key: 'sponsorBlock',           group: 'Watch Flow',   nameKey: 'qt_sponsorBlock_name',          nameFallback: 'SponsorBlock',         descKey: 'qt_sponsorBlock_desc',          descFallback: 'Skip crowd-marked sponsor segments' },
+    { key: 'deArrow',                group: 'Watch Flow',   nameKey: 'qt_deArrow_name',               nameFallback: 'DeArrow',              descKey: 'qt_deArrow_desc',               descFallback: 'Replace clickbait titles and thumbnails' },
+    { key: 'commentSearch',          group: 'Watch Flow',   nameKey: 'qt_commentSearch_name',         nameFallback: 'Comment Search',       descKey: 'qt_commentSearch_desc',         descFallback: 'Filter watch-page comments inline' },
+    { key: 'disableAutoplayNext',    group: 'Playback',     nameKey: 'qt_disableAutoplayNext_name',   nameFallback: 'Disable Autoplay',     descKey: 'qt_disableAutoplayNext_desc',   descFallback: 'Stop the next video from starting' },
+    { key: 'persistentSpeed',        group: 'Playback',     nameKey: 'qt_persistentSpeed_name',       nameFallback: 'Persistent Speed',     descKey: 'qt_persistentSpeed_desc',       descFallback: 'Keep playback speed consistent' },
+    { key: 'autoTheaterMode',        group: 'Playback',     nameKey: 'qt_autoTheaterMode_name',       nameFallback: 'Auto Theater Mode',   descKey: 'qt_autoTheaterMode_desc',       descFallback: 'Open videos in theater view' },
+    { key: 'blueLightFilter',        group: 'Focus',        nameKey: 'qt_blueLightFilter_name',       nameFallback: 'Blue-Light Filter',    descKey: 'qt_blueLightFilter_desc',       descFallback: 'Warm the player for late viewing' },
+    { key: 'miniPlayerBar',          group: 'Focus',        nameKey: 'qt_miniPlayerBar_name',         nameFallback: 'Mini Player Bar',      descKey: 'qt_miniPlayerBar_desc',         descFallback: 'Keep controls visible while scrolling' },
+    { key: 'digitalWellbeing',       group: 'Focus',        nameKey: 'qt_digitalWellbeing_name',      nameFallback: 'Digital Wellbeing',    descKey: 'qt_digitalWellbeing_desc',      descFallback: 'Track breaks and daily viewing' },
+    { key: 'cleanShareUrls',         group: 'Utilities',   nameKey: 'qt_cleanShareUrls_name',        nameFallback: 'Clean URLs',            descKey: 'qt_cleanShareUrls_desc',        descFallback: 'Remove tracking from share links' },
+    { key: 'transcriptViewer',       group: 'Utilities',   nameKey: 'qt_transcriptViewer_name',      nameFallback: 'Transcript Sidebar',    descKey: 'qt_transcriptViewer_desc',      descFallback: 'Read, jump, and export captions' },
+    { key: 'debugMode',              group: 'Utilities',   nameKey: 'qt_debugMode_name',             nameFallback: 'Diagnostic Logging',   descKey: 'qt_debugMode_desc',             descFallback: 'Record detailed local diagnostics' },
     // v4.15.0: privacy + profile toggles surfaced in the popup so the
     // v4.10.0 data-flow panel + v4.7.0 policy-profile machinery are
     // actually discoverable. safeStoreProfile stays on by default; the
     // others are off and become opt-in via the popup.
-    { key: 'privacyDataFlowPanel',   group: 'Privacy',           name: 'Data-Flow Panel',        desc: 'Show every API origin Astra Deck can contact' },
-    { key: 'syncSettings',           group: 'Privacy',           name: 'Browser Sync',           desc: 'Opt in to sync safe preferences and Video Hider blocklists' },
-    { key: 'safeStoreProfile',       group: 'Privacy',           name: 'Store-Safe Profile',     desc: 'Hide github-full toggles + scrub keys on export' },
-    { key: 'githubFullProfile',      group: 'Privacy',           name: 'GitHub-Full Profile',    desc: 'Unlock github-full toggles (e.g. Cobalt, AI keys)' },
+    { key: 'privacyDataFlowPanel',   group: 'Privacy',      nameKey: 'qt_privacyDataFlowPanel_name', nameFallback: 'Data-Flow Panel',     descKey: 'qt_privacyDataFlowPanel_desc', descFallback: 'Show every API origin Astra Deck can contact' },
+    { key: 'syncSettings',           group: 'Privacy',      nameKey: 'qt_syncSettings_name',          nameFallback: 'Browser Sync',        descKey: 'qt_syncSettings_desc',          descFallback: 'Opt in to sync safe preferences and Video Hider blocklists' },
+    { key: 'safeStoreProfile',       group: 'Privacy',      nameKey: 'qt_safeStoreProfile_name',      nameFallback: 'Store-Safe Profile',  descKey: 'qt_safeStoreProfile_desc',      descFallback: 'Hide github-full toggles + scrub keys on export' },
+    { key: 'githubFullProfile',      group: 'Privacy',      nameKey: 'qt_githubFullProfile_name',     nameFallback: 'GitHub-Full Profile', descKey: 'qt_githubFullProfile_desc',     descFallback: 'Unlock github-full toggles (e.g. Cobalt, AI keys)' },
 ];
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -280,7 +280,9 @@ function initLanguageDropdown() {
             };
             const detected = NATIVE[ui] || NATIVE[ui.split('-')[0]] || ui || '?';
             const baseLabel = t('languageAuto', 'Auto (browser default)');
-            autoOpt.textContent = `${baseLabel} — ${detected}`;
+            autoOpt.textContent = t('languageAutoDetectedTpl', '{label} — {detected}')
+                .replace('{label}', baseLabel)
+                .replace('{detected}', detected);
         }
     } catch (_) { /* reason: i18n detection is best-effort */ }
 
@@ -1435,13 +1437,16 @@ function updateSearchState() {
 function updateResultsState(totalCount, visibleCount, filter) {
     const normalizedFilter = (filter || '').trim();
     const controlsWord = totalCount === 1 ? t('controlSingular', 'control') : t('controlPlural', 'controls');
-    const totalLabel = `${totalCount} ${controlsWord}`;
+    const totalLabel = t('resultsCountTpl', '{count} {controls}')
+        .replace('{count}', String(totalCount))
+        .replace('{controls}', controlsWord);
     if (!normalizedFilter) {
         resultsState.textContent = totalLabel;
         resultsState.title = t('resultsAllAvailableTpl', `${totalCount} quick controls are available in this popup`).replace('{count}', String(totalCount));
         return;
     }
-    resultsState.textContent = `${visibleCount} ${t('resultsMatching', 'matching')}`;
+    resultsState.textContent = t('resultsVisibleTpl', '{count} matching')
+        .replace('{count}', String(visibleCount));
     resultsState.title = t('resultsMatchTpl', `${visibleCount} of ${totalCount} ${controlsWord} match this filter`)
         .replace('{visible}', String(visibleCount))
         .replace('{total}', String(totalCount))
@@ -1761,11 +1766,11 @@ function render(settings, filter) {
         if (!freeTerm) return true;
         // Match against both the source English text AND the translated
         // text so a user filtering in either language finds the toggle.
-        const tName = t(`qt_${item.key}_name`, item.name);
-        const tDesc = t(`qt_${item.key}_desc`, item.desc);
+        const tName = t(item.nameKey, item.nameFallback);
+        const tDesc = t(item.descKey, item.descFallback);
         const tGroup = t(`qtGroup_${item.group.replace(/\W+/g, '_')}`, item.group);
-        return item.name.toLowerCase().includes(freeTerm)
-            || item.desc.toLowerCase().includes(freeTerm)
+        return item.nameFallback.toLowerCase().includes(freeTerm)
+            || item.descFallback.toLowerCase().includes(freeTerm)
             || item.key.toLowerCase().includes(freeTerm)
             || item.group.toLowerCase().includes(freeTerm)
             || tName.toLowerCase().includes(freeTerm)
@@ -1813,7 +1818,9 @@ function render(settings, filter) {
 
         const groupCount = document.createElement('span');
         groupCount.className = 'toggle-group-count';
-        groupCount.textContent = `${groupEnabled}/${groupItems.length}`;
+        groupCount.textContent = t('quickGroupCountTpl', '{enabled}/{total}')
+            .replace('{enabled}', String(groupEnabled))
+            .replace('{total}', String(groupItems.length));
 
         groupHead.appendChild(groupTitleWrap);
         groupHead.appendChild(groupCount);
@@ -1821,8 +1828,8 @@ function render(settings, filter) {
 
         for (const item of groupItems) {
             const on = isQuickToggleOn(settings, item.key);
-            const tName = t(`qt_${item.key}_name`, item.name);
-            const tDesc = t(`qt_${item.key}_desc`, item.desc);
+            const tName = t(item.nameKey, item.nameFallback);
+            const tDesc = t(item.descKey, item.descFallback);
             const stateLabel = on ? t('toggleStateOn', 'Enabled') : t('toggleStateOff', 'Disabled');
             const permissionState = isOptionalHostGrantMissing(item.key)
                 ? ' ' + t('optionalHostPermissionAria', 'Permission needed.') : '';
@@ -1832,7 +1839,11 @@ function render(settings, filter) {
             row.dataset.key = item.key;
             row.setAttribute('role', 'switch');
             row.setAttribute('aria-checked', String(on));
-            row.setAttribute('aria-label', `${tName}. ${tDesc}. ${stateLabel}.${permissionState}`);
+            row.setAttribute('aria-label', t('quickToggleAriaTpl', '{name}. {description}. {state}.{permission}')
+                .replace('{name}', tName)
+                .replace('{description}', tDesc)
+                .replace('{state}', stateLabel)
+                .replace('{permission}', permissionState));
 
             const label = document.createElement('div');
             label.className = 'label';
@@ -1883,7 +1894,7 @@ function installToggleClickDelegation() {
         const key = row.dataset.key;
         const toggle = QUICK_TOGGLES.find((t) => t.key === key);
         if (!toggle) return;
-        const tName = t(`qt_${toggle.key}_name`, toggle.name);
+        const tName = t(toggle.nameKey, toggle.nameFallback);
         row.disabled = true;
         try {
             const next = !isQuickToggleOn(popupState.settings, key);
@@ -1891,7 +1902,9 @@ function installToggleClickDelegation() {
             render(popupState.settings, q.value);
             const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(key)}"]`);
             if (refocus) refocus.focus();
-            showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
+            showStatus(t('toggleStatusTpl', '{name} {state}.')
+                .replace('{name}', tName)
+                .replace('{state}', next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')), 'success');
         } catch (error) {
             console.warn('[Astra Deck popup] Failed to toggle setting:', error);
             showStatus(formatSettingWriteError(tName, error), 'error', 5200);
@@ -2233,7 +2246,9 @@ async function renderSelectorHealthDashboard() {
                 for (const [ctx, count] of ordered) {
                     const chip = document.createElement('span');
                     chip.className = 'sh-ctx-chip';
-                    chip.textContent = `${ctx}: ${count}`;
+                    chip.textContent = t('selectorHealthCtxCountTpl', '{ctx}: {count}')
+                        .replace('{ctx}', ctx)
+                        .replace('{count}', String(count));
                     selectorHealthCtx.appendChild(chip);
                 }
                 for (const rule of degradedMutationRules) {
@@ -3365,9 +3380,12 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             resetBtn.type = 'button';
             resetBtn.className = 'so-key-reset-btn';
             resetBtn.textContent = '↺';
-            resetBtn.title = `Reset ${entry.key} to default (${describeDefaultForTooltip(entry.defaultValue)})`;
+            resetBtn.title = t('schemaResetTitleTpl', 'Reset {key} to default ({value})')
+                .replace('{key}', entry.key)
+                .replace('{value}', describeDefaultForTooltip(entry.defaultValue));
             resetBtn.setAttribute('aria-label',
-                `Reset ${entry.key} to default value`);
+                t('schemaResetAriaTpl', 'Reset {key} to default value')
+                    .replace('{key}', entry.key));
             resetBtn.addEventListener('click', async () => {
                 resetBtn.disabled = true;
                 try {
@@ -3911,8 +3929,12 @@ function showWhatsNew(lastSeen) {
     // is omitted because the popup header already carries it; the
     // banner sits inside the same surface and adding "Astra Deck"
     // here is redundant.
-    const fromClause = lastSeen ? ` (from v${lastSeen})` : '';
-    whatsNewDetail.textContent = `Updated to v${manifestVersion}${fromClause}. See what changed.`;
+    whatsNewDetail.textContent = lastSeen
+        ? t('whatsNewDetailFromTpl', 'Updated to v{version} (from v{previous}). See what changed.')
+            .replace('{version}', manifestVersion)
+            .replace('{previous}', lastSeen)
+        : t('whatsNewDetailTpl', 'Updated to v{version}. See what changed.')
+            .replace('{version}', manifestVersion);
     whatsNewBanner.hidden = false;
 }
 
@@ -4560,7 +4582,9 @@ async function importSettings(file) {
                 'Backup imported. Click Undo Import to restore the previous state until you close the browser.');
         const previewSummary = t('statusImportPreviewSummaryTpl', 'Preview: {preview}.')
             .replace('{preview}', previewText);
-        showStatus(`${importedStatus} ${previewSummary}`,
+        showStatus(t('statusImportSummaryTpl', '{status} {preview}')
+            .replace('{status}', importedStatus)
+            .replace('{preview}', previewSummary),
             'success', 6000);
     } catch (error) {
         showStatus(t('statusImportFail', 'Import failed') + ': ' + error.message, 'error', 4200);

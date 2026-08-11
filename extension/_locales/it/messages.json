@@ -5051,7 +5051,7 @@
     "message": "Esamina ogni servizio che Astra Deck può contattare."
   },
   "spq_privacyDataFlowPanel_name": {
-    "message": "Pannello flussi di dati"
+    "message": "Pannello del flusso dati"
   },
   "spq_removeAllShorts_desc": {
     "message": "Rimuove le sezioni Shorts e i link di navigazione."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "dichiarazione di sponsorizzazione"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} corrispondenze"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "Ripristina {key} al valore predefinito ({value})"
+  },
+  "schemaResetAriaTpl": {
+    "message": "Ripristina {key} al valore predefinito"
+  },
+  "whatsNewDetailTpl": {
+    "message": "Aggiornato alla v{version}. Vedi le modifiche."
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "Aggiornato alla v{version} (da v{previous}). Vedi le modifiche."
+  },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}."
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "Filtri avanzati"
+  },
+  "advancedFiltersHint": {
+    "message": "Usa risk:, category:, scope: o profile:. Gli spazi combinano i filtri; le virgole cercano alternative."
+  },
+  "filterTogglesHelpTitle": {
+    "message": "Il testo libero cerca nomi, descrizioni, chiavi ed etichette tradotte. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. Combina con spazi (E) e virgole (O nel campo)."
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "Pannello del flusso dati"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Mostra ogni origine API che Astra Deck può contattare"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Profilo Store-Safe"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "Nascondi i controlli github-full e ripulisci le chiavi durante l’esportazione"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "Profilo GitHub-Full"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "Sblocca i controlli github-full (ad es. Cobalt e chiavi IA)"
+  },
+  "qtGroup_Privacy": {
+    "message": "Privacy"
   }
 }

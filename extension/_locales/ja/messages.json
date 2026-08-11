@@ -6836,7 +6836,7 @@
     "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
   "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
+    "message": "プライバシー"
   },
   "welcomePresetResearcherDesc": {
     "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "スポンサー表記"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} 件が一致"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "{key} を既定値にリセット（{value}）"
+  },
+  "schemaResetAriaTpl": {
+    "message": "{key} を既定値にリセット"
+  },
+  "whatsNewDetailTpl": {
+    "message": "v{version} に更新しました。変更内容を確認してください。"
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "v{previous} から v{version} に更新しました。変更内容を確認してください。"
+  },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}。"
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}。{description}。{state}。{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "詳細フィルター"
+  },
+  "advancedFiltersHint": {
+    "message": "risk:、category:、scope:、profile: を使用します。スペースでフィルターを組み合わせ、コンマで候補を指定します。"
+  },
+  "filterTogglesHelpTitle": {
+    "message": "フリーテキストは名前、説明、キー、翻訳済みラベルに一致します。Mini-DSL: risk:safe|api|local-companion|experimental|store-risk、category:<name>、scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup、profile:store-safe|github-full|both。スペース（AND）とコンマ（フィールド内の OR）で組み合わせます。"
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "データフローパネル"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Astra Deck が接続できるすべての API オリジンを表示"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Store-Safe プロファイル"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "github-full の切り替えを隠し、エクスポート時にキーを消去"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "GitHub-Full プロファイル"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "github-full の切り替えを解除（Cobalt、AI キーなど）"
+  },
+  "qtGroup_Privacy": {
+    "message": "プライバシー"
   }
 }

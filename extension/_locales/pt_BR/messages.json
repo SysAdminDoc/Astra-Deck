@@ -6836,7 +6836,7 @@
     "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
   "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
+    "message": "Privacidade"
   },
   "welcomePresetResearcherDesc": {
     "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "aviso de patrocínio"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} correspondentes"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "Redefinir {key} para o padrão ({value})"
+  },
+  "schemaResetAriaTpl": {
+    "message": "Redefinir {key} para o valor padrão"
+  },
+  "whatsNewDetailTpl": {
+    "message": "Atualizado para v{version}. Veja o que mudou."
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "Atualizado para v{version} (de v{previous}). Veja o que mudou."
+  },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}."
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "Filtros avançados"
+  },
+  "advancedFiltersHint": {
+    "message": "Use risk:, category:, scope: ou profile:. Espaços combinam filtros; vírgulas encontram alternativas."
+  },
+  "filterTogglesHelpTitle": {
+    "message": "O texto livre encontra nomes, descrições, chaves e rótulos traduzidos. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. Combine com espaços (E) e vírgulas (OU dentro do campo)."
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "Painel de fluxo de dados"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Mostrar toda origem de API que o Astra Deck pode contatar"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Perfil Store-Safe"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "Ocultar controles github-full e limpar chaves na exportação"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "Perfil GitHub-Full"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "Desbloquear controles github-full (por exemplo, Cobalt e chaves de IA)"
+  },
+  "qtGroup_Privacy": {
+    "message": "Privacidade"
   }
 }

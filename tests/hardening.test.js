@@ -7152,16 +7152,14 @@ test('v4.15.0 popup GROUP_ICONS defines a Privacy padlock glyph', () => {
         'Privacy icon must include the U-shaped shackle path');
 });
 
-test('v4.15.0 popup HTML quick-toggles section advertises the updated total', () => {
+test('popup HTML quick-toggles section starts with localized loading copy', () => {
     const html = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
     );
-    // After the browser-sync privacy toggle was added, the QUICK_TOGGLES
-    // list has 19 entries. Both the visible "19 controls" string and any
-    // future i18n-keyed total
-    // must stay in sync with QUICK_TOGGLES.length.
-    assert.match(html, /id="resultsState"[^>]*>19 controls</,
-        'popup.html must advertise 19 quick controls');
+    // The live count is rendered from QUICK_TOGGLES by popup.js. The HTML
+    // bootstrap must remain localized and must not fossilize a stale count.
+    assert.match(html, /id="resultsState"[^>]*data-i18n="loadingState"[^>]*>Loading</,
+        'popup.html must bootstrap the quick-toggle count with localized loading copy');
     // 2026-07-23 audit: the filter-results count is announced to screen
     // readers — typing previously filtered the list in silence.
     assert.match(html, /id="resultsState" role="status" aria-live="polite"/,

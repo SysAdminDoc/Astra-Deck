@@ -6836,7 +6836,7 @@
     "message": "Clean URLs, hide Shorts, block infinite scroll, and keep AI summaries off."
   },
   "welcomePresetPrivacyTitle": {
-    "message": "Privacy"
+    "message": "隐私"
   },
   "welcomePresetResearcherDesc": {
     "message": "Transcripts, bookmarks, watch time, summaries, and comment search."
@@ -7117,5 +7117,71 @@
   },
   "sponsoredFilterSponsorReason": {
     "message": "赞助披露"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
+  },
+  "resultsCountTpl": {
+    "message": "{count} 个{controls}"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} 个匹配项"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}：{count}"
+  },
+  "schemaResetTitleTpl": {
+    "message": "将 {key} 重置为默认值（{value}）"
+  },
+  "schemaResetAriaTpl": {
+    "message": "将 {key} 重置为默认值"
+  },
+  "whatsNewDetailTpl": {
+    "message": "已更新到 v{version}。查看变更。"
+  },
+  "whatsNewDetailFromTpl": {
+    "message": "已从 v{previous} 更新到 v{version}。查看变更。"
+  },
+  "toggleStatusTpl": {
+    "message": "{name}：{state}。"
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}。{description}。{state}。{permission}"
+  },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
+  "advancedFiltersTitle": {
+    "message": "高级过滤器"
+  },
+  "advancedFiltersHint": {
+    "message": "使用 risk:、category:、scope: 或 profile:。空格组合过滤器，逗号匹配备选项。"
+  },
+  "filterTogglesHelpTitle": {
+    "message": "自由文本会匹配名称、描述、键和翻译后的标签。Mini-DSL：risk:safe|api|local-companion|experimental|store-risk、category:<name>、scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup、profile:store-safe|github-full|both。使用空格（AND）和逗号（字段内 OR）组合。"
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "数据流面板"
+  },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "显示 Astra Deck 可以联系的所有 API 来源"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Store-Safe 配置"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "隐藏 github-full 开关并在导出时清理密钥"
+  },
+  "qt_githubFullProfile_name": {
+    "message": "GitHub-Full 配置"
+  },
+  "qt_githubFullProfile_desc": {
+    "message": "解锁 github-full 开关（例如 Cobalt、AI 密钥）"
+  },
+  "qtGroup_Privacy": {
+    "message": "隐私"
   }
 }
