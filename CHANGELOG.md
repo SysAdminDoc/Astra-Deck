@@ -15,6 +15,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Settings-panel literal filters now use `RegExp.escape()` when available,
+  with a compatibility implementation that keeps punctuation and surrogate
+  pairs literal on older browsers.
 - Duration summaries now use `Intl.DurationFormat` across all 11 bundled
   locales, with a deterministic fallback for older browsers.
 - Release builds now emit a Firefox `updates.json` feed with SHA-256-pinned

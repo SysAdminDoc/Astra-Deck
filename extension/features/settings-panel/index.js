@@ -56,7 +56,8 @@
             trapFocusWithin,
             supportsPopover = () => false,
             createCloseWatcher = () => null,
-            destroyCloseWatcher = () => {}
+            destroyCloseWatcher = () => {},
+            escapeRegExp: escapeRegExpDependency = null
         } = deps;
         const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
             ? deps.getPageModalOpen
@@ -70,6 +71,13 @@
         const requestFeatureOptionalHosts = typeof deps.requestFeatureOptionalHosts === 'function'
             ? deps.requestFeatureOptionalHosts
             : async () => true;
+        const escapeRegExp = typeof escapeRegExpDependency === 'function'
+            ? escapeRegExpDependency
+            : typeof globalThis.YTKitCore?.escapeRegExp === 'function'
+                ? globalThis.YTKitCore.escapeRegExp
+                : value => String(value ?? '')
+                    .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
+                    .replace(/-/g, '\\x2d');
 
         let _panelCleanups = [];
         let _settingsPanelLastFocus = null;
@@ -3203,15 +3211,16 @@ function attachUIEventListeners() {
                 if (!el) return;
                 if (el._originalText === undefined) el._originalText = el.textContent;
                 const text = el._originalText;
-                const idx = text.toLowerCase().indexOf(q);
+                const match = new RegExp(escapeRegExp(q), 'u').exec(text.toLowerCase());
+                const idx = match?.index ?? -1;
                 if (idx === -1) { el.textContent = text; return; }
                 el.textContent = '';
                 el.appendChild(document.createTextNode(text.substring(0, idx)));
                 const mark = document.createElement('mark');
                 mark.className = 'ytkit-search-mark';
-                mark.textContent = text.substring(idx, idx + q.length);
+                mark.textContent = text.substring(idx, idx + match[0].length);
                 el.appendChild(mark);
-                el.appendChild(document.createTextNode(text.substring(idx + q.length)));
+                el.appendChild(document.createTextNode(text.substring(idx + match[0].length)));
             };
 
             // Filter cards and highlight
