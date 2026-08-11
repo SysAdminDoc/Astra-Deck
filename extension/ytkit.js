@@ -91,6 +91,26 @@
     // Web Audio stage and therefore is never folded into persisted volume.
     const VolumeCurveController = globalThis.YTKitCore?.volumeCurveController || null;
 
+    // Locale-aware duration output is centralized in date-time.js. Keep a
+    // compact fallback for a userscript host that omits the core module.
+    const formatDuration = typeof globalThis.YTKitCore?.formatDuration === 'function'
+        ? globalThis.YTKitCore.formatDuration
+        : (seconds, options = {}) => {
+            const total = Math.max(0, Math.floor(Number(seconds) || 0));
+            const hours = Math.floor(total / 3600);
+            const minutes = Math.floor((total % 3600) / 60);
+            const remainder = total % 60;
+            if (options.style === 'digital') {
+                const clock = `${minutes}:${String(remainder).padStart(2, '0')}`;
+                return hours > 0 ? `${hours}:${clock}` : clock;
+            }
+            const output = [];
+            if (hours > 0) output.push(`${hours}h`);
+            if (minutes > 0 || hours > 0 || options.includeSeconds === false) output.push(`${minutes}m`);
+            if (options.includeSeconds !== false && (remainder > 0 || output.length === 0)) output.push(`${remainder}s`);
+            return output.join(' ');
+        };
+
     // v4.47.0 NF5 wave 3: feature-lifecycle CSS ownership hook. Peel
     // modules in extension/features/*/index.js register CSS lifecycle
     // specs at module-eval via getLifecycle().defineFeature(spec). The
@@ -21786,10 +21806,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _formatDuration(secs) {
-                const h = Math.floor(secs / 3600);
-                const m = Math.floor((secs % 3600) / 60);
-                if (h > 0) return `${h}h ${m}m`;
-                return `${m}m`;
+                return formatDuration(secs, { style: 'narrow', includeSeconds: false });
             },
 
             _calculate() {
@@ -24775,10 +24792,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _formatDuration(secs) {
-                const h = Math.floor(secs / 3600);
-                const m = Math.floor((secs % 3600) / 60);
-                if (h > 0) return `${h}h ${m}m`;
-                return `${m}m`;
+                return formatDuration(secs, { style: 'narrow', includeSeconds: false });
             },
 
             // Called by settings panel to render stats
@@ -38340,13 +38354,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _formatDuration(seconds) {
-                const total = Math.max(0, Math.floor(Number(seconds) || 0));
-                const hours = Math.floor(total / 3600);
-                const minutes = Math.floor((total % 3600) / 60);
-                const secs = total % 60;
-                return hours > 0
-                    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-                    : `${minutes}:${String(secs).padStart(2, '0')}`;
+                return formatDuration(seconds, { style: 'digital' });
             },
 
             _download(name, text, mime) {
@@ -44776,13 +44784,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _formatDuration(seconds) {
-                const total = Math.max(0, Math.floor(Number(seconds) || 0));
-                const h = Math.floor(total / 3600);
-                const m = Math.floor((total % 3600) / 60);
-                const s = total % 60;
-                if (h > 0) return `${h}h ${m}m ${s}s`;
-                if (m > 0) return `${m}m ${s}s`;
-                return `${s}s`;
+                return formatDuration(seconds, { style: 'narrow' });
             },
 
             _formatSavedAt(value) {

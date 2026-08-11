@@ -15,6 +15,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Duration summaries now use `Intl.DurationFormat` across all 11 bundled
+  locales, with a deterministic fallback for older browsers.
 - Release builds now emit a Firefox `updates.json` feed with SHA-256-pinned
   `store-safe` XPI links, and the patched store-safe Firefox manifest points
   at the stable latest-release feed. The feed remains inert until the XPI is

@@ -50,6 +50,32 @@ test('relative card ages become explicitly approximate locale-formatted calendar
     assert.equal(clamped.date.getDate(), 28);
 });
 
+test('duration formatting uses the platform formatter across every bundled locale', () => {
+    const { formatDuration } = loadCore();
+    const locales = ['ar', 'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt-BR', 'ru', 'zh-CN'];
+
+    for (const locale of locales) {
+        const formatted = formatDuration(3723, { locale, style: 'narrow' });
+        assert.ok(formatted, `${locale} should produce a duration`);
+        assert.doesNotMatch(formatted, /undefined|null/);
+    }
+
+    assert.equal(formatDuration(3723, { locale: 'en-US', style: 'narrow' }), '1h 2m 3s');
+    assert.equal(formatDuration(3723, { locale: 'en-US', style: 'narrow', includeSeconds: false }), '1h 2m');
+    assert.equal(formatDuration(3723, { locale: 'en-US', style: 'digital' }), '1:02:03');
+    assert.equal(formatDuration(62, { locale: 'en-US', style: 'digital' }), '1:02');
+});
+
+test('duration formatting falls back when Intl.DurationFormat is unavailable', () => {
+    const context = { globalThis: null, Intl: { DateTimeFormat: Intl.DateTimeFormat } };
+    context.globalThis = context;
+    vm.createContext(context);
+    vm.runInContext(source, context, { filename: 'extension/core/date-time.js' });
+
+    assert.equal(context.globalThis.YTKitCore.formatDuration(3723, { style: 'narrow' }), '1h 2m 3s');
+    assert.equal(context.globalThis.YTKitCore.formatDuration(3723, { includeSeconds: false }), '1h 2m');
+});
+
 test('date-time core loads before ytkit and is bundled for userscript parity', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8'));
     for (const block of manifest.content_scripts.filter((item) => runtimeModules(item).includes('ytkit.js'))) {
