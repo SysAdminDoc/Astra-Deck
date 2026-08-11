@@ -21,8 +21,8 @@
 
         return {
             id: 'digitalWellbeing',
-            name: 'Digital Wellbeing',
-            description: 'Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.',
+            name: t('feature_digitalWellbeing_name', 'Digital Wellbeing'),
+            description: t('feature_digitalWellbeing_desc', 'Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.'),
             group: 'Advanced',
             icon: 'clock',
             _timer: null,
@@ -349,7 +349,7 @@
                 if (dailyCap > 0 && today.seconds >= dailyCap) {
                     if (!this._overlay && capDismissedDate !== todayKey) {
                         this._showOverlay('cap', {
-                            title: 'Daily Limit Reached',
+                            title: t('dwDailyLimitTitle', 'Daily Limit Reached'),
                             badge: `${this._formatMinutes(today.seconds / 60)} Min Today`,
                             message: `You have watched ${this._formatMinutes(today.seconds / 60)} minutes today. Take the rest of the day off, or come back tomorrow with a fresh reset.`,
                             hint: 'Dismissing this reminder will keep it quiet until your next local day starts.',
@@ -363,7 +363,7 @@
                 if (breakEvery > 0 && sessionElapsed >= breakEvery && !this._overlay) {
                     this._sessionStart = today.seconds;
                     this._showOverlay('break', {
-                        title: 'Take a Break',
+                        title: t('dwBreakTitle', 'Take a Break'),
                         badge: `${this._formatMinutes(breakEvery / 60)} Min Session`,
                         message: `You have been watching for ${this._formatMinutes(breakEvery / 60)} minutes. Rest your eyes, stretch, or look away from the screen for a moment before continuing.`,
                         hint: 'Playback is paused until you choose to resume.'

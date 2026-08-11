@@ -7210,5 +7210,17 @@
   },
   "transcriptDownloadedTpl": {
     "message": "字幕已下载！（{count} 个片段）"
+  },
+  "dwDailyLimitTitle": {
+    "message": "已达到每日上限"
+  },
+  "dwBreakTitle": {
+    "message": "休息一下"
+  },
+  "playerDockHomeLink": {
+    "message": "前往主页"
+  },
+  "sponsorCachedSegmentTitleTpl": {
+    "message": "{label}（缓存于 {time}）"
   }
 }

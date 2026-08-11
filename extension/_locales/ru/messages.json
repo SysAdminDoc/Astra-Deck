@@ -7210,5 +7210,17 @@
   },
   "transcriptDownloadedTpl": {
     "message": "Расшифровка загружена! ({count} сегм.)"
+  },
+  "dwDailyLimitTitle": {
+    "message": "Достигнут дневной лимит"
+  },
+  "dwBreakTitle": {
+    "message": "Сделайте перерыв"
+  },
+  "playerDockHomeLink": {
+    "message": "На главную"
+  },
+  "sponsorCachedSegmentTitleTpl": {
+    "message": "{label} (в кэше с {time})"
   }
 }

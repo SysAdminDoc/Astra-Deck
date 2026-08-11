@@ -9,13 +9,14 @@
 
     function createYoutubeMusicCompatFeature(deps = {}) {
         const {
-            injectStyle = () => ({ remove() {} })
+            injectStyle = () => ({ remove() {} }),
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
             id: 'youtubeMusicCompat',
-            name: 'YouTube Music Compatibility',
-            description: 'Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating.',
+            name: t('feature_youtubeMusicCompat_name', 'YouTube Music Compatibility'),
+            description: t('feature_youtubeMusicCompat_desc', 'Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating.'),
             group: 'Integrations',
             icon: 'music',
             _styleElement: null,

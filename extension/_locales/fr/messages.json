@@ -7210,5 +7210,17 @@
   },
   "transcriptDownloadedTpl": {
     "message": "Transcription téléchargée ! ({count} segments)"
+  },
+  "dwDailyLimitTitle": {
+    "message": "Limite quotidien atteint"
+  },
+  "dwBreakTitle": {
+    "message": "Faites une pause"
+  },
+  "playerDockHomeLink": {
+    "message": "Accéder à l’accueil"
+  },
+  "sponsorCachedSegmentTitleTpl": {
+    "message": "{label} (en cache à {time})"
   }
 }

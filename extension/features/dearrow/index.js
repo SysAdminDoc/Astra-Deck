@@ -48,13 +48,14 @@
             injectStyle = () => null,
             announceA11y = () => {},
             VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/,
-            PageTypes = { WATCH: 'watch' }
+            PageTypes = { WATCH: 'watch' },
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
             id: 'deArrow',
-            name: 'DeArrow',
-            description: 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database',
+            name: t('feature_deArrow_name', 'DeArrow'),
+            description: t('feature_deArrow_desc', 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database'),
             group: 'Content',
             icon: 'type',
             isParent: true,

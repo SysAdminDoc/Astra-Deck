@@ -26347,8 +26347,8 @@ if (typeof globalThis !== "undefined") {
 
         return {
             id: 'digitalWellbeing',
-            name: 'Digital Wellbeing',
-            description: 'Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.',
+            name: t('feature_digitalWellbeing_name', 'Digital Wellbeing'),
+            description: t('feature_digitalWellbeing_desc', 'Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.'),
             group: 'Advanced',
             icon: 'clock',
             _timer: null,
@@ -26675,7 +26675,7 @@ if (typeof globalThis !== "undefined") {
                 if (dailyCap > 0 && today.seconds >= dailyCap) {
                     if (!this._overlay && capDismissedDate !== todayKey) {
                         this._showOverlay('cap', {
-                            title: 'Daily Limit Reached',
+                            title: t('dwDailyLimitTitle', 'Daily Limit Reached'),
                             badge: `${this._formatMinutes(today.seconds / 60)} Min Today`,
                             message: `You have watched ${this._formatMinutes(today.seconds / 60)} minutes today. Take the rest of the day off, or come back tomorrow with a fresh reset.`,
                             hint: 'Dismissing this reminder will keep it quiet until your next local day starts.',
@@ -26689,7 +26689,7 @@ if (typeof globalThis !== "undefined") {
                 if (breakEvery > 0 && sessionElapsed >= breakEvery && !this._overlay) {
                     this._sessionStart = today.seconds;
                     this._showOverlay('break', {
-                        title: 'Take a Break',
+                        title: t('dwBreakTitle', 'Take a Break'),
                         badge: `${this._formatMinutes(breakEvery / 60)} Min Session`,
                         message: `You have been watching for ${this._formatMinutes(breakEvery / 60)} minutes. Rest your eyes, stretch, or look away from the screen for a moment before continuing.`,
                         hint: 'Playback is paused until you choose to resume.'
@@ -30814,8 +30814,8 @@ function attachUIEventListeners() {
 
         return {
             id: 'floatingLogoOnWatch',
-            name: 'Astra Player Dock',
-            description: 'Replace native player right-controls with Astra quick links, local tools, and settings',
+            name: t('feature_floatingLogoOnWatch_name', 'Astra Player Dock'),
+            description: t('feature_floatingLogoOnWatch_desc', 'Replace native player right-controls with Astra quick links, local tools, and settings'),
             group: 'Watch Page',
             icon: 'layout',
             _ruleId: 'floatingLogoRule',
@@ -30917,7 +30917,7 @@ function attachUIEventListeners() {
                 const logoLink = document.createElement('a');
                 const launcherMeta = getFeatureById('quickLinkMenu')?._getLauncherMeta?.() || {
                     href: this._getLogoHref(),
-                    label: 'Go to home'
+                    label: t('playerDockHomeLink', 'Go to home')
                 };
                 logoLink.href = launcherMeta.href;
                 logoLink.title = launcherMeta.label;
@@ -31488,13 +31488,14 @@ function attachUIEventListeners() {
 
     function createYoutubeMusicCompatFeature(deps = {}) {
         const {
-            injectStyle = () => ({ remove() {} })
+            injectStyle = () => ({ remove() {} }),
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
             id: 'youtubeMusicCompat',
-            name: 'YouTube Music Compatibility',
-            description: 'Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating.',
+            name: t('feature_youtubeMusicCompat_name', 'YouTube Music Compatibility'),
+            description: t('feature_youtubeMusicCompat_desc', 'Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating.'),
             group: 'Integrations',
             icon: 'music',
             _styleElement: null,
@@ -32466,13 +32467,14 @@ function attachUIEventListeners() {
             injectStyle = () => null,
             announceA11y = () => {},
             VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/,
-            PageTypes = { WATCH: 'watch' }
+            PageTypes = { WATCH: 'watch' },
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
             id: 'sponsorBlock',
-            name: 'SponsorBlock',
-            description: 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data',
+            name: t('feature_sponsorBlock_name', 'SponsorBlock'),
+            description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data'),
             group: 'Content',
             icon: 'skip-forward',
             isParent: true,
@@ -32919,7 +32921,9 @@ function attachUIEventListeners() {
                     const label = seg.category.replace(/_/g, ' ');
                     if (seg._ytkitCacheSource === 'stale') {
                         bar.dataset.ytkitCacheSource = 'stale';
-                        bar.title = `${label} (cached at ${this._formatCacheTimestamp(seg._ytkitCachedAt)})`;
+                        bar.title = t('sponsorCachedSegmentTitleTpl', '{label} (cached at {time})')
+                            .replace('{label}', label)
+                            .replace('{time}', this._formatCacheTimestamp(seg._ytkitCachedAt));
                     } else {
                         bar.title = label;
                     }
@@ -33100,13 +33104,14 @@ function attachUIEventListeners() {
             injectStyle = () => null,
             announceA11y = () => {},
             VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/,
-            PageTypes = { WATCH: 'watch' }
+            PageTypes = { WATCH: 'watch' },
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
             id: 'deArrow',
-            name: 'DeArrow',
-            description: 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database',
+            name: t('feature_deArrow_name', 'DeArrow'),
+            description: t('feature_deArrow_desc', 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database'),
             group: 'Content',
             icon: 'type',
             isParent: true,

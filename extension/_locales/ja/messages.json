@@ -7210,5 +7210,17 @@
   },
   "transcriptDownloadedTpl": {
     "message": "文字起こしをダウンロードしました（{count} セグメント）"
+  },
+  "dwDailyLimitTitle": {
+    "message": "1日の上限に達しました"
+  },
+  "dwBreakTitle": {
+    "message": "休憩しましょう"
+  },
+  "playerDockHomeLink": {
+    "message": "ホームへ移動"
+  },
+  "sponsorCachedSegmentTitleTpl": {
+    "message": "{label}（{time} にキャッシュ）"
   }
 }

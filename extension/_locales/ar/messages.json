@@ -7210,5 +7210,17 @@
   },
   "transcriptDownloadedTpl": {
     "message": "تم تنزيل النص! ({count} مقطع)"
+  },
+  "dwDailyLimitTitle": {
+    "message": "تم بلوغ الحد اليومي"
+  },
+  "dwBreakTitle": {
+    "message": "خذ استراحة"
+  },
+  "playerDockHomeLink": {
+    "message": "الانتقال إلى الصفحة الرئيسية"
+  },
+  "sponsorCachedSegmentTitleTpl": {
+    "message": "{label} (مخزّن في {time})"
   }
 }

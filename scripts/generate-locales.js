@@ -4196,6 +4196,74 @@ const RUNTIME_COPY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(RUNTIME_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const FEATURE_RUNTIME_COPY_TRANSLATIONS = {
+  de: {
+    'Daily Limit Reached': 'Tageslimit erreicht',
+    'Take a Break': 'Zeit für eine Pause',
+    'Go to home': 'Zur Startseite'
+  },
+  es: {
+    'Daily Limit Reached': 'Límite diario alcanzado',
+    'Take a Break': 'Tómate un descanso',
+    'Go to home': 'Ir al inicio'
+  },
+  fr: {
+    'Daily Limit Reached': 'Limite quotidien atteint',
+    'Take a Break': 'Faites une pause',
+    'Go to home': 'Accéder à l’accueil'
+  },
+  it: {
+    'Daily Limit Reached': 'Limite giornaliero raggiunto',
+    'Take a Break': 'Fai una pausa',
+    'Go to home': 'Vai alla home'
+  },
+  pt_BR: {
+    'Daily Limit Reached': 'Limite diário atingido',
+    'Take a Break': 'Faça uma pausa',
+    'Go to home': 'Ir para a página inicial'
+  },
+  ru: {
+    'Daily Limit Reached': 'Достигнут дневной лимит',
+    'Take a Break': 'Сделайте перерыв',
+    'Go to home': 'На главную'
+  },
+  ja: {
+    'Daily Limit Reached': '1日の上限に達しました',
+    'Take a Break': '休憩しましょう',
+    'Go to home': 'ホームへ移動'
+  },
+  ko: {
+    'Daily Limit Reached': '일일 한도에 도달했습니다',
+    'Take a Break': '잠시 쉬세요',
+    'Go to home': '홈으로 이동'
+  },
+  ar: {
+    'Daily Limit Reached': 'تم بلوغ الحد اليومي',
+    'Take a Break': 'خذ استراحة',
+    'Go to home': 'الانتقال إلى الصفحة الرئيسية'
+  },
+  zh_CN: {
+    'Daily Limit Reached': '已达到每日上限',
+    'Take a Break': '休息一下',
+    'Go to home': '前往主页'
+  }
+};
+for (const [locale, messages] of Object.entries(FEATURE_RUNTIME_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+const SPONSOR_RUNTIME_COPY_TRANSLATIONS = {
+  de: { '{label} (cached at {time})': '{label} (gespeichert am {time})' },
+  es: { '{label} (cached at {time})': '{label} (en caché desde {time})' },
+  fr: { '{label} (cached at {time})': '{label} (en cache à {time})' },
+  it: { '{label} (cached at {time})': '{label} (in cache alle {time})' },
+  pt_BR: { '{label} (cached at {time})': '{label} (em cache em {time})' },
+  ru: { '{label} (cached at {time})': '{label} (в кэше с {time})' },
+  ja: { '{label} (cached at {time})': '{label}（{time} にキャッシュ）' },
+  ko: { '{label} (cached at {time})': '{label} ({time}에 캐시됨)' },
+  ar: { '{label} (cached at {time})': '{label} (مخزّن في {time})' },
+  zh_CN: { '{label} (cached at {time})': '{label}（缓存于 {time}）' }
+};
+for (const [locale, messages] of Object.entries(SPONSOR_RUNTIME_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AUDIO_TRACK_TRANSLATIONS = {
   de: {
     'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Wählen Sie Ihre bevorzugte Audiosprache über die Player-Brücke aus, ohne die YouTube-Einstellungen zu öffnen oder anzuklicken.',

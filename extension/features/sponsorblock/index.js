@@ -50,13 +50,14 @@
             injectStyle = () => null,
             announceA11y = () => {},
             VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/,
-            PageTypes = { WATCH: 'watch' }
+            PageTypes = { WATCH: 'watch' },
+            t = (_key, fallback) => fallback
         } = deps;
 
         return {
             id: 'sponsorBlock',
-            name: 'SponsorBlock',
-            description: 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data',
+            name: t('feature_sponsorBlock_name', 'SponsorBlock'),
+            description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data'),
             group: 'Content',
             icon: 'skip-forward',
             isParent: true,
@@ -503,7 +504,9 @@
                     const label = seg.category.replace(/_/g, ' ');
                     if (seg._ytkitCacheSource === 'stale') {
                         bar.dataset.ytkitCacheSource = 'stale';
-                        bar.title = `${label} (cached at ${this._formatCacheTimestamp(seg._ytkitCachedAt)})`;
+                        bar.title = t('sponsorCachedSegmentTitleTpl', '{label} (cached at {time})')
+                            .replace('{label}', label)
+                            .replace('{time}', this._formatCacheTimestamp(seg._ytkitCachedAt));
                     } else {
                         bar.title = label;
                     }
