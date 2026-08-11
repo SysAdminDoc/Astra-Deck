@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "{count} canali bloccati"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "Inserisci un URL video YouTube valido o un ID video di 11 caratteri."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "Aggiungi video nascosto"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "Incolla un URL YouTube o un ID video per aggiungerlo direttamente all’elenco dei nascosti."
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=ID_VIDEO"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "Nascondi video"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "Apri il video nascosto {videoId} su YouTube"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "Miniatura di anteprima del video nascosto {videoId}"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "Anteprima non disponibile"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "ID video"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "Nascosto dai consigli finché non lo ripristini. Il ripristino può aggiungere un’eccezione per lasciare il video visibile alle regole automatiche."
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "Apri su YouTube"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "Ripristina e consenti"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "Ripristina il video nascosto {videoId} e aggiungi un’eccezione di autorizzazione"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "Rimuovi dall’elenco"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "Rimuovi il video nascosto {videoId} dall’elenco senza aggiungere un’eccezione"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "Ripristina e consenti tutti i video nascosti ({count})"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "Svuota solo l’elenco dei nascosti ({count})"
+  },
+  "videoHiderRemovePage": {
+    "message": "Rimuovi i video nascosti in questa pagina"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "Aggiungi video consentito"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "Incolla un URL YouTube o un ID video per mantenerlo visibile anche quando corrisponde a un filtro."
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "Consenti video"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "Apri il video consentito {videoId} su YouTube"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "Miniatura di anteprima del video consentito {videoId}"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "Consentito dal ripristino manuale. I filtri automatici ignorano questo video finché resta l’eccezione."
+  },
+  "videoHiderRemoveException": {
+    "message": "Rimuovi eccezione"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "Rimuovi l’eccezione del video consentito {videoId}"
+  },
+  "videoHiderHideAgain": {
+    "message": "Nascondi di nuovo"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "Nascondi di nuovo il video consentito {videoId}"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "Svuota i video consentiti ({count})"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

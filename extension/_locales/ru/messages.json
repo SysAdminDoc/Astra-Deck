@@ -5962,6 +5962,93 @@
   "videoHiderBlockedCountTpl": {
     "message": "Заблокировано каналов: {count}"
   },
+  "videoHiderInvalidVideoInput": {
+    "message": "Введите корректный URL видео YouTube или 11-значный ID видео."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "Добавить скрытое видео"
+  },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "Вставьте URL YouTube или ID видео, чтобы добавить его в список скрытых."
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=ID_VIDEO"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "Скрыть видео"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "Открыть скрытое видео {videoId} на YouTube"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "Миниатюра скрытого видео {videoId}"
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "Предпросмотр недоступен"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "ID видео"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "Скрыто из рекомендаций до восстановления. Восстановление может добавить исключение, чтобы автоматические правила оставили видео видимым."
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "Открыть на YouTube"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "Восстановить и разрешить"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "Восстановить скрытое видео {videoId} и добавить исключение разрешённого видео"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "Удалить из списка"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "Удалить скрытое видео {videoId} из списка без добавления исключения"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "Восстановить и разрешить все скрытые видео ({count})"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "Очистить только список скрытых ({count})"
+  },
+  "videoHiderRemovePage": {
+    "message": "Удалить скрытые видео на этой странице"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "Добавить разрешённое видео"
+  },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "Вставьте URL YouTube или ID видео, чтобы оставить его видимым даже при совпадении фильтра."
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "Разрешить видео"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "Открыть разрешённое видео {videoId} на YouTube"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "Миниатюра разрешённого видео {videoId}"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "Разрешено ручным восстановлением. Автоматические фильтры пропускают видео, пока действует исключение."
+  },
+  "videoHiderRemoveException": {
+    "message": "Удалить исключение"
+  },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "Удалить исключение разрешённого видео {videoId}"
+  },
+  "videoHiderHideAgain": {
+    "message": "Скрыть снова"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "Снова скрыть разрешённое видео {videoId}"
+  },
+  "videoHiderClearAllowedTpl": {
+    "message": "Очистить разрешённые видео ({count})"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

@@ -742,7 +742,10 @@ function buildSettingsPanel() {
             paneTitleH2.textContent = t('feature_hideVideosFromHome_name', 'Video Hider');
             const paneDescription = document.createElement('p');
             paneDescription.className = 'ytkit-pane-description';
-            paneDescription.textContent = 'Review hidden videos, manage blocked channels, and tune automatic filters without leaving the page.';
+            paneDescription.textContent = t(
+                'videoHiderPaneDescription',
+                'Review hidden videos, manage channel lists, and tune automatic filters without leaving the page.'
+            );
             const paneMeta = document.createElement('div');
             paneMeta.className = 'ytkit-pane-meta';
             const paneStateChip = document.createElement('span');
@@ -1037,7 +1040,10 @@ function buildSettingsPanel() {
                     event.preventDefault();
                     const videoId = videoHiderFeature?._normalizeVideoIdInput?.(input.value);
                     if (!videoId) {
-                        status.textContent = 'Enter a valid YouTube video URL or 11-character video ID.';
+                        status.textContent = t(
+                            'videoHiderInvalidVideoInput',
+                            'Enter a valid YouTube video URL or 11-character video ID.'
+                        );
                         input.focus();
                         return;
                     }
@@ -1125,10 +1131,10 @@ function buildSettingsPanel() {
                     const videos = videoHiderFeature?._getHiddenVideos() || [];
                     const createHiddenEntryForm = () => createVideoIdEntryForm({
                         id: 'ytkit-vh-add-hidden',
-                        title: 'Add Hidden Video',
-                        copy: 'Paste a YouTube URL or video ID to add it directly to the hidden list.',
-                        placeholder: 'https://youtube.com/watch?v=...',
-                        buttonLabel: 'Hide Video',
+                        title: t('videoHiderAddHiddenVideoTitle', 'Add Hidden Video'),
+                        copy: t('videoHiderAddHiddenVideoCopy', 'Paste a YouTube URL or video ID to add it directly to the hidden list.'),
+                        placeholder: t('videoHiderVideoUrlPlaceholder', 'https://youtube.com/watch?v=...'),
+                        buttonLabel: t('videoHiderHideVideoButton', 'Hide Video'),
                         onSubmit: videoId => {
                             const added = videoHiderFeature?._addHiddenVideos?.([videoId]) || [];
                             videoHiderFeature?._processAllVideos?.();
@@ -1162,7 +1168,10 @@ function buildSettingsPanel() {
                             thumbLink.href = `https://youtube.com/watch?v=${vid}`;
                             thumbLink.target = '_blank';
                             thumbLink.rel = 'noopener noreferrer';
-                            thumbLink.setAttribute('aria-label', `Open hidden video ${vid} on YouTube`);
+                            thumbLink.setAttribute('aria-label', t(
+                                'videoHiderOpenHiddenVideoAriaTpl',
+                                'Open hidden video {videoId} on YouTube'
+                            ).replace('{videoId}', vid));
                             const thumb = document.createElement('img');
                             thumb.className = 'ytkit-vh-thumb';
                             thumb.src = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`;
@@ -1170,13 +1179,16 @@ function buildSettingsPanel() {
                             thumb.height = 100;
                             thumb.loading = 'lazy';
                             thumb.decoding = 'async';
-                            thumb.alt = `Preview thumbnail for hidden video ${vid}`;
+                            thumb.alt = t(
+                                'videoHiderHiddenVideoPreviewAltTpl',
+                                'Preview thumbnail for hidden video {videoId}'
+                            ).replace('{videoId}', vid);
                             thumb.onerror = () => {
                                 thumb.remove();
                                 thumbLink.classList.add('is-fallback');
                                 const fallback = document.createElement('span');
                                 fallback.className = 'ytkit-vh-thumb-fallback';
-                                fallback.textContent = 'Preview unavailable';
+                                fallback.textContent = t('videoHiderPreviewUnavailable', 'Preview unavailable');
                                 thumbLink.appendChild(fallback);
                             };
                             thumbLink.appendChild(thumb);
@@ -1184,14 +1196,17 @@ function buildSettingsPanel() {
                             info.className = 'ytkit-vh-item-main';
                             const vidLabel = document.createElement('div');
                             vidLabel.className = 'ytkit-vh-item-label';
-                            vidLabel.textContent = 'Video ID';
+                            vidLabel.textContent = t('videoHiderVideoIdLabel', 'Video ID');
                             const vidId = document.createElement('div');
                             vidId.className = 'ytkit-vh-item-title ytkit-vh-item-title--code';
                             vidId.setAttribute('translate', 'no');
                             vidId.textContent = vid;
                             const summary = document.createElement('div');
                             summary.className = 'ytkit-vh-item-meta';
-                            summary.textContent = 'Hidden from recommendations until you restore it. Restoring can add an exception so automatic rules leave it visible.';
+                            summary.textContent = t(
+                                'videoHiderHiddenVideoSummary',
+                                'Hidden from recommendations until you restore it. Restoring can add an exception so automatic rules leave it visible.'
+                            );
                             const actions = document.createElement('div');
                             actions.className = 'ytkit-vh-item-actions';
                             const link = document.createElement('a');
@@ -1199,12 +1214,15 @@ function buildSettingsPanel() {
                             link.href = `https://youtube.com/watch?v=${vid}`;
                             link.target = '_blank';
                             link.rel = 'noopener noreferrer';
-                            link.textContent = 'Open on YouTube';
+                            link.textContent = t('videoHiderOpenOnYouTube', 'Open on YouTube');
                             const removeBtn = document.createElement('button');
                             removeBtn.type = 'button';
                             removeBtn.className = 'ytkit-vh-list-btn';
-                            removeBtn.textContent = 'Restore & Allow';
-                            removeBtn.setAttribute('aria-label', `Restore hidden video ${vid} and add an allowed-video exception`);
+                            removeBtn.textContent = t('videoHiderRestoreAllow', 'Restore & Allow');
+                            removeBtn.setAttribute('aria-label', t(
+                                'videoHiderRestoreHiddenVideoAriaTpl',
+                                'Restore hidden video {videoId} and add an allowed-video exception'
+                            ).replace('{videoId}', vid));
                             removeBtn.onclick = () => {
                                 videoHiderFeature._unhideVideo?.(vid);
                                 renderTabContent('videos');
@@ -1212,8 +1230,11 @@ function buildSettingsPanel() {
                             const deleteBtn = document.createElement('button');
                             deleteBtn.type = 'button';
                             deleteBtn.className = 'ytkit-vh-list-btn';
-                            deleteBtn.textContent = 'Remove From List';
-                            deleteBtn.setAttribute('aria-label', `Remove hidden video ${vid} from the hidden list without adding an exception`);
+                            deleteBtn.textContent = t('videoHiderRemoveFromList', 'Remove From List');
+                            deleteBtn.setAttribute('aria-label', t(
+                                'videoHiderRemoveHiddenVideoAriaTpl',
+                                'Remove hidden video {videoId} from the hidden list without adding an exception'
+                            ).replace('{videoId}', vid));
                             deleteBtn.onclick = () => {
                                 const removed = videoHiderFeature._removeHiddenVideos?.([vid]) || [];
                                 videoHiderFeature._restoreRemovedVideoNodes?.(new Set([vid]));
@@ -1237,7 +1258,10 @@ function buildSettingsPanel() {
                         const clearBtn = document.createElement('button');
                         clearBtn.type = 'button';
                         clearBtn.className = 'ytkit-vh-clear-btn';
-                        clearBtn.textContent = `Restore & Allow All Hidden Videos (${videos.length})`;
+                        clearBtn.textContent = t(
+                            'videoHiderRestoreAllTpl',
+                            'Restore & Allow All Hidden Videos ({count})'
+                        ).replace('{count}', videos.length);
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getHiddenVideos()];
                             const allowedAdded = videoHiderFeature._addAllowedVideos?.(backup) || [];
@@ -1258,7 +1282,10 @@ function buildSettingsPanel() {
                         const clearListBtn = document.createElement('button');
                         clearListBtn.type = 'button';
                         clearListBtn.className = 'ytkit-vh-clear-btn';
-                        clearListBtn.textContent = `Clear Hidden List Only (${videos.length})`;
+                        clearListBtn.textContent = t(
+                            'videoHiderClearHiddenListTpl',
+                            'Clear Hidden List Only ({count})'
+                        ).replace('{count}', videos.length);
                         clearListBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getHiddenVideos()];
                             videoHiderFeature._setHiddenVideos([]);
@@ -1278,7 +1305,10 @@ function buildSettingsPanel() {
                         const removePageBtn = document.createElement('button');
                         removePageBtn.type = 'button';
                         removePageBtn.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
-                        removePageBtn.textContent = 'Remove Hidden Videos On This Page';
+                        removePageBtn.textContent = t(
+                            'videoHiderRemovePage',
+                            'Remove Hidden Videos On This Page'
+                        );
                         removePageBtn.onclick = () => {
                             videoHiderFeature._removeHiddenVideosOnPage?.();
                             updateVideoHiderMeta();
@@ -1289,10 +1319,10 @@ function buildSettingsPanel() {
                     const allowed = videoHiderFeature?._getAllowedVideos() || [];
                     const createAllowedEntryForm = () => createVideoIdEntryForm({
                         id: 'ytkit-vh-add-allowed',
-                        title: 'Add Allowed Video',
-                        copy: 'Paste a YouTube URL or video ID to keep it visible even when a filter still matches.',
-                        placeholder: 'https://youtube.com/watch?v=...',
-                        buttonLabel: 'Allow Video',
+                        title: t('videoHiderAddAllowedVideoTitle', 'Add Allowed Video'),
+                        copy: t('videoHiderAddAllowedVideoCopy', 'Paste a YouTube URL or video ID to keep it visible even when a filter still matches.'),
+                        placeholder: t('videoHiderVideoUrlPlaceholder', 'https://youtube.com/watch?v=...'),
+                        buttonLabel: t('videoHiderAllowVideoButton', 'Allow Video'),
                         onSubmit: videoId => {
                             const added = videoHiderFeature?._addAllowedVideos?.([videoId], { force: true }) || [];
                             const removedHidden = videoHiderFeature?._removeHiddenVideos?.([videoId]) || [];
@@ -1331,7 +1361,10 @@ function buildSettingsPanel() {
                             thumbLink.href = `https://youtube.com/watch?v=${vid}`;
                             thumbLink.target = '_blank';
                             thumbLink.rel = 'noopener noreferrer';
-                            thumbLink.setAttribute('aria-label', `Open allowed video ${vid} on YouTube`);
+                            thumbLink.setAttribute('aria-label', t(
+                                'videoHiderOpenAllowedVideoAriaTpl',
+                                'Open allowed video {videoId} on YouTube'
+                            ).replace('{videoId}', vid));
                             const thumb = document.createElement('img');
                             thumb.className = 'ytkit-vh-thumb';
                             thumb.src = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`;
@@ -1339,13 +1372,16 @@ function buildSettingsPanel() {
                             thumb.height = 100;
                             thumb.loading = 'lazy';
                             thumb.decoding = 'async';
-                            thumb.alt = `Preview thumbnail for allowed video ${vid}`;
+                            thumb.alt = t(
+                                'videoHiderAllowedVideoPreviewAltTpl',
+                                'Preview thumbnail for allowed video {videoId}'
+                            ).replace('{videoId}', vid);
                             thumb.onerror = () => {
                                 thumb.remove();
                                 thumbLink.classList.add('is-fallback');
                                 const fallback = document.createElement('span');
                                 fallback.className = 'ytkit-vh-thumb-fallback';
-                                fallback.textContent = 'Preview unavailable';
+                                fallback.textContent = t('videoHiderPreviewUnavailable', 'Preview unavailable');
                                 thumbLink.appendChild(fallback);
                             };
                             thumbLink.appendChild(thumb);
@@ -1353,14 +1389,17 @@ function buildSettingsPanel() {
                             info.className = 'ytkit-vh-item-main';
                             const vidLabel = document.createElement('div');
                             vidLabel.className = 'ytkit-vh-item-label';
-                            vidLabel.textContent = 'Video ID';
+                            vidLabel.textContent = t('videoHiderVideoIdLabel', 'Video ID');
                             const vidId = document.createElement('div');
                             vidId.className = 'ytkit-vh-item-title ytkit-vh-item-title--code';
                             vidId.setAttribute('translate', 'no');
                             vidId.textContent = vid;
                             const summary = document.createElement('div');
                             summary.className = 'ytkit-vh-item-meta';
-                            summary.textContent = 'Allowed by manual restore. Automatic filters skip this video while the exception remains.';
+                            summary.textContent = t(
+                                'videoHiderAllowedVideoSummary',
+                                'Allowed by manual restore. Automatic filters skip this video while the exception remains.'
+                            );
                             const actions = document.createElement('div');
                             actions.className = 'ytkit-vh-item-actions';
                             const link = document.createElement('a');
@@ -1368,12 +1407,15 @@ function buildSettingsPanel() {
                             link.href = `https://youtube.com/watch?v=${vid}`;
                             link.target = '_blank';
                             link.rel = 'noopener noreferrer';
-                            link.textContent = 'Open on YouTube';
+                            link.textContent = t('videoHiderOpenOnYouTube', 'Open on YouTube');
                             const removeBtn = document.createElement('button');
                             removeBtn.type = 'button';
                             removeBtn.className = 'ytkit-vh-list-btn';
-                            removeBtn.textContent = 'Remove Exception';
-                            removeBtn.setAttribute('aria-label', `Remove allowed-video exception for ${vid}`);
+                            removeBtn.textContent = t('videoHiderRemoveException', 'Remove Exception');
+                            removeBtn.setAttribute('aria-label', t(
+                                'videoHiderRemoveAllowedVideoAriaTpl',
+                                'Remove allowed-video exception for {videoId}'
+                            ).replace('{videoId}', vid));
                             removeBtn.onclick = () => {
                                 videoHiderFeature._removeAllowedVideos?.([vid]);
                                 videoHiderFeature._processAllVideos?.();
@@ -1382,8 +1424,11 @@ function buildSettingsPanel() {
                             const hideAgainBtn = document.createElement('button');
                             hideAgainBtn.type = 'button';
                             hideAgainBtn.className = 'ytkit-vh-list-btn';
-                            hideAgainBtn.textContent = 'Hide Again';
-                            hideAgainBtn.setAttribute('aria-label', `Hide allowed video ${vid} again`);
+                            hideAgainBtn.textContent = t('videoHiderHideAgain', 'Hide Again');
+                            hideAgainBtn.setAttribute('aria-label', t(
+                                'videoHiderHideAllowedVideoAriaTpl',
+                                'Hide allowed video {videoId} again'
+                            ).replace('{videoId}', vid));
                             hideAgainBtn.onclick = () => {
                                 videoHiderFeature._addHiddenVideos?.([vid]);
                                 videoHiderFeature._processAllVideos?.();
@@ -1405,7 +1450,10 @@ function buildSettingsPanel() {
                         const clearBtn = document.createElement('button');
                         clearBtn.type = 'button';
                         clearBtn.className = 'ytkit-vh-clear-btn';
-                        clearBtn.textContent = `Clear Allowed Videos (${allowed.length})`;
+                        clearBtn.textContent = t(
+                            'videoHiderClearAllowedTpl',
+                            'Clear Allowed Videos ({count})'
+                        ).replace('{count}', allowed.length);
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getAllowedVideos()];
                             videoHiderFeature._setAllowedVideos([]);
