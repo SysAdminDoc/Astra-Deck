@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "Vider les vidéos autorisées ({count})"
   },
+  "videoHiderOpenChannel": {
+    "message": "Ouvrir la chaîne"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "Débloquer la chaîne {channelName}"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "Débloquer toutes les chaînes ({count})"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "{count} chaînes débloquées"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "Chaînes restaurées"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "Mots-clés et règles"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "Séparez les entrées par des virgules. Les règles s’appliquent immédiatement après la mise à jour de ce champ."
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "réaction, unboxing, blague, shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "Seuil de vues faibles"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "Les vidéos sous ce nombre de vues sont masquées uniquement lorsque le filtre de vues faibles est activé."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "Masquer le taux visionné"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "Utilisez 0 pour désactiver. Les cartes dont la barre de reprise atteint ce pourcentage ou plus sont masquées."
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "% regardé"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "Durée minimale"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "Utilisez 0 pour désactiver cette règle."
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "minutes"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "Activer le limiteur de chargement"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "Recommandé si vous masquez beaucoup de contenu du flux des abonnements."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "Activer le limiteur de chargement des abonnements"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "Lots masqués consécutifs"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "Les valeurs basses arrêtent plus vite. Les valeurs élevées autorisent davantage de chargement avant l’intervention du limiteur."
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "lots"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

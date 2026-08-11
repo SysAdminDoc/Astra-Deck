@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "Svuota i video consentiti ({count})"
   },
+  "videoHiderOpenChannel": {
+    "message": "Apri canale"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "Sblocca il canale {channelName}"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "Sblocca tutti i canali ({count})"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "{count} canali sbloccati"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "Canali ripristinati"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "Parole chiave e regole"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "Separa le voci con virgole. Le regole si applicano subito dopo l’aggiornamento di questo campo."
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "reazione, unboxing, scherzo, shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "Soglia visualizzazioni basse"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "I video al di sotto di questo numero di visualizzazioni vengono nascosti solo quando il filtro delle visualizzazioni basse è attivo."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "Nascondi rapporto visualizzato"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "Usa 0 per disattivare. Le schede con una barra di ripresa pari o superiore a questa percentuale vengono nascoste."
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "% guardato"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "Durata minima"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "Usa 0 per disattivare questa regola."
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "minuti"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "Attiva limitatore di caricamento"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "Consigliato se nascondi molti contenuti del feed delle iscrizioni."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "Attiva limitatore di caricamento iscrizioni"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "Blocchi nascosti consecutivi"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "Valori più bassi fermano prima. Valori più alti consentono più caricamenti prima dell’intervento del limitatore."
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "blocchi"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

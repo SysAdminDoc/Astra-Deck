@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "مسح الفيديوهات المسموح بها ({count})"
   },
+  "videoHiderOpenChannel": {
+    "message": "فتح القناة"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "إلغاء حظر القناة {channelName}"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "إلغاء حظر جميع القنوات ({count})"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "تم إلغاء حظر {count} من القنوات"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "تمت استعادة القنوات"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "الكلمات المفتاحية والقواعد"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "افصل الإدخالات بفواصل. تُطبَّق القواعد فور تحديث هذا الحقل."
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "تفاعل، فتح الصندوق، مزحة، shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "حد المشاهدات المنخفضة"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "تُخفى الفيديوهات التي تقل مشاهداتها عن هذا العدد فقط عند تفعيل فلتر المشاهدات المنخفضة."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "إخفاء نسبة المشاهدة"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "استخدم 0 للتعطيل. تُخفى البطاقات التي يبلغ شريط الاستئناف فيها هذه النسبة أو يتجاوزها."
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "نسبة المشاهدة %"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "المدة الدنيا"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "استخدم 0 لتعطيل هذه القاعدة."
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "دقائق"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "تفعيل محدد التحميل"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "يُنصح به إذا كنت تخفي الكثير من محتوى خلاصة الاشتراكات."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "تفعيل محدد تحميل الاشتراكات"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "الدفعات المخفية المتتالية"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "القيم الأقل توقف التحميل أسرع. القيم الأعلى تسمح بتحميل المزيد قبل تدخل المحدد."
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "دفعات"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "Clear Allowed Videos ({count})"
   },
+  "videoHiderOpenChannel": {
+    "message": "Open Channel"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "Unblock channel {channelName}"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "Unblock All Channels ({count})"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "Unblocked {count} channels"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "Channels restored"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "Keywords & Rules"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "Separate entries with commas. Rules apply immediately after you update this field."
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "reaction, unboxing, prank, shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "Low-View Threshold"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "Videos below this view count are hidden only when low-view filtering is enabled."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "Hide Watched Ratio"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "Use 0 to disable. Cards with a resume bar at or above this percent are hidden."
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "% watched"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "Minimum Duration"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "Use 0 to disable this rule."
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "minutes"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "Enable Load Limiter"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "Recommended if you hide a lot of subscription feed content."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "Enable subscription load limiter"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "Consecutive Hidden Batches"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "Lower values stop faster. Higher values allow more loading before the limiter steps in."
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "batches"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "清空允许的视频（{count}）"
   },
+  "videoHiderOpenChannel": {
+    "message": "打开频道"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "解除屏蔽频道 {channelName}"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "解除屏蔽所有频道（{count}）"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "已解除屏蔽 {count} 个频道"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "频道已恢复"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "关键词和规则"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "用逗号分隔条目。更新此字段后，规则会立即生效。"
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "reaction, unboxing, prank, shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "低观看数阈值"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "只有启用低观看数筛选时，观看数低于此值的视频才会隐藏。"
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "隐藏观看比例"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "使用 0 可停用。恢复进度条达到或超过此百分比的视频卡片会隐藏。"
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "已观看百分比"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "最短时长"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "使用 0 可停用此规则。"
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "分钟"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "启用加载限制器"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "如果你隐藏了大量订阅动态内容，建议启用。"
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "启用订阅加载限制器"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "连续隐藏批次"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "数值越低停止越快。数值越高，在限制器介入前允许加载更多内容。"
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "批次"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },
