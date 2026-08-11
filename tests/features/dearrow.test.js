@@ -56,7 +56,7 @@ test('DeArrow feature block is reachable via the shared helper', () => {
     const [block] = extractFeatureBlock(sources.ytkit, 'deArrow');
     assert.ok(block.length > 100,
         'DeArrow feature block must contain non-trivial source');
-    assert.match(block, /name:\s*['"]DeArrow['"]/,
+    assert.match(block, /name:\s*(?:t\(['"]feature_deArrow_name['"],\s*)?['"]DeArrow['"]/,
         'DeArrow feature block must carry the user-facing name');
 });
 

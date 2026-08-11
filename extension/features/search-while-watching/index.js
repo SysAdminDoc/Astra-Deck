@@ -540,8 +540,8 @@
 
         return {
             id: 'searchWhileWatching',
-            name: 'Search While Watching',
-            description: 'Show YouTube search results in a lightweight watch-page panel without interrupting playback.',
+            name: t('feature_searchWhileWatching_name', 'Search While Watching'),
+            description: t('feature_searchWhileWatching_desc', 'Show YouTube search results in a lightweight watch-page panel without interrupting playback.'),
             group: 'Content',
             icon: 'search',
 

@@ -42,6 +42,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Transcript download feedback, userscript AI credential copy, and sidepanel
   diagnostic labels now use locale keys, removing 23 more grandfathered
   literals from the ratchet.
+- DeArrow, Digital Wellbeing, Player Dock, Search While Watching,
+  SponsorBlock, and YouTube Music feature metadata now resolve through locale
+  keys, removing the remaining 14 literals in those extracted modules.
 - Subscription-group badges, stale-channel dates, staged-unsubscribe labels,
   and persisted default group names now use locale keys, removing 9 more
   grandfathered literals.

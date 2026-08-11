@@ -63,7 +63,8 @@ function searchHtml(data = SEARCH_DATA) {
 
 test('search-while-watching feature is registered from the peeled module', () => {
     const [block] = extractFeatureBlock(sources.ytkit, 'searchWhileWatching');
-    assert.match(block, /name:\s*['"]Search While Watching['"]/);
+    assert.match(block, /name:\s*(?:t\(['"]feature_searchWhileWatching_name['"],\s*)?['"]Search While Watching['"]/,
+        'Search While Watching feature block must carry the localized name fallback');
     assert.match(sources.ytkit, /createSearchWhileWatchingFeature/);
     assert.match(sources.ytkit, /extensionFetchText/);
 });

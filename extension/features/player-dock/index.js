@@ -46,8 +46,8 @@
 
         return {
             id: 'floatingLogoOnWatch',
-            name: 'Astra Player Dock',
-            description: 'Replace native player right-controls with Astra quick links, local tools, and settings',
+            name: t('feature_floatingLogoOnWatch_name', 'Astra Player Dock'),
+            description: t('feature_floatingLogoOnWatch_desc', 'Replace native player right-controls with Astra quick links, local tools, and settings'),
             group: 'Watch Page',
             icon: 'layout',
             _ruleId: 'floatingLogoRule',
@@ -149,7 +149,7 @@
                 const logoLink = document.createElement('a');
                 const launcherMeta = getFeatureById('quickLinkMenu')?._getLauncherMeta?.() || {
                     href: this._getLogoHref(),
-                    label: 'Go to home'
+                    label: t('playerDockHomeLink', 'Go to home')
                 };
                 logoLink.href = launcherMeta.href;
                 logoLink.title = launcherMeta.label;

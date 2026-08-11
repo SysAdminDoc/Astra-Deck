@@ -106,6 +106,18 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
         'userscript AI summary rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/sidepanel.js'], undefined,
         'sidepanel rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/features/dearrow/index.js'], undefined,
+        'deArrow rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/features/digital-wellbeing/index.js'], undefined,
+        'digital wellbeing rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/features/player-dock/index.js'], undefined,
+        'player dock rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/features/search-while-watching/index.js'], undefined,
+        'search-while-watching rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/features/sponsorblock/index.js'], undefined,
+        'SponsorBlock rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/features/youtube-music-compat/index.js'], undefined,
+        'YouTube Music compatibility rendered sink copy should stay at zero after the burn-down pass');
 
     const downloadSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
@@ -163,6 +175,17 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
     );
     assert.match(sidepanelSource, /t\('spPerfRowAriaTpl'/);
     assert.match(sidepanelSource, /t\('spSettingRowTitleTpl'/);
+    for (const [file, key] of [
+        ['dearrow/index.js', 'feature_deArrow_desc'],
+        ['digital-wellbeing/index.js', 'dwDailyLimitTitle'],
+        ['player-dock/index.js', 'playerDockHomeLink'],
+        ['search-while-watching/index.js', 'feature_searchWhileWatching_desc'],
+        ['sponsorblock/index.js', 'sponsorCachedSegmentTitleTpl'],
+        ['youtube-music-compat/index.js', 'feature_youtubeMusicCompat_desc']
+    ]) {
+        const source = fs.readFileSync(path.join(repoRoot, 'extension', 'features', file), 'utf8');
+        assert.match(source, new RegExp(`t\\(['"]${key}`));
+    }
 });
 
 test('generated pseudolocale expands copy and isolates interpolation tokens for RTL proofing', () => {

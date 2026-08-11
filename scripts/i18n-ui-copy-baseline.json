@@ -5,33 +5,11 @@
       "count": 2,
       "digest": "9897409d22353e07cbf260bb49e396f2171b88dc102056d14d2801e686bb9e8e"
     },
-    "extension/features/dearrow/index.js": {
-      "count": 1,
-      "digest": "7a217049d64898476bfd0b8a6f05489c21c214fdc6ea268b4e0b2d07f7a20945"
-    },
-    "extension/features/digital-wellbeing/index.js": {
-      "count": 4,
-      "digest": "beac0f6b3078a6c27186bf870efdb047eb62db2d260143a5092eb45521281a2a"
-    },
-    "extension/features/player-dock/index.js": {
-      "count": 3,
-      "digest": "fe0cb025508debbe143950bd789bd1393d3879017f6b485087b777cd9e0e71b2"
-    },
     "extension/features/return-dislike/index.js": {
       "count": 13,
       "digest": "00803a3b3d041370b0d7894036c4f4fccca7e5dc57676ebb18f28b650e834659",
       "strictCount": 10,
       "strictDigest": "dcb52f5d74ee6d3e47876a3f6627b582aba942dee23b5098a3f80204561a6d42"
-    },
-    "extension/features/search-while-watching/index.js": {
-      "count": 2,
-      "digest": "d0319ba4029625649258bf038b45490dc385c8ec44cf4f7fde2387dc41385ea2"
-    },
-    "extension/features/sponsorblock/index.js": {
-      "count": 2,
-      "digest": "f01779c4deb78dda55e6b39737f90820e8b7f5272c37fa37710e81d3c844f337",
-      "strictCount": 1,
-      "strictDigest": "2c4c73af8bc86fa466d2fb0f1cf3652b6fcc7a7bee0540c047686f780bac18e0"
     },
     "extension/features/sticky-video/index.js": {
       "count": 9,
@@ -39,15 +17,11 @@
       "strictCount": 8,
       "strictDigest": "a005f92ca3b32428cbc53eff4168905b73b29a536c9973e3633c58f92416c575"
     },
-    "extension/features/youtube-music-compat/index.js": {
-      "count": 2,
-      "digest": "f5624ba6767b56881d967bfe8087ddc0b5c44586265ae9a599f2dfac82d4043f"
-    },
     "extension/ytkit.js": {
-      "count": 1252,
-      "digest": "71fdda68bdbdadf839b7f9bd040c3b8d43a2ba1c08e6e75c0a46288c3d152d06",
-      "strictCount": 598,
-      "strictDigest": "7cd5207cf3219cbad8734203faf8a135346f5c8f94a3cf24b1a1a24165fc93ec"
+      "count": 1238,
+      "digest": "7f7ab5a122692abfc30a6d78d74b6b7ef4ffa5c9b87ce7c4bdd3fd330395cbe3",
+      "strictCount": 597,
+      "strictDigest": "3398b2df734c89a1ecbfff0da1184262f975924b84fbe2ce22be9ecaa513d718"
     }
   }
 }
