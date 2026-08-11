@@ -4139,6 +4139,12 @@
   "qt_disableInfiniteScroll_name": {
     "message": "Limitar rolagem infinita"
   },
+  "qt_syncSettings_desc": {
+    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+  },
+  "qt_syncSettings_name": {
+    "message": "Browser Sync"
+  },
   "qt_hideRelatedVideos_desc": {
     "message": "Limpar a barra lateral da página de exibição"
   },
@@ -5217,6 +5223,33 @@
   },
   "storageStatsAriaLabel": {
     "message": "Estatísticas de armazenamento"
+  },
+  "settingsSyncDesc": {
+    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
+  },
+  "settingsSyncOff": {
+    "message": "Off — this device only."
+  },
+  "settingsSyncOn": {
+    "message": "On — preferences and blocklists sync through your browser account."
+  },
+  "settingsSyncTitle": {
+    "message": "Browser sync"
+  },
+  "settingsSyncUndo": {
+    "message": "Undo last sync"
+  },
+  "settingsSyncUndoAria": {
+    "message": "Restore the local state from before the last browser sync"
+  },
+  "settingsSyncUndoDone": {
+    "message": "Last browser sync undone locally."
+  },
+  "settingsSyncUndoFailed": {
+    "message": "Could not undo the last browser sync."
+  },
+  "settingsSyncUnavailable": {
+    "message": "Browser sync is unavailable in this browser."
   },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"

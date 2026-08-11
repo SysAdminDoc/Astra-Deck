@@ -5436,11 +5436,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // and two bounded player preferences (453 → 456), plus the experimental
     // extension-only Force DVR toggle (456 → 457), plus the replay-chat
     // density toggle (457 → 458), six local Video Hider heuristic controls
-    // (464), and the extension-only filter-list URL (465).
+    // (464), the extension-only filter-list URL (465), and the opt-in
+    // browser-account sync consent setting (466).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 465,
-        'SETTINGS_SCHEMA must cover all 465 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 466,
+        'SETTINGS_SCHEMA must cover all 466 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -5918,6 +5919,21 @@ test('policy-profile schema-only export drops unknown keys and reports scrubbed 
         'schema-only export should declare that aiSummaryApiKey was scrubbed');
     assert.equal(pp.validateSettingsSnapshot(snap.settings).ok, true,
         'schema-only export output must validate as an importable settings snapshot');
+});
+
+test('policy-profile keeps browser-account sync consent local to an installation', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const snap = pp.buildExportSnapshot({
+        syncSettings: true,
+        sponsorBlock: true
+    }, { schemaOnly: true });
+
+    assert.equal(snap.settings.syncSettings, false,
+        'portable settings exports must never opt another installation into browser sync');
+    assert.ok(snap.defaultedKeys.includes('syncSettings'),
+        'local-only sync consent must be reported as defaulted during export');
+    assert.equal(snap.settings.sponsorBlock, true);
 });
 
 test('v5.0.0 policy-profile: countByProfile partitions the schema cleanly', () => {
@@ -7056,11 +7072,12 @@ test('v4.15.0 popup HTML quick-toggles section advertises the updated total', ()
     const html = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
     );
-    // After v4.15.0 the QUICK_TOGGLES list has 18 entries. Both the
-    // visible "18 controls" string and any future i18n-keyed total
+    // After the browser-sync privacy toggle was added, the QUICK_TOGGLES
+    // list has 19 entries. Both the visible "19 controls" string and any
+    // future i18n-keyed total
     // must stay in sync with QUICK_TOGGLES.length.
-    assert.match(html, /id="resultsState"[^>]*>18 controls</,
-        'popup.html must advertise 18 quick controls after v4.15.0');
+    assert.match(html, /id="resultsState"[^>]*>19 controls</,
+        'popup.html must advertise 19 quick controls');
     // 2026-07-23 audit: the filter-results count is announced to screen
     // readers — typing previously filtered the list in silence.
     assert.match(html, /id="resultsState" role="status" aria-live="polite"/,

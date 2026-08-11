@@ -87,11 +87,11 @@
     },
     "extension/popup.html": {
       "count": 7,
-      "digest": "1b20784b77f1812dd547d9336e3f4237670353dc860219bff5b254656636d255"
+      "digest": "fbac5e5c153420d73fa0736099a774456f5389ae2a65b26298c65b4d071dd50b"
     },
     "extension/popup.js": {
-      "count": 26,
-      "digest": "699ece859c6ee81eeb7c9b30d7764c9d08b06fef77c17cf5b2cfe576c3c939c1",
+      "count": 27,
+      "digest": "0b8fbecafcbebdca580e27072026bbaf70e8e89edeb9fb1a022140fd016dcc4d",
       "strictCount": 8,
       "strictDigest": "72b9b8f631179b93ea06a79d854dbc436aae2c16f1ba36c60976ab73bd71e7b2"
     },

@@ -377,6 +377,51 @@ body {
   letter-spacing: 0.025em;
 }
 
+/* Optional browser-account sync status. Consent is controlled by the
+   Privacy quick toggle; this card keeps the current account-sync state and
+   local recovery action visible without exposing the sync payload. */
+.settings-sync-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(78, 200, 165, 0.24);
+  background:
+    linear-gradient(180deg, rgba(78, 200, 165, 0.06), rgba(78, 200, 165, 0.015)),
+    rgba(12, 20, 21, 0.72);
+}
+
+.settings-sync-card[hidden] { display: none; }
+
+.settings-sync-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.settings-sync-title {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.settings-sync-status {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.settings-sync-note {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
 .search-help {
   margin: -2px 0 2px;
   color: var(--text-muted);

@@ -150,6 +150,15 @@
       </div>
     </section>
 
+    <section class="settings-sync-card" id="settings-sync-card" aria-labelledby="settings-sync-title">
+      <header class="settings-sync-head">
+        <strong class="settings-sync-title" id="settings-sync-title" data-i18n="settingsSyncTitle">Browser sync</strong>
+        <span class="settings-sync-status" id="settings-sync-status" role="status" aria-live="polite" data-i18n="settingsSyncOff">Off — this device only.</span>
+      </header>
+      <p class="settings-sync-note" data-i18n="settingsSyncDesc">Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local.</p>
+      <button id="settings-sync-undo" class="undo-action" type="button" hidden data-i18n-attr-aria-label="settingsSyncUndoAria" aria-label="Restore the local state from before the last browser sync" data-i18n="settingsSyncUndo">Undo last sync</button>
+    </section>
+
     <!-- selector-health dashboard. Only rendered when the
          active tab is a YouTube page; otherwise hidden by JS so the
          popup stays compact on non-YT tabs. Shows top problematic
@@ -360,7 +369,7 @@
       <div class="section-head">
         <div class="section-head-copy">
           <span class="section-eyebrow" data-i18n="quickTogglesEyebrow">Quick toggles</span>
-          <h2 class="section-title" id="quick-toggles-title"><strong id="enabledCount">0</strong> <span id="enabledLabel" data-i18n="enabledLabel">enabled</span> · <span id="resultsState" role="status" aria-live="polite">18 controls</span></h2>
+          <h2 class="section-title" id="quick-toggles-title"><strong id="enabledCount">0</strong> <span id="enabledLabel" data-i18n="enabledLabel">enabled</span> · <span id="resultsState" role="status" aria-live="polite">19 controls</span></h2>
         </div>
       </div>
 

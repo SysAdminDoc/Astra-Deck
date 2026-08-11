@@ -4,13 +4,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Actionable Items
 
-- [ ] P2 — Opt-in settings/blocklist sync (`storage.sync`)
-  Why: Browser-account sync must be a distinct default-off consent decision; the existing `syncSafePrefs` field only governs safe-profile export filtering and defaults on.
-  Evidence: BlockTube issue #59; `extension/ytkit.js:5528-5660`; no `storage.sync` runtime call sites.
-  Touches: storage layer, policy-profile scrub, popup settings/import recovery, settings schema/locales.
-  Acceptance: A default-off toggle syncs schema-validated, secret-scrubbed preferences and blocklists within quota, resolves newest-write-wins conflicts, and offers local Undo.
-  Complexity: L
-
 - [ ] P2 — Logarithmic volume curve
   Why: A low-volume curve changes core playback semantics and must remain independently optional.
   Evidence: Youtube Music fix volume ratio (Nemo64); Volume Curve Designer.

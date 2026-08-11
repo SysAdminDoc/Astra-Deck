@@ -60,6 +60,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Added the opt-in Replay Chat Density chart for finite VODs with replay chat;
   its bounded sampler draws a seekable progress-bar sparkline and tears down
   iframe observers, timers, and chart state on SPA navigation.
+- Added opt-in browser-account sync for schema-validated preferences and Video
+  Hider blocklists. The diff-from-default payload is secret-scrubbed, chunked
+  under storage.sync quotas, resolves newest-write-wins conflicts, and keeps a
+  local Undo checkpoint; sync consent remains installation-local.
 
 ---
 

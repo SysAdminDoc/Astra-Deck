@@ -39,6 +39,10 @@
         })());
 
     const VALID_ARTIFACT_PROFILES = new Set(['store-safe', 'github-full']);
+    // Browser-account sync consent is installation-local. A backup may be
+    // copied to another machine, but importing it must never silently opt that
+    // machine into account storage.
+    const ALWAYS_LOCAL_ONLY_KEYS = new Set(['syncSettings']);
 
     function readRuntimeManifest() {
         const runtimes = [
@@ -272,10 +276,18 @@
         function buildExportSnapshot(settings = {}, options = {}) {
             const effective = normalizeEffectiveProfile(options.effective, settings);
             const schemaOnly = options.schemaOnly === true;
+            const excludeInternal = options.excludeInternal === true;
+            const excludedKeys = options.excludeKeys instanceof Set
+                ? options.excludeKeys
+                : new Set(Array.isArray(options.excludeKeys) ? options.excludeKeys : []);
             const out = {};
             const scrubbedKeys = [];
             const defaultedKeys = [];
             for (const key of Object.keys(settings)) {
+                if (excludedKeys.has(key)) {
+                    scrubbedKeys.push(key);
+                    continue;
+                }
                 if (shouldScrubKey(key)) {
                     scrubbedKeys.push(key);
                     continue;
@@ -287,6 +299,15 @@
                     // secret-shaped keys were already removed by the scrubber.
                     if (schemaOnly) continue;
                     out[key] = settings[key];
+                    continue;
+                }
+                if (excludeInternal && entry.internal) {
+                    scrubbedKeys.push(key);
+                    continue;
+                }
+                if (ALWAYS_LOCAL_ONLY_KEYS.has(key)) {
+                    out[key] = entry.defaultValue;
+                    defaultedKeys.push(key);
                     continue;
                 }
                 if (entry.profile === 'github-full' && effective === 'store-safe') {
@@ -324,7 +345,8 @@
             clampSettingValue,
             validateSettingsSnapshot,
             buildExportSnapshot,
-            countByProfile
+            countByProfile,
+            alwaysLocalOnlyKeys: new Set(ALWAYS_LOCAL_ONLY_KEYS)
         };
     }
 

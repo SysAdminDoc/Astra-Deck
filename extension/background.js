@@ -73,6 +73,9 @@ if (typeof importScripts === 'function') {
     importScripts(
         'core/companion-ports.js',
         'core/settings-schema.js',
+        'core/persisted-domains.js',
+        'core/policy-profile.js',
+        'core/settings-sync.js',
         'core/settings-controller.js',
         'core/credential-vault.js'
     );
@@ -116,6 +119,22 @@ const _credentialMigrationReady = migrateLegacyAiCredential().catch((error) => {
     void _recordSwLifecycle('ai-credential-migration-failed');
     return false;
 });
+
+const _settingsSync = globalThis.YTKitCore?.createSettingsSyncController?.({
+    localStorage: ext.storage?.local,
+    syncStorage: ext.storage?.sync,
+    settingsKey: SETTINGS_STORAGE_KEY,
+    schema: globalThis.__YTKIT_SETTINGS_SCHEMA__?.SETTINGS_SCHEMA,
+    policy: globalThis.YTKitCore?.createPolicyProfile?.(),
+    callApi: callExtensionApi
+}) || null;
+_settingsSync?.installListeners();
+void _credentialMigrationReady
+    .then(() => _settingsSync?.initialize())
+    .catch((error) => {
+        void error;
+        void _recordSwLifecycle('settings-sync-startup-failed');
+    });
 
 // Kept identical to popup.js's list — the manifest's content-script matches
 // are the source of truth for both.
@@ -952,6 +971,32 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // but if reading it throws we conservatively reject the message.
         try { sendResponse({ error: 'Sender validation failed.' }); } catch (__) { /* reason: sender may already be disconnected; we've already returned false */ }
         return false;
+    }
+
+    if (msg.type === 'YTKIT_SYNC_STATUS' || msg.type === 'YTKIT_SYNC_UNDO') {
+        (async () => {
+            if (!_settingsSync) {
+                sendResponse({
+                    ok: false,
+                    available: false,
+                    error: { code: 'SYNC_SERVICE_UNAVAILABLE', message: 'Settings sync is unavailable.' }
+                });
+                return;
+            }
+            const result = msg.type === 'YTKIT_SYNC_STATUS'
+                ? await _settingsSync.getStatus()
+                : await _settingsSync.undo();
+            sendResponse(result);
+        })().catch((error) => {
+            sendResponse({
+                ok: false,
+                error: {
+                    code: error?.code || 'SYNC_OPERATION_FAILED',
+                    message: error?.message || 'Settings sync operation failed.'
+                }
+            });
+        });
+        return true;
     }
 
     if (msg.type === 'YTKIT_AI_CREDENTIAL_STATUS'
