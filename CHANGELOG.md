@@ -15,6 +15,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Added a source-derived project-facts renderer and `npm run check` drift gate
+  covering release version, browser floors, locales, schema size, runtime and
+  peeled modules, selector surfaces, build profiles, themes, and bounded
+  YouTube Music/embed compatibility. README, CONTRIBUTING, and the architecture
+  map now share the generated facts block.
 - Optional browser APIs now share a frozen capability matrix with the runtime
   probes. It records browser availability, permissions, execution world,
   minimum browser, fallback, and user-visible degradation; the same contract

@@ -15,6 +15,22 @@
   Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 11 bundled UI locales (extension only — the userscript ships no locale catalogues).
 </p>
 
+<!-- BEGIN GENERATED PROJECT FACTS -->
+### Source-derived project facts
+
+| Fact | Current source value |
+| --- | --- |
+| Release | `v4.59.1` |
+| Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
+| Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
+| Settings schema | `463` entries across `18` categories |
+| Runtime graph | `98` modules, including `25` peeled feature modules and `282` declared feature IDs |
+| Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
+| Build profiles | `store-safe`, `github-full`; github-full adds 5 full-only origins |
+| Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
+| Compatibility modes | Desktop YouTube extension; bounded YouTube Music theme/OLED/density compatibility; bounded /embed/:id player mode; mobile browsers and YouTube Studio; userscript follows the host desktop browser |
+<!-- END GENERATED PROJECT FACTS -->
+
 <p align="center">
   <a href="https://github.com/SysAdminDoc/Astra-Deck/releases/latest"><strong>Download Latest Release</strong></a>
   ·
@@ -437,7 +453,9 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 | Chrome / Firefox | Tampermonkey / Violentmonkey | Supported (userscript) |
 | Safari | Userscripts app | Limited |
 
-**Not supported:** Mobile browsers, YouTube Music, YouTube Studio, embedded players.
+**Not supported:** Mobile browsers and YouTube Studio. YouTube Music has
+bounded theme/OLED/density compatibility; embedded `/embed/:id` pages have
+bounded player/quality support, not full watch-page parity.
 
 ### Optional browser capabilities
 

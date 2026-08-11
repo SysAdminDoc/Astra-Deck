@@ -2,6 +2,22 @@
 
 Thanks for your interest in contributing to Astra Deck! This guide will help you get started.
 
+<!-- BEGIN GENERATED PROJECT FACTS -->
+### Source-derived project facts
+
+| Fact | Current source value |
+| --- | --- |
+| Release | `v4.59.1` |
+| Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
+| Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
+| Settings schema | `463` entries across `18` categories |
+| Runtime graph | `98` modules, including `25` peeled feature modules and `282` declared feature IDs |
+| Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
+| Build profiles | `store-safe`, `github-full`; github-full adds 5 full-only origins |
+| Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
+| Compatibility modes | Desktop YouTube extension; bounded YouTube Music theme/OLED/density compatibility; bounded /embed/:id player mode; mobile browsers and YouTube Studio; userscript follows the host desktop browser |
+<!-- END GENERATED PROJECT FACTS -->
+
 ## Getting Started
 
 1. **Fork** the repository
@@ -19,7 +35,7 @@ Astra-Deck/
   extension/           # MV3 extension source
     core/              # Shared runtime utilities (env, storage, styles, url,
                        #   page, navigation, player)
-    _locales/          # WebExtension i18n catalogues (10 bundled locales)
+    _locales/          # WebExtension i18n catalogues (11 bundled locales)
     ytkit.js           # Main feature/content-script runtime (ISOLATED world)
     ytkit-main.js      # MAIN-world bridge (codec filter, quality forcer)
     background.js      # Service worker (fetch proxy, downloads, broadcasts)
