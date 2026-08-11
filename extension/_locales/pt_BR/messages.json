@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "Limpar vídeos permitidos ({count})"
   },
+  "videoHiderOpenChannel": {
+    "message": "Abrir canal"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "Desbloquear canal {channelName}"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "Desbloquear todos os canais ({count})"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "{count} canais desbloqueados"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "Canais restaurados"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "Palavras-chave e regras"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "Separe as entradas por vírgulas. As regras são aplicadas imediatamente após atualizar este campo."
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "reação, unboxing, pegadinha, shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "Limite de poucas visualizações"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "Vídeos abaixo desta contagem de visualizações são ocultados apenas quando o filtro de poucas visualizações está ativado."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "Ocultar proporção assistida"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "Use 0 para desativar. Cards com uma barra de retomada igual ou acima desta porcentagem são ocultados."
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "% assistido"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "Duração mínima"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "Use 0 para desativar esta regra."
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "minutos"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "Ativar limitador de carregamento"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "Recomendado se você oculta muito conteúdo do feed de inscrições."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "Ativar limitador de carregamento das inscrições"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "Lotes ocultos consecutivos"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "Valores menores param mais rápido. Valores maiores permitem carregar mais antes que o limitador intervenha."
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "lotes"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

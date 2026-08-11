@@ -28278,7 +28278,7 @@ function buildSettingsPanel() {
                             info.className = 'ytkit-vh-item-main';
                             const label = document.createElement('div');
                             label.className = 'ytkit-vh-item-label';
-                            label.textContent = 'Blocked Channel';
+                            label.textContent = t('videoHiderBlockedChannelLabel', 'Blocked Channel');
                             const name = document.createElement('div');
                             name.className = 'ytkit-vh-item-title';
                             name.textContent = ch.name || ch.id;
@@ -28295,14 +28295,17 @@ function buildSettingsPanel() {
                                 link.href = channelUrl;
                                 link.target = '_blank';
                                 link.rel = 'noopener noreferrer';
-                                link.textContent = 'Open Channel';
+                                link.textContent = t('videoHiderOpenChannel', 'Open Channel');
                                 actions.appendChild(link);
                             }
                             const removeBtn = document.createElement('button');
                             removeBtn.type = 'button';
                             removeBtn.className = 'ytkit-vh-list-btn';
-                            removeBtn.textContent = 'Unblock';
-                            removeBtn.setAttribute('aria-label', `Unblock channel ${ch.name || ch.id}`);
+                            removeBtn.textContent = t('videoHiderUnblockChannel', 'Unblock');
+                            removeBtn.setAttribute('aria-label', t(
+                                'videoHiderUnblockChannelAriaTpl',
+                                'Unblock channel {channelName}'
+                            ).replace('{channelName}', ch.name || ch.id));
                             removeBtn.onclick = () => {
                                 videoHiderFeature._removeBlockedChannel?.(ch);
                                 videoHiderFeature._restoreRemovedVideoNodes?.();
@@ -28322,19 +28325,25 @@ function buildSettingsPanel() {
                         const clearBtn = document.createElement('button');
                         clearBtn.type = 'button';
                         clearBtn.className = 'ytkit-vh-clear-btn';
-                        clearBtn.textContent = `Unblock All Channels (${channels.length})`;
+                        clearBtn.textContent = t(
+                            'videoHiderClearBlockedChannelsTpl',
+                            'Unblock All Channels ({count})'
+                        ).replace('{count}', channels.length);
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getBlockedChannels()];
                             videoHiderFeature._setBlockedChannels([]);
                             videoHiderFeature._restoreRemovedVideoNodes?.();
                             videoHiderFeature._processAllVideos();
                             renderTabContent('channels');
-                            showToast(`Unblocked ${backup.length} channels`, '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            showToast(t(
+                                'videoHiderUnblockedChannelsTpl',
+                                'Unblocked {count} channels'
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
                                 videoHiderFeature._setBlockedChannels(backup);
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
                                 updateVideoHiderMeta();
-                                showToast('Channels restored', '#22c55e');
+                                showToast(t('videoHiderChannelsRestored', 'Channels restored'), '#22c55e');
                             }}});
                         };
                         tabContent.appendChild(clearBtn);
@@ -28349,11 +28358,14 @@ function buildSettingsPanel() {
                     field.htmlFor = 'ytkit-vh-keywords';
                     const fieldLabel = document.createElement('span');
                     fieldLabel.className = 'ytkit-vh-field-label';
-                    fieldLabel.textContent = 'Keywords & Rules';
+                    fieldLabel.textContent = t('videoHiderKeywordsRulesLabel', 'Keywords & Rules');
                     const fieldCopy = document.createElement('span');
                     fieldCopy.className = 'ytkit-vh-field-copy';
                     fieldCopy.id = 'ytkit-vh-keywords-copy';
-                    fieldCopy.textContent = 'Separate entries with commas. Rules apply immediately after you update this field.';
+                    fieldCopy.textContent = t(
+                        'videoHiderKeywordsRulesCopy',
+                        'Separate entries with commas. Rules apply immediately after you update this field.'
+                    );
                     field.appendChild(fieldLabel);
                     field.appendChild(fieldCopy);
                     const textarea = document.createElement('textarea');
@@ -28363,7 +28375,10 @@ function buildSettingsPanel() {
                     textarea.spellcheck = false;
                     textarea.autocomplete = 'off';
                     textarea.setAttribute('aria-describedby', 'ytkit-vh-keywords-copy');
-                    textarea.placeholder = 'reaction, unboxing, prank, shorts…';
+                    textarea.placeholder = t(
+                        'videoHiderKeywordsPlaceholder',
+                        'reaction, unboxing, prank, shorts…'
+                    );
                     textarea.value = appState.settings.hideVideosKeywordFilter || '';
                     textarea.onchange = async () => {
                         appState.settings.hideVideosKeywordFilter = textarea.value;
@@ -28490,11 +28505,14 @@ function buildSettingsPanel() {
                     lowViewField.htmlFor = 'ytkit-vh-low-view-threshold';
                     const lowViewLabel = document.createElement('span');
                     lowViewLabel.className = 'ytkit-vh-field-label';
-                    lowViewLabel.textContent = 'Low-View Threshold';
+                    lowViewLabel.textContent = t('videoHiderLowViewThresholdLabel', 'Low-View Threshold');
                     const lowViewCopy = document.createElement('span');
                     lowViewCopy.className = 'ytkit-vh-field-copy';
                     lowViewCopy.id = 'ytkit-vh-low-view-copy';
-                    lowViewCopy.textContent = 'Videos below this view count are hidden only when low-view filtering is enabled.';
+                    lowViewCopy.textContent = t(
+                        'videoHiderLowViewThresholdDesc',
+                        'Videos below this view count are hidden only when low-view filtering is enabled.'
+                    );
                     const lowViewRow = document.createElement('div');
                     lowViewRow.className = 'ytkit-vh-input-row';
                     const lowViewInput = document.createElement('input');
@@ -28516,7 +28534,7 @@ function buildSettingsPanel() {
                     };
                     const lowViewSuffix = document.createElement('span');
                     lowViewSuffix.className = 'ytkit-vh-inline-note';
-                    lowViewSuffix.textContent = 'views';
+                    lowViewSuffix.textContent = t('videoHiderViewsSuffix', 'views');
                     lowViewRow.appendChild(lowViewInput);
                     lowViewRow.appendChild(lowViewSuffix);
                     lowViewField.appendChild(lowViewLabel);
@@ -28529,11 +28547,14 @@ function buildSettingsPanel() {
                     watchedField.htmlFor = 'ytkit-vh-watched-ratio';
                     const watchedLabel = document.createElement('span');
                     watchedLabel.className = 'ytkit-vh-field-label';
-                    watchedLabel.textContent = 'Hide Watched Ratio';
+                    watchedLabel.textContent = t('videoHiderWatchedRatioLabel', 'Hide Watched Ratio');
                     const watchedCopy = document.createElement('span');
                     watchedCopy.className = 'ytkit-vh-field-copy';
                     watchedCopy.id = 'ytkit-vh-watched-ratio-copy';
-                    watchedCopy.textContent = 'Use 0 to disable. Cards with a resume bar at or above this percent are hidden.';
+                    watchedCopy.textContent = t(
+                        'videoHiderWatchedRatioDesc',
+                        'Use 0 to disable. Cards with a resume bar at or above this percent are hidden.'
+                    );
                     const watchedRow = document.createElement('div');
                     watchedRow.className = 'ytkit-vh-input-row';
                     const watchedInput = document.createElement('input');
@@ -28555,7 +28576,7 @@ function buildSettingsPanel() {
                     };
                     const watchedSuffix = document.createElement('span');
                     watchedSuffix.className = 'ytkit-vh-inline-note';
-                    watchedSuffix.textContent = '% watched';
+                    watchedSuffix.textContent = t('videoHiderWatchedRatioSuffix', '% watched');
                     watchedRow.appendChild(watchedInput);
                     watchedRow.appendChild(watchedSuffix);
                     watchedField.appendChild(watchedLabel);
@@ -28574,11 +28595,11 @@ function buildSettingsPanel() {
                     durField.htmlFor = 'ytkit-vh-duration';
                     const durLabel = document.createElement('span');
                     durLabel.className = 'ytkit-vh-field-label';
-                    durLabel.textContent = 'Minimum Duration';
+                    durLabel.textContent = t('videoHiderMinimumDurationLabel', 'Minimum Duration');
                     const durHelper = document.createElement('span');
                     durHelper.className = 'ytkit-vh-field-copy';
                     durHelper.id = 'ytkit-vh-duration-copy';
-                    durHelper.textContent = 'Use 0 to disable this rule.';
+                    durHelper.textContent = t('videoHiderMinimumDurationDesc', 'Use 0 to disable this rule.');
                     const durRow = document.createElement('div');
                     durRow.className = 'ytkit-vh-input-row';
                     const durInput = document.createElement('input');
@@ -28603,7 +28624,7 @@ function buildSettingsPanel() {
                     };
                     const durSuffix = document.createElement('span');
                     durSuffix.className = 'ytkit-vh-inline-note';
-                    durSuffix.textContent = 'minutes';
+                    durSuffix.textContent = t('videoHiderMinutesSuffix', 'minutes');
                     durRow.appendChild(durInput);
                     durRow.appendChild(durSuffix);
                     durField.appendChild(durLabel);
@@ -28623,17 +28644,23 @@ function buildSettingsPanel() {
                     limiterToggleCopy.className = 'ytkit-vh-toggle-copy';
                     const limiterToggleLabel = document.createElement('div');
                     limiterToggleLabel.className = 'ytkit-vh-toggle-title';
-                    limiterToggleLabel.textContent = 'Enable Load Limiter';
+                    limiterToggleLabel.textContent = t('videoHiderLoadLimiterLabel', 'Enable Load Limiter');
                     const limiterToggleDesc = document.createElement('div');
                     limiterToggleDesc.className = 'ytkit-vh-toggle-desc';
-                    limiterToggleDesc.textContent = 'Recommended if you hide a lot of subscription feed content.';
+                    limiterToggleDesc.textContent = t(
+                        'videoHiderLoadLimiterDesc',
+                        'Recommended if you hide a lot of subscription feed content.'
+                    );
                     const limiterSwitch = document.createElement('div');
                     limiterSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosSubsLoadLimit !== false ? ' active' : '');
                     limiterSwitch.style.cssText = 'cursor:pointer;';
                     const limiterInput = document.createElement('input');
                     limiterInput.type = 'checkbox';
                     limiterInput.name = 'hideVideosSubsLoadLimit';
-                    limiterInput.setAttribute('aria-label', 'Enable subscription load limiter');
+                    limiterInput.setAttribute('aria-label', t(
+                        'videoHiderLoadLimiterAria',
+                        'Enable subscription load limiter'
+                    ));
                     limiterInput.checked = appState.settings.hideVideosSubsLoadLimit !== false;
                     const limiterTrack = document.createElement('span');
                     limiterTrack.className = 'ytkit-switch-track';
@@ -28652,11 +28679,14 @@ function buildSettingsPanel() {
                     thresholdRow.htmlFor = 'ytkit-vh-threshold';
                     const thresholdLabel = document.createElement('span');
                     thresholdLabel.className = 'ytkit-vh-field-label';
-                    thresholdLabel.textContent = 'Consecutive Hidden Batches';
+                    thresholdLabel.textContent = t('videoHiderConsecutiveBatchesLabel', 'Consecutive Hidden Batches');
                     const thresholdCopy = document.createElement('span');
                     thresholdCopy.className = 'ytkit-vh-field-copy';
                     thresholdCopy.id = 'ytkit-vh-threshold-copy';
-                    thresholdCopy.textContent = 'Lower values stop faster. Higher values allow more loading before the limiter steps in.';
+                    thresholdCopy.textContent = t(
+                        'videoHiderConsecutiveBatchesDesc',
+                        'Lower values stop faster. Higher values allow more loading before the limiter steps in.'
+                    );
                     const thresholdInputRow = document.createElement('div');
                     thresholdInputRow.className = 'ytkit-vh-input-row';
                     const thresholdInput = document.createElement('input');
@@ -28673,7 +28703,7 @@ function buildSettingsPanel() {
                     thresholdInput.setAttribute('aria-describedby', 'ytkit-vh-threshold-copy');
                     const thresholdNote = document.createElement('span');
                     thresholdNote.className = 'ytkit-vh-inline-note';
-                    thresholdNote.textContent = 'batches';
+                    thresholdNote.textContent = t('videoHiderBatchesSuffix', 'batches');
 
                     const syncLimiterState = () => {
                         const isEnabled = limiterInput.checked;

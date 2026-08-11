@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "Очистить разрешённые видео ({count})"
   },
+  "videoHiderOpenChannel": {
+    "message": "Открыть канал"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "Разблокировать канал {channelName}"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "Разблокировать все каналы ({count})"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "Разблокировано каналов: {count}"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "Каналы восстановлены"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "Ключевые слова и правила"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "Разделяйте записи запятыми. Правила применяются сразу после обновления этого поля."
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "реакция, распаковка, розыгрыш, shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "Порог малой популярности"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "Видео с меньшим числом просмотров скрываются только при включённом фильтре малой популярности."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "Скрывать по доле просмотра"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "Используйте 0, чтобы отключить. Карточки с полосой продолжения на этом проценте или выше скрываются."
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "% просмотрено"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "Минимальная длительность"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "Используйте 0, чтобы отключить это правило."
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "минут"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "Включить ограничитель загрузки"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "Рекомендуется, если вы скрываете много материалов из ленты подписок."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "Включить ограничитель загрузки подписок"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "Последовательные скрытые пачки"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "Меньшие значения останавливают загрузку быстрее. Большие позволяют загрузить больше до срабатывания ограничителя."
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "пачки"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "許可した動画を消去（{count}）"
   },
+  "videoHiderOpenChannel": {
+    "message": "チャンネルを開く"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "チャンネル {channelName} のブロックを解除"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "すべてのチャンネルのブロックを解除（{count}）"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "{count} 個のチャンネルのブロックを解除しました"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "チャンネルを復元しました"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "キーワードとルール"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "エントリをカンマで区切ってください。このフィールドを更新するとルールがすぐに適用されます。"
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "reaction, unboxing, prank, shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "低再生数のしきい値"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "この再生数を下回る動画は、低再生数フィルターが有効な場合のみ非表示になります。"
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "視聴済み割合を非表示"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "0 で無効化します。この割合以上の再生バーがあるカードを非表示にします。"
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "視聴済み%"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "最小再生時間"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "0 でこのルールを無効化します。"
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "分"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "読み込み制限を有効化"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "登録チャンネルのフィードを大量に非表示にする場合におすすめです。"
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "登録チャンネルの読み込み制限を有効化"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "連続して非表示になったバッチ数"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "小さい値では早く停止します。大きい値では制限が作動する前に多く読み込めます。"
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "バッチ"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

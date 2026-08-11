@@ -6049,6 +6049,72 @@
   "videoHiderClearAllowedTpl": {
     "message": "Erlaubte Videos leeren ({count})"
   },
+  "videoHiderOpenChannel": {
+    "message": "Kanal öffnen"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "Kanal {channelName} entsperren"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "Alle Kanäle entsperren ({count})"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "{count} Kanäle entsperrt"
+  },
+  "videoHiderChannelsRestored": {
+    "message": "Kanäle wiederhergestellt"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "Schlüsselwörter und Regeln"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "Trenne Einträge durch Kommas. Regeln gelten sofort, nachdem du dieses Feld aktualisiert hast."
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "Reaktion, Unboxing, Prank, Shorts…"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "Schwellenwert für wenige Aufrufe"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "Videos unter dieser Aufrufzahl werden nur ausgeblendet, wenn der Filter für wenige Aufrufe aktiviert ist."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "Wiedergabefortschritt ausblenden"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "Mit 0 deaktivieren. Karten mit einem Fortschrittsbalken ab diesem Prozentsatz werden ausgeblendet."
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "% angesehen"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "Mindestdauer"
+  },
+  "videoHiderMinimumDurationDesc": {
+    "message": "Mit 0 deaktivieren."
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "Minuten"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "Ladelimit aktivieren"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "Empfohlen, wenn du viele Inhalte im Abofeed ausblendest."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "Ladelimit für Abofeed aktivieren"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "Aufeinanderfolgende ausgeblendete Stapel"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "Niedrigere Werte stoppen schneller. Höhere Werte erlauben mehr Ladevorgänge, bevor das Limit greift."
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "Stapel"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },
