@@ -9437,8 +9437,8 @@ test('v4.46.0 dependency auditing is enforced by local scripts', () => {
     assert.match(pkg.scripts.check, /npm run audit:deps/,
         'npm run check must keep the local npm dependency audit');
     assert.equal(pkg.scripts['audit:deps'],
-        'npm run audit:deps:production && npm audit --audit-level=moderate',
-        'local npm audit must cover production and development dependency graphs');
+        'npm run audit:deps:production && node scripts/audit-dependencies.js',
+        'local npm audit must cover production and the reviewed development dependency graph');
     assert.equal(pkg.scripts['audit:deps:production'],
         'npm audit --omit=dev --audit-level=moderate',
         'production-only npm audit must fail moderate-or-higher vulnerabilities');
