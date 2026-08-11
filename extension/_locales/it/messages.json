@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "Nascondi i video sotto la soglia di visualizzazioni quando YouTube mostra il conteggio sulla scheda."
   },
+  "settingsCategorySummaryFallback": {
+    "message": "Impostazioni della categoria"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "Gruppo di impostazioni"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "Regola il comportamento di questa parte di YouTube."
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count} attivi"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} elementi"
+  },
+  "settingsGitHubTitle": {
+    "message": "Visualizza su GitHub"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "Scarica il file di configurazione del downloader Astra Deck"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "Salvato"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "Sottofunzione"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "Cancella {featureName}"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "Lettore video"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "Ripristinati {count} video nascosti"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "Video nascosti ripristinati"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "Cancellate {count} voci dall’elenco dei nascosti"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "Elenco dei nascosti ripristinato"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "Cancellati {count} video consentiti"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "Video consentiti ripristinati"
+  },
+  "settingsConflictWithTpl": {
+    "message": "è in conflitto con {featureName}"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "Disattivati automaticamente: {features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

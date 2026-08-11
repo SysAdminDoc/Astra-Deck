@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "当 YouTube 在卡片上显示观看数时，隐藏低于观看数阈值的视频。"
   },
+  "settingsCategorySummaryFallback": {
+    "message": "类别设置"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}。{summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "设置组"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "调整 YouTube 此部分的行为方式。"
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "已开启 {count} 项"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} 项"
+  },
+  "settingsGitHubTitle": {
+    "message": "在 GitHub 上查看"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "下载 Astra Deck 下载器设置文件"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "已保存"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "子功能"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "清除 {featureName}"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "视频播放器"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "已恢复 {count} 个隐藏视频"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "隐藏的视频已恢复"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "已清除隐藏列表中的 {count} 项"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "隐藏列表已恢复"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "已清除 {count} 个允许的视频"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "允许的视频已恢复"
+  },
+  "settingsConflictWithTpl": {
+    "message": "与 {featureName} 冲突"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "已自动停用：{features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

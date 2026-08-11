@@ -39,12 +39,6 @@
       "count": 2,
       "digest": "d0319ba4029625649258bf038b45490dc385c8ec44cf4f7fde2387dc41385ea2"
     },
-    "extension/features/settings-panel/index.js": {
-      "count": 28,
-      "digest": "9c23dee6a00fc24416417b004644060625888bb4c7840ce10a695813299fb090",
-      "strictCount": 21,
-      "strictDigest": "94f483e80cb1a8326ed8f5fb52319c29b52869c2d6924113538947ad4846b740"
-    },
     "extension/features/sponsorblock/index.js": {
       "count": 2,
       "digest": "f01779c4deb78dda55e6b39737f90820e8b7f5272c37fa37710e81d3c844f337",

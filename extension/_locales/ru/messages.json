@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "Скрывать видео ниже порога просмотров, когда YouTube показывает число просмотров на карточке."
   },
+  "settingsCategorySummaryFallback": {
+    "message": "Настройки категории"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "Группа настроек"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "Настройте поведение этой части YouTube."
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "Включено: {count}"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "Элементов: {count}"
+  },
+  "settingsGitHubTitle": {
+    "message": "Открыть на GitHub"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "Скачать файл установки загрузчика Astra Deck"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "Сохранено"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "Подфункция"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "Очистить {featureName}"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "Видеопроигрыватель"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "Восстановлено скрытых видео: {count}"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "Скрытые видео восстановлены"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "Очищено записей в списке скрытых: {count}"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "Список скрытых восстановлен"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "Очищено разрешённых видео: {count}"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "Разрешённые видео восстановлены"
+  },
+  "settingsConflictWithTpl": {
+    "message": "конфликтует с {featureName}"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "Автоматически отключено: {features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

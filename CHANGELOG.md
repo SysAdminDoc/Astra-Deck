@@ -33,6 +33,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   controls now use locale keys, removing 25 more grandfathered literals.
 - Video Hider scope and content-filter toggles now use translated titles and
   descriptions, removing 34 more grandfathered literals.
+- Settings-panel footer, status, category, and recovery copy now use locale
+  keys, removing the final 28 grandfathered rendered-sink literals in the
+  module.
 - Accessibility and contrast audits now resolve the popup/side-panel CSS token
   cascade and exercise real keyboard focus order, focus traps, forced colors,
   and narrow settings reflow in a headless DOM.

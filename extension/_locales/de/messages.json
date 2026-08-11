@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "Videos unter dem Aufrufschwellenwert ausblenden, wenn YouTube eine Aufrufzahl auf der Karte bereitstellt."
   },
+  "settingsCategorySummaryFallback": {
+    "message": "Kategorieeinstellungen"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "Einstellungsgruppe"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "Passe an, wie dieser Teil von YouTube funktioniert."
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count} aktiv"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} Elemente"
+  },
+  "settingsGitHubTitle": {
+    "message": "Auf GitHub ansehen"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "Astra Deck Downloader-Setupdatei herunterladen"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "Gespeichert"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "Unterfunktion"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "{featureName} löschen"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "Videoplayer"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "{count} ausgeblendete Videos wiederhergestellt"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "Ausgeblendete Videos wiederhergestellt"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "{count} Einträge der Ausblendliste geleert"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "Ausblendliste wiederhergestellt"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "{count} erlaubte Videos geleert"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "Erlaubte Videos wiederhergestellt"
+  },
+  "settingsConflictWithTpl": {
+    "message": "Konflikt mit {featureName}"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "Automatisch deaktiviert: {features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

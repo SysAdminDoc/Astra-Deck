@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "Ocultar vídeos abaixo do limite de visualizações quando o YouTube exibir uma contagem no cartão."
   },
+  "settingsCategorySummaryFallback": {
+    "message": "Configurações da categoria"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "Grupo de configurações"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "Ajuste como esta parte do YouTube funciona."
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count} ativados"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} itens"
+  },
+  "settingsGitHubTitle": {
+    "message": "Ver no GitHub"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "Baixar o arquivo de configuração do downloader Astra Deck"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "Salvo"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "Sub"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "Limpar {featureName}"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "Player de vídeo"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "{count} vídeos ocultos restaurados"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "Vídeos ocultos restaurados"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "{count} entradas da lista de ocultos limpas"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "Lista de ocultos restaurada"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "{count} vídeos permitidos limpos"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "Vídeos permitidos restaurados"
+  },
+  "settingsConflictWithTpl": {
+    "message": "entra em conflito com {featureName}"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "Desativado automaticamente: {features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

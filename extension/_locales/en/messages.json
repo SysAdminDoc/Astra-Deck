@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "Hide videos below the view-count threshold when YouTube exposes a view count on the card."
   },
+  "settingsCategorySummaryFallback": {
+    "message": "Category settings"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "Settings group"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "Adjust how this part of YouTube behaves."
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count} On"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} Items"
+  },
+  "settingsGitHubTitle": {
+    "message": "View on GitHub"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "Download the Astra Deck downloader setup file"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "Saved"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "Sub"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "Clear {featureName}"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "Video Player"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "Restored {count} hidden videos"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "Hidden videos restored"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "Cleared {count} hidden list entries"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "Hidden list restored"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "Cleared {count} allowed videos"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "Allowed videos restored"
+  },
+  "settingsConflictWithTpl": {
+    "message": "conflicts with {featureName}"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "Auto-disabled {features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

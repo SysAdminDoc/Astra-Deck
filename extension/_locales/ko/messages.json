@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "YouTube가 카드에 조회수를 표시할 때 기준 조회수보다 적은 동영상을 숨깁니다."
   },
+  "settingsCategorySummaryFallback": {
+    "message": "카테고리 설정"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "설정 그룹"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "YouTube의 이 부분이 작동하는 방식을 조정합니다."
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count}개 켜짐"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count}개 항목"
+  },
+  "settingsGitHubTitle": {
+    "message": "GitHub에서 보기"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "Astra Deck 다운로더 설정 파일 다운로드"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "저장됨"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "하위 기능"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "{featureName} 지우기"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "동영상 플레이어"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "숨긴 동영상 {count}개 복원됨"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "숨긴 동영상 복원됨"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "숨김 목록 항목 {count}개 지움"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "숨김 목록 복원됨"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "허용한 동영상 {count}개 지움"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "허용한 동영상 복원됨"
+  },
+  "settingsConflictWithTpl": {
+    "message": "{featureName}과(와) 충돌함"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "자동으로 사용 중지됨: {features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },
