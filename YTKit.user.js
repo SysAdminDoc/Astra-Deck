@@ -30545,10 +30545,12 @@
                 storageWriteJSON = () => {},
                 getVideoId = () => null,
                 isWatchPagePath = () => false,
+                isShortsPagePath = () => false,
+                findSurfaceHookElements = null,
                 addNavigateRule = () => {},
                 removeNavigateRule = () => {},
                 injectStyle = () => null,
-                PageTypes = { WATCH: 'watch' }
+                PageTypes = { WATCH: 'watch', SHORTS: 'shorts' }
             } = deps;
 
             let _cache = null;
@@ -30560,6 +30562,7 @@
             let _estimateEl = null;
             let _navRule = null;
             let _renderTimer = null;
+            const _pendingFetches = new Map();
 
             function _ensureStyles() {
                 if (_styleElement) return;
@@ -30639,6 +30642,41 @@
             // Bounded re-arm budget for a late-hydrating actions row.
             const _RENDER_RETRIES = 3;
 
+            function _isPlayerPage() {
+                return Boolean(isWatchPagePath?.() || isShortsPagePath?.());
+            }
+
+            function _findDislikeButton() {
+                const isShorts = Boolean(isShortsPagePath?.());
+                if (typeof findSurfaceHookElements === 'function') {
+                    try {
+                        const surface = isShorts ? 'shortsShelf' : 'watch';
+                        const matches = findSurfaceHookElements(surface, 'action.dislike');
+                        if (Array.isArray(matches) && matches[0]) return matches[0];
+                    } catch (_) {
+                        // reason: selector-health is diagnostic; the direct
+                        // compatibility chain below must remain usable.
+                    }
+                }
+
+                const selectors = isShorts
+                    ? [
+                        'ytd-reel-video-renderer[is-active] reel-action-bar-view-model dislike-button-view-model',
+                        'ytd-reel-video-renderer reel-action-bar-view-model dislike-button-view-model',
+                        'ytd-reel-video-renderer dislike-button-view-model'
+                    ]
+                    : [
+                        'dislike-button-view-model',
+                        'ytd-segmented-like-dislike-button-renderer #dislike-button-view-model',
+                        'ytd-segmented-like-dislike-button-renderer'
+                    ];
+                for (const selector of selectors) {
+                    const match = document.querySelector?.(selector);
+                    if (match) return match;
+                }
+                return null;
+            }
+
             async function _fetch(videoId) {
                 const cached = _readCache(videoId);
                 if (cached) {
@@ -30706,6 +30744,16 @@
                 }
             }
 
+            function _fetchOnce(videoId) {
+                const pending = _pendingFetches.get(videoId);
+                if (pending) return pending;
+                const request = Promise.resolve(_fetch(videoId)).finally(() => {
+                    if (_pendingFetches.get(videoId) === request) _pendingFetches.delete(videoId);
+                });
+                _pendingFetches.set(videoId, request);
+                return request;
+            }
+
             function _formatCount(n) {
                 if (!Number.isFinite(n)) return '—';
                 if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -30714,11 +30762,11 @@
             }
 
             async function _render(attempt = 0) {
-                if (!isWatchPagePath()) return;
+                if (!_isPlayerPage()) return;
                 const videoId = getVideoId?.();
                 if (!videoId) return;
                 const generation = _rydGeneration;
-                const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
+                const dislikeButton = _findDislikeButton();
                 if (!dislikeButton) {
                     // The actions row can hydrate after the single post-navigation
                     // timer fires — on a cold load it usually does. Without a
@@ -30733,13 +30781,13 @@
                     }
                     return;
                 }
-                const data = await _fetch(videoId);
+                const data = await _fetchOnce(videoId);
                 // The user can navigate during the fetch await. Bail if the active
                 // video changed (or we left the watch page) so we don't append the
                 // previous video's dislike count onto the current video's button —
                 // matches the route-token guards in dearrow/sponsorblock.
                 if (generation !== _rydGeneration) return;
-                if (!isWatchPagePath() || getVideoId?.() !== videoId) return;
+                if (!_isPlayerPage() || getVideoId?.() !== videoId) return;
                 _pillEl?.remove();
                 _estimateEl?.remove();
                 document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
@@ -30811,7 +30859,7 @@
                 description: 'Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
                 group: 'Ratings',
                 icon: 'thumbs-down',
-                pages: [PageTypes.WATCH],
+                pages: [PageTypes.WATCH, PageTypes.SHORTS || 'shorts'],
 
                 _pagehideFlush: null,
                 init() {
@@ -30860,6 +30908,7 @@
                         }
                     }
                     _cache = null;
+                    _pendingFetches.clear();
                     _budgetWindow.start = 0;
                     _budgetWindow.count = 0;
                 },

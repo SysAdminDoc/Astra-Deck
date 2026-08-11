@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const {
     calculateLikeRatio,
+    createReturnDislikeFeature,
     createReturnDislikeCardsFeature
 } = require('../../extension/features/return-dislike/index.js');
 
@@ -58,6 +59,42 @@ function flushPromises() {
     return new Promise((resolve) => setImmediate(resolve));
 }
 
+function makeDomElement(tagName = 'span') {
+    const element = {
+        tagName: tagName.toUpperCase(),
+        children: [],
+        parentNode: null,
+        dataset: {},
+        attributes: {},
+        className: '',
+        textContent: '',
+        title: '',
+        setAttribute(name, value) {
+            this.attributes[name] = String(value);
+        },
+        appendChild(child) {
+            child.parentNode = this;
+            this.children.push(child);
+            return child;
+        },
+        remove() {
+            if (!this.parentNode) return;
+            const index = this.parentNode.children.indexOf(this);
+            if (index >= 0) this.parentNode.children.splice(index, 1);
+            this.parentNode = null;
+        },
+        querySelectorAll(selector) {
+            if (selector === '.ytkit-ryd-card-bar') return [];
+            if (selector === '.ytkit-ryd-ratio') {
+                return this.children.filter((child) => child.className === 'ytkit-ryd-ratio');
+            }
+            return [];
+        },
+        querySelector() { return null; }
+    };
+    return element;
+}
+
 test('Return Dislike feature block is reachable via the shared helper', () => {
     const [block] = extractFeatureBlock(sources.ytkit, 'returnDislike');
     assert.ok(block.length > 100,
@@ -75,6 +112,102 @@ test('Return Dislike peeled module exports a factory function', () => {
         'Module must register on the YTKitFeatures namespace');
     assert.equal(typeof createReturnDislikeCardsFeature, 'function',
         'Module must export the thumbnail-card factory');
+});
+
+test('Return Dislike renders the estimated count on the Shorts action bar across reel navigation', async () => {
+    const originalDocument = global.document;
+    const originalWindow = global.window;
+    const originalSetTimeout = global.setTimeout;
+    const originalClearTimeout = global.clearTimeout;
+    const timers = [];
+    const listeners = new Map();
+    let currentVideoId = 'shorts00001';
+    let activeHost = makeDomElement('dislike-button-view-model');
+    let navigationRule = null;
+    const hookCalls = [];
+    let networkCalls = 0;
+
+    global.setTimeout = (fn, delay) => {
+        const timer = { fn, delay, cancelled: false };
+        timers.push(timer);
+        return timer;
+    };
+    global.clearTimeout = (timer) => {
+        if (timer) timer.cancelled = true;
+    };
+    global.window = {
+        addEventListener(type, callback) {
+            listeners.set(type, callback);
+        },
+        removeEventListener(type, callback) {
+            if (listeners.get(type) === callback) listeners.delete(type);
+        }
+    };
+    global.document = {
+        querySelector() { return null; },
+        querySelectorAll() { return []; },
+        createElement: makeDomElement
+    };
+
+    const runTimer = async (delay) => {
+        const timer = timers.find((candidate) => !candidate.cancelled && candidate.delay === delay);
+        assert.ok(timer, `expected a pending ${delay}ms timer`);
+        timer.cancelled = true;
+        timer.fn();
+        await flushPromises();
+        await flushPromises();
+    };
+
+    try {
+        const feature = createReturnDislikeFeature({
+            appState: { settings: { returnDislikeCacheHours: 24, returnDislikeShowRatio: true } },
+            storageReadJSON: (_key, fallback) => fallback,
+            storageWriteJSON() {},
+            getVideoId: () => currentVideoId,
+            isWatchPagePath: () => false,
+            isShortsPagePath: () => true,
+            findSurfaceHookElements(surface, hook) {
+                hookCalls.push({ surface, hook });
+                return [activeHost];
+            },
+            extensionFetchJson: async () => ({
+                data: {
+                    likes: 9,
+                    dislikes: networkCalls++ === 0 ? 12345 : 42,
+                    viewCount: 100,
+                    rating: 4.5
+                }
+            }),
+            addNavigateRule(_id, callback) { navigationRule = callback; },
+            removeNavigateRule() {},
+            injectStyle: () => ({ remove() {} }),
+            PageTypes: { WATCH: 'watch', SHORTS: 'shorts' }
+        });
+
+        feature.init();
+        await runTimer(1500);
+        assert.equal(networkCalls, 1);
+        assert.equal(activeHost.children.some((child) => child.textContent === '12.3K'), true);
+        assert.equal(activeHost.children.some((child) => child.textContent === 'est.'), true);
+        assert.equal(hookCalls[0].surface, 'shortsShelf');
+        assert.equal(hookCalls[0].hook, 'action.dislike');
+
+        currentVideoId = 'shorts00002';
+        activeHost = makeDomElement('dislike-button-view-model');
+        navigationRule();
+        await runTimer(1500);
+        assert.equal(networkCalls, 2, 'each newly navigated Short should fetch its own estimate');
+        assert.equal(activeHost.children.some((child) => child.textContent === '42'), true);
+        assert.equal(activeHost.children.some((child) => child.textContent === 'est.'), true);
+        feature.destroy();
+    } finally {
+        global.setTimeout = originalSetTimeout;
+        global.clearTimeout = originalClearTimeout;
+        if (originalDocument === undefined) delete global.document;
+        else global.document = originalDocument;
+        if (originalWindow === undefined) delete global.window;
+        else global.window = originalWindow;
+    }
 });
 
 test('thumbnail ratio calculation rejects malformed totals and clamps valid percentages', () => {

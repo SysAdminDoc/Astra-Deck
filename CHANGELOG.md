@@ -15,6 +15,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Return YouTube Dislike now restores estimated dislike counts on the Shorts
+  action bar and follows counts across Shorts navigation.
 - Added a source-derived project-facts renderer and `npm run check` drift gate
   covering release version, browser floors, locales, schema size, runtime and
   peeled modules, selector surfaces, build profiles, themes, and bounded

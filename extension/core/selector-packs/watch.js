@@ -25,6 +25,18 @@
             ]),
             fallback: Object.freeze([])
         }),
+        'action.dislike': Object.freeze({
+            stable: Object.freeze([
+                'ytd-watch-metadata #top-level-buttons-computed dislike-button-view-model',
+                'ytd-watch-metadata #top-level-buttons-computed ytd-segmented-like-dislike-button-renderer #dislike-button-view-model',
+                'ytd-watch-metadata #top-level-buttons-computed ytd-segmented-like-dislike-button-renderer'
+            ]),
+            fallback: Object.freeze([
+                'ytd-watch-metadata dislike-button-view-model',
+                'ytd-segmented-like-dislike-button-renderer #dislike-button-view-model',
+                'dislike-button-view-model'
+            ])
+        }),
         'action.share': Object.freeze({
             stable: Object.freeze([
                 'ytd-watch-metadata #top-level-buttons-computed > yt-button-view-model',

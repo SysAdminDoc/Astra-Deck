@@ -37,6 +37,7 @@
         getMainVideoElement,
         getMoviePlayerElement,
         getPlayerProgressBar,
+        findSurfaceHookElements,
         schedulePlayerTask,
         cancelPlayerTask,
         classifyAgeRestriction,
@@ -53,6 +54,7 @@
         installStorageFlushGuards,
         isLiveChatFrame,
         isLiveChatPath,
+        isShortsPagePath,
         isWatchPagePath,
         isTopLevelFrame,
         PageTypes,
@@ -116,6 +118,7 @@
         !getMainVideoElement ||
         !getMoviePlayerElement ||
         !getPlayerProgressBar ||
+        !findSurfaceHookElements ||
         !schedulePlayerTask ||
         !cancelPlayerTask ||
         !classifyAgeRestriction ||
@@ -132,6 +135,7 @@
         !installStorageFlushGuards ||
         !isLiveChatFrame ||
         !isLiveChatPath ||
+        !isShortsPagePath ||
         !isTopLevelFrame ||
         !isWatchPagePath ||
         !preloadExtensionState ||
@@ -40070,6 +40074,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             storageWriteJSON: storageWriteJSON || (() => {}),
             getVideoId,
             isWatchPagePath,
+            isShortsPagePath,
+            findSurfaceHookElements,
             addNavigateRule,
             removeNavigateRule,
             injectStyle,
@@ -40080,7 +40086,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
             group: 'Ratings',
             icon: 'thumbs-down',
-            pages: [PageTypes.WATCH],
+            pages: [PageTypes.WATCH, PageTypes.SHORTS || 'shorts'],
             _cache: null,
             _budgetWindow: { start: 0, count: 0 },
             _BUDGET_PER_MIN: 100,
@@ -40094,6 +40100,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Bumped by destroy() so a render awaiting a fetch cannot paint a
             // pill after teardown. The peeled module calls this _rydGeneration.
             _generation: 0,
+            _pendingFetches: new Map(),
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -40114,6 +40121,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _estimateDisclosureText() {
                 return 'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.';
+            },
+
+            _isPlayerPage() {
+                return Boolean(isWatchPagePath() || isShortsPagePath());
+            },
+
+            _findDislikeButton() {
+                const isShorts = Boolean(isShortsPagePath());
+                try {
+                    const surface = isShorts ? 'shortsShelf' : 'watch';
+                    const matches = findSurfaceHookElements(surface, 'action.dislike');
+                    if (Array.isArray(matches) && matches[0]) return matches[0];
+                } catch (_) {
+                    // reason: selector-health is diagnostic; retain the direct
+                    // compatibility chain below if it is unavailable.
+                }
+                const selectors = isShorts
+                    ? [
+                        'ytd-reel-video-renderer[is-active] reel-action-bar-view-model dislike-button-view-model',
+                        'ytd-reel-video-renderer reel-action-bar-view-model dislike-button-view-model',
+                        'ytd-reel-video-renderer dislike-button-view-model'
+                    ]
+                    : [
+                        'dislike-button-view-model',
+                        'ytd-segmented-like-dislike-button-renderer #dislike-button-view-model',
+                        'ytd-segmented-like-dislike-button-renderer'
+                    ];
+                for (const selector of selectors) {
+                    const match = document.querySelector?.(selector);
+                    if (match) return match;
+                }
+                return null;
             },
 
             _readCache(videoId) {
@@ -40190,6 +40229,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
 
+            _fetchOnce(videoId) {
+                const pending = this._pendingFetches.get(videoId);
+                if (pending) return pending;
+                const request = Promise.resolve(this._fetch(videoId)).finally(() => {
+                    if (this._pendingFetches.get(videoId) === request) this._pendingFetches.delete(videoId);
+                });
+                this._pendingFetches.set(videoId, request);
+                return request;
+            },
+
             _formatCount(n) {
                 if (!Number.isFinite(n)) return '—';
                 if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -40198,19 +40247,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             async _render() {
-                if (!isWatchPagePath()) return;
+                if (!this._isPlayerPage()) return;
                 const videoId = getVideoId?.();
                 if (!videoId) return;
                 const generation = this._generation;
-                const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
+                const dislikeButton = this._findDislikeButton();
                 if (!dislikeButton) return;
-                const data = await this._fetch(videoId);
+                const data = await this._fetchOnce(videoId);
                 // Bail if the feature was torn down or the user navigated during
                 // the fetch await, so we don't append the previous video's
                 // dislike count onto the current video's button (matches
                 // dearrow/sponsorblock route guards).
                 if (generation !== this._generation) return;
-                if (!isWatchPagePath() || getVideoId?.() !== videoId) return;
+                if (!this._isPlayerPage() || getVideoId?.() !== videoId) return;
                 this._pillEl?.remove();
                 this._estimateEl?.remove();
                 document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
@@ -40332,6 +40381,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 }
                 this._cache = null;
+                this._pendingFetches.clear();
                 this._budgetWindow = { start: 0, count: 0 };
             }
         }),
