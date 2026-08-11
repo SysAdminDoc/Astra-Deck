@@ -44412,7 +44412,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'localAiSummary',
             name: 'Local AI Summary (browser built-in)',
-            description: t('feature_aiVideoSummary_desc', 'Use Chrome\u2019s built-in Summarizer API when available; use the configured BYO-key lane when it is unavailable.'),
+            description: t('feature_localAiSummary_desc', 'Use Chrome\u2019s built-in Summarizer API when available; use the configured BYO-key lane when it is unavailable.'),
             group: 'Research',
             icon: 'sparkles',
             pages: [PageTypes.WATCH],

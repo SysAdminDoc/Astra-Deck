@@ -3,7 +3,7 @@
 
 // Build-time i18n consistency checker.
 //
-// Validates two things:
+// Validates:
 //
 // 1. __MSG_key__ references in manifest.json have a matching key in
 //    extension/_locales/en/messages.json.
@@ -11,6 +11,9 @@
 // 2. Every chrome.i18n.getMessage("key") / chrome.i18n.getMessage('key')
 //    call found in any JS source file under extension/ has a matching key in
 //    extension/_locales/en/messages.json.
+//
+// 3. Feature names/descriptions extracted from extension/ytkit.js match the
+//    canonical feature_*_{name,desc} messages in the English catalogue.
 //
 // Migration of existing hardcoded English remains incremental, but
 // check-localizable-ui-copy.js fingerprints that debt so newly added literals
@@ -22,6 +25,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const {
+    extractFeatureCopyFromSource,
+    normalizeFeatureCopy
+} = require('./catalog-utils');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const MESSAGES_PATH = path.join(REPO_ROOT, 'extension', '_locales', 'en', 'messages.json');
@@ -95,6 +102,7 @@ function findManifestMsgKeys(manifestText) {
 const T_CALL_RE = /\bt\(\s*(['"])([A-Za-z0-9_]+)\1/g;
 const REPLACE_TOKEN_RE = /\.replace\(\s*(['"])\{([A-Za-z0-9_]+)\}\1/g;
 const REPLACE_WINDOW = 600;
+const FEATURE_COPY_KEY_RE = /^feature_[A-Za-z0-9_]+_(?:name|desc)$/;
 
 function findReplaceTokenUsages(src) {
     const usages = [];
@@ -124,10 +132,52 @@ function findReplaceTokenUsages(src) {
     return usages;
 }
 
+function findFeatureCopyDrifts(messages, source) {
+    const { copies, conflicts } = extractFeatureCopyFromSource(source);
+    const findings = conflicts.map((conflict) => ({
+        type: 'conflict',
+        key: conflict.key,
+        first: conflict.first.value,
+        second: conflict.second.value
+    }));
+
+    for (const [key, copy] of Object.entries(copies)) {
+        if (!FEATURE_COPY_KEY_RE.test(key)) continue;
+        const catalog = messages[key]?.message;
+        if (typeof catalog !== 'string') {
+            findings.push({ type: 'missing', key, inline: copy.value });
+        } else if (normalizeFeatureCopy(catalog) !== normalizeFeatureCopy(copy.value)) {
+            findings.push({
+                type: 'drift',
+                key,
+                catalog,
+                inline: copy.value
+            });
+        }
+    }
+    return findings;
+}
+
 function main() {
     const messages = loadMessages();
     const definedKeys = new Set(Object.keys(messages));
     const errors = [];
+
+    // ── 0. Validate feature names/descriptions against the EN catalogue ──
+    let ytkitSource;
+    try { ytkitSource = fs.readFileSync(path.join(EXTENSION_DIR, 'ytkit.js'), 'utf8'); } catch (err) {
+        console.error('[check-i18n] Cannot read extension/ytkit.js: ' + err.message);
+        process.exit(2);
+    }
+    for (const finding of findFeatureCopyDrifts(messages, ytkitSource)) {
+        if (finding.type === 'missing') {
+            errors.push('extension/_locales/en/messages.json: missing feature copy key "' + finding.key + '" for inline value ' + JSON.stringify(finding.inline));
+        } else if (finding.type === 'drift') {
+            errors.push('extension/_locales/en/messages.json: "' + finding.key + '" differs from extension/ytkit.js inline copy (catalog=' + JSON.stringify(finding.catalog) + '; inline=' + JSON.stringify(finding.inline) + ')');
+        } else {
+            errors.push('extension/ytkit.js: conflicting inline values for "' + finding.key + '" (' + JSON.stringify(finding.first) + ' vs ' + JSON.stringify(finding.second) + ')');
+        }
+    }
 
     // ── 1. Validate __MSG_key__ references in manifest.json ──
     let manifestText;
@@ -299,4 +349,9 @@ if (require.main === module) {
     }
 }
 
-module.exports = { findGetMessageKeys, findManifestMsgKeys, findReplaceTokenUsages };
+module.exports = {
+    findFeatureCopyDrifts,
+    findGetMessageKeys,
+    findManifestMsgKeys,
+    findReplaceTokenUsages
+};

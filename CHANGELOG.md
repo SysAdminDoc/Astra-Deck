@@ -15,6 +15,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- English feature names and descriptions are resynced with the runtime
+  definitions, and `check-i18n` now detects catalog drift or missing feature
+  copy keys with a regression-tested bait case.
 - External enrichment health now reports the answering source, refresh age,
   cache TTL/staleness, availability, cooldown, privacy contract, and local
   fallback in popup/side-panel diagnostics.

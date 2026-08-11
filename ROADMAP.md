@@ -37,16 +37,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.58.6 work): `npm test` 1514/1514 pass. `npm run check` FAILS at `i18n:copy:gate` (new, from the uncommitted work — item below). Pre-existing baseline failures, already tracked, not re-logged: `audit:deps` (web-ext → addons-linter → image-size advisories; tracked P1 above) and `i18n:coverage:gate` (every locale 16 placeholder-identical keys over baseline, from fa3ebfdd). One `lint` failure during a loaded parallel run did not reproduce on a clean re-run — machine load, not a defect. All other gates pass at the working tree.
 
-- [ ] P2 — EN catalog descriptions have drifted from what features actually do, and no gate can see it
-  Category: correctness (settings copy) + testing
-  Where: `extension/_locales/en/messages.json` `feature_*_desc` keys vs the inline literals in `extension/ytkit.js`; worst confirmed: `feature_hideAiSummary_desc` ("Remove AI-generated summaries and Ask AI buttons" — Ask AI is the separate `hideAskAi` toggle, cross-checked against distinct `body.ytkit-hideAskAi`/`body.ytkit-hideAiSummary` lanes in early.css:54-78); also `feature_playlistEnhancer_desc`, `feature_codecSelector_desc`, `feature_bulkCardActions_desc`, `feature_storageQuotaLRU_desc` (store list omits videoNotesData/bookmarks/watch-progress/watch-time — code at ytkit.js:34998), `feature_researchSpacedReview_desc`, plus scope drift on sbPerChannelProfiles, deArrowVoting, audioPan, restoreNativeYouTubeUi, localAiTranscriptQa, subscriptionGroups
-  Problem: `getFeatureI18nText`/`t()` prefer the catalog, so every past "update the description" fix that touched only the ytkit.js literal was invisible to users; the catalog actively misstates feature scope in the cases above. Root cause is a gate gap: check-i18n validates tokens, the copy gate fingerprints literals as accepted debt, but nothing asserts catalog == inline copy.
-  Evidence: script-diffed catalog vs inline literals (typographic-quote noise excluded); representative entries hand-checked.
-  Fix: one catalog resync pass (EN + generate-locales tables), then extend check-i18n to diff `feature_*_{name,desc}` catalog messages against the extracted definitions (normalizing quotes) and fail on divergence.
-  Acceptance: the new check fails when a ytkit.js description literal is edited without the catalog (bait-verify), then passes; the listed keys match their inline copy.
-  Confidence: Verified
-  Effort: M
-
 - [ ] P3 — `toTrustedHTML` is a sanitization-free Trusted Types launderer exposed to all feature code
   Category: security (hardening, no current exploit)
   Where: `extension/core/trusted-html.js:9-33`; re-exposed via `extension/ytkit.js:1661-1673`
