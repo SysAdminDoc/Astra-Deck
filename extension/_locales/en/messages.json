@@ -1101,6 +1101,9 @@
   "externalHealthCopyPending": {
     "message": "Building report…"
   },
+  "externalHealthAvailabilityTpl": {
+    "message": "availability {state}"
+  },
   "externalHealthDetailEmpty": {
     "message": "No requests observed in this tab yet."
   },
@@ -1109,6 +1112,12 @@
   },
   "externalHealthTitle": {
     "message": "External API health"
+  },
+  "externalHealthRefreshTpl": {
+    "message": "refreshed {age} ago"
+  },
+  "externalHealthSourceTpl": {
+    "message": "source {source}"
   },
   "externalHealthTotalTpl": {
     "message": "{count} services"
