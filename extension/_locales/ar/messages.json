@@ -5323,6 +5323,69 @@
   "settingsSyncUnavailable": {
     "message": "Browser sync is unavailable in this browser."
   },
+  "subscriptionAgeDaysShortTpl": {
+    "message": "{days} يوم"
+  },
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "إنشاء مجموعة فرعية للاشتراكات"
+  },
+  "subscriptionCreateGroupDialogAria": {
+    "message": "إنشاء مجموعة اشتراكات"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "تسمية مجموعة فرعية ضمن {group}"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "تسمية هذه المجموعة"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "مثل: Frontend وDevOps وJazz"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "مثل: البرمجة والموسيقى والأخبار"
+  },
+  "subscriptionGroupNameAria": {
+    "message": "اسم المجموعة"
+  },
+  "subscriptionDialogCancel": {
+    "message": "إلغاء"
+  },
+  "subscriptionDialogCreate": {
+    "message": "إنشاء"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name} ({count}){tags}"
+  },
+  "subscriptionChannelSingular": {
+    "message": "قناة"
+  },
+  "subscriptionChannelPlural": {
+    "message": "قنوات"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": ". مجموعة فرعية"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}. {count} {channels}{subgroup}"
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "علامات الذكاء الاصطناعي: {tags} · انقر مع Shift لإعادة الإنشاء"
+  },
+  "subscriptionAiTagsGenerateTitle": {
+    "message": "انقر مع Shift لإنشاء علامات الذكاء الاصطناعي"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "تشغيل كل الفيديوهات من {group}"
+  },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "تضمين {channel} في {group}"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
@@ -5603,13 +5666,13 @@
     "message": "+ Group"
   },
   "subscriptionToolbarNewGroupAria": {
-    "message": "Create subscription group"
+    "message": "إنشاء مجموعة اشتراكات"
   },
   "subscriptionToolbarNewSubgroup": {
     "message": "+ Subgroup"
   },
   "subscriptionToolbarNewSubgroupAria": {
-    "message": "Create subscription subgroup"
+    "message": "إنشاء مجموعة فرعية للاشتراكات"
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"

@@ -52,10 +52,10 @@
       "strictDigest": "a005f92ca3b32428cbc53eff4168905b73b29a536c9973e3633c58f92416c575"
     },
     "extension/features/subscription-groups/index.js": {
-      "count": 31,
-      "digest": "fcb60ab99061eaf20532e7b393b9707da9852697ace9f1439b63ef8cb1b25047",
-      "strictCount": 28,
-      "strictDigest": "bf1c4f0d4c177161d7cb427dcbe6a2e7cf8974f8807cdbc4fac374d4cfbae22e"
+      "count": 18,
+      "digest": "b531c5fce9bb74279165d3e1aa7a50067e4b40e6c9badf051b60f300e61c3e70",
+      "strictCount": 17,
+      "strictDigest": "3e57f50adb51d8ef0b77a1efadae7e58b2d0d6f0419f6b7171ad4088cf82eb03"
     },
     "extension/features/video-hider/index.js": {
       "count": 28,

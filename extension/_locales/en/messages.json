@@ -5323,6 +5323,69 @@
   "settingsSyncUnavailable": {
     "message": "Browser sync is unavailable in this browser."
   },
+  "subscriptionAgeDaysShortTpl": {
+    "message": "{days}d"
+  },
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "Create subscription subgroup"
+  },
+  "subscriptionCreateGroupDialogAria": {
+    "message": "Create subscription group"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "Name a subgroup under {group}"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "Name this group"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "e.g. Frontend, DevOps, Jazz"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "e.g. Coding, Music, News"
+  },
+  "subscriptionGroupNameAria": {
+    "message": "Group name"
+  },
+  "subscriptionDialogCancel": {
+    "message": "Cancel"
+  },
+  "subscriptionDialogCreate": {
+    "message": "Create"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name} ({count}){tags}"
+  },
+  "subscriptionChannelSingular": {
+    "message": "channel"
+  },
+  "subscriptionChannelPlural": {
+    "message": "channels"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": ". Subgroup"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}. {count} {channels}{subgroup}"
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "AI tags: {tags} · Shift+click to regenerate"
+  },
+  "subscriptionAiTagsGenerateTitle": {
+    "message": "Shift+click to generate AI tags"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "Play all videos from {group}"
+  },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "Include {channel} in {group}"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

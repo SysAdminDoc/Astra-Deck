@@ -5323,6 +5323,69 @@
   "settingsSyncUnavailable": {
     "message": "Browser sync is unavailable in this browser."
   },
+  "subscriptionAgeDaysShortTpl": {
+    "message": "{days} j"
+  },
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "Créer un sous-groupe d’abonnements"
+  },
+  "subscriptionCreateGroupDialogAria": {
+    "message": "Créer un groupe d’abonnements"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "Nommer un sous-groupe sous {group}"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "Nommer ce groupe"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "p. ex. Frontend, DevOps, Jazz"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "p. ex. Programmation, Musique, Actualités"
+  },
+  "subscriptionGroupNameAria": {
+    "message": "Nom du groupe"
+  },
+  "subscriptionDialogCancel": {
+    "message": "Annuler"
+  },
+  "subscriptionDialogCreate": {
+    "message": "Créer"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name} ({count}){tags}"
+  },
+  "subscriptionChannelSingular": {
+    "message": "chaîne"
+  },
+  "subscriptionChannelPlural": {
+    "message": "chaînes"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": ". Sous-groupe"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}. {count} {channels}{subgroup}"
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "Tags IA : {tags} · Maj+clic pour régénérer"
+  },
+  "subscriptionAiTagsGenerateTitle": {
+    "message": "Maj+clic pour générer des tags IA"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "Lire toutes les vidéos de {group}"
+  },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "Inclure {channel} dans {group}"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
@@ -5603,13 +5666,13 @@
     "message": "+ Group"
   },
   "subscriptionToolbarNewGroupAria": {
-    "message": "Create subscription group"
+    "message": "Créer un groupe d’abonnements"
   },
   "subscriptionToolbarNewSubgroup": {
     "message": "+ Subgroup"
   },
   "subscriptionToolbarNewSubgroupAria": {
-    "message": "Create subscription subgroup"
+    "message": "Créer un sous-groupe d’abonnements"
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"

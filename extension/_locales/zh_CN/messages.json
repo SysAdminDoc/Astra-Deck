@@ -5323,6 +5323,69 @@
   "settingsSyncUnavailable": {
     "message": "Browser sync is unavailable in this browser."
   },
+  "subscriptionAgeDaysShortTpl": {
+    "message": "{days}天"
+  },
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "创建订阅子组"
+  },
+  "subscriptionCreateGroupDialogAria": {
+    "message": "创建订阅组"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "在 {group} 下命名子组"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "命名此组"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "例如：Frontend、DevOps、Jazz"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "例如：编程、音乐、新闻"
+  },
+  "subscriptionGroupNameAria": {
+    "message": "组名"
+  },
+  "subscriptionDialogCancel": {
+    "message": "取消"
+  },
+  "subscriptionDialogCreate": {
+    "message": "创建"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name}（{count}）{tags}"
+  },
+  "subscriptionChannelSingular": {
+    "message": "频道"
+  },
+  "subscriptionChannelPlural": {
+    "message": "个频道"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": "。子组"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}。{count} {channels}{subgroup}"
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "AI 标签：{tags} · 按住 Shift 点击以重新生成"
+  },
+  "subscriptionAiTagsGenerateTitle": {
+    "message": "按住 Shift 点击以生成 AI 标签"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "播放 {group} 中的所有视频"
+  },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "将 {channel} 加入 {group}"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
@@ -5603,13 +5666,13 @@
     "message": "+ Group"
   },
   "subscriptionToolbarNewGroupAria": {
-    "message": "Create subscription group"
+    "message": "创建订阅组"
   },
   "subscriptionToolbarNewSubgroup": {
     "message": "+ Subgroup"
   },
   "subscriptionToolbarNewSubgroupAria": {
-    "message": "Create subscription subgroup"
+    "message": "创建订阅子组"
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"
