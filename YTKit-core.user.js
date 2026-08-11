@@ -7328,23 +7328,35 @@ if (typeof globalThis !== "undefined") {
         sponsorBlock: {
             label: 'SponsorBlock',
             origin: 'https://sponsor.ajay.app',
-            feature: 'sponsorBlock'
+            feature: 'sponsorBlock',
+            defaultCacheTtlMs: 12 * 60 * 60 * 1000,
+            privacy: 'hashed video prefix only',
+            localFallback: 'no crowd segments; native playback continues'
         },
         deArrow: {
             label: 'DeArrow',
             origin: 'https://sponsor.ajay.app',
-            feature: 'deArrow'
+            feature: 'deArrow',
+            defaultCacheTtlMs: 4 * 60 * 60 * 1000,
+            privacy: 'video ID sent only while enabled',
+            localFallback: 'keep the original YouTube title and thumbnail'
         },
         videoInsights: {
             // i18n-static: stable provider diagnostic identity
             label: 'YouTube video insights',
             origin: 'https://www.youtube.com',
-            feature: 'videoInsights'
+            feature: 'videoInsights',
+            defaultCacheTtlMs: 5 * 60 * 1000,
+            privacy: 'video ID sent only in the GitHub-full profile',
+            localFallback: 'use metadata already present in the page'
         },
         returnDislike: {
             label: 'Return YouTube Dislike',
             origin: 'https://returnyoutubedislikeapi.com',
-            feature: 'returnDislike'
+            feature: 'returnDislike',
+            defaultCacheTtlMs: 24 * 60 * 60 * 1000,
+            privacy: 'video ID sent only while enabled; no cookies',
+            localFallback: 'show YouTube’s native like/dislike controls'
         }
     });
 
@@ -7387,6 +7399,11 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
+    function normalizeDuration(value) {
+        const n = Number(value);
+        return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+    }
+
     function createRecord(id) {
         const meta = SERVICE_META[id] || { label: id, origin: '', feature: id };
         return {
@@ -7394,16 +7411,23 @@ if (typeof globalThis !== "undefined") {
             label: meta.label,
             origin: meta.origin,
             feature: meta.feature,
+            privacy: meta.privacy || '',
+            localFallback: meta.localFallback || '',
             state: 'unknown',
             lastSuccessTs: 0,
+            lastRefreshTs: 0,
+            lastObservedTs: 0,
             lastSuccessSource: '',
             lastHost: '',
             lastErrorTs: 0,
             lastErrorClass: '',
             lastErrorMessage: '',
             cacheState: 'unknown',
+            cacheTtlMs: normalizeDuration(meta.defaultCacheTtlMs),
             fallbackState: '',
-            requestBudget: null
+            requestBudget: null,
+            cooldownUntilTs: 0,
+            cooldownReason: ''
         };
     }
 
@@ -7427,23 +7451,35 @@ if (typeof globalThis !== "undefined") {
 
     // Pure helper for compact in-page degraded-state copy. Returns null when
     // the record is NOT actionably degraded (ok/unknown states stay silent).
-    function describeDegradation(record, nowTs = Date.now()) {
-        if (!record || record.state === 'ok' || record.state === 'unknown') return null;
+    function describeDegradation(record, nowTs) {
+        if (!record || record.state === 'unknown') return null;
+        const effectiveNow = Number.isFinite(Number(nowTs))
+            ? Number(nowTs)
+            : (Number(record.lastObservedTs) || Date.now());
+        const cacheTtlMs = normalizeDuration(record.cacheTtlMs);
+        const lastSuccessTs = Number(record.lastSuccessTs) || 0;
+        const cacheAgeMs = lastSuccessTs > 0 ? Math.max(0, effectiveNow - lastSuccessTs) : 0;
+        const cacheExpired = cacheAgeMs > 0
+            && cacheTtlMs > 0
+            && cacheAgeMs >= cacheTtlMs
+            && ['fresh', 'refreshed', 'stale'].includes(record.cacheState);
+        if (record.state === 'ok' && !cacheExpired && record.cacheState !== 'stale') return null;
         const reason = ERROR_CLASS_COPY[record.lastErrorClass] || ERROR_CLASS_COPY['unknown-error'];
         const parts = [];
-        if (record.state === 'rate-limited') {
+        if (record.state === 'rate-limited' || Number(record.cooldownUntilTs) > effectiveNow) {
             const resetMs = record.requestBudget?.resetMs;
             parts.push(Number.isFinite(resetMs) && resetMs > 0
                 ? `rate limited — retrying in ${formatAge(resetMs)}`
                 : 'rate limited');
-        } else {
+        } else if (record.state !== 'ok') {
             parts.push(reason);
         }
-        if (record.state === 'degraded' && record.lastSuccessTs > 0) {
-            parts.push(`showing ${formatAge(nowTs - record.lastSuccessTs)}-old cache`);
-        } else if (record.cacheState === 'stale' && record.lastSuccessTs > 0) {
-            parts.push(`cache is ${formatAge(nowTs - record.lastSuccessTs)} old`);
+        if ((record.state === 'degraded' || cacheExpired || record.cacheState === 'stale') && lastSuccessTs > 0) {
+            parts.push(record.state === 'degraded'
+                ? `showing ${formatAge(cacheAgeMs)}-old cache`
+                : `cache is ${formatAge(cacheAgeMs)} old`);
         }
+        if (!parts.length) return null;
         return {
             id: record.id,
             label: record.label,
@@ -7472,6 +7508,39 @@ if (typeof globalThis !== "undefined") {
             return records[key];
         }
 
+        function isCacheExpired(rec, nowTs) {
+            const ttlMs = normalizeDuration(rec.cacheTtlMs);
+            const ts = Number(rec.lastRefreshTs || rec.lastSuccessTs) || 0;
+            return ts > 0
+                && ttlMs > 0
+                && nowTs - ts >= ttlMs
+                && ['fresh', 'refreshed', 'stale'].includes(rec.cacheState);
+        }
+
+        function availabilityFor(rec, nowTs) {
+            if (rec.state === 'rate-limited' || Number(rec.cooldownUntilTs) > nowTs) return 'cooldown';
+            if (rec.state === 'error') return 'unavailable';
+            if (rec.state === 'degraded' || rec.cacheState === 'stale' || isCacheExpired(rec, nowTs)) return 'stale';
+            if (rec.state === 'ok') return 'available';
+            return 'unknown';
+        }
+
+        function decorate(rec) {
+            const nowTs = now();
+            const refreshTs = Number(rec.lastRefreshTs || rec.lastSuccessTs) || 0;
+            const cooldownUntilTs = Number(rec.cooldownUntilTs) || 0;
+            const cooldownRemainingMs = Math.max(0, cooldownUntilTs - nowTs);
+            const expired = isCacheExpired(rec, nowTs);
+            return {
+                ...rec,
+                cacheState: expired && rec.cacheState !== 'stale' ? 'stale' : rec.cacheState,
+                lastRefreshTs: refreshTs,
+                lastRefreshAgeMs: refreshTs > 0 ? Math.max(0, nowTs - refreshTs) : null,
+                cooldownRemainingMs,
+                availability: availabilityFor(rec, nowTs)
+            };
+        }
+
         function notify(rec) {
             for (const listener of listeners) {
                 try {
@@ -7484,20 +7553,29 @@ if (typeof globalThis !== "undefined") {
 
         function recordSuccess(id, detail = {}) {
             const rec = ensure(id);
+            const observedTs = now();
             const ts = Number(detail.ts);
             rec.state = 'ok';
-            rec.lastSuccessTs = Number.isFinite(ts) && ts > 0 ? ts : now();
+            rec.lastObservedTs = observedTs;
+            rec.lastSuccessTs = Number.isFinite(ts) && ts > 0 ? ts : observedTs;
+            rec.lastRefreshTs = rec.lastSuccessTs;
             rec.lastSuccessSource = cleanText(detail.source || 'network');
             if (detail.host) rec.lastHost = cleanText(detail.host);
             rec.cacheState = cleanText(detail.cacheState || (detail.source === 'cache' ? 'fresh' : 'refreshed'), 'unknown');
+            const cacheTtlMs = normalizeDuration(detail.cacheTtlMs);
+            if (cacheTtlMs > 0) rec.cacheTtlMs = cacheTtlMs;
             rec.fallbackState = cleanText(detail.fallbackState || '');
             rec.requestBudget = normalizeBudget(detail.requestBudget);
-            notify(rec);
-            return rec;
+            rec.cooldownUntilTs = 0;
+            rec.cooldownReason = '';
+            const snapshot = decorate(rec);
+            notify(snapshot);
+            return snapshot;
         }
 
         function recordFailure(id, error, detail = {}, options = {}) {
             const rec = ensure(id);
+            const observedTs = now();
             const errorClass = classifyFailure(error, detail);
             const status = getStatus(error, detail);
             const message = cleanText(
@@ -7505,42 +7583,52 @@ if (typeof globalThis !== "undefined") {
                 'request failed'
             );
             rec.state = errorClass === 'rate-limited' ? 'rate-limited' : 'error';
-            rec.lastErrorTs = now();
+            rec.lastObservedTs = observedTs;
+            rec.lastErrorTs = observedTs;
             rec.lastErrorClass = errorClass;
             rec.lastErrorMessage = message;
             if (detail.host) rec.lastHost = cleanText(detail.host);
             rec.cacheState = cleanText(detail.cacheState || rec.cacheState || 'none', 'none');
             rec.fallbackState = cleanText(detail.fallbackState || '');
             rec.requestBudget = normalizeBudget(detail.requestBudget);
+            const cacheTtlMs = normalizeDuration(detail.cacheTtlMs);
+            if (cacheTtlMs > 0) rec.cacheTtlMs = cacheTtlMs;
+            const budgetResetMs = Number(rec.requestBudget?.resetMs) || 0;
+            const cooldownMs = normalizeDuration(detail.cooldownMs) || budgetResetMs;
+            rec.cooldownUntilTs = cooldownMs > 0 ? observedTs + cooldownMs : 0;
+            rec.cooldownReason = cleanText(detail.cooldownReason || (errorClass === 'rate-limited' ? 'rate-limited' : ''));
             try {
                 diagnosticLog?.record?.('external-api-health', `${rec.id} ${errorClass}: ${message}`);
             } catch (_) {
                 // reason: diagnostics must never break a feature fetch path
             }
-            if (!options.skipNotify) notify(rec);
-            return rec;
+            const snapshot = decorate(rec);
+            if (!options.skipNotify) notify(snapshot);
+            return snapshot;
         }
 
         function recordCacheFallback(id, error, detail = {}) {
             // Single notification with the FINAL degraded state — notifying
             // from recordFailure first flashed 'error' at every subscriber
             // (in-page pills, popup health center) on each stale-cache serve.
-            const rec = recordFailure(id, error, {
+            recordFailure(id, error, {
                 ...detail,
                 cacheState: detail.cacheState || 'stale',
                 fallbackState: detail.fallbackState || 'stale-cache'
             }, { skipNotify: true });
+            const rec = ensure(id);
             rec.state = 'degraded';
             rec.cacheState = cleanText(detail.cacheState || 'stale');
             rec.fallbackState = cleanText(detail.fallbackState || 'stale-cache');
             rec.lastCacheFallbackTs = now();
-            notify(rec);
-            return rec;
+            const snapshot = decorate(rec);
+            notify(snapshot);
+            return snapshot;
         }
 
         function snapshot() {
             const ids = new Set([...Object.keys(SERVICE_META), ...Object.keys(records)]);
-            return [...ids].map((id) => ({ ...ensure(id) }));
+            return [...ids].map((id) => decorate(ensure(id)));
         }
 
         function subscribe(listener) {

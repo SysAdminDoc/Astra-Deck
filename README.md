@@ -495,6 +495,10 @@ npm run release:prepare:no-crx            # Same, without any CRX — needs no m
 npm run release:sbom                      # Regenerate build/astra-deck-npm-sbom.cdx.json
 npm run release:manifest                  # Regenerate release-manifest.json + SHA256SUMS
 npm run release:readiness -- --require-pass # Generate release readiness JSON/Markdown
+npm run release:health                    # Gate manifest, selectors, startup, and real-DOM smoke
+npm run release:channels                  # Validate the checked-in channel ledger
+npm run release:promote -- --channel userscript # Promote only after release:health passes
+npm run release:rollback -- --channel userscript # Restore the recorded artifact without rebuilding
 npm run release:verify-digests -- --tag vX.Y.Z # Compare uploaded asset digests after release upload
 node build-extension.js --profile store-safe
 node build-extension.js --profile chromium-store
@@ -537,6 +541,16 @@ Outputs in `build/` (the `.crx` files only when the build was not run with `--no
 - `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`
 - `release-readiness/release-readiness.json` and
   `release-readiness/release-readiness.md` after `npm run release:readiness`
+- `release-health.json` after `npm run release:health`; promotion refuses a
+  failed or stale health report
+
+`release-channels.json` records the active, last-known-good, and rollback
+artifact for every extension profile/browser channel plus the userscript. A
+promotion checks the exact manifest hash and candidate asset digest before
+moving those pointers. If a release fails after publication, run
+`npm run release:rollback -- --channel <id>` (or omit `--channel` for all
+channels); rollback points the channel back to the stored artifact reference
+and does not rebuild or mutate the failed artifact.
 
 Companion release assets are intentionally separate from the default extension
 build output. Only a companion release/staging pass should add

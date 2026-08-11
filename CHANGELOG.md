@@ -18,6 +18,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - External enrichment health now reports the answering source, refresh age,
   cache TTL/staleness, availability, cooldown, privacy contract, and local
   fallback in popup/side-panel diagnostics.
+- Release channels now have checked-in active/last-known-good/rollback
+  pointers. Promotion requires a manifest-bound health report covering
+  version/digests, selector-pack integrity, the startup budget, and a real-DOM
+  smoke fixture; rollback restores the recorded artifact without rebuilding it.
 - Video Notes now uses the shared locale catalog in both the modular runtime and
   inline fallback, with translations across all supported locales.
 - Transcript playback cues and local transcript-search excerpts now use named
