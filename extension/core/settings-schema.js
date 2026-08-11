@@ -95,6 +95,9 @@ const CAPABILITIES = Object.freeze([
     // CSS @scope is used opportunistically by feature-owned lifecycle styles.
     // Styles containing document-root selectors retain the unwrapped fallback.
     'cssScope',
+    // CSS Custom Highlight paints transcript matches and the active segment
+    // without rewriting text nodes; older hosts retain the DOM fallback.
+    'cssHighlight',
 ]);
 
 const SETTINGS_SCHEMA = Object.freeze([

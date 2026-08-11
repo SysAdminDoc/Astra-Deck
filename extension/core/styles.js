@@ -34,6 +34,44 @@
         return `@scope (${root}) {\n${text}\n}`;
     }
 
+    function supportsCustomHighlight() {
+        if (typeof globalThis === 'undefined') return false;
+        return typeof globalThis.Highlight === 'function'
+            && typeof globalThis.CSS?.highlights?.set === 'function'
+            && typeof globalThis.CSS?.highlights?.delete === 'function';
+    }
+
+    function setCustomHighlight(name, ranges = []) {
+        if (!supportsCustomHighlight() || !name) return false;
+        try {
+            if (!Array.isArray(ranges) || ranges.length === 0) {
+                globalThis.CSS.highlights.delete(name);
+                return true;
+            }
+            const highlight = new globalThis.Highlight(...ranges);
+            globalThis.CSS.highlights.set(String(name), highlight);
+            return true;
+        } catch (_) {
+            // reason: a host may expose the registry but reject a Range from a
+            // detached or cross-document node; callers keep their DOM fallback.
+            try {
+                globalThis.CSS.highlights.delete(String(name));
+            } catch (_) {
+                // reason: cleanup of a failed highlight registration is best effort.
+            }
+            return false;
+        }
+    }
+
+    function clearCustomHighlight(name) {
+        if (!name || typeof globalThis === 'undefined') return false;
+        try {
+            return globalThis.CSS?.highlights?.delete?.(String(name)) === true;
+        } catch (_) {
+            return false;
+        }
+    }
+
     function appendStyleSheet(css) {
         const style = document.createElement('style');
         style.textContent = css;
@@ -221,8 +259,11 @@
         cleanupRetiredCommentUi,
         createCssLifecycleSpec,
         injectStyle,
+        clearCustomHighlight,
         scopeCss,
+        setCustomHighlight,
         stripCommentRestyleCss,
+        supportsCustomHighlight,
         supportsCssScope
     });
 
@@ -233,8 +274,11 @@
             cleanupRetiredCommentUi,
             createCssLifecycleSpec,
             injectStyle,
+            clearCustomHighlight,
             scopeCss,
+            setCustomHighlight,
             stripCommentRestyleCss,
+            supportsCustomHighlight,
             supportsCssScope
         };
     }

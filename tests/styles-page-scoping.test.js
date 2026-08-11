@@ -142,6 +142,35 @@ test('@scope wraps safe lifecycle CSS and preserves document-root fallback rules
     }
 });
 
+test('Custom Highlight registry paints ranges without changing the DOM', () => {
+    const harness = loadStylesHarness();
+    const previousHighlight = globalThis.Highlight;
+    const previousCss = globalThis.CSS;
+    try {
+        const registry = new Map();
+        class FakeHighlight {
+            constructor(...ranges) {
+                this.ranges = ranges;
+            }
+        }
+        globalThis.Highlight = FakeHighlight;
+        globalThis.CSS = { highlights: registry };
+        const range = { startContainer: {}, endContainer: {} };
+
+        assert.equal(harness.supportsCustomHighlight(), true);
+        assert.equal(harness.setCustomHighlight('transcript-active', [range]), true);
+        assert.deepEqual(registry.get('transcript-active').ranges, [range]);
+        assert.equal(harness.clearCustomHighlight('transcript-active'), true);
+        assert.equal(registry.has('transcript-active'), false);
+    } finally {
+        if (previousHighlight === undefined) delete globalThis.Highlight;
+        else globalThis.Highlight = previousHighlight;
+        if (previousCss === undefined) delete globalThis.CSS;
+        else globalThis.CSS = previousCss;
+        harness.restore();
+    }
+});
+
 test('every registered style lifecycle spec declares an explicit page scope', () => {
     const files = [
         'extension/features/home-subs-css/index.js',

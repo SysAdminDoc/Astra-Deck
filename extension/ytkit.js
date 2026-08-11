@@ -119,6 +119,13 @@
             .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
             .replace(/-/g, '\\x2d');
 
+    const setCustomHighlight = typeof globalThis.YTKitCore?.setCustomHighlight === 'function'
+        ? globalThis.YTKitCore.setCustomHighlight
+        : () => false;
+    const clearCustomHighlight = typeof globalThis.YTKitCore?.clearCustomHighlight === 'function'
+        ? globalThis.YTKitCore.clearCustomHighlight
+        : () => false;
+
     // v4.47.0 NF5 wave 3: feature-lifecycle CSS ownership hook. Peel
     // modules in extension/features/*/index.js register CSS lifecycle
     // specs at module-eval via getLifecycle().defineFeature(spec). The
@@ -25606,6 +25613,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _panel: null,
             _navRule: null,
             _createTimer: null,
+            _video: null,
+            _timeUpdateHandler: null,
+            _activeCueIndex: -1,
+            _activeHighlightName: 'ytkit-transcript-active',
             _cues: [],
             _scheduleCreate(delay = 2000) {
                 if (this._createTimer) clearTimeout(this._createTimer);
@@ -25640,6 +25651,79 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return this._cues.map(c => c.text).join('\n');
             },
 
+            _clearActiveCueHighlight() {
+                clearCustomHighlight(this._activeHighlightName);
+                this._panel?.querySelectorAll('.ytkit-transcript-line.is-active')
+                    ?.forEach((line) => line.classList.remove('is-active'));
+                this._activeCueIndex = -1;
+            },
+
+            _detachVideoTimeUpdates() {
+                if (this._video && this._timeUpdateHandler) {
+                    this._video.removeEventListener?.('timeupdate', this._timeUpdateHandler);
+                }
+                this._video = null;
+                this._timeUpdateHandler = null;
+                this._clearActiveCueHighlight();
+            },
+
+            _attachVideoTimeUpdates() {
+                const video = document.querySelector('video');
+                if (!video) return;
+                if (video === this._video && this._timeUpdateHandler) return;
+                this._detachVideoTimeUpdates();
+                this._video = video;
+                this._timeUpdateHandler = () => this._syncActiveCue();
+                video.addEventListener?.('timeupdate', this._timeUpdateHandler);
+                this._syncActiveCue();
+            },
+
+            _syncActiveCue() {
+                const body = this._panel?.querySelector('.ytkit-transcript-body');
+                const video = this._video || document.querySelector('video');
+                if (!body || !video || !this._cues.length) {
+                    this._clearActiveCueHighlight();
+                    return;
+                }
+                const currentTime = Number(video.currentTime);
+                if (!Number.isFinite(currentTime)) return;
+                let activeIndex = -1;
+                for (let index = 0; index < this._cues.length; index += 1) {
+                    const cue = this._cues[index];
+                    const start = Math.max(0, Number(cue?.start) || 0);
+                    const nextStart = Number(this._cues[index + 1]?.start);
+                    const explicitEnd = Number(cue?.end);
+                    const end = Number.isFinite(explicitEnd) && explicitEnd > start
+                        ? explicitEnd
+                        : (Number.isFinite(nextStart) && nextStart > start ? nextStart : Infinity);
+                    if (currentTime >= start && currentTime < end) {
+                        activeIndex = index;
+                        break;
+                    }
+                }
+
+                const textEl = activeIndex > -1
+                    ? body.querySelectorAll('.ytkit-transcript-line__text')[activeIndex]
+                    : null;
+                let customPainted = false;
+                if (textEl && typeof document.createRange === 'function') {
+                    try {
+                        const range = document.createRange();
+                        range.selectNodeContents(textEl);
+                        customPainted = setCustomHighlight(this._activeHighlightName, [range]);
+                    } catch (_) {
+                        // reason: a detached transcript line keeps the DOM fallback safe.
+                    }
+                }
+                if (!customPainted) {
+                    clearCustomHighlight(this._activeHighlightName);
+                    body.querySelectorAll('.ytkit-transcript-line').forEach((line, index) => {
+                        line.classList.toggle('is-active', index === activeIndex);
+                    });
+                }
+                this._activeCueIndex = activeIndex;
+            },
+
             _hasTranslatorApi() {
                 const localAi = globalThis.YTKitCore?.localAi;
                 return Boolean(localAi?.has?.('translator', window))
@@ -25659,6 +25743,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 lines.forEach((el, i) => {
                     if (source[i]) el.textContent = source[i].text;
                 });
+                this._syncActiveCue();
             },
 
             async _detectTranscriptLanguage(text) {
@@ -26008,6 +26093,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         });
                         body.appendChild(line);
                     });
+                    this._attachVideoTimeUpdates();
                     if (this._cues.length === 0) {
                         this._setTranscriptMeta(trackLabel, 'The transcript track loaded, but no readable lines were returned.', 'warning');
                         this._renderBodyState(body, 'empty', 'Transcript is empty', 'YouTube exposed a caption track, but it does not contain readable cue lines yet.');
@@ -26122,11 +26208,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 panel.appendChild(body);
                 secondary.insertBefore(panel, secondary.firstChild);
                 this._panel = panel;
+                this._attachVideoTimeUpdates();
                 this._loadTranscript();
             },
 
             init() {
                 addNavigateRule('transcriptViewer', () => {
+                    this._detachVideoTimeUpdates();
                     this._panel?.remove(); this._panel = null;
                     this._translatedCues = null;
                     this._showingTranslation = false;
@@ -26138,6 +26226,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._createTimer) clearTimeout(this._createTimer);
                 this._createTimer = null;
                 removeNavigateRule('transcriptViewer');
+                this._detachVideoTimeUpdates();
                 this._panel?.remove(); this._panel = null;
                 this._translatedCues = null;
                 this._showingTranslation = false;
@@ -45644,6 +45733,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btn: null,
             _panel: null,
             _navRule: null,
+            _searchHighlightName: 'ytkit-transcript-search-match',
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -45665,11 +45755,53 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-transcript-search-panel .state{color:rgba(255,255,255,0.72);}
                     .ytkit-transcript-search-panel .state[data-tone="error"]{color:#fecaca;}
                     .ytkit-transcript-search-panel .state button{display:block;margin-top:8px;min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(124,58,237,.45);background:rgba(124,58,237,.16);color:#ddd6fe;font:600 12px system-ui;cursor:pointer;}
+                    ::highlight(ytkit-transcript-search-match){background-color:rgba(167,139,250,.3);color:inherit;}
+                    .ytkit-transcript-search-mark{background:rgba(167,139,250,.3);color:inherit;border-radius:3px;padding:0 2px;}
                     .ytkit-transcript-search-panel__footer{margin-top:12px;display:flex;justify-content:space-between;gap:8px;}
                     .ytkit-transcript-search-panel__footer button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-transcript-search-panel__footer button:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-transcript-search-panel__footer button[data-danger="1"]{background:rgba(239,68,68,0.14);border-color:rgba(239,68,68,0.36);color:#fecaca;}
                 `, 'transcript-search-panel');
+            },
+
+            _clearSearchHighlights() {
+                clearCustomHighlight(this._searchHighlightName);
+            },
+
+            _appendExcerpt(meta, text, query, ranges, fallbackItems) {
+                const excerpt = String(text || '');
+                const normalizedQuery = String(query || '').toLowerCase();
+                const matchIndex = normalizedQuery
+                    ? excerpt.toLowerCase().indexOf(normalizedQuery)
+                    : -1;
+                const textNode = document.createTextNode(excerpt);
+                meta.appendChild(textNode);
+                if (matchIndex < 0) return;
+                if (typeof document.createRange === 'function') {
+                    try {
+                        const range = document.createRange();
+                        range.setStart(textNode, matchIndex);
+                        range.setEnd(textNode, matchIndex + normalizedQuery.length);
+                        ranges.push(range);
+                        fallbackItems.push({ meta, excerpt, matchIndex, matchLength: normalizedQuery.length });
+                        return;
+                    } catch (_) {
+                        // reason: detached text nodes use the mark fallback below.
+                    }
+                }
+                fallbackItems.push({ meta, excerpt, matchIndex, matchLength: normalizedQuery.length });
+            },
+
+            _renderExcerptFallback(items) {
+                for (const item of items) {
+                    item.meta.textContent = '';
+                    item.meta.appendChild(document.createTextNode(item.excerpt.slice(0, item.matchIndex)));
+                    const mark = document.createElement('mark');
+                    mark.className = 'ytkit-transcript-search-mark';
+                    mark.textContent = item.excerpt.slice(item.matchIndex, item.matchIndex + item.matchLength);
+                    item.meta.appendChild(mark);
+                    item.meta.appendChild(document.createTextNode(item.excerpt.slice(item.matchIndex + item.matchLength)));
+                }
             },
 
             _excerpt(text, query) {
@@ -45683,6 +45815,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _setResultsState(ul, message, options = {}) {
+                this._clearSearchHighlights();
                 ul.replaceChildren();
                 const li = document.createElement('li');
                 li.className = 'state';
@@ -45711,6 +45844,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const ul = this._panel.querySelector('ul');
                 if (!ul) return;
                 this._cancelQuery();
+                this._clearSearchHighlights();
                 const generation = this._queryGeneration;
                 if (!query || query.length < 3) {
                     this._setResultsState(ul, 'Type at least 3 characters to search.');
@@ -45745,6 +45879,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return;
                 }
                 ul.replaceChildren();
+                const highlightRanges = [];
+                const fallbackItems = [];
                 for (const hit of hits.slice(0, 50)) {
                     const li = document.createElement('li');
                     const link = document.createElement('a');
@@ -45755,9 +45891,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     li.appendChild(link);
                     const meta = document.createElement('span');
                     meta.className = 'meta';
-                    meta.textContent = this._excerpt(hit.text || '', query);
+                    this._appendExcerpt(meta, this._excerpt(hit.text || '', query), query, highlightRanges, fallbackItems);
                     li.appendChild(meta);
                     ul.appendChild(li);
+                }
+                if (!setCustomHighlight(this._searchHighlightName, highlightRanges)) {
+                    this._renderExcerptFallback(fallbackItems);
                 }
             },
 
@@ -45769,6 +45908,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._inputTimer = null;
                 this._focusTimer = null;
                 this._confirmTimer = null;
+                this._clearSearchHighlights();
                 this._panel?.remove();
                 this._panel = null;
                 if (restoreFocus) this._btn?.focus?.({ preventScroll: true });
@@ -58478,6 +58618,18 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             line-height: 1.45;
         }
 
+        /* Native text-range paint for the currently playing transcript cue.
+           Older engines use .is-active on the line button instead. */
+        ::highlight(ytkit-transcript-active) {
+            background-color: rgba(var(--ytkit-accent-rgb),0.24);
+            color: inherit;
+        }
+
+        .ytkit-transcript-line.is-active {
+            background: rgba(var(--ytkit-accent-rgb),0.16);
+            box-shadow: inset 2px 0 0 rgba(var(--ytkit-accent-rgb),0.8);
+        }
+
         html:not([dark]) .ytkit-transcript-panel {
             border-color: #d8dde5;
             background: #ffffff;
@@ -58560,6 +58712,11 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
 
         html:not([dark]) .ytkit-transcript-line__ts {
             color: #075985;
+        }
+
+        html:not([dark]) .ytkit-transcript-line.is-active {
+            background: rgba(var(--ytkit-accent-rgb),0.12);
+            box-shadow: inset 2px 0 0 rgba(var(--ytkit-accent-rgb),0.65);
         }
 
         .ytkit-mini-player-bar {

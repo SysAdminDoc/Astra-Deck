@@ -93,3 +93,26 @@ test('search panel tokens prevent older queries from replacing newer results', (
     assert.match(block, /Clear again to confirm/);
     assert.match(block, /Could not clear the local transcript index\. Your existing data is still available\./);
 });
+
+test('transcript and local-search marking use CSS Custom Highlight with DOM fallbacks', () => {
+    const source = fs.readFileSync(ytkitPath, 'utf8');
+    const viewerStart = source.indexOf("id: 'transcriptViewer'");
+    const viewerEnd = source.indexOf("id: 'searchFilterDefaults'", viewerStart);
+    const viewer = source.slice(viewerStart, viewerEnd);
+    assert.match(viewer, /document\.createRange\(\)/,
+        'transcript segment marking must build text ranges');
+    assert.match(viewer, /setCustomHighlight\(this\._activeHighlightName/,
+        'transcript segment marking must use the Custom Highlight registry');
+    assert.match(viewer, /line\.classList\.toggle\('is-active'/,
+        'transcript segment marking must retain a DOM fallback');
+
+    const searchStart = source.indexOf("id: 'researchTranscriptSearchPanel'");
+    const searchEnd = source.indexOf("id: 'reducedMotion'", searchStart);
+    const search = source.slice(searchStart, searchEnd);
+    assert.match(search, /::highlight\(ytkit-transcript-search-match\)/,
+        'transcript search must ship a named ::highlight paint rule');
+    assert.match(search, /setCustomHighlight\(this\._searchHighlightName/,
+        'transcript search must register ranges without wrapping matching text');
+    assert.match(search, /_renderExcerptFallback/,
+        'transcript search must retain a mark fallback for older browsers');
+});

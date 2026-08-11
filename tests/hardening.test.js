@@ -5046,7 +5046,8 @@ test('subscriptionGroups popularity sort reads view-count from card metadata', (
 test('researchTranscriptSearchPanel reuses __ytkitSearchTranscripts + __ytkitClearTranscriptIndex', () => {
     const start = ytkitSource.indexOf("id: 'researchTranscriptSearchPanel'");
     assert.ok(start > -1, 'researchTranscriptSearchPanel must exist');
-    const block = ytkitSource.slice(start, start + 14000);
+    const end = ytkitSource.indexOf("id: 'reducedMotion'", start);
+    const block = ytkitSource.slice(start, end > start ? end : start + 20000);
     assert.match(block, /window\.__ytkitSearchTranscripts/,
         'must call the searcher helper exposed by researchTranscriptIndex');
     assert.match(block, /window\.__ytkitClearTranscriptIndex/,
