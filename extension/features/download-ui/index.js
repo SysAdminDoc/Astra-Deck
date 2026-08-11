@@ -1019,6 +1019,7 @@
             if (!document.getElementById('ytkit-dl-anim')) {
                 const s = document.createElement('style');
                 s.id = 'ytkit-dl-anim';
+                // i18n-static: animation CSS payload, not user-visible copy.
                 s.textContent = `
                     @keyframes ytkit-slide-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
                 `;
@@ -1387,7 +1388,9 @@
         function showDownloaderFailure(resp = {}) {
             const failure = classifyDownloaderFailureResponse(resp);
             DiagnosticLog?.record?.('download-failure', `${failure.code}: ${failure.message} | ${failure.advice}`);
-            showToast(`Astra Downloader: ${failure.message} ${failure.advice}`, failure.tone, {
+            showToast(t('dlFailureTpl', 'Astra Downloader: {error} {advice}')
+                .replace('{error}', failure.message)
+                .replace('{advice}', failure.advice), failure.tone, {
                 duration: failure.duration,
             });
             return failure;
@@ -1541,23 +1544,37 @@
 
         // ── Download Options Popup ──
         const VIDEO_FORMATS = [
-            { value: 'mp4',  label: 'MP4',  desc: 'Universal, best compat' },
-            { value: 'mkv',  label: 'MKV',  desc: 'Lossless container' },
-            { value: 'webm', label: 'WebM', desc: 'Web-optimized' }
+            // i18n-static: technical format token.
+            { value: 'mp4',  label: 'MP4',  desc: t('dlFormatVideoUniversal', 'Universal, best compat') },
+            // i18n-static: technical format token.
+            { value: 'mkv',  label: 'MKV',  desc: t('dlFormatVideoLossless', 'Lossless container') },
+            // i18n-static: technical format token.
+            { value: 'webm', label: 'WebM', desc: t('dlFormatVideoWeb', 'Web-optimized') }
         ];
         const AUDIO_FORMATS = [
-            { value: 'mp3',  label: 'MP3',  desc: '320kbps, universal' },
-            { value: 'm4a',  label: 'M4A',  desc: 'AAC, Apple-friendly' },
-            { value: 'opus', label: 'Opus', desc: 'Smaller, high quality' },
-            { value: 'flac', label: 'FLAC', desc: 'Lossless audio' },
-            { value: 'wav',  label: 'WAV',  desc: 'Uncompressed PCM' }
+            // i18n-static: technical format token.
+            { value: 'mp3',  label: 'MP3',  desc: t('dlFormatAudio320', '320kbps, universal') },
+            // i18n-static: technical format token.
+            { value: 'm4a',  label: 'M4A',  desc: t('dlFormatAudioAac', 'AAC, Apple-friendly') },
+            // i18n-static: technical format token.
+            { value: 'opus', label: 'Opus', desc: t('dlFormatAudioOpus', 'Smaller, high quality') },
+            // i18n-static: technical format token.
+            { value: 'flac', label: 'FLAC', desc: t('dlFormatAudioLossless', 'Lossless audio') },
+            // i18n-static: technical format token.
+            { value: 'wav',  label: 'WAV',  desc: t('dlFormatAudioPcm', 'Uncompressed PCM') }
         ];
         const QUALITY_OPTIONS = [
+            // i18n-static: technical quality token.
             { value: 'best', label: 'Best' },
+            // i18n-static: technical quality token.
             { value: '2160', label: '4K' },
+            // i18n-static: technical quality token.
             { value: '1440', label: '1440p' },
+            // i18n-static: technical quality token.
             { value: '1080', label: '1080p' },
+            // i18n-static: technical quality token.
             { value: '720',  label: '720p' },
+            // i18n-static: technical quality token.
             { value: '480',  label: '480p' }
         ];
 
@@ -2116,6 +2133,7 @@
                             });
                             const copy = document.createElement('span');
                             copy.className = 'ytkit-dl-popup__playlist-item-copy';
+                            // i18n-static: dynamic ordinal/title composition; both values are already localized or user-authored.
                             copy.textContent = `${item.index}. ${item.title || t('commonUntitled', 'Untitled')}`;
                             option.appendChild(checkbox);
                             option.appendChild(copy);
@@ -2320,8 +2338,8 @@
 
         const downloadHealthPanel = {
             id: 'downloadHealthPanel',
-            name: 'Downloader Health Pills',
-            description: 'Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage.',
+            name: t('feature_downloadHealthPanel_name', 'Downloader Health Pills'),
+            description: t('feature_downloadHealthPanel_desc', 'Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage.'),
             group: 'Downloads',
             icon: 'activity',
             pages: [PageTypes.WATCH],
@@ -2365,8 +2383,12 @@
                 const pill = document.createElement('span');
                 pill.className = 'ytkit-download-health__pill';
                 pill.dataset.tone = tone;
-                pill.textContent = `${label}: ${value}`;
-                pill.setAttribute('aria-label', `${label} ${value}`);
+                pill.textContent = t('dlHealthPillTpl', '{label}: {value}')
+                    .replace('{label}', label)
+                    .replace('{value}', value);
+                pill.setAttribute('aria-label', t('dlHealthPillAriaTpl', '{label} {value}')
+                    .replace('{label}', label)
+                    .replace('{value}', value));
                 return pill;
             },
 
@@ -2516,8 +2538,8 @@
 
         const downloadStreamLinksPanel = {
             id: 'downloadStreamLinksPanel',
-            name: 'Stream Links Panel',
-            description: 'Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off.',
+            name: t('feature_downloadStreamLinksPanel_name', 'Stream Links Panel'),
+            description: t('feature_downloadStreamLinksPanel_desc', 'Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off.'),
             group: 'Downloads',
             icon: 'link',
             pages: [PageTypes.WATCH],
@@ -2686,7 +2708,7 @@
 
         const downloadCobaltFallback = {
             id: 'downloadCobaltFallback',
-            name: 'Cobalt Fallback (GitHub profile)',
+            name: t('feature_downloadCobaltFallback_name', 'Cobalt Fallback (GitHub profile)'),
             description: t('feature_downloadCobaltFallback_desc', 'When Astra Downloader is unreachable, fall back to Cobalt. Extension builds only allow api.cobalt.tools; use the userscript for custom instances.'),
             group: 'Downloads',
             icon: 'download-cloud',
@@ -2718,12 +2740,12 @@
 
             async _trigger() {
                 if (!this._isAllowed()) {
-                    if (typeof showToast === 'function') showToast('Cobalt fallback is only enabled in the GitHub/full profile.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t('dlCobaltProfileOnly', 'Cobalt fallback is only enabled in the GitHub/full profile.'), '#f59e0b');
                     return;
                 }
                 const mdl = await MediaDLManager.check();
                 if (mdl?.ok) {
-                    if (typeof showToast === 'function') showToast('Astra Downloader is running; fallback skipped.', '#6b7280');
+                    if (typeof showToast === 'function') showToast(t('dlCobaltRunningSkip', 'Astra Downloader is running; fallback skipped.'), '#6b7280');
                     return;
                 }
                 const url = location.href;
@@ -2753,7 +2775,7 @@
                         try { mediaProtocol = new URL(mediaUrl).protocol; } catch (e) { void e; }
                         if (mediaProtocol === 'https:' || mediaProtocol === 'http:') {
                             window.open(mediaUrl, '_blank', 'noopener,noreferrer');
-                            if (typeof showToast === 'function') showToast('Cobalt fallback: opened media URL in new tab.', '#22c55e');
+                            if (typeof showToast === 'function') showToast(t('dlCobaltOpened', 'Cobalt fallback: opened media URL in new tab.'), '#22c55e');
                             return;
                         }
                     }
@@ -2764,7 +2786,8 @@
                 } catch (e) {
                     DebugManager.log('CobaltFallback', `Failed: ${e.message}`);
                     this._recordFailureDiagnostic(instance, e);
-                    if (typeof showToast === 'function') showToast(`Cobalt fallback failed: ${e.message}`, '#ef4444', { duration: 6 });
+                    if (typeof showToast === 'function') showToast(t('dlCobaltFailedTpl', 'Cobalt fallback failed: {error}')
+                        .replace('{error}', e.message), '#ef4444', { duration: 6 });
                 }
             },
 
@@ -2781,8 +2804,9 @@
                         const btn = document.createElement('button');
                         btn.type = 'button';
                         btn.className = 'ytkit-cobalt-fallback-btn ytkit-stream-links-btn';
+                        // i18n-static: Cobalt is a brand/product name.
                         btn.textContent = 'Cobalt';
-                        btn.title = 'Try cobalt.tools when Astra Downloader is offline';
+                        btn.title = t('dlCobaltButtonTitle', 'Try cobalt.tools when Astra Downloader is offline');
                         btn.addEventListener('click', () => this._trigger());
                         anchor.insertAdjacentElement('afterend', btn);
                     }, 1500);
@@ -2800,8 +2824,8 @@
 
         const downloadHistoryPanel = {
             id: 'downloadHistoryPanel',
-            name: 'Download History Panel',
-            description: 'Adds a searchable, pageable, exportable view of download history recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session.',
+            name: t('feature_downloadHistoryPanel_name', 'Download History Panel'),
+            description: t('feature_downloadHistoryPanel_desc', 'Adds a searchable, pageable, exportable view of download history recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session.'),
             group: 'Downloads',
             icon: 'history',
             pages: [PageTypes.WATCH],

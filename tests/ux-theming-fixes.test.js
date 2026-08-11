@@ -403,8 +403,8 @@ test('companion toasts standardize on "Astra Downloader" (no MediaDL prefix)', (
         'the user-facing MediaDL: toast prefix must be gone');
     assert.ok(downloadUiSource.includes('showDownloaderFailure(resp || {})'),
         'download error handling must route through classified recovery copy');
-    assert.ok(downloadUiSource.includes('showToast(`Astra Downloader: ${failure.message} ${failure.advice}`'),
-        'classified download failure toasts must use the Astra Downloader prefix');
+    assert.ok(downloadUiSource.includes("showToast(t('dlFailureTpl', 'Astra Downloader: {error} {advice}')"),
+        'classified download failure toasts must use the localized Astra Downloader template');
     assert.ok(downloadUiSource.includes("t('toastDlReady', 'Astra Downloader is ready.')"),
         'ready toast must say Astra Downloader is ready.');
     assert.ok(downloadUiSource.includes("t('toastDlStopped', 'Astra Downloader stopped. Starting it again…')"),

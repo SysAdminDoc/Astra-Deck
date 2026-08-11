@@ -25,12 +25,6 @@
       "count": 4,
       "digest": "beac0f6b3078a6c27186bf870efdb047eb62db2d260143a5092eb45521281a2a"
     },
-    "extension/features/download-ui/index.js": {
-      "count": 30,
-      "digest": "8cc04d09e98a472302b358614d7c1bc6edd16dba182bc2e18034e6de6bb09779",
-      "strictCount": 11,
-      "strictDigest": "a6d237c24d604618334089d8f94657cde9a1b01d48a7fb246b57c15fc4d3a6d5"
-    },
     "extension/features/player-dock/index.js": {
       "count": 3,
       "digest": "fe0cb025508debbe143950bd789bd1393d3879017f6b485087b777cd9e0e71b2"
@@ -75,12 +69,6 @@
       "strictCount": 23,
       "strictDigest": "b5b07ed9a760074ba80e382bfa7f25fc45ba6c5ec9749c2a0c4f736ddd0a5e53"
     },
-    "extension/features/video-notes/index.js": {
-      "count": 2,
-      "digest": "dadde8c59c1fb580de8d9cd9b58d8da1f4a9fbae60e8c111e276b74a6dde735f",
-      "strictCount": 2,
-      "strictDigest": "dadde8c59c1fb580de8d9cd9b58d8da1f4a9fbae60e8c111e276b74a6dde735f"
-    },
     "extension/features/youtube-music-compat/index.js": {
       "count": 2,
       "digest": "f5624ba6767b56881d967bfe8087ddc0b5c44586265ae9a599f2dfac82d4043f"
@@ -102,10 +90,10 @@
       "strictDigest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a"
     },
     "extension/ytkit.js": {
-      "count": 1254,
-      "digest": "80933a87007c6a247c4fe174fbf89be450d7371c55a797e157af86f4aed2db1e",
-      "strictCount": 600,
-      "strictDigest": "531b2bebfc4309ba09d30a04e96d871bd9bb849b7559a737876f4b28e427f13d"
+      "count": 1252,
+      "digest": "71fdda68bdbdadf839b7f9bd040c3b8d43a2ba1c08e6e75c0a46288c3d152d06",
+      "strictCount": 598,
+      "strictDigest": "7cd5207cf3219cbad8734203faf8a135346f5c8f94a3cf24b1a1a24165fc93ec"
     }
   }
 }

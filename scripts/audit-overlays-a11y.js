@@ -414,7 +414,9 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         downloadUi.includes("this._container.setAttribute('role', 'status')") &&
         downloadUi.includes("this._container.setAttribute('aria-live', 'polite')") &&
         downloadUi.includes("this._container.setAttribute('aria-label', t('dlHealthRegionAria', 'Downloader health'))") &&
-        downloadUi.includes("pill.setAttribute('aria-label', `${label} ${value}`)"),
+        downloadUi.includes("pill.setAttribute('aria-label', t('dlHealthPillAriaTpl', '{label} {value}')") &&
+        downloadUi.includes(".replace('{label}', label)") &&
+        downloadUi.includes(".replace('{value}', value)"),
         'Downloader health pills must expose a polite named status');
     add('Downloader health pills meet target-size floor',
         hasMinTarget(downloadUi, '.ytkit-download-health__pill'),

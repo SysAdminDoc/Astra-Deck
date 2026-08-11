@@ -23132,6 +23132,7 @@ if (typeof globalThis !== "undefined") {
 
             _updateCount(value) {
                 const countEl = this._container?.querySelector('.ytkit-video-notes-count');
+                // i18n-static: numeric character-count display, not translatable copy.
                 if (countEl) countEl.textContent = `${String(value || '').length}/${this._MAX_NOTE_CHARS}`;
             },
 
@@ -23310,6 +23311,7 @@ if (typeof globalThis !== "undefined") {
                 scope.setAttribute('translate', 'no');
                 const count = document.createElement('span');
                 count.className = 'ytkit-video-notes-count';
+                // i18n-static: numeric character-count display, not translatable copy.
                 count.textContent = `${textarea.value.length}/${this._MAX_NOTE_CHARS}`;
                 footer.append(scope, count);
 

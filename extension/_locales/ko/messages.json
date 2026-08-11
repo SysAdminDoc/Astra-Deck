@@ -404,6 +404,48 @@
   "dataMgmtAria": {
     "message": "데이터 관리"
   },
+  "dlCobaltButtonTitle": {
+    "message": "Astra Downloader가 오프라인일 때 cobalt.tools 사용"
+  },
+  "dlCobaltFailedTpl": {
+    "message": "Cobalt 대체 기능 실패: {error}"
+  },
+  "dlCobaltOpened": {
+    "message": "Cobalt 대체 기능: 미디어 URL을 새 탭에서 열었습니다."
+  },
+  "dlCobaltProfileOnly": {
+    "message": "Cobalt 대체 기능은 GitHub/full 프로필에서만 활성화됩니다."
+  },
+  "dlCobaltRunningSkip": {
+    "message": "Astra Downloader가 실행 중이므로 대체 기능을 건너뜁니다."
+  },
+  "dlFailureTpl": {
+    "message": "Astra Downloader: {error} · {advice}"
+  },
+  "dlFormatAudio320": {
+    "message": "320kbps, 범용"
+  },
+  "dlFormatAudioAac": {
+    "message": "AAC, Apple 호환"
+  },
+  "dlFormatAudioLossless": {
+    "message": "무손실 오디오"
+  },
+  "dlFormatAudioOpus": {
+    "message": "더 작고 높은 품질"
+  },
+  "dlFormatAudioPcm": {
+    "message": "비압축 PCM"
+  },
+  "dlFormatVideoLossless": {
+    "message": "무손실 컨테이너"
+  },
+  "dlFormatVideoUniversal": {
+    "message": "범용, 최고의 호환성"
+  },
+  "dlFormatVideoWeb": {
+    "message": "웹 최적화"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -442,6 +484,12 @@
   },
   "dlHealthOffline": {
     "message": "offline"
+  },
+  "dlHealthPillAriaTpl": {
+    "message": "{label}, {value}"
+  },
+  "dlHealthPillTpl": {
+    "message": "{label} · {value}"
   },
   "dlHealthProvisioning": {
     "message": "Provisioning…"

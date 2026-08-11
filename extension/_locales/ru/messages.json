@@ -404,6 +404,48 @@
   "dataMgmtAria": {
     "message": "Управление данными"
   },
+  "dlCobaltButtonTitle": {
+    "message": "Попробовать cobalt.tools, когда Astra Downloader не запущен"
+  },
+  "dlCobaltFailedTpl": {
+    "message": "Ошибка резервного режима Cobalt: {error}"
+  },
+  "dlCobaltOpened": {
+    "message": "Резервный режим Cobalt: медиа-URL открыта в новой вкладке."
+  },
+  "dlCobaltProfileOnly": {
+    "message": "Резервный режим Cobalt доступен только в профиле GitHub/full."
+  },
+  "dlCobaltRunningSkip": {
+    "message": "Astra Downloader запущен; резервный режим пропущен."
+  },
+  "dlFailureTpl": {
+    "message": "Astra Downloader — {error}; {advice}"
+  },
+  "dlFormatAudio320": {
+    "message": "320 кбит/с, универсальный"
+  },
+  "dlFormatAudioAac": {
+    "message": "AAC, совместим с Apple"
+  },
+  "dlFormatAudioLossless": {
+    "message": "Аудио без потерь"
+  },
+  "dlFormatAudioOpus": {
+    "message": "Меньше, высокое качество"
+  },
+  "dlFormatAudioPcm": {
+    "message": "Несжатый PCM"
+  },
+  "dlFormatVideoLossless": {
+    "message": "Контейнер без потерь"
+  },
+  "dlFormatVideoUniversal": {
+    "message": "Универсальный, лучшая совместимость"
+  },
+  "dlFormatVideoWeb": {
+    "message": "Оптимизировано для веба"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -442,6 +484,12 @@
   },
   "dlHealthOffline": {
     "message": "offline"
+  },
+  "dlHealthPillAriaTpl": {
+    "message": "{label}, {value}"
+  },
+  "dlHealthPillTpl": {
+    "message": "{label} — {value}"
   },
   "dlHealthProvisioning": {
     "message": "Provisioning…"

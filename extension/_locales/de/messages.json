@@ -404,6 +404,48 @@
   "dataMgmtAria": {
     "message": "Datenverwaltung"
   },
+  "dlCobaltButtonTitle": {
+    "message": "cobalt.tools verwenden, wenn Astra Downloader offline ist"
+  },
+  "dlCobaltFailedTpl": {
+    "message": "Cobalt-Fallback fehlgeschlagen: {error}"
+  },
+  "dlCobaltOpened": {
+    "message": "Cobalt-Fallback: Medien-URL in neuem Tab geöffnet."
+  },
+  "dlCobaltProfileOnly": {
+    "message": "Der Cobalt-Fallback ist nur im GitHub/Full-Profil aktiviert."
+  },
+  "dlCobaltRunningSkip": {
+    "message": "Astra Downloader läuft; Fallback übersprungen."
+  },
+  "dlFailureTpl": {
+    "message": "Astra Downloader – {error} {advice}"
+  },
+  "dlFormatAudio320": {
+    "message": "320 kbit/s, universell"
+  },
+  "dlFormatAudioAac": {
+    "message": "AAC, Apple-kompatibel"
+  },
+  "dlFormatAudioLossless": {
+    "message": "Verlustfreies Audio"
+  },
+  "dlFormatAudioOpus": {
+    "message": "Kleiner, hohe Qualität"
+  },
+  "dlFormatAudioPcm": {
+    "message": "Unkomprimiertes PCM"
+  },
+  "dlFormatVideoLossless": {
+    "message": "Verlustfreier Container"
+  },
+  "dlFormatVideoUniversal": {
+    "message": "Universell, beste Kompatibilität"
+  },
+  "dlFormatVideoWeb": {
+    "message": "Für Web optimiert"
+  },
   "dlHealthAuth": {
     "message": "Auth"
   },
@@ -442,6 +484,12 @@
   },
   "dlHealthOffline": {
     "message": "offline"
+  },
+  "dlHealthPillAriaTpl": {
+    "message": "{label}, {value}"
+  },
+  "dlHealthPillTpl": {
+    "message": "{label} – {value}"
   },
   "dlHealthProvisioning": {
     "message": "Provisioning…"
