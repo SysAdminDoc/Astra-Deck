@@ -3,6 +3,11 @@
 
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
+const {
+    FIREFOX_UPDATE_MANIFEST_NAME,
+    assertFirefoxUpdateManifestMatchesAssets,
+    writeFirefoxUpdateManifest,
+} = require('./firefox-update-manifest');
 const fs = require('fs');
 const path = require('path');
 
@@ -74,6 +79,16 @@ function parseAssetName(name, version) {
         };
     }
 
+    if (name === FIREFOX_UPDATE_MANIFEST_NAME) {
+        return {
+            kind: 'firefox-update-manifest',
+            profile: 'release',
+            browser: 'firefox',
+            artifactType: 'json',
+            version
+        };
+    }
+
     return {
         kind: 'auxiliary',
         profile: 'release',
@@ -101,6 +116,7 @@ function expectedReleaseNames(version, options = {}) {
     names.push(`ytkit-v${version}.user.js`);
     names.push(SBOM_NAME);
     names.push(CAPABILITY_MATRIX_NAME);
+    names.push(FIREFOX_UPDATE_MANIFEST_NAME);
     // Astra Downloader ships from its own repository
     // (SysAdminDoc/AstraDownloader) as of companion v2.0.0. Its executable is
     // deliberately absent from this list, so a stray AstraDownloader.exe in
@@ -174,6 +190,9 @@ function main() {
     const version = readProductVersion();
     if (!version) throw new Error('package.json version is empty');
 
+    // Generate this before inventorying build/ so updates.json is itself a
+    // release asset and is covered by release-manifest.json + SHA256SUMS.
+    writeFirefoxUpdateManifest(BUILD_DIR, version);
     const assetNames = listBuildAssets();
     // Read the provenance once and thread it through, so a --no-crx build does
     // not report its (correctly) absent CRX assets as missing.
@@ -194,6 +213,11 @@ function main() {
             ...parseAssetName(name, version)
         };
     });
+
+    const updateManifest = JSON.parse(
+        fs.readFileSync(path.join(BUILD_DIR, FIREFOX_UPDATE_MANIFEST_NAME), 'utf8')
+    );
+    assertFirefoxUpdateManifestMatchesAssets(updateManifest, assets);
 
     const manifest = {
         schemaVersion: 1,
@@ -233,6 +257,7 @@ if (require.main === module) {
 
 module.exports = {
     CRX_SIGNING_PROVENANCE_NAME,
+    FIREFOX_UPDATE_MANIFEST_NAME,
     expectedReleaseNames,
     isValidationBuild,
     parseAssetName,

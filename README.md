@@ -66,6 +66,11 @@ could not be installed because it appears to be corrupt" — so `about:addons` �
 **Install Add-on From File** does not work on the Firefox most people run. Pick
 one of these instead:
 
+Release builds also emit `updates.json`, and the companion-capable `store-safe`
+Firefox manifest points at the stable latest-release update feed. That feed is
+effective only after the XPI is signed; the currently released unsigned XPI
+still requires one of the manual installation paths below.
+
 **Easiest — the userscript.** Works on every Firefox edition, installs in one
 click, and auto-updates. See [Userscript](#userscript-tampermonkey--violentmonkey)
 below.

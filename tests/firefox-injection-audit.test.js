@@ -12,7 +12,8 @@ const { BUILD_PROFILE_IDS } = require('../build-extension.js');
 const {
     createFirefoxStage,
     lintArgsForSource,
-    summarizeLintOutput
+    summarizeLintOutput,
+    stripSelfHostedUpdateUrlForLint
 } = require('../scripts/check-firefox-webext.js');
 const {
     buildWebExtRunArgs,
@@ -136,6 +137,15 @@ test('Firefox web-ext lint stages all profile manifests with Gecko patches', () 
                     'chromium-store Firefox stage must omit downloads');
                 assert.equal(fs.existsSync(path.join(stageDir, 'features', 'download-ui')), false,
                     'chromium-store Firefox stage must omit the downloader module directory');
+            }
+            if (profile === 'store-safe') {
+                assert.equal(typeof manifest.browser_specific_settings?.gecko?.update_url, 'string',
+                    'store-safe Firefox stage must retain the self-distribution update URL');
+                assert.equal(stripSelfHostedUpdateUrlForLint(stageDir), true,
+                    'lint helper must remove only the self-distribution update URL from its temporary stage');
+                const lintManifest = JSON.parse(fs.readFileSync(path.join(stageDir, 'manifest.json'), 'utf8'));
+                assert.equal(lintManifest.browser_specific_settings.gecko.update_url, undefined,
+                    'lint-only Firefox manifest must omit update_url for AMO web-ext lint');
             }
         }
     } finally {

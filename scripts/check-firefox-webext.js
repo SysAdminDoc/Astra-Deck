@@ -28,6 +28,20 @@ function createFirefoxStage(profile, stageRoot) {
     return stageDir;
 }
 
+// web-ext lint targets Mozilla-hosted submissions and rejects the valid
+// self-distribution `browser_specific_settings.gecko.update_url` key. Keep
+// that key in the packaged artifact, but remove it from this lint-only stage
+// so the AMO policy checker does not mask the rest of the Firefox validation.
+function stripSelfHostedUpdateUrlForLint(stageDir) {
+    const manifestPath = path.join(stageDir, 'manifest.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    const gecko = manifest.browser_specific_settings?.gecko;
+    if (!gecko || !Object.hasOwn(gecko, 'update_url')) return false;
+    delete gecko.update_url;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+    return true;
+}
+
 function lintArgsForSource(sourceDir) {
     return [
         'lint',
@@ -103,6 +117,7 @@ function main(argv = process.argv.slice(2)) {
     try {
         for (const profile of BUILD_PROFILE_IDS) {
             const stageDir = createFirefoxStage(profile, stageRoot);
+            stripSelfHostedUpdateUrlForLint(stageDir);
             const summary = runWebExtLint(stageDir);
             const suffix = summary
                 ? `${summary.errors} errors, ${summary.warnings} warnings, ${summary.notices} notices`
@@ -130,5 +145,6 @@ module.exports = {
     lintArgsForSource,
     parseArgs,
     shouldStageEntry,
+    stripSelfHostedUpdateUrlForLint,
     summarizeLintOutput,
 };

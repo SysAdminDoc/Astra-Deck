@@ -5,6 +5,9 @@
 // Side-effect-free module — safe to `require()` from tests.
 
 const FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION = '142.0';
+const FIREFOX_EXTENSION_ID = 'ytkit@sysadmindoc.github.io';
+const FIREFOX_AUTO_UPDATE_PROFILE = 'store-safe';
+const FIREFOX_UPDATE_MANIFEST_URL = 'https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/updates.json';
 const FIREFOX_DATA_COLLECTION_REQUIRED = Object.freeze([
     'browsingActivity',
     'websiteContent',
@@ -24,14 +27,16 @@ const FIREFOX_SIDEBAR_ACTION = Object.freeze({
 
 // Mutates and returns `ffManifest`. Caller is responsible for writing
 // the result back to disk.
-function patchManifestForFirefox(ffManifest) {
+function patchManifestForFirefox(ffManifest, profile = FIREFOX_AUTO_UPDATE_PROFILE) {
+    const autoUpdate = profile === FIREFOX_AUTO_UPDATE_PROFILE;
     ffManifest.browser_specific_settings = {
         gecko: {
-            id: 'ytkit@sysadmindoc.github.io',
+            id: FIREFOX_EXTENSION_ID,
             strict_min_version: FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
             data_collection_permissions: {
                 required: FIREFOX_DATA_COLLECTION_REQUIRED.slice()
-            }
+            },
+            ...(autoUpdate ? { update_url: FIREFOX_UPDATE_MANIFEST_URL } : {})
         }
     };
 
@@ -75,5 +80,8 @@ module.exports = {
     patchManifestForFirefox,
     FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
     FIREFOX_DATA_COLLECTION_REQUIRED,
+    FIREFOX_EXTENSION_ID,
+    FIREFOX_AUTO_UPDATE_PROFILE,
+    FIREFOX_UPDATE_MANIFEST_URL,
     FIREFOX_SIDEBAR_ACTION
 };

@@ -166,10 +166,12 @@ function buildBundleParityCheck(repoRoot) {
         return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'pass',
             'no sync-userscript.js in this tree; bundle parity does not apply');
     }
+    let sync;
     let buildBundleRegion;
     let BUNDLE_BEGIN_RE;
     try {
-        ({ buildBundleRegion, BUNDLE_BEGIN_RE } = require(syncScriptPath));
+        sync = require(syncScriptPath);
+        ({ buildBundleRegion, BUNDLE_BEGIN_RE } = sync);
     } catch (error) {
         return check('userscript-bundle-parity', 'Userscript bundle matches its source modules', 'fail',
             `could not load sync-userscript.js: ${error.message}`);
@@ -614,6 +616,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+    buildBundleParityCheck,
     buildReadinessReport,
     parseArgs,
     parseSha256Sums,
