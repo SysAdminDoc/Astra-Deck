@@ -84,6 +84,36 @@ function loadFoundation(extra = {}) {
     return context.globalThis.YTKitCore;
 }
 
+function createSanitizingTestParser() {
+    return class TestDOMParser {
+        parseFromString(value) {
+            const raw = String(value ?? '');
+            const image = {
+                nodeType: 1,
+                tagName: 'IMG',
+                attributes: raw.includes('onerror')
+                    ? [{ name: 'onerror', value: 'alert(1)' }]
+                    : [],
+                removeAttribute(name) {
+                    this.attributes = this.attributes.filter((attr) => attr.name !== name);
+                }
+            };
+            return {
+                body: {
+                    querySelectorAll() {
+                        return image.attributes.length ? [image] : [];
+                    },
+                    get innerHTML() {
+                        return raw.includes('onerror')
+                            ? (image.attributes.length ? raw : '<img>')
+                            : raw;
+                    }
+                }
+            };
+        }
+    };
+}
+
 test('feature registry registers, tracks health, and runs cleanup in reverse order', () => {
     const core = loadFoundation();
     const calls = [];
@@ -558,7 +588,8 @@ test('trusted html helper centralizes TrustedTypes policy creation', () => {
                     }
                 };
             }
-        }
+        },
+        DOMParser: createSanitizingTestParser()
     });
 
     assert.deepEqual(core.toTrustedHTML('<b>Astra</b>'), {
@@ -566,6 +597,29 @@ test('trusted html helper centralizes TrustedTypes policy creation', () => {
         value: '<b>Astra</b>'
     });
     assert.deepEqual(createdPolicies, ['astraDeck']);
+});
+
+test('toTrustedHTML sanitizes markup before a direct TrustedHTML sink', () => {
+    const core = loadFoundation({
+        trustedTypes: {
+            createPolicy(_name, rules) {
+                return { createHTML: (value) => rules.createHTML(value) };
+            }
+        },
+        DOMParser: createSanitizingTestParser()
+    });
+    let assigned = null;
+    const element = {};
+    Object.defineProperty(element, 'innerHTML', {
+        set(value) {
+            assigned = String(value);
+        }
+    });
+
+    element.innerHTML = core.toTrustedHTML('<img onerror=\"alert(1)\">');
+
+    assert.equal(assigned, '<img>');
+    assert.doesNotMatch(assigned, /onerror/i);
 });
 
 test('trusted-html.js feature-detects Sanitizer API setHTML when available', () => {
@@ -588,6 +642,10 @@ test('trusted-html.js feature-detects Sanitizer API setHTML when available', () 
         'sanitizer must strip on*/dangerous-URL attributes');
     assert.match(src, /javascript\|data\|vbscript/,
         'sanitizer must reject javascript:/data:/vbscript: URLs');
+    assert.match(src, /_BLOCKED_TAGS/,
+        'sanitizer must remove executable and embedded element types');
+    assert.match(src, /iframe.*object.*script.*style/s,
+        'sanitizer blocked-tag list must cover iframe/object/script/style');
     // Bypass regression pins (2026-07-23 audit): template content lives in a
     // separate fragment querySelectorAll never visits; control characters
     // inside a scheme defeat a plain regex; srcdoc is an inline document.

@@ -12,7 +12,7 @@
             try {
                 policy = trustedTypes.createPolicy(name, {
                     createHTML(value) {
-                        return String(value ?? '');
+                        return _sanitizeHtmlString(value);
                     }
                 });
                 return policy;
@@ -22,7 +22,7 @@
         }
         policy = {
             createHTML(value) {
-                return String(value ?? '');
+                return _sanitizeHtmlString(value);
             }
         };
         return policy;
@@ -34,6 +34,9 @@
 
     const _URL_ATTRS = ['href', 'src', 'xlink:href', 'action', 'formaction', 'data'];
     const _DANGEROUS_URL = /^\s*(?:javascript|data|vbscript):/i;
+    const _BLOCKED_TAGS = new Set([
+        'base', 'embed', 'iframe', 'link', 'meta', 'object', 'script', 'style'
+    ]);
 
     // Defense-in-depth for the DOMParser fallback (used on engines lacking the
     // Sanitizer API `setHTML`, which is most stable browsers today). Parsing
@@ -51,11 +54,12 @@
     function _sanitizeParsedElement(el) {
         if (!el || el.nodeType !== 1) return;
         const tag = (el.tagName || '').toLowerCase();
-        if (tag === 'script') { el.remove(); return; }
+        if (_BLOCKED_TAGS.has(tag)) { el.remove(); return; }
         const attrs = el.attributes ? Array.from(el.attributes) : [];
         for (const attr of attrs) {
             const name = attr.name || '';
             if (/^on/i.test(name)) { el.removeAttribute(name); continue; }
+            if (name.toLowerCase() === 'style') { el.removeAttribute(name); continue; }
             // srcdoc is an inline document — script inside it executes when
             // the iframe is adopted, regardless of URL filtering.
             if (name.toLowerCase() === 'srcdoc') { el.removeAttribute(name); continue; }
@@ -77,6 +81,40 @@
                 _sanitizeParsedTree(node.content);
             }
         }
+    }
+
+    function _sanitizeHtmlString(value) {
+        const html = String(value ?? '');
+        if (typeof DOMParser === 'function') {
+            try {
+                const parser = new DOMParser();
+                const parsed = parser.parseFromString(html, 'text/html');
+                const body = parsed?.body;
+                if (!body) return '';
+                _sanitizeParsedTree(body);
+                return typeof body.innerHTML === 'string' ? body.innerHTML : '';
+            } catch (_) {
+                // reason: fail closed when a parser rejects malformed input.
+                return '';
+            }
+        }
+
+        // Sanitizer API is the only safe parser available on a few engines
+        // without DOMParser. Use it when present, then apply the same
+        // defense-in-depth attribute/tag pass.
+        try {
+            const template = typeof document !== 'undefined'
+                ? document.createElement?.('template')
+                : null;
+            if (template && typeof template.setHTML === 'function') {
+                template.setHTML(html);
+                _sanitizeParsedTree(template.content || template);
+                return typeof template.innerHTML === 'string' ? template.innerHTML : '';
+            }
+        } catch (_) {
+            // reason: fall through to the fail-closed return below.
+        }
+        return '';
     }
 
     function parseTrustedHTML(value) {
@@ -102,16 +140,17 @@
 
     function setTrustedHTML(element, value) {
         if (!element) return null;
+        const safeValue = _sanitizeHtmlString(value);
         if (_hasSetHTML) {
             try {
-                element.setHTML(String(value ?? ''));
+                element.setHTML(safeValue);
                 return element;
             } catch (_) {
                 // reason: setHTML may throw on malformed input in early
                 // implementations; fall through to the DOMParser path.
             }
         }
-        const fragment = parseTrustedHTML(value);
+        const fragment = parseTrustedHTML(safeValue);
         if (fragment && typeof element.replaceChildren === 'function') {
             element.replaceChildren(fragment);
             return element;
@@ -130,6 +169,7 @@
 
     Object.assign(core, {
         createTrustedHtmlPolicy,
+        sanitizeTrustedHTML: _sanitizeHtmlString,
         toTrustedHTML,
         parseTrustedHTML,
         setTrustedHTML

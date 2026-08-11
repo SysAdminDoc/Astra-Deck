@@ -1700,10 +1700,9 @@ return response;
 
     //  Trusted Types Safe HTML Helper
     // YouTube enforces Trusted Types which blocks direct innerHTML assignments.
-    // Policy is pass-through by design: all TrustedHTML input comes from YTKit's
-    // own code (SVG icons, badges), not untrusted user input. The policy exists
-    // only to satisfy YouTube's CSP requirement — sanitization is unnecessary
-    // and actively harmful (breaks SVG data URIs, attribute patterns, etc.).
+    // Keep the policy backed by the shared sanitizer even though current
+    // callers use static SVG icons; future feature callers must not inherit a
+    // pass-through TrustedHTML launderer.
     const TrustedHTML = (() => {
         let policy = null;
         // v3.20.2: capture the reason TrustedTypes is unavailable so field
@@ -1715,13 +1714,17 @@ return response;
         // appState.settings is guaranteed to be loaded.
         let fallbackReason = null;
         let fallbackLogged = false;
+        const sanitizePolicyHtml = (value) => {
+            const sanitizer = globalThis.YTKitCore?.sanitizeTrustedHTML;
+            return typeof sanitizer === 'function' ? sanitizer(value) : '';
+        };
 
         if (typeof window.trustedTypes === 'undefined' || !window.trustedTypes.createPolicy) {
             fallbackReason = 'TT_UNAVAILABLE'; // Firefox / older browsers
         } else {
             try {
                 policy = window.trustedTypes.createPolicy('ytkit-policy', {
-                    createHTML: (string) => string
+                    createHTML: (string) => sanitizePolicyHtml(string)
                 });
             } catch (e) {
                 // Policy name already taken by a peer extension, or CSP forbids
@@ -1766,7 +1769,7 @@ return response;
                 }
                 // Inline fallback (legacy code path):
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(policy ? policy.createHTML(html) : String(html ?? ''), 'text/html');
+                const doc = parser.parseFromString(policy ? policy.createHTML(html) : sanitizePolicyHtml(html), 'text/html');
                 const fragment = document.createDocumentFragment();
                 fragment.append(...Array.from(doc.body?.childNodes || []));
                 element.replaceChildren();
@@ -1785,7 +1788,7 @@ return response;
                 if (core && typeof core.toTrustedHTML === 'function') {
                     return core.toTrustedHTML(html);
                 }
-                return html;
+                return sanitizePolicyHtml(html);
             }
         };
     })();

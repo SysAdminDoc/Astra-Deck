@@ -8,6 +8,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- TrustedHTML conversion now sanitizes parsed markup before policy creation,
+  strips executable/embed/style surfaces and dangerous URLs, and shares the
+  hardened helper with the userscript core.
 - The dependency gate now keeps the production audit strict while validating
   the one reviewed Firefox-tooling exception (`image-size` through
   `web-ext`/`addons-linter`) against a machine-readable, versioned policy. Any

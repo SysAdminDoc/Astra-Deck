@@ -27,6 +27,7 @@ const EXTERNAL_BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core
 // in scripts/check-userscript-drift.js instead of leaving silent parity drift.
 const V5_BUNDLE_MODULES = [
     'extension/core/styles.js',
+    'extension/core/trusted-html.js',
     'extension/core/settings-visual-system.js',
     'extension/core/settings-schema.js',
     'extension/core/injection-guard.js',

@@ -257,7 +257,7 @@ test('extension and userscript load the shared settings visual system before the
     assert.ok(visualIndex < panelIndex);
     assert.match(
         syncUserscript,
-        /'extension\/core\/styles\.js',\s*'extension\/core\/settings-visual-system\.js',/
+        /'extension\/core\/styles\.js',\s*(?:'extension\/core\/trusted-html\.js',\s*)?'extension\/core\/settings-visual-system\.js',/
     );
     assert.match(settingsPanel, /ensurePanelStyles\?\.\(\);\s*globalThis\.YTKitCore\?\.ensureSettingsVisualSystem\?\.\(\);/);
     assert.match(

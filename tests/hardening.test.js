@@ -4582,6 +4582,8 @@ test('ytkit.js TrustedHTML.setHTML delegates HTML writes to core/trusted-html.js
     const block = ytkitSource.slice(idx, end + 5);
     assert.match(block, /globalThis\.YTKitCore/,
         'TrustedHTML wrapper must reach for the core module by name');
+    assert.match(block, /sanitizeTrustedHTML/,
+        'TrustedHTML policy must use the shared sanitizer when the core is loaded');
     assert.match(block, /core\.setTrustedHTML\(element,\s*policy \? policy\.createHTML\(html\) : html\)/,
         'setHTML must call core.setTrustedHTML for policy and no-policy paths');
     assert.match(block, /core\.toTrustedHTML\(html\)/,
@@ -7627,6 +7629,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
     // content_scripts.js load order for these modules.
     const expectedOrder = [
         'extension/core/styles.js',
+        'extension/core/trusted-html.js',
         'extension/core/settings-visual-system.js',
         'extension/core/settings-schema.js',
         'extension/core/injection-guard.js',
