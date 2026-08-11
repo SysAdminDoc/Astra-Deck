@@ -51,6 +51,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Sticky Video navigation, live-header, action, close-panel, and fallback labels
   now use locale keys, removing its remaining rendered-sink literals from both
   runtime copies.
+- The monolith Timestamp Bookmarks fallback now localizes bookmark actions,
+  panel status, empty states, metadata, and accessible labels, removing 19
+  grandfathered literals from the ratchet.
 - Subscription-group badges, stale-channel dates, staged-unsubscribe labels,
   and persisted default group names now use locale keys, removing 9 more
   grandfathered literals.

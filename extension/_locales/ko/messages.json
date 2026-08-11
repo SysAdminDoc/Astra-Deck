@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "사이드 패널 닫기"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "이 위치에는 이미 북마크가 있습니다"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "{time}에 북마크함"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "{time}의 북마크 삭제됨"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "{time}의 북마크 복원됨"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count}개 저장됨"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "저장한 순간으로 돌아가 각 항목 옆에 짧은 메모를 남길 수 있습니다."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "중요한 순간을 저장해 두면 탐색 막대 없이 다시 볼 수 있습니다."
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "이 동영상의 북마크 {count}개"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "북마크가 아직 없습니다"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "‘현재 시간 저장’을 사용해 동영상의 순간을 고정하고 나중에 다시 볼 메모를 추가하세요."
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "{time}(으)로 이동"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "순간으로 이동"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "저장된 메모 포함"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "중요한 이유를 기억할 메모 추가"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "메모 추가…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "{time} 북마크 메모"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "메모"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "{time} 북마크 삭제"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "다시 보기"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "현재 시간 저장"
   }
 }

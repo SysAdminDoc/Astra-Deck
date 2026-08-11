@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "إغلاق اللوحة الجانبية"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "الإشارة المرجعية موجودة هنا بالفعل"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "تم وضع إشارة عند {time}"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "تمت إزالة الإشارة عند {time}"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "تمت استعادة الإشارة عند {time}"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "تم حفظ {count}"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "العودة إلى اللحظات المحفوظة والاحتفاظ بملاحظات سريعة بجانب كل منها."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "احفظ اللحظات المهمة هنا للعودة إليها دون تمرير."
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "{count} من الإشارات المرجعية لهذا الفيديو"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "لا توجد إشارات مرجعية بعد"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "استخدم «حفظ الوقت الحالي» لتثبيت لحظة وإضافة ملاحظات يمكنك مراجعتها لاحقًا."
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "الانتقال إلى {time}"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "الانتقال إلى اللحظة"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "تتضمن ملاحظة محفوظة"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "أضف ملاحظة لتذكر سبب أهميتها"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "إضافة ملاحظة…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "ملاحظة للإشارة عند {time}"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "ملاحظة"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "حذف الإشارة عند {time}"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "استئناف"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "حفظ الوقت الحالي"
   }
 }

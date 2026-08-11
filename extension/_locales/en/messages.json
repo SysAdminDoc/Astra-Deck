@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "Close side panel"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "Bookmark already exists here"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "Bookmarked at {time}"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "Removed bookmark at {time}"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "Restored bookmark at {time}"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count} Saved"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "Jump back to saved moments and keep quick notes beside each one."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "Save important moments here so you can jump back without scrubbing."
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "{count} bookmarks for this video"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "No bookmarks yet"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "Use Save Current Time to pin a moment from this video and add notes you can revisit later."
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "Jump to {time}"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "Jump to moment"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "Saved note included"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "Add a note to remember why it matters"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "Add note…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "Note for bookmark at {time}"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "Note"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "Delete bookmark at {time}"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "Jump Back In"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "Save Current Time"
   }
 }

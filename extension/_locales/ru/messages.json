@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "Закрыть боковую панель"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "Закладка уже существует здесь"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "Закладка на {time} добавлена"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "Закладка на {time} удалена"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "Закладка на {time} восстановлена"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "Сохранено: {count}"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "Вернуться к сохраненным моментам и держать рядом быстрые заметки."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "Сохраняйте важные моменты здесь, чтобы возвращаться к ним без перемотки."
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "{count} закладок для этого видео"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "Закладок пока нет"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "Используйте «Сохранить текущее время», чтобы отметить момент и добавить заметки для будущего."
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "Перейти к {time}"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "Перейти к моменту"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "Сохраненная заметка добавлена"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "Добавьте заметку, чтобы помнить, почему это важно"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "Добавить заметку…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "Заметка к закладке на {time}"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "Заметка"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "Удалить закладку на {time}"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "Вернуться"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "Сохранить текущее время"
   }
 }

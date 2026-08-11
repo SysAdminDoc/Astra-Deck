@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "关闭侧边栏"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "此处已存在书签"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "已在 {time} 添加书签"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "已移除 {time} 的书签"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "已恢复 {time} 的书签"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "已保存 {count} 个"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "返回已保存的时间点，并在旁边保留快速笔记。"
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "将重要时间点保存在这里，无需拖动进度条即可返回。"
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "此视频有 {count} 个书签"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "还没有书签"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "使用“保存当前时间”固定视频中的时间点，并添加稍后可查看的笔记。"
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "跳转到 {time}"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "跳转到时间点"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "包含已保存的笔记"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "添加笔记以记住它的重要性"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "添加笔记…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "{time} 的书签笔记"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "笔记"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "删除 {time} 的书签"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "继续观看"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "保存当前时间"
   }
 }

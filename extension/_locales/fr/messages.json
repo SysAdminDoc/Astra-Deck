@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "Fermer le panneau latéral"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "Le signet existe déjà ici"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "Marqué à {time}"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "Signet supprimé à {time}"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "Signet restauré à {time}"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count} enregistrés"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "Revenir aux moments enregistrés et garder des notes rapides à côté de chacun."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "Enregistrez ici les moments importants pour y revenir sans faire défiler."
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "{count} signets pour cette vidéo"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "Aucun signet pour l’instant"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "Utilisez « Enregistrer le moment actuel » pour marquer un moment et ajouter des notes à consulter plus tard."
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "Aller à {time}"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "Aller au moment"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "Note enregistrée incluse"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "Ajoutez une note pour vous souvenir de son intérêt"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "Ajouter une note…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "Note du signet à {time}"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "Note"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "Supprimer le signet à {time}"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "Reprendre"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "Enregistrer le moment actuel"
   }
 }

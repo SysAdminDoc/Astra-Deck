@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "Fechar painel lateral"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "O marcador já existe aqui"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "Marcado em {time}"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "Marcador removido em {time}"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "Marcador restaurado em {time}"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count} salvos"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "Volte aos momentos salvos e mantenha notas rápidas ao lado de cada um."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "Salve momentos importantes aqui para voltar a eles sem arrastar a barra."
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "{count} marcadores neste vídeo"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "Ainda não há marcadores"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "Use “Salvar hora atual” para marcar um momento e adicionar notas para rever depois."
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "Ir para {time}"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "Ir para o momento"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "Nota salva incluída"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "Adicione uma nota para lembrar por que isso importa"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "Adicionar nota…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "Nota do marcador em {time}"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "Nota"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "Excluir marcador em {time}"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "Voltar"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "Salvar hora atual"
   }
 }
