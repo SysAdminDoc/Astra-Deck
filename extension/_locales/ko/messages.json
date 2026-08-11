@@ -2571,6 +2571,15 @@
   "feature_liveLatencyTargetSeconds_name": {
     "message": "Live Latency Target"
   },
+  "feature_forceDvr_desc": {
+    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+  },
+  "feature_forceDvr_name": {
+    "message": "Force DVR for Live Streams"
+  },
+  "forceDvrDegraded": {
+    "message": "DVR could not be enabled because the live player response changed."
+  },
   "feature_localAiSummary_desc": {
     "message": "사용 가능한 경우 Chrome 내장 Summarizer API를 사용합니다. \"사용 불가\" 메시지로 명확히 안내하며, 원격 제공자로 자동 전환하지 않습니다. 기존 AI 요약 버튼 옆에 \"로컬 요약\" 버튼을 추가합니다."
   },

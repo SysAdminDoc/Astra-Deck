@@ -180,6 +180,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     liveLatencyCatchup: 'intentional-extension-only',
     liveLatencyTargetSeconds: 'intentional-extension-only',
     liveLatencyMaxRate: 'intentional-extension-only',
+    forceDvr: 'intentional-extension-only',
     // The userscript keeps the inline Video Hider runtime and custom pane,
     // while the extension-only registry cards remain intentionally absent.
     hideVideosSyntheticNarrationFilter: 'intentional-extension-only',

@@ -3486,6 +3486,7 @@ return response;
             liveLatencyCatchup: false,
             liveLatencyTargetSeconds: 8,
             liveLatencyMaxRate: 1.25,
+            forceDvr: false,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -34304,6 +34305,80 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.documentElement.removeAttribute('data-ytkit-audio-only');
                 document.documentElement.removeAttribute('data-ytkit-audio-only-status');
                 document.documentElement.removeAttribute('data-ytkit-audio-only-reason');
+            }
+        },
+
+        {
+            id: 'forceDvr',
+            name: t('feature_forceDvr_name', 'Force DVR for Live Streams'),
+            description: t('feature_forceDvr_desc', 'Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation.'),
+            group: 'Video Player',
+            icon: 'rewind',
+            pages: [PageTypes.WATCH],
+            _statusObserver: null,
+            _navRule: null,
+            _lastStatusKey: '',
+
+            _syncStatus() {
+                const root = document.documentElement;
+                if (!root) return;
+                const status = root.getAttribute('data-ytkit-force-dvr-status') || '';
+                const reason = root.getAttribute('data-ytkit-force-dvr-reason') || '';
+                if (!status || status === 'off' || status === 'waiting') return;
+                if (status === 'degraded') {
+                    const detail = reason || 'response-shape-drift';
+                    const key = `${status}:${detail}`;
+                    setFeatureHealth(this.id, {
+                        status: 'degraded',
+                        source: 'force-dvr',
+                        initialized: true,
+                        lastError: detail
+                    });
+                    if (this._lastStatusKey !== key) {
+                        this._lastStatusKey = key;
+                        DiagnosticLog?.record?.('force-dvr', detail);
+                        showToast(t('forceDvrDegraded', 'DVR could not be enabled because the live player response changed.'), '#f59e0b', { duration: 5, tone: 'warning' });
+                    }
+                    return;
+                }
+                setFeatureHealth(this.id, {
+                    status: 'initialized',
+                    source: 'force-dvr',
+                    initialized: true,
+                    lastError: null
+                });
+                if (status === 'applied') this._lastStatusKey = '';
+            },
+
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-force-dvr', 'on');
+                this._syncStatus();
+            },
+
+            init() {
+                this._lastStatusKey = '';
+                this._statusObserver = new MutationObserver(() => this._syncStatus());
+                this._statusObserver.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['data-ytkit-force-dvr-status', 'data-ytkit-force-dvr-reason']
+                });
+                this._apply();
+                this._navRule = () => {
+                    this._lastStatusKey = '';
+                    this._apply();
+                };
+                addNavigateRule('forceDvr', this._navRule);
+            },
+
+            destroy() {
+                removeNavigateRule('forceDvr');
+                this._navRule = null;
+                this._statusObserver?.disconnect();
+                this._statusObserver = null;
+                this._lastStatusKey = '';
+                document.documentElement.removeAttribute('data-ytkit-force-dvr');
+                document.documentElement.removeAttribute('data-ytkit-force-dvr-status');
+                document.documentElement.removeAttribute('data-ytkit-force-dvr-reason');
             }
         },
 

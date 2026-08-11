@@ -53,6 +53,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Profile-split artifacts now carry an immutable runtime ceiling; store-safe
   builds retain the authenticated Astra Downloader handoff while excluding
   GitHub-full AI, Ollama, and Cobalt capabilities, including on settings import.
+- Added the opt-in Force DVR for Live Streams feature. Its MAIN-world bridge
+  patches recognized live player responses from the initial page and SPA JSON
+  paths, fails closed on response-shape drift, and records a degraded health
+  status instead of guessing at a new YouTube contract.
 
 ---
 

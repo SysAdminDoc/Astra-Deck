@@ -468,6 +468,7 @@
     "dualLanguageSubtitles",
     "dualSubtitleLanguage",
     "fullscreenScroll",
+    "forceDvr",
     "hiddenGuideElements",
     "hiddenGuideElementsManager",
     "hideAiContextPanels",
