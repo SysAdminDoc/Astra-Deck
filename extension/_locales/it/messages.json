@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "Chiudi pannello laterale"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "Il segnalibro esiste già qui"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "Segnalibro aggiunto a {time}"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "Segnalibro rimosso da {time}"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "Segnalibro ripristinato a {time}"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count} salvati"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "Torna ai momenti salvati e mantieni note rapide accanto a ciascuno."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "Salva qui i momenti importanti per tornarci senza scorrere."
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "{count} segnalibri per questo video"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "Nessun segnalibro"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "Usa «Salva ora» per fissare un momento e aggiungere note da rileggere in seguito."
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "Vai a {time}"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "Vai al momento"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "Nota salvata inclusa"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "Aggiungi una nota per ricordare perché è importante"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "Aggiungi nota…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "Nota per il segnalibro a {time}"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "Nota"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "Elimina segnalibro a {time}"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "Riprendi"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "Salva ora"
   }
 }

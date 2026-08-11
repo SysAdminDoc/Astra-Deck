@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "サイドパネルを閉じる"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "この場所にはすでにブックマークがあります"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "{time} にブックマークしました"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "{time} のブックマークを削除しました"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "{time} のブックマークを復元しました"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count} 件保存済み"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "保存した場面に戻り、それぞれに短いメモを残せます。"
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "重要な場面をここに保存すると、シークせずに戻れます。"
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "この動画のブックマーク {count} 件"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "ブックマークはまだありません"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "「現在の時刻を保存」を使うと、動画の場面を保存して後でメモを確認できます。"
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "{time} に移動"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "場面に移動"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "保存済みメモあり"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "重要な理由をメモできます"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "メモを追加…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "{time} のブックマークのメモ"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "メモ"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "{time} のブックマークを削除"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "もう一度見る"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "現在の時刻を保存"
   }
 }

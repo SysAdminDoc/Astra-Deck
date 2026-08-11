@@ -7282,5 +7282,65 @@
   },
   "stickyVideoCloseSidePanelTitle": {
     "message": "Seitenleiste schließen"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "Lesezeichen existiert hier bereits"
+  },
+  "timestampBookmarkAddedTpl": {
+    "message": "Lesezeichen bei {time} gesetzt"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "Lesezeichen bei {time} entfernt"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "Lesezeichen bei {time} wiederhergestellt"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count} gespeichert"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "Zu gespeicherten Momenten springen und schnelle Notizen daneben aufbewahren."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "Wichtige Momente hier speichern, um ohne Zurückspulen dorthin zu springen."
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "{count} Lesezeichen für dieses Video"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "Noch keine Lesezeichen"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "Mit „Aktuelle Zeit speichern“ einen Moment markieren und später mit Notizen wiederfinden."
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "Zu {time} springen"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "Zum Moment springen"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "Gespeicherte Notiz enthalten"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "Notiz hinzufügen, um den Grund festzuhalten"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "Notiz hinzufügen…"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "Notiz für Lesezeichen bei {time}"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "Notiz"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "Lesezeichen bei {time} löschen"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "Wieder einsteigen"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "Aktuelle Zeit speichern"
   }
 }

@@ -23647,8 +23647,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'timestampBookmarks',
-            name: 'Timestamp Bookmarks',
-            description: 'Bookmark moments in videos with custom notes. Click a bookmark to seek. Persists across sessions.',
+            name: t('feature_timestampBookmarks_name', 'Timestamp Bookmarks'),
+            description: t('feature_timestampBookmarks_desc', 'Bookmark moments in videos with custom notes. Click a bookmark to seek. Persists across sessions.'),
             group: 'Watch Page',
             icon: 'bookmark',
             pages: [PageTypes.WATCH],
@@ -23703,13 +23703,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!bookmarks[videoId]) bookmarks[videoId] = [];
                 // Check for duplicate within 2 seconds
                 if (bookmarks[videoId].some(b => Math.abs(b.t - time) < 2)) {
-                    showToast('Bookmark already exists here', '#f97316'); return;
+                    showToast(t('timestampBookmarkAlreadyExists', 'Bookmark already exists here'), '#f97316'); return;
                 }
                 bookmarks[videoId].push({ t: time, n: '', d: Date.now() });
                 bookmarks[videoId].sort((a, b) => a.t - b.t);
                 this._writeBookmarks(bookmarks);
                 this._renderPanel();
-                showToast(`Bookmarked at ${this._formatTime(time)}`, '#22c55e');
+                showToast(t('timestampBookmarkAddedTpl', 'Bookmarked at {time}')
+                    .replace('{time}', this._formatTime(time)), '#22c55e');
             },
 
             _deleteBookmark(videoId, index) {
@@ -23721,7 +23722,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._writeBookmarks(bookmarks);
                 this._renderPanel();
                 if (!removed) return;
-                showToast(`Removed bookmark at ${this._formatTime(removed.t)}`, '#6b7280', {
+                showToast(t('timestampBookmarkRemovedTpl', 'Removed bookmark at {time}')
+                    .replace('{time}', this._formatTime(removed.t)), '#6b7280', {
                     duration: 5,
                     tone: 'neutral',
                     action: {
@@ -23733,7 +23735,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             nextBookmarks[videoId].sort((a, b) => a.t - b.t);
                             this._writeBookmarks(nextBookmarks);
                             this._renderPanel();
-                            showToast(`Restored bookmark at ${this._formatTime(removed.t)}`, '#22c55e');
+                            showToast(t('timestampBookmarkRestoredTpl', 'Restored bookmark at {time}')
+                                .replace('{time}', this._formatTime(removed.t)), '#22c55e');
                         }
                     }
                 });
@@ -23745,24 +23748,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const bookmarks = this._getBookmarks();
                 const list = bookmarks[videoId] || [];
                 if (this._countEl) {
-                    this._countEl.textContent = `${list.length} Saved`;
+                    this._countEl.textContent = t('timestampBookmarksSavedTpl', '{count} Saved')
+                        .replace('{count}', String(list.length));
                 }
                 if (this._statusEl) {
                     this._statusEl.textContent = list.length > 0
-                        ? 'Jump back to saved moments and keep quick notes beside each one.'
-                        : 'Save important moments here so you can jump back without scrubbing.';
+                        ? t('timestampBookmarksSavedStatus', 'Jump back to saved moments and keep quick notes beside each one.')
+                        : t('timestampBookmarksEmptyStatus', 'Save important moments here so you can jump back without scrubbing.');
                 }
                 this._panel.textContent = '';
-                this._panel.setAttribute('aria-label', `${list.length} bookmarks for this video`);
+                this._panel.setAttribute('aria-label', t('timestampBookmarksRegionAriaTpl', '{count} bookmarks for this video')
+                    .replace('{count}', String(list.length)));
                 if (list.length === 0) {
                     const empty = document.createElement('div');
                     empty.className = 'ytkit-bookmarks-empty';
                     const emptyTitle = document.createElement('div');
                     emptyTitle.className = 'ytkit-bookmarks-empty-title';
-                    emptyTitle.textContent = 'No bookmarks yet';
+                    emptyTitle.textContent = t('timestampBookmarksEmptyTitle', 'No bookmarks yet');
                     const emptyCopy = document.createElement('div');
                     emptyCopy.className = 'ytkit-bookmarks-empty-copy';
-                    emptyCopy.textContent = 'Use Save Current Time to pin a moment from this video and add notes you can revisit later.';
+                    emptyCopy.textContent = t('timestampBookmarksEmptyCopy', 'Use Save Current Time to pin a moment from this video and add notes you can revisit later.');
                     empty.appendChild(emptyTitle);
                     empty.appendChild(emptyCopy);
                     this._panel.appendChild(empty);
@@ -23778,7 +23783,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const jump = document.createElement('button');
                     jump.type = 'button';
                     jump.className = 'ytkit-bookmark-jump';
-                    jump.setAttribute('aria-label', `Jump to ${this._formatTime(bm.t)}`);
+                    jump.setAttribute('aria-label', t('timestampBookmarksJumpAriaTpl', 'Jump to {time}')
+                        .replace('{time}', this._formatTime(bm.t)));
                     const ts = document.createElement('span');
                     ts.className = 'ytkit-bookmark-ts';
                     ts.setAttribute('translate', 'no');
@@ -23787,10 +23793,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     jumpCopy.className = 'ytkit-bookmark-jump-copy';
                     const jumpLabel = document.createElement('span');
                     jumpLabel.className = 'ytkit-bookmark-jump-label';
-                    jumpLabel.textContent = 'Jump to moment';
+                    jumpLabel.textContent = t('timestampBookmarksJumpLabel', 'Jump to moment');
                     const jumpMeta = document.createElement('span');
                     jumpMeta.className = 'ytkit-bookmark-jump-meta';
-                    jumpMeta.textContent = bm.n ? 'Saved note included' : 'Add a note to remember why it matters';
+                    jumpMeta.textContent = bm.n
+                        ? t('timestampBookmarksSavedNoteMeta', 'Saved note included')
+                        : t('timestampBookmarksAddNoteMeta', 'Add a note to remember why it matters');
                     jumpCopy.appendChild(jumpLabel);
                     jumpCopy.appendChild(jumpMeta);
                     jump.appendChild(ts);
@@ -23801,9 +23809,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     note.className = 'ytkit-bookmark-note';
                     note.maxLength = IMPORT_LIMITS.bookmarkNoteChars;
                     note.value = bm.n || '';
-                    note.placeholder = 'Add note…';
+                    note.placeholder = t('timestampBookmarksNotePlaceholder', 'Add note…');
                     note.autocomplete = 'off';
-                    note.setAttribute('aria-label', `Note for bookmark at ${this._formatTime(bm.t)}`);
+                    note.setAttribute('aria-label', t('timestampBookmarksNoteAriaTpl', 'Note for bookmark at {time}')
+                        .replace('{time}', this._formatTime(bm.t)));
                     note.onclick = (e) => e.stopPropagation();
                     note.onchange = () => {
                         const bks = this._getBookmarks();
@@ -23818,14 +23827,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     noteWrap.className = 'ytkit-bookmark-note-wrap';
                     const noteLabel = document.createElement('span');
                     noteLabel.className = 'ytkit-bookmark-note-label';
-                    noteLabel.textContent = 'Note';
+                    noteLabel.textContent = t('timestampBookmarksNoteLabel', 'Note');
                     noteWrap.appendChild(noteLabel);
                     noteWrap.appendChild(note);
                     const del = document.createElement('button');
                     del.type = 'button';
                     del.className = 'ytkit-bookmark-delete';
                     del.textContent = '\u00D7';
-                    del.setAttribute('aria-label', `Delete bookmark at ${this._formatTime(bm.t)}`);
+                    del.setAttribute('aria-label', t('timestampBookmarksDeleteAriaTpl', 'Delete bookmark at {time}')
+                        .replace('{time}', this._formatTime(bm.t)));
                     del.onclick = (e) => { e.stopPropagation(); this._deleteBookmark(videoId, idx); };
                     jump.onclick = () => {
                         const video = document.querySelector('video.html5-main-video');
@@ -23967,10 +23977,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 headerMain.className = 'ytkit-bookmarks-header-main';
                 const eyebrow = document.createElement('span');
                 eyebrow.className = 'ytkit-bookmarks-eyebrow';
-                eyebrow.textContent = 'Jump Back In';
+                eyebrow.textContent = t('timestampBookmarksEyebrow', 'Jump Back In');
                 const title = document.createElement('span');
                 title.className = 'ytkit-bookmarks-title';
-                title.textContent = 'Timestamp Bookmarks';
+                title.textContent = t('feature_timestampBookmarks_name', 'Timestamp Bookmarks');
                 const status = document.createElement('p');
                 status.className = 'ytkit-bookmarks-status';
                 headerMain.appendChild(eyebrow);
@@ -23993,7 +24003,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const addBtn = document.createElement('button');
                 addBtn.type = 'button';
                 addBtn.className = 'ytkit-bookmarks-add';
-                addBtn.textContent = 'Save Current Time';
+                addBtn.textContent = t('timestampBookmarksSaveCurrentTime', 'Save Current Time');
                 addBtn.onclick = () => this._addBookmark();
                 headerActions.appendChild(count);
                 headerActions.appendChild(exportBtn);
@@ -24169,7 +24179,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     updatedAt: now
                 };
                 this._writeNotes(notes);
-                this._updateStatus('Saved locally.');
+                this._updateStatus(t('videoNotesSaved', 'Saved locally.'));
                 this._updateCount(text);
             },
 
