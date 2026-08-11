@@ -128,6 +128,7 @@
                 const safeLabel = String(label || 'cards').slice(0, 64);
                 this._cancelBudgetedScan(safeLabel);
                 const handle = runBudgetedElementBatch(list, callback, {
+                    // i18n-static: internal scan label, not rendered copy.
                     label: `subscription-groups:${safeLabel}`,
                     chunkSize: 80,
                     budgetMs: 8,
@@ -400,14 +401,22 @@
                     if (ids.length >= MAX_IDS) break;
                 }
                 if (!ids.length) {
-                    if (typeof showToast === 'function') showToast('No videos visible in this group', '#6b7280', { tone: 'neutral' });
+                    if (typeof showToast === 'function') showToast(t(
+                        'subscriptionGroupNoVideos',
+                        'No videos visible in this group'
+                    ), '#6b7280', { tone: 'neutral' });
                     return;
                 }
                 const url = `https://www.youtube.com/watch_videos?video_ids=${ids.join(',')}`;
                 window.open(url, '_blank', 'noopener,noreferrer');
                 const groupName = groups[groupId]?.name || groupId;
-                const truncated = ids.length >= MAX_IDS ? ` (capped at ${MAX_IDS})` : '';
-                if (typeof showToast === 'function') showToast(`Playing ${ids.length} videos from ${groupName}${truncated}`, '#22c55e');
+                const truncated = ids.length >= MAX_IDS
+                    ? t('subscriptionQueueCappedTpl', ' (capped at {count})').replace('{count}', MAX_IDS)
+                    : '';
+                if (typeof showToast === 'function') showToast(t(
+                    'subscriptionGroupPlayingTpl',
+                    'Playing {count} videos from {group}{truncated}'
+                ).replace('{count}', ids.length).replace('{group}', groupName).replace('{truncated}', truncated), '#22c55e');
             },
 
             _exportGroups() {
@@ -424,7 +433,10 @@
                 a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.json`;
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
-                if (typeof showToast === 'function') showToast('Exported subscription groups', '#22c55e');
+                if (typeof showToast === 'function') showToast(t(
+                    'subscriptionGroupsExported',
+                    'Exported subscription groups'
+                ), '#22c55e');
             },
 
             _csvEscape(value) {
@@ -467,7 +479,10 @@
                 a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.csv`;
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
-                if (typeof showToast === 'function') showToast('Exported subscription groups as CSV', '#22c55e');
+                if (typeof showToast === 'function') showToast(t(
+                    'subscriptionGroupsExportedCsv',
+                    'Exported subscription groups as CSV'
+                ), '#22c55e');
             },
 
             _exportGroupsOpml() {
@@ -479,7 +494,10 @@
                 a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.opml`;
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
-                if (typeof showToast === 'function') showToast('Exported subscription groups as OPML', '#22c55e');
+                if (typeof showToast === 'function') showToast(t(
+                    'subscriptionGroupsExportedOpml',
+                    'Exported subscription groups as OPML'
+                ), '#22c55e');
                 return opml;
             },
 
@@ -548,7 +566,10 @@
                         importedChannels
                     }, options);
                 } catch (e) {
-                    if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
+                    if (typeof showToast === 'function') showToast(t(
+                        'subscriptionGroupsImportFailedTpl',
+                        'Import failed: {error}'
+                    ).replace('{error}', e.message), '#ef4444');
                     return { ok: false, error: e.message };
                 }
             },
@@ -797,8 +818,16 @@
                 this._applySort();
                 this._renderDigestPanel();
                 if (typeof showToast === 'function') {
-                    const label = safeGroupId ? (groups[safeGroupId]?.name || safeGroupId) : 'rendered subscriptions';
-                    showToast(`Marked ${marked} ${marked === 1 ? 'channel' : 'channels'} read for ${label}`, '#22c55e', { duration: 4 });
+                    const label = safeGroupId
+                        ? (groups[safeGroupId]?.name || safeGroupId)
+                        : t('subscriptionRenderedSubscriptions', 'rendered subscriptions');
+                    const channelLabel = marked === 1
+                        ? t('subscriptionChannelSingular', 'channel')
+                        : t('subscriptionChannelPlural', 'channels');
+                    showToast(t(
+                        'subscriptionChannelsMarkedReadTpl',
+                        'Marked {count} {channels} read for {group}'
+                    ).replace('{count}', marked).replace('{channels}', channelLabel).replace('{group}', label), '#22c55e', { duration: 4 });
                 }
             },
 
@@ -1802,7 +1831,10 @@
 
             async _generateAiTagsForGroup(groupId) {
                 if (!appState?.settings?.subscriptionAiTags) {
-                    if (typeof showToast === 'function') showToast('Enable "AI Tags For Subscription Groups" first.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t(
+                        'subscriptionAiTagsRequired',
+                        'Enable "AI Tags For Subscription Groups" first.'
+                    ), '#f59e0b');
                     return;
                 }
                 const groups = this._readGroups();
@@ -1812,10 +1844,16 @@
                 // never-fall-through-to-remote contract as localAiSummary.
                 const factory = window.Summarizer || window.ai?.summarizer;
                 if (!factory?.create) {
-                    if (typeof showToast === 'function') showToast('Local Summarizer not available; enable the Chrome AI origin trial.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t(
+                        'subscriptionSummarizerUnavailable',
+                        'Local Summarizer not available; enable the Chrome AI origin trial.'
+                    ), '#f59e0b');
                     return;
                 }
-                if (typeof showToast === 'function') showToast(`Generating tags for "${group.name || groupId}"\u2026`, '#7c3aed', { duration: 6 });
+                if (typeof showToast === 'function') showToast(t(
+                    'subscriptionAiTagsGeneratingTpl',
+                    'Generating tags for "{group}"…'
+                ).replace('{group}', group.name || groupId), '#7c3aed', { duration: 6 });
                 // Gather titles from the rendered subscription feed cards for
                 // channels in this group. Title-only — never transcripts here.
                 const allowed = this._getGroupChannelIdSet(groupId, groups);
@@ -1827,7 +1865,10 @@
                     if (t) titles.push(t);
                 });
                 if (!titles.length) {
-                    if (typeof showToast === 'function') showToast('No matching cards rendered yet — scroll the feed and try again.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t(
+                        'subscriptionAiTagsNoCards',
+                        'No matching cards rendered yet — scroll the feed and try again.'
+                    ), '#f59e0b');
                     return;
                 }
                 const summary = titles.slice(0, 40).join('\n');
@@ -1844,16 +1885,25 @@
                         .slice(0, 8);
                 } catch (e) {
                     DebugManager.log('SubGroups', `AI tag generation failed: ${e.message}`);
-                    if (typeof showToast === 'function') showToast(`Tag generation failed: ${e.message}`, '#ef4444');
+                    if (typeof showToast === 'function') showToast(t(
+                        'subscriptionAiTagsGenerationFailedTpl',
+                        'Tag generation failed: {error}'
+                    ).replace('{error}', e.message), '#ef4444');
                     return;
                 }
                 if (!tags.length) {
-                    if (typeof showToast === 'function') showToast('Summarizer returned no usable tags.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t(
+                        'subscriptionAiTagsNoUsable',
+                        'Summarizer returned no usable tags.'
+                    ), '#f59e0b');
                     return;
                 }
                 const next = { ...this._readAiTagData(), [groupId]: { tags, generatedAt: Date.now() } };
                 this._writeAiTagData(next);
-                if (typeof showToast === 'function') showToast(`Tagged "${group.name || groupId}": ${tags.join(', ')}`, '#22c55e', { duration: 6 });
+                if (typeof showToast === 'function') showToast(t(
+                    'subscriptionAiTagsTaggedTpl',
+                    'Tagged "{group}": {tags}'
+                ).replace('{group}', group.name || groupId).replace('{tags}', tags.join(', ')), '#22c55e', { duration: 6 });
                 this._renderToolbar();
             },
 
@@ -2631,6 +2681,7 @@
                     const safeId = this._xmlEscape(channelId);
                     const label = safeId;
                     const pad = '  '.repeat(depth);
+                    // i18n-static: OPML export mirrors the channel identifier as its title.
                     lines.push(`${pad}<outline type="rss" text="${label}" title="${label}" astra:channelId="${safeId}" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=${safeId}" htmlUrl="https://www.youtube.com/channel/${safeId}" />`);
                 };
                 const renderGroup = (id, depth) => {
@@ -2640,6 +2691,7 @@
                     const name = this._xmlEscape(group.name || id);
                     const color = this._xmlEscape(group.color || '#7c3aed');
                     const sortMode = this._xmlEscape(this._normalizeSubscriptionSortMode(group.sortMode));
+                    // i18n-static: OPML export mirrors the user-entered group name as its title.
                     lines.push(`${pad}<outline text="${name}" title="${name}" astra:type="group" astra:id="${this._xmlEscape(id)}" astra:color="${color}" astra:sortMode="${sortMode}">`);
                     const seen = new Set();
                     for (const channelId of Array.isArray(group.channelIds) ? group.channelIds : []) {
@@ -2816,7 +2868,10 @@
                                 this._renderToolbar();
                                 this._applyGroupFilter();
                                 this._renderDeadChannelMarkers();
-                                showToast('Restored previous subscription groups', '#6b7280', { duration: 4, tone: 'neutral' });
+                                showToast(t(
+                                    'subscriptionGroupsRestored',
+                                    'Restored previous subscription groups'
+                                ), '#6b7280', { duration: 4, tone: 'neutral' });
                             }
                         }
                     });

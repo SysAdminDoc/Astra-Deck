@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "将 {channel} 加入 {group}"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": "（上限为 {count}）"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "此组中没有可见视频"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "正在播放 {group} 中的 {count} 个视频{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "已导出订阅组"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "已将订阅组导出为 CSV"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "已将订阅组导出为 OPML"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "导入失败：{error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "已显示的订阅"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "已将 {group} 中的 {count} 个{channels}标记为已读"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "请先启用订阅组的 AI 标签。"
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "本地摘要器不可用；请启用 Chrome AI 来源试用功能。"
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "正在为“{group}”生成标签…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "尚未显示匹配的卡片 — 滚动动态后重试。"
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "标签生成失败：{error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "摘要器未返回可用标签。"
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "已为“{group}”添加标签：{tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "已恢复之前的订阅组"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },

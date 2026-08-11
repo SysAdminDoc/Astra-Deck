@@ -5386,6 +5386,57 @@
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "{channel}을(를) {group}에 포함"
   },
+  "subscriptionQueueCappedTpl": {
+    "message": " ({count}개로 제한됨)"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "이 그룹에 표시할 동영상이 없음"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "{group}에서 동영상 {count}개 재생 중{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "구독 그룹 내보냄"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "구독 그룹을 CSV로 내보냄"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "구독 그룹을 OPML로 내보냄"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "가져오기 실패: {error}"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "표시된 구독"
+  },
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "{group}의 {count}개 {channels} 읽음으로 표시됨"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "먼저 구독 그룹의 AI 태그를 사용 설정하세요."
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "로컬 요약기를 사용할 수 없음. Chrome AI 오리진 트라이얼을 사용 설정하세요."
+  },
+  "subscriptionAiTagsGeneratingTpl": {
+    "message": "\"{group}\"의 태그 생성 중…"
+  },
+  "subscriptionAiTagsNoCards": {
+    "message": "일치하는 카드가 아직 표시되지 않음. 피드를 스크롤한 후 다시 시도하세요."
+  },
+  "subscriptionAiTagsGenerationFailedTpl": {
+    "message": "태그 생성 실패: {error}"
+  },
+  "subscriptionAiTagsNoUsable": {
+    "message": "요약기가 사용할 수 있는 태그를 반환하지 않음."
+  },
+  "subscriptionAiTagsTaggedTpl": {
+    "message": "\"{group}\"에 태그 지정됨: {tags}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "이전 구독 그룹 복원됨"
+  },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
   },
