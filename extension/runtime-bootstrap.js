@@ -99,6 +99,7 @@
         "core/transcript-service.js",
         "core/transcript-index.js",
         "core/ai-summary-artifacts.js",
+        "core/remote-list-scope.js",
         "core/persisted-domains.js",
         "core/settings-import-transaction.js",
         "core/storage-manager.js",

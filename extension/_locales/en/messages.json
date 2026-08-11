@@ -1078,28 +1078,34 @@
     "message": "Filter rules imported. Undo Import is available."
   },
   "filterListStatusInvalidUrl": {
-    "message": "Enter an HTTPS URL without credentials or a fragment."
+    "message": "Enter a full HTTPS address, with no username, password, or # fragment."
   },
   "filterListStatusNoTab": {
     "message": "Open a YouTube tab to refresh the remote list."
   },
+  "filterListStatusPrivateHost": {
+    "message": "That address is on a private or local network. Filter lists must be served from a public HTTPS site."
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "Astra Deck needs your permission to read from that site. Choose Allow when your browser asks."
+  },
   "filterListStatusReady": {
-    "message": "No remote list configured."
+    "message": "No filter list is being followed."
   },
   "filterListStatusRefreshed": {
     "message": "Remote filter list refreshed."
   },
   "filterListToolsDesc": {
-    "message": "Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge."
+    "message": "Back up your Video Hider rules, restore them from a file, or follow a filter list published on a site you trust."
   },
   "filterListToolsEyebrow": {
     "message": "Video Hider"
   },
   "filterListToolsTitle": {
-    "message": "Local filter lists"
+    "message": "Filter lists"
   },
   "filterListUrlLabel": {
-    "message": "Optional HTTPS list URL"
+    "message": "Filter list URL (optional)"
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"

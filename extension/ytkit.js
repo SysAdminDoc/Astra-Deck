@@ -6479,16 +6479,16 @@ return response;
     const MONOLITH_FILTER_LIST_MAX_BYTES = 1024 * 1024;
     const MONOLITH_FILTER_LIST_SUBSCRIPTION_KEY = 'ytkit-video-filter-list-subscription';
     const MONOLITH_FILTER_LIST_CODEC = globalThis.YTKitCore?.persistedDomains || (() => {
+        // Defer to the shared scope rules rather than restating a weaker copy
+        // of them. This fallback exists for hosts that omit the optional
+        // feature module; when the scope module is also absent (the standalone
+        // userscript, where the filter-list URL setting does not exist) it
+        // fails closed and no remote list is ever configured.
         const normalizeUrl = value => {
-            const raw = typeof value === 'string' ? value.trim() : '';
-            if (!raw || raw.length > 2048) return '';
-            try {
-                const parsed = new URL(raw);
-                if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.hash) return '';
-                return parsed.href.slice(0, 2048);
-            } catch (_) {
-                return '';
-            }
+            const describe = globalThis.YTKitCore?.describeRemoteListUrl;
+            if (typeof describe !== 'function') return '';
+            const described = describe(value);
+            return described.ok === true ? described.url : '';
         };
         const sanitizeRules = value => {
             const raw = isPlainObject(value) ? value : {};

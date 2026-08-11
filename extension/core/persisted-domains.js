@@ -6,6 +6,20 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     'use strict';
 
+    // Browser surfaces load core/remote-list-scope.js ahead of this module via
+    // the manifest. Direct Node consumers (tests, build tooling) get it here so
+    // the filter-list URL rules cannot silently differ between the two.
+    if (!globalThis.YTKitCore?.describeRemoteListUrl
+        && typeof module !== 'undefined' && module.exports
+        && typeof require === 'function') {
+        try {
+            require('./remote-list-scope');
+        } catch (_) {
+            // reason: the scope module is optional here; normalizeFilterListUrl
+            // fails closed when it is absent.
+        }
+    }
+
     const BACKUP_EXPORT_VERSION = 5;
     const BACKUP_SCHEMA_VERSION = 2;
     const MAX_BACKUP_BYTES = 512 * 1024 * 1024;
@@ -154,17 +168,20 @@
         return out;
     }
 
+    // Single source of truth for "may Astra Deck fetch this?" — core/remote-list-scope.js.
+    // Delegating means a settings import cannot persist a loopback or RFC1918
+    // filter-list URL that the background worker would then have to refuse:
+    // the value never survives sanitization in the first place.
+    //
+    // Fails CLOSED when the scope module is absent. The only surface without
+    // it is the standalone userscript, where the filter-list URL setting does
+    // not exist (schema vehicle: 'extension'), so an empty string is the
+    // correct answer there rather than a second, weaker copy of the rules.
     function normalizeFilterListUrl(value) {
-        const raw = typeof value === 'string' ? value.trim() : '';
-        if (!raw || raw.length > 2048) return '';
-        try {
-            const parsed = new URL(raw);
-            if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.hash) return '';
-            parsed.hash = '';
-            return parsed.href.slice(0, 2048);
-        } catch (_) {
-            return '';
-        }
+        const describe = globalThis.YTKitCore?.describeRemoteListUrl;
+        if (typeof describe !== 'function') return '';
+        const described = describe(value);
+        return described.ok === true ? described.url : '';
     }
 
     function sanitizeFilterListRules(value) {

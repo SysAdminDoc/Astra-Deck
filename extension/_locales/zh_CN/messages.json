@@ -1048,73 +1048,79 @@
     "message": "导出"
   },
   "exportFilterListBtn": {
-    "message": "Export rules"
+    "message": "导出规则"
   },
   "filterListExportFail": {
-    "message": "Filter-list export failed"
+    "message": "过滤列表导出失败"
   },
   "filterListExported": {
-    "message": "Video Hider rules exported."
+    "message": "已导出 Video Hider 规则。"
   },
   "filterListImportFail": {
-    "message": "Filter-list import failed"
+    "message": "过滤列表导入失败"
   },
   "filterListImportNotJson": {
-    "message": "That file is not valid JSON."
+    "message": "该文件不是有效的 JSON。"
   },
   "filterListImportRollback": {
-    "message": "Filter-list import failed; previous data was restored."
+    "message": "过滤列表导入失败；已恢复先前的数据。"
   },
   "filterListImported": {
-    "message": "Video Hider rules imported. Undo Import is available."
+    "message": "已导入 Video Hider 规则。可撤销导入。"
   },
   "filterListStatusExported": {
-    "message": "Local filter rules exported."
+    "message": "已导出本地过滤规则。"
   },
   "filterListStatusFail": {
-    "message": "Filter-list operation failed."
+    "message": "过滤列表操作失败。"
   },
   "filterListStatusImported": {
-    "message": "Filter rules imported. Undo Import is available."
+    "message": "已导入过滤规则。可撤销导入。"
   },
   "filterListStatusInvalidUrl": {
-    "message": "Enter an HTTPS URL without credentials or a fragment."
+    "message": "请输入完整的 HTTPS 地址，不含用户名、密码或 # 片段。"
   },
   "filterListStatusNoTab": {
-    "message": "Open a YouTube tab to refresh the remote list."
+    "message": "请打开一个 YouTube 标签页以刷新远程列表。"
+  },
+  "filterListStatusPrivateHost": {
+    "message": "该地址位于专用网络或本地网络。过滤列表必须由公开的 HTTPS 网站提供。"
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "Astra Deck 需要你的许可才能读取该网站。当浏览器询问时，请选择“允许”。"
   },
   "filterListStatusReady": {
-    "message": "No remote list configured."
+    "message": "当前未订阅任何过滤列表。"
   },
   "filterListStatusRefreshed": {
-    "message": "Remote filter list refreshed."
+    "message": "已刷新远程过滤列表。"
   },
   "filterListToolsDesc": {
-    "message": "Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge."
+    "message": "备份你的 Video Hider 规则、从文件恢复，或订阅你信任的网站上发布的过滤列表。"
   },
   "filterListToolsEyebrow": {
     "message": "Video Hider"
   },
   "filterListToolsTitle": {
-    "message": "Local filter lists"
+    "message": "过滤列表"
   },
   "filterListUrlLabel": {
-    "message": "Optional HTTPS list URL"
+    "message": "过滤列表网址（可选）"
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
   },
   "filterListRefreshFail": {
-    "message": "Filter-list refresh failed"
+    "message": "过滤列表刷新失败"
   },
   "filterListRefreshed": {
-    "message": "Video Hider filter list refreshed."
+    "message": "已刷新 Video Hider 过滤列表。"
   },
   "importFilterListBtn": {
-    "message": "Import rules"
+    "message": "导入规则"
   },
   "refreshFilterListBtn": {
-    "message": "Refresh list now"
+    "message": "立即刷新列表"
   },
   "extActionTitle": {
     "message": "Astra Deck",

@@ -4312,6 +4312,11 @@ async function exportSettings() {
     }
 }
 
+// Reasons from core/remote-list-scope.js that mean "this address is not on the
+// public internet". They share one message because the user's next action is
+// the same for all of them: publish the list somewhere reachable.
+const NON_PUBLIC_FILTER_LIST_REASONS = new Set(['private-network', 'ip-literal', 'non-public-host']);
+
 function setFilterListStatus(messageKey, fallback, type = 'info') {
     if (!filterListStatus) return;
     filterListStatus.textContent = t(messageKey, fallback);
@@ -4447,14 +4452,38 @@ async function refreshFilterList() {
     refreshFilterListButton.setAttribute('aria-busy', 'true');
     refreshFilterListButton.disabled = true;
     try {
-        if (!persistedDomains?.normalizeFilterListUrl) throw new Error('Filter-list service unavailable');
-        const normalizedUrl = persistedDomains.normalizeFilterListUrl(filterListUrlInput.value);
-        if (!normalizedUrl) {
-            setFilterListStatus('filterListStatusInvalidUrl', 'Enter an HTTPS URL without credentials or a fragment.', 'error');
+        const describe = window.YTKitCore?.describeRemoteListUrl;
+        if (typeof describe !== 'function') throw new Error('Filter-list service unavailable');
+        const described = describe(filterListUrlInput.value);
+        if (!described.ok) {
+            if (NON_PUBLIC_FILTER_LIST_REASONS.has(described.reason)) {
+                setFilterListStatus('filterListStatusPrivateHost',
+                    'That address is on a private or local network. Filter lists must be served from a public HTTPS site.', 'error');
+            } else {
+                setFilterListStatus('filterListStatusInvalidUrl',
+                    'Enter a full HTTPS address, with no username, password, or # fragment.', 'error');
+            }
             return;
         }
-        if (popupState.settings.hideVideosFilterListUrl !== normalizedUrl) {
-            await writeSetting('hideVideosFilterListUrl', normalizedUrl);
+
+        // Ask for this origin before any other await. Chromium hands the popup
+        // click's transient activation to the first call only, so a preceding
+        // storage round-trip would spend the gesture and the prompt would be
+        // suppressed. Requesting an already-granted origin resolves true with
+        // no prompt, which is why there is no contains() pre-check here.
+        try {
+            await requestOptionalHostOrigins([described.originPattern]);
+        } catch (error) {
+            if (isOptionalHostPermissionError(error)) {
+                setFilterListStatus('filterListStatusPermissionNeeded',
+                    'Astra Deck needs your permission to read from that site. Choose Allow when your browser asks.', 'error');
+                return;
+            }
+            throw error;
+        }
+
+        if (popupState.settings.hideVideosFilterListUrl !== described.url) {
+            await writeSetting('hideVideosFilterListUrl', described.url);
             syncFilterListUrlInput(popupState.settings);
         }
         const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_REFRESH_FILTER_LIST');

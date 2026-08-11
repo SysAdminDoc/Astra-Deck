@@ -1048,73 +1048,79 @@
     "message": "Exporter"
   },
   "exportFilterListBtn": {
-    "message": "Export rules"
+    "message": "Exporter les règles"
   },
   "filterListExportFail": {
-    "message": "Filter-list export failed"
+    "message": "Échec de l'exportation de la liste de filtres"
   },
   "filterListExported": {
-    "message": "Video Hider rules exported."
+    "message": "Règles Video Hider exportées."
   },
   "filterListImportFail": {
-    "message": "Filter-list import failed"
+    "message": "Échec de l'importation de la liste de filtres"
   },
   "filterListImportNotJson": {
-    "message": "That file is not valid JSON."
+    "message": "Ce fichier n'est pas un JSON valide."
   },
   "filterListImportRollback": {
-    "message": "Filter-list import failed; previous data was restored."
+    "message": "Échec de l'importation de la liste de filtres ; les données précédentes ont été restaurées."
   },
   "filterListImported": {
-    "message": "Video Hider rules imported. Undo Import is available."
+    "message": "Règles Video Hider importées. Annuler l'importation est disponible."
   },
   "filterListStatusExported": {
-    "message": "Local filter rules exported."
+    "message": "Règles de filtre locales exportées."
   },
   "filterListStatusFail": {
-    "message": "Filter-list operation failed."
+    "message": "L'opération sur la liste de filtres a échoué."
   },
   "filterListStatusImported": {
-    "message": "Filter rules imported. Undo Import is available."
+    "message": "Règles de filtre importées. Annuler l'importation est disponible."
   },
   "filterListStatusInvalidUrl": {
-    "message": "Enter an HTTPS URL without credentials or a fragment."
+    "message": "Saisissez une adresse HTTPS complète, sans nom d'utilisateur, mot de passe ni fragment #."
   },
   "filterListStatusNoTab": {
-    "message": "Open a YouTube tab to refresh the remote list."
+    "message": "Ouvrez un onglet YouTube pour actualiser la liste distante."
+  },
+  "filterListStatusPrivateHost": {
+    "message": "Cette adresse se trouve sur un réseau privé ou local. Les listes de filtres doivent être servies depuis un site HTTPS public."
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "Astra Deck a besoin de votre autorisation pour lire depuis ce site. Choisissez Autoriser lorsque votre navigateur vous le demande."
   },
   "filterListStatusReady": {
-    "message": "No remote list configured."
+    "message": "Aucune liste de filtres n'est suivie."
   },
   "filterListStatusRefreshed": {
-    "message": "Remote filter list refreshed."
+    "message": "Liste de filtres distante actualisée."
   },
   "filterListToolsDesc": {
-    "message": "Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge."
+    "message": "Sauvegardez vos règles Video Hider, restaurez-les depuis un fichier ou suivez une liste de filtres publiée sur un site de confiance."
   },
   "filterListToolsEyebrow": {
     "message": "Video Hider"
   },
   "filterListToolsTitle": {
-    "message": "Local filter lists"
+    "message": "Listes de filtres"
   },
   "filterListUrlLabel": {
-    "message": "Optional HTTPS list URL"
+    "message": "URL de la liste de filtres (facultatif)"
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
   },
   "filterListRefreshFail": {
-    "message": "Filter-list refresh failed"
+    "message": "Échec de l'actualisation de la liste de filtres"
   },
   "filterListRefreshed": {
-    "message": "Video Hider filter list refreshed."
+    "message": "Liste de filtres Video Hider actualisée."
   },
   "importFilterListBtn": {
-    "message": "Import rules"
+    "message": "Importer des règles"
   },
   "refreshFilterListBtn": {
-    "message": "Refresh list now"
+    "message": "Actualiser la liste"
   },
   "extActionTitle": {
     "message": "Astra Deck",

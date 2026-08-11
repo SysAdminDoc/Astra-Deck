@@ -52,6 +52,7 @@ import './core/playability.js';
 import './core/transcript-service.js';
 import './core/transcript-index.js';
 import './core/ai-summary-artifacts.js';
+import './core/remote-list-scope.js';
 import './core/persisted-domains.js';
 import './core/settings-import-transaction.js';
 import './core/storage-manager.js';

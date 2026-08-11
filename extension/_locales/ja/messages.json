@@ -1048,73 +1048,79 @@
     "message": "エクスポート"
   },
   "exportFilterListBtn": {
-    "message": "Export rules"
+    "message": "ルールをエクスポート"
   },
   "filterListExportFail": {
-    "message": "Filter-list export failed"
+    "message": "フィルターリストのエクスポートに失敗しました"
   },
   "filterListExported": {
-    "message": "Video Hider rules exported."
+    "message": "Video Hider のルールをエクスポートしました。"
   },
   "filterListImportFail": {
-    "message": "Filter-list import failed"
+    "message": "フィルターリストのインポートに失敗しました"
   },
   "filterListImportNotJson": {
-    "message": "That file is not valid JSON."
+    "message": "このファイルは有効な JSON ではありません。"
   },
   "filterListImportRollback": {
-    "message": "Filter-list import failed; previous data was restored."
+    "message": "フィルターリストのインポートに失敗しました。以前のデータを復元しました。"
   },
   "filterListImported": {
-    "message": "Video Hider rules imported. Undo Import is available."
+    "message": "Video Hider のルールをインポートしました。インポートの取り消しが利用できます。"
   },
   "filterListStatusExported": {
-    "message": "Local filter rules exported."
+    "message": "ローカルのフィルタールールをエクスポートしました。"
   },
   "filterListStatusFail": {
-    "message": "Filter-list operation failed."
+    "message": "フィルターリストの操作に失敗しました。"
   },
   "filterListStatusImported": {
-    "message": "Filter rules imported. Undo Import is available."
+    "message": "フィルタールールをインポートしました。インポートの取り消しが利用できます。"
   },
   "filterListStatusInvalidUrl": {
-    "message": "Enter an HTTPS URL without credentials or a fragment."
+    "message": "ユーザー名、パスワード、# フラグメントを含まない完全な HTTPS アドレスを入力してください。"
   },
   "filterListStatusNoTab": {
-    "message": "Open a YouTube tab to refresh the remote list."
+    "message": "リモートリストを更新するには YouTube のタブを開いてください。"
+  },
+  "filterListStatusPrivateHost": {
+    "message": "そのアドレスはプライベートまたはローカルネットワーク上にあります。フィルターリストは公開された HTTPS サイトから配信する必要があります。"
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "そのサイトを読み取るには Astra Deck の許可が必要です。ブラウザーが尋ねたら「許可」を選択してください。"
   },
   "filterListStatusReady": {
-    "message": "No remote list configured."
+    "message": "購読中のフィルターリストはありません。"
   },
   "filterListStatusRefreshed": {
-    "message": "Remote filter list refreshed."
+    "message": "リモートのフィルターリストを更新しました。"
   },
   "filterListToolsDesc": {
-    "message": "Export your local Video Hider rules, import a versioned file, or refresh an optional HTTPS list through the reviewed extension network bridge."
+    "message": "Video Hider のルールをバックアップしたり、ファイルから復元したり、信頼できるサイトで公開されているフィルターリストを購読したりできます。"
   },
   "filterListToolsEyebrow": {
     "message": "Video Hider"
   },
   "filterListToolsTitle": {
-    "message": "Local filter lists"
+    "message": "フィルターリスト"
   },
   "filterListUrlLabel": {
-    "message": "Optional HTTPS list URL"
+    "message": "フィルターリストの URL（任意）"
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
   },
   "filterListRefreshFail": {
-    "message": "Filter-list refresh failed"
+    "message": "フィルターリストの更新に失敗しました"
   },
   "filterListRefreshed": {
-    "message": "Video Hider filter list refreshed."
+    "message": "Video Hider のフィルターリストを更新しました。"
   },
   "importFilterListBtn": {
-    "message": "Import rules"
+    "message": "ルールをインポート"
   },
   "refreshFilterListBtn": {
-    "message": "Refresh list now"
+    "message": "今すぐリストを更新"
   },
   "extActionTitle": {
     "message": "Astra Deck",

@@ -34,8 +34,13 @@
     const SPONSORBLOCK_CANONICAL_ORIGIN = 'https://sponsor.ajay.app';
     // The maintained TeamPiped mirror implements the hash-prefix endpoint
     // Astra uses, so it is a safe bounded failover for segment lookups. Keep
-    // this list explicit: arbitrary user-supplied origins must never become
-    // extension host permissions or background proxy targets.
+    // this list explicit: a user-supplied origin must never become a STATIC
+    // host permission or a silently-proxied target. The one user-chosen
+    // destination in the catalogue — the Video Hider filter list — is instead
+    // gated on a github-full-only optional permission, the browser's own
+    // per-origin prompt, and the public-host denylist in
+    // core/remote-list-scope.js. Nothing else may follow that pattern without
+    // the same three gates.
     const SPONSORBLOCK_MIRROR_ORIGIN = 'https://sponsorblock.kavin.rocks';
     const SPONSORBLOCK_ALLOWED_ORIGINS = Object.freeze([
         SPONSORBLOCK_CANONICAL_ORIGIN,
@@ -204,6 +209,22 @@
             profile: 'github-full',
             hostGrant: 'required',
             riskBand: 'api'
+        }),
+        // The only entry whose destination the user chooses. It is a pattern,
+        // not a host: the build declares `https://*/*` so the browser can
+        // prompt for one specific origin at a time, and nothing is contacted
+        // until the user both configures a URL and grants that origin.
+        // core/remote-list-scope.js rejects private, loopback, link-local and
+        // non-public hosts before a grant is even requested.
+        Object.freeze({
+            origin: 'https://*',
+            purpose: 'User-configured Video Hider filter list, fetched anonymously from one granted HTTPS origin.',
+            requiredByFeatures: ['hideVideosFilterListUrl'],
+            credentialsPolicy: 'no-cookies',
+            profile: 'github-full',
+            hostGrant: 'runtime-optional',
+            runtimeOptionalProfiles: Object.freeze(['github-full']),
+            riskBand: 'experimental'
         })
     ]);
 

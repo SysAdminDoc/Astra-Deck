@@ -114,6 +114,11 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     'core/persisted-domains.js': 'intentional-extension-only',
     'core/playability.js': 'intentional-extension-only',
     'core/predicate-sandbox.js': 'intentional-extension-only',
+    // Scope rules for the user-configured filter-list URL. The setting is
+    // schema vehicle: extension, and the userscript has no optional host
+    // permission to grant, so bundling this would only ship rules nothing
+    // consults. The userscript-side normalizers fail closed without it.
+    'core/remote-list-scope.js': 'intentional-extension-only',
     'core/registry.js': 'intentional-extension-only',
     'core/selector-packs/appShell.js': 'intentional-extension-only',
     'core/selector-packs/commentComposer.js': 'intentional-extension-only',

@@ -26,7 +26,12 @@ const REVIEWED_EXACT_MESSAGES = Object.freeze([
     // target languages. Counting them as untranslated would push the
     // placeholder ratchet up for a translation that is already correct.
     'Serif',
-    'Monospace'
+    'Monospace',
+    // Product feature name, same in every catalogue (cf. 'Theater Split').
+    'Video Hider',
+    // Example URL in the filter-list field placeholder. Translating a URL
+    // would make the field demonstrate an address that does not exist.
+    'https://example.com/astra-deck-rules.json'
 ]);
 
 const DO_NOT_TRANSLATE_MESSAGES = new Set(REVIEWED_EXACT_MESSAGES);

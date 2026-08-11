@@ -170,6 +170,7 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 | `https://api.anthropic.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to Anthropic only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
 | `https://generativelanguage.googleapis.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to Gemini only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
 | `https://api.cobalt.tools/*` | Contacts a user-configurable Cobalt endpoint only when the GitHub-full Cobalt fallback is enabled and Astra Downloader is offline. |
+| `https://*/*` | Runtime-optional, GitHub-full only, and never granted as a whole. It exists so the browser can prompt for **one** user-typed Video Hider filter-list origin at a time: Astra Deck requests `https://<that host>/*` and nothing else, and the background proxy refuses any origin the user has not granted. Requests are anonymous (`credentials: 'omit'`, no `Authorization`), `GET` only, 15 s timeout, capped at 1 MiB, and the response is parsed as a versioned data-only rule list — a fetched list can never supply executable predicate code. `extension/core/remote-list-scope.js` rejects non-HTTPS URLs, embedded credentials, fragments, bare IP literals, and loopback/RFC1918/CGNAT/link-local/reserved addresses plus single-label and `.local`/`.internal`/`.lan`/`.home.arpa` names before a prompt is shown. This permission is stripped from store-safe artifacts. |
 | `http://127.0.0.1:11434/*` | Talks to the user's local Ollama runtime for offline AI summaries; no remote host is contacted. |
 
 ## Reviewer Notes
@@ -190,6 +191,14 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
   retrying silently.
 - The Grant access banner lets default-on SponsorBlock request its shared
   SponsorBlock/DeArrow host from an explicit user gesture.
+- The broad `https://*/*` optional pattern is a capability the GitHub-full build
+  declares, not a grant it asks for. `validateRuntimeOptionalHostRequest` in
+  `background.js` explicitly rejects any request for the pattern itself, so a
+  page-driven message cannot escalate one filter-list origin into blanket web
+  access. Residual risk, accepted and documented: the denylist is literal-only,
+  so a granted public hostname that later resolves to a private address is not
+  re-checked at fetch time. Resolving at validation time would not fix this —
+  DNS can change between the check and the request.
 - GitHub-full is intentionally broader and should not be submitted as the public
   Chrome Web Store package.
 - No `<all_urls>` host permission is requested.
