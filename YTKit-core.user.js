@@ -2546,6 +2546,10 @@ const CAPABILITIES = Object.freeze([
     // Chrome 138+ Prompt API (Gemini Nano on-device). Used by
     // localAiTranscriptQa for on-device transcript Q&A.
     'promptApi',
+    // RegExp.escape() is used for literal settings search filters. The
+    // feature has a local fallback, so this is diagnostic rather than a hard
+    // requirement for any setting.
+    'regexpEscape',
 ]);
 
 const SETTINGS_SCHEMA = Object.freeze([
@@ -10377,7 +10381,61 @@ if (typeof globalThis !== "undefined") {
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.parseCompactCount) return;
+    if (core.parseCompactCount && core.escapeRegExp) return;
+
+    function hex(value, width = 2) {
+        return value.toString(16).padStart(width, '0');
+    }
+
+    // RegExp.escape() is the platform path. The fallback follows the
+    // standard's important edge cases: a leading ASCII letter/digit is
+    // hex-escaped so it cannot merge with a preceding escape, and punctuators
+    // such as '-' use \x escapes because `\\-` is invalid in a Unicode regex.
+    function escapeRegExp(value) {
+        const text = String(value ?? '');
+        const nativeEscape = globalThis.RegExp?.escape;
+        if (typeof nativeEscape === 'function') return nativeEscape(text);
+
+        const syntax = new Set(['^', '$', '\\', '.', '*', '+', '?', '(', ')', '[', ']', '{', '}', '|', '/']);
+        const punctuators = new Set([',', '-', '=', '<', '>', '#', '&', '!', '%', ':', ';', '@', '~', "'", '`', '"']);
+        let output = '';
+        for (let index = 0; index < text.length; index += 1) {
+            const char = text[index];
+            const code = text.charCodeAt(index);
+            if (index === 0 && /[A-Za-z0-9]/.test(char)) {
+                output += `\\x${hex(code)}`;
+            } else if (syntax.has(char)) {
+                output += `\\${char}`;
+            } else if (punctuators.has(char)) {
+                output += `\\x${hex(code)}`;
+            } else if (char === '\f') {
+                output += '\\f';
+            } else if (char === '\n') {
+                output += '\\n';
+            } else if (char === '\r') {
+                output += '\\r';
+            } else if (char === '\t') {
+                output += '\\t';
+            } else if (char === '\v') {
+                output += '\\v';
+            } else if (char === ' ') {
+                output += '\\x20';
+            } else if (code === 0x2028 || code === 0x2029) {
+                output += `\\u${hex(code, 4)}`;
+            } else if (code >= 0xd800 && code <= 0xdbff
+                && index + 1 < text.length
+                && text.charCodeAt(index + 1) >= 0xdc00
+                && text.charCodeAt(index + 1) <= 0xdfff) {
+                output += char + text[index + 1];
+                index += 1;
+            } else if (code >= 0xd800 && code <= 0xdfff) {
+                output += `\\u${hex(code, 4)}`;
+            } else {
+                output += char;
+            }
+        }
+        return output;
+    }
 
     // YouTube localizes the words around a count, and may also localize the
     // compact suffix (for example "1,2 Mio. Aufrufe" or "12.3万 回視聴").
@@ -10537,7 +10595,7 @@ if (typeof globalThis !== "undefined") {
         return Math.round(token.number * parseSuffix(token.suffix));
     }
 
-    Object.assign(core, { parseCompactCount });
+    Object.assign(core, { escapeRegExp, parseCompactCount });
 })();
 
 // ── bundled module: extension/core/date-time.js ──
@@ -10964,6 +11022,20 @@ if (typeof globalThis !== "undefined") {
                 probe: 'hasPromptApi',
                 fallback: 'Keep transcript export and local search available; do not send transcript text to a remote model implicitly.',
                 userVisibleDegradation: 'On-device transcript Q&A is unavailable while transcript viewing and export continue to work.'
+            },
+            regexpEscape: {
+                api: 'ECMAScript RegExp.escape() static method',
+                availability: {
+                    chromium: 'Modern Chromium releases expose the Baseline 2025 method; older versions use the project fallback',
+                    firefox: 'Modern Firefox releases expose the Baseline 2025 method; older versions use the project fallback',
+                    userscript: 'Available when the host browser exposes RegExp.escape(); the bundled fallback remains active otherwise'
+                },
+                requiredPermission: [],
+                executionWorld: 'YouTube page and extension UI',
+                minimumBrowser: { chrome: 'feature-detected', edge: 'feature-detected', firefox: 'feature-detected' },
+                probe: 'hasRegExpEscape',
+                fallback: 'Escape literal filter text with the project-maintained compatibility implementation.',
+                userVisibleDegradation: 'Literal filters remain literal on older browsers; no setting search text is interpreted as regex syntax.'
             }
         }
     });
@@ -11116,6 +11188,10 @@ if (typeof globalThis !== "undefined") {
         );
     }
 
+    function hasRegExpEscape() {
+        return typeof globalThis?.RegExp?.escape === 'function';
+    }
+
     function getAiLaneStatus(options = {}) {
         const localAi = core.localAi;
         if (localAi?.getLaneStatus) return localAi.getLaneStatus(options);
@@ -11157,6 +11233,7 @@ if (typeof globalThis !== "undefined") {
         documentPip:      { async: false, run: hasDocumentPip },
         languageDetector: { async: false, run: hasLanguageDetector },
         promptApi:        { async: false, run: hasPromptApi },
+        regexpEscape:     { async: false, run: hasRegExpEscape },
         mediaDL:          { async: true,  run: hasMediaDL },
         ollama:           { async: true,  run: hasOllama },
     });
@@ -26249,7 +26326,8 @@ if (typeof globalThis !== "undefined") {
             trapFocusWithin,
             supportsPopover = () => false,
             createCloseWatcher = () => null,
-            destroyCloseWatcher = () => {}
+            destroyCloseWatcher = () => {},
+            escapeRegExp: escapeRegExpDependency = null
         } = deps;
         const getPageModalOpen = typeof deps.getPageModalOpen === 'function'
             ? deps.getPageModalOpen
@@ -26263,6 +26341,13 @@ if (typeof globalThis !== "undefined") {
         const requestFeatureOptionalHosts = typeof deps.requestFeatureOptionalHosts === 'function'
             ? deps.requestFeatureOptionalHosts
             : async () => true;
+        const escapeRegExp = typeof escapeRegExpDependency === 'function'
+            ? escapeRegExpDependency
+            : typeof globalThis.YTKitCore?.escapeRegExp === 'function'
+                ? globalThis.YTKitCore.escapeRegExp
+                : value => String(value ?? '')
+                    .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
+                    .replace(/-/g, '\\x2d');
 
         let _panelCleanups = [];
         let _settingsPanelLastFocus = null;
@@ -29396,15 +29481,16 @@ function attachUIEventListeners() {
                 if (!el) return;
                 if (el._originalText === undefined) el._originalText = el.textContent;
                 const text = el._originalText;
-                const idx = text.toLowerCase().indexOf(q);
+                const match = new RegExp(escapeRegExp(q), 'u').exec(text.toLowerCase());
+                const idx = match?.index ?? -1;
                 if (idx === -1) { el.textContent = text; return; }
                 el.textContent = '';
                 el.appendChild(document.createTextNode(text.substring(0, idx)));
                 const mark = document.createElement('mark');
                 mark.className = 'ytkit-search-mark';
-                mark.textContent = text.substring(idx, idx + q.length);
+                mark.textContent = text.substring(idx, idx + match[0].length);
                 el.appendChild(mark);
-                el.appendChild(document.createTextNode(text.substring(idx + q.length)));
+                el.appendChild(document.createTextNode(text.substring(idx + match[0].length)));
             };
 
             // Filter cards and highlight

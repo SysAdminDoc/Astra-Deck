@@ -2,7 +2,61 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.parseCompactCount) return;
+    if (core.parseCompactCount && core.escapeRegExp) return;
+
+    function hex(value, width = 2) {
+        return value.toString(16).padStart(width, '0');
+    }
+
+    // RegExp.escape() is the platform path. The fallback follows the
+    // standard's important edge cases: a leading ASCII letter/digit is
+    // hex-escaped so it cannot merge with a preceding escape, and punctuators
+    // such as '-' use \x escapes because `\\-` is invalid in a Unicode regex.
+    function escapeRegExp(value) {
+        const text = String(value ?? '');
+        const nativeEscape = globalThis.RegExp?.escape;
+        if (typeof nativeEscape === 'function') return nativeEscape(text);
+
+        const syntax = new Set(['^', '$', '\\', '.', '*', '+', '?', '(', ')', '[', ']', '{', '}', '|', '/']);
+        const punctuators = new Set([',', '-', '=', '<', '>', '#', '&', '!', '%', ':', ';', '@', '~', "'", '`', '"']);
+        let output = '';
+        for (let index = 0; index < text.length; index += 1) {
+            const char = text[index];
+            const code = text.charCodeAt(index);
+            if (index === 0 && /[A-Za-z0-9]/.test(char)) {
+                output += `\\x${hex(code)}`;
+            } else if (syntax.has(char)) {
+                output += `\\${char}`;
+            } else if (punctuators.has(char)) {
+                output += `\\x${hex(code)}`;
+            } else if (char === '\f') {
+                output += '\\f';
+            } else if (char === '\n') {
+                output += '\\n';
+            } else if (char === '\r') {
+                output += '\\r';
+            } else if (char === '\t') {
+                output += '\\t';
+            } else if (char === '\v') {
+                output += '\\v';
+            } else if (char === ' ') {
+                output += '\\x20';
+            } else if (code === 0x2028 || code === 0x2029) {
+                output += `\\u${hex(code, 4)}`;
+            } else if (code >= 0xd800 && code <= 0xdbff
+                && index + 1 < text.length
+                && text.charCodeAt(index + 1) >= 0xdc00
+                && text.charCodeAt(index + 1) <= 0xdfff) {
+                output += char + text[index + 1];
+                index += 1;
+            } else if (code >= 0xd800 && code <= 0xdfff) {
+                output += `\\u${hex(code, 4)}`;
+            } else {
+                output += char;
+            }
+        }
+        return output;
+    }
 
     // YouTube localizes the words around a count, and may also localize the
     // compact suffix (for example "1,2 Mio. Aufrufe" or "12.3万 回視聴").
@@ -162,5 +216,5 @@
         return Math.round(token.number * parseSuffix(token.suffix));
     }
 
-    Object.assign(core, { parseCompactCount });
+    Object.assign(core, { escapeRegExp, parseCompactCount });
 })();

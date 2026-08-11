@@ -88,6 +88,10 @@ const CAPABILITIES = Object.freeze([
     // Chrome 138+ Prompt API (Gemini Nano on-device). Used by
     // localAiTranscriptQa for on-device transcript Q&A.
     'promptApi',
+    // RegExp.escape() is used for literal settings search filters. The
+    // feature has a local fallback, so this is diagnostic rather than a hard
+    // requirement for any setting.
+    'regexpEscape',
 ]);
 
 const SETTINGS_SCHEMA = Object.freeze([

@@ -191,6 +191,20 @@
                 probe: 'hasPromptApi',
                 fallback: 'Keep transcript export and local search available; do not send transcript text to a remote model implicitly.',
                 userVisibleDegradation: 'On-device transcript Q&A is unavailable while transcript viewing and export continue to work.'
+            },
+            regexpEscape: {
+                api: 'ECMAScript RegExp.escape() static method',
+                availability: {
+                    chromium: 'Modern Chromium releases expose the Baseline 2025 method; older versions use the project fallback',
+                    firefox: 'Modern Firefox releases expose the Baseline 2025 method; older versions use the project fallback',
+                    userscript: 'Available when the host browser exposes RegExp.escape(); the bundled fallback remains active otherwise'
+                },
+                requiredPermission: [],
+                executionWorld: 'YouTube page and extension UI',
+                minimumBrowser: { chrome: 'feature-detected', edge: 'feature-detected', firefox: 'feature-detected' },
+                probe: 'hasRegExpEscape',
+                fallback: 'Escape literal filter text with the project-maintained compatibility implementation.',
+                userVisibleDegradation: 'Literal filters remain literal on older browsers; no setting search text is interpreted as regex syntax.'
             }
         }
     });
@@ -343,6 +357,10 @@
         );
     }
 
+    function hasRegExpEscape() {
+        return typeof globalThis?.RegExp?.escape === 'function';
+    }
+
     function getAiLaneStatus(options = {}) {
         const localAi = core.localAi;
         if (localAi?.getLaneStatus) return localAi.getLaneStatus(options);
@@ -384,6 +402,7 @@
         documentPip:      { async: false, run: hasDocumentPip },
         languageDetector: { async: false, run: hasLanguageDetector },
         promptApi:        { async: false, run: hasPromptApi },
+        regexpEscape:     { async: false, run: hasRegExpEscape },
         mediaDL:          { async: true,  run: hasMediaDL },
         ollama:           { async: true,  run: hasOllama },
     });

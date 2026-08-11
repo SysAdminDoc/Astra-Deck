@@ -18,6 +18,35 @@ function loadCore() {
     return context.globalThis.YTKitCore;
 }
 
+function loadCoreWithoutNativeRegExpEscape() {
+    const context = { globalThis: null };
+    class CompatibilityRegExp extends RegExp {}
+    CompatibilityRegExp.escape = undefined;
+    context.globalThis = context;
+    context.RegExp = CompatibilityRegExp;
+    vm.createContext(context);
+    vm.runInContext(source, context, { filename: 'extension/core/text-metrics.js' });
+    return context.globalThis.YTKitCore;
+}
+
+test('escapeRegExp uses a literal-safe pattern for filter text', () => {
+    const { escapeRegExp } = loadCore();
+    const literal = 'foo-bar / (demo) [v2]';
+    const pattern = escapeRegExp(literal);
+    assert.equal(new RegExp(pattern, 'u').test(literal), true);
+    assert.equal(new RegExp(pattern, 'u').test('fooXbar / (demo) [v2]'), false);
+    assert.equal(pattern, RegExp.escape(literal));
+});
+
+test('escapeRegExp fallback handles leading escapes, punctuators, and surrogate pairs', () => {
+    const { escapeRegExp } = loadCoreWithoutNativeRegExpEscape();
+    const literal = 'foo-bar / 😊';
+    const pattern = escapeRegExp(literal);
+    assert.equal(pattern, '\\x66oo\\x2dbar\\x20\\/\\x20😊');
+    assert.equal(new RegExp(pattern, 'u').test(literal), true);
+    assert.equal(escapeRegExp('1+1'), '\\x31\\+1');
+});
+
 test('parseCompactCount preserves comma-grouped integer counts (no decimal coercion)', () => {
     const { parseCompactCount } = loadCore();
     // The bug this module exists to prevent: "1,234" -> 1.234 -> 1.
@@ -152,4 +181,12 @@ test('ytkit.js delegates compact-count parsing to the shared core helper', () =>
     const matches = src.match(/globalThis\.YTKitCore && globalThis\.YTKitCore\.parseCompactCount/g) || [];
     assert.ok(matches.length >= 2,
         'both ytkit.js compact-count methods must delegate to core/text-metrics.js');
+});
+
+test('settings search escapes literal filter text in both runtimes', () => {
+    for (const rel of ['extension/features/settings-panel/index.js', 'extension/ytkit.js']) {
+        const src = fs.readFileSync(path.join(repoRoot, rel), 'utf8');
+        assert.match(src, /new RegExp\(escapeRegExp\(q\), 'u'\)/,
+            `${rel} must escape the user-supplied search query before matching`);
+    }
 });
