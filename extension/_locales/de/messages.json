@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "{count} ausgeblendete Videos wiederhergestellt"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "Abonnement-Ladesteuerung öffnen"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "Abonnements pausiert"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "{hidden} ausgeblendet von {loaded} gescannt"
+  },
+  "videoHiderSubsResume": {
+    "message": "Fortsetzen"
+  },
+  "videoHiderSubsGuard": {
+    "message": "Abonnement-Schutz"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "Abofeed pausiert"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "{percent} der gescannten Videos wurden ausgeblendet, daher hat Astra Deck das automatische Laden pausiert, bevor der Feed weitere leere Stapel durchlief."
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "Laden fortsetzen"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "Filter prüfen"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "Pausiert lassen"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "Gescannt"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "Serie"
+  },
+  "videoHiderHiddenToast": {
+    "message": "Video ausgeblendet"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "Kanalblockierung ist deaktiviert"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "Blockiert: {name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} ist bereits blockiert"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "Ausgeblendete Videos auf dieser Seite wiederherstellen"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "Keine ausgeblendeten Videos auf dieser Seite"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "{count} ausgeblendete Videos auf dieser Seite wiederherstellen"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "Keine ausgeblendeten Videos auf dieser Seite zu entfernen"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "{count} ausgeblendete Videos von dieser Seite entfernen"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "Keine sichtbaren Videos zum Ausblenden"
+  },
+  "videoHiderUndoAll": {
+    "message": "Alles rückgängig"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "Alle Videos wiederhergestellt"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "{count} ausgeblendete Videos von dieser Seite entfernt"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Schnellaktionen des Video Hider"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "Ausgeblendete Videos wiederhergestellt"
   },

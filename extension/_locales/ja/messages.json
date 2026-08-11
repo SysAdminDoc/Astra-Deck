@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "{count} 本の非表示動画を復元しました"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "登録チャンネルの読み込み操作を開く"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "登録チャンネルを一時停止中"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "{loaded} 件中 {hidden} 件を非表示"
+  },
+  "videoHiderSubsResume": {
+    "message": "再開"
+  },
+  "videoHiderSubsGuard": {
+    "message": "登録チャンネル保護"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "登録チャンネルのフィードを一時停止"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "スキャンした動画の {percent} が非表示になったため、フィードが空のバッチをさらに処理する前に Astra Deck が自動読み込みを一時停止しました。"
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "読み込みを再開"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "フィルターを確認"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "一時停止を維持"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "スキャン済み"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "連続"
+  },
+  "videoHiderHiddenToast": {
+    "message": "動画を非表示"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "チャンネルブロックは無効です"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "ブロック済み: {name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} はすでにブロックされています"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "このページの非表示動画を復元"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "このページに非表示動画はありません"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "このページの非表示動画 {count} 件を復元"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "このページから削除する非表示動画はありません"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "このページの非表示動画 {count} 件を削除"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "非表示にできる表示中の動画はありません"
+  },
+  "videoHiderUndoAll": {
+    "message": "すべて元に戻す"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "すべての動画を復元しました"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "このページから非表示動画 {count} 件を削除しました"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Video Hider のクイック操作"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "非表示動画を復元しました"
   },

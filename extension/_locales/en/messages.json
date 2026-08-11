@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "Restored {count} hidden videos"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "Open subscription load controls"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "Subscriptions Paused"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "{hidden} hidden of {loaded} scanned"
+  },
+  "videoHiderSubsResume": {
+    "message": "Resume"
+  },
+  "videoHiderSubsGuard": {
+    "message": "Subscriptions Guard"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "Subscription Feed Paused"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "{percent} of scanned videos were hidden, so Astra Deck paused auto-loading before the feed churned through more empty batches."
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "Resume Loading"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "Review Filters"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "Keep Paused"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "Scanned"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "Streak"
+  },
+  "videoHiderHiddenToast": {
+    "message": "Video hidden"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "Channel blocking is disabled"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "Blocked: {name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} is already blocked"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "Restore hidden videos on this page"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "No hidden videos on this page"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "Restore {count} hidden videos on this page"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "No hidden videos to remove from this page"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "Remove {count} hidden videos from this page"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "No visible videos to hide"
+  },
+  "videoHiderUndoAll": {
+    "message": "Undo All"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "Restored all videos"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "Removed {count} hidden videos from this page"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Video Hider quick actions"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "Hidden videos restored"
   },

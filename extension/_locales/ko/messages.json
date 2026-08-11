@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "숨긴 동영상 {count}개 복원됨"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "구독 로드 컨트롤 열기"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "구독 일시중지됨"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "{loaded}개 중 {hidden}개 숨김"
+  },
+  "videoHiderSubsResume": {
+    "message": "재개"
+  },
+  "videoHiderSubsGuard": {
+    "message": "구독 보호"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "구독 피드 일시중지됨"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "스캔한 동영상의 {percent}가 숨겨져 Astra Deck이 피드가 빈 배치를 더 처리하기 전에 자동 로드를 일시중지했습니다."
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "로드 재개"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "필터 검토"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "일시중지 유지"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "스캔됨"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "연속"
+  },
+  "videoHiderHiddenToast": {
+    "message": "동영상 숨김"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "채널 차단이 비활성화됨"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "차단됨: {name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name}은(는) 이미 차단됨"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "이 페이지의 숨긴 동영상 복원"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "이 페이지에 숨긴 동영상 없음"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "이 페이지의 숨긴 동영상 {count}개 복원"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "이 페이지에서 제거할 숨긴 동영상 없음"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "이 페이지의 숨긴 동영상 {count}개 제거"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "숨길 수 있는 표시된 동영상 없음"
+  },
+  "videoHiderUndoAll": {
+    "message": "모두 실행 취소"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "모든 동영상 복원됨"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "이 페이지에서 숨긴 동영상 {count}개 제거됨"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Video Hider 빠른 작업"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "숨긴 동영상 복원됨"
   },

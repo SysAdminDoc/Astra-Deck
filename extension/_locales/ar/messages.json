@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "تمت استعادة {count} من الفيديوهات المخفية"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "فتح عناصر التحكم في تحميل الاشتراكات"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "الاشتراكات متوقفة مؤقتًا"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "تم إخفاء {hidden} من أصل {loaded} تم فحصها"
+  },
+  "videoHiderSubsResume": {
+    "message": "استئناف"
+  },
+  "videoHiderSubsGuard": {
+    "message": "حماية الاشتراكات"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "تغذية الاشتراكات متوقفة مؤقتًا"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "تم إخفاء {percent} من الفيديوهات التي تم فحصها، لذلك أوقف Astra Deck التحميل التلقائي مؤقتًا قبل أن تمر الخلاصة عبر دفعات فارغة إضافية."
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "استئناف التحميل"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "مراجعة الفلاتر"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "الإبقاء على الإيقاف المؤقت"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "تم فحصها"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "السلسلة"
+  },
+  "videoHiderHiddenToast": {
+    "message": "تم إخفاء الفيديو"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "حظر القنوات معطل"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "محظور: {name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} محظور بالفعل"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "استعادة الفيديوهات المخفية في هذه الصفحة"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "لا توجد فيديوهات مخفية في هذه الصفحة"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "استعادة {count} من الفيديوهات المخفية في هذه الصفحة"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "لا توجد فيديوهات مخفية لإزالتها من هذه الصفحة"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "إزالة {count} من الفيديوهات المخفية من هذه الصفحة"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "لا توجد فيديوهات ظاهرة لإخفائها"
+  },
+  "videoHiderUndoAll": {
+    "message": "التراجع عن الكل"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "تمت استعادة كل الفيديوهات"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "تمت إزالة {count} من الفيديوهات المخفية من هذه الصفحة"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "الإجراءات السريعة لـ Video Hider"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "تمت استعادة الفيديوهات المخفية"
   },

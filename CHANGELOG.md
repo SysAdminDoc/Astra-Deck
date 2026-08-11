@@ -43,6 +43,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   accessibility names now use locale keys, removing 13 more literals.
 - Subscription-group queue, export/import, digest, AI-tag, and recovery
   feedback now use locale keys; the module’s rendered-sink debt is now zero.
+- Video Hider subscription-guard banners, page actions, quick-action labels,
+  and feedback now use locale keys, removing 28 grandfathered literals from
+  the ratchet baseline.
 - Accessibility and contrast audits now resolve the popup/side-panel CSS token
   cascade and exercise real keyboard focus order, focus traps, forced colors,
   and narrow settings reflow in a headless DOM.

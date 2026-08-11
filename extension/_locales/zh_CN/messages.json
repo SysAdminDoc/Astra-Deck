@@ -6403,6 +6403,84 @@
   "videoHiderRestoreHiddenVideosTpl": {
     "message": "已恢复 {count} 个隐藏视频"
   },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "打开订阅加载控制"
+  },
+  "videoHiderSubsLoadChipTitle": {
+    "message": "订阅已暂停"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "已扫描 {loaded} 个视频，其中隐藏 {hidden} 个"
+  },
+  "videoHiderSubsResume": {
+    "message": "继续"
+  },
+  "videoHiderSubsGuard": {
+    "message": "订阅保护"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "订阅动态已暂停"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "已扫描视频中有 {percent} 被隐藏，因此 Astra Deck 在动态继续经过更多空批次前暂停了自动加载。"
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "继续加载"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "查看过滤器"
+  },
+  "videoHiderSubsKeepPaused": {
+    "message": "保持暂停"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "已扫描"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "连续"
+  },
+  "videoHiderHiddenToast": {
+    "message": "视频已隐藏"
+  },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "频道屏蔽已禁用"
+  },
+  "videoHiderBlockedChannelToast": {
+    "message": "已屏蔽：{name}"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} 已经屏蔽"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "恢复本页隐藏视频"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "本页没有隐藏视频"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "恢复本页 {count} 个隐藏视频"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "本页没有可移除的隐藏视频"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "移除本页 {count} 个隐藏视频"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "没有可隐藏的可见视频"
+  },
+  "videoHiderUndoAll": {
+    "message": "全部撤销"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "已恢复所有视频"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "已从本页移除 {count} 个隐藏视频"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Video Hider 快速操作"
+  },
   "videoHiderHiddenVideosRestored": {
     "message": "隐藏的视频已恢复"
   },

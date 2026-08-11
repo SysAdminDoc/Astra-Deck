@@ -20310,6 +20310,7 @@ if (typeof globalThis !== "undefined") {
                 return {
                     cancel() {},
                     promise: Promise.resolve({
+                        // i18n-static: internal batch diagnostic label.
                         label: 'video-hider:fallback',
                         total: list.length,
                         processed: list.length,
@@ -20332,8 +20333,8 @@ if (typeof globalThis !== "undefined") {
 
         return {
             id: 'hideVideosFromHome',
-            name: 'Video Hider',
-            description: 'Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking.',
+            name: t('feature_hideVideosFromHome_name', 'Video Hider'),
+            description: t('feature_hideVideosFromHome_desc', 'Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking.'),
             group: 'Content',
             icon: 'eye-off',
             isParent: true,
@@ -20443,18 +20444,20 @@ if (typeof globalThis !== "undefined") {
                 const summaryBtn = document.createElement('button');
                 summaryBtn.type = 'button';
                 summaryBtn.className = 'ytkit-subs-load-chip__main';
-                summaryBtn.setAttribute('aria-label', 'Open subscription load controls');
+                summaryBtn.setAttribute('aria-label', t('videoHiderSubsLoadControlsAria', 'Open subscription load controls'));
 
                 const copy = document.createElement('span');
                 copy.className = 'ytkit-subs-load-chip__copy';
 
                 const title = document.createElement('span');
                 title.className = 'ytkit-subs-load-chip__title';
-                title.textContent = 'Subscriptions Paused';
+                title.textContent = t('videoHiderSubsLoadChipTitle', 'Subscriptions Paused');
 
                 const meta = document.createElement('span');
                 meta.className = 'ytkit-subs-load-chip__meta';
-                meta.textContent = `${this._formatSubsLoadCount(this._subsLoadState.totalVideosHidden)} hidden of ${this._formatSubsLoadCount(this._subsLoadState.totalVideosLoaded)} scanned`;
+                meta.textContent = t('videoHiderSubsLoadSummaryTpl', '{hidden} hidden of {loaded} scanned')
+                    .replace('{hidden}', this._formatSubsLoadCount(this._subsLoadState.totalVideosHidden))
+                    .replace('{loaded}', this._formatSubsLoadCount(this._subsLoadState.totalVideosLoaded));
                 meta.setAttribute('translate', 'no');
 
                 copy.appendChild(title);
@@ -20465,7 +20468,7 @@ if (typeof globalThis !== "undefined") {
                 const resumeBtn = document.createElement('button');
                 resumeBtn.type = 'button';
                 resumeBtn.className = 'ytkit-subs-load-chip__resume';
-                resumeBtn.textContent = 'Resume';
+                resumeBtn.textContent = t('videoHiderSubsResume', 'Resume');
                 resumeBtn.addEventListener('click', () => this._resumeSubsLoading());
 
                 chip.appendChild(summaryBtn);
@@ -20548,21 +20551,22 @@ if (typeof globalThis !== "undefined") {
 
                 const eyebrow = document.createElement('div');
                 eyebrow.className = 'ytkit-subs-load-banner__eyebrow';
-                eyebrow.textContent = 'Subscriptions Guard';
+                eyebrow.textContent = t('videoHiderSubsGuard', 'Subscriptions Guard');
 
                 const title = document.createElement('div');
                 title.className = 'ytkit-subs-load-banner__title';
-                title.textContent = 'Subscription Feed Paused';
+                title.textContent = t('videoHiderSubsLoadPaused', 'Subscription Feed Paused');
 
                 const subtitle = document.createElement('div');
                 subtitle.className = 'ytkit-subs-load-banner__subtitle';
-                subtitle.textContent = `${this._formatSubsLoadPercent(this._subsLoadState.totalVideosHidden, this._subsLoadState.totalVideosLoaded)} of scanned videos were hidden, so Astra Deck paused auto-loading before the feed churned through more empty batches.`;
+                subtitle.textContent = t('videoHiderSubsPauseReasonTpl', '{percent} of scanned videos were hidden, so Astra Deck paused auto-loading before the feed churned through more empty batches.')
+                    .replace('{percent}', this._formatSubsLoadPercent(this._subsLoadState.totalVideosHidden, this._subsLoadState.totalVideosLoaded));
 
                 const stats = document.createElement('div');
                 stats.className = 'ytkit-subs-load-banner__stats';
-                stats.appendChild(this._createSubsLoadStat('Hidden', this._formatSubsLoadCount(this._subsLoadState.totalVideosHidden)));
-                stats.appendChild(this._createSubsLoadStat('Scanned', this._formatSubsLoadCount(this._subsLoadState.totalVideosLoaded)));
-                stats.appendChild(this._createSubsLoadStat('Streak', this._formatSubsLoadCount(this._subsLoadState.consecutiveHiddenBatches)));
+                stats.appendChild(this._createSubsLoadStat(t('statHidden', 'Hidden'), this._formatSubsLoadCount(this._subsLoadState.totalVideosHidden)));
+                stats.appendChild(this._createSubsLoadStat(t('videoHiderSubsScannedStat', 'Scanned'), this._formatSubsLoadCount(this._subsLoadState.totalVideosLoaded)));
+                stats.appendChild(this._createSubsLoadStat(t('videoHiderSubsStreakStat', 'Streak'), this._formatSubsLoadCount(this._subsLoadState.consecutiveHiddenBatches)));
 
                 textContainer.appendChild(eyebrow);
                 textContainer.appendChild(title);
@@ -20576,19 +20580,19 @@ if (typeof globalThis !== "undefined") {
                 const resumeBtn = document.createElement('button');
                 resumeBtn.type = 'button';
                 resumeBtn.className = 'ytkit-subs-load-banner__btn ytkit-subs-load-banner__btn--primary';
-                resumeBtn.textContent = 'Resume Loading';
+                resumeBtn.textContent = t('videoHiderSubsResumeLoading', 'Resume Loading');
                 resumeBtn.addEventListener('click', () => this._resumeSubsLoading());
 
                 const settingsBtn = document.createElement('button');
                 settingsBtn.type = 'button';
                 settingsBtn.className = 'ytkit-subs-load-banner__btn';
-                settingsBtn.textContent = 'Review Filters';
+                settingsBtn.textContent = t('videoHiderSubsReviewFilters', 'Review Filters');
                 settingsBtn.addEventListener('click', () => setSettingsPanelOpen(true));
 
                 const keepPausedBtn = document.createElement('button');
                 keepPausedBtn.type = 'button';
                 keepPausedBtn.className = 'ytkit-subs-load-banner__btn ytkit-subs-load-banner__btn--quiet';
-                keepPausedBtn.textContent = 'Keep Paused';
+                keepPausedBtn.textContent = t('videoHiderSubsKeepPaused', 'Keep Paused');
                 keepPausedBtn.addEventListener('click', () => this._collapseLoadBlockedBanner());
 
                 buttonContainer.appendChild(resumeBtn);
@@ -21912,16 +21916,16 @@ if (typeof globalThis !== "undefined") {
                 this._applyVideoHiddenState(element, true, 'manual');
                 this._lastHidden = { type: 'video', id: videoId, element, removedAllowed };
                 this._updatePageActionButtons();
-                this._showToast('Video hidden', [
-                    { text: 'Undo', onClick: () => this._undoHide() },
-                    { text: 'Manage', onClick: () => this._showManager() }
+                this._showToast(t('videoHiderHiddenToast', 'Video hidden'), [
+                    { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoHide() },
+                    { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
                 ]);
             },
 
             _blockChannel(channelInfo, element) {
                 if (!channelInfo) return;
                 if (appState.settings.hideVideosAllowChannelBlock === false) {
-                    showToast('Channel blocking is disabled', '#6b7280');
+                    showToast(t('videoHiderChannelBlockingDisabled', 'Channel blocking is disabled'), '#6b7280');
                     return;
                 }
                 if (this._isChannelAllowlistMode()) {
@@ -21942,9 +21946,11 @@ if (typeof globalThis !== "undefined") {
                 const record = result.record || channelInfo;
                 this._hideChannelVideos(record);
                 this._lastHidden = { type: 'channel', info: record };
-                this._showToast(result.added ? `Blocked: ${record.name}` : `${record.name} is already blocked`, [
-                    { text: 'Undo', onClick: () => this._undoHide() },
-                    { text: 'Manage', onClick: () => this._showManager() }
+                this._showToast(result.added
+                    ? t('videoHiderBlockedChannelToast', 'Blocked: {name}').replace('{name}', record.name)
+                    : t('videoHiderAlreadyBlockedChannelToast', '{name} is already blocked').replace('{name}', record.name), [
+                    { text: t('toastActionUndo', 'Undo'), onClick: () => this._undoHide() },
+                    { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
                 ]);
             },
 
@@ -22338,6 +22344,7 @@ if (typeof globalThis !== "undefined") {
                     }
                     : (el) => this._processVideoElement(el);
                 const handle = runBudgetedElementBatch(videos, processOne, {
+                    // i18n-static: internal batch diagnostic label.
                     label: 'video-hider:process-all',
                     chunkSize: 60,
                     budgetMs: 8,
@@ -22417,23 +22424,28 @@ if (typeof globalThis !== "undefined") {
                     if (!(btn instanceof HTMLButtonElement)) return;
                     btn.disabled = hiddenCount === 0;
                     btn.title = hiddenCount === 0
-                        ? 'No hidden videos on this page'
-                        : `Restore ${hiddenCount} hidden video${hiddenCount === 1 ? '' : 's'} on this page`;
+                        ? t('videoHiderRestorePageNone', 'No hidden videos on this page')
+                        : t('videoHiderRestorePageTpl', 'Restore {count} hidden videos on this page')
+                            .replace('{count}', String(hiddenCount));
                     btn.setAttribute('aria-label', btn.title);
                 });
                 document.querySelectorAll('.ytkit-hide-all-remove-btn').forEach(btn => {
                     if (!(btn instanceof HTMLButtonElement)) return;
                     btn.disabled = removableCount === 0;
                     btn.title = removableCount === 0
-                        ? 'No hidden videos to remove from this page'
-                        : `Remove ${removableCount} hidden video${removableCount === 1 ? '' : 's'} from this page`;
+                        ? t('videoHiderRemovePageNone', 'No hidden videos to remove from this page')
+                        : t('videoHiderRemovePageTpl', 'Remove {count} hidden videos from this page')
+                            .replace('{count}', String(removableCount));
                     btn.setAttribute('aria-label', btn.title);
                 });
             },
 
             _hideAllVideos() {
                 const videos = this._getVisibleVideos();
-                if (videos.length === 0) { showToast('No visible videos to hide', '#6b7280'); return; }
+                if (videos.length === 0) {
+                    showToast(t('videoHiderNoVisibleVideos', 'No visible videos to hide'), '#6b7280');
+                    return;
+                }
                 const hidden = this._getHiddenVideos();
                 let newlyHidden = 0;
                 const removedAllowed = this._removeAllowedVideos(videos.map(v => v.id));
@@ -22446,9 +22458,9 @@ if (typeof globalThis !== "undefined") {
                 }
                 this._setHiddenVideos(hidden);
                 this._updatePageActionButtons();
-                this._showToast(`Hidden ${newlyHidden} videos`, [
-                    { text: 'Undo All', onClick: () => this._undoHideAll(videos, removedAllowed) },
-                    { text: 'Manage', onClick: () => this._showManager() }
+                this._showToast(t('bulkHiddenTpl', 'Hidden {count} videos').replace('{count}', String(newlyHidden)), [
+                    { text: t('videoHiderUndoAll', 'Undo All'), onClick: () => this._undoHideAll(videos, removedAllowed) },
+                    { text: t('toastActionManage', 'Manage'), onClick: () => this._showManager() }
                 ]);
             },
 
@@ -22460,13 +22472,13 @@ if (typeof globalThis !== "undefined") {
                 this._setHiddenVideos(hidden.filter(id => !removeSet.has(id)));
                 if (removedAllowed.length > 0) this._addAllowedVideos(removedAllowed, { force: true });
                 this._updatePageActionButtons();
-                showToast('Restored all videos', '#22c55e');
+                showToast(t('videoHiderRestoredAllVideos', 'Restored all videos'), '#22c55e');
             },
 
             _restoreHiddenVideosOnPage() {
                 const hiddenIds = this._getRestorableVideoIdsOnPage();
                 if (hiddenIds.length === 0) {
-                    showToast('No hidden videos on this page', '#6b7280');
+                    showToast(t('videoHiderRestorePageNone', 'No hidden videos on this page'), '#6b7280');
                     this._updatePageActionButtons();
                     return;
                 }
@@ -22482,10 +22494,11 @@ if (typeof globalThis !== "undefined") {
                 });
                 this._processAllVideos();
                 this._updatePageActionButtons();
-                showToast(`Restored ${hiddenIds.length} hidden video${hiddenIds.length === 1 ? '' : 's'}`, '#22c55e', {
+                showToast(t('videoHiderRestoreHiddenVideosTpl', 'Restored {count} hidden videos')
+                    .replace('{count}', String(hiddenIds.length)), '#22c55e', {
                     duration: 5,
                     action: {
-                        text: 'Undo',
+                        text: t('toastActionUndo', 'Undo'),
                         onClick: () => {
                             const restored = this._getHiddenVideos();
                             const merged = [...new Set([...restored, ...hiddenIds])];
@@ -22501,16 +22514,17 @@ if (typeof globalThis !== "undefined") {
             _removeHiddenVideosOnPage() {
                 const hiddenItems = this._getHiddenVideoElementsOnPage();
                 if (hiddenItems.length === 0) {
-                    showToast('No hidden videos to remove from this page', '#6b7280');
+                    showToast(t('videoHiderRemovePageNone', 'No hidden videos to remove from this page'), '#6b7280');
                     this._updatePageActionButtons();
                     return;
                 }
                 const ids = hiddenItems.map(item => item.id).filter(Boolean);
                 hiddenItems.forEach(item => this._removeVideoElement(item.element));
                 this._updatePageActionButtons();
-                this._showToast(`Removed ${hiddenItems.length} hidden video${hiddenItems.length === 1 ? '' : 's'} from this page`, [
+                this._showToast(t('videoHiderRemovedPageTpl', 'Removed {count} hidden videos from this page')
+                    .replace('{count}', String(hiddenItems.length)), [
                     {
-                        text: 'Undo',
+                        text: t('toastActionUndo', 'Undo'),
                         onClick: () => {
                             this._restoreRemovedVideoNodes(new Set(ids));
                             this._updatePageActionButtons();
@@ -22529,13 +22543,13 @@ if (typeof globalThis !== "undefined") {
                 const group = document.createElement('div');
                 group.className = `${className} ytkit-hide-all-group`;
                 group.setAttribute('role', 'group');
-                group.setAttribute('aria-label', 'Video Hider quick actions');
+                group.setAttribute('aria-label', t('videoHiderQuickActionsAria', 'Video Hider quick actions'));
 
                 const restoreBtn = document.createElement('button');
                 restoreBtn.type = 'button';
                 restoreBtn.className = 'ytkit-watch-action-btn ytkit-hide-all-restore-btn';
-                restoreBtn.title = 'Restore hidden videos on this page';
-                restoreBtn.setAttribute('aria-label', 'Restore hidden videos on this page');
+                restoreBtn.title = t('videoHiderRestorePageTitle', 'Restore hidden videos on this page');
+                restoreBtn.setAttribute('aria-label', restoreBtn.title);
                 const restoreSvg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
                 restoreSvg.appendChild(createSvgElement('path', { d: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z' }));
                 restoreSvg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '3' }));
@@ -22548,8 +22562,8 @@ if (typeof globalThis !== "undefined") {
                 const removeBtn = document.createElement('button');
                 removeBtn.type = 'button';
                 removeBtn.className = 'ytkit-watch-action-btn ytkit-hide-all-remove-btn';
-                removeBtn.title = 'Remove hidden videos on this page';
-                removeBtn.setAttribute('aria-label', 'Remove hidden videos on this page');
+                removeBtn.title = t('videoHiderRemovePage', 'Remove Hidden Videos On This Page');
+                removeBtn.setAttribute('aria-label', removeBtn.title);
                 const removeSvg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
                 removeSvg.appendChild(createSvgElement('path', { d: 'M3 6h18' }));
                 removeSvg.appendChild(createSvgElement('path', { d: 'M8 6V4h8v2' }));
@@ -22565,7 +22579,7 @@ if (typeof globalThis !== "undefined") {
                 const hideAllBtn = document.createElement('button');
                 hideAllBtn.type = 'button';
                 hideAllBtn.className = 'ytkit-watch-action-btn ytkit-hide-all-btn';
-                hideAllBtn.title = 'Hide all visible videos on this page';
+                hideAllBtn.title = t('hideAllButtonTitle', 'Hide all visible videos on this page');
                 const svg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
                 svg.appendChild(createSvgElement('path', { d: 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24' }));
                 svg.appendChild(createSvgElement('line', { x1: '1', y1: '1', x2: '23', y2: '23' }));
@@ -22575,7 +22589,7 @@ if (typeof globalThis !== "undefined") {
                 hideAllBtn.appendChild(iconWrap);
                 const text = document.createElement('span');
                 text.className = 'ytkit-watch-action-btn__label';
-                text.textContent = 'Hide All';
+                text.textContent = t('hideAllButtonLabel', 'Hide All');
                 hideAllBtn.appendChild(text);
                 hideAllBtn.addEventListener('click', () => this._hideAllVideos());
                 group.appendChild(restoreBtn);
@@ -22866,6 +22880,7 @@ if (typeof globalThis !== "undefined") {
                             batchBuffer.push({ element: el, hidden: wasHidden });
                         }
                     }, {
+                        // i18n-static: internal batch diagnostic label.
                         label: 'video-hider:mutation-batch',
                         chunkSize: 80,
                         budgetMs: 8,
