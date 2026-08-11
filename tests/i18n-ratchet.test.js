@@ -92,8 +92,8 @@ test('download, video-notes, and settings-panel surfaces keep rendered copy behi
         'download UI copy debt should stay at zero after the first burn-down pass');
     assert.equal(baseline.entries['extension/features/video-notes/index.js'], undefined,
         'video-notes copy debt should stay at zero after the first burn-down pass');
-    assert.equal(baseline.entries['extension/features/settings-panel/index.js'].count, 28,
-        'settings-panel toggle-copy pass should remove 59 grandfathered literals');
+    assert.equal(baseline.entries['extension/features/settings-panel/index.js'], undefined,
+        'settings-panel rendered sink copy should stay at zero after the burn-down passes');
 
     const downloadSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),

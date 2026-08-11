@@ -230,9 +230,12 @@ function updatePanelInsightState() {
         const savedValue = document.getElementById('ytkit-insight-saved-state');
 
         // i18n-static: numeric enabled/total summary, not user-facing copy.
-        if (enabledValue) enabledValue.textContent = `${enabledCount}/${topLevelFeatures.length}`;
+        if (enabledValue) enabledValue.textContent = t(
+            'settingsCategoryFractionTpl',
+            '{enabled}/{total}'
+        ).replace('{enabled}', enabledCount).replace('{total}', topLevelFeatures.length);
         if (sectionValue) sectionValue.textContent = String(document.querySelectorAll('.ytkit-pane').length);
-        if (activeSectionValue) activeSectionValue.textContent = activeNav?.textContent || 'Video Player';
+        if (activeSectionValue) activeSectionValue.textContent = activeNav?.textContent || t('settingsActiveSectionFallback', 'Video Player');
         if (profileValue) profileValue.textContent = getActiveSettingsProfileLabel();
         if (savedValue) savedValue.textContent = t('settingsInsightsSavedLocally', 'Saved locally');
     }
@@ -496,12 +499,16 @@ function buildSettingsPanel() {
             btn.setAttribute('aria-controls', `ytkit-pane-${catId}`);
             btn.setAttribute('aria-selected', String((extraClass || '').includes('active')));
             btn.tabIndex = (extraClass || '').includes('active') ? 0 : -1;
-            btn.setAttribute('aria-label', `${cat}. ${CATEGORY_META[cat]?.summary || ''}`);
+            const categorySummary = CATEGORY_META[cat]?.summary || t('settingsCategorySummaryFallback', 'Category settings');
+            btn.setAttribute('aria-label', t(
+                'settingsCategoryAriaTpl',
+                '{category}. {summary}'
+            ).replace('{category}', cat).replace('{summary}', categorySummary));
             const iconWrap = document.createElement('span');
             iconWrap.className = 'ytkit-nav-icon';
             iconWrap.style.setProperty('--cat-color', config.color);
             iconWrap.appendChild(iconNode);
-            btn.title = CATEGORY_META[cat]?.summary || cat;
+            btn.title = categorySummary || cat;
             const copyWrap = document.createElement('span');
             copyWrap.className = 'ytkit-nav-copy';
             const labelSpan = document.createElement('span');
@@ -509,7 +516,7 @@ function buildSettingsPanel() {
             labelSpan.textContent = cat;
             const metaSpan = document.createElement('span');
             metaSpan.className = 'ytkit-nav-meta';
-            metaSpan.textContent = CATEGORY_META[cat]?.summary || 'Category settings';
+            metaSpan.textContent = categorySummary;
             const countSpan = document.createElement('span');
             countSpan.className = 'ytkit-nav-count';
             countSpan.textContent = countText;
@@ -637,7 +644,16 @@ function buildSettingsPanel() {
             const topLevelCategoryFeatures = categoryFeatures.filter((feature) => !feature.isSubFeature);
             const enabledCount = countEnabledToggleFeatures(topLevelCategoryFeatures);
             const totalCount = topLevelCategoryFeatures.length;
-            const { btn, catId } = makeNavBtn(cat, config, (ICONS[config.icon] || ICONS.settings)(), `${enabledCount}/${totalCount}`, '', index === 0 ? ' active' : '');
+            const { btn, catId } = makeNavBtn(
+                cat,
+                config,
+                (ICONS[config.icon] || ICONS.settings)(),
+                t('settingsCategoryFractionTpl', '{enabled}/{total}')
+                    .replace('{enabled}', enabledCount)
+                    .replace('{total}', totalCount),
+                '',
+                index === 0 ? ' active' : ''
+            );
             btn.dataset.totalCount = String(totalCount);
             addDragReorder(btn, catId);
             navList.appendChild(btn);
@@ -1269,13 +1285,16 @@ function buildSettingsPanel() {
                             videoHiderFeature._restoreRemovedVideoNodes?.(new Set(backup));
                             videoHiderFeature._processAllVideos();
                             renderTabContent('videos');
-                            showToast(`Restored ${backup.length} hidden videos`, '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            showToast(t(
+                                'videoHiderRestoreHiddenVideosTpl',
+                                'Restored {count} hidden videos'
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
                                 videoHiderFeature._setHiddenVideos(backup);
                                 videoHiderFeature._removeAllowedVideos?.(allowedAdded);
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('videos');
                                 updateVideoHiderMeta();
-                                showToast('Hidden videos restored', '#22c55e');
+                                showToast(t('videoHiderHiddenVideosRestored', 'Hidden videos restored'), '#22c55e');
                             }}});
                         };
                         tabContent.appendChild(clearBtn);
@@ -1293,12 +1312,15 @@ function buildSettingsPanel() {
                             videoHiderFeature._processAllVideos?.();
                             renderTabContent('videos');
                             updateVideoHiderMeta();
-                            showToast(`Cleared ${backup.length} hidden list entries`, '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            showToast(t(
+                                'videoHiderClearHiddenEntriesTpl',
+                                'Cleared {count} hidden list entries'
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
                                 videoHiderFeature._setHiddenVideos(backup);
                                 videoHiderFeature._processAllVideos?.();
                                 renderTabContent('videos');
                                 updateVideoHiderMeta();
-                                showToast('Hidden list restored', '#22c55e');
+                                showToast(t('videoHiderHiddenListRestored', 'Hidden list restored'), '#22c55e');
                             }}});
                         };
                         tabContent.appendChild(clearListBtn);
@@ -1459,12 +1481,15 @@ function buildSettingsPanel() {
                             videoHiderFeature._setAllowedVideos([]);
                             videoHiderFeature._processAllVideos?.();
                             renderTabContent('allowed');
-                            showToast(`Cleared ${backup.length} allowed videos`, '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
+                            showToast(t(
+                                'videoHiderClearAllowedVideosTpl',
+                                'Cleared {count} allowed videos'
+                            ).replace('{count}', backup.length), '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
                                 videoHiderFeature._setAllowedVideos(backup);
                                 videoHiderFeature._processAllVideos?.();
                                 renderTabContent('allowed');
                                 updateVideoHiderMeta();
-                                showToast('Allowed videos restored', '#22c55e');
+                                showToast(t('videoHiderAllowedVideosRestored', 'Allowed videos restored'), '#22c55e');
                             }}});
                         };
                         tabContent.appendChild(clearBtn);
@@ -1648,7 +1673,10 @@ function buildSettingsPanel() {
                     const removeCurrentPageBtn = document.createElement('button');
                     removeCurrentPageBtn.type = 'button';
                     removeCurrentPageBtn.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
-                    removeCurrentPageBtn.textContent = 'Remove Hidden Videos On This Page';
+                    removeCurrentPageBtn.textContent = t(
+                        'videoHiderRemovePage',
+                        'Remove Hidden Videos On This Page'
+                    );
                     removeCurrentPageBtn.onclick = () => {
                         videoHiderFeature?._removeHiddenVideosOnPage?.();
                         updateVideoHiderMeta();
@@ -2031,7 +2059,9 @@ function buildSettingsPanel() {
                     const videoCount = videoHiderFeature?._getHiddenVideos()?.length || 0;
                     const allowedCount = videoHiderFeature?._getAllowedVideos()?.length || 0;
                     const channelCount = videoHiderFeature?._getBlockedChannels()?.length || 0;
-                    [{ label: 'Hidden Videos', value: videoCount }, { label: 'Allowed Videos', value: allowedCount }, { label: 'Blocked Channels', value: channelCount }].forEach(stat => {
+                    [{ label: t('videoHiderHiddenVideosTab', 'Hidden Videos'), value: videoCount },
+                        { label: t('videoHiderAllowedVideosTab', 'Allowed Videos'), value: allowedCount },
+                        { label: t('videoHiderBlockedChannelsTab', 'Blocked Channels'), value: channelCount }].forEach(stat => {
                         const statEl = document.createElement('div');
                         statEl.className = 'ytkit-vh-stat-card';
                         const val = document.createElement('div');
@@ -2099,13 +2129,16 @@ function buildSettingsPanel() {
 
             const paneEyebrow = document.createElement('span');
             paneEyebrow.className = 'ytkit-pane-eyebrow';
-            paneEyebrow.textContent = CATEGORY_META[cat]?.summary || 'Settings group';
+            paneEyebrow.textContent = CATEGORY_META[cat]?.summary || t('settingsGroupSummaryFallback', 'Settings group');
 
             const paneTitleH2 = document.createElement('h2');
             paneTitleH2.textContent = cat;
             const paneDescription = document.createElement('p');
             paneDescription.className = 'ytkit-pane-description';
-            paneDescription.textContent = CATEGORY_META[cat]?.description || 'Adjust how this part of YouTube behaves.';
+            paneDescription.textContent = CATEGORY_META[cat]?.description || t(
+                'settingsPaneDescriptionFallback',
+                'Adjust how this part of YouTube behaves.'
+            );
             paneDescription.title = paneDescription.textContent;
             const paneMeta = document.createElement('div');
             paneMeta.className = 'ytkit-pane-meta';
@@ -2113,10 +2146,12 @@ function buildSettingsPanel() {
             paneEnabledChip.className = 'ytkit-pane-chip';
             paneEnabledChip.dataset.stat = 'enabled';
             paneEnabledChip.dataset.category = catId;
-            paneEnabledChip.textContent = `${countEnabledToggleFeatures(parentFeatures)} On`;
+            paneEnabledChip.textContent = t('settingsCategoryOnTpl', '{count} On')
+                .replace('{count}', countEnabledToggleFeatures(parentFeatures));
             const paneTotalChip = document.createElement('span');
             paneTotalChip.className = 'ytkit-pane-chip';
-            paneTotalChip.textContent = `${parentFeatures.length} Items`;
+            paneTotalChip.textContent = t('settingsCategoryItemsTpl', '{count} Items')
+                .replace('{count}', parentFeatures.length);
             paneMeta.appendChild(paneEnabledChip);
             paneMeta.appendChild(paneTotalChip);
 
@@ -2651,7 +2686,7 @@ function buildSettingsPanel() {
         githubLink.target = '_blank';
         githubLink.rel = 'noopener noreferrer';
         githubLink.className = 'ytkit-github';
-        githubLink.title = 'View on GitHub';
+        githubLink.title = t('settingsGitHubTitle', 'View on GitHub');
         githubLink.appendChild(ICONS.github());
 
         // Local downloader installer button
@@ -2659,8 +2694,11 @@ function buildSettingsPanel() {
         ytToolsBtn.type = 'button';
         ytToolsBtn.className = 'ytkit-github';
         ytToolsBtn.classList.add('ytkit-downloader-link');
-        ytToolsBtn.title = 'Download the Astra Deck downloader setup file';
-        ytToolsBtn.setAttribute('aria-label', 'Download the Astra Deck downloader setup file');
+        ytToolsBtn.title = t('settingsDownloaderSetupTitle', 'Download the Astra Deck downloader setup file');
+        ytToolsBtn.setAttribute('aria-label', t(
+            'settingsDownloaderSetupTitle',
+            'Download the Astra Deck downloader setup file'
+        ));
         ytToolsBtn.style.cssText = 'cursor: pointer;';
         const dlIcon = ICONS.download();
         dlIcon.style.color = 'currentColor';
@@ -2675,7 +2713,7 @@ function buildSettingsPanel() {
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
-        versionSpan.textContent = 'v' + YTKIT_VERSION;
+        versionSpan.textContent = t('settingsVersionPrefix', 'v') + YTKIT_VERSION;
 
         footerLeft.appendChild(githubLink);
         footerLeft.appendChild(ytToolsLink);
@@ -2689,7 +2727,7 @@ function buildSettingsPanel() {
         footerStatus.setAttribute('role', 'status');
         footerStatus.setAttribute('aria-live', 'polite');
         footerStatus.dataset.tone = 'idle';
-        footerStatus.textContent = 'Saved';
+        footerStatus.textContent = t('settingsFooterSaved', 'Saved');
 
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
@@ -2697,28 +2735,28 @@ function buildSettingsPanel() {
         footerActions.className = 'ytkit-action-stack ytkit-footer-actions';
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-export',
-            label: 'Export',
+            label: t('commonExport', 'Export'),
             icon: 'download',
             variant: 'secondary',
             ariaLabel: `Export ${BRAND.name} settings`
         }));
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-import',
-            label: 'Import',
+            label: t('commonImport', 'Import'),
             icon: 'upload',
             variant: 'secondary',
             ariaLabel: `Import ${BRAND.name} settings`
         }));
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-reset-active-section',
-            label: 'Reset',
+            label: t('commonReset', 'Reset'),
             icon: 'settings',
             variant: 'danger',
             ariaLabel: 'Reset the active settings section to defaults'
         }));
         footerActions.appendChild(createPanelActionButton({
             id: 'ytkit-close-footer',
-            label: 'Done',
+            label: t('commonDone', 'Done'),
             icon: 'check',
             variant: 'primary',
             ariaLabel: t('panelCloseAria', 'Close settings')
@@ -2810,7 +2848,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
         if (isSubFeature) {
             const typeBadge = document.createElement('span');
             typeBadge.className = 'ytkit-feature-badge';
-            typeBadge.textContent = 'Sub';
+            typeBadge.textContent = t('settingsSubFeatureBadge', 'Sub');
             meta.appendChild(typeBadge);
             hasMeta = true;
         }
@@ -2944,8 +2982,11 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             const clearBtn = document.createElement('button');
             clearBtn.type = 'button';
             clearBtn.className = 'ytkit-color-clear';
-            clearBtn.setAttribute('aria-label', `Clear ${featureName}`);
-            clearBtn.textContent = 'Clear';
+            clearBtn.setAttribute('aria-label', t(
+                'settingsFeatureClearAriaTpl',
+                'Clear {featureName}'
+            ).replace('{featureName}', featureName));
+            clearBtn.textContent = t('commonClear', 'Clear');
             clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('input', { bubbles: true })); };
             wrapper.appendChild(colorInput);
             wrapper.appendChild(clearBtn);
@@ -3022,7 +3063,10 @@ function updateAllToggleStates() {
             const totalCount = Number(btn.dataset.totalCount || paneFeatures.length || 0);
             const countEl = btn.querySelector('.ytkit-nav-count');
             if (countEl) {
-                countEl.textContent = `${enabledCount}/${totalCount}`;
+                countEl.textContent = t(
+                    'settingsCategoryFractionTpl',
+                    '{enabled}/{total}'
+                ).replace('{enabled}', enabledCount).replace('{total}', totalCount);
                 countEl.style.color = '';
             }
             const stateEl = btn.querySelector('.ytkit-nav-state');
@@ -3030,7 +3074,10 @@ function updateAllToggleStates() {
                 stateEl.dataset.tone = enabledCount === 0 ? 'empty' : enabledCount >= totalCount ? 'complete' : 'partial';
             }
             const paneEnabledChip = pane.querySelector('.ytkit-pane-chip[data-stat="enabled"]');
-            if (paneEnabledChip) paneEnabledChip.textContent = `${enabledCount} On`;
+            if (paneEnabledChip) paneEnabledChip.textContent = t(
+                'settingsCategoryOnTpl',
+                '{count} On'
+            ).replace('{count}', enabledCount);
         });
 
         const sidebarEnabledCount = document.getElementById('ytkit-sidebar-enabled-count');
@@ -3576,7 +3623,14 @@ function attachUIEventListeners() {
                                 const cf = getFeatureById(cid);
                                 return getFeatureName(cf) || cid;
                             }).join(', ');
-                            showToast('Auto-disabled ' + conflictNames + ' — ' + (CONFLICT_MAP[featureId].reason || 'conflicts with ' + (getFeatureName(feature) || featureId)), '#f59e0b', { duration: 5 });
+                            const conflictReason = CONFLICT_MAP[featureId].reason || t(
+                                'settingsConflictWithTpl',
+                                'conflicts with {featureName}'
+                            ).replace('{featureName}', getFeatureName(feature) || featureId);
+                            showToast(t(
+                                'settingsAutoDisabledConflictTpl',
+                                'Auto-disabled {features} — {reason}'
+                            ).replace('{features}', conflictNames).replace('{reason}', conflictReason), '#f59e0b', { duration: 5 });
                         }
                     }
 

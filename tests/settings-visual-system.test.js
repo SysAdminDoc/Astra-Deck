@@ -137,8 +137,8 @@ test('the settings panel keeps three distinct elevation planes', () => {
         /\.ytkit-panel-status\s*\{[\s\S]*?border:\s*0[\s\S]*?background:\s*transparent[\s\S]*?text-align:\s*start/
     );
     for (const source of [settingsPanel, shell]) {
-        assert.match(source, /footerStatus\.textContent = 'Saved'/);
-        assert.match(source, /id: 'ytkit-close-footer',[\s\S]*?label: 'Done'/);
+        assert.match(source, /footerStatus\.textContent = (?:'Saved'|t\('settingsFooterSaved', 'Saved'\))/);
+        assert.match(source, /id: 'ytkit-close-footer',[\s\S]*?label: (?:'Done'|t\('commonDone', 'Done'\))/);
         assert.match(source, /paneDescription\.title = paneDescription\.textContent/);
     }
 });

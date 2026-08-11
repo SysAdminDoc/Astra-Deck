@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "YouTube がカードに再生数を表示している場合、しきい値未満の動画を非表示にします。"
   },
+  "settingsCategorySummaryFallback": {
+    "message": "カテゴリ設定"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}。{summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "設定グループ"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "YouTube のこの部分の動作を調整します。"
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count} 件がオン"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} 項目"
+  },
+  "settingsGitHubTitle": {
+    "message": "GitHub で表示"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "Astra Deck ダウンローダーのセットアップファイルをダウンロード"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "保存済み"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "サブ機能"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "{featureName} を消去"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "動画プレーヤー"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "{count} 本の非表示動画を復元しました"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "非表示動画を復元しました"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "非表示リストの {count} 件を消去しました"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "非表示リストを復元しました"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "許可した動画 {count} 本を消去しました"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "許可した動画を復元しました"
+  },
+  "settingsConflictWithTpl": {
+    "message": "{featureName} と競合します"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "自動的に無効化しました: {features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },

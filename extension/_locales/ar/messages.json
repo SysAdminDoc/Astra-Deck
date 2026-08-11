@@ -6217,6 +6217,72 @@
   "videoHiderHideLowViewDesc": {
     "message": "إخفاء الفيديوهات التي تقل عن حد المشاهدات عندما يعرض YouTube عدد المشاهدات على البطاقة."
   },
+  "settingsCategorySummaryFallback": {
+    "message": "إعدادات الفئة"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "مجموعة الإعدادات"
+  },
+  "settingsPaneDescriptionFallback": {
+    "message": "اضبط طريقة عمل هذا الجزء من YouTube."
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count} مفعّلة"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} عناصر"
+  },
+  "settingsGitHubTitle": {
+    "message": "عرض على GitHub"
+  },
+  "settingsDownloaderSetupTitle": {
+    "message": "تنزيل ملف إعداد أداة تنزيل Astra Deck"
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
+  },
+  "settingsFooterSaved": {
+    "message": "تم الحفظ"
+  },
+  "settingsSubFeatureBadge": {
+    "message": "ميزة فرعية"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "مسح {featureName}"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "مشغّل الفيديو"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "تمت استعادة {count} من الفيديوهات المخفية"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "تمت استعادة الفيديوهات المخفية"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "تم مسح {count} من إدخالات قائمة المخفي"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "تمت استعادة قائمة المخفي"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "تم مسح {count} من الفيديوهات المسموح بها"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "تمت استعادة الفيديوهات المسموح بها"
+  },
+  "settingsConflictWithTpl": {
+    "message": "يتعارض مع {featureName}"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "تم التعطيل تلقائيًا: {features} — {reason}"
+  },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
   },
