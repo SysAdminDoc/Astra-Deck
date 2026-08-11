@@ -9,7 +9,8 @@
 //   1. Every V5_BUNDLE_MODULES entry exists on disk.
 //   2. Every extension/features/*/index.js in the manifest is covered by
 //      V5_BUNDLE_MODULES (new peeled features must be added to the bundle).
-//   3. The userscript file contains the BEGIN/END bundle markers.
+//   3. The userscript file contains the ordered dependency manifest and the
+//      generated Greasy Fork library contains the executable module bodies.
 //
 // Core infrastructure modules (env.js, storage.js, selectors.js, etc.) are
 // NOT required in V5_BUNDLE_MODULES — the userscript provides its own
@@ -325,15 +326,15 @@ for (const js of manifestJsFiles) {
     }
 }
 
-// ── 5. Verify userscript bundle markers AND bundled module CONTENT ──
+// ── 5. Verify dependency manifest AND generated library CONTENT ──
 //
 // Marker presence is not parity. The hardening test that claims to check
 // "verbatim contents" only matches one fingerprint substring per module, so a
 // module edit that misses that single line ships stale to every Tampermonkey
 // install via the raw-main @updateURL — v4.51.2's settings-schema.js did
 // exactly that through three releases. Recompute the bundle region with the
-// same transform sync-userscript.js uses and compare it byte for byte,
-// naming the stale module.
+// same transforms sync-userscript.js uses and compare both artifacts byte for
+// byte, naming the stale module when the library has drifted.
 
 let bundledModuleContentChecked = 0;
 
@@ -341,6 +342,7 @@ try {
     const { resolveUserscriptPath } = require(path.join(REPO_ROOT, 'scripts', 'repo-paths'));
     const usPath = resolveUserscriptPath(REPO_ROOT);
     const usText = fs.readFileSync(usPath, 'utf8');
+    const sync = require(SYNC_SCRIPT);
     const hasBegin = usText.includes('// ── BEGIN v5.0.0 bundled core modules ──');
     const hasEnd = usText.includes('// ── END v5.0.0 bundled core modules ──');
     if (!hasBegin) {
@@ -351,7 +353,6 @@ try {
     }
 
     if (hasBegin && hasEnd) {
-        const sync = require(SYNC_SCRIPT);
         const actualMatch = usText.match(sync.BUNDLE_BEGIN_RE);
         if (!actualMatch) {
             errors.push('Userscript bundle region could not be extracted for content comparison');
@@ -364,32 +365,49 @@ try {
                 errors.push(`Could not rebuild the expected bundle: ${buildError.message}`);
             }
             if (expected && expected !== actual) {
-                // Point at the specific stale module rather than the whole region.
-                const stale = [];
-                for (const rel of sync.V5_BUNDLE_MODULES) {
-                    const header = sync.bundledModuleHeader(rel);
-                    const sliceFrom = (text) => {
-                        const at = text.indexOf(header);
-                        if (at === -1) return null;
-                        const nextAt = text.indexOf('    // ── bundled module: ', at + header.length);
-                        const endAt = nextAt === -1
-                            ? text.indexOf('    // ── END v5.0.0 bundled core modules ──', at)
-                            : nextAt;
-                        return text.slice(at, endAt === -1 ? undefined : endAt);
-                    };
-                    const expectedSlice = sliceFrom(expected);
-                    const actualSlice = sliceFrom(actual);
-                    if (actualSlice === null) stale.push(`${rel} (absent from the bundle)`);
-                    else if (expectedSlice !== actualSlice) stale.push(rel);
-                }
-                if (stale.length) {
-                    errors.push(`Userscript bundle is stale for ${stale.length} module(s): ${stale.join(', ')}. Run \`node sync-userscript.js\`.`);
-                } else {
-                    errors.push('Userscript bundle region differs from the rebuilt bundle (header or ordering drift). Run `node sync-userscript.js`.');
-                }
+                errors.push('Userscript dependency manifest is stale. Run `node sync-userscript.js`.');
             } else if (expected) {
                 bundledModuleContentChecked = sync.V5_BUNDLE_MODULES.length;
             }
+        }
+    }
+
+    const corePath = sync.USERSCRIPT_CORE_SOURCE;
+    if (!fs.existsSync(corePath)) {
+        errors.push('Generated userscript core library is missing; run `node sync-userscript.js`.');
+    } else {
+        const coreText = fs.readFileSync(corePath, 'utf8');
+        const coreRegionRe = /^\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^\/\/ ── END v5\.0\.0 bundled core modules ──/m;
+        const actualCore = coreText.match(coreRegionRe);
+        let expectedCore;
+        try {
+            expectedCore = sync.buildCoreLibrarySource(REPO_ROOT).match(coreRegionRe);
+        } catch (buildError) {
+            errors.push(`Could not rebuild the userscript core library: ${buildError.message}`);
+        }
+        if (!actualCore) {
+            errors.push('Generated userscript core library is missing its module markers.');
+        } else if (expectedCore && actualCore[0] !== expectedCore[0]) {
+            const stale = [];
+            for (const rel of sync.V5_BUNDLE_MODULES) {
+                const header = sync.coreModuleHeader(rel);
+                const sliceFrom = (text) => {
+                    const at = text.indexOf(header);
+                    if (at === -1) return null;
+                    const nextAt = text.indexOf('// ── bundled module: ', at + header.length);
+                    const endAt = nextAt === -1
+                        ? text.indexOf('// ── END v5.0.0 bundled core modules ──', at)
+                        : nextAt;
+                    return text.slice(at, endAt === -1 ? undefined : endAt);
+                };
+                const expectedSlice = sliceFrom(expectedCore[0]);
+                const actualSlice = sliceFrom(actualCore[0]);
+                if (actualSlice === null) stale.push(`${rel} (absent from the library)`);
+                else if (expectedSlice !== actualSlice) stale.push(rel);
+            }
+            errors.push(stale.length
+                ? `Userscript core library is stale for ${stale.length} module(s): ${stale.join(', ')}. Run \`node sync-userscript.js\`.`
+                : 'Userscript core library differs from its source modules. Run `node sync-userscript.js`.');
         }
     }
 } catch (e) {
@@ -431,7 +449,11 @@ for (const id of String(process.env.ASTRA_USERSCRIPT_DRIFT_INJECT_EXTENSION_IDS 
 }
 
 const { resolveUserscriptPath: resolveUs } = require(path.join(REPO_ROOT, 'scripts', 'repo-paths'));
-const usIds = extractFeatureIds(resolveUs(REPO_ROOT));
+const syncForFeatureIds = require(SYNC_SCRIPT);
+const usIds = new Set([
+    ...extractFeatureIds(resolveUs(REPO_ROOT)),
+    ...extractFeatureIds(syncForFeatureIds.USERSCRIPT_CORE_SOURCE),
+]);
 const parity = extIds.size > 0 ? Math.round((usIds.size / extIds.size) * 100) : 0;
 const extOnly = [...extIds].filter(id => !usIds.has(id)).sort();
 

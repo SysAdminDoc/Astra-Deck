@@ -13,7 +13,7 @@ const popup = read('extension/popup.js');
 const popupHtml = read('extension/popup.html');
 const schema = read('extension/core/settings-schema.js');
 const defaults = JSON.parse(read('extension/default-settings.json'));
-const userscript = read('YTKit.user.js');
+const userscript = read('YTKit-core.user.js') + '\n' + read('YTKit.user.js');
 
 test('ordinary settings and imports cannot carry an AI credential', () => {
     assert.equal(Object.hasOwn(defaults, 'aiSummaryApiKey'), false);

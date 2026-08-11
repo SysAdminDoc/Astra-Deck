@@ -2,7 +2,7 @@
 'use strict';
 
 // scripts/check-userscript-symbols.js — CI guard for cross-boundary symbol
-// resolution between the userscript's bundled modules and its monolith.
+// resolution between the userscript's required core library and its monolith.
 //
 // check-userscript-drift.js proves the bundled modules are byte-identical to
 // their extension sources. That is necessary but not sufficient: a bundled
@@ -16,8 +16,8 @@
 // since 2026-07-09, past a byte-for-byte parity gate, a 1,446-test suite and
 // a 20-gate `npm run check`.
 //
-// What this checks: every `<singleton>.<method>(` call inside the bundle
-// region resolves to a member the monolith actually defines.
+// What this checks: every `<singleton>.<method>(` call inside the generated
+// core library resolves to a member the main userscript monolith defines.
 //
 // Scope is DERIVED, not listed. The singleton set is read out of the monolith
 // itself (every top-level `const X = {` object literal below the bundle), so
@@ -31,6 +31,7 @@ const path = require('path');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const USERSCRIPT_PATH = path.join(REPO_ROOT, 'YTKit.user.js');
+const CORE_LIBRARY_PATH = path.join(REPO_ROOT, 'YTKit-core.user.js');
 
 const BEGIN_MARKER = /── BEGIN v5\.0\.0 bundled core modules ──/;
 const END_MARKER = /── END v5\.0\.0 bundled core modules ──/;
@@ -61,18 +62,27 @@ function fail(msg) {
 
 const source = fs.readFileSync(USERSCRIPT_PATH, 'utf8');
 const lines = source.split(/\r?\n/);
+if (!fs.existsSync(CORE_LIBRARY_PATH)) {
+    fail('Generated YTKit-core.user.js is missing — run `node sync-userscript.js`');
+}
+const coreSource = fs.readFileSync(CORE_LIBRARY_PATH, 'utf8');
+const coreLines = coreSource.split(/\r?\n/);
+const monolithEndIdx = lines.findIndex((l) => END_MARKER.test(l));
+if (monolithEndIdx < 0) {
+    fail('Cannot locate the v5.0.0 dependency manifest end marker in YTKit.user.js');
+}
 
-const beginIdx = lines.findIndex((l) => BEGIN_MARKER.test(l));
-const endIdx = lines.findIndex((l) => END_MARKER.test(l));
+const beginIdx = coreLines.findIndex((l) => BEGIN_MARKER.test(l));
+const endIdx = coreLines.findIndex((l) => END_MARKER.test(l));
 if (beginIdx < 0 || endIdx < 0 || endIdx <= beginIdx) {
-    fail('Cannot locate the v5.0.0 bundle markers in YTKit.user.js');
+    fail('Cannot locate the v5.0.0 bundle markers in YTKit-core.user.js');
 }
 
 // ── 1. Derive the singleton set and its members from the monolith body ──
 
 const singletons = new Map(); // name -> Set(member)
 
-for (let i = endIdx + 1; i < lines.length; i++) {
+for (let i = monolithEndIdx + 1; i < lines.length; i++) {
     const def = lines[i].match(SINGLETON_DEF_RE);
     if (!def) continue;
 
@@ -131,7 +141,7 @@ const unresolved = [];
 let callCount = 0;
 
 for (let i = beginIdx; i <= endIdx; i++) {
-    const line = lines[i];
+    const line = coreLines[i];
     let m;
     callRe.lastIndex = 0;
     while ((m = callRe.exec(line)) !== null) {
@@ -147,7 +157,7 @@ for (let i = beginIdx; i <= endIdx; i++) {
 
 if (unresolved.length > 0) {
     console.error('[check-userscript-symbols] Unresolved cross-boundary call(s) —');
-    console.error('  a bundled module calls a monolith method that YTKit.user.js does not define.');
+    console.error('  a required core module calls a monolith method that YTKit.user.js does not define.');
     console.error('  These throw TypeError on click for every userscript user.\n');
     for (const u of unresolved) {
         const defined = singletons.get(u.singleton).size;
@@ -157,5 +167,5 @@ if (unresolved.length > 0) {
     process.exit(1);
 }
 
-console.log(`[check-userscript-symbols] OK — ${callCount} singleton call(s) in the bundle region all resolve`);
+console.log(`[check-userscript-symbols] OK — ${callCount} singleton call(s) in the core library all resolve`);
 console.log(`[check-userscript-symbols] Scope derived from the monolith: ${singletons.size} singleton(s), ${[...singletons.values()].reduce((n, s) => n + s.size, 0)} member(s)`);

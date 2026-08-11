@@ -25,12 +25,19 @@ function readUtf8(...segments) {
     return fs.readFileSync(path.join(repoRoot, ...segments), 'utf8');
 }
 
+function readUserscriptRuntime() {
+    return readUtf8('YTKit-core.user.js') + '\n' + readUtf8('YTKit.user.js');
+}
+
 const sources = Object.freeze({
     ytkit: readUtf8('extension', 'ytkit.js'),
     popup: readUtf8('extension', 'popup.js'),
     popupHtml: readUtf8('extension', 'popup.html'),
     background: readUtf8('extension', 'background.js'),
-    userscript: readUtf8('YTKit.user.js'),
+    // Greasy Fork loads the core library before the main artifact. Source
+    // assertions that describe the effective userscript runtime must inspect
+    // both records, while the size/metadata gates inspect them separately.
+    userscript: readUserscriptRuntime(),
 });
 
 const config = Object.freeze({

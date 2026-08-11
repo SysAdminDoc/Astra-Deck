@@ -89,7 +89,7 @@ data-consent permissions cover the documented collection categories).
 
 ### Userscript (Tampermonkey / Violentmonkey)
 
-A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then **[click here to install](https://github.com/SysAdminDoc/Astra-Deck/raw/refs/heads/main/YTKit.user.js)**.
+A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then install the **[Greasy Fork listing](https://greasyfork.org/)**. The generated `YTKit.user.js` declares the separately hosted Astra Deck YTKit Core Library dependency; the core library must be published on Greasy Fork before installing the generated artifact directly from GitHub.
 
 > SharedAudio remains userscript-only. Both extension profiles can use Astra Downloader; the GitHub-full artifact can also expose the optional Cobalt fallback when the local companion is offline.
 

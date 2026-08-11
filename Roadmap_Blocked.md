@@ -18,6 +18,24 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: CORRECTED 2026-08-06 — the previous blocker (missing `ytkit.pem`) was wrong on the facts. The CRX key does **not** gate this release: self-hosted CRX installs are Linux-only on modern Chrome, the last two published releases (v4.50.2, v4.50.7) shipped **no CRX at all**, and a live `node scripts/generate-release-readiness.js` fails on exactly three checks — missing `build/release-manifest.json`, `build/astra-deck-npm-sbom.cdx.json` and `build/SHA256SUMS` — all produced by `npm run build:userscript`, none key-gated. The CRX check is not among the failures. What actually remains is an operator action: creating the git tag and publishing the GitHub Release. The code change that makes the build a one-command path is tracked in `ROADMAP.md` as "P0 — Cut a release without a CRX"; land that first, then this becomes a publish step.
 
+## P2 — Greasy Fork publication (2026-08-11)
+
+- [ ] P2 — Publish the YTKit userscript and its core library on Greasy Fork
+  Why: the repository-side work is complete. `YTKit.user.js` is 1,029,930 B and
+  `YTKit-core.user.js` is 1,811,263 B, both below Greasy Fork's 2 MiB per-script
+  record limit; the main artifact declares the Greasy Fork `@require`, accurate
+  homepage/support/license/icon metadata, `@connect 127.0.0.1`, and the optional
+  Astra Downloader companion disclosure. `npm test`, `npm run check`, and
+  `npm run build:userscript:no-crx` pass.
+  Blocker: creating the two live Greasy Fork script records requires the
+  maintainer's Greasy Fork account, authentication/2FA, and the script IDs
+  assigned by that service. This workspace has no such credentials or external
+  account authority, so the generated main header intentionally retains
+  `REPLACE_WITH_GREASY_FORK_CORE_ID` until the core record exists.
+  Needs: publish `YTKit-core.user.js` first, replace the placeholder by running
+  `ASTRA_GREASY_FORK_CORE_URL=<update.greasyfork.org URL> node sync-userscript.js`,
+  publish `YTKit.user.js`, and verify the live listing/auto-update path.
+
 - [ ] P3 — aria2c external-downloader option
   Why: parallel external downloading could improve throughput for some large media, but the requested integration contradicts the repository's active security invariant.
   Evidence: `astra_downloader/test_astra_downloader.py` (`Aria2cExternalDownloaderBanTests`); `CHANGELOG.md` (CVE-2026-50574 external-downloader ban).

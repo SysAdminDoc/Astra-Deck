@@ -204,3 +204,27 @@ test('userscript-health: YT_Reaction_Spammer.user.js retains the v0.3.0 N3 500 m
     assert.match(src, /const\s+MIN_INTERVAL_MS\s*=\s*500/,
         'YT_Reaction_Spammer.user.js must keep MIN_INTERVAL_MS at 500 (v0.3.0 N3 safety floor)');
 });
+
+test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () => {
+    const main = readUserscript('YTKit.user.js');
+    const core = readUserscript('YTKit-core.user.js');
+    const maxBytes = 2 * 1024 * 1024;
+    assert.ok(Buffer.byteLength(main, 'utf8') < maxBytes,
+        'YTKit.user.js must remain below Greasy Fork’s per-record 2 MiB limit');
+    assert.ok(Buffer.byteLength(core, 'utf8') < maxBytes,
+        'YTKit-core.user.js must remain below Greasy Fork’s per-record 2 MiB limit');
+    assert.match(main, /^\/\/ @require\s+https:\/\/update\.greasyfork\.org\/scripts\//m,
+        'YTKit.user.js must load its executable dependency from Greasy Fork');
+    assert.match(main, /^\/\/ @homepageURL\s+https:\/\/github\.com\/SysAdminDoc\/Astra-Deck/m,
+        'YTKit.user.js must advertise the project homepage');
+    assert.match(main, /^\/\/ @supportURL\s+https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/issues/m,
+        'YTKit.user.js must advertise the project support page');
+    assert.match(main, /^\/\/ @license\s+MIT$/m,
+        'YTKit.user.js must declare its MIT license');
+    assert.match(main, /^\/\/ @icon\s+https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/main\/extension\/icons\/128\.png/m,
+        'YTKit.user.js must declare the project icon');
+    assert.match(main, /@connect\s+127\.0\.0\.1/,
+        'YTKit.user.js must disclose local-companion traffic');
+    assert.match(main, /YTKit Core Library[\s\S]*Astra Downloader companion/,
+        'YTKit.user.js description must disclose both dependencies');
+});

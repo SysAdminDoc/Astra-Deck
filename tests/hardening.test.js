@@ -2074,6 +2074,8 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
         'expected release set must include eight extension artifacts plus userscript');
     assert.ok(expected.includes('astra-deck-npm-sbom.cdx.json'),
         'expected release set must include the npm SBOM asset');
+    assert.ok(expected.includes('browser-capability-matrix.json'),
+        'expected release set must include the generated browser capability matrix');
     assert.deepEqual(
         unexpectedReleaseNames([...expected, 'debug-extra.zip'], pkg.version),
         ['debug-extra.zip'],
@@ -7496,7 +7498,12 @@ test('v4.20.0 userscript bundles every v5.0.0 module byte-for-byte', () => {
     const region = shipped.match(sync.BUNDLE_BEGIN_RE);
     assert.ok(region, 'bundle region must be extractable');
     assert.equal(region[0], sync.buildBundleRegion(path.join(__dirname, '..')),
-        'YTKit.user.js bundle is stale — run `node sync-userscript.js`');
+        'YTKit.user.js dependency manifest is stale — run `node sync-userscript.js`');
+
+    const corePath = path.join(__dirname, '..', 'YTKit-core.user.js');
+    const core = fs.readFileSync(corePath, 'utf8');
+    assert.equal(core, sync.buildCoreLibrarySource(path.join(__dirname, '..')),
+        'YTKit-core.user.js is stale — run `node sync-userscript.js`');
 
     const userscript = fs.readFileSync(
         path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
@@ -7509,8 +7516,8 @@ test('v4.20.0 userscript bundles every v5.0.0 module byte-for-byte', () => {
         'userscript must contain exactly one metadata header');
     assert.equal((bundle.match(/^\/\/ ==UserScript==$/gm) || []).length, 0,
         'bundle must not contain a second userscript metadata header');
-    assert.ok(bundle.includes('matched the *suffix* `apiKey$` / `token$` plus the exact'),
-        'bundle replacement must preserve literal $` policy-profile text');
+    assert.ok(core.includes('matched the *suffix* `apiKey$` / `token$` plus the exact'),
+        'core-library generation must preserve literal $` policy-profile text');
     const fingerprints = {
         'core/styles.js':                    'function createCssLifecycleSpec(options',
         'core/settings-schema.js':              'const SETTINGS_SCHEMA = Object.freeze(',
@@ -7549,8 +7556,8 @@ test('v4.20.0 userscript bundles every v5.0.0 module byte-for-byte', () => {
         'core/lifecycle-route-bridge.js':       'function installLifecycleRouteBridge(options'
     };
     for (const [mod, fingerprint] of Object.entries(fingerprints)) {
-        assert.ok(bundle.includes(fingerprint),
-            'userscript bundle missing fingerprint from ' + mod + ': "' + fingerprint + '"');
+        assert.ok(core.includes(fingerprint),
+            'userscript core library missing fingerprint from ' + mod + ': "' + fingerprint + '"');
     }
 });
 

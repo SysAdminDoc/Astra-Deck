@@ -10,13 +10,19 @@ const EXTENSION_SOURCE = path.join(REPO_ROOT, 'extension', 'ytkit.js');
 const USERSCRIPT_SOURCE = resolveUserscriptPath(REPO_ROOT);
 const USERSCRIPT_BASENAME = getUserscriptBasename(REPO_ROOT);
 const USERSCRIPT_RAW_URL = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
+const USERSCRIPT_CORE_SOURCE = path.join(REPO_ROOT, 'YTKit-core.user.js');
+const GREASY_FORK_CORE_URL = process.env.ASTRA_GREASY_FORK_CORE_URL
+    || 'https://update.greasyfork.org/scripts/REPLACE_WITH_GREASY_FORK_CORE_ID/ytkit-core.js';
+const CORE_BEGIN_MARKER = '// ── BEGIN v5.0.0 bundled core modules ──';
+const CORE_END_MARKER = '// ── END v5.0.0 bundled core modules ──';
+const EXTERNAL_BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^[ \t]*\/\/ ── END v5\.0\.0 bundled core modules ──/m;
 
-// v4.20.0: bundle the v5.0.0 core modules into the userscript so the
-// userscript path reaches feature parity with the MV3 extension. Each
-// listed module is an IIFE that attaches to globalThis.YTKitCore or
-// globalThis.YTKitFeatures — safe to concatenate in this order. The
-// region between the BEGIN/END markers is replaced wholesale on every
-// sync; do NOT hand-edit content between the markers in YTKit.user.js.
+// v4.20.0: keep the v5.0.0 core modules in the userscript distribution so the
+// userscript path reaches feature parity with the MV3 extension. Each listed
+// module is an IIFE that attaches to globalThis.YTKitCore or
+// globalThis.YTKitFeatures — safe to concatenate in this order. The main
+// artifact carries an ordered dependency manifest; executable bodies are
+// generated into YTKit-core.user.js, a separate Greasy Fork library record.
 // If a manifest feature cannot ship in the userscript, classify the feature ID
 // in scripts/check-userscript-drift.js instead of leaving silent parity drift.
 const V5_BUNDLE_MODULES = [
@@ -80,19 +86,65 @@ function bundledModuleHeader(rel) {
     return '    // ── bundled module: ' + rel + ' ──';
 }
 
+function coreModuleHeader(rel) {
+    return '// ── bundled module: ' + rel + ' ──';
+}
+
+function buildExternalBundleRegion() {
+    const parts = [
+        '    ' + CORE_BEGIN_MARKER,
+        '    // The v5.0.0 modules are delivered by the Greasy Fork @require dependency.',
+        '    // This manifest keeps the dependency order visible in the main artifact;',
+        '    // the generated YTKit-core.user.js contains the executable module bodies.',
+        ''
+    ];
+    for (const rel of V5_BUNDLE_MODULES) parts.push(bundledModuleHeader(rel));
+    parts.push('', '    ' + CORE_END_MARKER);
+    return parts.join('\n');
+}
+
 // Build the bundled-module region exactly as the userscript must contain it.
 // check-userscript-drift.js recomputes this and compares it against the
 // shipped bundle, so this function is the single source of truth for the
 // transform. A fingerprint-substring check cannot see a stale module body —
 // v4.51.2's settings-schema shipped stale through three releases that way.
 function buildBundleRegion(repoRoot = REPO_ROOT) {
-    const parts = ['    // ── BEGIN v5.0.0 bundled core modules ──'];
-    parts.push('    // Auto-bundled by sync-userscript.js — do NOT hand-edit. To refresh, run:');
-    parts.push('    //     node sync-userscript.js');
-    parts.push('    //');
-    parts.push('    // The hardening test `v4.20.0 userscript bundles every v5.0.0 core module');
-    parts.push('    // verbatim` pins the parity contract.');
-    parts.push('');
+    // Keep the historical function name as the main-artifact contract. The
+    // executable bodies now live in the separately published library below;
+    // the main file retains an ordered manifest so stale dependency changes
+    // remain visible without paying for a second copy of the code.
+    void repoRoot;
+    return buildExternalBundleRegion();
+}
+
+function buildCoreLibrarySource(repoRoot = REPO_ROOT, version = null) {
+    const extensionText = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const versionMatch = extensionText.match(/const YTKIT_VERSION = '([^']+)'/);
+    if (!versionMatch && !version) {
+        throw new Error('Could not find YTKIT_VERSION while building the userscript core library');
+    }
+    const targetVersion = version || versionMatch[1];
+    const parts = [
+        '// ==UserScript==',
+        '// @name         Astra Deck YTKit Core Library',
+        '// @namespace    https://github.com/SysAdminDoc/Astra-Deck',
+        `// @version      ${targetVersion}`,
+        '// @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js',
+        '// @author       Matthew Parker',
+        '// @homepageURL  https://github.com/SysAdminDoc/Astra-Deck',
+        '// @supportURL    https://github.com/SysAdminDoc/Astra-Deck/issues',
+        '// @license      MIT',
+        '// @grant         none',
+        '// @run-at        document-start',
+        '// ==/UserScript==',
+        '',
+        CORE_BEGIN_MARKER,
+        '// Auto-generated by sync-userscript.js — do NOT hand-edit. To refresh, run:',
+        '//     node sync-userscript.js',
+        '//',
+        '// Every module body below is copied byte-for-byte from its extension source.',
+        ''
+    ];
     for (const rel of V5_BUNDLE_MODULES) {
         const full = path.join(repoRoot, rel);
         if (!fs.existsSync(full)) {
@@ -109,14 +161,19 @@ function buildBundleRegion(repoRoot = REPO_ROOT) {
             error.modulePath = rel;
             throw error;
         }
-        parts.push(bundledModuleHeader(rel));
-        // Indent each line by 4 spaces so the bundled module sits cleanly
-        // inside the userscript's outer IIFE (cosmetic — JS doesn't care).
-        parts.push(moduleBody.split('\n').map((line) => line.length ? '    ' + line : line).join('\n'));
+        parts.push(coreModuleHeader(rel));
+        parts.push(moduleBody);
         parts.push('');
     }
-    parts.push('    // ── END v5.0.0 bundled core modules ──');
+    parts.push(CORE_END_MARKER, '');
     return parts.join('\n');
+}
+
+function upsertMetadataLine(headerText, key, value) {
+    const line = `// @${key}      ${value}`;
+    const re = new RegExp(`^// @${key}\\s+.*$`, 'm');
+    if (re.test(headerText)) return headerText.replace(re, line);
+    return headerText.replace(/^\/\/ ==\/UserScript==$/m, `${line}\n// ==/UserScript==`);
 }
 
 function main() {
@@ -147,6 +204,17 @@ function main() {
         (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
     headerText = headerText.replace(/^(\/\/ @downloadURL\s+).+$/m,
         (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
+    headerText = upsertMetadataLine(headerText, 'require', GREASY_FORK_CORE_URL);
+    for (const [key, value] of [
+        ['homepageURL', 'https://github.com/SysAdminDoc/Astra-Deck'],
+        ['supportURL', 'https://github.com/SysAdminDoc/Astra-Deck/issues'],
+        ['license', 'MIT'],
+        ['icon', 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/extension/icons/128.png'],
+    ]) {
+        headerText = upsertMetadataLine(headerText, key, value);
+    }
+    headerText = headerText.replace(/^(\/\/ @description\s+).*$/m,
+        '$1YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion');
     userscriptText = headerText + bodyText;
     userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/,
         () => `const YTKIT_VERSION = '${targetVersion}';`);
@@ -161,12 +229,27 @@ function main() {
             process.exit(1);
         }
         userscriptText = userscriptText.replace(BUNDLE_BEGIN_RE, () => bundleRegion);
-    } else {
+    } else if (!EXTERNAL_BUNDLE_BEGIN_RE.test(userscriptText)) {
         // Fail loudly: this tool's whole job is refreshing the bundle region, so
         // silently rewriting only the header and reporting success let a stale
         // bundle reach packaging with a green run.
         console.error('Userscript bundle markers not found — cannot refresh the bundle region.');
         process.exit(1);
+    }
+
+    let coreLibraryText;
+    try {
+        coreLibraryText = buildCoreLibrarySource(REPO_ROOT, targetVersion);
+    } catch (error) {
+        console.error(error.message);
+        process.exit(1);
+    }
+    const previousCore = fs.existsSync(USERSCRIPT_CORE_SOURCE)
+        ? fs.readFileSync(USERSCRIPT_CORE_SOURCE, 'utf8')
+        : null;
+    if (previousCore !== coreLibraryText) {
+        fs.writeFileSync(USERSCRIPT_CORE_SOURCE, coreLibraryText, 'utf8');
+        console.log(`Userscript core library synced to v${targetVersion} (${path.basename(USERSCRIPT_CORE_SOURCE)})`);
     }
 
     if (userscriptText === before) {
@@ -182,4 +265,14 @@ if (require.main === module) {
     main();
 }
 
-module.exports = { V5_BUNDLE_MODULES, buildBundleRegion, bundledModuleHeader, BUNDLE_BEGIN_RE };
+module.exports = {
+    V5_BUNDLE_MODULES,
+    buildBundleRegion,
+    buildCoreLibrarySource,
+    bundledModuleHeader,
+    coreModuleHeader,
+    BUNDLE_BEGIN_RE,
+    EXTERNAL_BUNDLE_BEGIN_RE,
+    USERSCRIPT_CORE_SOURCE,
+    GREASY_FORK_CORE_URL,
+};

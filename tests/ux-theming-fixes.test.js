@@ -28,7 +28,7 @@ const downloadUiSource = read('extension', 'features', 'download-ui', 'index.js'
 const settingsPanelModuleSource = read('extension', 'features', 'settings-panel', 'index.js');
 const settingsVisualSystemSource = read('extension', 'core', 'settings-visual-system.js');
 const settingsOverlaySmokeSource = read('scripts', 'smoke-settings-overlay.js');
-const userscriptSource = read('YTKit.user.js');
+const userscriptSource = read('YTKit-core.user.js') + '\n' + read('YTKit.user.js');
 const defaultSettings = JSON.parse(read('extension', 'default-settings.json'));
 const schemaModule = require('../extension/core/settings-schema.js');
 
