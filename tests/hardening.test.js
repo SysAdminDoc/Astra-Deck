@@ -5434,12 +5434,13 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Photosensitive flash protection adds a master toggle and two bounded
     // player preferences (450 → 453). Live latency catch-up adds a toggle
     // and two bounded player preferences (453 → 456), plus the experimental
-    // extension-only Force DVR toggle (456 → 457), plus six local Video
-    // Hider heuristic controls (463), plus the extension-only filter-list URL (464).
+    // extension-only Force DVR toggle (456 → 457), plus the replay-chat
+    // density toggle (457 → 458), six local Video Hider heuristic controls
+    // (464), and the extension-only filter-list URL (465).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 464,
-        'SETTINGS_SCHEMA must cover all 464 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 465,
+        'SETTINGS_SCHEMA must cover all 465 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

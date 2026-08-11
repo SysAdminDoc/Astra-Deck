@@ -469,6 +469,7 @@
     "dualSubtitleLanguage",
     "fullscreenScroll",
     "forceDvr",
+    "replayChatDensity",
     "hiddenGuideElements",
     "hiddenGuideElementsManager",
     "hideAiContextPanels",

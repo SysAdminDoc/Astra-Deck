@@ -36,6 +36,7 @@ const FEATURE_ROUTES = Object.freeze({
     'features/subtitles/index.js': 'watch',
     'features/sticky-video/index.js': 'watch',
     'features/video-notes/index.js': 'watch',
+    'features/replay-chat-density/index.js': 'watch',
     'features/player-dock/index.js': 'watch',
     'features/search-while-watching/index.js': 'watch',
     'features/video-insights/index.js': 'watch',

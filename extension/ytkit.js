@@ -3487,6 +3487,7 @@ return response;
             liveLatencyTargetSeconds: 8,
             liveLatencyMaxRate: 1.25,
             forceDvr: false,
+            replayChatDensity: false,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -23903,6 +23904,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl = null;
             }
         }),
+        ...(globalThis.YTKitFeatures?.replayChatDensity?.createReplayChatDensityFeature
+            ? [globalThis.YTKitFeatures.replayChatDensity.createReplayChatDensityFeature({
+                PageTypes,
+                appState,
+                addNavigateRule,
+                removeNavigateRule,
+                addMutationRule,
+                removeMutationRule,
+                addScopedMutationRule,
+                removeScopedMutationRule,
+                getMainVideoElement,
+                getPlayerProgressBar,
+                getPlayerResponse: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
+                getVideoId,
+                injectStyle,
+                isWatchPagePath,
+                t,
+                documentRef: document,
+                windowRef: window
+            })]
+            : []),
         {
             id: 'blueLightFilter',
             name: 'Blue Light Filter',
