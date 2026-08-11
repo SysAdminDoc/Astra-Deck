@@ -95,3 +95,47 @@ test('CC observer does not attach before the mirror button exists', () => {
         );
     }
 });
+
+test('CC mirror follows native aria-pressed state in both directions', () => {
+    const mod = require('../../extension/features/player-dock/index.js');
+    const native = {
+        ariaPressed: 'true',
+        getAttribute(name) { return name === 'aria-pressed' ? this.ariaPressed : null; },
+        classList: { contains: () => false }
+    };
+    const mirrorClasses = new Set();
+    const mirror = {
+        attrs: {},
+        classList: {
+            toggle(name, force) { if (force) mirrorClasses.add(name); else mirrorClasses.delete(name); },
+            contains: (name) => mirrorClasses.has(name)
+        },
+        getAttribute(name) { return this.attrs[name] ?? null; },
+        setAttribute(name, value) { this.attrs[name] = String(value); }
+    };
+    const originalDocument = globalThis.document;
+    globalThis.document = {
+        querySelector(selector) {
+            return selector === '#movie_player .ytp-subtitles-button' ? native : null;
+        }
+    };
+    try {
+        const feature = mod.createFloatingLogoOnWatchFeature({
+            appState: { settings: {} },
+            getFeatureById: () => null,
+            t: (_key, fallback) => fallback
+        });
+        feature._ccButton = mirror;
+
+        feature._syncCcButton();
+        assert.equal(mirror.getAttribute('aria-pressed'), 'true');
+        assert.equal(mirror.classList.contains('ytkit-po-cc--active'), true);
+
+        native.ariaPressed = 'false';
+        feature._syncCcButton();
+        assert.equal(mirror.getAttribute('aria-pressed'), 'false');
+        assert.equal(mirror.classList.contains('ytkit-po-cc--active'), false);
+    } finally {
+        globalThis.document = originalDocument;
+    }
+});

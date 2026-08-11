@@ -225,3 +225,96 @@ test('page quick controls reconcile feature settings without in-place mutation',
             `${label} quick controls must not mutate the live settings object in place`);
     }
 });
+
+test('Video Hider toggle rolls back the optimistic state after a rejected save', async () => {
+    const events = new Map();
+    const classes = new Set(['ytkit-panel-open']);
+    const appState = { settings: { hideVideosFromHome: false } };
+    const calls = [];
+    const input = {
+        checked: true,
+        disabled: false,
+        setAttribute() {},
+        removeAttribute() {},
+        matches: (selector) => selector === '.ytkit-feature-cb',
+        closest: (selector) => {
+            if (selector === '[data-feature-id]') return card;
+            if (selector === '.ytkit-switch') return switchEl;
+            return null;
+        }
+    };
+    const card = {
+        dataset: { featureId: 'hideVideosFromHome' },
+        classList: {
+            toggle(name, force) { if (force) classes.add(name); else classes.delete(name); },
+            contains: (name) => classes.has(name),
+            add() {},
+            remove() {}
+        },
+        querySelector: () => null
+    };
+    const switchEl = {
+        classList: { toggle() {}, add() {}, remove() {} }
+    };
+    const panel = { contains: () => true };
+    const documentStub = {
+        body: { classList: { contains: (name) => classes.has(name), toggle() {} } },
+        documentElement: { classList: { toggle() {} }, style: {} },
+        activeElement: input,
+        getElementById: (id) => id === 'ytkit-settings-panel' ? panel : null,
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener(type, handler) { events.set(type, handler); },
+        removeEventListener() {}
+    };
+    const originalDocument = globalThis.document;
+    globalThis.document = documentStub;
+    try {
+        const api = loadModule().createSettingsPanelRuntime({
+            PANEL_OPEN_CLASS,
+            CONFLICT_MAP: {},
+            appState,
+            DebugManager: { log() {} },
+            StorageManager: { get: (_key, fallback) => fallback, set() {}, setSync: async () => ({ ok: true }) },
+            shouldBuildPrimaryUI: () => true,
+            buildSettingsPanel: () => panel,
+            createToast() {},
+            injectStyle: () => ({ remove() {} }),
+            isBooleanFeature: (feature) => feature?.type === 'checkbox',
+            getFeatureById: (id) => ({ id, type: 'checkbox', name: 'Video Hider' }),
+            getFeatureName: (feature) => feature?.name || feature?.id,
+            getFeatureDescription: () => '',
+            getFocusableUiElements: () => [],
+            liveFeatureList: [],
+            requestFeatureOptionalHosts: async () => true,
+            applyExternalSettingsUpdate({ nextSettings }) {
+                appState.settings = { ...nextSettings };
+            },
+            safeInitFeature() {},
+            safeDestroyFeature() {},
+            settingsManager: {
+                save(nextSettings) {
+                    calls.push({ ...nextSettings });
+                    return Promise.resolve({ ok: false, settings: { hideVideosFromHome: false } });
+                }
+            },
+            showToast() {},
+            t: (_key, fallback) => fallback
+        });
+        api.attachUIEventListeners();
+        const change = events.get('change');
+        assert.equal(typeof change, 'function', 'settings panel must register its delegated change handler');
+
+        await change({ target: input });
+
+        assert.deepEqual(calls, [
+            { hideVideosFromHome: true }
+        ], 'the save must receive the optimistic replacement object');
+        assert.equal(appState.settings.hideVideosFromHome, false,
+            'a rejected save must restore the previous setting');
+        assert.equal(input.checked, false,
+            'the dedicated Video Hider checkbox must mirror the rolled-back setting');
+    } finally {
+        globalThis.document = originalDocument;
+    }
+});
