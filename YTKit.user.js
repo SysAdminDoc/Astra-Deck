@@ -7611,6 +7611,9 @@
             const browserUA = options.browserUA || 'unknown';
             const budgetedScans = Array.isArray(options.budgetedScans) ? options.budgetedScans : [];
             const mutationRules = Array.isArray(options.mutationRules) ? options.mutationRules : [];
+            const selectorAsset = options.selectorAsset && typeof options.selectorAsset === 'object'
+                ? options.selectorAsset
+                : null;
             const lines = [];
             const summary = summarize(snapshot);
             const top = rankProblemSurfaces(snapshot, options.topN || 5);
@@ -7634,6 +7637,17 @@
             lines.push('  total shape drifts:      ' + summary.totalShapeDrifts);
             lines.push('  miss rate:               ' + summary.missRate + '%');
             lines.push('');
+
+            if (selectorAsset) {
+                lines.push('selector asset:');
+                lines.push('  status:                  ' + String(selectorAsset.status || 'unknown'));
+                lines.push('  source:                  ' + String(selectorAsset.source || 'unknown'));
+                lines.push('  version:                 ' + String(selectorAsset.assetVersion || 'unknown'));
+                lines.push('  digest:                  ' + String(selectorAsset.digest || 'none'));
+                lines.push('  rollbacks:               ' + safeNumber(selectorAsset.rollbackCount));
+                if (selectorAsset.lastError) lines.push('  last error:              ' + String(selectorAsset.lastError).slice(0, 240));
+                lines.push('');
+            }
 
             if (budgetedScans.length) {
                 lines.push('budgeted scan diagnostics:');
@@ -7701,6 +7715,8 @@
                 || (() => (core.getBudgetedScanDiagnostics ? core.getBudgetedScanDiagnostics() : []));
             const mutationRuleProvider = options.mutationRuleProvider
                 || (() => (core.getMutationRuleHealthSnapshot ? core.getMutationRuleHealthSnapshot() : []));
+            const selectorAssetProvider = options.selectorAssetProvider
+                || (() => (core.getSelectorAssetState ? core.getSelectorAssetState() : null));
 
             function getReport() {
                 const snap = snapshotProvider();
@@ -7709,7 +7725,8 @@
                     topProblems: rankProblemSurfaces(snap, options.topN || 5),
                     snapshot: snap,
                     budgetedScans: budgetedScanProvider(),
-                    mutationRules: mutationRuleProvider()
+                    mutationRules: mutationRuleProvider(),
+                    selectorAsset: selectorAssetProvider()
                 };
             }
 
@@ -7721,7 +7738,8 @@
                 const mutationRules = Array.isArray(extra.mutationRules)
                     ? extra.mutationRules
                     : mutationRuleProvider();
-                return formatCopyReport(snap, { ...options, ...extra, budgetedScans, mutationRules });
+                const selectorAsset = extra.selectorAsset || selectorAssetProvider();
+                return formatCopyReport(snap, { ...options, ...extra, budgetedScans, mutationRules, selectorAsset });
             }
 
             function exportSnapshotJson() {

@@ -566,6 +566,10 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://api.cobalt.tools',
     'https://www.reddit.com',
     'https://old.reddit.com',
+    // Fixed, data-only selector updates from the project-owned repository.
+    // The caller cannot supply an arbitrary URL; the dedicated message below
+    // fetches only SELECTOR_ASSET_URL and keeps the same origin allowlist.
+    'https://raw.githubusercontent.com',
     'http://127.0.0.1:11434',
     // The shared catalogue's primary URL is http://127.0.0.1:9751 in the shipped profile;
     // every fallback origin is appended below from that same source.
@@ -632,6 +636,22 @@ const WINDOWS_RESERVED_FILENAME_BASENAMES = new Set([
     'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'
 ]);
 const MAX_DOWNLOAD_FILENAME_LENGTH = 180;
+const SELECTOR_ASSET_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/selector-packs.json';
+const MAX_SELECTOR_ASSET_BYTES = 256 * 1024;
+
+async function readTextBounded(response, maxBytes, label) {
+    const contentLength = response.headers?.get?.('content-length');
+    if (contentLength !== null && contentLength !== undefined) {
+        const declared = Number.parseInt(contentLength, 10);
+        if (Number.isFinite(declared) && declared > maxBytes) {
+            throw new Error(`${label} exceeds the ${maxBytes}-byte limit`);
+        }
+    }
+    const text = await response.text();
+    const bytes = new TextEncoder().encode(text).byteLength;
+    if (bytes > maxBytes) throw new Error(`${label} exceeds the ${maxBytes}-byte limit`);
+    return { text, bytes };
+}
 
 function isUrlAllowed(url) {
     try {
@@ -1128,6 +1148,37 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             sendResponse({ tabId: tab.id || null });
         }).catch((error) => {
             sendResponse({ error: error.message });
+        });
+        return true;
+    }
+
+    if (msg.type === 'YTKIT_FETCH_SELECTOR_ASSET') {
+        // This is deliberately a separate message instead of a caller-owned
+        // EXT_FETCH URL. It prevents a compromised page or feature from
+        // turning selector refresh into an arbitrary remote data fetch.
+        if (!isUrlAllowed(SELECTOR_ASSET_URL)) {
+            sendResponse({ ok: false, error: 'Selector asset origin is not allowlisted.' });
+            return false;
+        }
+        fetch(SELECTOR_ASSET_URL, {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            credentials: 'omit',
+            cache: 'no-store',
+            redirect: 'error'
+        }).then(async (response) => {
+            if (!response.ok) throw new Error(`Selector asset HTTP ${response.status}`);
+            const { text, bytes } = await readTextBounded(response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset');
+            sendResponse({
+                ok: true,
+                text,
+                bytes,
+                url: SELECTOR_ASSET_URL,
+                fetchedAt: Date.now(),
+                etag: response.headers?.get?.('etag') || null
+            });
+        }).catch((error) => {
+            sendResponse({ ok: false, error: error?.message || 'Selector asset fetch failed.' });
         });
         return true;
     }

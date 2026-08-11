@@ -15,6 +15,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- YouTube selector packs now have a generated, versioned JSON asset with a
+  SHA-256 integrity record. The shipped selector packs remain the offline
+  default; an explicit diagnostics refresh uses the fixed project endpoint,
+  enforces a 256 KiB bound, promotes only verified data, persists it locally,
+  and rolls back safely on malformed or mismatched updates.
 - Watch Later Workbench now filters bulk cleanup by upload age, duration,
   watched state, channel, and title, with paced 25-item removal sessions,
   per-item recovery, and latest-session Undo-all restoration through YouTube's

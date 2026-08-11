@@ -475,6 +475,7 @@ module.exports = {
     buildSurfaceMatchFixture,
     decodeQuotedPrintable,
     extractTokens,
+    loadSurfaceSelectorMap,
     parseDomElements,
     selectorMatchCount,
     SURFACE_MATCH_SOURCES,

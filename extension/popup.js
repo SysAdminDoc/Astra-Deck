@@ -560,6 +560,8 @@ const selectorHealthSection = $('#selector-health');
 const selectorHealthTotal = $('#selector-health-total');
 const selectorHealthList = $('#selector-health-list');
 const selectorHealthCtx = $('#selector-health-ctx');
+const selectorHealthAsset = $('#selector-health-asset');
+const selectorHealthRefreshBtn = $('#selector-health-refresh-btn');
 // v4.47.0: copy-report button + transient status line.
 const selectorHealthCopyBtn = $('#selector-health-copy-btn');
 const selectorHealthCopyStatus = $('#selector-health-copy-status');
@@ -2195,6 +2197,17 @@ async function renderSelectorHealthDashboard() {
             const totalLabel = t('selectorHealthTotalTpl', `${response.totalSurfaces} surfaces tracked`);
             selectorHealthTotal.textContent = totalLabel.replace('{count}', String(response.totalSurfaces));
         }
+        if (selectorHealthAsset) {
+            const asset = response.selectorAsset || {};
+            const assetLabel = t('selectorHealthAssetTpl', 'Rules: {status} · {version} · {source}')
+                .replace('{status}', String(asset.status || 'unknown'))
+                .replace('{version}', String(asset.assetVersion || 'unknown'))
+                .replace('{source}', String(asset.source || 'unknown'));
+            selectorHealthAsset.textContent = asset.lastError
+                ? `${assetLabel} — ${String(asset.lastError).slice(0, 120)}`
+                : assetLabel;
+            selectorHealthAsset.dataset.state = asset.status || 'unknown';
+        }
         // Per-ctx diagnostic chip strip.
         if (selectorHealthCtx) {
             selectorHealthCtx.textContent = '';
@@ -2229,6 +2242,41 @@ async function renderSelectorHealthDashboard() {
         // Best-effort surface — never break the popup on a snapshot failure.
         selectorHealthSection.hidden = true;
     }
+}
+
+let _selectorHealthRefreshInFlight = false;
+async function refreshSelectorAssetFromPopup() {
+    if (_selectorHealthRefreshInFlight || !selectorHealthRefreshBtn) return;
+    _selectorHealthRefreshInFlight = true;
+    selectorHealthRefreshBtn.disabled = true;
+    if (selectorHealthAsset) selectorHealthAsset.textContent = t('selectorHealthRefreshPending', 'Refreshing selector rules…');
+    const refreshFailedLabel = t('selectorHealthRefreshFailed', 'Selector rules were not refreshed.');
+    try {
+        const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
+        if (!tab?.id || !isSupportedInlinePanelUrl(tab.url || '')) {
+            if (selectorHealthAsset) selectorHealthAsset.textContent = t('selectorHealthCopyNeedYt', 'Open a YouTube tab to build the report.');
+            return;
+        }
+        const response = await browserApi.sendTabMessage(
+            tab.id,
+            { type: 'YTKIT_REFRESH_SELECTOR_ASSET' },
+            { timeoutMs: 15000 }
+        );
+        if (!response?.ok) {
+            if (selectorHealthAsset) selectorHealthAsset.textContent = [refreshFailedLabel, String(response?.error || '').slice(0, 120)].filter(Boolean).join(' ');
+            return;
+        }
+        await renderSelectorHealthDashboard();
+    } catch (error) {
+        if (selectorHealthAsset) selectorHealthAsset.textContent = [refreshFailedLabel, String(error?.message || error).slice(0, 120)].filter(Boolean).join(' ');
+    } finally {
+        _selectorHealthRefreshInFlight = false;
+        selectorHealthRefreshBtn.disabled = false;
+    }
+}
+
+if (selectorHealthRefreshBtn) {
+    selectorHealthRefreshBtn.addEventListener('click', () => { void refreshSelectorAssetFromPopup(); });
 }
 
 // v4.47.0: "Copy report" button on the selector-health dashboard.
@@ -2281,6 +2329,7 @@ async function copySelectorHealthReport() {
                 productVersion: getVersion(),
                 browserUA: (navigator && navigator.userAgent) || 'unknown',
                 mutationRules: response.mutationRules,
+                selectorAsset: response.selectorAsset,
                 topN: 10
             });
             // Prepend the active tab URL + the per-ctx counts the formatter
@@ -2308,7 +2357,8 @@ async function copySelectorHealthReport() {
                 exportedAt: new Date().toISOString(),
                 activeTab: safeTabUrlFallback,
                 surfaces: response.surfaces,
-                ctxCounts: response.ctxCounts || {}
+                ctxCounts: response.ctxCounts || {},
+                selectorAsset: response.selectorAsset || null
             }, null, 2);
         }
         // navigator.clipboard works in popup contexts because the popup
