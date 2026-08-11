@@ -5573,7 +5573,7 @@
     "message": "Nothing new since your last visit stamp."
   },
   "subscriptionHealthNewHeading": {
-    "message": "New since last visit"
+    "message": "마지막 방문 이후 새 동영상"
   },
   "subscriptionHealthNewSummaryTpl": {
     "message": "{videos} new videos from {channels} channels since your last visit."
@@ -5697,6 +5697,24 @@
   },
   "subscriptionOrderNewestLoaded": {
     "message": "최신순(로드된 항목만)"
+  },
+  "subscriptionSortYouTubeDefault": {
+    "message": "YouTube 기본값"
+  },
+  "subscriptionSortLatest": {
+    "message": "최신순"
+  },
+  "subscriptionSortShortest": {
+    "message": "짧은 영상 먼저"
+  },
+  "subscriptionSortUnwatched": {
+    "message": "미시청 먼저"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "마지막 방문 이후 새 동영상"
+  },
+  "subscriptionSortPopular": {
+    "message": "인기순(조회수)"
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"
@@ -7029,7 +7047,7 @@
     "message": "재생목록 순서"
   },
   "wlwbSortShortest": {
-    "message": "짧은 순서"
+    "message": "짧은 영상 먼저"
   },
   "wlwbSortTitle": {
     "message": "제목 A–Z"

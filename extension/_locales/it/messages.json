@@ -5573,7 +5573,7 @@
     "message": "Nothing new since your last visit stamp."
   },
   "subscriptionHealthNewHeading": {
-    "message": "New since last visit"
+    "message": "Nuovi dall’ultima visita"
   },
   "subscriptionHealthNewSummaryTpl": {
     "message": "{videos} new videos from {channels} channels since your last visit."
@@ -5697,6 +5697,24 @@
   },
   "subscriptionOrderNewestLoaded": {
     "message": "Più recenti prima (solo caricati)"
+  },
+  "subscriptionSortYouTubeDefault": {
+    "message": "Predefinito di YouTube"
+  },
+  "subscriptionSortLatest": {
+    "message": "Più recenti prima"
+  },
+  "subscriptionSortShortest": {
+    "message": "Più corti prima"
+  },
+  "subscriptionSortUnwatched": {
+    "message": "Non visti prima"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "Nuovi dall’ultima visita"
+  },
+  "subscriptionSortPopular": {
+    "message": "Più popolari (visualizzazioni)"
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"
@@ -7029,7 +7047,7 @@
     "message": "Ordine della playlist"
   },
   "wlwbSortShortest": {
-    "message": "Prima i più corti"
+    "message": "Più corti prima"
   },
   "wlwbSortTitle": {
     "message": "Titolo A–Z"

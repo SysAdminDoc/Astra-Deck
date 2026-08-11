@@ -5573,7 +5573,7 @@
     "message": "Nothing new since your last visit stamp."
   },
   "subscriptionHealthNewHeading": {
-    "message": "New since last visit"
+    "message": "الجديد منذ آخر زيارة"
   },
   "subscriptionHealthNewSummaryTpl": {
     "message": "{videos} new videos from {channels} channels since your last visit."
@@ -5697,6 +5697,24 @@
   },
   "subscriptionOrderNewestLoaded": {
     "message": "الأحدث أولًا (المحمّل فقط)"
+  },
+  "subscriptionSortYouTubeDefault": {
+    "message": "افتراضي YouTube"
+  },
+  "subscriptionSortLatest": {
+    "message": "الأحدث أولًا"
+  },
+  "subscriptionSortShortest": {
+    "message": "الأقصر أولًا"
+  },
+  "subscriptionSortUnwatched": {
+    "message": "غير المشاهدة أولًا"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "الجديد منذ آخر زيارة"
+  },
+  "subscriptionSortPopular": {
+    "message": "الأكثر شعبية (المشاهدات)"
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"

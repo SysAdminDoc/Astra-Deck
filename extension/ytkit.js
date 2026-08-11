@@ -41960,8 +41960,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             t
         }) || {
             id: 'subscriptionGroups',
-            name: 'Subscription Groups',
-            description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML.',
+            name: t('feature_subscriptionGroups_name', 'Subscription Groups'),
+            description: t('feature_subscriptionGroups_desc', 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML.'),
             group: 'Subscriptions',
             icon: 'folder-tree',
             pages: [PageTypes.SUBSCRIPTIONS],
@@ -42243,14 +42243,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (ids.length >= MAX_IDS) break;
                 }
                 if (!ids.length) {
-                    if (typeof showToast === 'function') showToast('No videos visible in this group', '#6b7280', { tone: 'neutral' });
+                    if (typeof showToast === 'function') showToast(t('subscriptionGroupNoVideos', 'No videos visible in this group'), '#6b7280', { tone: 'neutral' });
                     return;
                 }
                 const url = `https://www.youtube.com/watch_videos?video_ids=${ids.join(',')}`;
                 window.open(url, '_blank', 'noopener,noreferrer');
                 const groupName = groups[groupId]?.name || groupId;
-                const truncated = ids.length >= MAX_IDS ? ` (capped at ${MAX_IDS})` : '';
-                if (typeof showToast === 'function') showToast(`Playing ${ids.length} videos from ${groupName}${truncated}`, '#22c55e');
+                const truncated = ids.length >= MAX_IDS
+                    ? t('subscriptionQueueCappedTpl', ' (capped at {count})').replace('{count}', MAX_IDS)
+                    : '';
+                if (typeof showToast === 'function') showToast(t('subscriptionGroupPlayingTpl', 'Playing {count} videos from {group}{truncated}')
+                    .replace('{count}', ids.length)
+                    .replace('{group}', groupName)
+                    .replace('{truncated}', truncated), '#22c55e');
             },
 
             _exportGroups() {
@@ -42267,7 +42272,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.json`;
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
-                if (typeof showToast === 'function') showToast('Exported subscription groups', '#22c55e');
+                if (typeof showToast === 'function') showToast(t('subscriptionGroupsExported', 'Exported subscription groups'), '#22c55e');
             },
 
             _csvEscape(value) {
@@ -42308,7 +42313,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.csv`;
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
-                if (typeof showToast === 'function') showToast('Exported subscription groups as CSV', '#22c55e');
+                if (typeof showToast === 'function') showToast(t('subscriptionGroupsExportedCsv', 'Exported subscription groups as CSV'), '#22c55e');
             },
 
             _exportGroupsOpml() {
@@ -42320,7 +42325,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.opml`;
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
-                if (typeof showToast === 'function') showToast('Exported subscription groups as OPML', '#22c55e');
+                if (typeof showToast === 'function') showToast(t('subscriptionGroupsExportedOpml', 'Exported subscription groups as OPML'), '#22c55e');
                 return opml;
             },
 
@@ -42389,7 +42394,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         importedChannels
                     });
                 } catch (e) {
-                    if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
+                    if (typeof showToast === 'function') showToast(t('subscriptionGroupsImportFailedTpl', 'Import failed: {error}')
+                        .replace('{error}', e.message), '#ef4444');
                     return { ok: false, error: e.message };
                 }
             },
@@ -42402,7 +42408,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         importedChannels: parsed.importedChannels
                     });
                 } catch (e) {
-                    const message = `OPML import failed: ${e.message}`;
+                    const message = t('subscriptionGroupsImportFailedTpl', 'Import failed: {error}')
+                        .replace('{error}', `OPML: ${e.message}`);
                     if (typeof showToast === 'function') showToast(message, '#ef4444', { duration: 6, tone: 'error' });
                     return { ok: false, error: e.message };
                 }
@@ -42470,7 +42477,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (target) {
                             const badge = document.createElement('span');
                             badge.className = 'ytkit-sub-new-badge';
-                            badge.textContent = 'NEW';
+                             badge.textContent = t('subscriptionNewBadge', 'NEW');
                             target.appendChild(badge);
                         }
                     }
@@ -42636,8 +42643,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._applySort();
                 this._renderDigestPanel();
                 if (typeof showToast === 'function') {
-                    const label = safeGroupId ? (groups[safeGroupId]?.name || safeGroupId) : 'rendered subscriptions';
-                    showToast(`Marked ${marked} ${marked === 1 ? 'channel' : 'channels'} read for ${label}`, '#22c55e', { duration: 4 });
+                    const label = safeGroupId ? (groups[safeGroupId]?.name || safeGroupId) : t('subscriptionRenderedSubscriptions', 'rendered subscriptions');
+                    const channelLabel = marked === 1
+                        ? t('subscriptionChannelSingular', 'channel')
+                        : t('subscriptionChannelPlural', 'channels');
+                    showToast(t('subscriptionChannelsMarkedReadTpl', 'Marked {count} {channels} read for {group}')
+                        .replace('{count}', marked)
+                        .replace('{channels}', channelLabel)
+                        .replace('{group}', label), '#22c55e', { duration: 4 });
                 }
             },
 
@@ -42675,14 +42688,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('section');
                 panel.className = 'ytkit-sub-digest-panel';
                 panel.setAttribute('role', 'region');
-                panel.setAttribute('aria-label', 'Subscription health center');
+                panel.setAttribute('aria-label', t('subscriptionHealthRegionAria', 'Subscription health center'));
 
                 const head = document.createElement('div');
                 head.className = 'ytkit-sub-digest-head';
                 const titleWrap = document.createElement('div');
                 const title = document.createElement('h3');
                 title.className = 'ytkit-sub-digest-title';
-                title.textContent = 'Subscription Health';
+                title.textContent = t('subscriptionHealthTitle', 'Subscription Health');
                 const meta = document.createElement('div');
                 meta.className = 'ytkit-sub-digest-meta';
                 titleWrap.append(title, meta);
@@ -42690,14 +42703,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const rescan = document.createElement('button');
                 rescan.type = 'button';
                 rescan.className = 'ytkit-sub-digest-close';
-                rescan.textContent = 'Rescan';
-                rescan.setAttribute('aria-label', 'Rescan the rendered feed for subscription health');
+                rescan.textContent = t('subscriptionHealthRescan', 'Rescan');
+                rescan.setAttribute('aria-label', t('subscriptionHealthRescanAria', 'Rescan the rendered feed for subscription health'));
                 rescan.addEventListener('click', () => this._renderHealthPanel());
                 const close = document.createElement('button');
                 close.type = 'button';
                 close.className = 'ytkit-sub-digest-close';
-                close.textContent = 'Close';
-                close.setAttribute('aria-label', 'Close subscription health center');
+                close.textContent = t('commonClose', 'Close');
+                close.setAttribute('aria-label', t('subscriptionHealthCloseAria', 'Close subscription health center'));
                 close.addEventListener('click', () => this._closeHealthPanel());
                 headActions.append(rescan, ' ', close);
                 head.append(titleWrap, headActions);
@@ -42712,7 +42725,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const stagedEntries = Object.values(staged);
                     const newVideos = summaries.filter(item => item.isNew);
                     const renderedChannels = new Set(summaries.map(item => item.channelId)).size;
-                    meta.textContent = `${renderedChannels} rendered channel${renderedChannels === 1 ? '' : 's'} · ${Object.keys(groups).length} group${Object.keys(groups).length === 1 ? '' : 's'}`;
+                    meta.textContent = t('subscriptionHealthMetaTpl', '{channels} rendered channels · {groups} groups')
+                        .replace('{channels}', String(renderedChannels))
+                        .replace('{groups}', String(Object.keys(groups).length));
 
                     const stats = document.createElement('div');
                     stats.className = 'ytkit-sub-health-stats';
@@ -42725,23 +42740,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         chip.append(strong, ` ${label}`);
                         stats.appendChild(chip);
                     };
-                    addStat('stale candidates', candidates.length, candidates.length ? 'warn' : '');
-                    addStat('staged for review', stagedEntries.length, stagedEntries.length ? 'staged' : '');
-                    addStat('new videos', newVideos.length);
-                    addStat(`new channel${new Set(newVideos.map(item => item.channelId)).size === 1 ? '' : 's'}`, new Set(newVideos.map(item => item.channelId)).size);
+                    addStat(t('subscriptionHealthStatStale', 'stale candidates'), candidates.length, candidates.length ? 'warn' : '');
+                    addStat(t('subscriptionHealthStatStaged', 'staged for review'), stagedEntries.length, stagedEntries.length ? 'staged' : '');
+                    addStat(t('subscriptionHealthStatNewVideos', 'new videos'), newVideos.length);
+                    addStat(t('subscriptionHealthStatNewChannels', 'new channels'), new Set(newVideos.map(item => item.channelId)).size);
                     panel.appendChild(stats);
 
                     // ── Stale / dead-channel candidates ──
                     const staleHeading = document.createElement('div');
                     staleHeading.className = 'ytkit-sub-health-section';
-                    staleHeading.textContent = `Stale channels (≥${this._STALE_CHANNEL_MIN_AGE_DAYS} days, rendered feed)`;
+                    staleHeading.textContent = t('subscriptionHealthStaleHeadingTpl', 'Stale channels (≥{days} days, rendered feed)')
+                        .replace('{days}', String(this._STALE_CHANNEL_MIN_AGE_DAYS));
                     panel.appendChild(staleHeading);
                     const staleList = document.createElement('div');
                     staleList.className = 'ytkit-sub-digest-list';
                     if (!candidates.length) {
                         const empty = document.createElement('div');
                         empty.className = 'ytkit-sub-digest-empty';
-                        empty.textContent = 'No stale channels detected among the rendered cards. Scroll to load more of the feed, then Rescan.';
+                        empty.textContent = t('subscriptionHealthStaleEmpty', 'No stale channels detected among the rendered cards. Scroll to load more of the feed, then Rescan.');
                         staleList.appendChild(empty);
                     } else {
                         for (const candidate of candidates.slice(0, 12)) {
@@ -42752,19 +42768,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             name.textContent = candidate.channelName || candidate.channelId;
                             const age = document.createElement('div');
                             age.className = 'ytkit-sub-digest-muted';
-                            age.textContent = `${candidate.ageDays}d`;
+                            age.textContent = t('subscriptionAgeDaysShortTpl', '{days}d')
+                                .replace('{days}', candidate.ageDays);
                             const action = document.createElement('button');
                             action.type = 'button';
                             if (staged[candidate.channelId]) {
-                                action.textContent = 'Undo stage';
-                                action.setAttribute('aria-label', `Undo staged unsubscribe for ${name.textContent}`);
+                                action.textContent = t('subscriptionHealthUndoStage', 'Undo stage');
+                                action.setAttribute('aria-label', t('subscriptionHealthUndoStageAriaTpl', 'Undo staged unsubscribe for {channel}')
+                                    .replace('{channel}', name.textContent));
                                 action.addEventListener('click', () => {
                                     this._undoStagedUnsubscribes([candidate.channelId]);
                                     this._renderHealthPanel();
                                 });
                             } else {
-                                action.textContent = 'Stage';
-                                action.setAttribute('aria-label', `Stage ${name.textContent} for unsubscribe review`);
+                                action.textContent = t('subscriptionHealthStage', 'Stage');
+                                action.setAttribute('aria-label', t('subscriptionHealthStageAriaTpl', 'Stage {channel} for unsubscribe review')
+                                    .replace('{channel}', name.textContent));
                                 action.addEventListener('click', () => {
                                     const now = Date.now();
                                     const next = { ...this._readUnsubscribeStaging() };
@@ -42788,7 +42807,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (candidates.length > 12) {
                             const more = document.createElement('div');
                             more.className = 'ytkit-sub-digest-empty';
-                            more.textContent = `+${candidates.length - 12} more — use Stage Stale in the toolbar to stage every candidate at once.`;
+                            more.textContent = t('subscriptionHealthMoreTpl', '+{count} more — use Stage Stale in the toolbar to stage every candidate at once.')
+                                .replace('{count}', String(candidates.length - 12));
                             staleList.appendChild(more);
                         }
                     }
@@ -42817,12 +42837,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const until = document.createElement('div');
                             until.className = 'ytkit-sub-digest-muted';
                             until.textContent = entry.undoUntil
-                                ? `undo by ${new Date(entry.undoUntil).toLocaleDateString()}`
-                                : 'staged';
+                                ? t('subscriptionHealthUndoByTpl', 'undo by {date}')
+                                    .replace('{date}', new Date(entry.undoUntil).toLocaleDateString())
+                                : t('subscriptionHealthStaged', 'staged');
                             const undo = document.createElement('button');
                             undo.type = 'button';
-                            undo.textContent = 'Undo';
-                            undo.setAttribute('aria-label', `Undo staged unsubscribe for ${name.textContent}`);
+                            undo.textContent = t('toastActionUndo', 'Undo');
+                            undo.setAttribute('aria-label', t('subscriptionHealthUndoStageAriaTpl', 'Undo staged unsubscribe for {channel}')
+                                .replace('{channel}', name.textContent));
                             undo.addEventListener('click', () => {
                                 this._undoStagedUnsubscribes([entry.channelId]);
                                 this._renderHealthPanel();
@@ -42834,8 +42856,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         undoAllWrap.className = 'ytkit-sub-health-actions';
                         const undoAll = document.createElement('button');
                         undoAll.type = 'button';
-                        undoAll.textContent = `Undo all staged (${stagedEntries.length})`;
-                        undoAll.setAttribute('aria-label', 'Undo every staged unsubscribe');
+                        undoAll.textContent = t('subscriptionHealthUndoAllTpl', 'Undo all staged ({count})')
+                            .replace('{count}', String(stagedEntries.length));
+                        undoAll.setAttribute('aria-label', t('subscriptionHealthUndoAllAria', 'Undo every staged unsubscribe'));
                         undoAll.addEventListener('click', () => {
                             this._undoStagedUnsubscribes(Object.keys(this._readUnsubscribeStaging()));
                             this._renderHealthPanel();
@@ -42862,25 +42885,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // ── New since last visit ──
                     const newHeading = document.createElement('div');
                     newHeading.className = 'ytkit-sub-health-section';
-                    newHeading.textContent = 'New since last visit';
+                    newHeading.textContent = t('subscriptionHealthNewHeading', 'New since last visit');
                     panel.appendChild(newHeading);
                     const newActions = document.createElement('div');
                     newActions.className = 'ytkit-sub-health-actions';
                     const newSummary = document.createElement('div');
                     newSummary.className = 'ytkit-sub-digest-empty';
                     newSummary.textContent = newVideos.length
-                        ? `${newVideos.length} new video${newVideos.length === 1 ? '' : 's'} from ${new Set(newVideos.map(item => item.channelId)).size} channel${new Set(newVideos.map(item => item.channelId)).size === 1 ? '' : 's'} since your last visit.`
-                        : 'Nothing new since your last visit stamp.';
+                        ? t('subscriptionHealthNewSummaryTpl', '{videos} new videos from {channels} channels since your last visit.')
+                            .replace('{videos}', String(newVideos.length))
+                            .replace('{channels}', String(new Set(newVideos.map(item => item.channelId)).size))
+                        : t('subscriptionHealthNewEmpty', 'Nothing new since your last visit stamp.');
                     const openDigest = document.createElement('button');
                     openDigest.type = 'button';
-                    openDigest.textContent = 'Open Digest';
-                    openDigest.setAttribute('aria-label', 'Open the per-group notifications digest');
+                    openDigest.textContent = t('subscriptionDigestOpen', 'Open Digest');
+                    openDigest.setAttribute('aria-label', t('subscriptionDigestOpenAria', 'Open the per-group notifications digest'));
                     openDigest.addEventListener('click', () => this._renderDigestPanel());
                     const markRead = document.createElement('button');
                     markRead.type = 'button';
-                    markRead.textContent = 'Mark all read';
+                    markRead.textContent = t('subscriptionDigestMarkAllRead', 'Mark all read');
                     markRead.disabled = newVideos.length === 0;
-                    markRead.setAttribute('aria-label', 'Mark every rendered channel as read');
+                    markRead.title = markRead.disabled
+                        ? t('subscriptionDigestMarkAllReadEmpty', 'Nothing new since your last visit')
+                        : '';
+                    markRead.setAttribute('aria-label', markRead.disabled
+                        ? t('subscriptionDigestMarkAllReadEmpty', 'Nothing new since your last visit')
+                        : t('subscriptionDigestMarkAllReadAria', 'Mark every rendered channel as read'));
                     markRead.addEventListener('click', () => {
                         this._markGroupDigestRead('');
                         this._renderHealthPanel();
@@ -42891,14 +42921,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // ── Export actions ──
                     const exportHeading = document.createElement('div');
                     exportHeading.className = 'ytkit-sub-health-section';
-                    exportHeading.textContent = 'Export';
+                    exportHeading.textContent = t('commonExport', 'Export');
                     panel.appendChild(exportHeading);
                     const exportActions = document.createElement('div');
                     exportActions.className = 'ytkit-sub-health-actions';
                     for (const [label, handler, aria] of [
-                        ['JSON', () => this._exportGroups(), 'Export subscription groups as JSON'],
-                        ['CSV', () => this._exportGroupsCsv(), 'Export subscription groups as CSV'],
-                        ['OPML', () => this._exportGroupsOpml(), 'Export subscription groups as OPML'],
+                        ['JSON', () => this._exportGroups(), t('subscriptionExportJsonAria', 'Export subscription groups as JSON')],
+                        ['CSV', () => this._exportGroupsCsv(), t('subscriptionExportCsvAria', 'Export subscription groups as CSV')],
+                        ['OPML', () => this._exportGroupsOpml(), t('subscriptionExportOpmlAria', 'Export subscription groups as OPML')],
                         [t('subscriptionUnsubscribeLogButton', 'Unsubscribe log'), () => this._exportUnsubscribeLog(), t('subscriptionUnsubscribeLogAria', 'Export the local unsubscribe session log as JSON')]
                     ]) {
                         const btn = document.createElement('button');
@@ -42912,7 +42942,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch (err) {
                     const errorBox = document.createElement('div');
                     errorBox.className = 'ytkit-sub-health-error';
-                    errorBox.textContent = `Health scan failed: ${err?.message || 'unexpected error'}. The feed may still be loading — try Rescan.`;
+                    errorBox.textContent = t('subscriptionHealthFailedTpl', 'Health scan failed: {error}. The feed may still be loading — try Rescan.')
+                        .replace('{error}', err?.message || t('commonUnexpectedError', 'unexpected error'));
                     panel.appendChild(errorBox);
                 }
 
@@ -42932,23 +42963,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('section');
                 panel.className = 'ytkit-sub-digest-panel';
                 panel.setAttribute('role', 'region');
-                panel.setAttribute('aria-label', 'Group notifications digest');
+                panel.setAttribute('aria-label', t('subscriptionDigestRegionAria', 'Group notifications digest'));
 
                 const head = document.createElement('div');
                 head.className = 'ytkit-sub-digest-head';
                 const titleWrap = document.createElement('div');
                 const title = document.createElement('h3');
                 title.className = 'ytkit-sub-digest-title';
-                title.textContent = 'Group Digest';
+                title.textContent = t('subscriptionDigestTitle', 'Group Digest');
                 const meta = document.createElement('div');
                 meta.className = 'ytkit-sub-digest-meta';
-                meta.textContent = `${allNew.length} new of ${summaries.length} rendered videos`;
+                meta.textContent = t('subscriptionDigestMetaTpl', '{newCount} new of {renderedCount} rendered videos')
+                    .replace('{newCount}', String(allNew.length))
+                    .replace('{renderedCount}', String(summaries.length));
                 titleWrap.append(title, meta);
                 const close = document.createElement('button');
                 close.type = 'button';
                 close.className = 'ytkit-sub-digest-close';
-                close.textContent = 'Close';
-                close.setAttribute('aria-label', 'Close group notifications digest');
+                close.textContent = t('commonClose', 'Close');
+                close.setAttribute('aria-label', t('subscriptionDigestCloseAria', 'Close group notifications digest'));
                 close.addEventListener('click', () => this._closeDigestPanel());
                 head.append(titleWrap, close);
 
@@ -42964,21 +42997,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     name.textContent = entry.name;
                     const count = document.createElement('div');
                     count.className = 'ytkit-sub-digest-count';
-                    count.textContent = `${entry.newVideos} new`;
+                    count.textContent = t('subscriptionDigestNewTpl', '{count} new')
+                        .replace('{count}', String(entry.newVideos));
                     const rendered = document.createElement('div');
                     rendered.className = 'ytkit-sub-digest-muted';
-                    rendered.textContent = `${entry.renderedVideos} shown / ${entry.newChannels} channel${entry.newChannels === 1 ? '' : 's'}`;
+                    rendered.textContent = t('subscriptionDigestRenderedTpl', '{shown} shown / {channels} channels')
+                        .replace('{shown}', String(entry.renderedVideos))
+                        .replace('{channels}', String(entry.newChannels));
                     const actions = document.createElement('div');
                     const mark = document.createElement('button');
                     mark.type = 'button';
-                    mark.textContent = 'Mark read';
+                    mark.textContent = t('subscriptionDigestMarkRead', 'Mark read');
                     mark.disabled = entry.newVideos === 0;
-                    mark.setAttribute('aria-label', `Mark ${entry.name} digest as read`);
+                    mark.setAttribute('aria-label', t('subscriptionDigestMarkReadAriaTpl', 'Mark {group} digest as read')
+                        .replace('{group}', entry.name));
                     mark.addEventListener('click', () => this._markGroupDigestRead(entry.groupId || ''));
                     const view = document.createElement('button');
                     view.type = 'button';
-                    view.textContent = 'View';
-                    view.setAttribute('aria-label', `View ${entry.name} subscriptions`);
+                    view.textContent = t('subscriptionDigestView', 'View');
+                    view.setAttribute('aria-label', t('subscriptionDigestViewAriaTpl', 'View {group} subscriptions')
+                        .replace('{group}', entry.name));
                     view.addEventListener('click', () => {
                         this._activeGroupId = entry.groupId || '';
                         this._renderToolbar();
@@ -42994,7 +43032,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 appendRow({
                     groupId: '',
-                    name: 'All subscriptions',
+                    name: t('subscriptionAllSubscriptions', 'All subscriptions'),
                     depth: 0,
                     renderedVideos: summaries.length,
                     newVideos: allNew.length,
@@ -43004,7 +43042,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!entries.length) {
                     const empty = document.createElement('div');
                     empty.className = 'ytkit-sub-digest-empty';
-                    empty.textContent = 'Create subscription groups to split new-video counts by topic.';
+                    empty.textContent = t('subscriptionDigestEmpty', 'Create subscription groups to split new-video counts by topic.');
                     list.appendChild(empty);
                 }
 
@@ -43055,8 +43093,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (target) {
                             const badge = document.createElement('span');
                             badge.className = 'ytkit-sub-dead-badge';
-                            badge.textContent = 'STALE';
-                            badge.title = `${candidate.ageDays} days since the newest rendered upload on this card`;
+                            badge.textContent = t('subscriptionStaleBadge', 'STALE');
+                            badge.title = t('subscriptionStaleAgeTitleTpl', '{days} days since the newest rendered upload on this card')
+                                .replace('{days}', candidate.ageDays);
                             target.appendChild(badge);
                         }
                     }
@@ -43067,10 +43106,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const undoDate = Number(staged[channelId].undoUntil) || 0;
                             const badge = document.createElement('span');
                             badge.className = 'ytkit-sub-staged-badge';
-                            badge.textContent = 'STAGED';
+                            badge.textContent = t('subscriptionStagedBadge', 'STAGED');
                             badge.title = undoDate
-                                ? `Unsubscribe staged. Undo window ends ${new Date(undoDate).toLocaleDateString()}.`
-                                : 'Unsubscribe staged for review.';
+                                ? t('subscriptionStagedUndoTitleTpl', 'Unsubscribe staged. Undo window ends {date}.')
+                                    .replace('{date}', new Date(undoDate).toLocaleDateString())
+                                : t('subscriptionStagedReviewTitle', 'Unsubscribe staged for review.');
                             target.appendChild(badge);
                         }
                     }
@@ -43082,7 +43122,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const candidates = this._collectDeadChannelCandidates();
                 this._renderDeadChannelMarkers(candidates);
                 if (!candidates.length) {
-                    if (typeof showToast === 'function') showToast('No stale subscription cards found in the rendered feed.', '#6b7280');
+                    if (typeof showToast === 'function') showToast(t('subscriptionHealthNoStaleCards', 'No stale subscription cards found in the rendered feed.'), '#6b7280');
                     return;
                 }
                 const now = Date.now();
@@ -43107,11 +43147,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._renderDeadChannelMarkers(candidates);
                 this._renderToolbar();
                 if (typeof showToast === 'function') {
-                    showToast(`Staged ${stagedIds.length} stale channel${stagedIds.length === 1 ? '' : 's'} for unsubscribe review`, '#f59e0b', {
+                    showToast(t('subscriptionHealthStagedCountTpl', 'Staged {count} stale channels for unsubscribe review')
+                        .replace('{count}', String(stagedIds.length)), '#f59e0b', {
                         duration: 8,
                         tone: 'warning',
                         action: {
-                            text: 'Undo',
+                            text: t('toastActionUndo', 'Undo'),
                             onClick: () => this._undoStagedUnsubscribes(stagedIds)
                         }
                     });
@@ -43134,7 +43175,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._renderDeadChannelMarkers();
                 this._renderToolbar();
                 if (typeof showToast === 'function') {
-                    showToast(`Removed ${removed} staged unsubscribe${removed === 1 ? '' : 's'}`, '#22c55e', { duration: 4 });
+                    showToast(t('subscriptionHealthRemovedStagedTpl', 'Removed {count} staged unsubscribes')
+                        .replace('{count}', String(removed)), '#22c55e', { duration: 4 });
                 }
             },
 
@@ -43514,7 +43556,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async _generateAiTagsForGroup(groupId) {
                 if (!appState?.settings?.subscriptionAiTags) {
-                    if (typeof showToast === 'function') showToast('Enable "AI Tags For Subscription Groups" first.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t('subscriptionAiTagsRequired', 'Enable "AI Tags For Subscription Groups" first.'), '#f59e0b');
                     return;
                 }
                 const groups = this._readGroups();
@@ -43524,10 +43566,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // never-fall-through-to-remote contract as localAiSummary.
                 const factory = window.Summarizer || window.ai?.summarizer;
                 if (!factory?.create) {
-                    if (typeof showToast === 'function') showToast('Local Summarizer not available; enable the Chrome AI origin trial.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t('subscriptionSummarizerUnavailable', 'Local Summarizer not available; enable the Chrome AI origin trial.'), '#f59e0b');
                     return;
                 }
-                if (typeof showToast === 'function') showToast(`Generating tags for "${group.name || groupId}"\u2026`, '#7c3aed', { duration: 6 });
+                if (typeof showToast === 'function') showToast(t('subscriptionAiTagsGeneratingTpl', 'Generating tags for "{group}"\u2026')
+                    .replace('{group}', group.name || groupId), '#7c3aed', { duration: 6 });
                 // Gather titles from the rendered subscription feed cards for
                 // channels in this group. Title-only — never transcripts here.
                 const allowed = this._getGroupChannelIdSet(groupId, groups);
@@ -43539,7 +43582,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (t) titles.push(t);
                 });
                 if (!titles.length) {
-                    if (typeof showToast === 'function') showToast('No matching cards rendered yet — scroll the feed and try again.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t('subscriptionAiTagsNoCards', 'No matching cards rendered yet — scroll the feed and try again.'), '#f59e0b');
                     return;
                 }
                 const summary = titles.slice(0, 40).join('\n');
@@ -43556,16 +43599,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         .slice(0, 8);
                 } catch (e) {
                     DebugManager.log('SubGroups', `AI tag generation failed: ${e.message}`);
-                    if (typeof showToast === 'function') showToast(`Tag generation failed: ${e.message}`, '#ef4444');
+                    if (typeof showToast === 'function') showToast(t('subscriptionAiTagsGenerationFailedTpl', 'Tag generation failed: {error}')
+                        .replace('{error}', e.message), '#ef4444');
                     return;
                 }
                 if (!tags.length) {
-                    if (typeof showToast === 'function') showToast('Summarizer returned no usable tags.', '#f59e0b');
+                    if (typeof showToast === 'function') showToast(t('subscriptionAiTagsNoUsable', 'Summarizer returned no usable tags.'), '#f59e0b');
                     return;
                 }
                 const next = { ...this._readAiTagData(), [groupId]: { tags, generatedAt: Date.now() } };
                 this._writeAiTagData(next);
-                if (typeof showToast === 'function') showToast(`Tagged "${group.name || groupId}": ${tags.join(', ')}`, '#22c55e', { duration: 6 });
+                if (typeof showToast === 'function') showToast(t('subscriptionAiTagsTaggedTpl', 'Tagged "{group}": {tags}')
+                    .replace('{group}', group.name || groupId)
+                    .replace('{tags}', tags.join(', ')), '#22c55e', { duration: 6 });
                 this._renderToolbar();
             },
 
@@ -43581,28 +43627,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 overlay.className = 'ytkit-sub-group-dialog';
                 overlay.setAttribute('role', 'dialog');
                 overlay.setAttribute('aria-modal', 'true');
-                overlay.setAttribute('aria-label', safeParentId ? 'Create subscription subgroup' : 'Create subscription group');
+                overlay.setAttribute('aria-label', safeParentId
+                    ? t('subscriptionCreateSubgroupDialogAria', 'Create subscription subgroup')
+                    : t('subscriptionCreateGroupDialogAria', 'Create subscription group'));
                 const card = document.createElement('div');
                 card.className = 'ytkit-sub-group-dialog__card';
                 const h = document.createElement('div');
                 h.className = 'ytkit-sub-group-dialog__title';
-                h.textContent = safeParentId ? `Name a subgroup under ${groups[safeParentId]?.name || safeParentId}` : 'Name this group';
+                h.textContent = safeParentId
+                    ? t('subscriptionSubgroupNameTpl', 'Name a subgroup under {group}')
+                        .replace('{group}', groups[safeParentId]?.name || safeParentId)
+                    : t('subscriptionGroupDialogTitle', 'Name this group');
                 const input = document.createElement('input');
                 input.className = 'ytkit-sub-group-dialog__input';
                 input.type = 'text';
                 input.maxLength = 80;
-                input.placeholder = safeParentId ? 'e.g. Frontend, DevOps, Jazz' : 'e.g. Coding, Music, News';
-                input.setAttribute('aria-label', 'Group name');
+                input.placeholder = safeParentId
+                    ? t('subscriptionSubgroupPlaceholder', 'e.g. Frontend, DevOps, Jazz')
+                    : t('subscriptionGroupPlaceholder', 'e.g. Coding, Music, News');
+                input.setAttribute('aria-label', t('subscriptionGroupNameAria', 'Group name'));
                 const actions = document.createElement('div');
                 actions.className = 'ytkit-sub-group-dialog__actions';
                 const cancel = document.createElement('button');
                 cancel.className = 'ytkit-sub-group-dialog__button';
                 cancel.type = 'button';
-                cancel.textContent = 'Cancel';
+                cancel.textContent = t('subscriptionDialogCancel', 'Cancel');
                 const create = document.createElement('button');
                 create.className = 'ytkit-sub-group-dialog__button ytkit-sub-group-dialog__button--primary';
                 create.type = 'button';
-                create.textContent = 'Create';
+                create.textContent = t('subscriptionDialogCreate', 'Create');
                 actions.append(cancel, create);
                 card.append(h, input, actions);
                 overlay.appendChild(card);
@@ -43657,11 +43710,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const bar = document.createElement('div');
                 bar.className = 'ytkit-sub-toolbar';
                 bar.setAttribute('role', 'toolbar');
-                bar.setAttribute('aria-label', 'Subscription group controls');
+                bar.setAttribute('aria-label', t('subscriptionToolbarAria', 'Subscription group controls'));
 
                 const groupLabel = document.createElement('span');
                 groupLabel.className = 'ytkit-sub-toolbar__label';
-                groupLabel.textContent = 'Groups';
+                groupLabel.textContent = t('subscriptionToolbarGroups', 'Groups');
                 bar.appendChild(groupLabel);
 
                 const groups = this._readGroups();
@@ -43670,9 +43723,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 allChip.type = 'button';
                 allChip.className = 'ytkit-sub-group-chip';
                 allChip.dataset.active = this._activeGroupId ? '0' : '1';
-                allChip.textContent = 'All';
+                allChip.textContent = t('commonAll', 'All');
                 allChip.setAttribute('aria-pressed', String(!this._activeGroupId));
-                allChip.setAttribute('aria-label', 'Show all subscriptions');
+                allChip.setAttribute('aria-label', t('subscriptionToolbarAllAria', 'Show all subscriptions'));
                 allChip.addEventListener('click', () => {
                     this._activeGroupId = '';
                     this._renderToolbar();
@@ -43697,12 +43750,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const groupName = group.name || id;
                     const tagSuffix = aiTagData[id]?.tags?.length ? ` · ${aiTagData[id].tags.slice(0, 3).join(' ')}` : '';
                     const prefix = depth ? '- ' : '';
-                    chip.textContent = `${prefix}${groupName} (${group.channelIds?.length || 0})${tagSuffix}`;
-                    chip.setAttribute('aria-label', `${groupName}. ${group.channelIds?.length || 0} channel${group.channelIds?.length === 1 ? '' : 's'}${depth ? '. Subgroup' : ''}`);
+                    const channelCount = group.channelIds?.length || 0;
+                    chip.textContent = t('subscriptionGroupChipTpl', '{prefix}{name} ({count}){tags}')
+                        .replace('{prefix}', prefix)
+                        .replace('{name}', groupName)
+                        .replace('{count}', channelCount)
+                        .replace('{tags}', tagSuffix);
+                    const channelLabel = channelCount === 1
+                        ? t('subscriptionChannelSingular', 'channel')
+                        : t('subscriptionChannelPlural', 'channels');
+                    const subgroupSuffix = depth ? t('subscriptionSubgroupSuffix', '. Subgroup') : '';
+                    chip.setAttribute('aria-label', t('subscriptionGroupChipAriaTpl', '{name}. {count} {channels}{subgroup}')
+                        .replace('{name}', groupName)
+                        .replace('{count}', channelCount)
+                        .replace('{channels}', channelLabel)
+                        .replace('{subgroup}', subgroupSuffix));
                     if (aiTagData[id]?.tags?.length) {
-                        chip.title = `AI tags: ${aiTagData[id].tags.join(', ')} · Shift+click to regenerate`;
+                        chip.title = t('subscriptionAiTagsRegenerateTitleTpl', 'AI tags: {tags} · Shift+click to regenerate')
+                            .replace('{tags}', aiTagData[id].tags.join(', '));
                     } else if (appState?.settings?.subscriptionAiTags) {
-                        chip.title = 'Shift+click to generate AI tags';
+                        chip.title = t('subscriptionAiTagsGenerateTitle', 'Shift+click to generate AI tags');
                     }
                     chip.addEventListener('click', (e) => {
                         if (e.shiftKey && appState?.settings?.subscriptionAiTags) {
@@ -43726,16 +43793,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const newBtn = document.createElement('button');
                 newBtn.type = 'button';
-                newBtn.textContent = '+ Group';
-                newBtn.setAttribute('aria-label', 'Create subscription group');
+                newBtn.textContent = t('subscriptionToolbarNewGroup', '+ Group');
+                newBtn.setAttribute('aria-label', t('subscriptionToolbarNewGroupAria', 'Create subscription group'));
                 newBtn.addEventListener('click', () => this._showNewGroupDialog(newBtn));
                 bar.appendChild(newBtn);
 
                 if (this._activeGroupId && groups[this._activeGroupId] && !this._getGroupParentId(this._activeGroupId, groups)) {
                     const subBtn = document.createElement('button');
                     subBtn.type = 'button';
-                    subBtn.textContent = '+ Subgroup';
-                    subBtn.setAttribute('aria-label', 'Create subscription subgroup');
+                    subBtn.textContent = t('subscriptionToolbarNewSubgroup', '+ Subgroup');
+                    subBtn.setAttribute('aria-label', t('subscriptionToolbarNewSubgroupAria', 'Create subscription subgroup'));
                     subBtn.addEventListener('click', () => this._showNewGroupDialog(subBtn, this._activeGroupId));
                     bar.appendChild(subBtn);
                 }
@@ -43745,8 +43812,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const editBtn = document.createElement('button');
                     editBtn.type = 'button';
                     editBtn.dataset.action = 'edit-channels';
-                    editBtn.textContent = 'Edit Channels';
-                    editBtn.setAttribute('aria-label', `Edit channels in ${groups[activeGroupId].name || activeGroupId}`);
+                    editBtn.textContent = t('subscriptionToolbarEditChannels', 'Edit Channels');
+                    editBtn.setAttribute('aria-label', t('subscriptionMembersRegionAriaTpl', 'Edit channels in {group}')
+                        .replace('{group}', groups[activeGroupId].name || activeGroupId));
                     editBtn.setAttribute('aria-haspopup', 'dialog');
                     editBtn.addEventListener('click', () => this._toggleMembersPanel(activeGroupId));
                     bar.appendChild(editBtn);
@@ -43754,27 +43822,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const playBtn = document.createElement('button');
                     playBtn.type = 'button';
                     playBtn.dataset.action = 'play-all';
-                    playBtn.textContent = 'Play All';
-                    playBtn.setAttribute('aria-label', `Play all videos from ${groups[activeGroupId].name || activeGroupId}`);
+                    playBtn.textContent = t('subscriptionToolbarPlayAll', 'Play All');
+                    playBtn.setAttribute('aria-label', t('subscriptionToolbarPlayAllAriaTpl', 'Play all videos from {group}')
+                        .replace('{group}', groups[activeGroupId].name || activeGroupId));
                     playBtn.addEventListener('click', () => this._playGroupAsQueue(activeGroupId));
                     bar.appendChild(playBtn);
                 }
 
                 const sortLabel = document.createElement('span');
                 sortLabel.className = 'ytkit-sub-toolbar__label';
-                sortLabel.textContent = 'Sort';
+                sortLabel.textContent = t('subscriptionToolbarSort', 'Sort');
                 bar.appendChild(sortLabel);
 
                 const sortSelect = document.createElement('select');
-                sortSelect.setAttribute('aria-label', 'Sort subscriptions');
+                sortSelect.setAttribute('aria-label', t('subscriptionToolbarSortAria', 'Sort subscriptions'));
                 const activeSortMode = this._getActiveSortMode(groups);
                 for (const [v, label] of [
-                    ['default', 'YouTube default'],
-                    ['date-desc', 'Latest first'],
-                    ['duration-asc', 'Shortest first'],
-                    ['unwatched', 'Unwatched first'],
-                    ['new-since-last-visit', 'New since last visit'],
-                    ['popular', 'Most popular (views)']
+                    ['default', t('subscriptionSortYouTubeDefault', 'YouTube default')],
+                    ['date-desc', t('subscriptionSortLatest', 'Latest first')],
+                    ['duration-asc', t('subscriptionSortShortest', 'Shortest first')],
+                    ['unwatched', t('subscriptionSortUnwatched', 'Unwatched first')],
+                    ['new-since-last-visit', t('subscriptionSortNewSinceLastVisit', 'New since last visit')],
+                    ['popular', t('subscriptionSortPopular', 'Most popular (views)')]
                 ]) {
                     const opt = document.createElement('option');
                     opt.value = v; opt.textContent = label;
@@ -43792,48 +43861,51 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 healthBtn.type = 'button';
                 healthBtn.dataset.action = 'health';
                 const healthStagedCount = Object.keys(stagedUnsubscribes).length;
-                healthBtn.textContent = healthStagedCount > 0 ? `Health (${healthStagedCount})` : 'Health';
-                healthBtn.title = 'Stale channels, staged unsubscribes, new-video counts, and exports in one panel.';
-                healthBtn.setAttribute('aria-label', 'Open the subscription health center');
+                healthBtn.textContent = healthStagedCount > 0
+                    ? t('subscriptionToolbarHealthCountTpl', 'Health ({count})').replace('{count}', String(healthStagedCount))
+                    : t('subscriptionToolbarHealth', 'Health');
+                healthBtn.title = t('subscriptionToolbarHealthTitle', 'Stale channels, staged unsubscribes, new-video counts, and exports in one panel.');
+                healthBtn.setAttribute('aria-label', t('subscriptionHealthOpenAria', 'Open the subscription health center'));
                 healthBtn.addEventListener('click', () => this._toggleHealthPanel());
                 bar.appendChild(healthBtn);
 
                 const digestBtn = document.createElement('button');
                 digestBtn.type = 'button';
                 digestBtn.dataset.action = 'digest';
-                digestBtn.textContent = 'Digest';
-                digestBtn.setAttribute('aria-label', 'Open group notifications digest');
+                digestBtn.textContent = t('subscriptionToolbarDigest', 'Digest');
+                digestBtn.setAttribute('aria-label', t('subscriptionDigestOpenAria', 'Open group notifications digest'));
                 digestBtn.addEventListener('click', () => this._toggleDigestPanel());
                 bar.appendChild(digestBtn);
 
                 const exportBtn = document.createElement('button');
                 exportBtn.type = 'button';
                 exportBtn.dataset.action = 'export';
-                exportBtn.textContent = 'Export';
-                exportBtn.setAttribute('aria-label', 'Export subscription groups as JSON');
+                exportBtn.textContent = t('commonExport', 'Export');
+                exportBtn.setAttribute('aria-label', t('subscriptionExportJsonAria', 'Export subscription groups as JSON'));
                 exportBtn.addEventListener('click', () => this._exportGroups());
                 bar.appendChild(exportBtn);
 
                 const csvBtn = document.createElement('button');
                 csvBtn.type = 'button';
                 csvBtn.dataset.action = 'export-csv';
-                csvBtn.textContent = 'CSV';
-                csvBtn.setAttribute('aria-label', 'Export subscription groups as CSV');
+                csvBtn.textContent = t('subscriptionExportCsvLabel', 'CSV');
+                csvBtn.setAttribute('aria-label', t('subscriptionExportCsvAria', 'Export subscription groups as CSV'));
                 csvBtn.addEventListener('click', () => this._exportGroupsCsv());
                 bar.appendChild(csvBtn);
 
                 const opmlBtn = document.createElement('button');
                 opmlBtn.type = 'button';
                 opmlBtn.dataset.action = 'export-opml';
-                opmlBtn.textContent = 'OPML';
-                opmlBtn.setAttribute('aria-label', 'Export subscription groups as OPML');
+                opmlBtn.textContent = t('subscriptionExportOpmlLabel', 'OPML');
+                opmlBtn.setAttribute('aria-label', t('subscriptionExportOpmlAria', 'Export subscription groups as OPML'));
                 opmlBtn.addEventListener('click', () => this._exportGroupsOpml());
                 bar.appendChild(opmlBtn);
 
                 const importBtn = document.createElement('button');
                 importBtn.type = 'button';
-                importBtn.textContent = 'Import';
-                importBtn.setAttribute('aria-label', 'Import subscription groups');
+                importBtn.textContent = t('commonImport', 'Import');
+                importBtn.setAttribute('aria-label', t('subscriptionImportAria', 'Import subscription groups'));
+                importBtn.title = t('subscriptionImportTitle', 'Import subscription groups (merges with your groups; Shift+click replaces them)');
                 importBtn.addEventListener('click', () => {
                     const inp = document.createElement('input');
                     inp.type = 'file';
@@ -43856,18 +43928,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const staleLabel = document.createElement('span');
                 staleLabel.className = 'ytkit-sub-toolbar__label';
-                staleLabel.textContent = 'Stale';
+                staleLabel.textContent = t('subscriptionToolbarStale', 'Stale');
                 bar.appendChild(staleLabel);
 
                 const scanBtn = document.createElement('button');
                 scanBtn.type = 'button';
                 scanBtn.dataset.action = 'scan-stale';
-                scanBtn.textContent = 'Scan Stale';
-                scanBtn.setAttribute('aria-label', 'Scan rendered subscriptions for stale channels');
+                scanBtn.textContent = t('subscriptionToolbarScanStale', 'Scan Stale');
+                scanBtn.setAttribute('aria-label', t('subscriptionToolbarScanStaleAria', 'Scan rendered subscriptions for stale channels'));
                 scanBtn.addEventListener('click', () => {
                     const candidates = this._renderDeadChannelMarkers();
                     if (typeof showToast === 'function') {
-                        showToast(`${candidates.length} stale channel${candidates.length === 1 ? '' : 's'} flagged`, candidates.length ? '#f59e0b' : '#6b7280', {
+                        showToast(t('subscriptionToolbarStaleFlaggedTpl', '{count} stale channels flagged')
+                            .replace('{count}', String(candidates.length)), candidates.length ? '#f59e0b' : '#6b7280', {
                             duration: 5,
                             tone: candidates.length ? 'warn' : 'neutral'
                         });
@@ -43878,9 +43951,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const stageBtn = document.createElement('button');
                 stageBtn.type = 'button';
                 stageBtn.dataset.action = 'stage-unsubscribe';
-                stageBtn.textContent = 'Stage Stale';
-                stageBtn.title = 'Stage rendered stale channels for review. No YouTube unsubscribe buttons are clicked.';
-                stageBtn.setAttribute('aria-label', 'Stage rendered stale channels for unsubscribe review');
+                stageBtn.textContent = t('subscriptionToolbarStageStale', 'Stage Stale');
+                stageBtn.title = t('subscriptionToolbarStageStaleTitle', 'Stage rendered stale channels for review. No YouTube unsubscribe buttons are clicked.');
+                stageBtn.setAttribute('aria-label', t('subscriptionToolbarStageStaleAria', 'Stage rendered stale channels for unsubscribe review'));
                 stageBtn.addEventListener('click', () => this._stageDeadChannelUnsubscribes());
                 bar.appendChild(stageBtn);
 
@@ -43889,8 +43962,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const undoStageBtn = document.createElement('button');
                     undoStageBtn.type = 'button';
                     undoStageBtn.dataset.action = 'undo-staged-unsubscribe';
-                    undoStageBtn.textContent = `Undo Staged (${stagedCount})`;
-                    undoStageBtn.setAttribute('aria-label', `Undo ${stagedCount} staged unsubscribe ${stagedCount === 1 ? 'item' : 'items'}`);
+                    undoStageBtn.textContent = t('subscriptionToolbarUndoStagedTpl', 'Undo Staged ({count})')
+                        .replace('{count}', String(stagedCount));
+                    undoStageBtn.setAttribute('aria-label', t('subscriptionToolbarUndoStagedAriaTpl', 'Undo {count} staged unsubscribe items')
+                        .replace('{count}', String(stagedCount)));
                     undoStageBtn.addEventListener('click', () => this._undoStagedUnsubscribes(Object.keys(this._readUnsubscribeStaging())));
                     bar.appendChild(undoStageBtn);
 
@@ -44028,7 +44103,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const notice = document.createElement('div');
                 notice.className = 'ytkit-sub-group-empty';
                 notice.setAttribute('role', 'status');
-                notice.textContent = 'No channels in this group yet — click Edit channels to add some.';
+                notice.textContent = t('subscriptionGroupEmpty', 'No channels in this group yet — click Edit Channels to add some.');
                 this._toolbar.insertAdjacentElement('afterend', notice);
             },
 
@@ -44072,7 +44147,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('section');
                 panel.className = 'ytkit-sub-members-panel';
                 panel.setAttribute('role', 'dialog');
-                panel.setAttribute('aria-label', `Edit channels in ${group.name || groupId}`);
+                panel.setAttribute('aria-label', t('subscriptionMembersRegionAriaTpl', 'Edit channels in {group}')
+                    .replace('{group}', group.name || groupId));
                 panel.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') {
                         e.preventDefault();
@@ -44086,16 +44162,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const titleWrap = document.createElement('div');
                 const title = document.createElement('h3');
                 title.className = 'ytkit-sub-members-title';
-                title.textContent = `Edit channels — ${group.name || groupId}`;
+                title.textContent = t('subscriptionMembersTitleTpl', 'Edit channels — {group}')
+                    .replace('{group}', group.name || groupId);
                 const meta = document.createElement('div');
                 meta.className = 'ytkit-sub-members-meta';
-                meta.textContent = 'Check a channel to add it to this group. Changes save immediately. Scroll the feed to surface more channels.';
+                meta.textContent = t('subscriptionMembersMeta', 'Check a channel to add it to this group. Changes save immediately. Scroll the feed to surface more channels.');
                 titleWrap.append(title, meta);
                 const close = document.createElement('button');
                 close.type = 'button';
                 close.className = 'ytkit-sub-members-close';
-                close.textContent = 'Done';
-                close.setAttribute('aria-label', 'Close the channel membership editor');
+                close.textContent = t('commonDone', 'Done');
+                close.setAttribute('aria-label', t('subscriptionMembersCloseAria', 'Close the channel membership editor'));
                 close.addEventListener('click', () => {
                     this._closeMembersPanel(true);
                     this._renderToolbar();
@@ -44106,12 +44183,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const list = document.createElement('div');
                 list.className = 'ytkit-sub-members-list';
                 list.setAttribute('role', 'group');
-                list.setAttribute('aria-label', 'Rendered channels');
+                list.setAttribute('aria-label', t('subscriptionMembersListAria', 'Rendered channels'));
 
                 if (!channels.size) {
                     const empty = document.createElement('div');
                     empty.className = 'ytkit-sub-members-empty';
-                    empty.textContent = 'No channels rendered yet — scroll the subscriptions feed, then reopen this panel.';
+                    empty.textContent = t('subscriptionMembersEmpty', 'No channels rendered yet — scroll the subscriptions feed, then reopen this panel.');
                     list.appendChild(empty);
                 }
 
@@ -44123,7 +44200,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = own.has(channelId);
-                    checkbox.setAttribute('aria-label', `Include ${channelName} in ${group.name || groupId}`);
+                    checkbox.setAttribute('aria-label', t('subscriptionMembersIncludeChannelAriaTpl', 'Include {channel} in {group}')
+                        .replace('{channel}', channelName)
+                        .replace('{group}', group.name || groupId));
                     checkbox.addEventListener('change', () => {
                         this._setGroupMembership(groupId, channelId, checkbox.checked);
                     });
@@ -44161,7 +44240,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._applyGroupFilter();
                 this._applyNewSinceMarkers();
                 if (typeof showToast === 'function') {
-                    showToast(included ? 'Channel added to group' : 'Channel removed from group', '#7c3aed', { duration: 2 });
+                    showToast(included
+                        ? t('subscriptionMembersAdded', 'Channel added to group')
+                        : t('subscriptionMembersRemoved', 'Channel removed from group'), '#7c3aed', { duration: 2 });
                 }
             },
             _xmlEscape(value) {
@@ -44419,7 +44500,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 this._renderToolbar();
                                 this._applyGroupFilter();
                                 this._renderDeadChannelMarkers();
-                                showToast('Restored previous subscription groups', '#6b7280', { duration: 4, tone: 'neutral' });
+                                 showToast(t('subscriptionGroupsRestored', 'Restored previous subscription groups'), '#6b7280', { duration: 4, tone: 'neutral' });
                             }
                         }
                     });

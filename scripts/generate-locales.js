@@ -3606,7 +3606,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': 'Tag-Erstellung fehlgeschlagen: {error}',
     'Summarizer returned no usable tags.': 'Die Zusammenfassung lieferte keine verwendbaren Tags.',
     'Tagged "{group}": {tags}': '„{group}“ getaggt: {tags}',
-    'Restored previous subscription groups': 'Vorherige Abogruppen wiederhergestellt'
+    'Restored previous subscription groups': 'Vorherige Abogruppen wiederhergestellt',
+    'YouTube default': 'YouTube-Standard',
+    'Latest first': 'Neueste zuerst',
+    'Shortest first': 'Kürzeste zuerst',
+    'Unwatched first': 'Ungesehene zuerst',
+    'New since last visit': 'Neu seit dem letzten Besuch',
+    'Most popular (views)': 'Am beliebtesten (Aufrufe)'
   },
   es: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -3655,7 +3661,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': 'Error al generar etiquetas: {error}',
     'Summarizer returned no usable tags.': 'El resumidor no devolvió etiquetas utilizables.',
     'Tagged "{group}": {tags}': 'Etiquetado "{group}": {tags}',
-    'Restored previous subscription groups': 'Grupos de suscripciones anteriores restaurados'
+    'Restored previous subscription groups': 'Grupos de suscripciones anteriores restaurados',
+    'YouTube default': 'Predeterminado de YouTube',
+    'Latest first': 'Más recientes primero',
+    'Shortest first': 'Más cortos primero',
+    'Unwatched first': 'No vistos primero',
+    'New since last visit': 'Nuevos desde la última visita',
+    'Most popular (views)': 'Más populares (vistas)'
   },
   fr: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -3704,7 +3716,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': 'Échec de la génération des tags : {error}',
     'Summarizer returned no usable tags.': 'Le résumeur n’a renvoyé aucun tag utilisable.',
     'Tagged "{group}": {tags}': 'Tags ajoutés à « {group} » : {tags}',
-    'Restored previous subscription groups': 'Groupes d’abonnements précédents restaurés'
+    'Restored previous subscription groups': 'Groupes d’abonnements précédents restaurés',
+    'YouTube default': 'Valeur par défaut YouTube',
+    'Latest first': 'Plus récents en premier',
+    'Shortest first': 'Plus courts en premier',
+    'Unwatched first': 'Non vus en premier',
+    'New since last visit': 'Nouveautés depuis la dernière visite',
+    'Most popular (views)': 'Plus populaires (vues)'
   },
   it: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -3753,7 +3771,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': 'Generazione dei tag non riuscita: {error}',
     'Summarizer returned no usable tags.': 'Il riepilogatore non ha restituito tag utilizzabili.',
     'Tagged "{group}": {tags}': 'Tag aggiunti a "{group}": {tags}',
-    'Restored previous subscription groups': 'Gruppi di iscrizioni precedenti ripristinati'
+    'Restored previous subscription groups': 'Gruppi di iscrizioni precedenti ripristinati',
+    'YouTube default': 'Predefinito di YouTube',
+    'Latest first': 'Più recenti prima',
+    'Shortest first': 'Più corti prima',
+    'Unwatched first': 'Non visti prima',
+    'New since last visit': 'Nuovi dall’ultima visita',
+    'Most popular (views)': 'Più popolari (visualizzazioni)'
   },
   pt_BR: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -3802,7 +3826,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': 'Falha ao gerar tags: {error}',
     'Summarizer returned no usable tags.': 'O resumidor não retornou tags utilizáveis.',
     'Tagged "{group}": {tags}': 'Tags adicionadas a "{group}": {tags}',
-    'Restored previous subscription groups': 'Grupos de inscrições anteriores restaurados'
+    'Restored previous subscription groups': 'Grupos de inscrições anteriores restaurados',
+    'YouTube default': 'Padrão do YouTube',
+    'Latest first': 'Mais recentes primeiro',
+    'Shortest first': 'Mais curtos primeiro',
+    'Unwatched first': 'Não assistidos primeiro',
+    'New since last visit': 'Novos desde a última visita',
+    'Most popular (views)': 'Mais populares (visualizações)'
   },
   ru: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -3851,7 +3881,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': 'Ошибка создания тегов: {error}',
     'Summarizer returned no usable tags.': 'Суммаризатор не вернул подходящих тегов.',
     'Tagged "{group}": {tags}': 'Теги добавлены к «{group}»: {tags}',
-    'Restored previous subscription groups': 'Предыдущие группы подписок восстановлены'
+    'Restored previous subscription groups': 'Предыдущие группы подписок восстановлены',
+    'YouTube default': 'По умолчанию YouTube',
+    'Latest first': 'Сначала новые',
+    'Shortest first': 'Сначала короткие',
+    'Unwatched first': 'Сначала непросмотренные',
+    'New since last visit': 'Новые с последнего посещения',
+    'Most popular (views)': 'Самые популярные (просмотры)'
   },
   ja: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -3900,7 +3936,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': 'タグの生成に失敗しました: {error}',
     'Summarizer returned no usable tags.': '要約機能から使用できるタグが返されませんでした。',
     'Tagged "{group}": {tags}': '「{group}」にタグを付けました: {tags}',
-    'Restored previous subscription groups': '以前の登録チャンネルのグループを復元しました'
+    'Restored previous subscription groups': '以前の登録チャンネルのグループを復元しました',
+    'YouTube default': 'YouTube の標準',
+    'Latest first': '新しい順',
+    'Shortest first': '短い順',
+    'Unwatched first': '未視聴を優先',
+    'New since last visit': '前回の訪問後に新しいもの',
+    'Most popular (views)': '人気順（再生回数）'
   },
   ko: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -3949,7 +3991,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': '태그 생성 실패: {error}',
     'Summarizer returned no usable tags.': '요약기가 사용할 수 있는 태그를 반환하지 않음.',
     'Tagged "{group}": {tags}': '"{group}"에 태그 지정됨: {tags}',
-    'Restored previous subscription groups': '이전 구독 그룹 복원됨'
+    'Restored previous subscription groups': '이전 구독 그룹 복원됨',
+    'YouTube default': 'YouTube 기본값',
+    'Latest first': '최신순',
+    'Shortest first': '짧은 영상 먼저',
+    'Unwatched first': '미시청 먼저',
+    'New since last visit': '마지막 방문 이후 새 동영상',
+    'Most popular (views)': '인기순(조회수)'
   },
   ar: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -3998,7 +4046,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': 'فشل إنشاء العلامات: {error}',
     'Summarizer returned no usable tags.': 'لم يُرجع الملخّص أي علامات قابلة للاستخدام.',
     'Tagged "{group}": {tags}': 'تم وضع علامات على "{group}": {tags}',
-    'Restored previous subscription groups': 'تمت استعادة مجموعات الاشتراكات السابقة'
+    'Restored previous subscription groups': 'تمت استعادة مجموعات الاشتراكات السابقة',
+    'YouTube default': 'الإعداد الافتراضي في YouTube',
+    'Latest first': 'الأحدث أولًا',
+    'Shortest first': 'الأقصر أولًا',
+    'Unwatched first': 'غير المشاهدة أولًا',
+    'New since last visit': 'الجديد منذ آخر زيارة',
+    'Most popular (views)': 'الأكثر شعبية (المشاهدات)'
   },
   zh_CN: {
     'subscription-groups:fallback': 'subscription-groups:fallback',
@@ -4047,7 +4101,13 @@ const SUBSCRIPTION_GROUPS_TRANSLATIONS = {
     'Tag generation failed: {error}': '标签生成失败：{error}',
     'Summarizer returned no usable tags.': '摘要器未返回可用标签。',
     'Tagged "{group}": {tags}': '已为“{group}”添加标签：{tags}',
-    'Restored previous subscription groups': '已恢复之前的订阅组'
+    'Restored previous subscription groups': '已恢复之前的订阅组',
+    'YouTube default': 'YouTube 默认',
+    'Latest first': '最新优先',
+    'Shortest first': '最短优先',
+    'Unwatched first': '未观看优先',
+    'New since last visit': '上次访问后新增',
+    'Most popular (views)': '最受欢迎（观看次数）'
   }
 };
 for (const [locale, messages] of Object.entries(SUBSCRIPTION_GROUPS_TRANSLATIONS)) Object.assign(T[locale], messages);
