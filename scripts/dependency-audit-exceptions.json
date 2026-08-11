@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "auditLevel": "moderate",
+  "scope": "development-only",
+  "exceptions": [
+    {
+      "package": "image-size",
+      "version": "2.0.2",
+      "severity": "high",
+      "advisories": [
+        {
+          "id": "GHSA-w3rx-r6r6-pgpr",
+          "url": "https://github.com/advisories/GHSA-w3rx-r6r6-pgpr",
+          "range": "<=2.0.2"
+        },
+        {
+          "id": "GHSA-5p2g-fcmc-qvqq",
+          "url": "https://github.com/advisories/GHSA-5p2g-fcmc-qvqq",
+          "range": "<=2.0.2"
+        }
+      ],
+      "reachableThrough": [
+        {
+          "package": "addons-linter",
+          "version": "10.10.0"
+        },
+        {
+          "package": "web-ext",
+          "version": "10.6.0"
+        }
+      ],
+      "directDependency": false,
+      "shipsToUsers": false,
+      "upstreamStatus": "No patched image-size release is available. npm audit fix proposes the breaking web-ext 5.5.0 downgrade, which would remove the supported Firefox tooling line.",
+      "availableFix": {
+        "package": "web-ext",
+        "version": "5.5.0",
+        "breaking": true
+      }
+    }
+  ]
+}

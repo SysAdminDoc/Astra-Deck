@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- The dependency gate now keeps the production audit strict while validating
+  the one reviewed Firefox-tooling exception (`image-size` through
+  `web-ext`/`addons-linter`) against a machine-readable, versioned policy. Any
+  new package, advisory, version, or dependency path fails the gate.
+
 ---
 
 ## [4.59.1] - 2026-08-10

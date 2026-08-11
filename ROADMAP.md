@@ -134,13 +134,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: a "changed from defaults" view lists every non-default key with its current and default value, is copyable into a bug report, and is included in the diagnostics bundle.
   Complexity: S
 
-- [ ] P1 — Restore a clean dependency-security gate for Firefox tooling
-  Why: npm run check is not green even though production dependencies pass audit. The failing chain is development-only, but it is part of the release and verification path.
-  Evidence: [image-size ICNS advisory](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr), [image-size JXL/HEIF advisory](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq), and the verified local graph web-ext 10.6.0 → addons-linter 10.10.0 → image-size 2.0.2; npm audit fix --force proposes a breaking web-ext 5.5.0 downgrade.
-  Touches: package.json and lockfile, Firefox lint/build scripts, check orchestration, and release/security documentation if a bounded exception is unavoidable.
-  Acceptance: npm run check passes without high-severity findings, or emits a machine-readable, narrowly scoped exception naming the exact transitive package, advisory, reachability, and upstream status; Firefox lint/build coverage still runs; production bundles and the production-only audit remain unchanged.
-  Complexity: M
-
 - [ ] P1 — Maintain a browser capability matrix and fallback contract
   Why: optional APIs span Chrome-only, Chrome-conditional, and Firefox-different behaviour. A feature can pass static checks while silently losing a fallback on a supported browser.
   Evidence: [Chrome scripting and userScripts conditions](https://developer.chrome.com/docs/extensions/reference/api/scripting), [Chrome userScripts](https://developer.chrome.com/docs/extensions/reference/api/userScripts), [Chrome built-in AI availability](https://developer.chrome.com/docs/ai/built-in-apis), and [Firefox content-script timing/world differences](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts).
