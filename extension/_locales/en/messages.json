@@ -5698,6 +5698,24 @@
   "subscriptionOrderNewestLoaded": {
     "message": "Newest first (loaded only)"
   },
+  "subscriptionSortYouTubeDefault": {
+    "message": "YouTube default"
+  },
+  "subscriptionSortLatest": {
+    "message": "Latest first"
+  },
+  "subscriptionSortShortest": {
+    "message": "Shortest first"
+  },
+  "subscriptionSortUnwatched": {
+    "message": "Unwatched first"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "New since last visit"
+  },
+  "subscriptionSortPopular": {
+    "message": "Most popular (views)"
+  },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"
   },

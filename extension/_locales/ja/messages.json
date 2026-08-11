@@ -5573,7 +5573,7 @@
     "message": "Nothing new since your last visit stamp."
   },
   "subscriptionHealthNewHeading": {
-    "message": "New since last visit"
+    "message": "前回の訪問後に新しいもの"
   },
   "subscriptionHealthNewSummaryTpl": {
     "message": "{videos} new videos from {channels} channels since your last visit."
@@ -5697,6 +5697,24 @@
   },
   "subscriptionOrderNewestLoaded": {
     "message": "新しい順（読み込み済みのみ）"
+  },
+  "subscriptionSortYouTubeDefault": {
+    "message": "YouTube の既定"
+  },
+  "subscriptionSortLatest": {
+    "message": "新しい順"
+  },
+  "subscriptionSortShortest": {
+    "message": "短い順"
+  },
+  "subscriptionSortUnwatched": {
+    "message": "未視聴を優先"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "前回の訪問後に新しいもの"
+  },
+  "subscriptionSortPopular": {
+    "message": "人気順（再生回数）"
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"

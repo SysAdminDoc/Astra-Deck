@@ -5573,7 +5573,7 @@
     "message": "Nothing new since your last visit stamp."
   },
   "subscriptionHealthNewHeading": {
-    "message": "New since last visit"
+    "message": "Novos desde a última visita"
   },
   "subscriptionHealthNewSummaryTpl": {
     "message": "{videos} new videos from {channels} channels since your last visit."
@@ -5697,6 +5697,24 @@
   },
   "subscriptionOrderNewestLoaded": {
     "message": "Mais recentes primeiro (somente carregados)"
+  },
+  "subscriptionSortYouTubeDefault": {
+    "message": "Padrão do YouTube"
+  },
+  "subscriptionSortLatest": {
+    "message": "Mais recentes primeiro"
+  },
+  "subscriptionSortShortest": {
+    "message": "Mais curtos primeiro"
+  },
+  "subscriptionSortUnwatched": {
+    "message": "Não assistidos primeiro"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "Novos desde a última visita"
+  },
+  "subscriptionSortPopular": {
+    "message": "Mais populares (visualizações)"
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"

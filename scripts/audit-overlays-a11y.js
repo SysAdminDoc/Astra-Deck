@@ -437,7 +437,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     // Subscription groups toolbar, digest, and modal.
     add('Subscription toolbar is labelled and uses pressed-state chips',
         ytkit.includes("bar.setAttribute('role', 'toolbar')") &&
-        ytkit.includes("bar.setAttribute('aria-label', 'Subscription group controls')") &&
+        ytkit.includes("bar.setAttribute('aria-label', t('subscriptionToolbarAria', 'Subscription group controls'))") &&
         ytkit.includes("allChip.setAttribute('aria-pressed', String(!this._activeGroupId))") &&
         ytkit.includes("chip.setAttribute('aria-pressed', String(this._activeGroupId === id))"),
         'Subscription toolbar must be labelled and chips must expose aria-pressed');
@@ -448,16 +448,17 @@ function audit(sources = readSources(), { quiet = false } = {}) {
             'Stage rendered stale channels for unsubscribe review'].every((text) => ytkit.includes(text)),
         'Subscription toolbar buttons/select must have accessible names');
     add('Subscription digest has named actions',
-        ytkit.includes("panel.setAttribute('aria-label', 'Group notifications digest')") &&
-        ytkit.includes("close.setAttribute('aria-label', 'Close group notifications digest')") &&
-        ytkit.includes("mark.setAttribute('aria-label', `Mark ${entry.name} digest as read`)") &&
-        ytkit.includes("view.setAttribute('aria-label', `View ${entry.name} subscriptions`)"),
+        ytkit.includes("panel.setAttribute('aria-label', t('subscriptionDigestRegionAria', 'Group notifications digest'))") &&
+        ytkit.includes("close.setAttribute('aria-label', t('subscriptionDigestCloseAria', 'Close group notifications digest'))") &&
+        ytkit.includes("mark.setAttribute('aria-label', t('subscriptionDigestMarkReadAriaTpl', 'Mark {group} digest as read')") &&
+        ytkit.includes("view.setAttribute('aria-label', t('subscriptionDigestViewAriaTpl', 'View {group} subscriptions')"),
         'Subscription digest must expose named close, mark-read, and view actions');
     add('Subscription group modal is modal, labelled, and Escape-closeable',
         ytkit.includes("overlay.setAttribute('role', 'dialog')") &&
         ytkit.includes("overlay.setAttribute('aria-modal', 'true')") &&
-        ytkit.includes("overlay.setAttribute('aria-label', safeParentId ? 'Create subscription subgroup' : 'Create subscription group')") &&
-        ytkit.includes("input.setAttribute('aria-label', 'Group name')") &&
+        ytkit.includes("t('subscriptionCreateSubgroupDialogAria', 'Create subscription subgroup')") &&
+        ytkit.includes("t('subscriptionCreateGroupDialogAria', 'Create subscription group')") &&
+        ytkit.includes("input.setAttribute('aria-label', t('subscriptionGroupNameAria', 'Group name'))") &&
         ytkit.includes("if (e.key === 'Escape') { e.preventDefault(); dismiss(); }"),
         'Subscription group modal must be labelled, modal, and close on Escape');
     // The watch-time dashboard shipped with no dialog semantics, an unlabeled
