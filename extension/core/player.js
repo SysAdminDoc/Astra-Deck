@@ -46,6 +46,43 @@
         return !!target.classList?.contains?.('html5-main-video');
     }
 
+    function getBufferedAhead(video, currentTime) {
+        const ranges = video?.buffered;
+        if (!ranges || !Number.isFinite(currentTime)) return null;
+        try {
+            for (let index = 0; index < ranges.length; index += 1) {
+                const start = Number(ranges.start(index));
+                const end = Number(ranges.end(index));
+                if (Number.isFinite(start) && Number.isFinite(end)
+                    && currentTime >= start - 0.25 && currentTime <= end) {
+                    return Math.max(0, end - currentTime);
+                }
+            }
+        } catch (_) {
+            return null;
+        }
+        return null;
+    }
+
+    function getLivePlaybackMetrics(video) {
+        if (!video) return null;
+        const currentTime = Number(video.currentTime);
+        if (!Number.isFinite(currentTime)) return null;
+        let latencySeconds = null;
+        try {
+            const seekable = video.seekable;
+            if (seekable && seekable.length > 0) {
+                const liveEdge = Number(seekable.end(seekable.length - 1));
+                if (Number.isFinite(liveEdge)) latencySeconds = Math.max(0, liveEdge - currentTime);
+            }
+        } catch (_) {
+            latencySeconds = null;
+        }
+        const bufferSeconds = getBufferedAhead(video, currentTime);
+        if (latencySeconds === null && bufferSeconds === null) return null;
+        return Object.freeze({ latencySeconds, bufferSeconds });
+    }
+
     function toEventSet(events) {
         const list = Array.isArray(events) && events.length ? events : DEFAULT_EVENTS;
         return new Set(list);
@@ -404,10 +441,11 @@
     const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 
     Object.assign(core, {
-        __playerCoreVersion: 3,
+        __playerCoreVersion: 4,
         createPlayerTaskManager,
         createVideoFrameSampler,
         computeFrameLuminance,
+        getLivePlaybackMetrics,
         getMainVideoElement,
         getMoviePlayerElement,
         getPlayerProgressBar,

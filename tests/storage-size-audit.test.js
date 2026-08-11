@@ -32,10 +32,12 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     // entry for another 93 bytes.
     // Configurable SponsorBlock primary + mirror hosts add 200 bytes across
     // the two bounded URL values and their safe-sync allowlist entries.
-    assert.equal(assessment.totalBytes, 6263);
+    // Live latency catch-up adds a toggle, two bounded controls, and their
+    // safe-sync allowlist entries for another 220 bytes.
+    assert.equal(assessment.totalBytes, 6483);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 6263);
+    assert.equal(assessment.largestItem.bytes, 6483);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -107,7 +109,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // The two SponsorBlock host values add 154 bytes to the typical fixture.
     // Photosensitive protection adds 103 bytes for its toggle and two bounded
     // local controls.
-    assert.equal(assessment.totalBytes, 185231);
+    // Live latency catch-up adds 151 bytes to the local settings payload.
+    assert.equal(assessment.totalBytes, 185382);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

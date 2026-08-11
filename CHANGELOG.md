@@ -27,6 +27,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   transcript-translation lanes without provider keys or remote host access
   when available; unavailable models announce and hand off to the configured
   BYO-key lane, whose GitHub-full provider hosts are runtime-optional.
+- Live streams can now opt into bounded latency catch-up with configurable
+  target/max-rate controls and a player-chrome latency/buffer readout; the
+  feature restores the user's saved playback rate when the target is reached.
 
 ---
 
