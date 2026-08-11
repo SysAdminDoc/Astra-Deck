@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (en cache à {time})"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "Les nombres de Return YouTube Dislike sont des estimations depuis que YouTube a supprimé les totaux publics de dislikes ; les vidéos peu vues peuvent être moins précises."
+  },
+  "ui_rydPaused": {
+    "message": "RYD en pause"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike en pause — limite de requêtes ({used}/{limit}/min). Reprise dans {seconds} s."
+  },
+  "ui_rydOff": {
+    "message": "RYD désactivé"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike indisponible — l’API n’a pas renvoyé de réponse utilisable. Vérifiez votre réseau ou réessayez plus tard."
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Nombre de dislikes en cache de Return YouTube Dislike (il y a {hours} h)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Nombre de dislikes en cache de Return YouTube Dislike (moins d’1 h)."
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Nombre de dislikes en direct de Return YouTube Dislike ({used}/{limit}/min utilisés). {estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "{count} dislikes estimés. {estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "est."
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% de mentions J’aime"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "Le ratio de mentions J’aime utilise les nombres estimés de Return YouTube Dislike. {estimate}"
   }
 }

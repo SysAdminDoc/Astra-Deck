@@ -5,12 +5,6 @@
       "count": 2,
       "digest": "9897409d22353e07cbf260bb49e396f2171b88dc102056d14d2801e686bb9e8e"
     },
-    "extension/features/return-dislike/index.js": {
-      "count": 13,
-      "digest": "00803a3b3d041370b0d7894036c4f4fccca7e5dc57676ebb18f28b650e834659",
-      "strictCount": 10,
-      "strictDigest": "dcb52f5d74ee6d3e47876a3f6627b582aba942dee23b5098a3f80204561a6d42"
-    },
     "extension/features/sticky-video/index.js": {
       "count": 9,
       "digest": "c82eb242c13aa707294b6615bdc0e07e3b987d65c325c64e005338f9cf88e06e",
@@ -18,10 +12,10 @@
       "strictDigest": "a005f92ca3b32428cbc53eff4168905b73b29a536c9973e3633c58f92416c575"
     },
     "extension/ytkit.js": {
-      "count": 1238,
-      "digest": "7f7ab5a122692abfc30a6d78d74b6b7ef4ffa5c9b87ce7c4bdd3fd330395cbe3",
-      "strictCount": 597,
-      "strictDigest": "3398b2df734c89a1ecbfff0da1184262f975924b84fbe2ce22be9ecaa513d718"
+      "count": 1226,
+      "digest": "52986032546602403681f8beb840c3df20c3aab0fa7176e48f0cfaed4314b3b4",
+      "strictCount": 588,
+      "strictDigest": "2639fd8da1e0ce4e0799963015cb23e460c0f75c05065befa9697d57fa67b43e"
     }
   }
 }

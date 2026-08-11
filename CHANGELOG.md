@@ -45,6 +45,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - DeArrow, Digital Wellbeing, Player Dock, Search While Watching,
   SponsorBlock, and YouTube Music feature metadata now resolve through locale
   keys, removing the remaining 14 literals in those extracted modules.
+- Return YouTube Dislike status, estimate disclosure, cache/live titles, ratios,
+  and feature metadata now use locale keys, removing 13 more grandfathered
+  literals from the modular runtime and its mirrored fallback.
 - Subscription-group badges, stale-channel dates, staged-unsubscribe labels,
   and persisted default group names now use locale keys, removing 9 more
   grandfathered literals.

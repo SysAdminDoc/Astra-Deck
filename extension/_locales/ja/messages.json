@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label}（{time} にキャッシュ）"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "Return YouTube Dislike の件数は、YouTube が公開の低評価数を削除した後の推定値です。視聴数の少ない動画では精度が下がる場合があります。"
+  },
+  "ui_rydPaused": {
+    "message": "RYD 一時停止"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike はレート制限中（{used}/{limit}/分）。{seconds}秒後に再開します。"
+  },
+  "ui_rydOff": {
+    "message": "RYD オフ"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike は利用できません。API が有効な応答を返しませんでした。ネットワークを確認して、後でもう一度お試しください。"
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Return YouTube Dislike の低評価数（{hours}時間前のキャッシュ）。"
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Return YouTube Dislike の低評価数（1時間未満前のキャッシュ）。"
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Return YouTube Dislike の現在の低評価数（{used}/{limit}/分を使用）。{estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "推定低評価 {count} 件。{estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "推定"
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% が高評価"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "高評価率は Return YouTube Dislike の推定件数を使用します。{estimate}"
   }
 }

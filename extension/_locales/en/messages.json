@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (cached at {time})"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate."
+  },
+  "ui_rydPaused": {
+    "message": "RYD paused"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s."
+  },
+  "ui_rydOff": {
+    "message": "RYD off"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later."
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Cached dislike count from Return YouTube Dislike ({hours}h old)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Cached dislike count from Return YouTube Dislike (<1h old)."
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "{count} estimated dislikes. {estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "est."
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% liked"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "Like ratio uses estimated Return YouTube Dislike counts. {estimate}"
   }
 }

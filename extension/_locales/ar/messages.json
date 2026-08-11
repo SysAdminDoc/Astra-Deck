@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (مخزّن في {time})"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "أعداد Return YouTube Dislike تقديرية بعد أن أزالت YouTube إجمالي عدم الإعجاب العام؛ قد تكون أقل دقة للفيديوهات منخفضة التفاعل."
+  },
+  "ui_rydPaused": {
+    "message": "تم إيقاف RYD مؤقتًا"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "تم إيقاف Return YouTube Dislike مؤقتًا — تم بلوغ حد الطلبات ({used}/{limit}/دقيقة). يُستأنف خلال {seconds} ث."
+  },
+  "ui_rydOff": {
+    "message": "RYD متوقف"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike غير متاح — لم تُرجع الواجهة استجابة قابلة للاستخدام. تحقق من الشبكة وحاول لاحقًا."
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "عدد عدم الإعجاب المخزن من Return YouTube Dislike (منذ {hours} ساعة)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "عدد عدم الإعجاب المخزن من Return YouTube Dislike (أقل من ساعة)."
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "عدد عدم الإعجاب المباشر من Return YouTube Dislike (استخدم {used}/{limit} في الدقيقة). {estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "{count} من عدم الإعجاب التقديري. {estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "تقديري"
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% إعجاب"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "تستخدم نسبة الإعجاب أعداد Return YouTube Dislike التقديرية. {estimate}"
   }
 }

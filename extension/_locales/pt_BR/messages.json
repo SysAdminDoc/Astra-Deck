@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (em cache em {time})"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "As contagens do Return YouTube Dislike são estimativas depois que o YouTube removeu os totais públicos de dislikes; vídeos com pouco tráfego podem ser menos precisos."
+  },
+  "ui_rydPaused": {
+    "message": "RYD pausado"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike pausado — limite de requisições ({used}/{limit}/min). Retoma em {seconds}s."
+  },
+  "ui_rydOff": {
+    "message": "RYD desativado"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike indisponível — a API não retornou uma resposta utilizável. Verifique sua rede ou tente novamente mais tarde."
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Contagem de dislikes em cache do Return YouTube Dislike (há {hours} h)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Contagem de dislikes em cache do Return YouTube Dislike (há menos de 1 h)."
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Contagem de dislikes ao vivo do Return YouTube Dislike ({used}/{limit}/min usados). {estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "{count} dislikes estimados. {estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "est."
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% curtido"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "A proporção de curtidas usa contagens estimadas do Return YouTube Dislike. {estimate}"
   }
 }

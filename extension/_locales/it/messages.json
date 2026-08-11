@@ -7222,5 +7222,41 @@
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (in cache alle {time})"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "I conteggi di Return YouTube Dislike sono stime dopo che YouTube ha rimosso i totali pubblici dei dislike; i video con poco traffico possono essere meno accurati."
+  },
+  "ui_rydPaused": {
+    "message": "RYD in pausa"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike in pausa — limite di richieste ({used}/{limit}/min). Riprende tra {seconds} s."
+  },
+  "ui_rydOff": {
+    "message": "RYD disattivato"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike non disponibile: l’API non ha restituito una risposta utilizzabile. Controlla la rete o riprova più tardi."
+  },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Conteggio dislike in cache da Return YouTube Dislike ({hours} ore fa)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Conteggio dislike in cache da Return YouTube Dislike (meno di 1 ora fa)."
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Conteggio dislike live da Return YouTube Dislike ({used}/{limit}/min utilizzati). {estimate}"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "{count} dislike stimati. {estimate}"
+  },
+  "ui_rydEstimateShort": {
+    "message": "stim."
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% Mi piace"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "Il rapporto Mi piace usa i conteggi stimati di Return YouTube Dislike. {estimate}"
   }
 }
