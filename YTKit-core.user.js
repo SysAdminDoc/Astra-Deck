@@ -5213,7 +5213,10 @@ if (typeof globalThis !== "undefined") {
     }
 
     function createAbortError() {
-        return core.transcriptIndex?.createAbortError?.() || Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
+        return core.transcriptIndex?.createAbortError?.() || Object.assign(new Error('Operation cancelled'), {
+            // i18n-static: standard DOMException-style error name.
+            name: 'AbortError'
+        });
     }
 
     function throwIfAborted(signal) {
@@ -5237,6 +5240,7 @@ if (typeof globalThis !== "undefined") {
         const extensionFetchText = typeof options.extensionFetchText === 'function'
             ? options.extensionFetchText
             : async () => { throw new Error('extensionFetchText not provided'); };
+        const t = typeof options.t === 'function' ? options.t : (_key, fallback) => fallback;
 
         const service = {
             config: { ...DEFAULT_CONFIG, ...(options.config || {}) },
@@ -5245,18 +5249,18 @@ if (typeof globalThis !== "undefined") {
             async downloadTranscript() {
                 const videoId = getVideoId();
                 if (!videoId) {
-                    showToast('No video ID found', '#ef4444');
+                    showToast(t('transcriptNoVideoId', 'No video ID found'), '#ef4444');
                     return { success: false, error: 'No video ID' };
                 }
 
-                showToast('Fetching transcript…', '#3b82f6');
+                showToast(t('transcriptFetching', 'Fetching transcript…'), '#3b82f6');
                 this._log('Starting transcript fetch for:', videoId);
 
                 try {
                     const transcript = await this.fetchTranscript(videoId);
 
                     if (transcript.status === 'captionless') {
-                        showToast('No transcript available for this video', '#ef4444');
+                        showToast(t('transcriptUnavailable', 'No transcript available for this video'), '#ef4444');
                         return { success: false, error: 'No captions available' };
                     }
 
@@ -5265,14 +5269,15 @@ if (typeof globalThis !== "undefined") {
 
                     this._downloadFile(content, `${videoTitle}_transcript.txt`);
 
-                    showToast(`Transcript downloaded! (${transcript.segments.length} segments)`, '#22c55e');
+                    showToast(t('transcriptDownloadedTpl', 'Transcript downloaded! ({count} segments)')
+                        .replace('{count}', String(transcript.segments.length)), '#22c55e');
                     return { success: true, segments: transcript.segments.length, language: transcript.language };
 
                 } catch (error) {
                     if (typeof console !== 'undefined') {
                         console.error('[YTKit TranscriptService] Error:', error);
                     }
-                    showToast('Failed to download transcript', '#ef4444');
+                    showToast(t('transcriptDownloadFailed', 'Failed to download transcript'), '#ef4444');
                     return { success: false, error: error.message };
                 }
             },
@@ -5310,10 +5315,15 @@ if (typeof globalThis !== "undefined") {
             async _getCaptionTracks(videoId, options = {}) {
                 const signal = options.signal;
                 const methods = [
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'ytInitialPlayerResponse', fn: () => this._method1_WindowVariable(videoId) },
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'Innertube API', fn: () => this._method2_InnertubeAPI(videoId, { signal }) },
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'HTML Page Fetch', fn: () => this._method3_HTMLPageFetch(videoId, { signal }) },
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'captionTracks Regex', fn: () => this._method4_CaptionTracksRegex(videoId, { signal }) },
+                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'DOM Panel Scrape', fn: () => this._method5_DOMPanelScrape(videoId, { signal }) }
                 ];
 
@@ -7196,7 +7206,9 @@ if (typeof globalThis !== "undefined") {
                     const open = doc.createElement('button');
                     open.type = 'button';
                     const date = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(artifact.generatedAt));
-                    open.textContent = `${artifact.title} · ${date}`;
+                    open.textContent = t('aiSummaryArtifactTpl', '{title} · {date}')
+                        .replace('{title}', artifact.title)
+                        .replace('{date}', date);
                     open.addEventListener('click', () => feature._renderArtifact(artifact));
                     const remove = doc.createElement('button');
                     remove.type = 'button';
@@ -7248,14 +7260,14 @@ if (typeof globalThis !== "undefined") {
                 form.className = 'ytkit-us-ai-credential-card';
                 const title = doc.createElement('h3');
                 title.id = 'ytkit-us-ai-credential-title';
-                title.textContent = `${provider[0].toUpperCase()}${provider.slice(1)} credential`;
+                title.textContent = t('aiCredentialTitle', 'AI provider credential');
                 const note = doc.createElement('p');
                 note.textContent = state.configured
-                    ? 'A credential is configured. Enter a new value to replace it; the stored value is never shown.'
-                    : 'Stored only in your userscript manager, outside Astra Deck settings and exports.';
+                    ? t('aiCredentialReplaceHint', 'A credential is configured. Enter a new value to replace it; the stored value is never shown.')
+                    : t('aiCredentialStoreHint', 'Stored only in your userscript manager, outside Astra Deck settings and exports.');
                 const label = doc.createElement('label');
                 label.htmlFor = 'ytkit-us-ai-credential-input';
-                label.textContent = 'New credential';
+                label.textContent = t('aiCredentialNewLabel', 'New credential');
                 const input = doc.createElement('input');
                 input.id = 'ytkit-us-ai-credential-input';
                 input.type = 'password';
@@ -7267,14 +7279,16 @@ if (typeof globalThis !== "undefined") {
                 actions.className = 'ytkit-us-ai-credential-actions';
                 const save = doc.createElement('button');
                 save.type = 'submit';
-                save.textContent = state.configured ? 'Replace' : 'Save';
+                save.textContent = state.configured
+                    ? t('aiCredentialReplaceBtn', 'Replace credential')
+                    : t('aiCredentialSaveBtn', 'Save credential');
                 const remove = doc.createElement('button');
                 remove.type = 'button';
-                remove.textContent = 'Delete';
+                remove.textContent = t('aiSummaryDelete', 'Delete');
                 remove.disabled = !state.configured;
                 const cancel = doc.createElement('button');
                 cancel.type = 'button';
-                cancel.textContent = 'Cancel';
+                cancel.textContent = t('subscriptionDialogCancel', 'Cancel');
                 actions.append(save, remove, cancel);
                 form.append(title, note, label, input, actions);
                 shell.appendChild(form);
@@ -7317,7 +7331,7 @@ if (typeof globalThis !== "undefined") {
 
         return {
             id: 'aiVideoSummary',
-            name: 'AI Video Summary',
+            name: t('feature_aiVideoSummary_name', 'AI Video Summary'),
             description: t('feature_aiVideoSummary_desc', 'Prefer the browser on-device Summarizer; fall back explicitly to the userscript-manager-isolated BYO-key provider'),
             group: 'Watch Page',
             icon: 'sparkles',
@@ -7376,11 +7390,11 @@ if (typeof globalThis !== "undefined") {
                 const panel = doc.createElement('section');
                 panel.className = 'ytkit-us-ai-panel';
                 panel.setAttribute('role', 'dialog');
-                panel.setAttribute('aria-label', 'AI video summary');
+                panel.setAttribute('aria-label', t('aiSummaryDialogLabel', 'AI video summary'));
                 const close = doc.createElement('button');
                 close.type = 'button';
                 close.className = 'ytkit-us-ai-close';
-                close.setAttribute('aria-label', 'Close AI summary');
+                close.setAttribute('aria-label', t('aiSummaryClose', 'Close AI summary'));
                 close.textContent = '×';
                 close.addEventListener('click', () => { this._runToken += 1; panel.remove(); this._panel = null; });
                 const body = doc.createElement('div');
@@ -7537,8 +7551,8 @@ if (typeof globalThis !== "undefined") {
                     event.stopPropagation();
                     const provider = getSettings()?.aiSummaryProvider || 'openai';
                     void manageCredential(provider).then(
-                        () => showToast('AI credential updated', '#22c55e'),
-                        (error) => showToast(error.message || 'AI credential update failed', '#ef4444')
+                        () => showToast(t('aiCredentialSaved', 'AI credential saved without exposing its value.'), '#22c55e'),
+                        (error) => showToast(error.message || t('aiCredentialSaveFailed', 'Credential could not be saved.'), '#ef4444')
                     );
                 });
                 controls.insertBefore(button, controls.firstChild);

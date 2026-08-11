@@ -5,18 +5,6 @@
       "count": 2,
       "digest": "9897409d22353e07cbf260bb49e396f2171b88dc102056d14d2801e686bb9e8e"
     },
-    "extension/core/transcript-service.js": {
-      "count": 11,
-      "digest": "4c50f3c01414595cb4de438c817debdd2df321738b8e792ac9ea30d3446db92c",
-      "strictCount": 5,
-      "strictDigest": "c08677aa26048a48949cb9d0c4b3a6baa420174d3428469e8bd144235aa54055"
-    },
-    "extension/core/userscript-ai-summary.js": {
-      "count": 9,
-      "digest": "f6a0a9a01b23b878bd253e26a7471cfc8822f3a3d9a16ef459fbe989f36b0d39",
-      "strictCount": 8,
-      "strictDigest": "77c0e426a260e3791b3f6d321c9bd57ecb17d035802136277d36bbd97dce3a46"
-    },
     "extension/features/dearrow/index.js": {
       "count": 1,
       "digest": "7a217049d64898476bfd0b8a6f05489c21c214fdc6ea268b4e0b2d07f7a20945"
@@ -54,12 +42,6 @@
     "extension/features/youtube-music-compat/index.js": {
       "count": 2,
       "digest": "f5624ba6767b56881d967bfe8087ddc0b5c44586265ae9a599f2dfac82d4043f"
-    },
-    "extension/sidepanel.js": {
-      "count": 3,
-      "digest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a",
-      "strictCount": 3,
-      "strictDigest": "e2f65843394deb09f198d751d8a08eeefed8d43a55b1d096e73e1da2f0a4721a"
     },
     "extension/ytkit.js": {
       "count": 1252,

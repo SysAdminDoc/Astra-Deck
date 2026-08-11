@@ -7183,5 +7183,32 @@
   },
   "qtGroup_Privacy": {
     "message": "الخصوصية"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
+  },
+  "aiCredentialReplaceHint": {
+    "message": "تم إعداد بيانات اعتماد. أدخل قيمة جديدة لاستبدالها؛ لا يتم عرض القيمة المخزنة."
+  },
+  "aiCredentialStoreHint": {
+    "message": "يتم تخزينها فقط في مدير userscript، خارج إعدادات Astra Deck وعمليات التصدير."
+  },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
+  "transcriptNoVideoId": {
+    "message": "لم يتم العثور على معرّف الفيديو"
+  },
+  "transcriptFetching": {
+    "message": "جارٍ جلب النص…"
+  },
+  "transcriptUnavailable": {
+    "message": "لا يتوفر نص لهذا الفيديو"
+  },
+  "transcriptDownloadedTpl": {
+    "message": "تم تنزيل النص! ({count} مقطع)"
   }
 }

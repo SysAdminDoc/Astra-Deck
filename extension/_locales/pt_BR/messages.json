@@ -7183,5 +7183,32 @@
   },
   "qtGroup_Privacy": {
     "message": "Privacidade"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
+  },
+  "aiCredentialReplaceHint": {
+    "message": "Uma credencial está configurada. Insira um novo valor para substituí-la; o valor armazenado nunca é exibido."
+  },
+  "aiCredentialStoreHint": {
+    "message": "Armazenada apenas no gerenciador de userscripts, fora das configurações e exportações do Astra Deck."
+  },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
+  "transcriptNoVideoId": {
+    "message": "ID do vídeo não encontrado"
+  },
+  "transcriptFetching": {
+    "message": "Buscando transcrição…"
+  },
+  "transcriptUnavailable": {
+    "message": "Nenhuma transcrição disponível para este vídeo"
+  },
+  "transcriptDownloadedTpl": {
+    "message": "Transcrição baixada! ({count} segmentos)"
   }
 }

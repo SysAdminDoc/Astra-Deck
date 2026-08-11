@@ -82,7 +82,7 @@ test('strict UI-copy sink changes identify a new direct literal separately from 
     assert.ok(failures.some((failure) => /strict UI-copy sink changed/.test(failure)));
 });
 
-test('download, video-notes, settings-panel, video-hider, and popup surfaces keep rendered copy behind locale keys', () => {
+test('core, sidepanel, download, video-notes, settings-panel, video-hider, and popup surfaces keep rendered copy behind locale keys', () => {
     const repoRoot = path.join(__dirname, '..');
     const baseline = JSON.parse(fs.readFileSync(
         path.join(repoRoot, 'scripts', 'i18n-ui-copy-baseline.json'),
@@ -100,6 +100,12 @@ test('download, video-notes, settings-panel, video-hider, and popup surfaces kee
         'popup.js rendered sink copy should stay at zero after the burn-down pass');
     assert.equal(baseline.entries['extension/popup.html'], undefined,
         'popup.html rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/core/transcript-service.js'], undefined,
+        'transcript-service rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/core/userscript-ai-summary.js'], undefined,
+        'userscript AI summary rendered sink copy should stay at zero after the burn-down pass');
+    assert.equal(baseline.entries['extension/sidepanel.js'], undefined,
+        'sidepanel rendered sink copy should stay at zero after the burn-down pass');
 
     const downloadSource = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'download-ui', 'index.js'),
@@ -139,6 +145,24 @@ test('download, video-notes, settings-panel, video-hider, and popup surfaces kee
     );
     assert.match(popupHtmlSource, /data-i18n="advancedFiltersTitle"/);
     assert.match(popupHtmlSource, /data-i18n-attr-title="filterTogglesHelpTitle"/);
+    const transcriptSource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'core', 'transcript-service.js'),
+        'utf8'
+    );
+    assert.match(transcriptSource, /t\('transcriptDownloadedTpl'/);
+    assert.match(transcriptSource, /i18n-static: diagnostic method identifier/);
+    const aiSummarySource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'core', 'userscript-ai-summary.js'),
+        'utf8'
+    );
+    assert.match(aiSummarySource, /t\('aiCredentialTitle'/);
+    assert.match(aiSummarySource, /t\('aiSummaryArtifactTpl'/);
+    const sidepanelSource = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'sidepanel.js'),
+        'utf8'
+    );
+    assert.match(sidepanelSource, /t\('spPerfRowAriaTpl'/);
+    assert.match(sidepanelSource, /t\('spSettingRowTitleTpl'/);
 });
 
 test('generated pseudolocale expands copy and isolates interpolation tokens for RTL proofing', () => {

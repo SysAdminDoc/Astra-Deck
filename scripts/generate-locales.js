@@ -4120,6 +4120,82 @@ const AI_SUMMARY_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(AI_SUMMARY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const RUNTIME_COPY_TRANSLATIONS = {
+  de: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Ein Zugangsschlüssel ist eingerichtet. Geben Sie einen neuen Wert ein, um ihn zu ersetzen; der gespeicherte Wert wird nie angezeigt.',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Wird nur in Ihrem Userscript-Manager gespeichert, außerhalb der Astra Deck-Einstellungen und -Exporte.',
+    'No video ID found': 'Keine Video-ID gefunden',
+    'No transcript available for this video': 'Für dieses Video ist kein Transkript verfügbar',
+    'Transcript downloaded! ({count} segments)': 'Transkript heruntergeladen! ({count} Segmente)'
+  },
+  es: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Se ha configurado una credencial. Introduce un valor nuevo para reemplazarla; el valor guardado nunca se muestra.',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Solo se guarda en tu gestor de userscripts, fuera de la configuración y las exportaciones de Astra Deck.',
+    'No video ID found': 'No se encontró el ID del video',
+    'No transcript available for this video': 'No hay transcripción disponible para este video',
+    'Transcript downloaded! ({count} segments)': '¡Transcripción descargada! ({count} segmentos)'
+  },
+  fr: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Un identifiant est configuré. Saisissez une nouvelle valeur pour le remplacer ; la valeur enregistrée n’est jamais affichée.',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Stocké uniquement dans votre gestionnaire de userscript, en dehors des paramètres et exports d’Astra Deck.',
+    'No video ID found': 'ID vidéo introuvable',
+    'No transcript available for this video': 'Aucune transcription disponible pour cette vidéo',
+    'Transcript downloaded! ({count} segments)': 'Transcription téléchargée ! ({count} segments)'
+  },
+  it: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Una credenziale è configurata. Inserisci un nuovo valore per sostituirla; il valore salvato non viene mai mostrato.',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Salvata solo nel gestore userscript, fuori dalle impostazioni e dalle esportazioni di Astra Deck.',
+    'No video ID found': 'ID video non trovato',
+    'No transcript available for this video': 'Nessuna trascrizione disponibile per questo video',
+    'Transcript downloaded! ({count} segments)': 'Trascrizione scaricata! ({count} segmenti)'
+  },
+  pt_BR: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Uma credencial está configurada. Insira um novo valor para substituí-la; o valor armazenado nunca é exibido.',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Armazenada apenas no gerenciador de userscripts, fora das configurações e exportações do Astra Deck.',
+    'No video ID found': 'ID do vídeo não encontrado',
+    'No transcript available for this video': 'Nenhuma transcrição disponível para este vídeo',
+    'Transcript downloaded! ({count} segments)': 'Transcrição baixada! ({count} segmentos)'
+  },
+  ru: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Учетные данные настроены. Введите новое значение для замены; сохраненное значение никогда не показывается.',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Хранится только в менеджере userscript, отдельно от настроек и экспортов Astra Deck.',
+    'No video ID found': 'ID видео не найдено',
+    'No transcript available for this video': 'Для этого видео нет доступной расшифровки',
+    'Transcript downloaded! ({count} segments)': 'Расшифровка загружена! ({count} сегм.)'
+  },
+  ja: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': '認証情報が設定されています。置き換える新しい値を入力してください。保存値は表示されません。',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'ユーザースクリプトマネージャー内だけに保存され、Astra Deck の設定やエクスポートには含まれません。',
+    'No video ID found': '動画 ID が見つかりません',
+    'No transcript available for this video': 'この動画の文字起こしはありません',
+    'Transcript downloaded! ({count} segments)': '文字起こしをダウンロードしました（{count} セグメント）'
+  },
+  ko: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': '자격 증명이 설정되어 있습니다. 바꿀 새 값을 입력하세요. 저장된 값은 표시되지 않습니다.',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'userscript 관리자에만 저장되며 Astra Deck 설정 및 내보내기에는 포함되지 않습니다.',
+    'No video ID found': '동영상 ID를 찾을 수 없습니다',
+    'No transcript available for this video': '이 동영상에는 사용할 수 있는 스크립트가 없습니다',
+    'Transcript downloaded! ({count} segments)': '스크립트를 다운로드했습니다! ({count}개 세그먼트)'
+  },
+  ar: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'تم إعداد بيانات اعتماد. أدخل قيمة جديدة لاستبدالها؛ لا يتم عرض القيمة المخزنة.',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'يتم تخزينها فقط في مدير userscript، خارج إعدادات Astra Deck وعمليات التصدير.',
+    'Fetching transcript…': 'جارٍ جلب النص…',
+    'No video ID found': 'لم يتم العثور على معرّف الفيديو',
+    'No transcript available for this video': 'لا يتوفر نص لهذا الفيديو',
+    'Transcript downloaded! ({count} segments)': 'تم تنزيل النص! ({count} مقطع)'
+  },
+  zh_CN: {
+    'A credential is configured. Enter a new value to replace it; the stored value is never shown.': '凭据已配置。输入新值即可替换；不会显示已存储的值。',
+    'Stored only in your userscript manager, outside Astra Deck settings and exports.': '仅存储在用户脚本管理器中，不会进入 Astra Deck 设置和导出内容。',
+    'Fetching transcript…': '正在获取转录文本…',
+    'No video ID found': '未找到视频 ID',
+    'No transcript available for this video': '此视频没有可用字幕',
+    'Transcript downloaded! ({count} segments)': '字幕已下载！（{count} 个片段）'
+  }
+};
+for (const [locale, messages] of Object.entries(RUNTIME_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AUDIO_TRACK_TRANSLATIONS = {
   de: {
     'Select your preferred audio language through the player bridge without opening or clicking YouTube settings.': 'Wählen Sie Ihre bevorzugte Audiosprache über die Player-Brücke aus, ohne die YouTube-Einstellungen zu öffnen oder anzuklicken.',

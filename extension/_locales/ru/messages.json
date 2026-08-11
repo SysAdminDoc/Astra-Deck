@@ -7183,5 +7183,32 @@
   },
   "qtGroup_Privacy": {
     "message": "Конфиденциальность"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
+  },
+  "aiCredentialReplaceHint": {
+    "message": "Учетные данные настроены. Введите новое значение для замены; сохраненное значение никогда не показывается."
+  },
+  "aiCredentialStoreHint": {
+    "message": "Хранится только в менеджере userscript, отдельно от настроек и экспортов Astra Deck."
+  },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
+  "transcriptNoVideoId": {
+    "message": "ID видео не найдено"
+  },
+  "transcriptFetching": {
+    "message": "Получение расшифровки…"
+  },
+  "transcriptUnavailable": {
+    "message": "Для этого видео нет доступной расшифровки"
+  },
+  "transcriptDownloadedTpl": {
+    "message": "Расшифровка загружена! ({count} сегм.)"
   }
 }

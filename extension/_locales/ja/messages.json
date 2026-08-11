@@ -7183,5 +7183,32 @@
   },
   "qtGroup_Privacy": {
     "message": "プライバシー"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
+  },
+  "aiCredentialReplaceHint": {
+    "message": "認証情報が設定されています。置き換える新しい値を入力してください。保存値は表示されません。"
+  },
+  "aiCredentialStoreHint": {
+    "message": "ユーザースクリプトマネージャー内だけに保存され、Astra Deck の設定やエクスポートには含まれません。"
+  },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
+  "transcriptNoVideoId": {
+    "message": "動画 ID が見つかりません"
+  },
+  "transcriptFetching": {
+    "message": "文字起こしを取得しています…"
+  },
+  "transcriptUnavailable": {
+    "message": "この動画の文字起こしはありません"
+  },
+  "transcriptDownloadedTpl": {
+    "message": "文字起こしをダウンロードしました（{count} セグメント）"
   }
 }

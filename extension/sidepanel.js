@@ -353,7 +353,9 @@ async function renderPerf(tab) {
     for (const feat of top) {
         const li = document.createElement('li');
         li.className = 'sp-perf-row';
-        li.setAttribute('aria-label', `${feat.id}: ${feat.initMs}ms`);
+        li.setAttribute('aria-label', t('spPerfRowAriaTpl', '{feature}: {ms}ms')
+            .replace('{feature}', feat.id)
+            .replace('{ms}', String(feat.initMs)));
         if (feat.initMs > 50) li.classList.add('sp-perf-slow');
         const name = document.createElement('span');
         name.className = 'fp-name';
@@ -782,6 +784,7 @@ function renderSettings(filter) {
         const count = document.createElement('span');
         count.className = 'sp-settings-group-count';
         const enabledInGroup = entries.filter(entry => Boolean(_settingsState[entry.key] ?? entry.defaultValue)).length;
+        // i18n-static: numeric enabled/total summary, not translatable copy.
         count.textContent = `${enabledInGroup}/${entries.length}`;
         head.appendChild(title);
         head.appendChild(count);
@@ -797,7 +800,9 @@ function renderSettings(filter) {
             row.setAttribute('aria-label', humanName);
             row.setAttribute('aria-description', rowLabel(humanName, on, entry));
             row.setAttribute('tabindex', '0');
-            row.title = `${entry.key} (${entry.category || 'general'})`;
+            row.title = t('spSettingRowTitleTpl', '{key} ({category})')
+                .replace('{key}', entry.key)
+                .replace('{category}', localizeCategory(entry.category || 'general'));
 
             const copy = document.createElement('span');
             copy.className = 'sp-setting-copy';
