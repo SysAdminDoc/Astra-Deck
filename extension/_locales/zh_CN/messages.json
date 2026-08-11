@@ -166,6 +166,10 @@
     "message": "{count} 秒",
     "description": "Buffer target slider value rendered in seconds"
   },
+  "liveLatencyReadout": {
+    "message": "Live {latency}s · buffer {buffer}s",
+    "description": "Live-stream latency and buffered-ahead player readout"
+  },
   "bulkActionsAria": {
     "message": "Bulk card actions"
   },
@@ -2434,6 +2438,24 @@
   },
   "feature_liveSpeedReset_name": {
     "message": "Live Catch-Up Speed Reset"
+  },
+  "feature_liveLatencyCatchup_desc": {
+    "message": "Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target."
+  },
+  "feature_liveLatencyCatchup_name": {
+    "message": "Live Latency Catch-up"
+  },
+  "feature_liveLatencyMaxRate_desc": {
+    "message": "Maximum playback rate used while catching up; your saved channel speed is restored afterward."
+  },
+  "feature_liveLatencyMaxRate_name": {
+    "message": "Live Catch-up Max Rate"
+  },
+  "feature_liveLatencyTargetSeconds_desc": {
+    "message": "Start catch-up above this live-edge delay. Lower values catch up sooner but may change speed more often."
+  },
+  "feature_liveLatencyTargetSeconds_name": {
+    "message": "Live Latency Target"
   },
   "feature_localAiSummary_desc": {
     "message": "可用时使用 Chrome 内置的 Summarizer API。不可用时显示明确的「不可用」消息 — 绝不静默路由到远程提供商。在现有 AI 摘要按钮旁添加「本地摘要」按钮。"

@@ -33,6 +33,7 @@
         generateSettingsSchema,
         getCurrentPage,
         getCategoryHealthSnapshot,
+        getLivePlaybackMetrics,
         getMainVideoElement,
         getMoviePlayerElement,
         getPlayerProgressBar,
@@ -105,6 +106,7 @@
         !generateSettingsSchema ||
         !getCurrentPage ||
         !getCategoryHealthSnapshot ||
+        !getLivePlaybackMetrics ||
         !getMainVideoElement ||
         !getMoviePlayerElement ||
         !getPlayerProgressBar ||
@@ -3473,6 +3475,9 @@ return response;
             autoSubtitlesWhenMuted: false,
             subtitlesOnRewind: false,
             liveSpeedReset: false,
+            liveLatencyCatchup: false,
+            liveLatencyTargetSeconds: 8,
+            liveLatencyMaxRate: 1.25,
             showPlaylistDuration: false,
             showTimeInTabTitle: false,
             customProgressBarColor: '#ff0000',
@@ -3681,7 +3686,7 @@ return response;
                 'watchPageRestyle', 'removeAllShorts', 'redirectShorts', 'disablePlayOnHover',
                 'fullWidthSubscriptions', 'hideRelatedVideos', 'expandVideoWidth',
                 'hideDescriptionRow', 'hideVideoEndContent', 'hideJumpAheadButton',
-                'videosPerRow', 'listFeedLayout', 'bufferPreload', 'bufferPreloadSeconds', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
+                'videosPerRow', 'listFeedLayout', 'bufferPreload', 'bufferPreloadSeconds', 'liveLatencyCatchup', 'liveLatencyTargetSeconds', 'liveLatencyMaxRate', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
                 'hideVideosFromHome', 'hideVideosKeywordFilter', 'hideVideosDurationFilter',
                 'hideVideosSubsLoadLimit', 'hideVideosSubsLoadThreshold',
                 'hideVideosRemoveHiddenCards', 'hideVideosShowFilterReason', 'hideVideosShowQuickHideButton',
@@ -26616,13 +26621,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _tick() {
                 const v = this._videoRef;
                 if (!v || !this._isLive()) return;
+                if (getFeatureById('liveLatencyCatchup')?._ownsRate?.(v)) return;
                 const latency = this._latency(v);
                 if (this._priorRate == null && v.playbackRate > 1 && latency < 4) {
                     this._priorRate = v.playbackRate;
                     setProgrammaticPlaybackRate(v, 1);
                     showToast('Caught up to live — speed reset to 1×', '#22c55e', { duration: 3 });
                 } else if (this._priorRate != null && latency > 15) {
-                    v.playbackRate = this._priorRate;
+                    setProgrammaticPlaybackRate(v, this._priorRate);
                     this._priorRate = null;
                 }
             },
@@ -26646,6 +26652,215 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._priorRate = null;
                 removeNavigateRule('liveSpeedReset');
             }
+        },
+        {
+            id: 'liveLatencyCatchup',
+            name: t('feature_liveLatencyCatchup_name', 'Live Latency Catch-up'),
+            description: t('feature_liveLatencyCatchup_desc', 'Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target.'),
+            group: 'Playback',
+            icon: 'gauge',
+            pages: [PageTypes.WATCH],
+            _videoRef: null,
+            _handler: null,
+            _rateHandler: null,
+            _navRule: null,
+            _mutationRule: null,
+            _readout: null,
+            _baseRate: null,
+            _appliedRate: null,
+
+            _targetSeconds() {
+                const raw = Number(appState.settings.liveLatencyTargetSeconds);
+                return Number.isFinite(raw) ? Math.min(60, Math.max(2, Math.round(raw))) : 8;
+            },
+            _maxRate() {
+                const raw = Number(appState.settings.liveLatencyMaxRate);
+                return Number.isFinite(raw) ? Math.min(2, Math.max(1.05, raw)) : 1.25;
+            },
+            _isLive() {
+                const video = this._videoRef;
+                if (!video) return false;
+                if (document.querySelector('#movie_player.ytp-live')) return true;
+                const metrics = getLivePlaybackMetrics(video);
+                return !Number.isFinite(Number(video.duration)) && metrics?.latencySeconds != null;
+            },
+            _metrics() {
+                return getLivePlaybackMetrics(this._videoRef);
+            },
+            _formatSeconds(value) {
+                if (!Number.isFinite(value)) return '—';
+                return `${Math.max(0, value).toFixed(value >= 10 ? 0 : 1)}s`;
+            },
+            _renderReadout(metrics) {
+                if (!this._readout) return;
+                const latency = metrics?.latencySeconds;
+                const buffer = metrics?.bufferSeconds;
+                if (latency == null && buffer == null) {
+                    this._readout.hidden = true;
+                    return;
+                }
+                const text = t('liveLatencyReadout', 'Live {latency}s · buffer {buffer}s')
+                    .replace('{latency}', this._formatSeconds(latency).replace(/s$/, ''))
+                    .replace('{buffer}', this._formatSeconds(buffer).replace(/s$/, ''));
+                this._readout.hidden = false;
+                this._readout.textContent = text;
+                this._readout.setAttribute('aria-label', text);
+            },
+            _mountReadout() {
+                const player = document.querySelector('#movie_player');
+                if (!player) return;
+                const timeDisplay = player.querySelector?.('.ytp-time-display');
+                const chrome = player.querySelector?.('.ytp-chrome-bottom');
+                const parent = timeDisplay?.parentElement || chrome;
+                if (!parent) return;
+                if (!this._readout) {
+                    this._readout = document.createElement('span');
+                    this._readout.className = 'ytkit-live-latency-readout';
+                    this._readout.setAttribute('role', 'status');
+                    this._readout.setAttribute('aria-live', 'polite');
+                    this._readout.style.cssText = 'display:inline-flex;align-items:center;margin-inline-start:8px;padding:2px 5px;border-radius:4px;background:var(--yt-spec-badge-chip-background,rgba(0,0,0,.55));color:var(--yt-spec-text-primary,#fff);font:500 11px/1.2 Roboto,Arial,sans-serif;white-space:nowrap;pointer-events:none;';
+                }
+                if (this._readout.parentElement !== parent) {
+                    if (timeDisplay?.parentElement === parent && typeof parent.insertBefore === 'function') {
+                        parent.insertBefore(this._readout, timeDisplay.nextSibling);
+                    } else {
+                        parent.appendChild(this._readout);
+                    }
+                }
+            },
+            _releaseRate() {
+                const video = this._videoRef;
+                const baseRate = this._baseRate;
+                if (video && baseRate != null && Math.abs(Number(video.playbackRate) - baseRate) > 0.01) {
+                    setProgrammaticPlaybackRate(video, baseRate);
+                }
+                this._baseRate = null;
+                this._appliedRate = null;
+            },
+            _ownsRate(video) {
+                return this._videoRef === video && this._appliedRate != null;
+            },
+            _onRateChange() {
+                const video = this._videoRef;
+                if (!video || isProgrammaticPlaybackRateChange()) return;
+                if (this._appliedRate != null && Math.abs(Number(video.playbackRate) - this._appliedRate) > 0.01) {
+                    this._baseRate = Number(video.playbackRate) || 1;
+                    this._appliedRate = null;
+                }
+            },
+            _tick() {
+                const video = this._videoRef;
+                if (!video || !this._isLive()) {
+                    if (this._readout) this._readout.hidden = true;
+                    this._releaseRate();
+                    return;
+                }
+                const metrics = this._metrics();
+                this._renderReadout(metrics);
+                const latency = metrics?.latencySeconds;
+                if (latency == null) {
+                    this._releaseRate();
+                    return;
+                }
+                const target = this._targetSeconds();
+                const maxRate = this._maxRate();
+                if (latency <= target) {
+                    this._releaseRate();
+                    return;
+                }
+                if (this._baseRate == null) this._baseRate = Number(video.playbackRate) || 1;
+                const excess = Math.max(0, latency - target);
+                const boost = Math.min(maxRate - 1, Math.max(0.05, Math.min(0.5, excess / 20)));
+                const desired = Math.max(this._baseRate, Math.min(maxRate, 1 + boost));
+                if (Math.abs(Number(video.playbackRate) - desired) > 0.01) {
+                    setProgrammaticPlaybackRate(video, desired);
+                    this._appliedRate = desired;
+                }
+            },
+            _detachVideo() {
+                const video = this._videoRef;
+                if (video) {
+                    if (this._handler) {
+                        video.removeEventListener('timeupdate', this._handler);
+                        video.removeEventListener('progress', this._handler);
+                        video.removeEventListener('durationchange', this._handler);
+                    }
+                    if (this._rateHandler) video.removeEventListener('ratechange', this._rateHandler);
+                }
+                this._releaseRate();
+                this._videoRef = null;
+            },
+            _attach() {
+                const video = getMainVideoElement();
+                if (!video) {
+                    this._detachVideo();
+                    return;
+                }
+                if (video !== this._videoRef) {
+                    this._detachVideo();
+                    this._videoRef = video;
+                    video.addEventListener('timeupdate', this._handler);
+                    video.addEventListener('progress', this._handler);
+                    video.addEventListener('durationchange', this._handler);
+                    video.addEventListener('ratechange', this._rateHandler);
+                }
+                this._mountReadout();
+                this._tick();
+            },
+            init() {
+                this._handler = () => this._tick();
+                this._rateHandler = () => { this._onRateChange(); this._tick(); };
+                this._attach();
+                this._navRule = () => this._attach();
+                this._mutationRule = () => { this._attach(); this._mountReadout(); };
+                addNavigateRule('liveLatencyCatchup', this._navRule);
+                addMutationRule(this.id, this._mutationRule);
+            },
+            destroy() {
+                removeNavigateRule('liveLatencyCatchup');
+                removeMutationRule(this.id);
+                this._detachVideo();
+                this._readout?.remove?.();
+                this._readout = null;
+                this._handler = null;
+                this._rateHandler = null;
+                this._navRule = null;
+                this._mutationRule = null;
+            }
+        },
+        {
+            id: 'liveLatencyTargetSeconds',
+            name: t('feature_liveLatencyTargetSeconds_name', 'Live Latency Target'),
+            description: t('feature_liveLatencyTargetSeconds_desc', 'Start catch-up above this live-edge delay. Lower values catch up sooner but may change speed more often.'),
+            group: 'Playback',
+            icon: 'gauge',
+            type: 'range',
+            min: 2,
+            max: 60,
+            step: 1,
+            formatValue: value => t('bufferTargetSecondsTpl', '{count}s').replace('{count}', String(Math.round(value))),
+            isSubFeature: true,
+            parentId: 'liveLatencyCatchup',
+            pages: [PageTypes.WATCH],
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'liveLatencyMaxRate',
+            name: t('feature_liveLatencyMaxRate_name', 'Live Catch-up Max Rate'),
+            description: t('feature_liveLatencyMaxRate_desc', 'Maximum playback rate used while catching up; your saved channel speed is restored afterward.'),
+            group: 'Playback',
+            icon: 'gauge',
+            type: 'range',
+            min: 1.05,
+            max: 2,
+            step: 0.05,
+            formatValue: value => `${Number(value).toFixed(2)}x`,
+            isSubFeature: true,
+            parentId: 'liveLatencyCatchup',
+            pages: [PageTypes.WATCH],
+            init() {},
+            destroy() {}
         },
         {
             id: 'focusedMode',

@@ -6,13 +6,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 - [ ] Six `Roadmap_Blocked.md` items (Force DVR, replay chat-density chart, opt-in settings sync, logarithmic volume curve, volatile-project-facts gate, immutable build-profile ceilings) cite a self-imposed "this run forbids staging Markdown other than README/CHANGELOG" constraint as their blocker. That is not an external blocker. Move them back to this file on the next pass.
 
-- [ ] P2 — Live-stream latency catch-up
-  Why: a single-idea extension took 433 stars in six weeks doing only this, and Astra already ships both halves — a configurable buffer target and programmatic playback-rate control.
-  Evidence: `joaogfc/ZeroDelay`; ImprovedTube #4090.
-  Touches: `extension/ytkit.js` (live-stream player features), `extension/core/player.js`
-  Acceptance: on a live stream, latency above a configurable threshold raises playback rate within bounds until the edge is reached, with a latency/buffer readout in the player chrome; writes go through `setProgrammaticPlaybackRate()` so per-channel saved speeds survive.
-  Complexity: M
-
 - [ ] P2 — Local AI-slop / low-signal filtering
   Why: the one 2026 demand wave with clear volume and no incumbent coverage, and it composes with filters Astra already has rather than needing a server.
   Evidence: SponsorBlock #1963 (22 👍), #2317, #2429; ImprovedTube #3150 (8 👍), #1833; FilterTube #22; the 2026 `combatslop-yt` extension.

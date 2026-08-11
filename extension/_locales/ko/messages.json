@@ -166,6 +166,10 @@
     "message": "{count}초",
     "description": "Buffer target slider value rendered in seconds"
   },
+  "liveLatencyReadout": {
+    "message": "Live {latency}s · buffer {buffer}s",
+    "description": "Live-stream latency and buffered-ahead player readout"
+  },
   "bulkActionsAria": {
     "message": "Bulk card actions"
   },
@@ -2434,6 +2438,24 @@
   },
   "feature_liveSpeedReset_name": {
     "message": "Live Catch-Up Speed Reset"
+  },
+  "feature_liveLatencyCatchup_desc": {
+    "message": "Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target."
+  },
+  "feature_liveLatencyCatchup_name": {
+    "message": "Live Latency Catch-up"
+  },
+  "feature_liveLatencyMaxRate_desc": {
+    "message": "Maximum playback rate used while catching up; your saved channel speed is restored afterward."
+  },
+  "feature_liveLatencyMaxRate_name": {
+    "message": "Live Catch-up Max Rate"
+  },
+  "feature_liveLatencyTargetSeconds_desc": {
+    "message": "Start catch-up above this live-edge delay. Lower values catch up sooner but may change speed more often."
+  },
+  "feature_liveLatencyTargetSeconds_name": {
+    "message": "Live Latency Target"
   },
   "feature_localAiSummary_desc": {
     "message": "사용 가능한 경우 Chrome 내장 Summarizer API를 사용합니다. \"사용 불가\" 메시지로 명확히 안내하며, 원격 제공자로 자동 전환하지 않습니다. 기존 AI 요약 버튼 옆에 \"로컬 요약\" 버튼을 추가합니다."

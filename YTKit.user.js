@@ -2808,6 +2808,9 @@
         Object.freeze({ key: "autoSubtitlesWhenMuted", category: "subtitles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
         Object.freeze({ key: "subtitlesOnRewind", category: "subtitles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
         Object.freeze({ key: "liveSpeedReset", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.48.0" }),
+        Object.freeze({ key: "liveLatencyCatchup", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
+        Object.freeze({ key: "liveLatencyTargetSeconds", category: "playback-audio", type: "number", defaultValue: 8, min: 2, max: 60, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
+        Object.freeze({ key: "liveLatencyMaxRate", category: "playback-audio", type: "number", defaultValue: 1.25, min: 1.05, max: 2, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
         Object.freeze({ key: "showPlaylistDuration", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "showTimeInTabTitle", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
@@ -3136,7 +3139,7 @@
         Object.freeze({ key: "safeStoreProfile", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "githubFullProfile", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "syncSafePrefs", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","listFeedLayout","bufferPreload","bufferPreloadSeconds","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowFilterReason","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosChannelAllowlist","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sponsorBlockBaseUrl","sponsorBlockMirrorUrl","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","listFeedLayout","bufferPreload","bufferPreloadSeconds","liveLatencyCatchup","liveLatencyTargetSeconds","liveLatencyMaxRate","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowFilterReason","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosChannelAllowlist","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sponsorBlockBaseUrl","sponsorBlockMirrorUrl","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── content-filter ───
         Object.freeze({ key: "advancedLocalPredicate", category: "content-filter", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -9109,6 +9112,43 @@
             return !!target.classList?.contains?.('html5-main-video');
         }
 
+        function getBufferedAhead(video, currentTime) {
+            const ranges = video?.buffered;
+            if (!ranges || !Number.isFinite(currentTime)) return null;
+            try {
+                for (let index = 0; index < ranges.length; index += 1) {
+                    const start = Number(ranges.start(index));
+                    const end = Number(ranges.end(index));
+                    if (Number.isFinite(start) && Number.isFinite(end)
+                        && currentTime >= start - 0.25 && currentTime <= end) {
+                        return Math.max(0, end - currentTime);
+                    }
+                }
+            } catch (_) {
+                return null;
+            }
+            return null;
+        }
+
+        function getLivePlaybackMetrics(video) {
+            if (!video) return null;
+            const currentTime = Number(video.currentTime);
+            if (!Number.isFinite(currentTime)) return null;
+            let latencySeconds = null;
+            try {
+                const seekable = video.seekable;
+                if (seekable && seekable.length > 0) {
+                    const liveEdge = Number(seekable.end(seekable.length - 1));
+                    if (Number.isFinite(liveEdge)) latencySeconds = Math.max(0, liveEdge - currentTime);
+                }
+            } catch (_) {
+                latencySeconds = null;
+            }
+            const bufferSeconds = getBufferedAhead(video, currentTime);
+            if (latencySeconds === null && bufferSeconds === null) return null;
+            return Object.freeze({ latencySeconds, bufferSeconds });
+        }
+
         function toEventSet(events) {
             const list = Array.isArray(events) && events.length ? events : DEFAULT_EVENTS;
             return new Set(list);
@@ -9467,10 +9507,11 @@
         const playerTaskManager = core.playerTaskManager || createPlayerTaskManager();
 
         Object.assign(core, {
-            __playerCoreVersion: 3,
+            __playerCoreVersion: 4,
             createPlayerTaskManager,
             createVideoFrameSampler,
             computeFrameLuminance,
+            getLivePlaybackMetrics,
             getMainVideoElement,
             getMoviePlayerElement,
             getPlayerProgressBar,
