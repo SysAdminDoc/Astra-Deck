@@ -54,6 +54,44 @@
         return `@scope (${root}) {\n${text}\n}`;
     }
 
+    function supportsCustomHighlight() {
+        if (typeof globalThis === 'undefined') return false;
+        return typeof globalThis.Highlight === 'function'
+            && typeof globalThis.CSS?.highlights?.set === 'function'
+            && typeof globalThis.CSS?.highlights?.delete === 'function';
+    }
+
+    function setCustomHighlight(name, ranges = []) {
+        if (!supportsCustomHighlight() || !name) return false;
+        try {
+            if (!Array.isArray(ranges) || ranges.length === 0) {
+                globalThis.CSS.highlights.delete(name);
+                return true;
+            }
+            const highlight = new globalThis.Highlight(...ranges);
+            globalThis.CSS.highlights.set(String(name), highlight);
+            return true;
+        } catch (_) {
+            // reason: a host may expose the registry but reject a Range from a
+            // detached or cross-document node; callers keep their DOM fallback.
+            try {
+                globalThis.CSS.highlights.delete(String(name));
+            } catch (_) {
+                // reason: cleanup of a failed highlight registration is best effort.
+            }
+            return false;
+        }
+    }
+
+    function clearCustomHighlight(name) {
+        if (!name || typeof globalThis === 'undefined') return false;
+        try {
+            return globalThis.CSS?.highlights?.delete?.(String(name)) === true;
+        } catch (_) {
+            return false;
+        }
+    }
+
     function appendStyleSheet(css) {
         const style = document.createElement('style');
         style.textContent = css;
@@ -241,8 +279,11 @@
         cleanupRetiredCommentUi,
         createCssLifecycleSpec,
         injectStyle,
+        clearCustomHighlight,
         scopeCss,
+        setCustomHighlight,
         stripCommentRestyleCss,
+        supportsCustomHighlight,
         supportsCssScope
     });
 
@@ -253,8 +294,11 @@
             cleanupRetiredCommentUi,
             createCssLifecycleSpec,
             injectStyle,
+            clearCustomHighlight,
             scopeCss,
+            setCustomHighlight,
             stripCommentRestyleCss,
+            supportsCustomHighlight,
             supportsCssScope
         };
     }
@@ -2613,6 +2657,9 @@ const CAPABILITIES = Object.freeze([
     // CSS @scope is used opportunistically by feature-owned lifecycle styles.
     // Styles containing document-root selectors retain the unwrapped fallback.
     'cssScope',
+    // CSS Custom Highlight paints transcript matches and the active segment
+    // without rewriting text nodes; older hosts retain the DOM fallback.
+    'cssHighlight',
 ]);
 
 const SETTINGS_SCHEMA = Object.freeze([
@@ -11113,6 +11160,20 @@ if (typeof globalThis !== "undefined") {
                 probe: 'hasCssScope',
                 fallback: 'Keep document-root-sensitive styles unwrapped and apply the existing body-class lifecycle path.',
                 userVisibleDegradation: 'Feature styles remain isolated by their existing selectors and body classes without @scope containment.'
+            },
+            cssHighlight: {
+                api: 'CSS Custom Highlight API (::highlight())',
+                availability: {
+                    chromium: 'Modern Chromium releases expose Highlight and CSS.highlights; older versions use the DOM fallback',
+                    firefox: 'Modern Firefox releases expose Highlight and CSS.highlights; older versions use the DOM fallback',
+                    userscript: 'Available when the host browser exposes the CSS Custom Highlight registry'
+                },
+                requiredPermission: [],
+                executionWorld: 'YouTube page MAIN world',
+                minimumBrowser: { chrome: 'feature-detected', edge: 'feature-detected', firefox: 'feature-detected' },
+                probe: 'hasCustomHighlight',
+                fallback: 'Use the existing transcript line or mark-element fallback when ranges cannot be registered.',
+                userVisibleDegradation: 'Transcript matches and the active segment remain visible without the CSS Custom Highlight paint layer.'
             }
         }
     });
@@ -11280,6 +11341,12 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
+    function hasCustomHighlight() {
+        return typeof globalThis?.Highlight === 'function'
+            && typeof globalThis?.CSS?.highlights?.set === 'function'
+            && typeof globalThis?.CSS?.highlights?.delete === 'function';
+    }
+
     function getAiLaneStatus(options = {}) {
         const localAi = core.localAi;
         if (localAi?.getLaneStatus) return localAi.getLaneStatus(options);
@@ -11323,6 +11390,7 @@ if (typeof globalThis !== "undefined") {
         promptApi:        { async: false, run: hasPromptApi },
         regexpEscape:     { async: false, run: hasRegExpEscape },
         cssScope:         { async: false, run: hasCssScope },
+        cssHighlight:     { async: false, run: hasCustomHighlight },
         mediaDL:          { async: true,  run: hasMediaDL },
         ollama:           { async: true,  run: hasOllama },
     });

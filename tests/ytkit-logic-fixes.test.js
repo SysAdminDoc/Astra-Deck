@@ -293,7 +293,7 @@ test('player-control features remove stale controls on navigation and destroy', 
 });
 
 test('transcriptViewer resets translation state before rebuilding after navigation', () => {
-    const block = featureBlock('transcriptViewer', 30000);
+    const block = featureBlock('transcriptViewer', 50000);
     const initBlock = methodSlice(block, 'init() {', 900);
     assert.match(initBlock, /this\._panel\?\.remove\(\);\s*this\._panel = null;/,
         'transcriptViewer must remove the previous panel on navigation');

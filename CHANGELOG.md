@@ -15,6 +15,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Transcript playback cues and local transcript-search excerpts now use named
+  CSS Custom Highlights for range paint, with reversible line and mark
+  fallbacks on older browsers.
 - Feature-owned lifecycle styles now opportunistically use native CSS `@scope`
   containment, while document-root-sensitive rules retain the existing
   unwrapped fallback.

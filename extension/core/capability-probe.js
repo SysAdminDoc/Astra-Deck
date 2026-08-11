@@ -219,6 +219,20 @@
                 probe: 'hasCssScope',
                 fallback: 'Keep document-root-sensitive styles unwrapped and apply the existing body-class lifecycle path.',
                 userVisibleDegradation: 'Feature styles remain isolated by their existing selectors and body classes without @scope containment.'
+            },
+            cssHighlight: {
+                api: 'CSS Custom Highlight API (::highlight())',
+                availability: {
+                    chromium: 'Modern Chromium releases expose Highlight and CSS.highlights; older versions use the DOM fallback',
+                    firefox: 'Modern Firefox releases expose Highlight and CSS.highlights; older versions use the DOM fallback',
+                    userscript: 'Available when the host browser exposes the CSS Custom Highlight registry'
+                },
+                requiredPermission: [],
+                executionWorld: 'YouTube page MAIN world',
+                minimumBrowser: { chrome: 'feature-detected', edge: 'feature-detected', firefox: 'feature-detected' },
+                probe: 'hasCustomHighlight',
+                fallback: 'Use the existing transcript line or mark-element fallback when ranges cannot be registered.',
+                userVisibleDegradation: 'Transcript matches and the active segment remain visible without the CSS Custom Highlight paint layer.'
             }
         }
     });
@@ -386,6 +400,12 @@
         }
     }
 
+    function hasCustomHighlight() {
+        return typeof globalThis?.Highlight === 'function'
+            && typeof globalThis?.CSS?.highlights?.set === 'function'
+            && typeof globalThis?.CSS?.highlights?.delete === 'function';
+    }
+
     function getAiLaneStatus(options = {}) {
         const localAi = core.localAi;
         if (localAi?.getLaneStatus) return localAi.getLaneStatus(options);
@@ -429,6 +449,7 @@
         promptApi:        { async: false, run: hasPromptApi },
         regexpEscape:     { async: false, run: hasRegExpEscape },
         cssScope:         { async: false, run: hasCssScope },
+        cssHighlight:     { async: false, run: hasCustomHighlight },
         mediaDL:          { async: true,  run: hasMediaDL },
         ollama:           { async: true,  run: hasOllama },
     });
