@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
+const { loadFeature } = require('./helpers/monolith');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const read = (...parts) => fs.readFileSync(path.join(REPO_ROOT, ...parts), 'utf8');
@@ -50,6 +51,50 @@ function makeThread({ body = '', author = '', attributes = {} } = {}) {
     };
 }
 
+function makeSponsoredNode({ tag = 'div', text = '' } = {}) {
+    const attrs = new Map();
+    const classes = new Set();
+    const node = {
+        tagName: tag.toUpperCase(),
+        textContent: text,
+        style: { display: '' },
+        parentElement: null,
+        classList: {
+            toggle(name, force) {
+                if (force) classes.add(name);
+                else classes.delete(name);
+            },
+            contains(name) { return classes.has(name); }
+        },
+        hasAttribute(name) { return attrs.has(name); },
+        getAttribute(name) { return attrs.get(name) ?? null; },
+        setAttribute(name, value) { attrs.set(name, String(value)); },
+        removeAttribute(name) { attrs.delete(name); },
+        querySelectorAll() { return []; },
+        addEventListener(type, callback) {
+            if (type === 'click') this._click = callback;
+        },
+        remove() {
+            const parent = this.parentElement;
+            const index = parent?.children?.indexOf(this);
+            if (index >= 0) parent.children.splice(index, 1);
+            this.parentElement = null;
+        },
+        click() { this._click?.(); }
+    };
+    const parent = {
+        children: [node],
+        closest() { return null; },
+        insertBefore(child, target) {
+            const index = this.children.indexOf(target);
+            child.parentElement = this;
+            this.children.splice(index < 0 ? this.children.length : index, 0, child);
+        }
+    };
+    node.parentElement = parent;
+    return { node, parent };
+}
+
 test('comment intelligence settings are safe, local, and bounded', () => {
     const schemaByKey = new Map(settingsSchema.SETTINGS_SCHEMA.map((entry) => [entry.key, entry]));
     for (const [key, type, defaultValue] of [
@@ -65,6 +110,61 @@ test('comment intelligence settings are safe, local, and bounded', () => {
         assert.equal(defaultSettings[key], defaultValue);
         assert.equal(entry.profile, 'both');
     }
+});
+
+test('sponsored content filtering is an opt-in watch setting', () => {
+    const entry = settingsSchema.SETTINGS_SCHEMA.find(({ key }) => key === 'sponsoredContentFilter');
+    assert.ok(entry);
+    assert.equal(entry.category, 'content-filter');
+    assert.equal(entry.scope, 'watch');
+    assert.equal(entry.type, 'boolean');
+    assert.equal(entry.defaultValue, false);
+    assert.equal(entry.profile, 'both');
+    assert.equal(defaultSettings.sponsoredContentFilter, false);
+});
+
+test('sponsored content filtering explains and reverses comment and description matches', () => {
+    const comment = makeSponsoredNode({ tag: 'ytd-comment-thread-renderer', text: 'Use my promo code ASTRA for 20% off.' });
+    const description = makeSponsoredNode({ tag: 'div', text: 'This video is sponsored by Acme.' });
+    const commentsRoot = {
+        querySelectorAll() { return [comment.node]; }
+    };
+    const feature = loadFeature('sponsoredContentFilter', {
+        document: {
+            querySelector(selector) {
+                return selector.includes('ytd-comments') ? commentsRoot : null;
+            },
+            querySelectorAll(selector) {
+                return selector === '#description-inline-expander' ? [description.node] : [];
+            },
+            createElement() {
+                return makeSponsoredNode({ tag: 'button' }).node;
+            }
+        },
+        isWatchPagePath: () => true,
+        injectStyle: () => ({ remove() {} })
+    });
+
+    feature.init();
+    assert.equal(comment.node.classList.contains('ytkit-sponsored-filter-collapsed'), true);
+    assert.equal(description.node.classList.contains('ytkit-sponsored-filter-collapsed'), true);
+    assert.match(comment.parent.children[0].textContent, /affiliate promotion/);
+    assert.match(description.parent.children[0].textContent, /sponsor disclosure/);
+
+    comment.parent.children[0].click();
+    assert.equal(comment.node.classList.contains('ytkit-sponsored-filter-collapsed'), false);
+    assert.equal(comment.node.getAttribute('data-ytkit-sponsored-revealed'), '1');
+    assert.match(comment.parent.children[0].textContent, /^Hide /);
+
+    comment.parent.children[0].click();
+    assert.equal(comment.node.classList.contains('ytkit-sponsored-filter-collapsed'), true);
+    assert.equal(comment.node.getAttribute('data-ytkit-sponsored-revealed'), null);
+
+    feature.destroy();
+    assert.equal(comment.node.classList.contains('ytkit-sponsored-filter-collapsed'), false);
+    assert.equal(description.node.classList.contains('ytkit-sponsored-filter-collapsed'), false);
+    assert.deepEqual(comment.parent.children, [comment.node]);
+    assert.deepEqual(description.parent.children, [description.node]);
 });
 
 test('comment selector pack exposes frozen root, thread, author, and body hooks', () => {

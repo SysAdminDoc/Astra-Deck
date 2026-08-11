@@ -6367,5 +6367,29 @@
   },
   "feature_logarithmicVolume_name": {
     "message": "Logarithmic Volume Curve"
+  },
+  "feature_sponsoredContentFilter_desc": {
+    "message": "Réduit les blocs de commentaires et de descriptions qui ressemblent à des parrainages ou à des promotions d’affiliation. Chaque élément explique la correspondance et peut être restauré."
+  },
+  "feature_sponsoredContentFilter_name": {
+    "message": "Filtre de contenu sponsorisé"
+  },
+  "sponsoredFilterCommentLabel": {
+    "message": "Commentaire sponsorisé"
+  },
+  "sponsoredFilterDescriptionLabel": {
+    "message": "Description sponsorisée"
+  },
+  "sponsoredFilterHideTpl": {
+    "message": "Masquer {label} — {reason}"
+  },
+  "sponsoredFilterShowTpl": {
+    "message": "Afficher {label} — {reason}"
+  },
+  "sponsoredFilterAffiliateReason": {
+    "message": "promotion d’affiliation"
+  },
+  "sponsoredFilterSponsorReason": {
+    "message": "mention de parrainage"
   }
 }

@@ -1918,6 +1918,110 @@ const PROOFED_FEATURE_TRANSLATION_OVERRIDES = {
   }
 };
 
+const SPONSORED_FILTER_TRANSLATIONS = {
+  ar: {
+    'Sponsored Content Filter': 'فلتر المحتوى المدعوم',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': 'طي كتل التعليقات والوصف التي تبدو كرعاية أو ترويج تابع. يوضح كل عنصر سبب المطابقة ويمكن استعادته.',
+    'Sponsored comment': 'تعليق مدعوم',
+    'Sponsored description': 'وصف مدعوم',
+    'Hide {label} — {reason}': 'إخفاء {label} — {reason}',
+    'Show {label} — {reason}': 'إظهار {label} — {reason}',
+    'affiliate promotion': 'ترويج تابع',
+    'sponsor disclosure': 'إفصاح عن رعاية'
+  },
+  de: {
+    'Sponsored Content Filter': 'Filter für gesponserte Inhalte',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': 'Blendet Kommentar- und Beschreibungselemente aus, die wie Sponsoring oder Affiliate-Werbung wirken. Jedes Element erklärt den Treffer und kann wiederhergestellt werden.',
+    'Sponsored comment': 'Gesponserter Kommentar',
+    'Sponsored description': 'Gesponserte Beschreibung',
+    'Hide {label} — {reason}': '{label} ausblenden — {reason}',
+    'Show {label} — {reason}': '{label} anzeigen — {reason}',
+    'affiliate promotion': 'Affiliate-Werbung',
+    'sponsor disclosure': 'Sponsoring-Hinweis'
+  },
+  es: {
+    'Sponsored Content Filter': 'Filtro de contenido patrocinado',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': 'Contrae bloques de comentarios y descripciones que parezcan patrocinios o promociones de afiliados. Cada elemento explica la coincidencia y se puede restaurar.',
+    'Sponsored comment': 'Comentario patrocinado',
+    'Sponsored description': 'Descripción patrocinada',
+    'Hide {label} — {reason}': 'Ocultar {label} — {reason}',
+    'Show {label} — {reason}': 'Mostrar {label} — {reason}',
+    'affiliate promotion': 'promoción de afiliado',
+    'sponsor disclosure': 'declaración de patrocinio'
+  },
+  fr: {
+    'Sponsored Content Filter': 'Filtre de contenu sponsorisé',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': 'Réduit les blocs de commentaires et de descriptions qui ressemblent à des parrainages ou à des promotions d’affiliation. Chaque élément explique la correspondance et peut être restauré.',
+    'Sponsored comment': 'Commentaire sponsorisé',
+    'Sponsored description': 'Description sponsorisée',
+    'Hide {label} — {reason}': 'Masquer {label} — {reason}',
+    'Show {label} — {reason}': 'Afficher {label} — {reason}',
+    'affiliate promotion': 'promotion d’affiliation',
+    'sponsor disclosure': 'mention de parrainage'
+  },
+  it: {
+    'Sponsored Content Filter': 'Filtro dei contenuti sponsorizzati',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': 'Comprime i blocchi di commenti e descrizioni che sembrano sponsorizzazioni o promozioni di affiliazione. Ogni elemento spiega la corrispondenza e può essere ripristinato.',
+    'Sponsored comment': 'Commento sponsorizzato',
+    'Sponsored description': 'Descrizione sponsorizzata',
+    'Hide {label} — {reason}': 'Nascondi {label} — {reason}',
+    'Show {label} — {reason}': 'Mostra {label} — {reason}',
+    'affiliate promotion': 'promozione di affiliazione',
+    'sponsor disclosure': 'dichiarazione di sponsorizzazione'
+  },
+  ja: {
+    'Sponsored Content Filter': 'スポンサーコンテンツフィルター',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': 'スポンサーやアフィリエイト宣伝と思われるコメントと説明ブロックを折りたたみます。一致理由を表示し、項目ごとに復元できます。',
+    'Sponsored comment': 'スポンサーコメント',
+    'Sponsored description': 'スポンサー説明',
+    'Hide {label} — {reason}': '{label}を非表示 — {reason}',
+    'Show {label} — {reason}': '{label}を表示 — {reason}',
+    'affiliate promotion': 'アフィリエイト宣伝',
+    'sponsor disclosure': 'スポンサー表記'
+  },
+  ko: {
+    'Sponsored Content Filter': '스폰서 콘텐츠 필터',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': '스폰서 또는 제휴 홍보로 보이는 댓글과 설명 블록을 접습니다. 각 항목에 일치 이유가 표시되며 항목별로 복원할 수 있습니다.',
+    'Sponsored comment': '스폰서 댓글',
+    'Sponsored description': '스폰서 설명',
+    'Hide {label} — {reason}': '{label} 숨기기 — {reason}',
+    'Show {label} — {reason}': '{label} 표시 — {reason}',
+    'affiliate promotion': '제휴 홍보',
+    'sponsor disclosure': '스폰서 표시'
+  },
+  pt_BR: {
+    'Sponsored Content Filter': 'Filtro de conteúdo patrocinado',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': 'Recolhe blocos de comentários e descrições que parecem patrocínios ou promoções de afiliados. Cada item explica a correspondência e pode ser restaurado.',
+    'Sponsored comment': 'Comentário patrocinado',
+    'Sponsored description': 'Descrição patrocinada',
+    'Hide {label} — {reason}': 'Ocultar {label} — {reason}',
+    'Show {label} — {reason}': 'Mostrar {label} — {reason}',
+    'affiliate promotion': 'promoção de afiliado',
+    'sponsor disclosure': 'aviso de patrocínio'
+  },
+  ru: {
+    'Sponsored Content Filter': 'Фильтр спонсорского контента',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': 'Сворачивает блоки комментариев и описаний, похожие на спонсорские или партнёрские предложения. Для каждого элемента показывается причина, его можно восстановить.',
+    'Sponsored comment': 'Спонсорский комментарий',
+    'Sponsored description': 'Спонсорское описание',
+    'Hide {label} — {reason}': 'Скрыть: {label} — {reason}',
+    'Show {label} — {reason}': 'Показать: {label} — {reason}',
+    'affiliate promotion': 'партнёрское продвижение',
+    'sponsor disclosure': 'указание на спонсорство'
+  },
+  zh_CN: {
+    'Sponsored Content Filter': '赞助内容过滤器',
+    'Collapse comment and description blocks that look like sponsorships or affiliate promotions. Each item explains the match and can be restored.': '折叠看起来像赞助或联盟推广的评论和描述区块。每项都会说明匹配原因，并可单独恢复。',
+    'Sponsored comment': '赞助评论',
+    'Sponsored description': '赞助描述',
+    'Hide {label} — {reason}': '隐藏{label} — {reason}',
+    'Show {label} — {reason}': '显示{label} — {reason}',
+    'affiliate promotion': '联盟推广',
+    'sponsor disclosure': '赞助披露'
+  }
+};
+for (const [locale, messages] of Object.entries(SPONSORED_FILTER_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const AI_SUMMARY_TRANSLATIONS = {
   de: {
     'AI Summary': 'KI-Zusammenfassung', 'AI video summary': 'KI-Videozusammenfassung', 'Calling AI provider…': 'KI-Anbieter wird aufgerufen…',

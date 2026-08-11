@@ -211,6 +211,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     cleanUiPreset: 'intentional-extension-only',
     commentFilterManager: 'intentional-extension-only',
     commentFilterRules: 'intentional-extension-only',
+    sponsoredContentFilter: 'intentional-extension-only',
     copyChapterMarkdown: 'not-yet-ported',
     deArrowChannelOverridesPanel: 'intentional-extension-only',
     deArrowVoting: 'unsafe-in-userscript',

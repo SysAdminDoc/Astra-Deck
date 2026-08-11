@@ -36,10 +36,12 @@ test('safe-store profile payload fits current storage.sync quotas', () => {
     // safe-sync allowlist entries for another 220 bytes.
     // Local low-signal heuristics add three toggles, three bounded controls,
     // and six safe-sync allowlist entries for another 601 bytes.
-    assert.equal(assessment.totalBytes, 7084);
+    // Sponsored-content filtering adds one opt-in toggle and its safe-sync
+    // allowlist entry for another 81 bytes in the profile snapshot.
+    assert.equal(assessment.totalBytes, 7165);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 7084);
+    assert.equal(assessment.largestItem.bytes, 7165);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -121,7 +123,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // (21 B) while remaining opt-in and local by default.
     // The logarithmic volume curve adds one opt-in false-by-default boolean
     // (26 B) while keeping the persisted volume value logical.
-    assert.equal(assessment.totalBytes, 185911);
+    // Sponsored-content filtering adds another 56 bytes to the local settings
+    // fixture.
+    assert.equal(assessment.totalBytes, 185967);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -149,7 +153,7 @@ test('storage audit report handles arbitrary --file payloads without the built-i
 test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
-    assert.match(report, /Safe-store profile sync candidate: viable \(6\.\d KB/);
+    assert.match(report, /Safe-store profile sync candidate: viable \(7\.\d KB/);
     assert.match(report, /Full UI preferences payload: not viable for sync \(14\.\d KB/);
     assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(18[0-9]\.\d KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);

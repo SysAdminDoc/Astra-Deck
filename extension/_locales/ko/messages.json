@@ -6367,5 +6367,29 @@
   },
   "feature_logarithmicVolume_name": {
     "message": "Logarithmic Volume Curve"
+  },
+  "feature_sponsoredContentFilter_desc": {
+    "message": "스폰서 또는 제휴 홍보로 보이는 댓글과 설명 블록을 접습니다. 각 항목에 일치 이유가 표시되며 항목별로 복원할 수 있습니다."
+  },
+  "feature_sponsoredContentFilter_name": {
+    "message": "스폰서 콘텐츠 필터"
+  },
+  "sponsoredFilterCommentLabel": {
+    "message": "스폰서 댓글"
+  },
+  "sponsoredFilterDescriptionLabel": {
+    "message": "스폰서 설명"
+  },
+  "sponsoredFilterHideTpl": {
+    "message": "{label} 숨기기 — {reason}"
+  },
+  "sponsoredFilterShowTpl": {
+    "message": "{label} 표시 — {reason}"
+  },
+  "sponsoredFilterAffiliateReason": {
+    "message": "제휴 홍보"
+  },
+  "sponsoredFilterSponsorReason": {
+    "message": "스폰서 표시"
   }
 }
