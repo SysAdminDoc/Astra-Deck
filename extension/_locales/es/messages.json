@@ -847,7 +847,7 @@
     "message": "Astra Downloader falló"
   },
   "dlProgressInProgress": {
-    "message": "En progreso"
+    "message": "En curso"
   },
   "dlProgressLocal": {
     "message": "Local"
@@ -3568,7 +3568,7 @@
     "message": "Botón rápido de Ver más tarde"
   },
   "feature_watchLaterWorkbench_desc": {
-    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+    "message": "Herramientas para la lista Ver más tarde: filtra por antigüedad, duración, estado de visualización, canal o título, previsualiza y ordena coincidencias, exporta CSV/JSON y elimina en sesiones limitadas recuperables"
   },
   "feature_watchLaterWorkbench_name": {
     "message": "Watch Later Workbench"
@@ -5603,7 +5603,7 @@
     "message": "Open"
   },
   "toastActionUndo": {
-    "message": "Undo"
+    "message": "Deshacer"
   },
   "toastDismissAria": {
     "message": "Dismiss notification"
@@ -5780,7 +5780,7 @@
     "message": "Me gusta · estimado por Return YouTube Dislike"
   },
   "undo": {
-    "message": "Undo"
+    "message": "Deshacer"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
@@ -6272,8 +6272,35 @@
   "wlwbChannelPlaceholder": {
     "message": "El canal contiene…"
   },
+  "wlwbAgeAria": {
+    "message": "Antigüedad mínima del video en días"
+  },
+  "wlwbAgePlaceholder": {
+    "message": "Más antiguo que (días)…"
+  },
+  "wlwbAgeUnavailableTpl": {
+    "message": "{count} fila(s) cargada(s) no tienen una antigüedad de subida legible y se excluyen del filtro de antigüedad."
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days} d"
+  },
+  "wlwbAgeLoading": {
+    "message": "Cargando fechas de subida…"
+  },
   "wlwbCloseAria": {
     "message": "Cerrar el banco de trabajo"
+  },
+  "wlwbDurationMaxAria": {
+    "message": "Duración máxima en minutos"
+  },
+  "wlwbDurationMaxPlaceholder": {
+    "message": "Duración ≤ minutos…"
+  },
+  "wlwbDurationMinAria": {
+    "message": "Duración mínima en minutos"
+  },
+  "wlwbDurationMinPlaceholder": {
+    "message": "Duración ≥ minutos…"
   },
   "wlwbExportCsv": {
     "message": "Exportar CSV"
@@ -6301,6 +6328,15 @@
   },
   "wlwbRemovalLogBtn": {
     "message": "Registro de eliminaciones"
+  },
+  "wlwbRecoveryEmpty": {
+    "message": "No hay videos eliminados esperando recuperación."
+  },
+  "wlwbRecoveryStatusTpl": {
+    "message": "Hay {count} video(s) eliminado(s) disponibles para restaurar."
+  },
+  "wlwbRecoveryTitle": {
+    "message": "Recuperación"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "Eliminar coincidencias (máx. {limit}/ejecución)"
@@ -6341,11 +6377,53 @@
   "wlwbTitlePlaceholder": {
     "message": "El título contiene…"
   },
+  "wlwbNothingToUndo": {
+    "message": "No hay videos eliminados de Ver más tarde esperando deshacer."
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "Se restauraron {restored} de {total} video(s) eliminado(s) en Ver más tarde."
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "Se restauró {title} en Ver más tarde"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "No se pudo restaurar {title}: {error}"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
+  },
+  "wlwbUndoAll": {
+    "message": "Deshacer todo"
+  },
+  "wlwbUndoItem": {
+    "message": "Deshacer"
+  },
   "wlwbWatchedAria": {
     "message": "Filtro de porcentaje mínimo visto"
   },
   "wlwbWatchedPlaceholder": {
     "message": "Visto ≥ % (p. ej., 90)"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "Filtro de estado de visualización"
+  },
+  "wlwbStateAny": {
+    "message": "Cualquier estado"
+  },
+  "wlwbStateInProgress": {
+    "message": "En curso"
+  },
+  "wlwbStateUnwatched": {
+    "message": "No vistos"
+  },
+  "wlwbStateWatched": {
+    "message": "Vistos (90%+)"
+  },
+  "wlwbUnknownAge": {
+    "message": "antigüedad ?"
+  },
+  "wlwbUnknownDuration": {
+    "message": "duración ?"
   },
   "workspaceEyebrow": {
     "message": "Espacio de configuración"

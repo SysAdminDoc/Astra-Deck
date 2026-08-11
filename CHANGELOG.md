@@ -15,6 +15,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Watch Later Workbench now filters bulk cleanup by upload age, duration,
+  watched state, channel, and title, with paced 25-item removal sessions,
+  per-item recovery, and latest-session Undo-all restoration through YouTube's
+  native playlist endpoint.
 - Added an opt-in sponsored-content filter for watch-page comments and
   descriptions, with local sponsor/affiliate matching, visible reasons, and
   per-item restore controls.

@@ -3568,7 +3568,7 @@
     "message": "Watch Later Quick Button"
   },
   "feature_watchLaterWorkbench_desc": {
-    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+    "message": "Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
   },
   "feature_watchLaterWorkbench_name": {
     "message": "Watch Later Workbench"
@@ -6272,8 +6272,35 @@
   "wlwbChannelPlaceholder": {
     "message": "Channel contains…"
   },
+  "wlwbAgeAria": {
+    "message": "Minimum video age in days"
+  },
+  "wlwbAgePlaceholder": {
+    "message": "Older than days…"
+  },
+  "wlwbAgeUnavailableTpl": {
+    "message": "{count} loaded row(s) have no readable upload age and are excluded from age filtering."
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days}d"
+  },
+  "wlwbAgeLoading": {
+    "message": "Loading upload dates…"
+  },
   "wlwbCloseAria": {
     "message": "Close workbench"
+  },
+  "wlwbDurationMaxAria": {
+    "message": "Maximum duration in minutes"
+  },
+  "wlwbDurationMaxPlaceholder": {
+    "message": "Duration ≤ minutes…"
+  },
+  "wlwbDurationMinAria": {
+    "message": "Minimum duration in minutes"
+  },
+  "wlwbDurationMinPlaceholder": {
+    "message": "Duration ≥ minutes…"
   },
   "wlwbExportCsv": {
     "message": "Export CSV"
@@ -6301,6 +6328,15 @@
   },
   "wlwbRemovalLogBtn": {
     "message": "Removal log"
+  },
+  "wlwbRecoveryEmpty": {
+    "message": "No removed videos are waiting for recovery."
+  },
+  "wlwbRecoveryStatusTpl": {
+    "message": "{count} removed video(s) are available to restore."
+  },
+  "wlwbRecoveryTitle": {
+    "message": "Undo recovery"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "Remove matched (max {limit}/run)"
@@ -6341,11 +6377,53 @@
   "wlwbTitlePlaceholder": {
     "message": "Title contains…"
   },
+  "wlwbNothingToUndo": {
+    "message": "No removed Watch Later videos are waiting for Undo."
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "Restored {restored} of {total} removed video(s) to Watch Later."
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "Restored {title} to Watch Later"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "Could not restore {title}: {error}"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
+  },
+  "wlwbUndoAll": {
+    "message": "Undo all"
+  },
+  "wlwbUndoItem": {
+    "message": "Undo"
+  },
   "wlwbWatchedAria": {
     "message": "Minimum watched percent filter"
   },
   "wlwbWatchedPlaceholder": {
     "message": "Watched ≥ % (e.g. 90)"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "Watched state filter"
+  },
+  "wlwbStateAny": {
+    "message": "Any watched state"
+  },
+  "wlwbStateInProgress": {
+    "message": "In progress"
+  },
+  "wlwbStateUnwatched": {
+    "message": "Unwatched"
+  },
+  "wlwbStateWatched": {
+    "message": "Watched (90%+)"
+  },
+  "wlwbUnknownAge": {
+    "message": "age ?"
+  },
+  "wlwbUnknownDuration": {
+    "message": "duration ?"
   },
   "workspaceEyebrow": {
     "message": "Settings workspace"

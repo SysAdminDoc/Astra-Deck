@@ -847,7 +847,7 @@
     "message": "本地下载器失败"
   },
   "dlProgressInProgress": {
-    "message": "进行中"
+    "message": "观看中"
   },
   "dlProgressLocal": {
     "message": "本地"
@@ -3568,7 +3568,7 @@
     "message": "稍后观看快捷按钮"
   },
   "feature_watchLaterWorkbench_desc": {
-    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+    "message": "“稍后观看”批量工具：按视频年龄、时长、观看状态、频道或标题筛选，预览并排序结果，导出 CSV/JSON，并在有上限且可恢复的会话中删除"
   },
   "feature_watchLaterWorkbench_name": {
     "message": "Watch Later Workbench"
@@ -5603,7 +5603,7 @@
     "message": "Open"
   },
   "toastActionUndo": {
-    "message": "Undo"
+    "message": "撤销"
   },
   "toastDismissAria": {
     "message": "Dismiss notification"
@@ -5780,7 +5780,7 @@
     "message": "点赞 · Return YouTube Dislike 估算"
   },
   "undo": {
-    "message": "Undo"
+    "message": "撤销"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
@@ -6272,8 +6272,35 @@
   "wlwbChannelPlaceholder": {
     "message": "频道包含…"
   },
+  "wlwbAgeAria": {
+    "message": "视频最小年龄（天）"
+  },
+  "wlwbAgePlaceholder": {
+    "message": "早于指定天数…"
+  },
+  "wlwbAgeUnavailableTpl": {
+    "message": "已加载的 {count} 行无法读取上传年龄，已从年龄筛选中排除。"
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days}天"
+  },
+  "wlwbAgeLoading": {
+    "message": "正在加载上传日期…"
+  },
   "wlwbCloseAria": {
     "message": "关闭工作台"
+  },
+  "wlwbDurationMaxAria": {
+    "message": "最长时长（分钟）"
+  },
+  "wlwbDurationMaxPlaceholder": {
+    "message": "时长 ≤ 分钟…"
+  },
+  "wlwbDurationMinAria": {
+    "message": "最短时长（分钟）"
+  },
+  "wlwbDurationMinPlaceholder": {
+    "message": "时长 ≥ 分钟…"
   },
   "wlwbExportCsv": {
     "message": "导出 CSV"
@@ -6301,6 +6328,15 @@
   },
   "wlwbRemovalLogBtn": {
     "message": "移除日志"
+  },
+  "wlwbRecoveryEmpty": {
+    "message": "没有等待恢复的已删除视频。"
+  },
+  "wlwbRecoveryStatusTpl": {
+    "message": "有 {count} 个已删除视频可恢复。"
+  },
+  "wlwbRecoveryTitle": {
+    "message": "恢复删除"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "移除匹配项（每次最多 {limit} 个）"
@@ -6341,11 +6377,53 @@
   "wlwbTitlePlaceholder": {
     "message": "标题包含…"
   },
+  "wlwbNothingToUndo": {
+    "message": "“稍后观看”中没有等待撤销的已删除视频。"
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "已将 {total} 个已删除视频中的 {restored} 个恢复到“稍后观看”。"
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "已将 {title} 恢复到“稍后观看”"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "无法恢复 {title}：{error}"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
+  },
+  "wlwbUndoAll": {
+    "message": "全部撤销"
+  },
+  "wlwbUndoItem": {
+    "message": "撤销"
+  },
   "wlwbWatchedAria": {
     "message": "最低已观看百分比筛选"
   },
   "wlwbWatchedPlaceholder": {
     "message": "已观看 ≥ %（例如 90）"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "观看状态筛选"
+  },
+  "wlwbStateAny": {
+    "message": "任意观看状态"
+  },
+  "wlwbStateInProgress": {
+    "message": "观看中"
+  },
+  "wlwbStateUnwatched": {
+    "message": "未观看"
+  },
+  "wlwbStateWatched": {
+    "message": "已观看（90%+）"
+  },
+  "wlwbUnknownAge": {
+    "message": "年龄？"
+  },
+  "wlwbUnknownDuration": {
+    "message": "时长？"
   },
   "workspaceEyebrow": {
     "message": "设置工作区"

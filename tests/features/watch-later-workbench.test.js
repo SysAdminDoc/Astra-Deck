@@ -4,13 +4,14 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const { loadFeature } = require('../helpers/monolith');
 
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
 
-// Window widened when the removal path gained dropdown-ownership checks —
-// these slices are length-sensitive.
-function featureSlice(id, span = 28000) {
+// Window widened when filters and recovery gained their own UI and native
+// restore path — these slices are length-sensitive.
+function featureSlice(id, span = 60000) {
     const start = ytkitSource.indexOf(`id: '${id}'`);
     assert.notEqual(start, -1, `feature ${id} must exist in ytkit.js`);
     return ytkitSource.slice(start, start + span);
@@ -42,14 +43,86 @@ test('watchLaterWorkbench filters, sorts, and exports the loaded scan', () => {
     const block = featureSlice('watchLaterWorkbench');
     assert.match(block, /watchedPct/,
         'scan must capture the watched percentage per row');
+    assert.match(block, /ageDays/,
+        'scan and matching must carry a conservative upload-age value');
+    assert.match(block, /durationMin|durationMax/,
+        'preview must support bounded duration filters');
+    assert.match(block, /watchedState/,
+        'matching must support explicit watched-state filters');
     assert.match(block, /duration-asc/,
         'preview supports duration sorting');
-    assert.match(block, /videoId,title,channel,durationSec,watchedPct,url/,
+    assert.match(block, /videoId,title,channel,durationSec,watchedPct,watchedState,ageDays,publishedAt,url/,
         'CSV export carries the full column set');
     assert.match(block, /_csvEscape/,
         'CSV fields must be escaped');
     assert.match(block, /Scroll the playlist to load more rows/,
         'status must disclose that only loaded rows are covered (no silent cap)');
+});
+
+test('watchLaterWorkbench fails closed for unknown age or duration while matching explicit cleanup filters', () => {
+    const feature = loadFeature('watchLaterWorkbench');
+    const base = {
+        watchedPct: 95,
+        watchedState: 'watched',
+        ageDays: 420,
+        durationSec: 900,
+        durationKnown: true,
+        channel: 'Example Channel',
+        title: 'Long Example'
+    };
+    assert.equal(feature._matches(base, {
+        watched: 90, watchedState: 'watched', ageDays: 365,
+        durationMin: 600, durationMax: 1200, channel: 'example', title: 'long'
+    }), true, 'a row meeting every filter should match');
+    assert.equal(feature._matches({ ...base, ageDays: null }, {
+        watched: null, watchedState: 'any', ageDays: 365,
+        durationMin: null, durationMax: null, channel: '', title: ''
+    }), false, 'age filtering must not remove rows whose upload age is unknown');
+    assert.equal(feature._matches({ ...base, durationKnown: false, durationSec: 0 }, {
+        watched: null, watchedState: 'any', ageDays: null,
+        durationMin: null, durationMax: 1200, channel: '', title: ''
+    }), false, 'duration filtering must not remove rows whose duration is unknown');
+    assert.equal(feature._watchedState(0), 'unwatched');
+    assert.equal(feature._watchedState(12), 'in-progress');
+    assert.equal(feature._watchedState(90), 'watched');
+    const now = Date.parse('2026-08-11T00:00:00Z');
+    assert.equal(feature._parseAgeDays('2 days ago', now), 2);
+    assert.equal(feature._parseAgeDays('2 Jahren', now), 730);
+});
+
+test('watchLaterWorkbench appends recoverable sessions and restores one item or the whole bounded session', async () => {
+    let log = [];
+    const requests = [];
+    const feature = loadFeature('watchLaterWorkbench', {
+        storageReadJSON: (_key, fallback) => log.length ? log : fallback,
+        storageWriteJSON: (_key, value) => { log = value; },
+        hasExtensionContext: () => true,
+        TranscriptService: {
+            _getInnertubeApiKey: () => '0123456789abcdefghij',
+            _getClientVersion: () => '2.20260401.00.00'
+        },
+        extensionFetchJson: async (details) => {
+            requests.push(details);
+            return { data: { playlistEdit: 'ok' } };
+        }
+    });
+    const sessionId = feature._appendLog([
+        { videoId: 'videoA123456', title: 'A', channel: 'Channel A' },
+        { videoId: 'videoB123456', title: 'B', channel: 'Channel B' }
+    ]);
+    assert.equal(typeof sessionId, 'string');
+    assert.equal(log.length, 2);
+    assert.ok(log.every(entry => entry.sessionId === sessionId && entry.restoredAt === null));
+
+    assert.equal(await feature._restoreEntry(log[0]), true, 'per-item Undo should restore through YouTube');
+    assert.equal(log[0].restoredAt > 0, true);
+    assert.equal(requests[0].data.includes('"action":"ACTION_ADD"'), true);
+    assert.equal(requests[0].data.includes('"addedVideoId":"videoA123456"'), true);
+
+    const restored = await feature._undoSession(sessionId);
+    assert.equal(restored, 1, 'Undo all should restore the remaining item in the session');
+    assert.equal(log.every(entry => entry.restoredAt > 0), true);
+    assert.equal(requests.length, 2);
 });
 
 test('watchLaterWorkbench routes its user-facing copy through locale keys', () => {
@@ -64,7 +137,11 @@ test('watchLaterWorkbench routes its user-facing copy through locale keys', () =
         'run button label must route through the {limit} template key');
     const en = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'));
-    for (const key of ['wlwbPanelAria', 'wlwbStatusTpl', 'wlwbRemoveMatchedTpl', 'wlwbOpenBtn']) {
+    for (const key of [
+        'wlwbPanelAria', 'wlwbStatusTpl', 'wlwbRemoveMatchedTpl', 'wlwbOpenBtn',
+        'wlwbAgePlaceholder', 'wlwbDurationMinPlaceholder', 'wlwbWatchedStateAria',
+        'wlwbRecoveryTitle', 'wlwbUndoAll', 'wlwbRestoredBatchTpl'
+    ]) {
         assert.ok(en[key]?.message, `en messages must define ${key}`);
     }
 });

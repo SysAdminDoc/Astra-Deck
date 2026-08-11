@@ -3568,7 +3568,7 @@
     "message": "Быстрая кнопка «Смотреть позже»"
   },
   "feature_watchLaterWorkbench_desc": {
-    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+    "message": "Инструменты плейлиста «Смотреть позже»: фильтрация по возрасту, длительности, состоянию просмотра, каналу или названию, просмотр и сортировка результатов, экспорт CSV/JSON и удаление в ограниченных восстанавливаемых сеансах"
   },
   "feature_watchLaterWorkbench_name": {
     "message": "Watch Later Workbench"
@@ -5603,7 +5603,7 @@
     "message": "Open"
   },
   "toastActionUndo": {
-    "message": "Undo"
+    "message": "Отменить"
   },
   "toastDismissAria": {
     "message": "Dismiss notification"
@@ -5780,7 +5780,7 @@
     "message": "лайков · оценка Return YouTube Dislike"
   },
   "undo": {
-    "message": "Undo"
+    "message": "Отменить"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
@@ -6272,8 +6272,35 @@
   "wlwbChannelPlaceholder": {
     "message": "Канал содержит…"
   },
+  "wlwbAgeAria": {
+    "message": "Минимальный возраст видео в днях"
+  },
+  "wlwbAgePlaceholder": {
+    "message": "Старше (дней)…"
+  },
+  "wlwbAgeUnavailableTpl": {
+    "message": "У {count} загруженных строк нет читаемого возраста публикации, поэтому они исключены из фильтра по возрасту."
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days} дн."
+  },
+  "wlwbAgeLoading": {
+    "message": "Загрузка дат публикации…"
+  },
   "wlwbCloseAria": {
     "message": "Закрыть мастерскую"
+  },
+  "wlwbDurationMaxAria": {
+    "message": "Максимальная длительность в минутах"
+  },
+  "wlwbDurationMaxPlaceholder": {
+    "message": "Длительность ≤ минут…"
+  },
+  "wlwbDurationMinAria": {
+    "message": "Минимальная длительность в минутах"
+  },
+  "wlwbDurationMinPlaceholder": {
+    "message": "Длительность ≥ минут…"
   },
   "wlwbExportCsv": {
     "message": "Экспорт CSV"
@@ -6301,6 +6328,15 @@
   },
   "wlwbRemovalLogBtn": {
     "message": "Журнал удалений"
+  },
+  "wlwbRecoveryEmpty": {
+    "message": "Нет удалённых видео, ожидающих восстановления."
+  },
+  "wlwbRecoveryStatusTpl": {
+    "message": "Доступно для восстановления удалённых видео: {count}."
+  },
+  "wlwbRecoveryTitle": {
+    "message": "Восстановление"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "Удалить совпадения (не более {limit} за запуск)"
@@ -6341,11 +6377,53 @@
   "wlwbTitlePlaceholder": {
     "message": "Название содержит…"
   },
+  "wlwbNothingToUndo": {
+    "message": "Нет удалённых видео из «Смотреть позже», ожидающих отмены."
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "В «Смотреть позже» восстановлено видео: {restored} из {total}."
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "«{title}» восстановлено в «Смотреть позже»"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "Не удалось восстановить «{title}»: {error}"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
+  },
+  "wlwbUndoAll": {
+    "message": "Отменить всё"
+  },
+  "wlwbUndoItem": {
+    "message": "Отменить"
+  },
   "wlwbWatchedAria": {
     "message": "Фильтр минимального процента просмотра"
   },
   "wlwbWatchedPlaceholder": {
     "message": "Просмотрено ≥ % (напр., 90)"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "Фильтр состояния просмотра"
+  },
+  "wlwbStateAny": {
+    "message": "Любое состояние"
+  },
+  "wlwbStateInProgress": {
+    "message": "В процессе"
+  },
+  "wlwbStateUnwatched": {
+    "message": "Не просмотрено"
+  },
+  "wlwbStateWatched": {
+    "message": "Просмотрено (90%+)"
+  },
+  "wlwbUnknownAge": {
+    "message": "возраст ?"
+  },
+  "wlwbUnknownDuration": {
+    "message": "длительность ?"
   },
   "workspaceEyebrow": {
     "message": "Рабочая область настроек"

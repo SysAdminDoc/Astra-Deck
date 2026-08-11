@@ -37941,7 +37941,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'watchLaterWorkbench',
             name: 'Watch Later Workbench',
-            description: 'Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions',
+            description: 'Bulk tools for the Watch Later playlist: filter by age, duration, watched state, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions',
             group: 'Playlists',
             icon: 'check-square',
             pages: [PageTypes.PLAYLIST],
@@ -37953,6 +37953,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
             _navRule: null,
             _running: false,
+            _undoRunning: false,
+            _lastSessionId: null,
+            _sessionSequence: 0,
+            _undoAllBtn: null,
+            _UNDO_BATCH_LIMIT: 25,
+            _AGE_FETCH_LIMIT: 25,
+            _AGE_PACE_MS: 100,
+            _ageCache: null,
+            _ageHydrating: false,
+            _ageHydrationToken: 0,
 
             _isWatchLater() {
                 try {
@@ -37967,6 +37977,137 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return parts.reduce((acc, n) => acc * 60 + n, 0);
             },
 
+            _textFromData(value) {
+                if (typeof value === 'string') return value;
+                if (!value || typeof value !== 'object') return '';
+                if (typeof value.simpleText === 'string') return value.simpleText;
+                if (Array.isArray(value.runs)) return value.runs.map(run => run?.text || '').join('');
+                return '';
+            },
+
+            _publishedValue(row) {
+                const data = row?.data || {};
+                const nodes = [...(row?.querySelectorAll?.(
+                    'meta[itemprop="datePublished"], time[datetime], #metadata-line span, ' +
+                    'ytd-video-meta-block #metadata-line span'
+                ) || [])];
+                const attributeValue = row?.getAttribute?.('data-published-at')
+                    || row?.getAttribute?.('data-upload-date')
+                    || row?.dataset?.publishedAt
+                    || row?.dataset?.uploadDate;
+                const dataValue = data.publishedAt || data.publishDate || data.uploadDate
+                    || data.publishedTimeText || data.videoDetails?.publishDate
+                    || data.videoDetails?.publishDateText;
+                const candidates = [
+                    attributeValue,
+                    this._textFromData(dataValue),
+                    ...nodes.flatMap(node => [
+                        node?.getAttribute?.('content'),
+                        node?.getAttribute?.('datetime'),
+                        node?.textContent?.trim()
+                    ])
+                ].filter(Boolean);
+                return candidates.find(candidate => (
+                    this._parsePublishedAt(candidate) !== null || this._parseAgeDays(candidate) !== null
+                )) || '';
+            },
+
+            _parsePublishedAt(value) {
+                const raw = String(value || '').trim();
+                if (!raw) return null;
+                const timestamp = Date.parse(raw);
+                if (Number.isFinite(timestamp) && timestamp > 0) return new Date(timestamp).toISOString();
+                return null;
+            },
+
+            _parseAgeDays(value, now = Date.now()) {
+                const raw = String(value || '').trim();
+                if (!raw) return null;
+                const timestamp = Date.parse(raw);
+                if (Number.isFinite(timestamp) && timestamp > 0) {
+                    return Math.max(0, (now - timestamp) / 86400000);
+                }
+                const normalized = raw.toLowerCase().replace(/[,،]/g, ' ');
+                const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*(seconds?|secs?|segundos?|segundos?|secondes?|sekunden?|секунд(?:а|ы)?|秒|초|ثواني?|minutes?|mins?|minutos?|minutes?|minuten?|минут(?:а|ы)?|分|분|دقائق?|hours?|hrs?|horas?|heures?|stunden?|час(?:а|ов)?|時間|시간|ساعات?|days?|días?|dias?|jours?|tages?|дн(?:ей|я|и)?|日|일|أيام?|weeks?|semanas?|semaines?|wochen?|недел(?:я|и|ь)?|週間|주|أسابيع?|months?|meses?|mois|monate?n?|месяц(?:а|ев)?|か月|개월|أشهر?|years?|años?|anos?|ans?|jahre?n?|год(?:а|ов)?|лет|年|년|سنوات?)/i);
+                if (!match) return null;
+                const amount = parseFloat(match[1].replace(',', '.'));
+                if (!Number.isFinite(amount)) return null;
+                const unit = match[2].toLowerCase();
+                if (/year|año|ano|ans?|jahr|год|лет|年|년|سنوات/.test(unit)) return amount * 365;
+                if (/second|sec|segundo|seconde|sekund|секунд|秒|초|ثوان/.test(unit)) return amount / 86400;
+                if (/minute|minuto|minute|минут|分|분|دقائق/.test(unit)) return amount / 1440;
+                if (/hour|hr|hora|heure|stunde|час|時間|시간|ساع/.test(unit)) return amount / 24;
+                if (/day|día|dia|jour|tag|дн|日|일|أيام/.test(unit)) return amount;
+                if (/week|semana|semaine|woche|недел|週間|주|أسابيع/.test(unit)) return amount * 7;
+                if (/month|mes|mois|monat|месяц|か月|개월|أشهر/.test(unit)) return amount * 30;
+                return null;
+            },
+
+            _watchedState(watchedPct) {
+                if (watchedPct >= 90) return 'watched';
+                if (watchedPct > 0) return 'in-progress';
+                return 'unwatched';
+            },
+
+            _ageCacheFor(videoId) {
+                if (!this._ageCache) this._ageCache = new Map();
+                return this._ageCache.get(videoId);
+            },
+
+            async _fetchPublishedAt(videoId) {
+                const url = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+                let html = '';
+                if (typeof extensionFetchText === 'function'
+                    && typeof hasExtensionContext === 'function'
+                    && hasExtensionContext()) {
+                    ({ text: html } = await extensionFetchText({ method: 'GET', url, timeout: 10000 }));
+                } else if (typeof fetch === 'function') {
+                    const response = await fetch(url, { credentials: 'include' });
+                    if (!response.ok) throw new Error(`YouTube returned HTTP ${response.status}`);
+                    html = await response.text();
+                } else {
+                    throw new Error('Upload-date lookup is unavailable in this browser context');
+                }
+                const escaped = String(html || '').match(/(?:"publishDate"|"datePublished"|"uploadDate")\s*:\s*"([^"\\]+)"/);
+                if (!escaped) return null;
+                const candidate = escaped[1].replace(/\\u002D/gi, '-');
+                return this._parsePublishedAt(candidate);
+            },
+
+            _hydrateAges(entries) {
+                if (this._ageHydrating) return;
+                if (!this._ageCache) this._ageCache = new Map();
+                const candidates = entries
+                    .filter(entry => !entry.publishedAt && !this._ageCache.has(entry.videoId))
+                    .slice(0, this._AGE_FETCH_LIMIT);
+                if (!candidates.length) return;
+                this._ageHydrating = true;
+                const token = ++this._ageHydrationToken;
+                (async () => {
+                    try {
+                        for (const entry of candidates) {
+                            if (token !== this._ageHydrationToken) break;
+                            try {
+                                const publishedAt = await this._fetchPublishedAt(entry.videoId);
+                                if (token !== this._ageHydrationToken) break;
+                                this._ageCache.set(entry.videoId, publishedAt ? { publishedAt } : null);
+                            } catch (_) {
+                                // Unknown age is a safe exclusion when an age
+                                // filter is active; do not retry every preview.
+                                if (token !== this._ageHydrationToken) break;
+                                this._ageCache.set(entry.videoId, null);
+                            }
+                            if (this._AGE_PACE_MS > 0) await new Promise(resolve => setTimeout(resolve, this._AGE_PACE_MS));
+                        }
+                    } finally {
+                        if (token === this._ageHydrationToken) {
+                            this._ageHydrating = false;
+                            if (this._panel) this._refreshPreview();
+                        }
+                    }
+                })();
+            },
+
             _scanRows() {
                 const rows = [];
                 document.querySelectorAll('ytd-playlist-video-renderer').forEach((row) => {
@@ -37977,15 +38118,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const channel = row.querySelector('ytd-channel-name a, ytd-channel-name #text')?.textContent?.trim() || '';
                     const durationText = row.querySelector('ytd-thumbnail-overlay-time-status-renderer, .badge-shape-wiz__text')?.textContent?.trim() || '';
                     const fill = row.querySelector('#progress');
-                    const watchedPct = fill ? (parseFloat(fill.style.width || '0') || 0) : 0;
+                    const watchedRaw = fill?.style?.width || fill?.getAttribute?.('aria-valuenow') || '0';
+                    const watchedPct = Math.max(0, Math.min(100, parseFloat(watchedRaw) || 0));
+                    const publishedValue = this._publishedValue(row);
+                    const publishedAt = this._parsePublishedAt(publishedValue) || this._ageCacheFor(videoId)?.publishedAt || null;
+                    const ageDays = publishedAt
+                        ? this._parseAgeDays(publishedAt)
+                        : this._parseAgeDays(publishedValue);
                     if (!videoId) return;
-                    rows.push({ row, videoId, title, channel, durationSec: this._parseDuration(durationText), watchedPct });
+                    rows.push({
+                        row,
+                        videoId,
+                        title,
+                        channel,
+                        durationSec: this._parseDuration(durationText),
+                        durationKnown: /^\d+(?::\d{1,2}){1,2}$/.test(durationText),
+                        watchedPct,
+                        watchedState: this._watchedState(watchedPct),
+                        publishedAt,
+                        ageDays
+                    });
                 });
                 return rows;
             },
 
             _matches(entry, filters) {
                 if (filters.watched != null && entry.watchedPct < filters.watched) return false;
+                if (filters.watchedState && filters.watchedState !== 'any' && entry.watchedState !== filters.watchedState) return false;
+                if (filters.ageDays != null && (entry.ageDays == null || entry.ageDays < filters.ageDays)) return false;
+                if (filters.durationMin != null && (!entry.durationKnown || entry.durationSec < filters.durationMin)) return false;
+                if (filters.durationMax != null && (!entry.durationKnown || entry.durationSec > filters.durationMax)) return false;
                 if (filters.channel && !entry.channel.toLowerCase().includes(filters.channel)) return false;
                 if (filters.title && !entry.title.toLowerCase().includes(filters.title)) return false;
                 return true;
@@ -37994,8 +38156,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _readFilters() {
                 const watchedRaw = this._panel?.querySelector('.ytkit-wlwb-watched')?.value ?? '';
                 const watched = watchedRaw === '' ? null : Math.max(0, Math.min(100, parseFloat(watchedRaw)));
+                const ageRaw = this._panel?.querySelector('.ytkit-wlwb-age')?.value ?? '';
+                const durationMinRaw = this._panel?.querySelector('.ytkit-wlwb-duration-min')?.value ?? '';
+                const durationMaxRaw = this._panel?.querySelector('.ytkit-wlwb-duration-max')?.value ?? '';
+                const ageDays = ageRaw === '' ? null : Math.max(0, parseFloat(ageRaw));
+                const durationMin = durationMinRaw === '' ? null : Math.max(0, parseFloat(durationMinRaw) * 60);
+                const durationMax = durationMaxRaw === '' ? null : Math.max(0, parseFloat(durationMaxRaw) * 60);
                 return {
                     watched: Number.isFinite(watched) ? watched : null,
+                    watchedState: this._panel?.querySelector('.ytkit-wlwb-watched-state')?.value || 'any',
+                    ageDays: Number.isFinite(ageDays) ? ageDays : null,
+                    durationMin: Number.isFinite(durationMin) ? durationMin : null,
+                    durationMax: Number.isFinite(durationMax) ? durationMax : null,
                     channel: (this._panel?.querySelector('.ytkit-wlwb-channel')?.value || '').trim().toLowerCase(),
                     title: (this._panel?.querySelector('.ytkit-wlwb-title')?.value || '').trim().toLowerCase()
                 };
@@ -38005,7 +38177,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!this._panel) return;
                 const filters = this._readFilters();
                 const sortMode = this._panel.querySelector('.ytkit-wlwb-sort')?.value || 'playlist';
-                const entries = this._scanRows().filter(e => this._matches(e, filters));
+                const loadedEntries = this._scanRows();
+                const entries = loadedEntries.filter(e => this._matches(e, filters));
                 if (sortMode === 'duration-asc') entries.sort((a, b) => a.durationSec - b.durationSec);
                 else if (sortMode === 'duration-desc') entries.sort((a, b) => b.durationSec - a.durationSec);
                 else if (sortMode === 'title') entries.sort((a, b) => a.title.localeCompare(b.title));
@@ -38022,17 +38195,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         .replace('{percent}', e.watchedPct.toFixed(0));
                     const meta = document.createElement('span');
                     meta.className = 'ytkit-wlwb-meta';
-                    meta.textContent = `${e.watchedPct.toFixed(0)}%`;
+                    const duration = e.durationKnown ? this._formatDuration(e.durationSec) : t('wlwbUnknownDuration', 'duration ?');
+                    const age = e.ageDays == null
+                        ? t('wlwbUnknownAge', 'age ?')
+                        : t('wlwbAgeDaysTpl', '{days}d').replace('{days}', String(Math.floor(e.ageDays)));
+                    meta.textContent = t('wlwbRowMetaTpl', '{percent}% · {duration} · {age}')
+                        .replace('{percent}', e.watchedPct.toFixed(0))
+                        .replace('{duration}', duration)
+                        .replace('{age}', age);
                     rowEl.appendChild(label);
                     rowEl.appendChild(meta);
                     list.appendChild(rowEl);
                 });
                 const status = this._panel.querySelector('.ytkit-wlwb-status');
-                const loaded = this._scanRows().length;
-                status.textContent = t('wlwbStatusTpl', `${entries.length} of ${loaded} loaded videos match. Scroll the playlist to load more rows before running.`)
+                const unknownAge = filters.ageDays != null
+                    ? loadedEntries.filter(e => e.ageDays == null).length
+                    : 0;
+                if (filters.ageDays != null) this._hydrateAges(loadedEntries);
+                const unknownAgeNote = unknownAge > 0
+                    ? ` ${t('wlwbAgeUnavailableTpl', '{count} loaded row(s) have no readable upload age and are excluded from age filtering.')
+                        .replace('{count}', String(unknownAge))}`
+                    : '';
+                const ageLoadingNote = filters.ageDays != null && this._ageHydrating
+                    ? ` ${t('wlwbAgeLoading', 'Loading upload dates…')}`
+                    : '';
+                status.textContent = t('wlwbStatusTpl', `${entries.length} of ${loadedEntries.length} loaded videos match. Scroll the playlist to load more rows before running.`)
                     .replace('{matched}', String(entries.length))
-                    .replace('{loaded}', String(loaded));
+                    .replace('{loaded}', String(loadedEntries.length)) + unknownAgeNote + ageLoadingNote;
                 this._matched = entries;
+                this._renderRecovery();
+            },
+
+            _formatDuration(seconds) {
+                const total = Math.max(0, Math.floor(Number(seconds) || 0));
+                const hours = Math.floor(total / 3600);
+                const minutes = Math.floor((total % 3600) / 60);
+                const secs = total % 60;
+                return hours > 0
+                    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+                    : `${minutes}:${String(secs).padStart(2, '0')}`;
             },
 
             _download(name, text, mime) {
@@ -38049,16 +38250,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
             },
             _exportScan(format) {
-                const entries = this._scanRows().map(({ videoId, title, channel, durationSec, watchedPct }) => (
-                    { videoId, title, channel, durationSec, watchedPct, url: `https://www.youtube.com/watch?v=${videoId}` }
+                const entries = this._scanRows().map(({ videoId, title, channel, durationSec, watchedPct, watchedState, ageDays, publishedAt }) => (
+                    { videoId, title, channel, durationSec, watchedPct, watchedState, ageDays, publishedAt, url: `https://www.youtube.com/watch?v=${videoId}` }
                 ));
                 const stamp = new Date().toISOString().slice(0, 10);
                 if (format === 'csv') {
-                    const head = 'videoId,title,channel,durationSec,watchedPct,url';
-                    const body = entries.map(e => [e.videoId, e.title, e.channel, e.durationSec, e.watchedPct, e.url].map(v => this._csvEscape(v)).join(','));
+                    const head = 'videoId,title,channel,durationSec,watchedPct,watchedState,ageDays,publishedAt,url';
+                    const body = entries.map(e => [e.videoId, e.title, e.channel, e.durationSec, e.watchedPct, e.watchedState, e.ageDays == null ? '' : e.ageDays.toFixed(1), e.publishedAt || '', e.url].map(v => this._csvEscape(v)).join(','));
                     this._download(`watch-later-${stamp}.csv`, [head, ...body].join('\n'), 'text/csv');
                 } else {
-                    this._download(`watch-later-${stamp}.json`, JSON.stringify({ exportVersion: 1, exportedAt: Date.now(), entries }, null, 2), 'application/json');
+                    this._download(`watch-later-${stamp}.json`, JSON.stringify({ exportVersion: 2, exportedAt: Date.now(), entries }, null, 2), 'application/json');
                 }
                 showToast(t('wlwbExportedToastTpl', `Exported ${entries.length} loaded Watch Later entries`)
                     .replace('{count}', String(entries.length)), '#22c55e', { duration: 3 });
@@ -38070,11 +38271,86 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     JSON.stringify({ exportVersion: 1, entries: log }, null, 2), 'application/json');
             },
             _appendLog(entries) {
+                if (!entries.length) return null;
                 const log = storageReadJSON(this._LOG_KEY, []);
-                for (const { videoId, title, channel } of entries) {
-                    log.push({ videoId, title, channel, removedAt: Date.now(), url: `https://www.youtube.com/watch?v=${videoId}` });
-                }
+                const current = Array.isArray(log) ? log : [];
+                const sessionId = `${Date.now()}-${++this._sessionSequence}`;
+                const removedAt = Date.now();
+                const records = entries.map(({ videoId, title, channel }, index) => ({
+                    id: `${sessionId}-${index + 1}`,
+                    sessionId,
+                    videoId,
+                    title,
+                    channel,
+                    removedAt,
+                    restoredAt: null,
+                    url: `https://www.youtube.com/watch?v=${videoId}`
+                }));
+                storageWriteJSON(this._LOG_KEY, [...current, ...records].slice(-500));
+                this._lastSessionId = sessionId;
+                return sessionId;
+            },
+
+            _readRemovalLog() {
+                const log = storageReadJSON(this._LOG_KEY, []);
+                return Array.isArray(log) ? log : [];
+            },
+
+            _recoverableLog() {
+                return this._readRemovalLog()
+                    .filter(entry => entry?.videoId && !entry.restoredAt)
+                    .sort((a, b) => (Number(b.removedAt) || 0) - (Number(a.removedAt) || 0));
+            },
+
+            _latestSessionId() {
+                return this._recoverableLog().find(entry => entry.sessionId)?.sessionId || null;
+            },
+
+            _updateRemovalLogEntry(entry, update) {
+                const log = this._readRemovalLog();
+                const index = log.findIndex(candidate => (
+                    (entry.id && candidate.id === entry.id)
+                    || (candidate.videoId === entry.videoId && candidate.removedAt === entry.removedAt)
+                ));
+                if (index < 0) return false;
+                log[index] = { ...log[index], ...update };
                 storageWriteJSON(this._LOG_KEY, log.slice(-500));
+                return true;
+            },
+
+            _renderRecovery() {
+                if (!this._panel) return;
+                const status = this._panel.querySelector('.ytkit-wlwb-recovery-status');
+                const list = this._panel.querySelector('.ytkit-wlwb-recovery-list');
+                if (!status || !list) return;
+                const entries = this._recoverableLog().slice(0, this._UNDO_BATCH_LIMIT);
+                status.textContent = entries.length
+                    ? t('wlwbRecoveryStatusTpl', '{count} removed video(s) are available to restore.')
+                        .replace('{count}', String(entries.length))
+                    : t('wlwbRecoveryEmpty', 'No removed videos are waiting for recovery.');
+                if (this._undoAllBtn) {
+                    this._undoAllBtn.disabled = !entries.length || this._undoRunning;
+                    this._undoAllBtn.textContent = t('wlwbUndoAll', 'Undo all');
+                }
+                list.replaceChildren();
+                entries.forEach((entry) => {
+                    const row = document.createElement('div');
+                    row.className = 'ytkit-wlwb-recovery-row';
+                    const label = document.createElement('span');
+                    label.textContent = entry.title || entry.videoId;
+                    label.title = entry.channel ? `${entry.title || entry.videoId} — ${entry.channel}` : entry.videoId;
+                    const undo = document.createElement('button');
+                    undo.type = 'button';
+                    undo.textContent = t('wlwbUndoItem', 'Undo');
+                    undo.addEventListener('click', async () => {
+                        undo.disabled = true;
+                        await this._restoreEntry(entry);
+                        this._renderRecovery();
+                    });
+                    row.appendChild(label);
+                    row.appendChild(undo);
+                    list.appendChild(row);
+                });
             },
 
             _openDropdown() {
@@ -38111,6 +38387,109 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!target) return null;
                 return target === videoId;
             },
+
+            _innertubeConfig() {
+                const apiKey = TranscriptService?._getInnertubeApiKey?.() || '';
+                const clientVersion = TranscriptService?._getClientVersion?.() || '2.20260401.00.00';
+                if (!/^[a-zA-Z0-9_-]{10,}$/.test(apiKey)) throw new Error('YouTube session configuration is unavailable');
+                return { apiKey, clientVersion };
+            },
+
+            async _editWatchLater(videoId, action = 'ACTION_ADD') {
+                if (!/^[a-zA-Z0-9_-]{6,}$/.test(String(videoId || ''))) throw new Error('Invalid video id');
+                if (action !== 'ACTION_ADD' && action !== 'ACTION_REMOVE') throw new Error('Unsupported Watch Later action');
+                const { apiKey, clientVersion } = this._innertubeConfig();
+                const endpointAction = action === 'ACTION_ADD'
+                    ? { action, addedVideoId: videoId }
+                    : { action, removedVideoId: videoId };
+                const body = JSON.stringify({
+                    context: { client: { clientName: 'WEB', clientVersion } },
+                    playlistId: 'WL',
+                    actions: [endpointAction]
+                });
+                const url = 'https://www.youtube.com/youtubei/v1/browse/edit_playlist' + '?'
+                    + 'key=' + encodeURIComponent(apiKey);
+                if (typeof extensionFetchJson === 'function'
+                    && typeof hasExtensionContext === 'function'
+                    && hasExtensionContext()) {
+                    const { data } = await extensionFetchJson({
+                        method: 'POST',
+                        url,
+                        headers: { 'Content-Type': 'application/json' },
+                        data: body,
+                        timeout: 10000
+                    });
+                    return data;
+                }
+                if (typeof fetch !== 'function') throw new Error('Watch Later restore is unavailable in this browser context');
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body
+                });
+                if (!response.ok) throw new Error(`YouTube returned HTTP ${response.status}`);
+                return response.json();
+            },
+
+            async _restoreEntry(entry, { silent = false } = {}) {
+                if (!entry?.videoId || entry.restoredAt) return false;
+                try {
+                    await this._editWatchLater(entry.videoId, 'ACTION_ADD');
+                    this._updateRemovalLogEntry(entry, { restoredAt: Date.now(), restoreError: null });
+                    if (!silent) {
+                        showToast(t('wlwbRestoredItemTpl', 'Restored {title} to Watch Later')
+                            .replace('{title}', entry.title || entry.videoId), '#22c55e', { duration: 4 });
+                    }
+                    return true;
+                } catch (error) {
+                    this._updateRemovalLogEntry(entry, {
+                        restoreError: String(error?.message || 'Restore failed').slice(0, 180)
+                    });
+                    if (!silent) {
+                        showToast(t('wlwbRestoreFailedTpl', 'Could not restore {title}: {error}')
+                            .replace('{title}', entry.title || entry.videoId)
+                            .replace('{error}', String(error?.message || 'Restore failed')), '#f59e0b', {
+                                duration: 6,
+                                tone: 'warning'
+                            });
+                    }
+                    return false;
+                }
+            },
+
+            async _undoSession(sessionId = null) {
+                if (this._undoRunning) return 0;
+                const targetSession = sessionId || this._lastSessionId || this._latestSessionId();
+                const entries = this._recoverableLog()
+                    .filter(entry => !targetSession || entry.sessionId === targetSession)
+                    .slice(0, this._UNDO_BATCH_LIMIT);
+                if (!entries.length) {
+                    showToast(t('wlwbNothingToUndo', 'No removed Watch Later videos are waiting for Undo.'), '#f59e0b', {
+                        duration: 3,
+                        tone: 'warning'
+                    });
+                    return 0;
+                }
+                this._undoRunning = true;
+                let restored = 0;
+                try {
+                    for (const entry of entries) {
+                        if (await this._restoreEntry(entry, { silent: true })) restored++;
+                    }
+                } finally {
+                    this._undoRunning = false;
+                }
+                this._renderRecovery();
+                showToast(t('wlwbRestoredBatchTpl', 'Restored {restored} of {total} removed video(s) to Watch Later.')
+                    .replace('{restored}', String(restored))
+                    .replace('{total}', String(entries.length)), restored === entries.length ? '#22c55e' : '#f59e0b', {
+                        duration: 6,
+                        tone: restored === entries.length ? 'success' : 'warning'
+                    });
+                return restored;
+            },
+
             async _removeRow(entry) {
                 const menuBtn = entry.row.querySelector('#menu yt-icon-button button, #menu button[aria-label*="Action menu"]');
                 if (!menuBtn) return false;
@@ -38159,6 +38538,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._running = true;
                 runBtn.disabled = true;
                 const removed = [];
+                let sessionId = null;
                 try {
                     for (let i = 0; i < batch.length; i++) {
                         runBtn.textContent = t('wlwbRemovingTpl', `Removing ${i + 1} / ${batch.length}…`)
@@ -38168,8 +38548,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const ok = await this._removeRow(batch[i]);
                         if (ok) removed.push(batch[i]);
                     }
-                    this._appendLog(removed);
                 } finally {
+                    sessionId = this._appendLog(removed);
                     // A throw mid-run must not strand the button disabled for
                     // the rest of the session.
                     this._running = false;
@@ -38181,14 +38561,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const remainingNote = remaining > 0
                     ? ` ${t('wlwbRemovedRemainingTpl', `— ${remaining} still match, run again`).replace('{count}', String(remaining))}`
                     : '';
+                const toastOptions = { duration: 8 };
+                if (sessionId) {
+                    toastOptions.action = {
+                        text: removed.length === 1 ? t('wlwbUndoItem', 'Undo') : t('wlwbUndoAll', 'Undo all'),
+                        onClick: () => this._undoSession(sessionId)
+                    };
+                }
                 showToast(t('wlwbRemovedToastTpl', `Removed ${removed.length} video(s)${remainingNote}. Recovery list is in the removal log.`)
                     .replace('{count}', String(removed.length))
-                    .replace('{remaining}', remainingNote), '#22c55e', { duration: 5 });
+                    .replace('{remaining}', remainingNote), '#22c55e', toastOptions);
                 this._refreshPreview();
             },
 
             _togglePanel() {
-                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                if (this._panel) {
+                    this._panel.remove();
+                    this._panel = null;
+                    this._undoAllBtn = null;
+                    return;
+                }
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-wlwb-panel';
                 panel.setAttribute('role', 'dialog');
@@ -38220,6 +38612,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return input;
                 };
                 mkInput('ytkit-wlwb-watched', 'number', t('wlwbWatchedPlaceholder', 'Watched ≥ % (e.g. 90)'), t('wlwbWatchedAria', 'Minimum watched percent filter'));
+                const watchedState = document.createElement('select');
+                watchedState.className = 'ytkit-wlwb-watched-state';
+                watchedState.setAttribute('aria-label', t('wlwbWatchedStateAria', 'Watched state filter'));
+                [
+                    ['any', t('wlwbStateAny', 'Any watched state')],
+                    ['unwatched', t('wlwbStateUnwatched', 'Unwatched')],
+                    ['in-progress', t('wlwbStateInProgress', 'In progress')],
+                    ['watched', t('wlwbStateWatched', 'Watched (90%+)')]
+                ].forEach(([value, label]) => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = label;
+                    watchedState.appendChild(option);
+                });
+                watchedState.addEventListener('change', () => this._refreshPreview());
+                controls.appendChild(watchedState);
+                mkInput('ytkit-wlwb-age', 'number', t('wlwbAgePlaceholder', 'Older than days…'), t('wlwbAgeAria', 'Minimum video age in days'));
+                mkInput('ytkit-wlwb-duration-min', 'number', t('wlwbDurationMinPlaceholder', 'Duration ≥ minutes…'), t('wlwbDurationMinAria', 'Minimum duration in minutes'));
+                mkInput('ytkit-wlwb-duration-max', 'number', t('wlwbDurationMaxPlaceholder', 'Duration ≤ minutes…'), t('wlwbDurationMaxAria', 'Maximum duration in minutes'));
                 mkInput('ytkit-wlwb-channel', 'text', t('wlwbChannelPlaceholder', 'Channel contains…'), t('wlwbChannelAria', 'Channel name filter'));
                 mkInput('ytkit-wlwb-title', 'text', t('wlwbTitlePlaceholder', 'Title contains…'), t('wlwbTitleAria', 'Title filter'));
                 const sort = document.createElement('select');
@@ -38264,7 +38675,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 panel.appendChild(controls);
                 panel.appendChild(status);
                 panel.appendChild(list);
+
+                const recovery = document.createElement('div');
+                recovery.className = 'ytkit-wlwb-recovery';
+                const recoveryHeader = document.createElement('div');
+                recoveryHeader.className = 'ytkit-wlwb-recovery-header';
+                const recoveryTitle = document.createElement('span');
+                recoveryTitle.textContent = t('wlwbRecoveryTitle', 'Undo recovery');
+                const recoveryStatus = document.createElement('span');
+                recoveryStatus.className = 'ytkit-wlwb-recovery-status';
+                recoveryHeader.appendChild(recoveryTitle);
+                recoveryHeader.appendChild(recoveryStatus);
+                const recoveryList = document.createElement('div');
+                recoveryList.className = 'ytkit-wlwb-recovery-list';
+                recovery.appendChild(recoveryHeader);
+                recovery.appendChild(recoveryList);
+
                 panel.appendChild(actions);
+                panel.appendChild(recovery);
                 panel.addEventListener('keydown', (event) => {
                     if (event.key === 'Escape') {
                         event.stopPropagation();
@@ -38274,6 +38702,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 document.body.appendChild(panel);
                 this._panel = panel;
+                this._undoAllBtn = mkAction(t('wlwbUndoAll', 'Undo all'), () => this._undoSession());
+                this._undoAllBtn.classList.add('ytkit-wlwb-undo-all');
                 close.focus({ preventScroll: true });
                 this._refreshPreview();
             },
@@ -38314,11 +38744,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-wlwb-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 12px; font-size: 12px; }
                     .ytkit-wlwb-row span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
                     .ytkit-wlwb-meta { color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.55)); }
+                    .ytkit-wlwb-recovery { border-top: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.1)); max-height: 180px; overflow-y: auto; padding: 8px 12px; }
+                    .ytkit-wlwb-recovery-header { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: 11px; font-weight: 600; }
+                    .ytkit-wlwb-recovery-status { color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.58)); font-weight: 400; text-align: end; }
+                    .ytkit-wlwb-recovery-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 0; font-size: 11.5px; }
+                    .ytkit-wlwb-recovery-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .ytkit-wlwb-recovery-row button { flex: none; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 5px; background: transparent; color: var(--yt-spec-text-primary, #fff); font-size: 11px; padding: 3px 7px; cursor: pointer; }
                     .ytkit-wlwb-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.1)); }
                     .ytkit-wlwb-actions button { border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 6px; background: transparent; color: var(--yt-spec-text-primary, #fff); font-size: 11.5px; padding: 5px 9px; cursor: pointer; }
                     .ytkit-wlwb-actions button:hover:not(:disabled) { border-color: rgba(255, 143, 64, 0.7); }
                     .ytkit-wlwb-actions button:disabled { opacity: 0.6; cursor: progress; }
                     .ytkit-wlwb-panel button:focus-visible, .ytkit-wlwb-panel input:focus-visible, .ytkit-wlwb-panel select:focus-visible, .ytkit-wlwb-open:focus-visible { outline: 2px solid var(--yt-spec-call-to-action, #ff8f40); outline-offset: 2px; }
+                    html:not([dark]) .ytkit-wlwb-recovery-row { color: var(--yt-spec-text-primary, #1f2937); }
+                    html:not([dark]) .ytkit-wlwb-recovery-status { color: var(--yt-spec-text-secondary, #4b5563); }
+                    html:not([dark]) .ytkit-wlwb-recovery-row button { color: var(--yt-spec-text-primary, #1f2937); }
                     @media (forced-colors: active) { .ytkit-wlwb-panel, .ytkit-wlwb-open { border: 1px solid ButtonText; } }
                 `, this.id, true);
                 this._navRule = () => {
@@ -38336,6 +38775,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl?.remove(); this._styleEl = null;
                 this._navRule = null;
                 this._matched = null;
+                this._undoAllBtn = null;
+                this._lastSessionId = null;
+                this._ageHydrationToken++;
+                this._ageHydrating = false;
+                this._ageCache = null;
             }
         },
         {

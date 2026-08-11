@@ -847,7 +847,7 @@
     "message": "Astra Downloader が失敗しました"
   },
   "dlProgressInProgress": {
-    "message": "進行中"
+    "message": "視聴中"
   },
   "dlProgressLocal": {
     "message": "ローカル"
@@ -3568,7 +3568,7 @@
     "message": "「後で見る」クイックボタン"
   },
   "feature_watchLaterWorkbench_desc": {
-    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+    "message": "後で見るの一括ツール。動画の年齢、長さ、視聴状態、チャンネル、タイトルで絞り込み、結果をプレビュー・並べ替えし、CSV/JSONに書き出して、復元可能な上限付きセッションで削除します"
   },
   "feature_watchLaterWorkbench_name": {
     "message": "Watch Later Workbench"
@@ -5603,7 +5603,7 @@
     "message": "Open"
   },
   "toastActionUndo": {
-    "message": "Undo"
+    "message": "取り消す"
   },
   "toastDismissAria": {
     "message": "Dismiss notification"
@@ -5780,7 +5780,7 @@
     "message": "高評価 · Return YouTube Dislike による推定"
   },
   "undo": {
-    "message": "Undo"
+    "message": "取り消す"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
@@ -6272,8 +6272,35 @@
   "wlwbChannelPlaceholder": {
     "message": "チャンネル名に含む…"
   },
+  "wlwbAgeAria": {
+    "message": "動画の最小経過日数"
+  },
+  "wlwbAgePlaceholder": {
+    "message": "日数がこれより古い…"
+  },
+  "wlwbAgeUnavailableTpl": {
+    "message": "読み取れる公開時期がない読み込み済みの行が{count}件あり、年齢フィルターから除外されています。"
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days}日"
+  },
+  "wlwbAgeLoading": {
+    "message": "公開日を読み込み中…"
+  },
   "wlwbCloseAria": {
     "message": "ワークベンチを閉じる"
+  },
+  "wlwbDurationMaxAria": {
+    "message": "最大再生時間（分）"
+  },
+  "wlwbDurationMaxPlaceholder": {
+    "message": "再生時間 ≤ 分…"
+  },
+  "wlwbDurationMinAria": {
+    "message": "最小再生時間（分）"
+  },
+  "wlwbDurationMinPlaceholder": {
+    "message": "再生時間 ≥ 分…"
   },
   "wlwbExportCsv": {
     "message": "CSVをエクスポート"
@@ -6301,6 +6328,15 @@
   },
   "wlwbRemovalLogBtn": {
     "message": "削除ログ"
+  },
+  "wlwbRecoveryEmpty": {
+    "message": "復元待ちの削除済み動画はありません。"
+  },
+  "wlwbRecoveryStatusTpl": {
+    "message": "復元できる削除済み動画が{count}本あります。"
+  },
+  "wlwbRecoveryTitle": {
+    "message": "復元"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "一致項目を削除（1回あたり最大 {limit} 件）"
@@ -6341,11 +6377,53 @@
   "wlwbTitlePlaceholder": {
     "message": "タイトルに含む…"
   },
+  "wlwbNothingToUndo": {
+    "message": "後で見るから削除した動画に、取り消し待ちはありません。"
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "削除した{total}本中{restored}本を後で見るに復元しました。"
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "{title}を後で見るに復元しました"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "{title}を復元できませんでした: {error}"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
+  },
+  "wlwbUndoAll": {
+    "message": "すべて取り消す"
+  },
+  "wlwbUndoItem": {
+    "message": "取り消す"
+  },
   "wlwbWatchedAria": {
     "message": "最低視聴率フィルター"
   },
   "wlwbWatchedPlaceholder": {
     "message": "視聴率 ≥ %（例: 90）"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "視聴状態フィルター"
+  },
+  "wlwbStateAny": {
+    "message": "すべての視聴状態"
+  },
+  "wlwbStateInProgress": {
+    "message": "視聴中"
+  },
+  "wlwbStateUnwatched": {
+    "message": "未視聴"
+  },
+  "wlwbStateWatched": {
+    "message": "視聴済み（90%以上）"
+  },
+  "wlwbUnknownAge": {
+    "message": "年齢 ?"
+  },
+  "wlwbUnknownDuration": {
+    "message": "長さ ?"
   },
   "workspaceEyebrow": {
     "message": "設定ワークスペース"

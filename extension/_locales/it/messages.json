@@ -3568,7 +3568,7 @@
     "message": "Pulsante rapido Guarda dopo"
   },
   "feature_watchLaterWorkbench_desc": {
-    "message": "Bulk tools for the Watch Later playlist: filter by watched %, channel, or title, preview and sort matches, export CSV/JSON, and remove in bounded recoverable sessions"
+    "message": "Strumenti per la playlist Guarda più tardi: filtra per età, durata, stato di visione, canale o titolo, visualizza e ordina i risultati, esporta CSV/JSON e rimuovi in sessioni limitate recuperabili"
   },
   "feature_watchLaterWorkbench_name": {
     "message": "Watch Later Workbench"
@@ -5603,7 +5603,7 @@
     "message": "Open"
   },
   "toastActionUndo": {
-    "message": "Undo"
+    "message": "Annulla"
   },
   "toastDismissAria": {
     "message": "Dismiss notification"
@@ -5780,7 +5780,7 @@
     "message": "Mi piace · stima Return YouTube Dislike"
   },
   "undo": {
-    "message": "Undo"
+    "message": "Annulla"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
@@ -6272,8 +6272,35 @@
   "wlwbChannelPlaceholder": {
     "message": "Il canale contiene…"
   },
+  "wlwbAgeAria": {
+    "message": "Età minima del video in giorni"
+  },
+  "wlwbAgePlaceholder": {
+    "message": "Più vecchio di (giorni)…"
+  },
+  "wlwbAgeUnavailableTpl": {
+    "message": "{count} riga/e caricata/e non ha/hanno un’età di caricamento leggibile e viene/vengono esclusa/e dal filtro per età."
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days} g"
+  },
+  "wlwbAgeLoading": {
+    "message": "Caricamento delle date di caricamento…"
+  },
   "wlwbCloseAria": {
     "message": "Chiudi il banco di lavoro"
+  },
+  "wlwbDurationMaxAria": {
+    "message": "Durata massima in minuti"
+  },
+  "wlwbDurationMaxPlaceholder": {
+    "message": "Durata ≤ minuti…"
+  },
+  "wlwbDurationMinAria": {
+    "message": "Durata minima in minuti"
+  },
+  "wlwbDurationMinPlaceholder": {
+    "message": "Durata ≥ minuti…"
   },
   "wlwbExportCsv": {
     "message": "Esporta CSV"
@@ -6301,6 +6328,15 @@
   },
   "wlwbRemovalLogBtn": {
     "message": "Registro delle rimozioni"
+  },
+  "wlwbRecoveryEmpty": {
+    "message": "Nessun video rimosso attende il ripristino."
+  },
+  "wlwbRecoveryStatusTpl": {
+    "message": "{count} video rimossi possono essere ripristinati."
+  },
+  "wlwbRecoveryTitle": {
+    "message": "Ripristino"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "Rimuovi corrispondenze (max {limit}/esecuzione)"
@@ -6341,11 +6377,53 @@
   "wlwbTitlePlaceholder": {
     "message": "Il titolo contiene…"
   },
+  "wlwbNothingToUndo": {
+    "message": "Nessun video rimosso da Guarda più tardi attende l’annullamento."
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "Ripristinati {restored} video rimossi su {total} in Guarda più tardi."
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "{title} ripristinato in Guarda più tardi"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "Impossibile ripristinare {title}: {error}"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
+  },
+  "wlwbUndoAll": {
+    "message": "Annulla tutto"
+  },
+  "wlwbUndoItem": {
+    "message": "Annulla"
+  },
   "wlwbWatchedAria": {
     "message": "Filtro percentuale minima guardata"
   },
   "wlwbWatchedPlaceholder": {
     "message": "Guardato ≥ % (es. 90)"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "Filtro stato di visione"
+  },
+  "wlwbStateAny": {
+    "message": "Qualsiasi stato"
+  },
+  "wlwbStateInProgress": {
+    "message": "In corso"
+  },
+  "wlwbStateUnwatched": {
+    "message": "Non visti"
+  },
+  "wlwbStateWatched": {
+    "message": "Visti (90%+)"
+  },
+  "wlwbUnknownAge": {
+    "message": "età ?"
+  },
+  "wlwbUnknownDuration": {
+    "message": "durata ?"
   },
   "workspaceEyebrow": {
     "message": "Area impostazioni"
