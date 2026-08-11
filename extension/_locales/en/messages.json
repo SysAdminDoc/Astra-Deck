@@ -1279,7 +1279,7 @@
     "message": "Audio-Only Mode"
   },
   "feature_audioPan_desc": {
-    "message": "Shift audio balance left or right. Range -1 (full left) to 1 (full right), 0 is center."
+    "message": "Shift audio balance left or right via a StereoPannerNode in the MAIN world audio graph. Range -1 (full left) to 1 (full right), 0 = center."
   },
   "feature_audioPan_name": {
     "message": "Audio Pan"
@@ -1441,7 +1441,7 @@
     "message": "Buffer / Preload"
   },
   "feature_bulkCardActions_desc": {
-    "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting."
+    "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, copy URLs, or run a bounded recommendation scrub (\"Not interested\" / \"Don't recommend channel\") with a local session log and undo."
   },
   "feature_bulkCardActions_name": {
     "message": "Bulk Card Actions"
@@ -1597,7 +1597,7 @@
     "message": "Layout Profile"
   },
   "feature_classicPlayerChrome_desc": {
-    "message": "One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display"
+    "message": "One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display. CSS-only, no DOM rebuild."
   },
   "feature_classicPlayerChrome_name": {
     "message": "Classic Player Chrome"
@@ -1615,7 +1615,7 @@
     "message": "Compact Clean UI"
   },
   "feature_codecSelector_desc": {
-    "message": "Choose which video codec to prefer: Auto, H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264."
+    "message": "Choose which video codec to prefer: Auto, Power-efficient (ask this device), H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264."
   },
   "feature_codecSelector_name": {
     "message": "Codec Selector"
@@ -1795,7 +1795,7 @@
     "message": "DeArrow Per-Channel Overrides"
   },
   "feature_deArrowVoting_desc": {
-    "message": "Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles. Uses a local private userID. Off by default."
+    "message": "Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles on the watch page. Uses a locally generated private userID that never leaves DeArrow requests. Off by default."
   },
   "feature_deArrowVoting_name": {
     "message": "DeArrow Voting"
@@ -2221,7 +2221,7 @@
     "message": "Hide AI Context Panels"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Remove AI-generated summaries and Ask AI buttons"
+    "message": "Remove AI-generated summary panels only"
   },
   "feature_hideAiSummary_name": {
     "message": "Hide AI Summary"
@@ -2416,7 +2416,7 @@
     "message": "On the Subscriptions page, hide scheduled livestreams and premieres that only show a \"Notify me\" button. They reappear automatically once they go live."
   },
   "feature_hidePlannedLivestreams_name": {
-    "message": "Hide Planned Livestreams"
+    "message": "Hide planned livestreams"
   },
   "feature_hidePlayables_desc": {
     "message": "Hide YouTube Playables gaming content from feeds"
@@ -2602,13 +2602,13 @@
     "message": "Chat activity — click to seek"
   },
   "feature_localAiSummary_desc": {
-    "message": "Use Chrome’s built-in Summarizer API when available. Falls back to a clear \"not available\" message — never silently routes to a remote provider. Adds a \"Local Summary\" button next to the existing AI Summary button."
+    "message": "Use Chrome’s built-in Summarizer API when available; use the configured BYO-key lane when it is unavailable."
   },
   "feature_localAiSummary_name": {
     "message": "Local AI Summary (browser built-in)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Ask questions about the current video transcript using Chrome Prompt API (Gemini Nano). Runs on-device, no API keys needed."
+    "message": "Ask questions about the current video transcript using the Chrome on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button."
   },
   "feature_localAiTranscriptQa_name": {
     "message": "Transcript Q&A (browser built-in)"
@@ -2842,7 +2842,7 @@
     "message": "Auto-skip watched playlist items"
   },
   "feature_playlistEnhancer_desc": {
-    "message": "Adds shuffle, copy, and hide-duplicate tools to playlist panels"
+    "message": "Adds shuffle, copy, duration sorting, per-playlist resume, and watched-item controls to playlist panels."
   },
   "feature_playlistEnhancer_name": {
     "message": "Playlist Enhancer"
@@ -2890,7 +2890,7 @@
     "message": "Premium Live Chat"
   },
   "feature_presetFocus_desc": {
-    "message": "Distraction-free viewing: hide Shorts, related videos, infinite scroll, notifications, and autoplay. Enables Zen Mode and Digital Wellbeing tracking."
+    "message": "Distraction-free viewing: hide Shorts, related videos, infinite scroll, notifications, and autoplay. Enables Zen Mode and Digital Wellbeing tracking. Toggle off to restore prior values."
   },
   "feature_presetFocus_name": {
     "message": "Focus Preset"
@@ -3016,7 +3016,7 @@
     "message": "Hide Scrubber Handle"
   },
   "feature_researchSpacedReview_desc": {
-    "message": "Export study/work-mode data to Markdown or CSV: watch-time totals, focused-mode state, digital-wellbeing state, and timestamp bookmarks with deep links."
+    "message": "Export study/work-mode data to Markdown or CSV, or build a bounded local transcript study pack from visible videos."
   },
   "feature_researchSpacedReview_name": {
     "message": "Study / Work Export"
@@ -3034,7 +3034,7 @@
     "message": "Transcript Search Panel"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
+    "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default. Toggles the early.css opt-out class so YouTube renders its own styling."
   },
   "feature_restoreNativeYouTubeUi_name": {
     "message": "Restore Native YouTube UI"
@@ -3124,7 +3124,7 @@
     "message": "Skip Sponsors"
   },
   "feature_sbPerChannelProfiles_desc": {
-    "message": "Override which SponsorBlock categories are skipped on a per-channel basis"
+    "message": "Override which SponsorBlock categories are skipped on a per-channel basis. Adds a chip next to the channel name on the watch page to configure overrides. Overrides persist in sbPerChannelProfilesData with a 500-entry cap."
   },
   "feature_sbPerChannelProfiles_name": {
     "message": "SponsorBlock Per-Channel Profiles"
@@ -3331,7 +3331,7 @@
     "message": "Theater Split"
   },
   "feature_storageQuotaLRU_desc": {
-    "message": "LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) to prevent quota exhaustion"
+    "message": "LRU-cap growing settings and stores (ytkit-hidden-videos, ytkit-blocked-channels, videoNotesData, ytkit-bookmarks, ytkit-watch-progress, ytkit-watch-time, da_branding_cache, sb_segments_cache) to prevent quota exhaustion"
   },
   "feature_storageQuotaLRU_name": {
     "message": "Storage Quota Management"
@@ -3343,7 +3343,7 @@
     "message": "Styled Filter Chips"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels from the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML."
+    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML."
   },
   "feature_subscriptionGroups_name": {
     "message": "Subscription Groups"
@@ -3451,7 +3451,7 @@
     "message": "UI Font"
   },
   "feature_uiFontSize_desc": {
-    "message": "Override the base interface font size (0 = YouTube default, otherwise 8-20px)"
+    "message": "Override the base interface font size (0 = YouTube default, otherwise 8–20px)"
   },
   "feature_uiFontSize_name": {
     "message": "UI Font Size"
