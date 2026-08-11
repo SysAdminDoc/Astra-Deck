@@ -11,6 +11,8 @@
 /scripts/generate-release-manifest.js @SysAdminDoc
 /scripts/generate-release-readiness.js @SysAdminDoc
 /scripts/generate-release-sbom.js @SysAdminDoc
+/scripts/release-*.js @SysAdminDoc
+/release-channels.json @SysAdminDoc
 /scripts/manifest-patch.js @SysAdminDoc
 /scripts/check-*.js @SysAdminDoc
 /scripts/eslint-rules/ @SysAdminDoc

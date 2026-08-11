@@ -88,6 +88,7 @@ test('release readiness verifies the repository userscript bundle without throwi
 
 test('release readiness passes for a complete manifest, checksum, SBOM, and version fixture', () => {
     const { root, buildDir, version } = writeFixtureRepo();
+    fs.writeFileSync(path.join(buildDir, 'release-health.json'), JSON.stringify({ status: 'pass' }) + '\n');
     const report = buildReadinessReport({
         repoRoot: root,
         buildDir,
@@ -316,6 +317,5 @@ test('release SBOM generation uses production package-lock dependencies', () => 
     assert.ok(sbom.dependencies.some((entry) => entry.dependsOn && entry.dependsOn.length),
         'SBOM must include dependency graph edges');
 });
-
 
 

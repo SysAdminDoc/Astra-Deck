@@ -13,6 +13,7 @@
 // unreadable primary controls.
 //
 // Usage: npm run smoke:settings-overlay [-- --browser <path>] [--keep-stage]
+//        npm run smoke:settings-overlay -- --health-only
 //        YTKIT_VISUAL_ISOLATED=1 node scripts/smoke-settings-overlay.js --headed-private
 // Screenshots land in build/settings-overlay-smoke/.
 
@@ -47,6 +48,7 @@ function parseArgs(argv) {
         browser: '',
         keepStage: false,
         fallbackOnly: false,
+        healthOnly: false,
         headedPrivate: false,
         timeoutMs: 45000
     };
@@ -55,6 +57,7 @@ function parseArgs(argv) {
         if (arg === '--browser') { opts.browser = path.resolve(argv[++i] || ''); continue; }
         if (arg === '--keep-stage') { opts.keepStage = true; continue; }
         if (arg === '--fallback-only') { opts.fallbackOnly = true; continue; }
+        if (arg === '--health-only') { opts.healthOnly = true; continue; }
         if (arg === '--headed-private') { opts.headedPrivate = true; continue; }
         if (arg === '--timeout') { opts.timeoutMs = Number(argv[++i]) || opts.timeoutMs; continue; }
         throw new Error(`unknown argument: ${arg}`);
@@ -765,8 +768,10 @@ async function main() {
             const report = JSON.parse(await client.evaluate(IN_PAGE_CHECKS));
             failuresByState[state.name] = [...directionFailures, ...(report.failures || [])];
 
-            const shot = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
-            fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
+            if (!opts.healthOnly) {
+                const shot = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+                fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
+            }
             if (['desktop-dark', 'desktop-light'].includes(state.name)) {
                 const categoryIds = await client.evaluate(`Array.from(
                     document.querySelectorAll('.ytkit-nav-btn[data-tab]'),
@@ -792,7 +797,7 @@ async function main() {
                     failuresByState[state.name].push(
                         ...(parityReport.failures || []).map((failure) => `${categoryId}: ${failure}`)
                     );
-                    if (!opts.fallbackOnly) {
+                    if (!opts.fallbackOnly && !opts.healthOnly) {
                         await client.evaluate('window.scrollTo(0, 0)');
                         const categoryShot = await client.send('Page.captureScreenshot', {
                             format: 'png',
@@ -828,14 +833,16 @@ async function main() {
                     failuresByState[state.name].push(
                         ...(scrolledReport.failures || []).map((failure) => `${categoryId}: ${failure}`)
                     );
-                    const scrolledShot = await client.send('Page.captureScreenshot', {
-                        format: 'png',
-                        captureBeyondViewport: false
-                    });
-                    fs.writeFileSync(
-                        path.join(outDir, `${state.name}-category-${categorySlug}-scrolled-header.png`),
-                        Buffer.from(scrolledShot.data, 'base64')
-                    );
+                    if (!opts.healthOnly) {
+                        const scrolledShot = await client.send('Page.captureScreenshot', {
+                            format: 'png',
+                            captureBeyondViewport: false
+                        });
+                        fs.writeFileSync(
+                            path.join(outDir, `${state.name}-category-${categorySlug}-scrolled-header.png`),
+                            Buffer.from(scrolledShot.data, 'base64')
+                        );
+                    }
                 }
             }
             if (state.name === 'desktop-dark') {
@@ -944,11 +951,13 @@ async function main() {
                 })()`);
                 if (!featureReady) failuresByState[state.name].push('could not stage the Blue Light Filter visual proof');
                 await sleep(300);
-                const featureShot = await client.send('Page.captureScreenshot', {
-                    format: 'png',
-                    captureBeyondViewport: false
-                });
-                fs.writeFileSync(path.join(outDir, 'blue-light-default.png'), Buffer.from(featureShot.data, 'base64'));
+                if (!opts.healthOnly) {
+                    const featureShot = await client.send('Page.captureScreenshot', {
+                        format: 'png',
+                        captureBeyondViewport: false
+                    });
+                    fs.writeFileSync(path.join(outDir, 'blue-light-default.png'), Buffer.from(featureShot.data, 'base64'));
+                }
             }
             if (state.name === 'desktop-dark') {
                 // Open the download options over the already-open settings
@@ -1032,13 +1041,16 @@ async function main() {
     }
     const result = {
         mode: opts.fallbackOnly ? 'fallback' : 'module',
+        captureScreenshots: !opts.healthOnly,
         browserMode: opts.headedPrivate ? 'headed-private' : 'headless',
         passed: !failed,
         states: failuresByState
     };
     fs.writeFileSync(path.join(outDir, 'result.json'), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
     fs.rmSync(progressPath, { force: true });
-    console.log(`[settings-overlay-smoke] screenshots: ${path.relative(REPO_ROOT, outDir).replace(/\\/g, '/')}`);
+    if (!opts.healthOnly) {
+        console.log(`[settings-overlay-smoke] screenshots: ${path.relative(REPO_ROOT, outDir).replace(/\\/g, '/')}`);
+    }
     if (failed) process.exit(1);
     console.log('[settings-overlay-smoke] PASS — all states rendered with close/focus targets and readable primary controls');
 }
@@ -1069,6 +1081,7 @@ module.exports = {
     DevtoolsClient,
     findBrowser,
     PANEL_SELECTOR,
+    parseArgs,
     sleep,
     STATES,
     waitFor,

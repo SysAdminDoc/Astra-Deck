@@ -17,6 +17,7 @@ const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const DEFAULT_OUTPUT_DIR = path.join(BUILD_DIR, 'release-readiness');
 const MANIFEST_NAME = 'release-manifest.json';
 const SHA256SUMS_NAME = 'SHA256SUMS';
+const RELEASE_HEALTH_NAME = 'release-health.json';
 const SBOM_NAME = 'astra-deck-npm-sbom.cdx.json';
 
 function readFileIfExists(filePath) {
@@ -153,6 +154,10 @@ function listBuildFiles(buildDir = BUILD_DIR) {
         return fs.readdirSync(buildDir, { withFileTypes: true })
             .filter((entry) => entry.isFile())
             .map((entry) => entry.name)
+            // The health report is a local promotion gate, not a release
+            // asset. It may be generated before a later readiness/manifest
+            // pass and must not poison the closed artifact inventory.
+            .filter((name) => name !== RELEASE_HEALTH_NAME)
             .sort();
     } catch (err) {
         if (err && err.code === 'ENOENT') return null;

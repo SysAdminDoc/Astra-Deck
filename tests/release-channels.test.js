@@ -1,0 +1,180 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const root = path.join(__dirname, '..');
+const {
+    CHANNEL_IDS,
+    CHANNEL_TEMPLATES,
+    buildReleaseRef,
+    fillArtifactTemplate,
+    promoteChannels,
+    readChannelState,
+    rollbackChannels,
+    validateChannelState
+} = require('../scripts/release-channels');
+const {
+    assertHealthAllowsPromotion
+} = require('../scripts/release-channels');
+const { buildHealthReport, sha256 } = require('../scripts/release-health');
+
+function digest(text) {
+    return crypto.createHash('sha256').update(text).digest('hex');
+}
+
+function fixtureBuild(version = '1.2.3') {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-release-channels-'));
+    const buildDir = path.join(tempRoot, 'build');
+    fs.mkdirSync(buildDir, { recursive: true });
+    const assets = [];
+    for (const id of CHANNEL_IDS) {
+        const name = fillArtifactTemplate(CHANNEL_TEMPLATES[id], version);
+        const content = `candidate ${id} ${version}\n`;
+        fs.writeFileSync(path.join(buildDir, name), content, 'utf8');
+        assets.push({
+            name,
+            size: Buffer.byteLength(content),
+            sha256: digest(content)
+        });
+    }
+    const manifest = { schemaVersion: 1, product: 'Astra Deck', version, assets };
+    const manifestPath = path.join(buildDir, 'release-manifest.json');
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+    return { buildDir, manifest, manifestPath };
+}
+
+function passingHealth(manifestPath) {
+    return {
+        status: 'pass',
+        promotionEligible: true,
+        version: '1.2.3',
+        manifestSha256: sha256(manifestPath),
+        checks: [
+            { id: 'artifact-readiness', status: 'pass' },
+            { id: 'selector-asset', status: 'pass' },
+            { id: 'startup-budget', status: 'pass' },
+            { id: 'smoke-fixture', status: 'pass' }
+        ]
+    };
+}
+
+test('checked-in release channel ledger covers every channel with LKG and rollback references', () => {
+    const state = readChannelState(path.join(root, 'release-channels.json'));
+
+    assert.deepEqual(Object.keys(state.channels).sort(), [...CHANNEL_IDS].sort());
+    for (const id of CHANNEL_IDS) {
+        const channel = state.channels[id];
+        assert.equal(channel.lastKnownGood.artifact, fillArtifactTemplate(CHANNEL_TEMPLATES[id], channel.lastKnownGood.version));
+        assert.equal(channel.rollbackTarget.artifact, fillArtifactTemplate(CHANNEL_TEMPLATES[id], channel.rollbackTarget.version));
+        assert.match(channel.lastKnownGood.url, /^https:\/\//);
+        assert.match(channel.rollbackTarget.url, /^https:\/\//);
+    }
+});
+
+test('promotion requires a passing health report tied to the exact manifest', () => {
+    const fixture = fixtureBuild();
+    const manifestText = fs.readFileSync(fixture.manifestPath, 'utf8');
+    const health = passingHealth(fixture.manifestPath);
+    assert.doesNotThrow(() => assertHealthAllowsPromotion(health, fixture.manifestPath));
+
+    const failed = { ...health, status: 'fail', promotionEligible: false };
+    assert.throws(() => assertHealthAllowsPromotion(failed, fixture.manifestPath), /promotion is refused/);
+
+    const stale = { ...health, manifestSha256: digest(manifestText + 'stale') };
+    assert.throws(() => assertHealthAllowsPromotion(stale, fixture.manifestPath), /current release manifest/);
+});
+
+test('promotion records the candidate digest and makes the previous LKG the rollback target', () => {
+    const state = readChannelState(path.join(root, 'release-channels.json'));
+    const fixture = fixtureBuild();
+    const next = promoteChannels(state, fixture.manifest, {
+        buildDir: fixture.buildDir,
+        manifestPath: fixture.manifestPath,
+        channelIds: ['userscript', 'store-safe-chrome'],
+        now: '2026-08-11T12:00:00.000Z'
+    });
+
+    assert.equal(next.channels.userscript.active.version, '1.2.3');
+    assert.equal(next.channels.userscript.lastKnownGood.version, '1.2.3');
+    assert.equal(next.channels.userscript.rollbackTarget.version, '4.59.0');
+    assert.match(next.channels.userscript.active.sha256, /^[a-f0-9]{64}$/);
+    assert.equal(next.channels['store-safe-firefox'].active.version, '4.59.0',
+        'an unselected channel must not be promoted');
+    assert.equal(next.lastAction.type, 'promote');
+});
+
+test('rollback swaps pointers to an existing artifact and explicitly records no rebuild', () => {
+    const state = readChannelState(path.join(root, 'release-channels.json'));
+    const next = rollbackChannels(state, {
+        channelIds: ['userscript'],
+        now: '2026-08-11T12:01:00.000Z'
+    });
+
+    assert.equal(next.channels.userscript.active.version, '4.58.2');
+    assert.equal(next.channels.userscript.lastKnownGood.version, '4.58.2');
+    assert.equal(next.channels.userscript.rollbackTarget.version, '4.59.0');
+    assert.equal(next.lastAction.rebuilt, false);
+    assert.equal(next.channels['store-safe-chrome'].active.version, '4.59.0');
+});
+
+test('release health combines readiness, selector, startup, and no-screenshot smoke results', () => {
+    const fixture = fixtureBuild();
+    const report = buildHealthReport({
+        repoRoot: root,
+        buildDir: fixture.buildDir,
+        now: new Date('2026-08-11T12:00:00.000Z'),
+        readinessReport: {
+            schemaVersion: 1,
+            product: 'Astra Deck',
+            version: '1.2.3',
+            status: 'pass',
+            checks: [{ id: 'checksum-coverage', status: 'pass' }]
+        },
+        selectorCheck: () => ({ status: 'pass', details: 'fixture selector pack' }),
+        startupCheck: () => ({ status: 'pass', details: 'startup budget fixture' }),
+        smokeCheck: () => ({ status: 'pass', details: 'DOM fixture passed without screenshots' })
+    });
+
+    assert.equal(report.status, 'pass');
+    assert.equal(report.promotionEligible, true);
+    assert.equal(report.version, '1.2.3');
+    assert.equal(report.checks.map((check) => check.id).join(','),
+        'artifact-readiness,selector-asset,startup-budget,smoke-fixture');
+});
+
+test('release health is not promotable when the startup budget fails', () => {
+    const fixture = fixtureBuild();
+    const report = buildHealthReport({
+        repoRoot: root,
+        buildDir: fixture.buildDir,
+        readinessReport: { status: 'pass', checks: [] },
+        selectorCheck: () => true,
+        startupCheck: () => ({ status: 'fail', details: 'startup regression' }),
+        smokeCheck: () => true
+    });
+
+    assert.equal(report.status, 'fail');
+    assert.equal(report.promotionEligible, false);
+    assert.equal(report.checks.find((check) => check.id === 'startup-budget').status, 'fail');
+});
+
+test('health-only overlay smoke mode is headless and does not capture screenshots', () => {
+    const smoke = require('../scripts/smoke-settings-overlay');
+    const parsed = smoke.parseArgs(['--health-only']);
+    assert.equal(parsed.healthOnly, true);
+    const source = fs.readFileSync(path.join(root, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
+    assert.match(source, /if \(!opts\.healthOnly\) \{[\s\S]*Page\.captureScreenshot/);
+    assert.match(source, /windowsHide: !opts\.headedPrivate/);
+});
+
+test('channel state validation rejects a missing rollback target', () => {
+    const state = readChannelState(path.join(root, 'release-channels.json'));
+    delete state.channels.userscript.rollbackTarget;
+    assert.throws(() => validateChannelState(state), /rollbackTarget/);
+    assert.equal(typeof buildReleaseRef, 'function');
+});

@@ -15,6 +15,7 @@ const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const MANIFEST_NAME = 'release-manifest.json';
 const SHA256SUMS_NAME = 'SHA256SUMS';
+const RELEASE_HEALTH_NAME = 'release-health.json';
 const SBOM_NAME = 'astra-deck-npm-sbom.cdx.json';
 const CAPABILITY_MATRIX_NAME = 'browser-capability-matrix.json';
 // Local-only signing provenance marker written by build-extension.js.
@@ -142,6 +143,7 @@ function listBuildAssets() {
         .map((entry) => entry.name)
         .filter((name) => name !== MANIFEST_NAME
             && name !== SHA256SUMS_NAME
+            && name !== RELEASE_HEALTH_NAME
             && name !== CRX_SIGNING_PROVENANCE_NAME)
         .sort();
 }
@@ -258,6 +260,7 @@ if (require.main === module) {
 module.exports = {
     CRX_SIGNING_PROVENANCE_NAME,
     FIREFOX_UPDATE_MANIFEST_NAME,
+    RELEASE_HEALTH_NAME,
     expectedReleaseNames,
     isValidationBuild,
     parseAssetName,
