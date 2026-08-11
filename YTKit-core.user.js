@@ -23420,7 +23420,7 @@ if (typeof globalThis !== "undefined") {
                 return {
                     cancel() {},
                     promise: Promise.resolve({
-                        label: 'subscription-groups:fallback',
+                        label: t('subscriptionBatchFallbackLabel', 'subscription-groups:fallback'),
                         total: list.length,
                         processed: list.length,
                         chunks: 1,
@@ -23438,8 +23438,11 @@ if (typeof globalThis !== "undefined") {
 
         return {
             id: 'subscriptionGroups',
-            name: 'Subscription Groups',
-            description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML.',
+            name: t('feature_subscriptionGroups_name', 'Subscription Groups'),
+            description: t(
+                'feature_subscriptionGroups_desc',
+                'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit, and back up or migrate groups with JSON, CSV, or OPML.'
+            ),
             group: 'Subscriptions',
             icon: 'folder-tree',
             pages: [PageTypes.SUBSCRIPTIONS],
@@ -24014,7 +24017,7 @@ if (typeof globalThis !== "undefined") {
                         if (target) {
                             const badge = document.createElement('span');
                             badge.className = 'ytkit-sub-new-badge';
-                            badge.textContent = 'NEW';
+                            badge.textContent = t('subscriptionNewBadge', 'NEW');
                             target.appendChild(badge);
                         }
                     }
@@ -24566,7 +24569,7 @@ if (typeof globalThis !== "undefined") {
 
                 appendRow({
                     groupId: '',
-                    name: 'All subscriptions',
+                    name: t('subscriptionAllSubscriptions', 'All subscriptions'),
                     depth: 0,
                     renderedVideos: summaries.length,
                     newVideos: allNew.length,
@@ -24628,8 +24631,11 @@ if (typeof globalThis !== "undefined") {
                         if (target) {
                             const badge = document.createElement('span');
                             badge.className = 'ytkit-sub-dead-badge';
-                            badge.textContent = 'STALE';
-                            badge.title = `${candidate.ageDays} days since the newest rendered upload on this card`;
+                            badge.textContent = t('subscriptionStaleBadge', 'STALE');
+                            badge.title = t(
+                                'subscriptionStaleAgeTitleTpl',
+                                '{days} days since the newest rendered upload on this card'
+                            ).replace('{days}', candidate.ageDays);
                             target.appendChild(badge);
                         }
                     }
@@ -24640,10 +24646,13 @@ if (typeof globalThis !== "undefined") {
                             const undoDate = Number(staged[channelId].undoUntil) || 0;
                             const badge = document.createElement('span');
                             badge.className = 'ytkit-sub-staged-badge';
-                            badge.textContent = 'STAGED';
+                            badge.textContent = t('subscriptionStagedBadge', 'STAGED');
                             badge.title = undoDate
-                                ? `Unsubscribe staged. Undo window ends ${new Date(undoDate).toLocaleDateString()}.`
-                                : 'Unsubscribe staged for review.';
+                                ? t(
+                                    'subscriptionStagedUndoTitleTpl',
+                                    'Unsubscribe staged. Undo window ends {date}.'
+                                ).replace('{date}', new Date(undoDate).toLocaleDateString())
+                                : t('subscriptionStagedReviewTitle', 'Unsubscribe staged for review.');
                             target.appendChild(badge);
                         }
                     }
@@ -26023,7 +26032,7 @@ if (typeof globalThis !== "undefined") {
                     if (groups.imported_opml) return 'imported_opml';
                     usedIds.add('imported_opml');
                     groups.imported_opml = {
-                        name: 'Imported OPML',
+                        name: t('subscriptionImportedOpml', 'Imported OPML'),
                         color: '#7c3aed',
                         channelIds: [],
                         parentId: '',

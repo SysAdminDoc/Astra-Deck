@@ -5338,6 +5338,33 @@
   "subscriptionArchiveUnavailable": {
     "message": "The Astra Downloader companion is not available."
   },
+  "subscriptionBatchFallbackLabel": {
+    "message": "subscription-groups:fallback"
+  },
+  "subscriptionNewBadge": {
+    "message": "新"
+  },
+  "subscriptionStaleBadge": {
+    "message": "过时"
+  },
+  "subscriptionStaleAgeTitleTpl": {
+    "message": "此卡片显示的最新上传已过去 {days} 天"
+  },
+  "subscriptionStagedBadge": {
+    "message": "已暂存"
+  },
+  "subscriptionStagedUndoTitleTpl": {
+    "message": "已暂存取消订阅，可在 {date} 前撤销。"
+  },
+  "subscriptionStagedReviewTitle": {
+    "message": "已暂存取消订阅，等待审核。"
+  },
+  "subscriptionAllSubscriptions": {
+    "message": "所有订阅"
+  },
+  "subscriptionImportedOpml": {
+    "message": "已导入 OPML"
+  },
   "subscriptionDigestCloseAria": {
     "message": "Close group notifications digest"
   },

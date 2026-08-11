@@ -5338,6 +5338,33 @@
   "subscriptionArchiveUnavailable": {
     "message": "The Astra Downloader companion is not available."
   },
+  "subscriptionBatchFallbackLabel": {
+    "message": "subscription-groups:fallback"
+  },
+  "subscriptionNewBadge": {
+    "message": "새로움"
+  },
+  "subscriptionStaleBadge": {
+    "message": "오래됨"
+  },
+  "subscriptionStaleAgeTitleTpl": {
+    "message": "이 카드에 최신 업로드가 표시된 후 {days}일"
+  },
+  "subscriptionStagedBadge": {
+    "message": "준비됨"
+  },
+  "subscriptionStagedUndoTitleTpl": {
+    "message": "구독 취소가 준비되었습니다. {date}까지 실행 취소할 수 있습니다."
+  },
+  "subscriptionStagedReviewTitle": {
+    "message": "검토할 구독 취소가 준비되었습니다."
+  },
+  "subscriptionAllSubscriptions": {
+    "message": "모든 구독"
+  },
+  "subscriptionImportedOpml": {
+    "message": "가져온 OPML"
+  },
   "subscriptionDigestCloseAria": {
     "message": "Close group notifications digest"
   },
