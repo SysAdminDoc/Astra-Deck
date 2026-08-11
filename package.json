@@ -38,7 +38,7 @@
     "audit:storage": "node scripts/audit-storage-size.js",
     "capture:watch": "node scripts/capture-watch-mhtml.js",
     "capture:surface": "node scripts/capture-watch-mhtml.js",
-    "check": "node scripts/check-syntax.js && node scripts/generate-live-chat-css.js --check && node scripts/generate-runtime-bootstrap.js --check && npm run check:selector-asset && npm run check:project-facts && node scripts/check-versions.js && npm run check:companion-ports && node scripts/check-i18n.js && node scripts/extract-i18n-keys.js --check-en && npm run i18n:copy:gate && node scripts/check-localized-selectors.js && node scripts/check-settings.js && node scripts/check-no-eval.js && node scripts/check-firefox-injection.js && node scripts/check-userscript-drift.js && node scripts/check-userscript-symbols.js && npm run check:firefox && npm run check:startup && npm run lint && npm run audit:a11y && npm run audit:overlays && npm run audit:contrast && npm run audit:light-theme && npm run audit:deps && npm run i18n:coverage:gate && npm run generate:capability-matrix",
+    "check": "node scripts/check-syntax.js && node scripts/generate-live-chat-css.js --check && node scripts/generate-runtime-bootstrap.js --check && npm run check:selector-asset && npm run check:project-facts && node scripts/check-versions.js && npm run check:companion-ports && node scripts/check-i18n.js && node scripts/extract-i18n-keys.js --check-en && npm run i18n:copy:gate && node scripts/check-localized-selectors.js && node scripts/check-settings.js && node scripts/check-no-eval.js && node scripts/check-userscript-size.js && node scripts/check-firefox-injection.js && node scripts/check-userscript-drift.js && node scripts/check-userscript-symbols.js && npm run check:firefox && npm run check:startup && npm run lint && npm run audit:a11y && npm run audit:overlays && npm run audit:contrast && npm run audit:light-theme && npm run audit:deps && npm run i18n:coverage:gate && npm run generate:capability-matrix",
     "project-facts": "node scripts/project-facts.js --write",
     "check:project-facts": "node scripts/project-facts.js --check",
     "check:selector-asset": "node scripts/build-selector-asset.js --check",
@@ -64,7 +64,8 @@
     "audit:contrast": "node scripts/check-contrast.js",
     "audit:light-theme": "node scripts/check-light-theme-lane.js",
     "test": "node --test tests/*.test.js tests/features/*.test.js",
-    "check:userscript-symbols": "node scripts/check-userscript-symbols.js"
+    "check:userscript-symbols": "node scripts/check-userscript-symbols.js",
+    "check:userscript-size": "node scripts/check-userscript-size.js"
   },
   "dependencies": {
     "crx3": "^2.0.0"

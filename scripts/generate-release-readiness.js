@@ -202,10 +202,29 @@ function buildBundleParityCheck(repoRoot) {
     }
     const actual = match[0];
     return check('userscript-bundle-parity', 'Userscript bundle matches its source modules',
-        actual === expected ? 'pass' : 'fail',
-        actual === expected
-            ? 'bundle region is byte-identical to its source modules'
-            : 'bundle region is STALE - run node sync-userscript.js and rebuild before releasing');
+        (() => {
+            if (actual !== expected) return 'fail';
+            const corePath = sync.USERSCRIPT_CORE_SOURCE;
+            if (!fs.existsSync(corePath)) return 'fail';
+            let coreExpected;
+            try {
+                coreExpected = sync.buildCoreLibrarySource(repoRoot);
+            } catch (_) {
+                return 'fail';
+            }
+            return fs.readFileSync(corePath, 'utf8') === coreExpected ? 'pass' : 'fail';
+        })(),
+        (() => {
+            if (actual !== expected) return 'bundle manifest is STALE - run node sync-userscript.js';
+            if (!fs.existsSync(sync.USERSCRIPT_CORE_SOURCE)) return 'generated YTKit-core.user.js is missing';
+            try {
+                return fs.readFileSync(sync.USERSCRIPT_CORE_SOURCE, 'utf8') === sync.buildCoreLibrarySource(repoRoot)
+                    ? 'dependency manifest and YTKit-core.user.js are byte-identical to their source modules'
+                    : 'YTKit-core.user.js is STALE - run node sync-userscript.js';
+            } catch (error) {
+                return `could not rebuild YTKit-core.user.js: ${error.message}`;
+            }
+        })());
 }
 
 function buildReadinessReport(options = {}) {

@@ -15,6 +15,11 @@ const path = require('node:path');
 
 const MODULE_PATH = '../../extension/features/settings-panel/index.js';
 const PANEL_OPEN_CLASS = 'ytkit-panel-open';
+const userscriptRuntime = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8'
+) + '\n' + fs.readFileSync(
+    path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8'
+);
 
 function loadModule() {
     const originalFeatures = globalThis.YTKitFeatures;
@@ -182,8 +187,7 @@ test('Video Hider pane uses its own toggle and shared settings reconciliation', 
         ['settings-panel module', moduleSource],
         ['extension inline fallback', fs.readFileSync(
             require.resolve('../../extension/ytkit.js'), 'utf8')],
-        ['userscript runtime', fs.readFileSync(
-            path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8')]
+        ['userscript runtime', userscriptRuntime]
     ]) {
         assert.match(source, /ytkit-video-hider-enabled/,
             `${label} must give the dedicated Video Hider toggle a unique id`);

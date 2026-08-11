@@ -15,6 +15,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The userscript distribution now keeps the main artifact and its generated
+  Greasy Fork core library as separate records, leaving both below the 2 MiB
+  per-record limit without minification. Metadata now declares the project
+  homepage, support page, MIT license, icon, local companion disclosure, and
+  the Greasy Fork dependency; source, size, symbol, and release-readiness gates
+  verify the split.
 - YouTube selector packs now have a generated, versioned JSON asset with a
   SHA-256 integrity record. The shipped selector packs remain the offline
   default; an explicit diagnostics refresh uses the fixed project endpoint,

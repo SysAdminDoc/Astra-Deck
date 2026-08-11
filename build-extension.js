@@ -32,6 +32,7 @@ const DEFAULT_SETTINGS_JSON = path.join(EXT_DIR, 'default-settings.json');
 const SETTINGS_META_JSON = path.join(EXT_DIR, 'settings-meta.json');
 const USERSCRIPT = resolveUserscriptPath(__dirname);
 const USERSCRIPT_BASENAME = getUserscriptBasename(__dirname);
+const USERSCRIPT_CORE = path.join(__dirname, 'YTKit-core.user.js');
 const CRX_KEY_PATH_ENV = 'ASTRA_CRX_KEY_PATH';
 const CRX_KEY_MODE_ENV = 'ASTRA_CRX_KEY_MODE';
 const CRX_KEY_MODES = Object.freeze(['external', 'ephemeral']);
@@ -274,6 +275,15 @@ if (bumpType) {
         if (usSrc !== before) {
             fs.writeFileSync(USERSCRIPT, usSrc, 'utf8');
             console.log('Updated userscript metadata in ' + USERSCRIPT_BASENAME);
+        }
+    }
+
+    const originalUserscriptCore = readUtf8IfPresent(USERSCRIPT_CORE);
+    if (originalUserscriptCore !== null) {
+        const updatedCore = originalUserscriptCore.replace(/^(\/\/ @version\s+)[\d.]+$/m, '$1' + version);
+        if (updatedCore !== originalUserscriptCore) {
+            fs.writeFileSync(USERSCRIPT_CORE, updatedCore, 'utf8');
+            console.log('Updated userscript core library version');
         }
     }
 

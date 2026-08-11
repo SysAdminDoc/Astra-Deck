@@ -43,6 +43,7 @@ const SCAN_FILES = [
     'extension/sidebar.js',
     'extension/live-chat.js',
     'YTKit.user.js',
+    'YTKit-core.user.js',
     // Every root userscript ships to users with its own @updateURL, so the
     // gate's scope must not stop at the flagship one.
     'theater-split.user.js',

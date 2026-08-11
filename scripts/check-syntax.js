@@ -30,6 +30,7 @@ const filesToCheck = [
 ];
 
 filesToCheck.push(resolveUserscriptPath(repoRoot));
+filesToCheck.push(path.join(repoRoot, 'YTKit-core.user.js'));
 
 const optionalScriptChecks = [
     'YT_Reaction_Spammer.user.js'

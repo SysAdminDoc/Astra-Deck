@@ -11,6 +11,7 @@ const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const MANIFEST_NAME = 'release-manifest.json';
 const SHA256SUMS_NAME = 'SHA256SUMS';
 const SBOM_NAME = 'astra-deck-npm-sbom.cdx.json';
+const CAPABILITY_MATRIX_NAME = 'browser-capability-matrix.json';
 // Local-only signing provenance marker written by build-extension.js.
 // Never listed as a release asset; its `mode` field is folded into the
 // manifest as `crxSigningMode` so release readiness can gate on it.
@@ -99,6 +100,7 @@ function expectedReleaseNames(version, options = {}) {
     }
     names.push(`ytkit-v${version}.user.js`);
     names.push(SBOM_NAME);
+    names.push(CAPABILITY_MATRIX_NAME);
     // Astra Downloader ships from its own repository
     // (SysAdminDoc/AstraDownloader) as of companion v2.0.0. Its executable is
     // deliberately absent from this list, so a stray AstraDownloader.exe in
