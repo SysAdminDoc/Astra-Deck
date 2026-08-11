@@ -4,6 +4,36 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.appendStyleSheet) return;
 
+    function supportsCssScope() {
+        if (typeof globalThis === 'undefined') return false;
+        if (typeof globalThis.CSSScopeRule === 'function') return true;
+        if (typeof globalThis.CSSRule?.SCOPE_RULE === 'number') return true;
+        try {
+            return globalThis.CSS?.supports?.('@scope (.ytkit-scope-probe) {}') === true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function canScopeCss(css) {
+        const text = String(css || '').trim();
+        if (!text || /@(?:font-face|(?:-webkit-)?keyframes|property|import|namespace|counter-style)\b/i.test(text)) {
+            return false;
+        }
+        // Document-root selectors must stay global. Wrapping one of these in
+        // a body-owned scope would silently turn a page-wide rule into a
+        // descendant rule, so the compatibility path keeps that stylesheet
+        // unwrapped instead.
+        return !/(?:^|[,{])\s*(?:html|body|:root)\b/i.test(text);
+    }
+
+    function scopeCss(css, options = {}) {
+        const text = String(css || '');
+        const root = String(options.scopeRoot || '').trim();
+        if (options.scope !== true || !root || !supportsCssScope() || !canScopeCss(text)) return text;
+        return `@scope (${root}) {\n${text}\n}`;
+    }
+
     function appendStyleSheet(css) {
         const style = document.createElement('style');
         style.textContent = css;
@@ -11,12 +41,14 @@
         return style;
     }
 
-    function injectStyle(selector, featureId, isRawCss = false) {
+    function injectStyle(selector, featureId, isRawCss = false, options = {}) {
         const id = `yt-suite-style-${featureId}`;
         document.getElementById(id)?.remove();
         const style = document.createElement('style');
         style.id = id;
-        style.textContent = isRawCss ? selector : `${selector} { display: none !important; }`;
+        style.textContent = isRawCss
+            ? scopeCss(selector, options)
+            : `${selector} { display: none !important; }`;
         (document.head || document.documentElement).appendChild(style);
         return style;
     }
@@ -30,6 +62,7 @@
             buildCss,
             isRawCss,
             bodyClass = `ytkit-${id}`,
+            scope = true,
             pageScopes = ['all']
         } = options;
 
@@ -71,9 +104,18 @@
                     ? isRawCss
                     : String(css).includes('{');
                 const className = ctx.bodyClass || bodyClass;
-                const style = injectStyle(css, id, raw);
                 if (className && document.body) document.body.classList.add(className);
-                lifecycleStyleRecords.set(id, { style, bodyClass: className });
+                const style = injectStyle(css, id, raw, {
+                    scope: scope && raw,
+                    scopeRoot: className ? `.${className}` : ''
+                });
+                lifecycleStyleRecords.set(id, {
+                    style,
+                    bodyClass: className,
+                    scope: scope && raw,
+                    scopeRoot: className ? `.${className}` : '',
+                    raw
+                });
             },
             apply(ctx = {}) {
                 if (!matchesPage(ctx.currentPage)) {
@@ -83,19 +125,28 @@
                 if (typeof buildCss !== 'function') return;
                 const record = lifecycleStyleRecords.get(id);
                 const css = buildCss(ctx.settings || {}, ctx);
+                const raw = typeof isRawCss === 'boolean'
+                    ? isRawCss
+                    : String(css).includes('{');
                 if (!record) {
                     // init() skips creating a record when the initial CSS is
                     // falsy (e.g. a default color that yields no override). If
                     // the user later picks a non-default value, apply() must be
                     // able to inject it — otherwise the style is never applied.
                     if (!css) return;
-                    const raw = typeof isRawCss === 'boolean'
-                        ? isRawCss
-                        : String(css).includes('{');
                     const className = ctx.bodyClass || bodyClass;
-                    const style = injectStyle(css, id, raw);
                     if (className && document.body) document.body.classList.add(className);
-                    lifecycleStyleRecords.set(id, { style, bodyClass: className });
+                    const style = injectStyle(css, id, raw, {
+                        scope: scope && raw,
+                        scopeRoot: className ? `.${className}` : ''
+                    });
+                    lifecycleStyleRecords.set(id, {
+                        style,
+                        bodyClass: className,
+                        scope: scope && raw,
+                        scopeRoot: className ? `.${className}` : '',
+                        raw
+                    });
                     return;
                 }
                 if (!css) {
@@ -103,7 +154,10 @@
                     lifecycleStyleRecords.delete(id);
                     return;
                 }
-                record.style.textContent = css;
+                record.style.textContent = raw
+                    ? scopeCss(css, { scope: record.scope, scopeRoot: record.scopeRoot })
+                    : `${css} { display: none !important; }`;
+                record.raw = raw;
             },
             destroy(ctx = {}) {
                 if (removeRecord()) return;
@@ -163,19 +217,25 @@
 
     Object.assign(core, {
         appendStyleSheet,
+        canScopeCss,
         cleanupRetiredCommentUi,
         createCssLifecycleSpec,
         injectStyle,
-        stripCommentRestyleCss
+        scopeCss,
+        stripCommentRestyleCss,
+        supportsCssScope
     });
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             appendStyleSheet,
+            canScopeCss,
             cleanupRetiredCommentUi,
             createCssLifecycleSpec,
             injectStyle,
-            stripCommentRestyleCss
+            scopeCss,
+            stripCommentRestyleCss,
+            supportsCssScope
         };
     }
 })();

@@ -205,6 +205,20 @@
                 probe: 'hasRegExpEscape',
                 fallback: 'Escape literal filter text with the project-maintained compatibility implementation.',
                 userVisibleDegradation: 'Literal filters remain literal on older browsers; no setting search text is interpreted as regex syntax.'
+            },
+            cssScope: {
+                api: 'CSS @scope at-rule',
+                availability: {
+                    chromium: 'Modern Chromium releases expose CSSScopeRule; older versions keep lifecycle styles unwrapped',
+                    firefox: 'Modern Firefox releases expose CSSScopeRule; older versions keep lifecycle styles unwrapped',
+                    userscript: 'Available when the host browser exposes CSSScopeRule or an equivalent CSS.supports() result'
+                },
+                requiredPermission: [],
+                executionWorld: 'YouTube page MAIN world and extension UI',
+                minimumBrowser: { chrome: 'feature-detected', edge: 'feature-detected', firefox: 'feature-detected' },
+                probe: 'hasCssScope',
+                fallback: 'Keep document-root-sensitive styles unwrapped and apply the existing body-class lifecycle path.',
+                userVisibleDegradation: 'Feature styles remain isolated by their existing selectors and body classes without @scope containment.'
             }
         }
     });
@@ -361,6 +375,17 @@
         return typeof globalThis?.RegExp?.escape === 'function';
     }
 
+    function hasCssScope() {
+        if (typeof globalThis === 'undefined') return false;
+        if (typeof globalThis.CSSScopeRule === 'function') return true;
+        if (typeof globalThis.CSSRule?.SCOPE_RULE === 'number') return true;
+        try {
+            return globalThis.CSS?.supports?.('@scope (.ytkit-scope-probe) {}') === true;
+        } catch (_) {
+            return false;
+        }
+    }
+
     function getAiLaneStatus(options = {}) {
         const localAi = core.localAi;
         if (localAi?.getLaneStatus) return localAi.getLaneStatus(options);
@@ -403,6 +428,7 @@
         languageDetector: { async: false, run: hasLanguageDetector },
         promptApi:        { async: false, run: hasPromptApi },
         regexpEscape:     { async: false, run: hasRegExpEscape },
+        cssScope:         { async: false, run: hasCssScope },
         mediaDL:          { async: true,  run: hasMediaDL },
         ollama:           { async: true,  run: hasOllama },
     });

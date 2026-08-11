@@ -109,6 +109,39 @@ test('page-scoped styles mount only on matching routes and leave no long-session
     }
 });
 
+test('@scope wraps safe lifecycle CSS and preserves document-root fallback rules', () => {
+    const harness = loadStylesHarness();
+    const previousScopeRule = globalThis.CSSScopeRule;
+    try {
+        globalThis.CSSScopeRule = function CSSScopeRule() {};
+        const scoped = harness.createCssLifecycleSpec({
+            id: 'scope-supported',
+            category: 'shell',
+            buildCss: () => '.scope-supported { color: red; }'
+        });
+        scoped.init({});
+        const scopedStyle = harness.styles.get('yt-suite-style-scope-supported');
+        assert.match(scopedStyle.textContent, /^@scope \(\.ytkit-scope-supported\) \{/,
+            'safe lifecycle CSS should use the native @scope containment path');
+        scoped.destroy({});
+
+        const rootSensitive = harness.createCssLifecycleSpec({
+            id: 'scope-root-sensitive',
+            category: 'shell',
+            buildCss: () => 'html:not([dark]) .scope-root-sensitive { color: red; }'
+        });
+        rootSensitive.init({});
+        const rootStyle = harness.styles.get('yt-suite-style-scope-root-sensitive');
+        assert.doesNotMatch(rootStyle.textContent, /^@scope /,
+            'document-root selectors must retain the unwrapped fallback');
+        rootSensitive.destroy({});
+    } finally {
+        if (previousScopeRule === undefined) delete globalThis.CSSScopeRule;
+        else globalThis.CSSScopeRule = previousScopeRule;
+        harness.restore();
+    }
+});
+
 test('every registered style lifecycle spec declares an explicit page scope', () => {
     const files = [
         'extension/features/home-subs-css/index.js',

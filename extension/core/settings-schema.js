@@ -92,6 +92,9 @@ const CAPABILITIES = Object.freeze([
     // feature has a local fallback, so this is diagnostic rather than a hard
     // requirement for any setting.
     'regexpEscape',
+    // CSS @scope is used opportunistically by feature-owned lifecycle styles.
+    // Styles containing document-root selectors retain the unwrapped fallback.
+    'cssScope',
 ]);
 
 const SETTINGS_SCHEMA = Object.freeze([
