@@ -40,8 +40,8 @@ const TYPES = Object.freeze(['boolean', 'string', 'number', 'array', 'object', '
 // v4.47.0 NF17: well-known runtime capability names that an entry can
 // declare via an optional `requires:` array. Each name corresponds to a
 // platform/runtime affordance the feature *cannot* work without — the
-// NF10 capability probe (still pending) will detect each at session
-// start and gate the popup row from being enabled when missing. Keep
+// NF10 capability probe detects each at session start and gates the popup
+// row from being enabled when missing. Keep
 // this list narrow and well-grounded — only add a capability when the
 // feature has no graceful in-code fallback. Features that *do* fall
 // back (e.g. popOutPlayer's Document PiP → standard PiP cascade) stay
@@ -50,8 +50,8 @@ const TYPES = Object.freeze(['boolean', 'string', 'number', 'array', 'object', '
 //
 // Adding a capability name here requires (a) updating the well-known
 // allowlist below, (b) declaring it on every entry that strictly
-// requires it, and (c) wiring the future capability-probe module
-// (extension/core/capability-probe.js — see RESEARCH_FEATURE_PLAN NF10).
+// requires it, and (c) wiring the capability-probe module
+// (extension/core/capability-probe.js).
 const CAPABILITIES = Object.freeze([
     // Chrome 138+ built-in Summarizer (global Summarizer, or the retired
     // origin-trial ai.summarizer shape).

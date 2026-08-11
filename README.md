@@ -439,6 +439,22 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 
 **Not supported:** Mobile browsers, YouTube Music, YouTube Studio, embedded players.
 
+### Optional browser capabilities
+
+Astra Deck probes optional APIs before using them. The popup diagnostics bundle
+includes the same generated matrix used by the runtime at
+`build/browser-capability-matrix.json`, so support reports identify both the
+available capability and the promised fallback.
+
+| Capability | Chromium | Firefox | Fallback when absent |
+|------------|----------|---------|----------------------|
+| Built-in Summarizer | Chrome 138+ when the local model is exposed | Not exposed | Keep BYO-key summaries; local-only features show unavailable |
+| Astra Downloader | Companion health endpoint reachable | Same companion contract | Cobalt path when configured; companion-only panels stay unavailable |
+| Ollama | Local server at `127.0.0.1:11434` | Same loopback contract | Selected remote/BYO provider, never an implicit provider switch |
+| Document PiP | Chrome 116+ | Firefox 151+ | Standard video PiP |
+| Language Detector | Chrome 138+ when the local model is exposed | Not exposed | Conservative text comparison |
+| Prompt API | Chrome 138+ when Gemini Nano is ready | Not exposed | Transcript viewing/export remain available; no implicit remote Q&A |
+
 ---
 
 ## Building
