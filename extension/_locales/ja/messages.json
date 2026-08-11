@@ -4379,8 +4379,23 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
+  "selectorHealthAssetTpl": {
+    "message": "ルール: {status} · {version} · {source}"
+  },
   "selectorHealthEmpty": {
     "message": "まだサーフェスがサンプリングされていません。"
+  },
+  "selectorHealthRefreshAria": {
+    "message": "セレクタールールを更新"
+  },
+  "selectorHealthRefreshBtn": {
+    "message": "ルールを更新"
+  },
+  "selectorHealthRefreshFailed": {
+    "message": "セレクタールールを更新できませんでした。"
+  },
+  "selectorHealthRefreshPending": {
+    "message": "セレクタールールを更新中…"
   },
   "selectorHealthTitle": {
     "message": "セレクター状態"

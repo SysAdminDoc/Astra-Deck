@@ -4379,8 +4379,23 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
+  "selectorHealthAssetTpl": {
+    "message": "القواعد: {status} · {version} · {source}"
+  },
   "selectorHealthEmpty": {
     "message": "لم يتم أخذ عينات من أي سطح بعد."
+  },
+  "selectorHealthRefreshAria": {
+    "message": "تحديث قواعد المحددات"
+  },
+  "selectorHealthRefreshBtn": {
+    "message": "تحديث القواعد"
+  },
+  "selectorHealthRefreshFailed": {
+    "message": "لم يتم تحديث قواعد المحددات."
+  },
+  "selectorHealthRefreshPending": {
+    "message": "جارٍ تحديث قواعد المحددات…"
   },
   "selectorHealthTitle": {
     "message": "حالة المحدِّد"

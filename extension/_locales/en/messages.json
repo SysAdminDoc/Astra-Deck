@@ -4379,8 +4379,23 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
+  "selectorHealthAssetTpl": {
+    "message": "Rules: {status} · {version} · {source}"
+  },
   "selectorHealthEmpty": {
     "message": "No surfaces sampled yet."
+  },
+  "selectorHealthRefreshAria": {
+    "message": "Refresh selector rules"
+  },
+  "selectorHealthRefreshBtn": {
+    "message": "Refresh rules"
+  },
+  "selectorHealthRefreshFailed": {
+    "message": "Selector rules were not refreshed."
+  },
+  "selectorHealthRefreshPending": {
+    "message": "Refreshing selector rules…"
   },
   "selectorHealthTitle": {
     "message": "Selector health"

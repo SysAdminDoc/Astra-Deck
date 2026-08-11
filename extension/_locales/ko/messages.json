@@ -4379,8 +4379,23 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
+  "selectorHealthAssetTpl": {
+    "message": "규칙: {status} · {version} · {source}"
+  },
   "selectorHealthEmpty": {
     "message": "아직 샘플링된 표면이 없습니다."
+  },
+  "selectorHealthRefreshAria": {
+    "message": "선택자 규칙 새로 고침"
+  },
+  "selectorHealthRefreshBtn": {
+    "message": "규칙 새로 고침"
+  },
+  "selectorHealthRefreshFailed": {
+    "message": "선택자 규칙을 새로 고치지 못했습니다."
+  },
+  "selectorHealthRefreshPending": {
+    "message": "선택자 규칙을 새로 고치는 중…"
   },
   "selectorHealthTitle": {
     "message": "셀렉터 상태"

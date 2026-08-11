@@ -48,7 +48,7 @@
 
     const packRegistry = core.SurfacePackRegistry || new Map();
     const surfaceNames = new Set([...Object.keys(INLINE_SURFACES), ...packRegistry.keys()]);
-    const SurfaceSelectorMap = Object.freeze(Object.fromEntries(
+    let SurfaceSelectorMap = Object.freeze(Object.fromEntries(
         [...surfaceNames].map((surface) => {
             const packEntry = packRegistry.get(surface);
             const source = packEntry || INLINE_SURFACES[surface];
@@ -56,12 +56,14 @@
         })
     ));
 
-    const SurfaceSelectors = Object.freeze(Object.fromEntries(
+    let SurfaceSelectors = Object.freeze(Object.fromEntries(
         Object.entries(SurfaceSelectorMap).map(([surface, entry]) => [
             surface,
             Object.freeze([...entry.stable, ...entry.fallback])
         ])
     ));
+    const SHIPPED_SURFACE_SELECTOR_MAP = SurfaceSelectorMap;
+    const SHIPPED_SURFACE_SELECTORS = SurfaceSelectors;
 
     const emittedMisses = new Set();
     const selectorStats = new Map();
@@ -95,6 +97,268 @@
         return selectors
             .map((selector) => String(selector || '').trim())
             .filter(Boolean);
+    }
+
+    // Selector assets are data-only JSON. They never contain executable code,
+    // and the shipped JS packs above remain the synchronous offline default.
+    // A verified asset can replace the active map for this page session; any
+    // malformed, oversized, or digest-mismatched candidate leaves the prior
+    // map untouched and records a rollback in selector health.
+    const SELECTOR_ASSET_SCHEMA_VERSION = 1;
+    const SELECTOR_ASSET_MAX_BYTES = 256 * 1024;
+    const SELECTOR_ASSET_MAX_PACKS = 128;
+    const SELECTOR_ASSET_MAX_HOOKS = 96;
+    const SELECTOR_ASSET_MAX_SELECTORS_PER_CHAIN = 32;
+    const SELECTOR_ASSET_MAX_SELECTOR_CHARS = 512;
+    const SELECTOR_ASSET_MAX_TOTAL_SELECTORS = 4096;
+    const SELECTOR_ASSET_VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+    const UNSAFE_ASSET_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
+    function selectorAssetByteLength(value) {
+        const text = typeof value === 'string' ? value : JSON.stringify(value);
+        if (typeof TextEncoder === 'function') return new TextEncoder().encode(text).byteLength;
+        return unescape(encodeURIComponent(text)).length;
+    }
+
+    function sortJsonValue(value) {
+        if (Array.isArray(value)) return value.map(sortJsonValue);
+        if (!value || typeof value !== 'object') return value;
+        return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortJsonValue(value[key])]));
+    }
+
+    function selectorAssetPayload(asset) {
+        return sortJsonValue({
+            schemaVersion: asset.schemaVersion,
+            assetVersion: asset.assetVersion,
+            packs: asset.packs
+        });
+    }
+
+    function canonicalSelectorAsset(asset) {
+        return JSON.stringify(selectorAssetPayload(asset));
+    }
+
+    function normalizeAssetSelectorList(value, label, limits) {
+        if (typeof value !== 'string' && !Array.isArray(value)) {
+            throw new Error(`${label} is malformed`);
+        }
+        const rawSelectors = typeof value === 'string' ? [value] : value;
+        if (rawSelectors.some((selector) => typeof selector !== 'string')) {
+            throw new Error(`${label} contains a non-string selector`);
+        }
+        const selectors = normalizeSelectorList(value);
+        if (selectors.length > limits.maxChain) throw new Error(`${label} has too many selectors`);
+        if (selectors.some((selector) => selector.length > limits.maxChars
+            || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(selector))) {
+            throw new Error(`${label} contains an invalid selector`);
+        }
+        return selectors;
+    }
+
+    function normalizeSelectorAssetEntry(value, surface, total) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            throw new Error(`Selector asset surface "${surface}" is malformed`);
+        }
+        const stable = normalizeAssetSelectorList(value.stable, `${surface}.stable`, {
+            maxChain: SELECTOR_ASSET_MAX_SELECTORS_PER_CHAIN,
+            maxChars: SELECTOR_ASSET_MAX_SELECTOR_CHARS
+        });
+        const fallback = normalizeAssetSelectorList(value.fallback, `${surface}.fallback`, {
+            maxChain: SELECTOR_ASSET_MAX_SELECTORS_PER_CHAIN,
+            maxChars: SELECTOR_ASSET_MAX_SELECTOR_CHARS
+        });
+        total.count += stable.length + fallback.length;
+        if (total.count > SELECTOR_ASSET_MAX_TOTAL_SELECTORS) throw new Error('Selector asset has too many selectors');
+
+        const hooks = {};
+        if (value.hooks != null) {
+            if (typeof value.hooks !== 'object' || Array.isArray(value.hooks)) {
+                throw new Error(`${surface}.hooks is malformed`);
+            }
+            const hookNames = Object.keys(value.hooks);
+            if (hookNames.length > SELECTOR_ASSET_MAX_HOOKS) throw new Error(`${surface}.hooks has too many entries`);
+            for (const hook of hookNames) {
+                if (UNSAFE_ASSET_KEYS.has(hook) || !/^[A-Za-z0-9._-]{1,80}$/.test(hook)) {
+                    throw new Error(`${surface}.hooks contains an invalid name`);
+                }
+                const hookValue = value.hooks[hook];
+                if (!hookValue || typeof hookValue !== 'object' || Array.isArray(hookValue)) {
+                    throw new Error(`${surface}.${hook} is malformed`);
+                }
+                const hookStable = normalizeAssetSelectorList(hookValue.stable, `${surface}.${hook}.stable`, {
+                    maxChain: SELECTOR_ASSET_MAX_SELECTORS_PER_CHAIN,
+                    maxChars: SELECTOR_ASSET_MAX_SELECTOR_CHARS
+                });
+                const hookFallback = normalizeAssetSelectorList(hookValue.fallback, `${surface}.${hook}.fallback`, {
+                    maxChain: SELECTOR_ASSET_MAX_SELECTORS_PER_CHAIN,
+                    maxChars: SELECTOR_ASSET_MAX_SELECTOR_CHARS
+                });
+                total.count += hookStable.length + hookFallback.length;
+                if (total.count > SELECTOR_ASSET_MAX_TOTAL_SELECTORS) throw new Error('Selector asset has too many selectors');
+                hooks[hook] = {
+                    stable: hookStable,
+                    fallback: hookFallback,
+                    notes: typeof hookValue.notes === 'string' ? hookValue.notes.slice(0, 240) : ''
+                };
+            }
+        }
+
+        const evidence = Array.isArray(value.captureEvidence)
+            ? value.captureEvidence.filter((item) => typeof item === 'string').slice(0, 16).map((item) => item.slice(0, 240))
+            : [];
+        const lastVerified = value.lastVerified == null ? null : String(value.lastVerified).slice(0, 32);
+        return {
+            stable,
+            fallback,
+            hooks,
+            captureEvidence: evidence,
+            lastVerified,
+            highChurn: value.highChurn === true,
+            needsFreshCapture: value.needsFreshCapture === true,
+            notes: typeof value.notes === 'string' ? value.notes.slice(0, 240) : ''
+        };
+    }
+
+    function normalizeSelectorAsset(asset) {
+        let parsed = asset;
+        if (typeof asset === 'string') {
+            if (selectorAssetByteLength(asset) > SELECTOR_ASSET_MAX_BYTES) throw new Error('Selector asset exceeds the size limit');
+            try { parsed = JSON.parse(asset); } catch (_) { throw new Error('Selector asset is not valid JSON'); }
+        }
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Selector asset must be an object');
+        if (parsed.schemaVersion !== SELECTOR_ASSET_SCHEMA_VERSION) throw new Error('Unsupported selector asset schema');
+        if (typeof parsed.assetVersion !== 'string' || !SELECTOR_ASSET_VERSION_PATTERN.test(parsed.assetVersion)) {
+            throw new Error('Selector asset version is invalid');
+        }
+        if (typeof parsed.digest !== 'string' || !/^sha256:[a-f0-9]{64}$/i.test(parsed.digest)) {
+            throw new Error('Selector asset digest is missing or invalid');
+        }
+        if (!parsed.packs || typeof parsed.packs !== 'object' || Array.isArray(parsed.packs)) {
+            throw new Error('Selector asset packs are malformed');
+        }
+        const packNames = Object.keys(parsed.packs);
+        if (packNames.length === 0 || packNames.length > SELECTOR_ASSET_MAX_PACKS) throw new Error('Selector asset pack count is invalid');
+        const total = { count: 0 };
+        const packs = {};
+        for (const surface of packNames) {
+            if (UNSAFE_ASSET_KEYS.has(surface) || !/^[A-Za-z0-9._-]{1,80}$/.test(surface)) {
+                throw new Error('Selector asset contains an invalid surface name');
+            }
+            packs[surface] = normalizeSelectorAssetEntry(parsed.packs[surface], surface, total);
+        }
+        for (const shippedSurface of Object.keys(SHIPPED_SURFACE_SELECTOR_MAP)) {
+            if (!Object.prototype.hasOwnProperty.call(packs, shippedSurface)) {
+                throw new Error(`Selector asset omits shipped surface "${shippedSurface}"`);
+            }
+        }
+        const normalized = {
+            schemaVersion: SELECTOR_ASSET_SCHEMA_VERSION,
+            assetVersion: parsed.assetVersion,
+            digest: parsed.digest.toLowerCase(),
+            packs: Object.fromEntries(Object.keys(packs).sort().map((key) => [key, packs[key]]))
+        };
+        if (selectorAssetByteLength(normalized) > SELECTOR_ASSET_MAX_BYTES) throw new Error('Selector asset exceeds the size limit');
+        return normalized;
+    }
+
+    async function selectorAssetDigest(asset) {
+        const bytes = typeof TextEncoder === 'function'
+            ? new TextEncoder().encode(canonicalSelectorAsset(asset))
+            : Uint8Array.from(unescape(encodeURIComponent(canonicalSelectorAsset(asset))), (char) => char.charCodeAt(0));
+        if (!globalThis.crypto?.subtle?.digest) throw new Error('Web Crypto is unavailable for selector asset verification');
+        const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    function buildSelectorMapFromAsset(packs) {
+        const map = Object.freeze(Object.fromEntries(
+            Object.keys(packs).sort().map((surface) => [surface, freezeEntry(packs[surface])])
+        ));
+        const selectors = Object.freeze(Object.fromEntries(
+            Object.entries(map).map(([surface, entry]) => [
+                surface,
+                Object.freeze([...entry.stable, ...entry.fallback])
+            ])
+        ));
+        return { map, selectors };
+    }
+
+    let selectorAssetState = {
+        source: 'shipped',
+        status: 'offline-default',
+        assetVersion: 'shipped',
+        digest: null,
+        sizeBytes: null,
+        updatedAt: null,
+        lastAttemptAt: null,
+        lastError: null,
+        failedAssetVersion: null,
+        rollbackCount: 0,
+        selectorCount: Object.values(SurfaceSelectors).reduce((sum, chain) => sum + chain.length, 0)
+    };
+
+    function getSelectorAssetState() {
+        return { ...selectorAssetState };
+    }
+
+    async function applySelectorAsset(asset, options = {}) {
+        const attemptedAt = Date.now();
+        const attemptedVersion = typeof asset === 'object' && asset ? asset.assetVersion : null;
+        try {
+            const normalized = normalizeSelectorAsset(asset);
+            const actualDigest = await selectorAssetDigest(normalized);
+            const expectedDigest = normalized.digest.slice('sha256:'.length);
+            if (actualDigest !== expectedDigest) throw new Error('Selector asset digest mismatch');
+            const next = buildSelectorMapFromAsset(normalized.packs);
+            SurfaceSelectorMap = next.map;
+            SurfaceSelectors = next.selectors;
+            core.SurfaceSelectorMap = SurfaceSelectorMap;
+            core.SurfaceSelectors = SurfaceSelectors;
+            selectorAssetState = {
+                source: options.source === 'stored' ? 'stored' : 'remote',
+                status: 'active',
+                assetVersion: normalized.assetVersion,
+                digest: normalized.digest,
+                sizeBytes: selectorAssetByteLength(asset),
+                updatedAt: attemptedAt,
+                lastAttemptAt: attemptedAt,
+                lastError: null,
+                failedAssetVersion: null,
+                rollbackCount: selectorAssetState.rollbackCount,
+                selectorCount: Object.values(SurfaceSelectors).reduce((sum, chain) => sum + chain.length, 0)
+            };
+            return { ok: true, state: getSelectorAssetState() };
+        } catch (error) {
+            selectorAssetState = {
+                ...selectorAssetState,
+                status: 'rollback',
+                lastAttemptAt: attemptedAt,
+                lastError: String(error?.message || error).slice(0, 240),
+                failedAssetVersion: attemptedVersion ? String(attemptedVersion).slice(0, 64) : null,
+                rollbackCount: selectorAssetState.rollbackCount + 1
+            };
+            return { ok: false, error: selectorAssetState.lastError, state: getSelectorAssetState() };
+        }
+    }
+
+    function resetSelectorAsset() {
+        SurfaceSelectorMap = SHIPPED_SURFACE_SELECTOR_MAP;
+        SurfaceSelectors = SHIPPED_SURFACE_SELECTORS;
+        core.SurfaceSelectorMap = SurfaceSelectorMap;
+        core.SurfaceSelectors = SurfaceSelectors;
+        selectorAssetState = {
+            ...selectorAssetState,
+            source: 'shipped',
+            status: 'offline-default',
+            assetVersion: 'shipped',
+            digest: null,
+            sizeBytes: null,
+            updatedAt: Date.now(),
+            lastError: null,
+            failedAssetVersion: null,
+            selectorCount: Object.values(SurfaceSelectors).reduce((sum, chain) => sum + chain.length, 0)
+        };
+        return getSelectorAssetState();
     }
 
     function normalizeArgs(surfaceOrSelectors, selectorsOrOptions, maybeOptions) {
@@ -695,6 +959,7 @@
             // Consumers parsing schemaVersion 1 ignore the new keys safely.
             schemaVersion: 2,
             exportedAt: new Date().toISOString(),
+            selectorAsset: getSelectorAssetState(),
             surfaces: getSelectorHealthSnapshot()
         }, null, 2);
     }
@@ -702,9 +967,11 @@
     Object.assign(core, {
         SurfaceSelectorMap,
         SurfaceSelectors,
+        applySelectorAsset,
         exportSelectorHealth,
         findSurfaceElement,
         findSurfaceElements,
+        getSelectorAssetState,
         getSelectorHealthSnapshot,
         findSurfaceHookElements,
         getSurfaceSelectorChain,
@@ -713,6 +980,8 @@
         getSurfaceHookSelectorEntry,
         normalizeSelectorList,
         recordSelectorShape,
+        resetSelectorAsset,
+        selectorAssetPayload,
         waitForSurfaceElement
     });
 })();

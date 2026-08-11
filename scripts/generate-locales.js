@@ -2692,6 +2692,60 @@ const WATCH_LATER_AGE_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(WATCH_LATER_AGE_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const SELECTOR_ASSET_TRANSLATIONS = {
+  de: {
+    'Rules: {status} · {version} · {source}': 'Regeln: {status} · {version} · {source}',
+    'Refresh selector rules': 'Selektorregeln aktualisieren', 'Refresh rules': 'Regeln aktualisieren',
+    'Selector rules were not refreshed.': 'Die Selektorregeln wurden nicht aktualisiert.', 'Refreshing selector rules…': 'Selektorregeln werden aktualisiert…'
+  },
+  es: {
+    'Rules: {status} · {version} · {source}': 'Reglas: {status} · {version} · {source}',
+    'Refresh selector rules': 'Actualizar reglas de selectores', 'Refresh rules': 'Actualizar reglas',
+    'Selector rules were not refreshed.': 'No se actualizaron las reglas de selectores.', 'Refreshing selector rules…': 'Actualizando reglas de selectores…'
+  },
+  fr: {
+    'Rules: {status} · {version} · {source}': 'Règles : {status} · {version} · {source}',
+    'Refresh selector rules': 'Actualiser les règles de sélecteurs', 'Refresh rules': 'Actualiser les règles',
+    'Selector rules were not refreshed.': 'Les règles de sélecteurs n’ont pas été actualisées.', 'Refreshing selector rules…': 'Actualisation des règles de sélecteurs…'
+  },
+  it: {
+    'Rules: {status} · {version} · {source}': 'Regole: {status} · {version} · {source}',
+    'Refresh selector rules': 'Aggiorna regole selettori', 'Refresh rules': 'Aggiorna regole',
+    'Selector rules were not refreshed.': 'Le regole dei selettori non sono state aggiornate.', 'Refreshing selector rules…': 'Aggiornamento delle regole dei selettori…'
+  },
+  ja: {
+    'Rules: {status} · {version} · {source}': 'ルール: {status} · {version} · {source}',
+    'Refresh selector rules': 'セレクタールールを更新', 'Refresh rules': 'ルールを更新',
+    'Selector rules were not refreshed.': 'セレクタールールを更新できませんでした。', 'Refreshing selector rules…': 'セレクタールールを更新中…'
+  },
+  ko: {
+    'Rules: {status} · {version} · {source}': '규칙: {status} · {version} · {source}',
+    'Refresh selector rules': '선택자 규칙 새로 고침', 'Refresh rules': '규칙 새로 고침',
+    'Selector rules were not refreshed.': '선택자 규칙을 새로 고치지 못했습니다.', 'Refreshing selector rules…': '선택자 규칙을 새로 고치는 중…'
+  },
+  pt_BR: {
+    'Rules: {status} · {version} · {source}': 'Regras: {status} · {version} · {source}',
+    'Refresh selector rules': 'Atualizar regras de seletores', 'Refresh rules': 'Atualizar regras',
+    'Selector rules were not refreshed.': 'As regras de seletores não foram atualizadas.', 'Refreshing selector rules…': 'Atualizando regras de seletores…'
+  },
+  ru: {
+    'Rules: {status} · {version} · {source}': 'Правила: {status} · {version} · {source}',
+    'Refresh selector rules': 'Обновить правила селекторов', 'Refresh rules': 'Обновить правила',
+    'Selector rules were not refreshed.': 'Правила селекторов не обновлены.', 'Refreshing selector rules…': 'Обновление правил селекторов…'
+  },
+  ar: {
+    'Rules: {status} · {version} · {source}': 'القواعد: {status} · {version} · {source}',
+    'Refresh selector rules': 'تحديث قواعد المحددات', 'Refresh rules': 'تحديث القواعد',
+    'Selector rules were not refreshed.': 'لم يتم تحديث قواعد المحددات.', 'Refreshing selector rules…': 'جارٍ تحديث قواعد المحددات…'
+  },
+  zh_CN: {
+    'Rules: {status} · {version} · {source}': '规则：{status} · {version} · {source}',
+    'Refresh selector rules': '刷新选择器规则', 'Refresh rules': '刷新规则',
+    'Selector rules were not refreshed.': '选择器规则未刷新。', 'Refreshing selector rules…': '正在刷新选择器规则…'
+  }
+};
+for (const [locale, messages] of Object.entries(SELECTOR_ASSET_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const STRUCTURAL_MATCH_TRANSLATIONS = {
   de: {
     '{count} views': '{count} Aufrufe',

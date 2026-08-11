@@ -44,6 +44,7 @@
     "https://returnyoutubedislikeapi.com/*",
     "https://www.reddit.com/*",
     "https://old.reddit.com/*",
+    "https://raw.githubusercontent.com/*",
     "https://api.cobalt.tools/*",
     "http://127.0.0.1:11434/*",
     "http://127.0.0.1:9751/*",

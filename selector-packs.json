@@ -1,0 +1,1023 @@
+{
+  "schemaVersion": 1,
+  "assetVersion": "4.59.1.selector.1",
+  "packs": {
+    "appShell": {
+      "stable": [
+        "ytd-app",
+        "ytd-page-manager"
+      ],
+      "fallback": [
+        "body > ytd-app",
+        "ytd-page-manager.style-scope"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": false,
+      "needsFreshCapture": false,
+      "notes": "Primary SPA shell. Mount observers here only until target containers exist."
+    },
+    "channelProfile": {
+      "stable": [
+        "ytd-video-owner-renderer",
+        "ytd-channel-name",
+        "#channel-name",
+        "ytd-c4-tabbed-header-renderer",
+        "ytd-page-header-renderer"
+      ],
+      "fallback": [
+        "yt-avatar-shape",
+        "yt-decorated-avatar-view-model",
+        "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "mhtml/Channel.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Alias for profile."
+    },
+    "commentComposer": {
+      "stable": [
+        "ytd-comment-simplebox-renderer",
+        "ytd-commentbox",
+        "#contenteditable-root"
+      ],
+      "fallback": [
+        "ytd-comments ytd-comment-simplebox-renderer div.style-scope",
+        "ytd-comment-simplebox-renderer #placeholder-area"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Prefer structural lookup below ytd-comments."
+    },
+    "comments": {
+      "stable": [
+        "ytd-comments",
+        "ytd-comment-thread-renderer",
+        "ytd-comment-view-model",
+        "#more-replies-sub-thread",
+        "#expanded-threads",
+        "#expander-contents"
+      ],
+      "fallback": [
+        "ytd-comment-thread-renderer.style-scope",
+        "ytd-comment-renderer",
+        "#more-replies",
+        "#less-replies"
+      ],
+      "hooks": {
+        "root": {
+          "stable": [
+            "ytd-comments#comments",
+            "ytd-comments"
+          ],
+          "fallback": [
+            "#comments"
+          ],
+          "notes": ""
+        },
+        "thread": {
+          "stable": [
+            "ytd-comments ytd-comment-thread-renderer",
+            "ytd-comments ytd-comment-view-model"
+          ],
+          "fallback": [
+            "ytd-comment-thread-renderer",
+            "ytd-comment-view-model",
+            "ytd-comment-renderer"
+          ],
+          "notes": ""
+        },
+        "body": {
+          "stable": [
+            "#content-text",
+            "yt-attributed-string#content-text"
+          ],
+          "fallback": [
+            "yt-formatted-string#content-text",
+            "[id=\"content-text\"]"
+          ],
+          "notes": ""
+        },
+        "author": {
+          "stable": [
+            "#author-text",
+            "#header-author #author-text"
+          ],
+          "fallback": [
+            "a#author-text",
+            "[id=\"author-text\"]"
+          ],
+          "notes": ""
+        }
+      },
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-06-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Keep old and new comment shapes during A/B transition. Threaded reply sub-thread containers added Jun 2026."
+    },
+    "engagementPanels": {
+      "stable": [
+        "ytd-engagement-panel-section-list-renderer",
+        "#panels ytd-engagement-panel-section-list-renderer"
+      ],
+      "fallback": [
+        "ytd-engagement-panel-section-list-renderer.style-scope",
+        "ytd-engagement-panel-title-header-renderer"
+      ],
+      "hooks": {
+        "panel.aiSummary": {
+          "stable": [
+            "ytd-engagement-panel-section-list-renderer[target-id*=\"summary\" i]",
+            "ytd-engagement-panel-section-list-renderer[panel-target-id*=\"summary\" i]"
+          ],
+          "fallback": [
+            "ytd-ai-summary-renderer",
+            "[class*=\"ai-summary\" i]"
+          ],
+          "notes": ""
+        },
+        "panel.aiContext": {
+          "stable": [
+            "ytd-info-panel-content-renderer:has([icon=\"info_outline\"])",
+            "ytd-factoid-renderer"
+          ],
+          "fallback": [
+            "ytd-engagement-panel-section-list-renderer[target-id*=\"context\" i]",
+            "[data-panel-type=\"context\"]"
+          ],
+          "notes": ""
+        },
+        "panel.gemini": {
+          "stable": [
+            "ytd-engagement-panel-section-list-renderer[target-id*=\"gemini\" i]",
+            "ytd-engagement-panel-section-list-renderer[panel-target-id*=\"gemini\" i]"
+          ],
+          "fallback": [
+            "[data-gemini]",
+            "[data-ai-type=\"gemini\"]"
+          ],
+          "notes": ""
+        }
+      },
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Chapters, transcript, AI summary, and clips live here."
+    },
+    "feed": {
+      "stable": [
+        "ytd-browse ytd-rich-grid-renderer",
+        "ytd-rich-grid-renderer"
+      ],
+      "fallback": [
+        "ytd-rich-grid-renderer.style-scope",
+        "#contents.ytd-rich-grid-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Process added nodes only; filter chips can recycle grid content without route events."
+    },
+    "feedCard": {
+      "stable": [
+        "ytd-rich-item-renderer",
+        "yt-lockup-view-model",
+        "ytd-video-renderer"
+      ],
+      "fallback": [
+        "yt-lockup-view-model.ytd-rich-item-renderer",
+        "ytd-rich-item-renderer.style-scope"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "mhtml/SearchResults.mhtml",
+        "mhtml/Channel.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "New lockup view-model appears in current captures."
+    },
+    "feedExperimentChips": {
+      "stable": [
+        "yt-chip-cloud-chip-renderer",
+        "yt-chip-cloud-renderer",
+        "ytd-feed-filter-chip-bar-renderer"
+      ],
+      "fallback": [
+        "ytd-rich-grid-renderer yt-chip-cloud-chip-renderer",
+        "ytd-rich-grid-renderer ytd-feed-filter-chip-bar-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/YouTube.mhtml",
+        "mhtml/SearchResults.mhtml"
+      ],
+      "lastVerified": "2026-06-29",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Category chips and prompt-generated feed pivots recycle cards without route events."
+    },
+    "feedPlayables": {
+      "stable": [
+        "ytd-game-card-renderer",
+        "ytd-mini-game-card-view-model",
+        "ytd-rich-shelf-renderer"
+      ],
+      "fallback": [
+        "ytd-game-details-renderer",
+        "yt-mini-app-game-info-dialog-view-model",
+        "ytd-rich-grid-renderer ytd-rich-shelf-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/YouTube.mhtml",
+        "mhtml/SearchResults.mhtml"
+      ],
+      "lastVerified": "2026-06-29",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Playables and mini-game shelves are capture-backed separately from organic video feed cards."
+    },
+    "feedPrompt": {
+      "stable": [
+        "ytd-feedback-survey-renderer",
+        "ytd-feedback-question-renderer",
+        "ytd-identity-prompt-footer-renderer"
+      ],
+      "fallback": [
+        "ytd-feedback-elicitation-single-question-renderer",
+        "ytd-feedback-option-renderer",
+        "ytd-feed-nudge-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/YouTube.mhtml",
+        "mhtml/SearchResults.mhtml"
+      ],
+      "lastVerified": "2026-06-29",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Prompt, survey, and identity-nudge feed inserts are tracked as their own high-churn surface."
+    },
+    "feedSponsored": {
+      "stable": [
+        "ytd-in-feed-ad-layout-renderer",
+        "ytd-ad-feedback-renderer",
+        "ytd-page-top-ad-layout-renderer"
+      ],
+      "fallback": [
+        "ytd-rich-grid-renderer ytd-in-feed-ad-layout-renderer",
+        "ytd-promoted-video-renderer",
+        "ytd-display-ad-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/YouTube.mhtml",
+        "mhtml/SearchResults.mhtml"
+      ],
+      "lastVerified": "2026-06-29",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Sponsored-card and ad-feedback shells are tracked separately from organic feedCard selectors."
+    },
+    "leftNav": {
+      "stable": [
+        "ytd-guide-renderer",
+        "ytd-mini-guide-renderer",
+        "yt-app-drawer"
+      ],
+      "fallback": [
+        "ytd-mini-guide-entry-renderer.style-scope",
+        "ytd-guide-entry-renderer.style-scope"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Subscriptions capture has full guide; home often has mini guide."
+    },
+    "liveChat": {
+      "stable": [
+        "yt-live-chat-app",
+        "yt-live-chat-renderer",
+        "yt-live-chat-item-list-renderer"
+      ],
+      "fallback": [
+        "yt-live-chat-text-message-renderer",
+        "yt-live-chat-message-input-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/LiveChat.mhtml"
+      ],
+      "lastVerified": "2026-06-04",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Live chat iframe document surface verified from a popout chat MHTML capture."
+    },
+    "liveChatFrame": {
+      "stable": [
+        "ytd-live-chat-frame#chat",
+        "ytd-live-chat-frame",
+        "iframe#chatframe"
+      ],
+      "fallback": [
+        "#chat.ytd-live-chat-frame",
+        "ytd-live-chat-frame iframe"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/LiveChat.mhtml",
+        "docs/selector-fixture-workflow.md#watch-page-wrapper-probe"
+      ],
+      "lastVerified": "2026-06-04",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Watch-page live chat frame verified by rendered DOM probe; iframe internals are capture-backed by LiveChat.mhtml."
+    },
+    "liveChatPlaceholder": {
+      "stable": [
+        "ytd-live-chat-frame",
+        "#chat"
+      ],
+      "fallback": [
+        "iframe#chatframe",
+        "ytd-live-chat-frame iframe"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/LiveChat.mhtml",
+        "docs/selector-fixture-workflow.md#watch-page-wrapper-probe"
+      ],
+      "lastVerified": "2026-06-04",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Placeholder canary verified by rendered watch-page DOM probe; iframe internals are capture-backed by LiveChat.mhtml."
+    },
+    "mainVideo": {
+      "stable": [
+        "video.html5-main-video",
+        "#movie_player video"
+      ],
+      "fallback": [
+        "video.video-stream",
+        ".html5-video-container video"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "mhtml/EmbedPlayer.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Main media element; should stay scoped to the current player."
+    },
+    "masthead": {
+      "stable": [
+        "ytd-masthead",
+        "#masthead-container"
+      ],
+      "fallback": [
+        "ytd-masthead div.style-scope",
+        "#masthead-container div.style-scope"
+      ],
+      "hooks": {
+        "createButton": {
+          "stable": [
+            "ytd-masthead #buttons ytd-button-renderer:has(path[d^=\"M12 3a1 1 0 00-1 1v7H4\"])",
+            "ytd-masthead #buttons ytd-button-renderer:has(svg path[d^=\"M12 3a1 1 0 00-1 1v7H4\"])"
+          ],
+          "fallback": [
+            "ytd-masthead ytd-button-renderer:has(button[aria-label=\"Create\"])"
+          ],
+          "notes": ""
+        }
+      },
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "mhtml/SearchResults.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": false,
+      "needsFreshCapture": false,
+      "notes": "Alias for nav so feature code can use either term."
+    },
+    "media": {
+      "stable": [
+        "video",
+        "img",
+        "ytd-thumbnail",
+        "yt-thumbnail-view-model"
+      ],
+      "fallback": [
+        "#content video",
+        "#content img",
+        "#content ytd-thumbnail"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "mhtml/Shorts.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": false,
+      "needsFreshCapture": false,
+      "notes": "Generic media resolver; prefer feature-specific roots."
+    },
+    "modals": {
+      "stable": [
+        "tp-yt-paper-dialog",
+        "ytd-popup-container tp-yt-paper-dialog",
+        "tp-yt-iron-dropdown"
+      ],
+      "fallback": [
+        ".ytp-popup",
+        ".ytd-popup-container",
+        "ytd-popup-container .style-scope"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Native YouTube popups and dialogs."
+    },
+    "nav": {
+      "stable": [
+        "ytd-masthead",
+        "#masthead-container"
+      ],
+      "fallback": [
+        "ytd-masthead div.style-scope",
+        "#masthead-container div.style-scope"
+      ],
+      "hooks": {
+        "createButton": {
+          "stable": [
+            "ytd-masthead #buttons ytd-button-renderer:has(path[d^=\"M12 3a1 1 0 00-1 1v7H4\"])",
+            "ytd-masthead #buttons ytd-button-renderer:has(svg path[d^=\"M12 3a1 1 0 00-1 1v7H4\"])"
+          ],
+          "fallback": [
+            "ytd-masthead ytd-button-renderer:has(button[aria-label=\"Create\"])"
+          ],
+          "notes": ""
+        }
+      },
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "mhtml/SearchResults.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": false,
+      "needsFreshCapture": false,
+      "notes": "Top navigation and masthead actions."
+    },
+    "notifications": {
+      "stable": [
+        "ytd-notification-topbar-button-renderer",
+        "yt-icon-badge-shape",
+        "ytd-notification-renderer"
+      ],
+      "fallback": [
+        ".ytd-notification-topbar-button-renderer .badge-shape-wiz",
+        "ytd-multi-page-menu-renderer ytd-notification-renderer"
+      ],
+      "hooks": {
+        "popup.root": {
+          "stable": [
+            "ytd-popup-container ytd-multi-page-menu-renderer",
+            "ytd-multi-page-menu-renderer"
+          ],
+          "fallback": [
+            "ytd-popup-container"
+          ],
+          "notes": ""
+        },
+        "element.item": {
+          "stable": [
+            "ytd-multi-page-menu-renderer ytd-notification-renderer",
+            "ytd-popup-container ytd-notification-renderer"
+          ],
+          "fallback": [
+            "ytd-notification-renderer"
+          ],
+          "notes": ""
+        }
+      },
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Wait for popup menu root before sorting or transforming notifications."
+    },
+    "player": {
+      "stable": [
+        "#movie_player",
+        ".html5-video-player"
+      ],
+      "fallback": [
+        "ytd-player #movie_player",
+        "#player-container #movie_player"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "mhtml/EmbedPlayer.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Use window.movie_player only from the MAIN-world bridge."
+    },
+    "playerChrome": {
+      "stable": [
+        ".ytp-chrome-bottom",
+        ".ytp-right-controls",
+        ".ytp-progress-bar",
+        ".ytp-progress-bar-padding"
+      ],
+      "fallback": [
+        ".ytp-delhi-modern .ytp-chrome-bottom",
+        ".ytp-delhi-modern",
+        ".ytp-overflow-panel",
+        ".ytp-action-pill",
+        ".ytp-actions-container"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "HARDENING.md#h21"
+      ],
+      "lastVerified": "2026-06-04",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Player redesign transition surface; 2026-06-04 stopped-loading Chrome Stable capture confirmed Delhi shell, overflow panel, and time-wrapper selectors. Action-pill/action-container remain fallback watchlist entries until captured."
+    },
+    "playerSettings": {
+      "stable": [
+        ".ytp-settings-button",
+        ".ytp-panel",
+        ".ytp-menuitem"
+      ],
+      "fallback": [
+        ".ytp-popup",
+        ".ytp-panel-menu",
+        ".ytp-overflow-panel",
+        "#movie_player .ytp-panel-menu"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Avoid forced menu opening where MAIN APIs exist."
+    },
+    "profile": {
+      "stable": [
+        "ytd-video-owner-renderer",
+        "ytd-channel-name",
+        "#channel-name",
+        "ytd-c4-tabbed-header-renderer",
+        "ytd-page-header-renderer"
+      ],
+      "fallback": [
+        "yt-avatar-shape",
+        "yt-decorated-avatar-view-model",
+        "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "mhtml/Channel.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Resolve channel ID or handle from links, not visible text."
+    },
+    "relatedSidebar": {
+      "stable": [
+        "#secondary ytd-watch-next-secondary-results-renderer",
+        "ytd-watch-next-secondary-results-renderer"
+      ],
+      "fallback": [
+        "ytd-watch-next-secondary-results-renderer.style-scope",
+        "#related"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Related and compact cards change often; resolve section root first."
+    },
+    "search": {
+      "stable": [
+        "yt-searchbox",
+        "input#search",
+        "form[role=\"search\"] input"
+      ],
+      "fallback": [
+        "yt-searchbox-input",
+        "ytd-searchbox #container.ytd-searchbox"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "mhtml/SearchResults.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Prefer roles and labels where present; avoid raw wrapper classes."
+    },
+    "searchResults": {
+      "stable": [
+        "ytd-search[page-subtype=\"search\"]",
+        "ytd-two-column-search-results-renderer[is-search]",
+        "ytd-section-list-renderer[page-subtype=\"search\"]"
+      ],
+      "fallback": [
+        "ytd-search",
+        "ytd-two-column-search-results-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/SearchResults.mhtml"
+      ],
+      "lastVerified": "2026-07-14",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Scope result hygiene to the search page; preserve filters, spelling corrections, and no-results renderers."
+    },
+    "settingsOverlay": {
+      "stable": [
+        "#ytkit-settings-panel",
+        "[data-ytkit-surface=\"control-center\"]",
+        ".ytkit-control-center",
+        "#ytkit-panel"
+      ],
+      "fallback": [
+        ".ytkit-panel",
+        ".ytkit-modal"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "extension/ytkit.js#createControlCenter"
+      ],
+      "lastVerified": "2026-07-09",
+      "highChurn": false,
+      "needsFreshCapture": false,
+      "notes": "Astra-owned UI must remain scoped and removable."
+    },
+    "shortsShelf": {
+      "stable": [
+        "a[href^=\"/shorts\"]",
+        "ytd-rich-shelf-renderer"
+      ],
+      "fallback": [
+        "yt-thumbnail-overlay-badge-view-model",
+        "ytd-reel-shelf-renderer"
+      ],
+      "hooks": {
+        "action.dislike": {
+          "stable": [
+            "ytd-reel-video-renderer[is-active] reel-action-bar-view-model dislike-button-view-model",
+            "ytd-reel-video-renderer reel-action-bar-view-model dislike-button-view-model"
+          ],
+          "fallback": [
+            "ytd-reel-video-renderer dislike-button-view-model",
+            "reel-action-bar-view-model dislike-button-view-model"
+          ],
+          "notes": ""
+        }
+      },
+      "captureEvidence": [
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "mhtml/Shorts.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "URL path is more stable than shelf wrapper names; action.dislike targets the current Shorts reel action bar."
+    },
+    "sidebar": {
+      "stable": [
+        "#secondary",
+        "ytd-watch-flexy #secondary"
+      ],
+      "fallback": [
+        "#secondary.style-scope",
+        "ytd-watch-flexy[is-two-columns_] #secondary"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": false,
+      "needsFreshCapture": false,
+      "notes": "Watch sidebar container for related, chat, and secondary panels."
+    },
+    "subscriptions": {
+      "stable": [
+        "ytd-browse ytd-rich-grid-renderer",
+        "ytd-rich-grid-renderer ytd-rich-item-renderer[lockup]",
+        "ytd-rich-item-renderer yt-lockup-view-model"
+      ],
+      "fallback": [
+        "ytd-browse",
+        "ytd-section-list-renderer ytd-video-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "Subscriptions - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-07-14",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "New lockup-view-model cards and classic video renderers are both supported; never replace native card semantics or actions."
+    },
+    "thumbnail": {
+      "stable": [
+        "ytd-thumbnail",
+        "yt-thumbnail-view-model",
+        "a#thumbnail"
+      ],
+      "fallback": [
+        "ytThumbnailViewModelHost",
+        "ytd-thumbnail a#thumbnail"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "mhtml/YouTube.mhtml",
+        "Subscriptions - YouTube.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml",
+        "mhtml/Shorts.mhtml",
+        "mhtml/SearchResults.mhtml",
+        "mhtml/Channel.mhtml"
+      ],
+      "lastVerified": "2026-06-05",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Resolve from nearest card root before querying document-wide."
+    },
+    "transcriptPanel": {
+      "stable": [
+        "ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-searchable-transcript\"]",
+        "[data-target-id=\"PAmodern_transcript_view\"]"
+      ],
+      "fallback": [
+        "ytd-engagement-panel-section-list-renderer[target-id=\"PAmodern_transcript_view\"]",
+        "ytd-transcript-renderer"
+      ],
+      "hooks": {},
+      "captureEvidence": [
+        "tests/fixtures/transcript-panel-classic.html",
+        "tests/fixtures/transcript-panel-modern.html"
+      ],
+      "lastVerified": "2026-07-14",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Legacy searchable transcript and PAmodern_transcript_view rollout shapes."
+    },
+    "watch": {
+      "stable": [
+        "ytd-watch-flexy[video-id]",
+        "ytd-watch-flexy",
+        "ytd-watch-metadata",
+        "#below"
+      ],
+      "fallback": [
+        "ytd-watch-metadata.watch-active-metadata",
+        "ytd-watch-flexy[flexy]"
+      ],
+      "hooks": {
+        "action.like": {
+          "stable": [
+            "ytd-watch-metadata #top-level-buttons-computed segmented-like-dislike-button-view-model",
+            "ytd-watch-metadata #top-level-buttons-computed like-button-view-model",
+            "ytd-watch-metadata #segmented-like-button"
+          ],
+          "fallback": [],
+          "notes": ""
+        },
+        "action.dislike": {
+          "stable": [
+            "ytd-watch-metadata #top-level-buttons-computed dislike-button-view-model",
+            "ytd-watch-metadata #top-level-buttons-computed ytd-segmented-like-dislike-button-renderer #dislike-button-view-model",
+            "ytd-watch-metadata #top-level-buttons-computed ytd-segmented-like-dislike-button-renderer"
+          ],
+          "fallback": [
+            "ytd-watch-metadata dislike-button-view-model",
+            "ytd-segmented-like-dislike-button-renderer #dislike-button-view-model",
+            "dislike-button-view-model"
+          ],
+          "notes": ""
+        },
+        "action.share": {
+          "stable": [
+            "ytd-watch-metadata #top-level-buttons-computed > yt-button-view-model",
+            "ytd-watch-metadata #top-level-buttons-computed > button-view-model",
+            "ytd-watch-metadata button-view-model:has(path[d^=\"M10 3.158\"])"
+          ],
+          "fallback": [
+            "ytd-watch-metadata button-view-model:has(button[aria-label=\"Share\"])",
+            "#top-level-buttons-computed ytd-button-renderer:has(button[aria-label=\"Share\"])"
+          ],
+          "notes": ""
+        },
+        "action.ask": {
+          "stable": [
+            "ytd-watch-metadata #flexible-item-buttons > conversational-ui-watch-metadata-button-view-model",
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([is-ask-ai])",
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([data-action=\"ask\"])"
+          ],
+          "fallback": [
+            "#flexible-item-buttons yt-button-view-model:has(button[aria-label*=\"AI\"])",
+            "ytd-watch-metadata button-view-model:has(button[aria-label=\"Ask\"])"
+          ],
+          "notes": ""
+        },
+        "action.clip": {
+          "stable": [
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has(path[d^=\"M22,3h-4\"])",
+            "ytd-watch-metadata button-view-model:has(path[d^=\"M22,3h-4\"])",
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:nth-of-type(3)"
+          ],
+          "fallback": [
+            "ytd-watch-metadata button-view-model:has(button[aria-label=\"Clip\"])",
+            "#top-level-buttons-computed ytd-button-renderer:has(button[aria-label=\"Clip\"])"
+          ],
+          "notes": ""
+        },
+        "action.thanks": {
+          "stable": [
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([data-action=\"thanks\"])",
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:nth-of-type(2)"
+          ],
+          "fallback": [
+            "ytd-watch-metadata button-view-model:has(button[aria-label=\"Thanks\"])",
+            "#top-level-buttons-computed ytd-button-renderer:has(button[aria-label=\"Thanks\"])"
+          ],
+          "notes": ""
+        },
+        "action.save": {
+          "stable": [
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has(path[d^=\"M19 2H5\"])",
+            "ytd-watch-metadata button-view-model:has(path[d^=\"M19 2H5\"])"
+          ],
+          "fallback": [
+            "ytd-watch-metadata button-view-model:has(button[aria-label=\"Save to playlist\"])",
+            "#top-level-buttons-computed ytd-button-renderer:has(button[aria-label=\"Save\"])"
+          ],
+          "notes": ""
+        },
+        "action.sponsor": {
+          "stable": [
+            "ytd-watch-metadata #sponsor-button",
+            ".ytFlexibleActionsViewModelAction:has(#sponsor-button)"
+          ],
+          "fallback": [],
+          "notes": ""
+        },
+        "action.moreActions": {
+          "stable": [
+            "ytd-watch-metadata #actions-inner #button-shape > button",
+            "ytd-watch-metadata ytd-menu-renderer > yt-button-shape#button-shape > button"
+          ],
+          "fallback": [
+            "ytd-watch-metadata button[aria-label=\"More actions\"]"
+          ],
+          "notes": ""
+        },
+        "element.askButton": {
+          "stable": [
+            "ytd-watch-metadata #flexible-item-buttons > conversational-ui-watch-metadata-button-view-model button",
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([is-ask-ai]) button"
+          ],
+          "fallback": [
+            "ytd-watch-metadata button[aria-label*=\"AI\"]",
+            "ytd-watch-metadata button[aria-label=\"Ask\"]"
+          ],
+          "notes": ""
+        },
+        "element.askAiSurface": {
+          "stable": [
+            "ytd-watch-metadata #flexible-item-buttons > conversational-ui-watch-metadata-button-view-model",
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has([is-ask-ai])",
+            "ytd-reel-shelf-renderer:has([is-ask-ai])"
+          ],
+          "fallback": [
+            "ytd-video-description-youchat-section-view-model",
+            "[data-ai-surface=\"ask\"]"
+          ],
+          "notes": ""
+        },
+        "element.saveButton": {
+          "stable": [
+            "ytd-watch-metadata #flexible-item-buttons > yt-button-view-model:has(path[d^=\"M19 2H5\"]) button",
+            "ytd-watch-metadata button-view-model:has(path[d^=\"M19 2H5\"]) button"
+          ],
+          "fallback": [
+            "ytd-watch-metadata button[aria-label=\"Save to playlist\"]"
+          ],
+          "notes": ""
+        },
+        "element.moreActions": {
+          "stable": [
+            "ytd-watch-metadata #actions-inner #button-shape > button",
+            "ytd-watch-metadata ytd-menu-renderer > yt-button-shape#button-shape > button"
+          ],
+          "fallback": [
+            "ytd-watch-metadata button[aria-label=\"More actions\"]"
+          ],
+          "notes": ""
+        }
+      },
+      "captureEvidence": [
+        "mhtml/WatchPage.mhtml",
+        "Worldwide Societal Collapse... - YouTube.mhtml"
+      ],
+      "lastVerified": "2026-05-19",
+      "highChurn": true,
+      "needsFreshCapture": false,
+      "notes": "Route state is best read from ytd-watch-flexy[video-id]."
+    }
+  },
+  "digest": "sha256:2562d58a6f11046f0132163ce2b22addc922646d554964b667eeff4a35c4e951"
+}

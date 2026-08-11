@@ -4379,8 +4379,23 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
+  "selectorHealthAssetTpl": {
+    "message": "Правила: {status} · {version} · {source}"
+  },
   "selectorHealthEmpty": {
     "message": "Поверхности ещё не зафиксированы."
+  },
+  "selectorHealthRefreshAria": {
+    "message": "Обновить правила селекторов"
+  },
+  "selectorHealthRefreshBtn": {
+    "message": "Обновить правила"
+  },
+  "selectorHealthRefreshFailed": {
+    "message": "Правила селекторов не обновлены."
+  },
+  "selectorHealthRefreshPending": {
+    "message": "Обновление правил селекторов…"
   },
   "selectorHealthTitle": {
     "message": "Состояние селекторов"

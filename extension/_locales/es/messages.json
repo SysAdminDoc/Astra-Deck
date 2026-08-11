@@ -4379,8 +4379,23 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
+  "selectorHealthAssetTpl": {
+    "message": "Reglas: {status} · {version} · {source}"
+  },
   "selectorHealthEmpty": {
     "message": "Aún no se han muestreado superficies."
+  },
+  "selectorHealthRefreshAria": {
+    "message": "Actualizar reglas de selectores"
+  },
+  "selectorHealthRefreshBtn": {
+    "message": "Actualizar reglas"
+  },
+  "selectorHealthRefreshFailed": {
+    "message": "No se actualizaron las reglas de selectores."
+  },
+  "selectorHealthRefreshPending": {
+    "message": "Actualizando reglas de selectores…"
   },
   "selectorHealthTitle": {
     "message": "Salud de selectores"

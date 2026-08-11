@@ -4379,8 +4379,23 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
+  "selectorHealthAssetTpl": {
+    "message": "规则：{status} · {version} · {source}"
+  },
   "selectorHealthEmpty": {
     "message": "尚未采样任何表面。"
+  },
+  "selectorHealthRefreshAria": {
+    "message": "刷新选择器规则"
+  },
+  "selectorHealthRefreshBtn": {
+    "message": "刷新规则"
+  },
+  "selectorHealthRefreshFailed": {
+    "message": "选择器规则未刷新。"
+  },
+  "selectorHealthRefreshPending": {
+    "message": "正在刷新选择器规则…"
   },
   "selectorHealthTitle": {
     "message": "选择器健康度"

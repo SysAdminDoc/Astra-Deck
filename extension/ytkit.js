@@ -852,6 +852,54 @@
         };
     }
 
+    const SELECTOR_ASSET_STORAGE_KEY = 'ytkit-selector-asset';
+
+    async function hydrateStoredSelectorAsset() {
+        const selectorCore = globalThis.YTKitCore || {};
+        if (typeof selectorCore.applySelectorAsset !== 'function') return null;
+        const stored = storageReadJSON(SELECTOR_ASSET_STORAGE_KEY, null);
+        if (!stored) return null;
+        const result = await selectorCore.applySelectorAsset(stored, { source: 'stored' });
+        if (!result.ok) {
+            // A stale/corrupt local candidate must not strand every future
+            // boot in rollback. The shipped JS packs remain active and the
+            // next explicit refresh can recover a newer verified asset.
+            try { await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY, null, { immediate: true }); } catch (_) {
+                // reason: storage cleanup is best-effort; selectors already rolled back safely
+            }
+        }
+        return result;
+    }
+
+    async function refreshSelectorAsset() {
+        const selectorCore = globalThis.YTKitCore || {};
+        if (typeof selectorCore.applySelectorAsset !== 'function') {
+            return { ok: false, error: 'Selector asset runtime is unavailable.' };
+        }
+        const response = await sendRuntimeMessage({ type: 'YTKIT_FETCH_SELECTOR_ASSET' });
+        if (!response?.ok || typeof response.text !== 'string') {
+            return {
+                ok: false,
+                error: response?.error || 'Selector asset fetch failed.',
+                selectorAsset: selectorCore.getSelectorAssetState?.() || null
+            };
+        }
+        const result = await selectorCore.applySelectorAsset(response.text, { source: 'remote' });
+        if (result.ok) {
+            try {
+                await storageWriteJSON(SELECTOR_ASSET_STORAGE_KEY, JSON.parse(response.text), { immediate: true });
+            } catch (error) {
+                // The verified map is already active. A storage failure only
+                // means the next page starts from the shipped offline copy.
+                result.storageError = String(error?.message || error).slice(0, 180);
+            }
+        }
+        return {
+            ...result,
+            selectorAsset: selectorCore.getSelectorAssetState?.() || result.state || null
+        };
+    }
+
     const browserCookies = {
         list(filter, callback) {
             sendRuntimeMessage({
@@ -908,6 +956,7 @@ return response;
     installStorageChangeListener();
     installStorageFlushGuards();
     await preloadExtensionState();
+    await hydrateStoredSelectorAsset();
 
     // Bridge to page context for reading ytInitialPlayerResponse from DOM
     const _rw = {
@@ -6052,17 +6101,31 @@ return response;
                             ? DiagnosticLog.countsByCtx()
                             : {};
                         const mutationRules = globalThis.YTKitCore?.getMutationRuleHealthSnapshot?.() || [];
+                        const selectorAsset = globalThis.YTKitCore?.getSelectorAssetState?.() || null;
                         sendResponse?.({
                             ok: true,
                             surfaces: surfaces.slice(0, 12),  // bound payload — popup only shows top few
                             totalSurfaces: surfaces.length,
                             ctxCounts,
-                            mutationRules
+                            mutationRules,
+                            selectorAsset
                         });
                     } catch (e) {
                         sendResponse?.({ ok: false, error: String(e?.message || e) });
                     }
                     return false;
+                }
+
+                if (message.type === 'YTKIT_REFRESH_SELECTOR_ASSET') {
+                    refreshSelectorAsset().then(
+                        (result) => sendResponse?.(result),
+                        (error) => sendResponse?.({
+                            ok: false,
+                            error: String(error?.message || error),
+                            selectorAsset: globalThis.YTKitCore?.getSelectorAssetState?.() || null
+                        })
+                    );
+                    return true;
                 }
 
                 if (message.type === 'YTKIT_GET_FEATURE_PERF') {
