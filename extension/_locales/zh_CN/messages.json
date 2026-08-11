@@ -5555,7 +5555,7 @@
     "message": "Nothing new since your last visit stamp."
   },
   "subscriptionHealthNewHeading": {
-    "message": "New since last visit"
+    "message": "上次访问后新增"
   },
   "subscriptionHealthNewSummaryTpl": {
     "message": "{videos} new videos from {channels} channels since your last visit."
@@ -5679,6 +5679,24 @@
   },
   "subscriptionOrderNewestLoaded": {
     "message": "最新优先（仅已加载）"
+  },
+  "subscriptionSortYouTubeDefault": {
+    "message": "YouTube 默认"
+  },
+  "subscriptionSortLatest": {
+    "message": "最新优先"
+  },
+  "subscriptionSortShortest": {
+    "message": "最短优先"
+  },
+  "subscriptionSortUnwatched": {
+    "message": "未观看优先"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "上次访问后新增"
+  },
+  "subscriptionSortPopular": {
+    "message": "最受欢迎（观看次数）"
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"

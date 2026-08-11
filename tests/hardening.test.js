@@ -5064,7 +5064,7 @@ test('subscriptionGroups popularity sort reads view-count from card metadata', (
         'subscriptionGroups must declare _parseCompactViewCount()');
     assert.match(block, /mode === 'popular'/,
         '_applySort must branch on the popular mode');
-    assert.match(block, /\['popular', 'Most popular \(views\)'\]/,
+    assert.match(block, /\['popular', t\('subscriptionSortPopular', 'Most popular \(views\)'\)\]/,
         'sort select must surface the popularity option');
     // higher views → lower score → earlier in DOM
     assert.match(block, /return -views;/,
