@@ -53,6 +53,22 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   `docs/store-permission-rationale.md`, then record the live listing URLs and
   review outcomes.
 
+## P2 — Firefox self-distribution signing (2026-08-11)
+
+- [ ] P2 — Sign and activate the Firefox self-update channel
+  Why: the release pipeline now emits `updates.json` with a SHA-256-pinned
+  `store-safe` XPI link, and the matching Firefox manifest points at the
+  stable feed. Firefox will not accept or auto-update the currently released
+  unsigned XPI.
+  Blocker: enabling the channel requires the maintainer to choose and
+  authorize Mozilla signing/self-distribution (AMO listed or unlisted),
+  authenticate the publisher account, and publish the signed XPI and
+  `updates.json` release assets. Those account credentials and publication
+  decisions are unavailable to an autonomous coding agent.
+  Needs: complete Mozilla signing, upload the signed
+  `astra-deck-store-safe-firefox-v*.xpi` and `updates.json`, then verify an
+  installed signed copy discovers and applies a later release.
+
 - [ ] P3 — aria2c external-downloader option
   Why: parallel external downloading could improve throughput for some large media, but the requested integration contradicts the repository's active security invariant.
   Evidence: `astra_downloader/test_astra_downloader.py` (`Aria2cExternalDownloaderBanTests`); `CHANGELOG.md` (CVE-2026-50574 external-downloader ban).

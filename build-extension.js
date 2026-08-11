@@ -726,7 +726,7 @@ function patchStagedManifest(stageDir, profile, browser) {
     const manifestPath = path.join(stageDir, 'manifest.json');
     const stagedManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     patchManifestForBuildProfile(stagedManifest, profile, browser);
-    if (browser === 'firefox') patchManifestForFirefox(stagedManifest);
+    if (browser === 'firefox') patchManifestForFirefox(stagedManifest, profile);
     fs.writeFileSync(manifestPath, JSON.stringify(stagedManifest, null, 2) + '\n', 'utf8');
     patchStagedRuntimeGraph(stageDir, profile);
 }

@@ -10,6 +10,7 @@ const path = require('path');
 const { expectedReleaseNames } = require('../scripts/generate-release-manifest');
 const {
     buildReadinessReport,
+    buildBundleParityCheck,
     parseArgs,
     parseSha256Sums,
     renderMarkdown
@@ -75,6 +76,13 @@ function writeFixtureRepo({ crxSigningMode = 'external', validationBuild = false
     fs.writeFileSync(path.join(buildDir, 'SHA256SUMS'), sums);
     return { root, buildDir, version };
 }
+
+test('release readiness verifies the repository userscript bundle without throwing', () => {
+    const check = buildBundleParityCheck(path.join(__dirname, '..'));
+
+    assert.equal(check.status, 'pass');
+    assert.match(check.details, /byte-identical to their source modules/);
+});
 
 
 
@@ -308,7 +316,6 @@ test('release SBOM generation uses production package-lock dependencies', () => 
     assert.ok(sbom.dependencies.some((entry) => entry.dependsOn && entry.dependsOn.length),
         'SBOM must include dependency graph edges');
 });
-
 
 
 

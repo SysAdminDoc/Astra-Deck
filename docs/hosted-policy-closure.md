@@ -226,6 +226,21 @@ Cycle 22 companion release-channel item.
 For a companion release pass, use `docs/signing-keys.md` and the companion
 release-channel roadmap item instead of this repository-settings runbook.
 
+## Firefox Self-Distribution Update Channel
+
+As of 2026-08-11, the local release pipeline also emits `build/updates.json`
+and includes it in `release-manifest.json` and `SHA256SUMS`. The feed contains
+the existing `ytkit@sysadmindoc.github.io` Gecko ID, the HTTPS GitHub Release
+link for `astra-deck-store-safe-firefox-vN.N.N.xpi`, and its `sha256:` hash.
+The `store-safe` Firefox manifest is patched with the stable URL
+`https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/updates.json`.
+
+`chromium-store` and `github-full` Firefox artifacts intentionally omit that
+URL: they have different capability ceilings or companion expectations, and
+must not silently update into the store-safe channel. The feed becomes a real
+update path only after the XPI is signed by Mozilla; signing and publication
+remain operator-gated in `Roadmap_Blocked.md`.
+
 ## Final Evidence To Record
 
 After each hosted change, update `docs/repo-settings.md` with:

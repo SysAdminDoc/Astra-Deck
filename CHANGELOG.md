@@ -15,6 +15,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Release builds now emit a Firefox `updates.json` feed with SHA-256-pinned
+  `store-safe` XPI links, and the patched store-safe Firefox manifest points
+  at the stable latest-release feed. The feed remains inert until the XPI is
+  Mozilla-signed; other capability profiles do not cross-update into it.
 - Added a `chromium-store` extension profile for Chrome Web Store and Edge
   submissions. It removes the downloader runtime, Cobalt and loopback access,
   and companion-only permissions while preserving the core YouTube features;
