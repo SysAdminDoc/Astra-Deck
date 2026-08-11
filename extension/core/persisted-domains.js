@@ -15,6 +15,8 @@
     const FILTER_LIST_MAX_BYTES = 1024 * 1024;
     const FILTER_LIST_MAX_KEYWORD_CHARS = 20000;
     const FILTER_LIST_SUBSCRIPTION_KEY = 'ytkit-video-filter-list-subscription';
+    const HIGHLIGHT_EXPORT_VERSION = 1;
+    const HIGHLIGHT_EXPORT_KIND = 'video-highlight-bundle';
     const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
     const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
     const SENSITIVE_KEYS = new Set([
@@ -475,6 +477,42 @@
         return out;
     }
 
+    // A highlight pack is a focused, import-compatible backup. It carries
+    // only the durable domains needed to restore the current video's notes,
+    // bookmarks, and summaries, while the rendered transcript remains a
+    // portable artifact rather than replacing the full transcript index.
+    function createHighlightExport(domains, highlightBundle, options = {}) {
+        const source = isPlainObject(domains) ? domains : {};
+        const included = {};
+        for (const domain of INCLUDED_DOMAINS) {
+            if (!Object.prototype.hasOwnProperty.call(source, domain.id)) continue;
+            included[domain.id] = sanitizeDomainValue(domain.id, source[domain.id]);
+        }
+        const settingsVersion = Number(options.settingsSchemaVersion);
+        const unavailable = Array.isArray(options.unavailableDomains)
+            ? [...new Set(options.unavailableDomains.filter((id) => typeof id === 'string').slice(0, 20))]
+            : ['transcriptIndex'];
+        return {
+            astraDeckBackup: true,
+            astraDeckHighlightExport: true,
+            highlightExportVersion: HIGHLIGHT_EXPORT_VERSION,
+            highlightExportKind: HIGHLIGHT_EXPORT_KIND,
+            exportVersion: BACKUP_EXPORT_VERSION,
+            backupSchemaVersion: BACKUP_SCHEMA_VERSION,
+            settingsSchemaVersion: Number.isInteger(settingsVersion) && settingsVersion > 0 ? settingsVersion : 1,
+            // Keep the legacy top-level mirrors for the userscript importer
+            // and older Astra builds; the current popup uses `domains`.
+            settings: included.settings || {},
+            bookmarks: included.bookmarks || {},
+            aiSummaries: included.aiSummaries || {},
+            domains: included,
+            unavailableDomains: unavailable,
+            highlightBundle: safeClone(highlightBundle),
+            exportDate: typeof options.exportDate === 'string' ? options.exportDate.slice(0, 64) : new Date().toISOString(),
+            ytkitVersion: typeof options.ytkitVersion === 'string' ? options.ytkitVersion.slice(0, 32) : ''
+        };
+    }
+
     function domainsToExtensionWrites(domains) {
         const writes = {};
         if (!isPlainObject(domains)) return writes;
@@ -536,6 +574,22 @@
             settingsSchemaVersion: Number(raw.settingsSchemaVersion || raw.backupSchemaVersion || 1),
             domains,
             exclusions: EXCLUDED_DOMAINS.map(({ id, reason }) => ({ id, reason }))
+        };
+    }
+
+    function parseHighlightExport(raw) {
+        if (!isPlainObject(raw)
+            || raw.astraDeckHighlightExport !== true
+            || raw.highlightExportKind !== HIGHLIGHT_EXPORT_KIND
+            || Number(raw.highlightExportVersion) !== HIGHLIGHT_EXPORT_VERSION) {
+            throw new Error('Unsupported or invalid Astra Deck highlight export');
+        }
+        const migrated = migrateBackup(raw);
+        return {
+            ...migrated,
+            highlightExportVersion: HIGHLIGHT_EXPORT_VERSION,
+            highlightExportKind: HIGHLIGHT_EXPORT_KIND,
+            highlightBundle: safeClone(raw.highlightBundle)
         };
     }
 
@@ -862,15 +916,19 @@
         FILTER_LIST_KIND,
         FILTER_LIST_MAX_BYTES,
         FILTER_LIST_SUBSCRIPTION_KEY,
+        HIGHLIGHT_EXPORT_VERSION,
+        HIGHLIGHT_EXPORT_KIND,
         DURABLE_DOMAIN_REGISTRY,
         INCLUDED_DOMAINS,
         EXCLUDED_DOMAINS,
         PAGE_DB,
         openPageDb,
         buildIncludedDomainPayload,
+        createHighlightExport,
         domainsToExtensionWrites,
         extensionKeysToRemove,
         migrateBackup,
+        parseHighlightExport,
         sanitizeMigratedDomains,
         sanitizeDomainValue,
         normalizeFilterListUrl,

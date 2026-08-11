@@ -6,13 +6,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 - [ ] Six `Roadmap_Blocked.md` items (Force DVR, replay chat-density chart, opt-in settings sync, logarithmic volume curve, volatile-project-facts gate, immutable build-profile ceilings) cite a self-imposed "this run forbids staging Markdown other than README/CHANGELOG" constraint as their blocker. That is not an external blocker. Move them back to this file on the next pass.
 
-- [ ] P2 — Timestamped-highlight export loop
-  Why: this is what the commercial tier actually paywalls — Glasp gates auto-sync to Notion at $12.50–$30/mo and Readwise Reader's $9.99/mo is the highlight→export loop — while Astra already owns transcripts, bookmarks, notes and AI artifacts and gives them no coherent way out.
-  Evidence: `glasp.co/pricing`; Astra ships `researchTranscriptIndex`, timestamp bookmarks, video notes and `ytkit-ai-summaries` as separate stores with separate exports.
-  Touches: `extension/core/transcript-service.js`, `extension/core/ai-summary-artifacts.js`, the notes and bookmarks features in `extension/ytkit.js`, `extension/core/persisted-domains.js`
-  Acceptance: one action exports a video's highlights, notes, bookmarks and summary as Markdown with clickable timestamps (Obsidian-compatible) and as JSON; round-trips through the existing schema-versioned import.
-  Complexity: M
-
 - [ ] P2 — Per-quality data-usage estimate before playback
   Why: a dedicated extension took 256 stars since 2026-02 on this alone, and the companion already enumerates formats with their sizes.
   Evidence: `MohamedSayed0573/TubeSize_Extension`; ImprovedTube #566 (5 👍); the `/formats` path in `extension/features/download-ui/index.js`.

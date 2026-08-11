@@ -23189,6 +23189,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btn: null,
             _countEl: null,
             _statusEl: null,
+            _exportBtn: null,
+            _exportBusy: false,
             _injectTimer: null,
             _scheduleInject(delay = 2500) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
@@ -23366,6 +23368,121 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._panel.appendChild(listEl);
             },
 
+            _currentVideoNote(videoId) {
+                const notesFeature = getFeatureById('videoNotes');
+                const notes = notesFeature?._readNotes?.()
+                    || (isPlainObject(appState.settings?.videoNotesData) ? appState.settings.videoNotesData : {});
+                return isPlainObject(notes) ? notes[videoId] || null : null;
+            },
+
+            _buildHighlightBackup(bundle, bookmarks, summaries) {
+                const settingsSnapshot = settingsManager?._buildSchemaValidatedExportSettings
+                    ? settingsManager._buildSchemaValidatedExportSettings(appState.settings || {}).settings
+                    : (isPlainObject(appState.settings) ? appState.settings : {});
+                const persisted = globalThis.YTKitCore?.persistedDomains;
+                const domains = { settings: settingsSnapshot, bookmarks, aiSummaries: summaries };
+                if (typeof persisted?.createHighlightExport === 'function') {
+                    return persisted.createHighlightExport(domains, bundle, {
+                        settingsSchemaVersion: settingsManager?.SETTINGS_VERSION,
+                        ytkitVersion: YTKIT_VERSION,
+                        unavailableDomains: ['transcriptIndex']
+                    });
+                }
+                // The userscript intentionally omits the extension-only
+                // persisted-domain module, but its JSON remains consumable by
+                // the popup because it uses the same current backup envelope.
+                return {
+                    astraDeckBackup: true,
+                    astraDeckHighlightExport: true,
+                    highlightExportVersion: globalThis.YTKitCore?.aiSummaryArtifacts?.HIGHLIGHT_EXPORT_VERSION || 1,
+                    highlightExportKind: globalThis.YTKitCore?.aiSummaryArtifacts?.HIGHLIGHT_EXPORT_KIND || 'video-highlight-bundle',
+                    exportVersion: 5,
+                    backupSchemaVersion: 2,
+                    settingsSchemaVersion: settingsManager?.SETTINGS_VERSION || 1,
+                    settings: domains.settings,
+                    bookmarks: domains.bookmarks,
+                    aiSummaries: domains.aiSummaries,
+                    domains,
+                    unavailableDomains: ['transcriptIndex'],
+                    highlightBundle: bundle,
+                    exportDate: new Date().toISOString(),
+                    ytkitVersion: YTKIT_VERSION
+                };
+            },
+
+            async _exportHighlightPack() {
+                if (this._exportBusy) return;
+                const videoId = getVideoId();
+                const artifactService = globalThis.YTKitCore?.aiSummaryArtifacts;
+                if (!videoId) {
+                    showToast(t('timestampHighlightNoVideo', 'No video is currently open.'), '#ef4444');
+                    return;
+                }
+                if (typeof artifactService?.createVideoHighlightBundle !== 'function'
+                    || typeof artifactService.videoHighlightBundleToMarkdown !== 'function') {
+                    showToast(t('timestampHighlightExportFailed', 'Highlight export is unavailable. Reload Astra Deck and try again.'), '#ef4444');
+                    return;
+                }
+                this._exportBusy = true;
+                if (this._exportBtn) {
+                    this._exportBtn.disabled = true;
+                    this._exportBtn.setAttribute('aria-busy', 'true');
+                    this._exportBtn.textContent = t('timestampHighlightExporting', 'Preparing highlight pack…');
+                }
+                try {
+                    const bookmarks = this._getBookmarks();
+                    const summaryStore = artifactService.sanitizeArtifactStore(
+                        StorageManager.get(STORAGE_KEYS.aiSummaries, {})
+                    );
+                    const summary = artifactService.searchArtifacts(summaryStore)
+                        .find((artifact) => artifact.videoId === videoId) || null;
+                    const title = (document.querySelector('ytd-watch-metadata h1, h1.ytd-watch-metadata, #title h1')?.textContent
+                        || summary?.title || document.title || videoId).trim().replace(/\s+/g, ' ').slice(0, 300);
+                    let transcript = { status: 'unavailable', videoId, title, segments: [] };
+                    try {
+                        const fetched = await TranscriptService.fetchTranscript(videoId);
+                        const normalized = typeof TranscriptService.normalizeSegments === 'function'
+                            ? TranscriptService.normalizeSegments(fetched.segments)
+                            : (globalThis.YTKitCore?.normalizeTranscriptSegments
+                                ? globalThis.YTKitCore.normalizeTranscriptSegments(fetched.segments)
+                                : { cues: fetched.segments || [], truncated: false });
+                        transcript = {
+                            ...fetched,
+                            title: fetched.title || title,
+                            segments: normalized.cues,
+                            truncated: normalized.truncated
+                        };
+                    } catch (error) {
+                        transcript.error = String(error?.message || error).slice(0, 240);
+                    }
+                    const bundle = artifactService.createVideoHighlightBundle({
+                        videoId,
+                        title,
+                        transcript,
+                        bookmarks: bookmarks[videoId] || [],
+                        note: this._currentVideoNote(videoId),
+                        summary
+                    });
+                    if (!bundle) throw new Error('Highlight bundle validation failed');
+                    const backup = this._buildHighlightBackup(bundle, bookmarks, summaryStore);
+                    const stamp = new Date().toISOString().slice(0, 10);
+                    const stem = `astra-deck-highlights-${videoId}-${stamp}`;
+                    handleFileExport(`${stem}.md`, artifactService.videoHighlightBundleToMarkdown(bundle), 'text/markdown;charset=utf-8');
+                    handleFileExport(`${stem}.json`, JSON.stringify(backup, null, 2));
+                    showToast(t('timestampHighlightExported', 'Highlight pack exported as Markdown and JSON.'), '#22c55e');
+                } catch (error) {
+                    DiagnosticLog?.record('timestampBookmarks.highlightExport', error.message);
+                    showToast(t('timestampHighlightExportFailed', 'Highlight export failed. Your saved data is unchanged.'), '#ef4444');
+                } finally {
+                    this._exportBusy = false;
+                    if (this._exportBtn) {
+                        this._exportBtn.disabled = false;
+                        this._exportBtn.removeAttribute('aria-busy');
+                        this._exportBtn.textContent = t('timestampHighlightExport', 'Export Highlight Pack');
+                    }
+                }
+            },
+
             _inject() {
                 const secondary = document.querySelector('#secondary-inner, #below');
                 if (!secondary || secondary.querySelector('.ytkit-bookmarks-container')) return;
@@ -23394,12 +23511,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const count = document.createElement('span');
                 count.className = 'ytkit-bookmarks-count';
                 this._countEl = count;
+                const exportBtn = document.createElement('button');
+                exportBtn.type = 'button';
+                exportBtn.className = 'ytkit-bookmarks-add';
+                exportBtn.dataset.action = 'export-highlight-pack';
+                exportBtn.textContent = t('timestampHighlightExport', 'Export Highlight Pack');
+                exportBtn.setAttribute('aria-label', t('timestampHighlightExportAria', 'Export this video’s highlights, notes, bookmarks, and summary'));
+                exportBtn.onclick = () => { void this._exportHighlightPack(); };
+                this._exportBtn = exportBtn;
                 const addBtn = document.createElement('button');
                 addBtn.type = 'button';
                 addBtn.className = 'ytkit-bookmarks-add';
                 addBtn.textContent = 'Save Current Time';
                 addBtn.onclick = () => this._addBookmark();
                 headerActions.appendChild(count);
+                headerActions.appendChild(exportBtn);
                 headerActions.appendChild(addBtn);
                 header.appendChild(headerMain);
                 header.appendChild(headerActions);
@@ -23420,6 +23546,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._panel = null;
                     this._countEl = null;
                     this._statusEl = null;
+                    this._exportBtn = null;
                     this._scheduleInject(2500);
                 });
             },
@@ -23430,6 +23557,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._panel = null;
                 this._countEl = null;
                 this._statusEl = null;
+                this._exportBtn = null;
+                this._exportBusy = false;
                 document.querySelectorAll('.ytkit-bookmarks-container').forEach(el => el.remove());
             }
         },

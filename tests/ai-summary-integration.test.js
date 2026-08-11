@@ -60,6 +60,22 @@ test('extension summary UI validates citations before saving and exposes searcha
     assert.match(block, /forced-colors:active/);
 });
 
+test('timestamp bookmark panel exports one current-video highlight pack in both formats', () => {
+    const start = ytkit.indexOf("id: 'timestampBookmarks'");
+    const end = ytkit.indexOf("id: 'videoNotes'", start);
+    assert.ok(start > -1 && end > start);
+    const block = ytkit.slice(start, end);
+    assert.match(block, /async _exportHighlightPack\(\)/);
+    assert.match(block, /TranscriptService\.fetchTranscript\(videoId\)/);
+    assert.match(block, /createVideoHighlightBundle\(/);
+    assert.match(block, /videoHighlightBundleToMarkdown\(bundle\)/);
+    assert.match(block, /handleFileExport\(`\$\{stem\}\.md`/);
+    assert.match(block, /handleFileExport\(`\$\{stem\}\.json`/);
+    assert.match(block, /createHighlightExport/);
+    assert.match(block, /unavailableDomains: \['transcriptIndex'\]/);
+    assert.match(block, /dataset\.action = 'export-highlight-pack'/);
+});
+
 test('gemini requests honor aiSummaryModel via a validated URL model substitution', () => {
     // The model rides in the URL path for Gemini; the setting must be
     // substituted (validated) instead of silently ignored.

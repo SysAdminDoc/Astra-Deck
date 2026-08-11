@@ -121,6 +121,22 @@ test('_formatTimestamp formats hours when ms >= 1h, MM:SS otherwise', () => {
     assert.equal(svc._formatTimestamp(3_725_000), '01:02:05');
 });
 
+test('normalizeTranscriptSegments creates bounded export cues without provider fields', () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const svc = createTranscriptService({});
+    const normalized = svc.normalizeSegments([
+        { startMs: 0, endMs: 1000, text: ' first\ncaption ' },
+        { startMs: 65000, endMs: 70000, text: 'second' },
+        { startMs: 90000, endMs: 91000, text: 'third' }
+    ], { maxSegments: 2 });
+    assert.deepEqual(normalized.cues.map((cue) => [cue.id, cue.timestamp, cue.text]), [
+        ['C0001', '0:00', 'first caption'],
+        ['C0002', '1:05', 'second']
+    ]);
+    assert.equal(normalized.truncated, true);
+    assert.equal(normalized.cues[0].startMs, undefined);
+});
+
 test('Innertube API method requires a page-derived API key', async () => {
     const createTranscriptService = loadFactoryIntoFreshGlobal();
     let fetchCalled = false;

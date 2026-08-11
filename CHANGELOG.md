@@ -39,6 +39,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   with transactional Undo Import recovery, or refreshed from an optional HTTPS
   list through the bounded extension fetch bridge. Remote lists remain
   data-only and never execute predicate code.
+- Timestamp Bookmarks now export a current video's transcript highlights,
+  bookmarks, local note, and saved AI summary as both clickable Markdown and
+  an import-compatible JSON highlight pack.
 
 ---
 
