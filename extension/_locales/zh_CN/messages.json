@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "有内容"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "保存当前时间"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "已允许 {count} 个频道"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "有内容"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "为空"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "视频已添加到隐藏列表"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "视频已隐藏"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "视频已从隐藏列表移除"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "视频不在隐藏列表中"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "视频已添加到允许列表"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "视频已从隐藏列表移至允许列表"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "视频已被允许"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "按标题或频道文字隐藏视频。添加逗号分隔的关键词；使用 ! 始终允许匹配，或以 / 开头使用正则表达式。"
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "关键词隐藏匹配项"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!关键词始终允许匹配项"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i 运行正则规则"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "时长过滤器"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "自动隐藏短于所选最小时长的视频。"
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "订阅加载限制器"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "连续多个批次全部隐藏时，停止订阅页的无限加载。"
   }
 }

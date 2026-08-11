@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "Activo"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "Guardar momento actual"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} canales permitidos"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "Activo"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "Vacío"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "Vídeo añadido a la lista de ocultos"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "El vídeo ya está oculto"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "Vídeo eliminado de la lista de ocultos"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "El vídeo no estaba en la lista de ocultos"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "Vídeo añadido a la lista de permitidos"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "Vídeo movido de oculto a permitido"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "El vídeo ya está permitido"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "Oculta vídeos por título o texto del canal. Añade palabras clave separadas por comas, usa ! para permitir siempre una coincidencia o empieza por / para usar una expresión regular."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "la palabra clave oculta coincidencias"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!palabra clave permite siempre las coincidencias"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/patrón/i ejecuta una regla de expresión regular"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "Filtro de duración"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "Oculta automáticamente los vídeos más cortos que la duración mínima elegida."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "Límite de carga de suscripciones"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "Detén la carga interminable en Suscripciones cuando se oculten por completo demasiados lotes consecutivos."
   }
 }

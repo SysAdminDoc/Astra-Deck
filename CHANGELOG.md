@@ -54,6 +54,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The monolith Timestamp Bookmarks fallback now localizes bookmark actions,
   panel status, empty states, metadata, and accessible labels, removing 19
   grandfathered literals from the ratchet.
+- The monolith Video Hider fallback now localizes video lists, channel actions,
+  keyword rules, thresholds, duration controls, and subscription-load settings,
+  removing 102 grandfathered literals from the ratchet.
 - Subscription-group badges, stale-channel dates, staged-unsubscribe labels,
   and persisted default group names now use locale keys, removing 9 more
   grandfathered literals.

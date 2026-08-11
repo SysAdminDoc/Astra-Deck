@@ -2152,7 +2152,7 @@
     "message": "Hide the Live topic entry"
   },
   "feature_guideHide_live_name": {
-    "message": "Live"
+    "message": "Actif"
   },
   "feature_guideHide_movies_desc": {
     "message": "Hide the Movies & TV entry"
@@ -7342,5 +7342,59 @@
   },
   "timestampBookmarksSaveCurrentTime": {
     "message": "Enregistrer le moment actuel"
+  },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} chaînes autorisées"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "Actif"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "Vide"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "Vidéo ajoutée à la liste des vidéos masquées"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "La vidéo est déjà masquée"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "Vidéo retirée de la liste des vidéos masquées"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "La vidéo ne figurait pas dans la liste des vidéos masquées"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "Vidéo ajoutée à la liste des vidéos autorisées"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "Vidéo déplacée de la liste masquée vers la liste autorisée"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "La vidéo est déjà autorisée"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "Masquez les vidéos par titre ou texte de chaîne. Ajoutez des mots-clés séparés par des virgules, utilisez ! pour toujours autoriser une correspondance ou commencez par / pour une expression régulière."
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "le mot-clé masque les correspondances"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!mot-clé autorise toujours les correspondances"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/motif/i exécute une règle regex"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "Filtre de durée"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "Masquez automatiquement les vidéos plus courtes que la durée minimale choisie."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "Limiteur de chargement des abonnements"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "Arrêtez le chargement sans fin des abonnements lorsque trop de lots consécutifs sont entièrement masqués."
   }
 }
