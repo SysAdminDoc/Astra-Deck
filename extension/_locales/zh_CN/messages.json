@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "喜欢比例使用 Return YouTube Dislike 估算数量。{estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "前往订阅"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "快速链接"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "直播视频"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "直播视频信息"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "直播"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "直播视频操作"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "视频操作"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "关闭侧边栏"
   }
 }

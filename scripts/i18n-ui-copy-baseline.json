@@ -5,17 +5,11 @@
       "count": 2,
       "digest": "9897409d22353e07cbf260bb49e396f2171b88dc102056d14d2801e686bb9e8e"
     },
-    "extension/features/sticky-video/index.js": {
-      "count": 9,
-      "digest": "c82eb242c13aa707294b6615bdc0e07e3b987d65c325c64e005338f9cf88e06e",
-      "strictCount": 8,
-      "strictDigest": "a005f92ca3b32428cbc53eff4168905b73b29a536c9973e3633c58f92416c575"
-    },
     "extension/ytkit.js": {
-      "count": 1226,
-      "digest": "52986032546602403681f8beb840c3df20c3aab0fa7176e48f0cfaed4314b3b4",
-      "strictCount": 588,
-      "strictDigest": "2639fd8da1e0ce4e0799963015cb23e460c0f75c05065befa9697d57fa67b43e"
+      "count": 1217,
+      "digest": "057362ebd0c6d949cc2c09f3def14530a9d73772210619943e07c5c60a68c1cb",
+      "strictCount": 580,
+      "strictDigest": "e308b180f6e318789323e86de095cb076abe8d47e8fff5a246d4da01e436c2a0"
     }
   }
 }

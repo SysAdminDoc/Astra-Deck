@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "La proporción de Me gusta usa recuentos estimados de Return YouTube Dislike. {estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "Ir a suscripciones"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "Enlaces rápidos"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "Vídeo en directo"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "Información del vídeo en directo"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "EN DIRECTO"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "Acciones del vídeo en directo"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "Acciones del vídeo"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "Cerrar panel lateral"
   }
 }

@@ -7258,5 +7258,29 @@
   },
   "ui_rydRatioTitleTpl": {
     "message": "Le ratio de mentions J’aime utilise les nombres estimés de Return YouTube Dislike. {estimate}"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "Accéder aux abonnements"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "Liens rapides"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "Vidéo en direct"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "Informations sur la vidéo en direct"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "EN DIRECT"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "Actions de la vidéo en direct"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "Actions vidéo"
+  },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "Fermer le panneau latéral"
   }
 }
