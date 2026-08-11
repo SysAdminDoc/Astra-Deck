@@ -3441,6 +3441,12 @@ return response;
             hideVideosScopeOther: true,
             hideVideosLowViewFilter: false,
             hideVideosLowViewThreshold: 1000,
+            hideVideosSyntheticNarrationFilter: false,
+            hideVideosLowSignalFilter: false,
+            hideVideosLowSignalMinViews: 1000,
+            hideVideosLowSignalMinAgeDays: 30,
+            hideVideosUploadCadenceFilter: false,
+            hideVideosUploadCadencePerDay: 5,
             hideVideosHideLive: false,
             hideVideosHideUpcoming: false,
             hidePlannedLivestreams: true,
@@ -3695,6 +3701,9 @@ return response;
                 'hideVideosScopeHome', 'hideVideosScopeSubscriptions', 'hideVideosScopeSearch',
                 'hideVideosScopeWatch', 'hideVideosScopeChannels', 'hideVideosScopeOther',
                 'hideVideosLowViewFilter', 'hideVideosLowViewThreshold',
+                'hideVideosSyntheticNarrationFilter', 'hideVideosLowSignalFilter',
+                'hideVideosLowSignalMinViews', 'hideVideosLowSignalMinAgeDays',
+                'hideVideosUploadCadenceFilter', 'hideVideosUploadCadencePerDay',
                 'hideVideosHideLive', 'hideVideosHideUpcoming', 'hidePlannedLivestreams', 'hideVideosHideMixes',
                 'hideVideosHidePlaylists', 'hideVideosHideMovies', 'hideVideosHideAutoDubbed',
                 'hideVideosWatchedRatio',
@@ -6180,6 +6189,30 @@ return response;
         commentEnhancements: 'Highlights creator replies, shows like heat, collapse toggle',
     };
 
+    // Keep these markers deliberately explicit rather than turning them into
+    // a general-purpose "AI detector": card-local text is sparse, so a false
+    // positive is more harmful than leaving a card visible.
+    const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
+    const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
+
+    function normalizeHeuristicText(value) {
+        return String(value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    function extractUploadCadencePerDay(text) {
+        const raw = normalizeHeuristicText(text);
+        if (!raw) return null;
+        const explicit = raw.match(/\b(\d+(?:[.,]\d+)?)\s*(?:videos?|uploads?)\s*(?:per|a|\/)\s*(day|week|month)s?\b/i);
+        if (explicit) {
+            const value = Number.parseFloat(explicit[1].replace(',', '.'));
+            const divisor = { day: 1, week: 7, month: 30 }[explicit[2].toLowerCase()];
+            return Number.isFinite(value) && divisor ? Math.max(0, value / divisor) : null;
+        }
+        if (/\bmultiple\s+(?:videos?|uploads?)\s+(?:daily|per\s+day)\b/i.test(raw)) return 2;
+        if (/\b(?:daily|every\s+day)\s+(?:videos?|uploads?)\b/i.test(raw)) return 1;
+        return null;
+    }
+
     const VIDEO_HIDER_FILTER_REASON_MESSAGES = Object.freeze({
         manual: ['videoHiderReasonManual', 'your saved hidden list'],
         blockedChannel: ['videoHiderReasonBlockedChannel', 'a blocked channel rule'],
@@ -6193,6 +6226,9 @@ return response;
         movie: ['videoHiderReasonMovie', 'the movie filter'],
         autoDubbed: ['videoHiderReasonAutoDubbed', 'the auto-dubbed filter'],
         lowView: ['videoHiderReasonLowView', 'the low-view filter'],
+        'synthetic-narration': ['videoHiderReasonSyntheticNarration', 'the synthetic-narration marker filter'],
+        'low-signal': ['videoHiderReasonLowSignal', 'the low-signal view/age filter'],
+        'upload-cadence': ['videoHiderReasonUploadCadence', 'the upload-cadence filter'],
         watchedRatio: ['videoHiderReasonWatchedRatio', 'the watched-ratio filter'],
         markedWatched: ['videoHiderReasonMarkedWatched', 'your local watched marker'],
         predicate: ['videoHiderReasonPredicate', 'your advanced local rule']
@@ -18088,6 +18124,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return match ? Math.max(0, Math.min(100, Number(match[1]) || 0)) : 0;
             },
 
+            _extractDescriptionText(element) {
+                const nodes = [
+                    element.querySelector('#description'),
+                    element.querySelector('ytd-video-meta-block #description'),
+                    element.querySelector('[id="description"]'),
+                    element.querySelector('.description')
+                ].filter(Boolean);
+                return Array.from(new Set(nodes))
+                    .map(node => `${node.textContent || ''} ${node.getAttribute?.('aria-label') || ''}`)
+                    .join(' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .toLowerCase();
+            },
+
+            _extractChannelText(element) {
+                return Array.from(element.querySelectorAll('#channel-name, #channel-name a, ytd-channel-name, a[href*="/@"], a[href*="/channel/"]'))
+                    .map(node => `${node.textContent || ''} ${node.getAttribute?.('aria-label') || ''} ${node.getAttribute?.('href') || ''}`)
+                    .join(' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .toLowerCase();
+            },
+
             _extractPredicateAgeDays(text) {
                 const raw = String(text || '').replace(/\u00a0/g, ' ').trim();
                 if (!raw) return null;
@@ -18111,6 +18171,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _extractVideoMetadata(element) {
                 const title = this._extractTitle(element);
+                const descriptionText = this._extractDescriptionText(element);
+                const channelText = this._extractChannelText(element);
                 const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
                     .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
                     .join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -18125,6 +18187,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
                 const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
                 const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
+                const heuristicText = `${title} ${descriptionText} ${channelText} ${hrefText}`;
                 const hasDuration = this._extractDuration(element) > 0;
                 const isShort = element.querySelector('ytd-reel-video-renderer, a[href*="/shorts/"], [href*="/shorts/"], [is-shorts]') ? true : null;
                 const isMembersOnly = element.querySelector('[aria-label*="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
@@ -18135,10 +18198,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return {
                     title,
                     metadataText,
+                    descriptionText,
+                    channelText,
                     hrefText,
                     views: this._extractViewCount(element),
                     watchedRatio: this._extractWatchedRatio(element),
                     ageDays: this._extractPredicateAgeDays(rowsText),
+                    syntheticNarration: SYNTHETIC_NARRATION_PATTERN.test(heuristicText)
+                        || SYNTHETIC_CHANNEL_PATTERN.test(heuristicText),
+                    uploadCadencePerDay: extractUploadCadencePerDay(`${metadataText} ${descriptionText} ${channelText}`),
                     isLive: hasLiveMarker
                         || /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
                     isUpcoming: hasUpcomingMarker
@@ -18174,6 +18242,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (appState.settings.hideVideosLowViewFilter) {
                     const threshold = Math.max(0, Number(appState.settings.hideVideosLowViewThreshold) || 0);
                     if (threshold > 0 && metadata.views !== null && metadata.views < threshold) return { hide: true, reason: 'low-view' };
+                }
+                if (appState.settings.hideVideosSyntheticNarrationFilter === true && metadata.syntheticNarration) {
+                    return { hide: true, reason: 'synthetic-narration' };
+                }
+                if (appState.settings.hideVideosLowSignalFilter === true) {
+                    const minViews = Math.max(0, Number(appState.settings.hideVideosLowSignalMinViews) || 0);
+                    const minAgeDays = Math.max(0, Number(appState.settings.hideVideosLowSignalMinAgeDays) || 0);
+                    if (minViews > 0 && metadata.views !== null && metadata.views < minViews
+                        && metadata.ageDays !== null && metadata.ageDays >= minAgeDays) {
+                        return { hide: true, reason: 'low-signal' };
+                    }
+                }
+                if (appState.settings.hideVideosUploadCadenceFilter === true) {
+                    const maxUploadsPerDay = Math.max(0, Number(appState.settings.hideVideosUploadCadencePerDay) || 0);
+                    if (maxUploadsPerDay > 0 && Number.isFinite(metadata.uploadCadencePerDay)
+                        && metadata.uploadCadencePerDay > maxUploadsPerDay) {
+                        return { hide: true, reason: 'upload-cadence' };
+                    }
                 }
                 const watchedThreshold = Math.max(0, Math.min(100, Number(appState.settings.hideVideosWatchedRatio) || 0));
                 if (watchedThreshold > 0 && metadata.watchedRatio >= watchedThreshold) return { hide: true, reason: 'watched-ratio' };
@@ -18531,6 +18617,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     channelHandle: channelInfo?.handle || '',
                     title: (metadata?.title || '').toLowerCase(),
                     channelName: (channelInfo?.name || '').toLowerCase(),
+                    descriptionText: metadata?.descriptionText || '',
+                    channelText: metadata?.channelText || '',
+                    syntheticNarration: !!metadata?.syntheticNarration,
+                    uploadCadencePerDay: metadata?.uploadCadencePerDay ?? null,
                     durationSec: this._extractDuration(element) || 0,
                     viewCount: metadata?.views || 0,
                     // v4.47.0 NF16: BlockTube/PocketTube parity additions.
@@ -18598,7 +18688,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // feed when a rule over-matches. Deliberate choices are exempt:
             // manual hides, blocked channels, marked-watched, and allowlist
             // mode, where hiding everything unlisted is the entire point.
-            _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate']),
+            _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate', 'synthetic-narration', 'low-signal', 'upload-cadence']),
             _MAX_RULE_HIDDEN_RATIO: 0.25,
             _RATIO_GUARD_MIN_CARDS: 8,
             _lastRuleHideGuard: null,
@@ -19119,6 +19209,96 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._removeLoadBlocker();
             }
         }),
+        {
+            id: 'hideVideosSyntheticNarrationFilter',
+            name: t('feature_hideVideosSyntheticNarrationFilter_name', 'Synthetic narration markers'),
+            description: t('feature_hideVideosSyntheticNarrationFilter_desc', 'Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database.'),
+            nameKey: 'feature_hideVideosSyntheticNarrationFilter_name',
+            descriptionKey: 'feature_hideVideosSyntheticNarrationFilter_desc',
+            group: 'Content',
+            icon: 'bot-off',
+            isSubFeature: true,
+            parentId: 'hideVideosFromHome',
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideVideosLowSignalFilter',
+            name: t('feature_hideVideosLowSignalFilter_name', 'Hide low-signal videos'),
+            description: t('feature_hideVideosLowSignalFilter_desc', 'Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open.'),
+            nameKey: 'feature_hideVideosLowSignalFilter_name',
+            descriptionKey: 'feature_hideVideosLowSignalFilter_desc',
+            group: 'Content',
+            icon: 'chart-no-axes-combined',
+            isSubFeature: true,
+            parentId: 'hideVideosFromHome',
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideVideosLowSignalMinViews',
+            name: t('feature_hideVideosLowSignalMinViews_name', 'Low-signal view threshold'),
+            description: t('feature_hideVideosLowSignalMinViews_desc', 'Minimum views used by the low-signal heuristic. Set to 0 to disable its view side.'),
+            nameKey: 'feature_hideVideosLowSignalMinViews_name',
+            descriptionKey: 'feature_hideVideosLowSignalMinViews_desc',
+            group: 'Content',
+            icon: 'chart-no-axes-combined',
+            type: 'range',
+            min: 0,
+            max: 10000000,
+            step: 100,
+            isSubFeature: true,
+            parentId: 'hideVideosFromHome',
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideVideosLowSignalMinAgeDays',
+            name: t('feature_hideVideosLowSignalMinAgeDays_name', 'Low-signal age threshold'),
+            description: t('feature_hideVideosLowSignalMinAgeDays_desc', 'Only treat a low-view card as low-signal after this many days. Missing age metadata fails open.'),
+            nameKey: 'feature_hideVideosLowSignalMinAgeDays_name',
+            descriptionKey: 'feature_hideVideosLowSignalMinAgeDays_desc',
+            group: 'Content',
+            icon: 'calendar-clock',
+            type: 'range',
+            min: 0,
+            max: 3650,
+            step: 1,
+            isSubFeature: true,
+            parentId: 'hideVideosFromHome',
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideVideosUploadCadenceFilter',
+            name: t('feature_hideVideosUploadCadenceFilter_name', 'Upload cadence filter'),
+            description: t('feature_hideVideosUploadCadenceFilter_desc', 'Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible.'),
+            nameKey: 'feature_hideVideosUploadCadenceFilter_name',
+            descriptionKey: 'feature_hideVideosUploadCadenceFilter_desc',
+            group: 'Content',
+            icon: 'repeat-2',
+            isSubFeature: true,
+            parentId: 'hideVideosFromHome',
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideVideosUploadCadencePerDay',
+            name: t('feature_hideVideosUploadCadencePerDay_name', 'Upload cadence threshold'),
+            description: t('feature_hideVideosUploadCadencePerDay_desc', 'Maximum uploads per day accepted by the upload-cadence heuristic.'),
+            nameKey: 'feature_hideVideosUploadCadencePerDay_name',
+            descriptionKey: 'feature_hideVideosUploadCadencePerDay_desc',
+            group: 'Content',
+            icon: 'repeat-2',
+            type: 'range',
+            min: 1,
+            max: 100,
+            step: 1,
+            isSubFeature: true,
+            parentId: 'hideVideosFromHome',
+            init() {},
+            destroy() {}
+        },
         {
             id: 'showLocalDownloadButton',
             name: 'Download Button',
@@ -46446,6 +46626,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     || appState.settings.hideVideosRememberRestoredVideos === false
                     || appState.settings.hideVideosLowViewFilter === true
                     || (appState.settings.hideVideosLowViewThreshold || 1000) !== 1000
+                    || appState.settings.hideVideosSyntheticNarrationFilter === true
+                    || appState.settings.hideVideosLowSignalFilter === true
+                    || (appState.settings.hideVideosLowSignalMinViews || 1000) !== 1000
+                    || (appState.settings.hideVideosLowSignalMinAgeDays || 30) !== 30
+                    || appState.settings.hideVideosUploadCadenceFilter === true
+                    || (appState.settings.hideVideosUploadCadencePerDay || 5) !== 5
                     || appState.settings.hideVideosHideLive === true
                     || appState.settings.hideVideosHideUpcoming === true
                     || appState.settings.hideVideosHideMixes === true
@@ -46572,6 +46758,48 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     else refreshVideoHiderAfterSettingChange();
                 };
                 return row;
+            }
+
+            function createVideoHiderNumberField({ id, key, title, description, min, max, step, suffix, defaultValue }) {
+                const field = document.createElement('label');
+                field.className = 'ytkit-vh-field';
+                field.htmlFor = id;
+                const fieldLabel = document.createElement('span');
+                fieldLabel.className = 'ytkit-vh-field-label';
+                fieldLabel.textContent = title;
+                const fieldCopy = document.createElement('span');
+                fieldCopy.className = 'ytkit-vh-field-copy';
+                fieldCopy.id = `${id}-copy`;
+                fieldCopy.textContent = description;
+                const row = document.createElement('div');
+                row.className = 'ytkit-vh-input-row';
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = id;
+                input.name = key;
+                input.className = 'ytkit-vh-number';
+                input.inputMode = 'numeric';
+                input.autocomplete = 'off';
+                input.min = String(min);
+                input.max = String(max);
+                input.step = String(step);
+                input.value = appState.settings[key] ?? defaultValue;
+                input.setAttribute('aria-describedby', fieldCopy.id);
+                input.onchange = () => {
+                    const value = Math.max(min, Math.min(max, parseInt(input.value, 10) || 0));
+                    appState.settings[key] = value;
+                    input.value = value;
+                    refreshVideoHiderAfterSettingChange();
+                };
+                const suffixNode = document.createElement('span');
+                suffixNode.className = 'ytkit-vh-inline-note';
+                suffixNode.textContent = suffix;
+                row.appendChild(input);
+                row.appendChild(suffixNode);
+                field.appendChild(fieldLabel);
+                field.appendChild(fieldCopy);
+                field.appendChild(row);
+                return field;
             }
 
             function createVideoIdEntryForm({ id, title, copy, placeholder, buttonLabel, onSubmit }) {
@@ -47348,6 +47576,63 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     lowViewField.appendChild(lowViewCopy);
                     lowViewField.appendChild(lowViewRow);
                     typeSection.appendChild(lowViewField);
+
+                    const localHeuristicsSection = createVideoHiderSection(
+                        t('videoHiderLocalHeuristicsTitle', 'Local low-signal heuristics'),
+                        t('videoHiderLocalHeuristicsDesc', 'Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used.')
+                    );
+                    localHeuristicsSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosSyntheticNarrationFilter',
+                        title: t('feature_hideVideosSyntheticNarrationFilter_name', 'Synthetic narration markers'),
+                        description: t('feature_hideVideosSyntheticNarrationFilter_desc', 'Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database.'),
+                        defaultChecked: false
+                    }));
+                    localHeuristicsSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosLowSignalFilter',
+                        title: t('feature_hideVideosLowSignalFilter_name', 'Hide low-signal videos'),
+                        description: t('feature_hideVideosLowSignalFilter_desc', 'Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open.'),
+                        defaultChecked: false
+                    }));
+                    localHeuristicsSection.appendChild(createVideoHiderNumberField({
+                        id: 'ytkit-vh-low-signal-min-views',
+                        key: 'hideVideosLowSignalMinViews',
+                        title: t('feature_hideVideosLowSignalMinViews_name', 'Low-signal view threshold'),
+                        description: t('feature_hideVideosLowSignalMinViews_desc', 'Minimum views used by the low-signal heuristic. Set to 0 to disable its view side.'),
+                        min: 0,
+                        max: 10000000,
+                        step: 100,
+                        suffix: t('videoHiderViewsSuffix', 'views'),
+                        defaultValue: 1000
+                    }));
+                    localHeuristicsSection.appendChild(createVideoHiderNumberField({
+                        id: 'ytkit-vh-low-signal-min-age',
+                        key: 'hideVideosLowSignalMinAgeDays',
+                        title: t('feature_hideVideosLowSignalMinAgeDays_name', 'Low-signal age threshold'),
+                        description: t('feature_hideVideosLowSignalMinAgeDays_desc', 'Only treat a low-view card as low-signal after this many days. Missing age metadata fails open.'),
+                        min: 0,
+                        max: 3650,
+                        step: 1,
+                        suffix: t('videoHiderDaysSuffix', 'days old'),
+                        defaultValue: 30
+                    }));
+                    localHeuristicsSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosUploadCadenceFilter',
+                        title: t('feature_hideVideosUploadCadenceFilter_name', 'Upload cadence filter'),
+                        description: t('feature_hideVideosUploadCadenceFilter_desc', 'Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible.'),
+                        defaultChecked: false
+                    }));
+                    localHeuristicsSection.appendChild(createVideoHiderNumberField({
+                        id: 'ytkit-vh-upload-cadence-per-day',
+                        key: 'hideVideosUploadCadencePerDay',
+                        title: t('feature_hideVideosUploadCadencePerDay_name', 'Upload cadence threshold'),
+                        description: t('feature_hideVideosUploadCadencePerDay_desc', 'Maximum uploads per day accepted by the upload-cadence heuristic.'),
+                        min: 1,
+                        max: 100,
+                        step: 1,
+                        suffix: t('videoHiderUploadsPerDaySuffix', 'uploads/day'),
+                        defaultValue: 5
+                    }));
+                    typeSection.appendChild(localHeuristicsSection);
 
                     const watchedField = document.createElement('label');
                     watchedField.className = 'ytkit-vh-field';
@@ -49433,6 +49718,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                         try { initFeatureLifecycle(feature, 'Range'); } catch(err) {
                             DebugManager.log('Range', `Init failed for "${featureId}": ${err.message}`);
+                        }
+                        if (feature.isSubFeature && feature.parentId) {
+                            const parentFeature = getFeatureById(feature.parentId);
+                            if (parentFeature && appState.settings[parentFeature.id] !== false) {
+                                try { destroyFeatureLifecycle(parentFeature, 'range-sub-feature'); } catch(err) {
+                                    DebugManager.log('Range', `Parent destroy failed for "${parentFeature.id}": ${err.message}`);
+                                }
+                                try { initFeatureLifecycle(parentFeature, 'range-sub-feature'); } catch(err) {
+                                    DebugManager.log('Range', `Parent init failed for "${parentFeature.id}": ${err.message}`);
+                                }
+                            }
                         }
                     }, 300));
                 }

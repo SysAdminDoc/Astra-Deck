@@ -2763,6 +2763,12 @@
         Object.freeze({ key: "hideVideosScopeOther", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosLowViewFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosLowViewThreshold", category: "content-filter", type: "number", defaultValue: 1000, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "hideVideosSyntheticNarrationFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
+        Object.freeze({ key: "hideVideosLowSignalFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
+        Object.freeze({ key: "hideVideosLowSignalMinViews", category: "content-filter", type: "number", defaultValue: 1000, min: 0, max: 10000000, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
+        Object.freeze({ key: "hideVideosLowSignalMinAgeDays", category: "content-filter", type: "number", defaultValue: 30, min: 0, max: 3650, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
+        Object.freeze({ key: "hideVideosUploadCadenceFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
+        Object.freeze({ key: "hideVideosUploadCadencePerDay", category: "content-filter", type: "number", defaultValue: 5, min: 1, max: 100, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
         Object.freeze({ key: "hideVideosHideLive", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosHideUpcoming", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hidePlannedLivestreams", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.50.0" }),
@@ -3139,7 +3145,7 @@
         Object.freeze({ key: "safeStoreProfile", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "githubFullProfile", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "syncSafePrefs", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","listFeedLayout","bufferPreload","bufferPreloadSeconds","liveLatencyCatchup","liveLatencyTargetSeconds","liveLatencyMaxRate","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowFilterReason","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosChannelAllowlist","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sponsorBlockBaseUrl","sponsorBlockMirrorUrl","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "syncSafePrefsAllowlist", category: "privacy-profiles", type: "array", defaultValue: ["hideCreateButton","hideVoiceSearch","logoToSubscriptions","widenSearchBar","squareSearchBar","squareAvatars","subscriptionsGrid","homepageGridAlign","styledFilterChips","hideSidebar","uiStyle","compactLayout","thinScrollbar","watchPageRestyle","removeAllShorts","redirectShorts","disablePlayOnHover","fullWidthSubscriptions","hideRelatedVideos","expandVideoWidth","hideDescriptionRow","hideVideoEndContent","hideJumpAheadButton","videosPerRow","listFeedLayout","bufferPreload","bufferPreloadSeconds","liveLatencyCatchup","liveLatencyTargetSeconds","liveLatencyMaxRate","autoMaxResolution","colorTheme","themeAccentColor","hideVideosFromHome","hideVideosKeywordFilter","hideVideosDurationFilter","hideVideosSubsLoadLimit","hideVideosSubsLoadThreshold","hideVideosRemoveHiddenCards","hideVideosShowFilterReason","hideVideosShowQuickHideButton","markWatchedVideos","hideVideosAllowChannelBlock","hideVideosChannelAllowlist","hideVideosRememberRestoredVideos","hideVideosScopeHome","hideVideosScopeSubscriptions","hideVideosScopeSearch","hideVideosScopeWatch","hideVideosScopeChannels","hideVideosScopeOther","hideVideosLowViewFilter","hideVideosLowViewThreshold","hideVideosSyntheticNarrationFilter","hideVideosLowSignalFilter","hideVideosLowSignalMinViews","hideVideosLowSignalMinAgeDays","hideVideosUploadCadenceFilter","hideVideosUploadCadencePerDay","hideVideosHideLive","hideVideosHideUpcoming","hidePlannedLivestreams","hideVideosHideMixes","hideVideosHidePlaylists","hideVideosHideMovies","hideVideosHideAutoDubbed","hideVideosWatchedRatio","hiddenActionButtonsManager","hiddenActionButtons","hiddenPlayerControlsManager","hiddenPlayerControls","hiddenWatchElementsManager","hiddenWatchElements","sponsorBlock","sponsorBlockBaseUrl","sponsorBlockMirrorUrl","sbCat_sponsor","sbCat_intro","sbCat_outro","sbCat_selfpromo","sbCat_interaction","sbCat_music_offtopic","sbCat_preview","sbCat_filler","sbCat_poi_highlight","sbPerChannelProfiles"], risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── content-filter ───
         Object.freeze({ key: "advancedLocalPredicate", category: "content-filter", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -18877,6 +18883,12 @@
 
         const SUBSCRIBER_COUNT_LABELS = /(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
         const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
+        // These markers are deliberately explicit rather than a general-purpose
+        // "AI detector": a false positive is more harmful than leaving a card
+        // visible, and card-local text is too sparse to support a probabilistic
+        // classifier. The channel pattern is kept narrow for the same reason.
+        const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
+        const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
         const FILTER_REASON_MESSAGES = Object.freeze({
             manual: ['videoHiderReasonManual', 'your saved hidden list'],
             blockedChannel: ['videoHiderReasonBlockedChannel', 'a blocked channel rule'],
@@ -18890,10 +18902,31 @@
             movie: ['videoHiderReasonMovie', 'the movie filter'],
             autoDubbed: ['videoHiderReasonAutoDubbed', 'the auto-dubbed filter'],
             lowView: ['videoHiderReasonLowView', 'the low-view filter'],
+            'synthetic-narration': ['videoHiderReasonSyntheticNarration', 'the synthetic-narration marker filter'],
+            'low-signal': ['videoHiderReasonLowSignal', 'the low-signal view/age filter'],
+            'upload-cadence': ['videoHiderReasonUploadCadence', 'the upload-cadence filter'],
             watchedRatio: ['videoHiderReasonWatchedRatio', 'the watched-ratio filter'],
             markedWatched: ['videoHiderReasonMarkedWatched', 'your local watched marker'],
             predicate: ['videoHiderReasonPredicate', 'your advanced local rule']
         });
+
+        function normalizeHeuristicText(value) {
+            return String(value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+
+        function extractUploadCadencePerDay(text) {
+            const raw = normalizeHeuristicText(text);
+            if (!raw) return null;
+            const explicit = raw.match(/\b(\d+(?:[.,]\d+)?)\s*(?:videos?|uploads?)\s*(?:per|a|\/)\s*(day|week|month)s?\b/i);
+            if (explicit) {
+                const value = Number.parseFloat(explicit[1].replace(',', '.'));
+                const divisor = { day: 1, week: 7, month: 30 }[explicit[2].toLowerCase()];
+                return Number.isFinite(value) && divisor ? Math.max(0, value / divisor) : null;
+            }
+            if (/\bmultiple\s+(?:videos?|uploads?)\s+(?:daily|per\s+day)\b/i.test(raw)) return 2;
+            if (/\b(?:daily|every\s+day)\s+(?:videos?|uploads?)\b/i.test(raw)) return 1;
+            return null;
+        }
 
         function createHideVideosFromHomeFeature(deps = {}) {
             const {
@@ -20073,6 +20106,30 @@
                     return match ? Math.max(0, Math.min(100, Number(match[1]) || 0)) : 0;
                 },
 
+                _extractDescriptionText(element) {
+                    const nodes = [
+                        element.querySelector('#description'),
+                        element.querySelector('ytd-video-meta-block #description'),
+                        element.querySelector('[id="description"]'),
+                        element.querySelector('.description')
+                    ].filter(Boolean);
+                    return Array.from(new Set(nodes))
+                        .map(node => `${node.textContent || ''} ${node.getAttribute?.('aria-label') || ''}`)
+                        .join(' ')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .toLowerCase();
+                },
+
+                _extractChannelText(element) {
+                    return Array.from(element.querySelectorAll('#channel-name, #channel-name a, ytd-channel-name, a[href*="/@"], a[href*="/channel/"]'))
+                        .map(node => `${node.textContent || ''} ${node.getAttribute?.('aria-label') || ''} ${node.getAttribute?.('href') || ''}`)
+                        .join(' ')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .toLowerCase();
+                },
+
                 _extractPredicateAgeDays(text) {
                     const raw = String(text || '').replace(/\u00a0/g, ' ').trim();
                     if (!raw) return null;
@@ -20096,6 +20153,8 @@
 
                 _extractVideoMetadata(element) {
                     const title = this._extractTitle(element);
+                    const descriptionText = this._extractDescriptionText(element);
+                    const channelText = this._extractChannelText(element);
                     const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
                         .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
                         .join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -20110,6 +20169,7 @@
                     const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
                     const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
                     const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
+                    const heuristicText = `${title} ${descriptionText} ${channelText} ${hrefText}`;
                     const hasDuration = this._extractDuration(element) > 0;
                     const isShort = element.querySelector('ytd-reel-video-renderer, a[href*="/shorts/"], [href*="/shorts/"], [is-shorts]') ? true : null;
                     const isMembersOnly = element.querySelector('[aria-label*="members only" i]') || /\bmembers only\b/.test(rowsText) ? true : null;
@@ -20120,10 +20180,15 @@
                     return {
                         title,
                         metadataText,
+                        descriptionText,
+                        channelText,
                         hrefText,
                         views: this._extractViewCount(element),
                         watchedRatio: this._extractWatchedRatio(element),
                         ageDays: this._extractPredicateAgeDays(rowsText),
+                        syntheticNarration: SYNTHETIC_NARRATION_PATTERN.test(heuristicText)
+                            || SYNTHETIC_CHANNEL_PATTERN.test(heuristicText),
+                        uploadCadencePerDay: extractUploadCadencePerDay(`${metadataText} ${descriptionText} ${channelText}`),
                         isLive: hasLiveMarker
                             || /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
                         isUpcoming: hasUpcomingMarker
@@ -20159,6 +20224,24 @@
                     if (appState.settings.hideVideosLowViewFilter) {
                         const threshold = Math.max(0, Number(appState.settings.hideVideosLowViewThreshold) || 0);
                         if (threshold > 0 && metadata.views !== null && metadata.views < threshold) return { hide: true, reason: 'low-view' };
+                    }
+                    if (appState.settings.hideVideosSyntheticNarrationFilter === true && metadata.syntheticNarration) {
+                        return { hide: true, reason: 'synthetic-narration' };
+                    }
+                    if (appState.settings.hideVideosLowSignalFilter === true) {
+                        const minViews = Math.max(0, Number(appState.settings.hideVideosLowSignalMinViews) || 0);
+                        const minAgeDays = Math.max(0, Number(appState.settings.hideVideosLowSignalMinAgeDays) || 0);
+                        if (minViews > 0 && metadata.views !== null && metadata.views < minViews
+                            && metadata.ageDays !== null && metadata.ageDays >= minAgeDays) {
+                            return { hide: true, reason: 'low-signal' };
+                        }
+                    }
+                    if (appState.settings.hideVideosUploadCadenceFilter === true) {
+                        const maxUploadsPerDay = Math.max(0, Number(appState.settings.hideVideosUploadCadencePerDay) || 0);
+                        if (maxUploadsPerDay > 0 && Number.isFinite(metadata.uploadCadencePerDay)
+                            && metadata.uploadCadencePerDay > maxUploadsPerDay) {
+                            return { hide: true, reason: 'upload-cadence' };
+                        }
                     }
                     const watchedThreshold = Math.max(0, Math.min(100, Number(appState.settings.hideVideosWatchedRatio) || 0));
                     if (watchedThreshold > 0 && metadata.watchedRatio >= watchedThreshold) return { hide: true, reason: 'watched-ratio' };
@@ -20598,6 +20681,10 @@
                         channelHandle: channelInfo?.handle || '',
                         title: (metadata?.title || '').toLowerCase(),
                         channelName: (channelInfo?.name || '').toLowerCase(),
+                        descriptionText: metadata?.descriptionText || '',
+                        channelText: metadata?.channelText || '',
+                        syntheticNarration: !!metadata?.syntheticNarration,
+                        uploadCadencePerDay: metadata?.uploadCadencePerDay ?? null,
                         durationSec: this._extractDuration(element) || 0,
                         viewCount: metadata?.views || 0,
                         // v4.47.0 NF16: BlockTube/PocketTube parity additions.
@@ -20701,7 +20788,7 @@
                 // feed when a rule over-matches. Deliberate choices are exempt:
                 // manual hides, blocked channels, marked-watched, and allowlist
                 // mode, where hiding everything unlisted is the entire point.
-                _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate']),
+                _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate', 'synthetic-narration', 'low-signal', 'upload-cadence']),
                 _MAX_RULE_HIDDEN_RATIO: 0.25,
                 _RATIO_GUARD_MIN_CARDS: 8,
                 _lastRuleHideGuard: null,

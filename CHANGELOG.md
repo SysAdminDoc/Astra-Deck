@@ -30,6 +30,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - Live streams can now opt into bounded latency catch-up with configurable
   target/max-rate controls and a player-chrome latency/buffer readout; the
   feature restores the user's saved playback rate when the target is reached.
+- Video Hider now offers three independent local low-signal lanes: explicit
+  synthetic-narration markers, aging low-view cards, and unusually high upload
+  cadence. Each lane is opt-in, fails open without card metadata, exposes
+  `syntheticNarration`, `descriptionText`, `channelText`, and
+  `uploadCadencePerDay` to the predicate DSL, and records the matching reason.
 
 ---
 

@@ -5432,11 +5432,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // enrichment preferences (447 → 450).
     // Photosensitive flash protection adds a master toggle and two bounded
     // player preferences (450 → 453). Live latency catch-up adds a toggle
-    // and two bounded player preferences (453 → 456).
+    // and two bounded player preferences (453 → 456), plus six local Video
+    // Hider heuristic controls (462).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 456,
-        'SETTINGS_SCHEMA must cover all 456 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 462,
+        'SETTINGS_SCHEMA must cover all 462 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

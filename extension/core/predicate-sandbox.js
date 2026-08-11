@@ -31,6 +31,18 @@
     // Longest string a user predicate will ever be asked to match: real
     // ctx fields are card titles, channel names and URLs.
     const MAX_MATCH_INPUT_LENGTH = 4096;
+    // Informational contract for feature authors and diagnostics. The
+    // evaluator intentionally still accepts any own-property on a frozen
+    // context so other local features can extend the DSL without changing
+    // this parser. Video Hider adds the text and cadence fields used by its
+    // local low-signal heuristics.
+    const PREDICATE_CONTEXT_FIELDS = Object.freeze([
+        'videoId', 'channelId', 'channelHandle', 'title', 'channelName',
+        'descriptionText', 'channelText', 'durationSec', 'viewCount', 'likes',
+        'subsCount', 'ageDays', 'isLive', 'isUpcoming', 'isShort', 'isMix',
+        'isMembersOnly', 'isAutoDubbed', 'syntheticNarration',
+        'uploadCadencePerDay', 'page'
+    ]);
 
     function createPredicateSandbox(options = {}) {
         const debugLog = typeof options.debugLog === 'function'
@@ -427,11 +439,12 @@
             }
         }
 
-        return { compile, PredicateError };
+        return { compile, PredicateError, supportedFields: PREDICATE_CONTEXT_FIELDS };
     }
 
     Object.assign(core, {
         createPredicateSandbox,
-        PredicateError
+        PredicateError,
+        PREDICATE_CONTEXT_FIELDS
     });
 })();

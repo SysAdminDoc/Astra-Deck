@@ -6,13 +6,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 - [ ] Six `Roadmap_Blocked.md` items (Force DVR, replay chat-density chart, opt-in settings sync, logarithmic volume curve, volatile-project-facts gate, immutable build-profile ceilings) cite a self-imposed "this run forbids staging Markdown other than README/CHANGELOG" constraint as their blocker. That is not an external blocker. Move them back to this file on the next pass.
 
-- [ ] P2 — Local AI-slop / low-signal filtering
-  Why: the one 2026 demand wave with clear volume and no incumbent coverage, and it composes with filters Astra already has rather than needing a server.
-  Evidence: SponsorBlock #1963 (22 👍), #2317, #2429; ImprovedTube #3150 (8 👍), #1833; FilterTube #22; the 2026 `combatslop-yt` extension.
-  Touches: `extension/features/video-hider/index.js`, `extension/core/predicate-sandbox.js`, `extension/core/settings-schema.js`
-  Acceptance: local heuristics (synthetic-narration markers in title/description/channel patterns, view-count and age thresholds, upload cadence) expose new predicate fields usable from the existing DSL, each independently toggleable, with the hidden-card reason naming which heuristic fired. No network call and no crowd database.
-  Complexity: L
-
 - [ ] P2 — Subscribable and exportable filter lists
   Why: BlockTube is stalled with its users asking for exactly this, and it is the in-policy substitute for the cloud sync this project rejects.
   Evidence: BlockTube #508, #384 (16 👍), #59 (11 👍); FilterTube #62. Astra's predicate DSL and keyword rules are strictly local.
