@@ -32,6 +32,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Peeled feature modules now register before `ytkit.js` constructs the
+  extension feature array. The generated runtime loader keeps the monolith
+  out of the foundation phase, and the bootstrap imports it only after the
+  selected feature-module barrier resolves, so extension and userscript paths
+  no longer silently choose different factories.
 - **The split userscript now has a usable core dependency by default.** The
   generated `@require` points at the published raw GitHub core until a
   numbered Greasy Fork record is configured; the userscript-size gate rejects

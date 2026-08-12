@@ -74,4 +74,3 @@ import './core/toast.js';
 import './core/toast-dom.js';
 import './core/lifecycle-route-bridge.js';
 import './features/download-ui/index.js';
-import './ytkit.js';

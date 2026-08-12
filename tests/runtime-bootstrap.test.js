@@ -75,7 +75,12 @@ test('generated runtime order, manifest catalogue, and dynamic resource allowlis
         'the static module graph loader must be exposed for the dynamic import URL');
     assert.match(loaderSource, /import '\.\/core\/browser-api\.js';/);
     assert.match(loaderSource, /import '\.\/features\/download-ui\/index\.js';/);
-    assert.match(loaderSource, /import '\.\/ytkit\.js';/);
+    assert.doesNotMatch(loaderSource, /import '\.\/ytkit\.js';/,
+        'the core loader must not construct the monolith before deferred feature factories register');
+    assert.match(bootstrapSource, /await import\(getURL\('ytkit\.js'\)\)/,
+        'the bootstrap must construct the monolith after deferred feature imports');
+    assert.match(bootstrapSource, /await Promise\.all\(deferredFeatureModules\.map\([\s\S]*?await import\(getURL\('ytkit\.js'\)\)/,
+        'the monolith import must follow the complete deferred feature-module barrier');
     for (const modulePath of generatedModules) {
         assert.ok(fs.existsSync(path.join(repoRoot, 'extension', modulePath)),
             `${modulePath} must exist on disk`);
