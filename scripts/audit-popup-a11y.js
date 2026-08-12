@@ -8,9 +8,18 @@
 const fs = require('fs');
 const path = require('path');
 
-const popupHtml = fs.readFileSync(path.join(__dirname, '../extension/popup.html'), 'utf8');
-const popupJs = fs.readFileSync(path.join(__dirname, '../extension/popup.js'), 'utf8');
-const popupCss = fs.readFileSync(path.join(__dirname, '../extension/popup.css'), 'utf8');
+const popupHtml = fs.readFileSync(
+    process.env.ASTRA_POPUP_HTML_PATH || path.join(__dirname, '../extension/popup.html'),
+    'utf8'
+);
+const popupJs = fs.readFileSync(
+    process.env.ASTRA_POPUP_JS_PATH || path.join(__dirname, '../extension/popup.js'),
+    'utf8'
+);
+const popupCss = fs.readFileSync(
+    process.env.ASTRA_POPUP_CSS_PATH || path.join(__dirname, '../extension/popup.css'),
+    'utf8'
+);
 
 let issues = [];
 
