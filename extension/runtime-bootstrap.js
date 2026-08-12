@@ -319,6 +319,12 @@
             && shouldLoadFeature(modulePath, settings, pathname)
         );
         await Promise.all(deferredFeatureModules.map((modulePath) => import(getURL(modulePath))));
+        // The monolith reads YTKitFeatures while constructing its top-level
+        // feature array. It must execute only after every selected peeled
+        // module has registered its factory; otherwise the inline fallback
+        // silently wins and extension users run a different implementation
+        // from userscript tests.
+        await import(getURL('ytkit.js'));
         globalThis.dispatchEvent?.(new CustomEvent('ytkit-runtime-ready'));
     };
 
