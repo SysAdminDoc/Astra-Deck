@@ -23,13 +23,13 @@ const DEVTOOLS_FETCH_TIMEOUT_MS = 2000;
 const DYNAMIC_PAGE_RESOURCES = Object.freeze(
     getPageAccessibleResourceInventory().map((entry) => entry.resource)
 );
-const STABLE_RUNTIME_RESOURCES = Object.freeze([
+const DYNAMIC_RUNTIME_RESOURCES = Object.freeze([
     'runtime-core-loader.mjs',
     ...getRuntimeModuleResources(),
 ]);
 const PAGE_ACCESSIBLE_RESOURCES = Object.freeze([
     ...DYNAMIC_PAGE_RESOURCES,
-    ...STABLE_RUNTIME_RESOURCES,
+    ...DYNAMIC_RUNTIME_RESOURCES,
 ]);
 const POPUP_BOOT_SETTINGS = Object.freeze({
     sponsorBlock: true,
@@ -58,23 +58,29 @@ function validateDynamicWebAccessibleResourceManifest(manifest) {
     if (entries.length !== 2) {
         throw new Error(`Expected two web-accessible resource entries; found ${entries.length}.`);
     }
-    const dynamicEntry = entries.find((entry) => entry.use_dynamic_url === true);
-    const stableEntry = entries.find((entry) => entry.use_dynamic_url === undefined);
-    if (!dynamicEntry || !stableEntry) {
-        throw new Error('Expected one per-session asset entry and one stable runtime-module entry.');
+    const dynamicEntries = entries.filter((entry) => entry.use_dynamic_url === true);
+    if (dynamicEntries.length !== entries.length) {
+        throw new Error('Every Chromium web-accessible resource entry must use a per-session dynamic URL.');
+    }
+    const dynamicEntry = dynamicEntries.find((entry) =>
+        (entry.resources || []).includes('icons/32.png'));
+    const runtimeEntry = dynamicEntries.find((entry) =>
+        (entry.resources || []).includes('runtime-core-loader.mjs'));
+    if (!dynamicEntry || !runtimeEntry) {
+        throw new Error('Expected separate page-asset and runtime-module resource entries.');
     }
     const actualDynamicResources = [...(dynamicEntry.resources || [])].sort();
     const expectedDynamicResources = [...DYNAMIC_PAGE_RESOURCES].sort();
-    const actualStableResources = [...(stableEntry.resources || [])].sort();
-    const expectedStableResources = [...STABLE_RUNTIME_RESOURCES].sort();
+    const actualRuntimeResources = [...(runtimeEntry.resources || [])].sort();
+    const expectedRuntimeResources = [...DYNAMIC_RUNTIME_RESOURCES].sort();
     if (JSON.stringify(actualDynamicResources) !== JSON.stringify(expectedDynamicResources)
-            || JSON.stringify(actualStableResources) !== JSON.stringify(expectedStableResources)) {
+            || JSON.stringify(actualRuntimeResources) !== JSON.stringify(expectedRuntimeResources)) {
         throw new Error(
             'Web-accessible resources exceed the generated consumer inventory: '
-            + [...actualDynamicResources, ...actualStableResources].join(', ')
+            + [...actualDynamicResources, ...actualRuntimeResources].join(', ')
         );
     }
-    if ([...actualDynamicResources, ...actualStableResources]
+    if ([...actualDynamicResources, ...actualRuntimeResources]
             .some((resource) => resource.includes('*'))) {
         throw new Error('Web-accessible resource paths must not contain wildcards.');
     }
@@ -351,7 +357,7 @@ function validateDynamicWebAccessibleResourceResults(results, extensionId) {
 
     const dynamicHosts = new Set();
     const dynamicResources = new Set(DYNAMIC_PAGE_RESOURCES);
-    const stableResources = new Set(STABLE_RUNTIME_RESOURCES);
+    const runtimeResources = new Set(DYNAMIC_RUNTIME_RESOURCES);
     for (const result of results) {
         if (!result.ok || result.status !== 200 || !Number.isFinite(result.bytes) || result.bytes <= 0) {
             throw new Error(
@@ -371,9 +377,9 @@ function validateDynamicWebAccessibleResourceResults(results, extensionId) {
                 throw new Error(`Resource URL did not use a per-session dynamic host: ${result.url}`);
             }
             dynamicHosts.add(url.hostname);
-        } else if (stableResources.has(result.resource)) {
-            if (url.hostname !== extensionId) {
-                throw new Error(`Runtime module did not use the stable extension host: ${result.url}`);
+        } else if (runtimeResources.has(result.resource)) {
+            if (!url.hostname || url.hostname === extensionId) {
+                throw new Error(`Runtime module did not use a per-session dynamic host: ${result.url}`);
             }
         } else {
             throw new Error(`Unexpected web-accessible resource result: ${result.resource}`);
@@ -384,7 +390,7 @@ function validateDynamicWebAccessibleResourceResults(results, extensionId) {
     }
     return {
         dynamicHost: [...dynamicHosts][0],
-        stableHost: extensionId,
+        runtimeHost: [...dynamicHosts][0],
     };
 }
 
@@ -878,8 +884,8 @@ async function main(argv = process.argv.slice(2)) {
     }
     console.log(`[smoke-chromium-optional-hosts] ${result.browser}: loaded store-safe MV3 ${result.extensionId}`);
     console.log(
-        `[smoke-chromium-optional-hosts] dynamic page assets loaded from ${result.webAccessibleResources.dynamicHost}; `
-        + `runtime modules loaded from ${result.webAccessibleResources.stableHost}`
+        `[smoke-chromium-optional-hosts] page assets and runtime modules loaded from dynamic host `
+        + `${result.webAccessibleResources.dynamicHost}`
     );
     console.log(`[smoke-chromium-optional-hosts] optional hosts before grant: ${result.expectedOptionalOrigins.length} missing`);
     console.log(`[smoke-chromium-optional-hosts] banner: ${result.promptState.bannerText}`);
@@ -906,7 +912,7 @@ module.exports = {
     POPUP_BOOT_SETTINGS,
     DYNAMIC_PAGE_RESOURCES,
     PAGE_ACCESSIBLE_RESOURCES,
-    STABLE_RUNTIME_RESOURCES,
+    DYNAMIC_RUNTIME_RESOURCES,
     browserCandidates,
     buildIsolatedHeadedCommand,
     chromiumArgs,

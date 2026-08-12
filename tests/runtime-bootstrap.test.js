@@ -69,12 +69,14 @@ test('generated runtime order, manifest catalogue, and dynamic resource allowlis
         (entry.resources || []).includes('runtime-core-loader.mjs')
     );
     assert.ok(runtimeResourceEntry, 'runtime module resources must have a manifest entry');
-    assert.equal(runtimeResourceEntry.use_dynamic_url, undefined,
-        'relative ES-module imports require the stable extension origin');
+    assert.equal(runtimeResourceEntry.use_dynamic_url, true,
+        'every Chromium runtime resource must use a per-session dynamic URL');
     assert.ok(warResources.has('runtime-core-loader.mjs'),
         'the static module graph loader must be exposed for the dynamic import URL');
-    assert.match(loaderSource, /import '\.\/core\/browser-api\.js';/);
-    assert.match(loaderSource, /import '\.\/features\/download-ui\/index\.js';/);
+    assert.match(loaderSource, /await import\(getURL\(modulePath\)\)/,
+        'the core loader must resolve foundation modules through runtime.getURL');
+    assert.match(loaderSource, /core\/browser-api\.js/);
+    assert.match(loaderSource, /features\/download-ui\/index\.js/);
     assert.doesNotMatch(loaderSource, /import '\.\/ytkit\.js';/,
         'the core loader must not construct the monolith before deferred feature factories register');
     assert.match(bootstrapSource, /await import\(getURL\('ytkit\.js'\)\)/,
