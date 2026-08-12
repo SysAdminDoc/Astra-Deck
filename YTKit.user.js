@@ -35,7 +35,7 @@
 // @connect      raw.githubusercontent.com
 // @connect      localhost
 // @connect      127.0.0.1
-// @require      https://update.greasyfork.org/scripts/REPLACE_WITH_GREASY_FORK_CORE_ID/ytkit-core.js
+// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js
 // @homepageURL      https://github.com/SysAdminDoc/Astra-Deck
 // @supportURL      https://github.com/SysAdminDoc/Astra-Deck/issues
 // @license      MIT
@@ -65,7 +65,7 @@
     }
 
     // ── BEGIN v5.0.0 bundled core modules ──
-    // The v5.0.0 modules are delivered by the Greasy Fork @require dependency.
+    // The v5.0.0 modules are delivered by the configured @require dependency.
     // This manifest keeps the dependency order visible in the main artifact;
     // the generated YTKit-core.user.js contains the executable module bodies.
 

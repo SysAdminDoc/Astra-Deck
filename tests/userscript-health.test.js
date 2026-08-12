@@ -18,6 +18,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+    DEFAULT_CORE_URL,
+    isResolvableRequireUrl,
+} = require('../scripts/check-userscript-size');
 
 const REPO_ROOT = path.join(__dirname, '..');
 
@@ -213,8 +217,10 @@ test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () 
         'YTKit.user.js must remain below Greasy Fork’s per-record 2 MiB limit');
     assert.ok(Buffer.byteLength(core, 'utf8') < maxBytes,
         'YTKit-core.user.js must remain below Greasy Fork’s per-record 2 MiB limit');
-    assert.match(main, /^\/\/ @require\s+https:\/\/update\.greasyfork\.org\/scripts\//m,
-        'YTKit.user.js must load its executable dependency from Greasy Fork');
+    assert.match(main, /^\/\/ @require\s+(?:https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/main\/YTKit-core\.user\.js|https:\/\/update\.greasyfork\.org\/scripts\/\d+\/[^\s]+)$/m,
+        'YTKit.user.js must load its executable dependency from the published core URL or a numbered Greasy Fork record');
+    assert.doesNotMatch(main, /REPLACE_WITH_GREASY_FORK_CORE_ID/,
+        'YTKit.user.js must not ship a placeholder @require');
     assert.match(main, /^\/\/ @homepageURL\s+https:\/\/github\.com\/SysAdminDoc\/Astra-Deck/m,
         'YTKit.user.js must advertise the project homepage');
     assert.match(main, /^\/\/ @supportURL\s+https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/issues/m,
@@ -227,4 +233,15 @@ test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () 
         'YTKit.user.js must disclose local-companion traffic');
     assert.match(main, /YTKit Core Library[\s\S]*Astra Downloader companion/,
         'YTKit.user.js description must disclose both dependencies');
+});
+
+test('userscript-health: core dependency gate rejects placeholders and unknown hosts', () => {
+    assert.equal(isResolvableRequireUrl(DEFAULT_CORE_URL), true,
+        'the published raw GitHub core fallback must be accepted');
+    assert.equal(isResolvableRequireUrl('https://update.greasyfork.org/scripts/12345/ytkit-core.js'), true,
+        'a numbered Greasy Fork core record must be accepted');
+    assert.equal(isResolvableRequireUrl('https://update.greasyfork.org/scripts/REPLACE_WITH_GREASY_FORK_CORE_ID/ytkit-core.js'), false,
+        'the placeholder Greasy Fork core record must fail closed');
+    assert.equal(isResolvableRequireUrl('https://invalid.example.invalid/ytkit-core.js'), false,
+        'an unresolvable external core host must fail closed');
 });
