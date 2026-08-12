@@ -12,7 +12,7 @@ const USERSCRIPT_BASENAME = getUserscriptBasename(REPO_ROOT);
 const USERSCRIPT_RAW_URL = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
 const USERSCRIPT_CORE_SOURCE = path.join(REPO_ROOT, 'YTKit-core.user.js');
 const GREASY_FORK_CORE_URL = process.env.ASTRA_GREASY_FORK_CORE_URL
-    || 'https://update.greasyfork.org/scripts/REPLACE_WITH_GREASY_FORK_CORE_ID/ytkit-core.js';
+    || 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js';
 const CORE_BEGIN_MARKER = '// ── BEGIN v5.0.0 bundled core modules ──';
 const CORE_END_MARKER = '// ── END v5.0.0 bundled core modules ──';
 const EXTERNAL_BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^[ \t]*\/\/ ── END v5\.0\.0 bundled core modules ──/m;
@@ -94,7 +94,7 @@ function coreModuleHeader(rel) {
 function buildExternalBundleRegion() {
     const parts = [
         '    ' + CORE_BEGIN_MARKER,
-        '    // The v5.0.0 modules are delivered by the Greasy Fork @require dependency.',
+        '    // The v5.0.0 modules are delivered by the configured @require dependency.',
         '    // This manifest keeps the dependency order visible in the main artifact;',
         '    // the generated YTKit-core.user.js contains the executable module bodies.',
         ''

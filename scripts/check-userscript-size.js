@@ -13,6 +13,12 @@ const ROOT = path.join(__dirname, '..');
 const MAX_CODE_BYTES = 2 * 1024 * 1024;
 const MAIN_PATH = path.join(ROOT, 'YTKit.user.js');
 const CORE_PATH = path.join(ROOT, 'YTKit-core.user.js');
+const DEFAULT_CORE_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js';
+const GREASY_FORK_CORE_URL_PATTERN = /^https:\/\/update\.greasyfork\.org\/scripts\/\d+\/[^/]+$/;
+
+function isResolvableRequireUrl(value) {
+    return value === DEFAULT_CORE_URL || GREASY_FORK_CORE_URL_PATTERN.test(value);
+}
 
 function fail(message) {
     console.error(`[check-userscript-size] ${message}`);
@@ -58,11 +64,8 @@ const requireUrls = metadataValues(mainBlock, 'require');
 
 if (requireUrls.length !== 1) {
     fail(`YTKit.user.js must declare exactly one @require dependency (found ${requireUrls.length})`);
-} else if (!/^https:\/\/update\.greasyfork\.org\/scripts\/[^/]+\/[^/]+$/.test(requireUrls[0])) {
-    fail(`@require must use a Greasy Fork update URL, not ${requireUrls[0]}`);
-}
-if (/@require\s+https:\/\/(?:raw\.githubusercontent\.com|cdn\.jsdelivr\.net)\//.test(mainBlock)) {
-    fail('YTKit.user.js must not execute a dependency from GitHub raw or jsDelivr');
+} else if (!isResolvableRequireUrl(requireUrls[0])) {
+    fail(`@require is not a resolvable Astra Deck core URL: ${requireUrls[0]}`);
 }
 
 for (const [key, pattern] of [
@@ -97,9 +100,14 @@ if (mainVersion && coreVersion && mainVersion !== coreVersion) {
 if (!process.exitCode) {
     const headroom = MAX_CODE_BYTES - mainBytes;
     const coreHeadroom = MAX_CODE_BYTES - coreBytes;
-    const dependencyState = requireUrls[0]?.includes('REPLACE_WITH_GREASY_FORK_CORE_ID')
-        ? 'pending Greasy Fork core ID'
+    const dependencyState = requireUrls[0] === DEFAULT_CORE_URL
+        ? 'GitHub raw fallback configured'
         : 'Greasy Fork core URL configured';
     console.log(`[check-userscript-size] OK — main ${mainBytes.toLocaleString()} B, core ${coreBytes.toLocaleString()} B; headroom ${headroom.toLocaleString()} B / ${coreHeadroom.toLocaleString()} B (${dependencyState})`);
 }
 
+module.exports = {
+    DEFAULT_CORE_URL,
+    GREASY_FORK_CORE_URL_PATTERN,
+    isResolvableRequireUrl,
+};

@@ -32,6 +32,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- **The split userscript now has a usable core dependency by default.** The
+  generated `@require` points at the published raw GitHub core until a
+  numbered Greasy Fork record is configured; the userscript-size gate rejects
+  placeholders and unknown dependency hosts instead of reporting them as OK.
 - The filter-list status line now reports the stored subscription instead of
   the text the markup shipped with. A configured, successfully fetched list
   previously still read "No filter list is being followed." on every popup
