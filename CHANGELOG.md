@@ -32,6 +32,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The local `npm run check` gates are now non-vacuous: capability-matrix
+  validation uses `--check`, overlay audits run their mutation canaries, and
+  popup focus-ring coverage is bait-tested against newly added
+  outline-suppressing selectors.
 - Peeled feature modules now register before `ytkit.js` constructs the
   extension feature array. The generated runtime loader keeps the monolith
   out of the foundation phase, and the bootstrap imports it only after the

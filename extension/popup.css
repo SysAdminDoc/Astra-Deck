@@ -3099,6 +3099,7 @@ textarea:focus-visible {
   .schema-overview-list .so-key-color:focus-visible,
   .schema-overview-list .so-row-head:focus-visible,
   .schema-overview-list .so-key-switch:focus-visible,
+  .schema-overview-tool:focus-visible,
   .filter-list-tools__url-label input:focus-visible,
   .search-row input:focus-visible,
   summary:focus-visible,
