@@ -637,11 +637,13 @@ function getManifestWebAccessibleResources(browser = 'chromium', repoRoot = __di
             matches: WEB_ACCESSIBLE_RESOURCE_POLICY.matches.slice()
         }
     ];
-    // Chromium's rotating WAR host cannot anchor the loader's relative ES-module
-    // imports: descendants resolve to chrome-extension://invalid. Keep only
-    // standalone page assets dynamic and serve the reviewed module graph from
-    // the stable extension origin.
-    if (browser !== 'firefox') entries[0].use_dynamic_url = true;
+    // Chromium rotates the WAR host per browser session. The runtime loader
+    // resolves every descendant through runtime.getURL(), so the complete
+    // exposed graph can share that privacy boundary instead of leaking a
+    // stable extension origin to YouTube pages.
+    if (browser !== 'firefox') {
+        for (const entry of entries) entry.use_dynamic_url = true;
+    }
     return entries;
 }
 
@@ -703,7 +705,8 @@ function patchStagedRuntimeGraph(stageDir, profile) {
     if (fs.existsSync(loaderPath)) {
         let loader = fs.readFileSync(loaderPath, 'utf8');
         for (const resource of excluded) {
-            loader = loader.replace(`import './${resource}';\n`, '');
+            const escaped = resource.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            loader = loader.replace(new RegExp(`^\\s*"${escaped}",?\\r?\\n`, 'gm'), '');
         }
         fs.writeFileSync(loaderPath, loader, 'utf8');
     }

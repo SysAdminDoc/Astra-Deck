@@ -37,6 +37,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   out of the foundation phase, and the bootstrap imports it only after the
   selected feature-module barrier resolves, so extension and userscript paths
   no longer silently choose different factories.
+- Chromium web-accessible resource entries now use one per-session dynamic URL.
+  The generated ESM loader resolves each foundation module through
+  `runtime.getURL()`, preserving module loading while preventing YouTube pages
+  from fingerprinting a stable extension-origin path.
 - **The split userscript now has a usable core dependency by default.** The
   generated `@require` points at the published raw GitHub core until a
   numbered Greasy Fork record is configured; the userscript-size gate rejects
@@ -529,12 +533,6 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   semantic sections with visible enabled rails and nested dependency branches.
   The modular extension and userscript fallback share the same responsive,
   light-theme, and RTL visual contract.
-
-### Fixed
-
-- **Chrome unpacked builds initialize on YouTube again.** Runtime modules now
-  use the stable extension origin required by their relative ES-module imports,
-  while ordinary page assets retain per-session dynamic URLs.
 
 ## [4.57.0] - 2026-08-06
 

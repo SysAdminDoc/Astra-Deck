@@ -3011,7 +3011,8 @@ test('build-extension gates web_accessible_resources policy for every profile', 
         },
         {
             resources: ['runtime-core-loader.mjs', ...runtimeResources],
-            matches
+            matches,
+            use_dynamic_url: true
         }
     ];
     const expectedFirefoxWar = expectedChromiumWar.map(({ use_dynamic_url: _ignored, ...entry }) => entry);

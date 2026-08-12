@@ -366,7 +366,8 @@
         "https://*.youtube.com/*",
         "https://*.youtube-nocookie.com/*",
         "https://youtu.be/*"
-      ]
+      ],
+      "use_dynamic_url": true
     }
   ],
   "content_security_policy": {
