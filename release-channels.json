@@ -54,48 +54,6 @@
         "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.58.2/astra-deck-store-safe-firefox-v4.58.2.xpi"
       }
     },
-    "chromium-store-chrome": {
-      "artifactTemplate": "astra-deck-chromium-store-chrome-v{version}.zip",
-      "active": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "astra-deck-chromium-store-chrome-v4.59.0.zip",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-chromium-store-chrome-v4.59.0.zip"
-      },
-      "lastKnownGood": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "astra-deck-chromium-store-chrome-v4.59.0.zip",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-chromium-store-chrome-v4.59.0.zip"
-      },
-      "rollbackTarget": {
-        "version": "4.58.2",
-        "tag": "v4.58.2",
-        "artifact": "astra-deck-chromium-store-chrome-v4.58.2.zip",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.58.2/astra-deck-chromium-store-chrome-v4.58.2.zip"
-      }
-    },
-    "chromium-store-firefox": {
-      "artifactTemplate": "astra-deck-chromium-store-firefox-v{version}.xpi",
-      "active": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "astra-deck-chromium-store-firefox-v4.59.0.xpi",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-chromium-store-firefox-v4.59.0.xpi"
-      },
-      "lastKnownGood": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "astra-deck-chromium-store-firefox-v4.59.0.xpi",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-chromium-store-firefox-v4.59.0.xpi"
-      },
-      "rollbackTarget": {
-        "version": "4.58.2",
-        "tag": "v4.58.2",
-        "artifact": "astra-deck-chromium-store-firefox-v4.58.2.xpi",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.58.2/astra-deck-chromium-store-firefox-v4.58.2.xpi"
-      }
-    },
     "github-full-chrome": {
       "artifactTemplate": "astra-deck-github-full-chrome-v{version}.zip",
       "active": {

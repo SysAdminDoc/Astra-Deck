@@ -4,6 +4,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { parseSha256Sums } = require('./generate-release-readiness');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const DEFAULT_STATE_PATH = path.join(REPO_ROOT, 'release-channels.json');
@@ -12,12 +13,11 @@ const DEFAULT_HEALTH_PATH = path.join(REPO_ROOT, 'build', 'release-health.json')
 const RELEASE_BASE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/releases/download';
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const DIGEST_PATTERN = /^[a-f0-9]{64}$/i;
+const REMOTE_TIMEOUT_MS = 15000;
 
 const CHANNEL_TEMPLATES = Object.freeze({
     'store-safe-chrome': 'astra-deck-store-safe-chrome-v{version}.zip',
     'store-safe-firefox': 'astra-deck-store-safe-firefox-v{version}.xpi',
-    'chromium-store-chrome': 'astra-deck-chromium-store-chrome-v{version}.zip',
-    'chromium-store-firefox': 'astra-deck-chromium-store-firefox-v{version}.xpi',
     'github-full-chrome': 'astra-deck-github-full-chrome-v{version}.zip',
     'github-full-firefox': 'astra-deck-github-full-firefox-v{version}.xpi',
     userscript: 'ytkit-v{version}.user.js'
@@ -29,8 +29,8 @@ function fillArtifactTemplate(template, version) {
     return String(template).replace('{version}', version);
 }
 
-function releaseUrl(ref) {
-    return `${RELEASE_BASE_URL}/${ref.tag}/${ref.artifact}`;
+function releaseUrl(ref, baseUrl = RELEASE_BASE_URL) {
+    return `${baseUrl}/${ref.tag}/${ref.artifact}`;
 }
 
 function buildReleaseRef(version, artifactTemplate, extra = {}) {
@@ -119,6 +119,89 @@ function readReleaseManifest(manifestPath = DEFAULT_MANIFEST_PATH) {
         throw new Error('release manifest must contain an assets array');
     }
     return manifest;
+}
+
+async function fetchRemote(url, options = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), options.timeoutMs || REMOTE_TIMEOUT_MS);
+    try {
+        const response = await fetch(url, {
+            method: options.method || 'GET',
+            redirect: 'follow',
+            signal: controller.signal,
+            headers: { 'User-Agent': 'Astra-Deck-release-channel-check' }
+        });
+        return response;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function checksumUrl(tag, baseUrl = RELEASE_BASE_URL) {
+    return `${baseUrl}/${tag}/SHA256SUMS`;
+}
+
+async function validateRemoteChannelRefs(state, options = {}) {
+    const baseUrl = options.baseUrl || RELEASE_BASE_URL;
+    if (options.baseUrl) {
+        // Tests may provide a local HTTP fixture. Validate its ref shape
+        // against the production URL form, while the fetches use baseUrl.
+        const schemaState = JSON.parse(JSON.stringify(state));
+        for (const id of CHANNEL_IDS) {
+            const channel = schemaState.channels[id];
+            for (const key of ['active', 'lastKnownGood', 'rollbackTarget']) {
+                channel[key].url = releaseUrl(channel[key]);
+            }
+        }
+        validateChannelState(schemaState);
+    } else {
+        validateChannelState(state);
+    }
+    const refs = [];
+    for (const id of CHANNEL_IDS) {
+        const channel = state.channels[id];
+        refs.push(
+            { label: `${id}.active`, ref: channel.active },
+            { label: `${id}.lastKnownGood`, ref: channel.lastKnownGood },
+            { label: `${id}.rollbackTarget`, ref: channel.rollbackTarget }
+        );
+    }
+
+    const checksumCache = new Map();
+    const checked = [];
+    const unique = new Map();
+    for (const item of refs) unique.set(`${item.ref.tag}/${item.ref.artifact}`, item);
+
+    for (const item of unique.values()) {
+        const { ref } = item;
+        const expectedUrl = releaseUrl(ref, baseUrl);
+        if (ref.url !== expectedUrl) {
+            throw new Error(`${item.label}.url must point at its recorded GitHub release artifact`);
+        }
+        const artifactResponse = await fetchRemote(ref.url, options);
+        if (!artifactResponse.ok) {
+            throw new Error(`${item.label} artifact is unavailable: HTTP ${artifactResponse.status}`);
+        }
+
+        let checksums = checksumCache.get(ref.tag);
+        if (!checksums) {
+            const checksumResponse = await fetchRemote(checksumUrl(ref.tag, baseUrl), options);
+            if (!checksumResponse.ok) {
+                throw new Error(`${item.label} release SHA256SUMS is unavailable: HTTP ${checksumResponse.status}`);
+            }
+            checksums = parseSha256Sums(await checksumResponse.text());
+            checksumCache.set(ref.tag, checksums);
+        }
+        const remoteDigest = checksums.get(ref.artifact);
+        if (!remoteDigest) {
+            throw new Error(`${item.label} is missing from ${ref.tag}/SHA256SUMS`);
+        }
+        if (ref.sha256 && String(ref.sha256).toLowerCase() !== remoteDigest.toLowerCase()) {
+            throw new Error(`${item.label}.sha256 disagrees with ${ref.tag}/SHA256SUMS`);
+        }
+        checked.push({ artifact: ref.artifact, tag: ref.tag, sha256: remoteDigest });
+    }
+    return { status: 'pass', checked };
 }
 
 function assertHealthAllowsPromotion(health, manifestPath = DEFAULT_MANIFEST_PATH) {
@@ -270,11 +353,12 @@ function parseArgs(argv = process.argv.slice(2)) {
     return args;
 }
 
-function main(argv = process.argv.slice(2)) {
+async function main(argv = process.argv.slice(2)) {
     const args = parseArgs(argv);
     const state = readChannelState(args.statePath);
     if (args.command === 'validate') {
-        console.log(`[release-channels] valid: ${CHANNEL_IDS.length} channel(s)`);
+        const remote = await validateRemoteChannelRefs(state);
+        console.log(`[release-channels] valid: ${CHANNEL_IDS.length} channel(s), ${remote.checked.length} published artifact pointer(s)`);
         return state;
     }
     if (args.command === 'promote') {
@@ -297,12 +381,10 @@ function main(argv = process.argv.slice(2)) {
 }
 
 if (require.main === module) {
-    try {
-        main();
-    } catch (error) {
+    Promise.resolve(main()).catch((error) => {
         console.error('[release-channels] ' + (error.message || error));
         process.exit(1);
-    }
+    });
 }
 
 module.exports = {
@@ -320,6 +402,7 @@ module.exports = {
     readChannelState,
     readReleaseManifest,
     rollbackChannels,
+    validateRemoteChannelRefs,
     validateChannelState,
     writeJsonAtomic
 };

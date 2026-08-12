@@ -36,6 +36,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   generated `@require` points at the published raw GitHub core until a
   numbered Greasy Fork record is configured; the userscript-size gate rejects
   placeholders and unknown dependency hosts instead of reporting them as OK.
+- **Release channel health now checks published artifacts, not just filenames.**
+  Validation dereferences every active, last-known-good, and rollback pointer
+  and compares it with the release `SHA256SUMS`; the two unpublished
+  Chromium-store pointers were removed from the channel ledger while their
+  build profiles remain available.
 - The filter-list status line now reports the stored subscription instead of
   the text the markup shipped with. A configured, successfully fetched list
   previously still read "No filter list is being followed." on every popup

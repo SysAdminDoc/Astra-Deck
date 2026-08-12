@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
+const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
 
@@ -16,6 +17,7 @@ const {
     promoteChannels,
     readChannelState,
     rollbackChannels,
+    validateRemoteChannelRefs,
     validateChannelState
 } = require('../scripts/release-channels');
 const {
@@ -73,6 +75,61 @@ test('checked-in release channel ledger covers every channel with LKG and rollba
         assert.equal(channel.rollbackTarget.artifact, fillArtifactTemplate(CHANNEL_TEMPLATES[id], channel.rollbackTarget.version));
         assert.match(channel.lastKnownGood.url, /^https:\/\//);
         assert.match(channel.rollbackTarget.url, /^https:\/\//);
+    }
+});
+
+test('release channel validation dereferences assets and checks SHA256SUMS', async () => {
+    const state = readChannelState(path.join(root, 'release-channels.json'));
+    const remoteDigests = new Map();
+    for (const id of CHANNEL_IDS) {
+        const channel = state.channels[id];
+        for (const key of ['active', 'lastKnownGood', 'rollbackTarget']) {
+            const ref = channel[key];
+            const keyName = `${ref.tag}/${ref.artifact}`;
+            const value = digest(`published ${keyName}`);
+            ref.sha256 = value;
+            remoteDigests.set(keyName, value);
+        }
+    }
+
+    const server = http.createServer((request, response) => {
+        const relative = String(request.url || '').replace(/^\/releases\/download\//, '');
+        const separator = relative.indexOf('/');
+        const tag = separator >= 0 ? relative.slice(0, separator) : '';
+        const artifact = separator >= 0 ? relative.slice(separator + 1) : '';
+        if (artifact === 'SHA256SUMS') {
+            const lines = [...remoteDigests.entries()]
+                .filter(([keyName]) => keyName.startsWith(`${tag}/`))
+                .map(([keyName, value]) => `${value}  ${keyName.slice(tag.length + 1)}`);
+            response.statusCode = lines.length ? 200 : 404;
+            response.end(lines.join('\n') + (lines.length ? '\n' : ''));
+            return;
+        }
+        response.statusCode = remoteDigests.has(`${tag}/${artifact}`) ? 200 : 404;
+        response.end();
+    });
+
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    const baseUrl = `http://127.0.0.1:${address.port}/releases/download`;
+    try {
+        for (const id of CHANNEL_IDS) {
+            const channel = state.channels[id];
+            for (const key of ['active', 'lastKnownGood', 'rollbackTarget']) {
+                const ref = channel[key];
+                ref.url = `${baseUrl}/${ref.tag}/${ref.artifact}`;
+            }
+        }
+        await assert.doesNotReject(() => validateRemoteChannelRefs(state, { baseUrl }));
+
+        const brokenKey = `${state.channels.userscript.active.tag}/${state.channels.userscript.active.artifact}`;
+        remoteDigests.delete(brokenKey);
+        await assert.rejects(
+            () => validateRemoteChannelRefs(state, { baseUrl }),
+            /HTTP 404/
+        );
+    } finally {
+        await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     }
 });
 
