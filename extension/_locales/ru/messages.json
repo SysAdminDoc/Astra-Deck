@@ -7477,5 +7477,32 @@
   },
   "selectorHealthExportAria": {
     "message": "Экспортировать состояние селекторов в JSON"
+  },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "Video Hider может получать данные с этого сайта, пока доступ не будет удалён."
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "Предоставлено: {count}"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "Разрешённый доступ к сайтам"
+  },
+  "dataFlowGrantRemove": {
+    "message": "Удалить доступ"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "Удалить доступ к сайту {host}"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "Доступ к сайту {host} удалён."
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "Не удалось удалить доступ к сайту {host}."
+  },
+  "filterListStopFailed": {
+    "message": "Не удалось отменить подписку на список фильтров."
+  },
+  "filterListStoppedTpl": {
+    "message": "Подписка на список {host} отменена. Доступа к сайту только для этого списка больше нет."
   }
 }

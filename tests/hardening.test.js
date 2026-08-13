@@ -3119,6 +3119,12 @@ test('optional host permission helper supports callback and promise APIs', async
             assert.deepEqual(payload, { origins: ['https://i.ytimg.com/*'] });
             cb(true);
         },
+        getAll(cb) {
+            cb({
+                origins: ['https://i.ytimg.com/*', 'https://i.ytimg.com/*', ''],
+                permissions: ['storage']
+            });
+        },
         onAdded: { addListener(listener) { this.listener = listener; } },
         onRemoved: { addListener(listener) { this.listener = listener; } }
     };
@@ -3128,6 +3134,10 @@ test('optional host permission helper supports callback and promise APIs', async
     });
     assert.equal(callbackHelper.isSupported(), true);
     assert.equal(await callbackHelper.contains(['https://i.ytimg.com/*']), false);
+    assert.deepEqual(await callbackHelper.getAll(), {
+        origins: ['https://i.ytimg.com/*'],
+        permissions: ['storage']
+    });
     assert.equal(await callbackHelper.request(['https://i.ytimg.com/*']), true);
     assert.equal(await callbackHelper.remove(['https://i.ytimg.com/*']), true);
     assert.equal(callbackHelper.onAdded(() => {}), true);
@@ -3135,13 +3145,33 @@ test('optional host permission helper supports callback and promise APIs', async
 
     const promiseHelper = createOptionalHostPermissions({
         permissionsApi: {
-            request: async () => false,
-            contains: async () => true,
-            remove: async () => true
+            request(_payload, ...extra) {
+                if (extra.length) throw new TypeError('callback overload is unsupported');
+                return Promise.resolve(false);
+            },
+            contains(_payload, ...extra) {
+                if (extra.length) throw new TypeError('callback overload is unsupported');
+                return Promise.resolve(true);
+            },
+            remove(_payload, ...extra) {
+                if (extra.length) throw new TypeError('callback overload is unsupported');
+                return Promise.resolve(true);
+            },
+            getAll(...args) {
+                if (args.length) throw new TypeError('callback overload is unsupported');
+                return Promise.resolve({
+                    origins: ['https://returnyoutubedislikeapi.com/*'],
+                    permissions: []
+                });
+            }
         },
         runtimeApi: {}
     });
     assert.equal(await promiseHelper.contains(['https://returnyoutubedislikeapi.com/*']), true);
+    assert.deepEqual(await promiseHelper.getAll(), {
+        origins: ['https://returnyoutubedislikeapi.com/*'],
+        permissions: []
+    });
     assert.equal(await promiseHelper.request(['https://returnyoutubedislikeapi.com/*']), false);
     assert.equal(await promiseHelper.remove(['https://returnyoutubedislikeapi.com/*']), true);
 });
@@ -6637,6 +6667,31 @@ test('v4.12.0 popup.js registers data-flow panel refs and uses the live schema s
         'renderDataFlowPanel must resolve the factory from window.YTKitCore');
 });
 
+test('popup enumerates and revokes exact runtime host grants from the Data Flow panel', () => {
+    const popup = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    assert.match(html, /id="data-flow-grants"[^>]*hidden/,
+        'granted host access must have a hidden-until-populated region');
+    assert.match(html, /id="data-flow-grants-list"/,
+        'granted host access must expose a list for one row per origin');
+    assert.match(popup, /async function renderDataFlowGrantedHosts\(/,
+        'the Data Flow renderer must enumerate runtime grants');
+    assert.match(popup, /await helper\.getAll\(\)/,
+        'runtime grant enumeration must use permissions.getAll');
+    assert.match(popup, /async function revokeRuntimeOptionalHostOrigin\(/,
+        'runtime grants must have a dedicated revoke path');
+    assert.match(popup, /await helper\.remove\(\[described\.originPattern\]\)/,
+        'grant removal must target only the validated exact origin');
+    assert.match(popup, /reconcileFilterListGrantTransition\(previousSettings, result\.settings\)/,
+        'single-setting URL transitions must revoke the previous origin');
+    assert.match(popup, /reconcileFilterListGrantTransition\(previousSettings, \{\}\)/,
+        'Reset must revoke a configured filter-list origin after data is cleared');
+});
+
 test('v4.12.0 popup.js wires the renderer into init and into storage.onChanged so it stays reactive', () => {
     const src = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
@@ -6652,7 +6707,11 @@ test('v4.12.0 every locale defines the data-flow i18n strings', () => {
     const required = [
         'dataFlowTitle', 'dataFlowNote', 'dataFlowSummaryTpl',
         'dataFlowActive', 'dataFlowInactive',
-        'dataFlowProfile', 'dataFlowCreds', 'dataFlowRisk', 'dataFlowDriver'
+        'dataFlowProfile', 'dataFlowCreds', 'dataFlowRisk', 'dataFlowDriver',
+        'dataFlowGrantedHostsTitle', 'dataFlowGrantedHostsCountTpl',
+        'dataFlowGrantRemove', 'dataFlowGrantRemoveAriaTpl',
+        'dataFlowFilterListGrantPurpose', 'dataFlowGrantRemovedTpl',
+        'dataFlowGrantRemoveFailedTpl'
     ];
     for (const locale of fs.readdirSync(localesDir)) {
         const file = path.join(localesDir, locale, 'messages.json');

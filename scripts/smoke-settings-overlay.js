@@ -101,13 +101,23 @@ const CHROME_STUB = `'use strict';
     const store = Object.create(null);
     const smokeParams = new URLSearchParams(globalThis.location?.search || '');
     const injectedRuntimeSettings = null; // __ASTRA_SMOKE_RUNTIME_SETTINGS__
-    store.ytSuiteSettings = injectedRuntimeSettings || (smokeParams.get('settingsDiff') === '1'
-        ? {
-            transcriptViewer: true,
+    const seededRuntimeSettings = { transcriptViewer: true };
+    if (smokeParams.get('settingsDiff') === '1') {
+        Object.assign(seededRuntimeSettings, {
             githubFullProfile: true,
             customCssCode: '/* astra-settings-diff-smoke-secret */'
-        }
-        : { transcriptViewer: true });
+        });
+    }
+    if (smokeParams.get('filterGrant') === '1') {
+        Object.assign(seededRuntimeSettings, {
+            privacyDataFlowPanel: true,
+            hideVideosFilterListUrl: 'https://lists.example.com/rules.json'
+        });
+    }
+    store.ytSuiteSettings = injectedRuntimeSettings || seededRuntimeSettings;
+    const permissionOrigins = new Set(smokeParams.get('filterGrant') === '1'
+        ? ['https://lists.example.com/*']
+        : []);
     const requestedLocale = smokeParams.get('locale');
     if (requestedLocale) store._localeOverride = requestedLocale;
     const messageListeners = [];
@@ -130,6 +140,38 @@ const CHROME_STUB = `'use strict';
         if (typeof cb === 'function') { cb(value); return undefined; }
         return Promise.resolve(value);
     };
+    const clone = (value) => value === undefined
+        ? undefined
+        : JSON.parse(JSON.stringify(value));
+    const permissionRequestOrigins = (request) => Array.isArray(request?.origins)
+        ? request.origins.filter((origin) => typeof origin === 'string' && origin)
+        : [];
+    const handleRuntimeMessage = (message) => {
+        const current = clone(store.ytSuiteSettings || {});
+        if (message?.type === 'YTKIT_MUTATE_SETTING') {
+            const next = { ...current, [message.key]: clone(message.value) };
+            store.ytSuiteSettings = next;
+            return {
+                ok: true,
+                persisted: true,
+                key: message.key,
+                previous: clone(current[message.key]),
+                value: clone(next[message.key]),
+                settings: clone(next)
+            };
+        }
+        if (message?.type === 'YTKIT_MUTATE_SETTINGS') {
+            const next = { ...current, ...clone(message.changes || {}) };
+            store.ytSuiteSettings = next;
+            return { ok: true, persisted: true, previous: current, value: clone(next), settings: clone(next) };
+        }
+        if (message?.type === 'YTKIT_REPLACE_SETTINGS') {
+            const next = clone(message.settings || {});
+            store.ytSuiteSettings = next;
+            return { ok: true, persisted: true, previous: current, value: clone(next), settings: clone(next) };
+        }
+        return {};
+    };
     const storageArea = {
         get: (keys, cb) => settle(readOut(keys), cb),
         set: (items, cb) => { Object.assign(store, items); return settle(undefined, cb); },
@@ -148,8 +190,12 @@ const CHROME_STUB = `'use strict';
         runtime: {
             id: 'ytkit-smoke-fixture',
             getURL: (p) => new URL(p, document.baseURI).href,
-            getManifest: () => ({ version: '0.0.0-smoke' }),
-            sendMessage: (_msg, cb) => settle({}, cb),
+            getManifest: () => ({
+                version: '0.0.0-smoke',
+                host_permissions: ['https://*.youtube.com/*'],
+                optional_host_permissions: ['https://*/*']
+            }),
+            sendMessage: (msg, cb) => settle(handleRuntimeMessage(msg), cb),
             onMessage: {
                 addListener: (fn) => messageListeners.push(fn),
                 removeListener: (fn) => {
@@ -169,10 +215,22 @@ const CHROME_STUB = `'use strict';
             getUILanguage: () => document.documentElement.dir === 'rtl' ? 'ar' : 'en'
         },
         permissions: {
-            contains: (_p, cb) => settle(false, cb),
-            getAll: (cb) => settle({ origins: [], permissions: [] }, cb),
-            request: (_p, cb) => settle(false, cb),
-            remove: (_p, cb) => settle(true, cb),
+            contains: (request, cb) => settle(
+                permissionRequestOrigins(request).every((origin) => permissionOrigins.has(origin)),
+                cb
+            ),
+            getAll: (cb) => settle({ origins: Array.from(permissionOrigins), permissions: [] }, cb),
+            request: (request, cb) => {
+                for (const origin of permissionRequestOrigins(request)) permissionOrigins.add(origin);
+                return settle(true, cb);
+            },
+            remove: (request, cb) => {
+                let removed = false;
+                for (const origin of permissionRequestOrigins(request)) {
+                    removed = permissionOrigins.delete(origin) || removed;
+                }
+                return settle(removed, cb);
+            },
             onAdded: noOpEvent,
             onRemoved: noOpEvent
         },
@@ -195,7 +253,9 @@ const CHROME_STUB = `'use strict';
             }
             return dispatched;
         },
-        listenerCount: () => messageListeners.length
+        listenerCount: () => messageListeners.length,
+        permissionOrigins: () => Array.from(permissionOrigins),
+        readSettings: () => clone(store.ytSuiteSettings || {})
     };
 })();
 `;

@@ -46,6 +46,7 @@ const SURFACES = Object.freeze([
         settleMs: 2200,
         themes: Object.freeze(['dark']),
         settingsDiff: true,
+        filterGrant: true,
     }),
     Object.freeze({
         name: 'sidepanel',
@@ -487,6 +488,7 @@ async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = '
     url.searchParams.set('theme', theme);
     if (locale) url.searchParams.set('locale', locale);
     if (surface.settingsDiff) url.searchParams.set('settingsDiff', '1');
+    if (surface.filterGrant) url.searchParams.set('filterGrant', '1');
     await client.send('Page.navigate', { url: url.href });
     await waitFor(
         () => client.evaluate("document.readyState === 'complete'"),
@@ -616,16 +618,22 @@ async function auditPopupSettingsDiff(client, surface, stateName) {
         };
     })()`);
     if (result.error) throw new Error(`${surface.name}/${stateName}: ${result.error}`);
-    const expectedKeys = ['customCssCode', 'githubFullProfile', 'transcriptViewer'];
+    const expectedKeys = [
+        'customCssCode',
+        'githubFullProfile',
+        'hideVideosFilterListUrl',
+        'privacyDataFlowPanel',
+        'transcriptViewer'
+    ];
     const failures = [];
     if (!result.overviewOpen) failures.push('settings overview did not open');
-    if (!/\b3\b/.test(result.count)) failures.push(`changed count is ${JSON.stringify(result.count)}, expected 3`);
+    if (!/\b5\b/.test(result.count)) failures.push(`changed count is ${JSON.stringify(result.count)}, expected 5`);
     if (result.pressed !== 'true') failures.push('changed-only toggle is not pressed');
     if (result.diffHidden) failures.push('changed-settings list stayed hidden');
     if (!result.diffVisible) failures.push('changed-settings list is not visibly rendered');
     if (!result.allSettingsHidden) failures.push('all-settings list stayed visible');
     if (result.allSettingsVisible) failures.push('all-settings list is still visibly rendered');
-    if (result.rowCount !== expectedKeys.length) failures.push(`rendered ${result.rowCount} changed rows, expected 3`);
+    if (result.rowCount !== expectedKeys.length) failures.push(`rendered ${result.rowCount} changed rows, expected 5`);
     if (JSON.stringify([...result.rowKeys].sort()) !== JSON.stringify(expectedKeys)) {
         failures.push(`changed row keys are ${JSON.stringify(result.rowKeys)}`);
     }
@@ -633,7 +641,7 @@ async function auditPopupSettingsDiff(client, surface, stateName) {
     if (!result.payload?.astraDeckSettingsDiff) failures.push('copied payload marker is missing');
     if (result.copied.includes('astra-settings-diff-smoke-secret')) failures.push('copied payload leaked custom CSS');
     const copiedChanges = Array.isArray(result.payload?.changed) ? result.payload.changed : [];
-    if (copiedChanges.length !== expectedKeys.length) failures.push(`copied ${copiedChanges.length} changes, expected 3`);
+    if (copiedChanges.length !== expectedKeys.length) failures.push(`copied ${copiedChanges.length} changes, expected 5`);
     const customCss = copiedChanges.find((change) => change.key === 'customCssCode');
     if (!/^\[redacted/.test(customCss?.current || '')) failures.push('copied custom CSS is not redacted');
     if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
@@ -647,6 +655,62 @@ async function auditPopupSettingsDiff(client, surface, stateName) {
     });
     fs.writeFileSync(path.join(OUT_DIR, 'popup-settings-diff.png'), Buffer.from(image.data, 'base64'));
     return 1;
+}
+
+async function auditPopupFilterGrant(client, surface, stateName) {
+    if (surface.name !== 'popup') return 0;
+    await waitFor(
+        () => client.evaluate(`Boolean(document.querySelector(
+            '#data-flow-grants:not([hidden]) .data-flow-grant-remove'
+        ))`),
+        5000,
+        `${surface.name}/${stateName} granted host row`
+    );
+    const before = await client.evaluate(`(() => {
+        const section = document.getElementById('data-flow-grants');
+        const row = section?.querySelector('.data-flow-grant-row');
+        const remove = row?.querySelector('.data-flow-grant-remove');
+        return {
+            sectionVisible: Boolean(section && !section.hidden && section.getClientRects().length),
+            host: row?.querySelector('.data-flow-grant-host')?.textContent?.trim() || '',
+            originPattern: row?.dataset?.originPattern || '',
+            removeLabel: remove?.getAttribute('aria-label') || '',
+            permissions: globalThis.__ytkitSmoke?.permissionOrigins?.() || []
+        };
+    })()`);
+    const failures = [];
+    if (!before.sectionVisible) failures.push('granted-host section is not visibly rendered');
+    if (before.host !== 'lists.example.com') failures.push(`grant host is ${JSON.stringify(before.host)}`);
+    if (before.originPattern !== 'https://lists.example.com/*') {
+        failures.push(`grant pattern is ${JSON.stringify(before.originPattern)}`);
+    }
+    if (!before.removeLabel.includes('lists.example.com')) failures.push('remove control does not name the host');
+    if (!before.permissions.includes('https://lists.example.com/*')) failures.push('fixture grant is missing');
+    if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+
+    await client.evaluate(`document.getElementById('data-flow-grants')?.scrollIntoView({ block: 'center' })`);
+    await sleep(120);
+    const image = await client.send('Page.captureScreenshot', {
+        format: 'png',
+        fromSurface: true,
+        captureBeyondViewport: false,
+    });
+    fs.writeFileSync(path.join(OUT_DIR, 'popup-filter-list-grants.png'), Buffer.from(image.data, 'base64'));
+
+    await client.evaluate(`document.querySelector('#data-flow-grants .data-flow-grant-remove')?.click()`);
+    await waitFor(
+        () => client.evaluate(`(() => {
+            const settings = globalThis.__ytkitSmoke?.readSettings?.() || {};
+            const permissions = globalThis.__ytkitSmoke?.permissionOrigins?.() || [];
+            const rows = document.querySelectorAll('#data-flow-grants .data-flow-grant-row');
+            return settings.hideVideosFilterListUrl === ''
+                && !permissions.includes('https://lists.example.com/*')
+                && rows.length === 0;
+        })()`),
+        5000,
+        `${surface.name}/${stateName} host grant removal`
+    );
+    return 5;
 }
 
 async function auditSurface(client, stageDir, surface, timeoutMs) {
@@ -669,7 +733,10 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             const settingsDiffChecks = mode === 'normal' && theme === 'dark'
                 ? await auditPopupSettingsDiff(client, surface, `${theme}/${mode}`)
                 : 0;
-            reports.push({ controls, focusTrapChecks, mode, settingsDiffChecks, theme, viewport });
+            const filterGrantChecks = mode === 'normal' && theme === 'dark'
+                ? await auditPopupFilterGrant(client, surface, `${theme}/${mode}`)
+                : 0;
+            reports.push({ controls, filterGrantChecks, focusTrapChecks, mode, settingsDiffChecks, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -774,6 +841,7 @@ async function main(argv = process.argv.slice(2)) {
                 + `${total} keyboard focus visits, `
                 + `${reports.reduce((sum, report) => sum + (report.focusTrapChecks || 0), 0)} focus-trap assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.settingsDiffChecks || 0), 0)} settings-diff assertions, `
+                + `${reports.reduce((sum, report) => sum + (report.filterGrantChecks || 0), 0)} filter-grant assertions, `
                 + 'no obscuring/overflow failures'
             );
         }

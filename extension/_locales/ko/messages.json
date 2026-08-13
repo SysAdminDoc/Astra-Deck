@@ -7477,5 +7477,32 @@
   },
   "selectorHealthExportAria": {
     "message": "선택기 상태를 JSON으로 내보내기"
+  },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "액세스가 제거될 때까지 Video Hider가 이 사이트에서 데이터를 가져올 수 있습니다."
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "{count}개 허용됨"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "허용된 사이트 액세스"
+  },
+  "dataFlowGrantRemove": {
+    "message": "액세스 제거"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "{host} 사이트 액세스 제거"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "{host} 사이트 액세스를 제거했습니다."
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "{host} 사이트 액세스를 제거할 수 없습니다."
+  },
+  "filterListStopFailed": {
+    "message": "필터 목록 구독을 중지할 수 없습니다."
+  },
+  "filterListStoppedTpl": {
+    "message": "{host} 구독을 중지했습니다. 필터 목록 전용 사이트 액세스는 남아 있지 않습니다."
   }
 }

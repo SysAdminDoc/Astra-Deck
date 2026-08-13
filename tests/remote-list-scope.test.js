@@ -9,6 +9,9 @@ const {
     isRemoteListUrlAllowed,
     remoteListOriginPattern
 } = require('../extension/core/remote-list-scope');
+const {
+    describeRemoteListOriginPattern
+} = require('../extension/core/optional-host-permissions');
 
 // The scope rules for the one destination a user chooses: the Video Hider
 // filter-list URL. Everything here is a table because the failure mode is a
@@ -43,6 +46,7 @@ test('URL shape rules reject anything that is not a plain anonymous HTTPS GET ta
         ['https://user:pass@lists.example.com/rules.json', 'credentials'],
         ['https://user@lists.example.com/rules.json', 'credentials'],
         ['https://lists.example.com/rules.json#section', 'fragment'],
+        ['https://*.example.com/rules.json', 'malformed-host'],
         ['not a url', 'malformed-host'],
         ['https://lists.example.com/' + 'a'.repeat(2100), 'too-long']
     ];
@@ -50,6 +54,21 @@ test('URL shape rules reject anything that is not a plain anonymous HTTPS GET ta
         const described = describeRemoteListUrl(input);
         assert.equal(described.ok, false, `${String(input).slice(0, 40)} must be rejected`);
         assert.equal(described.reason, reason, `${String(input).slice(0, 40)} reason`);
+    }
+});
+
+test('permission-pattern parsing accepts one exact public host and rejects broad grants', () => {
+    const described = describeRemoteListOriginPattern('https://lists.example.com/*');
+    assert.equal(described.ok, true);
+    assert.equal(described.hostname, 'lists.example.com');
+    for (const pattern of [
+        'https://*/*',
+        'https://*.example.com/*',
+        'https://lists.example.com/path/*',
+        'http://lists.example.com/*'
+    ]) {
+        assert.equal(describeRemoteListOriginPattern(pattern).ok, false,
+            `${pattern} must not be treated as an exact removable grant`);
     }
 });
 

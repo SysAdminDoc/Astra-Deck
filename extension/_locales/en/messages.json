@@ -7477,5 +7477,32 @@
   },
   "selectorHealthExportAria": {
     "message": "Export selector health JSON"
+  },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "Video Hider can fetch data from this site until access is removed."
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "{count} granted"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "Granted site access"
+  },
+  "dataFlowGrantRemove": {
+    "message": "Remove access"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "Remove site access for {host}"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "Removed site access for {host}."
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "Could not remove site access for {host}."
+  },
+  "filterListStopFailed": {
+    "message": "Could not stop following the filter list."
+  },
+  "filterListStoppedTpl": {
+    "message": "Stopped following {host}. No filter-list-only site access remains."
   }
 }
