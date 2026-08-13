@@ -96,9 +96,9 @@ data-consent permissions cover the documented collection categories).
 
 A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then install the [current `YTKit.user.js` artifact](https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js). Its generated `@require` loads the separately versioned [Astra Deck YTKit Core Library](https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js) from the same repository, so a separate Greasy Fork core publication is not required.
 
-The userscript starts at `document-start` and continuously collapses known ad shells, but a userscript manager cannot guarantee interception before the browser starts page requests. Use the extension when browser-level ad-request blocking is required.
+The userscript starts at `document-start` and continuously collapses known ad shells, but a userscript manager cannot guarantee interception before the browser starts page requests. Use the extension when browser-level ad-request blocking is required. Its download cascade never calls public Cobalt/community APIs: after local and direct methods fail, an external web page opens only when the user has explicitly configured a valid HTTPS downloader URL. Without a `{url}` placeholder, the canonical watch URL is placed in the fragment rather than the navigation request.
 
-> SharedAudio remains userscript-only. The `store-safe` and `github-full` extension profiles can use Astra Downloader; the `chromium-store` artifact is download-free, and the GitHub-full artifact can also expose the optional Cobalt fallback when the local companion is offline.
+> SharedAudio remains userscript-only. The `store-safe` and `github-full` extension profiles can use Astra Downloader; the `chromium-store` artifact is download-free. GitHub-full can also use a Cobalt instance the user operates or is authorized to use after an exact-origin browser grant; Astra Deck does not include Cobalt's public service.
 
 ### Astra Downloader Companion Setup
 
@@ -213,7 +213,7 @@ are not browser extension install steps.
 | Auto-Download on Visit | Off |
 | Download Thumbnail (maxres) | Off |
 
-> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. Both profiles probe `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accept health responses that identify as the Astra downloader service. The store-safe ceiling keeps the companion handoff but excludes AI, Ollama, and Cobalt; GitHub-full can show the Cobalt fallback button when Astra Downloader is offline. See [Astra Downloader Companion Setup](#astra-downloader-companion-setup) for the current install and release-asset state.
+> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. Both profiles probe `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accept health responses that identify as the Astra downloader service. The store-safe ceiling keeps the companion handoff but excludes AI, Ollama, and Cobalt. GitHub-full can show the fallback after the user enters the root HTTPS origin of a self-hosted Cobalt instance and grants access to that one host; `api.cobalt.tools` is deliberately unavailable. See [Astra Downloader Companion Setup](#astra-downloader-companion-setup) for the current install and release-asset state.
 
 The GitHub-full popup maintenance actions are recoverable. yt-dlp updates run
 against a staged sibling executable; companion updates must pass checksum and
@@ -391,7 +391,7 @@ document_idle
 - HTTP methods validated, download URLs protocol-checked (HTTP/S only)
 - Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs and accepts
   only YouTube-owned destinations
-- Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists the documented required and optional provider origins (AI providers, SponsorBlock, six Astra Downloader fallback ports, Ollama) — no wildcards
+- Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists documented provider origins. GitHub-full alone carries a scheme-scoped `https://*` connection lane because CSP cannot know a user-selected host in advance; browser permissions still require one exact host and never grant all sites.
 
 ### Trust & Transparency
 
@@ -400,7 +400,7 @@ document_idle
 - **SBOM + attestation** on every release build — verifiable software bill of materials
 - **External CRX signing key** — maintainer-only, never in the repo or CI
 - **Credential scrub** on settings export — API keys, tokens, and secrets are automatically stripped
-- **Profile-split permissions** — store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and Cobalt; GitHub-full builds keep the full catalogue
+- **Profile-split permissions** — store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and user-selected remote origins; GitHub-full keeps those capabilities behind runtime prompts, with Cobalt limited to an authorized self-hosted instance
 - **26+ hardening passes** documented in CHANGELOG with per-fix CVE/audit traceability
 - **Privacy policy** covers data handling for every API origin the extension contacts
 - **SponsorBlock data attribution** — the SponsorBlock and DeArrow features use
@@ -485,7 +485,7 @@ available capability and the promised fallback.
 |------------|----------|---------|----------------------|
 | Built-in Summarizer | Chrome 138+ when the local model is exposed | Not exposed | Local Summary uses the configured BYO-key lane explicitly |
 | Built-in Translator | Chrome 138+ when the requested language pack is exposed | Not exposed | Transcript translation says so and uses the configured BYO-key lane |
-| Astra Downloader | Companion health endpoint reachable | Same companion contract | Cobalt path when configured; companion-only panels stay unavailable |
+| Astra Downloader | Companion health endpoint reachable | Same companion contract | User-authorized self-hosted Cobalt path after an exact host grant; companion-only panels stay unavailable |
 | Ollama | Local server at `127.0.0.1:11434` | Same loopback contract | Selected remote/BYO provider, never an implicit provider switch |
 | Document PiP | Chrome 116+ | Firefox 151+ | Standard video PiP |
 | Language Detector | Chrome 138+ when the local model is exposed | Not exposed | Conservative text comparison |
@@ -551,7 +551,7 @@ Outputs in `build/` (the `.crx` files only when the build was not run with `--no
 - `astra-deck-chromium-store-firefox-v*.zip` + `.xpi`
 - `astra-deck-store-safe-chrome-v*.zip` + `.crx` (companion-capable self-hosted posture)
 - `astra-deck-store-safe-firefox-v*.zip` + `.xpi`
-- `astra-deck-github-full-chrome-v*.zip` + `.crx` (AI, local companion, Cobalt)
+- `astra-deck-github-full-chrome-v*.zip` + `.crx` (AI, local companion, optional self-hosted Cobalt)
 - `astra-deck-github-full-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript` / `npm run build:userscript`)
 - `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`

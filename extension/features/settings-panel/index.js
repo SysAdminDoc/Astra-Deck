@@ -3564,7 +3564,9 @@ function attachUIEventListeners() {
                             deniedCard.classList.remove('ytkit-card-enabled');
                         }
                         const featureName = getFeatureName(feature) || featureId;
-                        const message = `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
+                        const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
+                            ? error.message
+                            : `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
                         showToast(message, '#ef4444', { duration: 6 });
                         setPanelStatus(message, 'error');
                         DebugManager.log('Permissions', `${featureId} enable blocked: ${error?.message || 'host access denied'}`);
@@ -3748,7 +3750,9 @@ function attachUIEventListeners() {
                         e.target.checked = false;
                         const deniedSwitch = e.target.closest('.ytkit-switch');
                         if (deniedSwitch) deniedSwitch.classList.remove('active');
-                        const message = 'Some settings need host access. Try again and approve the browser prompt.';
+                        const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
+                            ? error.message
+                            : 'Some settings need host access. Try again and approve the browser prompt.';
                         showToast(message, '#ef4444', { duration: 6 });
                         setPanelStatus(message, 'error');
                         DebugManager.log('Permissions', `Enable-all blocked: ${error?.message || 'host access denied'}`);

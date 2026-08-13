@@ -13,6 +13,7 @@ const {
     AUTO_START_RETRY_BUDGET,
 } = require('../extension/features/download-ui');
 const { waitForCondition } = require('./helpers/async');
+const remoteListScope = require('../extension/core/remote-list-scope');
 
 const fixture = JSON.parse(fs.readFileSync(
     path.join(__dirname, 'fixtures', 'download-health-v2.json'),
@@ -131,25 +132,67 @@ test('download health polling and navigation teardown use a deterministic lifecy
     }
 });
 
-test('Cobalt fallback rejects extension-hosted custom instances before EXT_FETCH', async () => {
-    const previousLocation = globalThis.location;
+test('Cobalt fallback delegates a valid self-hosted request to the background contract', async () => {
+    const previousCore = globalThis.YTKitCore;
     const toasts = [];
     const diagnostics = [];
     const requests = [];
-    globalThis.location = { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' };
+    const opened = [];
+    globalThis.YTKitCore = { ...(previousCore || {}), ...remoteListScope };
 
     try {
         const feature = createDownloadUIFeature({
             appState: {
                 settings: {
                     githubFullProfile: true,
-                    downloadCobaltInstance: 'https://self-hosted.example/api/json'
+                    downloadCobaltInstance: 'https://cobalt.example.net/'
                 }
             },
             getProfileExportMode: () => 'github-full',
-            extensionFetchJson: async (details) => {
-                requests.push(details);
-                return { data: { status: 'error', text: 'must not be called' } };
+            requestCobaltDownload: async (...args) => {
+                requests.push(args);
+                return {
+                    ok: true,
+                    data: { status: 'redirect', url: 'https://media.example.net/video.mp4' }
+                };
+            },
+            openExternalUrl: async (url) => { opened.push(url); },
+            showToast: (...args) => toasts.push(args),
+            DiagnosticLog: { record: (...args) => diagnostics.push(args) }
+        });
+        feature.MediaDLManager.check = async () => ({ ok: false });
+
+        await feature.downloadCobaltFallback._trigger();
+
+        assert.equal(requests.length, 1, 'the UI must use the dedicated background contract once');
+        assert.deepEqual(opened, ['https://media.example.net/video.mp4']);
+        assert.match(toasts[0]?.[0] || '', /opened media URL/i);
+        assert.equal(diagnostics.length, 0);
+    } finally {
+        if (previousCore === undefined) delete globalThis.YTKitCore;
+        else globalThis.YTKitCore = previousCore;
+    }
+});
+
+test('Cobalt fallback rejects the public service before the background contract', async () => {
+    const previousCore = globalThis.YTKitCore;
+    const toasts = [];
+    const diagnostics = [];
+    let requested = false;
+    globalThis.YTKitCore = { ...(previousCore || {}), ...remoteListScope };
+
+    try {
+        const feature = createDownloadUIFeature({
+            appState: {
+                settings: {
+                    githubFullProfile: true,
+                    downloadCobaltInstance: 'https://api.cobalt.tools/'
+                }
+            },
+            getProfileExportMode: () => 'github-full',
+            requestCobaltDownload: async () => {
+                requested = true;
+                return { ok: false };
             },
             showToast: (...args) => toasts.push(args),
             DiagnosticLog: { record: (...args) => diagnostics.push(args) }
@@ -158,13 +201,12 @@ test('Cobalt fallback rejects extension-hosted custom instances before EXT_FETCH
 
         await feature.downloadCobaltFallback._trigger();
 
-        assert.equal(requests.length, 0, 'a custom origin must be rejected before the extension bridge');
-        assert.match(toasts[0]?.[0] || '', /api\.cobalt\.tools/);
-        assert.match(toasts[0]?.[0] || '', /userscript/);
-        assert.match(diagnostics[0]?.[1] || '', /origin allowlist/);
+        assert.equal(requested, false);
+        assert.match(toasts[0]?.[0] || '', /self-hosted Cobalt HTTPS origin/i);
+        assert.match(diagnostics[0]?.[1] || '', /public-instance/);
     } finally {
-        if (previousLocation === undefined) delete globalThis.location;
-        else globalThis.location = previousLocation;
+        if (previousCore === undefined) delete globalThis.YTKitCore;
+        else globalThis.YTKitCore = previousCore;
     }
 });
 
@@ -300,6 +342,53 @@ test('userscript twins carry the shipped extension fixes', () => {
     assert.ok(focusedIdx > -1, 'focusedMode must exist in the userscript');
     assert.match(userscriptSource.slice(focusedIdx, focusedIdx + 400), /pages: \[PageTypes\.WATCH\]/,
         'focused mode must not hide the masthead on every page type');
+});
+
+test('standalone userscript never falls through to public Cobalt APIs', () => {
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+    const metadata = userscriptSource.slice(0, userscriptSource.indexOf('// ==/UserScript=='));
+    const retiredHosts = [
+        'cobalt-api.meowing.de',
+        'cobalt-backend.canine.tools',
+        'kityune.imput.net',
+        'nachos.imput.net',
+        'sunny.imput.net',
+        'blossom.imput.net',
+        'capi.3kh0.net',
+        'downloadapi.stuff.solutions',
+    ];
+
+    assert.doesNotMatch(metadata, /@connect\s+.*cobalt/i,
+        'userscript metadata must not grant a public Cobalt request channel');
+    for (const host of retiredHosts) {
+        assert.equal(userscriptSource.includes(host), false,
+            `userscript runtime must not carry the retired public instance ${host}`);
+    }
+    assert.doesNotMatch(userscriptSource, /_cobaltApiInstances|_tryCobaltApiDownload|_resolveCobaltApiUrl/,
+        'automatic community-instance failover must stay deleted');
+    assert.match(userscriptSource, /function _buildConfiguredWebDownloaderUrl\(/,
+        'the userscript should retain an explicit navigation-only web fallback');
+    assert.match(userscriptSource, /targetUrl\.origin !== configuredOrigin/,
+        'a placeholder must not be able to redirect the handoff to another origin');
+    assert.match(userscriptSource, /:`?\s*`\$\{described\.url\.replace\(\/#\.\*\$\/, ''\)\}#\$\{encodedUrl\}`/,
+        'the default handoff must put the canonical URL in a fragment');
+    assert.match(userscriptSource, /SETTINGS_VERSION:\s*3/,
+        'the changed fallback semantics need a one-time settings migration');
+    assert.match(userscriptSource, /3:\s*\(s\)\s*=>\s*\{[\s\S]*?s\.cobaltUrl\s*=\s*'';/,
+        'migration must clear old API-or-frontend values instead of silently reusing them');
+    assert.doesNotMatch(userscriptSource, /cobaltUrl:\s*'https:\/\//,
+        'no public or community Cobalt URL may remain a shipped default');
+
+    const downloadStart = userscriptSource.indexOf('async function ytKitDownload');
+    const downloadEnd = userscriptSource.indexOf('async function _mediaDLSendDownload', downloadStart);
+    const downloadBlock = userscriptSource.slice(downloadStart, downloadEnd);
+    assert.match(downloadBlock, /_webDownloadFallback\(videoUrl\)/,
+        'the final userscript fallback should be the configured web-page handoff');
+    assert.doesNotMatch(downloadBlock, /GM_xmlhttpRequest|Cobalt API/,
+        'the final userscript fallback must not disclose the watch URL through an API request');
 });
 
 test('quality ladder rungs the companion cannot honor are rejected', () => {

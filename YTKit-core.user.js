@@ -3660,8 +3660,8 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "downloadHistoryPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["mediaDL"]) }),
     Object.freeze({ key: "downloadHealthPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["mediaDL"]) }),
     Object.freeze({ key: "downloadStreamLinksPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "downloadCobaltFallback", category: "downloads", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", labelKey: "Cobalt download fallback", descriptionKey: "When the Astra Downloader companion is unreachable, fall back to the Cobalt API." }),
-    Object.freeze({ key: "downloadCobaltInstance", category: "downloads", type: "string", defaultValue: "https://api.cobalt.tools/api/json", risk: "api", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "Cobalt API instance URL", descriptionKey: "Extension builds only allow https://api.cobalt.tools; userscript builds can use self-hosted endpoints." }),
+    Object.freeze({ key: "downloadCobaltFallback", category: "downloads", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "downloads", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", labelKey: "Self-hosted Cobalt fallback", descriptionKey: "When Astra Downloader is unreachable, use a self-hosted Cobalt instance after granting access to that one HTTPS origin." }),
+    Object.freeze({ key: "downloadCobaltInstance", category: "downloads", type: "string", defaultValue: "", risk: "api", profile: "github-full", scope: "downloads", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "Self-hosted Cobalt origin", descriptionKey: "Required. Enter the root HTTPS origin of a Cobalt instance you operate or are authorized to use; public api.cobalt.tools is not permitted." }),
 
     // ─── enrichment ───
     Object.freeze({ key: "returnDislike", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -8521,8 +8521,9 @@ if (typeof globalThis !== "undefined") {
     // The maintained TeamPiped mirror implements the hash-prefix endpoint
     // Astra uses, so it is a safe bounded failover for segment lookups. Keep
     // this list explicit: a user-supplied origin must never become a STATIC
-    // host permission or a silently-proxied target. The one user-chosen
-    // destination in the catalogue — the Video Hider filter list — is instead
+    // host permission or a silently-proxied target. The user-chosen
+    // destinations in the catalogue — Video Hider lists and self-hosted
+    // Cobalt — are instead
     // gated on a github-full-only optional permission, the browser's own
     // per-origin prompt, and the public-host denylist in
     // core/remote-list-scope.js. Nothing else may follow that pattern without
@@ -8704,19 +8705,22 @@ if (typeof globalThis !== "undefined") {
             riskBand: 'local-companion'
         }),
         ...(COMPANION_ORIGIN_ENTRY ? [COMPANION_ORIGIN_ENTRY] : []),
+        // Dynamic destinations are patterns, not install-time host grants: the
+        // github-full build declares `https://*/*` as optional so the browser
+        // can prompt for one specific origin at a time. Generic feature-to-host
+        // helpers skip `specificOriginRequired` entries to prevent an all-sites
+        // prompt; the owning UI derives the exact origin from its setting.
         Object.freeze({
-            origin: 'https://api.cobalt.tools',
-            purpose: 'Cobalt fallback download API (user-configurable instance, off by default).',
+            origin: 'https://*',
+            purpose: 'User-configured self-hosted Cobalt API, contacted only after an exact per-origin grant.',
             requiredByFeatures: ['downloadCobaltFallback'],
             credentialsPolicy: 'no-cookies',
             profile: 'github-full',
-            hostGrant: 'required',
+            hostGrant: 'runtime-optional',
+            runtimeOptionalProfiles: Object.freeze(['github-full']),
+            specificOriginRequired: true,
             riskBand: 'api'
         }),
-        // The only entry whose destination the user chooses. It is a pattern,
-        // not a host: the build declares `https://*/*` so the browser can
-        // prompt for one specific origin at a time, and nothing is contacted
-        // until the user both configures a URL and grants that origin.
         // core/remote-list-scope.js rejects private, loopback, link-local and
         // non-public hosts before a grant is even requested.
         Object.freeze({
@@ -8727,6 +8731,7 @@ if (typeof globalThis !== "undefined") {
             profile: 'github-full',
             hostGrant: 'runtime-optional',
             runtimeOptionalProfiles: Object.freeze(['github-full']),
+            specificOriginRequired: true,
             riskBand: 'experimental'
         })
     ]);
@@ -8877,6 +8882,7 @@ if (typeof globalThis !== "undefined") {
         for (const entry of catalogue) {
             if (entry.profile !== profile) continue;
             if (entry.hostGrant !== 'runtime-optional') continue;
+            if (entry.specificOriginRequired === true) continue;
             if (Array.isArray(entry.runtimeOptionalProfiles)
                 && !entry.runtimeOptionalProfiles.includes(profile)) continue;
             if (!entryAppliesToFeature(entry, featureKey)) continue;
@@ -30755,7 +30761,9 @@ function attachUIEventListeners() {
                             deniedCard.classList.remove('ytkit-card-enabled');
                         }
                         const featureName = getFeatureName(feature) || featureId;
-                        const message = `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
+                        const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
+                            ? error.message
+                            : `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
                         showToast(message, '#ef4444', { duration: 6 });
                         setPanelStatus(message, 'error');
                         DebugManager.log('Permissions', `${featureId} enable blocked: ${error?.message || 'host access denied'}`);
@@ -30939,7 +30947,9 @@ function attachUIEventListeners() {
                         e.target.checked = false;
                         const deniedSwitch = e.target.closest('.ytkit-switch');
                         if (deniedSwitch) deniedSwitch.classList.remove('active');
-                        const message = 'Some settings need host access. Try again and approve the browser prompt.';
+                        const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
+                            ? error.message
+                            : 'Some settings need host access. Try again and approve the browser prompt.';
                         showToast(message, '#ef4444', { duration: 6 });
                         setPanelStatus(message, 'error');
                         DebugManager.log('Permissions', `Enable-all blocked: ${error?.message || 'host access denied'}`);

@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "活跃"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "移除访问权限前，自托管 Cobalt 可以通过此站点处理该视频。"
+  },
   "dataFlowCreds": {
     "message": "凭据"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "风险"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "移除访问权限前，Video Hider 和自托管 Cobalt 可以使用此站点。"
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total} 个来源活跃"
   },
@@ -405,10 +411,13 @@
     "message": "数据管理"
   },
   "dlCobaltButtonTitle": {
-    "message": "Astra Downloader 离线时尝试使用 cobalt.tools"
+    "message": "Astra Downloader 离线时使用自托管 Cobalt 实例"
   },
   "dlCobaltFailedTpl": {
     "message": "Cobalt 备用功能失败：{error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "请在工具栏弹窗的设置概览中配置自托管 Cobalt HTTPS 来源，然后授权访问该站点。"
   },
   "dlCobaltOpened": {
     "message": "Cobalt 备用功能：已在新标签页中打开媒体 URL。"
@@ -1945,10 +1954,10 @@
     "message": "音频格式"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "当 Astra Downloader 不可达时，使用 Cobalt 作为备用。扩展版本仅允许连接 api.cobalt.tools；用户脚本版本可以使用自定义实例。仅在 GitHub/完整配置文件中运行，且仅在 Astra Downloader 离线时。"
+    "message": "当 Astra Downloader 无法连接时，请先在工具栏弹窗中设置自托管 Cobalt HTTPS 实例的来源并仅授权该站点，再使用此备用功能。不包含任何公共 Cobalt 实例。"
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt 回退（GitHub 配置文件）"
+    "message": "自托管 Cobalt 备用功能"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "在下载按钮旁显示 Astra Downloader 的 yt-dlp 版本、ffmpeg 状态和 PO Token 提供程序状态。每 30 秒读取 /health；无额外存储。"

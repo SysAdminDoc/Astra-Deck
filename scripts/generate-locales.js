@@ -2162,7 +2162,6 @@ for (const [locale, messages] of Object.entries(VIDEO_NOTES_TRANSLATIONS)) Objec
 
 const DOWNLOAD_UI_COPY_TRANSLATIONS = {
   de: {
-    'Try cobalt.tools when Astra Downloader is offline': 'cobalt.tools verwenden, wenn Astra Downloader offline ist',
     'Cobalt fallback failed: {error}': 'Cobalt-Fallback fehlgeschlagen: {error}',
     'Cobalt fallback: opened media URL in new tab.': 'Cobalt-Fallback: Medien-URL in neuem Tab geöffnet.',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'Der Cobalt-Fallback ist nur im GitHub/Full-Profil aktiviert.',
@@ -2180,7 +2179,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label}, {value}'
   },
   es: {
-    'Try cobalt.tools when Astra Downloader is offline': 'Probar cobalt.tools cuando Astra Downloader esté desconectado',
     'Cobalt fallback failed: {error}': 'Error del respaldo de Cobalt: {error}',
     'Cobalt fallback: opened media URL in new tab.': 'Respaldo de Cobalt: URL multimedia abierta en una pestaña nueva.',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'El respaldo de Cobalt solo está habilitado en el perfil GitHub/full.',
@@ -2198,7 +2196,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label}, {value}'
   },
   fr: {
-    'Try cobalt.tools when Astra Downloader is offline': 'Essayer cobalt.tools quand Astra Downloader est hors ligne',
     'Cobalt fallback failed: {error}': 'Échec du fallback Cobalt : {error}',
     'Cobalt fallback: opened media URL in new tab.': 'Fallback Cobalt : URL multimédia ouverte dans un nouvel onglet.',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'Le fallback Cobalt n’est activé que dans le profil GitHub/full.',
@@ -2216,7 +2213,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label} : {value}'
   },
   it: {
-    'Try cobalt.tools when Astra Downloader is offline': 'Prova cobalt.tools quando Astra Downloader è offline',
     'Cobalt fallback failed: {error}': 'Fallback Cobalt non riuscito: {error}',
     'Cobalt fallback: opened media URL in new tab.': 'Fallback Cobalt: URL multimediale aperta in una nuova scheda.',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'Il fallback Cobalt è attivo solo nel profilo GitHub/full.',
@@ -2234,7 +2230,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label}, {value}'
   },
   pt_BR: {
-    'Try cobalt.tools when Astra Downloader is offline': 'Tentar cobalt.tools quando o Astra Downloader estiver offline',
     'Cobalt fallback failed: {error}': 'Falha no fallback do Cobalt: {error}',
     'Cobalt fallback: opened media URL in new tab.': 'Fallback do Cobalt: URL de mídia aberta em uma nova guia.',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'O fallback do Cobalt só está ativado no perfil GitHub/full.',
@@ -2252,7 +2247,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label}, {value}'
   },
   ru: {
-    'Try cobalt.tools when Astra Downloader is offline': 'Попробовать cobalt.tools, когда Astra Downloader не запущен',
     'Cobalt fallback failed: {error}': 'Ошибка резервного режима Cobalt: {error}',
     'Cobalt fallback: opened media URL in new tab.': 'Резервный режим Cobalt: медиа-URL открыта в новой вкладке.',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'Резервный режим Cobalt доступен только в профиле GitHub/full.',
@@ -2270,7 +2264,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label}, {value}'
   },
   ja: {
-    'Try cobalt.tools when Astra Downloader is offline': 'Astra Downloader がオフラインのときに cobalt.tools を試す',
     'Cobalt fallback failed: {error}': 'Cobalt フォールバックに失敗しました: {error}',
     'Cobalt fallback: opened media URL in new tab.': 'Cobalt フォールバック: メディア URL を新しいタブで開きました。',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'Cobalt フォールバックは GitHub/full プロファイルでのみ有効です。',
@@ -2288,7 +2281,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label}、{value}'
   },
   ko: {
-    'Try cobalt.tools when Astra Downloader is offline': 'Astra Downloader가 오프라인일 때 cobalt.tools 사용',
     'Cobalt fallback failed: {error}': 'Cobalt 대체 기능 실패: {error}',
     'Cobalt fallback: opened media URL in new tab.': 'Cobalt 대체 기능: 미디어 URL을 새 탭에서 열었습니다.',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'Cobalt 대체 기능은 GitHub/full 프로필에서만 활성화됩니다.',
@@ -2306,7 +2298,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label}, {value}'
   },
   ar: {
-    'Try cobalt.tools when Astra Downloader is offline': 'جرّب cobalt.tools عندما يكون Astra Downloader غير متصل',
     'Cobalt fallback failed: {error}': 'فشل البديل Cobalt: {error}',
     'Cobalt fallback: opened media URL in new tab.': 'بديل Cobalt: فُتح عنوان الوسائط في علامة تبويب جديدة.',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'لا يتوفر البديل Cobalt إلا في ملف GitHub/full.',
@@ -2324,7 +2315,6 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
     '{label} {value}': '{label}، {value}'
   },
   zh_CN: {
-    'Try cobalt.tools when Astra Downloader is offline': 'Astra Downloader 离线时尝试使用 cobalt.tools',
     'Cobalt fallback failed: {error}': 'Cobalt 备用功能失败：{error}',
     'Cobalt fallback: opened media URL in new tab.': 'Cobalt 备用功能：已在新标签页中打开媒体 URL。',
     'Cobalt fallback is only enabled in the GitHub/full profile.': 'Cobalt 备用功能仅在 GitHub/full 配置中启用。',
@@ -2343,6 +2333,90 @@ const DOWNLOAD_UI_COPY_TRANSLATIONS = {
   }
 };
 for (const [locale, messages] of Object.entries(DOWNLOAD_UI_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+const SELF_HOSTED_COBALT_TRANSLATIONS = {
+  de: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Eigene Cobalt-Instanz verwenden, wenn Astra Downloader offline ist',
+    'Self-hosted Cobalt fallback': 'Fallback mit eigener Cobalt-Instanz',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'Wenn Astra Downloader nicht erreichbar ist, eine eigene Cobalt-HTTPS-Instanz verwenden, nachdem ihr Ursprung im Toolbar-Popup festgelegt und der Zugriff auf diese eine Website gewährt wurde. Es ist keine öffentliche Cobalt-Instanz enthalten.',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': 'Konfigurieren Sie im Einstellungsüberblick des Toolbar-Popups den HTTPS-Ursprung einer eigenen Cobalt-Instanz und gewähren Sie dann Zugriff auf diese Website.',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': 'Die eigene Cobalt-Instanz kann dieses Video über diese Website verarbeiten, bis der Zugriff entfernt wird.',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': 'Video Hider und die eigene Cobalt-Instanz können diese Website verwenden, bis der Zugriff entfernt wird.'
+  },
+  es: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Usar tu instancia propia de Cobalt cuando Astra Downloader esté desconectado',
+    'Self-hosted Cobalt fallback': 'Respaldo con Cobalt propio',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'Cuando Astra Downloader no esté disponible, usa una instancia propia de Cobalt por HTTPS después de configurar su origen en la ventana de la barra y conceder acceso solo a ese sitio. No se incluye ninguna instancia pública de Cobalt.',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': 'Configura el origen HTTPS de una instancia propia de Cobalt en el resumen de ajustes de la ventana de la barra y concede acceso a ese sitio.',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': 'La instancia propia de Cobalt puede procesar este vídeo mediante este sitio hasta que se retire el acceso.',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': 'Video Hider y la instancia propia de Cobalt pueden usar este sitio hasta que se retire el acceso.'
+  },
+  fr: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Utiliser votre instance Cobalt auto-hébergée quand Astra Downloader est hors ligne',
+    'Self-hosted Cobalt fallback': 'Repli Cobalt auto-hébergé',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'Quand Astra Downloader est inaccessible, utilisez une instance Cobalt auto-hébergée en HTTPS après avoir défini son origine dans la fenêtre de la barre d’outils et autorisé ce seul site. Aucune instance Cobalt publique n’est incluse.',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': 'Configurez l’origine HTTPS d’une instance Cobalt auto-hébergée dans l’aperçu des paramètres de la barre d’outils, puis autorisez ce site.',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': 'L’instance Cobalt auto-hébergée peut traiter cette vidéo via ce site jusqu’au retrait de l’accès.',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': 'Video Hider et l’instance Cobalt auto-hébergée peuvent utiliser ce site jusqu’au retrait de l’accès.'
+  },
+  it: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Usa la tua istanza Cobalt self-hosted quando Astra Downloader è offline',
+    'Self-hosted Cobalt fallback': 'Fallback Cobalt self-hosted',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'Quando Astra Downloader non è raggiungibile, usa un’istanza Cobalt self-hosted tramite HTTPS dopo averne impostato l’origine nel popup della barra e concesso l’accesso solo a quel sito. Non è inclusa alcuna istanza Cobalt pubblica.',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': 'Configura l’origine HTTPS di un’istanza Cobalt self-hosted nella panoramica impostazioni del popup della barra, quindi concedi l’accesso al sito.',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': 'L’istanza Cobalt self-hosted può elaborare questo video tramite il sito finché l’accesso non viene rimosso.',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': 'Video Hider e l’istanza Cobalt self-hosted possono usare questo sito finché l’accesso non viene rimosso.'
+  },
+  pt_BR: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Usar sua instância própria do Cobalt quando o Astra Downloader estiver offline',
+    'Self-hosted Cobalt fallback': 'Fallback com Cobalt próprio',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'Quando o Astra Downloader não estiver acessível, use uma instância própria do Cobalt por HTTPS após definir a origem no popup da barra e conceder acesso somente a esse site. Nenhuma instância pública do Cobalt está incluída.',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': 'Configure a origem HTTPS de uma instância própria do Cobalt na visão geral de configurações do popup da barra e conceda acesso ao site.',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': 'A instância própria do Cobalt pode processar este vídeo por esse site até que o acesso seja removido.',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': 'O Video Hider e a instância própria do Cobalt podem usar este site até que o acesso seja removido.'
+  },
+  ru: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Использовать собственный экземпляр Cobalt, когда Astra Downloader не запущен',
+    'Self-hosted Cobalt fallback': 'Резервный собственный Cobalt',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'Если Astra Downloader недоступен, используйте собственный экземпляр Cobalt по HTTPS, указав его источник во всплывающем окне панели инструментов и предоставив доступ только к этому сайту. Публичный экземпляр Cobalt не включён.',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': 'Укажите HTTPS-источник собственного экземпляра Cobalt в обзоре настроек всплывающего окна панели инструментов, затем предоставьте доступ к сайту.',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': 'Собственный экземпляр Cobalt может обрабатывать это видео через данный сайт, пока доступ не удалён.',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': 'Video Hider и собственный экземпляр Cobalt могут использовать этот сайт, пока доступ не удалён.'
+  },
+  ja: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Astra Downloader がオフラインのときに自己ホストの Cobalt インスタンスを使用',
+    'Self-hosted Cobalt fallback': '自己ホスト Cobalt フォールバック',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'Astra Downloader に接続できない場合、ツールバーのポップアップで接続先を設定し、そのサイトだけにアクセスを許可した後、自己ホストの Cobalt HTTPS インスタンスを使用します。公開 Cobalt インスタンスは含まれません。',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': 'ツールバーのポップアップにある設定概要で自己ホスト Cobalt の HTTPS 接続先を設定し、そのサイトへのアクセスを許可してください。',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': 'アクセスを削除するまで、自己ホストの Cobalt はこのサイトを通じて動画を処理できます。',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': 'アクセスを削除するまで、Video Hider と自己ホストの Cobalt はこのサイトを使用できます。'
+  },
+  ko: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Astra Downloader가 오프라인일 때 자체 호스팅 Cobalt 인스턴스 사용',
+    'Self-hosted Cobalt fallback': '자체 호스팅 Cobalt 대체 기능',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'Astra Downloader에 연결할 수 없으면 도구 모음 팝업에서 원본을 설정하고 해당 사이트 하나에만 액세스를 허용한 뒤 자체 호스팅 Cobalt HTTPS 인스턴스를 사용합니다. 공개 Cobalt 인스턴스는 포함되지 않습니다.',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': '도구 모음 팝업의 설정 개요에서 자체 호스팅 Cobalt HTTPS 원본을 구성한 다음 해당 사이트에 액세스를 허용하세요.',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': '액세스를 제거할 때까지 자체 호스팅 Cobalt가 이 사이트를 통해 동영상을 처리할 수 있습니다.',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': '액세스를 제거할 때까지 Video Hider와 자체 호스팅 Cobalt가 이 사이트를 사용할 수 있습니다.'
+  },
+  ar: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'استخدم مثيل Cobalt المستضاف ذاتيًا عندما يكون Astra Downloader غير متصل',
+    'Self-hosted Cobalt fallback': 'بديل Cobalt مستضاف ذاتيًا',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': 'عندما يتعذر الوصول إلى Astra Downloader، استخدم مثيل Cobalt مستضافًا ذاتيًا عبر HTTPS بعد ضبط أصله في نافذة شريط الأدوات ومنح الوصول إلى ذلك الموقع فقط. لا يتضمن Astra Deck أي مثيل Cobalt عام.',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': 'اضبط أصل HTTPS لمثيل Cobalt مستضاف ذاتيًا في نظرة عامة على الإعدادات بنافذة شريط الأدوات، ثم امنح الوصول إلى الموقع.',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': 'يمكن لمثيل Cobalt المستضاف ذاتيًا معالجة هذا الفيديو عبر الموقع حتى إزالة الوصول.',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': 'يمكن لـ Video Hider ومثيل Cobalt المستضاف ذاتيًا استخدام هذا الموقع حتى إزالة الوصول.'
+  },
+  zh_CN: {
+    'Try your self-hosted Cobalt instance when Astra Downloader is offline': 'Astra Downloader 离线时使用自托管 Cobalt 实例',
+    'Self-hosted Cobalt fallback': '自托管 Cobalt 备用功能',
+    'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.': '当 Astra Downloader 无法连接时，请先在工具栏弹窗中设置自托管 Cobalt HTTPS 实例的来源并仅授权该站点，再使用此备用功能。不包含任何公共 Cobalt 实例。',
+    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.': '请在工具栏弹窗的设置概览中配置自托管 Cobalt HTTPS 来源，然后授权访问该站点。',
+    'Self-hosted Cobalt can process this video through this site until access is removed.': '移除访问权限前，自托管 Cobalt 可以通过此站点处理该视频。',
+    'Video Hider and self-hosted Cobalt can use this site until access is removed.': '移除访问权限前，Video Hider 和自托管 Cobalt 可以使用此站点。'
+  }
+};
+for (const [locale, messages] of Object.entries(SELF_HOSTED_COBALT_TRANSLATIONS)) Object.assign(T[locale], messages);
 
 const SETTINGS_PANEL_TRANSLATIONS = {
   de: {

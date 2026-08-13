@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "активен"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "Собственный экземпляр Cobalt может обрабатывать это видео через данный сайт, пока доступ не удалён."
+  },
   "dataFlowCreds": {
     "message": "учётные данные"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "риск"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "Video Hider и собственный экземпляр Cobalt могут использовать этот сайт, пока доступ не удалён."
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total} источников активно"
   },
@@ -405,10 +411,13 @@
     "message": "Управление данными"
   },
   "dlCobaltButtonTitle": {
-    "message": "Попробовать cobalt.tools, когда Astra Downloader не запущен"
+    "message": "Использовать собственный экземпляр Cobalt, когда Astra Downloader не запущен"
   },
   "dlCobaltFailedTpl": {
     "message": "Ошибка резервного режима Cobalt: {error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "Укажите HTTPS-источник собственного экземпляра Cobalt в обзоре настроек всплывающего окна панели инструментов, затем предоставьте доступ к сайту."
   },
   "dlCobaltOpened": {
     "message": "Резервный режим Cobalt: медиа-URL открыта в новой вкладке."
@@ -1945,10 +1954,10 @@
     "message": "Формат аудио"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Если Astra Downloader недоступен, используется Cobalt. Сборки расширения разрешают только api.cobalt.tools; сборки userscript могут использовать пользовательские экземпляры. Работает только в GitHub/полном профиле и когда Astra Downloader офлайн."
+    "message": "Если Astra Downloader недоступен, используйте собственный экземпляр Cobalt по HTTPS, указав его источник во всплывающем окне панели инструментов и предоставив доступ только к этому сайту. Публичный экземпляр Cobalt не включён."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Резервный Cobalt (профиль GitHub)"
+    "message": "Резервный собственный Cobalt"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "Показывать индикаторы версии yt-dlp, актуальности ffmpeg и состояния PO Token рядом с кнопкой загрузки. Запрашивает /health каждые 30 с; без дополнительного хранилища."

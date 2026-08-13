@@ -3848,7 +3848,7 @@ return response;
             downloadHealthPanel: false,                // Surfaces poTokenProvider / yt-dlp / ffmpeg health pills
             downloadStreamLinksPanel: false,           // Reads adaptiveFormats from ytInitialPlayerResponse
             downloadCobaltFallback: false,             // GitHub-full profile only; default off
-            downloadCobaltInstance: 'https://api.cobalt.tools/api/json',
+            downloadCobaltInstance: '',
             // v3.28.0 — Ratings, clickbait, and metadata trust
             returnDislike: false,                      // Off by default — uses RYD public API with rate-limit budget
             returnDislikeOnCards: false,
@@ -4003,7 +4003,7 @@ return response;
         },
 
         // Settings versioning and migration
-        SETTINGS_VERSION: 9,
+        SETTINGS_VERSION: 10,
 
         _migrations: {
             // v1 -> v2: Renamed/restructured settings in 2.1.2
@@ -4079,6 +4079,32 @@ return response;
                     if (s.hideAskAi === undefined) s.hideAskAi = false;
                     if (s.hideGeminiButtons === undefined) s.hideGeminiButtons = false;
                     if (s.hideAiContextPanels === undefined) s.hideAiContextPanels = false;
+                }
+                return s;
+            },
+            10: (s) => {
+                // Cobalt's hosted API is not available to third-party
+                // projects without permission. Remove the shipped public
+                // default and normalize the legacy Cobalt `/api/json` path for
+                // user-supplied hosts that pass the current public-HTTPS
+                // validator. Invalid endpoints disable the fallback rather
+                // than retaining a silent/dead network path.
+                let candidate = typeof s.downloadCobaltInstance === 'string'
+                    ? s.downloadCobaltInstance.trim() : '';
+                try {
+                    const parsed = new URL(candidate);
+                    if (parsed.pathname === '/api/json' && !parsed.search && !parsed.hash) {
+                        candidate = parsed.origin + '/';
+                    }
+                } catch (_) {
+                    // reason: the shared validator below owns the stable result
+                }
+                const described = globalThis.YTKitCore?.describeCobaltInstanceUrl?.(candidate);
+                if (described?.ok) {
+                    s.downloadCobaltInstance = described.url;
+                } else {
+                    s.downloadCobaltInstance = '';
+                    s.downloadCobaltFallback = false;
                 }
                 return s;
             },
@@ -5154,6 +5180,7 @@ return response;
         openExternalUrl,
         openProtocol,
         triggerDownload,
+        requestCobaltDownload: () => sendRuntimeMessage({ type: 'YTKIT_COBALT_REQUEST' }),
         requestNativeDownloaderToken,
         browserCookies,
         getProfileExportMode,
@@ -5583,6 +5610,16 @@ return response;
         const ids = Array.isArray(featureIds) ? featureIds : [featureIds];
         const requested = [];
         for (const featureId of ids) {
+            if (featureId === 'downloadCobaltFallback') {
+                const broadPattern = globalThis.YTKitCore?.REMOTE_LIST_HOST_PATTERN || 'https://*/*';
+                const described = globalThis.YTKitCore?.describeCobaltInstanceUrl?.(
+                    appState.settings?.downloadCobaltInstance
+                );
+                if (declaredSet.has(broadPattern) && described?.ok) {
+                    requested.push(described.originPattern);
+                }
+                continue;
+            }
             for (const origin of getHosts(featureId, { profile }) || []) {
                 if (declaredSet.has(origin)) requested.push(origin);
             }
@@ -5592,6 +5629,18 @@ return response;
 
     async function requestFeatureOptionalHosts(featureIds, enabling) {
         if (enabling !== true) return true;
+        const ids = Array.isArray(featureIds) ? featureIds : [featureIds];
+        if (ids.includes('downloadCobaltFallback')) {
+            const described = globalThis.YTKitCore?.describeCobaltInstanceUrl?.(
+                appState.settings?.downloadCobaltInstance
+            );
+            if (!described?.ok) {
+                const error = new Error(t('dlCobaltInstanceRequired',
+                    'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.'));
+                error.code = 'COBALT_INSTANCE_INVALID';
+                throw error;
+            }
+        }
         const origins = getDeclaredOptionalHostsForFeatures(featureIds);
         if (!origins.length) return true;
         const response = await sendRuntimeMessage({

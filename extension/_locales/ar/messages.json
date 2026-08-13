@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "نشط"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "يمكن لمثيل Cobalt المستضاف ذاتيًا معالجة هذا الفيديو عبر الموقع حتى إزالة الوصول."
+  },
   "dataFlowCreds": {
     "message": "بيانات الاعتماد"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "المخاطرة"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "يمكن لـ Video Hider ومثيل Cobalt المستضاف ذاتيًا استخدام هذا الموقع حتى إزالة الوصول."
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total} مصدر نشط"
   },
@@ -405,10 +411,13 @@
     "message": "إدارة البيانات"
   },
   "dlCobaltButtonTitle": {
-    "message": "جرّب cobalt.tools عندما يكون Astra Downloader غير متصل"
+    "message": "استخدم مثيل Cobalt المستضاف ذاتيًا عندما يكون Astra Downloader غير متصل"
   },
   "dlCobaltFailedTpl": {
     "message": "فشل البديل Cobalt: {error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "اضبط أصل HTTPS لمثيل Cobalt مستضاف ذاتيًا في نظرة عامة على الإعدادات بنافذة شريط الأدوات، ثم امنح الوصول إلى الموقع."
   },
   "dlCobaltOpened": {
     "message": "بديل Cobalt: فُتح عنوان الوسائط في علامة تبويب جديدة."
@@ -1945,10 +1954,10 @@
     "message": "صيغة الصوت"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "عند تعذر الوصول إلى Astra Downloader، يستخدم Cobalt كبديل. تسمح إصدارات الامتداد بالاتصال بـ api.cobalt.tools فقط، بينما يمكن لإصدارات userscript استخدام مثيلات مخصصة. يعمل فقط في ملف GitHub/الكامل وعندما يكون Astra Downloader غير متصل."
+    "message": "عندما يتعذر الوصول إلى Astra Downloader، استخدم مثيل Cobalt مستضافًا ذاتيًا عبر HTTPS بعد ضبط أصله في نافذة شريط الأدوات ومنح الوصول إلى ذلك الموقع فقط. لا يتضمن Astra Deck أي مثيل Cobalt عام."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "بديل Cobalt (ملف GitHub)"
+    "message": "بديل Cobalt مستضاف ذاتيًا"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "عرض شارات لإصدار yt-dlp في Astra Downloader وحالة ffmpeg وموفّر PO Token بجانب زر التنزيل. يقرأ /health كل 30 ثانية؛ بدون تخزين إضافي."

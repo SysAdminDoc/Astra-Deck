@@ -4,7 +4,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+    COBALT_PUBLIC_INSTANCE_HOST,
     REMOTE_LIST_HOST_PATTERN,
+    describeCobaltInstanceUrl,
     describeRemoteListUrl,
     isRemoteListUrlAllowed,
     remoteListOriginPattern
@@ -23,6 +25,39 @@ test('a public HTTPS list URL is admitted and yields a single-host grant pattern
     assert.equal(described.url, 'https://lists.example.com/astra/rules.json?v=2');
     assert.equal(described.hostname, 'lists.example.com');
     assert.equal(described.originPattern, 'https://lists.example.com/*');
+});
+
+test('a self-hosted Cobalt root is normalized to one exact public HTTPS origin', () => {
+    for (const input of [
+        'https://cobalt.example.net',
+        '  https://cobalt.example.net/  '
+    ]) {
+        const described = describeCobaltInstanceUrl(input);
+        assert.equal(described.ok, true, input);
+        assert.equal(described.url, 'https://cobalt.example.net/');
+        assert.equal(described.origin, 'https://cobalt.example.net');
+        assert.equal(described.originPattern, 'https://cobalt.example.net/*');
+    }
+});
+
+test('Cobalt rejects the public service and endpoint shapes that could carry authority', () => {
+    assert.equal(COBALT_PUBLIC_INSTANCE_HOST, 'api.cobalt.tools');
+    const cases = [
+        ['https://api.cobalt.tools/', 'public-instance'],
+        ['http://cobalt.example.net/', 'not-https'],
+        ['https://user:secret@cobalt.example.net/', 'credentials'],
+        ['https://cobalt.example.net/?token=secret', 'query'],
+        ['https://cobalt.example.net/#fragment', 'fragment'],
+        ['https://cobalt.example.net/api/json', 'path'],
+        ['https://127.0.0.1/', 'private-network'],
+        ['https://cobalt.local/', 'non-public-host'],
+        ['https://8.8.8.8/', 'ip-literal']
+    ];
+    for (const [input, reason] of cases) {
+        const described = describeCobaltInstanceUrl(input);
+        assert.equal(described.ok, false, input);
+        assert.equal(described.reason, reason, input);
+    }
 });
 
 test('the grant pattern drops the port, because match patterns have no port component', () => {

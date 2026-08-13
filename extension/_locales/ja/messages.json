@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "アクティブ"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "アクセスを削除するまで、自己ホストの Cobalt はこのサイトを通じて動画を処理できます。"
+  },
   "dataFlowCreds": {
     "message": "認証情報"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "リスク"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "アクセスを削除するまで、Video Hider と自己ホストの Cobalt はこのサイトを使用できます。"
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total} 個のオリジンがアクティブ"
   },
@@ -405,10 +411,13 @@
     "message": "データ管理"
   },
   "dlCobaltButtonTitle": {
-    "message": "Astra Downloader がオフラインのときに cobalt.tools を試す"
+    "message": "Astra Downloader がオフラインのときに自己ホストの Cobalt インスタンスを使用"
   },
   "dlCobaltFailedTpl": {
     "message": "Cobalt フォールバックに失敗しました: {error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "ツールバーのポップアップにある設定概要で自己ホスト Cobalt の HTTPS 接続先を設定し、そのサイトへのアクセスを許可してください。"
   },
   "dlCobaltOpened": {
     "message": "Cobalt フォールバック: メディア URL を新しいタブで開きました。"
@@ -1945,10 +1954,10 @@
     "message": "音声フォーマット"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Astra Downloader に到達できない場合は Cobalt にフォールバックします。拡張機能ビルドで利用できる接続先は api.cobalt.tools のみです。ユーザースクリプトビルドではカスタムインスタンスを使用できます。GitHub/フルプロファイルかつ Astra Downloader がオフラインの場合のみ動作します。"
+    "message": "Astra Downloader に接続できない場合、ツールバーのポップアップで接続先を設定し、そのサイトだけにアクセスを許可した後、自己ホストの Cobalt HTTPS インスタンスを使用します。公開 Cobalt インスタンスは含まれません。"
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt フォールバック (GitHub プロファイル)"
+    "message": "自己ホスト Cobalt フォールバック"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "ダウンロードボタンの横に Astra Downloader の yt-dlp バージョン、ffmpeg の鮮度、PO Token プロバイダーの状態をピルとして表示。30 秒ごとに /health を読み取り。追加ストレージなし。"

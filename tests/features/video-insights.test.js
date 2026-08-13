@@ -155,6 +155,8 @@ test('video insights module is loaded before ytkit and registered in data-flow p
     assert.ok(youtube.requiredByFeatures.includes('videoInsights'));
 
     const { patchManifestForBuildProfile } = require('../../build-extension.js');
+    assert.ok((manifest.optional_host_permissions || []).includes('https://api.openai.com/*'),
+        'the source profile sentinel is runtime-optional, not an install-time host grant');
     assert.equal(isGithubFullArtifactManifest(manifest), true);
     assert.equal(isGithubFullArtifactManifest(patchManifestForBuildProfile(manifest, 'store-safe')), false);
     assert.equal(isGithubFullArtifactManifest(patchManifestForBuildProfile(manifest, 'github-full')), true);

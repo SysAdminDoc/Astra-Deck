@@ -564,7 +564,6 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://api.openai.com',
     'https://api.anthropic.com',
     'https://generativelanguage.googleapis.com',
-    'https://api.cobalt.tools',
     'https://www.reddit.com',
     'https://old.reddit.com',
     // Fixed, data-only selector updates from the project-owned repository.
@@ -639,6 +638,8 @@ const WINDOWS_RESERVED_FILENAME_BASENAMES = new Set([
 const MAX_DOWNLOAD_FILENAME_LENGTH = 180;
 const SELECTOR_ASSET_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/selector-packs.json';
 const MAX_SELECTOR_ASSET_BYTES = 256 * 1024;
+const MAX_COBALT_RESPONSE_BYTES = 512 * 1024;
+const COBALT_REQUEST_TIMEOUT_MS = 15000;
 
 async function readTextBounded(response, maxBytes, label) {
     const contentLength = response.headers?.get?.('content-length');
@@ -654,13 +655,20 @@ async function readTextBounded(response, maxBytes, label) {
     return { text, bytes };
 }
 
-// The broad optional pattern that makes user-chosen filter-list origins
-// grantable. It is declared only by the github-full build; store-safe strips
-// it, so the remote-list door does not exist in store artifacts at all.
+// The broad optional pattern that makes user-chosen HTTPS origins grantable.
+// It is declared only by the github-full build; store-safe strips it, so this
+// exact-origin permission door does not exist in store artifacts at all.
 const REMOTE_LIST_HOST_PATTERN = globalThis.YTKitCore?.REMOTE_LIST_HOST_PATTERN || 'https://*/*';
+const COBALT_PUBLIC_INSTANCE_HOST = globalThis.YTKitCore?.COBALT_PUBLIC_INSTANCE_HOST || 'api.cobalt.tools';
 
 function describeRemoteListUrl(url) {
     const describe = globalThis.YTKitCore?.describeRemoteListUrl;
+    if (typeof describe !== 'function') return { ok: false, reason: 'scope-service-unavailable' };
+    return describe(url);
+}
+
+function describeCobaltInstanceUrl(url) {
+    const describe = globalThis.YTKitCore?.describeCobaltInstanceUrl;
     if (typeof describe !== 'function') return { ok: false, reason: 'scope-service-unavailable' };
     return describe(url);
 }
@@ -685,7 +693,11 @@ function isStaticAllowlistedUrl(url) {
 // still demands that the user actually granted this exact origin.
 function isRemoteListUrlAdmissible(url) {
     if (!getRuntimeOptionalHostPermissions().includes(REMOTE_LIST_HOST_PATTERN)) return false;
-    return describeRemoteListUrl(url).ok === true;
+    const described = describeRemoteListUrl(url);
+    // The dynamic GET door exists for user-owned data sources, not as an
+    // alternate route back to Cobalt's public service. The dedicated Cobalt
+    // contract applies the stricter instance validator as well.
+    return described.ok === true && described.hostname !== COBALT_PUBLIC_INSTANCE_HOST;
 }
 
 function isUrlAllowed(url) {
@@ -752,7 +764,9 @@ function isGrantableRemoteListOrigin(origin) {
     if (!getRuntimeOptionalHostPermissions().includes(REMOTE_LIST_HOST_PATTERN)) return false;
     if (typeof origin !== 'string' || !origin.endsWith('/*')) return false;
     const described = describeRemoteListUrl(origin.slice(0, -2) + '/');
-    return described.ok === true && described.originPattern === origin;
+    return described.ok === true
+        && described.hostname !== COBALT_PUBLIC_INSTANCE_HOST
+        && described.originPattern === origin;
 }
 
 function validateRuntimeOptionalHostRequest(origins) {
@@ -972,6 +986,11 @@ async function fetchWithValidatedRedirects(url, options) {
         if (!isUrlAllowed(nextUrl)) {
             throw new Error(`Redirect URL not in allowlist: ${nextUrl}`);
         }
+        // Dynamic HTTPS destinations are covered by one broad declaration but
+        // one exact user grant. Re-check every redirect hop so a permitted
+        // filter-list host cannot bounce the worker to an unrelated public
+        // origin that the user never approved.
+        await requireRuntimeOptionalHostGrant(nextUrl);
 
         const nextMethod = getExtFetchRedirectMethod(response.status, currentMethod);
         if (nextMethod !== currentMethod) currentBody = null;
@@ -1010,6 +1029,108 @@ function normalizeRequestBody(data, headers = {}) {
     }
 
     return String(data);
+}
+
+function canonicalYouTubeWatchUrl(sender) {
+    const raw = sender?.tab?.url || sender?.url;
+    if (typeof raw !== 'string' || !raw) return '';
+    try {
+        const parsed = new URL(raw);
+        const hostname = parsed.hostname.toLowerCase();
+        let videoId = '';
+        if (hostname === 'youtu.be' || hostname === 'www.youtu.be') {
+            videoId = parsed.pathname.split('/').filter(Boolean)[0] || '';
+        } else if (hostname === 'youtube.com' || hostname.endsWith('.youtube.com')) {
+            if (parsed.pathname === '/watch') videoId = parsed.searchParams.get('v') || '';
+        }
+        if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return '';
+        return `https://www.youtube.com/watch?v=${videoId}`;
+    } catch (_) {
+        return '';
+    }
+}
+
+function cobaltFailure(code, message) {
+    return {
+        ok: false,
+        error: {
+            code: String(code || 'COBALT_REQUEST_FAILED').slice(0, 80),
+            message: String(message || 'Self-hosted Cobalt request failed.').slice(0, 240)
+        }
+    };
+}
+
+async function performCobaltRequest(sender) {
+    const mediaUrl = canonicalYouTubeWatchUrl(sender);
+    if (!mediaUrl) {
+        return cobaltFailure('COBALT_WATCH_TAB_REQUIRED', 'Open a YouTube watch page before using the Cobalt fallback.');
+    }
+
+    const stored = await callExtensionApi(ext.storage.local, 'get', SETTINGS_STORAGE_KEY);
+    const settings = stored?.[SETTINGS_STORAGE_KEY];
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+        return cobaltFailure('COBALT_SETTINGS_UNAVAILABLE', 'Cobalt settings are unavailable.');
+    }
+    const policy = globalThis.YTKitCore?.createPolicyProfile?.();
+    const effectiveProfile = policy?.resolveEffectiveProfile?.(settings)
+        || (settings.githubFullProfile === true || settings.safeStoreProfile === false
+            ? 'github-full' : 'store-safe');
+    if (effectiveProfile !== 'github-full' || settings.downloadCobaltFallback !== true) {
+        return cobaltFailure('COBALT_FEATURE_DISABLED', 'Enable the self-hosted Cobalt fallback in the GitHub/full profile first.');
+    }
+
+    const instance = describeCobaltInstanceUrl(settings.downloadCobaltInstance);
+    if (!instance.ok) {
+        return cobaltFailure('COBALT_INSTANCE_REQUIRED', 'Configure a self-hosted Cobalt HTTPS origin first.');
+    }
+    if (!getRuntimeOptionalHostPermissions().includes(REMOTE_LIST_HOST_PATTERN)) {
+        return cobaltFailure('COBALT_PROFILE_UNAVAILABLE', 'This build does not support user-supplied Cobalt hosts.');
+    }
+    const granted = await permissionsContainsOrigins([instance.originPattern]);
+    if (!granted) {
+        return cobaltFailure('COBALT_PERMISSION_REQUIRED', 'Grant site access to the configured Cobalt host, then retry.');
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), COBALT_REQUEST_TIMEOUT_MS);
+    try {
+        const response = await fetch(instance.url, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: mediaUrl }),
+            credentials: 'omit',
+            redirect: 'error',
+            signal: controller.signal
+        });
+        if (!response.ok) {
+            return cobaltFailure('COBALT_HTTP_ERROR', `Self-hosted Cobalt returned HTTP ${response.status}.`);
+        }
+        const { text } = await readTextBounded(response, MAX_COBALT_RESPONSE_BYTES, 'Cobalt response');
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (_) {
+            return cobaltFailure('COBALT_INVALID_RESPONSE', 'Self-hosted Cobalt returned invalid JSON.');
+        }
+        if (!data || typeof data !== 'object' || Array.isArray(data)
+            || !['redirect', 'tunnel', 'picker', 'local-processing', 'error'].includes(data.status)) {
+            return cobaltFailure('COBALT_INVALID_RESPONSE', 'Self-hosted Cobalt returned an unsupported response.');
+        }
+        return { ok: true, data };
+    } catch (error) {
+        if (error?.name === 'AbortError') {
+            return cobaltFailure('COBALT_TIMEOUT', 'Self-hosted Cobalt timed out.');
+        }
+        if (/Cobalt response exceeds the \d+-byte limit/.test(error?.message || '')) {
+            return cobaltFailure('COBALT_RESPONSE_TOO_LARGE', 'Self-hosted Cobalt returned too much data.');
+        }
+        return cobaltFailure('COBALT_REQUEST_FAILED', 'Could not reach the self-hosted Cobalt instance.');
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 function isAllowedCookieDomain(domain) {
@@ -1230,6 +1351,13 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         return true;
     }
 
+    if (msg.type === 'YTKIT_COBALT_REQUEST') {
+        performCobaltRequest(sender).then(sendResponse).catch(() => {
+            sendResponse(cobaltFailure('COBALT_REQUEST_FAILED', 'Self-hosted Cobalt request failed.'));
+        });
+        return true;
+    }
+
     if (msg.type === 'YTKIT_MUTATE_SETTING'
         || msg.type === 'YTKIT_MUTATE_SETTINGS'
         || msg.type === 'YTKIT_REPLACE_SETTINGS') {
@@ -1364,6 +1492,23 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         if (!isUrlAllowed(url)) {
             sendResponse({ error: `URL not in allowlist: ${url}` });
             return false;
+        }
+
+        // The broad github-full optional permission exists for anonymous,
+        // data-only filter-list GETs. It must never turn EXT_FETCH into a
+        // general-purpose POST proxy after one site grant. Self-hosted Cobalt
+        // uses the dedicated YTKIT_COBALT_REQUEST contract above, which owns
+        // its request shape and reads the destination from validated settings.
+        if (!isStaticAllowlistedUrl(url)) {
+            const dynamicMethod = String(method || 'GET').toUpperCase();
+            if (dynamicMethod !== 'GET' && dynamicMethod !== 'HEAD') {
+                sendResponse({ error: 'User-granted HTTPS hosts only support anonymous GET/HEAD through EXT_FETCH.' });
+                return false;
+            }
+            if (data !== null && data !== undefined) {
+                sendResponse({ error: 'User-granted HTTPS hosts do not accept request bodies through EXT_FETCH.' });
+                return false;
+            }
         }
 
         // Chrome runtime messaging JSON-serializes values instead of applying

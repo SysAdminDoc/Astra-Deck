@@ -45,8 +45,9 @@
     // The maintained TeamPiped mirror implements the hash-prefix endpoint
     // Astra uses, so it is a safe bounded failover for segment lookups. Keep
     // this list explicit: a user-supplied origin must never become a STATIC
-    // host permission or a silently-proxied target. The one user-chosen
-    // destination in the catalogue — the Video Hider filter list — is instead
+    // host permission or a silently-proxied target. The user-chosen
+    // destinations in the catalogue — Video Hider lists and self-hosted
+    // Cobalt — are instead
     // gated on a github-full-only optional permission, the browser's own
     // per-origin prompt, and the public-host denylist in
     // core/remote-list-scope.js. Nothing else may follow that pattern without
@@ -228,19 +229,22 @@
             riskBand: 'local-companion'
         }),
         ...(COMPANION_ORIGIN_ENTRY ? [COMPANION_ORIGIN_ENTRY] : []),
+        // Dynamic destinations are patterns, not install-time host grants: the
+        // github-full build declares `https://*/*` as optional so the browser
+        // can prompt for one specific origin at a time. Generic feature-to-host
+        // helpers skip `specificOriginRequired` entries to prevent an all-sites
+        // prompt; the owning UI derives the exact origin from its setting.
         Object.freeze({
-            origin: 'https://api.cobalt.tools',
-            purpose: 'Cobalt fallback download API (user-configurable instance, off by default).',
+            origin: 'https://*',
+            purpose: 'User-configured self-hosted Cobalt API, contacted only after an exact per-origin grant.',
             requiredByFeatures: ['downloadCobaltFallback'],
             credentialsPolicy: 'no-cookies',
             profile: 'github-full',
-            hostGrant: 'required',
+            hostGrant: 'runtime-optional',
+            runtimeOptionalProfiles: Object.freeze(['github-full']),
+            specificOriginRequired: true,
             riskBand: 'api'
         }),
-        // The only entry whose destination the user chooses. It is a pattern,
-        // not a host: the build declares `https://*/*` so the browser can
-        // prompt for one specific origin at a time, and nothing is contacted
-        // until the user both configures a URL and grants that origin.
         // core/remote-list-scope.js rejects private, loopback, link-local and
         // non-public hosts before a grant is even requested.
         Object.freeze({
@@ -251,6 +255,7 @@
             profile: 'github-full',
             hostGrant: 'runtime-optional',
             runtimeOptionalProfiles: Object.freeze(['github-full']),
+            specificOriginRequired: true,
             riskBand: 'experimental'
         })
     ]);
@@ -401,6 +406,7 @@
         for (const entry of catalogue) {
             if (entry.profile !== profile) continue;
             if (entry.hostGrant !== 'runtime-optional') continue;
+            if (entry.specificOriginRequired === true) continue;
             if (Array.isArray(entry.runtimeOptionalProfiles)
                 && !entry.runtimeOptionalProfiles.includes(profile)) continue;
             if (!entryAppliesToFeature(entry, featureKey)) continue;

@@ -340,7 +340,7 @@ const RETIRED_SETTING_KEYS = new Set([
 // v4.47.0 NF25: must match ytkit.js#SETTINGS_VERSION and
 // settings-meta.json#settingsVersion. The check-versions.js gate
 // enforces parity across all three sources; bump in lockstep.
-const SETTINGS_VERSION_FALLBACK = 9;
+const SETTINGS_VERSION_FALLBACK = 10;
 const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
     2(settings) {
         return settings;
@@ -376,6 +376,26 @@ const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
             if (settings.hideAskAi === undefined) settings.hideAskAi = false;
             if (settings.hideGeminiButtons === undefined) settings.hideGeminiButtons = false;
             if (settings.hideAiContextPanels === undefined) settings.hideAiContextPanels = false;
+        }
+        return settings;
+    },
+    10(settings) {
+        let candidate = typeof settings.downloadCobaltInstance === 'string'
+            ? settings.downloadCobaltInstance.trim() : '';
+        try {
+            const parsed = new URL(candidate);
+            if (parsed.pathname === '/api/json' && !parsed.search && !parsed.hash) {
+                candidate = parsed.origin + '/';
+            }
+        } catch (_) {
+            // reason: the shared validator below owns the stable result
+        }
+        const described = globalThis.YTKitCore?.describeCobaltInstanceUrl?.(candidate);
+        if (described?.ok) {
+            settings.downloadCobaltInstance = described.url;
+        } else {
+            settings.downloadCobaltInstance = '';
+            settings.downloadCobaltFallback = false;
         }
         return settings;
     },
@@ -1007,6 +1027,34 @@ function getConfiguredFilterListDescriptor(settings = popupState.settings) {
     return typeof describe === 'function' ? describe(configured) : { ok: false };
 }
 
+function getConfiguredCobaltDescriptor(settings = popupState.settings) {
+    const describe = window.YTKitCore?.describeCobaltInstanceUrl;
+    const configured = typeof settings?.downloadCobaltInstance === 'string'
+        ? settings.downloadCobaltInstance
+        : '';
+    return typeof describe === 'function' ? describe(configured) : { ok: false, reason: 'scope-service-unavailable' };
+}
+
+function getSpecificDataFlowDescriptor(entry, settings = popupState.settings) {
+    if (entry?.specificOriginRequired !== true) return null;
+    if (entry.requiredByFeatures?.includes('downloadCobaltFallback')) {
+        return getConfiguredCobaltDescriptor(settings);
+    }
+    if (entry.requiredByFeatures?.includes('hideVideosFilterListUrl')) {
+        return getConfiguredFilterListDescriptor(settings);
+    }
+    return null;
+}
+
+function getDynamicOptionalHostsForSetting(key, declaredSet, profile, settings) {
+    if (profile !== 'github-full'
+        || (key !== 'downloadCobaltFallback' && key !== 'downloadCobaltInstance')) return [];
+    const broadPattern = window.YTKitCore?.REMOTE_LIST_HOST_PATTERN || 'https://*/*';
+    if (!declaredSet.has(broadPattern)) return [];
+    const described = getConfiguredCobaltDescriptor(settings);
+    return described.ok ? [described.originPattern] : [];
+}
+
 function getDirectOptionalHostsForSetting(key, declaredSet, profile = 'store-safe') {
     const core = window.YTKitCore || {};
     const catalogue = Array.isArray(core.ORIGIN_CATALOGUE) ? core.ORIGIN_CATALOGUE : [];
@@ -1016,6 +1064,7 @@ function getDirectOptionalHostsForSetting(key, declaredSet, profile = 'store-saf
     for (const entry of catalogue) {
         if (entry?.profile !== profile) continue;
         if (entry.hostGrant !== 'runtime-optional') continue;
+        if (entry.specificOriginRequired === true) continue;
         if (Array.isArray(entry.runtimeOptionalProfiles)
             && !entry.runtimeOptionalProfiles.includes(profile)) continue;
         if (!Array.isArray(entry.requiredByFeatures) || !entry.requiredByFeatures.includes(key)) continue;
@@ -1034,6 +1083,13 @@ function getDeclaredOptionalHostsForSetting(key, options = {}) {
     const profile = options.profile || (policy
         ? policy.resolveEffectiveProfile(popupState.settings || {})
         : 'store-safe');
+    const dynamic = getDynamicOptionalHostsForSetting(
+        key,
+        declaredSet,
+        profile,
+        options.settings || popupState.settings
+    );
+    if (dynamic.length) return dynamic;
     if (options.directOnly) {
         return getDirectOptionalHostsForSetting(key, declaredSet, profile);
     }
@@ -1060,6 +1116,30 @@ async function requestOptionalHostOrigins(origins) {
 }
 
 async function requestOptionalHostsForSetting(key, value) {
+    if (key === 'downloadCobaltInstance') {
+        const candidateSettings = { ...(popupState.settings || {}), downloadCobaltInstance: value };
+        const described = getConfiguredCobaltDescriptor(candidateSettings);
+        if (!described.ok && (String(value || '').trim()
+            || popupState.settings?.downloadCobaltFallback === true)) {
+            const error = new Error(t('dlCobaltInstanceRequired',
+                'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.'));
+            error.code = 'COBALT_INSTANCE_INVALID';
+            throw error;
+        }
+        if (popupState.settings?.downloadCobaltFallback === true && described.ok) {
+            return requestOptionalHostOrigins(getDeclaredOptionalHostsForSetting(key, { settings: candidateSettings }));
+        }
+        return true;
+    }
+    if (key === 'downloadCobaltFallback' && value === true) {
+        const described = getConfiguredCobaltDescriptor();
+        if (!described.ok) {
+            const error = new Error(t('dlCobaltInstanceRequired',
+                'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.'));
+            error.code = 'COBALT_INSTANCE_INVALID';
+            throw error;
+        }
+    }
     if (value !== true) return true;
     return requestOptionalHostOrigins(getDeclaredOptionalHostsForSetting(key));
 }
@@ -1069,8 +1149,12 @@ function isOptionalHostPermissionError(error) {
         || /optional host permission|host access/i.test(error?.message || '');
 }
 
+function isCobaltInstanceError(error) {
+    return error?.code === 'COBALT_INSTANCE_INVALID';
+}
+
 function formatSettingWriteError(name, error) {
-    if (isOptionalHostPermissionError(error) && error?.message) {
+    if ((isOptionalHostPermissionError(error) || isCobaltInstanceError(error)) && error?.message) {
         return error.message;
     }
     return t('toggleUpdateFailTpl', `Couldn't update ${name}. Try again.`).replace('{name}', name);
@@ -1118,7 +1202,11 @@ function createSchemaOptionalHostBadge(key) {
 
 function dataFlowOptionalGrantLabel(entry) {
     if (!entry?.optionalManifestPermission || !entry.currentlyActive) return null;
-    return popupState._optionalHostGrantState.missingOrigins.has(entry.optionalManifestPermission)
+    const specific = getSpecificDataFlowDescriptor(entry);
+    const permission = entry.specificOriginRequired === true
+        ? (specific?.ok ? specific.originPattern : '')
+        : entry.optionalManifestPermission;
+    return !permission || popupState._optionalHostGrantState.missingOrigins.has(permission)
         ? t('dataFlowGrantNeeded', 'permission needed')
         : t('dataFlowGrantActive', 'granted');
 }
@@ -1295,10 +1383,35 @@ async function revokeRuntimeOptionalHostOrigin(originPattern) {
     }
 }
 
+function isRuntimeOptionalOriginStillNeeded(settings, originPattern) {
+    if (typeof originPattern !== 'string' || !originPattern) return false;
+    const filterList = getConfiguredFilterListDescriptor(settings);
+    if (filterList.ok && filterList.originPattern === originPattern) return true;
+    const cobalt = getConfiguredCobaltDescriptor(settings);
+    return settings?.downloadCobaltFallback === true
+        && cobalt.ok
+        && cobalt.originPattern === originPattern;
+}
+
 async function reconcileFilterListGrantTransition(previousSettings, nextSettings) {
     const previous = getConfiguredFilterListDescriptor(previousSettings);
     const next = getConfiguredFilterListDescriptor(nextSettings);
-    if (!previous.ok || previous.originPattern === (next.ok ? next.originPattern : '')) {
+    if (!previous.ok
+        || previous.originPattern === (next.ok ? next.originPattern : '')
+        || isRuntimeOptionalOriginStillNeeded(nextSettings, previous.originPattern)) {
+        return { ok: true, removed: false, hostname: previous.ok ? previous.hostname : '' };
+    }
+    return revokeRuntimeOptionalHostOrigin(previous.originPattern);
+}
+
+async function reconcileCobaltGrantTransition(previousSettings, nextSettings) {
+    const previous = getConfiguredCobaltDescriptor(previousSettings);
+    const next = getConfiguredCobaltDescriptor(nextSettings);
+    const wasEnabled = previousSettings?.downloadCobaltFallback === true;
+    const isEnabled = nextSettings?.downloadCobaltFallback === true;
+    if (!previous.ok || (!wasEnabled && !isEnabled)
+        || (isEnabled && previous.originPattern === (next.ok ? next.originPattern : ''))
+        || isRuntimeOptionalOriginStillNeeded(nextSettings, previous.originPattern)) {
         return { ok: true, removed: false, hostname: previous.ok ? previous.hostname : '' };
     }
     return revokeRuntimeOptionalHostOrigin(previous.originPattern);
@@ -1321,9 +1434,12 @@ async function writeSetting(key, value) {
         throw error;
     }
     popupState.settings = result.settings;
-    const permissionCleanup = key === 'hideVideosFilterListUrl'
-        ? await reconcileFilterListGrantTransition(previousSettings, result.settings)
-        : { ok: true, removed: false, hostname: '' };
+    let permissionCleanup = { ok: true, removed: false, hostname: '' };
+    if (key === 'hideVideosFilterListUrl') {
+        permissionCleanup = await reconcileFilterListGrantTransition(previousSettings, result.settings);
+    } else if (key === 'downloadCobaltFallback' || key === 'downloadCobaltInstance') {
+        permissionCleanup = await reconcileCobaltGrantTransition(previousSettings, result.settings);
+    }
     await refreshOptionalHostGrantState({ render: false });
     return { ...result, permissionCleanup };
 }
@@ -1338,12 +1454,16 @@ async function replaceSettings(settings) {
         throw error;
     }
     popupState.settings = result.settings;
-    const permissionCleanup = await reconcileFilterListGrantTransition(
+    const filterListCleanup = await reconcileFilterListGrantTransition(
         previousSettings,
         result.settings
     );
+    const cobaltCleanup = await reconcileCobaltGrantTransition(previousSettings, result.settings);
     await refreshOptionalHostGrantState({ render: false });
-    return { ...result, permissionCleanup };
+    return {
+        ...result,
+        permissionCleanup: filterListCleanup.ok === false ? filterListCleanup : cobaltCleanup
+    };
 }
 
 // ── URL / tab classification ──
@@ -2817,12 +2937,21 @@ async function removeDataFlowRuntimeGrant(described, button) {
     button.setAttribute('aria-busy', 'true');
     try {
         const configured = getConfiguredFilterListDescriptor();
+        const cobalt = getConfiguredCobaltDescriptor();
+        const clearsFilterList = configured.ok && configured.originPattern === described.originPattern;
+        const disablesCobalt = popupState.settings?.downloadCobaltFallback === true
+            && cobalt.ok && cobalt.originPattern === described.originPattern;
         let cleanup;
-        if (configured.ok && configured.originPattern === described.originPattern) {
-            const result = await writeSetting('hideVideosFilterListUrl', '');
+        if (clearsFilterList || disablesCobalt) {
+            const nextSettings = { ...(popupState.settings || {}) };
+            if (clearsFilterList) nextSettings.hideVideosFilterListUrl = '';
+            if (disablesCobalt) nextSettings.downloadCobaltFallback = false;
+            const result = await replaceSettings(nextSettings);
             cleanup = result.permissionCleanup;
-            syncFilterListUrlInput(popupState.settings);
-            await refreshFilterListStatus();
+            if (clearsFilterList) {
+                syncFilterListUrlInput(popupState.settings);
+                await refreshFilterListStatus();
+            }
         } else {
             cleanup = await revokeRuntimeOptionalHostOrigin(described.originPattern);
         }
@@ -2860,6 +2989,10 @@ async function renderDataFlowGrantedHosts(originEntries, renderToken) {
         for (const described of descriptors) {
             const catalogueEntry = originEntries.find((entry) =>
                 entry.optionalManifestPermission === described.originPattern);
+            const filterList = getConfiguredFilterListDescriptor();
+            const cobalt = getConfiguredCobaltDescriptor();
+            const servesFilterList = filterList.ok && filterList.originPattern === described.originPattern;
+            const servesCobalt = cobalt.ok && cobalt.originPattern === described.originPattern;
             const li = document.createElement('li');
             li.className = 'data-flow-grant-row';
             li.dataset.originPattern = described.originPattern;
@@ -2881,9 +3014,17 @@ async function renderDataFlowGrantedHosts(originEntries, renderToken) {
 
             const purpose = document.createElement('span');
             purpose.className = 'data-flow-grant-purpose';
-            purpose.textContent = catalogueEntry?.purpose
-                || t('dataFlowFilterListGrantPurpose',
-                    'Video Hider can fetch data from this site until access is removed.');
+            if (servesFilterList && servesCobalt) {
+                purpose.textContent = t('dataFlowSharedGrantPurpose',
+                    'Video Hider and self-hosted Cobalt can use this site until access is removed.');
+            } else if (servesCobalt) {
+                purpose.textContent = t('dataFlowCobaltGrantPurpose',
+                    'Self-hosted Cobalt can process this video through this site until access is removed.');
+            } else {
+                purpose.textContent = catalogueEntry?.purpose
+                    || t('dataFlowFilterListGrantPurpose',
+                        'Video Hider can fetch data from this site until access is removed.');
+            }
 
             li.appendChild(host);
             li.appendChild(remove);
@@ -2933,7 +3074,8 @@ function renderDataFlowPanel() {
 
         const originSpan = document.createElement('span');
         originSpan.className = 'data-flow-origin';
-        originSpan.textContent = entry.origin;
+        const specificOrigin = getSpecificDataFlowDescriptor(entry, settings);
+        originSpan.textContent = specificOrigin?.ok ? specificOrigin.origin : entry.origin;
 
         const flag = document.createElement('span');
         flag.className = 'data-flow-active-flag' + (entry.currentlyActive ? '' : ' df-flag-inactive');
@@ -3331,7 +3473,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     // v4.40.0: a schema entry may carry an explicit `labelKey` /
     // `descriptionKey` override for brand-name / domain-specific
     // strings where the deterministic humaniser is imprecise
-    // (e.g. "Cobalt API instance URL" beats "Download cobalt instance").
+    // (e.g. "Self-hosted Cobalt origin" beats "Download cobalt instance").
     // The raw storage key still goes in the tooltip so power users
     // can identify the underlying setting.
     const humanizer = window.__YTKIT_SETTINGS_SCHEMA__
@@ -3532,6 +3674,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             const current = resolveEffectiveSettingValue(entry, settings);
             if (typeof current === 'string') input.value = current;
         }
+        const previousValue = input.value;
         const persist = async () => {
             let raw = (input.value || '').toString();
             // For the colour picker an empty value never happens; for
@@ -3556,9 +3699,13 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             input.disabled = true;
             try {
                 await writeSetting(entry.key, raw);
+                input.removeAttribute('aria-invalid');
                 renderSchemaOverview();
             } catch (err) {
                 console.warn('[Astra Deck popup] schema-overview string persist failed:', err);
+                input.value = previousValue;
+                input.setAttribute('aria-invalid', 'true');
+                showStatus(formatSettingWriteError(entry.labelKey || entry.key, err), 'error', 5200);
             } finally {
                 input.disabled = false;
             }
@@ -5770,7 +5917,9 @@ async function resetAllData() {
         // Permissions live outside extension storage, so revoke only after the
         // recoverable data reset has committed. A failed revoke must not roll
         // restored user data back into a reset the user already requested.
-        permissionCleanup = await reconcileFilterListGrantTransition(previousSettings, {});
+        const filterListCleanup = await reconcileFilterListGrantTransition(previousSettings, {});
+        const cobaltCleanup = await reconcileCobaltGrantTransition(previousSettings, {});
+        permissionCleanup = filterListCleanup.ok === false ? filterListCleanup : cobaltCleanup;
         await renderStorageInfo();
         await loadSettings();
         await refreshOptionalHostGrantState({ render: false });

@@ -61,7 +61,14 @@ explicitly chooses the broader profile and enables the relevant feature:
 | OpenAI, Anthropic, Gemini, or user-configured AI endpoint | User-selected transcript/video context and the user's own API key or configured endpoint. | Only for opt-in BYO-key AI summary or transcript-translation fallback features; Chrome's built-in AI lane does not contact these services. |
 | Local Ollama (`127.0.0.1:11434`) | Transcript/video context for local summarization. | Only when the local AI feature is enabled and Ollama is running locally. |
 | Astra Downloader (`127.0.0.1:9751-9851`) | Download request metadata, selected format/quality, health/history requests, and YouTube cookies for authenticated downloads. | Only for explicit local downloader actions or enabled download panels. |
-| Cobalt API | Video URL/context for fallback downloads. | Only when GitHub-full Cobalt fallback is enabled and Astra Downloader is offline. |
+| User-configured self-hosted Cobalt | The canonical YouTube watch URL containing only the video ID. Cookies, credentials, playlist context, and the page's other query parameters are omitted. | Only when GitHub-full fallback is enabled, Astra Downloader is offline, and the user has configured and granted one HTTPS instance they operate or are authorized to use. Astra Deck does not use `api.cobalt.tools`. |
+
+The standalone userscript does not call Cobalt or community downloader APIs.
+Its optional web-downloader fallback navigates only to a user-configured HTTPS
+page. By default the canonical watch URL is placed in the fragment, which is
+not part of the HTTP navigation request. If the user deliberately puts the
+`{url}` placeholder in a path or query, that configured page receives the
+encoded canonical watch URL.
 
 Astra Deck does not send extension telemetry, analytics, crash reports, hidden
 lists, notes, settings profiles, or diagnostic bundles to Astra Deck servers.
