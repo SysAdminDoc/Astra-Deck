@@ -3,6 +3,41 @@
    Rules are scoped to body classes that ytkit.js applies when features are enabled,
    so disabled features don't incorrectly hide elements. */
 
+/* Zero-ad baseline — unconditional by design. The extension's static DNR
+   rules stop separable requests before they leave the browser; this persistent
+   document_start layer collapses known YouTube ad shells and any SPA
+   reinsertion without waiting for the document_idle runtime. Keep this list
+   narrow and selector-backed: media delivery hosts are intentionally absent. */
+#masthead-ad,
+#player-ads,
+ytd-in-feed-ad-layout-renderer,
+ytd-ad-slot-renderer,
+ytd-page-top-ad-layout-renderer,
+ytd-promoted-video-renderer,
+ytd-display-ad-renderer,
+ytd-promoted-sparkles-web-renderer,
+ytm-promoted-sparkles-web-renderer,
+ytd-ad-feedback-renderer,
+ytd-action-companion-ad-renderer,
+ytd-companion-slot-renderer,
+ytd-player-legacy-desktop-watch-ads-renderer,
+.video-ads,
+.ytp-ad-module,
+.ytp-ad-overlay-container,
+.ytp-ad-player-overlay,
+.ytp-ad-text-overlay,
+.ytp-ad-skip-button-container {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    block-size: 0 !important;
+    min-block-size: 0 !important;
+    max-block-size: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
 /* hideEndCards */
 body.ytkit-hideEndCards .ytp-ce-element { display: none !important; }
 

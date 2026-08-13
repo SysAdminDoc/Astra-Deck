@@ -8,11 +8,12 @@
 // This smoke stages the real ISOLATED-world content-script stack onto a
 // local fixture page with a minimal chrome-API stub, opens the overlay
 // through the real YTKIT_OPEN_PANEL message path in Chromium,
-// captures desktop/mobile screenshots for dark/light/RTL states, and fails
+// captures desktop plus legacy narrow-window screenshots for dark/light/RTL states, and fails
 // on blank render, horizontal overflow, a missing close/focus target, or
 // unreadable primary controls.
 //
 // Usage: npm run smoke:settings-overlay [-- --browser <path>] [--keep-stage]
+//        npm run smoke:settings-overlay -- --desktop-only
 //        npm run smoke:settings-overlay -- --health-only
 //        YTKIT_VISUAL_ISOLATED=1 node scripts/smoke-settings-overlay.js --headed-private
 // Screenshots land in build/settings-overlay-smoke/.
@@ -31,9 +32,10 @@ const OUT_DIR = path.join(REPO_ROOT, 'build', 'settings-overlay-smoke');
 const PANEL_SELECTOR = '#ytkit-settings-panel, [data-ytkit-surface="control-center"], .ytkit-control-center, #ytkit-panel, .ytkit-panel';
 
 const STATES = [
-    { name: 'desktop-dark', width: 1356, height: 920, dark: true, dir: 'ltr', mobile: false },
-    { name: 'desktop-light', width: 1356, height: 920, dark: false, dir: 'ltr', mobile: false },
-    { name: 'desktop-rtl', width: 1356, height: 920, dark: true, dir: 'rtl', mobile: false },
+    { name: 'desktop-dark', width: 1440, height: 900, dark: true, dir: 'ltr', mobile: false },
+    { name: 'desktop-light', width: 1440, height: 900, dark: false, dir: 'ltr', mobile: false },
+    { name: 'desktop-rtl', width: 1440, height: 900, dark: true, dir: 'rtl', mobile: false },
+    { name: 'desktop-wide', width: 1920, height: 1080, dark: true, dir: 'ltr', mobile: false },
     { name: 'tablet-dark', width: 760, height: 900, dark: true, dir: 'ltr', mobile: false },
     // mobile: false is deliberate — YouTube desktop is not a mobile-UA site;
     // the honest narrow-screen case is a desktop window at phone width, where
@@ -50,6 +52,7 @@ function parseArgs(argv) {
         fallbackOnly: false,
         healthOnly: false,
         headedPrivate: false,
+        desktopOnly: false,
         timeoutMs: 45000
     };
     for (let i = 0; i < argv.length; i += 1) {
@@ -59,6 +62,7 @@ function parseArgs(argv) {
         if (arg === '--fallback-only') { opts.fallbackOnly = true; continue; }
         if (arg === '--health-only') { opts.healthOnly = true; continue; }
         if (arg === '--headed-private') { opts.headedPrivate = true; continue; }
+        if (arg === '--desktop-only') { opts.desktopOnly = true; continue; }
         if (arg === '--timeout') { opts.timeoutMs = Number(argv[++i]) || opts.timeoutMs; continue; }
         throw new Error(`unknown argument: ${arg}`);
     }
@@ -418,13 +422,30 @@ const CATEGORY_PARITY_CHECKS = `(() => {
     // to measure. It gets its own contract rather than an exemption.
     if (pane.classList.contains('ytkit-vh-pane')) {
         const header = pane.querySelector(':scope > .ytkit-pane-header');
+        const lead = header?.querySelector('.ytkit-pane-lead');
+        const icon = header?.querySelector('.ytkit-pane-icon');
         const title = header?.querySelector('.ytkit-pane-title h2');
-        const chips = Array.from(header?.querySelectorAll('.ytkit-pane-chip') || []);
+        const statusChips = Array.from(header?.querySelectorAll('.ytkit-vh-status-chip') || []);
+        const summaryCards = Array.from(pane.querySelectorAll(':scope > .ytkit-vh-summary > .ytkit-vh-summary-card'));
         const tabs = Array.from(pane.querySelectorAll('.ytkit-vh-tab'));
         const body = pane.querySelector('#ytkit-vh-content');
-        if (!header || !title?.textContent?.trim()) failures.push('list pane is missing its header title');
-        if (chips.length < 3) failures.push('list pane expected state + list-count chips, found ' + chips.length);
-        if (chips.some((chip) => !chip.textContent.trim())) failures.push('list pane has an empty header chip');
+        if (!header || !lead || !icon || !title?.textContent?.trim()) {
+            failures.push('list pane is missing its mission lead, icon, or title');
+        }
+        if (statusChips.length !== 1 || !statusChips[0]?.textContent.trim()) {
+            failures.push('list pane expected one non-empty feature-state chip');
+        }
+        if (summaryCards.length !== 3) failures.push('list pane expected 3 summary cards, found ' + summaryCards.length);
+        for (const card of summaryCards) {
+            const value = card.querySelector('.ytkit-vh-summary-card__value');
+            const label = card.querySelector('.ytkit-vh-summary-card__label');
+            if (!value?.textContent.trim() || !label?.textContent.trim()) {
+                failures.push('list pane has an empty summary value or label');
+            }
+            if (label && label.scrollWidth > label.clientWidth + 1) {
+                failures.push('list pane summary label is clipped: ' + label.textContent.trim());
+            }
+        }
         if (tabs.length < 3) failures.push('list pane expected a tablist, found ' + tabs.length + ' tabs');
         if (tabs.some((tab) => !tab.querySelector('.ytkit-vh-tab__badge')?.textContent?.trim())) {
             failures.push('a list-pane tab is missing its count badge');
@@ -439,7 +460,7 @@ const CATEGORY_PARITY_CHECKS = `(() => {
             paneId,
             title: title?.textContent?.trim() || '',
             sections: tabs.map((tab) => tab.querySelector('.ytkit-vh-tab__label')?.textContent?.trim() || ''),
-            contextItems: chips.length,
+            contextItems: summaryCards.length,
             parentCards: 0
         });
     }
@@ -726,7 +747,10 @@ async function main() {
         );
         await client.evaluate('globalThis.__ytkitRuntimePromise || true');
 
-        for (const state of STATES) {
+        const selectedStates = opts.desktopOnly
+            ? STATES.filter(({ name }) => name.startsWith('desktop-'))
+            : STATES;
+        for (const state of selectedStates) {
             await client.send('Emulation.setDeviceMetricsOverride', {
                 width: state.width,
                 height: state.height,
@@ -772,7 +796,7 @@ async function main() {
                 const shot = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
                 fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
             }
-            if (['desktop-dark', 'desktop-light'].includes(state.name)) {
+            if (['desktop-dark', 'desktop-light', 'desktop-wide'].includes(state.name)) {
                 const categoryIds = await client.evaluate(`Array.from(
                     document.querySelectorAll('.ytkit-nav-btn[data-tab]'),
                     (tab) => tab.dataset.tab

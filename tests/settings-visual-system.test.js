@@ -79,6 +79,36 @@ test('settings visual system renders the imagegen-matched command-deck hierarchy
         'every category must show its count, not just the active one');
 });
 
+test('v6 desktop settings parity keeps labels readable and gives Video Hider a summary dashboard', () => {
+    assert.match(visualSystemSource, /\/\* v6 desktop parity pass\./);
+    assert.match(
+        visualSystemSource,
+        /@media \(min-width:\s*1181px\)[\s\S]*?grid-template-columns:\s*320px minmax\(0, 1fr\)/
+    );
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-nav-label,[\s\S]*?\.ytkit-pane-context-value[\s\S]*?text-overflow:\s*clip !important;[\s\S]*?white-space:\s*normal !important;/
+    );
+    assert.match(
+        visualSystemSource,
+        /\.ytkit-vh-summary\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/
+    );
+    for (const source of [settingsPanel, shell]) {
+        assert.match(source, /paneSummary\.className = 'ytkit-vh-summary'/);
+        assert.match(source, /paneIcon\.appendChild\(\(ICONS\['eye-off'\]/);
+        assert.match(source, /paneHeader\.appendChild\(paneLead\)/);
+        assert.match(source, /pane\.appendChild\(paneSummary\)/);
+    }
+    assert.match(userscript, /globalThis\.YTKitCore\?\.ensureSettingsVisualSystem\?\.\(\);/);
+    assert.match(userscript, /makeNavBtn\(\s*'Video Hider'/);
+    assert.match(userscript, /if \(cat === 'Content'\) content\.appendChild\(buildVideoHiderPane\(config\)\);/);
+    assert.match(userscript, /paneSummary\.className = 'ytkit-vh-summary'/);
+    assert.match(userscript, /addSummaryCard\('filters', 'filter', 'Active Filters'/);
+    assert.match(overlaySmoke, /name:\s*'desktop-dark',\s*width:\s*1440,\s*height:\s*900/);
+    assert.match(overlaySmoke, /name:\s*'desktop-wide',\s*width:\s*1920,\s*height:\s*1080/);
+    assert.match(overlaySmoke, /--desktop-only/);
+});
+
 // The panel used to paint --ytkit-v3-bg on the shell, the rail, the content
 // column, the header and the footer alike, at #090e14 — one notch off black.
 // With no elevation and hairline dividers, a 57-row category read as one

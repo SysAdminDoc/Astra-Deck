@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.60.0
+// @name         YTKit v4.60.1
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.60.0
+// @version      4.60.1
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion
@@ -48,6 +48,49 @@
     // In userscript context, GM_* APIs are native — no shim needed
     // window.ytInitialPlayerResponse and window.__ytab are directly accessible (same page context)
     const GM = { xmlHttpRequest: GM_xmlhttpRequest };
+    // A userscript cannot guarantee pre-request interception: the browser may
+    // start page requests before this sandbox executes. It can still suppress
+    // known ad shells at document-start and keep them suppressed across SPA
+    // reinsertion. Install the extension for browser-level request blocking.
+    const ZERO_AD_CSS = `
+        #masthead-ad,
+        #player-ads,
+        ytd-in-feed-ad-layout-renderer,
+        ytd-ad-slot-renderer,
+        ytd-page-top-ad-layout-renderer,
+        ytd-promoted-video-renderer,
+        ytd-display-ad-renderer,
+        ytd-promoted-sparkles-web-renderer,
+        ytm-promoted-sparkles-web-renderer,
+        ytd-ad-feedback-renderer,
+        ytd-action-companion-ad-renderer,
+        ytd-companion-slot-renderer,
+        ytd-player-legacy-desktop-watch-ads-renderer,
+        .video-ads,
+        .ytp-ad-module,
+        .ytp-ad-overlay-container,
+        .ytp-ad-player-overlay,
+        .ytp-ad-text-overlay,
+        .ytp-ad-skip-button-container {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            block-size: 0 !important;
+            min-block-size: 0 !important;
+            max-block-size: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+    `;
+    GM_addStyle(ZERO_AD_CSS);
+    // The userscript is intentionally English-only today, but extracted
+    // feature factories share the extension's t(key, fallback) contract.
+    // Keep that contract available so the generated @require modules can
+    // initialize instead of aborting the entire userscript at document-start.
+    function t(key, fallback = '') {
+        return String(fallback || key || '');
+    }
     // GM_cookie not available in userscripts — provide no-op
     const GM_cookie = { list(filter, cb) { cb(null, 'GM_cookie not available in userscript mode'); } };
     // triggerDownload — open URL directly in userscript mode (no chrome.downloads API)
@@ -200,7 +243,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.60.0';
+    const YTKIT_VERSION = '4.60.1';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -621,6 +664,18 @@
         }
     };
     StorageManager._initUnloadFlush();
+
+    // Extracted feature factories use the shared async storage facade. The
+    // userscript keeps its synchronous GM-backed StorageManager, so bridge the
+    // two contracts explicitly instead of leaving bare identifiers that abort
+    // startup before any feature or settings UI can initialize.
+    const storageReadJSON = globalThis.YTKitCore?.storageReadJSON
+        || ((key, fallback = null) => StorageManager.get(key, fallback));
+    const storageWriteJSON = globalThis.YTKitCore?.storageWriteJSON
+        || ((key, value) => {
+            StorageManager.set(key, value);
+            return Promise.resolve({ ok: true });
+        });
 
 
     //  TRANSCRIPT SERVICE - Multi-Method Extraction with Failover
@@ -15899,16 +15954,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         title.className = 'ytkit-title';
         const titleYT = document.createElement('span');
         titleYT.className = 'ytkit-title-yt';
-        titleYT.textContent = 'YT';
+        titleYT.textContent = 'Astra';
         const titleKit = document.createElement('span');
         titleKit.className = 'ytkit-title-kit';
-        titleKit.textContent = 'Kit';
+        titleKit.textContent = ' Deck';
         title.appendChild(titleYT);
         title.appendChild(titleKit);
 
         const badge = document.createElement('span');
         badge.className = 'ytkit-badge';
-        badge.textContent = 'PRO';
+        badge.textContent = 'Settings';
 
         brand.appendChild(title);
         brand.appendChild(badge);
@@ -15932,7 +15987,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         // Search box
         const searchContainer = document.createElement('div');
-        searchContainer.className = 'ytkit-search-container';
+        searchContainer.className = 'ytkit-search-container ytkit-command-search';
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.className = 'ytkit-search-input';
@@ -15943,7 +15998,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         searchIcon.setAttribute('class', 'ytkit-search-icon');
         searchContainer.appendChild(searchIcon);
         searchContainer.appendChild(searchInput);
-        sidebar.appendChild(searchContainer);
+        header.insertBefore(searchContainer, closeBtn);
 
         const searchHint = document.createElement('p');
         searchHint.className = 'ytkit-search-hint';
@@ -16038,6 +16093,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const { btn, catId } = makeNavBtn(cat, config, (ICONS[config.icon] || ICONS.settings)(), `${enabledCount}/${totalCount}`, '', index === 0 ? ' active' : '');
             addDragReorder(btn, catId);
             sidebar.appendChild(btn);
+
+            if (cat === 'Content') {
+                const videoHiderNav = makeNavBtn(
+                    'Video Hider',
+                    config,
+                    (ICONS['eye-off'] || ICONS.settings)(),
+                    '0',
+                    'Hidden videos and blocked channels',
+                    ''
+                );
+                videoHiderNav.btn._ytkitRefreshCount = () => {
+                    const feature = features.find(item => item.id === 'hideVideosFromHome');
+                    const count = (feature?._getHiddenVideos?.()?.length || 0)
+                        + (feature?._getBlockedChannels?.()?.length || 0);
+                    videoHiderNav.countSpan.textContent = String(count);
+                };
+                videoHiderNav.btn._ytkitRefreshCount();
+                addDragReorder(videoHiderNav.btn, videoHiderNav.catId);
+                sidebar.appendChild(videoHiderNav.btn);
+            }
         });
 
         // Apply saved sidebar order
@@ -16078,11 +16153,67 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Pane header
             const paneHeader = document.createElement('div');
             paneHeader.className = 'ytkit-pane-header';
+            const paneLead = document.createElement('div');
+            paneLead.className = 'ytkit-pane-lead';
+            const paneIcon = document.createElement('span');
+            paneIcon.className = 'ytkit-pane-icon';
+            paneIcon.style.setProperty('--cat-color', config.color);
+            paneIcon.setAttribute('aria-hidden', 'true');
+            paneIcon.appendChild((ICONS['eye-off'] || ICONS.settings)());
             const paneTitle = document.createElement('div');
             paneTitle.className = 'ytkit-pane-title';
+            const paneEyebrow = document.createElement('span');
+            paneEyebrow.className = 'ytkit-pane-eyebrow';
+            paneEyebrow.textContent = 'Content Controls';
             const paneTitleH2 = document.createElement('h2');
             paneTitleH2.textContent = 'Video Hider';
+            const paneDescription = document.createElement('p');
+            paneDescription.className = 'ytkit-pane-description';
+            paneDescription.textContent = 'Review hidden videos, manage blocked channels, and tune automatic filters without leaving the page.';
+            const paneMeta = document.createElement('div');
+            paneMeta.className = 'ytkit-pane-meta';
+            const paneStateChip = document.createElement('span');
+            paneStateChip.className = 'ytkit-pane-chip ytkit-vh-status-chip';
+            paneTitle.appendChild(paneEyebrow);
             paneTitle.appendChild(paneTitleH2);
+            paneTitle.appendChild(paneDescription);
+            paneMeta.appendChild(paneStateChip);
+            paneTitle.appendChild(paneMeta);
+            paneLead.appendChild(paneIcon);
+            paneLead.appendChild(paneTitle);
+
+            const paneSummary = document.createElement('div');
+            paneSummary.className = 'ytkit-vh-summary';
+            paneSummary.setAttribute('role', 'list');
+            const paneHiddenValue = document.createElement('span');
+            paneHiddenValue.className = 'ytkit-vh-summary-card__value';
+            const paneChannelsValue = document.createElement('span');
+            paneChannelsValue.className = 'ytkit-vh-summary-card__value';
+            const paneFiltersValue = document.createElement('span');
+            paneFiltersValue.className = 'ytkit-vh-summary-card__value';
+            const addSummaryCard = (kind, iconName, labelText, valueNode) => {
+                const card = document.createElement('div');
+                card.className = 'ytkit-vh-summary-card';
+                card.dataset.kind = kind;
+                card.setAttribute('role', 'listitem');
+                const icon = document.createElement('span');
+                icon.className = 'ytkit-vh-summary-card__icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.appendChild((ICONS[iconName] || ICONS.settings)());
+                const copy = document.createElement('span');
+                copy.className = 'ytkit-vh-summary-card__copy';
+                const label = document.createElement('span');
+                label.className = 'ytkit-vh-summary-card__label';
+                label.textContent = labelText;
+                copy.appendChild(valueNode);
+                copy.appendChild(label);
+                card.appendChild(icon);
+                card.appendChild(copy);
+                paneSummary.appendChild(card);
+            };
+            addSummaryCard('hidden', 'eye-off', 'Hidden Videos', paneHiddenValue);
+            addSummaryCard('channels', 'users-x', 'Blocked Channels', paneChannelsValue);
+            addSummaryCard('filters', 'filter', 'Active Filters', paneFiltersValue);
 
             // Enable toggle
             const toggleLabel = document.createElement('label');
@@ -16114,6 +16245,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const isEnabled = appState.settings.hideVideosFromHome === true;
                 toggleInput.checked = isEnabled;
                 toggleSwitch.classList.toggle('active', isEnabled);
+                pane.dataset.state = isEnabled ? 'active' : 'paused';
+                paneStateChip.dataset.state = isEnabled ? 'active' : 'paused';
+                paneStateChip.textContent = isEnabled ? 'Feature On' : 'Feature Off';
             };
             toggleInput.onchange = async () => {
                 const previousSettings = { ...appState.settings };
@@ -16142,9 +16276,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             toggleSwitch.appendChild(toggleTrack);
             toggleLabel.appendChild(toggleText);
             toggleLabel.appendChild(toggleSwitch);
-            paneHeader.appendChild(paneTitle);
+            paneHeader.appendChild(paneLead);
             paneHeader.appendChild(toggleLabel);
             pane.appendChild(paneHeader);
+            pane.appendChild(paneSummary);
 
             // Tab navigation
             const tabNav = document.createElement('div');
@@ -16179,7 +16314,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             tabContent.id = 'ytkit-vh-content';
             pane.appendChild(tabContent);
 
+            function updateVideoHiderSummary() {
+                paneHiddenValue.textContent = String(videoHiderFeature?._getHiddenVideos()?.length || 0);
+                paneChannelsValue.textContent = String(videoHiderFeature?._getBlockedChannels()?.length || 0);
+                const activeFilters = Number(Boolean((appState.settings.hideVideosKeywordFilter || '').trim()))
+                    + Number((appState.settings.hideVideosDurationFilter || 0) > 0)
+                    + Number(appState.settings.hideVideosSubsLoadLimit !== false);
+                paneFiltersValue.textContent = String(activeFilters);
+                document.querySelector('.ytkit-nav-btn[data-tab="Video-Hider"]')?._ytkitRefreshCount?.();
+            }
+
             function renderTabContent(tab) {
+                updateVideoHiderSummary();
                 while (tabContent.firstChild) tabContent.removeChild(tabContent.firstChild);
 
                 if (tab === 'videos') {
@@ -16467,6 +16613,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             }
 
+            syncVideoHiderToggle();
             renderTabContent('videos');
             pane._ytkitSyncVideoHiderToggle = syncVideoHiderToggle;
             return pane;
@@ -16771,6 +16918,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             pane.appendChild(grid);
             content.appendChild(pane);
+            if (cat === 'Content') content.appendChild(buildVideoHiderPane(config));
         });
 
         body.appendChild(sidebar);
@@ -16933,8 +17081,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             select.id = `ytkit-select-${f.id}`;
             select.style.cssText = `padding:5px 10px;border-radius:6px;background:var(--ytkit-bg-base);color:#fff;border:1px solid rgba(255,255,255,0.1);cursor:pointer;font-size:12px;min-width:140px;`;
             const settingKey = f.settingKey || f.id;
-            const currentValue = String(appState.settings[settingKey] ?? Object.keys(f.options)[0]);
-            for (const [value, label] of Object.entries(f.options)) {
+            const options = Array.isArray(f.options)
+                ? f.options.map(option => ({
+                    value: String(option?.value ?? ''),
+                    label: String(option?.label ?? option?.value ?? '')
+                }))
+                : Object.entries(f.options || {}).map(([value, label]) => ({
+                    value: String(value),
+                    label: String(label)
+                }));
+            const currentValue = String(appState.settings[settingKey] ?? options[0]?.value ?? '');
+            for (const { value, label } of options) {
                 const option = document.createElement('option');
                 option.value = value;
                 option.textContent = label;
@@ -17042,6 +17199,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // Update nav counts
         document.querySelectorAll('.ytkit-nav-btn').forEach(btn => {
             const catId = btn.dataset.tab;
+            if (catId === 'Video-Hider') {
+                btn._ytkitRefreshCount?.();
+                return;
+            }
             const pane = document.getElementById(`ytkit-pane-${catId}`);
             if (!pane) return;
             const featureToggles = pane.querySelectorAll('.ytkit-feature-card:not(.ytkit-sub-card) .ytkit-feature-cb');
@@ -17613,6 +17774,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         injectStyle(`:root, html[dark] { --ytkit-accent: #a78bfa; --ytkit-accent-rgb: 167,139,250; --ytkit-accent-light: #c4b5fd; }`, 'ytkit-accent-vars', true);
 
         injectPanelStyles();
+        // The @require bundle owns the current command-deck visual contract.
+        // Load it after the legacy userscript stylesheet so the shared desktop
+        // shell, theme, focus, and Video Hider refinements win the cascade.
+        globalThis.YTKitCore?.ensureSettingsVisualSystem?.();
+        // The extension opens the panel in the Popover top layer, whose shared
+        // visual rule establishes its center point. Userscript managers use the
+        // class-backed dialog fallback, so restore that same center point after
+        // the shared `inset: auto` reset.
+        GM_addStyle(`
+            #ytkit-settings-panel:not(:popover-open){
+                top:50%!important;
+                right:auto!important;
+                bottom:auto!important;
+                left:50%!important;
+                max-width:min(1540px,calc(100vw - 24px))!important;
+            }
+            #ytkit-settings-panel .ytkit-header>.ytkit-close{grid-area:actions!important;justify-self:end!important;}
+            #ytkit-settings-panel .ytkit-vh-pane .ytkit-pane-title{display:block!important;}
+        `);
 
     //  Page Feature Dock — per-page floating toggle strip
     //  Page Quick Settings Modal

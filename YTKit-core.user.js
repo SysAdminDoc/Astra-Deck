@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.60.0
+// @version      4.60.1
 // @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -2704,6 +2704,153 @@
 
             #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
                 min-width: 0 !important;
+            }
+        }
+
+        /* v6 desktop parity pass. These refinements are grounded in the
+           eleven page-specific ImageGen references under outputs/: preserve
+           the command-deck hierarchy while removing ellipsis-only labels and
+           giving Video Hider the same mission header + summary rhythm. */
+        @media (min-width: 1181px) {
+            #ytkit-settings-panel .ytkit-header {
+                grid-template-columns: 320px minmax(320px, 1fr) auto !important;
+            }
+
+            #ytkit-settings-panel .ytkit-body {
+                grid-template-columns: 320px minmax(0, 1fr) !important;
+            }
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn {
+            min-height: 52px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-label,
+        #ytkit-settings-panel .ytkit-pane-context-label,
+        #ytkit-settings-panel .ytkit-pane-context-value {
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-label {
+            line-height: 1.25 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-item {
+            min-height: 68px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-label,
+        #ytkit-settings-panel .ytkit-pane-context-value {
+            display: block !important;
+            line-height: 1.25 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-pane .ytkit-pane-header {
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            grid-template-areas: "lead actions" !important;
+            align-items: center !important;
+            min-height: 126px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-pane .ytkit-pane-actions {
+            align-self: center !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+            margin: 16px 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card {
+            display: grid !important;
+            grid-template-columns: 44px minmax(0, 1fr) !important;
+            align-items: center !important;
+            gap: 12px !important;
+            min-width: 0 !important;
+            min-height: 82px !important;
+            padding: 14px 16px !important;
+            border: 1px solid var(--ytkit-v3-border) !important;
+            border-radius: 11px !important;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.035), transparent 70%),
+                rgba(8,17,29,0.42) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__icon {
+            display: grid !important;
+            place-items: center !important;
+            width: 44px !important;
+            height: 44px !important;
+            border: 1px solid rgba(var(--ytkit-v3-accent-rgb),0.2) !important;
+            border-radius: 10px !important;
+            background: rgba(var(--ytkit-v3-accent-rgb),0.1) !important;
+            color: var(--ytkit-v3-accent) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card[data-kind="allowed"] .ytkit-vh-summary-card__icon {
+            border-color: rgba(16,185,129,0.22) !important;
+            background: rgba(16,185,129,0.1) !important;
+            color: #5ee2b3 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card[data-kind="channels"] .ytkit-vh-summary-card__icon {
+            border-color: rgba(245,158,11,0.22) !important;
+            background: rgba(245,158,11,0.1) !important;
+            color: #f6bf5d !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__icon svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__copy {
+            display: grid !important;
+            gap: 3px !important;
+            min-width: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__value {
+            color: var(--ytkit-v3-text) !important;
+            font-size: 23px !important;
+            font-weight: 740 !important;
+            line-height: 1 !important;
+            font-variant-numeric: tabular-nums !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__label {
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 12px !important;
+            font-weight: 620 !important;
+            line-height: 1.3 !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-tabs {
+            margin-bottom: 16px !important;
+            border-radius: 10px !important;
+        }
+
+        #ytkit-settings-panel #ytkit-vh-content > .ytkit-vh-hero.is-empty {
+            place-content: center !important;
+            justify-items: center !important;
+            min-height: 150px !important;
+            text-align: center !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-vh-summary-card {
+            background: rgba(255,255,255,0.92) !important;
+        }
+
+        @media (max-width: 1180px) {
+            #ytkit-settings-panel .ytkit-vh-summary {
+                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
             }
         }
 
@@ -27674,6 +27821,13 @@ function buildSettingsPanel() {
             // Pane header
             const paneHeader = document.createElement('div');
             paneHeader.className = 'ytkit-pane-header';
+            const paneLead = document.createElement('div');
+            paneLead.className = 'ytkit-pane-lead';
+            const paneIcon = document.createElement('span');
+            paneIcon.className = 'ytkit-pane-icon';
+            paneIcon.style.setProperty('--cat-color', config.color);
+            paneIcon.setAttribute('aria-hidden', 'true');
+            paneIcon.appendChild((ICONS['eye-off'] || ICONS.settings)());
             const paneTitle = document.createElement('div');
             paneTitle.className = 'ytkit-pane-title';
             const paneEyebrow = document.createElement('span');
@@ -27692,24 +27846,65 @@ function buildSettingsPanel() {
             const paneStateChip = document.createElement('span');
             paneStateChip.className = 'ytkit-pane-chip ytkit-vh-status-chip';
             const paneHiddenChip = document.createElement('span');
-            paneHiddenChip.className = 'ytkit-pane-chip';
+            paneHiddenChip.className = 'ytkit-vh-summary-card__value';
             const paneAllowedChip = document.createElement('span');
-            paneAllowedChip.className = 'ytkit-pane-chip';
+            paneAllowedChip.className = 'ytkit-vh-summary-card__value';
             const paneChannelsChip = document.createElement('span');
-            paneChannelsChip.className = 'ytkit-pane-chip';
+            paneChannelsChip.className = 'ytkit-vh-summary-card__value';
             paneTitle.appendChild(paneEyebrow);
             paneTitle.appendChild(paneTitleH2);
             paneTitle.appendChild(paneDescription);
             paneMeta.appendChild(paneStateChip);
-            paneMeta.appendChild(paneHiddenChip);
-            paneMeta.appendChild(paneAllowedChip);
-            paneMeta.appendChild(paneChannelsChip);
             paneTitle.appendChild(paneMeta);
+            paneLead.appendChild(paneIcon);
+            paneLead.appendChild(paneTitle);
+
+            const paneSummary = document.createElement('div');
+            paneSummary.className = 'ytkit-vh-summary';
+            paneSummary.setAttribute('role', 'list');
+            const createPaneSummaryCard = (kind, iconName, labelText, valueNode) => {
+                const card = document.createElement('div');
+                card.className = 'ytkit-vh-summary-card';
+                card.dataset.kind = kind;
+                card.setAttribute('role', 'listitem');
+                const icon = document.createElement('span');
+                icon.className = 'ytkit-vh-summary-card__icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.appendChild((ICONS[iconName] || ICONS.settings)());
+                const copy = document.createElement('span');
+                copy.className = 'ytkit-vh-summary-card__copy';
+                const label = document.createElement('span');
+                label.className = 'ytkit-vh-summary-card__label';
+                label.textContent = labelText;
+                copy.appendChild(valueNode);
+                copy.appendChild(label);
+                card.appendChild(icon);
+                card.appendChild(copy);
+                paneSummary.appendChild(card);
+                return label;
+            };
+            createPaneSummaryCard(
+                'hidden',
+                'eye-off',
+                t('videoHiderHiddenVideosTab', 'Hidden Videos'),
+                paneHiddenChip
+            );
+            createPaneSummaryCard(
+                'allowed',
+                'check',
+                t('videoHiderAllowedVideosTab', 'Allowed Videos'),
+                paneAllowedChip
+            );
+            createPaneSummaryCard(
+                'channels',
+                'lock',
+                t('videoHiderBlockedChannelsTab', 'Blocked Channels'),
+                paneChannelsChip
+            );
 
             // Enable toggle
             const toggleLabel = document.createElement('label');
             toggleLabel.className = 'ytkit-toggle-all';
-            toggleLabel.style.marginLeft = 'auto';
             const toggleText = document.createElement('span');
             toggleText.textContent = t('settingsInsightsEnabled', 'Enabled');
             const toggleSwitch = document.createElement('div');
@@ -27768,9 +27963,13 @@ function buildSettingsPanel() {
             toggleSwitch.appendChild(toggleTrack);
             toggleLabel.appendChild(toggleText);
             toggleLabel.appendChild(toggleSwitch);
-            paneHeader.appendChild(paneTitle);
-            paneHeader.appendChild(toggleLabel);
+            const paneActions = document.createElement('div');
+            paneActions.className = 'ytkit-pane-actions';
+            paneActions.appendChild(toggleLabel);
+            paneHeader.appendChild(paneLead);
+            paneHeader.appendChild(paneActions);
             pane.appendChild(paneHeader);
+            pane.appendChild(paneSummary);
 
             // Tab navigation
             const tabNav = document.createElement('div');
@@ -27806,7 +28005,9 @@ function buildSettingsPanel() {
             }
 
             function getKeywordStatus() {
-                return (appState.settings.hideVideosKeywordFilter || '').trim() ? 'Live' : 'Empty';
+                return (appState.settings.hideVideosKeywordFilter || '').trim()
+                    ? t('videoHiderKeywordStatusLive', 'Live')
+                    : t('videoHiderKeywordStatusEmpty', 'Empty');
             }
 
             function getSettingsStatus() {
@@ -27837,8 +28038,8 @@ function buildSettingsPanel() {
                     || appState.settings.hideVideosHideAutoDubbed === true
                     || (appState.settings.hideVideosWatchedRatio || 0) > 0
                     || scopeKeys.some(key => appState.settings[key] === false)
-                    ? 'Custom'
-                    : 'Ready';
+                    ? t('commonActive', 'Active')
+                    : t('commonReady', 'Ready');
             }
 
             function updateVideoHiderMeta() {
@@ -28976,8 +29177,8 @@ function buildSettingsPanel() {
 
                     // Stats
                     const statsSection = createVideoHiderSection(
-                        'At-a-Glance Status',
-                        'A quick snapshot of what Video Hider is currently managing for you.'
+                        t('settingsInsightsStatus', 'Status'),
+                        t('videoHiderPaneDescription', 'Review hidden videos, manage channel lists, and tune automatic filters without leaving the page.')
                     );
                     const statsGrid = document.createElement('div');
                     statsGrid.className = 'ytkit-vh-stat-grid';

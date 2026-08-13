@@ -1,0 +1,113 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "requestDomains": [
+        "2mdn.net",
+        "doubleclick.net",
+        "googleadservices.com",
+        "googlesyndication.com",
+        "googletagservices.com"
+      ],
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "font",
+        "image",
+        "media",
+        "object",
+        "other",
+        "ping",
+        "script",
+        "stylesheet",
+        "sub_frame",
+        "websocket",
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||google.com/pagead/",
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "image",
+        "other",
+        "ping",
+        "script",
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||youtube.com/api/stats/ads",
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "other",
+        "ping",
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||youtube.com/ptracking",
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "image",
+        "other",
+        "ping",
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||youtube.com/get_midroll_info",
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "other",
+        "xmlhttprequest"
+      ]
+    }
+  }
+]

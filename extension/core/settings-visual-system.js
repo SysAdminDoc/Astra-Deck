@@ -2221,6 +2221,153 @@
             }
         }
 
+        /* v6 desktop parity pass. These refinements are grounded in the
+           eleven page-specific ImageGen references under outputs/: preserve
+           the command-deck hierarchy while removing ellipsis-only labels and
+           giving Video Hider the same mission header + summary rhythm. */
+        @media (min-width: 1181px) {
+            #ytkit-settings-panel .ytkit-header {
+                grid-template-columns: 320px minmax(320px, 1fr) auto !important;
+            }
+
+            #ytkit-settings-panel .ytkit-body {
+                grid-template-columns: 320px minmax(0, 1fr) !important;
+            }
+        }
+
+        #ytkit-settings-panel .ytkit-nav-btn {
+            min-height: 52px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-label,
+        #ytkit-settings-panel .ytkit-pane-context-label,
+        #ytkit-settings-panel .ytkit-pane-context-value {
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+        }
+
+        #ytkit-settings-panel .ytkit-nav-label {
+            line-height: 1.25 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-item {
+            min-height: 68px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-pane-context-label,
+        #ytkit-settings-panel .ytkit-pane-context-value {
+            display: block !important;
+            line-height: 1.25 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-pane .ytkit-pane-header {
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            grid-template-areas: "lead actions" !important;
+            align-items: center !important;
+            min-height: 126px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-pane .ytkit-pane-actions {
+            align-self: center !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+            margin: 16px 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card {
+            display: grid !important;
+            grid-template-columns: 44px minmax(0, 1fr) !important;
+            align-items: center !important;
+            gap: 12px !important;
+            min-width: 0 !important;
+            min-height: 82px !important;
+            padding: 14px 16px !important;
+            border: 1px solid var(--ytkit-v3-border) !important;
+            border-radius: 11px !important;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.035), transparent 70%),
+                rgba(8,17,29,0.42) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__icon {
+            display: grid !important;
+            place-items: center !important;
+            width: 44px !important;
+            height: 44px !important;
+            border: 1px solid rgba(var(--ytkit-v3-accent-rgb),0.2) !important;
+            border-radius: 10px !important;
+            background: rgba(var(--ytkit-v3-accent-rgb),0.1) !important;
+            color: var(--ytkit-v3-accent) !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card[data-kind="allowed"] .ytkit-vh-summary-card__icon {
+            border-color: rgba(16,185,129,0.22) !important;
+            background: rgba(16,185,129,0.1) !important;
+            color: #5ee2b3 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card[data-kind="channels"] .ytkit-vh-summary-card__icon {
+            border-color: rgba(245,158,11,0.22) !important;
+            background: rgba(245,158,11,0.1) !important;
+            color: #f6bf5d !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__icon svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__copy {
+            display: grid !important;
+            gap: 3px !important;
+            min-width: 0 !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__value {
+            color: var(--ytkit-v3-text) !important;
+            font-size: 23px !important;
+            font-weight: 740 !important;
+            line-height: 1 !important;
+            font-variant-numeric: tabular-nums !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-summary-card__label {
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 12px !important;
+            font-weight: 620 !important;
+            line-height: 1.3 !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+        }
+
+        #ytkit-settings-panel .ytkit-vh-tabs {
+            margin-bottom: 16px !important;
+            border-radius: 10px !important;
+        }
+
+        #ytkit-settings-panel #ytkit-vh-content > .ytkit-vh-hero.is-empty {
+            place-content: center !important;
+            justify-items: center !important;
+            min-height: 150px !important;
+            text-align: center !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-vh-summary-card {
+            background: rgba(255,255,255,0.92) !important;
+        }
+
+        @media (max-width: 1180px) {
+            #ytkit-settings-panel .ytkit-vh-summary {
+                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+            }
+        }
+
         /* Keep this final focus lane after the footer, light-theme, and
            breakpoint overrides above. Those rules intentionally use
            !important for their visual contract, so focus must do the same. */
