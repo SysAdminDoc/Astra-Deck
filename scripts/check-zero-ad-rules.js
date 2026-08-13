@@ -98,6 +98,12 @@ function auditZeroAdRules() {
     if (userscript.indexOf('const ZERO_AD_CSS') > userscript.indexOf('BEGIN v5.0.0 bundled core modules')) {
         failures.push('userscript zero-ad CSS is not installed before bundled runtime startup');
     }
+    if (!userscript.includes("'data-ytkit-userscript-ad-contract'")) {
+        failures.push('userscript does not publish its shell-only ad contract');
+    }
+    if (!userscript.includes("'document-start-shells-only'")) {
+        failures.push('userscript ad contract must not claim browser-level request blocking');
+    }
     const serializedRules = JSON.stringify(rules);
     for (const protectedHost of ['googlevideo.com', 'ytimg.com']) {
         if (serializedRules.includes(protectedHost)) {

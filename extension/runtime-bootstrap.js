@@ -261,6 +261,34 @@
         return;
     }
 
+    const publishZeroAdStatus = () => new Promise((resolve) => {
+        if (typeof extensionRuntime?.sendMessage !== 'function') {
+            resolve(null);
+            return;
+        }
+        let settled = false;
+        const finish = (status) => {
+            if (settled) return;
+            settled = true;
+            const state = status?.ok && status?.enabled ? 'enabled' : 'unavailable';
+            try {
+                globalThis.document?.documentElement?.setAttribute('data-ytkit-zero-ad-ruleset', state);
+            } catch (_) {
+                // reason: diagnostics must never delay or fail runtime startup
+            }
+            bootstrapState.zeroAdRuleset = state;
+            resolve(status || null);
+        };
+        try {
+            const pending = extensionRuntime.sendMessage({ type: 'YTKIT_ZERO_AD_STATUS' }, finish);
+            if (pending && typeof pending.then === 'function') pending.then(finish, () => finish(null));
+        } catch (_) {
+            finish(null);
+        }
+    });
+
+    void publishZeroAdStatus();
+
     const readRuntimeSettings = () => new Promise((resolve) => {
         const storage = globalThis.chrome?.storage?.local || globalThis.browser?.storage?.local;
         if (typeof storage?.get !== 'function') {

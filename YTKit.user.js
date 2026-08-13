@@ -77,6 +77,21 @@
         }
     `;
     GM_addStyle(ZERO_AD_CSS);
+    // Keep the userscript's narrower network contract machine-readable for
+    // manager-specific diagnostics. This is deliberately not named
+    // "zero-ad": only the extension can enforce browser-level pre-request
+    // blocking, while userscript managers provide document-start shell
+    // suppression.
+    const publishUserscriptAdContract = () => {
+        document.documentElement?.setAttribute(
+            'data-ytkit-userscript-ad-contract',
+            'document-start-shells-only'
+        );
+    };
+    publishUserscriptAdContract();
+    if (!document.documentElement) {
+        document.addEventListener('readystatechange', publishUserscriptAdContract, { once: true });
+    }
     // The userscript is intentionally English-only today, but extracted
     // feature factories share the extension's t(key, fallback) contract.
     // Keep that contract available so the generated @require modules can
