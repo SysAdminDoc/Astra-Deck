@@ -1867,7 +1867,7 @@
     "message": "تصويت DeArrow"
   },
   "feature_deArrow_desc": {
-    "message": "استبدال العناوين والصور المصغرة المضلِّلة ببدائل مقترحة جماعياً من قاعدة بيانات DeArrow"
+    "message": "يستبدل العناوين والصور المصغرة المضللة ببيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -3367,7 +3367,7 @@
     "message": "مقدار خطوة السرعة"
   },
   "feature_sponsorBlock_desc": {
-    "message": "تخطي مقاطع الرعاية والمقدمات والخاتمات والأقسام غير المحتوى الأخرى تلقائياً باستخدام بيانات جماعية"
+    "message": "يتخطى تلقائيًا المقاطع الدعائية والمقدمات والنهايات والأجزاء الأخرى غير الأساسية باستخدام بيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -7288,6 +7288,12 @@
   },
   "playerDockHomeLink": {
     "message": "الانتقال إلى الصفحة الرئيسية"
+  },
+  "sponsorBlockDataAttribution": {
+    "message": "بيانات SponsorBlock"
+  },
+  "sponsorBlockDataAttributionTitle": {
+    "message": "بيانات واجهة API وقاعدة بيانات SponsorBlock — CC BY-NC-SA 4.0"
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (مخزّن في {time})"

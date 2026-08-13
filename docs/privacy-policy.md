@@ -1,6 +1,6 @@
 # Astra Deck Privacy Policy
 
-Last updated: 2026-06-04
+Last updated: 2026-08-13
 
 Astra Deck is a local-first browser extension and companion workflow for
 YouTube. It improves playback, layout, comments, transcripts, notes, exports,
@@ -66,6 +66,15 @@ explicitly chooses the broader profile and enables the relevant feature:
 Astra Deck does not send extension telemetry, analytics, crash reports, hidden
 lists, notes, settings profiles, or diagnostic bundles to Astra Deck servers.
 There are no Astra Deck servers.
+
+## Third-Party Data Attribution
+
+The SponsorBlock and DeArrow features use
+[SponsorBlock API/database data](https://sponsor.ajay.app/) licensed under
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+Astra Deck may reformat returned titles and visualize returned segments; those
+presentation changes are made by Astra Deck and are not endorsed by
+SponsorBlock.
 
 ## Cookies
 

@@ -1867,7 +1867,7 @@
     "message": "Vote DeArrow"
   },
   "feature_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "Remplace les titres et miniatures racoleurs avec les données SponsorBlock sous licence CC BY-NC-SA 4.0"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -3367,7 +3367,7 @@
     "message": "Pas de vitesse"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "Ignore automatiquement les segments sponsorisés, intros, outros et autres passages hors contenu grâce aux données SponsorBlock sous licence CC BY-NC-SA 4.0"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -7288,6 +7288,12 @@
   },
   "playerDockHomeLink": {
     "message": "Accéder à l’accueil"
+  },
+  "sponsorBlockDataAttribution": {
+    "message": "Données SponsorBlock"
+  },
+  "sponsorBlockDataAttributionTitle": {
+    "message": "Données de l’API/base SponsorBlock — CC BY-NC-SA 4.0"
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (en cache à {time})"

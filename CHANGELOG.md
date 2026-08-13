@@ -18,6 +18,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- SponsorBlock segment markers and DeArrow title/thumbnail replacements now
+  show a localized SponsorBlock data-source link. The settings descriptions,
+  README, privacy policy, and CWS/AMO listing copy also identify the upstream
+  API/database data, its CC BY-NC-SA 4.0 licence, and Astra Deck's presentation
+  changes.
 - Optional-host permission helpers now work with both Chromium callback APIs
   and Firefox-style Promise-only APIs, including permission enumeration.
 - Changed-only mode now visibly hides the full settings list; the list's flex

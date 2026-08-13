@@ -1867,7 +1867,7 @@
     "message": "DeArrow 投票"
   },
   "feature_deArrow_desc": {
-    "message": "使用 DeArrow 数据库中的众包替代方案替换标题党标题和缩略图"
+    "message": "使用按 CC BY-NC-SA 4.0 许可的 SponsorBlock 数据替换标题党标题和缩略图"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -3367,7 +3367,7 @@
     "message": "速度步进量"
   },
   "feature_sponsorBlock_desc": {
-    "message": "使用众包数据自动跳过赞助片段、片头、片尾等非内容部分"
+    "message": "使用按 CC BY-NC-SA 4.0 许可的 SponsorBlock 数据，自动跳过赞助、片头、片尾及其他非正片片段"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -7288,6 +7288,12 @@
   },
   "playerDockHomeLink": {
     "message": "前往主页"
+  },
+  "sponsorBlockDataAttribution": {
+    "message": "SponsorBlock 数据"
+  },
+  "sponsorBlockDataAttributionTitle": {
+    "message": "SponsorBlock API/数据库数据 — CC BY-NC-SA 4.0"
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label}（缓存于 {time}）"

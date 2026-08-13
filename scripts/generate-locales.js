@@ -4311,16 +4311,76 @@ const FEATURE_RUNTIME_COPY_TRANSLATIONS = {
 for (const [locale, messages] of Object.entries(FEATURE_RUNTIME_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 
 const SPONSOR_RUNTIME_COPY_TRANSLATIONS = {
-  de: { '{label} (cached at {time})': '{label} (gespeichert am {time})' },
-  es: { '{label} (cached at {time})': '{label} (en caché desde {time})' },
-  fr: { '{label} (cached at {time})': '{label} (en cache à {time})' },
-  it: { '{label} (cached at {time})': '{label} (in cache alle {time})' },
-  pt_BR: { '{label} (cached at {time})': '{label} (em cache em {time})' },
-  ru: { '{label} (cached at {time})': '{label} (в кэше с {time})' },
-  ja: { '{label} (cached at {time})': '{label}（{time} にキャッシュ）' },
-  ko: { '{label} (cached at {time})': '{label} ({time}에 캐시됨)' },
-  ar: { '{label} (cached at {time})': '{label} (مخزّن في {time})' },
-  zh_CN: { '{label} (cached at {time})': '{label}（缓存于 {time}）' }
+  de: {
+    '{label} (cached at {time})': '{label} (gespeichert am {time})',
+    'SponsorBlock data': 'SponsorBlock-Daten',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'SponsorBlock-API-/Datenbankdaten — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Überspringt automatisch gesponserte Segmente, Intros, Outros und andere Nicht-Inhalte mit SponsorBlock-Daten unter CC BY-NC-SA 4.0',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Ersetzt Clickbait-Titel und -Vorschaubilder durch SponsorBlock-Daten unter CC BY-NC-SA 4.0'
+  },
+  es: {
+    '{label} (cached at {time})': '{label} (en caché desde {time})',
+    'SponsorBlock data': 'Datos de SponsorBlock',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'Datos de la API/base de datos de SponsorBlock — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Omite automáticamente segmentos patrocinados, introducciones, cierres y otras partes ajenas al contenido mediante datos de SponsorBlock con licencia CC BY-NC-SA 4.0',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Reemplaza títulos y miniaturas sensacionalistas con datos de SponsorBlock bajo licencia CC BY-NC-SA 4.0'
+  },
+  fr: {
+    '{label} (cached at {time})': '{label} (en cache à {time})',
+    'SponsorBlock data': 'Données SponsorBlock',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'Données de l’API/base SponsorBlock — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Ignore automatiquement les segments sponsorisés, intros, outros et autres passages hors contenu grâce aux données SponsorBlock sous licence CC BY-NC-SA 4.0',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Remplace les titres et miniatures racoleurs avec les données SponsorBlock sous licence CC BY-NC-SA 4.0'
+  },
+  it: {
+    '{label} (cached at {time})': '{label} (in cache alle {time})',
+    'SponsorBlock data': 'Dati SponsorBlock',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'Dati API/database SponsorBlock — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Salta automaticamente segmenti sponsorizzati, intro, outro e altre sezioni non di contenuto usando dati SponsorBlock con licenza CC BY-NC-SA 4.0',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Sostituisce titoli e miniature clickbait con dati SponsorBlock con licenza CC BY-NC-SA 4.0'
+  },
+  pt_BR: {
+    '{label} (cached at {time})': '{label} (em cache em {time})',
+    'SponsorBlock data': 'Dados do SponsorBlock',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'Dados da API/base do SponsorBlock — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Pula automaticamente segmentos patrocinados, introduções, encerramentos e outras partes sem conteúdo usando dados do SponsorBlock sob a licença CC BY-NC-SA 4.0',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Substitui títulos e miniaturas sensacionalistas por dados do SponsorBlock sob a licença CC BY-NC-SA 4.0'
+  },
+  ru: {
+    '{label} (cached at {time})': '{label} (в кэше с {time})',
+    'SponsorBlock data': 'Данные SponsorBlock',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'Данные API/базы SponsorBlock — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Автоматически пропускает спонсорские сегменты, вступления, концовки и другие части вне основного содержания по данным SponsorBlock под лицензией CC BY-NC-SA 4.0',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': 'Заменяет кликбейтные заголовки и миниатюры данными SponsorBlock под лицензией CC BY-NC-SA 4.0'
+  },
+  ja: {
+    '{label} (cached at {time})': '{label}（{time} にキャッシュ）',
+    'SponsorBlock data': 'SponsorBlock データ',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'SponsorBlock API／データベースのデータ — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'CC BY-NC-SA 4.0 でライセンスされた SponsorBlock データを使い、スポンサー区間、イントロ、アウトロなど本編以外の区間を自動的にスキップします',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': 'クリックベイトのタイトルとサムネイルを、CC BY-NC-SA 4.0 でライセンスされた SponsorBlock データに置き換えます'
+  },
+  ko: {
+    '{label} (cached at {time})': '{label} ({time}에 캐시됨)',
+    'SponsorBlock data': 'SponsorBlock 데이터',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'SponsorBlock API/데이터베이스 데이터 — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'CC BY-NC-SA 4.0으로 라이선스된 SponsorBlock 데이터를 사용해 스폰서 구간, 인트로, 아웃트로 및 기타 비콘텐츠 구간을 자동으로 건너뜁니다',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': '클릭베이트 제목과 썸네일을 CC BY-NC-SA 4.0으로 라이선스된 SponsorBlock 데이터로 바꿉니다'
+  },
+  ar: {
+    '{label} (cached at {time})': '{label} (مخزّن في {time})',
+    'SponsorBlock data': 'بيانات SponsorBlock',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'بيانات واجهة API وقاعدة بيانات SponsorBlock — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': 'يتخطى تلقائيًا المقاطع الدعائية والمقدمات والنهايات والأجزاء الأخرى غير الأساسية باستخدام بيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': 'يستبدل العناوين والصور المصغرة المضللة ببيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0'
+  },
+  zh_CN: {
+    '{label} (cached at {time})': '{label}（缓存于 {time}）',
+    'SponsorBlock data': 'SponsorBlock 数据',
+    'SponsorBlock API/database data — CC BY-NC-SA 4.0': 'SponsorBlock API/数据库数据 — CC BY-NC-SA 4.0',
+    'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0': '使用按 CC BY-NC-SA 4.0 许可的 SponsorBlock 数据，自动跳过赞助、片头、片尾及其他非正片片段',
+    'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0': '使用按 CC BY-NC-SA 4.0 许可的 SponsorBlock 数据替换标题党标题和缩略图'
+  }
 };
 for (const [locale, messages] of Object.entries(SPONSOR_RUNTIME_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 

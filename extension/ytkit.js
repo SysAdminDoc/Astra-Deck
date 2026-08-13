@@ -32669,7 +32669,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }) || {
             id: 'sponsorBlock',
             name: t('feature_sponsorBlock_name', 'SponsorBlock'),
-            description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data'),
+            description: t('feature_sponsorBlock_desc', 'Automatically skip sponsored segments, intros, outros, and other non-content sections using SponsorBlock data licensed under CC BY-NC-SA 4.0'),
             group: 'Content',
             icon: 'skip-forward',
             isParent: true,
@@ -32680,6 +32680,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRuleId: 'sponsorBlockNav',
             _styleEl: null,
             _barSegments: [],
+            _attributionEl: null,
             _barObserver: null,
             _reloadTimer: null,
             // Bumped on destroy() so any in-flight _fetchSegments cannot
@@ -33093,6 +33094,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._skipTimer) { clearTimeout(this._skipTimer); this._skipTimer = null; }
             },
 
+            _createAttribution() {
+                const link = document.createElement('a');
+                const label = t('sponsorBlockDataAttribution', 'SponsorBlock data');
+                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API/database data — CC BY-NC-SA 4.0');
+                link.className = 'ytkit-sb-attribution';
+                link.href = 'https://sponsor.ajay.app/';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = label;
+                link.title = title;
+                link.setAttribute('aria-label', title);
+                link.dataset.ytkitLicense = 'CC BY-NC-SA 4.0';
+                link.addEventListener('click', event => event.stopPropagation());
+                return link;
+            },
+
+            _renderAttribution() {
+                const host = document.getElementById('ytkit-player-controls')
+                    || document.querySelector('.ytp-right-controls');
+                if (!host) return;
+                if (this._attributionEl?.isConnected && this._attributionEl.parentNode === host) return;
+                this._attributionEl?.remove();
+                this._attributionEl = this._createAttribution();
+                host.insertBefore(this._attributionEl, host.firstChild || null);
+            },
+
+            _clearAttribution() {
+                this._attributionEl?.remove();
+                this._attributionEl = null;
+            },
+
             _renderBarSegments() {
                 this._clearBarSegments();
                 const video = getMainVideoElement();
@@ -33100,6 +33132,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!video || !progressBar || !video.duration) return;
                 const duration = video.duration;
                 const enabledCats = this._getEnabledCategories();
+                let renderedCount = 0;
                 for (const seg of this._segments) {
                     if (!enabledCats.includes(seg.category)) continue;
                     const [start, end] = seg.segment;
@@ -33124,12 +33157,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     progressBar.appendChild(bar);
                     this._barSegments.push(bar);
+                    renderedCount++;
                 }
+                if (renderedCount > 0) this._renderAttribution();
             },
 
             _clearBarSegments() {
                 this._barSegments.forEach(el => el.remove());
                 this._barSegments = [];
+                this._clearAttribution();
             },
 
             _checkAntiAdblock() {
@@ -33151,7 +33187,49 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 const self = this;
-                this._styleEl = injectStyle('.ytkit-sb-segment { border-radius: 1px; }', this.id, true);
+                this._styleEl = injectStyle(`
+                    .ytkit-sb-segment { border-radius: 1px; }
+                    .ytkit-sb-attribution {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        align-self: center !important;
+                        height: 22px !important;
+                        margin: 0 5px !important;
+                        padding: 0 7px !important;
+                        border: 1px solid rgba(255, 255, 255, 0.24) !important;
+                        border-radius: 8px !important;
+                        background: rgba(10, 14, 20, 0.78) !important;
+                        color: rgba(255, 255, 255, 0.9) !important;
+                        font: 600 10px/1.2 Roboto, Arial, sans-serif !important;
+                        letter-spacing: 0.01em !important;
+                        text-decoration: none !important;
+                        white-space: nowrap !important;
+                        pointer-events: auto !important;
+                    }
+                    .ytkit-sb-attribution:hover,
+                    .ytkit-sb-attribution:focus-visible {
+                        border-color: rgba(255, 255, 255, 0.5) !important;
+                        background: rgba(25, 31, 40, 0.96) !important;
+                        color: #fff !important;
+                        outline: 2px solid rgba(255, 107, 74, 0.72) !important;
+                        outline-offset: 1px !important;
+                    }
+                    html:not([dark]) .ytkit-sb-attribution {
+                        border-color: rgba(15, 23, 42, 0.2) !important;
+                        background: rgba(255, 255, 255, 0.94) !important;
+                        color: #334155 !important;
+                    }
+                    html:not([dark]) .ytkit-sb-attribution:hover,
+                    html:not([dark]) .ytkit-sb-attribution:focus-visible {
+                        border-color: rgba(15, 23, 42, 0.42) !important;
+                        background: #fff !important;
+                        color: #0f172a !important;
+                    }
+                    html .ytp-right-controls > .ytkit-sb-attribution,
+                    #ytkit-player-controls > .ytkit-sb-attribution {
+                        display: inline-flex !important;
+                    }
+                `, this.id, true);
                 this._antiAdblockTimer = setInterval(() => self._checkAntiAdblock(), 30000);
                 this._checkAntiAdblock();
                 // Event-driven skip scheduling: reschedule on play/seek/rate changes
@@ -33568,7 +33646,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }) || {
             id: 'deArrow',
             name: t('feature_deArrow_name', 'DeArrow'),
-            description: t('feature_deArrow_desc', 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database'),
+            description: t('feature_deArrow_desc', 'Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0'),
             group: 'Content',
             icon: 'type',
             isParent: true,
@@ -33628,6 +33706,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                        submission) dim slightly so power users see the
                        distinction from real DeArrow data. */
                     .daCustomTitle[data-da-fallback="1"] { opacity: 0.78 !important; }
+                    .ytkit-dearrow-attribution {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        width: fit-content !important;
+                        margin-top: 3px !important;
+                        padding: 2px 6px !important;
+                        border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)) !important;
+                        border-radius: 8px !important;
+                        background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.08)) !important;
+                        color: var(--yt-spec-text-secondary, #aaa) !important;
+                        font: 600 10px/1.2 Roboto, Arial, sans-serif !important;
+                        letter-spacing: 0.01em !important;
+                        text-decoration: none !important;
+                    }
+                    .ytkit-dearrow-attribution:hover,
+                    .ytkit-dearrow-attribution:focus-visible {
+                        border-color: var(--yt-spec-text-secondary, #aaa) !important;
+                        color: var(--yt-spec-text-primary, #fff) !important;
+                        outline: 2px solid rgba(255, 107, 74, 0.62) !important;
+                        outline-offset: 1px !important;
+                    }
+                    html:not([dark]) .ytkit-dearrow-attribution {
+                        border-color: rgba(15, 23, 42, 0.18) !important;
+                        background: rgba(15, 23, 42, 0.06) !important;
+                        color: #475569 !important;
+                    }
+                    html:not([dark]) .ytkit-dearrow-attribution:hover,
+                    html:not([dark]) .ytkit-dearrow-attribution:focus-visible {
+                        border-color: rgba(15, 23, 42, 0.4) !important;
+                        background: rgba(255, 255, 255, 0.96) !important;
+                        color: #0f172a !important;
+                    }
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
                 const resetAndProcess = () => {
@@ -33635,6 +33745,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clearTimeout(self._processTimer);
                     clearTimeout(self._resetTimer);
                     document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
+                    document.querySelectorAll('.ytkit-dearrow-attribution').forEach(c => c.remove());
                     document.querySelectorAll('[data-da-processed]').forEach(el => {
                         const originalDisplay = el.getAttribute('data-da-original-display');
                         el.style.display = originalDisplay === null ? '' : originalDisplay;
@@ -33830,6 +33941,39 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 return title;
             },
+            _createAttribution() {
+                const link = document.createElement('a');
+                const label = t('sponsorBlockDataAttribution', 'SponsorBlock data');
+                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API/database data — CC BY-NC-SA 4.0');
+                link.className = 'ytkit-dearrow-attribution';
+                link.href = 'https://sponsor.ajay.app/';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = label;
+                link.title = title;
+                link.setAttribute('aria-label', title);
+                link.dataset.ytkitLicense = 'CC BY-NC-SA 4.0';
+                link.addEventListener('click', event => event.stopPropagation());
+                return link;
+            },
+            _ensureAttribution(outputEl) {
+                if (!outputEl) return null;
+                const owner = outputEl.closest?.(
+                    'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, '
+                    + 'ytd-grid-video-renderer, ytd-watch-metadata'
+                ) || outputEl.parentElement;
+                if (!owner) return null;
+                const existing = owner.querySelector?.('.ytkit-dearrow-attribution');
+                if (existing) return existing;
+                const titleEl = outputEl.matches?.('[data-ytkit-dearrow-title]')
+                    ? outputEl
+                    : owner.querySelector?.('[data-ytkit-dearrow-title], #video-title, #video-title-link');
+                const placement = titleEl?.closest?.('h1, h3') || titleEl || outputEl;
+                if (!placement.parentNode) return null;
+                const link = this._createAttribution();
+                placement.parentNode.insertBefore(link, placement.nextSibling || null);
+                return link;
+            },
             _renderTitle(titleEl, formatted, { fallback = false, uuid = '', announce = false } = {}) {
                 if (!titleEl || !formatted) return false;
                 const originalTitle = titleEl.textContent.trim();
@@ -33855,6 +33999,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 titleEl.dataset.daProcessed = '1';
                 titleEl.parentNode.insertBefore(clone, titleEl);
+                if (!fallback) this._ensureAttribution(clone);
                 if (announce) {
                     try { announceA11y(`Title replaced by DeArrow: ${formatted}`); } catch (_) { /* reason: optional accessibility announcement must not interrupt title rendering. */ }
                 }
@@ -33935,7 +34080,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 img.dataset.daOrigSrc = img.src;
                                 img.src = `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID=${encodeURIComponent(videoId)}&time=${stamp}`;
                                 img.classList.add('da-replaced-thumb');
-                                img.onerror = () => { if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc; };
+                                const attribution = this._ensureAttribution(img);
+                                img.onerror = () => {
+                                    if (img.dataset.daOrigSrc) img.src = img.dataset.daOrigSrc;
+                                    if (!el.querySelector('.daCustomTitle:not([data-da-fallback="1"])')) attribution?.remove();
+                                };
                             }
                         }
                     }
@@ -33978,6 +34127,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._observing = false;
                 this._styleEl?.remove();
                 document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
+                document.querySelectorAll('.ytkit-dearrow-attribution').forEach(c => c.remove());
                 document.querySelectorAll('[data-da-processed]').forEach(el => {
                     const originalDisplay = el.getAttribute('data-da-original-display');
                     el.style.display = originalDisplay === null ? '' : originalDisplay;
