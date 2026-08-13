@@ -150,6 +150,15 @@ are not browser extension install steps.
 | Comment Search — filter watch-page comments inline | Off |
 | DeArrow — replace clickbait titles/thumbnails via crowdsourced database | Off |
 
+GitHub-full builds can optionally follow one user-selected HTTPS Video Hider
+filter list after an exact-origin browser prompt. Remote lists are anonymous,
+data-only requests capped at 1 MiB: unknown fields and malformed payloads are
+rejected, publisher predicate code is discarded, and the exact response is
+recorded with SHA-256 plus ETag/Last-Modified validators. The popup shows the
+source host, format, verification age, and active/stale state; users can choose
+daily, weekly, or manual checks and pause last-known-good rules whenever a
+refresh fails or the last verification becomes older than seven days.
+
 ### Interface
 
 | Feature | Default |
@@ -405,6 +414,10 @@ document_idle
 - **External CRX signing key** — maintainer-only, never in the repo or CI
 - **Credential scrub** on settings export — API keys, tokens, and secrets are automatically stripped
 - **Profile-split permissions** — store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and user-selected remote origins; GitHub-full keeps those capabilities behind runtime prompts, with Cobalt limited to an authorized self-hosted instance
+- **Inspectable remote rules** — optional Video Hider subscriptions preserve a
+  hashed last-known-good payload with HTTP validators and visible freshness;
+  stale rules are explicit and user-disableable, never silently replaced by a
+  malformed response
 - **26+ hardening passes** documented in CHANGELOG with per-fix CVE/audit traceability
 - **Privacy policy** covers data handling for every API origin the extension contacts
 - **SponsorBlock data attribution** — the SponsorBlock and DeArrow features use

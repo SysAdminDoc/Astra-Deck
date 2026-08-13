@@ -29,6 +29,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   redacted JSON report, and includes the same sanitized diff in diagnostics.
   The rendered popup smoke exercises the changed-only, redaction, and copy
   paths in Chromium.
+- Optional remote Video Hider lists now use a versioned subscription record
+  with SHA-256 provenance, HTTP validators, last-known-good rollback, explicit
+  active/stale/error states, and daily, weekly, or manual refresh controls.
+  Strict parsing rejects unknown or oversized data, remote predicate code is
+  erased before persistence, diagnostics expose metadata and rule counts only,
+  and users can pause stale cached rules instead of leaving them silently
+  active.
 
 ### Fixed
 

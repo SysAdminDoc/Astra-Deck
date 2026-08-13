@@ -1065,6 +1065,30 @@
   "filterListExported": {
     "message": "已导出 Video Hider 规则。"
   },
+  "filterListFailureBadFormat": {
+    "message": "响应不是受支持的 Astra Deck 过滤列表"
+  },
+  "filterListFailureExpired": {
+    "message": "上次验证已超过 7 天"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "服务器返回了 HTTP {status}"
+  },
+  "filterListFailureIntegrity": {
+    "message": "SHA-256 验证不可用"
+  },
+  "filterListFailureStorage": {
+    "message": "无法保存已验证的列表"
+  },
+  "filterListFailureTooLarge": {
+    "message": "响应超过了 1 MiB 限制"
+  },
+  "filterListFailureUnreachable": {
+    "message": "无法访问来源"
+  },
+  "filterListHashUnavailable": {
+    "message": "未记录"
+  },
   "filterListImportFail": {
     "message": "过滤列表导入失败"
   },
@@ -1076,6 +1100,27 @@
   },
   "filterListImported": {
     "message": "已导入 Video Hider 规则。可撤销导入。"
+  },
+  "filterListNotModified": {
+    "message": "已检查过滤列表；缓存内容未更改。"
+  },
+  "filterListRefreshDaily": {
+    "message": "每天"
+  },
+  "filterListRefreshManual": {
+    "message": "仅手动"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "自动刷新"
+  },
+  "filterListRefreshWeekly": {
+    "message": "每周"
+  },
+  "filterListStatusActiveTpl": {
+    "message": "正在订阅 {host}。检查时间：{age}；格式 v{version}；SHA-256 {hash}。"
+  },
+  "filterListStatusErrorTpl": {
+    "message": "没有来自 {host} 的规则处于活动状态。上次刷新失败，原因是{reason}。"
   },
   "filterListStatusExported": {
     "message": "已导出本地过滤规则。"
@@ -1110,11 +1155,26 @@
   "filterListStatusPermissionNeeded": {
     "message": "Astra Deck 需要你的许可才能读取该网站。当浏览器询问时，请选择“允许”。"
   },
+  "filterListStatusPreferenceFail": {
+    "message": "无法保存过滤列表偏好设置。"
+  },
   "filterListStatusReady": {
     "message": "当前未订阅任何过滤列表。"
   },
   "filterListStatusRefreshed": {
     "message": "已刷新远程过滤列表。"
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "无法刷新列表，原因是{reason}。"
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "缓存的 {host} 规则仍处于活动状态；检查时间：{age}；{reason}。格式 v{version}；SHA-256 {hash}。"
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "缓存的 {host} 规则已暂停；检查时间：{age}；{reason}。格式 v{version}；SHA-256 {hash}。"
+  },
+  "filterListTimeUnknown": {
+    "message": "时间未知"
   },
   "filterListToolsDesc": {
     "message": "备份你的 Video Hider 规则、从文件恢复，或订阅你信任的网站上发布的过滤列表。"
@@ -1130,6 +1190,9 @@
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "如果刷新失败或规则已超过 7 天，则使用上次验证的规则"
   },
   "filterListRefreshFail": {
     "message": "过滤列表刷新失败"

@@ -1065,6 +1065,30 @@
   "filterListExported": {
     "message": "Reglas de Video Hider exportadas."
   },
+  "filterListFailureBadFormat": {
+    "message": "la respuesta no era una lista de filtros compatible con Astra Deck"
+  },
+  "filterListFailureExpired": {
+    "message": "la última verificación tiene más de 7 días"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "el servidor devolvió HTTP {status}"
+  },
+  "filterListFailureIntegrity": {
+    "message": "la verificación SHA-256 no estaba disponible"
+  },
+  "filterListFailureStorage": {
+    "message": "no se pudo guardar la lista verificada"
+  },
+  "filterListFailureTooLarge": {
+    "message": "la respuesta superó el límite de 1 MiB"
+  },
+  "filterListFailureUnreachable": {
+    "message": "no se pudo acceder a la fuente"
+  },
+  "filterListHashUnavailable": {
+    "message": "no registrado"
+  },
   "filterListImportFail": {
     "message": "Error al importar la lista de filtros"
   },
@@ -1076,6 +1100,27 @@
   },
   "filterListImported": {
     "message": "Reglas de Video Hider importadas. Deshacer importación está disponible."
+  },
+  "filterListNotModified": {
+    "message": "Lista de filtros comprobada; el contenido en caché no ha cambiado."
+  },
+  "filterListRefreshDaily": {
+    "message": "Diaria"
+  },
+  "filterListRefreshManual": {
+    "message": "Solo manual"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "Actualización automática"
+  },
+  "filterListRefreshWeekly": {
+    "message": "Semanal"
+  },
+  "filterListStatusActiveTpl": {
+    "message": "Siguiendo {host}. Comprobado {age}; formato v{version}; SHA-256 {hash}."
+  },
+  "filterListStatusErrorTpl": {
+    "message": "No hay reglas activas de {host}. La última actualización falló porque {reason}."
   },
   "filterListStatusExported": {
     "message": "Reglas de filtro locales exportadas."
@@ -1110,11 +1155,26 @@
   "filterListStatusPermissionNeeded": {
     "message": "Astra Deck necesita tu permiso para leer de ese sitio. Elige Permitir cuando tu navegador lo pregunte."
   },
+  "filterListStatusPreferenceFail": {
+    "message": "No se pudieron guardar las preferencias de la lista de filtros."
+  },
   "filterListStatusReady": {
     "message": "No se está siguiendo ninguna lista de filtros."
   },
   "filterListStatusRefreshed": {
     "message": "Lista de filtros remota actualizada."
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "No se pudo actualizar la lista porque {reason}."
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "Las reglas en caché de {host} siguen activas; comprobadas {age}; {reason}. Formato v{version}; SHA-256 {hash}."
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "Las reglas en caché de {host} están en pausa; comprobadas {age}; {reason}. Formato v{version}; SHA-256 {hash}."
+  },
+  "filterListTimeUnknown": {
+    "message": "en un momento desconocido"
   },
   "filterListToolsDesc": {
     "message": "Haz una copia de seguridad de tus reglas de Video Hider, restáuralas desde un archivo o sigue una lista de filtros publicada en un sitio de confianza."
@@ -1130,6 +1190,9 @@
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "Usar las últimas reglas verificadas si falla la actualización o tienen más de 7 días"
   },
   "filterListRefreshFail": {
     "message": "Error al actualizar la lista de filtros"

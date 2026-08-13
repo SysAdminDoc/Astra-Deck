@@ -670,11 +670,17 @@ async function auditPopupFilterGrant(client, surface, stateName) {
         const section = document.getElementById('data-flow-grants');
         const row = section?.querySelector('.data-flow-grant-row');
         const remove = row?.querySelector('.data-flow-grant-remove');
+        const preferences = document.getElementById('filter-list-preferences');
+        const refreshMode = document.getElementById('filter-list-refresh-mode');
+        const staleEnabled = document.getElementById('filter-list-stale-enabled');
         return {
             sectionVisible: Boolean(section && !section.hidden && section.getClientRects().length),
             host: row?.querySelector('.data-flow-grant-host')?.textContent?.trim() || '',
             originPattern: row?.dataset?.originPattern || '',
             removeLabel: remove?.getAttribute('aria-label') || '',
+            preferencesVisible: Boolean(preferences && !preferences.hidden && preferences.getClientRects().length),
+            refreshMode: refreshMode?.value || '',
+            staleEnabled: staleEnabled?.checked,
             permissions: globalThis.__ytkitSmoke?.permissionOrigins?.() || []
         };
     })()`);
@@ -685,6 +691,9 @@ async function auditPopupFilterGrant(client, surface, stateName) {
         failures.push(`grant pattern is ${JSON.stringify(before.originPattern)}`);
     }
     if (!before.removeLabel.includes('lists.example.com')) failures.push('remove control does not name the host');
+    if (!before.preferencesVisible) failures.push('filter-list preferences are not visibly rendered');
+    if (before.refreshMode !== 'daily') failures.push(`default refresh mode is ${JSON.stringify(before.refreshMode)}`);
+    if (before.staleEnabled !== true) failures.push('last-known-good rules are not enabled by default');
     if (!before.permissions.includes('https://lists.example.com/*')) failures.push('fixture grant is missing');
     if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
 

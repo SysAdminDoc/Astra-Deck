@@ -54,6 +54,33 @@ test('versioned Video Hider filter lists round-trip with bounded URL and rule sa
     assert.equal(parsed.rules.allowedChannels[0].id, 'UC0987654321');
     assert.ok(parsed.rules.keywordFilter.length <= 20000);
 
+    const remoteParsed = persisted.parseRemoteVideoFilterList(payload);
+    assert.equal(remoteParsed.rules.predicateEnabled, false);
+    assert.equal(remoteParsed.rules.predicateCode, '');
+    assert.throws(
+        () => persisted.parseRemoteVideoFilterList({ ...payload, unexpected: true }),
+        /Unsupported or invalid/
+    );
+    assert.throws(
+        () => persisted.parseRemoteVideoFilterList({ ...payload, filterListVersion: '1' }),
+        /Unsupported or invalid/,
+        'remote schema versions must not be accepted through type coercion'
+    );
+    assert.throws(
+        () => persisted.parseRemoteVideoFilterList({
+            ...payload,
+            rules: { ...payload.rules, hiddenVideos: ['abcdefghijk'], unexpected: true }
+        }),
+        /Unsupported or invalid/
+    );
+    assert.throws(
+        () => persisted.parseRemoteVideoFilterList({
+            ...payload,
+            rules: { ...payload.rules, keywordFilter: 'x'.repeat(20001) }
+        }),
+        /Unsupported or invalid/
+    );
+
     assert.throws(
         () => persisted.parseVideoFilterList({ ...payload, filterListVersion: persisted.FILTER_LIST_VERSION + 1 }),
         /Unsupported or invalid/
@@ -64,7 +91,7 @@ test('versioned Video Hider filter lists round-trip with bounded URL and rule sa
     );
 });
 
-test('filter-list subscription sanitizer keeps cached rules while bounding timestamps and errors', () => {
+test('filter-list subscription v2 migrates legacy cache into bounded last-known-good state', () => {
     const subscription = persisted.sanitizeVideoFilterListSubscription({
         url: 'https://example.com/rules.json',
         attemptedAt: 1234.9,
@@ -72,23 +99,64 @@ test('filter-list subscription sanitizer keeps cached rules while bounding times
         rules: { hiddenVideos: ['abcdefghijk'], predicateEnabled: true, predicateCode: 'return true;' },
         error: 'x'.repeat(500)
     });
-    assert.deepEqual(subscription, {
-        version: 1,
-        url: 'https://example.com/rules.json',
-        attemptedAt: 1234,
+    assert.equal(subscription.schemaVersion, 2);
+    assert.equal(subscription.sourceUrl, 'https://example.com/rules.json');
+    assert.equal(subscription.attemptedAt, 1234);
+    assert.equal(subscription.httpStatus, 0);
+    assert.equal(subscription.state, 'stale');
+    assert.equal(subscription.staleEnabled, true);
+    assert.equal(subscription.refreshMode, 'daily');
+    assert.equal(subscription.errorCode, 'unknown');
+    assert.deepEqual(subscription.lastKnownGood, {
+        filterListVersion: 1,
         fetchedAt: 2345,
+        validatedAt: 2345,
+        httpStatus: 200,
+        contentSha256: '',
+        etag: '',
+        lastModified: '',
         rules: {
             keywordFilter: '',
-            predicateEnabled: true,
-            predicateCode: 'return true;',
+            predicateEnabled: false,
+            predicateCode: '',
             hiddenVideos: ['abcdefghijk'],
             allowedVideos: [],
             blockedChannels: [],
             allowedChannels: []
-        },
-        error: 'x'.repeat(240)
+        }
     });
-    assert.equal(persisted.sanitizeDomainValue('videoFilterListSubscription', null).version, 1);
+    assert.equal(persisted.sanitizeDomainValue('videoFilterListSubscription', null).schemaVersion, 2);
+});
+
+test('filter-list state resolver makes expired last-known-good rules explicitly disableable', () => {
+    const sourceUrl = 'https://example.com/rules.json';
+    const week = persisted.FILTER_LIST_STALE_MS;
+    const base = persisted.sanitizeVideoFilterListSubscription({
+        sourceUrl,
+        attemptedAt: 1000,
+        state: 'active',
+        staleEnabled: true,
+        lastKnownGood: {
+            filterListVersion: 1,
+            fetchedAt: 1000,
+            validatedAt: 1000,
+            httpStatus: 200,
+            contentSha256: 'a'.repeat(64),
+            rules: { hiddenVideos: ['abcdefghijk'], predicateCode: 'return true;', predicateEnabled: true }
+        }
+    });
+    const stale = persisted.resolveVideoFilterListSubscriptionState(base, 1000 + week + 1);
+    assert.equal(stale.state, 'stale');
+    assert.equal(stale.reasonCode, 'expired');
+    assert.equal(stale.rulesActive, true);
+
+    const paused = persisted.resolveVideoFilterListSubscriptionState({ ...base, staleEnabled: false }, 1000 + week + 1);
+    assert.equal(paused.rulesActive, false);
+    const metadata = persisted.buildVideoFilterListSubscriptionMetadata(base, { now: 1000 + week + 1 });
+    assert.equal(metadata.lastKnownGood.contentSha256, 'a'.repeat(64));
+    assert.equal(metadata.lastKnownGood.ruleCounts.hiddenVideos, 1);
+    assert.equal(JSON.stringify(metadata).includes('predicateCode'), false);
+    assert.equal(JSON.stringify(metadata).includes('return true'), false);
 });
 
 test('persisted-domain service loads before every consumer surface', () => {

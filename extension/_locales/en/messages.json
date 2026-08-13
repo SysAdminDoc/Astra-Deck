@@ -1065,6 +1065,30 @@
   "filterListExported": {
     "message": "Video Hider rules exported."
   },
+  "filterListFailureBadFormat": {
+    "message": "the response was not a supported Astra Deck filter list"
+  },
+  "filterListFailureExpired": {
+    "message": "the last verification is older than 7 days"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "the server returned HTTP {status}"
+  },
+  "filterListFailureIntegrity": {
+    "message": "SHA-256 verification was unavailable"
+  },
+  "filterListFailureStorage": {
+    "message": "the verified list could not be saved"
+  },
+  "filterListFailureTooLarge": {
+    "message": "the response exceeded the 1 MiB limit"
+  },
+  "filterListFailureUnreachable": {
+    "message": "the source could not be reached"
+  },
+  "filterListHashUnavailable": {
+    "message": "not recorded"
+  },
   "filterListImportFail": {
     "message": "Filter-list import failed"
   },
@@ -1076,6 +1100,27 @@
   },
   "filterListImported": {
     "message": "Video Hider rules imported. Undo Import is available."
+  },
+  "filterListNotModified": {
+    "message": "Filter list checked; cached content is unchanged."
+  },
+  "filterListRefreshDaily": {
+    "message": "Daily"
+  },
+  "filterListRefreshManual": {
+    "message": "Manual only"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "Automatic refresh"
+  },
+  "filterListRefreshWeekly": {
+    "message": "Weekly"
+  },
+  "filterListStatusActiveTpl": {
+    "message": "Following {host}. Checked {age}; format v{version}; SHA-256 {hash}."
+  },
+  "filterListStatusErrorTpl": {
+    "message": "No rules from {host} are active. Last refresh failed because {reason}."
   },
   "filterListStatusExported": {
     "message": "Local filter rules exported."
@@ -1110,11 +1155,26 @@
   "filterListStatusPermissionNeeded": {
     "message": "Astra Deck needs your permission to read from that site. Choose Allow when your browser asks."
   },
+  "filterListStatusPreferenceFail": {
+    "message": "Could not save filter-list preferences."
+  },
   "filterListStatusReady": {
     "message": "No filter list is being followed."
   },
   "filterListStatusRefreshed": {
     "message": "Remote filter list refreshed."
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "Could not refresh the list because {reason}."
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "Cached {host} rules remain active; checked {age}; {reason}. Format v{version}; SHA-256 {hash}."
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "Cached {host} rules are paused; checked {age}; {reason}. Format v{version}; SHA-256 {hash}."
+  },
+  "filterListTimeUnknown": {
+    "message": "at an unknown time"
   },
   "filterListToolsDesc": {
     "message": "Back up your Video Hider rules, restore them from a file, or follow a filter list published on a site you trust."
@@ -1130,6 +1190,9 @@
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "Use the last verified rules if refresh fails or they become older than 7 days"
   },
   "filterListRefreshFail": {
     "message": "Filter-list refresh failed"

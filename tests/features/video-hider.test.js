@@ -230,6 +230,17 @@ test('Video Hider applies cached remote data rules but never executes remote pre
 
     feature._extractChannelInfos = () => [{ id: 'UC1234567890', name: 'Remote block' }];
     assert.equal(feature._isChannelBlocked(feature._extractChannelInfos()), true);
+
+    const pausedSubscription = globalThis.YTKitCore.persistedDomains.sanitizeVideoFilterListSubscription({
+        ...subscription,
+        staleEnabled: false
+    });
+    const pausedFeature = mod.createHideVideosFromHomeFeature({
+        appState,
+        storageReadJSON: () => pausedSubscription,
+        nowFn: () => globalThis.YTKitCore.persistedDomains.FILTER_LIST_STALE_MS + 1001
+    });
+    assert.equal(pausedFeature._getRemoteFilterRules(), null, 'user-paused stale rules must not remain active');
 });
 
 test('Video Hider refreshes filter lists anonymously and preserves stale cache on failure', async () => {
@@ -247,6 +258,8 @@ test('Video Hider refreshes filter lists anonymously and preserves stale cache o
     const writes = [];
     const timers = [];
     const appState = { settings: { hideVideosFilterListUrl: url } };
+    const payload = globalThis.YTKitCore.persistedDomains.createVideoFilterList(freshRules);
+    const responseText = JSON.stringify(payload);
     const feature = mod.createHideVideosFromHomeFeature({
         appState,
         storageReadJSON: (_key, fallback) => fallback,
@@ -258,7 +271,20 @@ test('Video Hider refreshes filter lists anonymously and preserves stale cache o
             assert.equal(details.credentials, 'omit');
             assert.equal(details.method, 'GET');
             assert.equal(details.timeout, 15000);
-            return { data: globalThis.YTKitCore.persistedDomains.createVideoFilterList(freshRules) };
+            assert.equal(details.maxResponseBytes, 1024 * 1024);
+            assert.equal(details.acceptNotModified, true);
+            return {
+                data: payload,
+                response: {
+                    status: 200,
+                    responseText,
+                    responseHeaders: 'etag: "remote-v1"\r\nlast-modified: Wed, 12 Aug 2026 12:00:00 GMT'
+                }
+            };
+        },
+        sha256TextFn: async text => {
+            assert.equal(text, responseText);
+            return 'a'.repeat(64);
         },
         nowFn: () => 1000000,
         setTimeoutFn: (callback, delay) => {
@@ -271,20 +297,35 @@ test('Video Hider refreshes filter lists anonymously and preserves stale cache o
     const result = await feature._refreshFilterListNow();
     assert.equal(result.ok, true);
     assert.equal(writes.length, 1);
-    assert.equal(writes[0].url, url);
-    assert.equal(writes[0].fetchedAt, 1000000);
-    assert.equal(writes[0].rules.keywordFilter, 'fresh');
+    assert.equal(writes[0].schemaVersion, 2);
+    assert.equal(writes[0].sourceUrl, url);
+    assert.equal(writes[0].state, 'active');
+    assert.equal(writes[0].lastKnownGood.fetchedAt, 1000000);
+    assert.equal(writes[0].lastKnownGood.validatedAt, 1000000);
+    assert.equal(writes[0].lastKnownGood.contentSha256, 'a'.repeat(64));
+    assert.equal(writes[0].lastKnownGood.etag, '"remote-v1"');
+    assert.equal(writes[0].lastKnownGood.rules.keywordFilter, 'fresh');
+    assert.equal(writes[0].lastKnownGood.rules.predicateCode, '', 'remote predicate code must not persist');
     feature._scheduleFilterListRefresh();
     assert.equal(timers.length, 1);
     assert.ok(timers[0].delay >= 6 * 60 * 60 * 1000);
     assert.ok(timers[0].delay <= 7 * 24 * 60 * 60 * 1000);
 
-    const stale = {
-        url,
+    const stale = globalThis.YTKitCore.persistedDomains.sanitizeVideoFilterListSubscription({
+        sourceUrl: url,
         attemptedAt: 1000,
-        fetchedAt: 900,
-        rules: { keywordFilter: 'stale', hiddenVideos: ['abcdefghijk'] }
-    };
+        state: 'active',
+        staleEnabled: true,
+        lastKnownGood: {
+            filterListVersion: 1,
+            fetchedAt: 900,
+            validatedAt: 900,
+            httpStatus: 200,
+            contentSha256: 'b'.repeat(64),
+            etag: '"stale"',
+            rules: { keywordFilter: 'stale', hiddenVideos: ['abcdefghijk'] }
+        }
+    });
     let failedWrite;
     const failedFeature = mod.createHideVideosFromHomeFeature({
         appState: { settings: { hideVideosFilterListUrl: url } },
@@ -298,9 +339,112 @@ test('Video Hider refreshes filter lists anonymously and preserves stale cache o
     });
     const failed = await failedFeature._refreshFilterListNow();
     assert.equal(failed.ok, false);
-    assert.equal(failedWrite.rules.keywordFilter, 'stale');
-    assert.equal(failedWrite.fetchedAt, 900);
-    assert.match(failedWrite.error, /offline/);
+    assert.equal(failed.code, 'unreachable');
+    assert.equal(failedWrite.state, 'stale');
+    assert.equal(failedWrite.errorCode, 'unreachable');
+    assert.equal(failedWrite.lastKnownGood.rules.keywordFilter, 'stale');
+    assert.equal(failedWrite.lastKnownGood.fetchedAt, 900);
+    assert.equal(Object.prototype.hasOwnProperty.call(failedWrite, 'error'), false, 'free-text errors must not persist');
+});
+
+test('Video Hider sends validators and refreshes last-known-good age on HTTP 304', async () => {
+    const { mod } = loadModule();
+    const codec = globalThis.YTKitCore.persistedDomains;
+    const url = 'https://example.com/rules.json';
+    const stored = codec.sanitizeVideoFilterListSubscription({
+        sourceUrl: url,
+        attemptedAt: 1000,
+        state: 'active',
+        refreshMode: 'weekly',
+        lastKnownGood: {
+            filterListVersion: 1,
+            fetchedAt: 900,
+            validatedAt: 950,
+            httpStatus: 200,
+            contentSha256: 'c'.repeat(64),
+            etag: '"v1"',
+            lastModified: 'Wed, 12 Aug 2026 12:00:00 GMT',
+            rules: { keywordFilter: 'cached' }
+        }
+    });
+    let written;
+    const feature = mod.createHideVideosFromHomeFeature({
+        appState: { settings: { hideVideosFilterListUrl: url } },
+        storageReadJSON: () => stored,
+        storageWriteJSON: async (_key, value) => { written = value; return { ok: true }; },
+        extensionFetchJson: async details => {
+            assert.equal(details.headers['If-None-Match'], '"v1"');
+            assert.equal(details.headers['If-Modified-Since'], 'Wed, 12 Aug 2026 12:00:00 GMT');
+            return { notModified: true, response: { status: 304, responseHeaders: 'etag: "v1"' } };
+        },
+        nowFn: () => 2000
+    });
+    feature._processAllVideosDebounced = () => {};
+    const result = await feature._refreshFilterListNow();
+    assert.equal(result.ok, true);
+    assert.equal(result.notModified, true);
+    assert.equal(written.state, 'active');
+    assert.equal(written.httpStatus, 304);
+    assert.equal(written.refreshMode, 'weekly');
+    assert.equal(written.lastKnownGood.fetchedAt, 900);
+    assert.equal(written.lastKnownGood.validatedAt, 2000);
+    assert.equal(written.lastKnownGood.rules.keywordFilter, 'cached');
+});
+
+test('Video Hider rolls back hostile payloads and drops old rules when the source URL changes', async () => {
+    const { mod } = loadModule();
+    const codec = globalThis.YTKitCore.persistedDomains;
+    const oldUrl = 'https://example.com/rules.json';
+    const stored = codec.sanitizeVideoFilterListSubscription({
+        sourceUrl: oldUrl,
+        attemptedAt: 1000,
+        state: 'active',
+        lastKnownGood: {
+            filterListVersion: 1,
+            fetchedAt: 900,
+            validatedAt: 900,
+            httpStatus: 200,
+            contentSha256: 'd'.repeat(64),
+            rules: { keywordFilter: 'safe' }
+        }
+    });
+    const hostile = {
+        ...codec.createVideoFilterList({ keywordFilter: 'hostile' }),
+        unexpectedCapability: 'execute'
+    };
+    let rollback;
+    const sameSource = mod.createHideVideosFromHomeFeature({
+        appState: { settings: { hideVideosFilterListUrl: oldUrl } },
+        storageReadJSON: () => stored,
+        storageWriteJSON: async (_key, value) => { rollback = value; return { ok: true }; },
+        extensionFetchJson: async () => ({
+            data: hostile,
+            response: { status: 200, responseText: JSON.stringify(hostile), responseHeaders: '' }
+        }),
+        sha256TextFn: async () => 'e'.repeat(64),
+        nowFn: () => 2000
+    });
+    sameSource._processAllVideosDebounced = () => {};
+    const rejected = await sameSource._refreshFilterListNow();
+    assert.equal(rejected.code, 'bad-format');
+    assert.equal(rollback.state, 'stale');
+    assert.equal(rollback.lastKnownGood.rules.keywordFilter, 'safe');
+
+    const newUrl = 'https://lists.example.org/rules.json';
+    let changed;
+    const changedSource = mod.createHideVideosFromHomeFeature({
+        appState: { settings: { hideVideosFilterListUrl: newUrl } },
+        storageReadJSON: () => stored,
+        storageWriteJSON: async (_key, value) => { changed = value; return { ok: true }; },
+        extensionFetchJson: async () => { throw new Error('offline'); },
+        nowFn: () => 3000
+    });
+    changedSource._processAllVideosDebounced = () => {};
+    const failed = await changedSource._refreshFilterListNow();
+    assert.equal(failed.code, 'unreachable');
+    assert.equal(changed.sourceUrl, newUrl);
+    assert.equal(changed.state, 'error');
+    assert.equal(changed.lastKnownGood, null, 'rules from a different source must not roll forward');
 });
 
 test('Video Hider processes current card hosts and keeps the thumbnail control mounted', () => {

@@ -50,6 +50,14 @@ test('relative card ages become explicitly approximate locale-formatted calendar
     assert.equal(clamped.date.getDate(), 28);
 });
 
+test('stored timestamps render as bounded locale-relative freshness labels', () => {
+    const { formatRelativeTimestamp } = loadCore();
+    const now = Date.parse('2026-08-13T12:00:00Z');
+    assert.equal(formatRelativeTimestamp(now - (2 * 60 * 60 * 1000), { now, locale: 'en-US' }), '2 hours ago');
+    assert.equal(formatRelativeTimestamp(now + (24 * 60 * 60 * 1000), { now, locale: 'en-US' }), 'tomorrow');
+    assert.equal(formatRelativeTimestamp(0, { now, locale: 'en-US' }), '');
+});
+
 test('duration formatting uses the platform formatter across every bundled locale', () => {
     const { formatDuration } = loadCore();
     const locales = ['ar', 'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt-BR', 'ru', 'zh-CN'];

@@ -1065,6 +1065,30 @@
   "filterListExported": {
     "message": "Video Hider 규칙을 내보냈습니다."
   },
+  "filterListFailureBadFormat": {
+    "message": "응답이 지원되는 Astra Deck 필터 목록이 아니었습니다"
+  },
+  "filterListFailureExpired": {
+    "message": "마지막 검증이 7일보다 오래되었습니다"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "서버가 HTTP {status}을(를) 반환했습니다"
+  },
+  "filterListFailureIntegrity": {
+    "message": "SHA-256 검증을 사용할 수 없었습니다"
+  },
+  "filterListFailureStorage": {
+    "message": "검증된 목록을 저장할 수 없었습니다"
+  },
+  "filterListFailureTooLarge": {
+    "message": "응답이 1 MiB 제한을 초과했습니다"
+  },
+  "filterListFailureUnreachable": {
+    "message": "소스에 연결할 수 없었습니다"
+  },
+  "filterListHashUnavailable": {
+    "message": "기록되지 않음"
+  },
   "filterListImportFail": {
     "message": "필터 목록 가져오기 실패"
   },
@@ -1076,6 +1100,27 @@
   },
   "filterListImported": {
     "message": "Video Hider 규칙을 가져왔습니다. 가져오기 실행 취소를 사용할 수 있습니다."
+  },
+  "filterListNotModified": {
+    "message": "필터 목록을 확인했습니다. 캐시된 내용은 변경되지 않았습니다."
+  },
+  "filterListRefreshDaily": {
+    "message": "매일"
+  },
+  "filterListRefreshManual": {
+    "message": "수동만"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "자동 새로 고침"
+  },
+  "filterListRefreshWeekly": {
+    "message": "매주"
+  },
+  "filterListStatusActiveTpl": {
+    "message": "{host} 구독 중. 확인: {age}, 형식 v{version}, SHA-256 {hash}."
+  },
+  "filterListStatusErrorTpl": {
+    "message": "{host}의 활성 규칙이 없습니다. 마지막 새로 고침 실패: {reason}."
   },
   "filterListStatusExported": {
     "message": "로컬 필터 규칙을 내보냈습니다."
@@ -1110,11 +1155,26 @@
   "filterListStatusPermissionNeeded": {
     "message": "해당 사이트를 읽으려면 Astra Deck의 권한이 필요합니다. 브라우저가 물어보면 '허용'을 선택하세요."
   },
+  "filterListStatusPreferenceFail": {
+    "message": "필터 목록 기본 설정을 저장할 수 없습니다."
+  },
   "filterListStatusReady": {
     "message": "구독 중인 필터 목록이 없습니다."
   },
   "filterListStatusRefreshed": {
     "message": "원격 필터 목록을 새로 고쳤습니다."
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "{reason} 때문에 목록을 새로 고칠 수 없습니다."
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "캐시된 {host} 규칙이 계속 활성 상태입니다. 확인: {age}, {reason}. 형식 v{version}, SHA-256 {hash}."
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "캐시된 {host} 규칙이 일시 중지되었습니다. 확인: {age}, {reason}. 형식 v{version}, SHA-256 {hash}."
+  },
+  "filterListTimeUnknown": {
+    "message": "알 수 없는 시각"
   },
   "filterListToolsDesc": {
     "message": "Video Hider 규칙을 백업하거나 파일에서 복원하거나 신뢰하는 사이트에 게시된 필터 목록을 구독할 수 있습니다."
@@ -1130,6 +1190,9 @@
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "새로 고침에 실패하거나 7일보다 오래된 경우 마지막으로 검증된 규칙 사용"
   },
   "filterListRefreshFail": {
     "message": "필터 목록 새로 고침 실패"
