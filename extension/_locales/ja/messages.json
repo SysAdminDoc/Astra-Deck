@@ -1065,6 +1065,30 @@
   "filterListExported": {
     "message": "Video Hider のルールをエクスポートしました。"
   },
+  "filterListFailureBadFormat": {
+    "message": "応答が対応する Astra Deck フィルターリストではありませんでした"
+  },
+  "filterListFailureExpired": {
+    "message": "最後の検証から 7 日以上経過しています"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "サーバーが HTTP {status} を返しました"
+  },
+  "filterListFailureIntegrity": {
+    "message": "SHA-256 検証を利用できませんでした"
+  },
+  "filterListFailureStorage": {
+    "message": "検証済みリストを保存できませんでした"
+  },
+  "filterListFailureTooLarge": {
+    "message": "応答が 1 MiB の上限を超えました"
+  },
+  "filterListFailureUnreachable": {
+    "message": "ソースに接続できませんでした"
+  },
+  "filterListHashUnavailable": {
+    "message": "記録なし"
+  },
   "filterListImportFail": {
     "message": "フィルターリストのインポートに失敗しました"
   },
@@ -1076,6 +1100,27 @@
   },
   "filterListImported": {
     "message": "Video Hider のルールをインポートしました。インポートの取り消しが利用できます。"
+  },
+  "filterListNotModified": {
+    "message": "フィルターリストを確認しました。キャッシュ内容に変更はありません。"
+  },
+  "filterListRefreshDaily": {
+    "message": "毎日"
+  },
+  "filterListRefreshManual": {
+    "message": "手動のみ"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "自動更新"
+  },
+  "filterListRefreshWeekly": {
+    "message": "毎週"
+  },
+  "filterListStatusActiveTpl": {
+    "message": "{host} を使用中。確認: {age}、形式 v{version}、SHA-256 {hash}。"
+  },
+  "filterListStatusErrorTpl": {
+    "message": "{host} のルールは有効ではありません。最後の更新に失敗しました: {reason}。"
   },
   "filterListStatusExported": {
     "message": "ローカルのフィルタールールをエクスポートしました。"
@@ -1110,11 +1155,26 @@
   "filterListStatusPermissionNeeded": {
     "message": "そのサイトを読み取るには Astra Deck の許可が必要です。ブラウザーが尋ねたら「許可」を選択してください。"
   },
+  "filterListStatusPreferenceFail": {
+    "message": "フィルターリストの設定を保存できませんでした。"
+  },
   "filterListStatusReady": {
     "message": "購読中のフィルターリストはありません。"
   },
   "filterListStatusRefreshed": {
     "message": "リモートのフィルターリストを更新しました。"
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "{reason} のためリストを更新できませんでした。"
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "{host} のキャッシュ済みルールは有効です。確認: {age}、{reason}。形式 v{version}、SHA-256 {hash}。"
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "{host} のキャッシュ済みルールは一時停止中です。確認: {age}、{reason}。形式 v{version}、SHA-256 {hash}。"
+  },
+  "filterListTimeUnknown": {
+    "message": "時刻不明"
   },
   "filterListToolsDesc": {
     "message": "Video Hider のルールをバックアップしたり、ファイルから復元したり、信頼できるサイトで公開されているフィルターリストを購読したりできます。"
@@ -1130,6 +1190,9 @@
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "更新に失敗した場合、または 7 日以上経過した場合に、最後に検証されたルールを使用する"
   },
   "filterListRefreshFail": {
     "message": "フィルターリストの更新に失敗しました"

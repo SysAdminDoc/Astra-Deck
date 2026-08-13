@@ -1646,7 +1646,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return false;
         }
 
-        const { method, url, headers, data, timeout, credentials } = details;
+        const { method, url, headers, data, timeout, credentials, maxResponseBytes } = details;
         if (typeof url !== 'string' || !url) {
             sendResponse({ error: 'Invalid fetch URL.' });
             return false;
@@ -1731,6 +1731,10 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 ? timeout
                 : DEFAULT_FETCH_TIMEOUT_MS;
             const clampedTimeout = Math.max(MIN_FETCH_TIMEOUT_MS, Math.min(requestedTimeout, MAX_FETCH_TIMEOUT_MS));
+            const requestedResponseBytes = Number(maxResponseBytes);
+            const responseByteLimit = Number.isFinite(requestedResponseBytes) && requestedResponseBytes > 0
+                ? Math.max(1024, Math.min(Math.floor(requestedResponseBytes), MAX_RESPONSE_BYTES))
+                : MAX_RESPONSE_BYTES;
             let timer = null;
 
             timer = setTimeout(() => {
@@ -1773,7 +1777,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             const contentLengthHeader = resp.headers.get('content-length');
             if (contentLengthHeader !== null) {
                 const contentLength = parseInt(contentLengthHeader, 10);
-                if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BYTES) {
+                if (Number.isFinite(contentLength) && contentLength > responseByteLimit) {
                     responded = true;
                     if (timer) { clearTimeout(timer); timer = null; }
                     sendResponse({ error: `Response too large (${contentLength} bytes)` });
@@ -1806,7 +1810,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                         const { value, done } = await reader.read();
                         if (done) break;
                         received += value.byteLength;
-                        if (received > MAX_RESPONSE_BYTES) {
+                        if (received > responseByteLimit) {
                             try { reader.cancel(); } catch (_) {
                                 // reason: stream may already be closed by caller abort
                             }
@@ -1827,7 +1831,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 } else {
                     text = await resp.text();
                     const measuredBytes = new TextEncoder().encode(text).byteLength;
-                    if (measuredBytes > MAX_RESPONSE_BYTES) {
+                    if (measuredBytes > responseByteLimit) {
                         try { controller.abort(); } catch (_) {
                             // reason: controller may already be aborted by timeout
                         }

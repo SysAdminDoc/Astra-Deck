@@ -29,6 +29,14 @@
     const FILTER_LIST_MAX_BYTES = 1024 * 1024;
     const FILTER_LIST_MAX_KEYWORD_CHARS = 20000;
     const FILTER_LIST_SUBSCRIPTION_KEY = 'ytkit-video-filter-list-subscription';
+    const FILTER_LIST_SUBSCRIPTION_VERSION = 2;
+    const FILTER_LIST_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const FILTER_LIST_REFRESH_MODES = new Set(['daily', 'weekly', 'manual']);
+    const FILTER_LIST_STATES = new Set(['disabled', 'pending', 'active', 'stale', 'error']);
+    const FILTER_LIST_ERROR_CODES = new Set([
+        'unreachable', 'bad-format', 'too-large', 'http-error', 'storage-error',
+        'integrity-error', 'not-modified-without-cache', 'unknown'
+    ]);
     const HIGHLIGHT_EXPORT_VERSION = 1;
     const HIGHLIGHT_EXPORT_KIND = 'video-highlight-bundle';
     const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
@@ -62,7 +70,7 @@
         { id: 'markedWatchedVideos', location: 'extension-local', key: 'ytkit-marked-watched-videos', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-id-list-lru' },
         { id: 'blockedChannels', location: 'extension-local', key: 'ytkit-blocked-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'blocked-channel-list' },
         { id: 'allowedChannels', location: 'extension-local', key: 'ytkit-allowed-channels', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'allowed-channel-list' },
-        { id: 'videoFilterListSubscription', location: 'extension-local', key: FILTER_LIST_SUBSCRIPTION_KEY, backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-filter-list-subscription-v1' },
+        { id: 'videoFilterListSubscription', location: 'extension-local', key: FILTER_LIST_SUBSCRIPTION_KEY, backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'video-filter-list-subscription-v2' },
         { id: 'bookmarks', location: 'extension-local', key: 'ytkit-bookmarks', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'timestamp-bookmarks' },
         { id: 'watchProgress', location: 'extension-local', key: 'ytkit-watch-progress', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'watch-progress-v1' },
         { id: 'watchTime', location: 'extension-local', key: 'ytkit-watch-time', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'watch-time-v1' },
@@ -204,17 +212,207 @@
         };
     }
 
-    function sanitizeVideoFilterListSubscription(value) {
-        const raw = isPlainObject(value) ? value : {};
-        const attemptedAt = Number(raw.attemptedAt);
-        const fetchedAt = Number(raw.fetchedAt);
+    function sanitizeRemoteFilterListRules(value) {
+        const rules = sanitizeFilterListRules(value);
+        // Remote filter lists are data, never code. Strip these fields before
+        // persistence so backups, diagnostics, and future call sites cannot
+        // accidentally revive a publisher-supplied predicate.
+        rules.predicateEnabled = false;
+        rules.predicateCode = '';
+        return rules;
+    }
+
+    function sanitizeTimestamp(value) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 0;
+    }
+
+    function sanitizeHttpStatus(value) {
+        const parsed = Number(value);
+        return Number.isInteger(parsed) && parsed >= 100 && parsed <= 599 ? parsed : 0;
+    }
+
+    function sanitizeHeaderValue(value, maxLength) {
+        if (typeof value !== 'string') return '';
+        return value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLength);
+    }
+
+    function sanitizeSha256(value) {
+        const digest = typeof value === 'string' ? value.trim().toLowerCase() : '';
+        return /^[a-f0-9]{64}$/.test(digest) ? digest : '';
+    }
+
+    function invalidRemoteFilterList() {
+        const error = new Error('Unsupported or invalid Astra Deck filter-list format');
+        error.code = 'bad-format';
+        return error;
+    }
+
+    function hasOnlyKeys(value, allowed) {
+        return Object.keys(value).every((key) => allowed.has(key));
+    }
+
+    function validateRemoteChannelList(value) {
+        if (value === undefined) return true;
+        if (!Array.isArray(value) || value.length > 2000) return false;
+        return value.every((row) => isPlainObject(row)
+            && hasOnlyKeys(row, new Set(['id', 'name']))
+            && typeof row.id === 'string'
+            && row.id.trim().length > 0
+            && row.id.trim().length <= 128
+            && (row.name === undefined || (typeof row.name === 'string' && row.name.length <= 200)));
+    }
+
+    function validateRemoteVideoIdList(value) {
+        if (value === undefined) return true;
+        return Array.isArray(value)
+            && value.length <= 5000
+            && value.every((id) => typeof id === 'string' && VIDEO_ID_PATTERN.test(id.trim()));
+    }
+
+    function parseRemoteVideoFilterList(value) {
+        const topLevelKeys = new Set(['astraDeckFilterList', 'filterListVersion', 'kind', 'exportedAt', 'rules']);
+        const ruleKeys = new Set([
+            'keywordFilter', 'predicateEnabled', 'predicateCode', 'hiddenVideos',
+            'allowedVideos', 'blockedChannels', 'allowedChannels'
+        ]);
+        if (!isPlainObject(value)
+            || !hasOnlyKeys(value, topLevelKeys)
+            || value.astraDeckFilterList !== true
+            || value.kind !== FILTER_LIST_KIND
+            || value.filterListVersion !== FILTER_LIST_VERSION
+            || (value.exportedAt !== undefined && (typeof value.exportedAt !== 'string' || value.exportedAt.length > 64))
+            || !isPlainObject(value.rules)
+            || !hasOnlyKeys(value.rules, ruleKeys)) {
+            throw invalidRemoteFilterList();
+        }
+
+        const rules = value.rules;
+        if ((rules.keywordFilter !== undefined
+                && (typeof rules.keywordFilter !== 'string' || rules.keywordFilter.length > FILTER_LIST_MAX_KEYWORD_CHARS))
+            || (rules.predicateEnabled !== undefined && typeof rules.predicateEnabled !== 'boolean')
+            || (rules.predicateCode !== undefined
+                && (typeof rules.predicateCode !== 'string' || rules.predicateCode.length > FILTER_LIST_MAX_KEYWORD_CHARS))
+            || !validateRemoteVideoIdList(rules.hiddenVideos)
+            || !validateRemoteVideoIdList(rules.allowedVideos)
+            || !validateRemoteChannelList(rules.blockedChannels)
+            || !validateRemoteChannelList(rules.allowedChannels)) {
+            throw invalidRemoteFilterList();
+        }
+
         return {
             version: FILTER_LIST_VERSION,
-            url: normalizeFilterListUrl(raw.url),
-            attemptedAt: Number.isFinite(attemptedAt) && attemptedAt > 0 ? Math.floor(attemptedAt) : 0,
-            fetchedAt: Number.isFinite(fetchedAt) && fetchedAt > 0 ? Math.floor(fetchedAt) : 0,
-            rules: sanitizeFilterListRules(raw.rules),
-            error: typeof raw.error === 'string' ? raw.error.slice(0, 240) : ''
+            kind: FILTER_LIST_KIND,
+            exportedAt: typeof value.exportedAt === 'string' ? value.exportedAt : '',
+            rules: sanitizeRemoteFilterListRules(rules)
+        };
+    }
+
+    function sanitizeVideoFilterListSubscription(value) {
+        const raw = isPlainObject(value) ? value : {};
+        const sourceUrl = normalizeFilterListUrl(raw.sourceUrl || raw.url);
+        const attemptedAt = sanitizeTimestamp(raw.attemptedAt);
+        const latestStatus = sanitizeHttpStatus(raw.httpStatus);
+        const rawGood = isPlainObject(raw.lastKnownGood) ? raw.lastKnownGood : null;
+        const fetchedAt = sanitizeTimestamp(rawGood?.fetchedAt ?? raw.fetchedAt);
+        const validatedAt = sanitizeTimestamp(rawGood?.validatedAt ?? raw.validatedAt) || fetchedAt;
+        const hasLastKnownGood = Boolean(sourceUrl && fetchedAt);
+        const legacyError = typeof raw.error === 'string' && raw.error.length > 0;
+        const rawErrorCode = typeof raw.errorCode === 'string' ? raw.errorCode : '';
+        const errorCode = FILTER_LIST_ERROR_CODES.has(rawErrorCode)
+            ? rawErrorCode
+            : (legacyError ? 'unknown' : '');
+        const requestedState = FILTER_LIST_STATES.has(raw.state) ? raw.state : '';
+        let state = requestedState;
+        if (!sourceUrl) state = 'disabled';
+        else if (!hasLastKnownGood) state = errorCode ? 'error' : 'pending';
+        else if (errorCode || requestedState === 'stale' || requestedState === 'error') state = 'stale';
+        else state = 'active';
+
+        const rawRules = rawGood?.rules ?? raw.rules;
+        const lastKnownGood = hasLastKnownGood ? {
+            filterListVersion: FILTER_LIST_VERSION,
+            fetchedAt,
+            validatedAt,
+            httpStatus: sanitizeHttpStatus(rawGood?.httpStatus) || 200,
+            contentSha256: sanitizeSha256(rawGood?.contentSha256 ?? raw.contentSha256),
+            etag: sanitizeHeaderValue(rawGood?.etag ?? raw.etag, 256),
+            lastModified: sanitizeHeaderValue(rawGood?.lastModified ?? raw.lastModified, 128),
+            rules: sanitizeRemoteFilterListRules(rawRules)
+        } : null;
+
+        return {
+            schemaVersion: FILTER_LIST_SUBSCRIPTION_VERSION,
+            sourceUrl,
+            attemptedAt,
+            httpStatus: latestStatus,
+            state,
+            staleEnabled: raw.staleEnabled !== false,
+            refreshMode: FILTER_LIST_REFRESH_MODES.has(raw.refreshMode) ? raw.refreshMode : 'daily',
+            errorCode: state === 'stale' || state === 'error' ? errorCode : '',
+            lastKnownGood
+        };
+    }
+
+    function resolveVideoFilterListSubscriptionState(value, now = Date.now()) {
+        const subscription = sanitizeVideoFilterListSubscription(value);
+        const good = subscription.lastKnownGood;
+        const checkedAt = good?.validatedAt || good?.fetchedAt || 0;
+        const nowMs = sanitizeTimestamp(now);
+        const ageMs = checkedAt && nowMs ? Math.max(0, nowMs - checkedAt) : 0;
+        const expired = Boolean(good && ageMs > FILTER_LIST_STALE_MS);
+        const state = good && (subscription.state === 'stale' || expired)
+            ? 'stale'
+            : subscription.state;
+        return {
+            subscription,
+            state,
+            expired,
+            ageMs,
+            reasonCode: expired && !subscription.errorCode ? 'expired' : subscription.errorCode,
+            rulesActive: Boolean(good && (state === 'active' || (state === 'stale' && subscription.staleEnabled)))
+        };
+    }
+
+    function buildVideoFilterListSubscriptionMetadata(value, options = {}) {
+        const resolved = resolveVideoFilterListSubscriptionState(value, options.now);
+        const subscription = resolved.subscription;
+        const good = subscription.lastKnownGood;
+        let source = subscription.sourceUrl;
+        if (options.redactSource === true && source) {
+            try {
+                const parsed = new URL(source);
+                source = `${parsed.origin}${parsed.pathname}`;
+            } catch (_) {
+                source = '';
+            }
+        }
+        const rules = good?.rules || {};
+        return {
+            schemaVersion: subscription.schemaVersion,
+            source,
+            attemptedAt: subscription.attemptedAt,
+            httpStatus: subscription.httpStatus,
+            state: resolved.state,
+            staleEnabled: subscription.staleEnabled,
+            refreshMode: subscription.refreshMode,
+            errorCode: resolved.reasonCode,
+            lastKnownGood: good ? {
+                filterListVersion: good.filterListVersion,
+                fetchedAt: good.fetchedAt,
+                validatedAt: good.validatedAt,
+                httpStatus: good.httpStatus,
+                contentSha256: good.contentSha256,
+                etag: good.etag,
+                lastModified: good.lastModified,
+                ruleCounts: {
+                    keywordCharacters: typeof rules.keywordFilter === 'string' ? rules.keywordFilter.length : 0,
+                    hiddenVideos: Array.isArray(rules.hiddenVideos) ? rules.hiddenVideos.length : 0,
+                    allowedVideos: Array.isArray(rules.allowedVideos) ? rules.allowedVideos.length : 0,
+                    blockedChannels: Array.isArray(rules.blockedChannels) ? rules.blockedChannels.length : 0,
+                    allowedChannels: Array.isArray(rules.allowedChannels) ? rules.allowedChannels.length : 0
+                }
+            } : null
         };
     }
 
@@ -934,6 +1132,8 @@
         FILTER_LIST_KIND,
         FILTER_LIST_MAX_BYTES,
         FILTER_LIST_SUBSCRIPTION_KEY,
+        FILTER_LIST_SUBSCRIPTION_VERSION,
+        FILTER_LIST_STALE_MS,
         HIGHLIGHT_EXPORT_VERSION,
         HIGHLIGHT_EXPORT_KIND,
         DURABLE_DOMAIN_REGISTRY,
@@ -951,10 +1151,14 @@
         sanitizeDomainValue,
         normalizeFilterListUrl,
         sanitizeFilterListRules,
+        sanitizeRemoteFilterListRules,
         sanitizeVideoFilterListSubscription,
+        resolveVideoFilterListSubscriptionState,
+        buildVideoFilterListSubscriptionMetadata,
         buildVideoFilterListRules,
         createVideoFilterList,
         parseVideoFilterList,
+        parseRemoteVideoFilterList,
         sanitizeTranscriptRecords,
         buildImportPreview,
         formatImportPreview,

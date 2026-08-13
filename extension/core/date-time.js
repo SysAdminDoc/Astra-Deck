@@ -90,6 +90,44 @@
         }).format(date);
     }
 
+    function formatRelativeTimestamp(value, options = {}) {
+        const timestamp = value instanceof Date ? value.getTime() : Number(value);
+        const nowValue = options.now instanceof Date ? options.now.getTime() : Number(options.now ?? Date.now());
+        if (!Number.isFinite(timestamp) || timestamp <= 0 || !Number.isFinite(nowValue)) return '';
+
+        const deltaSeconds = (timestamp - nowValue) / 1000;
+        const absoluteSeconds = Math.abs(deltaSeconds);
+        let unit = 'second';
+        let divisor = 1;
+        if (absoluteSeconds >= 31536000) {
+            unit = 'year';
+            divisor = 31536000;
+        } else if (absoluteSeconds >= 2592000) {
+            unit = 'month';
+            divisor = 2592000;
+        } else if (absoluteSeconds >= 604800) {
+            unit = 'week';
+            divisor = 604800;
+        } else if (absoluteSeconds >= 86400) {
+            unit = 'day';
+            divisor = 86400;
+        } else if (absoluteSeconds >= 3600) {
+            unit = 'hour';
+            divisor = 3600;
+        } else if (absoluteSeconds >= 60) {
+            unit = 'minute';
+            divisor = 60;
+        }
+        const amount = Math.round(deltaSeconds / divisor);
+        try {
+            return new Intl.RelativeTimeFormat(options.locale, { numeric: 'auto' }).format(amount, unit);
+        } catch (_) {
+            const magnitude = Math.abs(amount);
+            const label = `${unit}${magnitude === 1 ? '' : 's'}`;
+            return amount > 0 ? `in ${magnitude} ${label}` : `${magnitude} ${label} ago`;
+        }
+    }
+
     function durationParts(seconds) {
         const total = Math.max(0, Math.floor(Number(seconds) || 0));
         return {
@@ -153,6 +191,7 @@
         formatDuration,
         formatAbsoluteYouTubeDate,
         formatApproximateYouTubeDate,
+        formatRelativeTimestamp,
         hasExplicitTime,
         parseRelativeYouTubeAge,
         parseYouTubeDate

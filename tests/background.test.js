@@ -869,6 +869,54 @@ test('background EXT_FETCH allows runtime optional hosts after grant is present'
     assert.equal(response.responseText, '{"ok":true}');
 });
 
+test('background EXT_FETCH carries conditional validators and enforces a caller-lowered response cap', async () => {
+    const calls = [];
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: ['https://*/*'],
+        permissionsContainsImpl(_payload, callback) { callback(true); },
+        fetchImpl: async (_url, options) => {
+            calls.push(options);
+            if (calls.length === 1) {
+                return new Response(null, {
+                    status: 304,
+                    headers: { etag: '"v1"', 'last-modified': 'Wed, 12 Aug 2026 12:00:00 GMT' }
+                });
+            }
+            return new Response('x'.repeat(2048), {
+                status: 200,
+                headers: { 'content-length': '2048' }
+            });
+        }
+    });
+
+    const notModified = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'GET',
+            url: 'https://lists.example.org/rules.json',
+            headers: {
+                'If-None-Match': '"v1"',
+                'If-Modified-Since': 'Wed, 12 Aug 2026 12:00:00 GMT'
+            },
+            maxResponseBytes: 1024
+        }
+    });
+    assert.equal(calls[0].headers['If-None-Match'], '"v1"');
+    assert.equal(calls[0].headers['If-Modified-Since'], 'Wed, 12 Aug 2026 12:00:00 GMT');
+    assert.equal(notModified.status, 304);
+    assert.match(notModified.responseHeaders, /etag: "v1"/i);
+
+    const tooLarge = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'GET',
+            url: 'https://lists.example.org/rules.json',
+            maxResponseBytes: 1024
+        }
+    });
+    assert.match(tooLarge.error, /Response too large \(2048 bytes\)/);
+});
+
 test('background requests only declared optional hosts from an in-page user gesture', async () => {
     let requestedPayload = null;
     const { messageListener } = loadBackground({

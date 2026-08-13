@@ -2447,7 +2447,7 @@ test('EXT_FETCH aborts the controller on every size-limit early return path', ()
     const streamErr = handler.indexOf('Response body too large');
     assert.ok(streamErr > -1, 'streamed too-large branch must exist');
     // Walk back from the error to find the opening of the if-block.
-    const blockStart = handler.lastIndexOf('if (received > MAX_RESPONSE_BYTES)', streamErr);
+    const blockStart = handler.lastIndexOf('if (received > responseByteLimit)', streamErr);
     assert.ok(blockStart > -1, 'streamed too-large guard must exist');
     const blockBody = handler.slice(blockStart, streamErr + 200);
     assert.match(blockBody, /reader\.cancel\(\)/,
@@ -2456,7 +2456,7 @@ test('EXT_FETCH aborts the controller on every size-limit early return path', ()
         'streamed too-large path must ALSO call controller.abort() so the SW socket is freed');
 
     // Pin the non-streaming too-large branch (text = await resp.text() path).
-    const measuredBytesIdx = handler.indexOf('measuredBytes > MAX_RESPONSE_BYTES');
+    const measuredBytesIdx = handler.indexOf('measuredBytes > responseByteLimit');
     assert.ok(measuredBytesIdx > -1, 'non-streaming too-large guard must exist');
     const nonStreamingBlock = handler.slice(measuredBytesIdx, measuredBytesIdx + 400);
     assert.match(nonStreamingBlock, /controller\.abort\(\)/,

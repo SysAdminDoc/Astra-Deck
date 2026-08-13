@@ -207,7 +207,9 @@ test('popup exposes transactional filter-list import/export and bounded refresh 
         'import-filter-list-file',
         'filter-list-url',
         'refresh-filter-list-btn',
-        'filter-list-status'
+        'filter-list-status',
+        'filter-list-refresh-mode',
+        'filter-list-stale-enabled'
     ]) {
         assert.match(popupHtmlSource, new RegExp(`id="${id}"`),
             `popup.html must expose ${id}`);
@@ -231,6 +233,8 @@ test('popup exposes transactional filter-list import/export and bounded refresh 
         'filter-list import failures must restore the prior snapshot');
     assert.match(popupSource, /YTKIT_REFRESH_FILTER_LIST/,
         'popup refresh must use the YouTube tab bridge');
+    assert.match(popupSource, /updateFilterListSubscriptionPreferences/,
+        'popup must persist manual refresh and stale-rule choices in subscription state');
 
     const enMessages = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
@@ -760,26 +764,31 @@ test('the filter-list status line reports stored subscription state, not the shi
 
     for (const key of [
         'filterListStatusReady',
-        'filterListStatusLastFailedTpl',
-        'filterListStatusFollowingTpl',
         'filterListStatusPendingTpl'
     ]) {
-        assert.ok(block.includes(key), `status must cover the ${key} state`);
+        assert.ok(popupSource.includes(key), `status must cover the ${key} state`);
+    }
+    for (const key of ['filterListStatusActiveTpl', 'filterListStatusStaleActiveTpl', 'filterListStatusStalePausedTpl']) {
+        assert.ok(popupSource.includes(key), `status renderer must cover the ${key} state`);
     }
     assert.match(block, /describeRemoteListUrl/,
         'the status must resolve the configured URL through the shared scope rules');
-    assert.match(block, /const host = described\.hostname/,
+    assert.match(popupSource, /const host = described\.hostname/,
         'only the host may be written into the DOM, never the stored URL');
-    assert.match(block, /record\.url === described\.url/,
+    assert.match(popupSource, /\(record\.sourceUrl \|\| record\.url\) === described\.url/,
         'a cached record for a different URL must not be reported as current');
+    assert.match(popupSource, /buildVideoFilterListSubscriptionMetadata/,
+        'diagnostic bundles must include sanitized filter-list provenance');
+    assert.match(popupSource, /formatRelativeTimestamp/,
+        'freshness must use the shared relative-time formatter');
 
     // The token templates have to substitute at the call site or the
     // check-i18n substitution gate cannot see them. Plain string pins, not a
     // built regex: escaping a generated pattern is its own hazard.
-    for (const key of ['filterListStatusFollowingTpl', 'filterListStatusPendingTpl', 'filterListStatusLastFailedTpl']) {
-        const callIndex = block.indexOf("t('" + key + "'");
+    for (const key of ['filterListStatusPendingTpl', 'filterListStatusActiveTpl']) {
+        const callIndex = popupSource.indexOf("t('" + key + "'");
         assert.ok(callIndex > -1, key + ' must be read through t()');
-        const tail = block.slice(callIndex, callIndex + 300);
+        const tail = popupSource.slice(callIndex, callIndex + 700);
         assert.ok(tail.includes(".replace('{host}', host)"),
             key + ' must substitute {host} next to its own t() call');
     }
@@ -808,9 +817,12 @@ test('filter-list refresh failures do not echo the bridge error back into the po
         'filterListStatusRefreshFail',
         'filterListStatusPermissionNeeded',
         'filterListStatusPrivateHost',
-        'filterListStatusFollowingTpl',
+        'filterListStatusActiveTpl',
         'filterListStatusPendingTpl',
-        'filterListStatusLastFailedTpl'
+        'filterListStatusStaleActiveTpl',
+        'filterListStatusStalePausedTpl',
+        'filterListRefreshModeLabel',
+        'filterListUseStaleLabel'
     ]) {
         assert.ok(enMessages[key]?.message, `en/messages.json must define ${key}`);
     }

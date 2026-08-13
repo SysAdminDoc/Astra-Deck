@@ -523,6 +523,9 @@ const importFilterListFileInput = $('#import-filter-list-file');
 const filterListUrlInput = $('#filter-list-url');
 const refreshFilterListButton = $('#refresh-filter-list-btn');
 const filterListStatus = $('#filter-list-status');
+const filterListPreferences = $('#filter-list-preferences');
+const filterListRefreshMode = $('#filter-list-refresh-mode');
+const filterListStaleEnabled = $('#filter-list-stale-enabled');
 const resetButton = $('#reset-btn');
 const resetYoutubeStateButton = $('#reset-youtube-state-btn');
 const undoYoutubeStateButton = $('#undo-youtube-state-btn');
@@ -2949,6 +2952,11 @@ async function removeDataFlowRuntimeGrant(described, button) {
             const result = await replaceSettings(nextSettings);
             cleanup = result.permissionCleanup;
             if (clearsFilterList) {
+                if (typeof persistedDomains?.sanitizeVideoFilterListSubscription === 'function') {
+                    await storageSet({
+                        [STORAGE_KEYS.filterListSubscription]: persistedDomains.sanitizeVideoFilterListSubscription({})
+                    });
+                }
                 syncFilterListUrlInput(popupState.settings);
                 await refreshFilterListStatus();
             }
@@ -4093,6 +4101,7 @@ const BUG_REPORT_REDACTED_KEYS = Object.freeze([
     'aiSummaryEndpoint',
     'customCssCode',
     'downloadCobaltInstance',
+    'hideVideosFilterListUrl',
     'alternativeFrontendInstance',
 ]);
 
@@ -4154,7 +4163,7 @@ function redactBugReportSettings(settings) {
 if (healthSaveBtn) {
     healthSaveBtn.addEventListener('click', async () => {
         try {
-            const items = await storageGet([SETTINGS_STORAGE_KEY]);
+            const items = await storageGet([SETTINGS_STORAGE_KEY, STORAGE_KEYS.filterListSubscription]);
             const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
                 ? items[SETTINGS_STORAGE_KEY]
                 : {};
@@ -4163,6 +4172,12 @@ if (healthSaveBtn) {
             // Drop the errors array out of sanitized — already in `errors`
             // above; carrying it twice would just bloat the bundle.
             delete sanitized._errors;
+            const filterListSubscription = typeof persistedDomains?.buildVideoFilterListSubscriptionMetadata === 'function'
+                ? persistedDomains.buildVideoFilterListSubscriptionMetadata(
+                    items[STORAGE_KEYS.filterListSubscription],
+                    { redactSource: true, now: Date.now() }
+                )
+                : null;
             const capabilities = popupState._capabilities || null;
             const capabilityMatrix = window.YTKitCore?.capabilityProbe?.CAPABILITY_MATRIX || null;
             const capabilityProbe = window.YTKitCore?.capabilityProbe;
@@ -4210,6 +4225,7 @@ if (healthSaveBtn) {
                 capabilityLanes,
                 swLifecycle,
                 externalApiHealth,
+                filterListSubscription,
                 settings: sanitized,
                 settingsDiff,
                 errors,
@@ -4858,11 +4874,108 @@ function syncFilterListUrlInput(settings = popupState.settings) {
         : '';
 }
 
-// Report what the stored subscription actually says. Without this the status
-// line kept whatever the markup shipped with — so a user who had configured a
-// list and successfully fetched it still read "No filter list is being
-// followed." every time the popup opened, which is the one question this line
-// exists to answer.
+function formatFilterListRelativeTime(timestamp) {
+    const formatter = window.YTKitCore?.formatRelativeTimestamp;
+    const formatted = typeof formatter === 'function'
+        ? formatter(timestamp, { locale: document.documentElement.lang || undefined })
+        : '';
+    if (formatted) return formatted;
+    const date = new Date(Number(timestamp));
+    return Number.isNaN(date.getTime())
+        ? t('filterListTimeUnknown', 'at an unknown time')
+        : date.toLocaleString();
+}
+
+function getFilterListFailureText(code, httpStatus = 0) {
+    switch (code) {
+    case 'bad-format':
+    case 'not-modified-without-cache':
+        return t('filterListFailureBadFormat', 'the response was not a supported Astra Deck filter list');
+    case 'too-large':
+        return t('filterListFailureTooLarge', 'the response exceeded the 1 MiB limit');
+    case 'http-error':
+        return t('filterListFailureHttpTpl', 'the server returned HTTP {status}')
+            .replace('{status}', String(Number(httpStatus) || 0));
+    case 'storage-error':
+        return t('filterListFailureStorage', 'the verified list could not be saved');
+    case 'integrity-error':
+        return t('filterListFailureIntegrity', 'SHA-256 verification was unavailable');
+    case 'expired':
+        return t('filterListFailureExpired', 'the last verification is older than 7 days');
+    case 'unreachable':
+    case 'unknown':
+    default:
+        return t('filterListFailureUnreachable', 'the source could not be reached');
+    }
+}
+
+function renderFilterListSubscriptionStatus(described, record) {
+    if (!filterListStatus || !described?.ok) return;
+    const sanitize = persistedDomains?.sanitizeVideoFilterListSubscription;
+    const resolve = persistedDomains?.resolveVideoFilterListSubscriptionState;
+    if (typeof sanitize !== 'function' || typeof resolve !== 'function') {
+        setFilterListStatus('filterListStatusRefreshFail', 'Could not read filter-list state.', 'error');
+        return;
+    }
+
+    const sanitized = sanitize(record && (record.sourceUrl || record.url) === described.url
+        ? record
+        : { sourceUrl: described.url });
+    const resolved = resolve(sanitized, Date.now());
+    const current = resolved.subscription;
+    const good = current.lastKnownGood;
+
+    if (filterListPreferences) filterListPreferences.hidden = false;
+    if (filterListRefreshMode) filterListRefreshMode.value = current.refreshMode;
+    if (filterListStaleEnabled) filterListStaleEnabled.checked = current.staleEnabled;
+
+    const host = described.hostname;
+    if (!good) {
+        if (resolved.state === 'error') {
+            const reason = getFilterListFailureText(resolved.reasonCode, current.httpStatus);
+            setFilterListStatusText(
+                t('filterListStatusErrorTpl', 'No rules from {host} are active. Last refresh failed because {reason}.')
+                    .replace('{host}', host)
+                    .replace('{reason}', reason), 'error');
+            return;
+        }
+        setFilterListStatusText(
+            t('filterListStatusPendingTpl', 'Not fetched yet. Choose Refresh list now to follow {host}.')
+                .replace('{host}', host), 'info');
+        return;
+    }
+
+    const checkedAt = good.validatedAt || good.fetchedAt;
+    const age = formatFilterListRelativeTime(checkedAt);
+    const version = String(good.filterListVersion || 1);
+    const hash = good.contentSha256
+        ? good.contentSha256.slice(0, 12)
+        : t('filterListHashUnavailable', 'not recorded');
+    if (resolved.state === 'stale') {
+        const reason = getFilterListFailureText(resolved.reasonCode, current.httpStatus);
+        const template = current.staleEnabled
+            ? t('filterListStatusStaleActiveTpl', 'Cached {host} rules remain active; checked {age}; {reason}. Format v{version}; SHA-256 {hash}.')
+            : t('filterListStatusStalePausedTpl', 'Cached {host} rules are paused; checked {age}; {reason}. Format v{version}; SHA-256 {hash}.');
+        setFilterListStatusText(
+            template
+                .replace('{host}', host)
+                .replace('{age}', age)
+                .replace('{reason}', reason)
+                .replace('{version}', version)
+                .replace('{hash}', hash), current.staleEnabled ? 'error' : 'info');
+        return;
+    }
+
+    setFilterListStatusText(
+        t('filterListStatusActiveTpl', 'Following {host}. Checked {age}; format v{version}; SHA-256 {hash}.')
+            .replace('{host}', host)
+            .replace('{age}', age)
+            .replace('{version}', version)
+            .replace('{hash}', hash), 'success');
+}
+
+// Report the sanitized subscription record, including visible freshness and
+// last-known-good state. The full source URL is never echoed into the DOM.
 async function refreshFilterListStatus() {
     if (!filterListStatus) return;
     const describe = window.YTKitCore?.describeRemoteListUrl;
@@ -4871,6 +4984,7 @@ async function refreshFilterListStatus() {
         : '';
     const described = typeof describe === 'function' ? describe(configured) : { ok: false };
     if (!described.ok) {
+        if (filterListPreferences) filterListPreferences.hidden = true;
         setFilterListStatus('filterListStatusReady', 'No filter list is being followed.');
         return;
     }
@@ -4882,26 +4996,7 @@ async function refreshFilterListStatus() {
     } catch (_) {
         // reason: an unreadable cache is indistinguishable from "never fetched"
     }
-
-    // Show only the host, never the stored URL: this line is written straight
-    // into the DOM and the value came from a text field.
-    const host = described.hostname;
-    const current = record && record.url === described.url ? record : null;
-    if (current?.error) {
-        setFilterListStatusText(
-            t('filterListStatusLastFailedTpl', 'The last refresh of {host} did not succeed. Cached rules are still in use.')
-                .replace('{host}', host), 'error');
-        return;
-    }
-    if (current?.fetchedAt > 0) {
-        setFilterListStatusText(
-            t('filterListStatusFollowingTpl', 'Following the filter list at {host}.')
-                .replace('{host}', host), 'success');
-        return;
-    }
-    setFilterListStatusText(
-        t('filterListStatusPendingTpl', 'Not fetched yet. Choose Refresh list now to follow {host}.')
-            .replace('{host}', host), 'info');
+    renderFilterListSubscriptionStatus(described, record);
 }
 
 async function exportFilterList() {
@@ -5021,6 +5116,29 @@ async function importFilterList(file) {
     }
 }
 
+async function updateFilterListSubscriptionPreferences(patch) {
+    const described = getConfiguredFilterListDescriptor();
+    const sanitize = persistedDomains?.sanitizeVideoFilterListSubscription;
+    if (!described.ok || typeof sanitize !== 'function') return;
+    if (filterListRefreshMode) filterListRefreshMode.disabled = true;
+    if (filterListStaleEnabled) filterListStaleEnabled.disabled = true;
+    try {
+        const stored = await callExtensionApi(ext?.storage?.local, 'get', STORAGE_KEYS.filterListSubscription);
+        const raw = stored?.[STORAGE_KEYS.filterListSubscription];
+        const current = sanitize(raw && (raw.sourceUrl || raw.url) === described.url
+            ? raw
+            : { sourceUrl: described.url });
+        const next = sanitize({ ...current, ...patch, sourceUrl: described.url });
+        await storageSet({ [STORAGE_KEYS.filterListSubscription]: next });
+        renderFilterListSubscriptionStatus(described, next);
+    } catch (_) {
+        setFilterListStatus('filterListStatusPreferenceFail', 'Could not save filter-list preferences.', 'error');
+    } finally {
+        if (filterListRefreshMode) filterListRefreshMode.disabled = false;
+        if (filterListStaleEnabled) filterListStaleEnabled.disabled = false;
+    }
+}
+
 async function refreshFilterList() {
     if (!refreshFilterListButton || !filterListUrlInput) return;
     refreshFilterListButton.setAttribute('aria-busy', 'true');
@@ -5068,16 +5186,22 @@ async function refreshFilterList() {
             return;
         }
         if (!result?.ok) {
-            // Deliberately not echoing result.error: t() resolves the key and
-            // ignores the fallback anyway, and the raw string carries the
-            // configured URL back into the DOM for no user benefit.
-            setFilterListStatus('filterListStatusRefreshFail', 'Could not refresh the list. Check the address, then try again.', 'error');
+            if (result?.subscription) {
+                renderFilterListSubscriptionStatus(described, result.subscription);
+            } else {
+                const reason = getFilterListFailureText(result?.code, result?.status);
+                setFilterListStatusText(
+                    t('filterListStatusRefreshReasonTpl', 'Could not refresh the list because {reason}.')
+                        .replace('{reason}', reason), 'error');
+            }
             return;
         }
-        setFilterListStatus('filterListStatusRefreshed', 'Remote filter list refreshed.', 'success');
+        renderFilterListSubscriptionStatus(described, result.subscription);
         const cleanupFailure = formatPermissionCleanupFailure(permissionCleanup);
         if (cleanupFailure) {
             showStatus(cleanupFailure, 'error', 5200);
+        } else if (result.notModified) {
+            showStatus(t('filterListNotModified', 'Filter list checked; cached content is unchanged.'), 'success', 3200);
         } else {
             showStatus(t('filterListRefreshed', 'Video Hider filter list refreshed.'), 'success', 3200);
         }
@@ -5101,6 +5225,11 @@ async function clearConfiguredFilterListUrl() {
     if (refreshFilterListButton) refreshFilterListButton.disabled = true;
     try {
         const result = await writeSetting('hideVideosFilterListUrl', '');
+        if (typeof persistedDomains?.sanitizeVideoFilterListSubscription === 'function') {
+            await storageSet({
+                [STORAGE_KEYS.filterListSubscription]: persistedDomains.sanitizeVideoFilterListSubscription({})
+            });
+        }
         syncFilterListUrlInput(popupState.settings);
         await refreshFilterListStatus();
         renderDataFlowPanel();
@@ -6251,6 +6380,19 @@ function installWheelScrolling() {
         });
     }
     if (refreshFilterListButton) refreshFilterListButton.addEventListener('click', () => { void refreshFilterList(); });
+    if (filterListRefreshMode) {
+        filterListRefreshMode.addEventListener('change', () => {
+            const refreshMode = ['daily', 'weekly', 'manual'].includes(filterListRefreshMode.value)
+                ? filterListRefreshMode.value
+                : 'daily';
+            void updateFilterListSubscriptionPreferences({ refreshMode });
+        });
+    }
+    if (filterListStaleEnabled) {
+        filterListStaleEnabled.addEventListener('change', () => {
+            void updateFilterListSubscriptionPreferences({ staleEnabled: filterListStaleEnabled.checked });
+        });
+    }
     if (filterListUrlInput) {
         filterListUrlInput.addEventListener('change', () => {
             if (!filterListUrlInput.value.trim()) void clearConfiguredFilterListUrl();

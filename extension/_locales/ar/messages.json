@@ -1065,6 +1065,30 @@
   "filterListExported": {
     "message": "تم تصدير قواعد Video Hider."
   },
+  "filterListFailureBadFormat": {
+    "message": "لم تكن الاستجابة قائمة تصفية Astra Deck مدعومة"
+  },
+  "filterListFailureExpired": {
+    "message": "مرّ أكثر من 7 أيام على آخر تحقق"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "أعاد الخادم HTTP {status}"
+  },
+  "filterListFailureIntegrity": {
+    "message": "لم يكن تحقق SHA-256 متاحًا"
+  },
+  "filterListFailureStorage": {
+    "message": "تعذّر حفظ القائمة المتحقق منها"
+  },
+  "filterListFailureTooLarge": {
+    "message": "تجاوزت الاستجابة حد 1 MiB"
+  },
+  "filterListFailureUnreachable": {
+    "message": "تعذّر الوصول إلى المصدر"
+  },
+  "filterListHashUnavailable": {
+    "message": "غير مسجل"
+  },
   "filterListImportFail": {
     "message": "فشل استيراد قائمة التصفية"
   },
@@ -1076,6 +1100,27 @@
   },
   "filterListImported": {
     "message": "تم استيراد قواعد Video Hider. يمكن التراجع عن الاستيراد."
+  },
+  "filterListNotModified": {
+    "message": "تم التحقق من قائمة التصفية؛ لم يتغير المحتوى المخزن مؤقتًا."
+  },
+  "filterListRefreshDaily": {
+    "message": "يوميًا"
+  },
+  "filterListRefreshManual": {
+    "message": "يدوي فقط"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "التحديث التلقائي"
+  },
+  "filterListRefreshWeekly": {
+    "message": "أسبوعيًا"
+  },
+  "filterListStatusActiveTpl": {
+    "message": "تتم متابعة {host}. تم التحقق {age}؛ التنسيق v{version}؛ SHA-256 {hash}."
+  },
+  "filterListStatusErrorTpl": {
+    "message": "لا توجد قواعد نشطة من {host}. فشل آخر تحديث لأن {reason}."
   },
   "filterListStatusExported": {
     "message": "تم تصدير قواعد التصفية المحلية."
@@ -1110,11 +1155,26 @@
   "filterListStatusPermissionNeeded": {
     "message": "يحتاج Astra Deck إلى إذنك للقراءة من ذلك الموقع. اختر «سماح» عندما يسألك المتصفح."
   },
+  "filterListStatusPreferenceFail": {
+    "message": "تعذّر حفظ تفضيلات قائمة التصفية."
+  },
   "filterListStatusReady": {
     "message": "لا يتم اتباع أي قائمة تصفية."
   },
   "filterListStatusRefreshed": {
     "message": "تم تحديث قائمة التصفية البعيدة."
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "تعذّر تحديث القائمة لأن {reason}."
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "تظل قواعد {host} المخزنة مؤقتًا نشطة؛ تم التحقق {age}؛ {reason}. التنسيق v{version}؛ SHA-256 {hash}."
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "قواعد {host} المخزنة مؤقتًا متوقفة مؤقتًا؛ تم التحقق {age}؛ {reason}. التنسيق v{version}؛ SHA-256 {hash}."
+  },
+  "filterListTimeUnknown": {
+    "message": "في وقت غير معروف"
   },
   "filterListToolsDesc": {
     "message": "أنشئ نسخة احتياطية من قواعد Video Hider، أو استعدها من ملف، أو تابع قائمة تصفية منشورة على موقع تثق به."
@@ -1130,6 +1190,9 @@
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "استخدام آخر قواعد تم التحقق منها إذا فشل التحديث أو مرّ عليها أكثر من 7 أيام"
   },
   "filterListRefreshFail": {
     "message": "فشل تحديث قائمة التصفية"

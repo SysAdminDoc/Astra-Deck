@@ -1065,6 +1065,30 @@
   "filterListExported": {
     "message": "Правила Video Hider экспортированы."
   },
+  "filterListFailureBadFormat": {
+    "message": "ответ не является поддерживаемым списком фильтров Astra Deck"
+  },
+  "filterListFailureExpired": {
+    "message": "с момента последней проверки прошло больше 7 дней"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "сервер вернул HTTP {status}"
+  },
+  "filterListFailureIntegrity": {
+    "message": "проверка SHA-256 была недоступна"
+  },
+  "filterListFailureStorage": {
+    "message": "не удалось сохранить проверенный список"
+  },
+  "filterListFailureTooLarge": {
+    "message": "ответ превысил ограничение в 1 МиБ"
+  },
+  "filterListFailureUnreachable": {
+    "message": "не удалось связаться с источником"
+  },
+  "filterListHashUnavailable": {
+    "message": "не записано"
+  },
   "filterListImportFail": {
     "message": "Не удалось импортировать список фильтров"
   },
@@ -1076,6 +1100,27 @@
   },
   "filterListImported": {
     "message": "Правила Video Hider импортированы. Доступна отмена импорта."
+  },
+  "filterListNotModified": {
+    "message": "Список фильтров проверен; содержимое кэша не изменилось."
+  },
+  "filterListRefreshDaily": {
+    "message": "Ежедневно"
+  },
+  "filterListRefreshManual": {
+    "message": "Только вручную"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "Автоматическое обновление"
+  },
+  "filterListRefreshWeekly": {
+    "message": "Еженедельно"
+  },
+  "filterListStatusActiveTpl": {
+    "message": "Используется {host}. Проверено {age}; формат v{version}; SHA-256 {hash}."
+  },
+  "filterListStatusErrorTpl": {
+    "message": "Правила из {host} не активны. Последнее обновление не удалось: {reason}."
   },
   "filterListStatusExported": {
     "message": "Локальные правила фильтров экспортированы."
@@ -1110,11 +1155,26 @@
   "filterListStatusPermissionNeeded": {
     "message": "Astra Deck нужно ваше разрешение на чтение с этого сайта. Выберите «Разрешить», когда браузер спросит."
   },
+  "filterListStatusPreferenceFail": {
+    "message": "Не удалось сохранить настройки списка фильтров."
+  },
   "filterListStatusReady": {
     "message": "Ни один список фильтров не используется."
   },
   "filterListStatusRefreshed": {
     "message": "Удалённый список фильтров обновлён."
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "Не удалось обновить список: {reason}."
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "Кэшированные правила из {host} остаются активными; проверено {age}; {reason}. Формат v{version}; SHA-256 {hash}."
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "Кэшированные правила из {host} приостановлены; проверено {age}; {reason}. Формат v{version}; SHA-256 {hash}."
+  },
+  "filterListTimeUnknown": {
+    "message": "в неизвестное время"
   },
   "filterListToolsDesc": {
     "message": "Сохраните резервную копию правил Video Hider, восстановите их из файла или подпишитесь на список фильтров с сайта, которому доверяете."
@@ -1130,6 +1190,9 @@
   },
   "filterListUrlPlaceholder": {
     "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "Использовать последние проверенные правила, если обновление не удалось или им больше 7 дней"
   },
   "filterListRefreshFail": {
     "message": "Не удалось обновить список фильтров"

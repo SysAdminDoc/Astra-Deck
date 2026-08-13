@@ -381,6 +381,20 @@
         <button id="refresh-filter-list-btn" type="button" data-i18n="refreshFilterListBtn">Refresh list now</button>
         <span id="filter-list-status" class="filter-list-tools__status" role="status" aria-live="polite" data-i18n="filterListStatusReady">No filter list is being followed.</span>
       </div>
+      <div id="filter-list-preferences" class="filter-list-tools__preferences" hidden>
+        <label class="filter-list-tools__preference" for="filter-list-refresh-mode">
+          <span data-i18n="filterListRefreshModeLabel">Automatic refresh</span>
+          <select id="filter-list-refresh-mode" name="filter-list-refresh-mode">
+            <option value="daily" data-i18n="filterListRefreshDaily">Daily</option>
+            <option value="weekly" data-i18n="filterListRefreshWeekly">Weekly</option>
+            <option value="manual" data-i18n="filterListRefreshManual">Manual only</option>
+          </select>
+        </label>
+        <label class="filter-list-tools__stale-toggle" for="filter-list-stale-enabled">
+          <input id="filter-list-stale-enabled" name="filter-list-stale-enabled" type="checkbox">
+          <span data-i18n="filterListUseStaleLabel">Use the last verified rules if refresh fails or they become older than 7 days</span>
+        </label>
+      </div>
     </section>
 
     <div class="status" id="status" aria-live="polite"></div>
@@ -434,6 +448,7 @@
 <script src="core/settings-controller.js"></script>
 <script src="core/companion-ports.js"></script>
 <script src="core/data-flow.js"></script>
+<script src="core/date-time.js"></script>
 <script src="core/persisted-domains.js"></script>
 <script src="core/remote-list-scope.js"></script>
 <script src="core/optional-host-permissions.js"></script>

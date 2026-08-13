@@ -430,6 +430,9 @@
             data: serializedBody,
             timeout: details.timeout || 0
         };
+        if (Number.isFinite(details.maxResponseBytes) && details.maxResponseBytes > 0) {
+            bridgeDetails.maxResponseBytes = Math.floor(details.maxResponseBytes);
+        }
         // Downgrade-only: callers may force an anonymous request even to
         // origins the background would normally send cookies to. 'include'
         // is never forwarded — the background's origin allowlist stays the
@@ -844,7 +847,8 @@
             ? await extensionRequestWithRetry(req)
             : await extensionRequestAsync(req);
 
-        if (!response || response.status < 200 || response.status >= 300) {
+        const notModified = details?.acceptNotModified === true && response?.status === 304;
+        if (!response || (!notModified && (response.status < 200 || response.status >= 300))) {
             const error = new Error(`HTTP ${response?.status ?? 0}`);
             error.response = response;
             try {
@@ -853,6 +857,10 @@
                 // reason: error body may be plain text / HTML; leave error.data unset
             }
             throw error;
+        }
+
+        if (notModified) {
+            return { response, data: null, notModified: true };
         }
 
         try {
@@ -6543,71 +6551,51 @@ return response;
         return Array.from(new Set([primary, mirror].filter(Boolean)));
     }
 
-    // Keep the inline Video Hider fallback capable of consuming the same
-    // versioned, data-only filter lists as the peeled feature module. The
-    // normal extension path receives the shared persisted-domains codec; this
-    // local codec only matters when a host omits the optional feature module.
-    const MONOLITH_FILTER_LIST_VERSION = 1;
-    const MONOLITH_FILTER_LIST_KIND = 'video-hider-rules';
+    // Remote subscriptions are extension-only and use the same codec as
+    // popup import/export and backup migration. The standalone userscript has
+    // no remote-list setting, so a missing core fails closed instead of
+    // retaining a second parser that can drift from the extension boundary.
     const MONOLITH_FILTER_LIST_MAX_BYTES = 1024 * 1024;
     const MONOLITH_FILTER_LIST_SUBSCRIPTION_KEY = 'ytkit-video-filter-list-subscription';
-    const MONOLITH_FILTER_LIST_CODEC = globalThis.YTKitCore?.persistedDomains || (() => {
-        // Defer to the shared scope rules rather than restating a weaker copy
-        // of them. This fallback exists for hosts that omit the optional
-        // feature module; when the scope module is also absent (the standalone
-        // userscript, where the filter-list URL setting does not exist) it
-        // fails closed and no remote list is ever configured.
-        const normalizeUrl = value => {
-            const describe = globalThis.YTKitCore?.describeRemoteListUrl;
-            if (typeof describe !== 'function') return '';
-            const described = describe(value);
-            return described.ok === true ? described.url : '';
-        };
-        const sanitizeRules = value => {
-            const raw = isPlainObject(value) ? value : {};
-            const predicateCode = typeof raw.predicateCode === 'string' ? raw.predicateCode.slice(0, 20000) : '';
-            return {
-                keywordFilter: typeof raw.keywordFilter === 'string' ? raw.keywordFilter.trim().slice(0, 20000) : '',
-                predicateEnabled: raw.predicateEnabled === true && !!predicateCode,
-                predicateCode,
-                hiddenVideos: sanitizeImportedVideoIdList(raw.hiddenVideos, 5000),
-                allowedVideos: sanitizeImportedVideoIdList(raw.allowedVideos, 5000),
-                blockedChannels: sanitizeImportedBlockedChannels(raw.blockedChannels),
-                allowedChannels: sanitizeImportedAllowedChannels(raw.allowedChannels)
-            };
-        };
-        return {
-            FILTER_LIST_VERSION: MONOLITH_FILTER_LIST_VERSION,
-            FILTER_LIST_KIND: MONOLITH_FILTER_LIST_KIND,
-            FILTER_LIST_MAX_BYTES: MONOLITH_FILTER_LIST_MAX_BYTES,
-            FILTER_LIST_SUBSCRIPTION_KEY: MONOLITH_FILTER_LIST_SUBSCRIPTION_KEY,
-            normalizeFilterListUrl: normalizeUrl,
-            sanitizeFilterListRules: sanitizeRules,
-            sanitizeVideoFilterListSubscription(value) {
-                const raw = isPlainObject(value) ? value : {};
-                const attemptedAt = Number(raw.attemptedAt);
-                const fetchedAt = Number(raw.fetchedAt);
-                return {
-                    version: MONOLITH_FILTER_LIST_VERSION,
-                    url: normalizeUrl(raw.url),
-                    attemptedAt: Number.isFinite(attemptedAt) && attemptedAt > 0 ? Math.floor(attemptedAt) : 0,
-                    fetchedAt: Number.isFinite(fetchedAt) && fetchedAt > 0 ? Math.floor(fetchedAt) : 0,
-                    rules: sanitizeRules(raw.rules),
-                    error: typeof raw.error === 'string' ? raw.error.slice(0, 240) : ''
-                };
-            },
-            parseVideoFilterList(value) {
-                if (!isPlainObject(value)
-                    || value.astraDeckFilterList !== true
-                    || value.kind !== MONOLITH_FILTER_LIST_KIND
-                    || Number(value.filterListVersion) !== MONOLITH_FILTER_LIST_VERSION
-                    || !isPlainObject(value.rules)) {
-                    throw new Error('Unsupported or invalid Astra Deck filter-list format');
-                }
-                return { version: MONOLITH_FILTER_LIST_VERSION, kind: MONOLITH_FILTER_LIST_KIND, rules: sanitizeRules(value.rules) };
-            }
-        };
-    })();
+    const MONOLITH_FILTER_LIST_CODEC = globalThis.YTKitCore?.persistedDomains || null;
+
+    function monolithFilterListError(code, message) {
+        const error = new Error(message);
+        error.code = code;
+        return error;
+    }
+
+    async function monolithSha256Text(value) {
+        if (!globalThis.crypto?.subtle || typeof TextEncoder === 'undefined') {
+            throw monolithFilterListError('integrity-error', 'SHA-256 is unavailable');
+        }
+        const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value)));
+        return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    function monolithUtf8ByteLength(value) {
+        if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(String(value)).byteLength;
+        return new Blob([String(value)]).size;
+    }
+
+    function monolithReadResponseHeader(response, name) {
+        const target = String(name).toLowerCase();
+        for (const line of String(response?.responseHeaders || '').split(/\r?\n/)) {
+            const separator = line.indexOf(':');
+            if (separator <= 0 || line.slice(0, separator).trim().toLowerCase() !== target) continue;
+            return line.slice(separator + 1).trim();
+        }
+        return '';
+    }
+
+    function monolithClassifyFilterListRefreshError(error) {
+        if (typeof error?.code === 'string') return error.code;
+        if (Number(error?.response?.status) >= 400) return 'http-error';
+        const message = String(error?.message || error || '').toLowerCase();
+        if (message.includes('too large') || message.includes('exceeds')) return 'too-large';
+        if (message.includes('invalid json') || message.includes('invalid astra deck filter-list')) return 'bad-format';
+        return 'unreachable';
+    }
 
     const features = [
         // ─── Interface ───
@@ -18292,19 +18280,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._filterListSubscription === null) {
                     let stored = {};
                     try { stored = storageReadJSON(this._FILTER_LIST_SUBSCRIPTION_KEY, {}); } catch (_) { /* reason: malformed storage is treated as empty */ }
-                    this._filterListSubscription = MONOLITH_FILTER_LIST_CODEC.sanitizeVideoFilterListSubscription(stored);
+                    this._filterListSubscription = typeof MONOLITH_FILTER_LIST_CODEC?.sanitizeVideoFilterListSubscription === 'function'
+                        ? MONOLITH_FILTER_LIST_CODEC.sanitizeVideoFilterListSubscription(stored)
+                        : {
+                            schemaVersion: 2,
+                            sourceUrl: '',
+                            attemptedAt: 0,
+                            httpStatus: 0,
+                            state: 'disabled',
+                            staleEnabled: true,
+                            refreshMode: 'daily',
+                            errorCode: '',
+                            lastKnownGood: null
+                        };
                 }
                 return this._filterListSubscription;
             },
             _getConfiguredFilterListUrl() {
-                return MONOLITH_FILTER_LIST_CODEC.normalizeFilterListUrl(appState.settings.hideVideosFilterListUrl || '');
+                return typeof MONOLITH_FILTER_LIST_CODEC?.normalizeFilterListUrl === 'function'
+                    ? MONOLITH_FILTER_LIST_CODEC.normalizeFilterListUrl(appState.settings.hideVideosFilterListUrl || '')
+                    : '';
             },
             _getRemoteFilterRules() {
                 const configuredUrl = this._getConfiguredFilterListUrl();
                 const subscription = this._readFilterListSubscription();
-                if (!configuredUrl || subscription.url !== configuredUrl || !subscription.fetchedAt) return null;
+                if (!configuredUrl
+                    || subscription.sourceUrl !== configuredUrl
+                    || typeof MONOLITH_FILTER_LIST_CODEC?.resolveVideoFilterListSubscriptionState !== 'function') return null;
+                const resolved = MONOLITH_FILTER_LIST_CODEC.resolveVideoFilterListSubscriptionState(subscription, Date.now());
+                if (!resolved.rulesActive || !resolved.subscription.lastKnownGood) return null;
                 return {
-                    ...subscription.rules,
+                    ...resolved.subscription.lastKnownGood.rules,
                     // Remote lists are data-only. Predicate code is exported
                     // for local backups, but a fetched list must never turn
                     // into executable code in a YouTube page.
@@ -18321,6 +18327,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return filters;
             },
             async _refreshFilterList(url = appState.settings.hideVideosFilterListUrl, options = {}) {
+                if (typeof MONOLITH_FILTER_LIST_CODEC?.normalizeFilterListUrl !== 'function'
+                    || typeof MONOLITH_FILTER_LIST_CODEC?.sanitizeVideoFilterListSubscription !== 'function'
+                    || typeof MONOLITH_FILTER_LIST_CODEC?.parseRemoteVideoFilterList !== 'function') {
+                    return { ok: false, code: 'bad-format', reason: 'filter-list-codec-unavailable' };
+                }
                 const normalizedUrl = MONOLITH_FILTER_LIST_CODEC.normalizeFilterListUrl(url || '');
                 if (!normalizedUrl) return { ok: false, reason: 'invalid-url' };
                 if (this._filterListRefreshInFlight) return this._filterListRefreshInFlight;
@@ -18329,7 +18340,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const previous = this._readFilterListSubscription();
                 const force = options.force === true;
                 if (!force
-                    && previous.url === normalizedUrl
+                    && previous.sourceUrl === normalizedUrl
                     && previous.attemptedAt > 0
                     && now - previous.attemptedAt < this._FILTER_LIST_REFRESH_MIN_MS) {
                     return { ok: false, skipped: true, reason: 'refresh-cooldown', subscription: previous };
@@ -18338,41 +18349,92 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 this._filterListRefreshInFlight = (async () => {
                     try {
+                        const sameUrl = previous.sourceUrl === normalizedUrl;
+                        const previousGood = sameUrl ? previous.lastKnownGood : null;
+                        const requestHeaders = { Accept: 'application/json' };
+                        if (previousGood?.etag) requestHeaders['If-None-Match'] = previousGood.etag;
+                        if (previousGood?.lastModified) requestHeaders['If-Modified-Since'] = previousGood.lastModified;
                         const result = await extensionFetchJson({
                             method: 'GET',
                             url: normalizedUrl,
                             timeout: 15000,
                             credentials: 'omit',
-                            headers: { Accept: 'application/json' }
+                            headers: requestHeaders,
+                            maxResponseBytes: MONOLITH_FILTER_LIST_CODEC.FILTER_LIST_MAX_BYTES || MONOLITH_FILTER_LIST_MAX_BYTES,
+                            acceptNotModified: true
                         });
-                        const serialized = JSON.stringify(result?.data);
-                        if (typeof serialized !== 'string' || new Blob([serialized]).size > MONOLITH_FILTER_LIST_MAX_BYTES) {
-                            throw new Error('Filter list exceeds the 1 MiB limit');
+
+                        const response = result?.response || {};
+                        const responseStatus = Number(response.status) || (result?.notModified ? 304 : 200);
+                        const responseEtag = monolithReadResponseHeader(response, 'etag');
+                        const responseLastModified = monolithReadResponseHeader(response, 'last-modified');
+                        let lastKnownGood;
+                        if (result?.notModified || responseStatus === 304) {
+                            if (!previousGood) {
+                                throw monolithFilterListError('not-modified-without-cache', 'A 304 response requires a last-known-good list');
+                            }
+                            lastKnownGood = {
+                                ...previousGood,
+                                validatedAt: now,
+                                httpStatus: 304,
+                                etag: responseEtag || previousGood.etag,
+                                lastModified: responseLastModified || previousGood.lastModified
+                            };
+                        } else {
+                            const serialized = typeof response.responseText === 'string'
+                                ? response.responseText
+                                : JSON.stringify(result?.data);
+                            if (typeof serialized !== 'string'
+                                || monolithUtf8ByteLength(serialized) > (MONOLITH_FILTER_LIST_CODEC.FILTER_LIST_MAX_BYTES || MONOLITH_FILTER_LIST_MAX_BYTES)) {
+                                throw monolithFilterListError('too-large', 'Filter list exceeds the 1 MiB limit');
+                            }
+                            const parsed = MONOLITH_FILTER_LIST_CODEC.parseRemoteVideoFilterList(result?.data);
+                            const contentSha256 = await monolithSha256Text(serialized);
+                            if (!/^[a-f0-9]{64}$/i.test(String(contentSha256 || ''))) {
+                                throw monolithFilterListError('integrity-error', 'Filter list SHA-256 could not be computed');
+                            }
+                            lastKnownGood = {
+                                filterListVersion: parsed.version,
+                                fetchedAt: now,
+                                validatedAt: now,
+                                httpStatus: responseStatus,
+                                contentSha256,
+                                etag: responseEtag,
+                                lastModified: responseLastModified,
+                                rules: parsed.rules
+                            };
                         }
-                        const parsed = MONOLITH_FILTER_LIST_CODEC.parseVideoFilterList(result?.data);
                         const next = MONOLITH_FILTER_LIST_CODEC.sanitizeVideoFilterListSubscription({
-                            version: MONOLITH_FILTER_LIST_VERSION,
-                            url: normalizedUrl,
+                            schemaVersion: MONOLITH_FILTER_LIST_CODEC.FILTER_LIST_SUBSCRIPTION_VERSION || 2,
+                            sourceUrl: normalizedUrl,
                             attemptedAt: now,
-                            fetchedAt: now,
-                            rules: parsed.rules,
-                            error: ''
+                            httpStatus: responseStatus,
+                            state: 'active',
+                            staleEnabled: sameUrl ? previous.staleEnabled : true,
+                            refreshMode: sameUrl ? previous.refreshMode : 'daily',
+                            errorCode: '',
+                            lastKnownGood
                         });
                         const writeResult = await storageWriteJSON(this._FILTER_LIST_SUBSCRIPTION_KEY, next, { immediate: true });
-                        if (writeResult?.ok === false) throw writeResult.error || new Error('Filter list cache write failed');
+                        if (writeResult?.ok === false) throw monolithFilterListError('storage-error', 'Filter list cache write failed');
                         this._filterListSubscription = next;
                         this._filterListRemoteRules = null;
                         this._processAllVideosDebounced?.(0);
-                        return { ok: true, subscription: next };
+                        return { ok: true, notModified: responseStatus === 304, subscription: next };
                     } catch (error) {
-                        const sameUrl = previous.url === normalizedUrl;
+                        const sameUrl = previous.sourceUrl === normalizedUrl;
+                        const errorCode = monolithClassifyFilterListRefreshError(error);
+                        const httpStatus = Number(error?.response?.status);
                         const failed = MONOLITH_FILTER_LIST_CODEC.sanitizeVideoFilterListSubscription({
-                            version: MONOLITH_FILTER_LIST_VERSION,
-                            url: normalizedUrl,
+                            schemaVersion: MONOLITH_FILTER_LIST_CODEC.FILTER_LIST_SUBSCRIPTION_VERSION || 2,
+                            sourceUrl: normalizedUrl,
                             attemptedAt: now,
-                            fetchedAt: sameUrl ? previous.fetchedAt : 0,
-                            rules: sameUrl ? previous.rules : {},
-                            error: String(error?.message || error || 'Refresh failed').slice(0, 240)
+                            httpStatus: Number.isInteger(httpStatus) ? httpStatus : 0,
+                            state: sameUrl && previous.lastKnownGood ? 'stale' : 'error',
+                            staleEnabled: sameUrl ? previous.staleEnabled : true,
+                            refreshMode: sameUrl ? previous.refreshMode : 'daily',
+                            errorCode,
+                            lastKnownGood: sameUrl ? previous.lastKnownGood : null
                         });
                         try {
                             const writeResult = await storageWriteJSON(this._FILTER_LIST_SUBSCRIPTION_KEY, failed, { immediate: true });
@@ -18382,8 +18444,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         } catch (writeError) {
                             DebugManager.log('VideoHider', 'Filter list cache write failed', writeError?.message || writeError);
                         }
-                        DebugManager.log('VideoHider', 'Filter list refresh failed', failed.error);
-                        return { ok: false, reason: 'refresh-failed', error: failed.error, subscription: failed };
+                        DebugManager.log('VideoHider', `Filter list refresh failed (${errorCode}; HTTP ${failed.httpStatus || 0})`);
+                        return {
+                            ok: false,
+                            code: errorCode,
+                            reason: 'refresh-failed',
+                            status: failed.httpStatus,
+                            subscription: failed
+                        };
                     } finally {
                         this._filterListRefreshInFlight = null;
                     }
@@ -18398,12 +18466,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const url = this._getConfiguredFilterListUrl();
                 if (!url || typeof extensionFetchJson !== 'function') return;
                 const subscription = this._readFilterListSubscription();
-                const elapsed = subscription.url === url && subscription.attemptedAt > 0
+                const sameUrl = subscription.sourceUrl === url;
+                const refreshMode = sameUrl ? subscription.refreshMode : 'daily';
+                if (refreshMode === 'manual') return;
+                const cadence = refreshMode === 'weekly'
+                    ? this._FILTER_LIST_REFRESH_MAX_MS
+                    : this._FILTER_LIST_REFRESH_MS;
+                const elapsed = sameUrl && subscription.attemptedAt > 0
                     ? Math.max(0, Date.now() - subscription.attemptedAt)
                     : 0;
                 const delay = Math.max(
                     this._FILTER_LIST_REFRESH_MIN_MS,
-                    Math.min(this._FILTER_LIST_REFRESH_MAX_MS, this._FILTER_LIST_REFRESH_MS - elapsed)
+                    Math.min(this._FILTER_LIST_REFRESH_MAX_MS, cadence - elapsed)
                 );
                 this._filterListRefreshTimer = setTimeout(() => {
                     this._filterListRefreshTimer = null;
@@ -18415,7 +18489,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _initializeFilterListSubscription() {
                 this._scheduleFilterListRefresh();
-                if (this._getConfiguredFilterListUrl() && typeof extensionFetchJson === 'function') {
+                const subscription = this._readFilterListSubscription();
+                if (subscription.refreshMode !== 'manual'
+                    && this._getConfiguredFilterListUrl()
+                    && typeof extensionFetchJson === 'function') {
                     void this._refreshFilterList().then(() => this._scheduleFilterListRefresh());
                 }
             },
