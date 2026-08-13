@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
+const { webcrypto } = require('node:crypto');
 const { createSettingsMutationController } = require('../extension/core/settings-controller');
 const {
     createCredentialVault,
@@ -14,6 +15,7 @@ const {
 // context has no importScripts, so hand it the real module rather than a stub:
 // the user-chosen HTTPS door is only as good as these rules.
 const remoteListScope = require('../extension/core/remote-list-scope');
+const cookieHandoff = require('../extension/core/cookie-handoff');
 
 const repoRoot = path.join(__dirname, '..');
 const backgroundSource = fs.readFileSync(path.join(repoRoot, 'extension', 'background.js'), 'utf8');
@@ -26,6 +28,9 @@ function loadBackground({
     optionalHostPermissions = [],
     permissionsContainsImpl,
     permissionsRequestImpl,
+    cookiesGetAllImpl,
+    connectNativeImpl,
+    nativeResponse,
     initialSettings = {},
     apiNamespace = 'chrome'
 } = {}) {
@@ -37,11 +42,38 @@ function loadBackground({
     // settings bag (onboarding sentinels and friends).
     const localState = {};
     const badgeCalls = [];
+    const nativeMessages = [];
     const persistentCredentials = new Map();
     const persistentStore = {
         async get(provider) { return persistentCredentials.get(provider); },
         async set(provider, value) { persistentCredentials.set(provider, value); },
         async delete(provider) { persistentCredentials.delete(provider); }
+    };
+    const createNativePort = () => {
+        const messageListeners = [];
+        const disconnectListeners = [];
+        let disconnected = false;
+        return {
+            error: null,
+            onMessage: {
+                addListener(listener) { messageListeners.push(listener); }
+            },
+            onDisconnect: {
+                addListener(listener) { disconnectListeners.push(listener); }
+            },
+            postMessage(message) {
+                nativeMessages.push(message);
+                Promise.resolve().then(() => {
+                    if (disconnected) return;
+                    const response = typeof nativeResponse === 'function'
+                        ? nativeResponse(message)
+                        : nativeResponse;
+                    for (const listener of messageListeners) listener(response);
+                });
+            },
+            disconnect() { disconnected = true; },
+            _disconnectListeners: disconnectListeners
+        };
     };
     const chrome = {
         commands: {
@@ -73,7 +105,9 @@ function loadBackground({
                 addListener(listener) {
                     installedListener = listener;
                 }
-            }
+            },
+            connectNative: connectNativeImpl
+                || (nativeResponse !== undefined ? () => createNativePort() : undefined)
         },
         action: {
             async setBadgeText(details) { badgeCalls.push({ method: 'setBadgeText', details }); },
@@ -104,7 +138,7 @@ function loadBackground({
             request: permissionsRequestImpl || ((_payload, callback) => callback(true))
         },
         cookies: {
-            getAll: async () => []
+            getAll: cookiesGetAllImpl || (async () => [])
         },
         storage: {
             local: {
@@ -156,6 +190,7 @@ function loadBackground({
         URLSearchParams,
         clearTimeout,
         console,
+        crypto: webcrypto,
         fetch: fetchImpl || (async () => new Response('', {
             status: 200,
             headers: { 'content-length': '0' }
@@ -169,7 +204,8 @@ function loadBackground({
             COBALT_PUBLIC_INSTANCE_HOST: remoteListScope.COBALT_PUBLIC_INSTANCE_HOST,
             describeCobaltInstanceUrl: remoteListScope.describeCobaltInstanceUrl,
             describeRemoteListUrl: remoteListScope.describeRemoteListUrl,
-            remoteListOriginPattern: remoteListScope.remoteListOriginPattern
+            remoteListOriginPattern: remoteListScope.remoteListOriginPattern,
+            cookieHandoff
         },
         setTimeout
     };
@@ -187,7 +223,8 @@ function loadBackground({
         badgeCalls,
         getLocal: () => localState,
         getSettings: () => settingsState,
-        persistentCredentials
+        persistentCredentials,
+        nativeMessages
     };
 }
 
@@ -209,6 +246,22 @@ function dispatchMessage(listener, message, sender = {
             reject(error);
         }
     });
+}
+
+function youtubeSender({ tabId = 9, documentId = 'document-a', cookieStoreId } = {}) {
+    return {
+        id: 'astra-test-extension',
+        frameId: 0,
+        documentId,
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        tab: {
+            id: tabId,
+            windowId: 1,
+            index: 0,
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            ...(cookieStoreId ? { cookieStoreId } : {})
+        }
+    };
 }
 
 test('background serializes schema-aware setting mutations behind one message contract', async () => {
@@ -278,6 +331,154 @@ test('background exposes the enabled zero-ad ruleset through its internal status
     assert.equal(response.rulesetId, 'astra_zero_ads');
     assert.equal(response.enabled, true);
     assert.deepEqual(Array.from(response.enabledRulesets), ['astra_zero_ads']);
+});
+
+test('background retires generic and forged cookie requests before touching the cookie API', async () => {
+    let cookieReads = 0;
+    const { messageListener } = loadBackground({
+        cookiesGetAllImpl: async () => {
+            cookieReads += 1;
+            return [];
+        },
+        nativeResponse: { ok: true, token: 'legacy-native-token' }
+    });
+    const sender = youtubeSender();
+
+    const retired = await dispatchMessage(messageListener, {
+        type: 'EXT_COOKIE_LIST',
+        filter: { domain: '.youtube.com' }
+    }, sender);
+    const forged = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: '0'.repeat(48),
+        protocolVersion: 1
+    }, sender);
+    const legacyProof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, sender);
+
+    assert.equal(retired.error.code, 'COOKIE_BRIDGE_RETIRED');
+    assert.equal(forged.error.code, 'COOKIE_CAPABILITY_INVALID');
+    assert.equal(legacyProof.token, 'legacy-native-token');
+    assert.equal(legacyProof.cookieCapability, null,
+        'a native response without the versioned service/API proof must not unlock cookies');
+    assert.equal(cookieReads, 0);
+});
+
+test('background binds one-use cookie capabilities to a top-level YouTube document', async () => {
+    let cookieReads = 0;
+    const { messageListener } = loadBackground({
+        nativeResponse: {
+            ok: true,
+            service: 'astra-downloader',
+            api: 2,
+            token: 'native-download-token'
+        },
+        cookiesGetAllImpl: async () => {
+            cookieReads += 1;
+            return [];
+        }
+    });
+    const sender = youtubeSender({ tabId: 9, documentId: 'document-a' });
+
+    const iframeSender = { ...sender, frameId: 4 };
+    const iframeProof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, iframeSender);
+    assert.equal(iframeProof.cookieCapability, null,
+        'an embedded frame must not receive a top-level cookie capability');
+
+    const wrongContextProof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, sender);
+    const wrongContext = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: wrongContextProof.cookieCapability.token,
+        protocolVersion: 1
+    }, youtubeSender({ tabId: 9, documentId: 'document-b' }));
+
+    const validProof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, sender);
+    const firstUse = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: validProof.cookieCapability.token,
+        protocolVersion: 1
+    }, sender);
+    const replay = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: validProof.cookieCapability.token,
+        protocolVersion: 1
+    }, sender);
+
+    assert.equal(wrongContext.error.code, 'COOKIE_CAPABILITY_CONTEXT_MISMATCH');
+    assert.equal(firstUse.ok, true);
+    assert.equal(replay.error.code, 'COOKIE_CAPABILITY_INVALID');
+    assert.equal(cookieReads, 1, 'only the correctly bound first use may reach cookies.getAll');
+});
+
+test('background releases only the complete versioned YouTube auth-cookie set with redacted diagnostics', async () => {
+    const unknownSecret = 'unknown-cookie-secret';
+    const badPathSecret = 'wrong-path-secret';
+    const badDomainSecret = 'wrong-domain-secret';
+    const insecureSecret = 'insecure-cookie-secret';
+    const oversizedSecret = 'oversized-cookie-secret-' + 'x'.repeat(4096);
+    let query = null;
+    const { messageListener } = loadBackground({
+        nativeResponse: {
+            ok: true,
+            service: 'astra-downloader',
+            api: 2,
+            token: 'native-download-token'
+        },
+        cookiesGetAllImpl: async (details) => {
+            query = details;
+            return [
+                { domain: '.youtube.com', name: 'LOGIN_INFO', value: 'login-value', path: '/', secure: true, httpOnly: true },
+                { domain: '.youtube.com', name: 'SAPISID', value: 'sapisid-value', path: '/', secure: true },
+                { domain: '.youtube.com', name: '__Secure-1PAPISID', value: 'one-papisid-value', path: '/', secure: true },
+                { domain: '.youtube.com', name: '__Secure-3PAPISID', value: 'three-papisid-value', path: '/', secure: true },
+                { domain: '.youtube.com', name: 'SID', value: unknownSecret, path: '/', secure: true },
+                { domain: '.youtube.com', name: 'LOGIN_INFO', value: badPathSecret, path: '/accounts', secure: true },
+                { domain: '.google.com', name: 'SAPISID', value: badDomainSecret, path: '/', secure: true },
+                { domain: '.youtube.com', name: 'SAPISID', value: insecureSecret, path: '/', secure: false },
+                { domain: '.youtube.com', name: 'SAPISID', value: oversizedSecret, path: '/', secure: true }
+            ];
+        }
+    });
+    const sender = youtubeSender({ cookieStoreId: 'firefox-container-2' });
+    const proof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, sender);
+    const result = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: proof.cookieCapability.token,
+        protocolVersion: proof.cookieCapability.protocolVersion
+    }, sender);
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(
+        Array.from(result.cookies, (cookie) => cookie.name),
+        ['LOGIN_INFO', 'SAPISID', '__Secure-1PAPISID', '__Secure-3PAPISID']
+    );
+    assert.equal(query.domain, '.youtube.com');
+    assert.equal(query.storeId, 'firefox-container-2');
+    assert.equal(result.diagnostics.acceptedCount, 4);
+    assert.equal(result.diagnostics.droppedCount, 5);
+
+    const serialized = JSON.stringify(result);
+    for (const secret of [unknownSecret, badPathSecret, badDomainSecret, insecureSecret, oversizedSecret]) {
+        assert.equal(serialized.includes(secret), false, 'a rejected cookie value must not cross sendResponse');
+    }
+    assert.equal(serialized.includes(proof.cookieCapability.token), false,
+        'the consumed capability must not be reflected in the response');
+    const serializedDiagnostics = JSON.stringify(result.diagnostics);
+    assert.doesNotMatch(serializedDiagnostics, /LOGIN_INFO|SAPISID|PAPISID|cookie-secret|native-download-token/);
 });
 
 test('background EXT_FETCH preserves empty-string request bodies', async () => {

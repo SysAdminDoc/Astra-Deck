@@ -63,9 +63,9 @@ must use Google's standardized vocabulary to declare data categories.
       [store-permission-rationale.md](store-permission-rationale.md).
 - [ ] Declares EACH category Astra Deck uses against the [Chrome
       Web Store Permissions Justification template](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy):
-  - **Authentication info** — YouTube session cookies via
-    `chrome.cookies` (passed to Astra Downloader for authenticated
-    downloads).
+  - **Authentication info** — four allowlisted secure `.youtube.com` sign-in
+    cookie names via `chrome.cookies`, passed to local Astra Downloader only
+    for a user-started authenticated download after native-host proof.
   - **Personal communications** — N/A.
   - **Financial info** — N/A.
   - **Health info** — N/A.
@@ -133,7 +133,7 @@ grants. Submit the `chromium-store` package to Chrome Web Store or Edge; use
 |---|---|
 | `storage` | Settings persistence and per-feature local caches (DeArrow branding, SponsorBlock segments, video / channel hide lists, transcript cache). All local. |
 | `unlimitedStorage` | Long-term users accumulate DeArrow + SponsorBlock caches past Chrome's 10 MB `chrome.storage.local` default. The LRU cleanup task trims hot caches every 5 min; the cap exists only to prevent silent quota errors on a busy account. |
-| `cookies` | The Astra Downloader companion downloads authenticated YouTube content. The extension reads YouTube cookies via `chrome.cookies.getAll` and posts them to the localhost downloader (127.0.0.1:9751 only). Never sent off-machine. |
+| `cookies` | For a user-started authenticated download, the extension uses a 20-second, one-use, tab/document-bound capability after native API v2 proof, queries only `.youtube.com`, and forwards only `LOGIN_INFO` plus available `SAPISID`/`__Secure-1PAPISID`/`__Secure-3PAPISID` values that satisfy the secure root-path and 4 KiB limits. Incomplete sets fail closed. Sent only to Astra Downloader on the documented `127.0.0.1` ports and never off-machine. |
 | `downloads` | Triggering thumbnail + transcript exports + diagnostic-log save from the popup to the user's Downloads folder. |
 | `host_permissions: youtube.com / youtu.be / youtube-nocookie.com` | Core content script attachment, YouTube page reads, and short-link/embed support. |
 | `optional_host_permissions: sponsor.ajay.app / i.ytimg.com / returnyoutubedislikeapi.com / reddit.com` | SponsorBlock/DeArrow, thumbnail upgrade/download, estimated Return YouTube Dislike counts, and Reddit discussion panel calls. Requested from the popup when the user enables a matching feature, or through the Grant access banner when an already-enabled feature such as default-on SponsorBlock needs the runtime grant; the background proxy checks the current grant before fetching. No cookies are sent. |

@@ -366,7 +366,7 @@ document_idle
   runtime-bootstrap.js  ISOLATED world — reads settings and starts the guarded loader (<150 KB)
   runtime-core-loader.mjs  dynamic module graph — core + download bootstrap + ytkit
   features/*           dynamic, settings- and route-gated feature modules
-  background.js      Service worker — fetch proxy, downloads, cookie bridge
+  background.js      Service worker — fetch proxy, downloads, gated cookie handoff
 ```
 
 - **Split-context model** — MAIN world for page API interception, ISOLATED world for extension APIs and DOM
@@ -389,6 +389,10 @@ document_idle
 - Request/response headers filtered (`Cookie`, `Set-Cookie`, etc. stripped globally; `Authorization` only forwarded to explicit BYO-key/local service origins such as OpenAI/Anthropic/Ollama/MediaDL)
 - Response body capped at 10 MB, fetch timeout capped at 60s
 - HTTP methods validated, download URLs protocol-checked (HTTP/S only)
+- **Authenticated downloads** expose only four required secure YouTube cookie
+  names behind a 20-second, one-use capability bound to the requesting tab and
+  document after Astra Downloader proves native API v2 identity; legacy health
+  tokens cannot unlock cookies
 - Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs and accepts
   only YouTube-owned destinations
 - Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists documented provider origins. GitHub-full alone carries a scheme-scoped `https://*` connection lane because CSP cannot know a user-selected host in advance; browser permissions still require one exact host and never grant all sites.

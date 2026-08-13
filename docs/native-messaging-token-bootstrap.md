@@ -1,6 +1,6 @@
 # Native-messaging token bootstrap
 
-Status: **native-first bootstrap is implemented; legacy `/health` token echo is now gated.**
+Status: **native-first bootstrap and a versioned authenticated-cookie capability are implemented; legacy `/health` token echo is gated.**
 
 ## Problem
 
@@ -61,10 +61,39 @@ In the extension:
   token echo for all non-native callers, in which case `/health` reports
   `legacyTokenEcho: false` and `nativeChannelRequired: true`.
 
+## Authenticated-cookie capability (protocol v1)
+
+The bearer token and cookie grant are deliberately separate. A normal
+`NATIVE_MSG_GET_TOKEN` request preserves token-bootstrap compatibility but does
+not authorize cookie access. For a user-started authenticated download:
+
+1. The top-level YouTube content runtime requests `NATIVE_MSG_GET_TOKEN` with
+   `purpose: "cookie-handoff"` immediately before the download request.
+2. The native host must return a non-empty token plus exact
+   `service: "astra-downloader"` and integer `api: 2` or newer. Legacy native
+   responses and HTTP `/health` tokens receive no cookie capability.
+3. `background.js` creates a cryptographically random capability that expires
+   after 20 seconds and is bound to the sender's tab, top frame, document ID
+   when available, and Firefox cookie-store ID when available. Reissuing proof
+   revokes the document's prior grant.
+4. `YTKIT_COOKIE_HANDOFF` consumes the grant before calling the asynchronous
+   cookies API. Wrong-context, wrong-version, expired, and replayed grants fail
+   without reading cookies.
+5. `core/cookie-handoff.js` queries only `.youtube.com` and releases only
+   secure root-path `LOGIN_INFO`, `SAPISID`, `__Secure-1PAPISID`, and
+   `__Secure-3PAPISID` values of at most 4,096 UTF-8 bytes each. A complete
+   result requires `LOGIN_INFO` plus at least one SAPISID variant.
+
+The content runtime sends the already-filtered set to the loopback companion,
+shows a localized notice before the installation's first cookie-bearing
+request, and records only protocol/count/byte diagnostics. Cookie names,
+values, and capability tokens are excluded from diagnostics.
+
 Coverage includes native framing tests, malformed-message tests, manifest-shape
 tests, registry-write tests, downloader health token-suppression tests,
-extension fallback tests, native-channel-required UI recovery tests, and
-UI health-pill assertions.
+extension fallback tests, native-channel-required UI recovery tests, forged and
+cross-document cookie grants, one-use replay rejection, cookie contract
+filtering, redacted diagnostics, and UI health-pill assertions.
 
 ## Remaining validation and retirement gates
 

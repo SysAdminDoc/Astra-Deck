@@ -5896,6 +5896,9 @@
   "toastActionUndo": {
     "message": "تراجع"
   },
+  "toastCookieHandoffDisclosure": {
+    "message": "تنزيل موثَّق: لا تُرسل إلى Astra Downloader على هذا الجهاز سوى ملفات تعريف ارتباط تسجيل الدخول إلى YouTube المطلوبة."
+  },
   "toastDismissAria": {
     "message": "Dismiss notification"
   },

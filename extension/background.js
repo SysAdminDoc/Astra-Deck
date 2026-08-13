@@ -72,6 +72,7 @@ function callExtensionApi(target, method, ...args) {
 if (typeof importScripts === 'function') {
     importScripts(
         'core/companion-ports.js',
+        'core/cookie-handoff.js',
         'core/remote-list-scope.js',
         'core/settings-schema.js',
         'core/persisted-domains.js',
@@ -83,6 +84,7 @@ if (typeof importScripts === 'function') {
 }
 
 const COMPANION_PORT_CATALOGUE = globalThis.YTKitCore?.companionPorts || null;
+const COOKIE_HANDOFF = globalThis.YTKitCore?.cookieHandoff || null;
 const COMPANION_ORIGINS = Object.freeze(
     Array.isArray(COMPANION_PORT_CATALOGUE?.cspOrigins)
         ? COMPANION_PORT_CATALOGUE.cspOrigins.slice()
@@ -273,8 +275,9 @@ async function performAiSummaryRequest(details) {
     }
 }
 
-// v3.20.3: explicit cookie-jar wire contract.
-// Mirrors normalizeCookieExpiry() in extension/ytkit.js — keep both in sync.
+// v3.20.3: explicit cookie-jar wire contract. The narrowed authenticated
+// handoff also normalizes in core/cookie-handoff.js; this final mapper keeps
+// the service-worker response and userscript fallback wire-compatible.
 //   Session cookie    → 0 (Netscape format expects 0 for "session")
 //   Persistent cookie → positive Number, seconds since epoch (left as-is so
 //                       the Python downloader's int(float(x)) lands the same
@@ -285,6 +288,153 @@ async function performAiSummaryRequest(details) {
 function normalizeCookieExpiry(value) {
     const num = Number(value);
     return Number.isFinite(num) && num > 0 ? num : 0;
+}
+
+const COOKIE_HANDOFF_CAPABILITY_TTL_MS = 20 * 1000;
+const COOKIE_HANDOFF_CAPABILITY_LIMIT = 64;
+const COOKIE_HANDOFF_PURPOSE = 'cookie-handoff';
+const COOKIE_HANDOFF_SERVICE = 'astra-downloader';
+const _cookieHandoffCapabilities = new Map();
+
+function cookieHandoffProtocolVersion() {
+    return Number.isInteger(COOKIE_HANDOFF?.PROTOCOL_VERSION)
+        ? COOKIE_HANDOFF.PROTOCOL_VERSION
+        : 1;
+}
+
+function emptyCookieHandoffDiagnostics(status) {
+    return {
+        protocolVersion: cookieHandoffProtocolVersion(),
+        examinedCount: 0,
+        acceptedCount: 0,
+        acceptedBytes: 0,
+        droppedCount: 0,
+        reasons: {},
+        status
+    };
+}
+
+function cookieHandoffFailure(code) {
+    return {
+        ok: false,
+        cookies: [],
+        diagnostics: emptyCookieHandoffDiagnostics(code),
+        error: {
+            code,
+            message: 'Authenticated cookie handoff is unavailable.'
+        }
+    };
+}
+
+function cookieHandoffSenderBinding(sender) {
+    const tabId = sender?.tab?.id;
+    if (!Number.isInteger(tabId) || tabId < 0) return null;
+    if (sender?.frameId !== undefined && sender.frameId !== 0) return null;
+
+    let parsed;
+    try {
+        parsed = new URL(sender?.url || sender?.tab?.url || '');
+    } catch (_) {
+        return null;
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    if (parsed.protocol !== 'https:'
+        || (hostname !== 'youtube.com' && !hostname.endsWith('.youtube.com'))) {
+        return null;
+    }
+
+    return {
+        tabId,
+        frameId: 0,
+        documentId: typeof sender.documentId === 'string' ? sender.documentId.slice(0, 256) : null,
+        cookieStoreId: typeof sender.tab.cookieStoreId === 'string'
+            ? sender.tab.cookieStoreId.slice(0, 128)
+            : null
+    };
+}
+
+function sameCookieHandoffBinding(left, right) {
+    return !!left && !!right
+        && left.tabId === right.tabId
+        && left.frameId === right.frameId
+        && left.documentId === right.documentId
+        && left.cookieStoreId === right.cookieStoreId;
+}
+
+function pruneCookieHandoffCapabilities(now = Date.now()) {
+    for (const [token, capability] of _cookieHandoffCapabilities) {
+        if (!capability || capability.expiresAt <= now) _cookieHandoffCapabilities.delete(token);
+    }
+}
+
+function randomCookieHandoffToken() {
+    if (typeof globalThis.crypto?.getRandomValues !== 'function') return '';
+    const bytes = new Uint8Array(24);
+    globalThis.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function issueCookieHandoffCapability(sender) {
+    const binding = cookieHandoffSenderBinding(sender);
+    if (!binding || !COOKIE_HANDOFF?.sanitizeCookieHandoff) return null;
+    const now = Date.now();
+    pruneCookieHandoffCapabilities(now);
+
+    // A document gets one live grant. Reissuing proof revokes its prior grant
+    // rather than leaving a pile of independently usable credentials.
+    for (const [token, capability] of _cookieHandoffCapabilities) {
+        if (sameCookieHandoffBinding(capability.binding, binding)) {
+            _cookieHandoffCapabilities.delete(token);
+        }
+    }
+    if (_cookieHandoffCapabilities.size >= COOKIE_HANDOFF_CAPABILITY_LIMIT) {
+        const oldestToken = _cookieHandoffCapabilities.keys().next().value;
+        if (oldestToken) _cookieHandoffCapabilities.delete(oldestToken);
+    }
+
+    let token = '';
+    for (let attempt = 0; attempt < 3 && !token; attempt += 1) {
+        const candidate = randomCookieHandoffToken();
+        if (candidate && !_cookieHandoffCapabilities.has(candidate)) token = candidate;
+    }
+    if (!token) return null;
+
+    const capability = {
+        binding,
+        expiresAt: now + COOKIE_HANDOFF_CAPABILITY_TTL_MS
+    };
+    _cookieHandoffCapabilities.set(token, capability);
+    return {
+        token,
+        protocolVersion: cookieHandoffProtocolVersion(),
+        expiresAt: capability.expiresAt
+    };
+}
+
+function consumeCookieHandoffCapability(token, protocolVersion, sender) {
+    const now = Date.now();
+    pruneCookieHandoffCapabilities(now);
+    if (typeof token !== 'string' || !/^[a-f0-9]{48}$/.test(token)) {
+        return { ok: false, code: 'COOKIE_CAPABILITY_INVALID' };
+    }
+
+    const capability = _cookieHandoffCapabilities.get(token);
+    if (!capability) return { ok: false, code: 'COOKIE_CAPABILITY_INVALID' };
+
+    // Delete before any asynchronous cookie API work. Every grant is one-use,
+    // including failed attempts with the wrong protocol or tab binding.
+    _cookieHandoffCapabilities.delete(token);
+    if (protocolVersion !== cookieHandoffProtocolVersion()) {
+        return { ok: false, code: 'COOKIE_HANDOFF_PROTOCOL_MISMATCH' };
+    }
+    const binding = cookieHandoffSenderBinding(sender);
+    if (!sameCookieHandoffBinding(capability.binding, binding)) {
+        return { ok: false, code: 'COOKIE_CAPABILITY_CONTEXT_MISMATCH' };
+    }
+    if (capability.expiresAt <= now) {
+        return { ok: false, code: 'COOKIE_CAPABILITY_INVALID' };
+    }
+    return { ok: true, binding };
 }
 
 // v3.14.0: Track downloads that requested "show in folder" so the reveal
@@ -604,21 +754,6 @@ const CREDENTIALED_FETCH_ORIGINS = new Set([
     'https://youtu.be',
     'https://www.youtube-nocookie.com',
     ...COMPANION_ORIGINS,
-]);
-
-const ALLOWED_COOKIE_DOMAINS = new Set([
-    '.youtube.com',
-    'youtube.com',
-    '.www.youtube.com',
-    'www.youtube.com',
-    '.m.youtube.com',
-    'm.youtube.com',
-    '.music.youtube.com',
-    'music.youtube.com',
-    '.youtube-nocookie.com',
-    'youtube-nocookie.com',
-    '.www.youtube-nocookie.com',
-    'www.youtube-nocookie.com'
 ]);
 
 function shouldSendCredentials(url) {
@@ -1148,12 +1283,6 @@ async function performCobaltRequest(sender) {
     } finally {
         clearTimeout(timer);
     }
-}
-
-function isAllowedCookieDomain(domain) {
-    if (typeof domain !== 'string') return false;
-    const normalized = domain.trim().toLowerCase();
-    return ALLOWED_COOKIE_DOMAINS.has(normalized);
 }
 
 function sanitizeDownloadFilename(filename) {
@@ -1794,27 +1923,56 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 
     if (msg.type === 'EXT_COOKIE_LIST') {
-        const requestedDomain = typeof msg.filter?.domain === 'string' ? msg.filter.domain : '.youtube.com';
-        const domain = requestedDomain.trim().toLowerCase() || '.youtube.com';
-        if (!isAllowedCookieDomain(domain)) {
-            sendResponse({ cookies: null, error: `Cookie domain not allowed: ${requestedDomain}` });
+        // The former caller-selected cookie query was too broad to defend:
+        // any extension content runtime could request raw YouTube-family
+        // cookies. Keep a deterministic rejection for old content bundles.
+        sendResponse({
+            cookies: null,
+            error: {
+                code: 'COOKIE_BRIDGE_RETIRED',
+                message: 'Generic cookie access is unavailable.'
+            }
+        });
+        return false;
+    }
+
+    if (msg.type === 'YTKIT_COOKIE_HANDOFF') {
+        const consumed = consumeCookieHandoffCapability(
+            msg.capability,
+            msg.protocolVersion,
+            sender
+        );
+        if (!consumed.ok) {
+            sendResponse(cookieHandoffFailure(consumed.code));
             return false;
         }
-        callExtensionApi(ext.cookies, 'getAll', { domain }).then(cookies => {
+        if (!COOKIE_HANDOFF?.sanitizeCookieHandoff || !ext.cookies?.getAll) {
+            sendResponse(cookieHandoffFailure('COOKIE_API_UNAVAILABLE'));
+            return false;
+        }
+
+        const query = { domain: COOKIE_HANDOFF.QUERY_DOMAIN };
+        if (consumed.binding.cookieStoreId) query.storeId = consumed.binding.cookieStoreId;
+        callExtensionApi(ext.cookies, 'getAll', query).then((rawCookies) => {
+            const handoff = COOKIE_HANDOFF.sanitizeCookieHandoff(rawCookies);
             sendResponse({
-                cookies: cookies.map(c => ({
+                ok: true,
+                cookies: handoff.cookies.map(c => ({
                     domain: c.domain,
                     name: c.name,
                     value: c.value,
-                    path: c.path || '/',
-                    secure: !!c.secure,
-                    httpOnly: !!c.httpOnly,
+                    path: c.path,
+                    secure: c.secure,
+                    httpOnly: c.httpOnly,
                     expirationDate: normalizeCookieExpiry(c.expirationDate)
                 })),
+                diagnostics: handoff.diagnostics,
                 error: null
             });
-        }).catch(err => {
-            sendResponse({ cookies: null, error: err.message });
+        }).catch(() => {
+            // Cookie API errors can contain browser/profile details. Keep the
+            // content response stable and redacted.
+            sendResponse(cookieHandoffFailure('COOKIE_READ_FAILED'));
         });
         return true;
     }
@@ -1867,8 +2025,26 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 port.onMessage.addListener((response) => {
                     clearTimeout(timeout);
                     try { port.disconnect(); } catch (_) { /* reason: already disconnected */ }
-                    if (response && response.ok && response.token) {
-                        respond({ token: response.token, error: null });
+                    const token = typeof response?.token === 'string'
+                        && response.token.length > 0
+                        && response.token.length <= 512
+                        && !/[\u0000-\u001f\u007f]/.test(response.token)
+                        ? response.token
+                        : null;
+                    if (response?.ok && token) {
+                        const service = response.service === COOKIE_HANDOFF_SERVICE
+                            ? COOKIE_HANDOFF_SERVICE
+                            : null;
+                        const api = Number.isInteger(response.api) ? response.api : null;
+                        const minimumApi = Number.isInteger(COOKIE_HANDOFF?.MINIMUM_COMPANION_API)
+                            ? COOKIE_HANDOFF.MINIMUM_COMPANION_API
+                            : Number.POSITIVE_INFINITY;
+                        const cookieCapability = msg.purpose === COOKIE_HANDOFF_PURPOSE
+                            && service === COOKIE_HANDOFF_SERVICE
+                            && api >= minimumApi
+                            ? issueCookieHandoffCapability(sender)
+                            : null;
+                        respond({ token, service, api, cookieCapability, error: null });
                     } else {
                         respond({ token: null, error: response?.error || 'Token not available' });
                     }

@@ -10,6 +10,9 @@
     // dependencies; this file is the extension's canonical implementation.
 
     const DOWNLOAD_HEALTH_SCHEMA_VERSION = 2;
+    const COOKIE_HANDOFF_DISCLOSURE_KEY = 'ytkit_cookie_handoff_disclosed_v1';
+    const COOKIE_HANDOFF_PROTOCOL_VERSION = 1;
+    const COOKIE_HANDOFF_MINIMUM_API = 2;
     // A cold 40 MB one-file companion start can take roughly 12 seconds.
     // Eight 1.5-second polls gives the normal and recovery paths the same
     // documented window to finish unpacking, initialize Qt, and bind HTTP.
@@ -462,11 +465,17 @@
                 return headers;
             },
 
-            async _requestNativeToken() {
+            async _requestNativeToken(options = {}) {
                 try {
-                    const result = await requestNativeDownloaderToken();
+                    const result = await requestNativeDownloaderToken(options);
                     if (result && result.token) {
-                        return { token: result.token, error: null };
+                        return {
+                            token: result.token,
+                            service: result.service || null,
+                            api: Number.isInteger(result.api) ? result.api : null,
+                            cookieCapability: result.cookieCapability || null,
+                            error: null
+                        };
                     }
                     return { token: null, error: result?.error || 'Native messaging token unavailable' };
                 } catch (e) {
@@ -1272,6 +1281,37 @@
 
         // ── Download entry point ──
         let _downloadInProgress = false;
+        let _cookieHandoffDisclosedThisSession = false;
+
+        function recordCookieHandoffDiagnostic(status, diagnostics = {}) {
+            const safeStatus = String(status || 'unknown')
+                .replace(/[^a-z0-9_-]/gi, '')
+                .slice(0, 80) || 'unknown';
+            const protocolVersion = Number(diagnostics.protocolVersion) || COOKIE_HANDOFF_PROTOCOL_VERSION;
+            const acceptedCount = Math.max(0, Number(diagnostics.acceptedCount) || 0);
+            const acceptedBytes = Math.max(0, Number(diagnostics.acceptedBytes) || 0);
+            const droppedCount = Math.max(0, Number(diagnostics.droppedCount) || 0);
+            DiagnosticLog.record(
+                'cookie-handoff',
+                `status=${safeStatus} protocol=${protocolVersion} accepted=${acceptedCount} bytes=${acceptedBytes} dropped=${droppedCount}`
+            );
+        }
+
+        async function discloseCookieHandoffOnce() {
+            if (_cookieHandoffDisclosedThisSession
+                || storageRead(COOKIE_HANDOFF_DISCLOSURE_KEY, false) === true) return;
+            _cookieHandoffDisclosedThisSession = true;
+            showToast(t(
+                'toastCookieHandoffDisclosure',
+                'Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.'
+            ), '#3b82f6', { duration: 8 });
+            try {
+                await storageWrite(COOKIE_HANDOFF_DISCLOSURE_KEY, true);
+            } catch (_) {
+                recordCookieHandoffDiagnostic('disclosure-storage-failed');
+            }
+        }
+
         function _isDownloaderConnectionError(error) {
             const message = String(error?.message || error?.detail?.error || '').toLowerCase();
             return !!error?.isTimeout
@@ -1507,29 +1547,51 @@
                 }
             };
 
-            // SECURITY: only ship YouTube session cookies when the companion's
-            // identity was proven through the native-messaging host. On the
-            // legacy /health token path any local process that binds a
-            // candidate port and echoes the health shape could otherwise
-            // harvest the full cookie jar.
-            if (browserCookies.listAsync && MediaDLManager._tokenSource === 'native') {
+            // SECURITY: cookie access is a separate one-use capability. The
+            // background issues it only after a fresh native-host proof and
+            // binds it to this tab/document. Legacy /health tokens can still
+            // start unauthenticated downloads but can never unlock cookies.
+            if (typeof browserCookies.getDownloadHandoff === 'function'
+                && MediaDLManager._tokenSource === 'native') {
                 try {
-                    const cookies = await browserCookies.listAsync({ domain: '.youtube.com' });
-                    if (cookies.length > 0) {
-                        payload.cookies = cookies.map(c => ({
-                            domain: c.domain, name: c.name, value: c.value,
-                            path: c.path || '/', secure: !!c.secure,
-                            httpOnly: !!c.httpOnly,
-                            expirationDate: normalizeCookieExpiry(c.expirationDate)
-                        }));
-                        DebugManager.log('MediaDL', `Attached ${cookies.length} cookies for yt-dlp`);
+                    const proof = await MediaDLManager._requestNativeToken({ cookieHandoff: true });
+                    const capability = proof.cookieCapability;
+                    const proofIsCurrent = proof.token === token
+                        && proof.service === MediaDLManager._SERVICE_ID
+                        && Number.isInteger(proof.api)
+                        && proof.api >= COOKIE_HANDOFF_MINIMUM_API
+                        && typeof capability?.token === 'string'
+                        && capability.protocolVersion === COOKIE_HANDOFF_PROTOCOL_VERSION;
+                    if (!proofIsCurrent) {
+                        recordCookieHandoffDiagnostic('native-proof-incomplete');
+                        DebugManager.log('MediaDL', 'Cookies withheld: fresh native proof did not match the active download session');
                     } else {
-                        DebugManager.log('MediaDL', 'Extension cookie bridge returned no cookies (permission may not be granted)');
+                        const handoff = await browserCookies.getDownloadHandoff(capability);
+                        const cookies = Array.isArray(handoff?.cookies) ? handoff.cookies : [];
+                        recordCookieHandoffDiagnostic('ok', handoff?.diagnostics);
+                        if (cookies.length > 0) {
+                            payload.cookies = cookies.map(c => ({
+                                domain: c.domain, name: c.name, value: c.value,
+                                path: c.path || '/', secure: !!c.secure,
+                                httpOnly: !!c.httpOnly,
+                                expirationDate: normalizeCookieExpiry(c.expirationDate)
+                            }));
+                            await discloseCookieHandoffOnce();
+                            DebugManager.log(
+                                'MediaDL',
+                                `Attached ${cookies.length} contract-filtered cookies (${Number(handoff?.diagnostics?.acceptedBytes) || 0} bytes) for yt-dlp`
+                            );
+                        } else {
+                            DebugManager.log('MediaDL', 'Authenticated cookie contract returned no complete sign-in set');
+                        }
                     }
                 } catch (e) {
-                    DebugManager.log('MediaDL', `Extension cookie bridge error: ${e.message}`);
+                    const code = typeof e?.code === 'string' ? e.code : 'cookie-handoff-failed';
+                    recordCookieHandoffDiagnostic(code);
+                    DebugManager.log('MediaDL', `Cookies withheld: authenticated handoff failed (${String(code).slice(0, 80)})`);
                 }
-            } else if (browserCookies.listAsync) {
+            } else if (typeof browserCookies.getDownloadHandoff === 'function') {
+                recordCookieHandoffDiagnostic('legacy-token-withheld');
                 DebugManager.log('MediaDL', 'Cookies withheld: companion identity not native-verified (legacy health token)');
             }
 

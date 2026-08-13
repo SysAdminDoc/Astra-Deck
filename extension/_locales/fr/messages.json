@@ -5896,6 +5896,9 @@
   "toastActionUndo": {
     "message": "Annuler"
   },
+  "toastCookieHandoffDisclosure": {
+    "message": "Téléchargement authentifié : seuls les cookies de connexion YouTube requis sont envoyés à Astra Downloader sur cet appareil."
+  },
   "toastDismissAria": {
     "message": "Dismiss notification"
   },

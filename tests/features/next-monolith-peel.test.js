@@ -248,6 +248,142 @@ test('downloadUI MediaDLManager falls back to legacy /health token when native m
     assert.equal(calls[0].headers['X-MDL-Token-Source'], undefined);
 });
 
+test('downloadUI never requests cookies for a legacy-health token', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const requests = [];
+    const diagnostics = [];
+    let nativeProofRequests = 0;
+    let cookieRequests = 0;
+    const result = mod.createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => {
+            nativeProofRequests += 1;
+            return { token: 'native-token' };
+        },
+        browserCookies: {
+            async getDownloadHandoff() {
+                cookieRequests += 1;
+                return { cookies: [] };
+            }
+        },
+        extensionFetchJson: async (details) => {
+            requests.push(details);
+            return {
+                response: { status: 202, responseText: '{}' },
+                data: { error: 'fixture' }
+            };
+        },
+        DiagnosticLog: { record: (...args) => diagnostics.push(args) },
+        DebugManager: { log() {} },
+        showToast() {}
+    });
+    result.MediaDLManager._tokenSource = 'legacy-health';
+
+    await result._mediaDLSendDownload(
+        'https://www.youtube.com/watch?v=abcdefghijk',
+        false,
+        'legacy-health-secret'
+    );
+
+    assert.equal(nativeProofRequests, 0);
+    assert.equal(cookieRequests, 0);
+    assert.equal(Object.hasOwn(JSON.parse(requests[0].data), 'cookies'), false);
+    assert.ok(diagnostics.some(([kind, detail]) => kind === 'cookie-handoff'
+        && /legacy-token-withheld/.test(detail)));
+    assert.equal(JSON.stringify(diagnostics).includes('legacy-health-secret'), false);
+});
+
+test('downloadUI uses a fresh native capability and discloses the first cookie-bearing handoff once', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const cookieCapabilitySecret = 'capability-secret';
+    const loginSecret = 'login-cookie-secret';
+    const sidSecret = 'sid-cookie-secret';
+    const requests = [];
+    const toasts = [];
+    const diagnostics = [];
+    const storage = new Map();
+    const storageWrites = [];
+    const proofOptions = [];
+    const result = mod.createDownloadUIFeature({
+        requestNativeDownloaderToken: async (options) => {
+            proofOptions.push(options);
+            return {
+                token: 'native-download-token',
+                service: 'astra-downloader',
+                api: 2,
+                cookieCapability: {
+                    token: cookieCapabilitySecret,
+                    protocolVersion: 1,
+                    expiresAt: Date.now() + 20000
+                }
+            };
+        },
+        browserCookies: {
+            async getDownloadHandoff(capability) {
+                assert.equal(capability.token, cookieCapabilitySecret);
+                return {
+                    cookies: [
+                        { domain: '.youtube.com', name: 'LOGIN_INFO', value: loginSecret, path: '/', secure: true, httpOnly: true },
+                        { domain: '.youtube.com', name: 'SAPISID', value: sidSecret, path: '/', secure: true }
+                    ],
+                    diagnostics: {
+                        protocolVersion: 1,
+                        acceptedCount: 2,
+                        acceptedBytes: 37,
+                        droppedCount: 3
+                    }
+                };
+            }
+        },
+        extensionFetchJson: async (details) => {
+            requests.push(details);
+            return {
+                response: { status: 202, responseText: '{}' },
+                data: { error: 'fixture' }
+            };
+        },
+        storageRead: (key, fallback) => storage.has(key) ? storage.get(key) : fallback,
+        storageWrite: async (key, value) => {
+            storage.set(key, value);
+            storageWrites.push([key, value]);
+        },
+        showToast: (...args) => toasts.push(args),
+        DiagnosticLog: { record: (...args) => diagnostics.push(args) },
+        DebugManager: { log() {} }
+    });
+    result.MediaDLManager._tokenSource = 'native';
+
+    await result._mediaDLSendDownload(
+        'https://www.youtube.com/watch?v=abcdefghijk',
+        false,
+        'native-download-token'
+    );
+    await result._mediaDLSendDownload(
+        'https://www.youtube.com/watch?v=abcdefghijk',
+        false,
+        'native-download-token'
+    );
+
+    assert.deepEqual(proofOptions, [{ cookieHandoff: true }, { cookieHandoff: true }]);
+    assert.equal(requests.length, 2);
+    assert.equal(JSON.parse(requests[0].data).cookies.length, 2);
+    assert.equal(storageWrites.length, 1);
+    assert.deepEqual(storageWrites[0], ['ytkit_cookie_handoff_disclosed_v1', true]);
+    assert.equal(toasts.filter(([message]) => /only the required YouTube sign-in cookies/i.test(message)).length, 1);
+
+    const serializedDiagnostics = JSON.stringify(diagnostics);
+    for (const secret of [cookieCapabilitySecret, loginSecret, sidSecret, 'LOGIN_INFO', 'SAPISID']) {
+        assert.equal(serializedDiagnostics.includes(secret), false,
+            'cookie diagnostics must include counts only');
+    }
+    assert.match(serializedDiagnostics, /status=ok protocol=1 accepted=2 bytes=37 dropped=3/);
+});
+
 test('downloadUI MediaDLManager reports native-channel-required when legacy health token echo is disabled', async () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',

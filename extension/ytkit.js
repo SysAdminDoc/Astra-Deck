@@ -936,30 +936,44 @@
     }
 
     const browserCookies = {
-        list(filter, callback) {
-            sendRuntimeMessage({
-                type: 'EXT_COOKIE_LIST',
-                filter
-            }).then((result) => {
-                if (!result) {
-                    callback(null, 'No response from background');
-                    return;
-                }
-                callback(result.cookies, result.error);
-            }).catch((error) => {
-                callback(null, error.message);
-            });
-        },
-        listAsync(filter) {
-            return new Promise((resolve, reject) => {
-                this.list(filter, (cookies, error) => {
-                    if (error) {
-                        reject(new Error(error));
-                        return;
-                    }
-                    resolve(cookies || []);
+        async getDownloadHandoff(capability) {
+            const token = typeof capability?.token === 'string' ? capability.token : '';
+            const protocolVersion = Number(capability?.protocolVersion);
+            if (!token || !Number.isInteger(protocolVersion)) {
+                const error = new Error('Authenticated cookie handoff is unavailable.');
+                error.code = 'COOKIE_CAPABILITY_INVALID';
+                throw error;
+            }
+            let result;
+            try {
+                result = await sendRuntimeMessage({
+                    type: 'YTKIT_COOKIE_HANDOFF',
+                    capability: token,
+                    protocolVersion
                 });
-            });
+            } catch (_) {
+                const error = new Error('Authenticated cookie handoff is unavailable.');
+                error.code = 'COOKIE_HANDOFF_MESSAGE_FAILED';
+                throw error;
+            }
+            if (!result?.ok || !Array.isArray(result.cookies)) {
+                const error = new Error('Authenticated cookie handoff is unavailable.');
+                error.code = typeof result?.error?.code === 'string'
+                    ? result.error.code.slice(0, 80)
+                    : 'COOKIE_HANDOFF_REJECTED';
+                throw error;
+            }
+            const diagnostics = result.diagnostics || {};
+            return {
+                cookies: result.cookies,
+                diagnostics: {
+                    protocolVersion: Number(diagnostics.protocolVersion) || protocolVersion,
+                    examinedCount: Number(diagnostics.examinedCount) || 0,
+                    acceptedCount: Number(diagnostics.acceptedCount) || 0,
+                    acceptedBytes: Number(diagnostics.acceptedBytes) || 0,
+                    droppedCount: Number(diagnostics.droppedCount) || 0
+                }
+            };
         }
     };
 
@@ -975,13 +989,23 @@ return response;
 });
 };
 
-    async function requestNativeDownloaderToken() {
+    async function requestNativeDownloaderToken(options = {}) {
         if (!hasExtensionContext()) {
             return { token: null, error: 'Extension context unavailable' };
         }
         try {
-            const response = await sendRuntimeMessage({ type: 'NATIVE_MSG_GET_TOKEN' });
-            if (response && response.token) return { token: response.token, error: null };
+            const message = { type: 'NATIVE_MSG_GET_TOKEN' };
+            if (options.cookieHandoff === true) message.purpose = 'cookie-handoff';
+            const response = await sendRuntimeMessage(message);
+            if (response && response.token) {
+                return {
+                    token: response.token,
+                    service: response.service || null,
+                    api: Number.isInteger(response.api) ? response.api : null,
+                    cookieCapability: response.cookieCapability || null,
+                    error: null
+                };
+            }
             return { token: null, error: response?.error || 'Native messaging token unavailable' };
         } catch (error) {
             return { token: null, error: error?.message || 'Native messaging token failed' };
