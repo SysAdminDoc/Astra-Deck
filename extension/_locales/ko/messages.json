@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{categories}개 카테고리에서 {enabled}/{total}개 설정 활성화"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count}개 변경됨"
+  },
+  "schemaOverviewChangedView": {
+    "message": "기본값과 다른 설정"
+  },
+  "schemaOverviewAllView": {
+    "message": "모든 설정 표시"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "변경된 설정 복사"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "변경된 설정을 클립보드에 복사했습니다."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "기본값과 다른 설정이 없습니다."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "변경된 설정을 복사하지 못했습니다."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "현재"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "기본값"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "모든 설정이 기본값을 사용합니다."
+  },
   "schemaOverviewEyebrow": {
     "message": "설정 개요"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "설정 변경 도구"
   },
   "searchWatchClose": {
     "message": "검색 결과 닫기"

@@ -593,6 +593,12 @@ let aiCredentialProviders = Object.create(null);
 const schemaOverviewSection = $('#schema-overview');
 const schemaOverviewCount = $('#schema-overview-count');
 const schemaOverviewList = $('#schema-overview-list');
+const schemaOverviewDiffCount = $('#schema-overview-diff-count');
+const schemaOverviewDiffToggle = $('#schema-overview-diff-toggle');
+const schemaOverviewDiffCopy = $('#schema-overview-diff-copy');
+const schemaOverviewDiff = $('#schema-overview-diff');
+const schemaOverviewDiffEmpty = $('#schema-overview-diff-empty');
+const schemaOverviewDiffList = $('#schema-overview-diff-list');
 
 // v4.24.0: which category rows are currently expanded. Stored in a
 // Set so re-renders preserve open state across storage.onChanged
@@ -602,7 +608,7 @@ const schemaOverviewList = $('#schema-overview-list');
 // mirrored into ext.storage.local under SCHEMA_OVERVIEW_EXPANDED_KEY
 // so the popup remembers which categories the user had open.
 const SCHEMA_OVERVIEW_EXPANDED_KEY = 'ytkit_popup_schema_overview_expanded';
-const schemaOverviewState = { expanded: new Set() };
+const schemaOverviewState = { expanded: new Set(), showChangedOnly: false };
 
 // v4.29.0: persist popup overview expansion across opens. Stored as a
 // plain string array rather than a Set for ext.storage compatibility.
@@ -2766,6 +2772,144 @@ function renderDataFlowPanel() {
     dataFlowSection.hidden = false;
 }
 
+function getVisibleSchemaChanges(scope, settings, effectiveProfile) {
+    if (typeof scope.getChangedSettings !== 'function') return [];
+    const policy = ensurePolicyProfile();
+    return scope.getChangedSettings(settings).filter((change) => {
+        const entry = typeof scope.findSettingEntry === 'function'
+            ? scope.findSettingEntry(change.key)
+            : scope.SETTINGS_SCHEMA.find((candidate) => candidate.key === change.key);
+        return !policy || policy.isEntryAllowedInProfile(entry, effectiveProfile);
+    });
+}
+
+function formatSchemaDiffValue(value, key) {
+    const safe = redactBugReportSettings({ [key]: value })[key];
+    if (safe === undefined) return '—';
+    if (typeof safe === 'string') return safe;
+    try { return JSON.stringify(safe); } catch (_) {
+        // reason: a malformed imported value should still be visible as a
+        // bounded scalar instead of breaking the changed-settings view.
+        return String(safe);
+    }
+}
+
+function sanitizeSchemaDiff(changes) {
+    return changes.map((change) => ({
+        key: change.key,
+        category: change.category,
+        current: redactBugReportSettings({ [change.key]: change.currentValue })[change.key],
+        default: redactBugReportSettings({ [change.key]: change.defaultValue })[change.key]
+    }));
+}
+
+function formatSchemaDiffReport(changes) {
+    return JSON.stringify({
+        astraDeckSettingsDiff: true,
+        exportedAt: new Date().toISOString(),
+        changed: sanitizeSchemaDiff(changes)
+    }, null, 2);
+}
+
+function renderSchemaDiff(changes) {
+    if (schemaOverviewDiffCount) {
+        schemaOverviewDiffCount.textContent = t('schemaOverviewChangedCountTpl', '{count} changed')
+            .replace('{count}', String(changes.length));
+    }
+    if (schemaOverviewDiffToggle) {
+        schemaOverviewDiffToggle.setAttribute('aria-pressed', String(schemaOverviewState.showChangedOnly));
+        schemaOverviewDiffToggle.textContent = schemaOverviewState.showChangedOnly
+            ? t('schemaOverviewAllView', 'Show all settings')
+            : t('schemaOverviewChangedView', 'Changed from defaults');
+    }
+    if (schemaOverviewDiff) schemaOverviewDiff.hidden = !schemaOverviewState.showChangedOnly;
+    if (schemaOverviewList) schemaOverviewList.hidden = schemaOverviewState.showChangedOnly;
+    if (!schemaOverviewDiffList) return;
+    schemaOverviewDiffList.textContent = '';
+    if (schemaOverviewDiffEmpty) schemaOverviewDiffEmpty.hidden = changes.length > 0;
+    for (const change of changes) {
+        const li = document.createElement('li');
+        li.className = 'schema-overview-diff-row';
+
+        const head = document.createElement('div');
+        head.className = 'schema-overview-diff-head';
+        const label = document.createElement('strong');
+        label.textContent = typeof window.__YTKIT_SETTINGS_SCHEMA__?.humanizeSettingKey === 'function'
+            ? window.__YTKIT_SETTINGS_SCHEMA__.humanizeSettingKey(change.key)
+            : change.key;
+        label.title = change.key;
+        const category = document.createElement('span');
+        category.textContent = change.category;
+        head.appendChild(label);
+        head.appendChild(category);
+
+        const values = document.createElement('div');
+        values.className = 'schema-overview-diff-values';
+        const current = document.createElement('span');
+        current.className = 'schema-overview-diff-value';
+        current.textContent = t('schemaOverviewDiffCurrent', 'Current') + ': '
+            + formatSchemaDiffValue(change.currentValue, change.key);
+        const defaultValue = document.createElement('span');
+        defaultValue.className = 'schema-overview-diff-value schema-overview-diff-default';
+        defaultValue.textContent = t('schemaOverviewDiffDefault', 'Default') + ': '
+            + formatSchemaDiffValue(change.defaultValue, change.key);
+        values.appendChild(current);
+        values.appendChild(defaultValue);
+
+        li.appendChild(head);
+        li.appendChild(values);
+        schemaOverviewDiffList.appendChild(li);
+    }
+}
+
+async function copySchemaOverviewDiff() {
+    if (!schemaOverviewDiffCopy) return;
+    const scope = window.__YTKIT_SETTINGS_SCHEMA__;
+    if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA)) return;
+    const settings = popupState.settings || {};
+    const policy = ensurePolicyProfile();
+    const effectiveProfile = policy
+        ? policy.resolveEffectiveProfile(settings)
+        : 'store-safe';
+    const changes = getVisibleSchemaChanges(scope, settings, effectiveProfile);
+    if (!changes.length) {
+        showStatus(t('schemaOverviewCopyDiffEmpty', 'No settings differ from their defaults.'), 'info', 3200);
+        return;
+    }
+    schemaOverviewDiffCopy.disabled = true;
+    const payload = formatSchemaDiffReport(changes);
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(payload);
+        } else {
+            throw new Error('clipboard unavailable');
+        }
+        showStatus(t('schemaOverviewCopyDiffDone', 'Changed settings copied to clipboard.'), 'ok', 2600);
+    } catch (_) {
+        // reason: popup clipboard permissions vary by browser; preserve the
+        // same textarea fallback used by the other report-copy surfaces.
+        const textarea = document.createElement('textarea');
+        textarea.value = payload;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        let copied = false;
+        try { copied = document.execCommand('copy'); } catch (_) {
+            // reason: execCommand is unavailable in hardened popup contexts
+            copied = false;
+        }
+        textarea.remove();
+        showStatus(copied
+            ? t('schemaOverviewCopyDiffDone', 'Changed settings copied to clipboard.')
+            : t('schemaOverviewCopyDiffFail', 'Could not copy changed settings.'),
+        copied ? 'ok' : 'error', copied ? 2600 : 3600);
+    } finally {
+        schemaOverviewDiffCopy.disabled = false;
+    }
+}
+
 // v4.23.0: schema-driven category overview. Reads SETTINGS_SCHEMA
 // (bundled in popup.html as core/settings-schema.js) and renders a
 // dense per-category roll-up of enabled-vs-total counts. Internal
@@ -2825,6 +2969,7 @@ function renderSchemaOverview() {
     const effectiveProfile = policy
         ? policy.resolveEffectiveProfile(settings || {})
         : 'store-safe';
+    renderSchemaDiff(getVisibleSchemaChanges(scope, settings, effectiveProfile));
     let nonInternalTotal = 0;
     let nonInternalEnabled = 0;
     for (const entry of scope.SETTINGS_SCHEMA) {
@@ -2920,6 +3065,17 @@ function renderSchemaOverview() {
 
         schemaOverviewList.appendChild(li);
     }
+}
+
+if (schemaOverviewDiffToggle) {
+    schemaOverviewDiffToggle.addEventListener('click', () => {
+        schemaOverviewState.showChangedOnly = !schemaOverviewState.showChangedOnly;
+        renderSchemaOverview();
+        schemaOverviewDiffToggle.focus();
+    });
+}
+if (schemaOverviewDiffCopy) {
+    schemaOverviewDiffCopy.addEventListener('click', () => { void copySchemaOverviewDiff(); });
 }
 
 // Keyboard-focus restoration after a renderSchemaOverview() rebuild.
@@ -3681,6 +3837,14 @@ if (healthSaveBtn) {
             } catch (_) {
                 // reason: active-tab API health is supplemental; bundle ships without it on failure
             }
+            const schemaScope = window.__YTKIT_SETTINGS_SCHEMA__;
+            const policy = ensurePolicyProfile();
+            const effectiveProfile = policy
+                ? policy.resolveEffectiveProfile(settings)
+                : 'store-safe';
+            const settingsDiff = schemaScope && Array.isArray(schemaScope.SETTINGS_SCHEMA)
+                ? sanitizeSchemaDiff(getVisibleSchemaChanges(schemaScope, settings, effectiveProfile))
+                : [];
             const payload = {
                 astraDeckBugReport: true,
                 schemaVersion: 2,
@@ -3693,6 +3857,7 @@ if (healthSaveBtn) {
                 swLifecycle,
                 externalApiHealth,
                 settings: sanitized,
+                settingsDiff,
                 errors,
             };
             const json = JSON.stringify(payload, null, 2);

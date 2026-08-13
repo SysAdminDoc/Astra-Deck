@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} configuraciones activas en {categories} categorías"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count} modificados"
+  },
+  "schemaOverviewChangedView": {
+    "message": "Cambios respecto a los valores predeterminados"
+  },
+  "schemaOverviewAllView": {
+    "message": "Mostrar todos los ajustes"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "Copiar ajustes modificados"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "Ajustes modificados copiados al portapapeles."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "Ningún ajuste difiere de su valor predeterminado."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "No se pudieron copiar los ajustes modificados."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "Actual"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "Predeterminado"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "Todos los ajustes usan sus valores predeterminados."
+  },
   "schemaOverviewEyebrow": {
     "message": "Resumen de configuración"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "Herramientas de cambios de ajustes"
   },
   "searchWatchClose": {
     "message": "Cerrar resultados de búsqueda"

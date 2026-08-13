@@ -742,7 +742,7 @@
     "message": "تنزيل الفيديو بصيغة {format} بجودة {quality}"
   },
   "dlPopupDefault": {
-    "message": "افتراضي"
+    "message": "الافتراضي"
   },
   "dlPopupDownloaderOffline": {
     "message": "المُنزِّل غير مُشغَّل"
@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} إعداد مُفعَّل عبر {categories} فئة"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count} تغييرات"
+  },
+  "schemaOverviewChangedView": {
+    "message": "المتغيّرة عن الإعدادات الافتراضية"
+  },
+  "schemaOverviewAllView": {
+    "message": "عرض كل الإعدادات"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "نسخ الإعدادات المتغيّرة"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "نُسخت الإعدادات المتغيّرة إلى الحافظة."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "لا تختلف أي إعدادات عن قيمها الافتراضية."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "تعذّر نسخ الإعدادات المتغيّرة."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "الحالي"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "الافتراضي"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "تستخدم كل الإعدادات قيمها الافتراضية."
+  },
   "schemaOverviewEyebrow": {
     "message": "نظرة عامة على الإعدادات"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "أدوات مقارنة الإعدادات"
   },
   "searchWatchClose": {
     "message": "إغلاق نتائج البحث"

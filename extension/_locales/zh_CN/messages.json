@@ -742,7 +742,7 @@
     "message": "以 {quality} 下载为 {format} 格式的视频"
   },
   "dlPopupDefault": {
-    "message": "默认"
+    "message": "默认值"
   },
   "dlPopupDownloaderOffline": {
     "message": "下载器未运行"
@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} 项设置已开启，分布在 {categories} 个分类中"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "已更改 {count} 项"
+  },
+  "schemaOverviewChangedView": {
+    "message": "查看与默认值的差异"
+  },
+  "schemaOverviewAllView": {
+    "message": "显示所有设置"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "复制已更改的设置"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "已将更改的设置复制到剪贴板。"
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "没有设置偏离默认值。"
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "无法复制更改的设置。"
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "当前值"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "默认值"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "所有设置均使用默认值。"
+  },
   "schemaOverviewEyebrow": {
     "message": "设置概览"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "设置差异工具"
   },
   "searchWatchClose": {
     "message": "关闭搜索结果"

@@ -7985,7 +7985,7 @@ test('v4.24.0 popup.js declares schemaOverviewState with an expanded Set', () =>
     const src = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
     );
-    assert.match(src, /const schemaOverviewState = \{ expanded: new Set\(\) \};/,
+    assert.match(src, /const schemaOverviewState = \{ expanded: new Set\(\), showChangedOnly: false \};/,
         'popup.js must define schemaOverviewState with an expanded Set');
 });
 
@@ -8310,6 +8310,63 @@ test('v4.28.0 humanizeSettingKey inserts spaces around digit runs', () => {
     const { humanizeSettingKey } = require('../extension/core/settings-schema');
     assert.equal(humanizeSettingKey('vp9Codec'),       'VP9 codec');
     assert.equal(humanizeSettingKey('av1ForceEnable'), 'AV1 force enable');
+});
+
+test('settings schema reports only persisted user changes from defaults', () => {
+    const { getChangedSettings, settingsValuesEqual } = require('../extension/core/settings-schema');
+    const schema = [
+        { key: 'enabled', category: 'test', type: 'boolean', defaultValue: false },
+        { key: 'untouched', category: 'test', type: 'boolean', defaultValue: true },
+        { key: 'rules', category: 'test', type: 'array', defaultValue: [] },
+        { key: 'meter', category: 'test', type: 'object', defaultValue: { date: '', seconds: 0 } },
+        { key: '_internal', category: 'test', type: 'string', defaultValue: '' , internal: true },
+    ];
+    const changes = getChangedSettings({
+        enabled: true,
+        untouched: undefined,
+        rules: ['sponsor', 'news'],
+        meter: { seconds: 0, date: '' },
+        _internal: 'diagnostic-only'
+    }, schema);
+    assert.deepEqual(changes, [
+        {
+            key: 'enabled',
+            category: 'test',
+            type: 'boolean',
+            currentValue: true,
+            defaultValue: false
+        },
+        {
+            key: 'rules',
+            category: 'test',
+            type: 'array',
+            currentValue: ['sponsor', 'news'],
+            defaultValue: []
+        }
+    ]);
+    assert.equal(settingsValuesEqual({ nested: { first: 1, second: 2 } },
+        { nested: { second: 2, first: 1 } }), true,
+    'object insertion order must not create a false settings diff');
+    assert.equal(settingsValuesEqual(['sponsor', 'intro'], ['intro', 'sponsor']), false,
+        'array order remains meaningful');
+});
+
+test('popup exposes a redacted changed-settings view and diagnostics field', () => {
+    const popup = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8');
+    const html = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8');
+    assert.match(html, /id="schema-overview-diff-toggle"/);
+    assert.match(html, /id="schema-overview-diff-copy"/);
+    assert.match(html, /id="schema-overview-diff-list"/);
+    assert.match(popup, /scope\.getChangedSettings\(settings\)/,
+        'popup must derive the diff from the shared schema helper');
+    assert.match(popup,
+        /redactBugReportSettings\(\{ \[change\.key\]: change\.currentValue \}\)\[change\.key\]/,
+        'popup must redact current values before displaying or copying them');
+    assert.match(popup,
+        /redactBugReportSettings\(\{ \[change\.key\]: change\.defaultValue \}\)\[change\.key\]/,
+        'popup must redact default values before displaying or copying them');
+    assert.match(popup, /settingsDiff,/,
+        'diagnostic bundles must carry the changed-settings diff');
 });
 
 test('v4.28.0 popup schema-overview row labels prefer humanizeSettingKey output', () => {

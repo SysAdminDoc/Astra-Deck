@@ -45,6 +45,7 @@ const SURFACES = Object.freeze([
         height: 800,
         settleMs: 2200,
         themes: Object.freeze(['dark']),
+        settingsDiff: true,
     }),
     Object.freeze({
         name: 'sidepanel',
@@ -485,6 +486,7 @@ async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = '
     const url = new URL(fileUrl(path.join(stageDir, surface.page)));
     url.searchParams.set('theme', theme);
     if (locale) url.searchParams.set('locale', locale);
+    if (surface.settingsDiff) url.searchParams.set('settingsDiff', '1');
     await client.send('Page.navigate', { url: url.href });
     await waitFor(
         () => client.evaluate("document.readyState === 'complete'"),
@@ -567,6 +569,86 @@ async function captureSurface(client, surface, theme) {
     fs.writeFileSync(output, Buffer.from(image.data, 'base64'));
 }
 
+async function auditPopupSettingsDiff(client, surface, stateName) {
+    if (surface.name !== 'popup') return 0;
+    const result = await client.evaluate(`(async () => {
+        const overview = document.getElementById('schema-overview');
+        const count = document.getElementById('schema-overview-diff-count');
+        const toggle = document.getElementById('schema-overview-diff-toggle');
+        const copy = document.getElementById('schema-overview-diff-copy');
+        const diff = document.getElementById('schema-overview-diff');
+        const allSettings = document.getElementById('schema-overview-list');
+        const rows = document.getElementById('schema-overview-diff-list');
+        if (!overview || !count || !toggle || !copy || !diff || !allSettings || !rows) {
+            return { error: 'changed-settings controls are missing' };
+        }
+        overview.open = true;
+        let copied = '';
+        try {
+            Object.defineProperty(navigator, 'clipboard', {
+                configurable: true,
+                value: { writeText: async (value) => { copied = String(value); } }
+            });
+        } catch (error) {
+            return { error: 'clipboard interception failed: ' + error.message };
+        }
+        toggle.click();
+        copy.click();
+        for (let attempt = 0; attempt < 50 && !copied; attempt += 1) {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        let payload = null;
+        try { payload = JSON.parse(copied); } catch (_) { /* reported below */ }
+        const rowKeys = Array.from(rows.children).map((row) => row.querySelector('strong')?.title || '');
+        return {
+            overviewOpen: overview.open,
+            count: count.textContent || '',
+            pressed: toggle.getAttribute('aria-pressed'),
+            diffHidden: diff.hidden,
+            diffVisible: getComputedStyle(diff).display !== 'none' && diff.getClientRects().length > 0,
+            allSettingsHidden: allSettings.hidden,
+            allSettingsVisible: getComputedStyle(allSettings).display !== 'none' && allSettings.getClientRects().length > 0,
+            rowCount: rows.children.length,
+            rowKeys,
+            rowText: rows.textContent || '',
+            copied,
+            payload,
+        };
+    })()`);
+    if (result.error) throw new Error(`${surface.name}/${stateName}: ${result.error}`);
+    const expectedKeys = ['customCssCode', 'githubFullProfile', 'transcriptViewer'];
+    const failures = [];
+    if (!result.overviewOpen) failures.push('settings overview did not open');
+    if (!/\b3\b/.test(result.count)) failures.push(`changed count is ${JSON.stringify(result.count)}, expected 3`);
+    if (result.pressed !== 'true') failures.push('changed-only toggle is not pressed');
+    if (result.diffHidden) failures.push('changed-settings list stayed hidden');
+    if (!result.diffVisible) failures.push('changed-settings list is not visibly rendered');
+    if (!result.allSettingsHidden) failures.push('all-settings list stayed visible');
+    if (result.allSettingsVisible) failures.push('all-settings list is still visibly rendered');
+    if (result.rowCount !== expectedKeys.length) failures.push(`rendered ${result.rowCount} changed rows, expected 3`);
+    if (JSON.stringify([...result.rowKeys].sort()) !== JSON.stringify(expectedKeys)) {
+        failures.push(`changed row keys are ${JSON.stringify(result.rowKeys)}`);
+    }
+    if (result.rowText.includes('astra-settings-diff-smoke-secret')) failures.push('rendered row leaked custom CSS');
+    if (!result.payload?.astraDeckSettingsDiff) failures.push('copied payload marker is missing');
+    if (result.copied.includes('astra-settings-diff-smoke-secret')) failures.push('copied payload leaked custom CSS');
+    const copiedChanges = Array.isArray(result.payload?.changed) ? result.payload.changed : [];
+    if (copiedChanges.length !== expectedKeys.length) failures.push(`copied ${copiedChanges.length} changes, expected 3`);
+    const customCss = copiedChanges.find((change) => change.key === 'customCssCode');
+    if (!/^\[redacted/.test(customCss?.current || '')) failures.push('copied custom CSS is not redacted');
+    if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+
+    await client.evaluate(`document.getElementById('schema-overview')?.scrollIntoView({ block: 'start' })`);
+    await sleep(120);
+    const image = await client.send('Page.captureScreenshot', {
+        format: 'png',
+        fromSurface: true,
+        captureBeyondViewport: false,
+    });
+    fs.writeFileSync(path.join(OUT_DIR, 'popup-settings-diff.png'), Buffer.from(image.data, 'base64'));
+    return 1;
+}
+
 async function auditSurface(client, stageDir, surface, timeoutMs) {
     const reports = [];
     for (const theme of surface.themes) {
@@ -584,7 +666,10 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             const focusTrapChecks = mode === 'normal'
                 ? await auditFocusTrap(client, surface, `${theme}/${mode}`)
                 : 0;
-            reports.push({ controls, focusTrapChecks, mode, theme, viewport });
+            const settingsDiffChecks = mode === 'normal' && theme === 'dark'
+                ? await auditPopupSettingsDiff(client, surface, `${theme}/${mode}`)
+                : 0;
+            reports.push({ controls, focusTrapChecks, mode, settingsDiffChecks, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -688,6 +773,7 @@ async function main(argv = process.argv.slice(2)) {
                 `[headless-a11y] ${surface.name}: ${reports.length} state(s), `
                 + `${total} keyboard focus visits, `
                 + `${reports.reduce((sum, report) => sum + (report.focusTrapChecks || 0), 0)} focus-trap assertions, `
+                + `${reports.reduce((sum, report) => sum + (report.settingsDiffChecks || 0), 0)} settings-diff assertions, `
                 + 'no obscuring/overflow failures'
             );
         }
@@ -727,6 +813,7 @@ if (require.main === module) {
 module.exports = {
     auditKeyboardPath,
     auditFocusTrap,
+    auditPopupSettingsDiff,
     auditRtlLayout,
     collectFocusableExpression,
     configureRenderedState,

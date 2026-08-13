@@ -6,6 +6,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- Settings Overview now reports every persisted value that differs from its
+  schema default, switches to a focused current-versus-default view, copies a
+  redacted JSON report, and includes the same sanitized diff in diagnostics.
+  The rendered popup smoke exercises the changed-only, redaction, and copy
+  paths in Chromium.
+
+### Fixed
+
+- Changed-only mode now visibly hides the full settings list; the list's flex
+  declaration previously overrode the browser's native `hidden` rendering.
+
 ## [4.60.1] - 2026-08-13
 
 ### Added

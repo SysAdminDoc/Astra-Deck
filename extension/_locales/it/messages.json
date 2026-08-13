@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} impostazioni attive in {categories} categorie"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count} modifiche"
+  },
+  "schemaOverviewChangedView": {
+    "message": "Modifiche rispetto ai valori predefiniti"
+  },
+  "schemaOverviewAllView": {
+    "message": "Mostra tutte le impostazioni"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "Copia impostazioni modificate"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "Impostazioni modificate copiate negli appunti."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "Nessuna impostazione differisce dal valore predefinito."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "Impossibile copiare le impostazioni modificate."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "Attuale"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "Predefinito"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "Tutte le impostazioni usano i valori predefiniti."
+  },
   "schemaOverviewEyebrow": {
     "message": "Panoramica impostazioni"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "Strumenti per le modifiche delle impostazioni"
   },
   "searchWatchClose": {
     "message": "Chiudi i risultati di ricerca"

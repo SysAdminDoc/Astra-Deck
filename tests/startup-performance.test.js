@@ -8,6 +8,7 @@ const path = require('path');
 
 const repoRoot = path.join(__dirname, '..');
 const benchmark = require('../scripts/bench-startup');
+const { buildChromeStub } = require('../scripts/smoke-settings-overlay');
 const source = fs.readFileSync(path.join(repoRoot, 'scripts', 'bench-startup.js'), 'utf8');
 const packageJson = require('../package.json');
 
@@ -90,6 +91,15 @@ test('startup benchmark CLI and check gate are wired to the real fixture', () =>
     assert.match(source, /startup-performance-baseline\.json/);
     assert.equal(benchmark.PHOTOSENSITIVE_FRAME_BUDGET_MS, 1);
     assert.match(source, /photosensitive frame budget/);
+});
+
+test('settings fixture preserves explicit runtime settings after popup smoke seeding', () => {
+    const runtimeSettings = { transcriptViewer: false, blueLightFilter: true };
+    const stub = buildChromeStub(runtimeSettings);
+    assert.match(stub,
+        /const injectedRuntimeSettings = \{"transcriptViewer":false,"blueLightFilter":true\};/);
+    assert.match(stub, /store\.ytSuiteSettings = injectedRuntimeSettings \|\|/,
+        'explicit benchmark settings must win over query-driven popup fixtures');
 });
 
 test('startup benchmark extracts folded-boundary quoted-printable captures', () => {

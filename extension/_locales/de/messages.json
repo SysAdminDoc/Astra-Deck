@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} Einstellungen aktiv in {categories} Kategorien"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count} geändert"
+  },
+  "schemaOverviewChangedView": {
+    "message": "Geänderte Einstellungen"
+  },
+  "schemaOverviewAllView": {
+    "message": "Alle Einstellungen anzeigen"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "Geänderte Einstellungen kopieren"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "Geänderte Einstellungen in die Zwischenablage kopiert."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "Keine Einstellungen weichen von ihren Standardwerten ab."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "Geänderte Einstellungen konnten nicht kopiert werden."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "Aktuell"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "Standard"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "Alle Einstellungen verwenden ihre Standardwerte."
+  },
   "schemaOverviewEyebrow": {
     "message": "Einstellungsübersicht"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "Werkzeuge für Einstellungsänderungen"
   },
   "searchWatchClose": {
     "message": "Suchergebnisse schließen"

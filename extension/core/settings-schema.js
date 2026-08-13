@@ -907,6 +907,65 @@ function findSettingEntry(key, schema) {
     return null;
 }
 
+// Compare schema values without assuming that every setting is scalar. The
+// persisted settings bag is sparse, so callers should resolve an absent key
+// to its schema default before using this helper for an effective-value check.
+function settingsValuesEqual(left, right, comparedPairs) {
+    if (left === right) return true;
+    if (Number.isNaN(left) && Number.isNaN(right)) return true;
+    if (typeof left !== typeof right) return false;
+    if (!left || !right || typeof left !== "object") return false;
+
+    const leftIsArray = Array.isArray(left);
+    if (leftIsArray !== Array.isArray(right)) return false;
+    if (!leftIsArray) {
+        const leftPrototype = Object.getPrototypeOf(left);
+        const rightPrototype = Object.getPrototypeOf(right);
+        const leftIsPlain = leftPrototype === Object.prototype || leftPrototype === null;
+        const rightIsPlain = rightPrototype === Object.prototype || rightPrototype === null;
+        if (!leftIsPlain || !rightIsPlain) return false;
+    }
+
+    const pairs = comparedPairs || new WeakMap();
+    let rights = pairs.get(left);
+    if (rights?.has(right)) return true;
+    if (!rights) {
+        rights = new WeakSet();
+        pairs.set(left, rights);
+    }
+    rights.add(right);
+
+    if (leftIsArray) {
+        return left.length === right.length
+            && left.every((value, index) => settingsValuesEqual(value, right[index], pairs));
+    }
+    const leftKeys = Object.keys(left);
+    const rightKeys = Object.keys(right);
+    return leftKeys.length === rightKeys.length
+        && leftKeys.every((key) => Object.prototype.hasOwnProperty.call(right, key)
+            && settingsValuesEqual(left[key], right[key], pairs));
+}
+
+// Return the user-visible settings whose persisted value differs from the
+// schema default. Untouched sparse keys are deliberately omitted: an absent
+// key has the same effective value as its default and is not a user change.
+function getChangedSettings(settings, schema) {
+    const src = schema || SETTINGS_SCHEMA;
+    const bag = settings && typeof settings === "object" ? settings : {};
+    return src
+        .filter((entry) => !entry.internal
+            && Object.prototype.hasOwnProperty.call(bag, entry.key)
+            && bag[entry.key] !== undefined
+            && !settingsValuesEqual(bag[entry.key], entry.defaultValue))
+        .map((entry) => ({
+            key: entry.key,
+            category: entry.category,
+            type: entry.type,
+            currentValue: bag[entry.key],
+            defaultValue: entry.defaultValue
+        }));
+}
+
 // Internal storage-only keys (prefix `_`). Excluded from the popup
 // toggle surface and from data-flow advertising; still imported/exported.
 function isInternalSettingKey(key) {
@@ -972,6 +1031,7 @@ if (typeof module !== "undefined" && module.exports) {
         SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
         CAPABILITIES,
         buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,
+        settingsValuesEqual, getChangedSettings,
         isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
         humanizeSettingKey
     };
@@ -981,6 +1041,7 @@ if (typeof globalThis !== "undefined") {
         SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
         CAPABILITIES,
         buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,
+        settingsValuesEqual, getChangedSettings,
         isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
         humanizeSettingKey
     };
