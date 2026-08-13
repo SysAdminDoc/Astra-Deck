@@ -7477,5 +7477,32 @@
   },
   "selectorHealthExportAria": {
     "message": "Selektor-Gesundheitsbericht als JSON exportieren"
+  },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "Video Hider kann Daten von dieser Website abrufen, bis der Zugriff entfernt wird."
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "{count} gewährt"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "Gewährter Websitezugriff"
+  },
+  "dataFlowGrantRemove": {
+    "message": "Zugriff entfernen"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "Websitezugriff für {host} entfernen"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "Websitezugriff für {host} wurde entfernt."
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "Websitezugriff für {host} konnte nicht entfernt werden."
+  },
+  "filterListStopFailed": {
+    "message": "Die Filterliste konnte nicht abbestellt werden."
+  },
+  "filterListStoppedTpl": {
+    "message": "Die Filterliste von {host} wird nicht mehr verwendet. Es bleibt kein ausschließlich dafür erteilter Websitezugriff bestehen."
   }
 }

@@ -440,7 +440,8 @@ const popupState = {
     _optionalHostGrantState: {
         missingKeys: new Set(),
         missingOrigins: new Set()
-    }
+    },
+    _dataFlowGrantRenderToken: 0
 };
 
 async function ensureCapabilityMap() {
@@ -579,6 +580,9 @@ const externalHealthCopyStatus = $('#external-health-copy-status');
 const dataFlowSection = $('#data-flow');
 const dataFlowSummary = $('#data-flow-summary');
 const dataFlowList = $('#data-flow-list');
+const dataFlowGrants = $('#data-flow-grants');
+const dataFlowGrantsCount = $('#data-flow-grants-count');
+const dataFlowGrantsList = $('#data-flow-grants-list');
 
 const aiCredentialSection = $('#ai-credential-manager');
 const aiCredentialProvider = $('#ai-credential-provider');
@@ -975,10 +979,32 @@ function getManifestOptionalHostPermissions() {
     }
 }
 
+function getManifestRequiredHostPermissions() {
+    try {
+        const declared = ext?.runtime?.getManifest?.().host_permissions || [];
+        return Array.isArray(declared) ? declared : [];
+    } catch (_) {
+        return [];
+    }
+}
+
 function uniqueOptionalOrigins(origins) {
     if (!Array.isArray(origins)) return [];
     return Array.from(new Set(origins.filter((origin) =>
         typeof origin === 'string' && origin.trim()).map((origin) => origin.trim())));
+}
+
+function createOptionalHostPermissionHelper() {
+    const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
+    return typeof factory === 'function' ? factory() : null;
+}
+
+function getConfiguredFilterListDescriptor(settings = popupState.settings) {
+    const describe = window.YTKitCore?.describeRemoteListUrl;
+    const configured = typeof settings?.hideVideosFilterListUrl === 'string'
+        ? settings.hideVideosFilterListUrl
+        : '';
+    return typeof describe === 'function' ? describe(configured) : { ok: false };
 }
 
 function getDirectOptionalHostsForSetting(key, declaredSet, profile = 'store-safe') {
@@ -1018,8 +1044,7 @@ function getDeclaredOptionalHostsForSetting(key, options = {}) {
 async function requestOptionalHostOrigins(origins) {
     origins = uniqueOptionalOrigins(origins);
     if (!origins.length) return true;
-    const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
-    const helper = (typeof factory === 'function') ? factory() : null;
+    const helper = createOptionalHostPermissionHelper();
     if (!helper || !helper.isSupported()) {
         const error = new Error('Optional host permission prompts are not available in this browser.');
         error.code = 'OPTIONAL_HOST_PERMISSION_DENIED';
@@ -1145,8 +1170,7 @@ async function grantMissingOptionalHostPermissions() {
 
 async function refreshOptionalHostGrantState(options = {}) {
     const settings = popupState.settings || {};
-    const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
-    const helper = (typeof factory === 'function') ? factory() : null;
+    const helper = createOptionalHostPermissionHelper();
     const nextMissingKeys = new Set();
     const nextMissingOrigins = new Set();
 
@@ -1207,18 +1231,87 @@ async function refreshOptionalHostGrantState(options = {}) {
 }
 
 function registerOptionalHostPermissionListeners() {
-    const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
-    const helper = (typeof factory === 'function') ? factory() : null;
+    const helper = createOptionalHostPermissionHelper();
     if (!helper) return;
     helper.onAdded(() => {
-        void refreshOptionalHostGrantState();
+        void refreshOptionalHostGrantState().finally(() => renderDataFlowPanel());
     });
     helper.onRemoved(() => {
-        void refreshOptionalHostGrantState({ notify: true });
+        void refreshOptionalHostGrantState({ notify: true }).finally(() => renderDataFlowPanel());
     });
 }
 
+async function revokeRuntimeOptionalHostOrigin(originPattern) {
+    const describePattern = window.YTKitCore?.describeRemoteListOriginPattern;
+    const described = typeof describePattern === 'function'
+        ? describePattern(originPattern)
+        : { ok: false };
+    if (!described.ok) {
+        return { ok: false, removed: false, code: 'INVALID_ORIGIN_PATTERN', hostname: '' };
+    }
+    if (getManifestRequiredHostPermissions().includes(described.originPattern)) {
+        return {
+            ok: true,
+            removed: false,
+            required: true,
+            hostname: described.hostname
+        };
+    }
+    const helper = createOptionalHostPermissionHelper();
+    if (!helper || typeof helper.getAll !== 'function' || typeof helper.remove !== 'function') {
+        return {
+            ok: false,
+            removed: false,
+            code: 'PERMISSIONS_API_UNAVAILABLE',
+            hostname: described.hostname
+        };
+    }
+    try {
+        const snapshot = await helper.getAll();
+        const grantedOrigins = uniqueOptionalOrigins(snapshot?.origins);
+        if (!grantedOrigins.includes(described.originPattern)) {
+            return { ok: true, removed: false, hostname: described.hostname };
+        }
+        const removed = await helper.remove([described.originPattern]);
+        if (!removed) {
+            return {
+                ok: false,
+                removed: false,
+                code: 'PERMISSION_REMOVE_REFUSED',
+                hostname: described.hostname
+            };
+        }
+        await refreshOptionalHostGrantState({ render: false });
+        return { ok: true, removed: true, hostname: described.hostname };
+    } catch (error) {
+        console.warn('[Astra Deck popup] Optional host revoke failed:', error);
+        return {
+            ok: false,
+            removed: false,
+            code: 'PERMISSION_REMOVE_FAILED',
+            hostname: described.hostname,
+            error: error?.message || String(error)
+        };
+    }
+}
+
+async function reconcileFilterListGrantTransition(previousSettings, nextSettings) {
+    const previous = getConfiguredFilterListDescriptor(previousSettings);
+    const next = getConfiguredFilterListDescriptor(nextSettings);
+    if (!previous.ok || previous.originPattern === (next.ok ? next.originPattern : '')) {
+        return { ok: true, removed: false, hostname: previous.ok ? previous.hostname : '' };
+    }
+    return revokeRuntimeOptionalHostOrigin(previous.originPattern);
+}
+
+function formatPermissionCleanupFailure(cleanup) {
+    if (cleanup?.ok !== false) return '';
+    return t('dataFlowGrantRemoveFailedTpl', 'Could not remove site access for {host}.')
+        .replace('{host}', cleanup.hostname || t('optionalHostUnknown', 'the previous host'));
+}
+
 async function writeSetting(key, value) {
+    const previousSettings = popupState.settings;
     await requestOptionalHostsForSetting(key, value);
     const result = await getSettingsMutationController().mutate(key, value);
     if (!result.ok) {
@@ -1228,11 +1321,15 @@ async function writeSetting(key, value) {
         throw error;
     }
     popupState.settings = result.settings;
+    const permissionCleanup = key === 'hideVideosFilterListUrl'
+        ? await reconcileFilterListGrantTransition(previousSettings, result.settings)
+        : { ok: true, removed: false, hostname: '' };
     await refreshOptionalHostGrantState({ render: false });
-    return result;
+    return { ...result, permissionCleanup };
 }
 
 async function replaceSettings(settings) {
+    const previousSettings = popupState.settings;
     const result = await getSettingsMutationController().replace(settings);
     if (!result.ok) {
         const error = new Error(result.error?.message || 'Could not replace settings.');
@@ -1241,7 +1338,12 @@ async function replaceSettings(settings) {
         throw error;
     }
     popupState.settings = result.settings;
-    return result;
+    const permissionCleanup = await reconcileFilterListGrantTransition(
+        previousSettings,
+        result.settings
+    );
+    await refreshOptionalHostGrantState({ render: false });
+    return { ...result, permissionCleanup };
 }
 
 // ── URL / tab classification ──
@@ -2698,10 +2800,110 @@ async function renderFeaturePerfDashboard() {
 // entirely inside the popup context — no content-script round-trip
 // required, since the catalogue is static + the live settings are
 // already in popupState.
+function getRemovableRuntimeHostDescriptors(permissionSnapshot) {
+    const describePattern = window.YTKitCore?.describeRemoteListOriginPattern;
+    if (typeof describePattern !== 'function') return [];
+    const required = new Set(getManifestRequiredHostPermissions());
+    return uniqueOptionalOrigins(permissionSnapshot?.origins)
+        .filter((originPattern) => !required.has(originPattern))
+        .map((originPattern) => describePattern(originPattern))
+        .filter((described) => described.ok)
+        .sort((left, right) => left.hostname.localeCompare(right.hostname));
+}
+
+async function removeDataFlowRuntimeGrant(described, button) {
+    if (!described?.ok || !button) return;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    try {
+        const configured = getConfiguredFilterListDescriptor();
+        let cleanup;
+        if (configured.ok && configured.originPattern === described.originPattern) {
+            const result = await writeSetting('hideVideosFilterListUrl', '');
+            cleanup = result.permissionCleanup;
+            syncFilterListUrlInput(popupState.settings);
+            await refreshFilterListStatus();
+        } else {
+            cleanup = await revokeRuntimeOptionalHostOrigin(described.originPattern);
+        }
+        if (!cleanup?.ok) throw new Error(cleanup?.code || 'permission removal failed');
+        render(popupState.settings, q.value);
+        renderDataFlowPanel();
+        renderSchemaOverview();
+        showStatus(t('dataFlowGrantRemovedTpl', 'Removed site access for {host}.')
+            .replace('{host}', described.hostname), 'success', 3600);
+    } catch (error) {
+        console.warn('[Astra Deck popup] Data-flow grant removal failed:', error);
+        showStatus(t('dataFlowGrantRemoveFailedTpl', 'Could not remove site access for {host}.')
+            .replace('{host}', described.hostname), 'error', 4800);
+        renderDataFlowPanel();
+    } finally {
+        button.removeAttribute('aria-busy');
+        button.disabled = false;
+    }
+}
+
+async function renderDataFlowGrantedHosts(originEntries, renderToken) {
+    if (!dataFlowGrants || !dataFlowGrantsList || !dataFlowGrantsCount) return;
+    const helper = createOptionalHostPermissionHelper();
+    if (!helper || typeof helper.getAll !== 'function') {
+        dataFlowGrants.hidden = true;
+        return;
+    }
+    try {
+        const permissionSnapshot = await helper.getAll();
+        if (renderToken !== popupState._dataFlowGrantRenderToken || dataFlowSection?.hidden) return;
+        const descriptors = getRemovableRuntimeHostDescriptors(permissionSnapshot);
+        dataFlowGrantsList.replaceChildren();
+        dataFlowGrantsCount.textContent = t('dataFlowGrantedHostsCountTpl', '{count} granted')
+            .replace('{count}', String(descriptors.length));
+        for (const described of descriptors) {
+            const catalogueEntry = originEntries.find((entry) =>
+                entry.optionalManifestPermission === described.originPattern);
+            const li = document.createElement('li');
+            li.className = 'data-flow-grant-row';
+            li.dataset.originPattern = described.originPattern;
+
+            const host = document.createElement('span');
+            host.className = 'data-flow-grant-host';
+            host.textContent = described.hostname;
+            host.title = described.hostname;
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'data-flow-grant-remove';
+            remove.textContent = t('dataFlowGrantRemove', 'Remove access');
+            remove.setAttribute('aria-label', t('dataFlowGrantRemoveAriaTpl',
+                'Remove site access for {host}').replace('{host}', described.hostname));
+            remove.addEventListener('click', () => {
+                void removeDataFlowRuntimeGrant(described, remove);
+            });
+
+            const purpose = document.createElement('span');
+            purpose.className = 'data-flow-grant-purpose';
+            purpose.textContent = catalogueEntry?.purpose
+                || t('dataFlowFilterListGrantPurpose',
+                    'Video Hider can fetch data from this site until access is removed.');
+
+            li.appendChild(host);
+            li.appendChild(remove);
+            li.appendChild(purpose);
+            dataFlowGrantsList.appendChild(li);
+        }
+        dataFlowGrants.hidden = descriptors.length === 0;
+    } catch (error) {
+        if (renderToken !== popupState._dataFlowGrantRenderToken) return;
+        console.warn('[Astra Deck popup] Granted host enumeration failed:', error);
+        dataFlowGrants.hidden = true;
+    }
+}
+
 function renderDataFlowPanel() {
     if (!dataFlowSection || !dataFlowList) return;
     const settings = popupState.settings || {};
     if (settings.privacyDataFlowPanel !== true) {
+        popupState._dataFlowGrantRenderToken += 1;
+        if (dataFlowGrants) dataFlowGrants.hidden = true;
         dataFlowSection.hidden = true;
         return;
     }
@@ -2709,6 +2911,8 @@ function renderDataFlowPanel() {
     if (typeof factory !== 'function') {
         // Modules failed to load (CSP regression, missing file). Stay hidden
         // rather than render a broken panel.
+        popupState._dataFlowGrantRenderToken += 1;
+        if (dataFlowGrants) dataFlowGrants.hidden = true;
         dataFlowSection.hidden = true;
         return;
     }
@@ -2770,6 +2974,9 @@ function renderDataFlowPanel() {
             .replace('{total}', String(summary.totalCatalogued));
     }
     dataFlowSection.hidden = false;
+    if (dataFlowGrants) dataFlowGrants.hidden = true;
+    const grantRenderToken = ++popupState._dataFlowGrantRenderToken;
+    void renderDataFlowGrantedHosts(origins, grantRenderToken);
 }
 
 function getVisibleSchemaChanges(scope, settings, effectiveProfile) {
@@ -4702,8 +4909,10 @@ async function refreshFilterList() {
             throw error;
         }
 
+        let permissionCleanup = { ok: true, removed: false, hostname: '' };
         if (popupState.settings.hideVideosFilterListUrl !== described.url) {
-            await writeSetting('hideVideosFilterListUrl', described.url);
+            const writeResult = await writeSetting('hideVideosFilterListUrl', described.url);
+            permissionCleanup = writeResult.permissionCleanup;
             syncFilterListUrlInput(popupState.settings);
         }
         const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_REFRESH_FILTER_LIST');
@@ -4719,13 +4928,52 @@ async function refreshFilterList() {
             return;
         }
         setFilterListStatus('filterListStatusRefreshed', 'Remote filter list refreshed.', 'success');
-        showStatus(t('filterListRefreshed', 'Video Hider filter list refreshed.'), 'success', 3200);
+        const cleanupFailure = formatPermissionCleanupFailure(permissionCleanup);
+        if (cleanupFailure) {
+            showStatus(cleanupFailure, 'error', 5200);
+        } else {
+            showStatus(t('filterListRefreshed', 'Video Hider filter list refreshed.'), 'success', 3200);
+        }
     } catch (error) {
         setFilterListStatus('filterListStatusRefreshFail', 'Could not refresh the list. Check the address, then try again.', 'error');
         showStatus(t('filterListRefreshFail', 'Filter-list refresh failed') + ': ' + error.message, 'error', 5200);
     } finally {
         refreshFilterListButton.removeAttribute('aria-busy');
         refreshFilterListButton.disabled = false;
+    }
+}
+
+async function clearConfiguredFilterListUrl() {
+    if (!filterListUrlInput || filterListUrlInput.value.trim()) return;
+    const configured = getConfiguredFilterListDescriptor();
+    if (!configured.ok && !popupState.settings?.hideVideosFilterListUrl) {
+        setFilterListStatus('filterListStatusReady', 'No filter list is being followed.');
+        return;
+    }
+    filterListUrlInput.disabled = true;
+    if (refreshFilterListButton) refreshFilterListButton.disabled = true;
+    try {
+        const result = await writeSetting('hideVideosFilterListUrl', '');
+        syncFilterListUrlInput(popupState.settings);
+        await refreshFilterListStatus();
+        renderDataFlowPanel();
+        renderSchemaOverview();
+        const cleanupFailure = formatPermissionCleanupFailure(result.permissionCleanup);
+        if (cleanupFailure) {
+            showStatus(cleanupFailure, 'error', 5200);
+        } else {
+            showStatus(t('filterListStoppedTpl',
+                'Stopped following {host}. No filter-list-only site access remains.')
+                .replace('{host}', configured.ok ? configured.hostname : t('optionalHostUnknown', 'the previous host')),
+            'success', 3600);
+        }
+    } catch (error) {
+        console.warn('[Astra Deck popup] Filter-list clear failed:', error);
+        showStatus(t('filterListStopFailed', 'Could not stop following the filter list.'), 'error', 4800);
+        syncFilterListUrlInput(popupState.settings);
+    } finally {
+        filterListUrlInput.disabled = false;
+        if (refreshFilterListButton) refreshFilterListButton.disabled = false;
     }
 }
 
@@ -4738,6 +4986,7 @@ async function importSettings(file) {
         if (file.size > persistedDomains.MAX_BACKUP_BYTES) throw new Error('Import file exceeds the 512 MB safety limit');
         const text = await file.text();
         let data;
+        let permissionCleanup = { ok: true, removed: false, hostname: '' };
         try {
             data = JSON.parse(text);
         } catch (parseError) {
@@ -4803,6 +5052,7 @@ async function importSettings(file) {
             if (importedSettingsToApply) {
                 const result = await replaceSettings(importedSettingsToApply);
                 writes[STORAGE_KEYS.settings] = result.settings;
+                permissionCleanup = result.permissionCleanup;
             }
             if (hasTranscriptDomain && snapshot.pageSnapshotId) {
                 await replaceTranscriptDomain(sanitized.domains.transcriptIndex, snapshot.pageOrigin);
@@ -4834,10 +5084,12 @@ async function importSettings(file) {
                 'Backup imported. Click Undo Import to restore the previous state until you close the browser.');
         const previewSummary = t('statusImportPreviewSummaryTpl', 'Preview: {preview}.')
             .replace('{preview}', previewText);
-        showStatus(t('statusImportSummaryTpl', '{status} {preview}')
+        const importSummary = t('statusImportSummaryTpl', '{status} {preview}')
             .replace('{status}', importedStatus)
-            .replace('{preview}', previewSummary),
-            'success', 6000);
+            .replace('{preview}', previewSummary);
+        const cleanupFailure = formatPermissionCleanupFailure(permissionCleanup);
+        showStatus(cleanupFailure ? importSummary + ' ' + cleanupFailure : importSummary,
+            cleanupFailure ? 'error' : 'success', cleanupFailure ? 7200 : 6000);
     } catch (error) {
         showStatus(t('statusImportFail', 'Import failed') + ': ' + error.message, 'error', 4200);
     } finally {
@@ -5482,6 +5734,8 @@ async function resetAllData() {
     resetButton.disabled = true;
     if (storageBannerResetBtn) storageBannerResetBtn.disabled = true;
     try {
+        const previousSettings = popupState.settings;
+        let permissionCleanup = { ok: true, removed: false, hostname: '' };
         // Snapshot extension-local data in extension IndexedDB and the
         // YouTube-origin transcript store in its own origin. Session storage
         // holds only the small capability token, avoiding its quota ceiling.
@@ -5513,17 +5767,27 @@ async function resetAllData() {
             await clearResetSnapshot();
             throw new Error(`Reset did not complete; previous data was restored: ${error.message}`);
         }
+        // Permissions live outside extension storage, so revoke only after the
+        // recoverable data reset has committed. A failed revoke must not roll
+        // restored user data back into a reset the user already requested.
+        permissionCleanup = await reconcileFilterListGrantTransition(previousSettings, {});
         await renderStorageInfo();
         await loadSettings();
+        await refreshOptionalHostGrantState({ render: false });
         render(popupState.settings, q.value);
         await refreshUndoResetVisibility();
         undoResetButton?.focus?.({ preventScroll: true });
-        showStatus(!snapshot.pageSnapshotId
+        const resetMessage = !snapshot.pageSnapshotId
             ? t('statusResetDoneNoTranscript',
                 'Extension data cleared with Undo available. Transcript data was left unchanged because no responsive YouTube tab was available. Stored AI credentials were retained.')
             : t('statusResetDoneUndo',
-                'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.'),
-        'success', 6000);
+                'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.');
+        if (permissionCleanup.ok === false) {
+            const permissionMessage = formatPermissionCleanupFailure(permissionCleanup);
+            showStatus(resetMessage + ' ' + permissionMessage, 'error', 7200);
+        } else {
+            showStatus(resetMessage, 'success', 6000);
+        }
     } catch (error) {
         showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);
     } finally {
@@ -5555,6 +5819,7 @@ async function undoResetAllData() {
         await clearResetSnapshot();
         await renderStorageInfo();
         await loadSettings();
+        await refreshOptionalHostGrantState({ render: false });
         render(popupState.settings, q.value);
         renderDataFlowPanel();
         renderSchemaOverview();
@@ -5839,7 +6104,7 @@ function installWheelScrolling() {
     if (refreshFilterListButton) refreshFilterListButton.addEventListener('click', () => { void refreshFilterList(); });
     if (filterListUrlInput) {
         filterListUrlInput.addEventListener('change', () => {
-            syncFilterListUrlInput({ hideVideosFilterListUrl: filterListUrlInput.value });
+            if (!filterListUrlInput.value.trim()) void clearConfiguredFilterListUrl();
         });
     }
     if (undoImportButton) {

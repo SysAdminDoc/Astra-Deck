@@ -7477,5 +7477,32 @@
   },
   "selectorHealthExportAria": {
     "message": "导出选择器健康状态 JSON"
+  },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "在移除访问权限之前，Video Hider 可以从此网站获取数据。"
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "已授予 {count} 项"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "已授予的网站访问权限"
+  },
+  "dataFlowGrantRemove": {
+    "message": "移除访问权限"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "移除对 {host} 的网站访问权限"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "已移除对 {host} 的网站访问权限。"
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "无法移除对 {host} 的网站访问权限。"
+  },
+  "filterListStopFailed": {
+    "message": "无法停止关注此过滤列表。"
+  },
+  "filterListStoppedTpl": {
+    "message": "已停止关注 {host}。未保留仅用于过滤列表的网站访问权限。"
   }
 }

@@ -7477,5 +7477,32 @@
   },
   "selectorHealthExportAria": {
     "message": "Esporta lo stato dei selettori in JSON"
+  },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "Video Hider può recuperare dati da questo sito finché l'accesso non viene rimosso."
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "{count} con accesso"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "Accesso ai siti concesso"
+  },
+  "dataFlowGrantRemove": {
+    "message": "Rimuovi accesso"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "Rimuovi l'accesso al sito {host}"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "Accesso al sito {host} rimosso."
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "Impossibile rimuovere l'accesso al sito {host}."
+  },
+  "filterListStopFailed": {
+    "message": "Impossibile interrompere la lista di filtri."
+  },
+  "filterListStoppedTpl": {
+    "message": "La lista di {host} non viene più seguita. Non rimane alcun accesso al sito concesso solo per la lista."
   }
 }

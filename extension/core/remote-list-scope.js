@@ -109,6 +109,10 @@
     function classifyHostname(hostname) {
         const host = String(hostname || '').toLowerCase();
         if (!host) return 'malformed-host';
+        // WHATWG URL accepts a leading wildcard label (`*.example.com`). A
+        // runtime filter-list grant must always name one exact host; allowing
+        // that input would silently widen one user choice to every subdomain.
+        if (host.includes('*')) return 'malformed-host';
 
         const ipv6 = classifyIpv6(host);
         if (ipv6) return ipv6;
@@ -134,7 +138,7 @@
     // alone so `permissions.request` cannot throw on an invalid pattern.
     function remoteListOriginPattern(hostname) {
         const host = String(hostname || '').toLowerCase();
-        if (!host) return '';
+        if (classifyHostname(host) !== 'public') return '';
         // An IPv6 literal is bracketed in a URL but must not be in a match
         // pattern; such hosts are rejected before this point anyway.
         return 'https://' + host + '/*';

@@ -7477,5 +7477,32 @@
   },
   "selectorHealthExportAria": {
     "message": "تصدير صحة المحددات بصيغة JSON"
+  },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "يمكن لـ Video Hider جلب البيانات من هذا الموقع حتى تتم إزالة الوصول."
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "تم منح {count}"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "الوصول الممنوح إلى المواقع"
+  },
+  "dataFlowGrantRemove": {
+    "message": "إزالة الوصول"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "إزالة الوصول إلى موقع {host}"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "تمت إزالة الوصول إلى موقع {host}."
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "تعذرت إزالة الوصول إلى موقع {host}."
+  },
+  "filterListStopFailed": {
+    "message": "تعذر إيقاف متابعة قائمة عوامل التصفية."
+  },
+  "filterListStoppedTpl": {
+    "message": "تم إيقاف متابعة {host}. لم يعد هناك وصول إلى الموقع مخصص لقائمة عوامل التصفية."
   }
 }

@@ -7241,6 +7241,98 @@ const FILTER_LIST_STATE_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(FILTER_LIST_STATE_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const FILTER_LIST_PERMISSION_TRANSLATIONS = {
+  de: {
+    "Granted site access": "Gewährter Websitezugriff",
+    "{count} granted": "{count} gewährt",
+    "Remove access": "Zugriff entfernen",
+    "Remove site access for {host}": "Websitezugriff für {host} entfernen",
+    "Video Hider can fetch data from this site until access is removed.": "Video Hider kann Daten von dieser Website abrufen, bis der Zugriff entfernt wird.",
+    "Removed site access for {host}.": "Websitezugriff für {host} wurde entfernt.",
+    "Could not remove site access for {host}.": "Websitezugriff für {host} konnte nicht entfernt werden.",
+    "Stopped following {host}. No filter-list-only site access remains.": "Die Filterliste von {host} wird nicht mehr verwendet. Es bleibt kein ausschließlich dafür erteilter Websitezugriff bestehen.",
+    "Could not stop following the filter list.": "Die Filterliste konnte nicht abbestellt werden."
+  },
+  es: {
+    "Granted site access": "Acceso a sitios concedido",
+    "{count} granted": "{count} con acceso",
+    "Remove access": "Quitar acceso",
+    "Remove site access for {host}": "Quitar el acceso al sitio {host}",
+    "Video Hider can fetch data from this site until access is removed.": "Video Hider puede obtener datos de este sitio hasta que se quite el acceso.",
+    "Removed site access for {host}.": "Se quitó el acceso al sitio {host}.",
+    "Could not remove site access for {host}.": "No se pudo quitar el acceso al sitio {host}.",
+    "Stopped following {host}. No filter-list-only site access remains.": "Se dejó de seguir {host}. No queda acceso al sitio concedido solo para la lista de filtros.",
+    "Could not stop following the filter list.": "No se pudo dejar de seguir la lista de filtros."
+  },
+  fr: {
+    "Granted site access": "Accès aux sites accordé",
+    "{count} granted": "{count} avec accès",
+    "Remove access": "Retirer l’accès",
+    "Remove site access for {host}": "Retirer l’accès au site {host}",
+    "Video Hider can fetch data from this site until access is removed.": "Video Hider peut récupérer des données depuis ce site jusqu’au retrait de l’accès.",
+    "Removed site access for {host}.": "Accès au site {host} retiré.",
+    "Could not remove site access for {host}.": "Impossible de retirer l’accès au site {host}.",
+    "Stopped following {host}. No filter-list-only site access remains.": "La liste de {host} n’est plus suivie. Aucun accès au site propre à cette liste ne subsiste.",
+    "Could not stop following the filter list.": "Impossible d’arrêter de suivre la liste de filtres."
+  },
+  it: {
+    "Granted site access": "Accesso ai siti concesso",
+    "{count} granted": "{count} con accesso",
+    "Remove access": "Rimuovi accesso",
+    "Remove site access for {host}": "Rimuovi l'accesso al sito {host}",
+    "Video Hider can fetch data from this site until access is removed.": "Video Hider può recuperare dati da questo sito finché l'accesso non viene rimosso.",
+    "Removed site access for {host}.": "Accesso al sito {host} rimosso.",
+    "Could not remove site access for {host}.": "Impossibile rimuovere l'accesso al sito {host}.",
+    "Stopped following {host}. No filter-list-only site access remains.": "La lista di {host} non viene più seguita. Non rimane alcun accesso al sito concesso solo per la lista.",
+    "Could not stop following the filter list.": "Impossibile interrompere la lista di filtri."
+  },
+  pt_BR: {
+    "Granted site access": "Acesso concedido a sites",
+    "{count} granted": "{count} com acesso",
+    "Remove access": "Remover acesso",
+    "Remove site access for {host}": "Remover acesso ao site {host}",
+    "Video Hider can fetch data from this site until access is removed.": "O Video Hider pode buscar dados deste site até que o acesso seja removido.",
+    "Removed site access for {host}.": "Acesso ao site {host} removido.",
+    "Could not remove site access for {host}.": "Não foi possível remover o acesso ao site {host}.",
+    "Stopped following {host}. No filter-list-only site access remains.": "A lista de {host} deixou de ser seguida. Nenhum acesso ao site exclusivo da lista de filtros permanece.",
+    "Could not stop following the filter list.": "Não foi possível deixar de seguir a lista de filtros."
+  },
+  ru: {
+    "Granted site access": "Разрешённый доступ к сайтам",
+    "{count} granted": "Предоставлено: {count}",
+    "Remove access": "Удалить доступ",
+    "Remove site access for {host}": "Удалить доступ к сайту {host}",
+    "Video Hider can fetch data from this site until access is removed.": "Video Hider может получать данные с этого сайта, пока доступ не будет удалён.",
+    "Removed site access for {host}.": "Доступ к сайту {host} удалён.",
+    "Could not remove site access for {host}.": "Не удалось удалить доступ к сайту {host}.",
+    "Stopped following {host}. No filter-list-only site access remains.": "Подписка на список {host} отменена. Доступа к сайту только для этого списка больше нет.",
+    "Could not stop following the filter list.": "Не удалось отменить подписку на список фильтров."
+  },
+  ja: {
+    "Granted site access": "許可済みのサイトアクセス",
+    "{count} granted": "{count} 件を許可",
+    "Remove access": "アクセスを削除",
+    "Remove site access for {host}": "{host} へのサイトアクセスを削除",
+    "Video Hider can fetch data from this site until access is removed.": "アクセスを削除するまで、Video Hider はこのサイトからデータを取得できます。",
+    "Removed site access for {host}.": "{host} へのサイトアクセスを削除しました。",
+    "Could not remove site access for {host}.": "{host} へのサイトアクセスを削除できませんでした。",
+    "Stopped following {host}. No filter-list-only site access remains.": "{host} の購読を停止しました。フィルターリスト専用のサイトアクセスは残っていません。",
+    "Could not stop following the filter list.": "フィルターリストの購読を停止できませんでした。"
+  },
+  ko: {
+    "Granted site access": "허용된 사이트 액세스",
+    "{count} granted": "{count}개 허용됨",
+    "Remove access": "액세스 제거",
+    "Remove site access for {host}": "{host} 사이트 액세스 제거",
+    "Video Hider can fetch data from this site until access is removed.": "액세스가 제거될 때까지 Video Hider가 이 사이트에서 데이터를 가져올 수 있습니다.",
+    "Removed site access for {host}.": "{host} 사이트 액세스를 제거했습니다.",
+    "Could not remove site access for {host}.": "{host} 사이트 액세스를 제거할 수 없습니다.",
+    "Stopped following {host}. No filter-list-only site access remains.": "{host} 구독을 중지했습니다. 필터 목록 전용 사이트 액세스는 남아 있지 않습니다.",
+    "Could not stop following the filter list.": "필터 목록 구독을 중지할 수 없습니다."
+  }
+};
+for (const [locale, messages] of Object.entries(FILTER_LIST_PERMISSION_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

@@ -8,6 +8,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- Data Flow now lists each exact runtime-granted filter-list host, explains why
+  it is available, and provides a localized Remove access action.
 - Settings Overview now reports every persisted value that differs from its
   schema default, switches to a focused current-versus-default view, copies a
   redacted JSON report, and includes the same sanitized diff in diagnostics.
@@ -16,8 +18,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Optional-host permission helpers now work with both Chromium callback APIs
+  and Firefox-style Promise-only APIs, including permission enumeration.
 - Changed-only mode now visibly hides the full settings list; the list's flex
   declaration previously overrode the browser's native `hidden` rendering.
+
+### Security
+
+- Changing, clearing, importing, or resetting a Video Hider filter-list URL now
+  revokes the previous filter-list-only host grant. Wildcard host input is
+  rejected, and required manifest hosts are excluded from the revocation UI.
 
 ## [4.60.1] - 2026-08-13
 

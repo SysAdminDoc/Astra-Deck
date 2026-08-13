@@ -7477,5 +7477,32 @@
   },
   "selectorHealthExportAria": {
     "message": "セレクターの状態を JSON でエクスポート"
+  },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "アクセスを削除するまで、Video Hider はこのサイトからデータを取得できます。"
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "{count} 件を許可"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "許可済みのサイトアクセス"
+  },
+  "dataFlowGrantRemove": {
+    "message": "アクセスを削除"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "{host} へのサイトアクセスを削除"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "{host} へのサイトアクセスを削除しました。"
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "{host} へのサイトアクセスを削除できませんでした。"
+  },
+  "filterListStopFailed": {
+    "message": "フィルターリストの購読を停止できませんでした。"
+  },
+  "filterListStoppedTpl": {
+    "message": "{host} の購読を停止しました。フィルターリスト専用のサイトアクセスは残っていません。"
   }
 }

@@ -2069,6 +2069,92 @@ body {
   font-style: italic;
 }
 
+.data-flow-grants {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.data-flow-grants[hidden] { display: none; }
+
+.data-flow-grants-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.data-flow-grants-head strong {
+  color: var(--text-secondary);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.data-flow-grants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-flow-grant-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 184, 77, 0.2);
+  border-radius: 7px;
+  background: rgba(255, 184, 77, 0.045);
+}
+
+.data-flow-grant-host {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-flow-grant-purpose {
+  grid-column: 1 / -1;
+  color: var(--text-subtle);
+  font-size: 9.5px;
+}
+
+.data-flow-grant-remove {
+  min-height: 26px;
+  padding: 4px 7px;
+  border: 1px solid rgba(255, 133, 133, 0.32);
+  border-radius: 6px;
+  background: rgba(255, 133, 133, 0.07);
+  color: #ffb4b4;
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.data-flow-grant-remove:hover {
+  border-color: rgba(255, 133, 133, 0.58);
+  background: rgba(255, 133, 133, 0.13);
+  color: #ffd1d1;
+}
+
+.data-flow-grant-remove:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
 /* Credentials are managed separately from the schema-driven settings UI.
    Password values are write-only; the status chip exposes only configured /
    remembered state returned by the background-owned vault. */
