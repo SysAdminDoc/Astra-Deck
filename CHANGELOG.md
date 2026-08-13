@@ -44,6 +44,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- Authenticated downloads no longer expose a caller-selected YouTube cookie
+  jar through the background worker. A fresh registered Astra Downloader API
+  v2 proof now issues a 20-second, one-use grant bound to the requesting tab
+  and document; the worker releases only `LOGIN_INFO` plus allowlisted SAPISID
+  variants that pass exact domain, root-path, Secure, completeness, and 4 KiB
+  value limits. Legacy health tokens cannot unlock cookies, diagnostics contain
+  counts only, and the first cookie-bearing handoff is disclosed in all eleven
+  locales.
 - Cobalt fallback no longer grants or contacts `api.cobalt.tools`. GitHub-full
   users must configure a root HTTPS origin they operate or are authorized to
   use and approve that exact browser host grant. A dedicated worker contract

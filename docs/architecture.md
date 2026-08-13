@@ -81,6 +81,9 @@ ytkit.js: ytKitDownload(url, audioOnly) →
   MediaDLManager.check()  ─── HTTP GET http://127.0.0.1:9751/health (X-MDL-Client: MediaDL)
                               Validates {service, api, token} response shape.
                               Caches result for 30s. Falls back through 5 ports.
+  native cookie proof       registered API v2 host → random 20s one-use grant
+                              bound to top-level YouTube tab/document → exact
+                              `.youtube.com` four-name cookie filter.
   POST /download                 with X-Auth-Token bearer + {url, audio_only,
                               fmt, quality, output_dir, cookies}.
 astra_downloader.py:
@@ -127,7 +130,7 @@ User opens the popup:
 | Feature definitions | `extension/ytkit.js` `features` array (generated feature-ID count below) | Each has `{id, name, description, group, icon, init, destroy, pages?, dependsOn?}` |
 | CSS-only feature helpers | `extension/features/*/index.js` (6 modules, 21 ids) | Pure `buildCss(settings)` helpers; ytkit.js inline blocks delegate to them. Also call `getLifecycle().defineFeature` at module-eval (NF5 wave 1). |
 | MAIN-world bridge | `extension/ytkit-main.js` | `canPlayType` patching for codec/format filtering; the only MAIN-world reach. Talks to ISOLATED via `data-ytkit-codec` attribute. |
-| Background service worker | `extension/background.js` | Cross-origin fetch proxy (SSRF-defended allowlist); chrome.downloads bridge; cookie bridge; explicit error on unknown message type. |
+| Background service worker | `extension/background.js` + `extension/core/cookie-handoff.js` | Cross-origin fetch proxy (SSRF-defended allowlist); chrome.downloads bridge; native-proofed, one-use, tab/document-bound minimum-cookie handoff; explicit error on unknown message type. |
 | Toolbar popup UI | `extension/popup.html` + `popup.js` + `popup.css` | Hero card, storage stats, data-flow panel, selector-health dashboard + Copy report button, quick toggles, and schema overview editing. |
 | Selector resolution | `extension/core/selectors.js` + `extension/core/selector-packs/*.js` | Generated surface and alias counts below; each entry has `stable[]` + `fallback[]` + `captureEvidence[]` + `lastVerified` + `highChurn` flag. |
 | Lifecycle contract | `extension/core/feature-lifecycle.js` | `createLifecycle()` + `defineFeature` + `start` + `apply` + `destroy` + AbortController + monotonic route token. Singleton via `getLifecycle()`. |
@@ -146,7 +149,7 @@ User opens the popup:
 
 1. **MAIN world** (`ytkit-main.js`) — sees page globals (`movie_player`, `ytcfg`, `ytInitialPlayerResponse`). Cannot use `chrome.*` APIs. Communicates with ISOLATED via DOM attributes (`data-ytkit-codec`) and CustomEvent.
 2. **ISOLATED world** (`ytkit.js` + `core/*.js` + `features/*/index.js`) — sees `chrome.*` APIs. Cannot reach page globals directly (uses regex scrape + Innertube fallback). DOM manipulation only via TrustedTypes wrappers in `core/trusted-html.js`.
-3. **Service worker** (`background.js`) — does the cross-origin fetches the content script can't (due to YouTube's strict CSP). EXT_FETCH origin allowlist; cookies only forwarded to YouTube-family + 127.0.0.1 origins; Authorization only to OpenAI/Anthropic/Ollama/127.0.0.1 origins.
+3. **Service worker** (`background.js`) — does the cross-origin fetches the content script can't (due to YouTube's strict CSP). EXT_FETCH origin allowlist; request credentials only for YouTube-family + 127.0.0.1 origins; Authorization only to OpenAI/Anthropic/Ollama/127.0.0.1 origins. Authenticated-download cookies use a separate one-use capability after exact native API proof and are reduced to the versioned four-name `.youtube.com` contract before crossing the message boundary.
 4. **Popup** — `chrome.storage.local` direct read/write; communicates with content scripts via `chrome.tabs.sendMessage`; never fetches external origins (Reddit / SponsorBlock / AI / etc. all route through background proxy). Bundles `core/settings-schema.js`, `core/policy-profile.js`, `core/data-flow.js`, `core/selector-health.js`.
 5. **Astra Downloader** — `127.0.0.1` loopback only (literal IP, not `localhost` — DNS rebinding defense). Bearer-token auth (X-Auth-Token). Path-confined output directories (allowlist via DownloadPath / AudioDownloadPath / ExtraOutputRoots). Cookie jar files are per-download, mode 0o600, deleted on download exit. Request body ≤1 MB; response body ≤10 MB.
 

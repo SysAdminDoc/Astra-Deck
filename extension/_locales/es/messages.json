@@ -5896,6 +5896,9 @@
   "toastActionUndo": {
     "message": "Deshacer"
   },
+  "toastCookieHandoffDisclosure": {
+    "message": "Descarga autenticada: solo las cookies de inicio de sesión de YouTube necesarias se envían a Astra Downloader en este dispositivo."
+  },
   "toastDismissAria": {
     "message": "Dismiss notification"
   },

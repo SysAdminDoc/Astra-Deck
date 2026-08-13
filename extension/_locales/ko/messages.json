@@ -5896,6 +5896,9 @@
   "toastActionUndo": {
     "message": "실행 취소"
   },
+  "toastCookieHandoffDisclosure": {
+    "message": "인증된 다운로드: 필요한 YouTube 로그인 쿠키만 이 기기의 Astra Downloader로 전송됩니다."
+  },
   "toastDismissAria": {
     "message": "Dismiss notification"
   },

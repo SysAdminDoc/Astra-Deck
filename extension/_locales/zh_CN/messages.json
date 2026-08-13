@@ -5896,6 +5896,9 @@
   "toastActionUndo": {
     "message": "撤销"
   },
+  "toastCookieHandoffDisclosure": {
+    "message": "身份验证下载：仅将所需的 YouTube 登录 Cookie 发送到此设备上的 Astra Downloader。"
+  },
   "toastDismissAria": {
     "message": "Dismiss notification"
   },

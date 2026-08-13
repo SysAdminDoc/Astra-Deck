@@ -89,7 +89,7 @@ Reviewer mapping:
 | `browsingActivity` | YouTube URLs, video IDs, channel/page context, and Reddit/SponsorBlock/RYD lookups are part of user-visible YouTube enhancement features. |
 | `websiteContent` | Astra Deck reads visible YouTube text, captions/transcripts, thumbnails, comments, metadata, and cookies needed for enabled features. |
 | `websiteActivity` | Astra Deck stores user actions such as settings changes, watch progress, note/export/download actions, hidden videos, and subscription group state. |
-| `authenticationInfo` | Companion-capable profiles can read YouTube cookies for an explicit authenticated local-download handoff to Astra Downloader. The download-free `chromium-store` artifact cannot and does not declare this category. |
+| `authenticationInfo` | Companion-capable profiles can read only four allowlisted `.youtube.com` sign-in cookie names for an explicit authenticated local-download handoff after registered native-host proof. The download-free `chromium-store` artifact cannot and does not declare this category. |
 | `technicalAndInteraction` | Optional in companion-capable profiles because an explicit companion action can send the selected download format and quality outside the browser. The download-free `chromium-store` artifact omits it. |
 
 Astra Deck does not transmit telemetry, usage metrics, crash reports, or
@@ -110,9 +110,9 @@ settings imports cannot turn a restricted artifact into a broader one.
 | `storage` | Saves Astra Deck settings, local feature state, local caches, notes, watch-progress data, and user-created exports in the browser profile. |
 | `unlimitedStorage` | Prevents silent quota failure for local YouTube caches and long-term user data; bounded LRU cleanup still trims large stores. |
 | `declarativeNetRequest` | Enables the bundled static `astra_zero_ads` ruleset. Its five rules block known YouTube ad-serving domains and ad telemetry endpoints only when YouTube or YouTube No-Cookie initiated the request. Rules do not inspect request bodies, read browsing history, redirect traffic, or transmit data. |
-| `cookies` | Reads YouTube cookies only when the user starts an authenticated local download flow so yt-dlp can access media the user can already view. Cookies are not sent to Astra Deck servers. |
+| `cookies` | After fresh native API v2 proof, reads only `LOGIN_INFO`, `SAPISID`, `__Secure-1PAPISID`, and `__Secure-3PAPISID` from the secure root `.youtube.com` scope when the user starts an authenticated local download. A 20-second, one-use, tab/document-bound capability gates the read; each value is capped at 4 KiB, incomplete sets fail closed, and the first cookie-bearing handoff is disclosed in-product. Cookies are not sent to Astra Deck servers. |
 | `downloads` | Saves user-requested exports, thumbnails, transcript files, diagnostic bundles, and media handoff files to the user's Downloads folder. |
-| `nativeMessaging` | Enables secure token exchange with the optional local Astra Downloader companion via a browser-pinned stdio pipe, replacing the HTTP `/health` token disclosure path. Only activates when the companion registers its native host manifest. |
+| `nativeMessaging` | Enables secure token exchange with the optional local Astra Downloader companion via a browser-pinned stdio pipe. An exact `astra-downloader` API v2-or-newer response is also required before the background can issue a one-use authenticated-cookie capability. Only activates when the companion registers its native host manifest. |
 | `sidePanel` | Provides an optional persistent dashboard panel (Chrome only) for diagnostics, selector health, storage stats, and settings so the popup stays compact. |
 
 ## Store-Safe Host Permissions

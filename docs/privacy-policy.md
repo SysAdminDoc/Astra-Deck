@@ -33,7 +33,7 @@ external service.
 
 | Chrome category | Astra Deck use |
 | --- | --- |
-| Authentication information | YouTube cookies can be read only when the user starts an authenticated local download flow. Cookies are handed to Astra Downloader on `127.0.0.1` and are not sent to Astra Deck servers. |
+| Authentication information | A versioned minimum set of YouTube sign-in cookies can be read only when the user starts an authenticated local download flow and the registered Astra Downloader native host proves its identity. The cookies are handed to Astra Downloader on `127.0.0.1` and are not sent to Astra Deck servers. |
 | Personal communications | Not collected. |
 | Financial information | Not collected. |
 | Health information | Not collected. |
@@ -60,7 +60,7 @@ explicitly chooses the broader profile and enables the relevant feature:
 | --- | --- | --- |
 | OpenAI, Anthropic, Gemini, or user-configured AI endpoint | User-selected transcript/video context and the user's own API key or configured endpoint. | Only for opt-in BYO-key AI summary or transcript-translation fallback features; Chrome's built-in AI lane does not contact these services. |
 | Local Ollama (`127.0.0.1:11434`) | Transcript/video context for local summarization. | Only when the local AI feature is enabled and Ollama is running locally. |
-| Astra Downloader (`127.0.0.1:9751-9851`) | Download request metadata, selected format/quality, health/history requests, and YouTube cookies for authenticated downloads. | Only for explicit local downloader actions or enabled download panels. |
+| Astra Downloader (`127.0.0.1:9751-9851`) | Download request metadata, selected format/quality, health/history requests, and the minimum YouTube sign-in cookie set described below. | Only for explicit local downloader actions or enabled download panels; cookies require a fresh registered native-host proof. |
 | User-configured self-hosted Cobalt | The canonical YouTube watch URL containing only the video ID. Cookies, credentials, playlist context, and the page's other query parameters are omitted. | Only when GitHub-full fallback is enabled, Astra Downloader is offline, and the user has configured and granted one HTTPS instance they operate or are authorized to use. Astra Deck does not use `api.cobalt.tools`. |
 
 The standalone userscript does not call Cobalt or community downloader APIs.
@@ -85,12 +85,27 @@ SponsorBlock.
 
 ## Cookies
 
-Astra Deck uses the `cookies` permission only for YouTube-family cookies needed
-by explicit authenticated download handoff. Cookies are sent to the local Astra
-Downloader companion on `127.0.0.1`, written to per-download cookie jars, used by
-yt-dlp for that download, and cleaned up afterward. Astra Deck does not send
-YouTube cookies to remote AI providers, SponsorBlock, DeArrow, RYD, Reddit, or
-Cobalt.
+Astra Deck uses the `cookies` permission only for an explicit authenticated
+download handoff. Protocol version 1 queries `.youtube.com` and permits only
+`LOGIN_INFO`, `SAPISID`, `__Secure-1PAPISID`, and
+`__Secure-3PAPISID` cookies scoped to `.youtube.com`/`youtube.com`, path `/`,
+and the Secure flag. Each value is capped at 4,096 UTF-8 bytes; the handoff
+fails closed unless `LOGIN_INFO` and at least one permitted SAPISID variant are
+present.
+
+The background worker releases that set only after Astra Downloader identifies
+itself as native API 2 or newer over the browser-pinned native-messaging pipe.
+It issues a random, 20-second, one-use capability bound to the requesting
+top-level YouTube tab and document. A localized notice appears before the first
+cookie-bearing companion request on an installation. Local diagnostics record
+only protocol version and counts/byte totals, never cookie names, values, or
+capabilities.
+
+Permitted cookies are sent to the local Astra Downloader companion on
+`127.0.0.1`, written to per-download cookie jars, used by yt-dlp for that
+download, and cleaned up afterward. Astra Deck does not send YouTube cookies to
+remote AI providers, SponsorBlock, DeArrow, RYD, Reddit, or Cobalt. The legacy
+HTTP `/health` token path can start a download but cannot unlock cookies.
 
 ## Retention, Export, And Delete
 

@@ -7467,6 +7467,34 @@ const FILTER_LIST_PERMISSION_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(FILTER_LIST_PERMISSION_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const COOKIE_HANDOFF_TRANSLATIONS = {
+  de: {
+    "Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.": "Authentifizierter Download: Nur die erforderlichen YouTube-Anmeldecookies werden an Astra Downloader auf diesem Gerät gesendet."
+  },
+  es: {
+    "Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.": "Descarga autenticada: solo las cookies de inicio de sesión de YouTube necesarias se envían a Astra Downloader en este dispositivo."
+  },
+  fr: {
+    "Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.": "Téléchargement authentifié : seuls les cookies de connexion YouTube requis sont envoyés à Astra Downloader sur cet appareil."
+  },
+  it: {
+    "Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.": "Download autenticato: solo i cookie di accesso a YouTube necessari vengono inviati ad Astra Downloader su questo dispositivo."
+  },
+  ja: {
+    "Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.": "認証付きダウンロード: 必要な YouTube ログイン Cookie だけが、このデバイス上の Astra Downloader に送信されます。"
+  },
+  ko: {
+    "Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.": "인증된 다운로드: 필요한 YouTube 로그인 쿠키만 이 기기의 Astra Downloader로 전송됩니다."
+  },
+  pt_BR: {
+    "Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.": "Download autenticado: apenas os cookies de login do YouTube necessários são enviados ao Astra Downloader neste dispositivo."
+  },
+  ru: {
+    "Authenticated download: only the required YouTube sign-in cookies are being sent to Astra Downloader on this device.": "Авторизованное скачивание: в Astra Downloader на этом устройстве отправляются только необходимые файлы cookie для входа в YouTube."
+  }
+};
+for (const [locale, messages] of Object.entries(COOKIE_HANDOFF_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

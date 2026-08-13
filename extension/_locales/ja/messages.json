@@ -5896,6 +5896,9 @@
   "toastActionUndo": {
     "message": "取り消す"
   },
+  "toastCookieHandoffDisclosure": {
+    "message": "認証付きダウンロード: 必要な YouTube ログイン Cookie だけが、このデバイス上の Astra Downloader に送信されます。"
+  },
   "toastDismissAria": {
     "message": "Dismiss notification"
   },
