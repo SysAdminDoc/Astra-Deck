@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 11 bundled UI locales (extension only — the userscript ships no locale catalogues).
+  Premium desktop YouTube enhancement extension for Chrome and Firefox with 200+ features — zero-ad request filtering, SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 11 bundled UI locales (extension only — the userscript ships no locale catalogues).
 </p>
 
 <!-- BEGIN GENERATED PROJECT FACTS -->
@@ -20,7 +20,7 @@
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.60.0` |
+| Release | `v4.60.1` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `468` entries across `18` categories |
@@ -94,7 +94,9 @@ data-consent permissions cover the documented collection categories).
 
 ### Userscript (Tampermonkey / Violentmonkey)
 
-A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then install the **[Greasy Fork listing](https://greasyfork.org/)**. The generated `YTKit.user.js` declares the separately hosted Astra Deck YTKit Core Library dependency; the core library must be published on Greasy Fork before installing the generated artifact directly from GitHub.
+A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then install the [current `YTKit.user.js` artifact](https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js). Its generated `@require` loads the separately versioned [Astra Deck YTKit Core Library](https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js) from the same repository, so a separate Greasy Fork core publication is not required.
+
+The userscript starts at `document-start` and continuously collapses known ad shells, but a userscript manager cannot guarantee interception before the browser starts page requests. Use the extension when browser-level ad-request blocking is required.
 
 > SharedAudio remains userscript-only. The `store-safe` and `github-full` extension profiles can use Astra Downloader; the `chromium-store` artifact is download-free, and the GitHub-full artifact can also expose the optional Cobalt fallback when the local companion is offline.
 
@@ -140,6 +142,7 @@ are not browser extension install steps.
 
 | Feature | Default |
 |---------|---------|
+| Zero-Ad Desktop Surface — static MV3 request blocking plus document-start ad-shell collapse; userscript provides shell collapse only | Built in |
 | Theater Split — fullscreen video, scroll to reveal comments side-by-side | On |
 | Video Hider — hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
 | Video Context Menu — right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
@@ -332,18 +335,18 @@ Toggle individual elements on/off through the settings panel:
 Click the gear icon in the YouTube masthead or player controls, or use the toolbar popup's **Open Full Settings** action.
 
 <p align="center">
-  <img src="outputs/astra-deck-settings-command-deck-video-player-v5.png" alt="Astra Deck Command Deck settings workspace" width="900">
+  <img src="outputs/astra-deck-settings-command-deck-video-hider-v6.png" alt="Astra Deck Command Deck Video Hider settings workspace" width="900">
 </p>
 
 - Command Deck workspace with a mission card and three live preference summaries on every category
-- Searchable sidebar with enabled/total counts across all ten categorized pages
+- Searchable sidebar spanning eleven destinations, including the dedicated Video Hider workflow
 - Full-width semantic control sections with dependency rails for nested settings
 - Toggle switches with instant apply
 - Sub-feature controls for granular element hiding
 - Textarea editors for keyword filters, quick links, custom CSS
 - Schema-validated Export / Import / Reset with credential scrub
 - Conflict detection (auto-disables conflicting features with toast notification)
-- Responsive dark/light and RTL layouts for desktop, tablet, and narrow windows
+- Verified dark/light and RTL layouts at supported desktop viewports; mobile browsers are not supported
 
 The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, schema-validated backups, diagnostics, and language selection.
 
@@ -352,8 +355,11 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 ## Architecture
 
 ```
+network boundary
+  rules/zero-ads.json Static MV3 rules — blocks known YouTube ad request surfaces
+
 document_start
-  early.css          Anti-FOUC CSS (scoped to feature body classes)
+  early.css          Zero-ad shell collapse plus feature-scoped anti-FOUC CSS
   ytkit-main.js      MAIN world — canPlayType patching for codec/format filtering
 
 document_idle
@@ -378,6 +384,7 @@ document_idle
 ## Security
 
 - Report sensitive security issues through [private vulnerability reporting](SECURITY.md), not public issues.
+- **Zero-ad request rules** use the static MV3 `declarativeNetRequest` API, are restricted to YouTube initiators and known advertising endpoints, and do not inspect or transmit request contents
 - **EXT_FETCH proxy** uses domain allowlist — blocks SSRF to private networks
 - Request/response headers filtered (`Cookie`, `Set-Cookie`, etc. stripped globally; `Authorization` only forwarded to explicit BYO-key/local service origins such as OpenAI/Anthropic/Ollama/MediaDL)
 - Response body capped at 10 MB, fetch timeout capped at 60s
@@ -490,6 +497,10 @@ npm run check
 # Python dependency auditing lives in the Astra Downloader repository
 npm run build                             # Build store-safe + Chromium-store + GitHub-full artifacts
 npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
+npm run check:zero-ads                    # Validate the static rule contract and packaged manifest
+npm run smoke:zero-ads:live               # Cold-load desktop YouTube and verify blocked requests + collapsed shells
+npm run smoke:settings-overlay -- --desktop-only # Verify every extension settings destination at desktop sizes
+npm run smoke:settings-userscript         # Verify every userscript settings destination at desktop sizes
 npm run release:prepare                   # Build userscript artifacts and require readiness pass
 npm run release:prepare:no-crx            # Same, without any CRX — needs no maintainer key
 npm run release:sbom                      # Regenerate build/astra-deck-npm-sbom.cdx.json

@@ -10,29 +10,28 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P0 — Delivery
 
-- [ ] P0 — Tag and publish the v4.56.0 release
-  Why: RETARGETED 2026-08-06 (was v4.51.1). The tree is at v4.56.0 with 175 commits and six minor versions since the newest published release, v4.50.7 (2026-07-28), on a hand-install channel with no auto-update.
-  Evidence: `git tag --sort=-v:refname` and `gh release list` both top out at v4.50.7; `package.json` and `extension/manifest.json` state 4.56.0.
+- [ ] P0 — Tag and publish the v4.60.1 release
+  Why: RETARGETED 2026-08-13. The local source and complete no-CRX artifact set are at v4.60.1, while the latest local tag and GitHub Release are v4.59.1 (published 2026-08-10).
+  Evidence: `node scripts/check-versions.js` reports all seven product-version sources at v4.60.1; `npm run build:userscript:no-crx` emits all three Chrome/Firefox profiles, the userscript, SBOM, manifest, and checksums; `git tag --sort=-version:refname` and `gh release list` top out at v4.59.1.
   Touches: `npm run release:prepare`, `scripts/generate-release-readiness.js`, `scripts/generate-release-manifest.js`, git tag, GitHub Release assets.
-  Acceptance: a `v4.56.0` tag exists on the release commit and a GitHub Release carries the artifact set the last two releases actually shipped (store-safe + GitHub-full Chrome ZIP and Firefox ZIP/XPI, userscript, SBOM, `release-manifest.json`, `SHA256SUMS`); `npm run release:verify-digests -- --tag v4.56.0` passes.
+  Acceptance: a `v4.60.1` tag exists on the release commit and a GitHub Release carries the three-profile Chrome/Firefox ZIP/XPI set, userscript, SBOM, `release-manifest.json`, and `SHA256SUMS`; `npm run release:verify-digests -- --tag v4.60.1` passes and release channels are promoted only after health passes.
   Complexity: S
-  Blocker: CORRECTED 2026-08-06 — the previous blocker (missing `ytkit.pem`) was wrong on the facts. The CRX key does **not** gate this release: self-hosted CRX installs are Linux-only on modern Chrome, the last two published releases (v4.50.2, v4.50.7) shipped **no CRX at all**, and a live `node scripts/generate-release-readiness.js` fails on exactly three checks — missing `build/release-manifest.json`, `build/astra-deck-npm-sbom.cdx.json` and `build/SHA256SUMS` — all produced by `npm run build:userscript`, none key-gated. The CRX check is not among the failures. What actually remains is an operator action: creating the git tag and publishing the GitHub Release. The code change that makes the build a one-command path is tracked in `ROADMAP.md` as "P0 — Cut a release without a CRX"; land that first, then this becomes a publish step.
+  Blocker: The repository-side work is complete; creating the tag, publishing GitHub assets, and promoting release channels are operator actions explicitly excluded from the 2026-08-13 local-only pass. A CRX signing key is not required for the supported no-CRX release path.
 
 ## P2 — Greasy Fork publication (2026-08-11)
 
 - [ ] P2 — Publish the YTKit userscript and its core library on Greasy Fork
-  Why: the repository-side work is complete. `YTKit.user.js` is 1,029,930 B and
-  `YTKit-core.user.js` is 1,811,263 B, both below Greasy Fork's 2 MiB per-script
-  record limit; the main artifact declares the Greasy Fork `@require`, accurate
+  Why: the repository-side work is complete. `YTKit.user.js` and
+  `YTKit-core.user.js` remain below Greasy Fork's 2 MiB per-script
+  record limit; the main artifact currently uses a working raw-GitHub `@require`, accurate
   homepage/support/license/icon metadata, `@connect 127.0.0.1`, and the optional
-  Astra Downloader companion disclosure. `npm test`, `npm run check`, and
+  Astra Downloader companion disclosure. The userscript artifact smoke and
   `npm run build:userscript:no-crx` pass.
   Blocker: creating the two live Greasy Fork script records requires the
   maintainer's Greasy Fork account, authentication/2FA, and the script IDs
   assigned by that service. This workspace has no such credentials or external
-  account authority, so the generated main header intentionally retains
-  `REPLACE_WITH_GREASY_FORK_CORE_ID` until the core record exists.
-  Needs: publish `YTKit-core.user.js` first, replace the placeholder by running
+  account authority; GitHub installation remains usable without those IDs.
+  Needs: publish `YTKit-core.user.js` first, replace the raw-GitHub fallback by running
   `ASTRA_GREASY_FORK_CORE_URL=<update.greasyfork.org URL> node sync-userscript.js`,
   publish `YTKit.user.js`, and verify the live listing/auto-update path.
 
@@ -84,13 +83,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Acceptance: with the extension's `127.0.0.1` fetch blocked/denied by LNA, a download can still be initiated and its status polled over the native-messaging channel; when direct fetch works, behavior is unchanged.
   Complexity: L
   Blocker: Requires a live Chrome 142+ browser to reproduce LNA blocking and verify the native-transport fallback end-to-end — same live-browser dependency as the existing "Validate Chrome LNA exemption" item. Implement + verify together once a test browser is available.
-
-## P3 — Live-browser verification (2026-07-21)
-
-- [ ] P3 — Live-browser behavioral audit of the extension feature modules
-  Why: the 2026-07-20 audit deeply traced the companion and fixed a status-tone inconsistency, but the extension feature modules' *runtime* logic (e.g. `extension/features/download-ui/index.js`, video-hider, subscription-groups) was only spot-checked; the static a11y/contrast/i18n/lint gates and unit tests pass, but behavioral bugs on live YouTube DOM (empty/error/offline states, feature auto-disable-on-miss) are not covered by fixtures.
-  Where: `extension/features/**/index.js`, live YouTube watch/subscriptions/live-chat surfaces.
-  Blocker: Requires driving a real browser against live YouTube — cannot be performed in the headless/no-live-DOM environment; belongs with the other browser-gated verification items.
 
 ## P2 — External-binary integration + live verification (2026-07-21)
 

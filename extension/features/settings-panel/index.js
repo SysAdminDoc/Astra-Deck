@@ -749,6 +749,13 @@ function buildSettingsPanel() {
             // Pane header
             const paneHeader = document.createElement('div');
             paneHeader.className = 'ytkit-pane-header';
+            const paneLead = document.createElement('div');
+            paneLead.className = 'ytkit-pane-lead';
+            const paneIcon = document.createElement('span');
+            paneIcon.className = 'ytkit-pane-icon';
+            paneIcon.style.setProperty('--cat-color', config.color);
+            paneIcon.setAttribute('aria-hidden', 'true');
+            paneIcon.appendChild((ICONS['eye-off'] || ICONS.settings)());
             const paneTitle = document.createElement('div');
             paneTitle.className = 'ytkit-pane-title';
             const paneEyebrow = document.createElement('span');
@@ -767,24 +774,65 @@ function buildSettingsPanel() {
             const paneStateChip = document.createElement('span');
             paneStateChip.className = 'ytkit-pane-chip ytkit-vh-status-chip';
             const paneHiddenChip = document.createElement('span');
-            paneHiddenChip.className = 'ytkit-pane-chip';
+            paneHiddenChip.className = 'ytkit-vh-summary-card__value';
             const paneAllowedChip = document.createElement('span');
-            paneAllowedChip.className = 'ytkit-pane-chip';
+            paneAllowedChip.className = 'ytkit-vh-summary-card__value';
             const paneChannelsChip = document.createElement('span');
-            paneChannelsChip.className = 'ytkit-pane-chip';
+            paneChannelsChip.className = 'ytkit-vh-summary-card__value';
             paneTitle.appendChild(paneEyebrow);
             paneTitle.appendChild(paneTitleH2);
             paneTitle.appendChild(paneDescription);
             paneMeta.appendChild(paneStateChip);
-            paneMeta.appendChild(paneHiddenChip);
-            paneMeta.appendChild(paneAllowedChip);
-            paneMeta.appendChild(paneChannelsChip);
             paneTitle.appendChild(paneMeta);
+            paneLead.appendChild(paneIcon);
+            paneLead.appendChild(paneTitle);
+
+            const paneSummary = document.createElement('div');
+            paneSummary.className = 'ytkit-vh-summary';
+            paneSummary.setAttribute('role', 'list');
+            const createPaneSummaryCard = (kind, iconName, labelText, valueNode) => {
+                const card = document.createElement('div');
+                card.className = 'ytkit-vh-summary-card';
+                card.dataset.kind = kind;
+                card.setAttribute('role', 'listitem');
+                const icon = document.createElement('span');
+                icon.className = 'ytkit-vh-summary-card__icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.appendChild((ICONS[iconName] || ICONS.settings)());
+                const copy = document.createElement('span');
+                copy.className = 'ytkit-vh-summary-card__copy';
+                const label = document.createElement('span');
+                label.className = 'ytkit-vh-summary-card__label';
+                label.textContent = labelText;
+                copy.appendChild(valueNode);
+                copy.appendChild(label);
+                card.appendChild(icon);
+                card.appendChild(copy);
+                paneSummary.appendChild(card);
+                return label;
+            };
+            createPaneSummaryCard(
+                'hidden',
+                'eye-off',
+                t('videoHiderHiddenVideosTab', 'Hidden Videos'),
+                paneHiddenChip
+            );
+            createPaneSummaryCard(
+                'allowed',
+                'check',
+                t('videoHiderAllowedVideosTab', 'Allowed Videos'),
+                paneAllowedChip
+            );
+            createPaneSummaryCard(
+                'channels',
+                'lock',
+                t('videoHiderBlockedChannelsTab', 'Blocked Channels'),
+                paneChannelsChip
+            );
 
             // Enable toggle
             const toggleLabel = document.createElement('label');
             toggleLabel.className = 'ytkit-toggle-all';
-            toggleLabel.style.marginLeft = 'auto';
             const toggleText = document.createElement('span');
             toggleText.textContent = t('settingsInsightsEnabled', 'Enabled');
             const toggleSwitch = document.createElement('div');
@@ -843,9 +891,13 @@ function buildSettingsPanel() {
             toggleSwitch.appendChild(toggleTrack);
             toggleLabel.appendChild(toggleText);
             toggleLabel.appendChild(toggleSwitch);
-            paneHeader.appendChild(paneTitle);
-            paneHeader.appendChild(toggleLabel);
+            const paneActions = document.createElement('div');
+            paneActions.className = 'ytkit-pane-actions';
+            paneActions.appendChild(toggleLabel);
+            paneHeader.appendChild(paneLead);
+            paneHeader.appendChild(paneActions);
             pane.appendChild(paneHeader);
+            pane.appendChild(paneSummary);
 
             // Tab navigation
             const tabNav = document.createElement('div');
@@ -881,7 +933,9 @@ function buildSettingsPanel() {
             }
 
             function getKeywordStatus() {
-                return (appState.settings.hideVideosKeywordFilter || '').trim() ? 'Live' : 'Empty';
+                return (appState.settings.hideVideosKeywordFilter || '').trim()
+                    ? t('videoHiderKeywordStatusLive', 'Live')
+                    : t('videoHiderKeywordStatusEmpty', 'Empty');
             }
 
             function getSettingsStatus() {
@@ -912,8 +966,8 @@ function buildSettingsPanel() {
                     || appState.settings.hideVideosHideAutoDubbed === true
                     || (appState.settings.hideVideosWatchedRatio || 0) > 0
                     || scopeKeys.some(key => appState.settings[key] === false)
-                    ? 'Custom'
-                    : 'Ready';
+                    ? t('commonActive', 'Active')
+                    : t('commonReady', 'Ready');
             }
 
             function updateVideoHiderMeta() {
@@ -2051,8 +2105,8 @@ function buildSettingsPanel() {
 
                     // Stats
                     const statsSection = createVideoHiderSection(
-                        'At-a-Glance Status',
-                        'A quick snapshot of what Video Hider is currently managing for you.'
+                        t('settingsInsightsStatus', 'Status'),
+                        t('videoHiderPaneDescription', 'Review hidden videos, manage channel lists, and tune automatic filters without leaving the page.')
                     );
                     const statsGrid = document.createElement('div');
                     statsGrid.className = 'ytkit-vh-stat-grid';

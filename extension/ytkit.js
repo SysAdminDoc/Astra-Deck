@@ -1085,7 +1085,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.60.0';
+    const YTKIT_VERSION = '4.60.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -48275,6 +48275,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Pane header
             const paneHeader = document.createElement('div');
             paneHeader.className = 'ytkit-pane-header';
+            const paneLead = document.createElement('div');
+            paneLead.className = 'ytkit-pane-lead';
+            const paneIcon = document.createElement('span');
+            paneIcon.className = 'ytkit-pane-icon';
+            paneIcon.style.setProperty('--cat-color', config.color);
+            paneIcon.setAttribute('aria-hidden', 'true');
+            paneIcon.appendChild((ICONS['eye-off'] || ICONS.settings)());
             const paneTitle = document.createElement('div');
             paneTitle.className = 'ytkit-pane-title';
             const paneEyebrow = document.createElement('span');
@@ -48290,24 +48297,65 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const paneStateChip = document.createElement('span');
             paneStateChip.className = 'ytkit-pane-chip ytkit-vh-status-chip';
             const paneHiddenChip = document.createElement('span');
-            paneHiddenChip.className = 'ytkit-pane-chip';
+            paneHiddenChip.className = 'ytkit-vh-summary-card__value';
             const paneAllowedChip = document.createElement('span');
-            paneAllowedChip.className = 'ytkit-pane-chip';
+            paneAllowedChip.className = 'ytkit-vh-summary-card__value';
             const paneChannelsChip = document.createElement('span');
-            paneChannelsChip.className = 'ytkit-pane-chip';
+            paneChannelsChip.className = 'ytkit-vh-summary-card__value';
             paneTitle.appendChild(paneEyebrow);
             paneTitle.appendChild(paneTitleH2);
             paneTitle.appendChild(paneDescription);
             paneMeta.appendChild(paneStateChip);
-            paneMeta.appendChild(paneHiddenChip);
-            paneMeta.appendChild(paneAllowedChip);
-            paneMeta.appendChild(paneChannelsChip);
             paneTitle.appendChild(paneMeta);
+            paneLead.appendChild(paneIcon);
+            paneLead.appendChild(paneTitle);
+
+            const paneSummary = document.createElement('div');
+            paneSummary.className = 'ytkit-vh-summary';
+            paneSummary.setAttribute('role', 'list');
+            const createPaneSummaryCard = (kind, iconName, labelText, valueNode) => {
+                const card = document.createElement('div');
+                card.className = 'ytkit-vh-summary-card';
+                card.dataset.kind = kind;
+                card.setAttribute('role', 'listitem');
+                const icon = document.createElement('span');
+                icon.className = 'ytkit-vh-summary-card__icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.appendChild((ICONS[iconName] || ICONS.settings)());
+                const copy = document.createElement('span');
+                copy.className = 'ytkit-vh-summary-card__copy';
+                const label = document.createElement('span');
+                label.className = 'ytkit-vh-summary-card__label';
+                label.textContent = labelText;
+                copy.appendChild(valueNode);
+                copy.appendChild(label);
+                card.appendChild(icon);
+                card.appendChild(copy);
+                paneSummary.appendChild(card);
+                return label;
+            };
+            createPaneSummaryCard(
+                'hidden',
+                'eye-off',
+                t('videoHiderHiddenVideosTab', 'Hidden Videos'),
+                paneHiddenChip
+            );
+            createPaneSummaryCard(
+                'allowed',
+                'check',
+                t('videoHiderAllowedVideosTab', 'Allowed Videos'),
+                paneAllowedChip
+            );
+            const paneChannelsLabel = createPaneSummaryCard(
+                'channels',
+                'lock',
+                t('videoHiderBlockedChannelsTab', 'Blocked Channels'),
+                paneChannelsChip
+            );
 
             // Enable toggle
             const toggleLabel = document.createElement('label');
             toggleLabel.className = 'ytkit-toggle-all';
-            toggleLabel.style.marginLeft = 'auto';
             const toggleText = document.createElement('span');
             toggleText.textContent = t('toggleStateOn', 'Enabled');
             const toggleSwitch = document.createElement('div');
@@ -48366,9 +48414,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             toggleSwitch.appendChild(toggleTrack);
             toggleLabel.appendChild(toggleText);
             toggleLabel.appendChild(toggleSwitch);
-            paneHeader.appendChild(paneTitle);
-            paneHeader.appendChild(toggleLabel);
+            const paneActions = document.createElement('div');
+            paneActions.className = 'ytkit-pane-actions';
+            paneActions.appendChild(toggleLabel);
+            paneHeader.appendChild(paneLead);
+            paneHeader.appendChild(paneActions);
             pane.appendChild(paneHeader);
+            pane.appendChild(paneSummary);
 
             // Tab navigation
             const tabNav = document.createElement('div');
@@ -48467,17 +48519,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 paneStateChip.textContent = isEnabled
                     ? t('videoHiderFeatureOn', 'Feature On')
                     : t('videoHiderFeatureOff', 'Feature Off');
-                paneHiddenChip.textContent = t('videoHiderHiddenCountTpl', '{count} videos hidden')
-                    .replace('{count}', String(getVideoCount()));
-                paneAllowedChip.textContent = t('videoHiderAllowedCountTpl', '{count} videos allowed')
-                    .replace('{count}', String(getAllowedCount()));
+                paneHiddenChip.textContent = String(getVideoCount());
+                paneAllowedChip.textContent = String(getAllowedCount());
                 const channelModeLabel = isChannelAllowlistMode()
                     ? t('videoHiderAllowedChannelsTab', 'Allowed Channels')
                     : t('videoHiderBlockedChannelsTab', 'Blocked Channels');
-                paneChannelsChip.textContent = t(
-                    isChannelAllowlistMode() ? 'videoHiderAllowedChannelsCountTpl' : 'videoHiderBlockedCountTpl',
-                    isChannelAllowlistMode() ? '{count} channels allowed' : '{count} channels blocked'
-                ).replace('{count}', String(getChannelCount()));
+                paneChannelsChip.textContent = String(getChannelCount());
+                paneChannelsLabel.textContent = channelModeLabel;
                 const channelTabLabel = tabButtons.get('channels')?.querySelector('.ytkit-vh-tab__label');
                 if (channelTabLabel) channelTabLabel.textContent = channelModeLabel;
 

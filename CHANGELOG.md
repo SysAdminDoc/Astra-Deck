@@ -6,6 +6,40 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.60.1] - 2026-08-13
+
+### Added
+
+- The extension now enforces a built-in zero-ad desktop contract with a narrow
+  static MV3 ruleset for known YouTube advertising endpoints and
+  document-start shell collapse. A real-browser smoke proves cold home and SPA
+  watch navigation block matching responses while preserving the masthead,
+  search, player, and settings workspace.
+- Eleven ImageGen-led Command Deck references now cover every settings
+  destination, and the extension smoke renders each destination in dark,
+  light, RTL, and wide desktop lanes.
+- A manager-neutral userscript smoke executes the shipped split artifacts with
+  GM API shims and verifies every settings destination at 1440×900 and
+  1920×1080 in dark and light themes.
+
+### Fixed
+
+- The shipped userscript now defines its translation and JSON-storage bridges
+  before feature factories initialize, restoring startup in real userscript
+  environments instead of failing on undefined `t`, `storageReadJSON`, or
+  `storageWriteJSON` bindings.
+- Video Hider is reachable from the userscript settings navigation, mounts its
+  dedicated pane, and reports live hidden-video, blocked-channel, and active-
+  filter summaries. Object-shaped select choices now render their labels
+  instead of `[object Object]`.
+
+### Changed
+
+- The in-page settings workspace now uses the selected v6 desktop Command Deck
+  system: a stable 320 px navigation rail, clearer mission headers, larger
+  context cards, full labels, and consistent dark/light treatment without
+  mobile claims.
+
 ### Security
 
 - **Video Hider filter lists can now actually be fetched, and only from a host

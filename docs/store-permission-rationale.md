@@ -4,10 +4,12 @@ This is the copy-paste source for Chrome Web Store and AMO review fields. It is
 documentation only; the generated manifests remain controlled by
 `build-extension.js`.
 
-Source check 2026-06-04:
+Source check 2026-08-13:
 
 - Chrome Web Store Program Policies:
   https://developer.chrome.com/docs/webstore/program-policies/policies
+- Chrome declarativeNetRequest API:
+  https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest
 - Chrome Web Store quality guidelines FAQ:
   https://developer.chrome.com/docs/webstore/program-policies/quality-guidelines-faq
 - Chrome Web Store privacy fields:
@@ -108,6 +110,7 @@ settings imports cannot turn a restricted artifact into a broader one.
 | --- | --- |
 | `storage` | Saves Astra Deck settings, local feature state, local caches, notes, watch-progress data, and user-created exports in the browser profile. |
 | `unlimitedStorage` | Prevents silent quota failure for local YouTube caches and long-term user data; bounded LRU cleanup still trims large stores. |
+| `declarativeNetRequest` | Enables the bundled static `astra_zero_ads` ruleset. Its five rules block known YouTube ad-serving domains and ad telemetry endpoints only when YouTube or YouTube No-Cookie initiated the request. Rules do not inspect request bodies, read browsing history, redirect traffic, or transmit data. |
 | `cookies` | Reads YouTube cookies only when the user starts an authenticated local download flow so yt-dlp can access media the user can already view. Cookies are not sent to Astra Deck servers. |
 | `downloads` | Saves user-requested exports, thumbnails, transcript files, diagnostic bundles, and media handoff files to the user's Downloads folder. |
 | `nativeMessaging` | Enables secure token exchange with the optional local Astra Downloader companion via a browser-pinned stdio pipe, replacing the HTTP `/health` token disclosure path. Only activates when the companion registers its native host manifest. |
@@ -175,6 +178,10 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 
 ## Reviewer Notes
 
+- `rules/zero-ads.json` is a reviewable static ruleset. It does not use dynamic
+  or session rules, excludes YouTube media/CDN hosts, and pairs network
+  blocking with `early.css` collapse of empty ad containers so blocked slots do
+  not leave layout gaps.
 - `web_accessible_resources` is intentionally restricted to `icons/*` and
   `assets/*`. The latter exists only for bundled theme media such as
   `assets/cat.gif`; JavaScript, HTML, CSS, source maps, and data exports are not
