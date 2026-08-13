@@ -160,18 +160,19 @@ test('Firefox clean-profile smoke command is exposed for AMO pre-submission runs
         'utf8'
     );
     assert.equal(pkg.scripts['smoke:firefox'], 'node scripts/smoke-firefox-webext.js');
-    assert.equal(DEFAULT_START_URL, 'https://www.youtube.com/watch?v=jNQXAC9IVRw');
+    assert.equal(DEFAULT_START_URL, 'https://www.youtube.com/');
     assert.deepEqual(
-        parseFirefoxSmokeArgs(['--firefox', 'C:/Firefox/firefox.exe', '--timeout-ms', '1234']),
+        parseFirefoxSmokeArgs(['--firefox', 'C:/Firefox/firefox.exe', '--timeout-ms', '12345']),
         {
             extensionUuid: FIREFOX_OPTIONAL_HOST_UUID,
             firefox: 'C:/Firefox/firefox.exe',
+            geckodriver: '',
             headed: false,
             keepStage: false,
             manualOptionalHosts: false,
             stageRoot: '',
             startUrl: DEFAULT_START_URL,
-            timeoutMs: 1234
+            timeoutMs: 12345
         }
     );
     assert.match(smokeScript, /createFirefoxStage\('store-safe'/,
@@ -180,10 +181,14 @@ test('Firefox clean-profile smoke command is exposed for AMO pre-submission runs
         'smoke output must report the launched manifest version');
     assert.match(smokeScript, /geckoId:\s*manifest\.browser_specific_settings\?\.gecko\?\.id/,
         'smoke output must report the staged Gecko extension id');
+    assert.match(smokeScript, /webExtension\.install/,
+        'automated smoke must install the staged extension through WebDriver BiDi');
+    assert.match(smokeScript, /network\.fetchError/,
+        'automated smoke must capture a browser-level failed/blocked request event');
+    assert.match(smokeScript, /data-ytkit-zero-ad-ruleset/,
+        'automated smoke must prove the staged ruleset through the extension-owned handshake');
     assert.match(smokeScript, /'run'[\s\S]*'--source-dir'[\s\S]*'--start-url'[\s\S]*'--no-reload'/,
-        'smoke must use web-ext run against a clean staged source dir and stable start URL');
-    assert.match(smokeScript, /'--arg=-headless'/,
-        'smoke must run Firefox headless for CI/operator reproducibility');
+        'headed optional-host smoke must retain web-ext against the clean stage');
     assert.match(smokeScript, /--manual-optional-hosts/,
         'smoke must expose a headed manual optional-host prompt harness');
     assert.equal(fs.existsSync(path.join(REPO_ROOT, '.github', 'workflows', 'build.yml')), false,

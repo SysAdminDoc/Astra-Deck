@@ -8,6 +8,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- The Firefox smoke is now a live desktop behavioral gate instead of a process-
+  survival check. In a disposable WebDriver BiDi profile it installs the
+  staged store-safe build, confirms the `astra_zero_ads` static ruleset through
+  an extension-owned status handshake, observes a matching ad request abort
+  without a response, verifies real YouTube ad shells are zero-height, and
+  preserves home, search, SPA navigation, and the watch player.
+- A real-manager userscript smoke downloads checksum-pinned public Firefox
+  builds of Tampermonkey and Violentmonkey from AMO, installs the shipped split
+  YTKit artifacts in isolated profiles, and proves initial plus SPA-reinserted
+  ad-shell suppression. Its loopback fixture also observes an ordinary parser
+  request reaching the server, explicitly preserving the honest
+  `document-start-shells-only` contract instead of claiming request blocking.
+  Release preparation now runs the Chromium, Firefox, Tampermonkey, and
+  Violentmonkey desktop browser smokes before it builds publishable artifacts.
 - Data Flow now lists each exact runtime-granted filter-list host, explains why
   it is available, and provides a localized Remove access action.
 - Settings Overview now reports every persisted value that differs from its

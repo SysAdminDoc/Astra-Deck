@@ -176,6 +176,23 @@ const MAX_REQUEST_BYTES = 2 * 1024 * 1024; // 2 MB
 const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
 const MAX_AI_REQUEST_BYTES = 512 * 1024;
 const MAX_AI_RESPONSE_BYTES = 2 * 1024 * 1024;
+const ZERO_AD_RULESET_ID = 'astra_zero_ads';
+
+async function getZeroAdStatus() {
+    const enabledRulesets = await callExtensionApi(
+        ext.declarativeNetRequest,
+        'getEnabledRulesets'
+    );
+    const normalized = Array.isArray(enabledRulesets)
+        ? enabledRulesets.filter((id) => typeof id === 'string')
+        : [];
+    return {
+        ok: true,
+        rulesetId: ZERO_AD_RULESET_ID,
+        enabled: normalized.includes(ZERO_AD_RULESET_ID),
+        enabledRulesets: normalized
+    };
+}
 
 async function performAiSummaryRequest(details) {
     if (!_credentialVault) throw new Error('AI credential vault is unavailable.');
@@ -1277,6 +1294,23 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // but if reading it throws we conservatively reject the message.
         try { sendResponse({ error: 'Sender validation failed.' }); } catch (__) { /* reason: sender may already be disconnected; we've already returned false */ }
         return false;
+    }
+
+    // Content runtimes publish this non-sensitive health bit on the shared
+    // document root. Browser smokes and support diagnostics can then prove
+    // that Firefox loaded the declared ruleset without reaching through the
+    // browser's protected moz-extension:// automation boundary.
+    if (msg.type === 'YTKIT_ZERO_AD_STATUS') {
+        getZeroAdStatus().then(sendResponse).catch((error) => {
+            sendResponse({
+                ok: false,
+                rulesetId: ZERO_AD_RULESET_ID,
+                enabled: false,
+                enabledRulesets: [],
+                error: error?.message || 'Zero-ad ruleset status is unavailable.'
+            });
+        });
+        return true;
     }
 
     if (msg.type === 'YTKIT_SYNC_STATUS' || msg.type === 'YTKIT_SYNC_UNDO') {

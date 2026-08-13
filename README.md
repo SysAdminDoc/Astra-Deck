@@ -504,10 +504,13 @@ npm run build                             # Build store-safe + Chromium-store + 
 npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
 npm run check:zero-ads                    # Validate the static rule contract and packaged manifest
 npm run smoke:zero-ads:live               # Cold-load desktop YouTube and verify blocked requests + collapsed shells
+npm run smoke:firefox                     # Prove Firefox DNR, shell collapse, search, and SPA player behavior
+npm run smoke:userscript-managers         # Install and exercise YTKit in real Tampermonkey + Violentmonkey builds
+npm run release:browser-smokes            # Run Chromium, Firefox, and real-manager desktop release gates
 npm run smoke:settings-overlay -- --desktop-only # Verify every extension settings destination at desktop sizes
 npm run smoke:settings-userscript         # Verify every userscript settings destination at desktop sizes
-npm run release:prepare                   # Build userscript artifacts and require readiness pass
-npm run release:prepare:no-crx            # Same, without any CRX — needs no maintainer key
+npm run release:prepare                   # Check + desktop browser gates + build + readiness
+npm run release:prepare:no-crx            # Same release gates, without any CRX or maintainer key
 npm run release:sbom                      # Regenerate build/astra-deck-npm-sbom.cdx.json
 npm run release:manifest                  # Regenerate release-manifest.json + SHA256SUMS
 npm run release:readiness -- --require-pass # Generate release readiness JSON/Markdown
@@ -522,6 +525,13 @@ node build-extension.js --profile github-full
 node build-extension.js --bump patch      # Bump and build
 node build-extension.js --bump minor --with-userscript
 ```
+
+The live browser gates are desktop-only and require network access, Firefox,
+and `geckodriver` on `PATH` (or `FIREFOX_PATH` / `GECKODRIVER_PATH`). They use
+throwaway Firefox profiles and never touch the normal browser profile. The
+real-manager lane downloads only the versioned AMO XPI URLs pinned in
+`scripts/userscript-manager-fixtures.json` and verifies each size and SHA-256
+before temporary installation.
 
 `npm run build` is safe for validation builds: if no maintainer key is
 configured, CRX files are signed with ephemeral key material that is not

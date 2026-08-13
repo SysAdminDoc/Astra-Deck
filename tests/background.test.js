@@ -79,6 +79,13 @@ function loadBackground({
             async setBadgeText(details) { badgeCalls.push({ method: 'setBadgeText', details }); },
             async setBadgeBackgroundColor(details) { badgeCalls.push({ method: 'setBadgeBackgroundColor', details }); }
         },
+        declarativeNetRequest: {
+            getEnabledRulesets(callback) {
+                const value = ['astra_zero_ads'];
+                if (typeof callback === 'function') callback(value);
+                return Promise.resolve(value);
+            }
+        },
         downloads: {
             download: downloadsDownloadImpl || ((opts, callback) => callback(1)),
             // Chromium's downloads.show is a void API with NO callback
@@ -261,6 +268,16 @@ test('background resolves a Promise-only Firefox namespace without a chrome glob
         active: false
     });
     assert.equal(response.tabId, 1);
+});
+
+test('background exposes the enabled zero-ad ruleset through its internal status contract', async () => {
+    const { messageListener } = loadBackground();
+    const response = await dispatchMessage(messageListener, { type: 'YTKIT_ZERO_AD_STATUS' });
+
+    assert.equal(response.ok, true);
+    assert.equal(response.rulesetId, 'astra_zero_ads');
+    assert.equal(response.enabled, true);
+    assert.deepEqual(Array.from(response.enabledRulesets), ['astra_zero_ads']);
 });
 
 test('background EXT_FETCH preserves empty-string request bodies', async () => {

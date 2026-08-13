@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-08-13",
+  "managers": [
+    {
+      "id": "violentmonkey",
+      "name": "Violentmonkey",
+      "version": "2.47.0",
+      "extensionId": "{aecec67f-0d10-4fa7-b7c7-609a2db280cf}",
+      "downloadUrl": "https://addons.mozilla.org/firefox/downloads/file/4941753/violentmonkey-2.47.0.xpi",
+      "sha256": "cce81b8ae7064e7d70a805f61e73190fbd546bdd3c78483d3b702be003b1316f",
+      "size": 687379,
+      "installUrlPattern": "/confirm/index.html",
+      "installButton": "#confirm:not([disabled])",
+      "installedText": "Script installed."
+    },
+    {
+      "id": "tampermonkey",
+      "name": "Tampermonkey",
+      "version": "5.5.0",
+      "extensionId": "firefox@tampermonkey.net",
+      "downloadUrl": "https://addons.mozilla.org/firefox/downloads/file/4797143/tampermonkey-5.5.0.xpi",
+      "sha256": "190031c78dbc5696114835601f2c8e6b855ad1e134df5df278f8fc158c065908",
+      "size": 1717973,
+      "installUrlPattern": "/ask.html",
+      "installButton": ".button.install:not([disabled])",
+      "installedText": ""
+    }
+  ]
+}
