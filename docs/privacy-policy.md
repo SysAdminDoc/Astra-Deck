@@ -103,16 +103,24 @@ support bundle or other data for support.
 ## Firefox Data Collection Permissions
 
 Firefox builds require Firefox 142+ and use Firefox's built-in data collection
-and transmission consent prompt. The generated Firefox manifest declares these
-required data categories:
+and transmission consent prompt. Every generated Firefox profile declares
+these required data categories for the core YouTube workflow:
 
 - `browsingActivity`
 - `websiteContent`
 - `websiteActivity`
-- `authenticationInfo`
 
-`technicalAndInteraction` is not declared because Astra Deck does not transmit
-telemetry, product metrics, crash reports, or diagnostic bundles automatically.
+The companion-capable `store-safe` and `github-full` profiles additionally
+declare `authenticationInfo` as required because an explicit authenticated
+download can hand YouTube cookies to Astra Downloader. They declare
+`technicalAndInteraction` as optional because an explicit companion action can
+send the user's selected download format and quality outside the browser. Astra
+Deck does not transmit telemetry, product metrics, crash reports, or diagnostic
+bundles automatically.
+
+The download-free `chromium-store` profile has no cookie, native-messaging,
+download, downloader-module, or loopback capability, so its Firefox artifact
+declares neither `authenticationInfo` nor `technicalAndInteraction`.
 
 ## Contact
 

@@ -21,6 +21,7 @@
     //     manifestPermission:   string | null,                // matching host_permission, if present
     //     optionalManifestPermission: string | null,           // matching optional_host_permissions, if present
     //     currentlyActive:      boolean,                      // true iff any driving feature is enabled
+    //     firefoxDataCollection: { required: string[], optional: string[] },
     //     riskBand:             'safe' | 'api' | 'local-companion' | 'experimental' | 'store-risk'
     //   }
     //
@@ -30,6 +31,15 @@
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createDataFlow) return;
+
+    const FIREFOX_TECHNICAL_AND_INTERACTION = 'technicalAndInteraction';
+
+    function firefoxDataCollection(required = [], optional = []) {
+        return Object.freeze({
+            required: Object.freeze(Array.from(new Set(required))),
+            optional: Object.freeze(Array.from(new Set(optional)))
+        });
+    }
 
     const SPONSORBLOCK_CANONICAL_ORIGIN = 'https://sponsor.ajay.app';
     // The maintained TeamPiped mirror implements the hash-prefix endpoint
@@ -98,6 +108,15 @@
         // diagnostics, but make the build-time exclusion explicit and shared.
         excludedProfiles: Object.freeze(['chromium-store']),
         hostGrant: 'required',
+        // The companion can receive YouTube cookies and explicit download
+        // choices (format/quality) outside the browser. Firefox forbids
+        // technicalAndInteraction in the required list, so keep that category
+        // optional while authentication information remains required for a
+        // profile that exposes the authenticated handoff at all.
+        firefoxDataCollection: firefoxDataCollection(
+            ['authenticationInfo'],
+            [FIREFOX_TECHNICAL_AND_INTERACTION]
+        ),
         riskBand: 'local-companion'
     }) : null;
 
@@ -114,6 +133,14 @@
             credentialsPolicy: 'no-cookies',
             profile: 'store-safe',
             hostGrant: 'required',
+            // These categories describe the core YouTube workflow shared by
+            // every artifact. Profile-specific categories belong on the
+            // origin that introduces them (for example, the companion above).
+            firefoxDataCollection: firefoxDataCollection([
+                'browsingActivity',
+                'websiteContent',
+                'websiteActivity'
+            ]),
             riskBand: 'safe'
         }),
         Object.freeze({
@@ -255,6 +282,34 @@
         return entry.profile === profile
             || ((profile === 'chromium-store' || profile === 'github-full')
                 && entry.profile === 'store-safe');
+    }
+
+    function getFirefoxDataCollectionPermissionsForProfile(
+        profile,
+        catalogue = ORIGIN_CATALOGUE
+    ) {
+        const required = [];
+        const optional = [];
+        const addUnique = (target, value) => {
+            if (typeof value === 'string' && value && !target.includes(value)) target.push(value);
+        };
+        for (const entry of catalogue) {
+            if (!isOriginAvailableForProfile(entry, profile)) continue;
+            for (const category of entry.firefoxDataCollection?.required || []) {
+                if (category === FIREFOX_TECHNICAL_AND_INTERACTION) {
+                    throw new Error('technicalAndInteraction cannot be a required Firefox data permission');
+                }
+                addUnique(required, category);
+            }
+            for (const category of entry.firefoxDataCollection?.optional || []) {
+                addUnique(optional, category);
+            }
+        }
+        const optionalOnly = optional.filter((category) => !required.includes(category));
+        return {
+            required: required.length ? required : ['none'],
+            ...(optionalOnly.length ? { optional: optionalOnly } : {})
+        };
     }
 
     // Sub-toggle inheritance map. Some schema entries are pure sub-knobs
@@ -467,11 +522,14 @@
     core.hostPermissionsForDataFlowOrigin = hostPermissionsForOrigin;
     core.isOriginAvailableForProfile = isOriginAvailableForProfile;
     core.getOptionalHostPermissionsForFeature = getOptionalHostPermissionsForFeature;
+    core.getFirefoxDataCollectionPermissionsForProfile =
+        getFirefoxDataCollectionPermissionsForProfile;
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             createDataFlow,
             findCoverageGaps,
+            getFirefoxDataCollectionPermissionsForProfile,
             getOptionalHostPermissionsForFeature,
             hostPermissionsForOrigin,
             ORIGIN_CATALOGUE,

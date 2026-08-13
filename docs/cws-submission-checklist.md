@@ -191,10 +191,13 @@ differences:
 - AMO requires source code submission for any minified / obfuscated
   asset. Astra Deck ships readable so this is a no-op.
 - Firefox artifacts require Firefox 142+ and use the built-in data collection
-  consent prompt. `scripts/manifest-patch.js` injects
-  `browser_specific_settings.gecko.data_collection_permissions.required` with:
-  `browsingActivity`, `websiteContent`, `websiteActivity`, and
-  `authenticationInfo`.
+  consent prompt. `scripts/manifest-patch.js` derives
+  `browser_specific_settings.gecko.data_collection_permissions` from each
+  build profile's data-flow capabilities. All profiles require
+  `browsingActivity`, `websiteContent`, and `websiteActivity`; only the
+  companion-capable profiles also require `authenticationInfo` and optionally
+  declare `technicalAndInteraction`. The download-free `chromium-store`
+  artifact declares neither companion-only category.
 - AMO reviewer notes should point at [privacy-policy.md](privacy-policy.md) and
   the Firefox Data Consent section of
   [store-permission-rationale.md](store-permission-rationale.md).

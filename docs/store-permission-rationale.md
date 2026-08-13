@@ -63,25 +63,14 @@ Stable privacy policy source: [privacy-policy.md](privacy-policy.md).
 
 Firefox builds require Firefox 142+ so Astra Deck can use Firefox's built-in
 data collection and transmission consent flow instead of a custom consent screen
-for Firefox 128-141. The generated Firefox manifest declares:
+for Firefox 128-141. `extension/core/data-flow.js` derives the generated
+manifest declaration from each artifact's available origins:
 
-```json
-{
-  "browser_specific_settings": {
-    "gecko": {
-      "strict_min_version": "142.0",
-      "data_collection_permissions": {
-        "required": [
-          "browsingActivity",
-          "websiteContent",
-          "websiteActivity",
-          "authenticationInfo"
-        ]
-      }
-    }
-  }
-}
-```
+| Firefox artifact | Required | Optional |
+| --- | --- | --- |
+| `chromium-store` | `browsingActivity`, `websiteContent`, `websiteActivity` | None |
+| `store-safe` | `browsingActivity`, `websiteContent`, `websiteActivity`, `authenticationInfo` | `technicalAndInteraction` |
+| `github-full` | `browsingActivity`, `websiteContent`, `websiteActivity`, `authenticationInfo` | `technicalAndInteraction` |
 
 Reviewer mapping:
 
@@ -90,12 +79,12 @@ Reviewer mapping:
 | `browsingActivity` | YouTube URLs, video IDs, channel/page context, and Reddit/SponsorBlock/RYD lookups are part of user-visible YouTube enhancement features. |
 | `websiteContent` | Astra Deck reads visible YouTube text, captions/transcripts, thumbnails, comments, metadata, and cookies needed for enabled features. |
 | `websiteActivity` | Astra Deck stores user actions such as settings changes, watch progress, note/export/download actions, hidden videos, and subscription group state. |
-| `authenticationInfo` | YouTube cookies can be read for an explicit authenticated local-download handoff to Astra Downloader. |
+| `authenticationInfo` | Companion-capable profiles can read YouTube cookies for an explicit authenticated local-download handoff to Astra Downloader. The download-free `chromium-store` artifact cannot and does not declare this category. |
+| `technicalAndInteraction` | Optional in companion-capable profiles because an explicit companion action can send the selected download format and quality outside the browser. The download-free `chromium-store` artifact omits it. |
 
-`technicalAndInteraction` is not declared because Astra Deck does not transmit
-telemetry, usage metrics, crash reports, or diagnostic bundles automatically.
-Diagnostics are local and exported only when the user manually downloads a
-support bundle.
+Astra Deck does not transmit telemetry, usage metrics, crash reports, or
+diagnostic bundles automatically. Diagnostics are local and exported only when
+the user manually downloads a support bundle.
 
 ## Manifest Permissions
 

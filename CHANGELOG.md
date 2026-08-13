@@ -25,6 +25,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- Firefox data-consent declarations now follow each build profile's actual
+  data-flow ceiling. The download-free Chromium-store Firefox artifact no
+  longer claims authentication collection, while companion-capable artifacts
+  declare interaction data only as optional.
 - Changing, clearing, importing, or resetting a Video Hider filter-list URL now
   revokes the previous filter-list-only host grant. Wildcard host input is
   rejected, and required manifest hosts are excluded from the revocation UI.

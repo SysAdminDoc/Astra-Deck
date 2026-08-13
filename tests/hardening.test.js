@@ -1316,9 +1316,11 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
     const {
         patchManifestForFirefox,
         FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
-        FIREFOX_DATA_COLLECTION_REQUIRED,
         FIREFOX_SIDEBAR_ACTION
     } = require('../scripts/manifest-patch');
+    const {
+        getFirefoxDataCollectionPermissionsForProfile
+    } = require('../extension/core/data-flow');
     const ffManifest = JSON.parse(JSON.stringify(manifest));
     patchManifestForFirefox(ffManifest);
 
@@ -1335,14 +1337,9 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
         FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION
     );
     assert.deepEqual(
-        ffManifest.browser_specific_settings?.gecko?.data_collection_permissions?.required,
-        FIREFOX_DATA_COLLECTION_REQUIRED,
-        'Firefox manifest must declare the built-in data-consent categories Astra transmits'
-    );
-    assert.equal(
-        ffManifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional,
-        undefined,
-        'Astra does not request optional Firefox data permissions at runtime, so none should be declared optional'
+        ffManifest.browser_specific_settings?.gecko?.data_collection_permissions,
+        getFirefoxDataCollectionPermissionsForProfile('store-safe'),
+        'Firefox manifest must derive built-in data-consent categories from the store-safe data-flow profile'
     );
     assert.ok(
         Array.isArray(ffManifest.background?.scripts) && ffManifest.background.scripts.length > 0,
@@ -1380,6 +1377,64 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
     assert.equal(ffManifest.commands, undefined, 'Patch must remain idempotent across re-runs');
     assert.deepEqual(ffManifest.sidebar_action, FIREFOX_SIDEBAR_ACTION,
         'sidebar_action patch must remain idempotent across re-runs');
+});
+
+test('Firefox data consent follows each staged profile capability boundary', () => {
+    const builder = require('../build-extension.js');
+    const { patchManifestForFirefox } = require('../scripts/manifest-patch');
+    const {
+        getFirefoxDataCollectionPermissionsForProfile
+    } = require('../extension/core/data-flow');
+    const sourceManifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8'
+    ));
+    const expectedByProfile = {
+        'store-safe': {
+            required: ['browsingActivity', 'websiteContent', 'websiteActivity', 'authenticationInfo'],
+            optional: ['technicalAndInteraction']
+        },
+        'chromium-store': {
+            required: ['browsingActivity', 'websiteContent', 'websiteActivity']
+        },
+        'github-full': {
+            required: ['browsingActivity', 'websiteContent', 'websiteActivity', 'authenticationInfo'],
+            optional: ['technicalAndInteraction']
+        }
+    };
+
+    for (const [profile, expected] of Object.entries(expectedByProfile)) {
+        const manifest = builder.patchManifestForBuildProfile(
+            JSON.parse(JSON.stringify(sourceManifest)),
+            profile,
+            'firefox'
+        );
+        patchManifestForFirefox(manifest, profile);
+        assert.deepEqual(
+            getFirefoxDataCollectionPermissionsForProfile(profile),
+            expected,
+            `${profile} data-flow declaration must stay pinned`
+        );
+        assert.deepEqual(
+            manifest.browser_specific_settings.gecko.data_collection_permissions,
+            expected,
+            `${profile} Firefox artifact must match its data-flow declaration`
+        );
+    }
+
+    assert.deepEqual(
+        getFirefoxDataCollectionPermissionsForProfile('chromium-store', []),
+        { required: ['none'] },
+        'a profile with no transmitting data-flow entry must use Firefox\'s explicit none sentinel'
+    );
+    assert.throws(
+        () => getFirefoxDataCollectionPermissionsForProfile('store-safe', [{
+            profile: 'store-safe',
+            firefoxDataCollection: { required: ['technicalAndInteraction'] }
+        }]),
+        /cannot be a required Firefox data permission/,
+        'technicalAndInteraction must never drift into Firefox\'s required list'
+    );
 });
 
 test('popup side-panel launcher avoids static unsupported Firefox API references', () => {
@@ -3182,7 +3237,9 @@ test('privacy policy covers store data categories and Firefox consent packet', (
     const readme = read('README.md');
     const checklist = read('docs/cws-submission-checklist.md');
     const architecture = read('docs/architecture.md');
-    const { FIREFOX_DATA_COLLECTION_REQUIRED } = require('../scripts/manifest-patch');
+    const {
+        getFirefoxDataCollectionPermissionsForProfile
+    } = require('../extension/core/data-flow');
 
     assert.ok(readme.includes('docs/privacy-policy.md'),
         'README must link the stable privacy policy source');
@@ -3219,7 +3276,13 @@ test('privacy policy covers store data categories and Firefox consent packet', (
             'privacy policy must include Chrome data category ' + category);
     }
 
-    for (const firefoxCategory of FIREFOX_DATA_COLLECTION_REQUIRED) {
+    const firefoxCategories = new Set(
+        ['store-safe', 'chromium-store', 'github-full'].flatMap((profile) => {
+            const permissions = getFirefoxDataCollectionPermissionsForProfile(profile);
+            return [...permissions.required, ...(permissions.optional || [])];
+        })
+    );
+    for (const firefoxCategory of firefoxCategories) {
         assert.ok(policy.includes('`' + firefoxCategory + '`'),
             'privacy policy must include Firefox data category ' + firefoxCategory);
         assert.ok(checklist.includes('`' + firefoxCategory + '`'),
