@@ -99,8 +99,16 @@ const CHROME_STUB = `'use strict';
 // captured so the smoke can drive the real YTKIT_OPEN_PANEL path.
 (() => {
     const store = Object.create(null);
-    store.ytSuiteSettings = { transcriptViewer: true };
-    const requestedLocale = new URLSearchParams(globalThis.location?.search || '').get('locale');
+    const smokeParams = new URLSearchParams(globalThis.location?.search || '');
+    const injectedRuntimeSettings = null; // __ASTRA_SMOKE_RUNTIME_SETTINGS__
+    store.ytSuiteSettings = injectedRuntimeSettings || (smokeParams.get('settingsDiff') === '1'
+        ? {
+            transcriptViewer: true,
+            githubFullProfile: true,
+            customCssCode: '/* astra-settings-diff-smoke-secret */'
+        }
+        : { transcriptViewer: true });
+    const requestedLocale = smokeParams.get('locale');
     if (requestedLocale) store._localeOverride = requestedLocale;
     const messageListeners = [];
     const changeListeners = [];
@@ -514,14 +522,21 @@ const CATEGORY_PARITY_CHECKS = `(() => {
     });
 })()`;
 
+function buildChromeStub(runtimeSettings = null) {
+    if (runtimeSettings === null) return CHROME_STUB;
+    const marker = 'const injectedRuntimeSettings = null; // __ASTRA_SMOKE_RUNTIME_SETTINGS__';
+    if (!CHROME_STUB.includes(marker)) {
+        throw new Error('chrome stub runtime-settings marker is missing');
+    }
+    return CHROME_STUB.replace(
+        marker,
+        `const injectedRuntimeSettings = ${JSON.stringify(runtimeSettings)};`
+    );
+}
+
 function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null } = {}) {
     copyDir(EXT_DIR, stageDir);
-    const chromeStub = runtimeSettings
-        ? CHROME_STUB.replace(
-            'store.ytSuiteSettings = { transcriptViewer: true };',
-            `store.ytSuiteSettings = ${JSON.stringify(runtimeSettings)};`
-        )
-        : CHROME_STUB;
+    const chromeStub = buildChromeStub(runtimeSettings);
     fs.writeFileSync(path.join(stageDir, 'chrome-stub.js'), chromeStub, 'utf8');
     const manifest = JSON.parse(fs.readFileSync(path.join(stageDir, 'manifest.json'), 'utf8'));
     const isolatedGroup = (manifest.content_scripts || []).find((group) => {
@@ -1098,6 +1113,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+    buildChromeStub,
     buildFixture,
     CHROME_STUB,
     CATEGORY_PARITY_CHECKS,

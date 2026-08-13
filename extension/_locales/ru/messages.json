@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} настроек включено в {categories} категориях"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "Изменено: {count}"
+  },
+  "schemaOverviewChangedView": {
+    "message": "Изменения относительно значений по умолчанию"
+  },
+  "schemaOverviewAllView": {
+    "message": "Показать все настройки"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "Копировать изменённые настройки"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "Изменённые настройки скопированы в буфер обмена."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "Настройки не отличаются от значений по умолчанию."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "Не удалось скопировать изменённые настройки."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "Текущее"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "По умолчанию"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "Все настройки используют значения по умолчанию."
+  },
   "schemaOverviewEyebrow": {
     "message": "Обзор настроек"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "Инструменты сравнения настроек"
   },
   "searchWatchClose": {
     "message": "Закрыть результаты поиска"

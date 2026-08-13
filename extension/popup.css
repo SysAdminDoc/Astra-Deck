@@ -1388,6 +1388,132 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.schema-overview-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 6px 0 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.schema-overview-diff-count {
+  margin-inline-end: auto;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.schema-overview-tool {
+  appearance: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 10px;
+  padding: 4px 7px;
+  cursor: pointer;
+}
+
+.schema-overview-tool:hover,
+.schema-overview-tool[aria-pressed="true"] {
+  border-color: var(--accent-border);
+  background: rgba(78, 200, 165, 0.1);
+  color: var(--text-primary);
+}
+
+.schema-overview-tool:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.schema-overview-tool:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.schema-overview-diff {
+  margin: 6px 0 4px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 184, 77, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 184, 77, 0.05);
+}
+
+.schema-overview-diff-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.schema-overview-diff-empty {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.schema-overview-diff-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.schema-overview-diff-row {
+  padding: 5px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.schema-overview-diff-head,
+.schema-overview-diff-values {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.schema-overview-diff-head strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schema-overview-diff-head span {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.schema-overview-diff-values {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.schema-overview-diff-value {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.schema-overview-diff-default {
+  color: var(--text-muted);
+}
+
 /* v4.23.0 started as a two-column grid; v4.24.0 switched to a single
    flex column once rows became expandable. Single column keeps key
    sub-lists readable on narrow popups. */
@@ -1398,6 +1524,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.schema-overview-list[hidden],
+.schema-overview-diff[hidden] {
+  display: none;
 }
 
 .schema-overview-list li {

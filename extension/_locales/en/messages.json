@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} settings on across {categories} categories"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count} changed"
+  },
+  "schemaOverviewChangedView": {
+    "message": "Changed from defaults"
+  },
+  "schemaOverviewAllView": {
+    "message": "Show all settings"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "Copy changed settings"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "Changed settings copied to clipboard."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "No settings differ from their defaults."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "Could not copy changed settings."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "Current"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "Default"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "All settings use their defaults."
+  },
   "schemaOverviewEyebrow": {
     "message": "Settings overview"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "Settings diff tools"
   },
   "searchWatchClose": {
     "message": "Close search results"

@@ -177,6 +177,16 @@
         <span class="schema-overview-eyebrow" data-i18n="schemaOverviewEyebrow">Settings overview</span>
         <span class="schema-overview-count" id="schema-overview-count" aria-live="polite"></span>
       </summary>
+      <div class="schema-overview-tools" role="toolbar" data-i18n-attr-aria-label="schemaOverviewToolsAria" aria-label="Settings diff tools">
+        <span class="schema-overview-diff-count" id="schema-overview-diff-count" aria-live="polite"></span>
+        <button id="schema-overview-diff-toggle" type="button" class="schema-overview-tool" aria-pressed="false" data-i18n="schemaOverviewChangedView">Changed from defaults</button>
+        <button id="schema-overview-diff-copy" type="button" class="schema-overview-tool" data-i18n="schemaOverviewCopyDiff">Copy changed settings</button>
+      </div>
+      <section class="schema-overview-diff" id="schema-overview-diff" aria-labelledby="schema-overview-diff-title" hidden>
+        <h3 id="schema-overview-diff-title" class="schema-overview-diff-title" data-i18n="schemaOverviewChangedView">Changed from defaults</h3>
+        <p id="schema-overview-diff-empty" class="schema-overview-diff-empty" data-i18n="schemaOverviewDiffEmpty">All settings use their defaults.</p>
+        <ul class="schema-overview-diff-list" id="schema-overview-diff-list" role="list"></ul>
+      </section>
       <ul class="schema-overview-list" id="schema-overview-list" role="list"></ul>
     </details>
 

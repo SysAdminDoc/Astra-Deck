@@ -742,7 +742,7 @@
     "message": "動画を {format} で {quality} としてダウンロード"
   },
   "dlPopupDefault": {
-    "message": "デフォルト"
+    "message": "既定値"
   },
   "dlPopupDownloaderOffline": {
     "message": "ダウンローダーが実行されていません"
@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{categories} カテゴリで {enabled}/{total} 個の設定がオン"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count} 件を変更"
+  },
+  "schemaOverviewChangedView": {
+    "message": "既定値からの変更"
+  },
+  "schemaOverviewAllView": {
+    "message": "すべての設定を表示"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "変更した設定をコピー"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "変更した設定をクリップボードにコピーしました。"
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "既定値と異なる設定はありません。"
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "変更した設定をコピーできませんでした。"
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "現在"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "既定値"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "すべての設定が既定値です。"
+  },
   "schemaOverviewEyebrow": {
     "message": "設定の概要"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "設定変更ツール"
   },
   "searchWatchClose": {
     "message": "検索結果を閉じる"

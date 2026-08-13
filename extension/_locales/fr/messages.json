@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} paramètres activés dans {categories} catégories"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count} modifiés"
+  },
+  "schemaOverviewChangedView": {
+    "message": "Modifiés par rapport aux valeurs par défaut"
+  },
+  "schemaOverviewAllView": {
+    "message": "Afficher tous les paramètres"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "Copier les paramètres modifiés"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "Paramètres modifiés copiés dans le presse-papiers."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "Aucun paramètre ne diffère de sa valeur par défaut."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "Impossible de copier les paramètres modifiés."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "Actuel"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "Par défaut"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "Tous les paramètres utilisent leurs valeurs par défaut."
+  },
   "schemaOverviewEyebrow": {
     "message": "Aperçu des paramètres"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "Outils de comparaison des paramètres"
   },
   "searchWatchClose": {
     "message": "Fermer les résultats de recherche"

@@ -4388,8 +4388,41 @@
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} configurações ativas em {categories} categorias"
   },
+  "schemaOverviewChangedCountTpl": {
+    "message": "{count} alterados"
+  },
+  "schemaOverviewChangedView": {
+    "message": "Alterados em relação aos padrões"
+  },
+  "schemaOverviewAllView": {
+    "message": "Mostrar todas as configurações"
+  },
+  "schemaOverviewCopyDiff": {
+    "message": "Copiar configurações alteradas"
+  },
+  "schemaOverviewCopyDiffDone": {
+    "message": "Configurações alteradas copiadas para a área de transferência."
+  },
+  "schemaOverviewCopyDiffEmpty": {
+    "message": "Nenhuma configuração difere do padrão."
+  },
+  "schemaOverviewCopyDiffFail": {
+    "message": "Não foi possível copiar as configurações alteradas."
+  },
+  "schemaOverviewDiffCurrent": {
+    "message": "Atual"
+  },
+  "schemaOverviewDiffDefault": {
+    "message": "Padrão"
+  },
+  "schemaOverviewDiffEmpty": {
+    "message": "Todas as configurações usam seus padrões."
+  },
   "schemaOverviewEyebrow": {
     "message": "Visão geral das configurações"
+  },
+  "schemaOverviewToolsAria": {
+    "message": "Ferramentas de alterações de configuração"
   },
   "searchWatchClose": {
     "message": "Fechar resultados da pesquisa"
