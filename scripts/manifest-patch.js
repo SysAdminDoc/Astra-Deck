@@ -4,16 +4,14 @@
 // exact Firefox-side manifest delta without spawning a real build.
 // Side-effect-free module — safe to `require()` from tests.
 
+const {
+    getFirefoxDataCollectionPermissionsForProfile
+} = require('../extension/core/data-flow');
+
 const FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION = '142.0';
 const FIREFOX_EXTENSION_ID = 'ytkit@sysadmindoc.github.io';
 const FIREFOX_AUTO_UPDATE_PROFILE = 'store-safe';
 const FIREFOX_UPDATE_MANIFEST_URL = 'https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/updates.json';
-const FIREFOX_DATA_COLLECTION_REQUIRED = Object.freeze([
-    'browsingActivity',
-    'websiteContent',
-    'websiteActivity',
-    'authenticationInfo'
-]);
 const FIREFOX_SIDEBAR_ACTION = Object.freeze({
     default_title: '__MSG_extName__',
     default_panel: 'sidebar.html',
@@ -29,13 +27,12 @@ const FIREFOX_SIDEBAR_ACTION = Object.freeze({
 // the result back to disk.
 function patchManifestForFirefox(ffManifest, profile = FIREFOX_AUTO_UPDATE_PROFILE) {
     const autoUpdate = profile === FIREFOX_AUTO_UPDATE_PROFILE;
+    const dataCollectionPermissions = getFirefoxDataCollectionPermissionsForProfile(profile);
     ffManifest.browser_specific_settings = {
         gecko: {
             id: FIREFOX_EXTENSION_ID,
             strict_min_version: FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
-            data_collection_permissions: {
-                required: FIREFOX_DATA_COLLECTION_REQUIRED.slice()
-            },
+            data_collection_permissions: dataCollectionPermissions,
             ...(autoUpdate ? { update_url: FIREFOX_UPDATE_MANIFEST_URL } : {})
         }
     };
@@ -79,7 +76,6 @@ function patchManifestForFirefox(ffManifest, profile = FIREFOX_AUTO_UPDATE_PROFI
 module.exports = {
     patchManifestForFirefox,
     FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
-    FIREFOX_DATA_COLLECTION_REQUIRED,
     FIREFOX_EXTENSION_ID,
     FIREFOX_AUTO_UPDATE_PROFILE,
     FIREFOX_UPDATE_MANIFEST_URL,
