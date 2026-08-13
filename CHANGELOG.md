@@ -30,6 +30,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- Cobalt fallback no longer grants or contacts `api.cobalt.tools`. GitHub-full
+  users must configure a root HTTPS origin they operate or are authorized to
+  use and approve that exact browser host grant. A dedicated worker contract
+  derives the canonical YouTube watch URL from the sender tab, omits cookies
+  and credentials, rejects redirects, and bounds response time and size; the
+  standalone userscript's unaffiliated community-instance cascade and Cobalt
+  `@connect` declarations were removed. Its optional external-page fallback is
+  now unset by default, HTTPS-only, and opens only a user-configured URL.
+- Runtime-selected HTTPS grants can no longer turn the generic fetch bridge
+  into a POST proxy, and every dynamic GET redirect hop now requires its own
+  exact grant before the worker follows it.
 - Firefox data-consent declarations now follow each build profile's actual
   data-flow ceiling. The download-free Chromium-store Firefox artifact no
   longer claims authentication collection, while companion-capable artifacts

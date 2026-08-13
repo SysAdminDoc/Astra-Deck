@@ -12,7 +12,7 @@ const {
 } = require('../extension/core/credential-vault');
 // background.js pulls this in through importScripts in the browser. The vm
 // context has no importScripts, so hand it the real module rather than a stub:
-// the filter-list door is only as good as these rules.
+// the user-chosen HTTPS door is only as good as these rules.
 const remoteListScope = require('../extension/core/remote-list-scope');
 
 const repoRoot = path.join(__dirname, '..');
@@ -159,6 +159,8 @@ function loadBackground({
             createCredentialVault: (options) => createCredentialVault({ ...options, persistentStore }),
             validateAiProviderEndpoint: validateProviderEndpoint,
             REMOTE_LIST_HOST_PATTERN: remoteListScope.REMOTE_LIST_HOST_PATTERN,
+            COBALT_PUBLIC_INSTANCE_HOST: remoteListScope.COBALT_PUBLIC_INSTANCE_HOST,
+            describeCobaltInstanceUrl: remoteListScope.describeCobaltInstanceUrl,
             describeRemoteListUrl: remoteListScope.describeRemoteListUrl,
             remoteListOriginPattern: remoteListScope.remoteListOriginPattern
         },
@@ -1114,9 +1116,177 @@ test('a page-driven request cannot escalate the filter-list door into blanket we
     assert.match(privateHost.error, /not declared by this extension build/,
         'a private-network origin is not grantable through the filter-list door');
 
+    const publicCobalt = await dispatchMessage(messageListener, {
+        type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
+        origins: ['https://api.cobalt.tools/*']
+    });
+    assert.match(publicCobalt.error, /not declared by this extension build/,
+        'the dynamic permission door must not provide an alternate grant for Cobalt public service');
+
     const specific = await dispatchMessage(messageListener, {
         type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
         origins: ['https://lists.example.com/*']
     });
     assert.equal(specific.granted, true);
+});
+
+// ── Self-hosted Cobalt capability contract ──
+
+const COBALT_SETTINGS = Object.freeze({
+    safeStoreProfile: false,
+    githubFullProfile: true,
+    downloadCobaltFallback: true,
+    downloadCobaltInstance: 'https://cobalt.example.net/'
+});
+const COBALT_SENDER = Object.freeze({
+    id: 'astra-test-extension',
+    tab: { id: 9, windowId: 1, index: 0, url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=private-context' }
+});
+
+test('self-hosted Cobalt requires the configured host grant before any POST', async () => {
+    let fetchCalled = false;
+    let checkedOrigins = [];
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        initialSettings: COBALT_SETTINGS,
+        permissionsContainsImpl: (payload, callback) => {
+            checkedOrigins = Array.from(payload.origins || []);
+            callback(false);
+        },
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('{}', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COBALT_REQUEST'
+    }, COBALT_SENDER);
+
+    assert.equal(response.ok, false);
+    assert.equal(response.error.code, 'COBALT_PERMISSION_REQUIRED');
+    assert.deepEqual(checkedOrigins, ['https://cobalt.example.net/*']);
+    assert.equal(fetchCalled, false);
+});
+
+test('self-hosted Cobalt owns its endpoint and sends only a canonical video URL', async () => {
+    let capturedUrl = null;
+    let capturedInit = null;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        initialSettings: COBALT_SETTINGS,
+        permissionsContainsImpl: (_payload, callback) => callback(true),
+        fetchImpl: async (url, init) => {
+            capturedUrl = url;
+            capturedInit = init;
+            return new Response(JSON.stringify({
+                status: 'redirect',
+                url: 'https://media.example.net/video.mp4'
+            }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' }
+            });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COBALT_REQUEST',
+        // Forged destinations and media context are ignored; the worker reads
+        // validated storage and the sender tab instead.
+        endpoint: 'https://attacker.example/',
+        url: 'https://www.youtube.com/watch?v=AAAAAAAAAAA&secret=leak'
+    }, COBALT_SENDER);
+
+    assert.equal(response.ok, true);
+    assert.equal(response.data.status, 'redirect');
+    assert.equal(capturedUrl, 'https://cobalt.example.net/');
+    assert.equal(capturedInit.method, 'POST');
+    assert.equal(capturedInit.credentials, 'omit');
+    assert.equal(capturedInit.redirect, 'error');
+    assert.equal(capturedInit.headers.Accept, 'application/json');
+    assert.deepEqual(JSON.parse(capturedInit.body), {
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+    });
+});
+
+test('the public Cobalt service and non-watch senders fail closed', async () => {
+    for (const [settings, sender, code] of [
+        [{ ...COBALT_SETTINGS, downloadCobaltInstance: 'https://api.cobalt.tools/' }, COBALT_SENDER, 'COBALT_INSTANCE_REQUIRED'],
+        [COBALT_SETTINGS, { id: 'astra-test-extension', tab: { url: 'https://www.youtube.com/' } }, 'COBALT_WATCH_TAB_REQUIRED']
+    ]) {
+        let fetchCalled = false;
+        const { messageListener } = loadBackground({
+            optionalHostPermissions: FILTER_LIST_DECLARED,
+            initialSettings: settings,
+            permissionsContainsImpl: (_payload, callback) => callback(true),
+            fetchImpl: async () => {
+                fetchCalled = true;
+                return new Response('{}', { status: 200 });
+            }
+        });
+        const response = await dispatchMessage(messageListener, { type: 'YTKIT_COBALT_REQUEST' }, sender);
+        assert.equal(response.error.code, code);
+        assert.equal(fetchCalled, false);
+    }
+});
+
+test('generic EXT_FETCH cannot turn one dynamic grant into a POST proxy', async () => {
+    let fetchCalled = false;
+    let containsCalled = false;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        permissionsContainsImpl: (_payload, callback) => {
+            containsCalled = true;
+            callback(true);
+        },
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('{}', { status: 200 });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'POST',
+            url: 'https://cobalt.example.net/',
+            data: JSON.stringify({ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })
+        }
+    });
+
+    assert.match(response.error, /only support anonymous GET\/HEAD/);
+    assert.equal(containsCalled, false, 'request shape is rejected before consulting permission state');
+    assert.equal(fetchCalled, false);
+});
+
+test('dynamic GET redirects require an exact grant at every hop', async () => {
+    const checked = [];
+    const fetched = [];
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: FILTER_LIST_DECLARED,
+        permissionsContainsImpl: (payload, callback) => {
+            const origin = Array.from(payload.origins || [])[0];
+            checked.push(origin);
+            callback(origin === 'https://lists.example.com/*');
+        },
+        fetchImpl: async (url) => {
+            fetched.push(url);
+            return new Response(null, {
+                status: 302,
+                headers: { location: 'https://redirect.example.net/rules.json' }
+            });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://lists.example.com/rules.json' }
+    });
+
+    assert.match(response.error, /Runtime host permission not granted/);
+    assert.deepEqual(checked, [
+        'https://lists.example.com/*',
+        'https://redirect.example.net/*'
+    ]);
+    assert.deepEqual(fetched, ['https://lists.example.com/rules.json']);
 });

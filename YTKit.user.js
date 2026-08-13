@@ -25,13 +25,6 @@
 // @connect      api.openai.com
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
-// @connect      cobalt.tools
-// @connect      *.cobalt.tools
-// @connect      *.imput.net
-// @connect      *.meowing.de
-// @connect      *.canine.tools
-// @connect      capi.3kh0.net
-// @connect      downloadapi.stuff.solutions
 // @connect      raw.githubusercontent.com
 // @connect      localhost
 // @connect      127.0.0.1
@@ -1588,14 +1581,60 @@
         poll();
     }
 
-    // Web download fallback: opens cobalt when all other download methods fail
+    function _describeWebDownloaderUrl(value) {
+        const raw = typeof value === 'string' ? value.trim() : '';
+        if (!raw) return { ok: false, error: 'missing' };
+        if (raw.length > 2048) return { ok: false, error: 'too-long' };
+        try {
+            // Validate templates without allowing the placeholder to influence
+            // URL parsing. It is replaced only with an encoded canonical URL.
+            const parsed = new URL(raw.replaceAll('{url}', 'ytkit-video-url'));
+            if (parsed.protocol !== 'https:') return { ok: false, error: 'https-required' };
+            if (parsed.username || parsed.password) return { ok: false, error: 'credentials-forbidden' };
+            return { ok: true, url: raw };
+        } catch (_) {
+            return { ok: false, error: 'invalid-url' };
+        }
+    }
+
+    function _canonicalYouTubeWatchUrl(videoUrl) {
+        const videoId = getVideoId(videoUrl);
+        return videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
+    }
+
+    function _buildConfiguredWebDownloaderUrl(configuredUrl, videoUrl) {
+        const described = _describeWebDownloaderUrl(configuredUrl);
+        const canonicalUrl = _canonicalYouTubeWatchUrl(videoUrl);
+        if (!described.ok || !canonicalUrl) return null;
+        const encodedUrl = encodeURIComponent(canonicalUrl);
+        const target = described.url.includes('{url}')
+            ? described.url.replaceAll('{url}', encodedUrl)
+            : `${described.url.replace(/#.*$/, '')}#${encodedUrl}`;
+        try {
+            const configuredOrigin = new URL(described.url.replaceAll('{url}', 'ytkit-video-url')).origin;
+            const targetUrl = new URL(target);
+            if (targetUrl.protocol !== 'https:'
+                || targetUrl.username || targetUrl.password
+                || targetUrl.origin !== configuredOrigin) return null;
+            return targetUrl.href;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    // Optional userscript-only fallback. This is navigation to a page the
+    // user configured, not a background API request. The canonical watch URL
+    // is placed in the fragment unless the URL contains an explicit {url}
+    // placeholder, so it is not sent to that page's server during navigation.
     function _webDownloadFallback(videoUrl) {
-        const cobaltUrl = GM_getValue('ytkit_cobalt_url', 'https://cobalt.tools/#');
-        // Ensure URL ends with # for hash-based paste
-        const base = cobaltUrl.includes('#') ? cobaltUrl : cobaltUrl.replace(/\/?$/, '/#');
-        const downloadUrl = base + encodeURIComponent(videoUrl);
-        showToast('Opening web downloader...', '#3b82f6', { duration: 4 });
+        const downloadUrl = _buildConfiguredWebDownloaderUrl(appState.settings?.cobaltUrl, videoUrl);
+        if (!downloadUrl) {
+            showToast('Configure an HTTPS web downloader URL in Settings to use this fallback.', '#f59e0b', { duration: 6 });
+            return false;
+        }
+        showToast('Opening your configured web downloader...', '#3b82f6', { duration: 4 });
         openExternalWindow(downloadUrl);
+        return true;
     }
 
     // ── MediaDL Server Manager ──
@@ -2123,131 +2162,14 @@
         }
     }
 
-    // Cobalt API download — calls cobalt instance API to get a direct download URL
-    // No-auth community Cobalt API instances (fallback list)
-    const _cobaltApiInstances = [
-        'https://cobalt-api.meowing.de',
-        'https://cobalt-backend.canine.tools',
-        'https://kityune.imput.net',
-        'https://nachos.imput.net',
-        'https://sunny.imput.net',
-        'https://blossom.imput.net',
-        'https://capi.3kh0.net',
-        'https://downloadapi.stuff.solutions',
-    ];
-
-    // Resolve user's cobalt URL to an actual API endpoint.
-    // cobalt.tools is the web frontend — not the API. Map it to a working instance.
-    function _resolveCobaltApiUrl(userUrl) {
-        const cleaned = userUrl.replace(/#.*$/, '').replace(/\/+$/, '');
-        try {
-            const host = new URL(cleaned).hostname;
-            // cobalt.tools and co.wuk.sh are web frontends, not API endpoints
-            if (host === 'cobalt.tools' || host === 'co.wuk.sh') {
-                return _cobaltApiInstances[0];
-            }
-        } catch (_) {}
-        return cleaned;
-    }
-
-    async function _tryCobaltApiDownload(videoUrl, audioOnly) {
-        const userUrl = GM_getValue('ytkit_cobalt_url', 'https://cobalt.tools/#');
-        const primaryApi = _resolveCobaltApiUrl(userUrl);
-
-        // Build instance list: user's configured instance first, then fallbacks
-        const instances = [primaryApi, ..._cobaltApiInstances.filter(u => u !== primaryApi)];
-
-        const body = { url: videoUrl };
-        if (audioOnly) {
-            body.downloadMode = 'audio';
-            body.audioFormat = 'mp3';
-        } else {
-            body.downloadMode = 'auto';
-        }
-        const payload = JSON.stringify(body);
-
-        for (const instance of instances) {
-            const apiUrl = instance.replace(/\/+$/, '') + '/';
-            DebugManager.log('Download', `Cobalt API: ${apiUrl}`);
-            const result = await new Promise((resolve) => {
-                GM_xmlhttpRequest({
-                    method: 'POST',
-                    url: apiUrl,
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    data: payload,
-                    timeout: 15000,
-                    onload: function(r) {
-                        try {
-                            const resp = JSON.parse(r.responseText);
-                            DebugManager.log('Download', `Cobalt response: ${r.status} - status=${resp.status}`);
-
-                            // Auth required — skip to next instance
-                            if (resp.error?.code?.startsWith('api.auth')) {
-                                DebugManager.log('Download', `Cobalt instance ${instance} requires auth, trying next...`);
-                                resolve('next');
-                                return;
-                            }
-
-                            if ((resp.status === 'tunnel' || resp.status === 'redirect') && resp.url) {
-                                const filename = resp.filename || undefined;
-                                triggerDownload(resp.url, filename).then(() => {
-                                    showToast('Download started via Cobalt', '#22c55e', { duration: 3 });
-                                    resolve(true);
-                                }).catch(() => {
-                                    openExternalWindow(resp.url);
-                                    resolve(true);
-                                });
-                            } else if (resp.status === 'local-processing' && resp.url) {
-                                // v11+ local processing — browser handles muxing
-                                triggerDownload(resp.url, resp.filename || undefined).then(() => {
-                                    showToast('Download started via Cobalt', '#22c55e', { duration: 3 });
-                                    resolve(true);
-                                }).catch(() => {
-                                    openExternalWindow(resp.url);
-                                    resolve(true);
-                                });
-                            } else if (resp.status === 'picker' && resp.picker?.length > 0) {
-                                const pick = resp.picker[0];
-                                triggerDownload(pick.url, pick.filename || undefined).then(() => {
-                                    showToast('Download started via Cobalt', '#22c55e', { duration: 3 });
-                                    resolve(true);
-                                }).catch(() => resolve('next'));
-                            } else {
-                                DebugManager.log('Download', `Cobalt API returned: ${resp.status} - ${resp.error?.code || 'unknown'}`);
-                                resolve('next');
-                            }
-                        } catch (e) {
-                            DebugManager.log('Download', `Cobalt API parse error: ${e.message}`);
-                            resolve('next');
-                        }
-                    },
-                    onerror: function(err) {
-                        DebugManager.log('Download', `Cobalt API error (${instance}): ${JSON.stringify(err)}`);
-                        resolve('next');
-                    },
-                    ontimeout: function() {
-                        DebugManager.log('Download', `Cobalt API timed out (${instance})`);
-                        resolve('next');
-                    }
-                });
-            });
-            if (result === true) return true;
-            if (result === false) return false;
-            // 'next' — try next instance
-        }
-        DebugManager.log('Download', 'All Cobalt instances failed');
-        return false;
-    }
-
     // Main download handler — smart cascade with quality awareness:
     //
     //  1. Quick check: is MediaDL already running?          → use it (best quality)
     //  2. Not running: try auto-starting via mediadl://      → use it if it wakes up
     //  3. Still nothing: direct YouTube stream download       → combined ≤720p
-    //  4. Direct failed: Cobalt API                          → external muxing service
-    //  5. Everything failed: open Cobalt web UI              → manual fallback
+    //  4. Direct failed: open configured HTTPS web page      → manual fallback
     //
-    // After step 2 fails, the download still proceeds (steps 3-5) so the user is
+    // After step 2 fails, the download still proceeds (steps 3-4) so the user is
     // never blocked. A prompt is shown offering to install / retry MediaDL.
     const DOWNLOADER_FAILURE_COPY = Object.freeze({
         'po-token-required': {
@@ -2356,15 +2278,11 @@
             return;
         }
 
-        // ── Step 4: Cobalt API ──
-        DebugManager.log('Download', 'Direct download failed, trying Cobalt API...');
-        showToast('Trying Cobalt download service...', '#3b82f6', { duration: 2 });
-        const cobaltOk = await _tryCobaltApiDownload(videoUrl, audioOnly);
-        if (cobaltOk) return;
-
-        // ── Step 5: Cobalt web UI fallback ──
-        DebugManager.log('Download', 'All methods failed, opening Cobalt web UI');
-        _webDownloadFallback(videoUrl);
+        // ── Step 4: explicitly configured web-page fallback ──
+        const openedWebFallback = _webDownloadFallback(videoUrl);
+        DebugManager.log('Download', openedWebFallback
+            ? 'Direct download failed; opened configured web downloader'
+            : 'Direct download failed; no valid web downloader is configured');
 
         // Show install/retry prompt — the user clearly needs help
         if (!GM_getValue('ytkit_mediadl_prompt_dismissed', false)) {
@@ -2832,7 +2750,7 @@
             showMp3DownloadButton: true,
             videoContextMenu: true,
             downloadProvider: 'cobalt',
-            cobaltUrl: 'https://cobalt.tools/#',
+            cobaltUrl: '',
             hideCollaborations: true,
             hideVideosFromHome: true,
             hideVideosKeywordFilter: '',
@@ -3021,13 +2939,21 @@
         },
 
         // Settings versioning and migration
-        SETTINGS_VERSION: 2,
+        SETTINGS_VERSION: 3,
 
         _migrations: {
             // v1 -> v2: Renamed/restructured settings in 2.1.2
             2: (s) => {
                 // Future migrations go here. Example:
                 // if (s.oldKey !== undefined) { s.newKey = s.oldKey; delete s.oldKey; }
+                return s;
+            },
+            // v2 -> v3: the old setting mixed web frontends with unaffiliated
+            // API instances. Require the user to deliberately configure the
+            // new navigation-only HTTPS fallback and erase the obsolete GM key.
+            3: (s) => {
+                s.cobaltUrl = '';
+                try { GM_deleteValue('ytkit_cobalt_url'); } catch (_) { /* legacy manager */ }
                 return s;
             },
         },
@@ -5846,19 +5772,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'download',
             _styleElement: null,
             _providers: {
-                'cobalt': 'https://cobalt.tools/#',
                 'y2mate': 'https://www.y2mate.com/youtube/',
                 'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
                 'ssyoutube': 'https://ssyoutube.com/watch?v='
             },
             _getDownloadUrl(videoUrl) {
                 const provider = appState.settings.downloadProvider || 'cobalt';
-                const baseUrl = this._providers[provider] || this._providers['cobalt'];
-                // Validate provider URL: must be HTTPS to prevent javascript:/file:// redirect
+                if (provider === 'cobalt') {
+                    const configuredUrl = _buildConfiguredWebDownloaderUrl(appState.settings.cobaltUrl, videoUrl);
+                    if (!configuredUrl) {
+                        showToast('Configure an HTTPS web downloader URL in Settings first.', '#f59e0b');
+                    }
+                    return configuredUrl;
+                }
+                const baseUrl = this._providers[provider];
+                const canonicalUrl = _canonicalYouTubeWatchUrl(videoUrl);
+                if (!baseUrl || !canonicalUrl) {
+                    showToast('No valid YouTube watch URL is available.', '#ef4444');
+                    return null;
+                }
+                // Validate provider URL: HTTPS with no embedded credentials.
                 try {
-                    const parsed = new URL(typeof baseUrl === 'string' ? baseUrl : String(baseUrl));
-                    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-                        showToast('Invalid download provider URL — must be HTTP(S)', '#ef4444');
+                    const parsed = new URL(baseUrl);
+                    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) {
+                        showToast('Invalid download provider URL — HTTPS is required.', '#ef4444');
                         return null;
                     }
                 } catch(e) {
@@ -5866,10 +5803,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return null;
                 }
                 if (provider === 'ssyoutube') {
-                    const videoId = new URL(videoUrl).searchParams.get('v');
+                    const videoId = getVideoId(canonicalUrl);
                     return baseUrl + videoId;
                 }
-                return baseUrl + encodeURIComponent(videoUrl);
+                return baseUrl + encodeURIComponent(canonicalUrl);
             },
             _isWatchPage() { return window.location.pathname.startsWith('/watch'); },
             _injectButton() {
@@ -5944,13 +5881,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'download-cloud',
             type: 'select',
             options: {
-                'cobalt': 'Cobalt (configurable)',
+                'cobalt': 'Custom HTTPS page',
                 'y2mate': 'Y2Mate',
                 'savefrom': 'SaveFrom.net',
                 'ssyoutube': 'SSYouTube'
             },
             _providers: {
-                get cobalt() { return GM_getValue('ytkit_cobalt_url', 'https://cobalt.tools/#'); },
                 'y2mate': 'https://www.y2mate.com/youtube/',
                 'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
                 'ssyoutube': 'https://ssyoutube.com/watch?v='
@@ -5962,32 +5898,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'cobaltUrl',
-            name: 'Cobalt Instance URL',
-            description: 'Custom Cobalt API instance URL (Cobalt instances change frequently)',
+            name: 'Web Downloader URL',
+            description: 'Optional HTTPS page. Use {url} where its encoded YouTube URL belongs; otherwise Astra uses the URL fragment.',
             group: 'Downloads',
             icon: 'link',
             type: 'textarea',
-            placeholder: 'https://cobalt.tools/#',
-            init() {
-                // Sync textarea value to GM storage for the download provider getter
-                const val = appState.settings.cobaltUrl;
-                if (val) {
-                    // Validate: must be a valid HTTPS URL
-                    try {
-                        const u = new URL(val);
-                        if (u.protocol !== 'https:' && u.protocol !== 'http:') {
-                            console.warn('[YTKit] Cobalt URL rejected: must be HTTP(S). Using default.');
-                            return;
-                        }
-                        GM_setValue('ytkit_cobalt_url', val);
-                    } catch(e) {
-                        console.warn('[YTKit] Cobalt URL invalid, using default.');
-                    }
-                }
-            },
-            destroy() {
-                GM_setValue('ytkit_cobalt_url', settingsManager.defaults.cobaltUrl || 'https://cobalt.tools/#');
-            }
+            placeholder: 'https://downloads.example/#{url}',
+            init() {},
+            destroy() {}
         },
         {
             id: 'hideCollaborations',
@@ -17067,12 +16985,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Auto-save on blur for textarea features
             textarea.addEventListener('blur', () => {
                 const key = f.settingKey || f.id;
-                appState.settings[key] = textarea.value;
+                let nextValue = textarea.value.trim();
+                if (f.id === 'cobaltUrl' && nextValue) {
+                    const described = _describeWebDownloaderUrl(nextValue);
+                    if (!described.ok) {
+                        textarea.setAttribute('aria-invalid', 'true');
+                        textarea.value = appState.settings[key] || '';
+                        showToast('Web downloader URL must be a valid HTTPS URL without embedded credentials.', '#ef4444', { duration: 6 });
+                        return;
+                    }
+                    textarea.removeAttribute('aria-invalid');
+                    nextValue = described.url;
+                    textarea.value = nextValue;
+                } else if (f.id === 'cobaltUrl') {
+                    textarea.removeAttribute('aria-invalid');
+                }
+                appState.settings[key] = nextValue;
                 settingsManager.save(appState.settings);
                 document.dispatchEvent(new CustomEvent('ytkit-settings-changed', { detail: { key } }));
-                if (f.id === 'cobaltUrl' && textarea.value) {
-                    GM_setValue('ytkit_cobalt_url', textarea.value);
-                }
             });
             card.appendChild(textarea);
         } else if (f.type === 'select') {

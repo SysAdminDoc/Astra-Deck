@@ -479,7 +479,7 @@
   "downloadHealthPanel": false,
   "downloadStreamLinksPanel": false,
   "downloadCobaltFallback": false,
-  "downloadCobaltInstance": "https://api.cobalt.tools/api/json",
+  "downloadCobaltInstance": "",
   "returnDislike": false,
   "returnDislikeOnCards": false,
   "returnDislikeCacheHours": 24,

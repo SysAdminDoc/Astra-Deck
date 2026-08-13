@@ -125,7 +125,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // (26 B) while keeping the persisted volume value logical.
     // Sponsored-content filtering adds another 56 bytes to the local settings
     // fixture.
-    assert.equal(assessment.totalBytes, 185967);
+    // Removing the shipped public Cobalt URL trims 32 bytes from the default
+    // settings payload while leaving the opt-in field available.
+    assert.equal(assessment.totalBytes, 185935);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -40,16 +40,6 @@
         return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
     }
 
-    const COBALT_ALLOWED_ORIGIN = 'https://api.cobalt.tools';
-
-    function isExtensionCobaltInstanceAllowed(value) {
-        try {
-            return new URL(String(value || '').trim()).origin === COBALT_ALLOWED_ORIGIN;
-        } catch (_) {
-            return false;
-        }
-    }
-
     function parseSectionTimestampInput(value) {
         const raw = String(value ?? '').trim();
         if (!raw) return null;
@@ -397,6 +387,10 @@
             openExternalUrl = async () => {},
             openProtocol = () => {},
             triggerDownload = async () => {},
+            requestCobaltDownload = async () => ({
+                ok: false,
+                error: { code: 'COBALT_REQUEST_UNAVAILABLE', message: 'Self-hosted Cobalt requests are unavailable.' }
+            }),
             requestNativeDownloaderToken = async () => ({ token: null, error: 'Native messaging unavailable' }),
             browserCookies = {},
             getProfileExportMode = () => 'safe-store',
@@ -2708,8 +2702,8 @@
 
         const downloadCobaltFallback = {
             id: 'downloadCobaltFallback',
-            name: t('feature_downloadCobaltFallback_name', 'Cobalt Fallback (GitHub profile)'),
-            description: t('feature_downloadCobaltFallback_desc', 'When Astra Downloader is unreachable, fall back to Cobalt. Extension builds only allow api.cobalt.tools; use the userscript for custom instances.'),
+            name: t('feature_downloadCobaltFallback_name', 'Self-hosted Cobalt fallback'),
+            description: t('feature_downloadCobaltFallback_desc', 'When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included.'),
             group: 'Downloads',
             icon: 'download-cloud',
             pages: [PageTypes.WATCH],
@@ -2748,41 +2742,44 @@
                     if (typeof showToast === 'function') showToast(t('dlCobaltRunningSkip', 'Astra Downloader is running; fallback skipped.'), '#6b7280');
                     return;
                 }
-                const url = location.href;
-                const instance = (appState?.settings?.downloadCobaltInstance || 'https://api.cobalt.tools/api/json').trim();
-                if (!isExtensionCobaltInstanceAllowed(instance)) {
-                    const message = t(
-                        'feature_downloadCobaltFallback_desc',
-                        'This extension only allows Cobalt requests to api.cobalt.tools. Use the userscript for custom endpoints.'
-                    );
-                    DiagnosticLog?.record?.('cobalt-fallback', 'Cobalt fallback blocked: extension origin allowlist only permits api.cobalt.tools.');
+                const instance = String(appState?.settings?.downloadCobaltInstance || '').trim();
+                const described = globalThis.YTKitCore?.describeCobaltInstanceUrl?.(instance)
+                    || { ok: false, reason: 'scope-service-unavailable' };
+                if (!described.ok) {
+                    const message = t('dlCobaltInstanceRequired',
+                        'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.');
+                    DiagnosticLog?.record?.('cobalt-fallback',
+                        `Cobalt fallback blocked: self-hosted instance is not configured (${String(described.reason || 'invalid').slice(0, 60)}).`);
                     if (typeof showToast === 'function') showToast(message, '#f59e0b', { duration: 6 });
                     return;
                 }
                 try {
-                    const { data } = await extensionFetchJson({
-                        method: 'POST',
-                        url: instance,
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        data: JSON.stringify({ url }),
-                        timeout: 10000
-                    });
-                    if (data?.status === 'redirect' || data?.status === 'stream' || data?.status === 'tunnel') {
-                        const mediaUrl = data.url || data.tunnel || data.stream;
+                    const result = await requestCobaltDownload();
+                    if (!result?.ok) {
+                        const requestError = new Error(result?.error?.message || 'Self-hosted Cobalt request failed.');
+                        requestError.code = result?.error?.code || 'COBALT_REQUEST_FAILED';
+                        throw requestError;
+                    }
+                    const data = result.data;
+                    if (data?.status === 'redirect' || data?.status === 'tunnel') {
+                        const mediaUrl = data.url;
                         // Only open web URLs — the instance is remote/user-set
                         // and its response must not steer us to another scheme.
                         let mediaProtocol = '';
-                        try { mediaProtocol = new URL(mediaUrl).protocol; } catch (e) { void e; }
-                        if (mediaProtocol === 'https:' || mediaProtocol === 'http:') {
-                            window.open(mediaUrl, '_blank', 'noopener,noreferrer');
+                        let parsedMediaUrl = null;
+                        try { parsedMediaUrl = new URL(mediaUrl); } catch (e) { void e; }
+                        mediaProtocol = parsedMediaUrl?.protocol || '';
+                        if ((mediaProtocol === 'https:' || mediaProtocol === 'http:')
+                            && !parsedMediaUrl.username && !parsedMediaUrl.password) {
+                            await openExternalUrl(parsedMediaUrl.toString());
                             if (typeof showToast === 'function') showToast(t('dlCobaltOpened', 'Cobalt fallback: opened media URL in new tab.'), '#22c55e');
                             return;
                         }
                     }
-                    if (data?.status === 'error' || data?.text) {
-                        throw new Error(data.text || data.error || 'Cobalt rejected the request');
+                    if (data?.status === 'error') {
+                        throw new Error(data.error?.code || 'Cobalt rejected the request');
                     }
-                    throw new Error('Cobalt returned no usable media URL');
+                    throw new Error('Cobalt returned a response that requires a full Cobalt client.');
                 } catch (e) {
                     DebugManager.log('CobaltFallback', `Failed: ${e.message}`);
                     this._recordFailureDiagnostic(instance, e);
@@ -2806,7 +2803,7 @@
                         btn.className = 'ytkit-cobalt-fallback-btn ytkit-stream-links-btn';
                         // i18n-static: Cobalt is a brand/product name.
                         btn.textContent = 'Cobalt';
-                        btn.title = t('dlCobaltButtonTitle', 'Try cobalt.tools when Astra Downloader is offline');
+                        btn.title = t('dlCobaltButtonTitle', 'Try your self-hosted Cobalt instance when Astra Downloader is offline');
                         btn.addEventListener('click', () => this._trigger());
                         anchor.insertAdjacentElement('afterend', btn);
                     }, 1500);

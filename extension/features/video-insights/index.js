@@ -9,8 +9,7 @@
     const RETRY_AFTER_MS = 60 * 1000;
     const GITHUB_FULL_PERMISSION_SENTINELS = Object.freeze([
         'https://api.openai.com/*',
-        'https://api.anthropic.com/*',
-        'https://api.cobalt.tools/*'
+        'https://api.anthropic.com/*'
     ]);
 
     function cleanText(value, maxLength = 120) {
@@ -99,9 +98,10 @@
     }
 
     function isGithubFullArtifactManifest(manifest) {
-        const permissions = Array.isArray(manifest?.host_permissions)
-            ? manifest.host_permissions
-            : [];
+        const permissions = [
+            ...(Array.isArray(manifest?.host_permissions) ? manifest.host_permissions : []),
+            ...(Array.isArray(manifest?.optional_host_permissions) ? manifest.optional_host_permissions : []),
+        ];
         return GITHUB_FULL_PERMISSION_SENTINELS.some((permission) => permissions.includes(permission));
     }
 

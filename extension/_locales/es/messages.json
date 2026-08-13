@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "activo"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "La instancia propia de Cobalt puede procesar este vídeo mediante este sitio hasta que se retire el acceso."
+  },
   "dataFlowCreds": {
     "message": "credenciales"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "riesgo"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "Video Hider y la instancia propia de Cobalt pueden usar este sitio hasta que se retire el acceso."
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total} orígenes activos"
   },
@@ -405,10 +411,13 @@
     "message": "Gestión de datos"
   },
   "dlCobaltButtonTitle": {
-    "message": "Probar cobalt.tools cuando Astra Downloader esté desconectado"
+    "message": "Usar tu instancia propia de Cobalt cuando Astra Downloader esté desconectado"
   },
   "dlCobaltFailedTpl": {
     "message": "Error del respaldo de Cobalt: {error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "Configura el origen HTTPS de una instancia propia de Cobalt en el resumen de ajustes de la ventana de la barra y concede acceso a ese sitio."
   },
   "dlCobaltOpened": {
     "message": "Respaldo de Cobalt: URL multimedia abierta en una pestaña nueva."
@@ -1945,10 +1954,10 @@
     "message": "Formato de audio"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Cuando Astra Downloader no está disponible, recurrir a Cobalt. Las compilaciones de la extensión solo permiten api.cobalt.tools; las compilaciones userscript pueden usar instancias personalizadas. Solo se ejecuta en el perfil GitHub/completo y cuando Astra Downloader está sin conexión."
+    "message": "Cuando Astra Downloader no esté disponible, usa una instancia propia de Cobalt por HTTPS después de configurar su origen en la ventana de la barra y conceder acceso solo a ese sitio. No se incluye ninguna instancia pública de Cobalt."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Respaldo Cobalt (perfil GitHub)"
+    "message": "Respaldo con Cobalt propio"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "Mostrar indicadores de versión de yt-dlp de Astra Downloader, frescura de ffmpeg y estado del proveedor de PO Token junto al botón de descarga. Lee /health cada 30 s; sin almacenamiento adicional."

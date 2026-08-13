@@ -3,8 +3,8 @@
 
     // extension/core/remote-list-scope.js
     //
-    // Scope control for the ONE class of request whose destination a user
-    // chooses at runtime: the optional Video Hider filter-list URL.
+    // Scope control for requests whose destination a user chooses at runtime:
+    // the optional Video Hider filter-list URL and a self-hosted Cobalt API.
     //
     // Every other origin Astra Deck contacts is a fixed literal in
     // core/data-flow.js and is enforced by background.js's static
@@ -32,11 +32,12 @@
     // dotted-quad checks below cover them without any custom parsing.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
-    if (core.describeRemoteListUrl) return;
+    if (core.describeRemoteListUrl && core.describeCobaltInstanceUrl) return;
 
     // The single optional host pattern a build must declare for user-chosen
-    // filter-list origins to be grantable at all.
+    // HTTPS origins to be grantable at all.
     const REMOTE_LIST_HOST_PATTERN = 'https://*/*';
+    const COBALT_PUBLIC_INSTANCE_HOST = 'api.cobalt.tools';
 
     const MAX_URL_LENGTH = 2048;
 
@@ -144,12 +145,12 @@
         return 'https://' + host + '/*';
     }
 
-    // Returns a stable descriptor for a user-supplied filter-list URL.
+    // Returns a stable descriptor for a user-supplied public HTTPS URL.
     //   { ok: true,  url, origin, originPattern, hostname }
     //   { ok: false, reason }
     // `reason` is a stable token the UI maps to localized copy — never a raw
     // parser message, which would leak the input back into the surface.
-    function describeRemoteListUrl(value) {
+    function describePublicHttpsUrl(value, options = {}) {
         const raw = typeof value === 'string' ? value.trim() : '';
         if (!raw) return { ok: false, reason: 'empty' };
         if (raw.length > MAX_URL_LENGTH) return { ok: false, reason: 'too-long' };
@@ -164,6 +165,9 @@
         if (parsed.protocol !== 'https:') return { ok: false, reason: 'not-https' };
         if (parsed.username || parsed.password) return { ok: false, reason: 'credentials' };
         if (parsed.hash) return { ok: false, reason: 'fragment' };
+        if (options.allowSearch === false && parsed.search) {
+            return { ok: false, reason: 'query' };
+        }
 
         const classification = classifyHostname(parsed.hostname);
         if (classification !== 'public') return { ok: false, reason: classification };
@@ -180,12 +184,43 @@
         };
     }
 
+    // Filter lists may legitimately use query parameters (for example a
+    // version selector), so their existing contract is the general public
+    // HTTPS descriptor above.
+    function describeRemoteListUrl(value) {
+        return describePublicHttpsUrl(value);
+    }
+
+    // Cobalt v11 accepts POST requests at the instance root. Restricting this
+    // setting to an origin (rather than an arbitrary path/query) keeps the
+    // background capability auditable and avoids treating an API token in a
+    // query string as ordinary settings data. The project-operated public
+    // instance is explicitly forbidden: Cobalt's own API documentation says
+    // third-party projects must self-host or obtain an instance owner's
+    // permission, and Astra Deck has no such permission.
+    function describeCobaltInstanceUrl(value) {
+        const described = describePublicHttpsUrl(value, { allowSearch: false });
+        if (!described.ok) return described;
+        const parsed = new URL(described.url);
+        if (parsed.hostname.toLowerCase() === COBALT_PUBLIC_INSTANCE_HOST) {
+            return { ok: false, reason: 'public-instance' };
+        }
+        if (parsed.pathname !== '/') return { ok: false, reason: 'path' };
+        return {
+            ...described,
+            url: parsed.origin + '/'
+        };
+    }
+
     // Convenience for callers that only need a yes/no gate.
     function isRemoteListUrlAllowed(value) {
         return describeRemoteListUrl(value).ok === true;
     }
 
     core.REMOTE_LIST_HOST_PATTERN = REMOTE_LIST_HOST_PATTERN;
+    core.COBALT_PUBLIC_INSTANCE_HOST = COBALT_PUBLIC_INSTANCE_HOST;
+    core.describeCobaltInstanceUrl = describeCobaltInstanceUrl;
+    core.describePublicHttpsUrl = describePublicHttpsUrl;
     core.describeRemoteListUrl = describeRemoteListUrl;
     core.isRemoteListUrlAllowed = isRemoteListUrlAllowed;
     core.remoteListOriginPattern = remoteListOriginPattern;
@@ -193,6 +228,9 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             REMOTE_LIST_HOST_PATTERN,
+            COBALT_PUBLIC_INSTANCE_HOST,
+            describeCobaltInstanceUrl,
+            describePublicHttpsUrl,
             describeRemoteListUrl,
             isRemoteListUrlAllowed,
             remoteListOriginPattern

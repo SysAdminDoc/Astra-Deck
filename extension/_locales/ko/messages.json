@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "활성"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "액세스를 제거할 때까지 자체 호스팅 Cobalt가 이 사이트를 통해 동영상을 처리할 수 있습니다."
+  },
   "dataFlowCreds": {
     "message": "자격증명"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "위험"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "액세스를 제거할 때까지 Video Hider와 자체 호스팅 Cobalt가 이 사이트를 사용할 수 있습니다."
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total}개 출처 활성"
   },
@@ -405,10 +411,13 @@
     "message": "데이터 관리"
   },
   "dlCobaltButtonTitle": {
-    "message": "Astra Downloader가 오프라인일 때 cobalt.tools 사용"
+    "message": "Astra Downloader가 오프라인일 때 자체 호스팅 Cobalt 인스턴스 사용"
   },
   "dlCobaltFailedTpl": {
     "message": "Cobalt 대체 기능 실패: {error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "도구 모음 팝업의 설정 개요에서 자체 호스팅 Cobalt HTTPS 원본을 구성한 다음 해당 사이트에 액세스를 허용하세요."
   },
   "dlCobaltOpened": {
     "message": "Cobalt 대체 기능: 미디어 URL을 새 탭에서 열었습니다."
@@ -1945,10 +1954,10 @@
     "message": "오디오 포맷"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Astra Downloader에 연결할 수 없을 때 Cobalt로 대체합니다. 확장 프로그램 빌드는 api.cobalt.tools만 허용하며 userscript 빌드는 사용자 지정 인스턴스를 사용할 수 있습니다. GitHub/전체 프로필에서만, Astra Downloader가 오프라인일 때 작동합니다."
+    "message": "Astra Downloader에 연결할 수 없으면 도구 모음 팝업에서 원본을 설정하고 해당 사이트 하나에만 액세스를 허용한 뒤 자체 호스팅 Cobalt HTTPS 인스턴스를 사용합니다. 공개 Cobalt 인스턴스는 포함되지 않습니다."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt 대체 (GitHub 프로필)"
+    "message": "자체 호스팅 Cobalt 대체 기능"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "다운로드 버튼 옆에 Astra Downloader의 yt-dlp 버전, ffmpeg 최신 상태, PO Token 프로바이더 상태를 필로 표시합니다. 30초마다 /health를 읽으며 추가 저장소를 사용하지 않습니다."

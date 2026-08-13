@@ -2918,7 +2918,7 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
         'https://api.openai.com',
         'https://api.anthropic.com',
         'https://generativelanguage.googleapis.com',
-        'https://api.cobalt.tools',
+        'https://*',
         'http://127.0.0.1:9751',
         'http://127.0.0.1:11434',
     ];
@@ -2929,9 +2929,11 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
         );
     }
 
-    // Negative assertion: connect-src must NOT be a wildcard.
-    assert.ok(!/connect-src[^;]*\*\s*[;'"]/.test(csp),
-        'connect-src must not be a wildcard — defeats the purpose');
+    // CSP cannot name a host that the user has not configured yet, so the
+    // github-full build uses a scheme-scoped wildcard alongside exact browser
+    // host grants. An unscoped wildcard remains forbidden.
+    assert.equal(cspDirectiveTokens(csp, 'connect-src').includes('*'), false,
+        'connect-src must not contain an unscoped wildcard');
 });
 
 test('build-extension emits distinct store-safe, chromium-store, and github-full manifest profiles', () => {
@@ -3010,14 +3012,25 @@ test('build-extension emits distinct store-safe, chromium-store, and github-full
             'github-full AI provider access must remain runtime-optional: ' + optional);
     }
 
-    for (const fullOnly of [
-        'https://api.cobalt.tools/*',
-        'http://127.0.0.1:11434/*'
-    ]) {
+    for (const fullOnly of ['http://127.0.0.1:11434/*']) {
         assert.ok(!storeHosts.includes(fullOnly),
             'store-safe manifest must not include github-full host ' + fullOnly);
         assert.ok(fullHosts.includes(fullOnly),
             'github-full manifest must include ' + fullOnly);
+    }
+    assert.ok(!storeOptionalHosts.includes('https://*/*'),
+        'store-safe must not expose the user-selected HTTPS capability');
+    assert.ok(!fullHosts.includes('https://*/*'),
+        'github-full must never install-time grant all HTTPS hosts');
+    assert.ok(fullOptionalHosts.includes('https://*/*'),
+        'github-full must declare the exact-origin prompt capability as optional');
+    for (const manifestProfile of [storeManifest, chromiumStoreManifest, fullManifest]) {
+        const allHosts = [
+            ...(manifestProfile.host_permissions || []),
+            ...(manifestProfile.optional_host_permissions || [])
+        ];
+        assert.equal(allHosts.includes('https://api.cobalt.tools/*'), false,
+            'no profile may declare Cobalt public service');
     }
     assert.ok(storeHosts.includes('http://127.0.0.1:9751/*'),
         'store-safe manifest must retain the authenticated companion origin');
@@ -3028,6 +3041,8 @@ test('build-extension emits distinct store-safe, chromium-store, and github-full
         'store-safe CSP must exclude OpenAI');
     assert.ok(!cspAllowsConnect(storeCsp, 'https://api.cobalt.tools'),
         'store-safe CSP must exclude Cobalt');
+    assert.ok(!cspAllowsConnect(storeCsp, 'https://*'),
+        'store-safe CSP must exclude runtime-selected HTTPS origins');
     assert.ok(cspAllowsConnect(storeCsp, 'http://127.0.0.1:9751'),
         'store-safe CSP must retain the authenticated local companion');
     assert.ok(cspAllowsConnect(storeCsp, 'https://i.ytimg.com'),
@@ -3042,8 +3057,10 @@ test('build-extension emits distinct store-safe, chromium-store, and github-full
         'store-safe CSP must keep optional Reddit host connect-src eligible');
     assert.ok(cspAllowsConnect(fullCsp, 'https://api.openai.com'),
         'github-full CSP must include OpenAI');
-    assert.ok(cspAllowsConnect(fullCsp, 'https://api.cobalt.tools'),
-        'github-full CSP must include Cobalt');
+    assert.ok(cspAllowsConnect(fullCsp, 'https://*'),
+        'github-full CSP must admit the exact host selected through optional permissions');
+    assert.ok(!cspAllowsConnect(fullCsp, 'https://api.cobalt.tools'),
+        'github-full CSP must not name Cobalt public service');
     assert.ok(cspAllowsConnect(fullCsp, 'http://127.0.0.1:9751'),
         'github-full CSP must include local downloader loopback');
 });
@@ -3346,11 +3363,11 @@ test('reactionSpammer defaults to false in both ytkit.js source and the generate
     );
 });
 
-test('SETTINGS_VERSION is 9 and migrations 7/9 preserve safe AI defaults', () => {
+test('SETTINGS_VERSION is 10 and migrations preserve safe AI and Cobalt defaults', () => {
     assert.match(
         ytkitSource,
-        /SETTINGS_VERSION:\s*9,/,
-        'ytkit.js settingsManager must declare SETTINGS_VERSION: 9',
+        /SETTINGS_VERSION:\s*10,/,
+        'ytkit.js settingsManager must declare SETTINGS_VERSION: 10',
     );
     // The v7 migration must reset reactionSpammer to false and reset the
     // ack flag so the warning toast re-fires on the next opt-in.
@@ -3373,6 +3390,16 @@ test('SETTINGS_VERSION is 9 and migrations 7/9 preserve safe AI defaults', () =>
         'migration 9 must preserve the legacy opt-out for Gemini controls');
     assert.match(aiMigrationBlock, /s\.hideAiContextPanels\s*=\s*false/,
         'migration 9 must preserve the legacy opt-out for context panels');
+
+    const cobaltMigrationStart = ytkitSource.indexOf('10: (s) =>');
+    assert.ok(cobaltMigrationStart > -1, 'migration 10 must exist');
+    const cobaltMigrationBlock = ytkitSource.slice(cobaltMigrationStart, cobaltMigrationStart + 1800);
+    assert.match(cobaltMigrationBlock, /describeCobaltInstanceUrl/,
+        'migration 10 must validate a retained self-hosted endpoint');
+    assert.match(cobaltMigrationBlock, /s\.downloadCobaltInstance\s*=\s*''/,
+        'migration 10 must clear an invalid or public endpoint');
+    assert.match(cobaltMigrationBlock, /s\.downloadCobaltFallback\s*=\s*false/,
+        'migration 10 must disable fallback when no valid self-hosted endpoint remains');
 });
 
 test('reaction spammer panel interval is clamped to a 500 ms minimum floor', () => {
@@ -3864,8 +3891,10 @@ test('downloadCobaltFallback gates on github-full profile and only fires when do
         'must check Astra Downloader status before falling back to cobalt');
     assert.match(block, /downloadCobaltInstance/,
         'must read the configured cobalt instance URL');
-    assert.match(block, /'_blank',\s*'noopener,noreferrer'/,
-        'must open the returned media URL with noopener+noreferrer');
+    assert.match(block, /await openExternalUrl\(parsedMediaUrl\.toString\(\)\)/,
+        'must open the validated media URL through the extension-owned external navigation helper');
+    assert.match(block, /!parsedMediaUrl\.username && !parsedMediaUrl\.password/,
+        'must reject credential-bearing media URLs returned by a remote instance');
 });
 
 test('downloadCobaltFallback records an actionable diagnostic when Cobalt is unreachable', () => {
@@ -6680,24 +6709,31 @@ test('v4.11.0 data-flow: every api/local-companion schema entry maps to a catalo
     }
 });
 
-test('v4.11.0 data-flow: Cobalt fallback origin is catalogued (was missing pre-v4.11.0)', () => {
+test('data-flow: self-hosted Cobalt uses one runtime-selected origin and never the public service', () => {
     const { ORIGIN_CATALOGUE } = require('../extension/core/data-flow');
-    const cobalt = ORIGIN_CATALOGUE.find((o) => o.origin === 'https://api.cobalt.tools');
-    assert.ok(cobalt, 'data-flow catalogue must list https://api.cobalt.tools');
+    const cobalt = ORIGIN_CATALOGUE.find((o) =>
+        o.requiredByFeatures.includes('downloadCobaltFallback'));
+    assert.ok(cobalt, 'data-flow catalogue must list the self-hosted Cobalt capability');
+    assert.equal(cobalt.origin, 'https://*');
     assert.equal(cobalt.profile, 'github-full',
         'Cobalt is github-full only (user-supplied instance, off by default)');
-    assert.ok(cobalt.requiredByFeatures.includes('downloadCobaltFallback'),
-        'Cobalt origin must be driven by downloadCobaltFallback');
+    assert.equal(cobalt.hostGrant, 'runtime-optional');
+    assert.equal(cobalt.specificOriginRequired, true,
+        'generic helpers must never request the broad all-HTTPS pattern');
 
     const manifest = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
     ));
-    assert.ok((manifest.host_permissions || []).includes('https://api.cobalt.tools/*'),
-        'github-full source manifest must grant Cobalt for the full-profile artifact');
-    assert.ok(cspAllowsConnect(manifest.content_security_policy?.extension_pages || '', 'https://api.cobalt.tools'),
-        'github-full source manifest CSP must allow Cobalt connect-src');
-    assert.match(backgroundSource, /'https:\/\/api\.cobalt\.tools'/,
-        'background EXT_FETCH allowlist must include Cobalt for the full-profile artifact');
+    assert.ok(!(manifest.host_permissions || []).includes('https://api.cobalt.tools/*'),
+        'the public Cobalt service must not be install-time granted');
+    assert.ok((manifest.optional_host_permissions || []).includes('https://*/*'),
+        'github-full declares the browser capability but requests one exact host at runtime');
+    assert.ok(!cspAllowsConnect(manifest.content_security_policy?.extension_pages || '', 'https://api.cobalt.tools'),
+        'the source CSP must not name Cobalt public service');
+    assert.doesNotMatch(backgroundSource, /ALLOWED_FETCH_ORIGINS\s*=\s*\[[\s\S]*?'https:\/\/api\.cobalt\.tools'/,
+        'the generic background allowlist must not include Cobalt public service');
+    assert.match(backgroundSource, /msg\.type === 'YTKIT_COBALT_REQUEST'/,
+        'self-hosted Cobalt must use a dedicated background request contract');
 });
 
 test('v4.11.0 data-flow: PARENT_FEATURE inheritance map names only real parent features', () => {
@@ -6785,6 +6821,22 @@ test('popup enumerates and revokes exact runtime host grants from the Data Flow 
         'single-setting URL transitions must revoke the previous origin');
     assert.match(popup, /reconcileFilterListGrantTransition\(previousSettings, \{\}\)/,
         'Reset must revoke a configured filter-list origin after data is cleared');
+    assert.match(popup, /reconcileCobaltGrantTransition\(previousSettings, \{\}\)/,
+        'Reset must revoke a configured self-hosted Cobalt origin after data is cleared');
+    assert.match(popup, /function isRuntimeOptionalOriginStillNeeded\(/,
+        'shared exact grants need one ownership check before either feature revokes them');
+    const filterTransition = popup.slice(
+        popup.indexOf('async function reconcileFilterListGrantTransition'),
+        popup.indexOf('async function reconcileCobaltGrantTransition')
+    );
+    const cobaltTransition = popup.slice(
+        popup.indexOf('async function reconcileCobaltGrantTransition'),
+        popup.indexOf('function formatPermissionCleanupFailure')
+    );
+    assert.match(filterTransition, /isRuntimeOptionalOriginStillNeeded\(nextSettings, previous\.originPattern\)/,
+        'changing a filter list must preserve an exact grant still used by Cobalt');
+    assert.match(cobaltTransition, /isRuntimeOptionalOriginStillNeeded\(nextSettings, previous\.originPattern\)/,
+        'changing Cobalt must preserve an exact grant still used by a filter list');
 });
 
 test('v4.12.0 popup.js wires the renderer into init and into storage.onChanged so it stays reactive', () => {
@@ -9458,13 +9510,13 @@ test('v4.40.0 settings-schema brand-name entries carry labelKey overrides', () =
     const schemaSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
     // Each brand-name override surfaces the brand in the label so the
-    // popup row reads "Cobalt API instance URL" instead of the
+    // popup row reads "Self-hosted Cobalt origin" instead of the
     // humaniser's "Download cobalt instance" — a single canary per
     // brand is enough; if any of these regress the v4.40.0 user-facing
     // win is gone.
     for (const marker of [
-        'labelKey: "Cobalt download fallback"',
-        'labelKey: "Cobalt API instance URL"',
+        'labelKey: "Self-hosted Cobalt fallback"',
+        'labelKey: "Self-hosted Cobalt origin"',
         'labelKey: "AI summary endpoint URL"',
         'labelKey: "AI summary provider"'
     ]) {
@@ -9679,7 +9731,7 @@ test('v4.40.0 settings-migration round-trip preserves entries that carry overrid
         path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
     // Sanity: the brand entries still freeze cleanly (Object.freeze
     // on a literal — no syntax errors that would break the module).
-    assert.match(schemaSrc, /Object\.freeze\(\{ key: "downloadCobaltInstance"[^}]*labelKey: "Cobalt API instance URL"/,
+    assert.match(schemaSrc, /Object\.freeze\(\{ key: "downloadCobaltInstance"[^}]*labelKey: "Self-hosted Cobalt origin"/,
         'downloadCobaltInstance must still be a single frozen object literal with labelKey embedded');
 });
 

@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "actif"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "L’instance Cobalt auto-hébergée peut traiter cette vidéo via ce site jusqu’au retrait de l’accès."
+  },
   "dataFlowCreds": {
     "message": "identifiants"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "risque"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "Video Hider et l’instance Cobalt auto-hébergée peuvent utiliser ce site jusqu’au retrait de l’accès."
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total} origines actives"
   },
@@ -405,10 +411,13 @@
     "message": "Gestion des données"
   },
   "dlCobaltButtonTitle": {
-    "message": "Essayer cobalt.tools quand Astra Downloader est hors ligne"
+    "message": "Utiliser votre instance Cobalt auto-hébergée quand Astra Downloader est hors ligne"
   },
   "dlCobaltFailedTpl": {
     "message": "Échec du fallback Cobalt : {error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "Configurez l’origine HTTPS d’une instance Cobalt auto-hébergée dans l’aperçu des paramètres de la barre d’outils, puis autorisez ce site."
   },
   "dlCobaltOpened": {
     "message": "Fallback Cobalt : URL multimédia ouverte dans un nouvel onglet."
@@ -1945,10 +1954,10 @@
     "message": "Format audio"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Lorsque Astra Downloader est injoignable, utiliser Cobalt. Les builds de l'extension n'autorisent que api.cobalt.tools ; les builds userscript peuvent utiliser des instances personnalisées. Fonctionne uniquement dans le profil GitHub/complet et quand Astra Downloader est hors ligne."
+    "message": "Quand Astra Downloader est inaccessible, utilisez une instance Cobalt auto-hébergée en HTTPS après avoir défini son origine dans la fenêtre de la barre d’outils et autorisé ce seul site. Aucune instance Cobalt publique n’est incluse."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Repli Cobalt (profil GitHub)"
+    "message": "Repli Cobalt auto-hébergé"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "Afficher les pilules d'état pour la version yt-dlp d'Astra Downloader, la fraîcheur de ffmpeg et l'état du fournisseur de PO Token à côté du bouton de téléchargement. Interroge /health toutes les 30 s ; aucun stockage supplémentaire."

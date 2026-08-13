@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "active"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "Self-hosted Cobalt can process this video through this site until access is removed."
+  },
   "dataFlowCreds": {
     "message": "creds"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "risk"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "Video Hider and self-hosted Cobalt can use this site until access is removed."
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total} origins active"
   },
@@ -405,10 +411,13 @@
     "message": "Data management"
   },
   "dlCobaltButtonTitle": {
-    "message": "Try cobalt.tools when Astra Downloader is offline"
+    "message": "Try your self-hosted Cobalt instance when Astra Downloader is offline"
   },
   "dlCobaltFailedTpl": {
     "message": "Cobalt fallback failed: {error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site."
   },
   "dlCobaltOpened": {
     "message": "Cobalt fallback: opened media URL in new tab."
@@ -1945,10 +1954,10 @@
     "message": "Audio Format"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "When Astra Downloader is unreachable, fall back to Cobalt. Extension builds only allow api.cobalt.tools; userscript builds can use custom instances. Only runs in the GitHub/full profile and when Astra Downloader is offline."
+    "message": "When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt Fallback (GitHub profile)"
+    "message": "Self-hosted Cobalt fallback"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage."

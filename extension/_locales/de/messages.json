@@ -368,6 +368,9 @@
   "dataFlowActive": {
     "message": "aktiv"
   },
+  "dataFlowCobaltGrantPurpose": {
+    "message": "Die eigene Cobalt-Instanz kann dieses Video über diese Website verarbeiten, bis der Zugriff entfernt wird."
+  },
   "dataFlowCreds": {
     "message": "Anmeldedaten"
   },
@@ -395,6 +398,9 @@
   "dataFlowRisk": {
     "message": "Risiko"
   },
+  "dataFlowSharedGrantPurpose": {
+    "message": "Video Hider und die eigene Cobalt-Instanz können diese Website verwenden, bis der Zugriff entfernt wird."
+  },
   "dataFlowSummaryTpl": {
     "message": "{active}/{total} Ursprünge aktiv"
   },
@@ -405,10 +411,13 @@
     "message": "Datenverwaltung"
   },
   "dlCobaltButtonTitle": {
-    "message": "cobalt.tools verwenden, wenn Astra Downloader offline ist"
+    "message": "Eigene Cobalt-Instanz verwenden, wenn Astra Downloader offline ist"
   },
   "dlCobaltFailedTpl": {
     "message": "Cobalt-Fallback fehlgeschlagen: {error}"
+  },
+  "dlCobaltInstanceRequired": {
+    "message": "Konfigurieren Sie im Einstellungsüberblick des Toolbar-Popups den HTTPS-Ursprung einer eigenen Cobalt-Instanz und gewähren Sie dann Zugriff auf diese Website."
   },
   "dlCobaltOpened": {
     "message": "Cobalt-Fallback: Medien-URL in neuem Tab geöffnet."
@@ -1945,10 +1954,10 @@
     "message": "Audio-Format"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "Wenn Astra Downloader nicht erreichbar ist, auf Cobalt zurückfallen. Erweiterungs-Builds erlauben nur api.cobalt.tools; Userscript-Builds können benutzerdefinierte Instanzen verwenden. Läuft nur im GitHub/Voll-Profil und wenn Astra Downloader offline ist."
+    "message": "Wenn Astra Downloader nicht erreichbar ist, eine eigene Cobalt-HTTPS-Instanz verwenden, nachdem ihr Ursprung im Toolbar-Popup festgelegt und der Zugriff auf diese eine Website gewährt wurde. Es ist keine öffentliche Cobalt-Instanz enthalten."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt-Fallback (GitHub-Profil)"
+    "message": "Fallback mit eigener Cobalt-Instanz"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "Zeigt Pills für Astra Downloader yt-dlp-Version, ffmpeg-Aktualität und PO-Token-Provider-Status neben der Download-Schaltfläche. Liest /health alle 30 s; kein zusätzlicher Speicher."
