@@ -170,6 +170,22 @@ test('DeArrow writes the attributes its voting and peek consumers query', () => 
         'peek CSS must still key on the marker attribute the replacement writes');
 });
 
+test('DeArrow attributes remote titles and thumbnails but not local fallback formatting', () => {
+    const source = dearrowModuleSource;
+    assert.match(source, /if \(!fallback\) this\._ensureAttribution\(clone\)/,
+        'remote title replacements must receive attribution while local formatting stays unattributed');
+    assert.match(source, /const attribution = this\._ensureAttribution\(img\)/,
+        'remote thumbnail replacements must receive attribution');
+    assert.match(source, /\.ytkit-dearrow-attribution[\s\S]*?CC BY-NC-SA 4\.0/,
+        'the visible attribution surface must identify the licensed SponsorBlock data');
+    assert.match(source, /document\.querySelectorAll\('\.ytkit-dearrow-attribution'\)\.forEach\(c => c\.remove\(\)\)/,
+        'navigation and teardown must remove attribution when transformed data disappears');
+    assert.match(source, /href = 'https:\/\/sponsor\.ajay\.app\/'/,
+        'the attribution must link to the upstream data source');
+    assert.match(source, /rel = 'noopener noreferrer'/,
+        'the external attribution link must isolate its opener');
+});
+
 test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision)', () => {
     // The .daCustomTitle / .da-replaced-thumb / [data-da-processed]
     // markers are how we know we've already touched a node. They MUST

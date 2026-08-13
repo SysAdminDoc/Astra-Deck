@@ -59,6 +59,16 @@ user's browser to the selected provider or local runtime.
 
 Stable privacy policy source: [privacy-policy.md](privacy-policy.md).
 
+## Third-Party Data Attribution
+
+Use this text in the detailed Chrome Web Store and AMO listing descriptions:
+
+> Astra Deck's SponsorBlock and DeArrow features use SponsorBlock API/database
+> data from https://sponsor.ajay.app/, licensed under CC BY-NC-SA 4.0:
+> https://creativecommons.org/licenses/by-nc-sa/4.0/. Astra Deck may reformat
+> titles and visualize segments; those presentation changes are made by Astra
+> Deck and are not endorsed by SponsorBlock.
+
 ## Firefox Data Consent
 
 Firefox builds require Firefox 142+ so Astra Deck can use Firefox's built-in

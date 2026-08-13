@@ -1038,6 +1038,67 @@ async function main() {
                 }
             }
             if (state.name === 'desktop-dark' && !opts.fallbackOnly) {
+                const attributionSearchReady = await client.evaluate(`(() => {
+                    const search = document.getElementById('ytkit-search');
+                    if (!search) return false;
+                    search.value = 'CC BY-NC-SA';
+                    search.dispatchEvent(new Event('input', { bubbles: true }));
+                    return true;
+                })()`);
+                if (!attributionSearchReady) {
+                    failuresByState[state.name].push('could not stage the SponsorBlock attribution search');
+                } else {
+                    await sleep(400);
+                    const attributionProof = await client.evaluate(`(() => {
+                        const cards = Array.from(document.querySelectorAll('.ytkit-feature-card'));
+                        const byName = (name) => cards.find((card) =>
+                            card.querySelector('.ytkit-feature-name')?.textContent?.trim() === name
+                        );
+                        const sponsor = byName('SponsorBlock');
+                        const deArrow = byName('DeArrow');
+                        const describe = (card) => {
+                            const description = card?.querySelector('.ytkit-feature-desc');
+                            const rect = description?.getBoundingClientRect();
+                            return {
+                                visible: Boolean(card && getComputedStyle(card).display !== 'none' && rect?.width && rect?.height),
+                                text: description?.textContent?.trim() || '',
+                                clipped: Boolean(description && description.scrollWidth > description.clientWidth + 1)
+                            };
+                        };
+                        sponsor?.scrollIntoView({ block: 'center' });
+                        return { sponsor: describe(sponsor), deArrow: describe(deArrow) };
+                    })()`);
+                    for (const [featureName, proof] of Object.entries(attributionProof || {})) {
+                        if (!proof?.visible) {
+                            failuresByState[state.name].push(`${featureName} attribution settings card is not visible after search`);
+                        } else if (!/CC BY-NC-SA 4\.0/.test(proof.text)) {
+                            failuresByState[state.name].push(`${featureName} settings description omits the data licence`);
+                        } else if (proof.clipped) {
+                            failuresByState[state.name].push(`${featureName} attribution settings description is clipped`);
+                        }
+                    }
+                    await sleep(150);
+                    if (!opts.healthOnly) {
+                        const attributionShot = await client.send('Page.captureScreenshot', {
+                            format: 'png',
+                            captureBeyondViewport: false
+                        });
+                        fs.writeFileSync(
+                            path.join(outDir, 'sponsorblock-data-attribution.png'),
+                            Buffer.from(attributionShot.data, 'base64')
+                        );
+                    }
+                    await client.evaluate(`(() => {
+                        const search = document.getElementById('ytkit-search');
+                        if (search) {
+                            search.value = '';
+                            search.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    })()`);
+                    await sleep(300);
+                }
+            }
+            if (state.name === 'desktop-dark' && !opts.fallbackOnly) {
                 const featureReady = await client.evaluate(`(() => {
                     const toggle = document.getElementById('ytkit-toggle-blueLightFilter');
                     const intensity = document.getElementById('ytkit-range-blueLightIntensity');

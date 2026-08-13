@@ -915,7 +915,9 @@ test('sponsorBlock stale cache markers are category-filtered and annotated', () 
 
     const renderStart = block.search(/\n\s+_renderBarSegments\(\)\s*\{/);
     assert.ok(renderStart > -1, '_renderBarSegments must exist');
-    const renderBody = block.slice(renderStart, renderStart + 1800);
+    const renderEnd = block.indexOf('\n\n            _clearBarSegments()', renderStart);
+    assert.ok(renderEnd > renderStart, '_renderBarSegments must close before _clearBarSegments');
+    const renderBody = block.slice(renderStart, renderEnd);
 
     assert.match(renderBody, /const\s+enabledCats\s*=\s*this\._getEnabledCategories\(\)/,
         'Cached segment rendering must re-read the current enabled categories');
@@ -3155,6 +3157,36 @@ test('store permission rationale covers live manifest permissions and profile ho
             assert.ok(rationale.includes('`' + host + '`'),
                 'rationale doc must mention ' + profile + ' host permission ' + host);
         }
+    }
+});
+
+test('SponsorBlock API/database attribution is pinned across product and store surfaces', () => {
+    const read = (relPath) => fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
+    const requiredDocs = [
+        'README.md',
+        path.join('docs', 'privacy-policy.md'),
+        path.join('docs', 'store-permission-rationale.md'),
+        path.join('docs', 'cws-submission-checklist.md')
+    ];
+    for (const relPath of requiredDocs) {
+        const source = read(relPath);
+        assert.match(source, /SponsorBlock[\s\S]*CC BY-NC-SA 4\.0/,
+            `${relPath} must identify SponsorBlock data and its licence`);
+        assert.match(source, /sponsor\.ajay\.app/,
+            `${relPath} must name the upstream SponsorBlock data source`);
+    }
+
+    const localeRoot = path.join(__dirname, '..', 'extension', '_locales');
+    for (const locale of fs.readdirSync(localeRoot)) {
+        const messages = JSON.parse(read(path.join('extension', '_locales', locale, 'messages.json')));
+        assert.ok(messages.sponsorBlockDataAttribution?.message,
+            `${locale} must carry the visible SponsorBlock data label`);
+        assert.match(messages.sponsorBlockDataAttributionTitle?.message || '', /CC BY-NC-SA 4\.0/,
+            `${locale} must carry the licence disclosure for the in-product label`);
+        assert.match(messages.feature_sponsorBlock_desc?.message || '', /CC BY-NC-SA 4\.0/,
+            `${locale} SponsorBlock settings copy must disclose the data licence`);
+        assert.match(messages.feature_deArrow_desc?.message || '', /CC BY-NC-SA 4\.0/,
+            `${locale} DeArrow settings copy must disclose the data licence`);
     }
 });
 

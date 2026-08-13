@@ -55,7 +55,10 @@ must use Google's standardized vocabulary to declare data categories.
       project homepage or another maintainer-controlled stable URL before
       filling the CWS/AMO listing fields.
 - [ ] Copy the current single-purpose statement, data-handling statement, and
-      permission/host justifications from
+      third-party data attribution plus permission/host justifications from
+      [store-permission-rationale.md](store-permission-rationale.md).
+- [ ] Detailed CWS and AMO listing descriptions include the SponsorBlock
+      API/database attribution and CC BY-NC-SA 4.0 licence link verbatim from
       [store-permission-rationale.md](store-permission-rationale.md).
 - [ ] Declares EACH category Astra Deck uses against the [Chrome
       Web Store Permissions Justification template](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy):

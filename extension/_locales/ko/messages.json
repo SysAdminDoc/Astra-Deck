@@ -1867,7 +1867,7 @@
     "message": "DeArrow 투표"
   },
   "feature_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "클릭베이트 제목과 썸네일을 CC BY-NC-SA 4.0으로 라이선스된 SponsorBlock 데이터로 바꿉니다"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -3367,7 +3367,7 @@
     "message": "속도 단계"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "CC BY-NC-SA 4.0으로 라이선스된 SponsorBlock 데이터를 사용해 스폰서 구간, 인트로, 아웃트로 및 기타 비콘텐츠 구간을 자동으로 건너뜁니다"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -7288,6 +7288,12 @@
   },
   "playerDockHomeLink": {
     "message": "홈으로 이동"
+  },
+  "sponsorBlockDataAttribution": {
+    "message": "SponsorBlock 데이터"
+  },
+  "sponsorBlockDataAttributionTitle": {
+    "message": "SponsorBlock API/데이터베이스 데이터 — CC BY-NC-SA 4.0"
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} ({time}에 캐시됨)"

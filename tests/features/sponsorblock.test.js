@@ -174,6 +174,80 @@ test('SponsorBlock rejects unallowlisted API settings and stays on the canonical
     }
 });
 
+test('SponsorBlock attributes rendered timeline data and removes the label with the markers', () => {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    const originalDocument = globalThis.document;
+    const makeNode = (tagName) => ({
+        tagName: tagName.toUpperCase(),
+        style: {},
+        dataset: {},
+        attributes: {},
+        children: [],
+        parentNode: null,
+        isConnected: false,
+        setAttribute(name, value) { this.attributes[name] = String(value); },
+        addEventListener(type, listener) { this.listeners ||= {}; this.listeners[type] = listener; },
+        appendChild(child) {
+            child.parentNode = this;
+            child.isConnected = true;
+            this.children.push(child);
+            return child;
+        },
+        insertBefore(child, before) {
+            child.parentNode = this;
+            child.isConnected = true;
+            const index = before ? this.children.indexOf(before) : -1;
+            if (index >= 0) this.children.splice(index, 0, child);
+            else this.children.push(child);
+            return child;
+        },
+        remove() {
+            if (this.parentNode) {
+                const index = this.parentNode.children.indexOf(this);
+                if (index >= 0) this.parentNode.children.splice(index, 1);
+            }
+            this.parentNode = null;
+            this.isConnected = false;
+        },
+        get firstChild() { return this.children[0] || null; }
+    });
+    const playerControls = makeNode('div');
+    const progressBar = makeNode('div');
+    globalThis.document = {
+        createElement: makeNode,
+        getElementById: (id) => id === 'ytkit-player-controls' ? playerControls : null,
+        querySelector: () => null
+    };
+    try {
+        const feature = createSponsorBlockFeature({
+            appState: { settings: { sbCat_sponsor: true } },
+            getMainVideoElement: () => ({ duration: 100 }),
+            getPlayerProgressBar: () => progressBar,
+            t: (_key, fallback) => fallback
+        });
+        feature._segments = [{ segment: [10, 20], category: 'sponsor', actionType: 'skip' }];
+
+        feature._renderBarSegments();
+
+        assert.equal(progressBar.children.length, 1, 'the segment marker must render');
+        assert.equal(playerControls.children.length, 1, 'one attribution label must render beside player data');
+        const attribution = playerControls.children[0];
+        assert.equal(attribution.textContent, 'SponsorBlock data');
+        assert.equal(attribution.href, 'https://sponsor.ajay.app/');
+        assert.equal(attribution.target, '_blank');
+        assert.equal(attribution.rel, 'noopener noreferrer');
+        assert.equal(attribution.dataset.ytkitLicense, 'CC BY-NC-SA 4.0');
+        assert.match(attribution.attributes['aria-label'], /CC BY-NC-SA 4\.0/);
+
+        feature._clearBarSegments();
+        assert.equal(progressBar.children.length, 0, 'segment markers must be removed together');
+        assert.equal(playerControls.children.length, 0, 'attribution must not outlive the data it labels');
+    } finally {
+        if (originalDocument === undefined) delete globalThis.document;
+        else globalThis.document = originalDocument;
+    }
+});
+
 test('userscript legacy SponsorBlock and DeArrow copies use the validated host resolver', () => {
     const sponsorStart = sources.userscript.lastIndexOf("id: 'sponsorBlock'");
     const sponsorEnd = sources.userscript.indexOf("id: 'deArrow'", sponsorStart);

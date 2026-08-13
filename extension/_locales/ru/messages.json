@@ -1867,7 +1867,7 @@
     "message": "Голосование DeArrow"
   },
   "feature_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "Заменяет кликбейтные заголовки и миниатюры данными SponsorBlock под лицензией CC BY-NC-SA 4.0"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
@@ -3367,7 +3367,7 @@
     "message": "Шаг изменения скорости"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "Автоматически пропускает спонсорские сегменты, вступления, концовки и другие части вне основного содержания по данным SponsorBlock под лицензией CC BY-NC-SA 4.0"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
@@ -7288,6 +7288,12 @@
   },
   "playerDockHomeLink": {
     "message": "На главную"
+  },
+  "sponsorBlockDataAttribution": {
+    "message": "Данные SponsorBlock"
+  },
+  "sponsorBlockDataAttributionTitle": {
+    "message": "Данные API/базы SponsorBlock — CC BY-NC-SA 4.0"
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (в кэше с {time})"

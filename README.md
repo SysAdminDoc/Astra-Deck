@@ -403,6 +403,11 @@ document_idle
 - **Profile-split permissions** — store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and Cobalt; GitHub-full builds keep the full catalogue
 - **26+ hardening passes** documented in CHANGELOG with per-fix CVE/audit traceability
 - **Privacy policy** covers data handling for every API origin the extension contacts
+- **SponsorBlock data attribution** — the SponsorBlock and DeArrow features use
+  [SponsorBlock API/database data](https://sponsor.ajay.app/) licensed under
+  [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+  Astra Deck may reformat titles and visualize segments; those presentation
+  changes are made by Astra Deck and are not endorsed by SponsorBlock.
 
 ---
 
