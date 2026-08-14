@@ -47,7 +47,9 @@ test('extension summary UI validates citations before saving and exposes searcha
     const start = ytkit.indexOf("id: 'aiVideoSummary'");
     const end = ytkit.indexOf("id: 'copyChapterMarkdown'", start);
     const block = ytkit.slice(start, end);
-    assert.match(block, /TranscriptService\.fetchTranscript\(videoId\)/);
+    assert.match(block, /TranscriptService\.fetchTranscript\(videoId, \{ signal: options\.signal \}\)/);
+    assert.match(block, /this\._fetchTranscript\(videoId, \{ signal: controller\.signal \}\)/);
+    assert.match(block, /this\._runController\?\.abort\(\)/);
     assert.match(block, /buildPrompt\(/);
     assert.match(block, /parseSummaryResponse\(response, transcript\.prepared\.cues\)/);
     assert.match(block, /mergeArtifact\(this\._readArtifacts\(\), artifact\)/);
@@ -66,7 +68,7 @@ test('timestamp bookmark panel exports one current-video highlight pack in both 
     assert.ok(start > -1 && end > start);
     const block = ytkit.slice(start, end);
     assert.match(block, /async _exportHighlightPack\(\)/);
-    assert.match(block, /TranscriptService\.fetchTranscript\(videoId\)/);
+    assert.match(block, /TranscriptService\.fetchTranscript\(videoId, \{ signal: controller\.signal \}\)/);
     assert.match(block, /createVideoHighlightBundle\(/);
     assert.match(block, /videoHighlightBundleToMarkdown\(bundle\)/);
     assert.match(block, /handleFileExport\(`\$\{stem\}\.md`/);

@@ -7585,5 +7585,24 @@
   },
   "filterListStoppedTpl": {
     "message": "Die Filterliste von {host} wird nicht mehr verwendet. Es bleibt kein ausschließlich dafür erteilter Websitezugriff bestehen."
-  }
+  },
+  "transcriptSourcePlayerGlobal": { "message": "den Player-Daten der aktuellen Seite" },
+  "transcriptSourceInnertube": { "message": "aktuellen YouTube-Player-Daten" },
+  "transcriptSourceWatchPage": { "message": "einer neu geladenen YouTube-Wiedergabeseite" },
+  "transcriptSourcePanel": { "message": "dem aktuellen YouTube-Transkriptbereich" },
+  "transcriptSourceUnknown": { "message": "YouTube-Untertiteln" },
+  "transcriptLanguageUnknown": { "message": "Sprache unbekannt" },
+  "transcriptPanelFallback": { "message": "Bereich als Ausweichquelle" },
+  "transcriptMetaPanelTpl": { "message": "Aus {source} geladen ({age}); {language}." },
+  "transcriptRefreshedTrack": { "message": "Spur aktualisiert" },
+  "transcriptMetaRefreshedTpl": { "message": "Eine abgelaufene Untertitel-URL wurde durch {source} ersetzt; abgerufen {age}; {language}." },
+  "transcriptExpiryUnknown": { "message": "nicht angegeben" },
+  "transcriptMetaSourceTpl": { "message": "Aus {source} geladen ({age}); {language}; Ablauf der Spur-URL: {expires}." },
+  "transcriptTimeUnknown": { "message": "zu einem unbekannten Zeitpunkt" },
+  "transcriptNoCaptions": { "message": "Keine Untertitel" },
+  "transcriptUnavailableLabel": { "message": "Nicht verfügbar" },
+  "transcriptUnavailableNow": { "message": "Das Transkript kann derzeit nicht von YouTube abgerufen werden." },
+  "transcriptLoadFailed": { "message": "Transkript konnte nicht geladen werden" },
+  "transcriptNoCaptionsHelp": { "message": "Versuchen Sie ein anderes Video mit Untertiteln oder öffnen Sie diesen Bereich erneut, sobald die Untertitel geladen sind." },
+  "transcriptRetryHelp": { "message": "Laden Sie die Seite neu oder versuchen Sie es gleich erneut, falls die Untertitel noch verarbeitet werden." }
 }

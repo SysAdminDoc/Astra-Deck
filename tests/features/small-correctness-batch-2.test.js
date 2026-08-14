@@ -184,8 +184,14 @@ test('dual captions gate on a watch route and spend their retry budget', () => {
         'off-route the id-mismatch guard cannot fire, so the stale response was accepted');
 
     const loadStart = src.indexOf('async _load() {');
-    const load = src.slice(loadStart, loadStart + 2600);
-    assert.match(load, /if \(!this\._mountOverlay\(track\) \|\| !this\._attachVideo\(\)\) \{[\s\S]*?this\._retryCount \+= 1;/,
+    // Bound the slice by the next method signature rather than a fixed
+    // character count, so growing _load() cannot silently push the guard out
+    // of the window (fixed-length slices break when helpers grow). The mount
+    // overlay argument is matched loosely because the invariant under test is
+    // the retry-budget increment, not the exact track expression passed.
+    const loadEnd = src.indexOf('_resetForNavigation() {', loadStart);
+    const load = src.slice(loadStart, loadEnd > loadStart ? loadEnd : loadStart + 2600);
+    assert.match(load, /if \(!this\._mountOverlay\([^)]*\) \|\| !this\._attachVideo\(\)\) \{[\s\S]*?this\._retryCount \+= 1;/,
         'mount/attach failures must count against the retry budget');
 
     assert.match(src, /_activeCaptionLanguage\(\)/,

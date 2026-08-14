@@ -7585,5 +7585,24 @@
   },
   "filterListStoppedTpl": {
     "message": "已停止关注 {host}。未保留仅用于过滤列表的网站访问权限。"
-  }
+  },
+  "transcriptSourcePlayerGlobal": { "message": "当前页面的播放器数据" },
+  "transcriptSourceInnertube": { "message": "最新的 YouTube 播放器数据" },
+  "transcriptSourceWatchPage": { "message": "新获取的 YouTube 观看页" },
+  "transcriptSourcePanel": { "message": "当前 YouTube 转写面板" },
+  "transcriptSourceUnknown": { "message": "YouTube 字幕" },
+  "transcriptLanguageUnknown": { "message": "未知语言" },
+  "transcriptPanelFallback": { "message": "面板回退" },
+  "transcriptMetaPanelTpl": { "message": "已从{source}加载（{age}）；{language}。" },
+  "transcriptRefreshedTrack": { "message": "字幕轨道已刷新" },
+  "transcriptMetaRefreshedTpl": { "message": "已通过{source}替换过期的字幕网址；获取于{age}；{language}。" },
+  "transcriptExpiryUnknown": { "message": "未提供" },
+  "transcriptMetaSourceTpl": { "message": "已从{source}加载（{age}）；{language}；轨道网址到期时间：{expires}。" },
+  "transcriptTimeUnknown": { "message": "未知时间" },
+  "transcriptNoCaptions": { "message": "无字幕" },
+  "transcriptUnavailableLabel": { "message": "不可用" },
+  "transcriptUnavailableNow": { "message": "目前无法从 YouTube 获取转写。" },
+  "transcriptLoadFailed": { "message": "转写加载失败" },
+  "transcriptNoCaptionsHelp": { "message": "请尝试其他带字幕的视频，或在字幕加载完成后重新打开此面板。" },
+  "transcriptRetryHelp": { "message": "如果字幕仍在处理中，请重新加载页面或稍后重试。" }
 }

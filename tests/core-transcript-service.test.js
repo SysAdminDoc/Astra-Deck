@@ -69,10 +69,19 @@ test('fetchTranscript retrieves captions without depending on an opened DOM pane
 
 test('fetchTranscript reports captionless videos and honors cancellation', async () => {
     const createTranscriptService = loadFactoryIntoFreshGlobal();
-    const svc = createTranscriptService({});
-    svc._getCaptionTracks = async () => null;
+    const svc = createTranscriptService({ nowFn: () => 1234 });
+    svc._getCaptionTracks = async () => ({
+        videoId: 'abcdefghijk',
+        source: 'player-global',
+        captionless: true,
+        tracks: []
+    });
     assert.deepEqual(await svc.fetchTranscript('abcdefghijk'), {
-        status: 'captionless', videoId: 'abcdefghijk', title: '', segments: []
+        status: 'captionless', videoId: 'abcdefghijk', title: '', segments: [], language: '',
+        provenance: {
+            source: 'player-global', language: '', fetchedAt: 1234, expiresAt: 0,
+            staleReason: '', fallbackReason: 'no-caption-tracks'
+        }
     });
 
     const controller = new AbortController();
@@ -81,6 +90,251 @@ test('fetchTranscript reports captionless videos and honors cancellation', async
         () => svc.fetchTranscript('abcdefghijk', { signal: controller.signal }),
         (error) => error?.name === 'AbortError'
     );
+});
+
+test('expired caption URLs trigger one fresh discovery and expose bounded provenance', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const now = 2_000_000_000_000;
+    const diagnostics = [];
+    const svc = createTranscriptService({
+        getVideoId: () => 'abcdefghijk',
+        nowFn: () => now,
+        recordDiagnostic: (detail) => diagnostics.push(detail)
+    });
+    const discoveries = [];
+    svc._getCaptionTracks = async (_videoId, options) => {
+        discoveries.push(options.forceFresh === true ? 'fresh' : 'initial');
+        return {
+            videoId: 'abcdefghijk',
+            videoTitle: 'Fresh fixture',
+            source: options.forceFresh ? 'innertube-player' : 'player-global',
+            tracks: [{
+                baseUrl: options.forceFresh
+                    ? 'https://www.youtube.com/api/timedtext?v=abcdefghijk&expire=2000003600'
+                    : 'https://www.youtube.com/api/timedtext?v=abcdefghijk&expire=1999999999',
+                languageCode: 'en', kind: 'manual', vssId: '.en'
+            }]
+        };
+    };
+    const fetchedUrls = [];
+    svc._fetchTranscriptContent = async (url) => {
+        fetchedUrls.push(url);
+        return [{ startMs: 0, endMs: 1000, text: 'Fresh caption' }];
+    };
+
+    const result = await svc.fetchTranscript('abcdefghijk');
+    assert.deepEqual(discoveries, ['initial', 'fresh']);
+    assert.equal(fetchedUrls.length, 1, 'known-expired URL must not be requested');
+    assert.match(fetchedUrls[0], /expire=2000003600/);
+    assert.equal(result.status, 'ready');
+    assert.equal(result.videoId, 'abcdefghijk');
+    assert.deepEqual(result.provenance, {
+        source: 'innertube-player',
+        language: 'en',
+        fetchedAt: now,
+        expiresAt: 2_000_003_600_000,
+        staleReason: 'expired-url',
+        fallbackReason: 'track-refresh'
+    });
+    assert.deepEqual(svc.getDiagnostics(), diagnostics[0]);
+});
+
+for (const status of [403, 404]) {
+    test(`HTTP ${status} caption failure refreshes the track at most once`, async () => {
+        const createTranscriptService = loadFactoryIntoFreshGlobal();
+        const svc = createTranscriptService({ getVideoId: () => 'abcdefghijk', nowFn: () => 5000 });
+        let discoveries = 0;
+        svc._getCaptionTracks = async (_videoId, options) => {
+            discoveries += 1;
+            return {
+                videoId: 'abcdefghijk',
+                source: options.forceFresh ? 'watch-page-player' : 'player-global',
+                tracks: [{
+                    baseUrl: `https://www.youtube.com/api/timedtext?v=abcdefghijk&generation=${discoveries}`,
+                    languageCode: 'en', kind: 'manual'
+                }]
+            };
+        };
+        let fetches = 0;
+        svc._fetchTranscriptContent = async () => {
+            fetches += 1;
+            if (fetches === 1) {
+                const error = new Error(`HTTP ${status}`);
+                error.response = { status };
+                throw error;
+            }
+            return [{ startMs: 0, endMs: 1000, text: 'Recovered' }];
+        };
+
+        const result = await svc.fetchTranscript('abcdefghijk');
+        assert.equal(discoveries, 2);
+        assert.equal(fetches, 2);
+        assert.equal(result.provenance.staleReason, `http-${status}`);
+        assert.equal(result.provenance.fallbackReason, 'track-refresh');
+    });
+}
+
+test('a failed refreshed caption URL does not start a second rediscovery loop', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const svc = createTranscriptService({ getVideoId: () => 'abcdefghijk' });
+    let discoveries = 0;
+    svc._getCaptionTracks = async (_videoId, options) => {
+        discoveries += 1;
+        return {
+            videoId: 'abcdefghijk',
+            source: options.forceFresh ? 'watch-page-regex' : 'player-global',
+            tracks: [{ baseUrl: `https://www.youtube.com/api/timedtext?v=abcdefghijk&n=${discoveries}`, languageCode: 'en' }]
+        };
+    };
+    svc._fetchTranscriptContent = async () => {
+        const error = new Error('HTTP 403');
+        error.response = { status: 403 };
+        throw error;
+    };
+    await assert.rejects(() => svc.fetchTranscript('abcdefghijk'), /HTTP 403/);
+    assert.equal(discoveries, 2);
+});
+
+test('stale player globals fail over and navigation cancels before returning another video', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    let currentVideoId = 'abcdefghijk';
+    const svc = createTranscriptService({
+        getVideoId: () => currentVideoId,
+        getPlayerResponseGlobal: () => ({ videoDetails: { videoId: 'zzzzzzzzzzz' } })
+    });
+    svc._method2_InnertubeAPI = async () => ({
+        videoTitle: 'Current video',
+        tracks: [{ baseUrl: 'https://www.youtube.com/api/timedtext?v=abcdefghijk', languageCode: 'en' }]
+    });
+    const discovered = await svc._getCaptionTracks('abcdefghijk');
+    assert.equal(discovered.source, 'innertube-player');
+
+    svc._getCaptionTracks = async () => discovered;
+    svc._fetchTranscriptContent = async () => {
+        currentVideoId = 'yyyyyyyyyyy';
+        return [{ startMs: 0, endMs: 1000, text: 'Wrong video' }];
+    };
+    await assert.rejects(
+        () => svc.fetchTranscript('abcdefghijk'),
+        (error) => error?.name === 'AbortError'
+    );
+});
+
+test('navigation to a non-video route cancels before transcript completion', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    let currentVideoId = 'abcdefghijk';
+    const svc = createTranscriptService({ getVideoId: () => currentVideoId });
+    svc._getCaptionTracks = async () => ({
+        videoId: 'abcdefghijk',
+        source: 'innertube-player',
+        tracks: [{ baseUrl: 'https://www.youtube.com/api/timedtext?v=abcdefghijk', languageCode: 'en' }]
+    });
+    svc._fetchTranscriptContent = async () => {
+        currentVideoId = null;
+        return [{ startMs: 0, endMs: 1000, text: 'Stale completion' }];
+    };
+
+    await assert.rejects(
+        () => svc.fetchTranscript('abcdefghijk'),
+        (error) => error?.name === 'AbortError'
+    );
+});
+
+test('caller trackData cannot inject a caption URL for another video', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const fetchedUrls = [];
+    const svc = createTranscriptService({ getVideoId: () => 'abcdefghijk' });
+    svc._getCaptionTracks = async () => ({
+        videoId: 'abcdefghijk',
+        source: 'innertube-player',
+        tracks: [{ baseUrl: 'https://www.youtube.com/api/timedtext?v=abcdefghijk', languageCode: 'en' }]
+    });
+    svc._fetchTranscriptContent = async (url) => {
+        fetchedUrls.push(url);
+        return [{ startMs: 0, endMs: 1000, text: 'Bound caption' }];
+    };
+
+    const result = await svc.fetchTranscript('abcdefghijk', {
+        trackData: {
+            videoId: 'abcdefghijk',
+            tracks: [{ baseUrl: 'https://www.youtube.com/api/timedtext?v=zzzzzzzzzzz', languageCode: 'en' }]
+        }
+    });
+    assert.equal(result.status, 'ready');
+    assert.deepEqual(fetchedUrls, ['https://www.youtube.com/api/timedtext?v=abcdefghijk']);
+});
+
+test('strict track refresh fails closed when the requested language disappears', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const now = 2_000_000_000_000;
+    const svc = createTranscriptService({ getVideoId: () => 'abcdefghijk', nowFn: () => now });
+    let discoveries = 0;
+    svc._getCaptionTracks = async (_videoId, options) => {
+        discoveries += 1;
+        return {
+            videoId: 'abcdefghijk',
+            source: options.forceFresh ? 'innertube-player' : 'player-global',
+            tracks: options.forceFresh
+                ? [{ baseUrl: 'https://www.youtube.com/api/timedtext?v=abcdefghijk&lang=es', languageCode: 'es', kind: 'manual' }]
+                : [{
+                    baseUrl: 'https://www.youtube.com/api/timedtext?v=abcdefghijk&lang=en&expire=1999999999',
+                    languageCode: 'en', kind: 'manual', vssId: '.en'
+                }]
+        };
+    };
+    svc._fetchTranscriptContent = async () => assert.fail('no mismatched language URL should be fetched');
+
+    const result = await svc.fetchTranscript('abcdefghijk', {
+        trackPreference: { languageCode: 'en', kind: 'manual', vssId: '.en' },
+        strictTrack: true
+    });
+    assert.equal(discoveries, 2);
+    assert.equal(result.status, 'unavailable');
+    assert.equal(result.provenance.language, 'en');
+    assert.equal(result.provenance.fallbackReason, 'strict-track-unavailable');
+});
+
+test('off-page retrieval uses target-bound network discovery without page globals or DOM', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const calls = [];
+    const svc = createTranscriptService({ getVideoId: () => 'currentvid1' });
+    svc._method1_WindowVariable = () => { calls.push('global'); throw new Error('must not run'); };
+    svc._method2_InnertubeAPI = async () => {
+        calls.push('innertube');
+        return {
+            tracks: [{ baseUrl: 'https://www.youtube.com/api/timedtext?v=abcdefghijk', languageCode: 'en' }],
+            videoTitle: 'Off-page target'
+        };
+    };
+    svc._method5_DOMPanelScrape = async () => { calls.push('dom'); throw new Error('must not run'); };
+    svc._fetchTranscriptContent = async () => [{ startMs: 0, endMs: 1000, text: 'Target caption' }];
+
+    const result = await svc.fetchTranscript('abcdefghijk', { allowOffPage: true });
+    assert.equal(result.status, 'ready');
+    assert.deepEqual(calls, ['innertube']);
+});
+
+test('valid matched player data distinguishes captionless videos from discovery failure', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const captionless = createTranscriptService({
+        getVideoId: () => 'abcdefghijk',
+        getPlayerResponseGlobal: () => ({ videoDetails: { videoId: 'abcdefghijk', title: 'No captions' } })
+    });
+    const result = await captionless.fetchTranscript('abcdefghijk');
+    assert.equal(result.status, 'captionless');
+    assert.equal(result.provenance.source, 'player-global');
+
+    const broken = createTranscriptService({ getVideoId: () => 'abcdefghijk' });
+    for (const method of [
+        '_method1_WindowVariable', '_method2_InnertubeAPI', '_method3_HTMLPageFetch',
+        '_method4_CaptionTracksRegex', '_method5_DOMPanelScrape'
+    ]) broken[method] = async () => { throw new Error('fixture failure'); };
+    await assert.rejects(
+        () => broken.fetchTranscript('abcdefghijk', { allowDomFallback: false }),
+        /Transcript discovery failed/
+    );
+    assert.equal(broken.getDiagnostics().status, 'error');
+    assert.doesNotMatch(JSON.stringify(broken.getDiagnostics()), /timedtext|baseUrl|https?:\/\//);
 });
 
 test('downloadTranscript fails cleanly when no video id is in scope', async () => {

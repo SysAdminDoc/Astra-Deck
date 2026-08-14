@@ -118,6 +118,24 @@ test('_fetchTranscriptContent returns the empty parse only after every format wa
     assert.deepEqual(segments, [], 'a genuinely empty transcript still surfaces as an empty result, not a throw');
 });
 
+for (const status of [403, 404]) {
+    test(`_fetchTranscriptContent preserves HTTP ${status} so the shared service can refresh`, async () => {
+        const core = loadCoreModule('extension/core/transcript-service.js');
+        const svc = core.createTranscriptService({
+            extensionFetchText: async () => {
+                const error = new Error(`HTTP ${status}`);
+                error.response = { status };
+                throw error;
+            }
+        });
+
+        await assert.rejects(
+            () => svc._fetchTranscriptContent('https://www.youtube.com/api/timedtext?v=abc'),
+            (error) => error?.response?.status === status
+        );
+    });
+}
+
 // ── Fix 3: malformed number literals are a compile-time PredicateError ──
 
 test('PredicateSandbox compile rejects malformed number literals like 1.2.3', () => {

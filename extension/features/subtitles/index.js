@@ -227,10 +227,11 @@
             : null;
         const fetchCaptionTrack = typeof options.fetchCaptionTrack === 'function'
             ? options.fetchCaptionTrack
-            : async (track) => {
+            : async (track, _tracks, fetchOptions = {}) => {
                 if (!extensionFetchJson || !track?.baseUrl) return { cues: null, track };
                 const result = await extensionFetchJson({
-                    url: appendTimedTextFormat(track.baseUrl, 'json3')
+                    url: appendTimedTextFormat(track.baseUrl, 'json3'),
+                    signal: fetchOptions.signal
                 });
                 return {
                     cues: parseJson3Cues(result?.data),
@@ -264,6 +265,7 @@
             _timeHandler: null,
             _resizeHandler: null,
             _loadTimer: null,
+            _loadController: null,
             _loadToken: 0,
             _retryCount: 0,
             _cues: [],
@@ -308,12 +310,14 @@
                 if (!String(getVideoId?.() || '')) return null;
                 const pageData = doc?.querySelector?.('ytd-watch-flexy');
                 const pageResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
-                if (pageResponse) return pageResponse;
-                const globalResponse = getPlayerResponseGlobal();
                 const currentVideoId = String(getVideoId?.() || '');
+                const pageVideoId = String(pageResponse?.videoDetails?.videoId || '');
+                if (pageResponse && pageVideoId === currentVideoId) return pageResponse;
+                const globalResponse = getPlayerResponseGlobal();
                 const responseVideoId = String(globalResponse?.videoDetails?.videoId || '');
-                if (currentVideoId && responseVideoId && currentVideoId !== responseVideoId) return null;
-                return globalResponse || null;
+                return globalResponse && responseVideoId === currentVideoId
+                    ? globalResponse
+                    : null;
             },
 
             _captionTracks() {
@@ -429,9 +433,14 @@
 
             async _load() {
                 if (!this._started) return;
+                this._loadController?.abort();
+                const controller = new AbortController();
+                this._loadController = controller;
                 const token = ++this._loadToken;
+                const videoId = String(getVideoId?.() || '');
                 const tracks = this._captionTracks();
                 if (!Array.isArray(tracks) || tracks.length === 0) {
+                    if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
                     if (this._retryCount < 6) {
                         this._retryCount += 1;
@@ -447,23 +456,29 @@
                     this._primaryLanguage()
                 );
                 if (!track) {
+                    if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
                     return;
                 }
 
                 let result;
                 try {
-                    result = await fetchCaptionTrack(track, tracks);
+                    result = await fetchCaptionTrack(track, tracks, { signal: controller.signal });
                 } catch (_) {
                     // reason: a missing/expired timed-text track is a normal
                     // unavailable-caption state, not a feature crash.
                     result = null;
                 }
-                if (!this._started || token !== this._loadToken) return;
+                if (!this._started || token !== this._loadToken || controller.signal.aborted
+                    || String(getVideoId?.() || '') !== videoId) {
+                    if (this._loadController === controller) this._loadController = null;
+                    return;
+                }
                 const cues = Array.isArray(result?.cues)
                     ? result.cues.filter((cue) => cue && typeof cue.text === 'string' && cue.text.trim())
                     : [];
                 if (cues.length === 0) {
+                    if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
                     return;
                 }
@@ -473,7 +488,8 @@
                 // the retry count, so a page that resolved tracks but never
                 // produced a player node looped every 700ms forever. Only a
                 // fully successful render clears the budget.
-                if (!this._mountOverlay(track) || !this._attachVideo()) {
+                if (!this._mountOverlay(result?.track || track) || !this._attachVideo()) {
+                    if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
                     if (this._retryCount < 6) {
                         this._retryCount += 1;
@@ -483,9 +499,12 @@
                 }
                 this._retryCount = 0;
                 this._renderCue();
+                if (this._loadController === controller) this._loadController = null;
             },
 
             _resetForNavigation() {
+                this._loadController?.abort();
+                this._loadController = null;
                 this._loadToken += 1;
                 this._retryCount = 0;
                 this._cues = [];
@@ -551,6 +570,8 @@
 
             destroy() {
                 this._started = false;
+                this._loadController?.abort();
+                this._loadController = null;
                 this._loadToken += 1;
                 if (this._loadTimer) clearTimer(this._loadTimer);
                 this._loadTimer = null;

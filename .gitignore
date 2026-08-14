@@ -57,3 +57,6 @@ SESSION*.md
 # AI config
 .ai/
 PROJECT_CONTEXT.md
+
+# Chrome-generated DNR ruleset metadata (created on unpacked load)
+extension/_metadata/

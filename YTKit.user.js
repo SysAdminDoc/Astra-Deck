@@ -687,7 +687,7 @@
 
 
     //  TRANSCRIPT SERVICE - Multi-Method Extraction with Failover
-    const TranscriptService = {
+    const LegacyTranscriptService = {
         config: {
             preferredLanguages: ['en', 'en-US', 'en-GB'],
             preferManualCaptions: true,
@@ -1153,6 +1153,52 @@
             }
         }
     };
+
+    async function userscriptTranscriptFetchText(details = {}) {
+        const response = await fetch(details.url, {
+            method: details.method || 'GET',
+            headers: details.headers || {},
+            body: details.data,
+            credentials: 'include',
+            signal: details.signal
+        });
+        const responseMeta = { status: response.status };
+        if (!response.ok) {
+            const error = new Error(`HTTP ${response.status}`);
+            error.response = responseMeta;
+            throw error;
+        }
+        return { response: responseMeta, text: await response.text() };
+    }
+
+    async function userscriptTranscriptFetchJson(details = {}) {
+        const result = await userscriptTranscriptFetchText(details);
+        try {
+            return { response: result.response, data: JSON.parse(result.text) };
+        } catch (cause) {
+            const error = new Error('Invalid JSON response from YouTube');
+            error.response = result.response;
+            error.cause = cause;
+            throw error;
+        }
+    }
+
+    const TranscriptService = typeof globalThis.YTKitCore?.createTranscriptService === 'function'
+        ? globalThis.YTKitCore.createTranscriptService({
+            getVideoId,
+            showToast,
+            getPlayerResponseGlobal: () => window.ytInitialPlayerResponse || null,
+            isDomTranscriptForVideo: (videoId, panel) => {
+                const flexy = document.querySelector('ytd-watch-flexy');
+                const response = flexy?.__data?.playerResponse || flexy?.playerResponse;
+                return response?.videoDetails?.videoId === videoId
+                    && (!panel || flexy.contains(panel));
+            },
+            extensionFetchJson: userscriptTranscriptFetchJson,
+            extensionFetchText: userscriptTranscriptFetchText,
+            t
+        })
+        : LegacyTranscriptService;
 
     // Debug Mode Manager — gated behind a flag, no-op in production
     const DebugManager = {
@@ -10018,32 +10064,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'file-text',
             _panel: null,
             _navRule: null,
+            _loadController: null,
 
             async _loadTranscript() {
                 const panel = this._panel;
                 if (!panel) return;
+                this._loadController?.abort();
+                const controller = new AbortController();
+                const videoId = getVideoId();
+                this._loadController = controller;
                 const body = panel.querySelector('.ytkit-transcript-body');
                 if (!body) return;
                 body.textContent = 'Loading transcript...';
 
                 try {
-                    const pageData = document.querySelector('ytd-watch-flexy');
-                    const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
-                    const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (!tracks || tracks.length === 0) {
+                    if (!videoId) throw new Error('No video detected');
+                    const transcript = await TranscriptService.fetchTranscript(videoId, { signal: controller.signal });
+                    if (controller.signal.aborted || getVideoId() !== videoId || this._panel !== panel) return;
+                    if (transcript.status !== 'ready' || !transcript.segments?.length) {
                         body.textContent = 'No transcript available for this video.';
                         return;
                     }
-                    const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
-                    const resp = await fetch(track.baseUrl + '&fmt=json3');
-                    const data = await resp.json();
                     body.textContent = '';
 
-                    (data.events || []).forEach(ev => {
-                        if (!ev.segs) return;
-                        const text = ev.segs.map(s => s.utf8).join('').trim();
+                    transcript.segments.forEach(segment => {
+                        const text = String(segment.text || '').trim();
                         if (!text) return;
-                        const startSec = (ev.tStartMs || 0) / 1000;
+                        const startSec = (segment.startMs || 0) / 1000;
                         const mins = Math.floor(startSec / 60);
                         const secs = Math.floor(startSec % 60);
 
@@ -10069,7 +10116,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         body.appendChild(line);
                     });
                 } catch(e) {
+                    if (e?.name === 'AbortError') return;
                     body.textContent = 'Failed to load transcript.';
+                } finally {
+                    if (this._loadController === controller) this._loadController = null;
                 }
             },
 
@@ -10107,6 +10157,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 addNavigateRule('transcriptViewer', () => {
+                    this._loadController?.abort();
+                    this._loadController = null;
                     this._panel?.remove(); this._panel = null;
                     setTimeout(() => this._create(), 2000);
                 });
@@ -10114,6 +10166,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 removeNavigateRule('transcriptViewer');
+                this._loadController?.abort();
+                this._loadController = null;
                 this._panel?.remove(); this._panel = null;
             }
         },
@@ -11126,20 +11180,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     getVideoId,
                     getMainVideoElement: () => document.querySelector('#movie_player video, video'),
                     getPlayerResponseGlobal: () => window.ytInitialPlayerResponse || null,
-                    fetchCaptionTrack: async (track) => {
-                        if (!track?.baseUrl) return { cues: null, track };
-                        const url = typeof subtitleHelpers.appendTimedTextFormat === 'function'
-                            ? subtitleHelpers.appendTimedTextFormat(track.baseUrl, 'json3')
-                            : `${track.baseUrl}${track.baseUrl.includes('?') ? '&' : '?'}fmt=json3`;
-                        const response = await fetch(url, { credentials: 'include' });
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        const data = await response.json();
+                    fetchCaptionTrack: async (track, _tracks, options = {}) => {
+                        const videoId = getVideoId();
+                        if (!videoId || !track) return { cues: null, track };
+                        const result = await TranscriptService.fetchTranscript(videoId, {
+                            signal: options.signal,
+                            trackPreference: {
+                                vssId: track.vssId,
+                                languageCode: track.languageCode,
+                                kind: track.kind
+                            },
+                            strictTrack: true,
+                            allowDomFallback: false
+                        });
+                        if (result.status !== 'ready' || !result.segments?.length) return { cues: null, track };
                         return {
-                            cues: typeof subtitleHelpers.parseJson3Cues === 'function'
-                                ? subtitleHelpers.parseJson3Cues(data)
-                                : [],
+                            cues: result.segments.map(segment => ({
+                                start: Math.max(0, Number(segment.startMs) || 0) / 1000,
+                                end: Number.isFinite(Number(segment.endMs)) ? Number(segment.endMs) / 1000 : null,
+                                text: String(segment.text || '')
+                            })),
                             source: 'api',
-                            track
+                            track: result.track || track,
+                            provenance: result.provenance
                         };
                     }
                 });

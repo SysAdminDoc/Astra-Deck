@@ -7585,5 +7585,24 @@
   },
   "filterListStoppedTpl": {
     "message": "{host} の購読を停止しました。フィルターリスト専用のサイトアクセスは残っていません。"
-  }
+  },
+  "transcriptSourcePlayerGlobal": { "message": "現在のページのプレーヤーデータ" },
+  "transcriptSourceInnertube": { "message": "更新された YouTube プレーヤーデータ" },
+  "transcriptSourceWatchPage": { "message": "更新された YouTube 視聴ページ" },
+  "transcriptSourcePanel": { "message": "現在の YouTube 文字起こしパネル" },
+  "transcriptSourceUnknown": { "message": "YouTube 字幕" },
+  "transcriptLanguageUnknown": { "message": "言語不明" },
+  "transcriptPanelFallback": { "message": "パネルからのフォールバック" },
+  "transcriptMetaPanelTpl": { "message": "{source} から読み込み（{age}、{language}）。" },
+  "transcriptRefreshedTrack": { "message": "トラックを更新" },
+  "transcriptMetaRefreshedTpl": { "message": "期限切れの字幕 URL を {source} で更新しました（取得: {age}、{language}）。" },
+  "transcriptExpiryUnknown": { "message": "未指定" },
+  "transcriptMetaSourceTpl": { "message": "{source} から読み込み（{age}、{language}、トラック URL の期限: {expires}）。" },
+  "transcriptTimeUnknown": { "message": "時刻不明" },
+  "transcriptNoCaptions": { "message": "字幕なし" },
+  "transcriptUnavailableLabel": { "message": "利用不可" },
+  "transcriptUnavailableNow": { "message": "現在、YouTube から文字起こしを取得できません。" },
+  "transcriptLoadFailed": { "message": "文字起こしを読み込めませんでした" },
+  "transcriptNoCaptionsHelp": { "message": "字幕付きの別の動画を試すか、字幕の読み込み完了後にこのパネルを開き直してください。" },
+  "transcriptRetryHelp": { "message": "字幕が処理中の場合は、ページを再読み込みするか、しばらくしてからもう一度お試しください。" }
 }

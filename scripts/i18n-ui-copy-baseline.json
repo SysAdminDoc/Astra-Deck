@@ -6,10 +6,10 @@
       "digest": "9897409d22353e07cbf260bb49e396f2171b88dc102056d14d2801e686bb9e8e"
     },
     "extension/ytkit.js": {
-      "count": 926,
-      "digest": "3284a27e28d82ab6f3ca774231f52459ddd6817d35082f48ce79bbe4461966b2",
+      "count": 930,
+      "digest": "10c7d5666f95aca989da4b9af38a1949b1d429a5ae357f6ab55aa96a85e07df6",
       "strictCount": 343,
-      "strictDigest": "5738384ba97592861efedbb3526dc1812c487a7600ece32af9c19f4eebe09d44"
+      "strictDigest": "a2240f40549463bc6e98594f762eef4efb8dc1370e0aa96093ed465a4756f7c0"
     }
   }
 }

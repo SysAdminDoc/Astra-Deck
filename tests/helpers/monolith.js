@@ -38,6 +38,7 @@ function featureSource(id) {
 function loadFeature(id, extraGlobals = {}) {
     const sandbox = {
         console,
+        AbortController,
         setTimeout,
         clearTimeout,
         t: (_key, fallback) => fallback,
@@ -49,6 +50,11 @@ function loadFeature(id, extraGlobals = {}) {
         DebugManager: { log() {} },
         showToast() {},
         getVideoId: () => 'abc12345678',
+        assertCurrentTranscriptRequest(videoId, signal) {
+            if (signal?.aborted || sandbox.getVideoId() !== videoId) {
+                throw Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
+            }
+        },
         appState: { settings: {} },
         addMutationRule() {},
         removeMutationRule() {},

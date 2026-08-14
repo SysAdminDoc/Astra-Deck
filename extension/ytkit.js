@@ -1875,8 +1875,33 @@ return response;
             getVideoId: () => getVideoId(),
             showToast: (...args) => showToast(...args),
             getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
+            isDomTranscriptForVideo: (videoId, panel) => {
+                try {
+                    return Array.from(document.querySelectorAll('ytd-watch-flexy')).some((flexy) => {
+                        const style = getComputedStyle(flexy);
+                        const responseVideoId = (flexy.__data?.playerResponse || flexy.playerResponse)
+                            ?.videoDetails?.videoId;
+                        return flexy.isConnected
+                            && flexy.getClientRects().length > 0
+                            && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && responseVideoId === videoId
+                            && (!panel || flexy.contains(panel));
+                    });
+                } catch (_) {
+                    return false;
+                }
+            },
             extensionFetchJson: (...args) => extensionFetchJson(...args),
             extensionFetchText: (...args) => extensionFetchText(...args),
+            recordDiagnostic: (detail) => DiagnosticLog?.record(
+                'transcript-source',
+                JSON.stringify({
+                    videoId: detail?.videoId || '',
+                    status: detail?.status || 'error',
+                    ...(detail?.provenance || {})
+                })
+            ),
             t
         })
         : (() => {
@@ -1888,6 +1913,8 @@ return response;
                 config: {},
                 async downloadTranscript() { return { success: false, error: 'TranscriptService factory missing' }; },
                 async fetchTranscript() { throw new Error('TranscriptService factory missing'); },
+                getDiagnostics() { return null; },
+                formatTranscript() { return ''; },
                 _getCaptionTracks: async () => null,
                 _selectBestTrack: (t) => (t && t[0]) || null,
                 _fetchTranscriptContent: async () => [],
@@ -5308,85 +5335,75 @@ return response;
         return byCode(pref) || byCode(navLang) || byCode('en') || tracks[0];
     }
 
-    // PO Token resilience: engagement-panel HTML transcript scrape.
-    // YouTube increasingly requires Proof-of-Origin Tokens for timedtext
-    // API access. When the json3 fetch returns empty or errors, this
-    // fallback reads the rendered engagement-panel transcript DOM instead.
-    function _scrapeEngagementPanelTranscript() {
-        const panel = globalThis.YTKitCore?.getTranscriptPanelElement?.(document);
-        if (!panel) return null;
-        const segs = panel.querySelectorAll(
-            'ytd-transcript-segment-renderer .segment-text, ' +
-            'ytd-transcript-segment-renderer yt-formatted-string'
-        );
-        if (!segs || segs.length === 0) return null;
-        const cues = [];
-        segs.forEach(seg => {
-            const text = seg.textContent?.trim();
-            if (!text) return;
-            const row = seg.closest('ytd-transcript-segment-renderer');
-            const tsEl = row?.querySelector('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]');
-            const tsText = tsEl?.textContent?.trim() || '';
-            // Parse timestamp like "1:23" or "12:34" into seconds
-            const parts = tsText.split(':').map(Number).filter(n => !isNaN(n));
-            let startSec = 0;
-            if (parts.length === 2) startSec = parts[0] * 60 + parts[1];
-            else if (parts.length === 3) startSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
-            cues.push({ start: startSec, text });
-        });
-        return cues.length > 0 ? cues : null;
+    // Shared caption retrieval with signed-URL refresh and a video-bound
+    // rendered-panel fallback. Returns normalized cue seconds for UI callers.
+    async function fetchTranscriptWithFallback(tracks, selectedTrack = null, options = {}) {
+        const videoId = options.videoId || getVideoId();
+        if (!videoId) return { status: 'unavailable', cues: null, source: null, error: 'No video detected' };
+        const track = selectedTrack || pickTranscriptTrack(tracks);
+        try {
+            const transcript = await TranscriptService.fetchTranscript(videoId, {
+                signal: options.signal,
+                trackPreference: track ? {
+                    vssId: track.vssId,
+                    languageCode: track.languageCode,
+                    kind: track.kind
+                } : null,
+                strictTrack: options.strictTrack === true,
+                allowDomFallback: options.allowDomFallback !== false
+            });
+            if (transcript.status !== 'ready' || !transcript.segments?.length) {
+                return {
+                    status: transcript.status,
+                    cues: null,
+                    source: null,
+                    track,
+                    provenance: transcript.provenance,
+                    error: transcript.status === 'captionless'
+                        ? t('transcriptUnavailable', 'No transcript available for this video')
+                        : t('transcriptUnavailableNow', 'The transcript could not be fetched from YouTube right now.')
+                };
+            }
+            return {
+                status: 'ready',
+                cues: transcript.segments.map(segment => ({
+                    start: Math.max(0, Number(segment.startMs) || 0) / 1000,
+                    end: Number.isFinite(Number(segment.endMs)) ? Number(segment.endMs) / 1000 : null,
+                    text: String(segment.text || '')
+                })),
+                source: transcript.provenance?.source === 'dom-panel' ? 'panel' : 'api',
+                track: transcript.track || (transcript.provenance?.source === 'dom-panel' ? null : track),
+                provenance: transcript.provenance
+            };
+        } catch (error) {
+            if (error?.name === 'AbortError') throw error;
+            DiagnosticLog?.record('transcript-source', `Transcript fetch failed: ${error.message}`);
+            const diagnostic = TranscriptService.getDiagnostics?.();
+            return {
+                status: 'error',
+                cues: null,
+                source: null,
+                track,
+                provenance: diagnostic?.videoId === videoId ? diagnostic.provenance : null,
+                error: error.message
+            };
+        }
     }
 
-    // Fetch transcript with PO Token fallback. Tries json3 API first,
-    // then falls back to engagement-panel DOM scraping.
-    // Returns { cues: [{start, text}], source: 'api'|'panel'|null }
-    async function fetchTranscriptWithFallback(tracks, selectedTrack = null) {
-        const track = selectedTrack || pickTranscriptTrack(tracks);
-        if (!track) return { cues: null, source: null, error: 'No caption tracks available' };
-
-        // Guard against missing/corrupt baseUrl — skip API fetch, try panel fallback
-        if (!track.baseUrl || typeof track.baseUrl !== 'string') {
-            DiagnosticLog?.record('transcript-po-token', 'Caption track has no baseUrl; trying engagement-panel fallback.');
-            const panelCues = _scrapeEngagementPanelTranscript();
-            if (panelCues) return { cues: panelCues, source: 'panel', track };
-            return { cues: null, source: null, track, error: 'Caption track has no fetchable URL.' };
+    function assertCurrentTranscriptRequest(videoId, signal) {
+        if (signal?.aborted || getVideoId() !== videoId) {
+            throw Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
         }
+    }
 
-        // Try json3 API first
-        try {
-            const { response, data } = await extensionFetchJson({
-                url: track.baseUrl + '&fmt=json3'
-            });
-            if (response && response.status >= 200 && response.status < 300 && data?.events?.length > 0) {
-                const cues = [];
-                for (const ev of data.events) {
-                    if (!ev.segs) continue;
-                    const text = ev.segs.map(s => s.utf8 || '').join('').trim();
-                    if (!text) continue;
-                    const startSec = (ev.tStartMs || 0) / 1000;
-                    const durSec = (ev.dDurationMs != null) ? ev.dDurationMs / 1000 : null;
-                    const endSec = durSec != null ? startSec + durSec : null;
-                    cues.push({ start: startSec, end: endSec, text });
-                }
-                if (cues.length > 0) {
-                    return { cues, source: 'api', track };
-                }
-            }
-            // Empty response — likely PO Token required
-            DiagnosticLog?.record('transcript-po-token',
-                'timedtext API returned empty or error — may require PO Token. Attempting engagement-panel fallback.');
-        } catch (e) {
-            DiagnosticLog?.record('transcript-po-token',
-                `timedtext API fetch failed: ${e.message}. Attempting engagement-panel fallback.`);
-        }
-
-        // Fallback: engagement-panel HTML scrape
-        const panelCues = _scrapeEngagementPanelTranscript();
-        if (panelCues) {
-            return { cues: panelCues, source: 'panel', track };
-        }
-
-        return { cues: null, source: null, track, error: 'Transcript unavailable — YouTube may require a Proof-of-Origin Token for this video.' };
+    async function fetchCurrentTranscriptText(options = {}) {
+        const videoId = options.videoId || getVideoId();
+        if (!videoId) return '';
+        assertCurrentTranscriptRequest(videoId, options.signal);
+        const result = await TranscriptService.fetchTranscript(videoId, { signal: options.signal });
+        assertCurrentTranscriptRequest(videoId, options.signal);
+        if (result?.status !== 'ready' || !result.segments?.length) return '';
+        return TranscriptService.formatTranscript(result.segments);
     }
 
     // v3.14.0: Selector chain with first-miss diagnostics. Used at the
@@ -23830,6 +23847,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _statusEl: null,
             _exportBtn: null,
             _exportBusy: false,
+            _exportController: null,
             _injectTimer: null,
             _scheduleInject(delay = 2500) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
@@ -24073,6 +24091,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return;
                 }
                 this._exportBusy = true;
+                const controller = new AbortController();
+                this._exportController = controller;
                 if (this._exportBtn) {
                     this._exportBtn.disabled = true;
                     this._exportBtn.setAttribute('aria-busy', 'true');
@@ -24089,7 +24109,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         || summary?.title || document.title || videoId).trim().replace(/\s+/g, ' ').slice(0, 300);
                     let transcript = { status: 'unavailable', videoId, title, segments: [] };
                     try {
-                        const fetched = await TranscriptService.fetchTranscript(videoId);
+                        const fetched = await TranscriptService.fetchTranscript(videoId, { signal: controller.signal });
                         const normalized = typeof TranscriptService.normalizeSegments === 'function'
                             ? TranscriptService.normalizeSegments(fetched.segments)
                             : (globalThis.YTKitCore?.normalizeTranscriptSegments
@@ -24102,6 +24122,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             truncated: normalized.truncated
                         };
                     } catch (error) {
+                        if (error?.name === 'AbortError') throw error;
                         transcript.error = String(error?.message || error).slice(0, 240);
                     }
                     const bundle = artifactService.createVideoHighlightBundle({
@@ -24120,9 +24141,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     handleFileExport(`${stem}.json`, JSON.stringify(backup, null, 2));
                     showToast(t('timestampHighlightExported', 'Highlight pack exported as Markdown and JSON.'), '#22c55e');
                 } catch (error) {
+                    if (error?.name === 'AbortError') return;
                     DiagnosticLog?.record('timestampBookmarks.highlightExport', error.message);
                     showToast(t('timestampHighlightExportFailed', 'Highlight export failed. Your saved data is unchanged.'), '#ef4444');
                 } finally {
+                    if (this._exportController === controller) this._exportController = null;
                     this._exportBusy = false;
                     if (this._exportBtn) {
                         this._exportBtn.disabled = false;
@@ -24192,6 +24215,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._scheduleInject(2500);
                 addNavigateRule('bookmarks', () => {
+                    this._exportController?.abort();
+                    this._exportController = null;
                     this._panel = null;
                     this._countEl = null;
                     this._statusEl = null;
@@ -24202,6 +24227,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = null;
+                this._exportController?.abort();
+                this._exportController = null;
                 removeNavigateRule('bookmarks');
                 this._panel = null;
                 this._countEl = null;
@@ -25812,6 +25839,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _activeCueIndex: -1,
             _activeHighlightName: 'ytkit-transcript-active',
             _cues: [],
+            _loadController: null,
+            _loadGeneration: 0,
             _scheduleCreate(delay = 2000) {
                 if (this._createTimer) clearTimeout(this._createTimer);
                 this._createTimer = setTimeout(() => {
@@ -26171,6 +26200,66 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (summary) summary.textContent = copy;
             },
 
+            _describeTranscriptSource(source) {
+                switch (source) {
+                case 'player-global': return t('transcriptSourcePlayerGlobal', 'the current page player data');
+                case 'innertube-player': return t('transcriptSourceInnertube', 'fresh YouTube player data');
+                case 'watch-page-player':
+                case 'watch-page-regex': return t('transcriptSourceWatchPage', 'a fresh YouTube watch page');
+                case 'dom-panel':
+                case 'dom-panel-track': return t('transcriptSourcePanel', 'the current YouTube transcript panel');
+                default: return t('transcriptSourceUnknown', 'YouTube captions');
+                }
+            },
+
+            _showTranscriptProvenance(trackLabel, provenance = {}) {
+                const source = this._describeTranscriptSource(provenance.source);
+                const formatter = globalThis.YTKitCore?.formatRelativeTimestamp;
+                const fetched = typeof formatter === 'function'
+                    ? formatter(provenance.fetchedAt, { locale: document.documentElement.lang || undefined })
+                    : '';
+                const language = provenance.language || t('transcriptLanguageUnknown', 'language unknown');
+                // Resolve the {age} fallback once up front. Keeping this t()
+                // call out of the .replace('{language}'/'{expires}') chains
+                // below also stops check-i18n's proximity heuristic from
+                // mis-attributing those tokens to transcriptTimeUnknown.
+                const ageText = fetched || t('transcriptTimeUnknown', 'at an unknown time');
+                if (provenance.source === 'dom-panel') {
+                    this._setTranscriptMeta(
+                        t('transcriptPanelFallback', 'Panel Fallback'),
+                        t('transcriptMetaPanelTpl', 'Loaded from {source} {age}; {language}.')
+                            .replace('{source}', source)
+                            .replace('{age}', ageText)
+                            .replace('{language}', language),
+                        'info'
+                    );
+                    return;
+                }
+                if (provenance.fallbackReason === 'track-refresh') {
+                    this._setTranscriptMeta(
+                        t('transcriptRefreshedTrack', 'Refreshed Track'),
+                        t('transcriptMetaRefreshedTpl', 'Replaced an expired caption URL from {source}; fetched {age}; {language}.')
+                            .replace('{source}', source)
+                            .replace('{age}', ageText)
+                            .replace('{language}', language),
+                        'success'
+                    );
+                    return;
+                }
+                const expires = provenance.expiresAt > 0
+                    ? new Date(provenance.expiresAt).toLocaleString()
+                    : t('transcriptExpiryUnknown', 'not advertised');
+                this._setTranscriptMeta(
+                    trackLabel,
+                    t('transcriptMetaSourceTpl', 'Loaded from {source} {age}; {language}; track URL expiry: {expires}.')
+                        .replace('{source}', source)
+                        .replace('{age}', ageText)
+                        .replace('{language}', language)
+                        .replace('{expires}', expires),
+                    'success'
+                );
+            },
+
             _renderBodyState(body, state, title, copy) {
                 if (!body) return;
                 body.textContent = '';
@@ -26207,6 +26296,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _loadTranscript() {
                 const panel = this._panel;
                 if (!panel) return;
+                this._loadController?.abort();
+                const generation = ++this._loadGeneration;
+                const controller = new AbortController();
+                const signal = controller.signal;
+                const videoId = getVideoId();
+                this._loadController = controller;
                 const body = panel.querySelector('.ytkit-transcript-body');
                 const exportBar = panel.querySelector('.ytkit-transcript-export');
                 if (!body) return;
@@ -26219,43 +26314,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     const pageData = document.querySelector('ytd-watch-flexy');
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
-                    const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (!tracks || tracks.length === 0) {
-                        // No API tracks — try engagement-panel fallback before giving up
-                        const panelCues = _scrapeEngagementPanelTranscript();
-                        if (panelCues && panelCues.length > 0) {
-                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube transcript panel (API captions unavailable).', 'info');
-                            body.textContent = '';
-                            body.classList.remove('is-stateful');
-                            this._cues = panelCues;
-                        } else {
-                            this._setTranscriptMeta('No Captions', 'This video does not expose a transcript track that Astra Deck can read.', 'warning');
-                            this._renderBodyState(body, 'empty', 'No transcript available', 'Try another video with captions enabled, or reopen this panel after captions finish loading.');
-                            body.setAttribute('aria-busy', 'false');
-                            return;
-                        }
+                    const tracks = playerResponse?.videoDetails?.videoId === videoId
+                        ? playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks
+                        : [];
+                    const result = await fetchTranscriptWithFallback(tracks || [], null, { videoId, signal });
+                    if (generation !== this._loadGeneration
+                        || signal.aborted
+                        || getVideoId() !== videoId
+                        || this._panel !== panel
+                        || !panel.isConnected) return;
+                    if (!result.cues || result.cues.length === 0) {
+                        const noCaptions = result.status === 'captionless';
+                        this._setTranscriptMeta(
+                            noCaptions ? t('transcriptNoCaptions', 'No Captions') : t('transcriptUnavailableLabel', 'Unavailable'),
+                            result.error || t('transcriptUnavailableNow', 'The transcript could not be fetched from YouTube right now.'),
+                            noCaptions ? 'warning' : 'danger'
+                        );
+                        this._renderBodyState(
+                            body,
+                            noCaptions ? 'empty' : 'error',
+                            noCaptions ? t('transcriptUnavailable', 'No transcript available') : t('transcriptLoadFailed', 'Failed to load transcript'),
+                            noCaptions
+                                ? t('transcriptNoCaptionsHelp', 'Try another video with captions enabled, or reopen this panel after captions finish loading.')
+                                : t('transcriptRetryHelp', 'Reload the page or try again in a moment if captions are still processing.')
+                        );
+                        body.setAttribute('aria-busy', 'false');
+                        return;
                     }
-                    let trackLabel = 'Transcript';
-                    if (this._cues.length === 0) {
-                        // Have API tracks — fetch with PO Token fallback
-                        const result = await fetchTranscriptWithFallback(tracks);
-                        if (!this._panel || !panel.isConnected) return;
-                        if (!result.cues || result.cues.length === 0) {
-                            this._setTranscriptMeta('Unavailable', result.error || 'The transcript could not be fetched from YouTube right now.', 'danger');
-                            this._renderBodyState(body, 'error', 'Transcript unavailable', result.error || 'Reload the page or try again in a moment if captions are still processing.');
-                            body.setAttribute('aria-busy', 'false');
-                            return;
-                        }
-                        this._cues = result.cues;
-                        if (result.source === 'panel') {
-                            trackLabel = 'Panel Transcript';
-                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube transcript panel (API required PO Token).', 'info');
-                        } else {
-                            trackLabel = this._getTrackLabel(result.track);
-                        }
-                    } else {
-                        trackLabel = 'Panel Transcript';
-                    }
+                    this._cues = result.cues;
+                    const trackLabel = result.source === 'panel'
+                        ? t('transcriptPanelFallback', 'Panel Fallback')
+                        : this._getTrackLabel(result.track);
                     body.textContent = '';
                     body.classList.remove('is-stateful');
 
@@ -26292,15 +26381,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._setTranscriptMeta(trackLabel, 'The transcript track loaded, but no readable lines were returned.', 'warning');
                         this._renderBodyState(body, 'empty', 'Transcript is empty', 'YouTube exposed a caption track, but it does not contain readable cue lines yet.');
                     } else {
-                        const durationLabel = `${this._cues.length} lines ready`;
-                        this._setTranscriptMeta(trackLabel, `${durationLabel}. Jump to a moment or export below.`, 'success');
+                        this._showTranscriptProvenance(trackLabel, result.provenance);
                         if (exportBar) exportBar.hidden = false;
                     }
                     body.setAttribute('aria-busy', 'false');
                 } catch(e) {
+                    if (e?.name === 'AbortError'
+                        || generation !== this._loadGeneration
+                        || getVideoId() !== videoId
+                        || this._panel !== panel) return;
                     this._setTranscriptMeta('Unavailable', 'Astra Deck hit a problem while reading the transcript.', 'danger');
                     this._renderBodyState(body, 'error', 'Failed to load transcript', 'Refresh the page or reopen the panel after YouTube finishes loading the video metadata.');
                     body.setAttribute('aria-busy', 'false');
+                } finally {
+                    if (this._loadController === controller) this._loadController = null;
                 }
             },
 
@@ -26408,6 +26502,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 addNavigateRule('transcriptViewer', () => {
+                    this._loadController?.abort();
+                    this._loadController = null;
+                    this._loadGeneration += 1;
                     this._detachVideoTimeUpdates();
                     this._panel?.remove(); this._panel = null;
                     this._translatedCues = null;
@@ -26419,6 +26516,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._createTimer) clearTimeout(this._createTimer);
                 this._createTimer = null;
+                this._loadController?.abort();
+                this._loadController = null;
+                this._loadGeneration += 1;
                 removeNavigateRule('transcriptViewer');
                 this._detachVideoTimeUpdates();
                 this._panel?.remove(); this._panel = null;
@@ -36089,6 +36189,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btn: null,
             _injectTimer: null,
             _downloading: false,
+            _downloadController: null,
             _scheduleInject(delay = 2000) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = setTimeout(() => {
@@ -36108,13 +36209,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _download() {
                 if (this._downloading) return;
                 this._downloading = true;
+                const videoId = getVideoId();
+                const controller = new AbortController();
+                this._downloadController = controller;
                 try {
-                    const pageData = document.querySelector('ytd-watch-flexy');
-                    const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
-                    const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+                    if (!videoId) throw new Error('No video detected');
                     showToast('Fetching captions…', '#3b82f6');
-                    // Use PO Token resilient fetch with engagement-panel fallback
-                    const result = await fetchTranscriptWithFallback(tracks || []);
+                    const result = await fetchTranscriptWithFallback([], null, {
+                        videoId,
+                        signal: controller.signal
+                    });
+                    if (getVideoId() !== videoId) throw Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
                     if (!result.cues || result.cues.length === 0) {
                         throw new Error(result.error || 'No captions available');
                     }
@@ -36130,16 +36235,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const blob = new Blob([lines.join('\n')], { type: 'text/srt' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    const vid = getVideoId() || 'video';
                     const lang = result.track?.languageCode || 'en';
-                    a.href = url; a.download = `${vid}_${lang}.srt`;
+                    a.href = url; a.download = `${videoId}_${lang}.srt`;
                     a.click();
                     setTimeout(() => URL.revokeObjectURL(url), 5000);
                     showToast('SRT downloaded', '#22c55e');
                 } catch (e) {
+                    if (e?.name === 'AbortError') return;
                     DiagnosticLog?.record('subtitleDownload', e.message);
                     showToast('Subtitle download failed: ' + e.message, '#ef4444');
                 } finally {
+                    if (this._downloadController === controller) this._downloadController = null;
                     this._downloading = false;
                 }
             },
@@ -36157,6 +36263,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._scheduleInject(2000);
                 this._navRule = () => {
+                    this._downloadController?.abort();
+                    this._downloadController = null;
                     this._btn?.remove();
                     this._btn = null;
                     this._scheduleInject(2000);
@@ -36166,6 +36274,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = null;
+                this._downloadController?.abort();
+                this._downloadController = null;
                 removeNavigateRule('subtitleDownload');
                 document.querySelectorAll('.ytkit-subdl-btn').forEach(el => el.remove());
                 this._btn?.remove(); this._btn = null;
@@ -37471,7 +37581,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         ? _rw.ytInitialPlayerResponse
                         : null),
                     extensionFetchJson,
-                    fetchCaptionTrack: (track, tracks) => fetchTranscriptWithFallback(tracks, track),
+                    fetchCaptionTrack: (track, tracks, options) => fetchTranscriptWithFallback(tracks, track, {
+                        signal: options?.signal,
+                        strictTrack: true,
+                        allowDomFallback: false
+                    }),
                     t
                 });
                 this._runtime?.init?.();
@@ -37520,6 +37634,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'sparkles',
             pages: [PageTypes.WATCH],
             _btn: null, _panel: null, _navRule: null, _styleEl: null, _injectTimer: null, _activeArtifact: null, _runToken: 0,
+            _runController: null,
             _scheduleInject(delay = 2000) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = setTimeout(() => {
@@ -37527,8 +37642,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._inject();
                 }, delay);
             },
-            async _fetchTranscript(videoId) {
-                const result = await TranscriptService.fetchTranscript(videoId);
+            async _fetchTranscript(videoId, options = {}) {
+                const result = await TranscriptService.fetchTranscript(videoId, { signal: options.signal });
                 if (result?.status !== 'ready' || !result.segments?.length) {
                     throw new Error('No captions are available for this video.');
                 }
@@ -37592,6 +37707,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 close.setAttribute('aria-label', t('aiSummaryClose', 'Close AI summary'));
                 close.addEventListener('click', () => {
                     this._runToken += 1;
+                    this._runController?.abort();
+                    this._runController = null;
                     panel.remove();
                     this._panel = null;
                     this._activeArtifact = null;
@@ -37874,18 +37991,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _run(options = {}) {
                 if (this._panel) {
                     this._runToken += 1;
+                    this._runController?.abort();
+                    this._runController = null;
                     this._panel.remove();
                     this._panel = null;
                     this._activeArtifact = null;
                     return;
                 }
                 const runToken = ++this._runToken;
+                this._runController?.abort();
+                const controller = new AbortController();
+                this._runController = controller;
                 this._showStatus(t('aiSummaryFetchingTranscript', 'Fetching transcript…'));
                 try {
-                    await this._requestByoHostAccess();
                     const videoId = getVideoId();
                     if (!videoId) throw new Error('No video ID found.');
-                    const transcript = await this._fetchTranscript(videoId);
+                    await this._requestByoHostAccess();
+                    assertCurrentTranscriptRequest(videoId, controller.signal);
+                    const transcript = await this._fetchTranscript(videoId, { signal: controller.signal });
                     if (runToken !== this._runToken || getVideoId() !== videoId) return;
                     const providerStatus = transcript.prepared.truncated
                         ? t('aiSummaryCallingTruncated', 'Calling AI provider with the first 120,000 transcript characters…')
@@ -37919,9 +38042,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         DiagnosticLog?.record('aiVideoSummary.citations', `${parsed.invalidCitationCount} invented citation(s) removed`);
                     }
                 } catch (e) {
+                    if (e?.name === 'AbortError') return;
                     if (runToken !== this._runToken) return;
                     DiagnosticLog?.record('aiVideoSummary', e.message);
                     this._showStatus(`${t('aiSummaryFailed', 'Summary failed')}: ${e.message}`, 'error');
+                } finally {
+                    if (this._runController === controller) this._runController = null;
                 }
             },
             _inject() {
@@ -37956,6 +38082,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._scheduleInject(2000);
                 this._navRule = () => {
                     this._runToken += 1;
+                    this._runController?.abort();
+                    this._runController = null;
                     this._panel?.remove();
                     this._panel = null;
                     this._activeArtifact = null;
@@ -37966,6 +38094,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 this._runToken += 1;
+                this._runController?.abort();
+                this._runController = null;
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = null;
                 removeNavigateRule('aiVideoSummary');
@@ -39369,6 +39499,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRule: null,
             _injectTimer: null,
             _styleEl: null,
+            _handoffController: null,
             _targetUrl(target) {
                 // Most of these don't accept a real pre-filled prompt via
                 // URL; we copy the prompt to clipboard and open the landing
@@ -39389,19 +39520,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _handoff() {
                 const target = appState.settings.transcriptAiTarget || 'notebooklm';
                 showToast('Fetching transcript…', '#3b82f6', { duration: 3 });
+                this._handoffController?.abort();
+                const controller = new AbortController();
+                this._handoffController = controller;
                 try {
                     const videoId = getVideoId();
                     if (!videoId) { showToast('No video detected', '#ef4444'); return; }
-                    const trackData = await TranscriptService._getCaptionTracks(videoId);
-                    if (!trackData?.tracks?.length) {
+                    const pageTitle = document.title.replace(/\s*-\s*YouTube$/, '');
+                    const channel = document.querySelector('ytd-channel-name a')?.textContent?.trim() || 'Unknown';
+                    const fetched = await TranscriptService.fetchTranscript(videoId, { signal: controller.signal });
+                    if (getVideoId() !== videoId) throw Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
+                    if (fetched?.status !== 'ready' || !fetched.segments?.length) {
                         showToast('No transcript available for this video', '#ef4444', { duration: 5 });
                         return;
                     }
-                    const track = TranscriptService._selectBestTrack(trackData.tracks);
-                    const segments = await TranscriptService._fetchTranscriptContent(track.baseUrl);
-                    const text = TranscriptService._formatTranscript(segments);
-                    const title = trackData.videoTitle || document.title.replace(/\s*-\s*YouTube$/, '');
-                    const channel = document.querySelector('ytd-channel-name a')?.textContent?.trim() || 'Unknown';
+                    const text = TranscriptService.formatTranscript(fetched.segments);
+                    const title = fetched.title || pageTitle;
                     const prompt = this._buildPrompt(title, channel, text);
                     try {
                         await navigator.clipboard.writeText(prompt);
@@ -39409,6 +39543,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         // reason: clipboard can be blocked by page focus loss;
                         // we still open the target so the user can paste manually.
                     }
+                    if (getVideoId() !== videoId) throw Object.assign(new Error('Operation cancelled'), { name: 'AbortError' });
                     let url = this._targetUrl(target);
                     if (target === 'chatgpt') {
                         // ChatGPT supports a ?q= query — truncate to ~6k chars
@@ -39420,8 +39555,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     await openExternalUrl(url);
                     showToast('Prompt copied + target opened', '#22c55e', { duration: 3 });
                 } catch (e) {
+                    if (e?.name === 'AbortError') return;
                     DebugManager.log('TranscriptAI', `Handoff failed: ${e.message}`);
                     showToast('Handoff failed — check diagnostics log', '#ef4444', { duration: 5 });
+                } finally {
+                    if (this._handoffController === controller) this._handoffController = null;
                 }
             },
             _injectButton() {
@@ -39457,6 +39595,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const css = `.ytkit-ai-handoff{width:36px;height:36px;opacity:.85}.ytkit-ai-handoff:hover{opacity:1}.ytkit-ai-handoff svg{width:22px;height:22px}`;
                 this._styleEl = injectStyle(css, this.id, true);
                 this._navRule = () => {
+                    this._handoffController?.abort();
+                    this._handoffController = null;
                     clearTimeout(this._injectTimer);
                     this._injectTimer = setTimeout(() => {
                         this._injectTimer = null;
@@ -39469,6 +39609,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 clearTimeout(this._injectTimer);
                 this._injectTimer = null;
+                this._handoffController?.abort();
+                this._handoffController = null;
                 removeNavigateRule('transcriptAiHandoff');
                 this._btn?.remove(); this._btn = null;
                 this._styleEl?.remove(); this._styleEl = null;
@@ -44852,6 +44994,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleElement: null,
             _btn: null,
             _navRule: null,
+            _runController: null,
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -44887,16 +45030,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return false;
             },
 
-            async _fetchTranscript() {
-                // Reuse the transcript fetch path used by aiVideoSummary if available.
-                const f = getFeatureById('aiVideoSummary');
-                if (f?._fetchTranscriptText) {
-                    try { return await f._fetchTranscriptText(); }
-                    catch (e) { DebugManager.log('LocalAI', `Transcript fetch failed: ${e.message}`); }
-                }
-                // Light fallback: read the engagement-panel transcript text.
-                const segs = document.querySelectorAll('ytd-transcript-segment-renderer .segment-text, ytd-transcript-segment-renderer yt-formatted-string');
-                return Array.from(segs).map(s => s.textContent?.trim()).filter(Boolean).join(' ');
+            async _fetchTranscript(options = {}) {
+                return fetchCurrentTranscriptText(options);
             },
 
             async _summarize() {
@@ -44904,9 +45039,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     await this._runByoFallback('Chrome\u2019s built-in Summarizer API isn\u2019t exposed in this browser.');
                     return;
                 }
+                this._runController?.abort();
+                const controller = new AbortController();
+                const videoId = getVideoId();
+                this._runController = controller;
                 this._renderModal('Local Summarizer', 'Loading transcript and running the local model\u2026');
                 let summarizer = null;
                 try {
+                    assertCurrentTranscriptRequest(videoId, controller.signal);
                     const localAi = globalThis.YTKitCore?.localAi;
                     const availability = localAi?.availability
                         ? await localAi.availability('summarizer', {}, window)
@@ -44915,7 +45055,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         await this._runByoFallback('Chrome\u2019s built-in Summarizer model is unavailable on this device.');
                         return;
                     }
-                    const transcript = await this._fetchTranscript();
+                    const transcript = await this._fetchTranscript({ videoId, signal: controller.signal });
+                    assertCurrentTranscriptRequest(videoId, controller.signal);
                     if (!transcript || transcript.length < 50) {
                         this._renderModal('Local Summarizer', 'No transcript available for this video.');
                         return;
@@ -44925,14 +45066,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     summarizer = localAi?.create
                         ? await localAi.create('summarizer', { type: 'tldr', length: 'medium', format: 'plain-text' }, window)
                         : await factory?.create?.({ type: 'tldr', length: 'medium', format: 'plain-text' });
+                    assertCurrentTranscriptRequest(videoId, controller.signal);
                     if (!summarizer) throw new Error('Summarizer factory returned no instance');
                     const result = await summarizer.summarize(transcript.slice(0, 4000));
+                    assertCurrentTranscriptRequest(videoId, controller.signal);
                     this._renderModal('Local Summary', String(result || '(no output)'));
                 } catch (e) {
+                    if (e?.name === 'AbortError') return;
                     DebugManager.log('LocalAI', `Summarize failed: ${e.message}`);
                     await this._runByoFallback(`The browser\u2019s local model returned an error: ${e.message}`);
                 } finally {
                     summarizer?.destroy?.();
+                    if (this._runController === controller) this._runController = null;
                 }
             },
 
@@ -44977,7 +45122,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._ensureStyles();
-                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                this._navRule = () => {
+                    this._runController?.abort();
+                    this._runController = null;
+                    document.querySelector('.ytkit-local-ai-modal')?.remove();
+                    setTimeout(() => this._attach(), 1500);
+                };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
             },
@@ -44985,6 +45135,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
+                this._runController?.abort();
+                this._runController = null;
                 this._btn?.remove();
                 this._btn = null;
                 document.querySelectorAll('.ytkit-local-ai-modal, .ytkit-local-ai-btn').forEach(el => el.remove());
@@ -45007,6 +45159,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRule: null,
             _session: null,
             _transcript: null,
+            _transcriptVideoId: null,
+            _sessionVideoId: null,
+            _fetchController: null,
+            _panelVideoId: null,
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -45032,18 +45188,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     || (typeof window.ai !== 'undefined' && typeof window.ai.languageModel !== 'undefined');
             },
 
-            async _fetchTranscript() {
-                const f = getFeatureById('aiVideoSummary');
-                if (f?._fetchTranscriptText) {
-                    try { return await f._fetchTranscriptText(); }
-                    catch (e) { DebugManager.log('TranscriptQA', `Transcript fetch failed: ${e.message}`); }
-                }
-                const segs = document.querySelectorAll('ytd-transcript-segment-renderer .segment-text, ytd-transcript-segment-renderer yt-formatted-string');
-                return Array.from(segs).map(s => s.textContent?.trim()).filter(Boolean).join(' ');
+            async _fetchTranscript(options = {}) {
+                return fetchCurrentTranscriptText(options);
             },
 
-            async _getSession(transcript) {
-                if (this._session && this._transcript === transcript) return this._session;
+            async _getSession(transcript, videoId) {
+                if (this._session && this._transcript === transcript && this._sessionVideoId === videoId) {
+                    return this._session;
+                }
+                this._destroySession();
                 const factory = window.LanguageModel || window.ai?.languageModel;
                 if (!factory) return null;
                 try {
@@ -45051,6 +45204,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         systemPrompt: `You are an assistant that answers questions about YouTube video content. Answer ONLY based on the transcript provided. If the transcript does not contain the answer, say so. Be concise.\n\nTranscript:\n${transcript.slice(0, 6000)}`
                     });
                     this._transcript = transcript;
+                    this._transcriptVideoId = videoId;
+                    this._sessionVideoId = videoId;
                     return this._session;
                 } catch (e) {
                     DebugManager.log('TranscriptQA', `Session creation failed: ${e.message}`);
@@ -45062,6 +45217,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try { this._session?.destroy?.(); } catch (_) { /* reason: session cleanup is best-effort */ }
                 this._session = null;
                 this._transcript = null;
+                this._transcriptVideoId = null;
+                this._sessionVideoId = null;
             },
 
             _openQaPanel() {
@@ -45069,6 +45226,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (typeof showToast === 'function') showToast('Chrome Prompt API not available. Requires Chrome 138+ with Gemini Nano.', '#f59e0b');
                     return;
                 }
+                const panelVideoId = getVideoId();
+                if (!panelVideoId) return;
+                this._fetchController?.abort();
+                this._fetchController = null;
+                this._panelVideoId = panelVideoId;
                 document.querySelector('.ytkit-ai-qa-modal')?.remove();
                 const overlay = document.createElement('div');
                 overlay.className = 'ytkit-ai-qa-modal';
@@ -45108,32 +45270,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 askBtn.addEventListener('click', async () => {
                     const question = input.value.trim();
                     if (!question) return;
+                    self._fetchController?.abort();
+                    const controller = new AbortController();
+                    self._fetchController = controller;
                     askBtn.disabled = true;
                     answer.textContent = 'Thinking…';
                     try {
-                        if (!self._transcript) {
+                        assertCurrentTranscriptRequest(panelVideoId, controller.signal);
+                        if (!self._transcript || self._transcriptVideoId !== panelVideoId) {
+                            self._destroySession();
                             answer.textContent = 'Loading transcript…';
-                            const text = await self._fetchTranscript();
+                            const text = await self._fetchTranscript({
+                                videoId: panelVideoId,
+                                signal: controller.signal
+                            });
+                            assertCurrentTranscriptRequest(panelVideoId, controller.signal);
                             if (!text || text.length < 50) {
                                 answer.textContent = 'No transcript available for this video.';
-                                askBtn.disabled = false;
                                 return;
                             }
                             self._transcript = text;
+                            self._transcriptVideoId = panelVideoId;
                         }
-                        const session = await self._getSession(self._transcript);
+                        const session = await self._getSession(self._transcript, panelVideoId);
+                        assertCurrentTranscriptRequest(panelVideoId, controller.signal);
                         if (!session) {
                             answer.textContent = 'Failed to create Prompt API session. The model may not be downloaded yet.';
-                            askBtn.disabled = false;
                             return;
                         }
                         const result = await session.prompt(question);
+                        assertCurrentTranscriptRequest(panelVideoId, controller.signal);
                         answer.textContent = String(result || '(no response)');
                     } catch (e) {
+                        if (e?.name === 'AbortError') return;
                         DebugManager.log('TranscriptQA', `Prompt failed: ${e.message}`);
                         answer.textContent = `Error: ${e.message}`;
+                    } finally {
+                        if (self._fetchController === controller) self._fetchController = null;
+                        if (askBtn.isConnected !== false) askBtn.disabled = false;
                     }
-                    askBtn.disabled = false;
                 });
 
                 input.addEventListener('keydown', (e) => {
@@ -45143,8 +45318,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 });
 
-                closeBtn.addEventListener('click', () => overlay.remove());
-                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+                const closePanel = () => {
+                    self._fetchController?.abort();
+                    self._fetchController = null;
+                    overlay.remove();
+                };
+                closeBtn.addEventListener('click', closePanel);
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) closePanel(); });
 
                 actions.appendChild(askBtn);
                 actions.appendChild(closeBtn);
@@ -45171,7 +45351,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._ensureStyles();
-                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                this._navRule = () => {
+                    this._fetchController?.abort();
+                    this._fetchController = null;
+                    this._panelVideoId = null;
+                    this._destroySession();
+                    document.querySelector('.ytkit-ai-qa-modal')?.remove();
+                    setTimeout(() => this._attach(), 1500);
+                };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
             },
@@ -45179,6 +45366,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
+                this._fetchController?.abort();
+                this._fetchController = null;
+                this._panelVideoId = null;
                 this._btn?.remove();
                 this._btn = null;
                 this._destroySession();
@@ -45202,8 +45392,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
             _batchPanel: null,
             _batchRunning: false,
+            _batchController: null,
             _BATCH_MAX: 20,
-            _BATCH_RETRY_LIMIT: 1,
+            _BATCH_RETRY_LIMIT: 0,
 
             _isSupportedPage() {
                 const path = window.location?.pathname || '';
@@ -45553,7 +45744,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 title.textContent = 'Transcript study pack';
                 const summary = document.createElement('div');
                 summary.className = 'ytkit-transcript-batch-summary';
-                summary.textContent = `Queue cap ${this._BATCH_MAX}, retry cap ${this._BATCH_RETRY_LIMIT}`;
+                summary.textContent = `Queue cap ${this._BATCH_MAX}, one recovery pass per video`;
                 head.append(title, summary);
 
                 const list = document.createElement('ol');
@@ -45600,7 +45791,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     list.appendChild(row);
                 }
                 panel.hidden = false;
-                this._setBatchSummary(`${items.length}/${this._BATCH_MAX} queued; retry cap ${this._BATCH_RETRY_LIMIT}`);
+                this._setBatchSummary(`${items.length}/${this._BATCH_MAX} queued; one recovery pass per video`);
             },
 
             _setBatchRow(videoId, state, detail = '') {
@@ -45631,30 +45822,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
             },
 
-            async _fetchTranscriptForBatchItem(item) {
+            async _fetchTranscriptForBatchItem(item, signal) {
                 let lastError = 'Unknown transcript error';
                 for (let attempt = 0; attempt <= this._BATCH_RETRY_LIMIT; attempt++) {
                     try {
-                        const trackData = await TranscriptService._getCaptionTracks(item.videoId);
-                        if (!trackData?.tracks?.length) throw new Error('No captions available');
-                        const track = TranscriptService._selectBestTrack(trackData.tracks);
-                        if (!track?.baseUrl) throw new Error('Selected caption track has no URL');
-                        const segments = await TranscriptService._fetchTranscriptContent(track.baseUrl);
+                        const fetched = await TranscriptService.fetchTranscript(item.videoId, {
+                            allowOffPage: true,
+                            signal
+                        });
+                        if (fetched?.status !== 'ready' || !fetched.segments?.length) throw new Error('No captions available');
+                        const segments = fetched.segments;
+                        const track = fetched.track || {};
                         if (!Array.isArray(segments) || !segments.length) throw new Error('Transcript parsed with no segments');
                         return {
                             status: 'success',
                             attempts: attempt + 1,
                             videoId: item.videoId,
-                            title: trackData.videoTitle || item.title || item.videoId,
+                            title: fetched.title || item.title || item.videoId,
                             url: item.url,
                             source: item.source,
                             language: track.languageCode || '',
                             trackName: this._getTrackName(track),
                             autoGenerated: track.kind === 'asr',
+                            transcriptProvenance: fetched.provenance,
                             segmentCount: segments.length,
                             transcript: segments.map(segment => this._formatTranscriptCue(segment)).filter(cue => cue.text)
                         };
                     } catch (error) {
+                        if (error?.name === 'AbortError') throw error;
                         lastError = error?.message || String(error);
                         DebugManager.log('StudyWorkExport', `Transcript batch ${item.videoId} attempt ${attempt + 1} failed: ${lastError}`);
                     }
@@ -45683,7 +45878,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     '',
                     `Generated: ${exportedAt}`,
                     `Queue size: ${results.length} (cap ${this._BATCH_MAX})`,
-                    `Retry cap: ${this._BATCH_RETRY_LIMIT}`,
+                    'Recovery: one bounded refresh per video',
                     `Succeeded: ${successCount}`,
                     `Failed: ${failedCount}`,
                     '',
@@ -45703,6 +45898,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     lines.push(`- Transcript language: ${row.language || 'unknown'}`);
                     lines.push(`- Track: ${row.trackName || 'unknown'}${row.autoGenerated ? ' (auto-generated)' : ''}`);
+                    lines.push(`- Transcript source: ${row.transcriptProvenance?.source || 'unknown'}`);
+                    lines.push(`- Transcript fetched: ${row.transcriptProvenance?.fetchedAt
+                        ? new Date(row.transcriptProvenance.fetchedAt).toISOString()
+                        : 'unknown'}`);
+                    if (row.transcriptProvenance?.expiresAt) {
+                        lines.push(`- Caption URL expires: ${new Date(row.transcriptProvenance.expiresAt).toISOString()}`);
+                    }
+                    if (row.transcriptProvenance?.staleReason) {
+                        lines.push(`- Refreshed because: ${row.transcriptProvenance.staleReason}`);
+                    }
+                    if (row.transcriptProvenance?.fallbackReason) {
+                        lines.push(`- Fallback: ${row.transcriptProvenance.fallbackReason}`);
+                    }
                     lines.push(`- Segments: ${row.segmentCount}`);
                     lines.push('', '#### Transcript');
                     for (const cue of row.transcript) {
@@ -45727,6 +45935,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     language: row.language || '',
                     trackName: row.trackName || '',
                     autoGenerated: !!row.autoGenerated,
+                    transcriptProvenance: row.transcriptProvenance || null,
                     segmentCount: row.segmentCount || 0,
                     transcript: row.transcript || []
                 })).join('\n') + '\n';
@@ -45744,14 +45953,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 this._batchRunning = true;
+                const controller = new AbortController();
+                this._batchController = controller;
                 this._renderBatchQueue(items, anchor);
                 const results = [];
                 try {
                     for (let i = 0; i < items.length; i++) {
                         const item = items[i];
-                        this._setBatchSummary(`Fetching ${i + 1}/${items.length}; retry cap ${this._BATCH_RETRY_LIMIT}`);
+                        this._setBatchSummary(`Fetching ${i + 1}/${items.length}; one recovery pass per video`);
                         this._setBatchRow(item.videoId, 'running');
-                        const result = await this._fetchTranscriptForBatchItem(item);
+                        const result = await this._fetchTranscriptForBatchItem(item, controller.signal);
                         results.push(result);
                         if (result.status === 'success') {
                             this._setBatchRow(item.videoId, 'success', `${result.segmentCount} cues`);
@@ -45775,7 +45986,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const successCount = results.filter(row => row.status === 'success').length;
                     this._setBatchSummary(`Exported ${successCount}/${results.length}; failures are included in JSONL`);
                     showToast?.(`Exported transcript study pack (${successCount}/${results.length} succeeded)`, '#22c55e', { duration: 4 });
+                } catch (error) {
+                    if (error?.name === 'AbortError') {
+                        this._setBatchSummary('Transcript batch cancelled after navigation');
+                        return;
+                    }
+                    throw error;
                 } finally {
+                    if (this._batchController === controller) this._batchController = null;
                     this._batchRunning = false;
                 }
             },
@@ -45838,7 +46056,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._ensureStyles();
-                this._navRule = () => { setTimeout(() => this._attach(), 1800); };
+                this._navRule = () => {
+                    this._batchController?.abort();
+                    this._batchController = null;
+                    setTimeout(() => this._attach(), 1800);
+                };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
             },
@@ -45846,6 +46068,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
+                this._batchController?.abort();
+                this._batchController = null;
                 this._btn?.remove();
                 this._btn = null;
                 this._batchPanel?.remove();
@@ -45969,7 +46193,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const record = cursor.value || {};
                         if (!seen.has(record.videoId)) {
                             seen.add(record.videoId);
-                            if (helpers.matchesSearch(record, normalizedQuery)) hits.push({ videoId: record.videoId, title: record.title, text: record.text });
+                            if (helpers.matchesSearch(record, normalizedQuery)) hits.push({
+                                videoId: record.videoId,
+                                title: record.title,
+                                text: record.text,
+                                provenance: record.provenance || null
+                            });
                         }
                         cursor.continue();
                     };
@@ -46035,11 +46264,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._status = { state: 'captionless', videoId, message: 'This video has no indexable captions.' };
                         return false;
                     }
+                    if (transcript.status !== 'ready' || !transcript.segments?.length) {
+                        throw new Error('Transcript is temporarily unavailable');
+                    }
                     const record = helpers.prepareTranscriptRecord({
                         videoId,
                         title: transcript.title,
                         segments: transcript.segments,
-                        indexedAt: Date.now()
+                        indexedAt: Date.now(),
+                        provenance: transcript.provenance
                     });
                     await this._put(record, { signal });
                     helpers.throwIfAborted(signal);

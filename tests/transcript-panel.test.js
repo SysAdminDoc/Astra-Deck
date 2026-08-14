@@ -46,8 +46,12 @@ function loadServiceForVariant(name) {
         matches: () => false,
     };
     const panel = {
+        isConnected: true,
+        hidden: false,
+        getClientRects: () => [{}],
         matches: () => false,
         querySelector: (selector) => selector === 'ytd-transcript-renderer' ? transcriptRenderer : null,
+        querySelectorAll: () => [],
     };
     const document = {
         querySelector(selector) {
@@ -60,7 +64,7 @@ function loadServiceForVariant(name) {
     context.globalThis = context;
     vm.createContext(context);
     vm.runInContext(SERVICE_SOURCE, context, { filename: 'core/transcript-service.js' });
-    return { core: context.YTKitCore, document };
+    return { core: context.YTKitCore, document, panel, transcriptRenderer };
 }
 
 for (const variant of ['classic', 'modern']) {
@@ -94,4 +98,84 @@ test('required transcript panel resolution fails loudly when both rollout select
         () => context.YTKitCore.getTranscriptPanelElement(context.document, { required: true }),
         /Required selector surface "transcriptPanel" was not found/
     );
+});
+
+test('active panel resolution skips a hidden stale rollout panel', () => {
+    const { core } = loadServiceForVariant('classic');
+    const hidden = {
+        isConnected: true,
+        hidden: true,
+        getClientRects: () => [],
+        getAttribute: () => null,
+    };
+    const visible = {
+        isConnected: true,
+        hidden: false,
+        getClientRects: () => [{}],
+        getAttribute: () => null,
+    };
+    const root = {
+        querySelector: () => hidden,
+        querySelectorAll: (selector) => selector.includes('engagement-panel-searchable-transcript')
+            ? [hidden, visible]
+            : [],
+    };
+
+    assert.equal(core.getTranscriptPanelElement(root, {
+        videoId: 'abcdefghijk',
+        isForVideo: (_videoId, panel) => panel === visible,
+    }), visible);
+});
+
+test('DOM panel tracks and rendered cues are rejected when they cannot be bound to the video', async () => {
+    const { core, panel, transcriptRenderer } = loadServiceForVariant('classic');
+    transcriptRenderer.data.content.transcriptSearchPanelRenderer.footer
+        .transcriptFooterRenderer.languageMenu.sortFilterSubMenuRenderer.subMenuItems[0]
+        .baseUrl = 'https://www.youtube.com/api/timedtext?v=zzzzzzzzzzz&lang=en';
+
+    const wrongTrackService = core.createTranscriptService({
+        isDomTranscriptForVideo: (_videoId, candidate) => candidate === panel,
+    });
+    await assert.rejects(
+        () => wrongTrackService._method5_DOMPanelScrape('abcdefghijk'),
+        /no fetchable caption URLs/
+    );
+
+    const stalePanelService = core.createTranscriptService({
+        getVideoId: () => 'abcdefghijk',
+        isDomTranscriptForVideo: () => false,
+    });
+    stalePanelService._getCaptionTracks = async () => { throw new Error('network unavailable'); };
+    await assert.rejects(
+        () => stalePanelService.fetchTranscript('abcdefghijk'),
+        /network unavailable/
+    );
+});
+
+test('rendered-panel fallback reports unknown language and current-video provenance', async () => {
+    const { core, panel } = loadServiceForVariant('classic');
+    const row = {
+        querySelector: () => ({ textContent: '1:23' }),
+    };
+    panel.querySelectorAll = () => [{
+        textContent: 'Rendered caption',
+        closest: () => row,
+    }];
+    const service = core.createTranscriptService({
+        getVideoId: () => 'abcdefghijk',
+        isDomTranscriptForVideo: (_videoId, candidate) => candidate === panel,
+        nowFn: () => 1234,
+    });
+    service._getCaptionTracks = async () => { throw new Error('network unavailable'); };
+
+    const result = await service.fetchTranscript('abcdefghijk');
+    assert.equal(result.status, 'ready');
+    assert.equal(result.language, '');
+    assert.equal(result.provenance.source, 'dom-panel');
+    assert.equal(result.provenance.fallbackReason, 'discovery-failed');
+    assert.deepEqual(JSON.parse(JSON.stringify(result.segments)), [{
+        startMs: 83000,
+        endMs: 83000,
+        text: 'Rendered caption',
+    }]);
 });
