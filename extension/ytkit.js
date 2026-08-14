@@ -2085,7 +2085,10 @@ return response;
                 top: unset !important; left: unset !important;
                 bottom: anchor(top) !important;
                 left: anchor(center) !important;
-                translate: -50% -8px !important;
+                /* Gap as a margin so position-try flips it with the box; see
+                   the .ytkit-dl-popup--anchored rule below. */
+                margin-bottom: 8px !important;
+                translate: -50% !important;
                 position-try-fallbacks: flip-block !important;
             }
             .ytkit-po-dl { anchor-name: --ytkit-dl-anchor !important; }
@@ -2095,12 +2098,27 @@ return response;
                 top: unset !important; left: unset !important;
                 bottom: anchor(top) !important;
                 left: anchor(center) !important;
-                translate: -50% -8px !important;
+                /* Carry the trigger gap as a margin rather than folding it
+                   into the translate: position-try flips margins with the
+                   box, so flip-block keeps an 8px gap below the trigger,
+                   whereas a -8px translate keeps pointing up and overlaps
+                   the button after the flip. */
+                margin-bottom: 8px !important;
+                translate: -50% !important;
                 position-try-fallbacks: flip-block !important;
             }
         }
         .ytkit-speed-popup {
             position: fixed !important;
+            /* Undo the UA popover sheet's `inset: 0; margin: auto` centring.
+               Left in place it fights the JS fallback's inline left/top on
+               browsers without CSS anchor positioning, which landed the popup
+               168px from where showSpeedPopup() had placed it, overlapping the
+               trigger. Deliberately NOT !important: the anchored rule above
+               is !important and must keep winning where anchoring works, and
+               author-normal already outranks the UA sheet. */
+            inset: auto;
+            margin: 0;
             z-index: 2147483647 !important;
             min-width: 196px !important;
             padding: 12px 12px 10px !important;
@@ -57142,8 +57160,17 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             -webkit-backdrop-filter: none;
         }
 
-        .ytkit-dl-popup:popover-open {
-            inset: auto !important;
+        /* The UA popover sheet centres the box with `inset: 0; margin: auto`.
+           This rule used to restate `inset: auto !important`, which outranked
+           BOTH positioning paths — author !important beats the JS branch's
+           inline left/top, and it ties with (then wins on sheet order over)
+           the .ytkit-dl-popup--anchored anchor() insets. Every open landed at
+           the viewport origin, and the anchored branch's -50% translate then
+           pushed it half off the left edge. The base .ytkit-dl-popup rule is
+           author-origin and already outranks the UA sheet, so nothing here
+           needs !important; the margin reset stays only for the branch that
+           does not use margin for its anchor gap. */
+        .ytkit-dl-popup:popover-open:not(.ytkit-dl-popup--anchored) {
             margin: 0 !important;
         }
 
