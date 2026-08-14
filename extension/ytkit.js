@@ -3474,6 +3474,10 @@ return response;
         'preferredQuality',
         'useEnhancedBitrate',
         'hideQualityPopup',
+        // v4.62.0: low-power restore state has always lived in the dedicated
+        // top-level `ytkit-low-power-backup` store. The schema key was never
+        // read and exposed a misleading, read-only null row in the popup.
+        'lowPowerProfileBackup',
         // v4.49.0: credentials moved behind the extension background
         // worker (or the userscript manager's isolated value store).
         'aiSummaryApiKey',
@@ -3972,7 +3976,6 @@ return response;
             presetResearcher: false,                   // Preset: research/study workflow
             presetPowerUser: false,                    // Preset: max feature density
             presetFocus: false,                        // Preset: distraction-free viewing
-            lowPowerProfileBackup: null,               // Backup of pre-applied flags
             // v3.32.0 — Premium visual system
             oledTheme: false,                          // True OLED black via --yt-sys-* token bridge
             denseMode: false,                          // Global density scale on Astra surfaces
@@ -6999,7 +7002,7 @@ return response;
             _styleElement: null,
 
             init() {
-                const style = appState.settings.uiStyle || 'rounded';
+                const style = appState.settings.uiStyle || 'square';
                 if (style === 'square') {
                     const css = `
                         /* Nuclear squarify — broad selector with surgical exclusions */
@@ -27977,12 +27980,44 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Playback',
             icon: 'subtitles',
             _enableTimer: null,
+            _languageTimer: null,
             _scheduleEnable(delay = 3000) {
                 if (this._enableTimer) clearTimeout(this._enableTimer);
+                if (this._languageTimer) clearTimeout(this._languageTimer);
+                this._languageTimer = null;
                 this._enableTimer = setTimeout(() => {
                     this._enableTimer = null;
                     this._enable();
                 }, delay);
+            },
+
+            _selectPreferredLanguage(player) {
+                const preferred = String(appState.settings.autoSubtitleLang || '').trim();
+                if (!preferred || preferred.toLowerCase() === 'auto') return true;
+                const pickTrack = globalThis.YTKitFeatures?.subtitles?.pickPreferredCaptionTrack;
+                if (typeof pickTrack !== 'function' || typeof player?.getOption !== 'function'
+                    || typeof player?.setOption !== 'function') return false;
+                try {
+                    const tracks = player.getOption('captions', 'tracklist');
+                    const track = pickTrack(tracks, preferred);
+                    if (!track) return false;
+                    const active = player.getOption('captions', 'track');
+                    if (pickTrack([active], preferred)) return true;
+                    player.setOption('captions', 'track', track);
+                    DebugManager.log('AutoSub', `Selected ${track.languageCode || preferred} captions`);
+                    return true;
+                } catch (error) {
+                    DebugManager.log('AutoSub', `Language selection unavailable: ${error.message}`);
+                    return false;
+                }
+            },
+
+            _scheduleLanguageRetry(player) {
+                if (this._languageTimer) clearTimeout(this._languageTimer);
+                this._languageTimer = setTimeout(() => {
+                    this._languageTimer = null;
+                    this._selectPreferredLanguage(player);
+                }, 350);
             },
 
             _enable() {
@@ -27998,6 +28033,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ccBtn.click();
                     DebugManager.log('AutoSub', 'Enabled subtitles');
                 }
+                if (!this._selectPreferredLanguage(player)) {
+                    // YouTube often populates the captions track list only
+                    // after the CC module is enabled. Retry once after that
+                    // bounded module-init window; navigation/destroy cancels it.
+                    this._scheduleLanguageRetry(player);
+                }
             },
 
             init() {
@@ -28006,7 +28047,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 if (this._enableTimer) clearTimeout(this._enableTimer);
+                if (this._languageTimer) clearTimeout(this._languageTimer);
                 this._enableTimer = null;
+                this._languageTimer = null;
                 removeNavigateRule('autoSubtitles');
             }
         },

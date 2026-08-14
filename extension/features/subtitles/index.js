@@ -111,6 +111,16 @@
         return a === b || a.split('-')[0] === b.split('-')[0];
     }
 
+    function pickPreferredCaptionTrack(tracks, preferredLanguage = '') {
+        if (!Array.isArray(tracks) || tracks.length === 0) return null;
+        const preferred = normaliseLanguageCode(preferredLanguage);
+        if (!preferred || preferred === 'auto') return null;
+        const available = tracks.filter((track) => track && typeof track === 'object');
+        return available.find((track) => getCaptionTrackLanguage(track) === preferred)
+            || available.find((track) => languageCodesMatch(getCaptionTrackLanguage(track), preferred))
+            || null;
+    }
+
     function pickSecondaryCaptionTrack(tracks, preferredLanguage = 'auto', primaryLanguage = '') {
         if (!Array.isArray(tracks) || tracks.length === 0) return null;
         const available = tracks.filter((track) => track && typeof track === 'object');
@@ -614,6 +624,7 @@
         getCaptionTrackLabel,
         getCaptionTrackLanguage,
         parseJson3Cues,
+        pickPreferredCaptionTrack,
         pickSecondaryCaptionTrack,
         createDualLanguageSubtitlesRuntime
     });
@@ -642,6 +653,7 @@
             getCaptionTrackLabel,
             getCaptionTrackLanguage,
             parseJson3Cues,
+            pickPreferredCaptionTrack,
             pickSecondaryCaptionTrack,
             createDualLanguageSubtitlesRuntime
         };

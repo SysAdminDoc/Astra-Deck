@@ -18,7 +18,7 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.nodeFloor, '>=22');
     assert.deepEqual(facts.firefoxFloor, 'Firefox 142+');
     assert.equal(facts.locales.length, 11);
-    assert.equal(facts.schemaEntries, 468);
+    assert.equal(facts.schemaEntries, 467);
     assert.equal(facts.schemaCategories, 18);
     // 100 since core/remote-list-scope.js joined the ISOLATED-world graph.
     assert.equal(facts.runtimeModules, 100);
@@ -42,7 +42,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('468', '467')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('`467` entries', '`466` entries')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);

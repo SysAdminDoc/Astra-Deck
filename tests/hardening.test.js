@@ -10,7 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { findBalancedObjectLiteral } = require('../scripts/catalog-utils');
-const { runtimeModules } = require('./helpers/source');
+const { extractFeatureBlock, runtimeModules } = require('./helpers/source');
 
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'ytkit.js'),
@@ -5657,10 +5657,13 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (464), the extension-only filter-list URL (465), and the opt-in
     // browser-account sync consent setting (466), plus the opt-in logarithmic
     // volume curve (467), and the opt-in sponsored-content filter (468).
+    // The retired lowPowerProfileBackup compatibility placeholder was removed
+    // after the audit confirmed the real backup lives in its own storage key
+    // (468 → 467).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 468,
-        'SETTINGS_SCHEMA must cover all 468 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 467,
+        'SETTINGS_SCHEMA must cover all 467 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -6003,15 +6006,14 @@ test('v5.0.0 policy-profile: scrubber removes apiKey-shaped values from exports'
     assert.equal(out.sponsorBlock, true);
 });
 
-test('policy-profile: nullable-complex settings accept populated runtime shapes (sidebarOrder/lowPowerProfileBackup)', () => {
+test('policy-profile: nullable-complex settings accept populated runtime shapes (sidebarOrder)', () => {
     const core = loadPolicyProfileModule();
     const pp = core.createPolicyProfile();
-    // Regression: these keys are schema type "null" (default null) but hold an
-    // array/object at runtime. The validator must accept the populated shape,
-    // otherwise export/import hard-fails for anyone who reordered their sidebar.
+    // Regression: sidebarOrder is schema type "null" (default null) but holds
+    // an array at runtime. The validator must accept the populated shape,
+    // otherwise export/import hard-fails after a sidebar reorder.
     const populated = pp.validateSettingsSnapshot({
-        sidebarOrder: ['history', 'wl', 'subs'],
-        lowPowerProfileBackup: { enableCPU_Tamer: false }
+        sidebarOrder: ['history', 'wl', 'subs']
     }, { allowUnknown: true });
     assert.equal(populated.ok, true, populated.errors && populated.errors.join('; '));
     assert.deepEqual(populated.settings.sidebarOrder, ['history', 'wl', 'subs']);
@@ -6023,6 +6025,26 @@ test('policy-profile: nullable-complex settings accept populated runtime shapes 
     // A type-incorrect value (number) is still rejected.
     const bad = pp.validateSettingsSnapshot({ sidebarOrder: 42 }, { allowUnknown: true });
     assert.equal(bad.ok, false);
+});
+
+test('policy-profile can drop and report unknown backup keys without weakening known-key validation', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const result = pp.validateSettingsSnapshot({
+        sponsorBlock: false,
+        futureSetting: 'from-newer-build'
+    }, { dropUnknown: true });
+    assert.equal(result.ok, true, result.errors && result.errors.join('; '));
+    assert.deepEqual(result.settings, { sponsorBlock: false });
+    assert.deepEqual(result.skippedKeys, ['futureSetting']);
+
+    const invalidKnown = pp.validateSettingsSnapshot({
+        sponsorBlock: 'not-a-boolean',
+        futureSetting: true
+    }, { dropUnknown: true });
+    assert.equal(invalidKnown.ok, false,
+        'dropping unknown keys must not make invalid known values importable');
+    assert.deepEqual(invalidKnown.skippedKeys, ['futureSetting']);
 });
 
 test('policy-profile: clamps out-of-range numbers and coerces unknown enums to the default', () => {
@@ -6124,8 +6146,7 @@ test('policy-profile validates schema-shaped settings backup payloads', () => {
         sponsorBlock: true,
         videosPerRow: 4,
         hiddenChatElements: ['header', 'polls'],
-        subscriptionGroupData: {},
-        lowPowerProfileBackup: null
+        subscriptionGroupData: {}
     });
     assert.equal(valid.ok, true, valid.errors.join('; '));
     assert.deepEqual(valid.settings.hiddenChatElements, ['header', 'polls']);
@@ -6925,8 +6946,35 @@ test('v4.13.0 features/subtitles exports buildSubtitleCss + featureSpec + FONT_F
     assert.ok(stub.subtitles, 'must attach to globalThis.YTKitFeatures');
     assert.equal(typeof stub.subtitles.buildSubtitleCss, 'function');
     assert.equal(typeof mod.createDualLanguageSubtitlesRuntime, 'function');
+    assert.equal(typeof mod.pickPreferredCaptionTrack, 'function');
     assert.equal(typeof mod.pickSecondaryCaptionTrack, 'function');
     assert.equal(typeof mod.parseJson3Cues, 'function');
+});
+
+test('auto subtitle language prefers exact BCP-47 then primary-subtag matches', () => {
+    const { pickPreferredCaptionTrack } = require('../extension/features/subtitles/index.js');
+    const tracks = [
+        { languageCode: 'en', name: 'English' },
+        { languageCode: 'es-MX', name: 'Español (México)' },
+        { languageCode: 'es', name: 'Español' }
+    ];
+    assert.equal(pickPreferredCaptionTrack(tracks, 'es-MX'), tracks[1]);
+    assert.equal(pickPreferredCaptionTrack(tracks, 'es-ES'), tracks[1],
+        'an unavailable regional variant should use the first primary-language match');
+    assert.equal(pickPreferredCaptionTrack(tracks, 'fr'), null);
+    assert.equal(pickPreferredCaptionTrack(tracks, 'auto'), null,
+        'auto leaves YouTube native caption selection unchanged');
+});
+
+test('auto subtitles consumes autoSubtitleLang through the player caption-track API', () => {
+    const [block] = extractFeatureBlock(ytkitSource, 'autoSubtitles');
+    assert.match(block, /appState\.settings\.autoSubtitleLang/);
+    assert.match(block, /getOption\('captions', 'tracklist'\)/);
+    assert.match(block, /setOption\('captions', 'track', track\)/);
+    assert.match(block, /_scheduleLanguageRetry\(player\)/,
+        'caption selection should retry once after enabling the lazy captions module');
+    assert.match(block, /clearTimeout\(this\._languageTimer\)/,
+        'navigation and teardown must cancel a pending caption-language retry');
 });
 
 test('v4.51.1 dual subtitles select an alternate track and fail closed when unavailable', () => {
@@ -8363,17 +8411,17 @@ test('v4.26.0 buildSchemaOverviewKeyRow renders <input type="number"> for number
         'number branch must seed the placeholder from the schema default');
 });
 
-test('v4.26.0 number persist routes through writeSetting and validates Number.isFinite', () => {
+test('number persist resets empty input, rejects non-finite values, and routes through writeSetting', () => {
     const src = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
     );
-    // The persist function must short-circuit on empty/NaN AND must
-    // route through the existing writeSetting path so the popup's
-    // chained-Promise serialisation applies.
+    // Empty is an explicit reset to the schema default; NaN still
+    // short-circuits. Every valid commit routes through writeSetting so
+    // the popup's chained-Promise serialisation applies.
     assert.match(src, /if \(!Number\.isFinite\(next\)\) return;/,
         'persist must reject non-finite numbers');
-    assert.match(src, /if \(raw === ''\) return;/,
-        'persist must short-circuit on empty input (preserve prior value)');
+    assert.match(src, /raw === '' \? entry\.defaultValue : Number\(raw\)/,
+        'empty input must reset to the schema default instead of lying via the placeholder');
     assert.match(src, /await writeSetting\(entry\.key, next\)/,
         'persist must use writeSetting so onChanged fans out');
 });
