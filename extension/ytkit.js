@@ -2110,7 +2110,7 @@ return response;
         }
         .ytkit-speed-popup {
             position: fixed !important;
-            /* Undo the UA popover sheet's `inset: 0; margin: auto` centring.
+            /* Undo the UA popover sheet's 'inset: 0; margin: auto' centring.
                Left in place it fights the JS fallback's inline left/top on
                browsers without CSS anchor positioning, which landed the popup
                168px from where showSpeedPopup() had placed it, overlapping the
@@ -57160,8 +57160,8 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             -webkit-backdrop-filter: none;
         }
 
-        /* The UA popover sheet centres the box with `inset: 0; margin: auto`.
-           This rule used to restate `inset: auto !important`, which outranked
+        /* The UA popover sheet centres the box with 'inset: 0; margin: auto'.
+           This rule used to restate 'inset: auto !important', which outranked
            BOTH positioning paths — author !important beats the JS branch's
            inline left/top, and it ties with (then wins on sheet order over)
            the .ytkit-dl-popup--anchored anchor() insets. Every open landed at
