@@ -6135,6 +6135,9 @@ function normalizeWheelDelta(event, scroller) {
 
 function installWheelScrolling() {
     document.addEventListener('wheel', (event) => {
+        // Never swallow the browser's Ctrl/Cmd+wheel zoom gesture — cancelling
+        // it would strip a zoom path low-vision users rely on inside the popup.
+        if (event.ctrlKey || event.metaKey) return;
         const scroller = getWheelScrollTarget(event.target);
         if (!scroller || scroller.scrollHeight <= scroller.clientHeight) return;
         const delta = normalizeWheelDelta(event, scroller);

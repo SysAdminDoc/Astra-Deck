@@ -506,16 +506,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — Popup wheel interceptor swallows Ctrl/⌘+wheel zoom
-  Category: a11y
-  Where: `extension/popup.js:6136-6148` (`installWheelScrolling`).
-  Problem: the non-passive document `wheel` handler calls `preventDefault()` without checking `event.ctrlKey`/`metaKey`, so the browser's Ctrl+wheel / pinch zoom is cancelled over any scrollable region (most of the popup). Low-vision users lose a zoom path inside the popup.
-  Evidence: read the handler; no modifier check exists.
-  Fix: `if (event.ctrlKey || event.metaKey) return;` at the top of the handler.
-  Acceptance: Ctrl+wheel zooms the popup; a test or manual check confirms the gesture is not cancelled.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Capability-probe re-render lacks the focused-editor guard the storage-change path has
   Category: ux
   Where: `extension/popup.js:6195-6199` (`ensureCapabilityMap()` → unconditional `renderSchemaOverview()`) vs. the guard at `:6294-6296`.
