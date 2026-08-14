@@ -166,6 +166,7 @@ test('persisted-domain service loads before every consumer surface', () => {
         assert.ok(entry.js.indexOf('core/persisted-domains.js') < entry.js.indexOf('ytkit.js'));
     }
     const popup = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8');
+    assert.notEqual(popup.indexOf('core/persisted-domains.js'), -1, 'anchor: the popup.html script tag must exist');
     assert.ok(popup.indexOf('core/persisted-domains.js') < popup.indexOf('popup.js'));
 });
 

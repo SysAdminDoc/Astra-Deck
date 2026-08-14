@@ -356,16 +356,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
 
 ### P3
 
-- [ ] P3 — Vacuous `indexOf`/`slice` ordering pins: several security/ordering tests pass when their anchor string drifts to `-1`
-  Category: testing
-  Where: `tests/ai-credential-custody.test.js:51` and `:62`; `tests/persisted-domains.test.js:169`; `tests/features/age-restriction.test.js:52`; `tests/youtube-state-reset.test.js:173`; `tests/features/live-chat.test.js:52`.
-  Problem: each computes `x.indexOf(A) < x.indexOf(B)` (or slices `x.slice(indexOf(A), indexOf(B))`) without first asserting the needle exists. If `A` (or `B`) drifts — a dispatch refactor, a bundler rename in generated `YTKit-core.user.js`, a moved `<script>` tag, a manifest entry removed — `indexOf` returns `-1` and the assertion passes vacuously, silently voiding the invariant it guards (e.g. "the credential-status handler must not return the credential", "persisted-domains.js loads before popup.js", "playability loads after video-type"). None are vacuous at HEAD; the operands exist today. The repo already has the correct pattern (`assert.ok(idx > -1)` before slicing) at `tests/bugfix-validation.test.js:878-886` and `tests/core-icons.test.js:116`.
-  Evidence: read each site; confirmed no positive presence-assert anchors the drifting operand (partial transitive guards noted for `:40`, live-chat `:48`).
-  Fix: anchor every `indexOf` needle with `assert.notEqual(idx, -1)` (or `assert.ok(idx > -1)`) before the ordering/slice comparison.
-  Acceptance: deleting any guarded anchor string makes the corresponding test fail; a lint/self-test could forbid bare `indexOf(...) < indexOf(...)` in `tests/`.
-  Confidence: Verified (mechanism); latent (not vacuous at HEAD)
-  Effort: S
-
 - [ ] P3 — The i18n copy gate fingerprints `<style>.textContent` CSS as "UI copy", and `npm run check` is fail-fast
   Category: testing / maintainability
   Where: `scripts/check-localizable-ui-copy.js:88-124` (`collectJsLiterals` classifies a `styleEl.textContent = \`…css…\`` assignment as sink `assignment:textContent`); chain at `package.json` `scripts.check`.

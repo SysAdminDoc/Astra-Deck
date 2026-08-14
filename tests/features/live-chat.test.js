@@ -49,6 +49,7 @@ test('recycled chat renderers re-evaluate instead of keeping the previous messag
         'the per-message signature must include the author');
     assert.match(scanBody, /text\.slice\(0, 120\)/,
         'the per-message signature must include the message text');
+    assert.notEqual(scanBody.indexOf('const author ='), -1, 'anchor: the author declaration must exist or the ordering is vacuous');
     assert.ok(scanBody.indexOf('const signature =') > scanBody.indexOf('const author ='),
         'the signature must be computed after reading the content it covers');
 

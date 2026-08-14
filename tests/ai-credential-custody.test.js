@@ -37,6 +37,7 @@ test('extension content sends only provider request data to the worker broker', 
 
 test('Gemini uses a header and provider endpoints reject credential query parameters', () => {
     assert.match(read('extension/core/credential-vault.js'), /credentialHeader:\s*'x-goog-api-key'/);
+    assert.notEqual(ytkit.indexOf('async _callLLM(prompt)'), -1, 'anchor: _callLLM must exist or the slice is empty and the assertion vacuous');
     assert.doesNotMatch(ytkit.slice(ytkit.indexOf('async _callLLM(prompt)'), ytkit.indexOf('async _run()', ytkit.indexOf('async _callLLM(prompt)'))), /encodeURIComponent\([^)]*credential/);
     assert.match(background, /AI provider response contained credential material and was blocked/);
 });
@@ -48,6 +49,7 @@ test('popup credential controls are write-only and status-only', () => {
     assert.match(popup, /YTKIT_AI_CREDENTIAL_SET/);
     assert.match(popup, /YTKIT_AI_CREDENTIAL_DELETE/);
     assert.match(popup, /aiCredentialInput\.value\s*=\s*''/);
+    assert.notEqual(background.indexOf("if (msg.type === 'YTKIT_AI_CREDENTIAL_STATUS'"), -1, 'anchor: credential-status dispatch must exist');
     assert.doesNotMatch(background.slice(background.indexOf("if (msg.type === 'YTKIT_AI_CREDENTIAL_STATUS'"), background.indexOf("if (msg.type === 'YTKIT_AI_SUMMARY_REQUEST'")), /credential:\s*await/);
 });
 
@@ -59,5 +61,6 @@ test('userscript credentials live in manager-isolated storage and never in reque
     assert.match(userscript, /id:\s*'aiVideoSummary'/);
     assert.match(userscript, /deleteValue\(key\)/);
     assert.match(userscript, /credentialHeader:\s*'x-goog-api-key'/);
+    assert.notEqual(userscript.indexOf('async _callLLM(prompt)'), -1, 'anchor: userscript _callLLM must exist');
     assert.doesNotMatch(userscript.slice(userscript.indexOf('async _callLLM(prompt)'), userscript.indexOf('async _run()', userscript.indexOf('async _callLLM(prompt)'))), /\?key=/);
 });

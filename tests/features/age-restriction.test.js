@@ -49,6 +49,7 @@ test('playability classifier loads before the ytkit runtime only on normal pages
     const normal = manifest.content_scripts.find((entry) => runtimeModules(entry).includes('ytkit.js'));
     const chat = manifest.content_scripts.find((entry) => entry.js?.includes('live-chat.js'));
     const normalScripts = runtimeModules(normal);
+    assert.notEqual(normalScripts.indexOf('core/video-type.js'), -1, 'anchor: video-type must be in the manifest or the ordering is vacuous');
     assert.ok(normalScripts.indexOf('core/playability.js') > normalScripts.indexOf('core/video-type.js'));
     assert.ok(normalScripts.indexOf('core/playability.js') < normalScripts.indexOf('ytkit.js'));
     assert.equal(chat.js.includes('core/playability.js'), false,
