@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.62.0] - 2026-08-14
+
 ### Added
 
 - README now contains a generated, linkable knowledgebase entry for all 463
