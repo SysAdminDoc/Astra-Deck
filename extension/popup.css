@@ -2014,7 +2014,7 @@ body {
 
 .data-flow-dot.df-risk-safe        { background: #4ec8a5; }
 .data-flow-dot.df-risk-api         { background: #5aa9ff; }
-.data-flow-dot.df-risk-local       { background: #ffb84d; }
+.data-flow-dot.df-risk-local-companion { background: #ffb84d; }
 .data-flow-dot.df-risk-experimental{ background: #b889ff; }
 .data-flow-dot.df-risk-store-risk  { background: #ff8585; }
 
