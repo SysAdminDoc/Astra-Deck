@@ -163,21 +163,36 @@ function parseAuditOutput(output) {
 
 function run() {
     const npmExecPath = process.env.npm_execpath;
-    const npmCommand = npmExecPath ? process.execPath : (process.platform === 'win32' ? 'npm.cmd' : 'npm');
-    const npmArgs = npmExecPath
-        ? [npmExecPath, 'audit', '--json', '--audit-level=moderate']
-        : ['audit', '--json', '--audit-level=moderate'];
-    const result = spawnSync(
-        npmCommand,
-        npmArgs,
-        {
-            cwd: repoRoot,
-            encoding: 'utf8',
-            windowsHide: true,
-            stdio: ['ignore', 'pipe', 'pipe'],
-            maxBuffer: 8 * 1024 * 1024,
-        }
-    );
+    const spawnOptions = {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        windowsHide: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        maxBuffer: 8 * 1024 * 1024,
+    };
+    // Three launch shapes:
+    //  - Under `npm run`, npm_execpath points at npm-cli.js — invoke it with
+    //    the current node binary directly (no shell).
+    //  - Standalone on Windows, only the `npm.cmd` launcher exists, and Node's
+    //    CVE-2024-27980 hardening rejects spawning a `.cmd` without a shell
+    //    (EINVAL). Pass a single command string so shell:true does not trip
+    //    the DEP0190 unescaped-args warning; the command is a fixed literal.
+    //  - Standalone elsewhere, plain `npm`.
+    let result;
+    if (npmExecPath) {
+        result = spawnSync(
+            process.execPath,
+            [npmExecPath, 'audit', '--json', '--audit-level=moderate'],
+            spawnOptions
+        );
+    } else if (process.platform === 'win32') {
+        result = spawnSync(
+            'npm audit --json --audit-level=moderate',
+            { ...spawnOptions, shell: true }
+        );
+    } else {
+        result = spawnSync('npm', ['audit', '--json', '--audit-level=moderate'], spawnOptions);
+    }
 
     if (result.error) {
         throw result.error;
