@@ -376,16 +376,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Confidence: Verified
   Effort: M
 
-- [ ] P3 — `audit-dependencies.js` cannot run standalone on Windows (spawnSync `npm.cmd` EINVAL)
-  Category: reliability
-  Where: `scripts/audit-dependencies.js:166-180`.
-  Problem: when `npm_execpath` is unset (direct `node scripts/audit-dependencies.js`), it spawns `npm.cmd` via `spawnSync` without `shell:true`; Node's CVE-2024-27980 hardening throws `EINVAL` on Windows (`[audit-deps] FAIL — spawnSync npm.cmd EINVAL`, exit 1). It fails closed, but on this repo's only dev platform the dependency-exception policy validator is unrunnable outside `npm run`.
-  Evidence: reproduced standalone on Windows.
-  Fix: spawn `process.execPath` with `require.resolve('npm/bin/npm-cli.js')`, or pass `shell: process.platform === 'win32'`.
-  Acceptance: `node scripts/audit-dependencies.js` runs on Windows without EINVAL.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Speed popup: no vertical clamp / max-height on the JS fallback, and a document-listener leak on fast reopen
   Category: correctness / a11y
   Where: `extension/ytkit.js:3122-3133` (fallback placement, no `top+ph>innerHeight` clamp and no `maxHeight`), `:3142-3145` (50 ms `setTimeout` attaching capture-phase `click`+`keydown` with no `popup.isConnected` guard).
