@@ -596,16 +596,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Confidence: High (localhost, RYD) / Medium (githubusercontent)
   Effort: S
 
-- [ ] P3 — `.data-flow-dot.df-risk-local-companion` has no CSS rule, so loopback origins render with no risk color
-  Category: visual
-  Where: `extension/popup.css:2015-2019` (rules for `safe`/`api`/`local`/`experimental`/`store-risk`) vs. emitter `popup.js:3080` (`'data-flow-dot df-risk-' + entry.riskBand`) and the only loopback `riskBand: 'local-companion'` (`core/data-flow.js:121`, and Ollama `:229`).
-  Problem: the emitted class is `df-risk-local-companion`, which has no rule — both loopback origins (companion, Ollama) render with no risk dot color. The stylesheet instead carries `df-risk-local` (never emitted) and `df-risk-store-risk` (also never emitted — `riskBand` only takes `safe`/`api`/`local-companion`/`experimental`; `store-risk` is a schema `risk` value feeding the separate `toggle-risk-*` family). The sibling toggle badge got the name right (`popup.css:3007` `.toggle-risk-local-companion`).
-  Evidence: exhaustive `riskBand:` scan of `data-flow.js`; grep of the emitted class against the stylesheet.
-  Fix: rename the CSS rule to `.df-risk-local-companion` (drop the dead `df-risk-local` and `df-risk-store-risk` rules).
-  Acceptance: the Data Flow panel's loopback origin dots render in the intended color; verified in the popup smoke.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — `.ytkit-vote-badge` / `.ytkit-liked` is styled and removed in the extension but never created (lost in the module peel)
   Category: correctness / maintainability
   Where: `extension/features/chat-style-comments/index.js:18` (5 `.ytkit-vote-badge` style rules), injected at `ytkit.js:7745-7747`; removal-only sites at `chat-style-comments/index.js:307,1286,1374`.
