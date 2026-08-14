@@ -7,10 +7,12 @@ const path = require('path');
 
 const repoRoot = path.join(__dirname, '..');
 const corePath = path.join(repoRoot, 'extension', 'core', 'transcript-index.js');
+const servicePath = path.join(repoRoot, 'extension', 'core', 'transcript-service.js');
 const ytkitPath = path.join(repoRoot, 'extension', 'ytkit.js');
 
 function loadHelpers() {
     globalThis.YTKitCore = {};
+    (0, eval)(fs.readFileSync(servicePath, 'utf8'));
     (0, eval)(fs.readFileSync(corePath, 'utf8'));
     return globalThis.YTKitCore.transcriptIndex;
 }
@@ -21,12 +23,20 @@ test('transcript records normalize segment text once and carry bounded search te
         videoId: 'abcdefghijk',
         title: '  Demo\u00a0title  ',
         segments: [{ text: 'Hello\nworld' }, { text: 'hello   again' }],
-        indexedAt: 10
+        indexedAt: 10,
+        provenance: {
+            source: 'innertube-player', language: 'en', fetchedAt: 9,
+            expiresAt: 99, staleReason: 'http-403', fallbackReason: 'track-refresh'
+        }
     });
     assert.equal(record.text, 'Hello world hello again');
     assert.equal(record.title, 'Demo title');
     assert.deepEqual(record.searchTerms, ['again', 'hello', 'world']);
     assert.equal(record.indexedAt, 10);
+    assert.deepEqual(record.provenance, {
+        source: 'innertube-player', language: 'en', fetchedAt: 9, expiresAt: 99,
+        staleReason: 'http-403', fallbackReason: 'track-refresh'
+    });
     assert.ok(record.text.length <= helpers.MAX_TEXT_CHARS);
     assert.ok(record.searchTerms.length <= helpers.MAX_SEARCH_TERMS);
 });

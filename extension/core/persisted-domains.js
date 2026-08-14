@@ -611,11 +611,18 @@
             if (!isPlainObject(row) || !VIDEO_ID_PATTERN.test(String(row.videoId || ''))) continue;
             const text = typeof row.text === 'string' ? row.text.slice(0, 200000) : '';
             if (text.length < 1) continue;
+            const provenance = typeof globalThis.YTKitCore?.sanitizeTranscriptProvenance === 'function'
+                ? globalThis.YTKitCore.sanitizeTranscriptProvenance(row.provenance)
+                : {
+                    source: 'none', language: '', fetchedAt: 0, expiresAt: 0,
+                    staleReason: '', fallbackReason: ''
+                };
             byId.set(row.videoId, {
                 videoId: row.videoId,
                 title: typeof row.title === 'string' ? row.title.slice(0, 200) : '',
                 text,
-                indexedAt: Number.isFinite(Number(row.indexedAt)) ? Number(row.indexedAt) : 0
+                indexedAt: Number.isFinite(Number(row.indexedAt)) ? Number(row.indexedAt) : 0,
+                provenance
             });
         }
         return [...byId.values()].sort((a, b) => a.indexedAt - b.indexedAt).slice(-1000);

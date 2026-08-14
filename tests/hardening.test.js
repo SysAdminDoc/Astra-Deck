@@ -4479,16 +4479,16 @@ test('researchSpacedReview exports study/work data to Markdown and CSV', () => {
         'watch-page UI must expose a CSV export action');
     assert.match(block, /_BATCH_MAX:\s*20/,
         'transcript batch queue must have a bounded size cap');
-    assert.match(block, /_BATCH_RETRY_LIMIT:\s*1/,
-        'transcript batch fetches must have a bounded retry cap');
+    assert.match(block, /_BATCH_RETRY_LIMIT:\s*0/,
+        'batch callers must not multiply the shared service recovery budget');
     assert.match(block, /_collectVisibleTranscriptBatchItems\(\)/,
         'must gather visible video links into the batch queue');
     assert.match(block, /items\.length >= this\._BATCH_MAX/,
         'batch collector must stop at the queue cap');
-    assert.match(block, /TranscriptService\._getCaptionTracks\(item\.videoId\)/,
-        'batch export must reuse the local transcript service caption discovery');
-    assert.match(block, /TranscriptService\._fetchTranscriptContent\(track\.baseUrl\)/,
-        'batch export must reuse the local transcript service parser');
+    assert.match(block, /TranscriptService\.fetchTranscript\(item\.videoId, \{\s*allowOffPage: true,\s*signal\s*\}\)/,
+        'batch export must reuse the shared refresh, cancellation, and provenance transcript contract');
+    assert.match(block, /transcriptProvenance: fetched\.provenance/,
+        'batch export must preserve transcript acquisition provenance');
     assert.match(block, /_buildTranscriptBatchMarkdown\(results, exportedAt\)/,
         'must build the Markdown study pack');
     assert.match(block, /_buildTranscriptBatchJsonl\(results, exportedAt\)/,

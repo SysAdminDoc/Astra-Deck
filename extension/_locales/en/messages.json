@@ -7585,5 +7585,62 @@
   },
   "filterListStoppedTpl": {
     "message": "Stopped following {host}. No filter-list-only site access remains."
+  },
+  "transcriptSourcePlayerGlobal": {
+    "message": "the current page player data"
+  },
+  "transcriptSourceInnertube": {
+    "message": "fresh YouTube player data"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "a fresh YouTube watch page"
+  },
+  "transcriptSourcePanel": {
+    "message": "the current YouTube transcript panel"
+  },
+  "transcriptSourceUnknown": {
+    "message": "YouTube captions"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "language unknown"
+  },
+  "transcriptPanelFallback": {
+    "message": "Panel Fallback"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "Loaded from {source} {age}; {language}."
+  },
+  "transcriptRefreshedTrack": {
+    "message": "Refreshed Track"
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "Replaced an expired caption URL from {source}; fetched {age}; {language}."
+  },
+  "transcriptExpiryUnknown": {
+    "message": "not advertised"
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "Loaded from {source} {age}; {language}; track URL expiry: {expires}."
+  },
+  "transcriptTimeUnknown": {
+    "message": "at an unknown time"
+  },
+  "transcriptNoCaptions": {
+    "message": "No Captions"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "Unavailable"
+  },
+  "transcriptUnavailableNow": {
+    "message": "The transcript could not be fetched from YouTube right now."
+  },
+  "transcriptLoadFailed": {
+    "message": "Failed to load transcript"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "Try another video with captions enabled, or reopen this panel after captions finish loading."
+  },
+  "transcriptRetryHelp": {
+    "message": "Reload the page or try again in a moment if captions are still processing."
   }
 }

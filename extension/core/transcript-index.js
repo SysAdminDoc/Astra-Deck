@@ -65,12 +65,19 @@
         if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) throw new Error('Invalid transcript video id');
         const text = normalizeTranscriptText(raw?.segments || raw?.text);
         if (!text) throw new Error('Transcript has no indexable text');
+        const provenance = typeof core.sanitizeTranscriptProvenance === 'function'
+            ? core.sanitizeTranscriptProvenance(raw?.provenance)
+            : {
+                source: 'none', language: '', fetchedAt: 0, expiresAt: 0,
+                staleReason: '', fallbackReason: ''
+            };
         return {
             videoId,
             title: normalizeTranscriptText(raw?.title || '', 200),
             text,
             searchTerms: buildSearchTerms(text),
-            indexedAt: Number.isFinite(Number(raw?.indexedAt)) ? Number(raw.indexedAt) : Date.now()
+            indexedAt: Number.isFinite(Number(raw?.indexedAt)) ? Number(raw.indexedAt) : Date.now(),
+            provenance
         };
     }
 
@@ -80,7 +87,7 @@
     }
 
     function estimateRecordBytes(record) {
-        return (String(record?.text || '').length * 2) + (String(record?.title || '').length * 2) + 128;
+        return (String(record?.text || '').length * 2) + (String(record?.title || '').length * 2) + 384;
     }
 
     async function scanTranscriptRecordsChunked(records, query, options = {}) {

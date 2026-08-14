@@ -5347,6 +5347,11 @@ if (typeof globalThis !== "undefined") {
     };
 
     const INNERTUBE_CLIENT_VERSION_FALLBACK = '2.20260401.00.00';
+    const CAPTION_TRACK_EXPIRY_SKEW_MS = 30 * 1000;
+    const TRANSCRIPT_SOURCES = new Set([
+        'none', 'player-global', 'innertube-player', 'watch-page-player',
+        'watch-page-regex', 'dom-panel-track', 'dom-panel'
+    ]);
     const TRANSCRIPT_PANEL_SELECTORS = Object.freeze([
         'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
         '[data-target-id="PAmodern_transcript_view"]',
@@ -5406,17 +5411,37 @@ if (typeof globalThis !== "undefined") {
 
     function getTranscriptPanelElement(root = typeof document !== 'undefined' ? document : null, options = {}) {
         if (!root?.querySelector) return null;
+        const candidates = [];
+        const addCandidate = (candidate) => {
+            if (candidate && !candidates.includes(candidate)) candidates.push(candidate);
+        };
         if (typeof core.findSurfaceElement === 'function') {
-            return core.findSurfaceElement('transcriptPanel', {
-                root,
-                required: options.required === true
-            });
+            addCandidate(core.findSurfaceElement('transcriptPanel', { root, required: false }));
         }
         for (const selector of TRANSCRIPT_PANEL_SELECTORS) {
-            const match = root.querySelector(selector);
-            if (match) return match;
+            if (typeof root.querySelectorAll === 'function') {
+                const matches = Array.from(root.querySelectorAll(selector) || []);
+                for (const match of matches) addCandidate(match);
+                if (matches.length === 0) addCandidate(root.querySelector(selector));
+            } else {
+                addCandidate(root.querySelector(selector));
+            }
         }
-        if (options.required) throw new Error('Required selector surface "transcriptPanel" was not found.');
+        const isActive = typeof options.isForVideo === 'function'
+            ? (panel) => {
+                if (panel.isConnected === false
+                    || panel.hidden === true
+                    || panel.getAttribute?.('aria-hidden') === 'true'
+                    || (typeof panel.getClientRects === 'function' && panel.getClientRects().length === 0)) return false;
+                try { return options.isForVideo(options.videoId, panel) === true; }
+                catch (_) { return false; }
+            }
+            : () => true;
+        const match = candidates.find(isActive) || null;
+        if (match) return match;
+        if (options.required) {
+            throw new Error('Required selector surface "transcriptPanel" was not found.');
+        }
         return null;
     }
 
@@ -5432,8 +5457,62 @@ if (typeof globalThis !== "undefined") {
         throw signal.reason?.name === 'AbortError' ? signal.reason : createAbortError();
     }
 
+    function parseCaptionTrackExpiresAt(baseUrl) {
+        if (typeof baseUrl !== 'string' || !baseUrl) return 0;
+        try {
+            const value = Number(new URL(baseUrl, 'https://www.youtube.com').searchParams.get('expire'));
+            return Number.isFinite(value) && value > 0 ? Math.floor(value * 1000) : 0;
+        } catch (_) {
+            return 0;
+        }
+    }
+
+    function getCaptionTrackVideoId(baseUrl) {
+        if (typeof baseUrl !== 'string') return '';
+        try {
+            if (typeof URL !== 'undefined') {
+                return new URL(baseUrl, 'https://www.youtube.com').searchParams.get('v') || '';
+            }
+        } catch (_) {
+            // reason: fall through to a narrow query parser for test/legacy contexts
+        }
+        const match = baseUrl.match(/[?&]v=([^&#]+)/);
+        try { return match?.[1] ? decodeURIComponent(match[1]) : ''; }
+        catch (_) { return match?.[1] || ''; }
+    }
+
+    function getTranscriptHttpStatus(error) {
+        const status = Number(error?.response?.status ?? error?.status);
+        return Number.isInteger(status) && status >= 100 && status <= 599 ? status : 0;
+    }
+
+    function classifyCaptionFailure(error) {
+        const status = getTranscriptHttpStatus(error);
+        if (status === 403) return 'http-403';
+        if (status === 404) return 'http-404';
+        return 'fetch-failed';
+    }
+
+    function sanitizeTranscriptProvenance(value = {}) {
+        const source = TRANSCRIPT_SOURCES.has(value.source) ? value.source : 'none';
+        const fetchedAt = Number(value.fetchedAt);
+        const expiresAt = Number(value.expiresAt);
+        const cleanToken = (token, maxLength) => String(token || '')
+            .replace(/[^A-Za-z0-9._-]/g, '')
+            .slice(0, maxLength);
+        return {
+            source,
+            language: cleanToken(value.language, 40),
+            fetchedAt: Number.isFinite(fetchedAt) && fetchedAt > 0 ? Math.floor(fetchedAt) : 0,
+            expiresAt: Number.isFinite(expiresAt) && expiresAt > 0 ? Math.floor(expiresAt) : 0,
+            staleReason: cleanToken(value.staleReason, 80),
+            fallbackReason: cleanToken(value.fallbackReason, 80)
+        };
+    }
+
     function createTranscriptService(options = {}) {
-        const getVideoId = typeof options.getVideoId === 'function'
+        const hasVideoIdResolver = typeof options.getVideoId === 'function';
+        const getVideoId = hasVideoIdResolver
             ? options.getVideoId
             : () => null;
         const showToast = typeof options.showToast === 'function'
@@ -5449,6 +5528,16 @@ if (typeof globalThis !== "undefined") {
             ? options.extensionFetchText
             : async () => { throw new Error('extensionFetchText not provided'); };
         const t = typeof options.t === 'function' ? options.t : (_key, fallback) => fallback;
+        const nowFn = typeof options.nowFn === 'function' ? options.nowFn : () => Date.now();
+        const recordDiagnostic = typeof options.recordDiagnostic === 'function'
+            ? options.recordDiagnostic
+            : () => {};
+        const isDomTranscriptForVideo = typeof options.isDomTranscriptForVideo === 'function'
+            ? options.isDomTranscriptForVideo
+            : (videoId) => {
+                const currentVideoId = getVideoId();
+                return !hasVideoIdResolver || currentVideoId === videoId;
+            };
 
         const service = {
             config: { ...DEFAULT_CONFIG, ...(options.config || {}) },
@@ -5467,9 +5556,16 @@ if (typeof globalThis !== "undefined") {
                 try {
                     const transcript = await this.fetchTranscript(videoId);
 
-                    if (transcript.status === 'captionless') {
-                        showToast(t('transcriptUnavailable', 'No transcript available for this video'), '#ef4444');
-                        return { success: false, error: 'No captions available' };
+                    if (transcript.status !== 'ready') {
+                        const captionless = transcript.status === 'captionless';
+                        showToast(captionless
+                            ? t('transcriptUnavailable', 'No transcript available for this video')
+                            : t('transcriptUnavailableNow', 'The transcript could not be fetched from YouTube right now.'), '#ef4444');
+                        return {
+                            success: false,
+                            error: captionless ? 'No captions available' : 'Transcript unavailable',
+                            provenance: transcript.provenance
+                        };
                     }
 
                     const videoTitle = this._sanitizeFilename(transcript.title || videoId);
@@ -5479,80 +5575,383 @@ if (typeof globalThis !== "undefined") {
 
                     showToast(t('transcriptDownloadedTpl', 'Transcript downloaded! ({count} segments)')
                         .replace('{count}', String(transcript.segments.length)), '#22c55e');
-                    return { success: true, segments: transcript.segments.length, language: transcript.language };
+                    return {
+                        success: true,
+                        segments: transcript.segments.length,
+                        language: transcript.language,
+                        provenance: transcript.provenance
+                    };
 
                 } catch (error) {
                     if (typeof console !== 'undefined') {
                         console.error('[YTKit TranscriptService] Error:', error);
                     }
                     showToast(t('transcriptDownloadFailed', 'Failed to download transcript'), '#ef4444');
-                    return { success: false, error: error.message };
+                    return {
+                        success: false,
+                        error: error.message,
+                        provenance: this.getDiagnostics()?.provenance
+                    };
                 }
             },
 
-            // Shared, side-effect-free retrieval path for indexing, study
-            // exports, and downloads. Consumers get structured captionless
-            // output and can cancel stale navigation work without opening
-            // YouTube's transcript panel.
+            // Shared retrieval path for indexing, study exports, panels, and
+            // downloads. A signed timedtext URL can expire while a tab stays
+            // open, so one 403/404/expired URL is allowed exactly one fresh
+            // discovery pass. Any rendered-panel fallback is bound to the
+            // same current video before its text can leave this service.
             async fetchTranscript(videoId, options = {}) {
                 if (!/^[A-Za-z0-9_-]{11}$/.test(String(videoId || ''))) throw new Error('Invalid video ID');
                 const signal = options.signal;
-                throwIfAborted(signal);
-                const trackData = await this._getCaptionTracks(videoId, { signal });
-                throwIfAborted(signal);
+                const allowOffPage = options.allowOffPage === true;
+                const strictTrack = options.strictTrack === true;
+                const allowDomFallback = options.allowDomFallback !== false
+                    && !allowOffPage
+                    && !strictTrack;
+                this._assertVideoCurrent(videoId, signal, allowOffPage);
+                const tryRenderedPanel = (fallbackReason, title = videoId, staleReason = '') => {
+                    if (!allowDomFallback) return null;
+                    const panelSegments = this._scrapeRenderedTranscript(videoId, { signal });
+                    if (!panelSegments?.length) return null;
+                    return this._finalizeTranscriptResult({
+                        status: 'ready',
+                        videoId,
+                        title: title || videoId,
+                        segments: panelSegments
+                    }, {
+                        source: 'dom-panel',
+                        language: '',
+                        fetchedAt: nowFn(),
+                        staleReason,
+                        fallbackReason
+                    });
+                };
+
+                let trackData;
+                try {
+                    trackData = await this._getCaptionTracks(videoId, { signal, allowOffPage });
+                } catch (error) {
+                    if (error?.name === 'AbortError') throw error;
+                    this._assertVideoCurrent(videoId, signal, allowOffPage);
+                    const panelResult = tryRenderedPanel('discovery-failed');
+                    if (panelResult) return panelResult;
+                    this._setTranscriptDiagnostic(videoId, 'error', {
+                        source: 'none',
+                        fetchedAt: nowFn(),
+                        staleReason: 'discovery-failed',
+                        fallbackReason: allowDomFallback ? 'panel-unavailable' : 'dom-disabled'
+                    });
+                    throw error;
+                }
+                this._assertVideoCurrent(videoId, signal, allowOffPage);
+                if (trackData?.captionless === true) {
+                    return this._finalizeTranscriptResult({
+                        status: 'captionless', videoId, title: trackData?.videoTitle || '', segments: []
+                    }, {
+                        source: trackData?.source || 'none',
+                        fetchedAt: nowFn(),
+                        fallbackReason: 'no-caption-tracks'
+                    });
+                }
                 if (!trackData?.tracks?.length) {
-                    return { status: 'captionless', videoId, title: trackData?.videoTitle || '', segments: [] };
+                    const panelResult = tryRenderedPanel('no-fetchable-track', trackData?.videoTitle);
+                    if (panelResult) return panelResult;
+                    return this._finalizeTranscriptResult({
+                        status: 'unavailable', videoId, title: trackData?.videoTitle || '', segments: []
+                    }, {
+                        source: trackData?.source || 'none',
+                        fetchedAt: nowFn(),
+                        staleReason: 'discovery-empty',
+                        fallbackReason: allowDomFallback ? 'panel-unavailable' : 'dom-disabled'
+                    });
                 }
-                const selectedTrack = this._selectBestTrack(trackData.tracks);
+                let selectedTrack = this._selectTrackForFetch(trackData.tracks, options);
+                if (!selectedTrack?.baseUrl) {
+                    return this._finalizeTranscriptResult({
+                        status: 'unavailable', videoId, title: trackData.videoTitle || '', segments: []
+                    }, {
+                        source: trackData.source || 'none',
+                        language: options.trackPreference?.languageCode || '',
+                        fetchedAt: nowFn(),
+                        staleReason: 'requested-track-missing',
+                        fallbackReason: strictTrack ? 'strict-track-unavailable' : 'track-url-missing'
+                    });
+                }
                 this._log('Selected track:', selectedTrack.languageCode, selectedTrack.kind);
-                const segments = await this._fetchTranscriptContent(selectedTrack.baseUrl, { signal });
-                throwIfAborted(signal);
-                if (!segments?.length) {
-                    return { status: 'captionless', videoId, title: trackData.videoTitle || '', segments: [] };
+
+                let expiresAt = parseCaptionTrackExpiresAt(selectedTrack.baseUrl);
+                let staleReason = expiresAt && expiresAt <= nowFn() + CAPTION_TRACK_EXPIRY_SKEW_MS
+                    ? 'expired-url'
+                    : '';
+                let fallbackReason = '';
+                let segments = null;
+                let fetchError = null;
+                if (!staleReason) {
+                    try {
+                        segments = await this._fetchTranscriptContent(selectedTrack.baseUrl, { signal });
+                    } catch (error) {
+                        if (error?.name === 'AbortError') throw error;
+                        fetchError = error;
+                        staleReason = classifyCaptionFailure(error);
+                    }
                 }
-                return {
+                this._assertVideoCurrent(videoId, signal, allowOffPage);
+
+                const refreshable = staleReason === 'expired-url'
+                    || staleReason === 'http-403'
+                    || staleReason === 'http-404';
+                if ((!segments || segments.length === 0) && refreshable) {
+                    // One forced-fresh pass only. It skips the page-global
+                    // player response because that is the stale object that
+                    // commonly supplied the expired URL in the first place.
+                    let freshData = null;
+                    try {
+                        freshData = await this._getCaptionTracks(videoId, {
+                            signal,
+                            forceFresh: true,
+                            allowOffPage
+                        });
+                    } catch (error) {
+                        if (error?.name === 'AbortError') throw error;
+                        fetchError = fetchError || error;
+                        fallbackReason = 'refresh-discovery-failed';
+                    }
+                    this._assertVideoCurrent(videoId, signal, allowOffPage);
+                    if (freshData?.tracks?.length) {
+                        const freshTrack = this._selectRefreshedTrack(freshData.tracks, selectedTrack, options);
+                        if (freshTrack?.baseUrl) {
+                            selectedTrack = freshTrack;
+                            trackData = freshData;
+                            expiresAt = parseCaptionTrackExpiresAt(freshTrack.baseUrl);
+                            const refreshedUrlExpired = expiresAt
+                                && expiresAt <= nowFn() + CAPTION_TRACK_EXPIRY_SKEW_MS;
+                            if (refreshedUrlExpired) {
+                                fallbackReason = 'refresh-expired-url';
+                                fetchError = null;
+                            } else {
+                                try {
+                                    segments = await this._fetchTranscriptContent(freshTrack.baseUrl, { signal });
+                                    fallbackReason = segments?.length ? 'track-refresh' : 'track-refresh-empty';
+                                    fetchError = null;
+                                } catch (error) {
+                                    if (error?.name === 'AbortError') throw error;
+                                    fetchError = error;
+                                    fallbackReason = 'refresh-fetch-failed';
+                                }
+                            }
+                            this._assertVideoCurrent(videoId, signal, allowOffPage);
+                        } else if (strictTrack) {
+                            fallbackReason = 'strict-track-unavailable';
+                        }
+                    } else if (freshData?.captionless === true) {
+                        fallbackReason = 'refresh-captionless';
+                    }
+                }
+
+                if (!segments?.length) {
+                    const panelResult = tryRenderedPanel(
+                        staleReason ? `dom-after-${staleReason}` : 'dom-after-empty',
+                        trackData.videoTitle,
+                        staleReason
+                    );
+                    if (panelResult) return panelResult;
+                    if (fetchError) {
+                        this._setTranscriptDiagnostic(videoId, 'error', {
+                            source: trackData.source || 'none',
+                            language: selectedTrack.languageCode || '',
+                            fetchedAt: nowFn(),
+                            expiresAt,
+                            staleReason,
+                            fallbackReason: allowDomFallback ? 'panel-unavailable' : 'dom-disabled'
+                        });
+                        throw fetchError;
+                    }
+                    return this._finalizeTranscriptResult({
+                        status: 'unavailable',
+                        videoId,
+                        title: trackData.videoTitle || '',
+                        segments: []
+                    }, {
+                        source: trackData.source || 'none',
+                        language: selectedTrack.languageCode || '',
+                        fetchedAt: nowFn(),
+                        expiresAt,
+                        staleReason,
+                        fallbackReason: fallbackReason
+                            || (refreshable ? 'refresh-empty' : 'empty-caption-track')
+                    });
+                }
+
+                return this._finalizeTranscriptResult({
                     status: 'ready',
                     videoId,
                     title: trackData.videoTitle || videoId,
+                    segments,
+                    track: this._sanitizeTrackMetadata(selectedTrack)
+                }, {
+                    source: trackData.source || 'none',
                     language: selectedTrack.languageCode || '',
-                    segments
-                };
+                    fetchedAt: nowFn(),
+                    expiresAt,
+                    staleReason,
+                    fallbackReason
+                });
             },
 
             // Multi-method caption track retrieval with automatic failover
             async _getCaptionTracks(videoId, options = {}) {
                 const signal = options.signal;
+                const allowOffPage = options.allowOffPage === true;
                 const methods = [
+                    ...(options.forceFresh === true || allowOffPage ? [] : [{
+                        // i18n-static: diagnostic method identifier, not rendered copy.
+                        name: 'ytInitialPlayerResponse',
+                        source: 'player-global',
+                        fn: () => this._method1_WindowVariable(videoId)
+                    }]),
                     // i18n-static: diagnostic method identifier, not rendered copy.
-                    { name: 'ytInitialPlayerResponse', fn: () => this._method1_WindowVariable(videoId) },
+                    { name: 'Innertube API', source: 'innertube-player', fn: () => this._method2_InnertubeAPI(videoId, { signal }) },
                     // i18n-static: diagnostic method identifier, not rendered copy.
-                    { name: 'Innertube API', fn: () => this._method2_InnertubeAPI(videoId, { signal }) },
+                    { name: 'HTML Page Fetch', source: 'watch-page-player', fn: () => this._method3_HTMLPageFetch(videoId, { signal }) },
                     // i18n-static: diagnostic method identifier, not rendered copy.
-                    { name: 'HTML Page Fetch', fn: () => this._method3_HTMLPageFetch(videoId, { signal }) },
-                    // i18n-static: diagnostic method identifier, not rendered copy.
-                    { name: 'captionTracks Regex', fn: () => this._method4_CaptionTracksRegex(videoId, { signal }) },
-                    // i18n-static: diagnostic method identifier, not rendered copy.
-                    { name: 'DOM Panel Scrape', fn: () => this._method5_DOMPanelScrape(videoId, { signal }) }
+                    { name: 'captionTracks Regex', source: 'watch-page-regex', fn: () => this._method4_CaptionTracksRegex(videoId, { signal }) },
+                    ...(allowOffPage ? [] : [{
+                        // i18n-static: diagnostic method identifier, not rendered copy.
+                        name: 'DOM Panel Scrape', source: 'dom-panel-track', fn: () => this._method5_DOMPanelScrape(videoId, { signal })
+                    }])
                 ];
 
+                let lastError = null;
                 for (const method of methods) {
                     throwIfAborted(signal);
                     try {
                         this._log(`Trying method: ${method.name}`);
                         const result = await method.fn();
                         throwIfAborted(signal);
-                        if (result && result.tracks && result.tracks.length > 0) {
-                            this._log(`Success with method: ${method.name}`, result.tracks.length, 'tracks found');
-                            return result;
+                        if (result?.captionless === true || result?.tracks?.length > 0) {
+                            this._log(`Success with method: ${method.name}`, result.tracks?.length || 0, 'tracks found');
+                            return { ...result, videoId, source: method.source };
                         }
                     } catch (error) {
                         if (error?.name === 'AbortError') throw error;
+                        lastError = error;
                         this._log(`Method ${method.name} failed:`, error.message);
                     }
                 }
 
-                return null;
+                const discoveryError = new Error('Transcript discovery failed for this video');
+                if (lastError) discoveryError.cause = lastError;
+                throw discoveryError;
             },
+
+            _assertVideoCurrent(videoId, signal, allowOffPage = false) {
+                throwIfAborted(signal);
+                if (allowOffPage) return;
+                const currentVideoId = getVideoId();
+                if (hasVideoIdResolver && currentVideoId !== videoId) throw createAbortError();
+            },
+
+            _selectTrackForFetch(tracks, options = {}) {
+                const preferred = options.trackPreference || options.selectedTrack;
+                if (preferred) {
+                    const match = this._findMatchingTrack(tracks, preferred, options.strictTrack === true);
+                    return match || (options.strictTrack === true ? null : this._selectBestTrack(tracks));
+                }
+                return this._selectBestTrack(tracks);
+            },
+
+            _selectRefreshedTrack(tracks, previousTrack, options = {}) {
+                const match = this._findMatchingTrack(
+                    tracks,
+                    options.trackPreference || options.selectedTrack || previousTrack,
+                    options.strictTrack === true
+                );
+                return match || (options.strictTrack === true ? null : this._selectBestTrack(tracks));
+            },
+
+            _findMatchingTrack(tracks, target, strict = false) {
+                if (!Array.isArray(tracks) || !target) return null;
+                const vssId = String(target.vssId || '');
+                const language = String(target.languageCode || '');
+                const kind = String(target.kind || '');
+                return tracks.find((track) => vssId && String(track?.vssId || '') === vssId)
+                    || tracks.find((track) => String(track?.languageCode || '') === language
+                        && String(track?.kind || '') === kind)
+                    || (!strict || !kind
+                        ? tracks.find((track) => String(track?.languageCode || '') === language)
+                        : null)
+                    || null;
+            },
+
+            _sanitizeTrackMetadata(track) {
+                if (!track) return null;
+                return {
+                    languageCode: String(track.languageCode || '').slice(0, 40),
+                    name: String(track.name?.simpleText || track.name?.runs?.[0]?.text || track.name || '').slice(0, 120),
+                    kind: track.kind === 'asr' ? 'asr' : 'manual',
+                    vssId: String(track.vssId || '').slice(0, 160)
+                };
+            },
+
+            _scrapeRenderedTranscript(videoId, options = {}) {
+                if (options.allowOffPage === true) return null;
+                this._assertVideoCurrent(videoId, options.signal);
+                if (typeof document === 'undefined') return null;
+                const panel = getTranscriptPanelElement(document, {
+                    videoId,
+                    isForVideo: isDomTranscriptForVideo
+                });
+                if (!panel) return null;
+                const segments = panel.querySelectorAll?.(
+                    'ytd-transcript-segment-renderer .segment-text, ' +
+                    'ytd-transcript-segment-renderer yt-formatted-string'
+                );
+                if (!segments?.length) return null;
+                const cues = [];
+                for (const segment of segments) {
+                    this._assertVideoCurrent(videoId, options.signal);
+                    const text = String(segment.textContent || '').replace(/\s+/g, ' ').trim();
+                    if (!text) continue;
+                    const row = segment.closest?.('ytd-transcript-segment-renderer');
+                    const stamp = row?.querySelector?.('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]')
+                        ?.textContent?.trim() || '';
+                    const parts = stamp.split(':').map(Number).filter(Number.isFinite);
+                    let startSeconds = 0;
+                    if (parts.length === 2) startSeconds = parts[0] * 60 + parts[1];
+                    else if (parts.length === 3) startSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                    cues.push({ startMs: startSeconds * 1000, endMs: startSeconds * 1000, text });
+                }
+                return cues.length ? cues : null;
+            },
+
+            _setTranscriptDiagnostic(videoId, status, provenance) {
+                const detail = { videoId, status, provenance: sanitizeTranscriptProvenance(provenance) };
+                this.lastResultMetadata = detail;
+                try { recordDiagnostic(detail); } catch (_) {
+                    // reason: diagnostics are best effort and must never fail transcript retrieval
+                }
+            },
+
+            _finalizeTranscriptResult(result, provenance) {
+                const clean = sanitizeTranscriptProvenance({ ...provenance, language: provenance.language || result.language });
+                const next = { ...result, language: result.language || clean.language, provenance: clean };
+                this._setTranscriptDiagnostic(result.videoId, result.status, clean);
+                return next;
+            },
+
+            getDiagnostics() {
+                const detail = this.lastResultMetadata;
+                return detail ? {
+                    videoId: String(detail.videoId || '').slice(0, 11),
+                    status: detail.status === 'ready' || detail.status === 'captionless'
+                        || detail.status === 'unavailable' || detail.status === 'error'
+                        ? detail.status
+                        : 'error',
+                    provenance: sanitizeTranscriptProvenance(detail.provenance)
+                } : null;
+            },
+
+            lastResultMetadata: null,
 
             // Method 1: window.ytInitialPlayerResponse (fastest for fresh page loads)
             _method1_WindowVariable(videoId) {
@@ -5602,6 +6001,9 @@ if (typeof globalThis !== "undefined") {
                 if (!response || response.status < 200 || response.status >= 300) {
                     throw new Error(`Innertube API returned ${response?.status}`);
                 }
+                if (data?.videoDetails?.videoId !== videoId) {
+                    throw new Error('Innertube player response is for a different video');
+                }
                 return this._extractFromPlayerResponse(data);
             },
 
@@ -5624,6 +6026,9 @@ if (typeof globalThis !== "undefined") {
                     if (match && match[1]) {
                         try {
                             const playerResponse = JSON.parse(match[1]);
+                            if (playerResponse?.videoDetails?.videoId !== videoId) {
+                                throw new Error('Watch-page player response is for a different video');
+                            }
                             return this._extractFromPlayerResponse(playerResponse);
                         } catch (parseError) {
                             this._log('JSON parse failed for pattern, trying next');
@@ -5665,8 +6070,12 @@ if (typeof globalThis !== "undefined") {
                 // page is usually an unrelated config or accessibility field,
                 // so the bare match named the download after the wrong string.
                 const detailsAt = html.indexOf('"videoDetails"');
-                const titleMatch = (detailsAt === -1 ? html : html.slice(detailsAt))
-                    .match(/"title":"([^"]+)"/);
+                const detailsText = detailsAt === -1 ? html : html.slice(detailsAt);
+                const pageVideoId = detailsText.match(/"videoId":"([A-Za-z0-9_-]{11})"/)?.[1] || '';
+                if (pageVideoId && pageVideoId !== videoId) {
+                    throw new Error('Watch-page caption data is for a different video');
+                }
+                const titleMatch = detailsText.match(/"title":"([^"]+)"/);
                 if (titleMatch && titleMatch[1]) {
                     videoTitle = titleMatch[1]
                         .replace(/\\u0026/g, '&')
@@ -5674,8 +6083,16 @@ if (typeof globalThis !== "undefined") {
                         .replace(/\\\//g, '/');
                 }
 
+                const matchingTracks = tracks.filter((track) => {
+                    const trackVideoId = getCaptionTrackVideoId(track?.baseUrl || '');
+                    return !trackVideoId || trackVideoId === videoId;
+                });
+                if (tracks.length > 0 && matchingTracks.length === 0) {
+                    throw new Error('Watch-page caption tracks are for a different video');
+                }
+
                 return {
-                    tracks: tracks.map(t => ({
+                    tracks: matchingTracks.map(t => ({
                         baseUrl: t.baseUrl?.replace(/\\u0026/g, '&'),
                         languageCode: t.languageCode,
                         name: t.name?.simpleText || t.name?.runs?.[0]?.text || t.languageCode,
@@ -5692,7 +6109,13 @@ if (typeof globalThis !== "undefined") {
                 if (typeof document === 'undefined') {
                     throw new Error('document not available');
                 }
-                const panel = getTranscriptPanelElement(document);
+                const panel = getTranscriptPanelElement(document, {
+                    videoId,
+                    isForVideo: isDomTranscriptForVideo
+                });
+                if (!panel) {
+                    throw new Error('Transcript panel is stale (different video)');
+                }
                 const nestedRenderer = panel?.querySelector?.('ytd-transcript-renderer');
                 const transcriptRenderer = nestedRenderer || (
                     panel?.data?.content?.transcriptSearchPanelRenderer ||
@@ -5723,6 +6146,10 @@ if (typeof globalThis !== "undefined") {
                 // fabricate tracks for the wrong video.
                 const tracks = languageMenu
                     .filter(item => typeof item.baseUrl === 'string' && item.baseUrl.includes('/api/timedtext'))
+                    .filter(item => {
+                        const trackVideoId = getCaptionTrackVideoId(item.baseUrl);
+                        return !trackVideoId || trackVideoId === videoId;
+                    })
                     .map(item => ({
                         baseUrl: item.baseUrl,
                         languageCode: item.languageCode || 'unknown',
@@ -5740,11 +6167,11 @@ if (typeof globalThis !== "undefined") {
             },
 
             _extractFromPlayerResponse(playerResponse) {
-                if (!playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
-                    throw new Error('No caption tracks in player response');
+                if (!playerResponse || typeof playerResponse !== 'object') {
+                    throw new Error('Invalid player response');
                 }
-
-                const captionTracks = playerResponse.captions.playerCaptionsTracklistRenderer.captionTracks;
+                const rawTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+                const captionTracks = Array.isArray(rawTracks) ? rawTracks : [];
                 const videoTitle = playerResponse.videoDetails?.title || '';
 
                 return {
@@ -5755,7 +6182,8 @@ if (typeof globalThis !== "undefined") {
                         kind: t.kind || (t.vssId?.startsWith('a.') ? 'asr' : 'manual'),
                         vssId: t.vssId
                     })),
-                    videoTitle: videoTitle
+                    videoTitle: videoTitle,
+                    captionless: captionTracks.length === 0
                 };
             },
 
@@ -5798,10 +6226,13 @@ if (typeof globalThis !== "undefined") {
                 // formats and only hand back the empty parse after every
                 // format has had its chance.
                 let emptyResult = null;
+                let terminalHttpError = null;
                 for (const fmt of formats) {
                     throwIfAborted(options.signal);
                     try {
-                        const url = fmt === 'xml' ? baseUrl : `${baseUrl}&fmt=${fmt}`;
+                        const url = fmt === 'xml'
+                            ? baseUrl
+                            : `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}fmt=${fmt}`;
                         const { text: content } = await extensionFetchText({ url, signal: options.signal });
                         throwIfAborted(options.signal);
 
@@ -5815,10 +6246,13 @@ if (typeof globalThis !== "undefined") {
                         this._log(`Format ${fmt} parsed but produced no segments, trying next format`);
                     } catch (e) {
                         if (e?.name === 'AbortError') throw e;
+                        const status = getTranscriptHttpStatus(e);
+                        if (status === 403 || status === 404) terminalHttpError = e;
                         this._log(`Format ${fmt} failed:`, e.message);
                     }
                 }
 
+                if (terminalHttpError) throw terminalHttpError;
                 if (emptyResult) return emptyResult;
                 throw new Error('Failed to fetch transcript in any format');
             },
@@ -5914,6 +6348,10 @@ if (typeof globalThis !== "undefined") {
                     }
                     return s.text;
                 }).join('\n');
+            },
+
+            formatTranscript(segments) {
+                return this._formatTranscript(Array.isArray(segments) ? segments : []);
             },
 
             _formatTimestamp(ms) {
@@ -6021,9 +6459,12 @@ if (typeof globalThis !== "undefined") {
     }
 
     Object.assign(core, {
+        CAPTION_TRACK_EXPIRY_SKEW_MS,
         createTranscriptService,
         getTranscriptPanelElement,
         normalizeTranscriptSegments,
+        parseCaptionTrackExpiresAt,
+        sanitizeTranscriptProvenance,
         TRANSCRIPT_PANEL_SELECTORS
     });
 })();
@@ -6096,12 +6537,19 @@ if (typeof globalThis !== "undefined") {
         if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) throw new Error('Invalid transcript video id');
         const text = normalizeTranscriptText(raw?.segments || raw?.text);
         if (!text) throw new Error('Transcript has no indexable text');
+        const provenance = typeof core.sanitizeTranscriptProvenance === 'function'
+            ? core.sanitizeTranscriptProvenance(raw?.provenance)
+            : {
+                source: 'none', language: '', fetchedAt: 0, expiresAt: 0,
+                staleReason: '', fallbackReason: ''
+            };
         return {
             videoId,
             title: normalizeTranscriptText(raw?.title || '', 200),
             text,
             searchTerms: buildSearchTerms(text),
-            indexedAt: Number.isFinite(Number(raw?.indexedAt)) ? Number(raw.indexedAt) : Date.now()
+            indexedAt: Number.isFinite(Number(raw?.indexedAt)) ? Number(raw.indexedAt) : Date.now(),
+            provenance
         };
     }
 
@@ -6111,7 +6559,7 @@ if (typeof globalThis !== "undefined") {
     }
 
     function estimateRecordBytes(record) {
-        return (String(record?.text || '').length * 2) + (String(record?.title || '').length * 2) + 128;
+        return (String(record?.text || '').length * 2) + (String(record?.title || '').length * 2) + 384;
     }
 
     async function scanTranscriptRecordsChunked(records, query, options = {}) {
@@ -12390,10 +12838,11 @@ if (typeof globalThis !== "undefined") {
             : null;
         const fetchCaptionTrack = typeof options.fetchCaptionTrack === 'function'
             ? options.fetchCaptionTrack
-            : async (track) => {
+            : async (track, _tracks, fetchOptions = {}) => {
                 if (!extensionFetchJson || !track?.baseUrl) return { cues: null, track };
                 const result = await extensionFetchJson({
-                    url: appendTimedTextFormat(track.baseUrl, 'json3')
+                    url: appendTimedTextFormat(track.baseUrl, 'json3'),
+                    signal: fetchOptions.signal
                 });
                 return {
                     cues: parseJson3Cues(result?.data),
@@ -12427,6 +12876,7 @@ if (typeof globalThis !== "undefined") {
             _timeHandler: null,
             _resizeHandler: null,
             _loadTimer: null,
+            _loadController: null,
             _loadToken: 0,
             _retryCount: 0,
             _cues: [],
@@ -12471,12 +12921,14 @@ if (typeof globalThis !== "undefined") {
                 if (!String(getVideoId?.() || '')) return null;
                 const pageData = doc?.querySelector?.('ytd-watch-flexy');
                 const pageResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
-                if (pageResponse) return pageResponse;
-                const globalResponse = getPlayerResponseGlobal();
                 const currentVideoId = String(getVideoId?.() || '');
+                const pageVideoId = String(pageResponse?.videoDetails?.videoId || '');
+                if (pageResponse && pageVideoId === currentVideoId) return pageResponse;
+                const globalResponse = getPlayerResponseGlobal();
                 const responseVideoId = String(globalResponse?.videoDetails?.videoId || '');
-                if (currentVideoId && responseVideoId && currentVideoId !== responseVideoId) return null;
-                return globalResponse || null;
+                return globalResponse && responseVideoId === currentVideoId
+                    ? globalResponse
+                    : null;
             },
 
             _captionTracks() {
@@ -12592,9 +13044,14 @@ if (typeof globalThis !== "undefined") {
 
             async _load() {
                 if (!this._started) return;
+                this._loadController?.abort();
+                const controller = new AbortController();
+                this._loadController = controller;
                 const token = ++this._loadToken;
+                const videoId = String(getVideoId?.() || '');
                 const tracks = this._captionTracks();
                 if (!Array.isArray(tracks) || tracks.length === 0) {
+                    if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
                     if (this._retryCount < 6) {
                         this._retryCount += 1;
@@ -12610,23 +13067,29 @@ if (typeof globalThis !== "undefined") {
                     this._primaryLanguage()
                 );
                 if (!track) {
+                    if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
                     return;
                 }
 
                 let result;
                 try {
-                    result = await fetchCaptionTrack(track, tracks);
+                    result = await fetchCaptionTrack(track, tracks, { signal: controller.signal });
                 } catch (_) {
                     // reason: a missing/expired timed-text track is a normal
                     // unavailable-caption state, not a feature crash.
                     result = null;
                 }
-                if (!this._started || token !== this._loadToken) return;
+                if (!this._started || token !== this._loadToken || controller.signal.aborted
+                    || String(getVideoId?.() || '') !== videoId) {
+                    if (this._loadController === controller) this._loadController = null;
+                    return;
+                }
                 const cues = Array.isArray(result?.cues)
                     ? result.cues.filter((cue) => cue && typeof cue.text === 'string' && cue.text.trim())
                     : [];
                 if (cues.length === 0) {
+                    if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
                     return;
                 }
@@ -12636,7 +13099,8 @@ if (typeof globalThis !== "undefined") {
                 // the retry count, so a page that resolved tracks but never
                 // produced a player node looped every 700ms forever. Only a
                 // fully successful render clears the budget.
-                if (!this._mountOverlay(track) || !this._attachVideo()) {
+                if (!this._mountOverlay(result?.track || track) || !this._attachVideo()) {
+                    if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
                     if (this._retryCount < 6) {
                         this._retryCount += 1;
@@ -12646,9 +13110,12 @@ if (typeof globalThis !== "undefined") {
                 }
                 this._retryCount = 0;
                 this._renderCue();
+                if (this._loadController === controller) this._loadController = null;
             },
 
             _resetForNavigation() {
+                this._loadController?.abort();
+                this._loadController = null;
                 this._loadToken += 1;
                 this._retryCount = 0;
                 this._cues = [];
@@ -12714,6 +13181,8 @@ if (typeof globalThis !== "undefined") {
 
             destroy() {
                 this._started = false;
+                this._loadController?.abort();
+                this._loadController = null;
                 this._loadToken += 1;
                 if (this._loadTimer) clearTimer(this._loadTimer);
                 this._loadTimer = null;

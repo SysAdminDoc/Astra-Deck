@@ -7585,5 +7585,24 @@
   },
   "filterListStoppedTpl": {
     "message": "La liste de {host} n’est plus suivie. Aucun accès au site propre à cette liste ne subsiste."
-  }
+  },
+  "transcriptSourcePlayerGlobal": { "message": "les données du lecteur de la page actuelle" },
+  "transcriptSourceInnertube": { "message": "de nouvelles données du lecteur YouTube" },
+  "transcriptSourceWatchPage": { "message": "une page de lecture YouTube actualisée" },
+  "transcriptSourcePanel": { "message": "le panneau de transcription YouTube actuel" },
+  "transcriptSourceUnknown": { "message": "les sous-titres YouTube" },
+  "transcriptLanguageUnknown": { "message": "langue inconnue" },
+  "transcriptPanelFallback": { "message": "Repli sur le panneau" },
+  "transcriptMetaPanelTpl": { "message": "Chargée depuis {source} ({age}) ; {language}." },
+  "transcriptRefreshedTrack": { "message": "Piste actualisée" },
+  "transcriptMetaRefreshedTpl": { "message": "Une URL de sous-titres expirée a été remplacée via {source} ; récupérée {age} ; {language}." },
+  "transcriptExpiryUnknown": { "message": "non indiquée" },
+  "transcriptMetaSourceTpl": { "message": "Chargée depuis {source} ({age}) ; {language} ; expiration de l’URL de piste : {expires}." },
+  "transcriptTimeUnknown": { "message": "à une date inconnue" },
+  "transcriptNoCaptions": { "message": "Aucun sous-titre" },
+  "transcriptUnavailableLabel": { "message": "Indisponible" },
+  "transcriptUnavailableNow": { "message": "La transcription ne peut pas être récupérée depuis YouTube pour le moment." },
+  "transcriptLoadFailed": { "message": "Échec du chargement de la transcription" },
+  "transcriptNoCaptionsHelp": { "message": "Essayez une autre vidéo avec des sous-titres, ou rouvrez ce panneau une fois les sous-titres chargés." },
+  "transcriptRetryHelp": { "message": "Rechargez la page ou réessayez dans un instant si les sous-titres sont encore en cours de traitement." }
 }

@@ -7585,5 +7585,24 @@
   },
   "filterListStoppedTpl": {
     "message": "Se dejó de seguir {host}. No queda acceso al sitio concedido solo para la lista de filtros."
-  }
+  },
+  "transcriptSourcePlayerGlobal": { "message": "los datos del reproductor de la página actual" },
+  "transcriptSourceInnertube": { "message": "datos nuevos del reproductor de YouTube" },
+  "transcriptSourceWatchPage": { "message": "una página de reproducción de YouTube recién cargada" },
+  "transcriptSourcePanel": { "message": "el panel de transcripción actual de YouTube" },
+  "transcriptSourceUnknown": { "message": "subtítulos de YouTube" },
+  "transcriptLanguageUnknown": { "message": "idioma desconocido" },
+  "transcriptPanelFallback": { "message": "Alternativa del panel" },
+  "transcriptMetaPanelTpl": { "message": "Cargada desde {source} ({age}); {language}." },
+  "transcriptRefreshedTrack": { "message": "Pista actualizada" },
+  "transcriptMetaRefreshedTpl": { "message": "Se sustituyó una URL de subtítulos caducada mediante {source}; obtenida {age}; {language}." },
+  "transcriptExpiryUnknown": { "message": "no indicada" },
+  "transcriptMetaSourceTpl": { "message": "Cargada desde {source} ({age}); {language}; caducidad de la URL de la pista: {expires}." },
+  "transcriptTimeUnknown": { "message": "en un momento desconocido" },
+  "transcriptNoCaptions": { "message": "Sin subtítulos" },
+  "transcriptUnavailableLabel": { "message": "No disponible" },
+  "transcriptUnavailableNow": { "message": "No se pudo obtener la transcripción de YouTube en este momento." },
+  "transcriptLoadFailed": { "message": "No se pudo cargar la transcripción" },
+  "transcriptNoCaptionsHelp": { "message": "Prueba otro vídeo con subtítulos o vuelve a abrir este panel cuando terminen de cargarse." },
+  "transcriptRetryHelp": { "message": "Recarga la página o inténtalo de nuevo en un momento si los subtítulos aún se están procesando." }
 }
