@@ -6,8 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.61.0] - 2026-08-14
+
+### Fixed
+
+- **Download options and playback-speed popups no longer open off-screen.** A defensive `inset` reset outranked both the JS and CSS-anchor positioning paths and pinned the panel to the viewport origin; positioning is now scoped, clamped on both axes, and mirrored for the no-anchor (Firefox) path.
+- **The popup keeps Ctrl/Cmd+wheel zoom.** The wheel handler no longer cancels the browser zoom gesture over scrollable regions.
+- **Data Flow loopback risk dots render their risk color** — the emitted `df-risk-local-companion` class had no matching rule, so companion and Ollama origins showed no risk color.
+- **`audit-dependencies` runs standalone on Windows** — Node's CVE-2024-27980 hardening rejected the bare `npm.cmd` launcher (EINVAL); the launch is branched so the dependency-exception policy is exercisable outside `npm run`.
+
 ### Added
 
+- **Transcript source provenance and expired-caption-track refresh.** On an expired/403/404 caption URL the transcript service performs one fresh track discovery for the same video, retries the selected track or an honest DOM fallback, and aborts on SPA video change so a stale response can never return another video's transcript; the transcript meta line shows source, age, language, and track-URL expiry. The transcript IndexedDB index gains record and byte budgets.
 - The Firefox smoke is now a live desktop behavioral gate instead of a process-
   survival check. In a disposable WebDriver BiDi profile it installs the
   staged store-safe build, confirms the `astra_zero_ads` static ruleset through
