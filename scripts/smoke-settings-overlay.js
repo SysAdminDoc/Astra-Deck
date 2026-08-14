@@ -835,6 +835,7 @@ async function main() {
             await client.evaluate(`(() => {
                 document.querySelector(${JSON.stringify(PANEL_SELECTOR)})?.remove();
                 document.getElementById('ytkit-overlay')?.remove();
+                document.querySelectorAll('.ytkit-global-toast').forEach((toast) => toast.remove());
                 document.body.classList.remove('ytkit-panel-open');
                 document.documentElement.toggleAttribute('dark', ${state.dark});
                 document.documentElement.setAttribute('dir', '${state.dir}');
@@ -866,6 +867,52 @@ async function main() {
             await sleep(600); // let fonts/layout settle before measuring
             const report = JSON.parse(await client.evaluate(IN_PAGE_CHECKS));
             failuresByState[state.name] = [...directionFailures, ...(report.failures || [])];
+
+            if (state.name === 'desktop-dark') {
+                // The mutable appState object used to be stored as the save
+                // diff baseline. The first edit after load then changed both
+                // objects and emitted no storage mutation. Exercise a real
+                // select event before any other settings interaction.
+                const firstWriteStage = await client.evaluate(`(() => {
+                    const select = document.getElementById('ytkit-select-codecSelector');
+                    if (!select) return { ok: false, reason: 'codec selector is missing' };
+                    const before = select.value;
+                    const after = Array.from(select.options).map((option) => option.value)
+                        .find((value) => value !== before);
+                    if (!after) return { ok: false, reason: 'codec selector has no alternate value' };
+                    select.value = after;
+                    select.dispatchEvent(new Event('input', { bubbles: true }));
+                    return { ok: true, before, after };
+                })()`);
+                if (!firstWriteStage?.ok) {
+                    failuresByState[state.name].push(`could not stage first-write persistence proof: ${firstWriteStage?.reason || 'unknown reason'}`);
+                } else {
+                    await sleep(250);
+                    const persistedValue = await client.evaluate('globalThis.__ytkitSmoke.readSettings().codecSelector');
+                    if (persistedValue !== firstWriteStage.after) {
+                        failuresByState[state.name].push(
+                            `first edited setting was not persisted (${String(persistedValue)} != ${firstWriteStage.after})`
+                        );
+                    }
+                    await client.evaluate(`(() => {
+                        const select = document.getElementById('ytkit-select-codecSelector');
+                        if (!select) return false;
+                        select.value = ${JSON.stringify(firstWriteStage.before)};
+                        select.dispatchEvent(new Event('input', { bubbles: true }));
+                        return true;
+                    })()`);
+                    await sleep(150);
+                    await client.evaluate(`(() => {
+                        document.querySelectorAll('.ytkit-global-toast').forEach((toast) => toast.remove());
+                        const status = document.getElementById('ytkit-panel-status');
+                        if (status) {
+                            status.textContent = 'Saved';
+                            status.dataset.tone = 'idle';
+                        }
+                        return true;
+                    })()`);
+                }
+            }
 
             if (!opts.healthOnly) {
                 const shot = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });

@@ -4405,6 +4405,14 @@ return response;
             return next;
         },
 
+        _snapshotSettings(settings = {}) {
+            const normalized = this._sanitize(this._normalizeProfileModel(settings));
+            if (typeof structuredClone === 'function') {
+                try { return structuredClone(normalized); } catch (_) { /* reason: fall through to the JSON-safe settings clone */ }
+            }
+            try { return JSON.parse(JSON.stringify(normalized)); } catch (_) { return { ...normalized }; }
+        },
+
         load() {
             let savedSettings = StorageManager.get(STORAGE_KEYS.settings, {});
             if (!savedSettings || typeof savedSettings !== 'object' || Array.isArray(savedSettings)) {
@@ -4432,10 +4440,10 @@ return response;
                 ? normalizedStored
                 : this.SETTINGS_VERSION;
             const rawSettingsSnapshot = this._sanitize(savedSettings);
-            this._lastSubmittedSettings = this._normalizeProfileModel(this._sanitize({
+            this._lastSubmittedSettings = this._snapshotSettings({
                 ...this.defaults,
                 ...rawSettingsSnapshot
-            }));
+            });
             savedSettings = this._sanitize(this._migrate(savedSettings));
             const merged = this._normalizeProfileModel(this._sanitize({ ...this.defaults, ...savedSettings, _settingsVersion: targetVersion }));
             let shouldPersistMerged = extraction.moved
@@ -4453,7 +4461,10 @@ return response;
             if (shouldPersistMerged) {
                 this.save(merged);
             } else {
-                this._lastSubmittedSettings = merged;
+                // Keep the diff baseline detached from the mutable object
+                // returned to appState. Otherwise the first control edit after
+                // load mutates both objects and save() observes no change.
+                this._lastSubmittedSettings = this._snapshotSettings(merged);
             }
             return merged;
         },
@@ -4493,7 +4504,9 @@ return response;
             for (const [key, value] of Object.entries(nextSettings)) {
                 if (JSON.stringify(baseline[key]) !== JSON.stringify(value)) changes[key] = value;
             }
-            this._lastSubmittedSettings = nextSettings;
+            // appState mutates settings (including nested arrays) in place.
+            // The persistence baseline must therefore be a deep snapshot.
+            this._lastSubmittedSettings = this._snapshotSettings(nextSettings);
             const controller = this._getSettingsMutationController();
             if (!controller) {
                 StorageManager.set(STORAGE_KEYS.settings, nextSettings);
@@ -4528,7 +4541,7 @@ return response;
             return controller.mutateMany(changes).then((result) => {
                 if (result.ok) {
                     if (generation === this._settingsSaveGeneration && result.settings) {
-                        this._lastSubmittedSettings = result.settings;
+                        this._lastSubmittedSettings = this._snapshotSettings(result.settings);
                         StorageManager.syncFromExternal(STORAGE_KEYS.settings, result.settings);
                         if (appState?.settings
                             && JSON.stringify(appState.settings) !== JSON.stringify(result.settings)) {
@@ -4546,7 +4559,7 @@ return response;
                 // save is queued, its result will either persist or perform the
                 // final rollback without flashing an older intermediate state.
                 if (generation === this._settingsSaveGeneration && result.settings) {
-                    this._lastSubmittedSettings = result.settings;
+                    this._lastSubmittedSettings = this._snapshotSettings(result.settings);
                     StorageManager.syncFromExternal(STORAGE_KEYS.settings, result.settings);
                     if (appState?.settings) {
                         applyExternalSettingsUpdate({
@@ -5951,7 +5964,7 @@ return response;
         const changedKeys = getChangedSettingKeys(previousSettings, resolvedSettings);
         const changedKeysSet = new Set(changedKeys);
 
-        settingsManager._lastSubmittedSettings = resolvedSettings;
+        settingsManager._lastSubmittedSettings = settingsManager._snapshotSettings(resolvedSettings);
         StorageManager.syncFromExternal(STORAGE_KEYS.settings, resolvedSettings);
         appState.settings = resolvedSettings;
         appState.currentPage = getCurrentPage();

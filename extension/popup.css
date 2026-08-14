@@ -1884,11 +1884,10 @@ body {
   box-shadow: var(--focus-ring);
 }
 
-/* v4.27.0: string-type inline editor. Two surfaces — a compact text
-   field for free-form strings, and a native <input type="color"> for
-   schema entries whose default looks like a hex colour. Both follow
-   the same square-corner 6 px house-style radius. */
-.schema-overview-list .so-key-text {
+/* String-type editors: finite vocabularies use a native select, free-form
+   strings use a compact text field, and hex colours use a native picker. */
+.schema-overview-list .so-key-text,
+.schema-overview-list .so-key-select {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
   color: var(--text-primary);
@@ -1900,7 +1899,13 @@ body {
   min-width: 90px;
 }
 
-.schema-overview-list .so-key-text:focus-visible {
+.schema-overview-list .so-key-select {
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.schema-overview-list .so-key-text:focus-visible,
+.schema-overview-list .so-key-select:focus-visible {
   outline: none;
   border-color: var(--accent-border);
   box-shadow: var(--focus-ring);
@@ -2342,11 +2347,17 @@ body {
 
 .filter-list-tools {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
+  min-width: 0;
   padding: 14px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.02);
+}
+
+.filter-list-tools > * {
+  min-width: 0;
 }
 
 .filter-list-tools__description {
@@ -2447,6 +2458,12 @@ body {
 .filter-list-tools__stale-toggle input {
   flex: 0 0 auto;
   margin: 2px 0 0;
+}
+
+@media (max-width: 420px) {
+  .filter-list-tools__preferences {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .actions-end { margin-left: auto; }
@@ -3285,6 +3302,17 @@ textarea:focus-visible {
     width: 100%;
     max-width: none;
   }
+
+  .whats-new {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .whats-new-btn,
+  .whats-new-dismiss {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3365,6 +3393,7 @@ textarea:focus-visible {
   .ai-credential-manager :focus-visible,
   .schema-overview-list .so-key-number:focus-visible,
   .schema-overview-list .so-key-text:focus-visible,
+  .schema-overview-list .so-key-select:focus-visible,
   .schema-overview-list .so-key-color:focus-visible,
   .schema-overview-list .so-row-head:focus-visible,
   .schema-overview-list .so-key-switch:focus-visible,
@@ -3528,7 +3557,7 @@ textarea:focus-visible {
   top: calc(100% + 6px);
   right: 0;
   display: grid;
-  width: min(270px, calc(100vw - 32px));
+  width: min(270px, calc(100vw - 48px));
   gap: 6px;
   padding: 8px;
   border: 1px solid var(--astra-border);
