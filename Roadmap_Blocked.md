@@ -18,6 +18,26 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: The repository-side work is complete; creating the tag, publishing GitHub assets, and promoting release channels are operator actions explicitly excluded from the 2026-08-13 local-only pass. A CRX signing key is not required for the supported no-CRX release path.
 
+## P1 — Upstream dependency fix (2026-08-13)
+
+- [ ] P1 — Remove the reviewed `image-size` audit exception after an upstream fix
+  Why: `web-ext@10.6.0` depends on `addons-linter@10.10.0`, which pins
+  `image-size@2.0.2`; the two reviewed infinite-loop advisories therefore keep
+  the development audit at three high findings. Production dependencies remain
+  clean and the existing exception gate pins the exact dev-only graph.
+  Blocker: As of 2026-08-13, npm still publishes `image-size@2.0.2` as latest,
+  GitHub advisories GHSA-w3rx-r6r6-pgpr and GHSA-5p2g-fcmc-qvqq mark every
+  version `<=2.0.2` affected with no patched release, and both `web-ext` and
+  `addons-linter` are already at their latest releases. The proposed 1.2.1
+  override is also inside the advisory range, so it cannot make `npm audit`
+  clean and would only disguise the dependency risk.
+  Unblock by: upgrade when `image-size` publishes a non-vulnerable release or
+  `addons-linter` replaces the dependency; then delete
+  `scripts/dependency-audit-exceptions.json` (and simplify
+  `scripts/audit-dependencies.js`), require a zero-finding development audit,
+  and rerun all three Firefox lint profiles.
+  Complexity: S
+
 ## P2 — Greasy Fork publication (2026-08-11)
 
 - [ ] P2 — Publish the YTKit userscript and its core library on Greasy Fork
@@ -117,12 +137,6 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Where: `astra_downloader/astra_downloader.py` (`is_playlist_url` ~2764; invocation ~3266/3317).
   Complexity: M
   Blocker: Product decision — choose a sane default cap (for example `MaxPlaylistItems`, with 0 meaning unlimited). Silently capping could surprise users who intentionally download full playlists, so the default and GUI/config surface require maintainer judgment.
-
-- [ ] P3 — Reconsider `.google.com` breadth in the cookie allowlist
-  Why: `ALLOWED_COOKIE_DOMAINS` includes the `.google.com` wildcard, which is genuinely required for authenticated YouTube downloads (SAPISID/SID live there) but also matches non-YouTube Google cookies. yt-dlp only sends cookies whose domain matches the youtube.com request, so the incremental exfil risk is low — but a tighter scheme (only forward the specific auth cookie names) would shrink the credential surface.
-  Where: `astra_downloader/astra_downloader.py:1991` (`ALLOWED_COOKIE_DOMAINS`).
-  Complexity: M
-  Blocker: Product decision — decide whether to allowlist the google.com set by cookie name rather than domain without breaking authenticated or members-only downloads.
 
 - [ ] P3 — Native-host token handshake assumes a single message
   Why: `NATIVE_MSG_GET_TOKEN` responds on the first `port.onMessage` and disconnects; a native host that sends a hello/handshake frame before the token reply would consume the single response slot and the real token frame would never be read.
