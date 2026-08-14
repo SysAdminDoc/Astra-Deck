@@ -6,8 +6,25 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- README now contains a generated, linkable knowledgebase entry for all 463
+  user-facing settings, including purpose, default or allowed values, scope,
+  build profile, storage vehicle, apply timing, capability, risk, and version.
+  A drift check prevents undocumented settings from shipping.
+
 ### Fixed
 
+- The first settings edit after a page load now persists. The mutable runtime
+  state previously shared its object with the save-diff baseline, so the first
+  scalar edit—and in-place array edits—could update the UI without emitting a
+  storage mutation.
+- Finite settings now expose only valid choices, numeric settings carry
+  source-backed bounds, and validation rejects user-facing numbers without a
+  constraint or array controls without a declared vocabulary.
+- The toolbar popup no longer gains a horizontal scrollbar from Filter List
+  controls at normal size or maintenance/update banners at 200% reflow. The
+  rendered accessibility smoke now checks nested scroll containers too.
 - The settings audit now proves every user-facing schema key has a runtime
   consumer and every hidden-element sub-toggle is exposed in the popup. It
   restores the missing auto-subtitle language selection, adds the Reactions,
