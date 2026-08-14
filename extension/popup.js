@@ -801,7 +801,7 @@ function migrateImportedSettings(settings, currentVersion, source = 'popup-impor
             migrated,
             `${source}: preserved future settings schema v${version}; stored by v${targetVersion}`
         );
-        migrated._settingsVersion = targetVersion;
+        migrated._settingsVersion = Math.max(startingVersion, targetVersion);
         return sanitizeSettingsObject(migrated);
     }
 
@@ -843,11 +843,17 @@ async function loadSettingsImportCatalog() {
 
 function mergeImportedSettingsWithDefaults(settings, defaults, settingsVersion, source, options = {}) {
     const migrated = migrateImportedSettings(settings, settingsVersion, source, options);
-    const validated = validateSettingsForBackupImport(migrated);
+    // `_settingsVersion` is migration metadata rather than a schema setting.
+    // Keep it out of the per-setting validator, then restore the highest stamp
+    // after known-key validation so a downgrade cannot re-arm migrations.
+    const migratedVersion = normalizeSettingsVersion(migrated._settingsVersion);
+    const settingsToValidate = { ...migrated };
+    delete settingsToValidate._settingsVersion;
+    const validated = validateSettingsForBackupImport(settingsToValidate);
     return sanitizeSettingsObject({
         ...defaults,
         ...validated,
-        _settingsVersion: settingsVersion
+        _settingsVersion: Math.max(migratedVersion, normalizeSettingsVersion(settingsVersion))
     });
 }
 
@@ -863,7 +869,11 @@ function validateSettingsForBackupImport(settings) {
     if (!policy || typeof policy.validateSettingsSnapshot !== 'function') {
         return sanitizeSettingsObject(settings);
     }
-    const validation = policy.validateSettingsSnapshot(settings);
+    // A backup from a newer build may contain settings this build does not
+    // know. Import every validated key, drop only the unknown keys, and let
+    // persisted-domains' before/after counts report those skips in the import
+    // preview. Type-invalid known keys remain a hard rejection.
+    const validation = policy.validateSettingsSnapshot(settings, { dropUnknown: true });
     if (!validation.ok) {
         throw new Error(formatSchemaValidationError('Settings import rejected', validation));
     }
@@ -3619,7 +3629,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         input.className = 'so-key-number';
         input.dataset.key = entry.key;
         input.placeholder = String(entry.defaultValue);
-        input.setAttribute('aria-label', entry.key);
+        input.setAttribute('aria-label', label.textContent);
         const current = resolveEffectiveSettingValue(entry, settings);
         if (current !== undefined && current !== null) input.value = String(current);
         // Persist on every change/blur. We deliberately don't debounce
@@ -3628,8 +3638,10 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         // edits so race conditions are bounded.
         const persist = async () => {
             const raw = input.value.trim();
-            if (raw === '') return;     // empty input leaves the prior value untouched
-            let next = Number(raw);
+            // Clearing then committing is an explicit reset. The old path
+            // silently retained storage while the empty field displayed the
+            // default placeholder, so the visible and persisted values lied.
+            let next = raw === '' ? entry.defaultValue : Number(raw);
             if (!Number.isFinite(next)) return;
             // Route through the same clamp/enum coercion the import path
             // applies (policy-profile clampSettingValue) so an inline edit
@@ -3641,7 +3653,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                 next = policy.clampSettingValue(next, entry);
                 if (String(next) !== raw) input.value = String(next);
             }
-            if (popupState.settings[entry.key] === next) return;
+            if (resolveEffectiveSettingValue(entry, popupState.settings) === next) return;
             input.disabled = true;
             try {
                 await writeSetting(entry.key, next);
@@ -3668,7 +3680,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         input.type = looksHex ? 'color' : 'text';
         input.className = looksHex ? 'so-key-color' : 'so-key-text';
         input.dataset.key = entry.key;
-        input.setAttribute('aria-label', entry.key);
+        input.setAttribute('aria-label', label.textContent);
         if (looksHex) {
             const current = settings[entry.key] || def || '#000000';
             // input[type=color] only accepts #RRGGBB. Coerce shorter
@@ -3734,7 +3746,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         const grid = document.createElement('div');
         grid.className = 'so-key-checks';
         grid.setAttribute('role', 'group');
-        grid.setAttribute('aria-label', entry.key);
+        grid.setAttribute('aria-label', label.textContent);
         const effective = resolveEffectiveSettingValue(entry, settings);
         const seed = Array.isArray(effective) ? effective : [];
         const seedSet = new Set(seed);
@@ -3789,7 +3801,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         const textarea = document.createElement('textarea');
         textarea.className = 'so-key-json';
         textarea.dataset.key = entry.key;
-        textarea.setAttribute('aria-label', entry.key);
+        textarea.setAttribute('aria-label', label.textContent);
         textarea.spellcheck = false;
         textarea.rows = 4;
         const seed = resolveEffectiveSettingValue(entry, settings);
@@ -6197,7 +6209,11 @@ function installWheelScrolling() {
     // requires: declares a capability that came back false.
     void ensureCapabilityMap().then((caps) => {
         if (caps && Object.keys(caps).length > 0) {
-            renderSchemaOverview();
+            // Match the storage-change path: a late capability probe must not
+            // rebuild and discard a focused inline editor mid-entry.
+            if (!schemaOverviewList || !schemaOverviewList.contains(document.activeElement)) {
+                renderSchemaOverview();
+            }
         }
     });
 

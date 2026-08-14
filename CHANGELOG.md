@@ -6,6 +6,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The settings audit now proves every user-facing schema key has a runtime
+  consumer and every hidden-element sub-toggle is exposed in the popup. It
+  restores the missing auto-subtitle language selection, adds the Reactions,
+  YouTube logo, and Player settings choices, aligns the UI-style fallback with
+  its square default, and retires the inert low-power backup placeholder.
+- Settings import and editing are safer and more predictable: newer schema
+  stamps survive merge imports, unknown future keys are skipped without
+  discarding valid settings, clearing a number restores its documented
+  default, inline editors use readable accessible names, and late capability
+  probes no longer replace the control currently being edited.
+
 ## [4.61.0] - 2026-08-14
 
 ### Fixed

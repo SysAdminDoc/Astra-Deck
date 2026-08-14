@@ -208,13 +208,10 @@
             case 'object':
                 return isPlainObject(value);
             case 'null':
-                // Nullable-complex settings (e.g. `sidebarOrder` holds an array,
-                // `lowPowerProfileBackup` holds an object) default to null but are
-                // populated with an array/object at runtime once the user customizes
-                // them. The schema models them as `type: "null"` because the default
-                // IS null (check-settings enforces type==defaultValue runtime type),
-                // so the validator must accept the populated runtime shapes — otherwise
-                // export/import hard-fails for anyone who reordered their sidebar.
+                // Nullable-complex settings (currently `sidebarOrder`) default to
+                // null but are populated with an array/object once customized. The
+                // schema models them as `type: "null"` because the default IS null,
+                // so the validator must accept the populated runtime shapes.
                 return value === null || Array.isArray(value) || isPlainObject(value);
             default:
                 return false;
@@ -242,8 +239,10 @@
 
         function validateSettingsSnapshot(settings = {}, options = {}) {
             const allowUnknown = options.allowUnknown === true;
+            const dropUnknown = options.dropUnknown === true;
             const errors = [];
             const out = {};
+            const skippedKeys = [];
 
             if (!isPlainObject(settings)) {
                 return {
@@ -263,6 +262,8 @@
                 if (!entry) {
                     if (allowUnknown) {
                         out[key] = value;
+                    } else if (dropUnknown) {
+                        skippedKeys.push(key);
                     } else {
                         errors.push(`unknown setting "${key}"`);
                     }
@@ -280,7 +281,8 @@
             return {
                 ok: errors.length === 0,
                 errors,
-                settings: out
+                settings: out,
+                skippedKeys
             };
         }
 

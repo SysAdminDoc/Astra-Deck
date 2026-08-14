@@ -3088,7 +3088,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "homepageGridAlign", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "styledFilterChips", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideSidebar", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "uiStyle", category: "shell", type: "string", defaultValue: "square", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "uiStyle", category: "shell", type: "string", defaultValue: "square", enum: Object.freeze(["square","rounded"]), risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "noAmbientMode", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "compactLayout", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "thinScrollbar", category: "shell", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -3187,14 +3187,14 @@ const SETTINGS_SCHEMA = Object.freeze([
     // JSON textarea). Optional — entries without `knownValues` keep
     // the JSON path. The array MUST be a superset of the default value
     // so a fresh install can deselect any element.
-    Object.freeze({ key: "hiddenChatElements", category: "live-chat", type: "array", defaultValue: ["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"], knownValues: Object.freeze(["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"]), risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "hiddenChatElements", category: "live-chat", type: "array", defaultValue: ["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"], knownValues: Object.freeze(["header","menu","popout","reactions","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"]), risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "chatKeywordFilter", category: "live-chat", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── watch-player ───
     Object.freeze({ key: "hiddenActionButtonsManager", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hiddenActionButtons", category: "watch-player", type: "array", defaultValue: ["like","share","ask","clip","thanks","save","sponsor","moreActions"], knownValues: Object.freeze(["like","dislike","share","ask","clip","thanks","save","sponsor","moreActions"]), risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hiddenPlayerControlsManager", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "hiddenPlayerControls", category: "watch-player", type: "array", defaultValue: ["next","autoplay","subtitles","miniplayer","pip","theater"], knownValues: Object.freeze(["next","autoplay","subtitles","captions","miniplayer","pip","theater","fullscreen"]), risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "hiddenPlayerControls", category: "watch-player", type: "array", defaultValue: ["next","autoplay","subtitles","miniplayer","pip","theater"], knownValues: Object.freeze(["ytLogo","settings","next","autoplay","subtitles","captions","miniplayer","pip","theater","fullscreen"]), risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hiddenWatchElementsManager", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hiddenWatchElements", category: "watch-player", type: "array", defaultValue: ["joinButton","askButton","saveButton","moreActions","askAISection","podcastSection","transcriptSection","channelInfoCards"], knownValues: Object.freeze(["joinButton","askButton","saveButton","moreActions","askAISection","podcastSection","transcriptSection","channelInfoCards"]), risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
@@ -3713,7 +3713,6 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "forcedColorsSupport", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "globalAriaLiveRegion", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "lowPowerProfile", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "lowPowerProfileBackup", category: "a11y-perf", type: "null", defaultValue: null, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "presetPrivacy", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "presetResearcher", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "presetPowerUser", category: "a11y-perf", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -4569,13 +4568,10 @@ if (typeof globalThis !== "undefined") {
             case 'object':
                 return isPlainObject(value);
             case 'null':
-                // Nullable-complex settings (e.g. `sidebarOrder` holds an array,
-                // `lowPowerProfileBackup` holds an object) default to null but are
-                // populated with an array/object at runtime once the user customizes
-                // them. The schema models them as `type: "null"` because the default
-                // IS null (check-settings enforces type==defaultValue runtime type),
-                // so the validator must accept the populated runtime shapes — otherwise
-                // export/import hard-fails for anyone who reordered their sidebar.
+                // Nullable-complex settings (currently `sidebarOrder`) default to
+                // null but are populated with an array/object once customized. The
+                // schema models them as `type: "null"` because the default IS null,
+                // so the validator must accept the populated runtime shapes.
                 return value === null || Array.isArray(value) || isPlainObject(value);
             default:
                 return false;
@@ -4603,8 +4599,10 @@ if (typeof globalThis !== "undefined") {
 
         function validateSettingsSnapshot(settings = {}, options = {}) {
             const allowUnknown = options.allowUnknown === true;
+            const dropUnknown = options.dropUnknown === true;
             const errors = [];
             const out = {};
+            const skippedKeys = [];
 
             if (!isPlainObject(settings)) {
                 return {
@@ -4624,6 +4622,8 @@ if (typeof globalThis !== "undefined") {
                 if (!entry) {
                     if (allowUnknown) {
                         out[key] = value;
+                    } else if (dropUnknown) {
+                        skippedKeys.push(key);
                     } else {
                         errors.push(`unknown setting "${key}"`);
                     }
@@ -4641,7 +4641,8 @@ if (typeof globalThis !== "undefined") {
             return {
                 ok: errors.length === 0,
                 errors,
-                settings: out
+                settings: out,
+                skippedKeys
             };
         }
 
@@ -12722,6 +12723,16 @@ if (typeof globalThis !== "undefined") {
         return a === b || a.split('-')[0] === b.split('-')[0];
     }
 
+    function pickPreferredCaptionTrack(tracks, preferredLanguage = '') {
+        if (!Array.isArray(tracks) || tracks.length === 0) return null;
+        const preferred = normaliseLanguageCode(preferredLanguage);
+        if (!preferred || preferred === 'auto') return null;
+        const available = tracks.filter((track) => track && typeof track === 'object');
+        return available.find((track) => getCaptionTrackLanguage(track) === preferred)
+            || available.find((track) => languageCodesMatch(getCaptionTrackLanguage(track), preferred))
+            || null;
+    }
+
     function pickSecondaryCaptionTrack(tracks, preferredLanguage = 'auto', primaryLanguage = '') {
         if (!Array.isArray(tracks) || tracks.length === 0) return null;
         const available = tracks.filter((track) => track && typeof track === 'object');
@@ -13225,6 +13236,7 @@ if (typeof globalThis !== "undefined") {
         getCaptionTrackLabel,
         getCaptionTrackLanguage,
         parseJson3Cues,
+        pickPreferredCaptionTrack,
         pickSecondaryCaptionTrack,
         createDualLanguageSubtitlesRuntime
     });
@@ -13253,6 +13265,7 @@ if (typeof globalThis !== "undefined") {
             getCaptionTrackLabel,
             getCaptionTrackLanguage,
             parseJson3Cues,
+            pickPreferredCaptionTrack,
             pickSecondaryCaptionTrack,
             createDualLanguageSubtitlesRuntime
         };

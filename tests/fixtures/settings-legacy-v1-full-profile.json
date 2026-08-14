@@ -550,6 +550,7 @@
     "preferredQuality",
     "useEnhancedBitrate",
     "hideQualityPopup",
+    "lowPowerProfileBackup",
     "aiSummaryApiKey"
   ]
 }

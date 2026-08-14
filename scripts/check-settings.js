@@ -15,12 +15,16 @@
 //      byte-for-byte (every default value matches).
 //   6. Every entry's declared `type` matches the runtime type of its
 //      defaultValue (null entries explicitly carry type "null").
+//   7. Every user-facing key has a runtime consumer or a registered feature.
+//   8. Every in-page array sub-toggle token is exposed by the popup's
+//      schema `knownValues` editor vocabulary.
 //
 // Exit 0 if all invariants hold; exit 1 with a per-issue list otherwise.
 // Hooked into the `check` npm script alongside check-versions / check-i18n.
 
 const fs = require('fs');
 const path = require('path');
+const { extractFeatureCopyFromSource, findBalancedObjectLiteral } = require('./catalog-utils');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const SCHEMA_PATH = path.join(REPO_ROOT, 'extension', 'core', 'settings-schema.js');
@@ -204,6 +208,99 @@ const orphanKeys = SETTINGS_SCHEMA
     .filter((key) => !referenceCorpus.includes(key));
 if (orphanKeys.length) {
     issues.push('schema key(s) referenced nowhere in extension/: ' + orphanKeys.join(', '));
+}
+
+// 7. A declaration/default/UI echo is not an implementation. Build a second,
+// stricter corpus that excludes the schema, generated defaults, popup editor,
+// and in-page settings renderer; strip comments and the monolith's defaults
+// object. A setting is implemented when it is either a registered feature
+// (canonical feature copy exists) or is read by another shipped runtime file.
+const RUNTIME_SKIP = new Set([
+    path.join(REPO_ROOT, 'extension', 'core', 'settings-schema.js'),
+    path.join(REPO_ROOT, 'extension', 'default-settings.json'),
+    path.join(REPO_ROOT, 'extension', 'popup.js'),
+    path.join(REPO_ROOT, 'extension', 'features', 'settings-panel', 'index.js'),
+]);
+
+function collectRuntimeSources(dir, sink) {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
+    catch { return; }
+    for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            if (entry.name !== '_locales') collectRuntimeSources(full, sink);
+            continue;
+        }
+        if (!entry.name.endsWith('.js') || RUNTIME_SKIP.has(full)) continue;
+        let source;
+        try { source = fs.readFileSync(full, 'utf8'); } catch { continue; }
+        sink.push({ full, source });
+    }
+}
+
+function stripJsComments(source) {
+    return String(source || '')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/(^|\n)\s*\/\/[^\n]*/g, '$1');
+}
+
+const runtimeSources = [];
+collectRuntimeSources(path.join(REPO_ROOT, 'extension'), runtimeSources);
+const featureCopy = {};
+const runtimeChunks = [];
+for (const item of runtimeSources) {
+    const extracted = extractFeatureCopyFromSource(item.source);
+    Object.assign(featureCopy, extracted.copies);
+    let source = item.source;
+    if (item.full.endsWith(path.join('extension', 'ytkit.js'))) {
+        const defaultsLiteral = findBalancedObjectLiteral(source, 'defaults:');
+        if (defaultsLiteral) source = source.replace(defaultsLiteral, '');
+    }
+    runtimeChunks.push(stripJsComments(source));
+}
+const runtimeCorpus = runtimeChunks.join('\n');
+const inertKeys = SETTINGS_SCHEMA
+    .filter((entry) => !entry.internal)
+    .map((entry) => entry.key)
+    .filter((key) => !featureCopy[`feature_${key}_name`] && !runtimeCorpus.includes(key));
+if (inertKeys.length) {
+    issues.push('user-facing schema key(s) have no runtime consumer or registered feature: ' + inertKeys.join(', '));
+}
+
+// 8. The in-page settings panel models hidden-element sub-toggles as compact
+// array literals whose `_arrayValue` is each row's first item. Compare every
+// such runtime token with the popup editor vocabulary. This is intentionally
+// one-way: `knownValues` may include selector-backed values that do not have an
+// in-page card, but no in-page card may become invisible/unsettable in popup.
+const ytkitSource = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'ytkit.js'), 'utf8');
+for (const entry of SETTINGS_SCHEMA.filter((candidate) => Array.isArray(candidate.knownValues))) {
+    const marker = `_arrayKey:'${entry.key}'`;
+    const markerAt = ytkitSource.indexOf(marker);
+    if (markerAt === -1) {
+        issues.push(`knownValues entry "${entry.key}" has no in-page _arrayKey sub-toggle model`);
+        continue;
+    }
+    const spreadAt = ytkitSource.lastIndexOf('...([', markerAt);
+    const mapAt = spreadAt === -1 ? -1 : ytkitSource.indexOf('].map(', spreadAt);
+    if (spreadAt === -1 || mapAt === -1 || mapAt > markerAt) {
+        issues.push(`could not parse in-page token vocabulary for "${entry.key}"`);
+        continue;
+    }
+    let rows;
+    try {
+        // Node-only validation of a repo-owned literal; shipped code never
+        // evaluates strings. The literal contains only [value,name,desc] rows.
+        rows = Function('"use strict"; return (' + ytkitSource.slice(spreadAt + 4, mapAt + 1) + ');')();
+    } catch (error) {
+        issues.push(`could not evaluate in-page token vocabulary for "${entry.key}": ${error.message}`);
+        continue;
+    }
+    const known = new Set(entry.knownValues);
+    const missing = rows.map((row) => row?.[0]).filter((token) => typeof token === 'string' && !known.has(token));
+    if (missing.length) {
+        issues.push(`knownValues for "${entry.key}" omit in-page token(s): ${missing.join(', ')}`);
+    }
 }
 
 // Final verdict

@@ -129,6 +129,18 @@ test('legacy v1 import preserves explicit false through the full chain', () => {
     assert.equal(result.autoExpandComments, false);
 });
 
+test('migrateImportedSettings preserves a future schema stamp', () => {
+    const futureVersion = SETTINGS_VERSION_FALLBACK + 7;
+    const result = migrateImportedSettings(
+        { _settingsVersion: futureVersion, sponsorBlock: false },
+        SETTINGS_VERSION_FALLBACK,
+        'future-import'
+    );
+    assert.equal(result._settingsVersion, futureVersion,
+        'older popup code must not lower the stamp and re-arm migrations');
+    assert.equal(result.sponsorBlock, false);
+});
+
 test('popup importer threads the backup settingsSchemaVersion into the migration chain', () => {
     assert.match(popupSource,
         /backupSchemaVersion:\s*migrated\.settingsSchemaVersion/,
@@ -136,6 +148,12 @@ test('popup importer threads the backup settingsSchemaVersion into the migration
     assert.match(popupSource,
         /function mergeImportedSettingsWithDefaults\(settings, defaults, settingsVersion, source, options = \{\}\)/,
         'mergeImportedSettingsWithDefaults must accept and forward the options bag');
+    assert.match(popupSource,
+        /_settingsVersion:\s*Math\.max\(migratedVersion, normalizeSettingsVersion\(settingsVersion\)\)/,
+        'the final defaults merge must retain the highest schema stamp');
+    assert.match(popupSource,
+        /validateSettingsSnapshot\(settings, \{ dropUnknown: true \}\)/,
+        'backup import must drop/report unknown keys instead of rejecting every known value');
 });
 
 test('popup import stages a session undo snapshot before applying backup data', () => {
@@ -417,11 +435,36 @@ test('inline number and string editors clamp through policy clampSettingValue be
     // Number editor reflects the clamped value back into the input.
     const numStart = popupSource.indexOf("input.type = 'number'");
     assert.ok(numStart > -1, 'number inline editor must exist');
-    const numBlock = popupSource.slice(numStart, numStart + 1600);
+    const numBlock = popupSource.slice(numStart, numStart + 2400);
     assert.match(numBlock, /clampSettingValue\(next, entry\)/,
         'number editor must clamp the parsed value against the schema entry');
     assert.match(numBlock, /input\.value = String\(next\)/,
         'number editor must reflect the clamped value back into the input');
+    assert.match(numBlock, /raw === '' \? entry\.defaultValue : Number\(raw\)/,
+        'clearing a number editor must reset to its schema default');
+});
+
+test('schema overview editors use their visible labels as accessible names', () => {
+    for (const selector of [
+        "input.className = 'so-key-number'",
+        "input.className = looksHex ? 'so-key-color' : 'so-key-text'",
+        "grid.className = 'so-key-checks'",
+        "textarea.className = 'so-key-json'"
+    ]) {
+        const start = popupSource.indexOf(selector);
+        assert.ok(start > -1, `editor block must exist: ${selector}`);
+        assert.match(popupSource.slice(start, start + 600),
+            /setAttribute\('aria-label', label\.textContent\)/,
+            `editor ${selector} must match its visible label`);
+    }
+});
+
+test('late capability results do not rebuild a focused schema editor', () => {
+    const start = popupSource.indexOf('void ensureCapabilityMap().then((caps) =>');
+    assert.ok(start > -1, 'capability bootstrap path must exist');
+    const block = popupSource.slice(start, start + 700);
+    assert.match(block, /!schemaOverviewList\.contains\(document\.activeElement\)/,
+        'capability re-render must preserve a focused inline editor');
 });
 
 // ── 5. Quick toggles resolve schema defaults for never-written keys ──

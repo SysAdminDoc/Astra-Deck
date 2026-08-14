@@ -251,7 +251,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.60.1';
+    const YTKIT_VERSION = '4.61.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {

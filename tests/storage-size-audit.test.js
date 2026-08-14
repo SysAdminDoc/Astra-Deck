@@ -127,7 +127,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // fixture.
     // Removing the shipped public Cobalt URL trims 32 bytes from the default
     // settings payload while leaving the opt-in field available.
-    assert.equal(assessment.totalBytes, 185935);
+    // Retiring the unused lowPowerProfileBackup schema placeholder trims a
+    // further 29 bytes; the real backup remains in its dedicated local key.
+    assert.equal(assessment.totalBytes, 185906);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
