@@ -240,18 +240,6 @@ duplicated here.
 
 Baseline at audit time (clean worktree at origin/main after two in-session fixes — `7f40b94e` unbroke a backtick-in-CSS-comment parse error in `extension/ytkit.js:2113`, `9c29ae6f` ratcheted the UI-copy baseline for the popover CSS edit): `npm test` **1688/1688 pass**. `npm run check` now runs the full chain and fails **only** at `check:startup` (`firstFeaturePaintMs` median 117.70 ms > 102.40 ms budget, `fixture mode: synthetic-fallback` because the gitignored `mhtml/*` captures are absent on a clean clone) — this is the already-tracked startup-reproducibility item, not a new regression. `audit:deps` reports the tracked `image-size@2.0.2` dev-only exception. All other gates green. Method: six parallel trace-and-verify sweeps (background trust boundaries, popup/sidepanel UX+a11y, download/player slice, userscript drift + dead code, vacuous tests/gates, settings wiring) plus rendered smoke captures (settings-overlay in dark/light/RTL/tablet/mobile, headless-a11y in normal/200%-reflow/forced-colors) reviewed by hand. Findings below were each re-verified at file:line against the working tree before logging; suspicions the agents cleared are omitted.
 
-### P1
-
-- [ ] P1 — `autoSubtitleLang` is a dead user-facing setting in both vehicles
-  Category: correctness
-  Where: `extension/core/settings-schema.js:463` (declared `internal: false`, `immediateApply: true`, default `"en"`); defaults-only echoes at `extension/default-settings.json:248`, `extension/ytkit.js:3721`, `YTKit.user.js:2868`, `YTKit-core.user.js:3433`.
-  Problem: the key is never read by any runtime code — exhaustive cross-ref of the whole 468-key schema against `ytkit.js`, `features/**`, `core/**`, `background.js`, `popup.js`, and both userscript files found zero read sites. The `autoSubtitles` feature (`ytkit.js:27874-27911`) only clicks the CC button; it never selects a caption language. Because the popup schema-overview renders an editable text input for every non-internal string entry (`popup.js:3658-3723`), a user can set "Auto subtitle lang" to `es`, it persists, and nothing happens — the worst dead-toggle class (looks wired, silently inert). The real language knob is `dualSubtitleLanguage` (`settings-schema.js:812`), the only settings key `features/subtitles/index.js` reads.
-  Evidence: two independent sweeps reached the same conclusion; grep for `autoSubtitleLang` outside schema/defaults/fixtures returns nothing.
-  Fix: either wire the language into the subtitle feature (select the matching caption track via the player API on enable) or mark the entry `internal: true` and add it to `RETIRED_SETTING_KEYS` with a migration.
-  Acceptance: either setting the value changes the selected caption track on a multi-caption video, or the key no longer renders in the popup and a migration drops it; a test asserts the chosen behavior.
-  Confidence: Verified
-  Effort: M
-
 ### P2
 
 - [ ] P2 — Userscript sends the full YouTube cookie jar (incl. httpOnly session cookies) to any local port squatter
@@ -284,26 +272,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Confidence: Likely (browser-behavior dependent, fail-closed)
   Effort: M
 
-- [ ] P2 — Popup backup import lowers a future `settingsSchemaVersion` stamp that `load()` deliberately preserves
-  Category: correctness
-  Where: `extension/popup.js:799-806` (`migrateImportedSettings`), contradicting the invariant at `extension/ytkit.js:4396-4403`.
-  Problem: when an imported backup's `settingsSchemaVersion` is newer than the running build, values are kept but `migrated._settingsVersion = targetVersion` writes the **lower** running version. `load()` explicitly guards against this ("Preserve a stamp written by a NEWER build… otherwise would lower the stamp and re-arm forward migrations") using `Math.max`; the import path defeats it. Reachable when a future build bumps the schema version, a second machine / downgrade imports that backup, the stamp drops, and the next upgrade re-runs forward migrations over already-future-shaped data. Today's migrations are mostly `undefined`-guarded so corruption is latent, but the guard exists precisely for this.
-  Evidence: both code paths read; the `load()` invariant is documented and enforced.
-  Fix: mirror `load()` — store `Math.max(startingVersion, targetVersion)` in the future-version branch.
-  Acceptance: importing a backup stamped with a higher schema version leaves the stored `_settingsVersion` at the higher value; a test covers the future-version import.
-  Confidence: Verified (mechanism); corruption impact Likely
-  Effort: S
-
-- [ ] P2 — `knownValues` vocabularies are out of sync with the runtime/in-page token set (cross-surface state misrepresentation)
-  Category: correctness
-  Where: `extension/core/settings-schema.js:227` (`hiddenPlayerControls`, missing `ytLogo` and `settings`) and `:220` (`hiddenChatElements`, missing `reactions`); popup grid at `popup.js:3724-3766`; runtime handlers at `ytkit.js:17529-17550` and the `reactions` chat entry near `ytkit.js:16511`/`:16552`.
-  Problem: the popup checkbox grid renders only `knownValues`. A user who hides the native brand button, the settings gear, or chat reactions in-page (all offered as in-panel sub-toggles with live selectors) then opens the popup and sees no checked box for that state — the tokens are carried silently at the array tail and can't be inspected or unset from the popup. Not data loss (the grid preserves unknown tokens, `popup.js:3765-3766`), but the popup and the in-page panel disagree about what is hidden. The parity gate didn't catch it because it only requires `knownValues ⊇ default`.
-  Evidence: verified both directions (the reverse case `hiddenActionButtons` omitting `dislike` is fine because `action.dislike` exists in `selector-packs.json`).
-  Fix: add `ytLogo`, `settings` to `hiddenPlayerControls.knownValues` and `reactions` to `hiddenChatElements.knownValues`; consider a gate that asserts `knownValues` equals the union of default + in-page sub-toggle tokens.
-  Acceptance: hiding those elements in-page shows the corresponding checked boxes in the popup grid; the vocabularies match the runtime selector maps.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — Content-script storage preload failure degrades to silent session-long defaults with no signal
   Category: correctness
   Where: `extension/core/storage.js:245-254`; consumed by `settingsManager.load()` at `ytkit.js:4378+`.
@@ -312,16 +280,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Fix: surface the preload failure through the existing `_errors` toast/diagnostic-ring machinery, the same way flush failures already are.
   Acceptance: a simulated preload rejection produces a visible degraded-state indication in-page; a test asserts the error is recorded.
   Confidence: path Verified; trigger Needs-repro
-  Effort: S
-
-- [ ] P2 — Backup import rejects the entire file on a single unknown key
-  Category: ux / reliability
-  Where: `extension/popup.js:861-869` → `core/policy-profile.js:243+` (`validateSettingsForBackupImport`, no `allowUnknown`).
-  Problem: any unknown key makes `validateSettingsSnapshot` throw and aborts the whole import ("Settings import rejected: unknown setting …"). A backup from a future build that added even one setting cannot be restored after a downgrade — all-or-nothing, no partial import, no per-key skip report (the sync path resolves per-key). Malformed JSON is handled well (friendly message) and the apply path is snapshot+rollback protected, so this is specifically the unknown-key wholesale rejection.
-  Evidence: traced the validator; contrast with the per-key sync path.
-  Fix: pass `allowUnknown: true` for backup import (unknown keys already survive round-trips elsewhere), or drop-and-report unknown keys instead of rejecting the file.
-  Acceptance: a backup containing one unknown key imports the known keys and reports the skipped one; a test covers it.
-  Confidence: Verified
   Effort: S
 
 - [ ] P2 — Onboarding preset completion is silent; the profile-confirmation toasts are dead code
@@ -466,16 +424,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — Number/color/JSON schema editors expose raw camelCase keys as their accessible name
-  Category: a11y
-  Where: `extension/popup.js:3622` (number), `:3671` (string/color), `:3737` (checkbox group), `:3792` (JSON textarea) — all set `aria-label` to `entry.key`.
-  Problem: the visible row label is the humanized/override label, but the accessible name is the raw storage key (e.g. `downloadCobaltInstance`). Voice-control users cannot target "Self-hosted Cobalt origin" by its visible name, and SR users hear camelCase. This is the exact accessible-name/visible-label mismatch the code already fixed for boolean switches at `:3585-3588`.
-  Evidence: read all four editor builders.
-  Fix: reuse the humanized `label.textContent` computed at `:3487-3491` for the `aria-label`.
-  Acceptance: each editor's accessible name contains its visible label; the popup a11y smoke asserts name/label agreement.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Two side-panel state strings are injected via CSS `content:` and can never be localized
   Category: i18n / a11y
   Where: `extension/sidepanel.css:1129-1141` (`[data-saving="true"]::after { content:"Saving" }`, `[data-error="true"]::after { content:"Try again" }`); shared by `sidebar.html`.
@@ -484,36 +432,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Fix: render the state text from `sidepanel.js` with `t()` into a real element, drop the `::after` content.
   Acceptance: switching locale localizes the saving/retry state text; a locale render check covers it.
   Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Number-editor "clear to reset" affordance silently keeps the old value
-  Category: correctness / ux
-  Where: `extension/popup.js:3616-3633` (`persist()` early-returns on empty input).
-  Problem: the code comment claims "Schema default fills the placeholder so the user can recover by clearing and re-typing", but committing an empty field early-returns; after clear+blur the field shows the default (as placeholder) while storage still holds the old value, which reappears on reopen. The affordance actively misleads (the real reset is the per-key ↺ button).
-  Evidence: read the persist path end to end.
-  Fix: treat commit-on-empty as reset-to-default, or restore the stored value into the field on blur.
-  Acceptance: clearing a number field and blurring either resets to default or visibly restores the stored value; a test covers it.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — `uiStyle` runtime fallback disagrees with the schema default and is reachable
-  Category: correctness
-  Where: `extension/ytkit.js:6985` (`appState.settings.uiStyle || 'rounded'`) vs. schema default `"square"` (`settings-schema.js:121`).
-  Problem: normally latent on a dense post-`load()` bag, but the popup string editor deliberately persists empty strings and `uiStyle` has no `enum`, so `''` writes cleanly and `'' || 'rounded'` flips the UI to rounded while the schema diff/placeholder say square. This was the only true `||`/`??` fallback mismatch in the sampled set (all others matched schema).
-  Evidence: traced the empty-string persist path into the fallback.
-  Fix: `|| 'square'`, or treat `''` as `'square'` explicitly.
-  Acceptance: clearing `uiStyle` yields the square style; a test asserts the fallback equals the schema default.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Capability-probe re-render lacks the focused-editor guard the storage-change path has
-  Category: ux
-  Where: `extension/popup.js:6195-6199` (`ensureCapabilityMap()` → unconditional `renderSchemaOverview()`) vs. the guard at `:6294-6296`.
-  Problem: when the capability probe resolves (up to ~1.5 s after boot), it rebuilds the schema overview unconditionally, while the storage-change path deliberately skips the rebuild when focus is inside the overview ("never blow away a focused inline editor mid-edit"). A user who opens the overview and starts typing within the probe window loses uncommitted input.
-  Evidence: compared the two re-render call sites.
-  Fix: reuse the same `contains(document.activeElement)` guard before the probe-driven rebuild.
-  Acceptance: typing in an inline editor during the probe window is not discarded; timing test or manual repro.
-  Confidence: Verified (paths); timing-dependent
   Effort: S
 
 - [ ] P3 — Pre-NF21 upgrade guard stamps the version but still shows the "What's New" banner it exists to suppress
@@ -598,10 +516,10 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
 
 - [ ] P3 — Confirmed dead code and inert scaffolding (delete or wire)
   Category: maintainability
-  Where: (a) `extension/features/settings-panel/index.js` — the `_panelCleanups` registry has zero `.push(...)` sites anywhere (`ytkit.js:1719`+`:48118-48125`, `settings-panel/index.js:82`+`:254-261` only drain it), and the same file attaches six anonymous `document`-level listeners (`:3169,:3174,:3201,:3390,:3542,:3786`) with no `removeEventListener` and no `destroy()` export; (b) three dead `YTKitCore` aliases — `core/data-flow.js:527` `findDataFlowCoverageGaps`, `core/settings-sync.js:909` `settingsSync`, `core/browser-api.js:121` `resolveBrowserNamespace` (each shadowed by the live export the callers actually use); (c) two dead regex alternates `uiStyleManager`/`colorThemeManager` in `core/settings-visual-system.js:47` (they are element ids, not schema keys, so the branch never fires); (d) dead schema key `lowPowerProfileBackup` (`settings-schema.js:746`; the real snapshot lives under the top-level `ytkit-low-power-backup` key, `ytkit.js:46665`); (e) unused CSS `.sp-storage-card` (`sidepanel.css:1106`, no creation site).
+  Where: (a) `extension/features/settings-panel/index.js` — the `_panelCleanups` registry has zero `.push(...)` sites anywhere (`ytkit.js:1719`+`:48118-48125`, `settings-panel/index.js:82`+`:254-261` only drain it), and the same file attaches six anonymous `document`-level listeners (`:3169,:3174,:3201,:3390,:3542,:3786`) with no `removeEventListener` and no `destroy()` export; (b) three dead `YTKitCore` aliases — `core/data-flow.js:527` `findDataFlowCoverageGaps`, `core/settings-sync.js:909` `settingsSync`, `core/browser-api.js:121` `resolveBrowserNamespace` (each shadowed by the live export the callers actually use); (c) two dead regex alternates `uiStyleManager`/`colorThemeManager` in `core/settings-visual-system.js:47` (they are element ids, not schema keys, so the branch never fires); (d) unused CSS `.sp-storage-card` (`sidepanel.css:1106`, no creation site).
   Problem: inert code that misleads maintainers — the `_panelCleanups` registry promises centralized teardown that does nothing (no leak today, but the next panel-widget author will trust it and leak), the settings panel cannot be torn down, and the dead keys/aliases/CSS invite false assumptions.
   Evidence: grep-verified zero consumers for each; the `_panelCleanups` drains iterate an empty array.
-  Fix: delete the dead aliases, regex alternates, `lowPowerProfileBackup` key (with a retirement migration), and `.sp-storage-card`; either wire real registrations into `_panelCleanups` and give the settings panel a `destroy()` (named handlers) or remove the empty registry + its MutationObserver.
+  Fix: delete the dead aliases, regex alternates, and `.sp-storage-card`; either wire real registrations into `_panelCleanups` and give the settings panel a `destroy()` (named handlers) or remove the empty registry + its MutationObserver.
   Acceptance: each listed symbol is either removed or given a live consumer; `npm test` + `npm run check` stay green.
   Confidence: Verified
   Effort: M
