@@ -1634,6 +1634,11 @@
             { value: '480',  label: '480p' }
         ];
 
+        // Gutter kept between the download panel and the viewport edges, and
+        // the floor the panel is never shrunk below when space runs out.
+        const MIN_VIEWPORT_GAP_PX = 8;
+        const MIN_POPUP_HEIGHT_PX = 200;
+
         let _dlPopup = null;
         let _dlPopupCleanup = null;
         let _dlPopupReturnFocus = null;
@@ -2322,6 +2327,38 @@
                 popup.style.translate = 'none';
                 popup.style.left = left + 'px';
                 popup.style.top = top + 'px';
+            } else if (anchorEl) {
+                // CSS anchoring pins the panel to the trigger but does not
+                // keep it inside the viewport on its own: position-try only
+                // swaps which side of the trigger the panel sits on, it never
+                // shrinks the panel and it does not act on the inline axis at
+                // all. Two clamps close that gap. Both are measured after the
+                // anchor has resolved and neither rewrites an inset, so
+                // anchor() and the flip-block fallback stay intact.
+                const triggerRect = anchorEl.getBoundingClientRect();
+
+                // Block axis: cap the panel to the taller of the two sides so
+                // one of them can actually hold it. Without this a panel
+                // taller than the space above a mid-screen trigger runs off
+                // the top of the viewport, taking the tabs and close button
+                // with it. The body scrolls, so nothing becomes unreachable.
+                // Two gutters each: one between panel and trigger, one
+                // between panel and the viewport edge.
+                const spaceAbove = triggerRect.top - MIN_VIEWPORT_GAP_PX * 2;
+                const spaceBelow = window.innerHeight - triggerRect.bottom - MIN_VIEWPORT_GAP_PX * 2;
+                const heightCap = Math.max(MIN_POPUP_HEIGHT_PX, spaceAbove, spaceBelow);
+                if (popup.offsetHeight > heightCap) popup.style.maxHeight = heightCap + 'px';
+
+                // Inline axis: the panel is centred on the trigger, so a
+                // trigger near a viewport edge overhangs it. Nudge it back
+                // with a margin shift rather than an inset rewrite.
+                const rect = popup.getBoundingClientRect();
+                let shift = 0;
+                if (rect.right > window.innerWidth - MIN_VIEWPORT_GAP_PX) {
+                    shift = (window.innerWidth - MIN_VIEWPORT_GAP_PX) - rect.right;
+                }
+                if (rect.left + shift < MIN_VIEWPORT_GAP_PX) shift = MIN_VIEWPORT_GAP_PX - rect.left;
+                if (shift) popup.style.marginInlineStart = shift + 'px';
             }
 
             if (!_usePopover) {
