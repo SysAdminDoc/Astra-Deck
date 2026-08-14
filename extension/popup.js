@@ -3467,6 +3467,8 @@ function refocusSchemaOverviewKey(entry) {
     const control = schemaOverviewList.querySelector(
         `.so-key-row[data-key="${esc}"] button[data-key="${esc}"], `
         + `.so-key-row[data-key="${esc}"] input[data-key="${esc}"], `
+        + `.so-key-row[data-key="${esc}"] select[data-key="${esc}"], `
+        + `.so-key-row[data-key="${esc}"] textarea[data-key="${esc}"], `
         + `.so-key-row[data-key="${esc}"] .so-key-reset-btn`);
     if (control) { control.focus(); return; }
     refocusSchemaOverviewCategory(entry.category);
@@ -3619,6 +3621,40 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             }
         });
         row.appendChild(btn);
+    } else if (Array.isArray(entry.enum) && entry.enum.length > 0) {
+        // Finite settings are choices, not free-form text/numbers. Rendering a
+        // select keeps the popup vocabulary identical to the runtime control
+        // and makes it impossible to save a value the feature will ignore.
+        const select = document.createElement('select');
+        select.className = 'so-key-select';
+        select.dataset.key = entry.key;
+        select.setAttribute('aria-label', label.textContent);
+        const effective = resolveEffectiveSettingValue(entry, settings);
+        for (const value of entry.enum) {
+            const option = document.createElement('option');
+            option.value = String(value);
+            option.textContent = String(value) || '—';
+            option.selected = value === effective;
+            select.appendChild(option);
+        }
+        select.addEventListener('change', async () => {
+            const previous = resolveEffectiveSettingValue(entry, popupState.settings);
+            const next = entry.type === 'number' ? Number(select.value) : select.value;
+            if (previous === next) return;
+            select.disabled = true;
+            try {
+                await writeSetting(entry.key, next);
+                renderSchemaOverview();
+                refocusSchemaOverviewKey(entry);
+            } catch (err) {
+                console.warn('[Astra Deck popup] schema-overview enum persist failed:', err);
+                select.value = String(previous);
+                showStatus(formatSettingWriteError(entry.key, err), 'error', 5200);
+            } finally {
+                select.disabled = false;
+            }
+        });
+        row.appendChild(select);
     } else if (entry.type === 'number') {
         // v4.26.0: number-type inline editor. <input type="number">
         // accepts any numeric value the user enters and persists on

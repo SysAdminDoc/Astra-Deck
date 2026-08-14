@@ -447,6 +447,7 @@ test('inline number and string editors clamp through policy clampSettingValue be
 test('schema overview editors use their visible labels as accessible names', () => {
     for (const selector of [
         "input.className = 'so-key-number'",
+        "select.className = 'so-key-select'",
         "input.className = looksHex ? 'so-key-color' : 'so-key-text'",
         "grid.className = 'so-key-checks'",
         "textarea.className = 'so-key-json'"
@@ -457,6 +458,22 @@ test('schema overview editors use their visible labels as accessible names', () 
             /setAttribute\('aria-label', label\.textContent\)/,
             `editor ${selector} must match its visible label`);
     }
+});
+
+test('finite settings render a constrained select and preserve typed values and focus', () => {
+    const start = popupSource.indexOf("select.className = 'so-key-select'");
+    assert.ok(start > -1, 'enum select editor must exist');
+    const block = popupSource.slice(start, start + 1800);
+    assert.match(block, /for \(const value of entry\.enum\)/,
+        'the select vocabulary must come from the canonical schema enum');
+    assert.match(block, /entry\.type === 'number' \? Number\(select\.value\) : select\.value/,
+        'number enums must remain numbers instead of being persisted as strings');
+    assert.match(block, /await writeSetting\(entry\.key, next\)/,
+        'enum changes must use the serialized settings write path');
+    assert.match(block, /refocusSchemaOverviewKey\(entry\)/,
+        'the rebuilt enum row must restore keyboard focus');
+    assert.match(popupSource, /select\[data-key="\$\{esc\}"\]/,
+        'the shared refocus helper must discover enum select controls');
 });
 
 test('late capability results do not rebuild a focused schema editor', () => {

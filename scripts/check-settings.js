@@ -116,6 +116,10 @@ for (let i = 0; i < SETTINGS_SCHEMA.length; i++) {
             if (!e.enum.includes(e.defaultValue)) issues.push(ctx + ' enum must include the defaultValue');
         }
     }
+    if (!e.internal && e.type === 'number' && e.enum === undefined
+        && typeof e.min !== 'number' && typeof e.max !== 'number') {
+        issues.push(ctx + ' user-facing number settings require a schema bound or enum');
+    }
 
     // v4.47.0 NF17: optional `requires:` field declares the runtime
     // capabilities the feature strictly needs. Validate shape +
@@ -274,6 +278,17 @@ if (inertKeys.length) {
 // one-way: `knownValues` may include selector-backed values that do not have an
 // in-page card, but no in-page card may become invisible/unsettable in popup.
 const ytkitSource = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'ytkit.js'), 'utf8');
+const runtimeArrayKeys = [...new Set(
+    [...ytkitSource.matchAll(/_arrayKey:'([^']+)'/g)].map((match) => match[1])
+)];
+for (const key of runtimeArrayKeys) {
+    const entry = SETTINGS_SCHEMA.find((candidate) => candidate.key === key);
+    if (!entry) {
+        issues.push(`in-page _arrayKey "${key}" has no schema entry`);
+    } else if (!Array.isArray(entry.knownValues)) {
+        issues.push(`in-page _arrayKey "${key}" has no schema knownValues vocabulary`);
+    }
+}
 for (const entry of SETTINGS_SCHEMA.filter((candidate) => Array.isArray(candidate.knownValues))) {
     const marker = `_arrayKey:'${entry.key}'`;
     const markerAt = ytkitSource.indexOf(marker);

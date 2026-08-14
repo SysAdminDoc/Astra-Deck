@@ -8497,15 +8497,16 @@ test('v4.27.0 color input coerces #RGB short-hex into #RRGGBB before assigning t
         'string branch must mirror short-hex digits when feeding input[type=color]');
 });
 
-test('v4.27.0 popup.css declares both editor variants without pill backdrops', () => {
+test('popup.css declares text, enum, and color editor variants without pill backdrops', () => {
     const css = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
     );
-    assert.match(css, /\.so-key-text \{/);
+    assert.match(css, /\.so-key-text(?:\s*,|\s*\{)/);
+    assert.match(css, /\.so-key-select/);
     assert.match(css, /\.so-key-color \{/);
     // Both surfaces use 6 px radius — same house-style constraint as
     // the v4.26.0 number input. No half-height stadium aesthetic.
-    const textBlock = css.slice(css.indexOf('.so-key-text {'));
+    const textBlock = css.slice(css.indexOf('.so-key-text'));
     const textRadius = textBlock.match(/border-radius:\s*(\d+)px/);
     assert.ok(textRadius && parseInt(textRadius[1], 10) <= 8);
     const colourBlock = css.slice(css.indexOf('.so-key-color {'));

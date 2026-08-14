@@ -130,6 +130,21 @@ function parseArgs(argv) {
     return options;
 }
 
+async function removeTreeWithRetry(targetPath) {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+        try {
+            fs.rmSync(targetPath, { recursive: true, force: true });
+            return;
+        } catch (error) {
+            const retryable = error?.code === 'EPERM'
+                || error?.code === 'EACCES'
+                || error?.code === 'ENOTEMPTY';
+            if (!retryable || attempt === 7) throw error;
+            await sleep(250 * (attempt + 1));
+        }
+    }
+}
+
 function injectChromeStub(stageDir, sourceName, targetName) {
     const source = fs.readFileSync(path.join(stageDir, sourceName), 'utf8');
     const patched = source.replace(
@@ -260,7 +275,48 @@ function collectFocusableExpression(selector) {
             document: {
                 clientWidth: document.documentElement.clientWidth,
                 scrollWidth: document.documentElement.scrollWidth
-            }
+            },
+            scrollContainers: [root, ...root.querySelectorAll('*')]
+                .filter((element) => {
+                    const style = getComputedStyle(element);
+                    const rect = element.getBoundingClientRect();
+                    return /^(auto|scroll)$/.test(style.overflowY)
+                        && rect.width > 0 && rect.height > 0;
+                })
+                .map((element) => ({
+                    selector: element.id
+                        ? '#' + element.id
+                        : element.classList.length
+                            ? '.' + Array.from(element.classList).join('.')
+                            : element.tagName.toLowerCase(),
+                    clientWidth: element.clientWidth,
+                    scrollWidth: element.scrollWidth,
+                    overflowers: (() => {
+                        const containerRect = element.getBoundingClientRect();
+                        return Array.from(element.querySelectorAll('*'))
+                            .map((child) => {
+                                const rect = child.getBoundingClientRect();
+                                return {
+                                    selector: child.id
+                                        ? '#' + child.id
+                                        : child.classList.length
+                                            ? '.' + Array.from(child.classList).join('.')
+                                            : child.tagName.toLowerCase(),
+                                    left: Math.round(rect.left),
+                                    right: Math.round(rect.right),
+                                    width: Math.round(rect.width),
+                                    excess: Math.round(Math.max(
+                                        0,
+                                        containerRect.left - rect.left,
+                                        rect.right - containerRect.right
+                                    ))
+                                };
+                            })
+                            .filter((entry) => entry.width > 0 && entry.excess > 1)
+                            .sort((left, right) => right.excess - left.excess)
+                            .slice(0, 5);
+                    })()
+                }))
         };
     })()`;
 }
@@ -325,6 +381,16 @@ async function auditKeyboardPath(client, surface, stateName) {
         throw new Error(
             `${surface.name}/${stateName}: document horizontal overflow `
             + `${inventory.document.scrollWidth} > ${inventory.document.clientWidth}.`
+        );
+    }
+    const overflowingScroller = inventory.scrollContainers.find(
+        (entry) => entry.scrollWidth > entry.clientWidth + 1
+    );
+    if (overflowingScroller) {
+        throw new Error(
+            `${surface.name}/${stateName}: nested horizontal overflow in ${overflowingScroller.selector} `
+            + `${overflowingScroller.scrollWidth} > ${overflowingScroller.clientWidth}; `
+            + `overflowers=${JSON.stringify(overflowingScroller.overflowers)}.`
         );
     }
 
@@ -657,6 +723,64 @@ async function auditPopupSettingsDiff(client, surface, stateName) {
     return 1;
 }
 
+async function auditPopupFiniteSelect(client, surface, stateName) {
+    if (surface.name !== 'popup') return 0;
+    const staged = await client.evaluate(`(async () => {
+        const overview = document.getElementById('schema-overview');
+        const diffToggle = document.getElementById('schema-overview-diff-toggle');
+        if (!overview || !diffToggle) return { error: 'settings overview controls are missing' };
+        overview.open = true;
+        if (diffToggle.getAttribute('aria-pressed') === 'true') diffToggle.click();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        const category = document.querySelector('.so-row-head[data-category="quality-codec"]');
+        if (!category) return { error: 'quality-codec category is missing' };
+        if (category.getAttribute('aria-expanded') !== 'true') category.click();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        const select = document.querySelector('select.so-key-select[data-key="codecSelector"]');
+        if (!select) return { error: 'codecSelector did not render as a select' };
+        const options = Array.from(select.options).map((option) => option.value);
+        select.value = 'h264';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        return { options, tagName: select.tagName, type: typeof select.value };
+    })()`);
+    if (staged.error) throw new Error(`${surface.name}/${stateName}: ${staged.error}`);
+    const failures = [];
+    if (staged.tagName !== 'SELECT') failures.push(`enum control is ${staged.tagName || 'missing'}`);
+    if (staged.type !== 'string') failures.push(`enum DOM value type is ${staged.type}`);
+    for (const value of ['auto', 'efficient', 'h264', 'vp9', 'av1']) {
+        if (!staged.options.includes(value)) failures.push(`enum option ${value} is missing`);
+    }
+    if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+
+    await waitFor(
+        () => client.evaluate(`globalThis.__ytkitSmoke?.readSettings?.().codecSelector === 'h264'`),
+        5000,
+        `${surface.name}/${stateName} finite-select persistence`
+    );
+    await client.evaluate(`document.querySelector('.so-key-row[data-key="codecSelector"]')?.scrollIntoView({ block: 'center' })`);
+    await sleep(120);
+    const rendered = await client.evaluate(`(() => {
+        const select = document.querySelector('select.so-key-select[data-key="codecSelector"]');
+        return {
+            value: select?.value || '',
+            focused: document.activeElement === select,
+            stored: globalThis.__ytkitSmoke?.readSettings?.().codecSelector
+        };
+    })()`);
+    if (rendered.value !== 'h264') failures.push(`rendered enum value is ${JSON.stringify(rendered.value)}`);
+    if (rendered.stored !== 'h264') failures.push(`stored enum value is ${JSON.stringify(rendered.stored)}`);
+    if (!rendered.focused) failures.push('rebuilt enum control did not regain focus');
+    if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+
+    const image = await client.send('Page.captureScreenshot', {
+        format: 'png',
+        fromSurface: true,
+        captureBeyondViewport: false,
+    });
+    fs.writeFileSync(path.join(OUT_DIR, 'popup-settings-select.png'), Buffer.from(image.data, 'base64'));
+    return 8;
+}
+
 async function auditPopupFilterGrant(client, surface, stateName) {
     if (surface.name !== 'popup') return 0;
     await waitFor(
@@ -742,10 +866,13 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             const settingsDiffChecks = mode === 'normal' && theme === 'dark'
                 ? await auditPopupSettingsDiff(client, surface, `${theme}/${mode}`)
                 : 0;
+            const finiteSelectChecks = mode === 'normal' && theme === 'dark'
+                ? await auditPopupFiniteSelect(client, surface, `${theme}/${mode}`)
+                : 0;
             const filterGrantChecks = mode === 'normal' && theme === 'dark'
                 ? await auditPopupFilterGrant(client, surface, `${theme}/${mode}`)
                 : 0;
-            reports.push({ controls, filterGrantChecks, focusTrapChecks, mode, settingsDiffChecks, theme, viewport });
+            reports.push({ controls, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -850,6 +977,7 @@ async function main(argv = process.argv.slice(2)) {
                 + `${total} keyboard focus visits, `
                 + `${reports.reduce((sum, report) => sum + (report.focusTrapChecks || 0), 0)} focus-trap assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.settingsDiffChecks || 0), 0)} settings-diff assertions, `
+                + `${reports.reduce((sum, report) => sum + (report.finiteSelectChecks || 0), 0)} finite-select assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.filterGrantChecks || 0), 0)} filter-grant assertions, `
                 + 'no obscuring/overflow failures'
             );
@@ -874,9 +1002,11 @@ async function main(argv = process.argv.slice(2)) {
             } else {
                 browser.kill('SIGKILL');
             }
+            await Promise.race([browserExit, sleep(3000)]);
         }
-        if (!options.keepStage) fs.rmSync(stageDir, { recursive: true, force: true });
-        fs.rmSync(profileDir, { recursive: true, force: true });
+        if (process.platform === 'win32') await sleep(250);
+        if (!options.keepStage) await removeTreeWithRetry(stageDir);
+        await removeTreeWithRetry(profileDir);
     }
 }
 

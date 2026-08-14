@@ -83,6 +83,43 @@ function createSettingsManagerFromSource(source) {
     return { manager, diagnostics };
 }
 
+test('settings persistence baselines stay detached from mutable app state', () => {
+    const { manager } = createSettingsManagerFromSource(ytkitSource);
+    const active = manager._normalizeProfileModel({
+        ...manager.defaults,
+        codecSelector: 'auto',
+        hiddenPlayerControls: ['next']
+    });
+    const baseline = manager._snapshotSettings(active);
+
+    active.codecSelector = 'h264';
+    active.hiddenPlayerControls.push('settings');
+
+    assert.equal(baseline.codecSelector, 'auto',
+        'changing the first scalar setting after load must not mutate the diff baseline');
+    assert.deepEqual(baseline.hiddenPlayerControls, ['next'],
+        'in-place array edits must not mutate the diff baseline');
+    assert.notStrictEqual(baseline.hiddenPlayerControls, active.hiddenPlayerControls,
+        'nested setting values must be deep-cloned');
+
+    const changedKeys = Object.entries(active)
+        .filter(([key, value]) => JSON.stringify(baseline[key]) !== JSON.stringify(value))
+        .map(([key]) => key);
+    assert.ok(changedKeys.includes('codecSelector'));
+    assert.ok(changedKeys.includes('hiddenPlayerControls'));
+
+    assert.match(
+        ytkitSource,
+        /else\s*\{[\s\S]{0,400}_lastSubmittedSettings\s*=\s*this\._snapshotSettings\(merged\)/,
+        'load() must not return the same object it stores as the persistence baseline'
+    );
+    assert.match(
+        ytkitSource,
+        /settingsManager\._lastSubmittedSettings\s*=\s*settingsManager\._snapshotSettings\(resolvedSettings\)/,
+        'external settings reconciliation must also keep a detached baseline'
+    );
+});
+
 // ── item 1: migrations 3/4 must be conditional ──
 
 test('migrations 3 and 4 preserve an explicit user false instead of force-enabling', () => {
