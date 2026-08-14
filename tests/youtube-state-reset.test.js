@@ -170,6 +170,7 @@ test('popup reset uses snapshot-stage-clear ordering and tab-scoped Undo', () =>
     const undoStart = popupSource.indexOf('async function undoYoutubeStateReset()', resetStart);
     assert.ok(resetStart > -1 && undoStart > resetStart);
     const resetBlock = popupSource.slice(resetStart, undoStart);
+    assert.notEqual(resetBlock.indexOf("{ action: 'snapshot' }"), -1, 'anchor: the snapshot call must exist or the ordering is vacuous');
     assert.ok(resetBlock.indexOf("{ action: 'snapshot' }") < resetBlock.indexOf("ext.storage.session, 'set'"));
     assert.ok(resetBlock.indexOf("ext.storage.session, 'set'") < resetBlock.indexOf("{ action: 'clear', snapshot: staged.snapshot }"));
     assert.match(resetBlock, /sendPopupBridgeMessageToTab\(\s*staged\.tabId/);
