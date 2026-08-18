@@ -49,6 +49,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and the request worked only because GitHub sends a permissive CORS header —
   while the Data Flow panel never listed the host at all. It is now catalogued,
   disclosed, and documented in the store permission rationale.
+- Finishing first-run setup now confirms which profile is active, instead of the
+  welcome card silently disappearing. The two confirmation messages already
+  existed and were translated into every language, but nothing could reach them.
+- Popup status text now carries a colour that matches what it says. A rejected
+  filter-list address, a storage-corruption warning, and a failing selector-rules
+  asset all rendered in the same grey as their idle state, so a size nudge and
+  malformed data looked identical. The wording still states the outcome on its
+  own — the colour reinforces it rather than replacing it.
 - Video Hider's safety net now covers scrolling, and can actually undo itself.
   The rule that refuses to hide more than a quarter of a feed only ran on
   navigation, so an over-matching keyword, duration, or predicate rule silently

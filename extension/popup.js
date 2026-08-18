@@ -4435,15 +4435,9 @@ async function dismissWelcomeCard(reason) {
     } catch (err) {
         console.warn('[Astra Deck popup] welcome dismiss persist failed:', err);
     }
-    if (reason === 'profile-store-safe') {
-        showStatus(t('statusWelcomeProfileSafe',
-            'Store-safe profile active. Open Full Settings to explore features.'),
-            'ok', 4200);
-    } else if (reason === 'profile-github-full') {
-        showStatus(t('statusWelcomeProfileFull',
-            'GitHub-Full profile enabled. Astra Downloader and AI providers are now available.'),
-            'ok', 4200);
-    }
+    // No profile-* reason reaches here: the profile step hands over to the
+    // preset step, which fires the confirmation once onboarding completes.
+    void reason;
 }
 
 // Audit pass: serialize welcome-button clicks so a double-tap can't
@@ -4497,6 +4491,22 @@ async function pickWelcomePreset(presetKey) {
         }
         await dismissWelcomeCard(presetKey ? `preset-${presetKey}` : 'preset-skip');
         renderSchemaOverview();
+        // Onboarding used to end in silence: the card simply vanished. The two
+        // profile-confirmation messages existed and were translated into every
+        // locale, but nothing could reach them — the profile step hands over to
+        // this preset step rather than dismissing, and no toast branch matched
+        // a `preset-*` reason. Fire them here, which is the actual moment
+        // onboarding completes and the chosen profile takes effect.
+        // The profile step always writes this key explicitly on both branches,
+        // so it is present by the time onboarding reaches the preset step; the
+        // schema default (false) is the right answer if it somehow is not.
+        const fullProfile = popupState.settings?.githubFullProfile === true;
+        showStatus(fullProfile
+            ? t('statusWelcomeProfileFull',
+                'GitHub-Full profile enabled. Astra Downloader and AI providers are now available.')
+            : t('statusWelcomeProfileSafe',
+                'Store-safe profile active. Open Full Settings to explore features.'),
+        'ok', 4200);
     } catch (err) {
         showStatus(t('statusWelcomePresetFail', 'Could not apply preset') + ': ' + err.message, 'error', 4200);
         document.querySelectorAll('.welcome-preset-btn, .welcome-preset-skip').forEach(b => { b.disabled = false; });
