@@ -982,3 +982,61 @@ test('a denied host-permission prompt is not reported as a failed save', () => {
     assert.doesNotMatch(sidepanel, /t\('panelTitle', 'Settings'\), value: String\(Object\.keys\(settings\)/,
         'the stored-settings stat must not be labelled "Settings" like the schema count');
 });
+
+// ── Onboarding must confirm itself, and state hooks must have a tone ──
+
+test('completing onboarding shows a confirmation instead of the card just vanishing', () => {
+    // Picking a preset flipped a bundle of settings and produced zero
+    // feedback. The two profile-confirmation messages were translated into
+    // every locale but unreachable: the profile step hands over to the preset
+    // step rather than dismissing, so no `profile-*` reason ever arrived.
+    const start = popupSource.indexOf('async function pickWelcomePreset');
+    assert.ok(start > -1, 'pickWelcomePreset must exist');
+    const fn = popupSource.slice(start, popupSource.indexOf('function showWhatsNew', start));
+
+    assert.match(fn, /showStatus\(fullProfile/,
+        'completing onboarding must confirm which profile is active');
+    assert.match(fn, /statusWelcomeProfileFull/, 'the full-profile message must be used');
+    assert.match(fn, /statusWelcomeProfileSafe/, 'the store-safe message must be used');
+    assert.ok(
+        fn.indexOf('await dismissWelcomeCard') < fn.indexOf('showStatus(fullProfile'),
+        'the confirmation must follow the successful write, not precede it'
+    );
+
+    // The unreachable branches are gone rather than left as decoys.
+    const dismiss = popupSource.slice(
+        popupSource.indexOf('async function dismissWelcomeCard'),
+        popupSource.indexOf('let _welcomePickInFlight')
+    );
+    assert.doesNotMatch(dismiss, /reason === 'profile-store-safe'/,
+        'the dead profile-reason branch must be removed');
+});
+
+test('every popup state hook the JS sets has a matching tone rule', () => {
+    // popup.js sets data-state / data-tier on three surfaces to signal
+    // outcomes; none of them had a single CSS rule, so a filter-list refusal,
+    // a storage-corruption banner, and a failed selector asset all rendered in
+    // the same neutral grey as their idle state.
+    const css = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8');
+
+    for (const selector of [
+        '.filter-list-tools__status[data-state="error"]',
+        '.filter-list-tools__status[data-state="success"]',
+        '.filter-list-tools__status[data-state="info"]',
+        '.selector-health-asset[data-state="degraded"]',
+        '.selector-health-asset[data-state="failed"]',
+        '.storage-banner[data-tier="soft"]',
+        '.storage-banner[data-tier="corruption"]',
+    ]) {
+        assert.ok(css.includes(selector), `popup.css must style ${selector}`);
+    }
+
+    // Corruption must not look identical to a size nudge — that distinction is
+    // the entire reason the tiers exist.
+    const soft = css.slice(css.indexOf('.storage-banner[data-tier="soft"] {'));
+    assert.match(soft.slice(0, 200), /--warning/,
+        'the soft size nudge must use the warning tone');
+    const corruption = css.slice(css.indexOf('.storage-banner[data-tier="corruption"] .storage-banner-icon {'));
+    assert.match(corruption.slice(0, 200), /--error/,
+        'the corruption tier must use the error tone');
+});

@@ -957,6 +957,29 @@ body {
 
 .storage-banner[hidden] { display: none; }
 
+/* Three tiers, one appearance. The corruption tier means data is malformed
+   and needs a reset; the soft tier is a size nudge. They read identically
+   until you got to the text, which is the opposite of what the tiers are for.
+   The banner already carries its own explanatory copy, so the tone is a
+   reinforcement rather than the only signal. */
+.storage-banner[data-tier="soft"] {
+  border-color: var(--warning-border);
+  background: var(--warning-soft);
+}
+.storage-banner[data-tier="soft"] .storage-banner-icon {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.storage-banner[data-tier="hard"],
+.storage-banner[data-tier="corruption"] {
+  border-color: var(--error-border);
+  background: var(--error-soft);
+}
+.storage-banner[data-tier="corruption"] .storage-banner-icon {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
 .storage-banner-icon {
   display: inline-flex;
   align-items: center;
@@ -1100,6 +1123,14 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .selector-health-asset:empty { display: none; }
+/* A degraded or failed selector-rules asset used to read exactly like a
+   healthy one. The status word is always present in the text; this only adds
+   the tone. */
+.selector-health-asset[data-state="degraded"] { color: var(--warning); }
+.selector-health-asset[data-state="failed"],
+.selector-health-asset[data-state="error"]    { color: var(--error); }
+.selector-health-asset[data-state="ok"],
+.selector-health-asset[data-state="active"]   { color: var(--success); }
 
 .selector-health-copy-status {
   font-size: 10px;
@@ -2407,6 +2438,16 @@ body {
   font-size: 11px;
   line-height: 1.4;
 }
+
+/* The JS sets data-state on this line for every outcome, but nothing styled
+   it: a refusal ("that address is on a private or local network"), a failed
+   refresh, and a denied permission all rendered in the same grey as the idle
+   "no filter list is being followed". Screen-reader users got the live region;
+   sighted users got no signal at all. Colour is a second channel here — the
+   message itself always states the outcome. */
+.filter-list-tools__status[data-state="success"] { color: var(--success); }
+.filter-list-tools__status[data-state="error"]   { color: var(--error); }
+.filter-list-tools__status[data-state="info"]    { color: var(--info); }
 
 .filter-list-tools__preferences {
   display: grid;

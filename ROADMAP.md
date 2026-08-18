@@ -257,26 +257,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Confidence: path Verified; trigger Needs-repro
   Effort: S
 
-- [ ] P2 — Onboarding preset completion is silent; the profile-confirmation toasts are dead code
-  Category: ux
-  Where: `extension/popup.js:4390-4398` (dead `profile-store-safe`/`profile-github-full` toast branches), `:4442-4458` (`pickWelcomePreset`).
-  Problem: picking a welcome preset flips a whole bundle of settings but produces **zero** success feedback — the card just vanishes (`dismissWelcomeCard` is called with `preset-*`/`preset-skip`, which no toast branch handles). The two profile-confirmation toasts, localized in all 11 locales (`statusWelcomeProfileSafe`/`statusWelcomeProfileFull`), are unreachable because no caller passes those reasons. Failure paths toast; success doesn't — violating the popup's own immediate-apply+toast convention.
-  Evidence: traced all `dismissWelcomeCard` callers; the reason strings never match the toast branch.
-  Fix: toast in `pickWelcomePreset` after the write (and/or thread the profile reasons back through `dismissWelcomeCard`).
-  Acceptance: completing onboarding by any preset shows a confirmation toast; a test asserts a status message fires on preset apply.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — Several JS-driven state hooks have no CSS, so error/urgent states render as neutral idle text
-  Category: visual / ux
-  Where: `extension/popup.js:4856-4868` (`filterListStatus.dataset.state = 'info'|'success'|'error'`), `:2355`/`:2372` (`storageBanner.dataset.tier = 'corruption'|'soft'|'hard'`), `:2461` (`selectorHealthAsset.dataset.state = asset.status`).
-  Problem: none of these `[data-state]`/`[data-tier]` selectors have any rule in `popup.css`/`surface-system.css` (grep returns only `.app-status` and `.external-health-state[data-tone]`). Every filter-list failure ("That address is on a private or local network…", refresh/permission failures) renders as gray body text indistinguishable from the idle "No filter list is being followed"; the storage `corruption` tier is meant to read as more urgent than the `soft` size nudge (per its own code comment) but renders identically; a degraded/error selector-rules asset looks healthy. SR users get the `role="status"` live region; sighted users get no tone.
-  Evidence: grepped both stylesheets for the emitted attribute selectors — absent.
-  Fix: add tone rules mirroring the existing `.status.success/.error/.info` palette (`popup.css:2580-2582`) for each `[data-state]`/`[data-tier]` family.
-  Acceptance: a filter-list error renders in the error color, a corruption banner is visibly more urgent than a soft nudge, and a degraded selector asset is visually distinct; verified in the rendered popup smoke in both themes.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — Notification hide/restore feature has no CSS backstop; its test asserts only the `hidden` IDL property
   Category: testing / correctness
   Where: `extension/ytkit.js:31346-31365` (`_setHidden`); test `tests/notification-controls.test.js:98-105`.
