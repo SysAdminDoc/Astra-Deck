@@ -130,8 +130,12 @@ test('Firefox web-ext lint stages all profile manifests with Gecko patches', () 
                 `${profile} staged manifest must strip Chrome sidePanel permission`);
             assert.equal(fs.existsSync(path.join(stageDir, 'sidebar.html')), true,
                 `${profile} staged source must include sidebar.html`);
-            assert.equal(fs.existsSync(path.join(stageDir, 'sidebar.js')), true,
-                `${profile} staged source must include sidebar.js`);
+            // sidebar.js was an inert surface marker nothing read; the sidebar
+            // is generated from sidepanel.html and shares sidepanel.js.
+            assert.equal(fs.existsSync(path.join(stageDir, 'sidebar.js')), false,
+                `${profile} staged source must not carry the deleted sidebar.js`);
+            assert.equal(fs.existsSync(path.join(stageDir, 'sidepanel.js')), true,
+                `${profile} staged sidebar must still get its renderer`);
             if (profile === 'chromium-store') {
                 assert.equal(manifest.permissions.includes('downloads'), false,
                     'chromium-store Firefox stage must omit downloads');
