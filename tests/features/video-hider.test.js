@@ -1459,3 +1459,90 @@ test('rule-driven filters fail open when they would hide most of a feed', () => 
     assert.equal(feature._enforceRuleHideRatioGuard(small), false,
         'the guard needs a reasonably sized feed before it can judge a ratio');
 });
+
+test('the fail-open guard puts back cards that remove-mode detached', () => {
+    // With "remove hidden cards from layout" on, an over-matching rule detaches
+    // the cards. The guard cleared their classes and toasted "left visible"
+    // while the feed stayed empty: clearing state on an orphaned node reveals
+    // nothing. Restoring is the other half of revealing.
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature({ appState: { settings: {} } });
+
+    const makeCard = (id) => {
+        const classes = new Set(['ytkit-video-hidden']);
+        return {
+            dataset: { ytkitFilterReason: 'keyword', ytkitRemoved: 'true', ytkitVideoId: id },
+            classList: {
+                contains: (name) => classes.has(name),
+                add: (name) => classes.add(name),
+                remove: (name) => classes.delete(name)
+            }
+        };
+    };
+
+    feature._applyVideoHiddenState = (el, shouldHide) => {
+        if (!shouldHide) {
+            el.classList.remove('ytkit-video-hidden');
+            delete el.dataset.ytkitRemoved;   // the real method clears the marker
+        }
+        return !!shouldHide;
+    };
+    let restoredWith = null;
+    feature._restoreRemovedVideoNodes = (ids) => { restoredWith = ids; return ids ? ids.size : 0; };
+
+    const detached = ['a1', 'b2', 'c3', 'd4', 'e5', 'f6'].map(makeCard);
+    const visible = Array.from({ length: 4 }, () => ({
+        dataset: {},
+        classList: { contains: () => false, add() {}, remove() {} }
+    }));
+
+    assert.equal(feature._enforceRuleHideRatioGuard(detached.concat(visible)), true,
+        'a rule matching 60% of the feed must still fail open in remove mode');
+    assert.ok(restoredWith, 'the guard must ask for the detached cards back');
+    assert.deepEqual([...restoredWith].sort(), ['a1', 'b2', 'c3', 'd4', 'e5', 'f6'],
+        'every detached rule-hidden card must be restored by id');
+});
+
+test('the fail-open guard also covers infinite-scroll batches, not just navigation', () => {
+    // The invariant only ever ran from _processAllVideos (navigation, chip
+    // clicks). Continuation batches loaded by scrolling hid cards with no
+    // guard at all, so an over-matching rule emptied every new batch silently
+    // until the next navigation — the exact symptom the invariant exists for.
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'video-hider', 'index.js'), 'utf8');
+
+    const batchStart = source.indexOf('const scheduleMutationBatch = () => {');
+    assert.ok(batchStart > -1, 'the mutation batch scheduler must exist');
+    const batchEnd = source.indexOf('this._observer = new MutationObserver', batchStart);
+    assert.ok(batchEnd > batchStart, 'the observer must follow the scheduler');
+    assert.match(source.slice(batchStart, batchEnd), /_enforceRuleHideRatioGuard\(this\._guardCardSet\(\)\)/,
+        'each settled mutation batch must run the ratio guard');
+
+    // A cancelled full scan must not starve the guard either.
+    const scanStart = source.indexOf('this._processAllBudgetHandle = handle;');
+    const scanEnd = source.indexOf('_processAllVideosDebounced', scanStart);
+    const scanTail = source.slice(scanStart, scanEnd);
+    assert.match(scanTail, /this\._enforceRuleHideRatioGuard\(videos\);/,
+        'the full scan must run the guard');
+    assert.ok(
+        scanTail.indexOf('this._enforceRuleHideRatioGuard(videos);') < scanTail.indexOf('if (!result?.cancelled)'),
+        'the guard must run before the cancelled-scan early exit, not inside it'
+    );
+
+    // The card set must include nodes remove-mode detached, or the numerator
+    // silently drops to zero in exactly that mode.
+    const setStart = source.indexOf('_guardCardSet() {');
+    assert.ok(setStart > -1, '_guardCardSet must exist');
+    const setFn = source.slice(setStart, source.indexOf('_enforceRuleHideRatioGuard(cards)', setStart));
+    assert.match(setFn, /_removedVideoNodes/, 'detached cards must be counted');
+    assert.match(setFn, /!el\.isConnected/, 'only still-detached cards may be added back');
+
+    // Both copies ship the fix: which one runs no longer depends on the route,
+    // but the monolith copy is still live code for userscript users.
+    const monolith = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
+    assert.match(monolith, /_enforceRuleHideRatioGuard\(this\._guardCardSet\(\)\)/,
+        'the monolith observer must run the guard on mutation batches too');
+    assert.match(monolith, /if \(removedIds\.length\) this\._restoreRemovedVideoNodes\(new Set\(removedIds\)\);/,
+        'the monolith guard must restore detached cards too');
+});

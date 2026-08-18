@@ -537,16 +537,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
 
 ### P2
 
-- [ ] P2 — Video Hider fail-open guard is bypassed on the mutation-batch path and cannot actually restore cards in remove mode
-  Category: correctness
-  Where: guard invoked only from `_processAllVideos` (peeled `features/video-hider/index.js:2295-2303`, monolith `ytkit.js:19675`); mutation path hides with no guard (peeled `scheduleMutationBatch` `index.js:2805-2846`, monolith observer `ytkit.js:20061-20084`); peeled-only skip when the budgeted scan is cancelled (`if (!result?.cancelled)`, `index.js:2299`); reveal path `_applyVideoHiddenState(el,false)` (peeled `index.js:1411-1418`, monolith `ytkit.js:18915-18922`) never reinserts nodes detached by remove mode (`_removeVideoElement`, `index.js:1345-1367` / `ytkit.js:18869`; reinsertion exists only in `_restoreRemovedVideoNodes`, run at the start of the NEXT full scan)
-  Problem: two gaps in the v4.58.1 ">25% of a ≥8-card feed must fail open" invariant. (1) Infinite-scroll continuation batches are hidden by the mutation path with no ratio guard, so an over-matching keyword/duration/predicate rule empties every newly loaded batch silently until the next navigation — the exact symptom the invariant exists to prevent. Under heavy mutation churn the peeled copy can also starve the guard entirely via the cancelled-scan skip. (2) With `hideVideosRemoveHiddenCards` on, the guard "reveal" clears classes on already-DETACHED nodes and toasts "…were left visible" while the feed stays empty until the next navigation. Same in the `YTKit-core.user.js` bundled copy (~`:23179`).
-  Evidence: guard call sites enumerated; `_applyVideoHiddenState(false)` traced — it deletes `dataset.ytkitRemoved` but performs no reinsertion (verified by hand).
-  Fix: after each mutation batch resolves, run `_enforceRuleHideRatioGuard` over the current card set (it is idempotent and page-wide) and run it in the cancelled branch too; in the guard's reveal loop, restore detached nodes via the `_removedVideoNodes` records (or call `_restoreRemovedVideoNodes()` filtered to the overreaching set) before clearing state. Apply to both copies + the userscript bundle (`node sync-userscript.js`).
-  Acceptance: a rule matching 100% of cards, applied mid-scroll, triggers the fail-open toast within one batch; with remove-mode on, the guard visibly restores the cards; tests drive the real mutation dispatcher (not a stub) for both.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — perChannelSpeed can delete its own saved speeds, silently fails to apply, and mis-keys dotted handles
   Category: correctness
   Where: `extension/ytkit.js:22834-22838` (ratechange handler), `:22806-22808` (rate===1 deletes the channel entry), `:3265-3273` (250 ms programmatic-write window), `:22820-22829` (single `setTimeout(...,3000)` apply, no retry), `:22786-22799` (`_applySpeed` gives up silently), `:22781` (`_getChannelId` regex `/@[\w-]+|channel\/[\w-]+/`)

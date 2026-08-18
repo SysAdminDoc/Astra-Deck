@@ -19,6 +19,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   (`/@handle`) matched no route, so they lost Video Hider too. Measured
   startup is unchanged. Modules whose features are all switched off are still
   skipped.
+- Video Hider's safety net now covers scrolling, and can actually undo itself.
+  The rule that refuses to hide more than a quarter of a feed only ran on
+  navigation, so an over-matching keyword, duration, or predicate rule silently
+  emptied every batch loaded by scrolling until you navigated away; it is now
+  checked after each batch, and after a scan that was cut short. When "remove
+  hidden cards from layout" is on it also puts the cards back — previously it
+  announced that it had left them visible while the feed stayed empty.
 - The filter-list address you are typing is no longer wiped by a background
   refresh. The field is only saved when you submit it, but any toggle, storage
   change, or permission check re-rendered the panel and restored the stored

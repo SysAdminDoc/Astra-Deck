@@ -19631,6 +19631,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _MAX_RULE_HIDDEN_RATIO: 0.25,
             _RATIO_GUARD_MIN_CARDS: 8,
             _lastRuleHideGuard: null,
+            // The page-wide card set for a ratio check. Cards detached by
+            // remove-mode are no longer matched by a DOM query, so they have to
+            // be added back in or the numerator silently shrinks to zero and
+            // the guard can never fire in exactly the mode where an emptied
+            // feed is most alarming.
+            _guardCardSet() {
+                const live = Array.from(document.querySelectorAll(this._VIDEO_SELECTORS));
+                const detached = this._removedVideoNodes
+                    .map((record) => record?.element)
+                    .filter((el) => el && !el.isConnected);
+                return detached.length ? live.concat(detached) : live;
+            },
             _enforceRuleHideRatioGuard(cards) {
                 if (!Array.isArray(cards) || cards.length < this._RATIO_GUARD_MIN_CARDS) return false;
                 const guarded = this._RULE_HIDE_REASONS;
@@ -19644,7 +19656,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._lastRuleHideGuard = null;
                     return false;
                 }
-                for (const el of overreaching) this._applyVideoHiddenState(el, false);
+                // Revealing means clearing the hide state AND putting back any
+                // card that remove-mode detached. Without the second half the
+                // guard cleared classes on orphaned nodes and toasted "left
+                // visible" while the feed stayed empty until the next
+                // navigation. Read the marker before _applyVideoHiddenState
+                // deletes it.
+                const removedIds = [];
+                for (const el of overreaching) {
+                    if (el?.dataset?.ytkitRemoved === 'true') {
+                        const id = el.dataset.ytkitVideoId || this._extractVideoId(el);
+                        if (id) removedIds.push(id);
+                    }
+                    this._applyVideoHiddenState(el, false);
+                }
+                if (removedIds.length) this._restoreRemovedVideoNodes(new Set(removedIds));
                 this._lastRuleHideGuard = { hidden: overreaching.length, total: cards.length };
                 const message = `refused to hide ${overreaching.length}/${cards.length} cards by rule`;
                 try { DiagnosticLog?.record?.('videoHider', message); } catch (e) { void e; }
@@ -20079,6 +20105,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (this._mutationTouchesMastheadControls(mutations)) {
                         this._syncMastheadPageActions();
                     }
+                    // Continuation batches hide cards too. Without this the
+                    // >25% fail-open invariant only ever covered the navigation
+                    // scan, so an over-matching rule emptied every batch loaded
+                    // by scrolling — silently, until the next navigation. The
+                    // guard is page-wide and idempotent.
+                    this._enforceRuleHideRatioGuard(this._guardCardSet());
                     if (batchTimeout) clearTimeout(batchTimeout);
                     batchTimeout = setTimeout(processBatch, 300);
                 });
