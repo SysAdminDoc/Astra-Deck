@@ -6,6 +6,25 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Timestamp Bookmarks now rebinds its panel after every watch-page navigation.
+  `#secondary-inner` survives SPA navigation, so the previous video's panel
+  container stayed in the tree and made the injector give up: the panel kept
+  listing the first video's bookmarks for the rest of the session, note edits
+  typed into those stale rows were saved under the previous video's id, and the
+  jump buttons seeked the current video to the previous video's timestamps.
+
+### Changed
+
+- The monolith feature test helper models the DOM instead of silently
+  no-opping it: `appendChild`/`replaceChildren` now attach children, `remove()`
+  and `insertBefore()` exist, `className` reflects into the class list,
+  `isConnected` defaults to true, and `matches()` evaluates class, id, and
+  attribute selectors — throwing on combinators it cannot honestly evaluate
+  rather than reporting a false "no match". Feature UI built during a test is
+  now observable, so render regressions can fail a test.
+
 ## [4.62.0] - 2026-08-14
 
 ### Added

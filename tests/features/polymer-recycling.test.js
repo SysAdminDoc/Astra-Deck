@@ -137,3 +137,43 @@ test('commentFilterManager re-evaluates a recycled comment node', () => {
     feature._lastRulesHash = 'cafebabe';
     assert.notEqual(feature._threadCheckStamp(thread), after);
 });
+
+// ── timestampBookmarks ─────────────────────────────────────────────────
+// `#secondary-inner` survives SPA navigation, so the previous video's panel
+// container is still in the tree on the next watch page. The navigate rule
+// dropped only its element references, leaving an orphan that made _inject()
+// early-return forever: the panel kept rendering video A's bookmarks, and
+// note edits made in those stale rows were written under video A's id.
+test('timestampBookmarks removes its stale container so the next video rebinds', () => {
+    const secondary = fakeNode({ tag: 'div', attributes: { id: 'secondary-inner' } });
+    // Both lookups read the live child list, so an orphan the navigate rule
+    // failed to remove really does block the next _inject() — the same way it
+    // does in the page.
+    const mounted = () => secondary.children.filter(el => el.matches('.ytkit-bookmarks-container'));
+    secondary.querySelector = selector =>
+        (selector.includes('ytkit-bookmarks-container') ? (mounted()[0] || null) : null);
+
+    const navRules = new Map();
+    const feature = loadFeature('timestampBookmarks', {
+        document: fakeDocument(selector =>
+            (selector.includes('ytkit-bookmarks-container') ? mounted() : [secondary])),
+        addNavigateRule: (id, fn) => navRules.set(id, fn),
+        removeNavigateRule: id => navRules.delete(id)
+    });
+    feature._renderPanel = () => {};
+
+    feature.init();
+    feature._inject();
+    assert.equal(mounted().length, 1, 'the panel must mount on the first video');
+    const stale = mounted()[0];
+    const first = feature._panel;
+    assert.ok(first, 'the body element must be bound');
+
+    // Navigate to the next video.
+    navRules.get('bookmarks')();
+    assert.equal(stale.removed, 1, 'the previous video\'s container must be removed');
+
+    feature._inject();
+    assert.equal(mounted().length, 1, 'exactly one container may exist');
+    assert.notEqual(feature._panel, first, 'the panel must rebind to the new video');
+});
