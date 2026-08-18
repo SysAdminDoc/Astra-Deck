@@ -3,6 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const cookieHandoff = require('../extension/core/cookie-handoff');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function cookie(name, value, overrides = {}) {
     return {
@@ -71,4 +73,51 @@ test('cookie handoff rejects unknown, malformed, insecure, and oversized credent
     assert.equal(result.diagnostics.reasons.invalidDomain, 1);
     assert.equal(result.diagnostics.reasons.insecure, 1);
     assert.equal(JSON.stringify(result).includes(unknown), false);
+});
+
+test('the userscript only hands cookies to a companion that proved its identity', () => {
+    // The userscript posted ALL .youtube.com cookies — including the httpOnly
+    // SID/SAPISID sign-in cookies — to whichever local server answered /health
+    // in a shape it accepted. The legacy {token_required, port} shape proves
+    // nothing about who is listening, so any local process on a catalogued
+    // port could obtain a full Google session, defeating Chrome's app-bound
+    // cookie encryption.
+    const src = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+
+    const start = src.indexOf('async function _mediaDLSendDownload');
+    assert.ok(start > -1, '_mediaDLSendDownload must exist');
+    const fn = src.slice(start, src.indexOf('\n    // Aggressive button injection', start));
+    assert.ok(fn.length > 0, 'the download sender must be extractable');
+
+    assert.match(fn, /_lastHealth\?\.service === MediaDLManager\._SERVICE_ID/,
+        'cookies require an exact service id, not merely a reachable port');
+    assert.match(fn, /if \(!identityProven \|\| !handoff\)/,
+        'an unproven companion must skip the handoff entirely');
+    assert.ok(
+        fn.indexOf('identityProven') < fn.indexOf('GM_cookie.list'),
+        'identity must be proven before any cookie is read'
+    );
+    assert.match(fn, /sanitizeCookieHandoff\(cookies\)/,
+        'cookies must pass through the reviewed allowlist contract');
+    assert.doesNotMatch(fn, /domain: c\.domain, name: c\.name, value: c\.value/,
+        'the raw jar must never be mapped into the payload');
+
+    // The legacy health shape still authorizes ordinary downloads.
+    assert.match(src, /return data\.token_required === true && Number\.isInteger\(data\.port\);/,
+        'the backward-compatible health shape must still allow plain downloads');
+});
+
+test('the userscript ships no third-party download destination', () => {
+    // y2mate / savefrom / ssyoutube received the canonical watch URL, existed
+    // nowhere under extension/, and skipped the _buildConfiguredWebDownloaderUrl
+    // boundary the Cobalt branch goes through.
+    const src = fs.readFileSync(path.join(__dirname, '..', 'YTKit.user.js'), 'utf8');
+    for (const host of ['y2mate.com', 'savefrom.net', 'ssyoutube.com']) {
+        assert.equal(src.includes(host), false,
+            `${host} must not appear as a download destination`);
+    }
+    assert.doesNotMatch(src, /id: 'downloadProvider'/,
+        'the provider selector must be gone with its third-party choices');
+    assert.match(src, /_getDownloadUrl\(videoUrl\) \{\s*\n\s*const configuredUrl = _buildConfiguredWebDownloaderUrl/,
+        'the only web destination must go through the configured-URL boundary');
 });

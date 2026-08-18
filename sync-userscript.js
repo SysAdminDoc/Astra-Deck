@@ -40,6 +40,11 @@ const V5_BUNDLE_MODULES = [
     // NOTE: no apostrophes in comments inside this array — check-userscript-drift.js
     // scans it with a bare quote regex and one stray quote truncates the list.
     'extension/core/settings-import-transaction.js',
+    // Bundled so the userscript filters an authenticated cookie handoff
+    // through the SAME reviewed contract the extension uses (four yt-dlp
+    // auth cookie names, domain/path/Secure/size validation) instead of
+    // posting the whole YouTube jar. Pure JS, no chrome.* and no DOM.
+    'extension/core/cookie-handoff.js',
     'extension/core/transcript-service.js',
     'extension/core/transcript-index.js',
     'extension/core/ai-summary-artifacts.js',

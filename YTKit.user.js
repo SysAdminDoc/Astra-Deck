@@ -129,6 +129,7 @@
     // ── bundled module: extension/core/policy-profile.js ──
     // ── bundled module: extension/core/settings-controller.js ──
     // ── bundled module: extension/core/settings-import-transaction.js ──
+    // ── bundled module: extension/core/cookie-handoff.js ──
     // ── bundled module: extension/core/transcript-service.js ──
     // ── bundled module: extension/core/transcript-index.js ──
     // ── bundled module: extension/core/ai-summary-artifacts.js ──
@@ -1720,6 +1721,9 @@
         _PORT_CANDIDATES: Object.freeze(USERSCRIPT_COMPANION_PORT_CATALOGUE?.ports?.slice() || []),
         _port: USERSCRIPT_COMPANION_PORT_CATALOGUE?.primaryPort || null,
         _SERVICE_ID: 'astra-downloader',
+        // Last accepted /health payload. Only a response carrying the exact
+        // service id authorizes an authenticated cookie handoff.
+        _lastHealth: null,
 
         // Base URL for server calls — always reflects the discovered port.
         baseUrl() {
@@ -1793,6 +1797,11 @@
                     this._port = port;
                     this._status = 'running';
                     this._token = data.token;
+                    // Retained so the cookie handoff can require an exact
+                    // service id. A legacy {token_required, port} response is
+                    // good enough to download with, but it proves nothing
+                    // about who is listening, so it must not unlock cookies.
+                    this._lastHealth = data;
                     this._serverVersion = data.version || null;
                     this._lastCheck = now;
                     DebugManager.log('MediaDL', `Server running on port ${port} (v${this._serverVersion || '?'}, ${data.downloads || 0} active)`);
@@ -2399,17 +2408,33 @@
             });
         };
 
+        // An authenticated cookie handoff is only ever made to a server that
+        // identified itself as Astra Downloader by exact service id. The
+        // legacy {token_required, port} health shape is accepted for ordinary
+        // downloads, but it is NOT proof of identity, so it must never unlock
+        // sign-in cookies: any local process able to answer on a catalogued
+        // port would otherwise receive a full Google session. What does get
+        // sent is filtered through the extension's reviewed contract — the
+        // four cookie names yt-dlp actually needs, with domain, path, Secure
+        // and size validation — never the whole YouTube jar.
+        const handoff = globalThis.YTKitCore?.cookieHandoff;
+        const identityProven = MediaDLManager._lastHealth?.service === MediaDLManager._SERVICE_ID;
+        if (!identityProven || !handoff) {
+            if (!identityProven) DebugManager.log('MediaDL', 'Skipping cookie handoff: companion identity not proven');
+            sendDownload();
+            return;
+        }
         if (typeof GM_cookie !== 'undefined' && GM_cookie.list) {
             try {
-                GM_cookie.list({ domain: '.youtube.com' }, (cookies, error) => {
+                GM_cookie.list({ domain: handoff.QUERY_DOMAIN }, (cookies, error) => {
                     if (!error && cookies && cookies.length > 0) {
-                        payload.cookies = cookies.map(c => ({
-                            domain: c.domain, name: c.name, value: c.value,
-                            path: c.path || '/', secure: !!c.secure,
-                            httpOnly: !!c.httpOnly,
-                            expirationDate: normalizeCookieExpiry(c.expirationDate)
-                        }));
-                        DebugManager.log('MediaDL', `Attached ${cookies.length} cookies for yt-dlp fallback`);
+                        const result = handoff.sanitizeCookieHandoff(cookies);
+                        if (result.cookies.length) {
+                            payload.cookies = result.cookies;
+                            payload.cookieProtocolVersion = handoff.PROTOCOL_VERSION;
+                        }
+                        // Diagnostics expose counts only — never names or values.
+                        DebugManager.log('MediaDL', `Attached ${result.cookies.length} authentication cookie(s) of ${cookies.length} candidate(s)`);
                     } else {
                         DebugManager.log('MediaDL', 'GM_cookie returned no cookies (permission may not be granted)');
                     }
@@ -2810,7 +2835,6 @@
             showLocalDownloadButton: true,
             showMp3DownloadButton: true,
             videoContextMenu: true,
-            downloadProvider: 'cobalt',
             cobaltUrl: '',
             hideCollaborations: true,
             hideVideosFromHome: true,
@@ -5828,46 +5852,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                                                         {
             id: 'replaceWithCobaltDownloader',
             name: 'Web Download Button',
-            description: 'Add a web-based download button (Cobalt, y2mate, etc). Disabled by default when YTYT local download is enabled.',
+            description: 'Add a web-based download button that opens the self-hosted Cobalt instance you configure.',
             group: 'Downloads',
             icon: 'download',
             _styleElement: null,
-            _providers: {
-                'y2mate': 'https://www.y2mate.com/youtube/',
-                'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
-                'ssyoutube': 'https://ssyoutube.com/watch?v='
-            },
+            // The y2mate / savefrom / ssyoutube destinations were removed: they
+            // are unaffiliated third parties that received the canonical watch
+            // URL, they exist nowhere under extension/ (not in the fetch
+            // allowlist, the manifest, or the origin catalogue), and they
+            // bypassed the _buildConfiguredWebDownloaderUrl boundary that the
+            // Cobalt branch goes through. The only supported destination is the
+            // HTTPS instance the user configures themselves.
             _getDownloadUrl(videoUrl) {
-                const provider = appState.settings.downloadProvider || 'cobalt';
-                if (provider === 'cobalt') {
-                    const configuredUrl = _buildConfiguredWebDownloaderUrl(appState.settings.cobaltUrl, videoUrl);
-                    if (!configuredUrl) {
-                        showToast('Configure an HTTPS web downloader URL in Settings first.', '#f59e0b');
-                    }
-                    return configuredUrl;
+                const configuredUrl = _buildConfiguredWebDownloaderUrl(appState.settings.cobaltUrl, videoUrl);
+                if (!configuredUrl) {
+                    showToast('Configure an HTTPS web downloader URL in Settings first.', '#f59e0b');
                 }
-                const baseUrl = this._providers[provider];
-                const canonicalUrl = _canonicalYouTubeWatchUrl(videoUrl);
-                if (!baseUrl || !canonicalUrl) {
-                    showToast('No valid YouTube watch URL is available.', '#ef4444');
-                    return null;
-                }
-                // Validate provider URL: HTTPS with no embedded credentials.
-                try {
-                    const parsed = new URL(baseUrl);
-                    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) {
-                        showToast('Invalid download provider URL — HTTPS is required.', '#ef4444');
-                        return null;
-                    }
-                } catch(e) {
-                    showToast('Invalid download provider URL', '#ef4444');
-                    return null;
-                }
-                if (provider === 'ssyoutube') {
-                    const videoId = getVideoId(canonicalUrl);
-                    return baseUrl + videoId;
-                }
-                return baseUrl + encodeURIComponent(canonicalUrl);
+                return configuredUrl;
             },
             _isWatchPage() { return window.location.pathname.startsWith('/watch'); },
             _injectButton() {
@@ -5934,29 +5935,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                                                         // Individual player control features removed - now consolidated in hiddenPlayerControlsManager
 
         // ─── Downloads (YTYT-Downloader Integration) ───
-        {
-            id: 'downloadProvider',
-            name: 'Download Provider',
-            description: 'Choose which service to use for video downloads',
-            group: 'Downloads',
-            icon: 'download-cloud',
-            type: 'select',
-            options: {
-                'cobalt': 'Custom HTTPS page',
-                'y2mate': 'Y2Mate',
-                'savefrom': 'SaveFrom.net',
-                'ssyoutube': 'SSYouTube'
-            },
-            _providers: {
-                'y2mate': 'https://www.y2mate.com/youtube/',
-                'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
-                'ssyoutube': 'https://ssyoutube.com/watch?v='
-            },
-            init() {
-                // This is a config-only feature, the download button uses this setting
-            },
-            destroy() {}
-        },
+        // The Download Provider selector is gone: three of its four choices
+        // were unaffiliated third parties that received the canonical watch
+        // URL outside the download boundary, and the fourth is the user's own
+        // configured HTTPS page — which is now simply the only destination.
         {
             id: 'cobaltUrl',
             name: 'Web Downloader URL',
