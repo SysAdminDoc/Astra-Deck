@@ -34,6 +34,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- `npm run check` can pass on a fresh clone. The capability-matrix gate treated
+  a missing build artifact as drift, and the project-facts gate failed on stale
+  untracked working notes that no other checkout can even see; both sit in a
+  fail-fast chain, so either one hid every gate behind it. Genuine drift, and
+  stale tracked documentation, still fail.
 - The monolith feature test helper models the DOM instead of silently
   no-opping it: `appendChild`/`replaceChildren` now attach children, `remove()`
   and `insertBefore()` exist, `className` reflects into the class list,
