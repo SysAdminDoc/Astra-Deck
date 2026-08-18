@@ -16326,6 +16326,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             animation: none !important;
                         }
                     }
+
+                    /* This restyle paints ~50 chat selectors with hard-coded
+                       rgba backgrounds, borders and text colours. In forced-colors
+                       mode those are ignored for colour but the layering still
+                       reads as flat, and any focusable chat control inherits a
+                       box-shadow ring that is never painted. Hand every surface
+                       back to the system palette and give focus a real outline. */
+                    @media (forced-colors: active) {
+                        html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer,
+                        html[data-ytkit-livechat-premium] yt-live-chat-membership-item-renderer,
+                        html[data-ytkit-livechat-premium] yt-live-chat-paid-message-renderer,
+                        html[data-ytkit-livechat-premium] yt-live-chat-viewer-engagement-message-renderer {
+                            background: Canvas !important;
+                            color: CanvasText !important;
+                            border: 1px solid CanvasText !important;
+                            forced-color-adjust: none;
+                        }
+
+                        html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer a,
+                        html[data-ytkit-livechat-premium] #author-name {
+                            color: LinkText !important;
+                        }
+
+                        html[data-ytkit-livechat-premium] *:focus-visible {
+                            outline: 2px solid Highlight !important;
+                            outline-offset: 2px;
+                            box-shadow: none !important;
+                        }
+                    }
                 `;
 
                 this._styleElement = injectStyle(css, this.id, true);

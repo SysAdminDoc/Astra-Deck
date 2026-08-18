@@ -21,6 +21,15 @@ const popupCss = fs.readFileSync(
     'utf8'
 );
 
+function readExtensionCss(name) {
+    try {
+        return fs.readFileSync(path.join(__dirname, '..', 'extension', name), 'utf8');
+    } catch (_) {
+        // reason: an absent optional stylesheet is not an a11y failure.
+        return '';
+    }
+}
+
 let issues = [];
 
 // 1. Check for icon-only buttons without aria-label
@@ -135,10 +144,30 @@ if (!hasEscapeClose) issues.push('Escape close handling is missing');
 // because specificity decides the winner: a bare `input:focus-visible` in the
 // forced-colors block does not beat `.some-panel input:focus-visible`
 // declared earlier at higher specificity.
-const forcedColorsStart = popupCss.indexOf('@media (forced-colors: active) {');
+// Scope floor. The detection below is rule-based rather than a selector list,
+// but it only ever read popup.css. surface-system.css — loaded by BOTH
+// extension pages — carried a global `*:focus-visible { outline: none;
+// box-shadow: ... }` whose forced-colors lane rewrote the token to ANOTHER
+// box-shadow, which forced-colors never paints, so High Contrast users had no
+// focus ring on anything popup.css did not happen to list. Nothing caught it
+// because the file was out of scope.
+const AUDITED_STYLESHEETS = [
+    ['popup.css', popupCss],
+    ['surface-system.css', readExtensionCss('surface-system.css')],
+    ['sidepanel.css', readExtensionCss('sidepanel.css')],
+    ['live-chat.css', readExtensionCss('live-chat.css')]
+];
+
 console.log('\nForced-colors focus lane:');
+for (const [cssName, cssSource] of AUDITED_STYLESHEETS) auditForcedColorsLane(cssName, cssSource);
+
+function auditForcedColorsLane(cssName, popupCss) {
+if (!popupCss) return;
+const forcedColorsStart = popupCss.indexOf('@media (forced-colors: active) {');
 if (forcedColorsStart === -1) {
-    issues.push('popup.css has no @media (forced-colors: active) block');
+    const suppresses = /outline:\s*(none|0)\b/.test(popupCss) && /box-shadow/.test(popupCss);
+    if (suppresses) issues.push(`${cssName} has no @media (forced-colors: active) block`);
+    else console.log(`✓ ${cssName} suppresses no focus outline`);
 } else {
     let depth = 0;
     let cursor = popupCss.indexOf('{', forcedColorsStart);
@@ -192,10 +221,16 @@ if (forcedColorsStart === -1) {
         }
     }
 
-    console.log(`${uncovered.length === 0 ? '\u2713' : '\u2717'} every outline-suppressing focus rule has a forced-colors lane`);
+    console.log(`${uncovered.length === 0 ? '\u2713' : '\u2717'} ${cssName}: every outline-suppressing focus rule has a forced-colors lane`);
     for (const selector of uncovered) {
-        issues.push(`No forced-colors focus lane for "${selector}" (its box-shadow ring is invisible in High Contrast)`);
+        issues.push(`${cssName}: no forced-colors focus lane for "${selector}" (its box-shadow ring is invisible in High Contrast)`);
     }
+    // A lane that "restores" the ring with another box-shadow is not a lane at
+    // all \u2014 forced-colors paints no box-shadow. It has to be a real outline.
+    if (laneSelectors.size > 0 && !/outline:\s*[0-9]/.test(forcedColorsBlock)) {
+        issues.push(`${cssName}: its forced-colors block restores focus without a real outline`);
+    }
+}
 }
 
 console.log('\n' + (issues.length > 0 ? `⚠ ${issues.length} issue(s):` : '✓ No a11y issues found'));

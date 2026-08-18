@@ -20,6 +20,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   following it, so it declines and tells you to use the final address directly.
   This is what already happened in the browser; the code and its tests just
   disagreed about it.
+- Windows High Contrast users can see what is focused again. The shared focus
+  ring was drawn with a shadow, which High Contrast mode does not paint, and its
+  High Contrast fallback was drawn the same way -- so on every surface not
+  individually listed there was no focus indicator at all. Live chat also gained
+  proper High Contrast styling.
 - Hidden notifications now actually disappear. Sort Notifications marked read or
   over-cap items as hidden but had no style rule to enforce it, so YouTube's own
   styling could keep them on screen.
