@@ -541,6 +541,95 @@ async function auditFocusTrap(client, surface, stateName) {
 // its own. This lane pins it exactly, for every surface, at 1x.
 const REFLOW_CSS_WIDTH = 320;
 
+// v4.68.0 — the feature-health panel only renders when a live YouTube tab
+// answers, so in this harness (tabs.query returns []) it would stay hidden
+// and never be proven at any width, in any locale, in forced colors. Drive
+// the REAL renderer with a synthetic report instead of stubbing the panel:
+// popup.js is a classic script, so its top-level declarations are reachable
+// on the global object. The fixture deliberately includes the worst content
+// the panel can show — a long localised feature name next to a long selector
+// surface — because that is what spills at 320 CSS px.
+const FEATURE_HEALTH_FIXTURE = JSON.stringify({
+    generatedAt: 0,
+    total: 3,
+    worstStatus: 'failed',
+    counts: { failed: 1, degraded: 1, healthy: 1, idle: 0 },
+    features: [
+        {
+            id: 'subscriptionGroups',
+            name: 'Subscription Groups',
+            status: 'failed',
+            reasons: [{ kind: 'runtime', detail: 'Cannot read properties of null (reading "querySelector")', at: 1 }]
+        },
+        {
+            id: 'videoHider',
+            name: 'Video Hider',
+            status: 'degraded',
+            reasons: [{ kind: 'selector', surface: 'feedCard', detail: 'ytd-rich-item-renderer', at: 1 }]
+        },
+        { id: 'sponsorBlock', name: 'SponsorBlock', status: 'healthy', reasons: [] }
+    ]
+});
+
+async function renderFeatureHealthFixture(client, surface) {
+    if (surface.name !== 'popup') return;
+    const rendered = await client.evaluate(`(() => {
+        const section = document.getElementById('feature-health');
+        const line = document.getElementById('feature-health-line');
+        if (!section || typeof globalThis.renderFeatureHealthRows !== 'function') return 'missing';
+        const report = ${FEATURE_HEALTH_FIXTURE};
+        globalThis.renderFeatureHealthRows(report);
+        if (line) {
+            const format = globalThis.YTKitCore?.formatFeatureHealthLine;
+            line.textContent = typeof format === 'function' ? format(report) : '';
+            line.dataset.status = report.worstStatus;
+        }
+        section.hidden = false;
+        section.open = true;
+        return String(document.querySelectorAll('#feature-health-list .feature-health-row').length);
+    })()`);
+    if (rendered === 'missing') {
+        throw new Error(`${surface.name}: popup no longer exposes the feature-health renderer`);
+    }
+    if (rendered !== '3') {
+        throw new Error(`${surface.name}: feature-health fixture rendered ${rendered} rows, expected 3`);
+    }
+}
+
+// Status must never be communicated by colour alone, and the reason line has
+// to survive the narrowest supported viewport — this panel exists to be read
+// during a breakage, which is the worst possible time for it to be unusable.
+async function auditFeatureHealthPanel(client, surface, stateName) {
+    if (surface.name !== 'popup') return 0;
+    const result = await client.evaluate(`(() => {
+        const rows = Array.from(document.querySelectorAll('#feature-health-list .feature-health-row'));
+        const failures = [];
+        const section = document.getElementById('feature-health');
+        const width = document.documentElement.clientWidth;
+        if (!section || section.hidden || !section.getClientRects().length) {
+            failures.push('feature-health panel is not visibly rendered');
+        }
+        for (const row of rows) {
+            const badge = row.querySelector('.fh-status');
+            const label = badge?.textContent?.trim() || '';
+            if (!label) failures.push(row.dataset.status + ' row states its status with colour alone');
+            for (const element of [row, badge, row.querySelector('.fh-reason')]) {
+                if (!element) continue;
+                const rect = element.getBoundingClientRect();
+                if (rect.width === 0 && rect.height === 0) continue;
+                if (rect.right > width + 1 || rect.left < -1) {
+                    failures.push((element.className || 'row') + ' spills to ' + Math.round(rect.right) + ' of ' + width);
+                }
+            }
+        }
+        return { failures, rows: rows.length };
+    })()`);
+    if (result.failures.length) {
+        throw new Error(`${surface.name}/${stateName}: ${result.failures.join('; ')}`);
+    }
+    return result.rows;
+}
+
 async function configureRenderedState(client, surface, theme, mode) {
     const zoomed = mode === 'zoom-200';
     const reflow = mode === 'reflow-320';
@@ -570,6 +659,10 @@ async function configureRenderedState(client, surface, theme, mode) {
         const active = await client.evaluate("matchMedia('(forced-colors: active)').matches");
         if (!active) throw new Error(`${surface.name}: Chromium did not activate forced-colors emulation.`);
     }
+    // Re-render after every state change: a navigation clears the panel, and
+    // the reflow lane needs it present before it opens the disclosures and
+    // measures.
+    await renderFeatureHealthFixture(client, surface);
     return { width, height };
 }
 
@@ -964,7 +1057,8 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             const filterGrantChecks = mode === 'normal' && theme === 'dark'
                 ? await auditPopupFilterGrant(client, surface, `${theme}/${mode}`)
                 : 0;
-            reports.push({ controls, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, theme, viewport });
+            const featureHealthChecks = await auditFeatureHealthPanel(client, surface, `${theme}/${mode}`);
+            reports.push({ controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -987,8 +1081,14 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
         surface,
         `${surface.themes[0]}/forced-colors`
     );
+    const forcedFeatureHealthChecks = await auditFeatureHealthPanel(
+        client,
+        surface,
+        `${surface.themes[0]}/forced-colors`
+    );
     reports.push({
         controls: forcedControls,
+        featureHealthChecks: forcedFeatureHealthChecks,
         mode: 'forced-colors',
         theme: surface.themes[0],
         viewport: forcedViewport,
@@ -1026,8 +1126,9 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             () => requestAnimationFrame(() => setTimeout(resolve, 120))
         ))`);
         const reflowChecks = await auditLocaleReflow(client, surface, locale, `${locale}/reflow-320`);
+        const featureHealthChecks = await auditFeatureHealthPanel(client, surface, `${locale}/reflow-320`);
         await captureSurface(client, surface, `${locale}-reflow-320`);
-        reports.push({ controls: 0, locale, mode: 'reflow-320', theme: 'dark', viewport, reflowChecks });
+        reports.push({ controls: 0, featureHealthChecks, locale, mode: 'reflow-320', theme: 'dark', viewport, reflowChecks });
     }
     return reports;
 }
@@ -1099,6 +1200,7 @@ async function main(argv = process.argv.slice(2)) {
                 + `${reports.reduce((sum, report) => sum + (report.settingsDiffChecks || 0), 0)} settings-diff assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.finiteSelectChecks || 0), 0)} finite-select assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.filterGrantChecks || 0), 0)} filter-grant assertions, `
+                + `${reports.reduce((sum, report) => sum + (report.featureHealthChecks || 0), 0)} feature-health assertions, `
                 + 'no obscuring/overflow failures'
             );
         }

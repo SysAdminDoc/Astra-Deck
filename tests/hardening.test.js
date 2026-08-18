@@ -7945,6 +7945,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/userscript-ai-summary.js',
         'extension/core/external-api-health.js',
         'extension/core/selector-health.js',
+        'extension/core/feature-health.js',
         'extension/core/companion-ports.js',
         'extension/core/data-flow.js',
         'extension/core/toast.js',
@@ -11773,7 +11774,9 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into storage.session 
     assert.match(popupSource, /type:\s*['"]GET_SW_LIFECYCLE['"]/,
         'popup.js must request the SW lifecycle ring via GET_SW_LIFECYCLE');
     const bundleStart = popupSource.indexOf('healthSaveBtn.addEventListener');
-    const bundleBlock = popupSource.slice(bundleStart, bundleStart + 4000);
+    // Window widened in v4.68.0: the bundle now also gathers the joined
+    // feature-health report before assembling the payload.
+    const bundleBlock = popupSource.slice(bundleStart, bundleStart + 6000);
     assert.match(bundleBlock, /let swLifecycle\s*=\s*null/,
         'bug-report bundle path must declare swLifecycle = null up front (graceful fallback)');
     assert.match(bundleBlock, /\n\s+swLifecycle,/,
@@ -12308,7 +12311,8 @@ test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and inc
     // can grep for.
     const saveStart = popupSource.indexOf('healthSaveBtn.addEventListener');
     assert.ok(saveStart > -1, 'popup.js must wire healthSaveBtn');
-    const saveBlock = popupSource.slice(saveStart, saveStart + 3800);
+    // Window widened in v4.68.0 alongside the feature-health gather.
+    const saveBlock = popupSource.slice(saveStart, saveStart + 5800);
     assert.match(saveBlock, /astraDeckBugReport:\s*true/,
         'healthSave payload must carry the astraDeckBugReport: true marker');
     // schemaVersion currently 2 after the NEW-7 SW lifecycle ring

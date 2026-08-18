@@ -2878,6 +2878,140 @@ if (externalHealthCopyBtn) {
     externalHealthCopyBtn.addEventListener('click', () => { void copyExternalApiHealthReport(); });
 }
 
+// v4.68.0 — feature health. One round-trip to the active tab for the
+// joined per-feature report (built content-script side in
+// buildFeatureHealthPayload, because that world owns all four inputs),
+// rendered worst-first. Unlike the diagnostics dashboards below this
+// panel is not gated on a debug setting: the whole point is that a user
+// who thinks "something broke" gets an answer without knowing which
+// toggle exposes the telemetry.
+const featureHealthSection = $('#feature-health');
+const featureHealthList = $('#feature-health-list');
+const featureHealthLine = $('#feature-health-line');
+
+// How many rows the list renders. Healthy features are summarised by the
+// count in the header; enumerating all of them would bury the problems
+// and make the popup scroll for pages.
+const FEATURE_HEALTH_MAX_ROWS = 25;
+
+function formatFeatureHealthAge(at, now) {
+    if (!Number.isFinite(at) || at <= 0) return '';
+    const ms = Math.max(0, now - at);
+    if (ms < 60000) return t('featureHealthAgeSecondsTpl', '{count}s ago').replace('{count}', String(Math.max(1, Math.round(ms / 1000))));
+    if (ms < 3600000) return t('featureHealthAgeMinutesTpl', '{count}m ago').replace('{count}', String(Math.round(ms / 60000)));
+    if (ms < 86400000) return t('featureHealthAgeHoursTpl', '{count}h ago').replace('{count}', String(Math.round(ms / 3600000)));
+    return t('featureHealthAgeDaysTpl', '{count}d ago').replace('{count}', String(Math.round(ms / 86400000)));
+}
+
+function featureHealthStatusLabel(status) {
+    if (status === 'failed') return t('featureHealthStatusFailed', 'Failed');
+    if (status === 'degraded') return t('featureHealthStatusDegraded', 'Degraded');
+    if (status === 'idle') return t('featureHealthStatusIdle', 'Not active here');
+    return t('featureHealthStatusHealthy', 'Working');
+}
+
+function renderFeatureHealthRows(report) {
+    const now = Date.now();
+    featureHealthList.textContent = '';
+    const rows = Array.isArray(report.features) ? report.features : [];
+    // Rows arrive worst-first from the builder, so a plain slice shows
+    // every problem before any healthy row. A completely healthy install
+    // still lists real feature names rather than a bare "all good" claim
+    // the user has no way to check.
+    const shown = rows.slice(0, FEATURE_HEALTH_MAX_ROWS);
+    if (shown.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'feature-health-empty';
+        empty.textContent = t('featureHealthEmpty', 'No enabled features sampled yet.');
+        featureHealthList.appendChild(empty);
+        return;
+    }
+    for (const row of shown) {
+        const li = document.createElement('li');
+        li.className = 'feature-health-row';
+        li.dataset.status = row.status;
+
+        const name = document.createElement('span');
+        name.className = 'fh-name';
+        name.textContent = row.name;
+
+        const badge = document.createElement('span');
+        badge.className = 'fh-status';
+        badge.dataset.status = row.status;
+        badge.textContent = featureHealthStatusLabel(row.status);
+
+        li.appendChild(name);
+        li.appendChild(badge);
+
+        const reason = Array.isArray(row.reasons) ? row.reasons[0] : null;
+        if (reason) {
+            const detail = document.createElement('span');
+            detail.className = 'fh-reason';
+            const age = formatFeatureHealthAge(reason.at, now);
+            const what = reason.kind === 'selector'
+                ? t('featureHealthReasonSelectorTpl', 'Page element “{surface}” no longer found')
+                    .replace('{surface}', reason.surface || reason.detail || '')
+                : reason.kind === 'api'
+                    ? t('featureHealthReasonApiTpl', '{service}: {detail}')
+                        .replace('{service}', reason.service || '')
+                        .replace('{detail}', reason.detail || '')
+                    : reason.detail || '';
+            detail.textContent = age ? `${what} · ${age}` : what;
+            li.appendChild(detail);
+        }
+        featureHealthList.appendChild(li);
+    }
+    if (rows.length > shown.length) {
+        const more = document.createElement('li');
+        more.className = 'feature-health-more';
+        // Neutral wording: with more than FEATURE_HEALTH_MAX_ROWS problems
+        // the overflow is not all healthy rows, and claiming it would be a lie
+        // in exactly the situation the panel exists for.
+        more.textContent = t('featureHealthMoreTpl', '+{count} more')
+            .replace('{count}', String(rows.length - shown.length));
+        featureHealthList.appendChild(more);
+    }
+}
+
+async function renderFeatureHealthPanel() {
+    if (!featureHealthSection || !featureHealthList) return;
+    try {
+        const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
+        if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
+            featureHealthSection.hidden = true;
+            return;
+        }
+        const response = await browserApi.sendTabMessage(
+            tab.id,
+            { type: 'YTKIT_GET_FEATURE_HEALTH' },
+            { timeoutMs: 1500 }
+        );
+        if (!response || response.ok === false || !response.report) {
+            featureHealthSection.hidden = true;
+            return;
+        }
+        const report = response.report;
+        if (featureHealthLine) {
+            // Same formatter the report itself ships with, so the collapsed
+            // header can never disagree with the expanded list.
+            const format = window.YTKitCore?.formatFeatureHealthLine;
+            featureHealthLine.textContent = typeof format === 'function'
+                ? format(report, t)
+                : String(report.counts?.healthy || 0);
+            featureHealthLine.dataset.status = report.worstStatus || 'healthy';
+        }
+        renderFeatureHealthRows(report);
+        featureHealthSection.hidden = false;
+        // Open on arrival when something is wrong. A healthy install keeps
+        // it collapsed so the popup stays compact.
+        const worst = report.worstStatus;
+        if (worst === 'failed' || worst === 'degraded') featureHealthSection.open = true;
+    } catch (_) {
+        // reason: feature health is a diagnostic read; a non-responsive tab hides the panel
+        featureHealthSection.hidden = true;
+    }
+}
+
 // Feature performance dashboard. Queries the active YouTube tab for
 // per-feature init timing via YTKIT_GET_FEATURE_PERF, then renders the
 // slowest features with a visual bar. Threshold: features > 50ms are
@@ -4269,6 +4403,24 @@ if (healthSaveBtn) {
             } catch (_) {
                 // reason: active-tab API health is supplemental; bundle ships without it on failure
             }
+            // v4.68.0: the joined per-feature answer travels with the bundle.
+            // A report that says "Video Hider degraded — feedCard missing 4m
+            // ago" is the single most useful line in a breakage report, and
+            // it is exactly what a user cannot type from memory.
+            let featureHealth = null;
+            try {
+                const [healthTab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
+                if (healthTab?.id && isSupportedInlinePanelUrl(healthTab.url || '')) {
+                    const resp = await browserApi.sendTabMessage(
+                        healthTab.id,
+                        { type: 'YTKIT_GET_FEATURE_HEALTH' },
+                        { timeoutMs: 1500 }
+                    );
+                    if (resp?.ok && resp.report) featureHealth = resp.report;
+                }
+            } catch (_) {
+                // reason: feature health needs a live YouTube tab; the bundle ships without it otherwise
+            }
             const schemaScope = window.__YTKIT_SETTINGS_SCHEMA__;
             const policy = ensurePolicyProfile();
             const effectiveProfile = policy
@@ -4288,6 +4440,7 @@ if (healthSaveBtn) {
                 capabilityLanes,
                 swLifecycle,
                 externalApiHealth,
+                featureHealth,
                 filterListSubscription,
                 settings: sanitized,
                 settingsDiff,
@@ -6255,6 +6408,7 @@ function installWheelScrolling() {
     // best-effort selector-health snapshot from the active tab.
     // Hides the section if the user isn't on a YouTube page or if the
     // content script doesn't respond in time.
+    void renderFeatureHealthPanel();
     void renderSelectorHealthDashboard();
     void renderExternalApiHealthDashboard();
     void renderFeaturePerfDashboard();

@@ -1334,6 +1334,96 @@ body {
 .external-health-state[data-tone="unknown"] { color: var(--text-muted); }
 
 /* ── Feature performance dashboard ──────────────────────────────── */
+/* v4.68.0 feature health. Status is carried by a text badge, never by
+   colour alone — the colours below are reinforcement, not the signal, so
+   the panel still reads correctly in forced-colors and for anyone who
+   cannot separate the red from the amber. */
+.feature-health {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.feature-health[hidden] { display: none; }
+.feature-health-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+.feature-health-summary::-webkit-details-marker { display: none; }
+.feature-health-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.feature-health-line {
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.feature-health-line[data-status="degraded"] { color: var(--warning); }
+.feature-health-line[data-status="failed"] { color: var(--error); }
+.feature-health-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.feature-health-row {
+  display: grid;
+  /* Name and badge share the first line; the reason wraps under both, so a
+     long selector name never pushes the badge off the panel at 320px. */
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  align-items: baseline;
+  padding: 3px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.feature-health-row:first-child { border-top: none; }
+.feature-health-row .fh-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.feature-health-row .fh-status {
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--text-subtle);
+}
+.feature-health-row .fh-status[data-status="healthy"] { color: var(--success); }
+.feature-health-row .fh-status[data-status="degraded"] { color: var(--warning); }
+.feature-health-row .fh-status[data-status="failed"] { color: var(--error); }
+.feature-health-row .fh-reason {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.feature-health-empty,
+.feature-health-more {
+  color: var(--text-subtle);
+  font-size: 10px;
+  padding: 3px 0;
+}
+.feature-health-note {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--text-subtle);
+}
+
 .feature-perf {
   margin-top: 8px;
   padding: 10px 12px;

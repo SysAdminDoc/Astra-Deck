@@ -75,6 +75,111 @@
     const SELECTOR_STATS_CAP = 512;
     const EMITTED_MISSES_CAP = 1024;
 
+    // v4.68.0 — feature attribution.
+    //
+    // Selector telemetry above is keyed by SURFACE, which answers "is this
+    // selector still matching?" but not the question users actually ask:
+    // "which of my features stopped working?". Nothing in the codebase maps
+    // a feature to the surfaces it depends on, and a hand-maintained table
+    // over ~470 features would be stale within a release.
+    //
+    // Instead the mapping is observed: callers that run feature code wrap it
+    // in withSelectorAttribution(featureId, fn), and every surface resolution
+    // performed inside that window is credited to the feature. The two entry
+    // points that matter are the mutation-rule dispatcher (navigation.js,
+    // which already knows the feature id) and feature init/destroy
+    // (ytkit.js). Anything queried outside such a window is simply not
+    // attributed — an unattributed surface never invents a feature.
+    //
+    // Recording happens at SURFACE granularity, not per selector: a surface
+    // whose stable selector misses but whose fallback hits is working, and
+    // per-selector attribution would report it as broken.
+    const attributionStats = new Map();
+    const ATTRIBUTION_FEATURE_CAP = 256;
+    const ATTRIBUTION_SURFACE_CAP = 32;
+    let attributionDepth = 0;
+    let attributionFeatureId = null;
+
+    function withSelectorAttribution(featureId, fn) {
+        if (typeof fn !== 'function') return undefined;
+        const id = String(featureId || '').trim();
+        if (!id) return fn();
+        const previousId = attributionFeatureId;
+        // Nested windows keep the OUTERMOST feature: a feature that calls a
+        // shared helper which itself attributes would otherwise credit the
+        // helper and lose the caller.
+        if (attributionDepth === 0) attributionFeatureId = id;
+        attributionDepth += 1;
+        try {
+            return fn();
+        } finally {
+            attributionDepth -= 1;
+            if (attributionDepth === 0) attributionFeatureId = previousId;
+        }
+    }
+
+    function getAttributedFeatureId() {
+        return attributionFeatureId;
+    }
+
+    function recordSurfaceOutcome(surface, selector, outcome, error = null) {
+        const featureId = attributionFeatureId;
+        if (!featureId || !surface) return null;
+        let surfaces = attributionStats.get(featureId);
+        if (!surfaces) {
+            surfaces = new Map();
+            attributionStats.set(featureId, surfaces);
+            _enforceMapCap(attributionStats, ATTRIBUTION_FEATURE_CAP);
+        }
+        let row = surfaces.get(surface);
+        if (!row) {
+            row = {
+                surface,
+                resolutions: 0,
+                hits: 0,
+                misses: 0,
+                lastOutcome: 'untested',
+                lastHitAt: null,
+                lastMissAt: null,
+                lastSelector: null,
+                lastError: null
+            };
+            surfaces.set(surface, row);
+            _enforceMapCap(surfaces, ATTRIBUTION_SURFACE_CAP);
+        }
+        const now = Date.now();
+        row.resolutions += 1;
+        row.lastOutcome = outcome;
+        row.lastSelector = selector ? String(selector).slice(0, 240) : null;
+        if (outcome === 'hit') {
+            row.hits += 1;
+            row.lastHitAt = now;
+            row.lastError = null;
+        } else {
+            row.misses += 1;
+            row.lastMissAt = now;
+            row.lastError = error ? String(error.message || error).slice(0, 240) : null;
+        }
+        return row;
+    }
+
+    function getSelectorAttributionSnapshot() {
+        const rows = [];
+        for (const [featureId, surfaces] of attributionStats) {
+            rows.push({
+                featureId,
+                surfaces: Array.from(surfaces.values(), (row) => ({ ...row }))
+            });
+        }
+        return rows;
+    }
+
+    function resetSelectorAttribution() {
+        attributionStats.clear();
+        attributionDepth = 0;
+        attributionFeatureId = null;
+    }
+
     function _enforceMapCap(map, cap) {
         while (map.size > cap) {
             const first = map.keys().next().value;
@@ -672,6 +777,7 @@
                 const match = root.querySelector?.(selector);
                 if (match) {
                     recordHit(surface, selector);
+                    recordSurfaceOutcome(surface, selector, 'hit');
                     // v4.5+: live shape sampling. Custom shapeKey takes
                     // precedence so callers can pass surface-specific
                     // fingerprints; otherwise the default signature.
@@ -686,6 +792,11 @@
                 recordMiss(surface, selector, error, options);
             }
         }
+
+        // Every selector in the chain — stable and fallback — failed, so the
+        // surface itself is unresolved for whichever feature is running. An
+        // empty chain attempted nothing and is not evidence of breakage.
+        if (selectors.length) recordSurfaceOutcome(surface, selectors[selectors.length - 1], 'miss');
 
         if (options.required) {
             throw new Error(`Required selector surface "${surface}" was not found.`);
@@ -702,6 +813,7 @@
                 const matches = Array.from(root.querySelectorAll?.(selector) || []);
                 if (matches.length) {
                     recordHit(surface, selector);
+                    recordSurfaceOutcome(surface, selector, 'hit');
                     // v4.5+: sample shape of the first match. Multi-match
                     // surfaces (feed cards, comment threads) have collection
                     // drift too — node count changes can be a drift signal
@@ -722,6 +834,7 @@
                 recordMiss(surface, selector, error, options);
             }
         }
+        if (selectors.length) recordSurfaceOutcome(surface, selectors[selectors.length - 1], 'miss');
         return [];
     }
 
@@ -971,8 +1084,12 @@
         exportSelectorHealth,
         findSurfaceElement,
         findSurfaceElements,
+        getAttributedFeatureId,
         getSelectorAssetState,
+        getSelectorAttributionSnapshot,
         getSelectorHealthSnapshot,
+        resetSelectorAttribution,
+        withSelectorAttribution,
         findSurfaceHookElements,
         getSurfaceSelectorChain,
         getSurfaceSelectorEntry,
