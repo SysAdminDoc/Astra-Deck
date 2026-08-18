@@ -1844,12 +1844,27 @@ test('normalizeCookieExpiry replaces every prior c.expirationDate || 0 site', ()
             /expirationDate:\s*c\.expirationDate\s*\|\|\s*0/,
             `${label} must use normalizeCookieExpiry instead of "c.expirationDate || 0"`
         );
+    }
+
+    for (const [label, src] of [
+        ['extension/features/download-ui/index.js', downloadUiSource],
+        ['extension/background.js', backgroundSource],
+    ]) {
         assert.match(
             src,
             /expirationDate:\s*normalizeCookieExpiry\(c\.expirationDate\)/,
             `${label} must call normalizeCookieExpiry on c.expirationDate at the cookie-mapper site`
         );
     }
+
+    // The userscript no longer maps cookies by hand at all: it delegates to
+    // the same reviewed contract the extension uses, which normalizes expiry
+    // itself while also enforcing the allowed names, domains, and size caps.
+    // Hand-mapping there is what shipped the whole YouTube jar.
+    assert.match(userscriptSource, /handoff\.sanitizeCookieHandoff\(cookies\)/,
+        'YTKit.user.js must filter cookies through the shared handoff contract');
+    assert.doesNotMatch(userscriptSource, /payload\.cookies = cookies\.map/,
+        'YTKit.user.js must not hand-map the raw cookie jar into the payload');
 });
 
 // ── v1.0.7 H7: theater-split divider-drag mid-SPA-nav cleanup ──
@@ -7916,6 +7931,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/policy-profile.js',
         'extension/core/settings-controller.js',
         'extension/core/settings-import-transaction.js',
+        'extension/core/cookie-handoff.js',
         'extension/core/transcript-service.js',
         'extension/core/transcript-index.js',
         'extension/core/ai-summary-artifacts.js',

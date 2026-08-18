@@ -237,26 +237,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
 
 ### P2
 
-- [ ] P2 — Userscript sends the full YouTube cookie jar (incl. httpOnly session cookies) to any local port squatter
-  Category: security
-  Where: `YTKit.user.js:2356-2371` (cookie collection + attach), gated only by `_isAstraDownloaderHealth` at `YTKit.user.js:1683-1690`.
-  Problem: the userscript's companion `/download` attaches **all** `.youtube.com` cookies — including httpOnly `SID`/`HSID`/`SSID`/`SAPISID` sign-in cookies — to whichever local server answered `/health` with `{token, service: 'astra-downloader'}` (or merely `{token, token_required: true, port}` on a catalogued port). There is no native-messaging identity proof, no cookie-contract filtering, no one-time capability, and no disclosure. The extension hardened exactly this path (`extension/features/download-ui/index.js:1550-1596`: cookies only after fresh native-host proof, contract-filtered, disclosed); the userscript body never got that gate. An unprivileged local process listening on a companion port obtains a full Google session — defeating Chrome's app-bound cookie encryption, which otherwise stops non-browser processes reading these cookies. Requires a userscript manager with `GM_cookie` granted.
-  Evidence: read both code paths; the extension's gate is absent from the userscript body; matches the documented "userscript retains retired/looser network paths" incident class (repo CLAUDE.md).
-  Fix: port the extension's contract — require the exact `service` id plus an out-of-band proof before attaching any sign-in cookie, or drop cookie handoff from the userscript entirely and let the companion use its own browser-cookie import.
-  Acceptance: a fake local server returning the minimal health shape receives no httpOnly sign-in cookies; a test drives the userscript download path against a stub health server and asserts the payload carries no `SID`/`SAPISID`.
-  Confidence: Verified
-  Effort: M
-
-- [ ] P2 — Userscript leaks the watch URL to y2mate / savefrom / ssyoutube; branches bypass the download-boundary gate
-  Category: security
-  Where: `YTKit.user.js:5790-5792` (provider map), used at `:5818`/`:5820`; duplicated at `:5905-5907`.
-  Problem: three third-party download frontends are hardcoded as navigation targets that receive the canonical watch URL / video id (`baseUrl + encodeURIComponent(canonicalUrl)` at `:5820`, `baseUrl + videoId` at `:5818`). None exist anywhere under `extension/` (zero hits for `y2mate|savefrom|ssyoutube`; not in `background.js` `ALLOWED_FETCH_ORIGINS`, `manifest.json`, or `core/data-flow.js` `ORIGIN_CATALOGUE`) — they are archived v3 providers (`CHANGELOG-v3-archive.md:2367`). This contradicts the hardening comment at `YTKit.user.js:1631-1644` and the `_buildConfiguredWebDownloaderUrl` fragment design that `tests/download-health-boundary.test.js:376-382` asserts — but the test only guards the `cobalt` branch, so these three are untested and skip the boundary.
-  Evidence: grep + changelog + test-scope read; the sibling Cobalt-instance keys are deliberately retained and pinned, so this is specifically the three retired providers.
-  Fix: remove the y2mate/savefrom/ssyoutube provider map and their settings keys (`downloadProvider`, `replaceWithCobaltDownloader`), or route them through the same `_buildConfiguredWebDownloaderUrl` boundary and extend the test to cover every branch.
-  Acceptance: the userscript exposes no download destination that transmits the watch URL outside the boundary-gated set; the boundary test covers all surviving branches.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — `EXT_FETCH` per-hop redirect validation is unreachable in a real MV3 service worker (blocks all redirects; legit 3xx endpoints fail in production but pass CI)
   Category: correctness
   Where: `extension/background.js:1104-1150` (`fetchWithValidatedRedirects` hop loop); masking test `tests/background.test.js:769-797`.

@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- The userscript no longer sends your whole YouTube cookie jar to any local
+  program that answers on a companion port. It attached every `.youtube.com`
+  cookie — including the httpOnly sign-in cookies — to whichever local server
+  responded to a health check in a shape it recognised, and one of those shapes
+  proves nothing about who is listening. Cookies now require the companion to
+  identify itself by exact service name, and only the four authentication
+  cookies yt-dlp actually needs are sent, filtered through the same reviewed
+  contract the extension uses.
+- The userscript's Download Provider no longer offers y2mate, SaveFrom, or
+  SSYouTube. Those are unaffiliated third parties that received the address of
+  the video you were watching, they appear nowhere in the extension, and they
+  bypassed the check every other download destination goes through. The
+  remaining destination is the HTTPS page you configure yourself.
+
 ### Fixed
 
 - Feature modules no longer load based on which page you happened to open
