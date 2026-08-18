@@ -15,9 +15,22 @@
   ],
   "metricOrigin": "performance.now() plus Runtime.getHeapUsage() around the isolated-world stack",
   "browser": "chrome.exe",
-  "iterations": 3,
+  "iterations": 7,
+  "comparisonStatistic": "min",
+  "acceptedRegression": {
+    "recordedAt": "2026-08-18",
+    "reason": "measured, tracked startup regression between 3c9a5ef2 and HEAD -- bisected on one machine in one sitting: 3c9a5ef2 49.30/57.70, 86cac849 59.00/90.40, ab1c45a3 86.40/119.20, dbd9a75e 109.80/137.00, HEAD 103.90/134.40 (firstFeaturePaintMin/parseInitMin). The reference metrics below stay at the 2026-08-08 floor deliberately: they are the goal, not the current state. These allowances are a RATCHET and may only ever decrease. Tracked in ROADMAP.md.",
+    "parseInitMs": 55,
+    "firstFeaturePaintMs": 25
+  },
+  "fallbackAcceptedRegression": {
+    "recordedAt": "2026-08-18",
+    "reason": "same tracked regression as acceptedRegression, measured against the synthetic fixture. Kept separate because the synthetic and captured references have different shapes, so one shared allowance would have to widen to the looser lane and would stop gating the tighter one. RATCHET -- may only ever decrease.",
+    "parseInitMs": 20,
+    "firstFeaturePaintMs": 40
+  },
   "tolerance": {
-    "relative": 0.35,
+    "relative": 0.2,
     "absoluteMs": 25,
     "absoluteBytes": 524288
   },

@@ -87,12 +87,12 @@ duplicated here.
   Acceptance: a steady-state lane holds a captured watch page open for a fixed interval with the default feature set and records observer callback time, timer wakeups and heap growth per minute; a budget is recorded; the default profile stays under it. Chrome 151's `soft-navigation` and `interaction-contentful-paint` PerformanceEntries are the native instrument for the navigation half — https://developer.chrome.com/blog/new-in-chrome-151
   Complexity: M
 
-- [ ] P2 — Make the startup gate reproducible instead of advisory
-  Why: with `iterations: 3`, a 35% relative tolerance and a silent fixture fallback, the gate cannot distinguish a regression from machine load — which is exactly why a real ~5x regression went unremarked.
-  Evidence: `scripts/startup-performance-baseline.json` sets `iterations: 3` and `tolerance.relative: 0.35`; observed samples on 2026-08-11 spanned 135–2542 ms within single runs. `scripts/bench-startup.js:446-461` falls back to synthetic fixtures when the gitignored `mhtml/*` captures are absent — i.e. on every clean clone — and then compares against `baseline.fallbackMetrics`, a different budget, with only a `console.warn`.
-  Touches: `scripts/bench-startup.js`, `scripts/startup-performance-baseline.json`
-  Acceptance: the gate uses a load-robust statistic (minimum or trimmed mean of ≥7 samples, since load only inflates), prints which fixture mode it used in its failure message, and fails loudly rather than warning when it silently switches budgets. Bait-verify by inserting a known 100 ms delay and confirming the gate fails.
-  Complexity: S
+- [ ] P1 — Pay back the measured ~2x startup regression the reproducible gate exposed
+  Why: first-feature paint roughly doubled and parse+init more than doubled between 2026-08-08 and v4.63.0. This was invisible for ~6 weeks because the gate compared medians on 3 samples, so every red run was dismissed as machine load — the repo `CLAUDE.md` twice recorded "don't re-baseline it, re-run it" as the conclusion. Both notes have been corrected.
+  Evidence: bisected 2026-08-18 on one machine in one sitting with the min-of-7 statistic (`firstFeaturePaintMin`/`parseInitMin`, captured-mhtml fixture): `3c9a5ef2` 49.30/57.70 → `86cac849` "load peeled factories before monolith" 59.00/90.40 → `ab1c45a3` "ship zero-ad desktop command deck" 86.40/119.20 → `dbd9a75e` 109.80/137.00 → HEAD 103.90/134.40. It is a staircase across ~15 commits, not one bad commit: the runtime simply got heavier. The two largest single steps are `86cac849` (+32.7 ms parse+init) and the `dfdc0534..ab1c45a3` span (+27 ms paint).
+  Touches: `extension/runtime-bootstrap.js`, `scripts/generate-runtime-bootstrap.js`, `extension/core/*` (FOUNDATION_MODULES), `extension/ytkit.js`
+  Acceptance: `scripts/startup-performance-baseline.json`'s `acceptedRegression` / `fallbackAcceptedRegression` allowances ratchet down toward 0 and the reference `metrics` (the 2026-08-08 floor) become reachable again; each reduction is a measured before/after at the same commit on the same machine, not a re-record. The gate prints the unused headroom on every run — use it.
+  Complexity: L
 
 - [ ] P2 — Filter before render instead of hiding after it
   Why: post-render CSS hiding is why `hideCollaborations` could hide 32 of 102 cards for months with no symptom; the v4.58.1 ">25% of a ≥8-card feed must fail open" invariant patches the symptom at the wrong layer. BlockTube — the benchmark for this — intercepts YouTube's response data so blocked items never exist in the page, and it is decaying (487 open issues, Shorts and comment blocking reported broken, last push 2026-02-07), which leaves the position open.
