@@ -190,18 +190,12 @@ duplicated here.
   Acceptance: the popup reports transcript-index count/bytes alongside extension-local bytes by asking an open YouTube tab (and degrades cleanly when none is open); backups carry the cap and index metadata; a corruption state offers export-then-clear rather than clear alone.
   Complexity: M
 
-- [ ] P2 — Extend rendered locale and WCAG reflow coverage to every primary surface
-  Why: `smoke-headless-a11y.js` exercises 200% overflow and forced colors, but RTL is limited to sidepanel/sidebar `ar`, popup/settings/transcript/download are not locale-stressed, and no all-surface run proves the 320 CSS-pixel reflow requirement for the 11 bundled locales.
-  Evidence: `scripts/smoke-headless-a11y.js:47-80,454-622`, `extension/_locales/` (11 locales), `README.md:346`, https://www.w3.org/WAI/WCAG22/Understanding/reflow.html
-  Touches: `scripts/smoke-headless-a11y.js`, `scripts/smoke-settings-overlay.js`, `extension/popup.css`, `extension/sidepanel.css`, `extension/sidebar.html`, `extension/_locales/**`, `tests/hardening.test.js`
-  Acceptance: CI renders popup, sidepanel/sidebar, settings, transcript, and download at a 320 CSS-pixel equivalent with `en`, `de`, `pt_BR`, `ar`, and a generated long-string/pseudo-locale fixture; it checks document/root horizontal overflow, clipped labels/focus targets, correct `lang/dir`, keyboard reachability, and forced-colors; exceptions are scoped to video/data surfaces and documented.
-  Complexity: M
-
-## Audit Findings — 2026-08-14
-
-Baseline at audit time (clean worktree at origin/main after two in-session fixes — `7f40b94e` unbroke a backtick-in-CSS-comment parse error in `extension/ytkit.js:2113`, `9c29ae6f` ratcheted the UI-copy baseline for the popover CSS edit): `npm test` **1688/1688 pass**. `npm run check` now runs the full chain and fails **only** at `check:startup` (`firstFeaturePaintMs` median 117.70 ms > 102.40 ms budget, `fixture mode: synthetic-fallback` because the gitignored `mhtml/*` captures are absent on a clean clone) — this is the already-tracked startup-reproducibility item, not a new regression. `audit:deps` reports the tracked `image-size@2.0.2` dev-only exception. All other gates green. Method: six parallel trace-and-verify sweeps (background trust boundaries, popup/sidepanel UX+a11y, download/player slice, userscript drift + dead code, vacuous tests/gates, settings wiring) plus rendered smoke captures (settings-overlay in dark/light/RTL/tablet/mobile, headless-a11y in normal/200%-reflow/forced-colors) reviewed by hand. Findings below were each re-verified at file:line against the working tree before logging; suspicions the agents cleared are omitted.
-
-### P2
+- [ ] P3 — Add a pseudo-locale long-string lane to the reflow smoke
+  Status 2026-08-18: the reflow coverage shipped — `smoke-headless-a11y.js` now renders ALL SIX primary surfaces (popup, sidepanel, sidebar, settings, transcript, download) at exactly 320 CSS pixels in `ar`, `de` and `pt_BR`, checking document-level horizontal scrolling, clipped controls, and (on the surfaces Astra Deck owns) `lang`/`dir`. It found and fixed a real clip: the settings footer was one unwrappable row and pushed its Done button 13px off the panel edge — bait-verified.
+  Remaining: the acceptance also asked for a generated long-string/pseudo-locale fixture. `npm run i18n:pseudolocale` exists (`scripts/generate-pseudolocale.js`) but its output is not wired into the smoke's staged `_locales`, so worst-case string length is not yet exercised.
+  Touches: `scripts/smoke-headless-a11y.js`, `scripts/generate-pseudolocale.js`
+  Acceptance: the smoke stages a generated pseudo-locale (accented, ~40% expanded) and renders every surface with it at 320 CSS pixels; failures name the clipped control.
+  Complexity: S
 
 - [ ] P3 — The i18n copy gate fingerprints `<style>.textContent` CSS as "UI copy", and `npm run check` is fail-fast
   Category: testing / maintainability

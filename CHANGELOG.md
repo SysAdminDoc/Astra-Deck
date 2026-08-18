@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The settings panel footer no longer pushes its Done button off the edge on a
+  narrow window. It now wraps instead of overflowing.
+- Accessibility checks now render every Astra Deck surface at a 320-pixel width
+  in Arabic, German and Brazilian Portuguese, so clipped controls and sideways
+  scrolling are caught before release rather than reported by users.
+
 ## [4.66.0] - 2026-08-18
 
 ### Fixed

@@ -13100,3 +13100,58 @@ test('motion and forced-colors sheets target the real toast root class', () => {
     assert.match(ytkitSource, /\.ytkit-global-toast,\s*\n\s*\.ytkit-volume-hud/,
         'the reduced-motion and forced-colors lists must include the toast root');
 });
+
+// ── WCAG 1.4.10 reflow, every surface, every tracked locale ──
+
+test('the a11y smoke proves 320px reflow on every primary surface in every tracked locale', () => {
+    const smoke = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'smoke-headless-a11y.js'), 'utf8'
+    );
+
+    assert.match(smoke, /const REFLOW_CSS_WIDTH = 320;/,
+        'the reflow width must be the WCAG figure, not an approximation of it');
+    assert.match(smoke, /const LOCALE_STATES = Object\.freeze\(\['ar', 'de', 'pt_BR'\]\);/,
+        'one RTL locale plus two long-string locales must be covered');
+
+    // Locale rendering used to be proven on sidepanel and sidebar only, because
+    // auditRtlLayout reaches for .sp-search and could never cover the others.
+    const surfaces = [...smoke.matchAll(/name: '(popup|sidepanel|sidebar|settings|transcript|download)'/g)]
+        .map((match) => match[1]);
+    assert.equal(surfaces.length, 6, 'all six primary surfaces must be declared');
+    assert.equal((smoke.match(/localeStates: LOCALE_STATES/g) || []).length, 6,
+        'every primary surface must render the tracked locales');
+
+    // lang/dir belongs to whoever owns the document; the in-page surfaces
+    // inherit YouTube's and are covered by smoke-settings-overlay instead.
+    assert.equal((smoke.match(/ownsDocument: true/g) || []).length, 3,
+        'only popup/sidepanel/sidebar own their document direction');
+
+    // Both of these exist because the lane's first run produced a spill report
+    // that could not be reproduced: collapsed <details> have zero-size rects, and
+    // measuring before relayout reads the previous state's width.
+    assert.match(smoke, /for \(const element of document\.querySelectorAll\('details'\)\) element\.open = true;/,
+        'disclosures must be opened so the widest content is measured deterministically');
+    assert.match(smoke, /requestAnimationFrame\(\s*\n?\s*\(\) => requestAnimationFrame/,
+        'the viewport change must settle before rects are read');
+
+    // Fully off-screen elements are the visually-hidden idiom (skip links park
+    // at -9999px); genuine horizontal scrolling is caught by scrollWidth.
+    assert.match(smoke, /if \(rect\.right <= 0 \|\| rect\.left >= viewport\) continue;/,
+        'the visually-hidden idiom must not be reported as a clipped control');
+    assert.match(smoke, /root\.scrollWidth - root\.clientWidth/,
+        'document-level horizontal scrolling must still fail the lane');
+});
+
+test('the settings footer wraps rather than overflowing a narrow viewport', () => {
+    const visual = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-visual-system.js'), 'utf8'
+    );
+    const start = visual.indexOf('#ytkit-settings-panel .ytkit-footer-right,');
+    assert.ok(start > 0, 'the footer rule must exist');
+    const end = visual.indexOf('}', start);
+    const block = visual.slice(start, end);
+    // Without this the footer is one unwrappable row and the Done button was
+    // pushed 13px past the panel edge at 320 CSS px — bait-verified.
+    assert.match(block, /flex-wrap: wrap !important;/);
+    assert.match(block, /max-width: 100% !important;/);
+});

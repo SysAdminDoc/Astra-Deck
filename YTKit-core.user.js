@@ -1657,6 +1657,12 @@
             justify-content: flex-end !important;
             gap: 8px !important;
             width: auto !important;
+            /* Wrap instead of overflowing. Without this the footer is a single
+               unwrappable row, so at a 320 CSS-pixel viewport (WCAG 1.4.10
+               reflow) the Done button was pushed 13px past the panel edge and
+               could not be clicked. */
+            flex-wrap: wrap !important;
+            max-width: 100% !important;
         }
 
         #ytkit-settings-panel #ytkit-reset-active-section {
