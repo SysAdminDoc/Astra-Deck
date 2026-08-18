@@ -15,6 +15,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Network requests that redirect are now refused with a clear message instead of
+  failing obscurely. Astra Deck cannot verify where a redirect leads before
+  following it, so it declines and tells you to use the final address directly.
+  This is what already happened in the browser; the code and its tests just
+  disagreed about it.
 - Hidden notifications now actually disappear. Sort Notifications marked read or
   over-cap items as hidden but had no style rule to enforce it, so YouTube's own
   styling could keep them on screen.

@@ -1025,31 +1025,36 @@ test('remainingTimeDisplay + showTimeInTabTitle use timeupdate, not setInterval'
 
 // ── Audit pass: EXT_FETCH per-hop redirect validation ──
 
-test('EXT_FETCH validates every redirect hop before following it', () => {
+test('EXT_FETCH refuses redirects rather than following them unvalidated', () => {
     const fetchStart = backgroundSource.indexOf("if (msg.type === 'EXT_FETCH')");
     const fetchEnd = backgroundSource.indexOf("if (msg.type === 'DOWNLOAD_FILE')", fetchStart);
     assert.ok(fetchStart > -1 && fetchEnd > fetchStart, 'EXT_FETCH handler must be extractable');
     const fetchBlock = backgroundSource.slice(fetchStart, fetchEnd);
 
+    // `redirect: 'manual'` yields an opaque-redirect filtered response for any
+    // 3xx: status 0, no readable headers. A redirect target therefore cannot be
+    // validated before the worker would contact it, so redirects are refused.
+    // The hop-following branch this test used to pin could only ever run under
+    // a mock that returned a readable 302 -- it was dead in every browser.
     assert.match(
         backgroundSource,
-        /const MAX_EXT_FETCH_REDIRECTS = \d+;/,
-        'background.js must bound the number of manually followed redirects'
+        /const MAX_EXT_FETCH_REDIRECTS = 0;/,
+        'redirects are refused, so the followed-hop bound must be zero'
     );
-    assert.match(
+    assert.doesNotMatch(
         backgroundSource,
         /const location = response\.headers\?\.get\?\.\('location'\)/,
-        'redirect handling must read the next hop from the response Location header'
+        'the unreachable Location-following branch must not return'
     );
     assert.match(
         backgroundSource,
-        /nextUrl = new URL\(location, currentUrl\)\.toString\(\)/,
-        'redirect locations must resolve against the current hop'
+        /response\.type === 'opaqueredirect' \|\| EXT_FETCH_REDIRECT_STATUSES\.has\(response\.status\)/,
+        'both the opaque and readable 3xx forms must be refused'
     );
     assert.match(
         backgroundSource,
-        /if \(!isUrlAllowed\(nextUrl\)\)/,
-        'each redirect target must be checked against the origin allowlist'
+        /Blocked redirect on a credentialed request/,
+        'a credentialed redirect must keep its distinct credential-leak error'
     );
     assert.match(
         fetchBlock,

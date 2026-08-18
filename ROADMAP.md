@@ -218,16 +218,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
 
 ### P2
 
-- [ ] P2 — `EXT_FETCH` per-hop redirect validation is unreachable in a real MV3 service worker (blocks all redirects; legit 3xx endpoints fail in production but pass CI)
-  Category: correctness
-  Where: `extension/background.js:1104-1150` (`fetchWithValidatedRedirects` hop loop); masking test `tests/background.test.js:769-797`.
-  Problem: each hop fetches with `redirect: 'manual'` (`:1096`), then the loop expects to read `response.status` and the `Location` header to follow and re-validate the next hop (the behavior commit `49549a60` was written to provide). In a real service worker, `fetch(url,{redirect:'manual'})` returns an opaque-redirect filtered response (`type:'opaqueredirect'`, `status:0`, no readable headers), so the guard at `:1114` always throws first and the follow branch at `:1121-1150` never runs — `EXT_FETCH` rejects every redirect instead of validating-and-following. It is fail-closed (no exploit), but any allowlisted endpoint that legitimately 301/302s (an http→https bounce or trailing-slash normalization on SponsorBlock/RYD/a filter-list host) fails in shipped browsers while passing CI, because the test's mock returns a plain `Response(null,{status:302,headers:{location}})` (type `basic`, status readable) so the follow-loop executes only in tests.
-  Evidence: traced the handler; the MV3 opaque-redirect behavior is well-defined; the test/browser divergence is in the mock shape.
-  Fix: drive the redirect tests with a fetch mock that reproduces `type:'opaqueredirect'`/`status:0` for `redirect:'manual'`; if following is actually desired, obtain `Location` via a mechanism that survives manual-redirect (the filtered response cannot expose it) — otherwise document that redirects are intentionally refused and simplify the dead follow-branch.
-  Acceptance: a test using a realistic opaque-redirect mock demonstrates the shipped behavior; a known-good redirecting allowlisted URL either succeeds or is documented as unsupported.
-  Confidence: Likely (browser-behavior dependent, fail-closed)
-  Effort: M
-
 - [ ] P2 — Content-script storage preload failure degrades to silent session-long defaults with no signal
   Category: correctness
   Where: `extension/core/storage.js:245-254`; consumed by `settingsManager.load()` at `ytkit.js:4378+`.

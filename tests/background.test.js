@@ -761,22 +761,59 @@ test('background EXT_FETCH uses manual redirects for non-credentialed requests t
     });
 
     assert.equal(capturedOptions?.credentials, 'omit');
-    // Anonymous requests still need manual redirects so every Location can be
-    // checked before the next hop is contacted.
+    // Anonymous requests still use manual redirects, which is what turns any
+    // 3xx into an opaque-redirect response the handler can refuse. With
+    // 'follow', the browser would contact every intermediate host before the
+    // allowlist ever saw the final URL.
     assert.equal(capturedOptions?.redirect, 'manual');
 });
 
-test('background EXT_FETCH validates each redirect hop before contacting it', async () => {
+test('background EXT_FETCH refuses a redirect instead of following it', async () => {
+    // `redirect: 'manual'` makes a real browser return an opaque-redirect
+    // FILTERED response: type 'opaqueredirect', status 0, no readable headers.
+    // The mock has to reproduce that or the test proves nothing about shipped
+    // behaviour -- this one used to return Response(null, {status: 302,
+    // headers: {location}}), which is type 'basic' with a readable Location, so
+    // it drove a hop-following branch that could never run in a browser.
     const calls = [];
     const { messageListener } = loadBackground({
         fetchImpl: async (url, options) => {
             calls.push({ url, options });
-            if (calls.length === 1) {
-                return new Response(null, {
-                    status: 302,
-                    headers: { location: 'https://sponsor.ajay.app/allowed' }
-                });
-            }
+            return {
+                type: 'opaqueredirect',
+                status: 0,
+                ok: false,
+                url: '',
+                headers: new Headers(),
+                text: async () => '',
+                json: async () => ({})
+            };
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://sponsor.ajay.app/api/skipSegments' }
+    });
+
+    assert.match(response.error, /Blocked redirect/);
+    assert.match(response.error, /cannot be validated/);
+    // Exactly one request: the redirect target is never contacted, because it
+    // cannot be read from the filtered response to be validated first.
+    assert.deepEqual(calls.map((call) => call.url), [
+        'https://sponsor.ajay.app/api/skipSegments'
+    ]);
+    assert.deepEqual(calls.map((call) => call.options.redirect), ['manual']);
+});
+
+test('background EXT_FETCH refuses a readable 3xx too, not just the opaque form', async () => {
+    // Belt and braces: if a host ever hands back a readable 3xx (a non-browser
+    // fetch shim, a future spec change), it must still be refused rather than
+    // silently followed through the unvalidated path.
+    const calls = [];
+    const { messageListener } = loadBackground({
+        fetchImpl: async (url, options) => {
+            calls.push(url);
             return new Response(null, {
                 status: 302,
                 headers: { location: 'https://attacker.example/internal' }
@@ -789,12 +826,8 @@ test('background EXT_FETCH validates each redirect hop before contacting it', as
         details: { method: 'GET', url: 'https://sponsor.ajay.app/api/skipSegments' }
     });
 
-    assert.match(response.error, /Redirect URL not in allowlist/);
-    assert.deepEqual(calls.map((call) => call.url), [
-        'https://sponsor.ajay.app/api/skipSegments',
-        'https://sponsor.ajay.app/allowed'
-    ]);
-    assert.deepEqual(calls.map((call) => call.options.redirect), ['manual', 'manual']);
+    assert.match(response.error, /Blocked redirect/);
+    assert.deepEqual(calls, ['https://sponsor.ajay.app/api/skipSegments']);
 });
 
 test('background EXT_FETCH rejects runtime optional hosts before fetch when grant is missing', async () => {
@@ -1549,10 +1582,11 @@ test('dynamic GET redirects require an exact grant at every hop', async () => {
         details: { method: 'GET', url: 'https://lists.example.com/rules.json' }
     });
 
-    assert.match(response.error, /Runtime host permission not granted/);
-    assert.deepEqual(checked, [
-        'https://lists.example.com/*',
-        'https://redirect.example.net/*'
-    ]);
+    // The redirect is refused before any grant re-check can happen, because the
+    // target is unreadable -- so only the ORIGINAL origin is ever checked. The
+    // previous expectation (a second check for redirect.example.net) was an
+    // artifact of the unrealistic readable-302 mock.
+    assert.match(response.error, /Blocked redirect/);
+    assert.deepEqual(checked, ['https://lists.example.com/*']);
     assert.deepEqual(fetched, ['https://lists.example.com/rules.json']);
 });
