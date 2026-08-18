@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.63.0] - 2026-08-18
+
 ### Security
 
 - The userscript no longer sends your whole YouTube cookie jar to any local
