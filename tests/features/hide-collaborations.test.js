@@ -94,6 +94,22 @@ test('a real-shaped feed hides only the collaboration cards', () => {
         assert.equal(cards[i].classList.contains(feature._HIDDEN_CLASS), false,
             `ordinary upload ${i} must stay visible`);
     }
+
+    // v4.68.0: hiding a card without saying who hid it is the v4.58.1 failure.
+    // The attribution must agree with the CSS class exactly — every hidden card
+    // attributed, no visible card attributed.
+    const attributed = feature._testHideAttributionCalls.filter(call => call.hidden);
+    assert.equal(attributed.length, REAL_COLLABORATIONS,
+        'each hidden card must name the feature that hid it');
+    for (const call of attributed) {
+        assert.equal(call.featureId, 'hideCollaborations');
+        assert.equal(call.rule, 'collaboration');
+        assert.ok(cards.slice(0, REAL_COLLABORATIONS).includes(call.element),
+            'attribution must land on the cards that were actually hidden');
+    }
+    const cleared = feature._testHideAttributionCalls.filter(call => !call.hidden);
+    assert.equal(cleared.length, cards.length - REAL_COLLABORATIONS,
+        'every card left visible must have its attribution explicitly cleared');
 });
 
 test('a pass that wants to hide a large share of the feed fails open instead', () => {
@@ -106,6 +122,12 @@ test('a pass that wants to hide a large share of the feed fails open instead', (
     const hidden = cards.filter(c => c.classList.contains(feature._HIDDEN_CLASS));
     assert.equal(hidden.length, 0,
         'over the ratio guard the feature reveals everything rather than hiding a third of the feed');
+    // The bail restores every card, so it must retract the attribution too —
+    // otherwise the popup would keep reporting 32 hides that were just undone.
+    assert.equal(feature._testHideAttributionCalls.filter(call => call.hidden).length, 0,
+        'a failing-open pass must not leave any card attributed as hidden');
+    assert.equal(feature._testHideAttributionCalls.length, cards.length,
+        'the bail must clear attribution on every card it restored');
 });
 
 test('the ratio guard does not fire on a small feed or a plausible collaboration share', () => {

@@ -20,8 +20,9 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.locales.length, 11);
     assert.equal(facts.schemaEntries, 467);
     assert.equal(facts.schemaCategories, 18);
-    // 101 since core/feature-health.js joined the ISOLATED-world graph.
-    assert.equal(facts.runtimeModules, 101);
+    // 102 since core/feature-health.js and core/hide-attribution.js joined
+    // the ISOLATED-world graph.
+    assert.equal(facts.runtimeModules, 102);
     assert.equal(facts.featureModules.length, 26);
     assert.equal(facts.featureIds.length, 286);
     assert.equal(facts.selectorPackFiles.length, 33);

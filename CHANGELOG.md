@@ -13,6 +13,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   with the page element or service that stopped answering and when. It opens
   automatically when something is wrong, and travels with the diagnostics
   bundle so a bug report says what broke instead of "it stopped working".
+- **Every hidden card can now say who hid it.** "Explain hidden cards" used to
+  annotate only Video Hider's matches; Hide Collaborations, Hide planned
+  livestreams and Remove Shorts hid cards silently, which is why turning Video
+  Hider off sometimes cleared nothing. All four now leave the same note naming
+  the feature and the rule that matched, and the per-feature count of cards
+  hidden on the current page travels with the diagnostics bundle.
 
 ## [4.67.0] - 2026-08-18
 

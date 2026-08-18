@@ -116,6 +116,7 @@
         "core/settings-controller.js",
         "core/selector-health.js",
         "core/feature-health.js",
+        "core/hide-attribution.js",
         "core/companion-ports.js",
         "core/data-flow.js",
         "core/toast.js",

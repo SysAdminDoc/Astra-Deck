@@ -166,6 +166,18 @@
     "message": "{count}s",
     "description": "Buffer target slider value rendered in seconds"
   },
+  "hiddenCardNoteTpl": {
+    "message": "Hidden by {feature}: {rule}"
+  },
+  "hiddenRuleCollaboration": {
+    "message": "multi-creator upload"
+  },
+  "hiddenRuleScheduled": {
+    "message": "scheduled livestream or premiere"
+  },
+  "hiddenRuleShorts": {
+    "message": "Shorts video"
+  },
   "liveLatencyReadout": {
     "message": "Live {latency}s · buffer {buffer}s",
     "description": "Live-stream latency and buffered-ahead player readout"
@@ -6872,7 +6884,7 @@
     "message": "Video Hider filters matched {count} of {total} cards, so they were left visible."
   },
   "videoHiderShowFilterReasonDesc": {
-    "message": "Show a small note beside each hidden card explaining which local rule matched."
+    "message": "Show a small note beside every card Astra Deck hides — from Video Hider, Hide Collaborations, Hide planned livestreams, or Remove Shorts — naming the feature and the rule that matched."
   },
   "videoHiderShowFilterReasonTitle": {
     "message": "Explain hidden cards"

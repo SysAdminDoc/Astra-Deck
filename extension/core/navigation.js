@@ -185,6 +185,10 @@
         lastNavHref = href;
         if (urlChanged || pendingMutationRouteReset) {
             resetMutationRuleHealthForRoute();
+            // Hidden-card counts are per navigation: "42 cards hidden" only
+            // means something against one feed. This is the same boundary the
+            // mutation-rule budgets reset on, so the two always agree.
+            core.resetHideAttribution?.();
         }
         pendingMutationRouteReset = false;
         // Only pay for a full-page view-transition snapshot on a real URL

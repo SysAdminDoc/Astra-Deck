@@ -83,10 +83,26 @@ function loadFeature(id, extraGlobals = {}) {
         addScopedMutationRule() {},
         removeScopedMutationRule() {},
         injectStyle: () => fakeNode(),
+        // v4.68.0: every feed-hiding feature stamps the shared hide marker.
+        // The stub RECORDS rather than no-ops so a test can assert the feature
+        // attributed the right cards to the right rule — a silent no-op here
+        // would let the wiring rot while the feature tests stayed green.
+        getFeatureName: (feature) => feature?.name || feature?.id || '',
+        markCardHidden() {},
+        unmarkCardHidden() {},
+        syncHiddenNote() {},
         ...extraGlobals
     };
+    sandbox.hideAttributionCalls = [];
+    if (!sandbox.applyHideAttribution) {
+        sandbox.applyHideAttribution = (element, options) => {
+            sandbox.hideAttributionCalls.push({ element, ...options });
+        };
+    }
     sandbox.globalThis = sandbox;
-    return vm.runInNewContext(`(${featureSource(id)})`, sandbox);
+    const feature = vm.runInNewContext(`(${featureSource(id)})`, sandbox);
+    feature._testHideAttributionCalls = sandbox.hideAttributionCalls;
+    return feature;
 }
 
 /** Evaluate the inline fallback literal of a factory-built monolith feature. */

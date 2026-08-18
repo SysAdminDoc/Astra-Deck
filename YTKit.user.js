@@ -139,6 +139,7 @@
     // ── bundled module: extension/core/external-api-health.js ──
     // ── bundled module: extension/core/selector-health.js ──
     // ── bundled module: extension/core/feature-health.js ──
+    // ── bundled module: extension/core/hide-attribution.js ──
     // ── bundled module: extension/core/companion-ports.js ──
     // ── bundled module: extension/core/data-flow.js ──
     // ── bundled module: extension/core/toast.js ──

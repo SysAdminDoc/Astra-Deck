@@ -11,7 +11,7 @@ Thanks for your interest in contributing to Astra Deck! This guide will help you
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `467` entries across `18` categories |
-| Runtime graph | `101` modules, including `26` peeled feature modules and `286` declared feature IDs |
+| Runtime graph | `102` modules, including `26` peeled feature modules and `286` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
