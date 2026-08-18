@@ -19,6 +19,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   (`/@handle`) matched no route, so they lost Video Hider too. Measured
   startup is unchanged. Modules whose features are all switched off are still
   skipped.
+- Per-Channel Speed Memory no longer erases itself. YouTube's player keeps its
+  own playback rate and re-asserts it on a new stream or a quality change; that
+  reset was recorded as if you had chosen 1x, deleting the channel's saved
+  speed seconds after it was applied. A reset with no accompanying key, click,
+  or scroll is now treated as the player's and the saved speed is re-applied.
+  Applying it also retries as the page hydrates instead of making one attempt
+  three seconds in, and handles containing a dot (`@some.name`) get their own
+  entry rather than sharing one with every handle before the dot.
 - The selector-refresh repair path is now disclosed like every other external
   origin. `raw.githubusercontent.com` was declared in the source manifest but
   missing from the origin catalogue, so built releases dropped the permission

@@ -22808,9 +22808,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _observer: null,
             _applied: false,
             _activeChannelId: null,
+            // How recently a pointer/key/wheel event must have happened for a
+            // rate change to count as the user's doing.
+            _USER_INTENT_WINDOW_MS: 1500,
+            _lastInputAt: 0,
+            _inputHandler: null,
 
             _getChannelId() {
-                return document.querySelector('ytd-watch-metadata ytd-channel-name a, #owner a, ytd-video-owner-renderer a')?.href?.match(/@[\w-]+|channel\/[\w-]+/)?.[0] || null;
+                // `\w` excludes dots, so @mr.beast keyed as "@mr" and every
+                // dotted handle sharing a prefix collided into one entry.
+                // Deliberately NOT YTKitCore.channelSettingsKey: this feature
+                // owns its own `ytkit-channel-speeds` store rather than sharing
+                // a key with another surface, so adopting that format would
+                // silently orphan every speed users have already saved.
+                return document.querySelector('ytd-watch-metadata ytd-channel-name a, #owner a, ytd-video-owner-renderer a')?.href?.match(/@[\w.-]+|channel\/[\w-]+/)?.[0] || null;
             },
 
             _getSpeeds() { return StorageManager.get(this._storageKey, {}); },
@@ -22828,6 +22839,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 setProgrammaticPlaybackRate(video, savedSpeed);
                 this._applied = true;
                 DebugManager.log('ChannelSpeed', `Applied ${savedSpeed}x for ${channelId}`);
+            },
+
+            // A single unvalidated read three seconds in gave up silently when
+            // metadata hydrated slowly, and could read the PREVIOUS route's
+            // owner link out of a retained page-manager tree. Use the same
+            // event-driven retry ladder persistentSpeed uses.
+            _scheduleApply(delay = 250, reason = 'manual') {
+                if (typeof schedulePlayerTask === 'function') {
+                    schedulePlayerTask('feature:perChannelSpeed', () => this._applySpeed(), {
+                        owner: this.id,
+                        reason,
+                        delay,
+                        needsVideo: true,
+                        events: ['loadedmetadata', 'canplay', 'playing', 'player-state', 'navigate', 'page-data'],
+                        retryDelays: [0, 150, 400, 1000, 1800, 3000],
+                        maxAttempts: 6
+                    });
+                    return;
+                }
+                clearTimeout(this._applyTimer);
+                this._applyTimer = setTimeout(() => this._applySpeed(), 3000);
             },
 
             _saveCurrentSpeed(channelId = this._activeChannelId || this._getChannelId()) {
@@ -22851,20 +22883,39 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._activeChannelId = this._getChannelId();
-                this._applyTimer = setTimeout(() => this._applySpeed(), 3000);
+                this._scheduleApply(250, 'init');
                 addNavigateRule('channelSpeed', () => {
                     this._saveCurrentSpeed(this._activeChannelId);
                     this._activeChannelId = null;
                     this._applied = false;
-                    clearTimeout(this._applyTimer);
-                    this._applyTimer = setTimeout(() => this._applySpeed(), 3000);
+                    this._scheduleApply(250, 'navigate');
                 });
-                // Observe speed changes via ratechange event. Writes made BY
-                // other features (music-video lock, live catch-up reset, Shorts
-                // teardown) are tagged and skipped — persisting their forced 1x
-                // deleted the channel's saved speed.
+                // Only a change the USER made should be remembered. Tagging
+                // covers our own writes (music-video lock, live catch-up reset,
+                // Shorts teardown), but YouTube's player keeps its own internal
+                // rate and re-asserts it on the element on a new stream or a
+                // quality change. That arrives untagged at 1x, and persisting
+                // it DELETED the channel's saved speed moments after we applied
+                // it. A real speed change is always driven by a pointer or key,
+                // so an untagged reset to 1x with no recent input is YouTube's,
+                // not the user's — re-apply instead of forgetting.
+                this._lastInputAt = 0;
+                this._inputHandler = () => { this._lastInputAt = Date.now(); };
+                for (const type of ['pointerdown', 'keydown', 'wheel']) {
+                    document.addEventListener(type, this._inputHandler, { capture: true, passive: true });
+                }
                 this._rateHandler = () => {
                     if (isProgrammaticPlaybackRateChange()) return;
+                    const video = getMainVideoElement();
+                    if (video && video.playbackRate === 1 && (Date.now() - this._lastInputAt) > this._USER_INTENT_WINDOW_MS) {
+                        const channelId = this._activeChannelId || this._getChannelId();
+                        const saved = channelId ? this._getSpeeds()[channelId] : null;
+                        if (saved && saved !== 1) {
+                            setProgrammaticPlaybackRate(video, saved);
+                            DebugManager.log('ChannelSpeed', `Re-applied ${saved}x after an unattributed reset for ${channelId}`);
+                            return;
+                        }
+                    }
                     this._saveCurrentSpeed();
                 };
                 document.addEventListener('ratechange', this._rateHandler, true);
@@ -22874,8 +22925,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._activeChannelId = null;
                 clearTimeout(this._applyTimer);
                 this._applyTimer = null;
+                if (typeof cancelPlayerTask === 'function') cancelPlayerTask('feature:perChannelSpeed');
                 removeNavigateRule('channelSpeed');
                 document.removeEventListener('ratechange', this._rateHandler, true);
+                if (this._inputHandler) {
+                    for (const type of ['pointerdown', 'keydown', 'wheel']) {
+                        document.removeEventListener(type, this._inputHandler, { capture: true });
+                    }
+                    this._inputHandler = null;
+                }
             }
         },
         {

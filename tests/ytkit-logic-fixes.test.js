@@ -360,7 +360,10 @@ test('perChannelSpeed removes 1x overrides and saves navigation against the outg
     );
     assert.ok(objectLiteral, 'perChannelSpeed object must be extractable');
 
-    const owners = [{ href: 'https://www.youtube.com/@alpha' }];
+    // A real owner link answers getAttribute; the key is derived through the
+    // shared canonicaliser so dotted handles cannot collide.
+    const ownerLink = (href) => ({ href, getAttribute: (name) => (name === 'href' ? href : null) });
+    const owners = [ownerLink('https://www.youtube.com/@alpha')];
     const video = { playbackRate: 2 };
     const store = { 'ytkit-channel-speeds': { '@alpha': 1.5 } };
     const writes = [];
@@ -389,6 +392,10 @@ test('perChannelSpeed removes 1x overrides and saves navigation against the outg
         'removeNavigateRule',
         'setTimeout',
         'clearTimeout',
+        'schedulePlayerTask',
+        'cancelPlayerTask',
+        'isProgrammaticPlaybackRateChange',
+        'setProgrammaticPlaybackRate',
         '"use strict"; return (' + objectLiteral + ');'
     )(
         { WATCH: 'watch' },
@@ -399,18 +406,23 @@ test('perChannelSpeed removes 1x overrides and saves navigation against the outg
         (id, callback) => { navRules[id] = callback; },
         () => {},
         () => 1,
-        () => {}
+        () => {},
+        // The apply path is exercised separately; here we only care about save.
+        () => {},
+        () => {},
+        () => false,
+        (videoEl, rate) => { videoEl.playbackRate = rate; }
     );
 
     feature.init();
-    owners[0] = { href: 'https://www.youtube.com/@beta' };
+    owners[0] = ownerLink('https://www.youtube.com/@beta');
     navRules.channelSpeed();
     assert.equal(store['ytkit-channel-speeds']['@alpha'], 2,
         'navigation must attribute the outgoing rate to the cached alpha channel');
     assert.equal(store['ytkit-channel-speeds']['@beta'], undefined,
         'navigation must not attribute the outgoing rate to the incoming channel');
 
-    owners[0] = { href: 'https://www.youtube.com/@alpha' };
+    owners[0] = ownerLink('https://www.youtube.com/@alpha');
     video.playbackRate = 1;
     feature._activeChannelId = '@alpha';
     feature._saveCurrentSpeed();
@@ -728,4 +740,78 @@ test('transcriptViewer aborts an in-flight translation when the video changes', 
         translate.indexOf('if (isStale()) return;') < translate.indexOf('this._translatedCues = translated;'),
         'the guards must run before the translated cues are published'
     );
+});
+
+function perChannelSpeedBlock() {
+    // Bounded by the next feature's id line, so the slice cannot silently
+    // truncate (and drop destroy()) as the feature grows.
+    const start = ytkitSource.indexOf("\n        {\n            id: 'perChannelSpeed'");
+    assert.ok(start > -1, 'perChannelSpeed must exist');
+    const end = ytkitSource.indexOf("\n            id: '", start + 60);
+    assert.ok(end > start, 'perChannelSpeed must be followed by another feature');
+    return ytkitSource.slice(start, end);
+}
+
+test('perChannelSpeed keeps a saved speed when YouTube re-asserts 1x on its own', () => {
+    // YouTube's player holds its own internal rate and re-asserts it on the
+    // media element on a new stream or a quality change. That arrives untagged
+    // at 1x, and persisting it DELETED the channel's saved speed moments after
+    // we had applied it — the memory erased itself. A real speed change is
+    // always driven by a pointer or a key, so an untagged reset with no recent
+    // input is the player's, not the user's.
+    const block = perChannelSpeedBlock();
+
+    assert.match(block, /_USER_INTENT_WINDOW_MS/,
+        'the feature must define a user-intent window');
+    const rateHandler = block.slice(
+        block.indexOf('this._rateHandler = () => {'),
+        block.indexOf("document.addEventListener('ratechange'")
+    );
+    assert.ok(rateHandler.length > 0, 'the ratechange handler must be extractable');
+    assert.match(rateHandler, /this\._lastInputAt\) > this\._USER_INTENT_WINDOW_MS/,
+        'an untagged reset must be judged against recent user input');
+    assert.match(rateHandler, /setProgrammaticPlaybackRate\(video, saved\)/,
+        'an unattributed reset must re-apply the saved speed');
+    assert.ok(
+        rateHandler.indexOf('setProgrammaticPlaybackRate') < rateHandler.indexOf('this._saveCurrentSpeed()'),
+        're-applying must pre-empt the save that would delete the override'
+    );
+
+    assert.match(block, /document\.addEventListener\(type, this\._inputHandler/,
+        'user input must be observed to attribute rate changes');
+    const destroy = block.slice(block.indexOf('destroy() {'));
+    assert.ok(destroy.length > 0, 'destroy must be present in the slice');
+    assert.match(destroy, /document\.removeEventListener\(type, this\._inputHandler/,
+        'the input listeners must be removed on teardown');
+    assert.match(destroy, /cancelPlayerTask\('feature:perChannelSpeed'\)/,
+        'the scheduled apply must be cancelled on teardown');
+});
+
+test('perChannelSpeed keys dotted handles separately and retries a slow apply', () => {
+    const block = perChannelSpeedBlock();
+
+    // Run the SHIPPED pattern against real owner links rather than pinning its
+    // text: @mr.beast used to key as "@mr", so every dotted handle sharing a
+    // prefix collided into a single saved speed.
+    const keyFn = block.slice(block.indexOf('_getChannelId() {'), block.indexOf('_getSpeeds()'));
+    // Bounded by the call's own tail rather than a character class, so an
+    // escaped slash inside the pattern cannot truncate the capture.
+    const source = keyFn.match(/\.match\(([\s\S]+?)\)\?\.\[0\]/);
+    assert.ok(source, 'the channel-key pattern must be extractable from the feature');
+    const literal = source[1].trim();
+    assert.ok(literal.startsWith('/') && literal.endsWith('/'),
+        'the extracted channel-key pattern must be a regex literal');
+    const pattern = new RegExp(literal.slice(1, -1));
+    assert.equal('https://www.youtube.com/@mr.beast'.match(pattern)[0], '@mr.beast');
+    assert.equal('https://www.youtube.com/@mr.bean'.match(pattern)[0], '@mr.bean');
+    assert.equal('https://www.youtube.com/@alpha/featured'.match(pattern)[0], '@alpha',
+        'a suffixed owner link must still resolve to the bare handle');
+    assert.equal('https://www.youtube.com/channel/UCabc-123'.match(pattern)[0], 'channel/UCabc-123');
+
+    // A single unvalidated read three seconds in gave up silently on slow
+    // metadata; the apply now uses the retry ladder persistentSpeed uses.
+    assert.match(block, /schedulePlayerTask\('feature:perChannelSpeed'/,
+        'apply must go through the player task manager');
+    assert.match(block, /retryDelays: \[0, 150, 400, 1000, 1800, 3000\]/,
+        'apply must retry rather than fire once at t+3s');
 });
