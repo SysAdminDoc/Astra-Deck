@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The local transcript search index can no longer grow without limit. It kept a
+  cap on the number of videos but none on their size, so in the worst case it
+  could reach several hundred megabytes on your disk with nothing showing it and
+  no way to see it. It now also has a size budget and removes the oldest entries
+  first, and the search panel shows how much space it is using.
+
 ## [4.65.0] - 2026-08-18
 
 ### Changed

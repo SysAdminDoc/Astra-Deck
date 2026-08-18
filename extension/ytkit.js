@@ -46376,6 +46376,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _completedVideoId: null,
             _status: null,
             _MAX_RECORDS: 1000,
+            _MAX_TOTAL_BYTES: 64 * 1024 * 1024,
             _MAX_CHUNK_BYTES: 2 * 1024 * 1024,
 
             _helpers() {
@@ -46430,10 +46431,41 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const abort = () => { try { tx.abort(); } catch (_) { /* reason: transaction already settled */ } };
                     options.signal?.addEventListener('abort', abort, { once: true });
                     store.put(prepared);
-                    const countReq = store.count();
-                    countReq.onsuccess = () => {
-                        const overflow = countReq.result - this._MAX_RECORDS;
-                        if (overflow > 0) this._evictOldest(store, overflow);
+                    // Both caps, in one pass over the byIndexedAt index. A record
+                    // count alone was never a budget: 1000 records at the
+                    // 200,000-char text cap is ~400 MB, in a page-origin
+                    // IndexedDB that storageQuotaLRU does not prune and the
+                    // popup's chrome.storage.local measurement cannot see. Walk
+                    // oldest-first, total the estimated bytes, and let the shared
+                    // planner decide what goes — so eviction happens well before
+                    // a write can fail on quota rather than after.
+                    const helpers = this._helpers();
+                    const entries = [];
+                    const scanReq = store.index('byIndexedAt').openCursor();
+                    scanReq.onsuccess = () => {
+                        const cursor = scanReq.result;
+                        if (cursor) {
+                            const record = cursor.value || {};
+                            entries.push({
+                                videoId: record.videoId,
+                                indexedAt: record.indexedAt,
+                                bytes: helpers.estimateRecordBytes(record)
+                            });
+                            cursor.continue();
+                            return;
+                        }
+                        const plan = helpers.planTranscriptEviction(entries, {
+                            maxRecords: this._MAX_RECORDS,
+                            maxBytes: this._MAX_TOTAL_BYTES
+                        });
+                        for (const videoId of plan.evict) {
+                            if (videoId === prepared.videoId) continue;
+                            store.delete(videoId);
+                        }
+                        if (plan.evict.length) {
+                            DebugManager.log('TranscriptIndex',
+                                `Evicted ${plan.evict.length} record(s); kept ${plan.keptRecords} (~${Math.round(plan.keptBytes / 1024)} KB)`);
+                        }
                     };
                     const finish = () => { options.signal?.removeEventListener('abort', abort); db.close(); };
                     tx.oncomplete = () => { finish(); resolve(prepared); };
@@ -46480,6 +46512,54 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     tx.onerror = () => { finish(); reject(tx.error || new Error('Transcript search failed')); };
                     tx.onabort = () => { finish(); reject(options.signal?.aborted ? helpers.createAbortError() : (tx.error || new Error('Transcript search aborted'))); };
                 });
+            },
+
+            // Reports what the index is actually costing: record count, estimated
+            // bytes, oldest/newest entry age, and the browser's own quota
+            // estimate. Nothing else measures this store — the popup reads
+            // chrome.storage.local, which does not include a page-origin
+            // IndexedDB — so without this the largest thing Astra Deck writes to
+            // disk had no readout at all.
+            async _stats() {
+                const helpers = this._helpers();
+                const db = await this._openDb();
+                const entries = await new Promise((resolve, reject) => {
+                    const tx = db.transaction(this._DB_STORE, 'readonly');
+                    const store = tx.objectStore(this._DB_STORE);
+                    const collected = [];
+                    const req = store.index('byIndexedAt').openCursor();
+                    req.onsuccess = () => {
+                        const cursor = req.result;
+                        if (!cursor) return;
+                        const record = cursor.value || {};
+                        collected.push({
+                            videoId: record.videoId,
+                            indexedAt: record.indexedAt,
+                            bytes: helpers.estimateRecordBytes(record)
+                        });
+                        cursor.continue();
+                    };
+                    tx.oncomplete = () => { db.close(); resolve(collected); };
+                    tx.onerror = () => { db.close(); reject(tx.error || new Error('Transcript index stats failed')); };
+                    tx.onabort = () => { db.close(); reject(tx.error || new Error('Transcript index stats aborted')); };
+                });
+                const summary = helpers.summarizeTranscriptIndex(entries, {
+                    maxRecords: this._MAX_RECORDS,
+                    maxBytes: this._MAX_TOTAL_BYTES
+                });
+                let estimate = null;
+                try {
+                    // Optional: Firefox gates this behind a permission in some
+                    // configurations and it must never fail the readout.
+                    estimate = await navigator.storage?.estimate?.() || null;
+                } catch (_) {
+                    estimate = null;
+                }
+                return {
+                    ...summary,
+                    quotaBytes: Number(estimate?.quota) || 0,
+                    quotaUsageBytes: Number(estimate?.usage) || 0
+                };
             },
 
             async _clear() {
@@ -46785,6 +46865,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._queryController = null;
             },
 
+            // Fills the panel's storage line from the index's own stats. Failure
+            // is not fatal to the panel: a search surface that cannot measure
+            // itself must still search.
+            async _renderIndexUsage(target) {
+                const feature = getFeatureById?.('researchTranscriptIndex');
+                if (!feature?._stats) return;
+                try {
+                    const stats = await feature._stats();
+                    if (!target.isConnected) return;
+                    // Local formatter: ytkit.js has no shared byte formatter, and
+                    // referencing a bare undeclared identifier throws in strict
+                    // mode rather than reading as undefined.
+                    const asSize = (bytes) => (bytes >= 1024 * 1024
+                        ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+                        : `${Math.max(0, Math.round(bytes / 1024))} KB`);
+                    const sizeText = asSize(stats.bytes);
+                    const budgetText = asSize(stats.maxBytes);
+                    target.textContent = t('transcriptIndexUsageTpl',
+                        '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.')
+                        .replace('{count}', String(stats.records))
+                        .replace('{maxCount}', String(stats.maxRecords))
+                        .replace('{size}', sizeText)
+                        .replace('{budget}', budgetText);
+                } catch (e) {
+                    if (!target.isConnected) return;
+                    target.textContent = t('transcriptIndexUsageFailed', 'Could not measure the local index.');
+                    DebugManager.log('TranscriptIndex', `Usage readout failed: ${e.message}`);
+                }
+            },
+
             async _renderResults(query) {
                 if (!this._panel) return;
                 const ul = this._panel.querySelector('ul');
@@ -46883,6 +46993,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 panel.appendChild(input);
                 const ul = document.createElement('ul');
                 panel.appendChild(ul);
+                // Storage readout. This index lives in a page-origin IndexedDB,
+                // so the popup's chrome.storage.local measurement cannot see it
+                // and the user had no way to learn what the largest thing Astra
+                // Deck writes to disk was costing them. It belongs next to the
+                // Clear button, which is the recovery action for it.
+                const usage = document.createElement('p');
+                usage.className = 'ytkit-transcript-search-panel__usage';
+                usage.setAttribute('role', 'status');
+                usage.textContent = t('transcriptIndexUsageLoading', 'Measuring local index…');
+                panel.appendChild(usage);
+                this._renderIndexUsage(usage);
+
                 const footer = document.createElement('div');
                 footer.className = 'ytkit-transcript-search-panel__footer';
                 const closeBtn = document.createElement('button');

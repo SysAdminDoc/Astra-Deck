@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "Laden Sie die Seite neu oder versuchen Sie es gleich erneut, falls die Untertitel noch verarbeitet werden."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "Lokalen Index wird gemessen…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "{count} von {maxCount} Videos indexiert, {size} von {budget}. Die ältesten Einträge werden zuerst entfernt."
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "Der lokale Index konnte nicht gemessen werden."
   }
 }

@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "Reload the page or try again in a moment if captions are still processing."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "Measuring local index…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first."
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "Could not measure the local index."
   }
 }

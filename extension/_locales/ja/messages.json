@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "字幕が処理中の場合は、ページを再読み込みするか、しばらくしてからもう一度お試しください。"
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "ローカルインデックスを測定中…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "{maxCount} 本中 {count} 本の動画をインデックス済み、{budget} 中 {size}。古いエントリーから削除されます。"
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "ローカルインデックスを測定できませんでした。"
   }
 }

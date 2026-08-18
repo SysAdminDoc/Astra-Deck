@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "Recarregue a página ou tente novamente em instantes se as legendas ainda estiverem sendo processadas."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "Medindo o índice local…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "{count} de {maxCount} vídeos indexados, {size} de {budget}. As entradas mais antigas são removidas primeiro."
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "Não foi possível medir o índice local."
   }
 }
