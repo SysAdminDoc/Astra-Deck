@@ -75,6 +75,40 @@ test('the one destructive action that cannot be undone says so', () => {
         'deleteAiCredential must not offer an undo it cannot honour');
 });
 
+test('the popup gives keyboard users a skip link, like the side panel already did', () => {
+    const html = read('extension', 'popup.html');
+    const css = read('extension', 'popup.css');
+
+    // ~15 sections of app bar and header controls sit above the toggle list.
+    assert.match(html, /<a class="skip-link" href="#popup-workspace" data-i18n="spSkipToSettings">/,
+        'popup must offer a skip link as its first focusable element');
+    assert.ok(html.indexOf('class="skip-link"') < html.indexOf('class="page-shell"'),
+        'the skip link must precede the shell so Tab reaches it first');
+    assert.match(html, /<main class="options-workspace" id="popup-workspace" tabindex="-1"/,
+        'the skip target must be focusable programmatically');
+
+    // Visually hidden but never display:none — a display:none link is not
+    // reachable by Tab, which is the whole point.
+    assert.match(css, /\.skip-link \{[^}]*position: absolute/);
+    assert.doesNotMatch(css.slice(css.indexOf('.skip-link {'), css.indexOf('.skip-link:focus')),
+        /display:\s*none/, 'a skip link hidden with display:none is unreachable');
+    assert.match(css, /\.skip-link:focus \{[^}]*position: fixed/,
+        'the skip link must become visible on focus');
+
+    const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
+    assert.ok(en.spSkipToSettings?.message, 'the skip link label must be localizable');
+});
+
+test('the popup keeps the focus cycle its aria-modal body promises', () => {
+    // A 2026-08-14 audit read this trap as vestigial. It is not: popup.html
+    // declares role="dialog" aria-modal="true" on <body>, and a modal dialog
+    // owes AT a real focus cycle. Pinned here so the reasoning travels with it.
+    const html = read('extension', 'popup.html');
+    assert.match(html, /<body[^>]*aria-modal="true"/);
+    assert.match(popupSource, /a modal dialog\s*\n\/\/ owes assistive technology a real focus cycle|owes assistive technology a real focus cycle/,
+        'the trap must carry the reason it exists, so it is not deleted as dead code again');
+});
+
 test('the irreversibility warning is localized, not English-only', () => {
     const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
     assert.match(en.aiCredentialDeleted.message, /cannot be undone/);

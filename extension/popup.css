@@ -129,6 +129,46 @@ body {
   color: var(--text-primary);
 }
 
+/* Visually hidden until focused, then pinned over the app bar. Mirrors
+   .sp-skip-link in sidepanel.css. Kept off `display:none` so it stays
+   reachable by Tab. */
+.skip-link {
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 100;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%);
+  color: var(--accent-on);
+  text-decoration: none;
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.skip-link:focus {
+  position: fixed;
+  inset-inline-start: 12px;
+  top: 12px;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  box-shadow: var(--focus-ring);
+}
+
+/* The workspace takes focus programmatically from the skip link only; it
+   must never become a Tab stop of its own. */
+.options-workspace:focus {
+  outline: none;
+}
+
+.options-workspace:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
 .page-shell {
   display: flex;
   flex-direction: column;
@@ -3426,6 +3466,9 @@ textarea:focus-visible {
      field all outrank a bare `input:focus-visible`, so they have to be
      matched at their own specificity to win here. `npm run audit:a11y`
      fails if a new outline-suppressing focus rule is added without a lane. */
+  /* The skip link is focused with :focus, not :focus-visible — it must show
+     while keyboard-tabbing through it — so it needs its own entry here. */
+  .skip-link:focus,
   .toggle:focus-visible,
   [role="switch"]:focus-visible,
   input:focus-visible,

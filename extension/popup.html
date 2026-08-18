@@ -18,6 +18,10 @@
 <link rel="stylesheet" href="surface-system.css">
 </head>
 <body role="dialog" aria-modal="true" aria-labelledby="popup-title">
+<!-- Keyboard users otherwise tab through the whole app bar and every
+     header control before reaching the workspace. Mirrors sidepanel.html's
+     .sp-skip-link, which has had one since v4.47.0. -->
+<a class="skip-link" href="#popup-workspace" data-i18n="spSkipToSettings">Skip to settings</a>
 <div class="page-shell">
 
   <header class="app-bar">
@@ -32,7 +36,7 @@
     <div class="app-status" id="contextState" data-i18n-attr-aria-label="contextStateAriaLabel" aria-label="Tab context" data-i18n="contextStateLocal">Local</div>
   </header>
 
-  <main class="options-workspace" aria-labelledby="popup-title">
+  <main class="options-workspace" id="popup-workspace" tabindex="-1" aria-labelledby="popup-title">
 
     <!-- v4.47.0 NF21: first-run welcome card. Rendered on first popup
          open after install (detected via the absence of the

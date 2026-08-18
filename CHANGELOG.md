@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The Reaction Sender panel now closes with Escape and returns focus to the
+  button that opened it.
+- The popup has a "Skip to settings" link for keyboard users, matching the side
+  panel. It stays visible in Windows High Contrast.
 - Destructive actions now behave consistently. Removing a single video from the
   hidden list offers Undo, the same as the two bulk buttons beside it. Undoing a
   YouTube Takeout import works even on a first-ever import, which previously got
