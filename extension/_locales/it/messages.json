@@ -5425,6 +5425,9 @@
   "storageBannerTitle": {
     "message": "Utilizzo archivio elevato"
   },
+  "storagePreloadFailed": {
+    "message": "Astra Deck non è riuscito a leggere le impostazioni salvate. Questa pagina usa i valori predefiniti: ricaricala per riprovare."
+  },
   "storageStatsAriaLabel": {
     "message": "Statistiche di archiviazione"
   },

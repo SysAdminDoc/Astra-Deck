@@ -5425,6 +5425,9 @@
   "storageBannerTitle": {
     "message": "Stockage saturé"
   },
+  "storagePreloadFailed": {
+    "message": "Astra Deck n’a pas pu lire vos paramètres enregistrés. Cette page utilise les valeurs par défaut — rechargez-la pour réessayer."
+  },
   "storageStatsAriaLabel": {
     "message": "Statistiques de stockage"
   },

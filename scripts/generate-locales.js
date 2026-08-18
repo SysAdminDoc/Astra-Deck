@@ -4324,56 +4324,64 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Wird nur in Ihrem Userscript-Manager gespeichert, außerhalb der Astra Deck-Einstellungen und -Exporte.',
     'No video ID found': 'Keine Video-ID gefunden',
     'No transcript available for this video': 'Für dieses Video ist kein Transkript verfügbar',
-    'Transcript downloaded! ({count} segments)': 'Transkript heruntergeladen! ({count} Segmente)'
+    'Transcript downloaded! ({count} segments)': 'Transkript heruntergeladen! ({count} Segmente)',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck konnte Ihre gespeicherten Einstellungen nicht lesen. Diese Seite läuft mit Standardwerten – laden Sie sie neu, um es erneut zu versuchen.'
   },
   es: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Se ha configurado una credencial. Introduce un valor nuevo para reemplazarla; el valor guardado nunca se muestra.',
     'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Solo se guarda en tu gestor de userscripts, fuera de la configuración y las exportaciones de Astra Deck.',
     'No video ID found': 'No se encontró el ID del video',
     'No transcript available for this video': 'No hay transcripción disponible para este video',
-    'Transcript downloaded! ({count} segments)': '¡Transcripción descargada! ({count} segmentos)'
+    'Transcript downloaded! ({count} segments)': '¡Transcripción descargada! ({count} segmentos)',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck no pudo leer tu configuración guardada. Esta página funciona con los valores predeterminados: recárgala para volver a intentarlo.'
   },
   fr: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Un identifiant est configuré. Saisissez une nouvelle valeur pour le remplacer ; la valeur enregistrée n’est jamais affichée.',
     'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Stocké uniquement dans votre gestionnaire de userscript, en dehors des paramètres et exports d’Astra Deck.',
     'No video ID found': 'ID vidéo introuvable',
     'No transcript available for this video': 'Aucune transcription disponible pour cette vidéo',
-    'Transcript downloaded! ({count} segments)': 'Transcription téléchargée ! ({count} segments)'
+    'Transcript downloaded! ({count} segments)': 'Transcription téléchargée ! ({count} segments)',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck n’a pas pu lire vos paramètres enregistrés. Cette page utilise les valeurs par défaut — rechargez-la pour réessayer.'
   },
   it: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Una credenziale è configurata. Inserisci un nuovo valore per sostituirla; il valore salvato non viene mai mostrato.',
     'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Salvata solo nel gestore userscript, fuori dalle impostazioni e dalle esportazioni di Astra Deck.',
     'No video ID found': 'ID video non trovato',
     'No transcript available for this video': 'Nessuna trascrizione disponibile per questo video',
-    'Transcript downloaded! ({count} segments)': 'Trascrizione scaricata! ({count} segmenti)'
+    'Transcript downloaded! ({count} segments)': 'Trascrizione scaricata! ({count} segmenti)',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck non è riuscito a leggere le impostazioni salvate. Questa pagina usa i valori predefiniti: ricaricala per riprovare.'
   },
   pt_BR: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Uma credencial está configurada. Insira um novo valor para substituí-la; o valor armazenado nunca é exibido.',
     'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Armazenada apenas no gerenciador de userscripts, fora das configurações e exportações do Astra Deck.',
     'No video ID found': 'ID do vídeo não encontrado',
     'No transcript available for this video': 'Nenhuma transcrição disponível para este vídeo',
-    'Transcript downloaded! ({count} segments)': 'Transcrição baixada! ({count} segmentos)'
+    'Transcript downloaded! ({count} segments)': 'Transcrição baixada! ({count} segmentos)',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'O Astra Deck não conseguiu ler suas configurações salvas. Esta página está usando os padrões — recarregue para tentar de novo.'
   },
   ru: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'Учетные данные настроены. Введите новое значение для замены; сохраненное значение никогда не показывается.',
     'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'Хранится только в менеджере userscript, отдельно от настроек и экспортов Astra Deck.',
     'No video ID found': 'ID видео не найдено',
     'No transcript available for this video': 'Для этого видео нет доступной расшифровки',
-    'Transcript downloaded! ({count} segments)': 'Расшифровка загружена! ({count} сегм.)'
+    'Transcript downloaded! ({count} segments)': 'Расшифровка загружена! ({count} сегм.)',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck не смог прочитать сохранённые настройки. Эта страница работает со значениями по умолчанию — перезагрузите её, чтобы повторить попытку.'
   },
   ja: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': '認証情報が設定されています。置き換える新しい値を入力してください。保存値は表示されません。',
     'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'ユーザースクリプトマネージャー内だけに保存され、Astra Deck の設定やエクスポートには含まれません。',
     'No video ID found': '動画 ID が見つかりません',
     'No transcript available for this video': 'この動画の文字起こしはありません',
-    'Transcript downloaded! ({count} segments)': '文字起こしをダウンロードしました（{count} セグメント）'
+    'Transcript downloaded! ({count} segments)': '文字起こしをダウンロードしました（{count} セグメント）',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck は保存された設定を読み取れませんでした。このページは既定値で動作しています。再読み込みして再試行してください。'
   },
   ko: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': '자격 증명이 설정되어 있습니다. 바꿀 새 값을 입력하세요. 저장된 값은 표시되지 않습니다.',
     'Stored only in your userscript manager, outside Astra Deck settings and exports.': 'userscript 관리자에만 저장되며 Astra Deck 설정 및 내보내기에는 포함되지 않습니다.',
     'No video ID found': '동영상 ID를 찾을 수 없습니다',
     'No transcript available for this video': '이 동영상에는 사용할 수 있는 스크립트가 없습니다',
-    'Transcript downloaded! ({count} segments)': '스크립트를 다운로드했습니다! ({count}개 세그먼트)'
+    'Transcript downloaded! ({count} segments)': '스크립트를 다운로드했습니다! ({count}개 세그먼트)',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck이 저장된 설정을 읽지 못했습니다. 이 페이지는 기본값으로 실행 중입니다. 새로고침하여 다시 시도하세요.'
   },
   ar: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': 'تم إعداد بيانات اعتماد. أدخل قيمة جديدة لاستبدالها؛ لا يتم عرض القيمة المخزنة.',
@@ -4381,7 +4389,8 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'Fetching transcript…': 'جارٍ جلب النص…',
     'No video ID found': 'لم يتم العثور على معرّف الفيديو',
     'No transcript available for this video': 'لا يتوفر نص لهذا الفيديو',
-    'Transcript downloaded! ({count} segments)': 'تم تنزيل النص! ({count} مقطع)'
+    'Transcript downloaded! ({count} segments)': 'تم تنزيل النص! ({count} مقطع)',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'تعذّر على Astra Deck قراءة إعداداتك المحفوظة. تعمل هذه الصفحة بالإعدادات الافتراضية — أعد تحميلها للمحاولة مرة أخرى.'
   },
   zh_CN: {
     'A credential is configured. Enter a new value to replace it; the stored value is never shown.': '凭据已配置。输入新值即可替换；不会显示已存储的值。',
@@ -4389,7 +4398,8 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'Fetching transcript…': '正在获取转录文本…',
     'No video ID found': '未找到视频 ID',
     'No transcript available for this video': '此视频没有可用字幕',
-    'Transcript downloaded! ({count} segments)': '字幕已下载！（{count} 个片段）'
+    'Transcript downloaded! ({count} segments)': '字幕已下载！（{count} 个片段）',
+    'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck 无法读取您保存的设置。此页面正在使用默认值 — 请重新加载后重试。'
   }
 };
 for (const [locale, messages] of Object.entries(RUNTIME_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);

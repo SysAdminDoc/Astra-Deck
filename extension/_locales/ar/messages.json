@@ -5425,6 +5425,9 @@
   "storageBannerTitle": {
     "message": "استخدام التخزين مرتفع"
   },
+  "storagePreloadFailed": {
+    "message": "تعذّر على Astra Deck قراءة إعداداتك المحفوظة. تعمل هذه الصفحة بالإعدادات الافتراضية — أعد تحميلها للمحاولة مرة أخرى."
+  },
   "storageStatsAriaLabel": {
     "message": "إحصائيات التخزين"
   },
