@@ -252,6 +252,7 @@ function updateDocument(content, facts) {
 function run(mode = 'check') {
     const facts = collectProjectFacts();
     const errors = [];
+    const warnings = [];
     for (const relativePath of getDocumentTargets()) {
         const absolutePath = path.join(REPO_ROOT, relativePath);
         const content = fs.readFileSync(absolutePath, 'utf8');
@@ -260,9 +261,18 @@ function run(mode = 'check') {
             if (updated !== content) fs.writeFileSync(absolutePath, updated, 'utf8');
             continue;
         }
+        // Optional targets are untracked, machine-local working notes. Their
+        // staleness is worth reporting but must not fail a shared gate — no
+        // other machine can even see the file, and a red gate here masked
+        // every gate after it in the fail-fast `check` chain.
+        const sink = OPTIONAL_DOCUMENT_TARGETS.includes(relativePath) ? warnings : errors;
         for (const error of validateDocument(content, facts)) {
-            errors.push(`${relativePath}: ${error}`);
+            sink.push(`${relativePath}: ${error}`);
         }
+    }
+    if (mode === 'check' && warnings.length) {
+        console.warn('[project-facts] local documentation drift (not gated):');
+        for (const warning of warnings) console.warn(`  ! ${warning} — run \`node scripts/project-facts.js --write\``);
     }
     if (mode === 'check' && errors.length) {
         console.error('[project-facts] documentation drift detected:');

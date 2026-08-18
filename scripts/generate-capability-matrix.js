@@ -33,8 +33,14 @@ function writeCapabilityMatrix(outputPath = DEFAULT_OUTPUT_PATH) {
 }
 
 function checkCapabilityMatrix(outputPath = DEFAULT_OUTPUT_PATH) {
+    // The matrix is derived entirely from capability-probe.js and written into
+    // the gitignored build/ directory, so on a fresh clone there is nothing to
+    // compare against — and treating that as drift made `npm run check` fail
+    // on every clean checkout. A missing artifact is not drift: generate it
+    // and pass. Only a file that disagrees with the source is a failure.
     if (!fs.existsSync(outputPath)) {
-        throw new Error(`Capability matrix is missing: ${path.relative(REPO_ROOT, outputPath)}`);
+        writeCapabilityMatrix(outputPath);
+        return;
     }
     const actual = fs.readFileSync(outputPath, 'utf8');
     const expected = renderCapabilityMatrix();
