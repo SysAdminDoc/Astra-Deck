@@ -1049,16 +1049,13 @@ function filterRequestHeaders(headers, url) {
 }
 
 const EXT_FETCH_REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
-const MAX_EXT_FETCH_REDIRECTS = 5;
+// Redirects are refused, not followed, so the only bound that matters is zero.
+// Kept as a named constant because the refusal is a deliberate policy rather
+// than an oversight, and because the gate in tests/hardening.test.js reads it.
+const MAX_EXT_FETCH_REDIRECTS = 0;
 const EXT_FETCH_BODY_HEADERS = new Set([
     'content-length', 'content-type', 'transfer-encoding'
 ]);
-
-function getExtFetchRedirectMethod(status, method) {
-    if (status === 303 && method !== 'GET' && method !== 'HEAD') return 'GET';
-    if ((status === 301 || status === 302) && method === 'POST') return 'GET';
-    return method;
-}
 
 function normalizeExtFetchUrl(url) {
     try {
@@ -1074,12 +1071,12 @@ async function fetchWithValidatedRedirects(url, options) {
         throw new Error(`URL not in allowlist: ${url}`);
     }
 
-    let currentMethod = options.method;
-    let currentBody = options.body ?? null;
+    const currentMethod = options.method;
+    const currentBody = options.body ?? null;
     const baseHeaders = options.headers || {};
     const requestedCredentials = options.credentials;
 
-    for (let redirectCount = 0; ; redirectCount++) {
+    {
         const hopHeaders = filterRequestHeaders(baseHeaders, currentUrl);
         if (currentBody === null || currentMethod === 'GET' || currentMethod === 'HEAD') {
             for (const key of Object.keys(hopHeaders)) {
@@ -1111,43 +1108,39 @@ async function fetchWithValidatedRedirects(url, options) {
             throw new Error('Response URL changed before redirect validation.');
         }
 
-        if (response.type === 'opaqueredirect') {
+        // REDIRECTS ARE REFUSED, DELIBERATELY, AND THIS IS THE ONLY OUTCOME.
+        //
+        // `redirect: 'manual'` above makes the browser return an opaque-redirect
+        // filtered response for ANY 3xx: type 'opaqueredirect', status 0, empty
+        // headers. There is no way to read `Location` from it, so a redirect
+        // target cannot be checked against the allowlist or re-checked against
+        // the user's optional-host grant before the worker would contact it.
+        //
+        // This used to be followed by a hop-following loop that read
+        // response.status and the Location header. That branch could never run
+        // in a browser — only under a test mock that returned a plain
+        // Response(null, {status: 302, headers: {location}}), which is type
+        // 'basic' with readable headers. The code therefore advertised per-hop
+        // validation it did not have, while shipping fail-closed behaviour.
+        //
+        // Fail-closed is the right outcome, so the dead branch is gone rather
+        // than the guard. The cost is real and accepted: an allowlisted endpoint
+        // that legitimately 3xx-bounces (http→https, trailing-slash
+        // normalisation) is refused rather than followed. Fixing that would mean
+        // giving up per-hop validation entirely — `redirect: 'follow'` only lets
+        // us check the FINAL url, after every intermediate host has already been
+        // contacted — which is a worse trade for an SSRF boundary.
+        if (response.type === 'opaqueredirect' || EXT_FETCH_REDIRECT_STATUSES.has(response.status)) {
             if (hopOptions.credentials === 'include' || hasSensitiveAuthHeader(hopHeaders)) {
                 throw new Error('Blocked redirect on a credentialed request (possible cross-origin credential leak)');
             }
-            throw new Error('Blocked opaque redirect because its target could not be validated.');
+            throw new Error(
+                `Blocked redirect from ${currentUrl}: its target cannot be validated before the request is made, `
+                + 'so redirects are refused. Point the setting at the final URL instead.'
+            );
         }
 
-        if (!EXT_FETCH_REDIRECT_STATUSES.has(response.status)) {
-            return { response, finalUrl: currentUrl };
-        }
-
-        if (redirectCount >= MAX_EXT_FETCH_REDIRECTS) {
-            throw new Error(`Too many redirects (maximum ${MAX_EXT_FETCH_REDIRECTS})`);
-        }
-
-        const location = response.headers?.get?.('location');
-        if (!location) throw new Error('Redirect response did not expose a Location header.');
-
-        let nextUrl;
-        try {
-            nextUrl = new URL(location, currentUrl).toString();
-        } catch (_) {
-            throw new Error('Redirect location is invalid.');
-        }
-        if (!isUrlAllowed(nextUrl)) {
-            throw new Error(`Redirect URL not in allowlist: ${nextUrl}`);
-        }
-        // Dynamic HTTPS destinations are covered by one broad declaration but
-        // one exact user grant. Re-check every redirect hop so a permitted
-        // filter-list host cannot bounce the worker to an unrelated public
-        // origin that the user never approved.
-        await requireRuntimeOptionalHostGrant(nextUrl);
-
-        const nextMethod = getExtFetchRedirectMethod(response.status, currentMethod);
-        if (nextMethod !== currentMethod) currentBody = null;
-        currentMethod = nextMethod;
-        currentUrl = nextUrl;
+        return { response, finalUrl: currentUrl };
     }
 }
 
