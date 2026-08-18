@@ -24233,6 +24233,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 addNavigateRule('bookmarks', () => {
                     this._exportController?.abort();
                     this._exportController = null;
+                    // #secondary-inner survives SPA navigation, so the previous
+                    // video's container must be removed here. Dropping only the
+                    // element references leaves an orphan that makes _inject()
+                    // early-return forever: the panel would keep rendering the
+                    // previous video's bookmarks and route note edits to its id.
+                    document.querySelectorAll('.ytkit-bookmarks-container').forEach(el => el.remove());
                     this._panel = null;
                     this._countEl = null;
                     this._statusEl = null;

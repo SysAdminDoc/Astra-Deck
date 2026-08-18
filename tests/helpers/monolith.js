@@ -69,6 +69,39 @@ function loadFeature(id, extraGlobals = {}) {
     return vm.runInNewContext(`(${featureSource(id)})`, sandbox);
 }
 
+/**
+ * Match one compound selector (no combinators) against a fake node.
+ * Descendant/child combinators cannot be evaluated against a fixture that only
+ * models one hop, so they throw rather than silently reporting "no match" —
+ * a false negative here makes `closest()` return null and skips whole feature
+ * bodies while the test still passes.
+ */
+function matchesCompound(node, selector, classes, attrs) {
+    if (/[\s>+~]/.test(selector)) {
+        throw new Error(`fakeNode.matches cannot evaluate combinator selector '${selector}'`);
+    }
+    const parts = selector.match(/^[a-zA-Z][\w-]*|\.[\w-]+|#[\w-]+|\[[^\]]+\]|:[\w-]+/g);
+    if (!parts || parts.join('') !== selector) {
+        throw new Error(`fakeNode.matches cannot evaluate selector '${selector}'`);
+    }
+    return parts.every((part) => {
+        if (part.startsWith('.')) return classes.has(part.slice(1));
+        if (part.startsWith('#')) return attrs.get('id') === part.slice(1);
+        if (part.startsWith('[')) {
+            const body = part.slice(1, -1);
+            const eq = body.indexOf('=');
+            if (eq === -1) return attrs.has(body);
+            const name = body.slice(0, eq).replace(/[$^*~|]$/, '');
+            const value = body.slice(eq + 1).replace(/^["']|["']$/g, '');
+            return attrs.has(name) && attrs.get(name) === value;
+        }
+        if (part.startsWith(':')) {
+            throw new Error(`fakeNode.matches cannot evaluate pseudo-class '${part}'`);
+        }
+        return part.toUpperCase() === node.tagName;
+    });
+}
+
 /** A DOM-ish node: enough surface for feature code, nothing more. */
 function fakeNode(options = {}) {
     const {
@@ -80,14 +113,22 @@ function fakeNode(options = {}) {
     } = options;
     const attrs = new Map(Object.entries(attributes));
     const classes = new Set();
+    if (typeof attributes.class === 'string') {
+        attributes.class.split(/\s+/).filter(Boolean).forEach((name) => classes.add(name));
+    }
     const node = {
         tagName: tag.toUpperCase(),
         textContent: text,
         data,
         clicked: 0,
+        removed: 0,
         dataset: {},
         style: {},
         children,
+        // Real nodes are attached until something detaches them. A falsy
+        // default made every `if (!el.isConnected) return` guard skip its whole
+        // body under test, so a broken feature passed silently.
+        isConnected: true,
         classList: {
             add: (name) => classes.add(name),
             remove: (name) => classes.delete(name),
@@ -105,7 +146,10 @@ function fakeNode(options = {}) {
         getAttribute: (name) => (attrs.has(name) ? attrs.get(name) : null),
         setAttribute: (name, value) => attrs.set(name, String(value)),
         removeAttribute: (name) => attrs.delete(name),
-        matches: (selector) => selector.split(',').some(part => part.trim() === tag),
+        matches(selector) {
+            return String(selector).split(',')
+                .some(part => matchesCompound(this, part.trim(), classes, attrs));
+        },
         closest(selector) {
             return this.matches(selector) ? this : (this.parentElement?.closest?.(selector) ?? null);
         },
@@ -114,9 +158,61 @@ function fakeNode(options = {}) {
         addEventListener() {},
         removeEventListener() {},
         click() { this.clicked += 1; },
-        appendChild() {},
-        replaceChildren() {}
+        // These used to be no-ops, so a feature could "build and attach" its
+        // whole UI invisibly and any assertion on the result was impossible.
+        appendChild(child) {
+            this.children.push(child);
+            if (child) {
+                child.parentElement = this;
+                child.isConnected = true;
+            }
+            return child;
+        },
+        replaceChildren(...next) {
+            this.children.splice(0, this.children.length, ...next);
+            next.forEach((child) => {
+                if (!child) return;
+                child.parentElement = this;
+                child.isConnected = true;
+            });
+        },
+        insertBefore(child, reference) {
+            const at = reference ? this.children.indexOf(reference) : -1;
+            if (at === -1) this.children.push(child);
+            else this.children.splice(at, 0, child);
+            if (child) {
+                child.parentElement = this;
+                child.isConnected = true;
+            }
+            return child;
+        },
+        remove() {
+            this.removed += 1;
+            this.isConnected = false;
+            const siblings = this.parentElement?.children;
+            if (Array.isArray(siblings)) {
+                const at = siblings.indexOf(this);
+                if (at !== -1) siblings.splice(at, 1);
+            }
+            this.parentElement = null;
+        }
     };
+    Object.defineProperty(node, 'firstChild', {
+        get() { return this.children[0] || null; },
+        configurable: true
+    });
+    // Features assign `el.className = 'x y'` as often as they call
+    // classList.add. Without reflection the classes are invisible to
+    // matches()/closest()/contains(), so a mounted element looks unmounted.
+    Object.defineProperty(node, 'className', {
+        get() { return [...classes].join(' '); },
+        set(value) {
+            classes.clear();
+            String(value ?? '').split(/\s+/).filter(Boolean).forEach(name => classes.add(name));
+        },
+        configurable: true,
+        enumerable: true
+    });
     children.forEach((child) => { child.parentElement = node; });
     return node;
 }
@@ -129,6 +225,8 @@ function fakeDocument(resolve) {
     return {
         body: fakeNode({ tag: 'body' }),
         documentElement: fakeNode({ tag: 'html' }),
+        createElement: (tag) => fakeNode({ tag }),
+        createTextNode: (text) => fakeNode({ tag: '#text', text }),
         querySelector(selector) { return this.querySelectorAll(selector)[0] || null; },
         querySelectorAll(selector) {
             const found = resolve(selector);
