@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "자막 처리 중이라면 페이지를 새로 고치거나 잠시 후 다시 시도하세요."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "로컬 색인을 측정하는 중…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "동영상 {maxCount}개 중 {count}개 색인됨, {budget} 중 {size}. 오래된 항목부터 삭제됩니다."
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "로컬 색인을 측정할 수 없습니다."
   }
 }

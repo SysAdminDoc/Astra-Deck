@@ -191,11 +191,11 @@ duplicated here.
 
 #### P2
 
-- [ ] P2 — Put the transcript IndexedDB under a byte budget and show it in storage health
-  Why: the index caps 1,000 records and 200,000 characters per record but the popup measures only `chrome.storage.local`; `storageQuotaLRU` does not prune `ytkit-transcript-index`, so the largest local store can grow without a visible budget or recovery path.
-  Evidence: `extension/core/transcript-index.js:7-18`, `extension/ytkit.js:45545-45843`, `extension/popup.js:2011-2055`, `extension/ytkit.js:36726-36855`, https://developer.chrome.com/docs/extensions/reference/api/storage, https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/estimate
-  Touches: `extension/core/transcript-index.js`, `extension/ytkit.js`, `extension/core/persisted-domains.js`, `extension/popup.js`, `scripts/audit-storage-size.js`, `scripts/smoke-transcript-index.js`, `tests/core-transcript-index.test.js`, `tests/storage-size-audit.test.js`
-  Acceptance: transcript index reports count, estimated bytes, oldest/newest age, and IndexedDB/storage estimate alongside extension-local bytes; a deterministic byte cap plus record cap evicts oldest records before writes fail; quota/corruption states offer export/clear/undo-safe recovery; the cap and metadata are included in backups; stress tests prove no cross-video data loss and no silent quota rejection.
+- [ ] P3 — Finish the transcript-index storage story: popup readout, backups, corruption recovery
+  Status 2026-08-18: the reliability core shipped — a 64 MB byte budget alongside the 1,000-record cap, oldest-first eviction planned by a pure, unit-tested helper (`planTranscriptEviction`) and applied in the write path before a quota failure can occur, an `_stats()` readout (count, bytes, oldest/newest, `navigator.storage.estimate()`), and a localized usage line in the transcript search panel next to its Clear action. Stress test proves the worst case the record cap alone permitted (1,000 x 200,000 chars, ~400 MB) now stays under budget with nothing dropped from the accounting.
+  Remaining: (a) the POPUP cannot show this — the index lives in a page-origin IndexedDB, so `chrome.storage.local` measurement will never include it and surfacing it needs a new content-script message channel; (b) the cap and index metadata are not yet included in settings backups; (c) a corrupted-store state offers Clear but no export-before-clear.
+  Touches: `extension/popup.js`, `extension/background.js`, `extension/core/persisted-domains.js`, `extension/ytkit.js`
+  Acceptance: the popup reports transcript-index count/bytes alongside extension-local bytes by asking an open YouTube tab (and degrades cleanly when none is open); backups carry the cap and index metadata; a corruption state offers export-then-clear rather than clear alone.
   Complexity: M
 
 - [ ] P2 — Extend rendered locale and WCAG reflow coverage to every primary surface

@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "如果字幕仍在处理中，请重新加载页面或稍后重试。"
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "正在测量本地索引…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "已索引 {maxCount} 个视频中的 {count} 个，{budget} 中已用 {size}。最早的条目会被优先删除。"
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "无法测量本地索引。"
   }
 }

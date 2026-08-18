@@ -4325,6 +4325,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': 'Keine Video-ID gefunden',
     'No transcript available for this video': 'Für dieses Video ist kein Transkript verfügbar',
     'Transcript downloaded! ({count} segments)': 'Transkript heruntergeladen! ({count} Segmente)',
+    'Measuring local index…': 'Lokalen Index wird gemessen…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': '{count} von {maxCount} Videos indexiert, {size} von {budget}. Die ältesten Einträge werden zuerst entfernt.',
+    'Could not measure the local index.': 'Der lokale Index konnte nicht gemessen werden.',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck konnte Ihre gespeicherten Einstellungen nicht lesen. Diese Seite läuft mit Standardwerten – laden Sie sie neu, um es erneut zu versuchen.'
   },
   es: {
@@ -4333,6 +4336,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': 'No se encontró el ID del video',
     'No transcript available for this video': 'No hay transcripción disponible para este video',
     'Transcript downloaded! ({count} segments)': '¡Transcripción descargada! ({count} segmentos)',
+    'Measuring local index…': 'Midiendo el índice local…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': '{count} de {maxCount} videos indexados, {size} de {budget}. Las entradas más antiguas se eliminan primero.',
+    'Could not measure the local index.': 'No se pudo medir el índice local.',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck no pudo leer tu configuración guardada. Esta página funciona con los valores predeterminados: recárgala para volver a intentarlo.'
   },
   fr: {
@@ -4341,6 +4347,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': 'ID vidéo introuvable',
     'No transcript available for this video': 'Aucune transcription disponible pour cette vidéo',
     'Transcript downloaded! ({count} segments)': 'Transcription téléchargée ! ({count} segments)',
+    'Measuring local index…': 'Mesure de l’index local…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': '{count} vidéos sur {maxCount} indexées, {size} sur {budget}. Les entrées les plus anciennes sont supprimées en premier.',
+    'Could not measure the local index.': 'Impossible de mesurer l’index local.',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck n’a pas pu lire vos paramètres enregistrés. Cette page utilise les valeurs par défaut — rechargez-la pour réessayer.'
   },
   it: {
@@ -4349,6 +4358,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': 'ID video non trovato',
     'No transcript available for this video': 'Nessuna trascrizione disponibile per questo video',
     'Transcript downloaded! ({count} segments)': 'Trascrizione scaricata! ({count} segmenti)',
+    'Measuring local index…': 'Misurazione dell’indice locale…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': '{count} di {maxCount} video indicizzati, {size} di {budget}. Le voci più vecchie vengono rimosse per prime.',
+    'Could not measure the local index.': 'Impossibile misurare l’indice locale.',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck non è riuscito a leggere le impostazioni salvate. Questa pagina usa i valori predefiniti: ricaricala per riprovare.'
   },
   pt_BR: {
@@ -4357,6 +4369,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': 'ID do vídeo não encontrado',
     'No transcript available for this video': 'Nenhuma transcrição disponível para este vídeo',
     'Transcript downloaded! ({count} segments)': 'Transcrição baixada! ({count} segmentos)',
+    'Measuring local index…': 'Medindo o índice local…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': '{count} de {maxCount} vídeos indexados, {size} de {budget}. As entradas mais antigas são removidas primeiro.',
+    'Could not measure the local index.': 'Não foi possível medir o índice local.',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'O Astra Deck não conseguiu ler suas configurações salvas. Esta página está usando os padrões — recarregue para tentar de novo.'
   },
   ru: {
@@ -4365,6 +4380,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': 'ID видео не найдено',
     'No transcript available for this video': 'Для этого видео нет доступной расшифровки',
     'Transcript downloaded! ({count} segments)': 'Расшифровка загружена! ({count} сегм.)',
+    'Measuring local index…': 'Измерение локального индекса…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': 'Проиндексировано {count} из {maxCount} видео, {size} из {budget}. Самые старые записи удаляются первыми.',
+    'Could not measure the local index.': 'Не удалось измерить локальный индекс.',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck не смог прочитать сохранённые настройки. Эта страница работает со значениями по умолчанию — перезагрузите её, чтобы повторить попытку.'
   },
   ja: {
@@ -4373,6 +4391,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': '動画 ID が見つかりません',
     'No transcript available for this video': 'この動画の文字起こしはありません',
     'Transcript downloaded! ({count} segments)': '文字起こしをダウンロードしました（{count} セグメント）',
+    'Measuring local index…': 'ローカルインデックスを測定中…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': '{maxCount} 本中 {count} 本の動画をインデックス済み、{budget} 中 {size}。古いエントリーから削除されます。',
+    'Could not measure the local index.': 'ローカルインデックスを測定できませんでした。',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck は保存された設定を読み取れませんでした。このページは既定値で動作しています。再読み込みして再試行してください。'
   },
   ko: {
@@ -4381,6 +4402,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': '동영상 ID를 찾을 수 없습니다',
     'No transcript available for this video': '이 동영상에는 사용할 수 있는 스크립트가 없습니다',
     'Transcript downloaded! ({count} segments)': '스크립트를 다운로드했습니다! ({count}개 세그먼트)',
+    'Measuring local index…': '로컬 색인을 측정하는 중…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': '동영상 {maxCount}개 중 {count}개 색인됨, {budget} 중 {size}. 오래된 항목부터 삭제됩니다.',
+    'Could not measure the local index.': '로컬 색인을 측정할 수 없습니다.',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck이 저장된 설정을 읽지 못했습니다. 이 페이지는 기본값으로 실행 중입니다. 새로고침하여 다시 시도하세요.'
   },
   ar: {
@@ -4390,6 +4414,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': 'لم يتم العثور على معرّف الفيديو',
     'No transcript available for this video': 'لا يتوفر نص لهذا الفيديو',
     'Transcript downloaded! ({count} segments)': 'تم تنزيل النص! ({count} مقطع)',
+    'Measuring local index…': 'جارٍ قياس الفهرس المحلي…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': 'تمت فهرسة {count} من {maxCount} فيديو، {size} من {budget}. تُحذف أقدم الإدخالات أولاً.',
+    'Could not measure the local index.': 'تعذّر قياس الفهرس المحلي.',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'تعذّر على Astra Deck قراءة إعداداتك المحفوظة. تعمل هذه الصفحة بالإعدادات الافتراضية — أعد تحميلها للمحاولة مرة أخرى.'
   },
   zh_CN: {
@@ -4399,6 +4426,9 @@ const RUNTIME_COPY_TRANSLATIONS = {
     'No video ID found': '未找到视频 ID',
     'No transcript available for this video': '此视频没有可用字幕',
     'Transcript downloaded! ({count} segments)': '字幕已下载！（{count} 个片段）',
+    'Measuring local index…': '正在测量本地索引…',
+    '{count} of {maxCount} videos indexed, {size} of {budget}. Oldest entries are removed first.': '已索引 {maxCount} 个视频中的 {count} 个，{budget} 中已用 {size}。最早的条目会被优先删除。',
+    'Could not measure the local index.': '无法测量本地索引。',
     'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.': 'Astra Deck 无法读取您保存的设置。此页面正在使用默认值 — 请重新加载后重试。'
   }
 };

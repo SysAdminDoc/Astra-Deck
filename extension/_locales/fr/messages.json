@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "Rechargez la page ou réessayez dans un instant si les sous-titres sont encore en cours de traitement."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "Mesure de l’index local…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "{count} vidéos sur {maxCount} indexées, {size} sur {budget}. Les entrées les plus anciennes sont supprimées en premier."
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "Impossible de mesurer l’index local."
   }
 }

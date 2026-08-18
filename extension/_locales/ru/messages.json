@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "Обновите страницу или повторите попытку через несколько секунд, если субтитры ещё обрабатываются."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "Измерение локального индекса…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "Проиндексировано {count} из {maxCount} видео, {size} из {budget}. Самые старые записи удаляются первыми."
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "Не удалось измерить локальный индекс."
   }
 }

@@ -7669,5 +7669,14 @@
   },
   "transcriptRetryHelp": {
     "message": "أعد تحميل الصفحة أو حاول مجددًا بعد لحظات إذا كانت التسميات التوضيحية لا تزال قيد المعالجة."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "جارٍ قياس الفهرس المحلي…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "تمت فهرسة {count} من {maxCount} فيديو، {size} من {budget}. تُحذف أقدم الإدخالات أولاً."
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "تعذّر قياس الفهرس المحلي."
   }
 }
