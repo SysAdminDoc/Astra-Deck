@@ -140,6 +140,7 @@
     // ── bundled module: extension/core/selector-health.js ──
     // ── bundled module: extension/core/feature-health.js ──
     // ── bundled module: extension/core/hide-attribution.js ──
+    // ── bundled module: extension/core/heatmap.js ──
     // ── bundled module: extension/core/companion-ports.js ──
     // ── bundled module: extension/core/data-flow.js ──
     // ── bundled module: extension/core/toast.js ──
@@ -9751,6 +9752,93 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const video = document.querySelector('video.html5-main-video');
                 if (video) video.loop = false;
                 this._btn?.remove(); this._btn = null;
+            }
+        },
+        {
+            // v4.68.0 - ported from the extension. The userscript runs in page
+            // context, so window.ytInitialPlayerResponse is read directly
+            // rather than through the extension's _rw bridge.
+            //
+            // Its sibling heatmapSmartSpeed is deliberately NOT ported: it
+            // writes playbackRate, and this vehicle has no programmatic-rate
+            // guard - the userscript's per-channel speed feature listens on
+            // 'ratechange' and would save a cold-region rate as the channel's
+            // preferred speed. See EXTENSION_ONLY_FEATURE_CLASSIFICATIONS.
+            id: 'jumpToMostReplayed',
+            name: 'Jump to Most Replayed',
+            description: 'Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap.',
+            group: 'Video Player',
+            icon: 'gauge',
+            pages: [PageTypes.WATCH],
+            _markers: [],
+            _btn: null,
+            _navRule: null,
+
+            _readMarkers() {
+                if (typeof parseHeatmapMarkers !== 'function') return [];
+                const fromPlayer = parseHeatmapMarkers(window.ytInitialPlayerResponse);
+                if (fromPlayer.length) return fromPlayer;
+                return parseHeatmapMarkers(window.ytInitialData);
+            },
+
+            _seekToPeak() {
+                const peak = findMostReplayed(this._markers);
+                const video = getMainVideoElement();
+                if (!peak || !video) return;
+                video.currentTime = peak.startSeconds;
+                showToast(
+                    t('heatmapJumpedToast', 'Jumped to the most replayed moment'),
+                    '#22c55e',
+                    { duration: 2 }
+                );
+            },
+
+            _removeButton() {
+                this._btn?.remove();
+                this._btn = null;
+                unregisterPersistentButton(this.id);
+            },
+
+            _sync() {
+                this._markers = this._readMarkers();
+                if (!this._markers.length) {
+                    this._removeButton();
+                    return;
+                }
+                registerPersistentButton(
+                    this.id,
+                    '.ytp-right-controls',
+                    '.ytkit-most-replayed-btn',
+                    (parent) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'ytp-button ytkit-player-btn ytkit-most-replayed-btn';
+                        const label = t('heatmapJumpAria', 'Jump to the most replayed moment');
+                        btn.title = label;
+                        btn.setAttribute('aria-label', label);
+                        btn.appendChild(createSVG('0 0 24 24', [{
+                            type: 'path',
+                            d: 'M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z',
+                            fill: 'currentColor'
+                        }], { fill: 'currentColor', stroke: false }));
+                        btn.addEventListener('click', () => this._seekToPeak());
+                        parent.insertBefore(btn, parent.firstChild);
+                        this._btn = btn;
+                        return btn;
+                    },
+                    t('heatmapJumpAria', 'Jump to the most replayed moment')
+                );
+            },
+
+            init() {
+                this._navRule = () => this._sync();
+                addNavigateRule(this.id, this._navRule);
+                this._sync();
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._markers = [];
+                this._removeButton();
             }
         },
         {

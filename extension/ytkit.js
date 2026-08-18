@@ -3714,6 +3714,9 @@ return response;
             chapterNavButtons: false,
             videoLoopButton: false,
             persistentSpeed: false,
+            jumpToMostReplayed: false,
+            heatmapSmartSpeed: false,
+            heatmapSmartSpeedColdRate: 1.5,
             persistentSpeedValue: 1,
             codecSelector: 'auto',
             ageRestrictionBypass: false,
@@ -25682,6 +25685,195 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (video) video.loop = false;
                 document.querySelectorAll('.ytkit-loop-btn').forEach(el => el.remove());
                 this._btn?.remove(); this._btn = null;
+            }
+        },
+        {
+            // v4.68.0 - the heatmap YouTube already ships in the player
+            // response. Astra Deck parsed that response for four other things
+            // and threw the "most replayed" curve away; ImprovedTube shipped
+            // both of these in 2026 on data we already had in hand.
+            id: 'jumpToMostReplayed',
+            name: 'Jump to Most Replayed',
+            description: 'Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap.',
+            group: 'Video Player',
+            icon: 'gauge',
+            pages: [PageTypes.WATCH],
+            _markers: [],
+            _btn: null,
+            _navRule: null,
+
+            _readMarkers() {
+                if (typeof parseHeatmapMarkers !== 'function') return [];
+                // The curve can arrive on either object depending on the A/B
+                // bucket, so both are offered and the parser picks.
+                const fromPlayer = parseHeatmapMarkers(_rw.ytInitialPlayerResponse);
+                if (fromPlayer.length) return fromPlayer;
+                return parseHeatmapMarkers(_rw.ytInitialData);
+            },
+
+            _seekToPeak() {
+                const peak = findMostReplayed(this._markers);
+                const video = getMainVideoElement();
+                if (!peak || !video) return;
+                video.currentTime = peak.startSeconds;
+                showToast(
+                    t('heatmapJumpedToast', 'Jumped to the most replayed moment'),
+                    '#22c55e',
+                    { duration: 2 }
+                );
+            },
+
+            _removeButton() {
+                this._btn?.remove();
+                this._btn = null;
+                unregisterPersistentButton(this.id);
+            },
+
+            _sync() {
+                this._markers = this._readMarkers();
+                // No heatmap means no control. A dead button on every video
+                // without the data would be worse than no feature: it would
+                // teach users the feature is broken.
+                if (!this._markers.length) {
+                    this._removeButton();
+                    return;
+                }
+                registerPersistentButton(
+                    this.id,
+                    '.ytp-right-controls',
+                    '.ytkit-most-replayed-btn',
+                    (parent) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'ytp-button ytkit-player-btn ytkit-most-replayed-btn';
+                        const label = t('heatmapJumpAria', 'Jump to the most replayed moment');
+                        btn.title = label;
+                        btn.setAttribute('aria-label', label);
+                        btn.appendChild(createSVG('0 0 24 24', [{
+                            type: 'path',
+                            d: 'M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z',
+                            fill: 'currentColor'
+                        }], { fill: 'currentColor', stroke: false }));
+                        btn.addEventListener('click', () => this._seekToPeak());
+                        parent.insertBefore(btn, parent.firstChild);
+                        this._btn = btn;
+                        return btn;
+                    },
+                    t('heatmapJumpAria', 'Jump to the most replayed moment')
+                );
+            },
+
+            init() {
+                this._navRule = () => this._sync();
+                addNavigateRule(this.id, this._navRule);
+                this._sync();
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._markers = [];
+                this._removeButton();
+            }
+        },
+        {
+            id: 'heatmapSmartSpeed',
+            name: 'Heatmap Smart Speed',
+            description: 'Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data.',
+            group: 'Video Player',
+            icon: 'gauge',
+            pages: [PageTypes.WATCH],
+            _markers: [],
+            _video: null,
+            _handler: null,
+            _navRule: null,
+            // The rate the user actually chose. Captured when the feature takes
+            // over so that leaving a cold region restores THEIR speed, not a
+            // hardcoded 1x - a per-channel or persistent speed must survive
+            // this feature entirely.
+            _baseRate: null,
+            _appliedRate: null,
+
+            _coldRate() {
+                const value = Number(appState.settings.heatmapSmartSpeedColdRate);
+                return Number.isFinite(value) && value >= 1 ? value : 1.5;
+            },
+
+            _readMarkers() {
+                if (typeof parseHeatmapMarkers !== 'function') return [];
+                const fromPlayer = parseHeatmapMarkers(_rw.ytInitialPlayerResponse);
+                if (fromPlayer.length) return fromPlayer;
+                return parseHeatmapMarkers(_rw.ytInitialData);
+            },
+
+            _tick() {
+                const video = this._video;
+                if (!video || !this._markers.length) return;
+                // Another feature owning the rate wins: live catch-up writes
+                // the rate for reasons this feature cannot see.
+                if (getFeatureById('liveLatencyCatchup')?._ownsRate?.(video)) return;
+                if (this._baseRate == null) this._baseRate = video.playbackRate || 1;
+                // A rate change the USER made re-bases the feature instead of
+                // being overwritten on the next tick.
+                if (this._appliedRate != null
+                    && Math.abs(video.playbackRate - this._appliedRate) > 0.001
+                    && !isProgrammaticPlaybackRateChange()) {
+                    this._baseRate = video.playbackRate;
+                    this._appliedRate = null;
+                }
+                const target = resolveHeatmapRate(this._markers, video.currentTime, {
+                    baseRate: this._baseRate,
+                    coldRate: this._coldRate()
+                });
+                // null means "no data for this position" - leave the rate alone
+                // rather than snapping the user back to 1x.
+                if (target == null) return;
+                if (Math.abs(video.playbackRate - target) < 0.001) return;
+                setProgrammaticPlaybackRate(video, target);
+                this._appliedRate = target;
+            },
+
+            _restoreBaseRate() {
+                if (this._video && this._baseRate != null && this._appliedRate != null) {
+                    setProgrammaticPlaybackRate(this._video, this._baseRate);
+                }
+                this._appliedRate = null;
+            },
+
+            _detach() {
+                if (this._video && this._handler) {
+                    this._video.removeEventListener('timeupdate', this._handler);
+                }
+                this._video = null;
+            },
+
+            _sync() {
+                // A new video is a new baseline: carrying the previous video's
+                // cold-region rate over would look like the feature ignoring
+                // the user's chosen speed.
+                this._restoreBaseRate();
+                this._detach();
+                this._baseRate = null;
+                this._markers = this._readMarkers();
+                if (!this._markers.length) return;
+                const video = getMainVideoElement();
+                if (!video) return;
+                this._video = video;
+                video.addEventListener('timeupdate', this._handler);
+            },
+
+            init() {
+                this._handler = () => this._tick();
+                this._navRule = () => this._sync();
+                addNavigateRule(this.id, this._navRule);
+                this._sync();
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._restoreBaseRate();
+                this._detach();
+                this._handler = null;
+                this._markers = [];
+                this._baseRate = null;
             }
         },
         {

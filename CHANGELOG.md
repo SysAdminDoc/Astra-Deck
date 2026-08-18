@@ -19,6 +19,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   Hider off sometimes cleared nothing. All four now leave the same note naming
   the feature and the rule that matched, and the per-feature count of cards
   hidden on the current page travels with the diagnostics bundle.
+- **Jump to Most Replayed.** A player control that seeks straight to the
+  most-replayed moment, using heatmap data YouTube already sends with every
+  video. It appears only on videos that actually have the data, so there is no
+  dead button on the ones that do not.
+- **Heatmap Smart Speed** (opt-in). Plays the stretches nobody rewatches at a
+  faster rate and drops back to your own speed through the most-replayed
+  moments. It never slows you down below the speed you chose, and it writes
+  through the same guarded path as the other speed features so a saved
+  per-channel or persistent speed is never overwritten.
 
 ## [4.67.0] - 2026-08-18
 

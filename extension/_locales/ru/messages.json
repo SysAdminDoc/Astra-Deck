@@ -166,6 +166,24 @@
     "message": "{count} с",
     "description": "Buffer target slider value rendered in seconds"
   },
+  "feature_heatmapSmartSpeed_desc": {
+    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
+  },
+  "feature_heatmapSmartSpeed_name": {
+    "message": "Heatmap Smart Speed"
+  },
+  "feature_jumpToMostReplayed_desc": {
+    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
+  },
+  "feature_jumpToMostReplayed_name": {
+    "message": "Jump to Most Replayed"
+  },
+  "heatmapJumpAria": {
+    "message": "Jump to the most replayed moment"
+  },
+  "heatmapJumpedToast": {
+    "message": "Jumped to the most replayed moment"
+  },
   "hiddenCardNoteTpl": {
     "message": "Hidden by {feature}: {rule}"
   },

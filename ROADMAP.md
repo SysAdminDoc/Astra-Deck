@@ -88,13 +88,6 @@ duplicated here.
   Acceptance: at least one filter class (blocked channel IDs) is applied to the browse/player response before Polymer renders it, autoplay and playlist integrity are preserved, the post-render path remains as the fallback, and a test drives the real interception rather than stubbing it. Store-review risk of data interception is assessed against the `chromium-store` profile before it ships there.
   Complexity: XL
 
-- [ ] P2 — Ship the heatmap features YouTube already hands us
-  Why: jump-to-most-replayed and heatmap-driven speed are the only genuinely new playback ideas in the category this year, ImprovedTube shipped both in 2026, and the heatmap JSON already arrives in the player response Astra Deck parses — so the marginal cost is low and it is a leapfrog on a specialist's own ground.
-  Evidence: https://github.com/code-charity/youtube/releases (v4.2026 "Smart Speed"); no `heatmap`/`mostReplayed` key exists in `extension/core/settings-schema.js` (verified 2026-08-11).
-  Touches: `extension/ytkit.js` (`_rw.ytInitialPlayerResponse` parser), `extension/core/settings-schema.js`, `extension/_locales/**`
-  Acceptance: a jump-to-most-replayed control appears in the player chrome when heatmap data is present and is absent when it is not; an opt-in speed mode raises playback rate through cold regions and returns to the user's rate through hot ones, writing through `setProgrammaticPlaybackRate()` so it cannot clobber a saved per-channel speed.
-  Complexity: M
-
 - [ ] P2 — Restore original thumbnails, not just original titles
   Why: YouTube now localises text baked into thumbnails, so `antiTranslate` restores the title while the thumbnail still shows translated text — a visible half-fix. YouTube-No-Translation (1,231 stars) solves it and adds oEmbed as a zero-permission metadata fallback Astra Deck has no equivalent of.
   Evidence: https://github.com/YouG-o/YouTube-No-Translation ; no `thumbnailOriginal`-shaped key exists in the settings schema (verified 2026-08-11).

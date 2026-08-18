@@ -23,8 +23,8 @@
 | Release | `v4.67.0` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `467` entries across `18` categories |
-| Runtime graph | `102` modules, including `26` peeled feature modules and `286` declared feature IDs |
+| Settings schema | `470` entries across `18` categories |
+| Runtime graph | `103` modules, including `26` peeled feature modules and `288` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -363,7 +363,7 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **463 user-facing settings** in the canonical schema. The remaining 4 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **466 user-facing settings** in the canonical schema. The remaining 4 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -566,7 +566,7 @@ This generated knowledgebase documents all **463 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Playback, audio, and utilities</strong> — 104 settings</summary>
+<summary><strong>Playback, audio, and utilities</strong> — 107 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -602,6 +602,9 @@ This generated knowledgebase documents all **463 user-facing settings** in the c
 | <a id="setting-videoLoopButton"></a><strong>Video Loop Button</strong><br><code>videoLoopButton</code> | Add a loop toggle button to the player controls for one-click video looping | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-persistentSpeed"></a><strong>Persistent Playback Speed</strong><br><code>persistentSpeed</code> | Remember your preferred playback speed globally and auto-apply it to every video | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-persistentSpeedValue"></a><strong>Persistent speed value</strong><br><code>persistentSpeedValue</code> | Sets the playback rate reapplied by Persistent Playback Speed. | Default: <code>1</code><br>Range: <code>0.1–16</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-jumpToMostReplayed"></a><strong>Jump to Most Replayed</strong><br><code>jumpToMostReplayed</code> | Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.68.0</code> |
+| <a id="setting-heatmapSmartSpeed"></a><strong>Heatmap Smart Speed</strong><br><code>heatmapSmartSpeed</code> | Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.68.0</code> |
+| <a id="setting-heatmapSmartSpeedColdRate"></a><strong>Heatmap smart speed cold rate</strong><br><code>heatmapSmartSpeedColdRate</code> | Sets the playback rate Heatmap Smart Speed uses through the parts of a video nobody rewatches. Never slows playback below your own speed. | Default: <code>1.5</code><br>Range: <code>1–4</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.68.0</code> |
 | <a id="setting-ageRestrictionBypass"></a><strong>Age Restriction Bypass</strong><br><code>ageRestrictionBypass</code> | Bypass age verification by fetching video data from YouTube's embed endpoint. No sign-in required. | Default: Off | Extension + userscript<br>GitHub-full only<br>Player<br>Live apply + reversible teardown<br>Store-sensitive<br>Since <code>v0.1.0</code> |
 | <a id="setting-autoLikeSubscribed"></a><strong>Auto-Like Subscribed Channels</strong><br><code>autoLikeSubscribed</code> | Automatically like videos from channels you're subscribed to after watching for 30 seconds | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Store-sensitive<br>Since <code>v0.1.0</code> |
 | <a id="setting-searchFilterDefaults"></a><strong>Search Filter Defaults</strong><br><code>searchFilterDefaults</code> | Automatically apply a default sort order (upload date, view count, or rating) to YouTube search results | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |

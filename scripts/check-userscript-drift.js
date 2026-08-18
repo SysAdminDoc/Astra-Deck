@@ -159,6 +159,12 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
 });
 
 const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
+    // The userscript has no programmatic-rate guard: its per-channel speed
+    // feature listens on 'ratechange' and writes playbackRate directly, so a
+    // cold-region rate from this feature would be saved as the channel's
+    // preferred speed. Its sibling jumpToMostReplayed IS ported - it only
+    // seeks, and touches no rate.
+    heatmapSmartSpeed: 'unsafe-in-userscript',
     antiTranslateAudioTrack: 'not-yet-ported',
     antiTranslateTranscript: 'not-yet-ported',
     astraContextMenu: 'chrome-api',
