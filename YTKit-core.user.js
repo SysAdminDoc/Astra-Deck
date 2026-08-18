@@ -34936,10 +34936,18 @@ function attachUIEventListeners() {
         return true;
     }
 
-    // Auto-install on production load (manifest order guarantees that
-    // navigation.js + feature-lifecycle.js are present by this point).
-    installLifecycleRouteBridge();
-
+    // Deliberately NOT auto-installed here. This used to call
+    // installLifecycleRouteBridge() at evaluation time, relying on manifest
+    // order to guarantee navigation.js and feature-lifecycle.js had already
+    // registered. That made it the ONE module in the 75-module foundation graph
+    // whose behaviour depended on load order — and it failed silently, because
+    // a missing dependency makes the installer return false rather than throw,
+    // which would have left SPA route-token invalidation permanently off.
+    //
+    // runtime-bootstrap now installs it once the whole graph has loaded, and
+    // checks the return value. Removing this call is what lets the loader
+    // import the graph concurrently; tests/runtime-graph-order.test.js holds
+    // the order-independence property in place.
     core.installLifecycleRouteBridge = installLifecycleRouteBridge;
 
     if (typeof module !== 'undefined' && module.exports) {

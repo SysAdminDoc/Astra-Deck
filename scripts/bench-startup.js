@@ -276,6 +276,28 @@ function summarize(samples) {
     return metrics;
 }
 
+// The four serial stages of runtime-bootstrap's loadRuntime(), reported on the
+// same minimum-of-samples basis as the gated metrics so the two can be read
+// together. Attribution only — these are not gated, because a stage boundary
+// can legitimately move work between stages without changing the total.
+const STAGE_KEYS = Object.freeze(['coreLoaderMs', 'settingsReadMs', 'featureModulesMs', 'monolithMs']);
+
+function summarizeStageTimings(samples) {
+    const lines = [];
+    for (const surface of [...new Set(samples.map((sample) => sample.surface))]) {
+        const forSurface = samples.filter((sample) => sample.surface === surface && sample.stageTimings);
+        if (!forSurface.length) continue;
+        const parts = STAGE_KEYS.map((key) => {
+            const values = forSurface.map((sample) => Number(sample.stageTimings[key])).filter(Number.isFinite);
+            return values.length ? `${key.replace(/Ms$/, '')} ${Math.min(...values).toFixed(2)}` : null;
+        }).filter(Boolean);
+        const moduleCount = forSurface[0].stageTimings.featureModuleCount;
+        lines.push(`${surface} stage min (ms): ${parts.join('; ')}`
+            + (Number.isFinite(moduleCount) ? ` [${moduleCount} feature modules]` : ''));
+    }
+    return lines;
+}
+
 function roundMetric(key, value) {
     if (key === 'heapDeltaBytes') return Math.round(Number(value));
     return Math.round(Number(value) * 100) / 100;
@@ -681,7 +703,11 @@ async function runIteration(browserPath, fixturePath, timeoutMs) {
                 parseInitMs: state.initReadyAt - state.scriptStartAt,
                 firstFeaturePaintMs: state.firstFeaturePaintAt - state.scriptStartAt,
                 firstFeatureNode: state.firstFeatureNode,
-                scriptEndMs: state.scriptEndAt === null ? null : state.scriptEndAt - state.scriptStartAt
+                scriptEndMs: state.scriptEndAt === null ? null : state.scriptEndAt - state.scriptStartAt,
+                // Per-stage attribution from the bootstrap, so a regression can
+                // be pinned to core-loader / settings / feature fan-out /
+                // monolith instead of only showing up in the end-to-end number.
+                stageTimings: globalThis.__ytkitRuntimeBootstrap?.stageTimings || null
             };
         })()`), 'content-script initialization and first feature paint', timeoutMs);
         if (!Number.isFinite(result.parseInitMs) || !Number.isFinite(result.firstFeaturePaintMs)) {
@@ -764,6 +790,9 @@ async function main(argv = process.argv.slice(2)) {
     const result = await runBenchmark(options, browserPath);
     console.log(`[bench-startup] fixture mode: ${result.fixtureMode}`);
     console.log(`[bench-startup] photosensitive frame budget: ${PHOTOSENSITIVE_FRAME_BUDGET_MS.toFixed(2)} ms/sample`);
+    for (const line of summarizeStageTimings(result.samples)) {
+        console.log(`[bench-startup] ${line}`);
+    }
     for (const key of METRIC_KEYS) {
         console.log(
             `[bench-startup] ${COMPARISON_STATISTIC} ${key}: ${metricValue(result.metrics, key).toFixed(2)} ${metricUnit(key)}`

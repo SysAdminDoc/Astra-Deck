@@ -6,6 +6,21 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- Astra Deck starts noticeably faster. Its internal modules used to be loaded
+  one after another; they now load together, which cuts the time before the
+  first feature appears on the page by roughly a third and puts it back where it
+  was in early August.
+
+### Fixed
+
+- Fixed a silent failure that could stop Astra Deck noticing YouTube page
+  changes. The component that tracks navigation installed itself early and gave
+  up quietly if it ran before the pieces it needs, which would leave features
+  acting on the previous video. It is now installed explicitly, and a failure is
+  reported instead of ignored.
+
 ## [4.64.0] - 2026-08-18
 
 ### Fixed

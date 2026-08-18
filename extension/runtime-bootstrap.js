@@ -308,25 +308,57 @@
             && keys.every((key) => Object.hasOwn(settings, key) && settings[key] === false));
     };
 
+    // Per-stage attribution. loadRuntime is four serial awaits and, until this
+    // existed, a startup regression could only be measured end-to-end — which
+    // is how a ~2x one accumulated across ~15 commits before anyone could say
+    // WHICH stage grew. Cost is four performance.now() reads; the numbers ride
+    // on the bootstrap state that already carries startedAt/completedAt, so
+    // diagnostics and the startup bench can both read them.
+    const stageTimings = Object.create(null);
+    bootstrapState.stageTimings = stageTimings;
+    const timeStage = async (name, run) => {
+        const startedAt = performance.now();
+        try {
+            return await run();
+        } finally {
+            stageTimings[name] = Math.round((performance.now() - startedAt) * 100) / 100;
+        }
+    };
+
     const loadRuntime = async () => {
         const firstFeatureIndex = RUNTIME_MODULES.findIndex((modulePath) => modulePath.startsWith('features/'));
         const optionalFeatureModules = firstFeatureIndex === -1
             ? []
             : RUNTIME_MODULES.slice(firstFeatureIndex, -1);
         const settingsPromise = readRuntimeSettings();
-        await import(getURL('runtime-core-loader.mjs'));
-        const settings = await settingsPromise;
+        await timeStage('coreLoaderMs', () => import(getURL('runtime-core-loader.mjs')));
+        // The route bridge is installed here, not by the module itself: it is
+        // the one foundation module with cross-module dependencies at install
+        // time, and self-installing on load both forced the whole graph to load
+        // sequentially and failed SILENTLY (the installer returns false, it does
+        // not throw) whenever its dependencies had not registered yet. Without
+        // it, SPA route tokens never advance and every stale-result guard that
+        // compares them stops working.
+        const routeBridgeInstalled = globalThis.YTKitCore?.installLifecycleRouteBridge?.() === true;
+        if (!routeBridgeInstalled) {
+            console.error('[YTKit] Lifecycle route bridge failed to install; SPA route tokens will not advance');
+        }
+        bootstrapState.routeBridgeInstalled = routeBridgeInstalled;
+        const settings = await timeStage('settingsReadMs', () => settingsPromise);
         const deferredFeatureModules = optionalFeatureModules.filter((modulePath) =>
             modulePath !== 'features/download-ui/index.js'
             && shouldLoadFeature(modulePath, settings)
         );
-        await Promise.all(deferredFeatureModules.map((modulePath) => import(getURL(modulePath))));
+        stageTimings.featureModuleCount = deferredFeatureModules.length;
+        await timeStage('featureModulesMs', () => Promise.all(
+            deferredFeatureModules.map((modulePath) => import(getURL(modulePath)))
+        ));
         // The monolith reads YTKitFeatures while constructing its top-level
         // feature array. It must execute only after every selected peeled
         // module has registered its factory; otherwise the inline fallback
         // silently wins and extension users run a different implementation
         // from userscript tests.
-        await import(getURL('ytkit.js'));
+        await timeStage('monolithMs', () => import(getURL('ytkit.js')));
         globalThis.dispatchEvent?.(new CustomEvent('ytkit-runtime-ready'));
     };
 
