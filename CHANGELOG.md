@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.68.0] - 2026-08-18
+
 ### Added
 
 - **Feature health.** The popup now answers "which of my features are working
