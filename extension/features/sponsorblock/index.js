@@ -105,14 +105,16 @@
             _cachePersistTimer: null,
 
             _getChannelId() {
+                // One canonical key, shared with the chip that WRITES these
+                // profiles. Returning the raw handle href here meant a
+                // suffixed owner link (/featured, ?si=…) produced a key the
+                // stored profile could never match, so per-channel overrides
+                // were silently ignored while the chip showed them active.
                 const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
-                if (link) {
-                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
-                    if (m) return m[1];
-                }
+                const byId = globalThis.YTKitCore?.channelSettingsKey?.(link?.getAttribute('href'));
+                if (byId) return byId;
                 const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
-                if (handleLink) return handleLink.getAttribute('href') || '';
-                return '';
+                return globalThis.YTKitCore?.channelSettingsKey?.(handleLink?.getAttribute('href')) || '';
             },
 
             _getEnabledCategories() {

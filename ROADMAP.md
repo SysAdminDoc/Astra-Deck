@@ -213,12 +213,7 @@ duplicated here.
 
 #### P1
 
-- [ ] P1 — Refresh expired caption tracks and expose transcript provenance
-  Why: YouTube caption `baseUrl` values carry an `expire` parameter; Astra’s service tries five track sources and two formats but does not retry a fresh player response after a 403/404/expired URL, and returned transcripts have no source/age/expiry signal.
-  Evidence: `extension/core/transcript-service.js:179-503`, `extension/ytkit.js:1841-1848`, `extension/ytkit.js:45545-45843`, https://stackoverflow.com/questions/78081057/how-can-i-download-youtube-captions-using-javascript
-  Touches: `extension/core/transcript-service.js`, transcript call sites in `extension/ytkit.js`, `extension/features/**` transcript consumers, `tests/core-transcript-service.test.js`, `tests/transcript-panel.test.js`, localized status/diagnostic copy
-  Acceptance: an expired/403/404 caption fetch triggers at most one fresh track discovery for the same video, retries the selected track or an honest DOM fallback, aborts on SPA video change, and never returns a different video’s transcript; result/diagnostics expose source, language, fetchedAt, expiresAt, and stale/fallback reason; tests simulate expired URLs, stale player globals, captionless videos, and navigation cancellation.
-  Complexity: M
+(The former P1 item "Refresh expired caption tracks and expose transcript provenance" was verified fully implemented by `cc55df5f` on 2026-08-18 — every acceptance criterion traced to code and tests — and deleted per the roadmap workflow. Residual polish from that feature is logged in the 2026-08-18 audit section: fallbackReason overwrite, dead-URL double-fetch, and the i18n ratchet regression.)
 
 #### P2
 
@@ -535,3 +530,280 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Effort: S
 
 Note — refines the existing "Delete the five dead helpers in `popup.js` and `ytkit.js`" item: its line numbers are stale. The dead import-sanitizers are now at `extension/popup.js:4559` (`sanitizeImportedVideoIdList`), `:4575` (`sanitizeImportedHiddenVideos`), `:4579` (`getImportedFilteredVideoPosts`), `:4586` (`sanitizeImportedBlockedChannels`), `:4602` (`sanitizeImportedBookmarks`) — six functions, not four — and `ytkit.js:5004` no longer holds `cachedQuery` (the file grew). Update the item's `Where:` before implementing.
+
+## Audit Findings — 2026-08-18
+
+Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae..2b839c33`, v4.62.0; `npm ci` was required first — node_modules was absent on this machine after the OS rebuild): `npm test` **1713/1714 pass** (1 skipped, 0 fail). `npm run check` fails at HEAD on four gates: `check:project-facts` (the machine-local CLAUDE.md generated block was stale at v4.61.0 — regenerated during this audit, passes now; while red it masked the 24 gates after it via the tracked fail-fast `&&` chain), `check:startup` (firstFeaturePaintMs median 116.80 ms > 88.80 ms budget, fixture mode captured-mhtml — pre-existing machine-sensitive baseline, already tracked), `i18n:coverage:gate` and `generate-capability-matrix --check` (both logged below). Rendered smokes pass: settings-overlay 7 states × 445 controls (dark/light/RTL/wide/tablet/mobile), headless-a11y 6 surfaces incl. 200% reflow and forced colors. Delivery state: latest git tag and GitHub release are **v4.59.1**; `release-channels.json` still points every channel at 4.59.0 — see the release-gate item below and the refreshed P0 in `Roadmap_Blocked.md`. Method: five parallel trace-and-verify sweeps (post-08-14 delta, popup/sidepanel UX, background trust boundaries, monolith feature slices incl. peeled-copy drift, tests/gates/release); ~40 candidate findings, 14 re-verified by hand at file:line with zero mismatches; agent-cleared suspicions are omitted. The background trust-boundary sweep found **no high/critical issue** — cookie-handoff capability, remote filter-list sanitization, DNR rules, and optional-host validation all hold as documented.
+
+### P2
+
+- [ ] P2 — Video Hider fail-open guard is bypassed on the mutation-batch path and cannot actually restore cards in remove mode
+  Category: correctness
+  Where: guard invoked only from `_processAllVideos` (peeled `features/video-hider/index.js:2295-2303`, monolith `ytkit.js:19675`); mutation path hides with no guard (peeled `scheduleMutationBatch` `index.js:2805-2846`, monolith observer `ytkit.js:20061-20084`); peeled-only skip when the budgeted scan is cancelled (`if (!result?.cancelled)`, `index.js:2299`); reveal path `_applyVideoHiddenState(el,false)` (peeled `index.js:1411-1418`, monolith `ytkit.js:18915-18922`) never reinserts nodes detached by remove mode (`_removeVideoElement`, `index.js:1345-1367` / `ytkit.js:18869`; reinsertion exists only in `_restoreRemovedVideoNodes`, run at the start of the NEXT full scan)
+  Problem: two gaps in the v4.58.1 ">25% of a ≥8-card feed must fail open" invariant. (1) Infinite-scroll continuation batches are hidden by the mutation path with no ratio guard, so an over-matching keyword/duration/predicate rule empties every newly loaded batch silently until the next navigation — the exact symptom the invariant exists to prevent. Under heavy mutation churn the peeled copy can also starve the guard entirely via the cancelled-scan skip. (2) With `hideVideosRemoveHiddenCards` on, the guard "reveal" clears classes on already-DETACHED nodes and toasts "…were left visible" while the feed stays empty until the next navigation. Same in the `YTKit-core.user.js` bundled copy (~`:23179`).
+  Evidence: guard call sites enumerated; `_applyVideoHiddenState(false)` traced — it deletes `dataset.ytkitRemoved` but performs no reinsertion (verified by hand).
+  Fix: after each mutation batch resolves, run `_enforceRuleHideRatioGuard` over the current card set (it is idempotent and page-wide) and run it in the cancelled branch too; in the guard's reveal loop, restore detached nodes via the `_removedVideoNodes` records (or call `_restoreRemovedVideoNodes()` filtered to the overreaching set) before clearing state. Apply to both copies + the userscript bundle (`node sync-userscript.js`).
+  Acceptance: a rule matching 100% of cards, applied mid-scroll, triggers the fail-open toast within one batch; with remove-mode on, the guard visibly restores the cards; tests drive the real mutation dispatcher (not a stub) for both.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P2 — Transcript "Translate" has no navigation guard — a translation started on video A paints over video B's panel
+  Category: correctness
+  Where: `extension/ytkit.js:26085-26140` (`_translateTranscript`)
+  Problem: the handler awaits language detection / on-device translation / LLM translation with no `_loadGeneration`, videoId, or panel recheck after any await. Navigating mid-translation (autoplay included) paints video A's translated cues over the first N cue lines of video B's panel, flips B's Translate button state, and pollutes `_translatedCues`. Contrast `_loadTranscript` in the same file (`:26313-26341`), which carries exemplary generation guards after every await.
+  Evidence: every await in `_translateTranscript` enumerated — zero re-checks; `_loadTranscript`'s guard pattern confirmed adjacent.
+  Fix: capture `_loadGeneration` + panel + cues refs at entry and bail after each await when they no longer match (same pattern as `_loadTranscript`).
+  Acceptance: starting a translation and navigating before it resolves leaves video B's panel untouched; a test resolves a deferred translator after a simulated navigation and asserts no writes.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P2 — perChannelSpeed can delete its own saved speeds, silently fails to apply, and mis-keys dotted handles
+  Category: correctness
+  Where: `extension/ytkit.js:22834-22838` (ratechange handler), `:22806-22808` (rate===1 deletes the channel entry), `:3265-3273` (250 ms programmatic-write window), `:22820-22829` (single `setTimeout(...,3000)` apply, no retry), `:22786-22799` (`_applySpeed` gives up silently), `:22781` (`_getChannelId` regex `/@[\w-]+|channel\/[\w-]+/`)
+  Problem: three related defects. (1) No `player.setPlaybackRate` call exists anywhere (grep: zero hits) — all writes go to the media element — so YouTube's html5 player keeps its internal rate (1x for users who never touch the native menu) and re-asserts it on the element on new-stream load / quality change; that untagged ratechange runs `_saveCurrentSpeed()` with rate 1 → the channel's entry is DELETED and the just-applied saved speed reverts. The in-code comment (`:22830-22833`) records fixing exactly this for the extension's own forced writes; YouTube's writes were left uncovered. (2) The one-shot 3 s apply silently never fires on slow metadata hydration, and a single unvalidated DOM read at t+3 s can grab the previous video's channel link (`ytd-page-manager` retains prior-route trees — see the 2026-08-13 recon note above) and mis-key the save; contrast persistentSpeed's 6-step `schedulePlayerTask` retry ladder (`:25444-25455`). (3) `\w` excludes `.`, so `@mr.beast` keys as `@mr` — all dotted handles sharing a prefix collide into one speed entry (self-consistent, so collisions not loss).
+  Evidence: all sites read; grep for `setPlaybackRate` across the repo returned zero hits.
+  Fix: (1) write speed through the `#movie_player` player API so YouTube's internal state agrees, or persist only on ratechange correlated with a recent user gesture; (2) move `_applySpeed` onto `schedulePlayerTask` with persistentSpeed's retry ladder; (3) reuse `YTKitCore.channelSettingsKey` for the key. The userscript copy additionally lacks BOTH existing extension fixes (untagged programmatic writes at `YTKit.user.js:8285,:8314`; navigate-save reads the current DOM at `:8308-8309`) — port along with the rest.
+  Acceptance: a saved 1.5× channel speed survives a quality change and a new video load on the same channel; a video whose metadata hydrates in 5 s still gets its speed; `@mr.beast` and `@mr.bean` persist separately; tests cover the untagged-reset and retry paths.
+  Confidence: mechanism Verified; reset-trigger frequency Needs-repro (live)
+  Effort: M
+
+- [ ] P2 — i18n coverage gate is red at HEAD: cc55df5f shipped 19 EN keys with no baseline/report regen and pushed the UI-copy ratchet UP (pre-existing baseline)
+  Category: i18n / process
+  Where: `scripts/i18n-placeholder-baseline.json` (last regenerated at `66b30e6f`, reference keys 2519 vs 2538 in `extension/_locales/en/messages.json`); `docs/i18n-coverage.md` stale; `scripts/i18n-ui-copy-baseline.json` count for `extension/ytkit.js` moved 926 → 930 in the same commit
+  Problem: `npm run i18n:coverage:gate` fails at HEAD ("reference key count changed from 2519 to 2538"). The 19 transcript-provenance panel keys ARE properly translated in all 11 locales (spot-checked de), but the recipe's baseline/report steps were skipped. Separately, four study-batch UI strings in the same commit bypass `t()` entirely — `'Queue cap ${this._BATCH_MAX}, one recovery pass per video'` (2 sites, ~`ytkit.js:45744/45791`), `'Transcript batch cancelled after navigation'` (~`:45986`), the `'Recovery: one bounded refresh per video'` export line — and were absorbed into the ratchet, violating the tracked "baseline count only ever decreases" acceptance rule.
+  Evidence: gate output captured 2026-08-18; `git diff cc55df5f^..cc55df5f -- scripts/i18n-ui-copy-baseline.json` shows `count: 926` → `930`.
+  Fix: wrap the four batch strings in `t()` with locale keys (translations into the `generate-locales.js` tables first, then ar/zh_CN backfill per the documented recipe), then `node scripts/i18n-coverage.js --update-placeholder-baseline` + `npm run i18n:coverage`, and `--update-baseline` the copy gate downward. Correct signature: only `referenceKeys` moves in the placeholder baseline; the ytkit.js copy count returns to ≤926.
+  Acceptance: `npm run i18n:coverage:gate` passes; `scripts/i18n-ui-copy-baseline.json` ytkit.js count ≤926; the batch status strings render localized.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P2 — Typed-but-unsaved filter-list URL is clobbered by any popup re-render
+  Category: ux / correctness
+  Where: `extension/popup.js:1973` (`render()` unconditionally calls `syncFilterListUrlInput(settings)`), `:4918-4923` (sync overwrites `filterListUrlInput.value` with the stored setting)
+  Problem: the URL persists only on "Refresh list now" (`:5226-5229`). Until then, any `render()` — a quick-toggle click (`:2144`), any relevant `storage.onChanged` (`:6331`), `refreshOptionalHostGrantState` (`:1326`) — resets the input mid-typing. The schema-overview editors carry exactly the missing guard ("never blow away a focused inline editor", `:6349`); this input was not given it.
+  Evidence: all `render()` call sites traced; `syncFilterListUrlInput` has no activeElement check (verified by hand).
+  Fix: skip the rewrite when `document.activeElement === filterListUrlInput` (mirror the schema-overview guard).
+  Acceptance: typing in the filter-list URL while a storage change fires preserves the draft; a test simulates focus + render and asserts the value survives.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P2 — Selector-pack refresh origin is undisclosed and survives only by a CORS accident: `raw.githubusercontent.com` is in the dev manifest but absent from the origin catalogue and every built profile
+  Category: security / docs
+  Where: `extension/manifest.json:57` (`https://raw.githubusercontent.com/*` host permission) vs zero entries in `extension/core/data-flow.js` (grep-verified); consumers `extension/background.js:739` (EXT_FETCH allowlist), `:791` (`SELECTOR_ASSET_URL` remote selector-pack refresh), `extension/ytkit.js:1197`
+  Problem: built profiles derive host permissions from the catalogue, so all three artifacts silently drop a permission the dev manifest declares for a real fetch path. It keeps working only because GitHub raw serves `Access-Control-Allow-Origin: *` — an undocumented load-bearing accident — and the popup Data Flow panel (rendered from the catalogue) never discloses this origin even though the extension fetches from it. The Firefox data-consent categories are also derived from the catalogue, so the omission propagates into the consent declaration.
+  Evidence: manifest + catalogue grepped; consumers read; the tests/release sweep executed the profile helpers and confirmed the origin absent from all three computed manifests.
+  Fix: add a catalogued entry for the selector-asset origin (profile-appropriate, with its data-flow disclosure copy) so manifest, Data Flow panel, and artifacts agree — or remove it from the dev manifest and document the CORS reliance next to `SELECTOR_ASSET_URL`.
+  Acceptance: the Data Flow panel lists the origin (or the permission is gone from the dev manifest); built-profile host permissions match the catalogue exactly; `npm run check` gains/keeps a green catalogue-parity assertion.
+  Confidence: Verified
+  Effort: S
+
+### P3
+
+- [ ] P3 — Subscription Groups: confirm-dialog matcher can click Cancel and still record success; 1000-cap silently drops the just-added channel; no way to rename or delete a group
+  Category: correctness / ux
+  Where: `_confirmUnsubscribeDialog` selector `'#confirm-button, button[aria-label], [role="button"]'` takes the first document-order match — `extension/ytkit.js:43809-43826`, `features/subscription-groups/index.js:1479-1496`; staged record deleted on "success" `index.js:1624-1627`. Cap: `_setGroupMembership` appends then `slice(0, 1000)` — `index.js:2546-2560` — dropping the just-added channel while toasting "added". Product gap: group rename/delete/reorder exists in NO copy; the only way to remove a group is Shift+click replace-import.
+  Problem: in dialog variants without `#confirm-button`, the first `[role="button"]` is typically Cancel — the helper clicks it, returns true, the 30-day staging record is deleted, and a still-subscribed channel is logged as unsubscribed. The cap bug turns a hard limit into silent data drop with false success feedback.
+  Evidence: selectors and cap logic read in both copies; absence of rename/delete verified by control enumeration.
+  Fix: match the confirm button by accessible label/test, never bare `[role="button"]`; at the cap, refuse the add with an explanatory toast instead of slicing; add minimal rename + delete controls to the group editor (both copies + `sync-userscript.js`).
+  Acceptance: a cancel-first dialog leaves the staging record intact; adding channel 1001 toasts a refusal and membership is unchanged; a group can be renamed and deleted from the editor.
+  Confidence: dialog Likely (needs a cancel-first fixture), cap + product gap Verified
+  Effort: M
+
+- [ ] P3 — Recycled-node once-markers freeze verdicts: preciseViewCounts, live-chat filters, Shorts removal, and the subs-groups order stamp
+  Category: correctness
+  Where: (a) preciseViewCounts stamps `ytkitPrecise`/`ytkitPreciseOriginal` on the recycled watch-metadata element and the navigate rule (`ytkit.js:22401-22405`) clears neither — inert after the first navigation, and `destroy()` (`:22415-22421`) restores video A's saved text onto whatever video is on screen; (b) live-chat bot/keyword filters use `data-ytkit-bot-checked`/`data-ytkit-kw-checked` + sticky `display:none` on recycled `yt-live-chat-text-message-renderer` nodes (`ytkit.js:47802-47853`; same in `YTKit.user.js:15391-15417`) — recycled nodes skip re-evaluation (bots slip through) or keep `display:none` (innocent messages invisibly swallowed); (c) removeAllShorts `hideShort` marks `ytkitShortsHidden` + `display:none` on the ancestor renderer (`ytkit.js:9177-9197`) — a card recycled into a regular video stays invisible; (d) subscription-groups `ytkitOrigIdx` (`index.js:1684-1702`, `ytkit.js:43998-44013`) never re-stamps on recycle, so "YouTube default" order after continuations is neither native nor sorted.
+  Problem: the repo's own invariant ("any state keyed to a DOM node must re-evaluate per pass or track the bound element" — v4.53.0 note) is violated by these four; hideWatchedVideos in the extension was already fixed for exactly this class (`ytkit.js:22879-22886`).
+  Evidence: each marker's set/clear sites enumerated; the cleared-marker list (video-hider `ytkitHideProcessed`, subs `ytkitBlocked`, DeArrow `daProcessed`) confirmed handled — only these four remain.
+  Fix: (a) clear both markers + restore text in the navigate rule (as destroy already does); (b) key the checked-marker to a content hash of `#message`, clearing hide state when it changes; (c) per scan, unhide `[data-ytkit-shorts-hidden]` nodes that no longer contain a `/shorts` link; (d) pair `ytkitOrigIdx` with the video id and re-stamp on mismatch.
+  Acceptance: per-feature: precise count updates on the second video; a recycled chat node is re-evaluated; a recycled ex-Shorts card is visible; restoring default order after a continuation matches native order. Tests drive recycling by mutating a fake node's content in place.
+  Confidence: (a) Verified mechanism / Likely impact; (b)(c)(d) Likely
+  Effort: M
+
+- [ ] P3 — remainingTimeDisplay accumulates a frozen duplicate readout on every watch→watch navigation
+  Category: correctness / visual
+  Where: `extension/ytkit.js:21822-21826` (navigate rule nulls `this._el` without removing or re-querying the node), `:21785-21791` (`_update` appends a NEW span when `!this._el`); same in `YTKit.user.js:7776` + `:7763-7770`
+  Problem: `.ytp-time-display` persists across SPA navigation, so each navigation orphans the old `.ytkit-remaining-time` span (frozen at video A's remaining time) and appends a new one — one extra stale readout per navigation until destroy().
+  Evidence: trace above; the container's persistence is the same recycling fact the sibling features document.
+  Fix: in `_update`, adopt an existing span first (`this._el = timeDisplay.querySelector('.ytkit-remaining-time') || create`), or remove the old node in the navigate rule. Port to the userscript.
+  Acceptance: after three navigations exactly one readout exists and it ticks; a two-navigation live check confirms.
+  Confidence: Verified (trace); recommend a 2-navigation live confirm
+  Effort: S
+
+- [ ] P3 — `YTKIT_AI_SUMMARY_REQUEST` spends the stored provider credential from content-script context without the grant re-check or rate limit its siblings have
+  Category: security (defense-in-depth)
+  Where: `extension/background.js:1471-1477` (`YTKIT_AI_CREDENTIAL_STATUS/SET/DELETE` reject `sender.tab`) vs `:1501-1515` (`YTKIT_AI_SUMMARY_REQUEST` has no such guard) → `performAiSummaryRequest` `:199-276`
+  Problem: the endpoint is origin-locked (`core/credential-vault.js:44-49`) and the response is scanned so the key cannot be exfiltrated, but a compromised isolated-world content script can drive the user's paid OpenAI/Anthropic/Google key for arbitrary completions: unlike `EXT_FETCH` (`:1877`) there is no `requireRuntimeOptionalHostGrant` re-check, and there is no throttle or in-flight cap. Content-script reachability is by design (the in-page AI summary calls it) — this is a hardening asymmetry, not a vuln.
+  Evidence: dispatch guards compared by hand; vault origin-lock and response scan confirmed by the trust-boundary sweep.
+  Fix: gate the handler behind `requireRuntimeOptionalHostGrant(validated.url)` and add a coarse per-tab rate limit / in-flight cap mirroring `_downloadInProgress`.
+  Acceptance: an ungranted provider origin is refused; a burst of requests from one tab is throttled; existing AI-summary tests stay green.
+  Confidence: Verified (asymmetry); impact bounded
+  Effort: S
+
+- [ ] P3 — Cookie-handoff document binding silently degrades to tab+store when the browser omits `sender.documentId`
+  Category: security (contract accuracy)
+  Where: `extension/background.js:349` (`documentId: … : null`), `sameCookieHandoffBinding` `:356-362`
+  Problem: when the host doesn't populate `documentId`, issue-time and consume-time both hold `null`, so `null === null` passes and the advertised tab+frame+document+container binding quietly loses its document leg — within the 20 s TTL a same-tab top-frame navigation could satisfy a binding a different document originated. Single-use, TTL, frame-lock, and https-youtube-lock all still hold, so exposure is bounded to the four sanitized cookies.
+  Evidence: binding construction and comparison verified by hand; all other legs confirmed enforced by the trust-boundary sweep.
+  Fix: refuse to ISSUE a capability when `documentId` is absent (fail closed), or additionally bind `sender.url` — otherwise document the degradation in the contract instead of asserting document binding unconditionally.
+  Acceptance: with a simulated `documentId`-less sender, issuance is refused (or the fallback binding is asserted and documented); a test covers the null-vs-null path.
+  Confidence: Verified (code path); real-world reachability Needs-repro
+  Effort: S
+
+- [ ] P3 — One rejected deferred feature module fails the entire runtime
+  Category: reliability
+  Where: `extension/runtime-bootstrap.js:349` (`Promise.all` over deferred feature imports; a single rejection fails the whole runtime and `ytkit.js` never runs)
+  Problem: fail-closed is correct for the FOUNDATION modules (a missing guard module must not soften security), but for the 26 peeled feature modules one corrupted/unfetchable file (e.g. a truncated store install) turns "one feature broken" into "extension does nothing on the page" with only a console signal. check-syntax gates shipped syntax errors, so reachability is low — this is resilience hardening.
+  Evidence: load path traced by the trust-boundary sweep (fail-closed confirmed, no security bypass in partial-load).
+  Fix: `Promise.allSettled` for the feature (not foundation) tier: log rejects to the diagnostic ring, mark the affected feature degraded in the health surface, and continue.
+  Acceptance: with one feature module import forced to reject, the page still gets every other feature and the failure is visible in diagnostics; foundation-module failure still fails closed.
+  Confidence: Verified (path); scenario Needs-repro
+  Effort: S
+
+- [ ] P3 — New enum `<select>` editors misrepresent a legacy out-of-enum stored value as the first option
+  Category: correctness / ux
+  Where: `extension/popup.js:3628-3640` (`option.selected = value === effective`; no coercion or placeholder when `effective` is not in `entry.enum`)
+  Problem: 24 previously free-form schema entries gained `enum` in d1b332ae/2b148ea3, and nothing coerces already-persisted values at content-script `load()` (`clampSettingValue` runs only on popup edits `:3688,:3745` and import `core/policy-profile.js:278`). A stored legacy value outside the enum keeps driving the runtime while the select renders the browser default (first option) — display and storage disagree until the first edit.
+  Evidence: mechanism verified by the delta sweep; requires a pre-enum persisted value to exist in the wild.
+  Fix: when `!entry.enum.includes(effective)`, prepend a disabled "(unrecognized: X)" option and select it — or coerce via `clampSettingValue` on render and persist the clamp.
+  Acceptance: a seeded out-of-enum stored value renders visibly as unrecognized (or is normalized with a diff entry); a test seeds one and asserts the select state.
+  Confidence: mechanism Verified; occurrence Likely
+  Effort: S
+
+- [ ] P3 — Transcript refresh polish: error-path diagnostics discard the refresh outcome, and a known-dead caption URL is fetched twice before refreshing
+  Category: correctness / perf
+  Where: `extension/core/transcript-service.js:440-448` (thrown-error diagnostic hardcodes `fallbackReason: allowDomFallback ? 'panel-unavailable' : 'dom-disabled'`, overwriting `'refresh-discovery-failed'`/`'refresh-fetch-failed'` set at `:399,:421`); `:912-937` (`_fetchTranscriptContent` format loop: on a 403/404 for json3 it still fetches the SAME URL as xml before throwing)
+  Problem: (1) exactly the case provenance was built to explain — "we tried a refresh and it failed" — never reaches `getDiagnostics()`/DiagnosticLog. (2) A revoked-but-unexpired URL costs two wasted round-trips of latency per refresh (the expired-`expire`-param case is correctly pre-skipped at `:365`).
+  Evidence: both read by hand; verified the hardcoded overwrite at `:447`.
+  Fix: `fallbackReason: fallbackReason || (allowDomFallback ? 'panel-unavailable' : 'dom-disabled')`; and `if (status === 403 || status === 404) break;` out of the format loop.
+  Acceptance: a failed-refresh + no-panel scenario reports `refresh-fetch-failed` in diagnostics; a 403 track fetch issues exactly one request before rediscovery; tests cover both.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — `check-settings` orphan/consumer invariants are substring-vacuous for prefix-family keys
+  Category: testing
+  Where: `scripts/check-settings.js:210-215` and `:267-273` (`corpus.includes(key)`)
+  Problem: a key that is a lexical substring of any other identifier can never be flagged orphaned — delete every consumer of `sponsorBlock` and the gate stays green because `sponsorBlockBaseUrl` contains it; same for every prefixed family. The gate is real only for unique-named keys. (No current orphan slips through — gate weakness only.)
+  Evidence: verified by hand at `:212`.
+  Fix: word-boundary match (`new RegExp('\\b'+escape(key)+'\\b')`) or quote-delimited/property-access match; bait-verify by deleting a prefix-family key's consumers.
+  Acceptance: the bait fails the gate; current tree still passes.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — Future-version imports drop settings with only a count: `skippedKeys` is computed but never shown
+  Category: ux
+  Where: `extension/core/policy-profile.js:245,266,285` (`skippedKeys` built and returned); `extension/popup.js:869-876` (comment claims "persisted-domains' before/after counts report those skips" — nothing names the dropped keys to the user or diagnostics)
+  Problem: importing a backup from a newer schema silently drops unknown keys; the user sees only aggregate counts, not which settings didn't survive — contradicting the import surface's otherwise-explicit preview contract.
+  Evidence: consumer grep — zero readers of `skippedKeys`.
+  Fix: thread `validation.skippedKeys` into the import preview/status ("N settings from a newer version were skipped: key, key, …") and the diagnostics bundle.
+  Acceptance: a future-version import names its skipped keys in the preview; a test asserts the list renders.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — Settings-reference generator escapes `|` only in the Purpose cell — a future value containing a pipe silently truncates its README table row
+  Category: docs / maintainability
+  Where: `scripts/generate-settings-reference.js:165-169` (`escapeCell` used only at `:236`); `formatConstraints`/`formatBehavior`/title go through `code()`/`escapeHtml`, which do not escape `|`
+  Problem: latent today (no current value contains `|`), but the `--check` gate would PASS on the broken output since generator and README agree. An enum value or feature name with a pipe breaks the table silently.
+  Evidence: escape call sites enumerated.
+  Fix: run every cell through `escapeCell` after HTML formatting; add a generator unit test with a pipe-bearing fixture entry.
+  Acceptance: a pipe-bearing value renders escaped; the fixture test pins it.
+  Confidence: Verified (latent)
+  Effort: S
+
+- [ ] P3 — Newest source-pin tests carry three latent vacuous windows
+  Category: testing
+  Where: (a) `tests/ai-credential-custody.test.js:52-53` — the slice's end needle `indexOf("…SUMMARY_REQUEST'")` is searched from 0, not from the start index: if dispatch reorder puts SUMMARY_REQUEST before CREDENTIAL_STATUS the slice is empty and `doesNotMatch` passes vacuously (the sibling `_callLLM`/`_run` slices pass a fromIndex; `tests/youtube-state-reset.test.js:170-172` shows the correct pattern); (b) `tests/hardening.test.js` `.so-key-select` pin asserts only that the selector STRING appears in popup.css — an empty rule or a comment passes (the text/color variants pin a declaration); (c) `tests/popup-fixes.test.js` finite-select refocus pin matches `select[data-key="${esc}"]` at global scope — unique at HEAD, but survives the refocus helper losing its select branch if the string appears anywhere else.
+  Problem: all three are non-vacuous at HEAD but in the exact `gotcha-checks-that-always-pass` family the 22c60972 commit was draining.
+  Evidence: (a) verified by hand at `:52-53`; (b)(c) verified by the tests sweep against current file content.
+  Fix: (a) pass the start index as fromIndex + assert end > start; (b) pin one load-bearing declaration inside the block; (c) scope the match to the extracted refocus-helper slice.
+  Acceptance: each pin fails under its bait (reorder / empty rule / moved string) and passes at HEAD.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — Backfill real render assertions onto the features whose DOM half was never covered
+  Category: testing
+  Where: `tests/features/watch-later-workbench.test.js` (the feature has 26 `appendChild`, 2 `replaceChildren`, and an `isConnected` guard; the test references none of them); same shape for other `loadFeature`-hosted features whose tests exercise only pure helpers
+  Problem: the shared helper's DOM no-ops were fixed on 2026-08-18 (`appendChild`/`replaceChildren` attach, `remove`/`insertBefore` exist, `className` reflects, `isConnected` defaults true, `matches` evaluates class/id/attribute selectors and throws on combinators), so render assertions are now POSSIBLE — but the existing tests still assert only source shape for the render half, which is why a broken render path can still pass.
+  Evidence: the helper rewrite landed with the timestampBookmarks regression test as its first consumer (bait-verified); the remaining feature tests were not revisited.
+  Fix: for each `loadFeature` test that covers a UI-building feature, assert on the built tree (`children`, `textContent`, class state) rather than on source text; delete the source pins those assertions replace.
+  Acceptance: at least the watch-later-workbench, transcript-viewer, and subscription-groups render paths assert on real built nodes; a bait (render into the wrong node) fails.
+  Confidence: Verified
+  Effort: M
+
+- [ ] P3 — Nothing gates release staleness: `chore(release)` commits ship with no tag, no channel promotion, and every gate stays green
+  Category: process / testing
+  Where: `release-channels.json` (all five channels: active=4.59.0, lastKnownGood=4.59.0, rollbackTarget=4.58.2) vs product version 4.62.0; `scripts/check-versions.js:153-170` tag-sanity only asserts no tag sorts AHEAD of the product version and has zero coverage of release-channels.json (grep-verified)
+  Problem: v4.60.0, v4.61.0, and v4.62.0 each have a release commit but no tag, no artifacts, no promotion — and even tagged v4.59.1 was never promoted. A release commit that never ships passes every gate silently. (The publication act itself is maintainer-local and stays in `Roadmap_Blocked.md` — this item is the missing gate.)
+  Evidence: `git tag` + `gh release list` + release-channels.json read 2026-08-18.
+  Fix: extend check-versions (or a `release:channels validate` lane) to warn/fail when HEAD's product version has a `chore(release)` commit but no matching tag, and to report channel-pointer lag against the newest tag explicitly.
+  Acceptance: at current HEAD the new lane reports the 3-version lag; after a properly tagged+promoted release it passes.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — npm-chain flag forwarding silently swallows `--bump`/`--profile`/`--crx-key`, and `capture:surface` duplicates `capture:watch`
+  Category: process
+  Where: `package.json:16-18` — `npm run build -- --bump patch` appends the flags to the LAST command of the `&&` chain (`generate-capability-matrix.js`, which ignores them), so `build-extension.js` runs with no bump and default `--profile both`, exit 0, silently wrong (the documented `--no-crx` instance of this trap got a dedicated script + `ASTRA_SKIP_CRX` env escape; bump/profile/key have none). `package.json:45-46` — `capture:watch` and `capture:surface` are byte-identical entries.
+  Evidence: npm arg-forwarding semantics + chain shape; script entries read.
+  Fix: add env-var equivalents in build-extension.js (it already reads `ASTRA_SKIP_CRX`) or restructure so `node build-extension.js` is the chain's last command; give `capture:surface` its intended argument or delete the alias.
+  Acceptance: `npm run build -- --bump patch` either bumps or fails loudly; no byte-identical script aliases remain.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — Mobile settings panel clips setting descriptions mid-glyph instead of ellipsizing
+  Category: visual
+  Where: `extension/core/settings-visual-system.js:1513-1519` — the mobile lane switches `.ytkit-feature-desc` to `display:-webkit-box` + `-webkit-line-clamp:2` (inheriting `overflow:hidden` from the base rule at `:851-855`)
+  Problem: observed in the shipped smoke render (`build/settings-overlay-smoke/mobile-light.png`, Codec Selector card): the description paints ~2.5 lines with the third line sheared horizontally mid-glyph behind the select control — no ellipsis, unreadable fragment. The smoke's "readable primary controls" assertion doesn't cover description overflow, so it passes.
+  Evidence: rendered PNG reviewed by hand 2026-08-18; CSS lane read.
+  Fix: verify the clamp interaction in the panel probe (the box height is not collapsing to the clamp — likely the `!important` `display` fight with the base `display:block`); either make the clamp lane self-consistent (`display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical` together, no competing height) or drop the clamp on mobile and let descriptions wrap fully; add a description-overflow check to the mobile smoke states.
+  Acceptance: the mobile render shows either a clean 2-line ellipsis or full wrapped text — no sheared glyphs; the smoke asserts it.
+  Confidence: Verified (observed); root-cause mechanism Needs-repro in the probe
+  Effort: S
+
+- [ ] P3 — Make the side panel tell the truth: stale "live" claims, MB-capped byte formatter, misdiagnosed save failures, and two "Settings" numbers that disagree
+  Category: ux
+  Where: (a) `extension/sidepanel.html:22,35,37,109` promise "Live diagnostics"/"stream", but `sidepanel.js` has no `setInterval` and no `tabs.onActivated`/`onUpdated` listener (grep: 0 hits) — dashboards update only on boot and manual Refresh, so tab switches show stale data under a "Live diagnostics updated" status; (b) `sidepanel.js:271-275` `formatBytes` caps at MB with `toFixed(1)` — the exact bug popup.js already fixed (`popup.js:911-923`, GB tier + locale decimals); (c) `sidepanel.js:849-858` funnels a DENIED host-permission prompt into the same "Save failed. Try refreshing the dashboard." copy as a storage write failure (refreshing cannot fix a denied grant; the popup names the real cause at `popup.js:1124`); (d) `sidepanel.html:46` overview stat and `sidepanel.js:538` storage stat both label their number with `panelTitle` ("Settings") while meaning different things — 16 schema entries vs count of sparsely stored keys (e.g. 3) — reading as a bug.
+  Evidence: all four verified against source (grep for interval/listener run by hand).
+  Fix: (a) re-run `refresh()` on `tabs.onActivated` + relevant `onUpdated` (renderers are idempotent), or soften the copy to "On-demand diagnostics"; (b) lift popup's `formatBytes` into a shared core module and use it; (c) branch the message when `granted === false`, reusing the popup's optional-host copy key; (d) relabel the storage stat (`spStatStoredSettings` "Stored settings").
+  Acceptance: switching YouTube tabs refreshes the dashboards (or the copy no longer claims live); a multi-GB store reads in GB with locale decimals; a denied prompt names the permission cause; the two stats carry distinct labels. Locale keys added per the documented recipe.
+  Confidence: Verified
+  Effort: S–M
+
+- [ ] P3 — Popup feedback gaps: "Open Full Settings" gives no busy state and can open duplicate tabs; the external-health empty state is unstyled; copy-status live regions never clear
+  Category: ux / visual
+  Where: (a) `extension/popup.js:6386-6400` — the click handler never sets `disabled`/`aria-busy` during the up-to-8 s `sendPanelOpenMessage` ack window (`:1751-1771`), and each extra click can fall through to `ext.tabs.create('https://www.youtube.com/')` → duplicate tabs; `#openSidePanel` (`:6409`) has the same unguarded shape; (b) `popup.js:2743` creates `li.className='external-health-empty'` but popup.css styles only `.selector-health-empty` (`:1167`) and `.feature-perf-empty` (`:1332`) — the third dashboard's empty state renders as a plain default list item; (c) `popup.js:2635/2653` and `:2838/2851` write "Copied…" into aria-live regions with no auto-clear (unlike `showStatus` `:1571-1577`), so stale "Copied" lines persist for the popup's lifetime and can coexist.
+  Evidence: all traced by the UX sweep; every OTHER async action in the file was confirmed to carry disable+aria-busy (cleared list), making these the only stragglers.
+  Fix: (a) `disabled` + `aria-busy` for the flight on both CTAs; (b) add `.external-health-empty` to the shared empty-state rule; (c) clear the copy-status lines after ~4 s like the status banner.
+  Acceptance: double-clicking Open Full Settings opens at most one tab and the button shows busy; the empty state matches its siblings in both render states; "Copied" clears itself. Rendered popup smoke re-checked.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — Popup speaks raw camelCase setting keys in toasts and accessible names, against its own labeling policy
+  Category: a11y / ux
+  Where: `extension/popup.js:3950-3955` (`schemaResetTitleTpl`/`schemaResetAriaTpl` interpolate `entry.key`), `:3963` (toast "customProgressBarColor reset to default."), `:3618/:3652` (`formatSettingWriteError(entry.key, …)`), while `:3764` passes `entry.labelKey || entry.key` and the row label deliberately humanizes (`:3499-3503`, with an in-code comment about voice-control targeting)
+  Problem: the reset button's accessible name and three status paths contradict the popup's own humanized-label policy; three call sites disagree on which name to use, so voice-control users and toast readers get names that match nothing on screen.
+  Evidence: call sites compared by the UX sweep.
+  Fix: pass the resolved visible label everywhere; keep the raw key in the title/tooltip only.
+  Acceptance: reset toast/aria-name show the humanized label; a test asserts label parity across the three sites.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — Risk-badge tooltips are structurally unlocalizable: the dynamic key contains a hyphen chrome.i18n forbids
+  Category: i18n
+  Where: `extension/popup.js:1960` — `t('toggleRiskTooltip_' + entry.risk, {…inline EN map})`; risk vocabulary includes `local-companion` and `store-risk` (`extension/core/settings-schema.js:34`)
+  Problem: no `toggleRiskTooltip_*` key exists in any locale (grep: 0 in EN), and for the two hyphenated bands none CAN exist on the `ext.i18n` path — message names allow only `[A-Za-z0-9_]`. The tooltip renders inline English in all 11 locales forever, and naively adding keys later would silently fix only 2 of 4 bands.
+  Evidence: verified by hand — key pattern at `:1960`, zero matches in `_locales/en/messages.json`.
+  Fix: normalize the dynamic key (`entry.risk.replace(/-/g,'_')`) and add the four keys through the locale recipe.
+  Acceptance: all four risk tooltips localize; a test asserts every value in the risk vocabulary resolves to an existing key after normalization.
+  Confidence: Verified
+  Effort: S
+
+- [ ] P3 — Microcopy consistency batch (popup + sidepanel)
+  Category: ux / docs
+  Where: (a) `extension/popup.js:4965` vs `:5257` — one key `filterListStatusRefreshFail` serves two different failures; the service-unavailable branch tells users to "Check the address, then try again" when the address is fine and retrying cannot help; (b) `popup.html:85` "Skip - configure manually" uses a hyphen where the surface's style is an em dash; (c) the same destination is named "Open Full Settings", "the full workspace", and "Settings workspace" across `openFullSettings`/`contextNoteInlinePanel`/`workspaceEyebrow`; (d) `popup.js:1138/1151` directs users to "Settings Overview" while the section is titled "Settings overview"; (e) `sidepanel.js:715` renders "Unavailable" where sibling placeholders are `'--'`/`'-'` (`:714`, `sidepanel.html:47`).
+  Problem: each is small; together they read as inattention on the primary surfaces. Same class as the tracked `statusImportSnapshotFail` drift, different keys.
+  Evidence: all verified by the UX sweep at the cited lines.
+  Fix: give the `:4965` branch its own key (`filterListStatusStateReadFail`) with cause-accurate copy; fix the dash; pick one workspace noun; match the section title's case; unify placeholders. Locale keys via the documented recipe (11 locales).
+  Acceptance: each cited string matches its surface's convention; `npm run check` i18n gates stay green after the baseline ratchets.
+  Confidence: Verified
+  Effort: S
+
+Note — extends the existing P3 item "Userscript duplicates RYD / SponsorBlock / DeArrow / player-handoff features on non-schema keys; bundled modules are never called": the 2026-08-18 monolith sweep verified twelve concrete divergences the hand-maintained userscript copies carry versus the extension pair (which are line-for-line identical for SponsorBlock/DeArrow): DeArrow never processes watch pages (`YTKit.user.js:14830-14843` pathname gate) so the related rail — its main target — is untouched; sentence-case renders "THe truth about x" (`:14904` operates on `slice(1)`); a DeArrow 404 yields null instead of empty branding so `daFallbackFormat` never fires (`:14857-14875`); SB drops `[t,t]` `poi_highlight` markers (`:14518`); the SB cache ignores which categories it was fetched for (`:14527-14547`); DeArrow cache has no in-session TTL and "No cache" hydrates 24 h of entries (`:14788,:14846`); the thumbnail path lacks the extension's three guards (videoId pattern, timestamp finiteness, lazy-img deferral; `:14955-14987`); SB lacks skip-timing jitter, stale-cache API-outage fallback, and the progress-bar rebuild observer (declared `:14462`, never armed); perChannelSpeed lacks BOTH extension fixes (untagged programmatic writes `:8285,:8314`; navigate-save reads current DOM `:8308-8309`); hideWatchedVideos still uses the once-marker the extension removed for recycled nodes (`:8336-8338`); Subscription Groups is the oldest third copy (silent full-replace import with no undo `:13589-13626`, no `_sessionLastVisit`, default true vs schema false `:2966`) while the modern factory bundled at `YTKit-core.user.js:24286` has zero call sites — the stickyChat/subtitles/themeCss factories show the wiring pattern to follow. This strengthens that item's case: wire the bundled factories rather than patching twelve divergences one at a time.

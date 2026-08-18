@@ -33047,14 +33047,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _cachePersistTimer: null,
 
             _getChannelId() {
+                // One canonical key, shared with the chip that WRITES these
+                // profiles. Returning the raw handle href here meant a
+                // suffixed owner link (/featured, ?si=…) produced a key the
+                // stored profile could never match, so per-channel overrides
+                // were silently ignored while the chip showed them active.
                 const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
-                if (link) {
-                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
-                    if (m) return m[1];
-                }
+                const byId = globalThis.YTKitCore?.channelSettingsKey?.(link?.getAttribute('href'));
+                if (byId) return byId;
                 const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
-                if (handleLink) return handleLink.getAttribute('href') || '';
-                return '';
+                return globalThis.YTKitCore?.channelSettingsKey?.(handleLink?.getAttribute('href')) || '';
             },
 
             _getEnabledCategories() {
@@ -33736,8 +33738,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // One canonical key. Storing the RAW owner href here meant a
                 // suffixed link (/featured, ?si=…) produced a key the feed-card
                 // reader could never match, so the setting was accepted and then
-                // silently ignored. Shared with the SponsorBlock per-channel
-                // profiles, which key on the same href.
+                // silently ignored. SponsorBlock's per-channel profile reader
+                // resolves the same way — it kept the raw href long after this
+                // side was fixed, which reintroduced the same mismatch there.
                 const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
                 const key = globalThis.YTKitCore?.channelSettingsKey?.(link?.getAttribute('href'));
                 if (key) return key;
@@ -42229,8 +42232,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // One canonical key. Storing the RAW owner href here meant a
                 // suffixed link (/featured, ?si=…) produced a key the feed-card
                 // reader could never match, so the setting was accepted and then
-                // silently ignored. Shared with the SponsorBlock per-channel
-                // profiles, which key on the same href.
+                // silently ignored. SponsorBlock's per-channel profile reader
+                // resolves the same way — it kept the raw href long after this
+                // side was fixed, which reintroduced the same mismatch there.
                 const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
                 const key = globalThis.YTKitCore?.channelSettingsKey?.(link?.getAttribute('href'));
                 if (key) return key;
