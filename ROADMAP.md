@@ -537,18 +537,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
 
 ### P2
 
-- [ ] P2 — perChannelSpeed can delete its own saved speeds, silently fails to apply, and mis-keys dotted handles
-  Category: correctness
-  Where: `extension/ytkit.js:22834-22838` (ratechange handler), `:22806-22808` (rate===1 deletes the channel entry), `:3265-3273` (250 ms programmatic-write window), `:22820-22829` (single `setTimeout(...,3000)` apply, no retry), `:22786-22799` (`_applySpeed` gives up silently), `:22781` (`_getChannelId` regex `/@[\w-]+|channel\/[\w-]+/`)
-  Problem: three related defects. (1) No `player.setPlaybackRate` call exists anywhere (grep: zero hits) — all writes go to the media element — so YouTube's html5 player keeps its internal rate (1x for users who never touch the native menu) and re-asserts it on the element on new-stream load / quality change; that untagged ratechange runs `_saveCurrentSpeed()` with rate 1 → the channel's entry is DELETED and the just-applied saved speed reverts. The in-code comment (`:22830-22833`) records fixing exactly this for the extension's own forced writes; YouTube's writes were left uncovered. (2) The one-shot 3 s apply silently never fires on slow metadata hydration, and a single unvalidated DOM read at t+3 s can grab the previous video's channel link (`ytd-page-manager` retains prior-route trees — see the 2026-08-13 recon note above) and mis-key the save; contrast persistentSpeed's 6-step `schedulePlayerTask` retry ladder (`:25444-25455`). (3) `\w` excludes `.`, so `@mr.beast` keys as `@mr` — all dotted handles sharing a prefix collide into one speed entry (self-consistent, so collisions not loss).
-  Evidence: all sites read; grep for `setPlaybackRate` across the repo returned zero hits.
-  Fix: (1) write speed through the `#movie_player` player API so YouTube's internal state agrees, or persist only on ratechange correlated with a recent user gesture; (2) move `_applySpeed` onto `schedulePlayerTask` with persistentSpeed's retry ladder; (3) reuse `YTKitCore.channelSettingsKey` for the key. The userscript copy additionally lacks BOTH existing extension fixes (untagged programmatic writes at `YTKit.user.js:8285,:8314`; navigate-save reads the current DOM at `:8308-8309`) — port along with the rest.
-  Acceptance: a saved 1.5× channel speed survives a quality change and a new video load on the same channel; a video whose metadata hydrates in 5 s still gets its speed; `@mr.beast` and `@mr.bean` persist separately; tests cover the untagged-reset and retry paths.
-  Confidence: mechanism Verified; reset-trigger frequency Needs-repro (live)
-  Effort: M
-
-### P3
-
 - [ ] P3 — Subscription Groups: confirm-dialog matcher can click Cancel and still record success; 1000-cap silently drops the just-added channel; no way to rename or delete a group
   Category: correctness / ux
   Where: `_confirmUnsubscribeDialog` selector `'#confirm-button, button[aria-label], [role="button"]'` takes the first document-order match — `extension/ytkit.js:43809-43826`, `features/subscription-groups/index.js:1479-1496`; staged record deleted on "success" `index.js:1624-1627`. Cap: `_setGroupMembership` appends then `slice(0, 1000)` — `index.js:2546-2560` — dropping the just-added channel while toasting "added". Product gap: group rename/delete/reorder exists in NO copy; the only way to remove a group is Shift+click replace-import.
