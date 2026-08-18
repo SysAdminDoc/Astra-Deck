@@ -42851,7 +42851,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return opml;
             },
 
-            _importGroups(json) {
+            _importGroups(json, options = {}) {
                 try {
                     const data = JSON.parse(json);
                     if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
@@ -42914,7 +42914,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         skippedChannels,
                         duplicateChannels,
                         importedChannels
-                    });
+                    }, options);
                 } catch (e) {
                     if (typeof showToast === 'function') showToast(t('subscriptionGroupsImportFailedTpl', 'Import failed: {error}')
                         .replace('{error}', e.message), '#ef4444');
@@ -42922,13 +42922,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
 
-            _importGroupsOpml(opmlText) {
+            _importGroupsOpml(opmlText, options = {}) {
                 try {
                     const parsed = this._parseGroupsOpml(opmlText);
                     return this._commitImportedGroups(parsed.groups, 'OPML', {
                         duplicateChannels: parsed.duplicateChannels,
                         importedChannels: parsed.importedChannels
-                    });
+                    }, options);
                 } catch (e) {
                     const message = t('subscriptionGroupsImportFailedTpl', 'Import failed: {error}')
                         .replace('{error}', `OPML: ${e.message}`);
@@ -44428,7 +44428,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 importBtn.textContent = t('commonImport', 'Import');
                 importBtn.setAttribute('aria-label', t('subscriptionImportAria', 'Import subscription groups'));
                 importBtn.title = t('subscriptionImportTitle', 'Import subscription groups (merges with your groups; Shift+click replaces them)');
-                importBtn.addEventListener('click', () => {
+                importBtn.addEventListener('click', (event) => {
+                    // Import merges by default. Replacing every group is the
+                    // destructive path, so it takes a deliberate Shift+click.
+                    const mode = event.shiftKey ? 'replace' : 'merge';
                     const inp = document.createElement('input');
                     inp.type = 'file';
                     inp.accept = 'application/json,.json,.opml,.xml,application/xml,text/xml,text/x-opml';
@@ -44438,9 +44441,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         file.text().then(text => {
                             const name = String(file.name || '').toLowerCase();
                             if (name.endsWith('.opml') || name.endsWith('.xml') || /^\s*<\?xml|^\s*<opml/i.test(text)) {
-                                this._importGroupsOpml(text);
+                                this._importGroupsOpml(text, { mode });
                             } else {
-                                this._importGroups(text);
+                                this._importGroups(text, { mode });
                             }
                         });
                     });
@@ -44981,8 +44984,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return result;
             },
 
-            _commitImportedGroups(groups, label, meta = {}) {
+            _mergeImportedGroups(previous, incoming) {
+                const GROUP_LIMIT = 500;
+                const CHANNEL_LIMIT = 1000;
+                const merged = {};
+                for (const [id, group] of Object.entries(previous)) {
+                    merged[id] = { ...group, channelIds: [...(group.channelIds || [])] };
+                }
+                for (const [id, group] of Object.entries(incoming)) {
+                    const existing = merged[id];
+                    if (!existing) {
+                        if (Object.keys(merged).length >= GROUP_LIMIT) continue;
+                        merged[id] = { ...group, channelIds: [...(group.channelIds || [])] };
+                        continue;
+                    }
+                    // The imported record wins on presentation, but a channel
+                    // already in the group is never dropped by an import.
+                    const channelIds = [...existing.channelIds];
+                    const seen = new Set(channelIds);
+                    for (const channelId of (group.channelIds || [])) {
+                        if (seen.has(channelId) || channelIds.length >= CHANNEL_LIMIT) continue;
+                        seen.add(channelId);
+                        channelIds.push(channelId);
+                    }
+                    merged[id] = {
+                        ...existing,
+                        ...group,
+                        channelIds,
+                        updatedAt: Date.now()
+                    };
+                }
+                return merged;
+            },
+            _commitImportedGroups(groups, label, meta = {}, options = {}) {
                 const previous = this._readGroups();
+                // Import merges by default; a full replace is destructive and
+                // only happens on the deliberate Shift+click path the button
+                // title advertises.
+                const replace = options.mode === 'replace';
+                groups = replace ? groups : this._mergeImportedGroups(previous, groups);
                 this._writeGroups(groups);
                 const ids = Object.keys(groups);
                 const previousIds = Object.keys(previous);

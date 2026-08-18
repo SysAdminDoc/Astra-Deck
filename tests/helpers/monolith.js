@@ -34,6 +34,24 @@ function featureSource(id) {
     return region.slice(0, close.index + close[0].length);
 }
 
+/**
+ * Slice the inline fallback literal of a FACTORY-BUILT feature — the
+ * `createXFeature({...}) || { id: 'x', … }` shape. Which copy actually runs
+ * depends on the landing route (`FEATURE_ROUTES` in runtime-bootstrap.js), so
+ * a behaviour proved only against the peeled module proves nothing about the
+ * session that landed elsewhere. The literal closes at the array indent
+ * followed by `)`, which is the wrapping factory call's own close.
+ */
+function fallbackFeatureSource(id) {
+    const needle = `|| {\n            id: '${id}'`;
+    const start = sources.ytkit.indexOf(needle);
+    assert.ok(start > 0, `factory fallback for '${id}' must exist in ytkit.js`);
+    const open = start + needle.indexOf('{');
+    const close = sources.ytkit.indexOf('\n        })', open);
+    assert.ok(close > open, `factory fallback for '${id}' must close at the array indent`);
+    return sources.ytkit.slice(open, close + '\n        }'.length);
+}
+
 /** Evaluate a monolith feature literal with a caller-supplied environment. */
 function loadFeature(id, extraGlobals = {}) {
     const sandbox = {
@@ -67,6 +85,38 @@ function loadFeature(id, extraGlobals = {}) {
     };
     sandbox.globalThis = sandbox;
     return vm.runInNewContext(`(${featureSource(id)})`, sandbox);
+}
+
+/** Evaluate the inline fallback literal of a factory-built monolith feature. */
+function loadFallbackFeature(id, extraGlobals = {}) {
+    const sandbox = {
+        console,
+        AbortController,
+        setTimeout,
+        clearTimeout,
+        t: (_key, fallback) => fallback,
+        PageTypes: new Proxy({}, { get: (_target, prop) => String(prop) }),
+        Z: new Proxy({}, { get: () => 1 }),
+        ICONS: new Proxy({}, { get: () => () => fakeNode() }),
+        IMPORT_LIMITS: new Proxy({}, { get: () => 100 }),
+        createSVG: () => fakeNode(),
+        DebugManager: { log() {} },
+        showToast() {},
+        getVideoId: () => 'abc12345678',
+        appState: { settings: {} },
+        settingsManager: { save() {} },
+        isSafeObjectKey: (key) => !['__proto__', 'constructor', 'prototype'].includes(key),
+        addMutationRule() {},
+        removeMutationRule() {},
+        addNavigateRule() {},
+        removeNavigateRule() {},
+        addScopedMutationRule() {},
+        removeScopedMutationRule() {},
+        injectStyle: () => fakeNode(),
+        ...extraGlobals
+    };
+    sandbox.globalThis = sandbox;
+    return vm.runInNewContext(`(${fallbackFeatureSource(id)})`, sandbox);
 }
 
 /**
@@ -235,4 +285,11 @@ function fakeDocument(resolve) {
     };
 }
 
-module.exports = { featureSource, loadFeature, fakeNode, fakeDocument };
+module.exports = {
+    featureSource,
+    fallbackFeatureSource,
+    loadFeature,
+    loadFallbackFeature,
+    fakeNode,
+    fakeDocument
+};

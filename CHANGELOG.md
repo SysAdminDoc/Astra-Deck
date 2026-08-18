@@ -8,6 +8,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Importing subscription groups now merges instead of silently replacing.
+  Which copy of the feature runs depends on the page you land on, and the
+  in-page copy still deleted every group missing from the imported file — the
+  button's own tooltip promised a merge, and a six-second toast was the only
+  recovery. Both copies now merge by default and replace only on the
+  deliberate Shift+click the tooltip describes.
 - Timestamp Bookmarks now rebinds its panel after every watch-page navigation.
   `#secondary-inner` survives SPA navigation, so the previous video's panel
   container stayed in the tree and made the injector give up: the panel kept
