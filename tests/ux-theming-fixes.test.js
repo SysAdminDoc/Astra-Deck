@@ -179,8 +179,15 @@ test('extension Takeout import keeps large-file and undo recovery parity', () =>
             `${label} must allow large YouTube Takeout history exports`);
         assert.ok(block.includes('const preImportStats = StorageManager.get(STORAGE_KEYS.watchTime, null);'),
             `${label} must snapshot watch-time state before import`);
-        assert.ok(block.includes('StorageManager.setSync(STORAGE_KEYS.watchTime, preImportStats);'),
-            `${label} must restore the pre-import watch-time state from Undo`);
+        assert.ok(block.includes('const undoTarget = preImportStats !== null ? preImportStats : { days: {}, total: 0 };'),
+            `${label} must restore the pre-import watch-time state from Undo, and the empty shape when there was none`);
+        assert.ok(block.includes('StorageManager.setSync(STORAGE_KEYS.watchTime, undoTarget);'),
+            `${label} undo must write the resolved restore target`);
+        // The undo used to be inside `if (preImportStats !== null)`, so a
+        // first-ever import — the case where the user is least sure — silently
+        // got no undo at all. One contract, not two.
+        assert.doesNotMatch(block, /if \(preImportStats !== null\) \{\s*showToast/,
+            `${label} must not gate the undo affordance on there being prior watch-time data`);
         assert.ok(block.includes("'takeout-undo'") || block.includes('"takeout-undo"'),
             `${label} undo must notify storage listeners with a distinct Takeout undo source`);
     }
@@ -518,11 +525,17 @@ test('fallback Takeout import exposes the same Undo toast contract as the module
     const marker = "if (e.target.closest('#ytkit-import-history'))";
     const fallbackStart = ytkitSource.indexOf(marker, ytkitSource.indexOf('function attachUIEventListeners'));
     assert.ok(fallbackStart > -1, 'fallback Takeout handler must exist');
-    const fallbackBlock = ytkitSource.slice(fallbackStart, fallbackStart + 5000);
-    assert.match(fallbackBlock, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*'Undo'/,
-        'fallback Takeout success must use the action-capable toast API');
-    assert.match(settingsPanelModuleSource, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*'Undo'/,
-        'module Takeout success must retain the same action-capable toast API');
+    // Bound on the handler's own closing landmark rather than a fixed byte
+    // window, which silently truncates as the handler grows.
+    const fallbackEnd = ytkitSource.indexOf('maxBytes: 500 * 1024 * 1024', fallbackStart);
+    assert.ok(fallbackEnd > fallbackStart, 'fallback Takeout handler must end at its size policy');
+    const fallbackBlock = ytkitSource.slice(fallbackStart, fallbackEnd);
+    // The Undo label goes through the locale pipeline like every other action
+    // label; it used to be a bare English literal in both copies.
+    assert.match(fallbackBlock, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*t\('toastActionUndo', 'Undo'\)/,
+        'fallback Takeout success must use the action-capable toast API with a localized label');
+    assert.match(settingsPanelModuleSource, /showToast\(result\.message, '#22c55e',[\s\S]*?text:\s*t\('toastActionUndo', 'Undo'\)/,
+        'module Takeout success must retain the same action-capable toast API with a localized label');
 });
 
 // ── Default-ON injected chrome must be legible on YouTube's light theme ──

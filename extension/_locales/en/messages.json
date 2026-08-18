@@ -3,7 +3,7 @@
     "message": "Credential could not be deleted."
   },
   "aiCredentialDeleted": {
-    "message": "AI credential deleted."
+    "message": "AI credential deleted. This cannot be undone — re-enter the key to use AI features again."
   },
   "aiCredentialInputPlaceholder": {
     "message": "Paste your API key"
