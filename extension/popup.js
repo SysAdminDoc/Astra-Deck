@@ -2967,7 +2967,7 @@ async function removeDataFlowRuntimeGrant(described, button) {
                         [STORAGE_KEYS.filterListSubscription]: persistedDomains.sanitizeVideoFilterListSubscription({})
                     });
                 }
-                syncFilterListUrlInput(popupState.settings);
+                syncFilterListUrlInput(popupState.settings, { force: true });
                 await refreshFilterListStatus();
             }
         } else {
@@ -4915,8 +4915,15 @@ function setFilterListStatusText(text, type = 'info') {
     filterListStatus.dataset.state = type;
 }
 
-function syncFilterListUrlInput(settings = popupState.settings) {
+function syncFilterListUrlInput(settings = popupState.settings, { force = false } = {}) {
     if (!filterListUrlInput) return;
+    // The URL is only persisted when the user submits it, so until then this
+    // field holds uncommitted input. render() runs on any quick toggle, any
+    // storage change, and every permission refresh — rewriting the value then
+    // discards a half-typed address mid-entry. Same guard the schema-overview
+    // editors carry. Deliberate actions (submit, stop following, reset) pass
+    // force, because there the new value IS the user's intent.
+    if (!force && document.activeElement === filterListUrlInput) return;
     filterListUrlInput.value = typeof settings?.hideVideosFilterListUrl === 'string'
         ? settings.hideVideosFilterListUrl
         : '';
@@ -5226,7 +5233,7 @@ async function refreshFilterList() {
         if (popupState.settings.hideVideosFilterListUrl !== described.url) {
             const writeResult = await writeSetting('hideVideosFilterListUrl', described.url);
             permissionCleanup = writeResult.permissionCleanup;
-            syncFilterListUrlInput(popupState.settings);
+            syncFilterListUrlInput(popupState.settings, { force: true });
         }
         const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_REFRESH_FILTER_LIST');
         if (result?.noYouTubeTab) {
@@ -5278,7 +5285,7 @@ async function clearConfiguredFilterListUrl() {
                 [STORAGE_KEYS.filterListSubscription]: persistedDomains.sanitizeVideoFilterListSubscription({})
             });
         }
-        syncFilterListUrlInput(popupState.settings);
+        syncFilterListUrlInput(popupState.settings, { force: true });
         await refreshFilterListStatus();
         renderDataFlowPanel();
         renderSchemaOverview();
@@ -5294,7 +5301,7 @@ async function clearConfiguredFilterListUrl() {
     } catch (error) {
         console.warn('[Astra Deck popup] Filter-list clear failed:', error);
         showStatus(t('filterListStopFailed', 'Could not stop following the filter list.'), 'error', 4800);
-        syncFilterListUrlInput(popupState.settings);
+        syncFilterListUrlInput(popupState.settings, { force: true });
     } finally {
         filterListUrlInput.disabled = false;
         if (refreshFilterListButton) refreshFilterListButton.disabled = false;

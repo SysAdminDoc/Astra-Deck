@@ -48,6 +48,14 @@ T.zh_CN = {};
 
 // ── German (de) ──
 T.de = {
+  "Transcript batch cancelled after navigation": "Transkript-Stapel nach Navigation abgebrochen",
+  "Exported transcript study pack ({done}/{total} succeeded)": "Transkript-Lernpaket exportiert ({done}/{total} erfolgreich)",
+  "Exported {done}/{total}; failures are included in JSONL": "{done}/{total} exportiert; Fehler sind in JSONL enthalten",
+  "Queue cap {count}, one recovery pass per video": "Warteschlangenlimit {count}, ein Wiederherstellungsdurchlauf pro Video",
+  "Transcript study pack": "Transkript-Lernpaket",
+  "{name}. Needs site access before it can be enabled.": "{name}. Benötigt Website-Zugriff, bevor es aktiviert werden kann.",
+  "Customized": "Angepasst",
+  "Astra Deck needs host access for this optional feature before it can be enabled.": "Astra Deck benötigt Host-Zugriff für diese optionale Funktion, bevor sie aktiviert werden kann.",
   "Cap Infinite Scroll": "Endloses Scrollen begrenzen",
   "Diagnostic Logging": "Diagnoseprotokollierung",
   "Disable Autoplay": "Autoplay deaktivieren",
@@ -271,6 +279,14 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  "Transcript batch cancelled after navigation": "Lote de transcripciones cancelado tras la navegación",
+  "Exported transcript study pack ({done}/{total} succeeded)": "Paquete de estudio de transcripciones exportado ({done}/{total} correctos)",
+  "Exported {done}/{total}; failures are included in JSONL": "Exportados {done}/{total}; los fallos se incluyen en JSONL",
+  "Queue cap {count}, one recovery pass per video": "Límite de cola {count}, una pasada de recuperación por vídeo",
+  "Transcript study pack": "Paquete de estudio de transcripciones",
+  "{name}. Needs site access before it can be enabled.": "{name}. Necesita acceso al sitio antes de poder activarse.",
+  "Customized": "Personalizados",
+  "Astra Deck needs host access for this optional feature before it can be enabled.": "Astra Deck necesita acceso al host para esta función opcional antes de poder activarla.",
   "Cap Infinite Scroll": "Limitar el desplazamiento infinito",
   "Diagnostic Logging": "Registro de diagnóstico",
   "Disable Autoplay": "Desactivar la reproducción automática",
@@ -482,6 +498,14 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  "Transcript batch cancelled after navigation": "Пакет расшифровок отменён после перехода",
+  "Exported transcript study pack ({done}/{total} succeeded)": "Учебный пакет расшифровок экспортирован ({done}/{total} успешно)",
+  "Exported {done}/{total}; failures are included in JSONL": "Экспортировано {done}/{total}; ошибки включены в JSONL",
+  "Queue cap {count}, one recovery pass per video": "Лимит очереди {count}, один проход восстановления на видео",
+  "Transcript study pack": "Учебный пакет расшифровок",
+  "{name}. Needs site access before it can be enabled.": "{name}. Требуется доступ к сайту, прежде чем включить.",
+  "Customized": "Изменено",
+  "Astra Deck needs host access for this optional feature before it can be enabled.": "Astra Deck требуется доступ к хосту для этой дополнительной функции, прежде чем её можно включить.",
   "Cap Infinite Scroll": "Ограничить бесконечную прокрутку",
   "Diagnostic Logging": "Диагностическое журналирование",
   "Disable Autoplay": "Отключить автовоспроизведение",
@@ -693,6 +717,14 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  "Transcript batch cancelled after navigation": "Lot de transcriptions annulé après la navigation",
+  "Exported transcript study pack ({done}/{total} succeeded)": "Pack d'étude de transcriptions exporté ({done}/{total} réussis)",
+  "Exported {done}/{total}; failures are included in JSONL": "Exportés {done}/{total} ; les échecs sont inclus dans le JSONL",
+  "Queue cap {count}, one recovery pass per video": "Limite de file d'attente {count}, une passe de récupération par vidéo",
+  "Transcript study pack": "Pack d'étude de transcriptions",
+  "{name}. Needs site access before it can be enabled.": "{name}. Nécessite l'accès au site avant de pouvoir être activé.",
+  "Customized": "Personnalisés",
+  "Astra Deck needs host access for this optional feature before it can be enabled.": "Astra Deck a besoin d'un accès à l'hôte pour cette fonctionnalité optionnelle avant de pouvoir l'activer.",
   "Cap Infinite Scroll": "Limiter le défilement infini",
   "Diagnostic Logging": "Journalisation de diagnostic",
   "Disable Autoplay": "Désactiver la lecture automatique",
@@ -902,6 +934,14 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  "Transcript batch cancelled after navigation": "Lotto di trascrizioni annullato dopo la navigazione",
+  "Exported transcript study pack ({done}/{total} succeeded)": "Pacchetto di studio delle trascrizioni esportato ({done}/{total} riusciti)",
+  "Exported {done}/{total}; failures are included in JSONL": "Esportati {done}/{total}; gli errori sono inclusi nel JSONL",
+  "Queue cap {count}, one recovery pass per video": "Limite coda {count}, una passata di recupero per video",
+  "Transcript study pack": "Pacchetto di studio delle trascrizioni",
+  "{name}. Needs site access before it can be enabled.": "{name}. Richiede l'accesso al sito prima di poter essere attivato.",
+  "Customized": "Personalizzate",
+  "Astra Deck needs host access for this optional feature before it can be enabled.": "Astra Deck richiede l'accesso all'host per questa funzione opzionale prima di poterla attivare.",
   "Cap Infinite Scroll": "Limita lo scorrimento infinito",
   "Diagnostic Logging": "Registrazione diagnostica",
   "Disable Autoplay": "Disattiva la riproduzione automatica",
@@ -1104,6 +1144,14 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  "Transcript batch cancelled after navigation": "Lote de transcrições cancelado após a navegação",
+  "Exported transcript study pack ({done}/{total} succeeded)": "Pacote de estudo de transcrições exportado ({done}/{total} com sucesso)",
+  "Exported {done}/{total}; failures are included in JSONL": "Exportados {done}/{total}; as falhas estão incluídas no JSONL",
+  "Queue cap {count}, one recovery pass per video": "Limite da fila {count}, uma passagem de recuperação por vídeo",
+  "Transcript study pack": "Pacote de estudo de transcrições",
+  "{name}. Needs site access before it can be enabled.": "{name}. Precisa de acesso ao site antes de ser ativado.",
+  "Customized": "Personalizados",
+  "Astra Deck needs host access for this optional feature before it can be enabled.": "O Astra Deck precisa de acesso ao host para este recurso opcional antes de ativá-lo.",
   "Cap Infinite Scroll": "Limitar rolagem infinita",
   "Diagnostic Logging": "Registro de diagnóstico",
   "Disable Autoplay": "Desativar reprodução automática",
@@ -1306,6 +1354,14 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  "Transcript batch cancelled after navigation": "ページ移動により文字起こしの一括処理を中止しました",
+  "Exported transcript study pack ({done}/{total} succeeded)": "文字起こし学習パックを書き出しました（{done}/{total} 件成功）",
+  "Exported {done}/{total}; failures are included in JSONL": "{done}/{total} 件を書き出しました。失敗分は JSONL に含まれます",
+  "Queue cap {count}, one recovery pass per video": "キュー上限 {count} 件、動画ごとに再取得は 1 回",
+  "Transcript study pack": "文字起こし学習パック",
+  "{name}. Needs site access before it can be enabled.": "{name}。有効にする前にサイトへのアクセスが必要です。",
+  "Customized": "カスタム済み",
+  "Astra Deck needs host access for this optional feature before it can be enabled.": "このオプション機能を有効にする前に、Astra Deck にホストへのアクセス許可が必要です。",
   "Cap Infinite Scroll": "無限スクロールを制限",
   "Diagnostic Logging": "診断ログ",
   "Disable Autoplay": "自動再生を無効化",
@@ -1511,6 +1567,14 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  "Transcript batch cancelled after navigation": "페이지 이동으로 스크립트 일괄 작업이 취소되었습니다",
+  "Exported transcript study pack ({done}/{total} succeeded)": "스크립트 학습 팩을 내보냈습니다({done}/{total}개 성공)",
+  "Exported {done}/{total}; failures are included in JSONL": "{done}/{total}개를 내보냈습니다. 실패 항목은 JSONL에 포함됩니다",
+  "Queue cap {count}, one recovery pass per video": "대기열 상한 {count}개, 동영상당 복구 1회",
+  "Transcript study pack": "스크립트 학습 팩",
+  "{name}. Needs site access before it can be enabled.": "{name}. 사용하려면 먼저 사이트 액세스 권한이 필요합니다.",
+  "Customized": "사용자 지정됨",
+  "Astra Deck needs host access for this optional feature before it can be enabled.": "이 선택적 기능을 사용하려면 먼저 Astra Deck에 호스트 액세스 권한이 필요합니다.",
   "Cap Infinite Scroll": "무한 스크롤 제한",
   "Diagnostic Logging": "진단 로깅",
   "Disable Autoplay": "자동 재생 끄기",

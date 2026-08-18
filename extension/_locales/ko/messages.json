@@ -4948,6 +4948,9 @@
   "spRiskTpl": {
     "message": "위험도: {risk}"
   },
+  "spRowHostAccessDeniedTpl": {
+    "message": "{name}. 사용하려면 먼저 사이트 액세스 권한이 필요합니다."
+  },
   "spRowSaveFailedTpl": {
     "message": "{name}. 저장에 실패했습니다. 대시보드를 새로고침해 보세요."
   },
@@ -5065,6 +5068,9 @@
   "spStatSize": {
     "message": "크기"
   },
+  "spStatStoredSettings": {
+    "message": "사용자 지정됨"
+  },
   "spStatUnavailable": {
     "message": "사용 불가"
   },
@@ -5088,6 +5094,9 @@
   },
   "spStatusSaveFailed": {
     "message": "설정을 저장할 수 없습니다"
+  },
+  "spStatusHostAccessDenied": {
+    "message": "이 선택적 기능을 사용하려면 먼저 Astra Deck에 호스트 액세스 권한이 필요합니다."
   },
   "spStatusSettingsLoadFailed": {
     "message": "진단이 갱신되었습니다. 빠른 설정을 불러올 수 없습니다"
@@ -6030,6 +6039,21 @@
   },
   "timestampHighlightNoVideo": {
     "message": "No video is currently open."
+  },
+  "transcriptBatchCancelled": {
+    "message": "페이지 이동으로 스크립트 일괄 작업이 취소되었습니다"
+  },
+  "transcriptBatchExportedToastTpl": {
+    "message": "스크립트 학습 팩을 내보냈습니다({done}/{total}개 성공)"
+  },
+  "transcriptBatchExportedTpl": {
+    "message": "{done}/{total}개를 내보냈습니다. 실패 항목은 JSONL에 포함됩니다"
+  },
+  "transcriptBatchQueueCapTpl": {
+    "message": "대기열 상한 {count}개, 동영상당 복구 1회"
+  },
+  "transcriptBatchTitle": {
+    "message": "스크립트 학습 팩"
   },
   "transcriptCaptions": {
     "message": "Captions"
@@ -7586,23 +7610,61 @@
   "filterListStoppedTpl": {
     "message": "{host} 구독을 중지했습니다. 필터 목록 전용 사이트 액세스는 남아 있지 않습니다."
   },
-  "transcriptSourcePlayerGlobal": { "message": "현재 페이지의 플레이어 데이터" },
-  "transcriptSourceInnertube": { "message": "새로 가져온 YouTube 플레이어 데이터" },
-  "transcriptSourceWatchPage": { "message": "새로 가져온 YouTube 시청 페이지" },
-  "transcriptSourcePanel": { "message": "현재 YouTube 스크립트 패널" },
-  "transcriptSourceUnknown": { "message": "YouTube 자막" },
-  "transcriptLanguageUnknown": { "message": "알 수 없는 언어" },
-  "transcriptPanelFallback": { "message": "패널 대체 경로" },
-  "transcriptMetaPanelTpl": { "message": "{source}에서 로드됨({age}); {language}." },
-  "transcriptRefreshedTrack": { "message": "트랙 새로 고침" },
-  "transcriptMetaRefreshedTpl": { "message": "만료된 자막 URL을 {source}에서 교체함; 가져온 시각: {age}; {language}." },
-  "transcriptExpiryUnknown": { "message": "표시되지 않음" },
-  "transcriptMetaSourceTpl": { "message": "{source}에서 로드됨({age}); {language}; 트랙 URL 만료: {expires}." },
-  "transcriptTimeUnknown": { "message": "알 수 없는 시각" },
-  "transcriptNoCaptions": { "message": "자막 없음" },
-  "transcriptUnavailableLabel": { "message": "사용할 수 없음" },
-  "transcriptUnavailableNow": { "message": "현재 YouTube에서 스크립트를 가져올 수 없습니다." },
-  "transcriptLoadFailed": { "message": "스크립트를 불러오지 못했습니다" },
-  "transcriptNoCaptionsHelp": { "message": "자막이 있는 다른 동영상을 시도하거나 자막 로드가 끝난 뒤 이 패널을 다시 여세요." },
-  "transcriptRetryHelp": { "message": "자막 처리 중이라면 페이지를 새로 고치거나 잠시 후 다시 시도하세요." }
+  "transcriptSourcePlayerGlobal": {
+    "message": "현재 페이지의 플레이어 데이터"
+  },
+  "transcriptSourceInnertube": {
+    "message": "새로 가져온 YouTube 플레이어 데이터"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "새로 가져온 YouTube 시청 페이지"
+  },
+  "transcriptSourcePanel": {
+    "message": "현재 YouTube 스크립트 패널"
+  },
+  "transcriptSourceUnknown": {
+    "message": "YouTube 자막"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "알 수 없는 언어"
+  },
+  "transcriptPanelFallback": {
+    "message": "패널 대체 경로"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "{source}에서 로드됨({age}); {language}."
+  },
+  "transcriptRefreshedTrack": {
+    "message": "트랙 새로 고침"
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "만료된 자막 URL을 {source}에서 교체함; 가져온 시각: {age}; {language}."
+  },
+  "transcriptExpiryUnknown": {
+    "message": "표시되지 않음"
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "{source}에서 로드됨({age}); {language}; 트랙 URL 만료: {expires}."
+  },
+  "transcriptTimeUnknown": {
+    "message": "알 수 없는 시각"
+  },
+  "transcriptNoCaptions": {
+    "message": "자막 없음"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "사용할 수 없음"
+  },
+  "transcriptUnavailableNow": {
+    "message": "현재 YouTube에서 스크립트를 가져올 수 없습니다."
+  },
+  "transcriptLoadFailed": {
+    "message": "스크립트를 불러오지 못했습니다"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "자막이 있는 다른 동영상을 시도하거나 자막 로드가 끝난 뒤 이 패널을 다시 여세요."
+  },
+  "transcriptRetryHelp": {
+    "message": "자막 처리 중이라면 페이지를 새로 고치거나 잠시 후 다시 시도하세요."
+  }
 }

@@ -19,6 +19,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   (`/@handle`) matched no route, so they lost Video Hider too. Measured
   startup is unchanged. Modules whose features are all switched off are still
   skipped.
+- The filter-list address you are typing is no longer wiped by a background
+  refresh. The field is only saved when you submit it, but any toggle, storage
+  change, or permission check re-rendered the panel and restored the stored
+  value mid-entry.
+- The side panel now updates when you switch tabs or finish a YouTube
+  navigation, instead of showing another tab's data under a "Live diagnostics
+  updated" status. It also reports multi-gigabyte storage in GB rather than
+  thousands of MB, distinguishes a declined site-access prompt from a failed
+  save (refreshing the dashboard cannot fix a declined prompt), and no longer
+  labels its count of customized settings "Settings" next to a different
+  "Settings" number meaning the whole schema.
 - Translating a transcript and then moving to another video no longer paints the
   first video's translation into the second one's panel. Translation spans
   several async steps and autoplay can navigate through any of them; the result

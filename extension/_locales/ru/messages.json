@@ -4948,6 +4948,9 @@
   "spRiskTpl": {
     "message": "Риск: {risk}"
   },
+  "spRowHostAccessDeniedTpl": {
+    "message": "{name}. Требуется доступ к сайту, прежде чем включить."
+  },
   "spRowSaveFailedTpl": {
     "message": "{name}. Не удалось сохранить. Попробуйте обновить панель."
   },
@@ -5065,6 +5068,9 @@
   "spStatSize": {
     "message": "Размер"
   },
+  "spStatStoredSettings": {
+    "message": "Изменено"
+  },
   "spStatUnavailable": {
     "message": "Недоступно"
   },
@@ -5088,6 +5094,9 @@
   },
   "spStatusSaveFailed": {
     "message": "Не удалось сохранить настройку"
+  },
+  "spStatusHostAccessDenied": {
+    "message": "Astra Deck требуется доступ к хосту для этой дополнительной функции, прежде чем её можно включить."
   },
   "spStatusSettingsLoadFailed": {
     "message": "Диагностика обновлена; быстрые настройки не загрузились"
@@ -6030,6 +6039,21 @@
   },
   "timestampHighlightNoVideo": {
     "message": "No video is currently open."
+  },
+  "transcriptBatchCancelled": {
+    "message": "Пакет расшифровок отменён после перехода"
+  },
+  "transcriptBatchExportedToastTpl": {
+    "message": "Учебный пакет расшифровок экспортирован ({done}/{total} успешно)"
+  },
+  "transcriptBatchExportedTpl": {
+    "message": "Экспортировано {done}/{total}; ошибки включены в JSONL"
+  },
+  "transcriptBatchQueueCapTpl": {
+    "message": "Лимит очереди {count}, один проход восстановления на видео"
+  },
+  "transcriptBatchTitle": {
+    "message": "Учебный пакет расшифровок"
   },
   "transcriptCaptions": {
     "message": "Captions"
@@ -7586,23 +7610,61 @@
   "filterListStoppedTpl": {
     "message": "Подписка на список {host} отменена. Доступа к сайту только для этого списка больше нет."
   },
-  "transcriptSourcePlayerGlobal": { "message": "данные проигрывателя текущей страницы" },
-  "transcriptSourceInnertube": { "message": "обновлённые данные проигрывателя YouTube" },
-  "transcriptSourceWatchPage": { "message": "обновлённая страница просмотра YouTube" },
-  "transcriptSourcePanel": { "message": "текущая панель расшифровки YouTube" },
-  "transcriptSourceUnknown": { "message": "субтитры YouTube" },
-  "transcriptLanguageUnknown": { "message": "язык неизвестен" },
-  "transcriptPanelFallback": { "message": "Резервная панель" },
-  "transcriptMetaPanelTpl": { "message": "Источник: {source}; получено {age}; {language}." },
-  "transcriptRefreshedTrack": { "message": "Дорожка обновлена" },
-  "transcriptMetaRefreshedTpl": { "message": "Просроченный URL субтитров заменён через {source}; получено {age}; {language}." },
-  "transcriptExpiryUnknown": { "message": "не указано" },
-  "transcriptMetaSourceTpl": { "message": "Источник: {source}; получено {age}; {language}; срок действия URL дорожки: {expires}." },
-  "transcriptTimeUnknown": { "message": "в неизвестное время" },
-  "transcriptNoCaptions": { "message": "Нет субтитров" },
-  "transcriptUnavailableLabel": { "message": "Недоступно" },
-  "transcriptUnavailableNow": { "message": "Сейчас не удалось получить расшифровку с YouTube." },
-  "transcriptLoadFailed": { "message": "Не удалось загрузить расшифровку" },
-  "transcriptNoCaptionsHelp": { "message": "Попробуйте другое видео с субтитрами или снова откройте эту панель после загрузки субтитров." },
-  "transcriptRetryHelp": { "message": "Обновите страницу или повторите попытку через несколько секунд, если субтитры ещё обрабатываются." }
+  "transcriptSourcePlayerGlobal": {
+    "message": "данные проигрывателя текущей страницы"
+  },
+  "transcriptSourceInnertube": {
+    "message": "обновлённые данные проигрывателя YouTube"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "обновлённая страница просмотра YouTube"
+  },
+  "transcriptSourcePanel": {
+    "message": "текущая панель расшифровки YouTube"
+  },
+  "transcriptSourceUnknown": {
+    "message": "субтитры YouTube"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "язык неизвестен"
+  },
+  "transcriptPanelFallback": {
+    "message": "Резервная панель"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "Источник: {source}; получено {age}; {language}."
+  },
+  "transcriptRefreshedTrack": {
+    "message": "Дорожка обновлена"
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "Просроченный URL субтитров заменён через {source}; получено {age}; {language}."
+  },
+  "transcriptExpiryUnknown": {
+    "message": "не указано"
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "Источник: {source}; получено {age}; {language}; срок действия URL дорожки: {expires}."
+  },
+  "transcriptTimeUnknown": {
+    "message": "в неизвестное время"
+  },
+  "transcriptNoCaptions": {
+    "message": "Нет субтитров"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "Недоступно"
+  },
+  "transcriptUnavailableNow": {
+    "message": "Сейчас не удалось получить расшифровку с YouTube."
+  },
+  "transcriptLoadFailed": {
+    "message": "Не удалось загрузить расшифровку"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "Попробуйте другое видео с субтитрами или снова откройте эту панель после загрузки субтитров."
+  },
+  "transcriptRetryHelp": {
+    "message": "Обновите страницу или повторите попытку через несколько секунд, если субтитры ещё обрабатываются."
+  }
 }

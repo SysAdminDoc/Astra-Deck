@@ -4948,6 +4948,9 @@
   "spRiskTpl": {
     "message": "{risk} risk"
   },
+  "spRowHostAccessDeniedTpl": {
+    "message": "{name}. Needs site access before it can be enabled."
+  },
   "spRowSaveFailedTpl": {
     "message": "{name}. Save failed. Try refreshing the dashboard."
   },
@@ -5065,6 +5068,9 @@
   "spStatSize": {
     "message": "Size"
   },
+  "spStatStoredSettings": {
+    "message": "Customized"
+  },
   "spStatUnavailable": {
     "message": "Unavailable"
   },
@@ -5088,6 +5094,9 @@
   },
   "spStatusSaveFailed": {
     "message": "Could not save setting"
+  },
+  "spStatusHostAccessDenied": {
+    "message": "Astra Deck needs host access for this optional feature before it can be enabled."
   },
   "spStatusSettingsLoadFailed": {
     "message": "Diagnostics updated; quick settings could not load"
@@ -6030,6 +6039,21 @@
   },
   "timestampHighlightNoVideo": {
     "message": "No video is currently open."
+  },
+  "transcriptBatchCancelled": {
+    "message": "Transcript batch cancelled after navigation"
+  },
+  "transcriptBatchExportedToastTpl": {
+    "message": "Exported transcript study pack ({done}/{total} succeeded)"
+  },
+  "transcriptBatchExportedTpl": {
+    "message": "Exported {done}/{total}; failures are included in JSONL"
+  },
+  "transcriptBatchQueueCapTpl": {
+    "message": "Queue cap {count}, one recovery pass per video"
+  },
+  "transcriptBatchTitle": {
+    "message": "Transcript study pack"
   },
   "transcriptCaptions": {
     "message": "Captions"
