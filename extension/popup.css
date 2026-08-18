@@ -3639,7 +3639,10 @@ textarea:focus-visible {
   position: absolute;
   z-index: 30;
   top: calc(100% + 6px);
-  right: 0;
+  /* Logical, not physical. With `right: 0` this dropdown anchored to the same
+     physical edge under RTL while its trigger moved to the other side, putting
+     the whole menu ~177px off-screen in Arabic at a 320px viewport. */
+  inset-inline-end: 0;
   display: grid;
   width: min(270px, calc(100vw - 48px));
   gap: 6px;
@@ -3654,7 +3657,7 @@ textarea:focus-visible {
   width: 100%;
   min-height: 36px;
   justify-content: flex-start;
-  text-align: left;
+  text-align: start;
 }
 
 .status {
@@ -3717,6 +3720,6 @@ textarea:focus-visible {
   }
 
   .maintenance-menu .actions-end {
-    right: 0;
+    inset-inline-end: 0;
   }
 }

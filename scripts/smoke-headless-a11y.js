@@ -35,6 +35,13 @@ const FOCUSABLE_SELECTOR = [
     '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+const RTL_LOCALES = new Set(['ar', 'he', 'fa', 'ur']);
+// One RTL locale, one long-word German (compounds are the classic clipper), and
+// one long-phrase Brazilian Portuguese. Every primary surface renders all three
+// at 320 CSS px, which is what makes the reflow claim hold for the 11 bundled
+// locales rather than for the two that happened to be covered.
+const LOCALE_STATES = Object.freeze(['ar', 'de', 'pt_BR']);
+
 const SURFACES = Object.freeze([
     Object.freeze({
         name: 'popup',
@@ -47,6 +54,8 @@ const SURFACES = Object.freeze([
         themes: Object.freeze(['dark']),
         settingsDiff: true,
         filterGrant: true,
+        localeStates: LOCALE_STATES,
+        ownsDocument: true,
     }),
     Object.freeze({
         name: 'sidepanel',
@@ -58,6 +67,8 @@ const SURFACES = Object.freeze([
         settleMs: 1000,
         themes: Object.freeze(['dark']),
         rtlLocales: Object.freeze(['ar']),
+        localeStates: LOCALE_STATES,
+        ownsDocument: true,
     }),
     Object.freeze({
         name: 'sidebar',
@@ -69,6 +80,8 @@ const SURFACES = Object.freeze([
         settleMs: 1000,
         themes: Object.freeze(['dark']),
         rtlLocales: Object.freeze(['ar']),
+        localeStates: LOCALE_STATES,
+        ownsDocument: true,
     }),
     Object.freeze({
         name: 'settings',
@@ -81,6 +94,7 @@ const SURFACES = Object.freeze([
         settleMs: 500,
         themes: Object.freeze(['dark', 'light']),
         focusTrap: Object.freeze({ root: '#ytkit-settings-panel' }),
+        localeStates: LOCALE_STATES,
     }),
     Object.freeze({
         name: 'transcript',
@@ -91,6 +105,7 @@ const SURFACES = Object.freeze([
         height: 800,
         settleMs: 300,
         themes: Object.freeze(['dark', 'light']),
+        localeStates: LOCALE_STATES,
     }),
     Object.freeze({
         name: 'download',
@@ -104,6 +119,7 @@ const SURFACES = Object.freeze([
         settleMs: 300,
         themes: Object.freeze(['dark', 'light']),
         focusTrap: Object.freeze({ root: '.ytkit-dl-popup' }),
+        localeStates: LOCALE_STATES,
     }),
 ]);
 
@@ -518,10 +534,18 @@ async function auditFocusTrap(client, surface, stateName) {
     return 3;
 }
 
+// WCAG 2.2 SC 1.4.10 Reflow: content must not require two-dimensional scrolling
+// at a viewport equivalent to 320 CSS pixels wide. The zoom-200 lane approximates
+// that for wide surfaces but not for narrow ones (the popup halves to ~200 CSS px
+// while the side panel halves to 210), so neither proves the 320 px contract on
+// its own. This lane pins it exactly, for every surface, at 1x.
+const REFLOW_CSS_WIDTH = 320;
+
 async function configureRenderedState(client, surface, theme, mode) {
     const zoomed = mode === 'zoom-200';
-    const width = zoomed ? Math.max(200, Math.floor(surface.width / 2)) : surface.width;
-    const height = zoomed ? Math.max(320, Math.floor(surface.height / 2)) : surface.height;
+    const reflow = mode === 'reflow-320';
+    const width = reflow ? REFLOW_CSS_WIDTH : (zoomed ? Math.max(200, Math.floor(surface.width / 2)) : surface.width);
+    const height = reflow ? Math.min(surface.height, 640) : (zoomed ? Math.max(320, Math.floor(surface.height / 2)) : surface.height);
     await client.send('Emulation.setDeviceMetricsOverride', {
         width,
         height,
@@ -575,6 +599,74 @@ async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = '
         `${surface.name} rendered surface`
     );
     await sleep(surface.settleMs || 300);
+}
+
+// Surface-agnostic. auditRtlLayout below is sidepanel-specific (it reaches for
+// .sp-search and friends), so it could never cover popup/settings/transcript/
+// download — which is why locale rendering was only ever proven on two surfaces.
+// This checks the contract every surface owes in every locale: no horizontal
+// scrolling of the document, correct lang/dir, and nothing laid out wider than
+// the viewport it has to fit in.
+async function auditLocaleReflow(client, surface, locale, stateName) {
+    const result = await client.evaluate(`(() => {
+        const root = document.documentElement;
+        const overflowBy = Math.max(
+            root.scrollWidth - root.clientWidth,
+            document.body ? document.body.scrollWidth - root.clientWidth : 0
+        );
+        const viewport = root.clientWidth;
+        // Report the worst offenders so a failure names the element to fix
+        // rather than only the surface.
+        const wide = [];
+        for (const element of document.querySelectorAll('button, input, select, textarea, a[href], h1, h2, label, .sp-setting-row, .toggle')) {
+            const rect = element.getBoundingClientRect();
+            if (rect.width === 0 && rect.height === 0) continue;
+            // Fully off-screen elements are the visually-hidden idiom (skip
+            // links park at inset-inline-start: -9999px until focused) and are
+            // not clipped controls. Content that genuinely forces horizontal
+            // scrolling is caught by the document scrollWidth check above; this
+            // per-element pass is specifically for controls that ARE on screen
+            // and get cut off at the edge.
+            if (rect.right <= 0 || rect.left >= viewport) continue;
+            const spill = Math.round(Math.max(rect.right - viewport, -rect.left));
+            if (spill > 1) {
+                wide.push((element.id || element.className || element.tagName) + ' +' + spill + 'px');
+                if (wide.length >= 5) break;
+            }
+        }
+        return {
+            overflowBy,
+            viewport,
+            lang: root.lang || '',
+            dir: root.dir || getComputedStyle(root).direction || '',
+            wide
+        };
+    })()`);
+
+    const failures = [];
+    // 1 px of rounding slack; anything more is a real horizontal scrollbar.
+    if (result.overflowBy > 1) {
+        failures.push(`document scrolls horizontally by ${result.overflowBy}px at ${result.viewport}px wide`);
+    }
+    if (result.wide.length) {
+        failures.push(`controls spill outside the viewport: ${result.wide.join(', ')}`);
+    }
+    // lang/dir belong to whoever owns the document. The in-page surfaces
+    // (settings, transcript, download) are injected into YouTube's document and
+    // inherit ITS direction — smoke-settings-overlay.js covers their RTL
+    // mirroring by setting documentElement dir explicitly. Only assert here on
+    // the surfaces Astra Deck actually owns.
+    if (surface.ownsDocument && locale) {
+        if (!result.lang) failures.push('documentElement carries no lang attribute');
+        const expectedDir = RTL_LOCALES.has(locale) ? 'rtl' : 'ltr';
+        if (result.dir !== expectedDir) {
+            failures.push(`documentElement dir is "${result.dir}", expected "${expectedDir}" for ${locale}`);
+        }
+    }
+    if (failures.length) {
+        throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+    }
+    return 1;
 }
 
 async function auditRtlLayout(client, surface, locale) {
@@ -909,6 +1001,34 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
         const controls = await auditKeyboardPath(client, surface, `${locale}/dark/zoom-200`);
         reports.push({ controls, locale, mode: 'zoom-200', theme: 'dark', viewport });
     }
+
+    // Every primary surface, every tracked locale, at the WCAG reflow width.
+    // This is deliberately separate from the surface-specific RTL audit above:
+    // that one proves the side panel's search row mirrors correctly, this one
+    // proves nothing anywhere overflows or gets clipped in any of them.
+    for (const locale of surface.localeStates || []) {
+        await navigateToSurface(client, stageDir, surface, timeoutMs, 'dark', locale);
+        const viewport = await configureRenderedState(client, surface, 'dark', 'reflow-320');
+        // Open every disclosure before measuring. The first run of this lane
+        // found the popup's maintenance dropdown hanging 177px off-screen only
+        // because a previous state had left it open — collapsed panels have
+        // zero-size rects and are skipped, so the check silently depended on
+        // leftover state. Opening them explicitly makes the lane deterministic
+        // and actually exercises the widest content each surface can show.
+        await client.evaluate(`(() => {
+            for (const element of document.querySelectorAll('details')) element.open = true;
+            return document.querySelectorAll('details[open]').length;
+        })()`);
+        // Let the new viewport actually lay out before measuring. Without this
+        // the first reflow measurement can read rects from the PREVIOUS state's
+        // width, which produced a spill report that could not be reproduced.
+        await client.evaluate(`new Promise((resolve) => requestAnimationFrame(
+            () => requestAnimationFrame(() => setTimeout(resolve, 120))
+        ))`);
+        const reflowChecks = await auditLocaleReflow(client, surface, locale, `${locale}/reflow-320`);
+        await captureSurface(client, surface, `${locale}-reflow-320`);
+        reports.push({ controls: 0, locale, mode: 'reflow-320', theme: 'dark', viewport, reflowChecks });
+    }
     return reports;
 }
 
@@ -983,7 +1103,7 @@ async function main(argv = process.argv.slice(2)) {
             );
         }
         console.log(`[headless-a11y] Captures saved to ${OUT_DIR}`);
-        console.log('[headless-a11y] PASS — normal, 200% reflow, themes, and forced colors');
+        console.log('[headless-a11y] PASS — normal, 200% reflow, 320px reflow x ar/de/pt_BR, themes, and forced colors');
     } finally {
         if (socket) socket.close();
         const browserExit = browser.exitCode !== null
