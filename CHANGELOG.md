@@ -8,6 +8,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Feature modules no longer load based on which page you happened to open
+  first. YouTube is a single-page app, but the runtime bootstrap ran once on
+  the landing URL and skipped every module whose route did not match — and
+  because the monolith builds its feature list at load time, those modules
+  could never take over later. A session that started on a watch page ran an
+  older in-page copy of Video Hider and Subscription Groups for its entire
+  life: Mark Watched did nothing at all, group imports were destructive, and a
+  staged unsubscribe kept running after you navigated away. Channel URLs
+  (`/@handle`) matched no route, so they lost Video Hider too. Measured
+  startup is unchanged. Modules whose features are all switched off are still
+  skipped.
 - Importing subscription groups now merges instead of silently replacing.
   Which copy of the feature runs depends on the page you land on, and the
   in-page copy still deleted every group missing from the imported file — the
