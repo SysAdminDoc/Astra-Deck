@@ -53931,6 +53931,20 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
     function main() {
         if (_mainRan) return; // Guard against double-init (YouTube SPA can re-trigger)
         _mainRan = true;
+        // Arms SPA route tokens. The extension's runtime-bootstrap already did
+        // this once the foundation graph resolved; this call is the USERSCRIPT's
+        // path, which has no bootstrap, and is a guarded no-op for the
+        // extension. It lives here rather than in core/lifecycle-route-bridge.js
+        // because self-installing on load made that module the one order-
+        // dependent node in a graph the extension now loads concurrently — and
+        // it failed silently when its dependencies had not registered yet.
+        try {
+            globalThis.YTKitCore?.installLifecycleRouteBridge?.();
+        } catch (e) {
+            // reason: a missing route bridge degrades stale-result guards; it
+            // must never stop the runtime from starting.
+            console.warn('[YTKit] Lifecycle route bridge install failed:', e);
+        }
         _runtimeGuard?.markReady({
             registrySize: getFeatureHealthSnapshot?.()?.length || 0
         });

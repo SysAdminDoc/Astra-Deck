@@ -27,6 +27,14 @@ function readGeneratedModules() {
     return JSON.parse(match[1]);
 }
 
+function readGeneratedLoaderModules() {
+    const match = loaderSource.match(
+        /export const FOUNDATION_MODULES = Object\.freeze\(\s*(\[[\s\S]*?\])\s*\);/
+    );
+    assert.ok(match, 'the core loader must publish its foundation catalogue for diagnostics');
+    return JSON.parse(match[1]);
+}
+
 test('normal YouTube pages inject a thin generated bootstrap and defer the runtime graph', () => {
     const entry = runtimeEntry();
     assert.ok(entry, 'normal YouTube runtime entry must exist');
@@ -73,16 +81,40 @@ test('generated runtime order, manifest catalogue, and dynamic resource allowlis
         'every Chromium runtime resource must use a per-session dynamic URL');
     assert.ok(warResources.has('runtime-core-loader.mjs'),
         'the static module graph loader must be exposed for the dynamic import URL');
-    assert.match(loaderSource, /await import\(getURL\(modulePath\)\)/,
-        'the core loader must resolve foundation modules through runtime.getURL');
+    // The loader imports the 75-module foundation graph CONCURRENTLY so V8 can
+    // compile it off-thread; the sequential `await import()` loop it replaced
+    // cost ~48 ms of a ~140 ms parse+init. This is safe only while no module
+    // calls a sibling at evaluation time — tests/runtime-graph-order.test.js
+    // holds that property by loading the graph in reverse.
+    assert.match(loaderSource, /await Promise\.all\(FOUNDATION_MODULES\.map\(\(modulePath\) => import\(getURL\(modulePath\)\)\)\)/,
+        'the core loader must import the foundation graph concurrently through runtime.getURL');
+    assert.doesNotMatch(loaderSource, /for \(const modulePath of FOUNDATION_MODULES\)/,
+        'the sequential dynamic-import loop must not come back — it serialized 75 compiles');
+    // Static `import './core/x.js'` specifiers resolve against the canonical
+    // extension origin, where these resources are deliberately NOT exposed under
+    // use_dynamic_url — the real extension fails to boot. Measured, not guessed.
+    assert.doesNotMatch(loaderSource, /^import '\.\//m,
+        'static relative specifiers are incompatible with use_dynamic_url resources');
+    assert.deepEqual(readGeneratedLoaderModules(), generatedModules.slice(0, -1).filter(
+        (modulePath) => !modulePath.startsWith('features/') || modulePath === 'features/download-ui/index.js'
+    ), 'the loader catalogue must track the manifest catalogue');
     assert.match(loaderSource, /core\/browser-api\.js/);
     assert.match(loaderSource, /features\/download-ui\/index\.js/);
     assert.doesNotMatch(loaderSource, /import '\.\/ytkit\.js';/,
         'the core loader must not construct the monolith before deferred feature factories register');
-    assert.match(bootstrapSource, /await import\(getURL\('ytkit\.js'\)\)/,
+    assert.match(bootstrapSource, /await timeStage\('monolithMs', \(\) => import\(getURL\('ytkit\.js'\)\)\)/,
         'the bootstrap must construct the monolith after deferred feature imports');
-    assert.match(bootstrapSource, /await Promise\.all\(deferredFeatureModules\.map\([\s\S]*?await import\(getURL\('ytkit\.js'\)\)/,
-        'the monolith import must follow the complete deferred feature-module barrier');
+    assert.match(
+        bootstrapSource,
+        /await timeStage\('featureModulesMs'[\s\S]*?await timeStage\('monolithMs', \(\) => import\(getURL\('ytkit\.js'\)\)\)/,
+        'the monolith import must follow the complete deferred feature-module barrier'
+    );
+    // Stage attribution exists so a future startup regression can be pinned to
+    // a stage instead of only showing up in the end-to-end number.
+    for (const stage of ['coreLoaderMs', 'settingsReadMs', 'featureModulesMs', 'monolithMs']) {
+        assert.ok(bootstrapSource.includes(`timeStage('${stage}'`),
+            `the bootstrap must time the ${stage} stage`);
+    }
     for (const modulePath of generatedModules) {
         assert.ok(fs.existsSync(path.join(repoRoot, 'extension', modulePath)),
             `${modulePath} must exist on disk`);

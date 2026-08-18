@@ -17737,6 +17737,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     function main() {
         if (_mainRan) return; // Guard against double-init (YouTube SPA can re-trigger)
         _mainRan = true;
+        // Arms SPA route tokens. core/lifecycle-route-bridge.js no longer
+        // self-installs on load: doing so made it the one order-dependent node
+        // in the extension's foundation graph, and it failed silently when its
+        // dependencies had not registered yet. The extension installs it from
+        // runtime-bootstrap; the userscript has no bootstrap, so it installs
+        // here. Idempotent either way.
+        try {
+            globalThis.YTKitCore?.installLifecycleRouteBridge?.();
+        } catch (e) {
+            // reason: a missing route bridge degrades stale-result guards; it
+            // must never stop the runtime from starting.
+            console.warn('[YTKit] Lifecycle route bridge install failed:', e);
+        }
         appState.settings = settingsManager.load();
         appState.currentPage = getCurrentPage();
 

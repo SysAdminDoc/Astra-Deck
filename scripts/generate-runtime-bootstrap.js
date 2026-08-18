@@ -228,25 +228,57 @@ ${settingsLiteral}
             && keys.every((key) => Object.hasOwn(settings, key) && settings[key] === false));
     };
 
+    // Per-stage attribution. loadRuntime is four serial awaits and, until this
+    // existed, a startup regression could only be measured end-to-end — which
+    // is how a ~2x one accumulated across ~15 commits before anyone could say
+    // WHICH stage grew. Cost is four performance.now() reads; the numbers ride
+    // on the bootstrap state that already carries startedAt/completedAt, so
+    // diagnostics and the startup bench can both read them.
+    const stageTimings = Object.create(null);
+    bootstrapState.stageTimings = stageTimings;
+    const timeStage = async (name, run) => {
+        const startedAt = performance.now();
+        try {
+            return await run();
+        } finally {
+            stageTimings[name] = Math.round((performance.now() - startedAt) * 100) / 100;
+        }
+    };
+
     const loadRuntime = async () => {
         const firstFeatureIndex = RUNTIME_MODULES.findIndex((modulePath) => modulePath.startsWith('features/'));
         const optionalFeatureModules = firstFeatureIndex === -1
             ? []
             : RUNTIME_MODULES.slice(firstFeatureIndex, -1);
         const settingsPromise = readRuntimeSettings();
-        await import(getURL('${LOADER_MODULE}'));
-        const settings = await settingsPromise;
+        await timeStage('coreLoaderMs', () => import(getURL('${LOADER_MODULE}')));
+        // The route bridge is installed here, not by the module itself: it is
+        // the one foundation module with cross-module dependencies at install
+        // time, and self-installing on load both forced the whole graph to load
+        // sequentially and failed SILENTLY (the installer returns false, it does
+        // not throw) whenever its dependencies had not registered yet. Without
+        // it, SPA route tokens never advance and every stale-result guard that
+        // compares them stops working.
+        const routeBridgeInstalled = globalThis.YTKitCore?.installLifecycleRouteBridge?.() === true;
+        if (!routeBridgeInstalled) {
+            console.error('[YTKit] Lifecycle route bridge failed to install; SPA route tokens will not advance');
+        }
+        bootstrapState.routeBridgeInstalled = routeBridgeInstalled;
+        const settings = await timeStage('settingsReadMs', () => settingsPromise);
         const deferredFeatureModules = optionalFeatureModules.filter((modulePath) =>
             modulePath !== 'features/download-ui/index.js'
             && shouldLoadFeature(modulePath, settings)
         );
-        await Promise.all(deferredFeatureModules.map((modulePath) => import(getURL(modulePath))));
+        stageTimings.featureModuleCount = deferredFeatureModules.length;
+        await timeStage('featureModulesMs', () => Promise.all(
+            deferredFeatureModules.map((modulePath) => import(getURL(modulePath)))
+        ));
         // The monolith reads YTKitFeatures while constructing its top-level
         // feature array. It must execute only after every selected peeled
         // module has registered its factory; otherwise the inline fallback
         // silently wins and extension users run a different implementation
         // from userscript tests.
-        await import(getURL('ytkit.js'));
+        await timeStage('monolithMs', () => import(getURL('ytkit.js')));
         globalThis.dispatchEvent?.(new CustomEvent('ytkit-runtime-ready'));
     };
 
@@ -298,12 +330,30 @@ const getURL = extensionRuntime?.getURL;
 if (typeof getURL !== 'function') {
     throw new Error('Extension runtime URL API is unavailable while loading the runtime graph');
 }
-const FOUNDATION_MODULES = Object.freeze(
+export const FOUNDATION_MODULES = Object.freeze(
 ${moduleLiteral}
 );
-for (const modulePath of FOUNDATION_MODULES) {
-    await import(getURL(modulePath));
-}
+// Imported CONCURRENTLY. These are classic IIFE modules that all attach to one
+// globalThis.YTKitCore namespace, so the browser evaluates them in completion
+// order rather than list order -- which is safe only because no module calls a
+// sibling at evaluation time. tests/runtime-graph-order.test.js enforces that
+// property by loading the whole graph in reverse and comparing the namespace.
+// (core/lifecycle-route-bridge.js used to break it: it self-installed on load
+// and silently no-opped when its dependencies had not registered yet. The
+// bootstrap installs it explicitly after this resolves.)
+//
+// This was a \`for (const m of FOUNDATION_MODULES) await import(getURL(m))\`
+// loop: 75 sequential compile-and-evaluate round-trips, ~48 ms of a ~140 ms
+// parse+init on the captured watch fixture. Loading concurrently lets V8
+// compile the graph off-thread in parallel and costs ~18 ms for the same work.
+//
+// Measured alternatives that do NOT work: STATIC \`import './core/x.js'\`
+// specifiers are marginally faster and spec-ordered, but resolve relative to
+// the canonical extension origin, where these resources are deliberately not
+// exposed under \`use_dynamic_url: true\` -- the real extension then fails to
+// boot at all. Warming the fetches ahead of the sequential loop changes
+// nothing, because the cost is compile, not fetch.
+await Promise.all(FOUNDATION_MODULES.map((modulePath) => import(getURL(modulePath))));
 `;
 }
 
