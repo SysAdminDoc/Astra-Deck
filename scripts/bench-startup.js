@@ -43,6 +43,17 @@ const BASELINE_PATH = path.join(__dirname, 'startup-performance-baseline.json');
 const DEFAULT_ITERATIONS = 7;
 const DEFAULT_TIMEOUT_MS = 30000;
 const BOUNDED_SESSION_MS = 750;
+// Idle window for the steady-state lane. Long enough that a once-per-second
+// interval is unmistakable and short enough to gate on; results are normalised
+// per minute so this can change without moving the recorded budget.
+const STEADY_STATE_MS = 10000;
+const STEADY_STATE_KEYS = Object.freeze([
+    'idleScriptMsPerMin',
+    'idleTaskMsPerMin',
+    'idleLayoutsPerMin',
+    'idleStyleRecalcsPerMin',
+    'idleHeapGrowthBytesPerMin',
+]);
 // Photosensitive protection gets one millisecond per presented frame for its
 // 2x2 luminance readback. The shared frame sampler disables itself after three
 // consecutive over-budget callbacks; keep this contract visible beside the
@@ -105,13 +116,13 @@ class BenchmarkDevtoolsClient {
         });
     }
 
-    send(method, params = {}) {
+    send(method, params = {}, timeoutMs = 15000) {
         const id = this.nextId++;
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 this.pending.delete(id);
                 reject(new Error(`DevTools call timed out: ${method}`));
-            }, 15000);
+            }, timeoutMs);
             this.pending.set(id, { reject, resolve, timer });
             try {
                 this.ws.send(JSON.stringify({ id, method, params }));
@@ -123,12 +134,12 @@ class BenchmarkDevtoolsClient {
         });
     }
 
-    async evaluate(expression) {
+    async evaluate(expression, timeoutMs = 15000) {
         const result = await this.send('Runtime.evaluate', {
             expression,
             returnByValue: true,
             awaitPromise: true,
-        });
+        }, timeoutMs);
         if (result.exceptionDetails) {
             throw new Error(`page evaluate failed: ${result.exceptionDetails.text || 'exception'}`);
         }
@@ -211,6 +222,8 @@ function parseArgs(argv) {
         browser: '',
         check: false,
         iterations: DEFAULT_ITERATIONS,
+        steadyState: false,
+        steadyStateMs: STEADY_STATE_MS,
         timeoutMs: DEFAULT_TIMEOUT_MS,
         updateBaseline: false,
     };
@@ -228,6 +241,10 @@ function parseArgs(argv) {
             opts.updateBaseline = true;
         } else if (arg === '--allow-synthetic') {
             opts.allowSynthetic = true;
+        } else if (arg === '--steady-state') {
+            opts.steadyState = true;
+        } else if (arg === '--steady-state-ms') {
+            opts.steadyStateMs = Number(argv[++index]);
         } else {
             throw new Error(`unknown argument: ${arg}`);
         }
@@ -240,6 +257,9 @@ function parseArgs(argv) {
     }
     if (opts.check && opts.updateBaseline) {
         throw new Error('--check and --update-baseline cannot be combined');
+    }
+    if (!Number.isFinite(opts.steadyStateMs) || opts.steadyStateMs < 2000 || opts.steadyStateMs > 120000) {
+        throw new Error('--steady-state-ms must be between 2000 and 120000');
     }
     return opts;
 }
@@ -296,6 +316,33 @@ function summarizeStageTimings(samples) {
             + (Number.isFinite(moduleCount) ? ` [${moduleCount} feature modules]` : ''));
     }
     return lines;
+}
+
+// Idle metrics are collected once per surface, so there is nothing to take a
+// minimum over — the worst (highest) surface is the honest number to gate on.
+function summarizeSteadyState(samples) {
+    const withIdle = (samples || []).filter((sample) => Number.isFinite(Number(sample.idleTaskMsPerMin)));
+    if (!withIdle.length) return null;
+    const summary = {};
+    for (const key of STEADY_STATE_KEYS) {
+        summary[key] = Math.max(...withIdle.map((sample) => Number(sample[key]) || 0));
+    }
+    return summary;
+}
+
+function checkSteadyState(summary, baseline) {
+    const budget = baseline?.steadyStateBudget;
+    if (!summary || !budget) return [];
+    const failures = [];
+    for (const key of STEADY_STATE_KEYS) {
+        const limit = Number(budget[key]);
+        if (!Number.isFinite(limit)) continue;
+        const observed = Number(summary[key]) || 0;
+        if (observed > limit) {
+            failures.push(`idle ${key} ${observed.toFixed(2)} exceeds budget ${limit.toFixed(2)} (per minute, default feature set)`);
+        }
+    }
+    return failures;
 }
 
 function roundMetric(key, value) {
@@ -654,6 +701,54 @@ async function runBoundedSession(client) {
     return result;
 }
 
+// Holds the page open and IDLE — no synthetic mutations, no navigation events —
+// and measures what the runtime costs for doing nothing. runBoundedSession above
+// deliberately churns the DOM to exercise observers; this is the opposite lane,
+// and it is the one that answers "why is this extension using CPU when I have
+// not touched anything". Rates are normalised per minute so the window length
+// can change without moving the budget.
+async function readPerformanceMetrics(client) {
+    const result = await client.send('Performance.getMetrics').catch(() => null);
+    const out = Object.create(null);
+    for (const entry of result?.metrics || []) out[entry.name] = Number(entry.value) || 0;
+    return out;
+}
+
+// Holds the page open and IDLE — no synthetic mutations, no navigation events —
+// and measures what the runtime costs for doing nothing. runBoundedSession above
+// deliberately churns the DOM to exercise observers; this is the opposite lane,
+// and it answers "why is this extension using CPU when I have not touched
+// anything", which is the single largest uninstall complaint in the category.
+//
+// Measured through CDP Performance.getMetrics rather than by patching
+// setTimeout/setInterval in the page. Wrapping the timer APIs was tried first
+// and REJECTED: it cost ~14 ms of parse+init on every run because the wrappers
+// are installed before the runtime loads, so the instrument moved the startup
+// numbers it shares a harness with. It also could not see intervals scheduled
+// before the wrapper was installed — which is exactly the case that matters.
+// ScriptDuration/TaskDuration are real CPU seconds and cost nothing to read.
+async function runSteadyStateSession(client, durationMs) {
+    await client.send('Performance.enable', {}).catch(() => {});
+    const heapStartBytes = await readHeapBytes(client);
+    const before = await readPerformanceMetrics(client);
+    const startedAt = Date.now();
+    await new Promise((resolve) => setTimeout(resolve, durationMs));
+    const elapsedMs = Date.now() - startedAt;
+    const after = await readPerformanceMetrics(client);
+    const heapEndBytes = await readHeapBytes(client);
+
+    const minutes = Math.max(elapsedMs, 1) / 60000;
+    const delta = (name) => Math.max(0, (after[name] || 0) - (before[name] || 0));
+    return {
+        // Performance.getMetrics reports durations in SECONDS.
+        idleScriptMsPerMin: (delta('ScriptDuration') * 1000) / minutes,
+        idleTaskMsPerMin: (delta('TaskDuration') * 1000) / minutes,
+        idleLayoutsPerMin: delta('LayoutCount') / minutes,
+        idleStyleRecalcsPerMin: delta('RecalcStyleCount') / minutes,
+        idleHeapGrowthBytesPerMin: Math.max(0, heapEndBytes - heapStartBytes) / minutes
+    };
+}
+
 async function waitForProcessExit(proc, timeoutMs = 3000) {
     if (!proc || proc.exitCode !== null) return;
     await Promise.race([
@@ -662,7 +757,7 @@ async function waitForProcessExit(proc, timeoutMs = 3000) {
     ]);
 }
 
-async function runIteration(browserPath, fixturePath, timeoutMs) {
+async function runIteration(browserPath, fixturePath, timeoutMs, options = {}) {
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-startup-bench-profile-'));
     const fixtureUrl = pathToFileURL(fixturePath).href;
     const browser = spawn(browserPath, [
@@ -733,12 +828,19 @@ async function runIteration(browserPath, fixturePath, timeoutMs) {
                 || !Number.isFinite(Number(steadyState?.observerCallbackMs))) {
             throw new Error(`benchmark returned invalid steady-state metrics: ${JSON.stringify({ heapDeltaBytes, session, steadyState })}`);
         }
+        // The idle lane runs LAST and only when asked: it holds the page still
+        // for STEADY_STATE_MS, which would otherwise add that to every startup
+        // sample for numbers nobody reads.
+        const idle = options.steadyState
+            ? await runSteadyStateSession(client, options.steadyStateMs || STEADY_STATE_MS)
+            : null;
         return {
             ...result,
             heapDeltaBytes,
             observerCallbackMs: Number(steadyState.observerCallbackMs),
             observerCallbackCount: Number(steadyState.observerCallbackCount),
             boundedSessionMs: Number(steadyState.sessionMs),
+            ...(idle || {}),
         };
     } finally {
         client?.close();
@@ -756,7 +858,13 @@ async function runBenchmark(options, browserPath, { forceSynthetic = false } = {
             const prepared = prepareFixtureDetails(stageDir, surface, { forceSynthetic });
             const fixturePath = prepared.fixturePath;
             for (let index = 0; index < options.iterations; index += 1) {
-                const sample = await runIteration(browserPath, fixturePath, options.timeoutMs);
+                const sample = await runIteration(browserPath, fixturePath, options.timeoutMs, {
+                    // Only the FIRST sample per surface pays the idle window;
+                    // idle cost does not vary between identical loads and
+                    // paying it seven times would add ~70 s per surface.
+                    steadyState: options.steadyState && index === 0,
+                    steadyStateMs: options.steadyStateMs
+                });
                 const taggedSample = {
                     ...sample,
                     surface: surface.id,
@@ -792,6 +900,17 @@ async function main(argv = process.argv.slice(2)) {
     console.log(`[bench-startup] photosensitive frame budget: ${PHOTOSENSITIVE_FRAME_BUDGET_MS.toFixed(2)} ms/sample`);
     for (const line of summarizeStageTimings(result.samples)) {
         console.log(`[bench-startup] ${line}`);
+    }
+
+    // Idle steady state. Reported and gated separately from startup: they answer
+    // different questions and a change to one rarely moves the other.
+    const idle = summarizeSteadyState(result.samples);
+    if (idle) {
+        for (const key of STEADY_STATE_KEYS) {
+            console.log(`[bench-startup] idle ${key}: ${idle[key].toFixed(2)}`);
+        }
+    } else if (options.steadyState) {
+        throw new Error('steady-state lane requested but no sample reported idle metrics');
     }
     for (const key of METRIC_KEYS) {
         console.log(
@@ -853,6 +972,7 @@ async function main(argv = process.argv.slice(2)) {
     }
 
     const failures = checkAgainstBaseline(result.metrics, comparisonBaseline);
+    failures.push(...checkSteadyState(idle, baseline));
     if (failures.length) {
         failures.push(`measured with fixture mode '${result.fixtureMode}' against baseline.${budgetSource}`);
         // `--check` gates (that is `npm run check:startup`); a bare bench run
@@ -886,9 +1006,12 @@ module.exports = {
     buildBaseline,
     checkAgainstBaseline,
     extractCapturedHtml,
+    checkSteadyState,
     median,
     parseArgs,
     prepareFixture,
     readBaseline,
+    STEADY_STATE_KEYS,
     summarize,
+    summarizeSteadyState,
 };
