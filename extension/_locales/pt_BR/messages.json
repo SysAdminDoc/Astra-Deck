@@ -5425,6 +5425,9 @@
   "storageBannerTitle": {
     "message": "Uso de armazenamento alto"
   },
+  "storagePreloadFailed": {
+    "message": "O Astra Deck não conseguiu ler suas configurações salvas. Esta página está usando os padrões — recarregue para tentar de novo."
+  },
   "storageStatsAriaLabel": {
     "message": "Estatísticas de armazenamento"
   },

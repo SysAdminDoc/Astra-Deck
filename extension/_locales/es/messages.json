@@ -5425,6 +5425,9 @@
   "storageBannerTitle": {
     "message": "Uso de almacenamiento elevado"
   },
+  "storagePreloadFailed": {
+    "message": "Astra Deck no pudo leer tu configuración guardada. Esta página funciona con los valores predeterminados: recárgala para volver a intentarlo."
+  },
   "storageStatsAriaLabel": {
     "message": "Estadísticas de almacenamiento"
   },

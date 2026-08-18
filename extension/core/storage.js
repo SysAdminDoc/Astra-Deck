@@ -231,6 +231,15 @@
     // preload has resolved and the merge can no longer overwrite them.
     const preloadWindowDeletions = new Set();
 
+    // Set when the one-shot preload read rejected. Read by ytkit.js after
+    // settings load so the degraded state reaches the user and the diagnostic
+    // ring, instead of only a console.warn nobody sees.
+    let storagePreloadError = null;
+
+    function getStoragePreloadError() {
+        return storagePreloadError;
+    }
+
     async function preloadExtensionState() {
         if (extensionStateReady) return;
         if (extensionStateReadyPromise) return extensionStateReadyPromise;
@@ -251,6 +260,18 @@
                     }
                 } catch (error) {
                     console.warn('[YTKit] Storage preload failed:', error);
+                    // The cache stays empty and extensionStateReady still flips
+                    // true, so settingsManager.load() merges {} over defaults and
+                    // every feature runs at factory settings for the rest of this
+                    // tab session — while the popup, which reads storage on its
+                    // own, keeps showing the user's real values. Nothing is lost
+                    // (save() diffs against the same-session baseline), but the
+                    // two surfaces silently disagree. Record the failure so the
+                    // page can say so instead of pretending these ARE the
+                    // user's settings.
+                    storagePreloadError = error instanceof Error
+                        ? error
+                        : new Error(String(error && error.message ? error.message : error));
                 }
             }
             extensionStateReady = true;
@@ -441,6 +462,7 @@
     Object.assign(core, {
         createYouTubeStateManager,
         flushPendingStorageWrites,
+        getStoragePreloadError,
         installStorageChangeListener,
         installStorageFlushGuards,
         preloadExtensionState,

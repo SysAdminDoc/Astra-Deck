@@ -45,6 +45,7 @@
         getRegisteredFeature,
         getFeatureHealthSnapshot,
         getSelectorHealthSnapshot,
+        getStoragePreloadError,
         getUrlParam,
         getUrlSearchParams,
         getVideoId,
@@ -53869,6 +53870,48 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
     }
 
     //  SECTION 6: BOOTSTRAP
+
+    // The settings preload is a one-shot read. When it rejects, the cache stays
+    // empty and every feature on this page runs at factory defaults for the whole
+    // tab session — while the popup, which reads storage itself, keeps showing the
+    // user's real values. Nothing else on the page path observes that failure, so
+    // the two surfaces disagree with only a console.warn to explain it. Surface it
+    // here: the diagnostic ring in every frame, a persistent toast on the main
+    // document (a chat iframe has no room for one and shares the page's toast).
+    let _storagePreloadNoticeShown = false;
+    function reportStoragePreloadFailure() {
+        if (_storagePreloadNoticeShown) return;
+        let error = null;
+        try {
+            error = (typeof getStoragePreloadError === 'function' ? getStoragePreloadError() : null) || null;
+        } catch (e) {
+            // reason: a broken accessor must never block boot; there is nothing
+            // to report if we cannot read the failure state.
+            error = null;
+        }
+        if (!error) return;
+        _storagePreloadNoticeShown = true;
+        const reason = String(error.message || error).slice(0, 200);
+        try {
+            DiagnosticLog.record('storage-preload', `Settings preload failed, running on defaults: ${reason}`);
+        } catch (e) {
+            // reason: diagnostics are best-effort; the toast below is the
+            // user-facing half and must still run.
+        }
+        if (isLiveChatFrame()) return;
+        try {
+            showToast(
+                t('storagePreloadFailed', 'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.'),
+                '#ef4444',
+                { tone: 'error', persistent: true }
+            );
+        } catch (e) {
+            // reason: the toast host may not exist yet on an unusual boot; the
+            // diagnostic entry above is already recorded.
+            console.warn('[YTKit] Storage preload notice failed:', e);
+        }
+    }
+
     let _mainRan = false;
     function main() {
         if (_mainRan) return; // Guard against double-init (YouTube SPA can re-trigger)
@@ -53878,6 +53921,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         });
         appState.settings = settingsManager.load();
         appState.currentPage = getCurrentPage();
+        reportStoragePreloadFailure();
         cleanupRetiredCommentUi();
         if (shouldBuildPrimaryUI()) {
             addNavigateRule('_retiredCommentCleanup', () => cleanupRetiredCommentUi());

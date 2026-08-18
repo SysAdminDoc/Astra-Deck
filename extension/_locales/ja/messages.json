@@ -5425,6 +5425,9 @@
   "storageBannerTitle": {
     "message": "ストレージ使用量が多い"
   },
+  "storagePreloadFailed": {
+    "message": "Astra Deck は保存された設定を読み取れませんでした。このページは既定値で動作しています。再読み込みして再試行してください。"
+  },
   "storageStatsAriaLabel": {
     "message": "ストレージ統計"
   },
