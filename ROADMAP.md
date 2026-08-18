@@ -547,16 +547,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: mechanism Verified; reset-trigger frequency Needs-repro (live)
   Effort: M
 
-- [ ] P2 — Selector-pack refresh origin is undisclosed and survives only by a CORS accident: `raw.githubusercontent.com` is in the dev manifest but absent from the origin catalogue and every built profile
-  Category: security / docs
-  Where: `extension/manifest.json:57` (`https://raw.githubusercontent.com/*` host permission) vs zero entries in `extension/core/data-flow.js` (grep-verified); consumers `extension/background.js:739` (EXT_FETCH allowlist), `:791` (`SELECTOR_ASSET_URL` remote selector-pack refresh), `extension/ytkit.js:1197`
-  Problem: built profiles derive host permissions from the catalogue, so all three artifacts silently drop a permission the dev manifest declares for a real fetch path. It keeps working only because GitHub raw serves `Access-Control-Allow-Origin: *` — an undocumented load-bearing accident — and the popup Data Flow panel (rendered from the catalogue) never discloses this origin even though the extension fetches from it. The Firefox data-consent categories are also derived from the catalogue, so the omission propagates into the consent declaration.
-  Evidence: manifest + catalogue grepped; consumers read; the tests/release sweep executed the profile helpers and confirmed the origin absent from all three computed manifests.
-  Fix: add a catalogued entry for the selector-asset origin (profile-appropriate, with its data-flow disclosure copy) so manifest, Data Flow panel, and artifacts agree — or remove it from the dev manifest and document the CORS reliance next to `SELECTOR_ASSET_URL`.
-  Acceptance: the Data Flow panel lists the origin (or the permission is gone from the dev manifest); built-profile host permissions match the catalogue exactly; `npm run check` gains/keeps a green catalogue-parity assertion.
-  Confidence: Verified
-  Effort: S
-
 ### P3
 
 - [ ] P3 — Subscription Groups: confirm-dialog matcher can click Cancel and still record success; 1000-cap silently drops the just-added channel; no way to rename or delete a group
