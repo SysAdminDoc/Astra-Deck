@@ -3,7 +3,7 @@
     "message": "자격 증명을 삭제하지 못했습니다."
   },
   "aiCredentialDeleted": {
-    "message": "AI 자격 증명이 삭제되었습니다."
+    "message": "AI 자격 증명을 삭제했습니다. 이 작업은 취소할 수 없습니다. AI 기능을 사용하려면 키를 다시 입력하세요."
   },
   "aiCredentialInputPlaceholder": {
     "message": "API 키를 붙여넣으세요"

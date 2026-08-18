@@ -1910,7 +1910,16 @@ async function deleteAiCredential() {
         if (!response?.ok) throw new Error(response?.error?.message || t('aiCredentialDeleteFailed', 'Credential could not be deleted.'));
         aiCredentialInput.value = '';
         aiCredentialRemember.checked = false;
-        showStatus(t('aiCredentialDeleted', 'AI credential deleted.'), 'success', 3200);
+        // No undo is possible here and none can be faked: the stored secret is
+        // never re-displayable (popup.html marks the field write-only), so the
+        // popup does not hold a copy to restore. Every other destructive action
+        // in this surface restores on undo; the one that cannot must say so
+        // rather than reading like the reversible ones.
+        showStatus(
+            t('aiCredentialDeleted', 'AI credential deleted. This cannot be undone — re-enter the key to use AI features again.'),
+            'success',
+            5200
+        );
         await refreshAiCredentialManager();
     } catch (error) {
         showStatus(error.message || t('aiCredentialDeleteFailed', 'Credential could not be deleted.'), 'error', 4200);

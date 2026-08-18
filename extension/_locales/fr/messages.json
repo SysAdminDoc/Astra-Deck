@@ -3,7 +3,7 @@
     "message": "Impossible de supprimer l'identifiant."
   },
   "aiCredentialDeleted": {
-    "message": "Identifiant IA supprimé."
+    "message": "Identifiant IA supprimé. Cette action est irréversible — saisissez à nouveau la clé pour réutiliser les fonctions IA."
   },
   "aiCredentialInputPlaceholder": {
     "message": "Collez votre clé d’API"

@@ -3,7 +3,7 @@
     "message": "Anmeldedaten konnten nicht gelöscht werden."
   },
   "aiCredentialDeleted": {
-    "message": "KI-Anmeldedaten gelöscht."
+    "message": "KI-Anmeldedaten gelöscht. Das lässt sich nicht rückgängig machen – geben Sie den Schlüssel erneut ein, um KI-Funktionen wieder zu nutzen."
   },
   "aiCredentialInputPlaceholder": {
     "message": "API-Schlüssel einfügen"

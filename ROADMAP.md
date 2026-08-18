@@ -108,13 +108,6 @@ duplicated here.
   Acceptance: every feature that hides a card stamps a single shared marker naming the feature and the matched rule; one toggle reveals annotations for all of them; the count of cards hidden per feature this navigation is readable from the diagnostics bundle.
   Complexity: M
 
-- [ ] P2 — Add the destructive-action safety net where it is missing
-  Why: three surfaces apply three different safety contracts to comparable actions, including one irreversible action with neither confirmation nor undo, which contradicts the repo's own "reversible-apply or undo toasts" convention.
-  Evidence: `extension/popup.js:1670-1685` `deleteAiCredential()` is irreversible (the secret is never re-displayable, `popup.html:201`) with no undo, while reset-everything at `popup.js:5388-5447` has a full snapshot undo. Video Hider per-entry "Remove From List" (`features/settings-panel/index.js:1246-1261`, `ytkit.js:48887-48901`) has no undo while "Clear Hidden List Only" 20 lines below does. Takeout history import (`ytkit.js:51037-51050`) offers undo only when `preImportStats !== null` and silently drops it otherwise.
-  Touches: `extension/popup.js`, `extension/features/settings-panel/index.js`, `extension/ytkit.js`
-  Acceptance: every destructive action either restores on undo or states in its toast that it cannot be undone; the Takeout import path has one contract, not two; `clearDiagnosticLog()`'s documented exception stays documented.
-  Complexity: S
-
 - [ ] P2 — Unify the focus-ring strategy and finish forced-colors coverage
   Why: two incompatible strategies ship side by side and the forced-colors fallback for one of them is dead, so Windows High Contrast users lose focus indication on surfaces nothing flags.
   Evidence: extension pages use `outline: none` + `box-shadow` (`extension/surface-system.css:69-72`, 38 popup + 10 sidepanel rules) while in-page surfaces use a real `outline` (`core/settings-visual-system.js:907-911`); forced-colors never paints `box-shadow`, so `surface-system.css:106-110` — which rewrites the token to another box-shadow — can never work. `extension/live-chat.css` has zero `forced-colors` rules while restyling ~50 chat selectors with hard-coded rgba.

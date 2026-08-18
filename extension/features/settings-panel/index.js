@@ -1311,7 +1311,21 @@ function buildSettingsPanel() {
                                 videoHiderFeature._processAllVideos?.();
                                 renderTabContent('videos');
                                 updateVideoHiderMeta();
-                                showToast(removed.length > 0 ? 'Video removed from hidden list' : 'Video was not in the hidden list', '#6b7280');
+                                if (removed.length === 0) {
+                                    showToast(t('videoHiderMissingHiddenVideoToast', 'Video was not in the hidden list'), '#6b7280');
+                                    return;
+                                }
+                                // Same undo contract as "Clear Hidden List Only" and
+                                // "Restore & Allow All" below. A single-entry delete is
+                                // no less destructive than the bulk ones, and it is the
+                                // easiest of the three to hit by accident.
+                                showToast(t('videoHiderRemovedHiddenVideoToast', 'Video removed from hidden list'), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
+                                    videoHiderFeature._addHiddenVideos?.(removed);
+                                    videoHiderFeature._processAllVideos?.();
+                                    renderTabContent('videos');
+                                    updateVideoHiderMeta();
+                                    showToast(t('videoHiderHiddenListRestored', 'Hidden list restored'), '#22c55e');
+                                }}});
                             };
                             actions.appendChild(link);
                             actions.appendChild(removeBtn);
@@ -3314,25 +3328,28 @@ function attachUIEventListeners() {
                                 [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
                             }, 'takeout-import', { forceApplyLocal: true });
                         }
-                        if (preImportStats !== null) {
-                            showToast(result.message, '#22c55e', {
-                                duration: 8,
-                                action: {
-                                    text: 'Undo',
-                                    onClick: () => {
-                                        StorageManager.setSync(STORAGE_KEYS.watchTime, preImportStats);
-                                        handleExternalStorageChanges({
-                                            [STORAGE_KEYS.watchTime]: { newValue: preImportStats }
-                                        }, 'takeout-undo', { forceApplyLocal: true });
-                                        const undoMessage = t('statusTakeoutImportUndone', 'Takeout import undone');
-                                        createToast(undoMessage, 'success');
-                                        setPanelStatus(undoMessage, 'success');
-                                    }
+                        // One undo contract, not two. A first-ever import used to
+                        // get no undo at all, purely because there was no prior
+                        // watch-time record to snapshot — which is exactly the case
+                        // where the user is least sure the import was a good idea.
+                        // Restoring the empty shape is the correct inverse of
+                        // "there was nothing here before".
+                        const undoTarget = preImportStats !== null ? preImportStats : { days: {}, total: 0 };
+                        showToast(result.message, '#22c55e', {
+                            duration: 8,
+                            action: {
+                                text: t('toastActionUndo', 'Undo'),
+                                onClick: () => {
+                                    StorageManager.setSync(STORAGE_KEYS.watchTime, undoTarget);
+                                    handleExternalStorageChanges({
+                                        [STORAGE_KEYS.watchTime]: { newValue: undoTarget }
+                                    }, 'takeout-undo', { forceApplyLocal: true });
+                                    const undoMessage = t('statusTakeoutImportUndone', 'Takeout import undone');
+                                    createToast(undoMessage, 'success');
+                                    setPanelStatus(undoMessage, 'success');
                                 }
-                            });
-                        } else {
-                            createToast(result.message, result.toastTone || result.tone || 'success');
-                        }
+                            }
+                        });
                         setPanelStatus(result.message, result.statusTone || result.tone || 'success');
                     } else {
                         const message = result?.message || t('settingsTakeoutImportInvalid', 'Import failed. Choose a valid YouTube Takeout watch-history JSON file.');

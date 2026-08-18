@@ -3,7 +3,7 @@
     "message": "Não foi possível excluir a credencial."
   },
   "aiCredentialDeleted": {
-    "message": "Credencial de IA excluída."
+    "message": "Credencial de IA excluída. Isso não pode ser desfeito — insira a chave novamente para usar os recursos de IA."
   },
   "aiCredentialInputPlaceholder": {
     "message": "Cole sua chave de API"

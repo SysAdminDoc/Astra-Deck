@@ -3,7 +3,7 @@
     "message": "資格情報を削除できませんでした。"
   },
   "aiCredentialDeleted": {
-    "message": "AI 資格情報を削除しました。"
+    "message": "AI 資格情報を削除しました。この操作は取り消せません。AI 機能を使うにはキーを再入力してください。"
   },
   "aiCredentialInputPlaceholder": {
     "message": "API キーを貼り付け"

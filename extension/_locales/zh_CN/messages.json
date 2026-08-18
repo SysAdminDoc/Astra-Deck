@@ -3,7 +3,7 @@
     "message": "无法删除凭据。"
   },
   "aiCredentialDeleted": {
-    "message": "已删除 AI 凭据。"
+    "message": "已删除 AI 凭据。此操作无法撤销 — 请重新输入密钥才能继续使用 AI 功能。"
   },
   "aiCredentialInputPlaceholder": {
     "message": "粘贴你的 API 密钥"

@@ -8,6 +8,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Destructive actions now behave consistently. Removing a single video from the
+  hidden list offers Undo, the same as the two bulk buttons beside it. Undoing a
+  YouTube Takeout import works even on a first-ever import, which previously got
+  no Undo at all. And deleting a stored AI key — the one action that genuinely
+  cannot be reversed, since the key is never shown again — now says so instead
+  of reading like the reversible ones.
 - Astra Deck now tells you when it could not read your saved settings. If the
   one-time settings read failed, the page quietly ran on factory defaults for
   the rest of the session while the popup kept showing your real values, with
