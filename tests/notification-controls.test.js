@@ -104,6 +104,25 @@ test('notification filtering is explicit-state only and loop-safe', () => {
     assert.equal(item.hidden, false);
     assert.equal(item.hasAttribute('data-ytkit-notification-read-hidden'), false);
 
+    // `hidden` is only a UA-level display:none, which any author-level `display`
+    // on the Polymer host outranks — so the assertions above can all hold while
+    // the notification stays painted. The marker attributes need a real CSS
+    // backstop, and this pins it.
+    const injected = [];
+    const styled = vm.runInNewContext(`(${notificationFeatureBlock()})`, {
+        t: (_key, fallback) => fallback,
+        injectStyle: (css, id, enabled) => injected.push({ css, id, enabled })
+    });
+    styled._ensureHiddenCss();
+    assert.equal(injected.length, 1, 'the hide markers must carry a stylesheet');
+    assert.equal(injected[0].enabled, true);
+    assert.match(injected[0].css, /\[data-ytkit-notification-read-hidden\]/);
+    assert.match(injected[0].css, /\[data-ytkit-notification-cap-hidden\]/);
+    assert.match(injected[0].css, /display:\s*none\s*!important/,
+        'the backstop must outrank an author-level display on the Polymer host');
+    assert.match(notificationFeatureBlock(), /this\._ensureHiddenCss\(\);/,
+        'init() must install the backstop, not just define it');
+
     const block = notificationFeatureBlock();
     assert.match(block, /sorted\.every\(\(item, index\) => item === groupItems\[index\]\)/,
         'sorting must avoid appendChild when the order is already stable');

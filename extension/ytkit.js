@@ -31714,8 +31714,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._setHidden(item, 'cap', maxCount > 0 && index >= maxCount);
                 });
             },
+            // The `hidden` IDL property is only a UA-level `display:none`, so any
+            // author-level `display` on the Polymer host outranks it and the
+            // notification stays painted while the code believes it is hidden.
+            // Every other hide path in this codebase carries a marker-attribute
+            // CSS backstop; this one did not, and its test asserted the IDL
+            // property rather than the rendered outcome, so it passed either way.
+            _ensureHiddenCss() {
+                injectStyle(
+                    'ytd-notification-renderer[data-ytkit-notification-read-hidden],'
+                    + 'ytd-notification-renderer[data-ytkit-notification-cap-hidden],'
+                    + '[data-ytkit-notification-read-hidden],'
+                    + '[data-ytkit-notification-cap-hidden]{display:none !important;}',
+                    'ytkit-notification-hidden',
+                    true
+                );
+            },
             init() {
                 this._hiddenOriginalState.clear();
+                this._ensureHiddenCss();
                 this._settingsHandler = (event) => {
                     const detail = event?.detail || {};
                     const keys = Array.isArray(detail.keys)
