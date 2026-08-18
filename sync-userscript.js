@@ -55,6 +55,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/selector-health.js',
     'extension/core/feature-health.js',
     'extension/core/hide-attribution.js',
+    'extension/core/heatmap.js',
     'extension/core/companion-ports.js',
     'extension/core/data-flow.js',
     'extension/core/toast.js',

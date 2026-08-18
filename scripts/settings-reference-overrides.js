@@ -23,6 +23,7 @@ const PURPOSE_OVERRIDES = Object.freeze({
 
     autoSkipChapterPatterns: 'Provides comma-separated chapter-name fragments that Auto-Skip Chapters treats as skippable.',
     persistentSpeedValue: 'Sets the playback rate reapplied by Persistent Playback Speed.',
+    heatmapSmartSpeedColdRate: 'Sets the playback rate Heatmap Smart Speed uses through the parts of a video nobody rewatches. Never slows playback below your own speed.',
     searchFilterSort: 'Chooses the sort filter automatically added to search URLs that do not already contain a YouTube filter.',
     rememberVolumeLevel: 'Stores the logical volume percentage restored by Remember Volume.',
     autoSubtitleLang: 'Chooses the preferred BCP-47 caption track after Auto Subtitles enables captions; exact matches win before primary-language matches.',

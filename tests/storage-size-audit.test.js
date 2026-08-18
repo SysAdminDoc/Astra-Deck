@@ -129,7 +129,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // settings payload while leaving the opt-in field available.
     // Retiring the unused lowPowerProfileBackup schema placeholder trims a
     // further 29 bytes; the real backup remains in its dedicated local key.
-    assert.equal(assessment.totalBytes, 185906);
+    // The two heatmap toggles plus their cold-rate number add 85 bytes.
+    assert.equal(assessment.totalBytes, 185991);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
