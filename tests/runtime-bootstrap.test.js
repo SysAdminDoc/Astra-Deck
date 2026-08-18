@@ -40,7 +40,7 @@ test('normal YouTube pages inject a thin generated bootstrap and defer the runti
     assert.match(bootstrapSource, /storage\.get\('ytSuiteSettings'/,
         'the bootstrap must read the persisted settings before selecting deferred features');
     assert.match(bootstrapSource, /shouldLoadFeature/,
-        'deferred modules must use the settings and route gate');
+        'deferred modules must use the settings gate');
     assert.match(bootstrapSource, /__ytkitRuntimePromise/,
         'duplicate bootstrap execution must be idempotent');
     assert.match(bootstrapSource, /BOOTSTRAP_STATE_KEY/,
@@ -94,4 +94,36 @@ test('generated runtime order, manifest catalogue, and dynamic resource allowlis
 test('runtime bootstrap has no executable code-generation path', () => {
     assert.doesNotMatch(bootstrapSource, /\beval\s*\(|\bnew\s+Function\s*\(/);
     assert.doesNotMatch(bootstrapSource, /set(?:Timeout|Interval)\s*\(\s*["'`]/);
+});
+
+test('deferred feature modules are never gated by the landing route', () => {
+    // YouTube is an SPA: the bootstrap runs once, on the landing URL, and the
+    // session then navigates everywhere. Because the monolith builds its
+    // feature array at load time, a module imported after that point can no
+    // longer displace the inline fallback that already won — so a route gate
+    // silently swapped implementations for the whole session based on nothing
+    // but which page the user opened first. That is how the in-page
+    // Subscription Groups copy (destructive import) and the fallback Video
+    // Hider (no Mark-Watched runtime at all) reached users.
+    assert.doesNotMatch(bootstrapSource, /FEATURE_ROUTES/,
+        'the bootstrap must not carry a route table for feature modules');
+    assert.doesNotMatch(bootstrapSource, /routeMatches/,
+        'the bootstrap must not gate feature-module imports by pathname');
+
+    // The settings gate must survive: it keys on user settings, which do not
+    // change under the session's feet.
+    const gate = bootstrapSource.slice(
+        bootstrapSource.indexOf('const shouldLoadFeature'),
+        bootstrapSource.indexOf('const loadRuntime')
+    );
+    assert.ok(gate.length > 0, 'shouldLoadFeature must precede loadRuntime');
+    assert.match(gate, /FEATURE_SETTINGS\[modulePath\]/,
+        'a module whose every feature is switched off may still be skipped');
+    assert.doesNotMatch(gate, /pathname/,
+        'the surviving gate must not consider the pathname');
+
+    const generator = fs.readFileSync(
+        path.join(repoRoot, 'scripts', 'generate-runtime-bootstrap.js'), 'utf8');
+    assert.doesNotMatch(generator, /^const FEATURE_ROUTES/m,
+        'the generator must not reintroduce a route table');
 });

@@ -36,11 +36,13 @@ function featureSource(id) {
 
 /**
  * Slice the inline fallback literal of a FACTORY-BUILT feature — the
- * `createXFeature({...}) || { id: 'x', … }` shape. Which copy actually runs
- * depends on the landing route (`FEATURE_ROUTES` in runtime-bootstrap.js), so
- * a behaviour proved only against the peeled module proves nothing about the
- * session that landed elsewhere. The literal closes at the array indent
- * followed by `)`, which is the wrapping factory call's own close.
+ * `createXFeature({...}) || { id: 'x', … }` shape. The fallback no longer wins
+ * in the extension now that route gating is gone from the bootstrap, but it is
+ * still what userscript users run wherever the bundle does not carry the
+ * module, and it is still live code that drifts. A behaviour proved only
+ * against the peeled module proves nothing about this copy. The literal closes
+ * at the array indent followed by `)`, which is the wrapping factory call's
+ * own close.
  */
 function fallbackFeatureSource(id) {
     const needle = `|| {\n            id: '${id}'`;

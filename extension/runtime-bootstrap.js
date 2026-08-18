@@ -233,23 +233,6 @@
         ]
     }
     );
-    const FEATURE_ROUTES = Object.freeze(
-    {
-        "features/subtitles/index.js": "watch",
-        "features/sticky-video/index.js": "watch",
-        "features/video-notes/index.js": "watch",
-        "features/replay-chat-density/index.js": "watch",
-        "features/player-dock/index.js": "watch",
-        "features/search-while-watching/index.js": "watch",
-        "features/video-insights/index.js": "watch",
-        "features/return-dislike/index.js": "watch",
-        "features/sponsorblock/index.js": "watch",
-        "features/dearrow/index.js": "watch",
-        "features/video-hider/index.js": "home",
-        "features/subscription-view/index.js": "subscriptions",
-        "features/subscription-groups/index.js": "subscriptions"
-    }
-    );
     const extensionRuntime = globalThis.chrome?.runtime || globalThis.browser?.runtime;
     const getURL = extensionRuntime?.getURL;
 
@@ -316,21 +299,13 @@
         }
     });
 
-    const routeMatches = (route, pathname) => {
-        if (route === 'watch') return /^\/(?:watch|shorts|live|embed)(?:\/|$)/.test(pathname);
-        if (route === 'home') return pathname === '/' || /^\/(?:feed|channel|c)\//.test(pathname);
-        if (route === 'subscriptions') return /^\/feed\/subscriptions(?:\/|$)/.test(pathname);
-        return true;
-    };
-
-    const shouldLoadFeature = (modulePath, settings, pathname) => {
+    // Only the settings gate remains: a module whose every feature is switched
+    // off is skipped. Route gating is deliberately absent — see the note in
+    // scripts/generate-runtime-bootstrap.js.
+    const shouldLoadFeature = (modulePath, settings) => {
         const keys = FEATURE_SETTINGS[modulePath];
-        if (Array.isArray(keys) && keys.length
-                && keys.every((key) => Object.hasOwn(settings, key) && settings[key] === false)) {
-            return false;
-        }
-        const route = FEATURE_ROUTES[modulePath];
-        return !route || routeMatches(route, pathname);
+        return !(Array.isArray(keys) && keys.length
+            && keys.every((key) => Object.hasOwn(settings, key) && settings[key] === false));
     };
 
     const loadRuntime = async () => {
@@ -341,10 +316,9 @@
         const settingsPromise = readRuntimeSettings();
         await import(getURL('runtime-core-loader.mjs'));
         const settings = await settingsPromise;
-        const pathname = String(globalThis.__ytkitRouteHint || globalThis.location?.pathname || '');
         const deferredFeatureModules = optionalFeatureModules.filter((modulePath) =>
             modulePath !== 'features/download-ui/index.js'
-            && shouldLoadFeature(modulePath, settings, pathname)
+            && shouldLoadFeature(modulePath, settings)
         );
         await Promise.all(deferredFeatureModules.map((modulePath) => import(getURL(modulePath))));
         // The monolith reads YTKitFeatures while constructing its top-level
