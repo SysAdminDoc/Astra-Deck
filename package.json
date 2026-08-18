@@ -73,6 +73,8 @@
     "bench:startup": "node scripts/bench-startup.js",
     "check:startup": "node scripts/bench-startup.js --check --allow-synthetic",
     "check:startup:captured": "node scripts/bench-startup.js --check",
+    "bench:steady-state": "node scripts/bench-startup.js --steady-state",
+    "check:steady-state": "node scripts/bench-startup.js --check --allow-synthetic --steady-state",
     "audit:a11y": "node scripts/audit-popup-a11y.js",
     "audit:overlays": "node scripts/audit-overlays-a11y.js",
     "audit:contrast": "node scripts/check-contrast.js",

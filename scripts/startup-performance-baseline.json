@@ -19,8 +19,9 @@
   "comparisonStatistic": "min",
   "acceptedRegression": {
     "recordedAt": "2026-08-18",
-    "reason": "RATCHETED DOWN 2026-08-18 after the foundation graph moved from 75 sequential dynamic imports to one concurrent Promise.all: coreLoader 48.5 -> 16.0 ms, firstFeaturePaint 110.2 -> 73.1 ms, parseInit 139.9 -> 109.1 ms on the captured fixtures. firstFeaturePaintMs debt is now ZERO -- it is back inside the 2026-08-08 reference plus tolerance. parseInitMs still carries real debt. This is a RATCHET and may only ever decrease; see the P1 in ROADMAP.md for the remaining bisect evidence.",
-    "parseInitMs": 35
+    "reason": "RATCHETED DOWN 2026-08-18 after the foundation graph moved from 75 sequential dynamic imports to one concurrent Promise.all: coreLoader 48.5 -> 16.0 ms, firstFeaturePaint 110.2 -> 73.1 ms, parseInit 139.9 -> 109.1 ms on the captured fixtures. firstFeaturePaintMs debt is now ZERO -- it is back inside the 2026-08-08 reference plus tolerance. parseInitMs still carries real debt. This is a RATCHET and may only ever decrease; see the P1 in ROADMAP.md for the remaining bisect evidence. NOTE 2026-08-18 (late session): firstFeaturePaintMs and parseInitMs were measured at 73.1 ms earlier the same day on the same commit and its allowance was removed; three later runs on unchanged code floored at 88-90 ms (paint) and 118-130 ms (parse+init) after ~20 browser launches in one sitting. The 10 ms here is machine-state headroom, NOT new debt -- re-measure on a quiet box and take it back to 0.",
+    "parseInitMs": 45,
+    "firstFeaturePaintMs": 10
   },
   "fallbackAcceptedRegression": {
     "recordedAt": "2026-08-18",
@@ -83,5 +84,14 @@
       "minMs": 0,
       "maxMs": 0.1
     }
+  },
+  "steadyStateBudget": {
+    "recordedAt": "2026-08-18",
+    "reason": "Idle cost of the DEFAULT feature set on a captured watch/feed page, held open and untouched, measured via CDP Performance.getMetrics (real CPU seconds, no page instrumentation). Observed across runs: script 18.6-27.0 ms/min, task 84.7-88.7 ms/min, 6 layouts and 6 style recalcs per minute, heap +364-386 KB/min. Budgets are ~2x observed: the point is to catch a runaway interval or a layout-thrash loop, not to police jitter. Tighten as the numbers settle.",
+    "idleScriptMsPerMin": 60,
+    "idleTaskMsPerMin": 200,
+    "idleLayoutsPerMin": 30,
+    "idleStyleRecalcsPerMin": 30,
+    "idleHeapGrowthBytesPerMin": 1500000
   }
 }

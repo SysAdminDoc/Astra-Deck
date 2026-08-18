@@ -226,11 +226,88 @@ test('startup benchmark argument parser rejects unsafe or ambiguous runs', () =>
         browser: '',
         check: true,
         iterations: 7,
+        steadyState: false,
+        steadyStateMs: 10000,
         timeoutMs: 30000,
         updateBaseline: false,
     });
+    assert.equal(benchmark.parseArgs(['--steady-state']).steadyState, true);
+    assert.throws(() => benchmark.parseArgs(['--steady-state-ms', '500']), /between 2000 and 120000/);
     assert.equal(benchmark.parseArgs(['--check', '--allow-synthetic']).allowSynthetic, true);
     assert.throws(() => benchmark.parseArgs(['--iterations', '0']), /from 1 to 20/);
     assert.throws(() => benchmark.parseArgs(['--iterations', '21']), /from 1 to 20/);
     assert.throws(() => benchmark.parseArgs(['--check', '--update-baseline']), /cannot be combined/);
+});
+
+// ── Idle steady state ──
+// Startup numbers say nothing about what the runtime costs once it is just
+// sitting on an open page, which is the largest uninstall complaint in the
+// category ("ramped up CPU 30-40%, I haven't even toggled anything ON").
+
+test('the idle lane gates CPU, layout churn and heap growth per minute', () => {
+    const baseline = {
+        steadyStateBudget: {
+            idleScriptMsPerMin: 60,
+            idleTaskMsPerMin: 200,
+            idleLayoutsPerMin: 30,
+            idleStyleRecalcsPerMin: 30,
+            idleHeapGrowthBytesPerMin: 1500000
+        }
+    };
+    const quiet = {
+        idleScriptMsPerMin: 22, idleTaskMsPerMin: 97, idleLayoutsPerMin: 6,
+        idleStyleRecalcsPerMin: 6, idleHeapGrowthBytesPerMin: 385000
+    };
+    assert.deepEqual(benchmark.checkSteadyState(quiet, baseline), []);
+
+    // A runaway interval is the shape this exists to catch.
+    const runaway = { ...quiet, idleScriptMsPerMin: 109, idleTaskMsPerMin: 313 };
+    const failures = benchmark.checkSteadyState(runaway, baseline);
+    assert.equal(failures.length, 2);
+    assert.match(failures[0], /idleScriptMsPerMin 109\.00 exceeds budget 60\.00/);
+    assert.match(failures[1], /idleTaskMsPerMin/);
+
+    // A layout-thrash loop is the other shape.
+    const thrash = { ...quiet, idleLayoutsPerMin: 900 };
+    assert.match(benchmark.checkSteadyState(thrash, baseline)[0], /idleLayoutsPerMin/);
+});
+
+test('the idle lane reports the worst surface, and is skipped when not collected', () => {
+    // Idle metrics are collected once per surface, so there is no minimum to
+    // take — the worst surface is the honest number to gate on.
+    const summary = benchmark.summarizeSteadyState([
+        { surface: 'watch', idleTaskMsPerMin: 80, idleScriptMsPerMin: 20, idleLayoutsPerMin: 6, idleStyleRecalcsPerMin: 6, idleHeapGrowthBytesPerMin: 100 },
+        { surface: 'feed', idleTaskMsPerMin: 140, idleScriptMsPerMin: 12, idleLayoutsPerMin: 9, idleStyleRecalcsPerMin: 4, idleHeapGrowthBytesPerMin: 900 }
+    ]);
+    assert.equal(summary.idleTaskMsPerMin, 140);
+    assert.equal(summary.idleScriptMsPerMin, 20);
+    assert.equal(summary.idleHeapGrowthBytesPerMin, 900);
+
+    // Startup-only runs carry no idle fields and must not be gated on them.
+    assert.equal(benchmark.summarizeSteadyState([{ surface: 'watch', parseInitMs: 100 }]), null);
+    assert.deepEqual(benchmark.checkSteadyState(null, { steadyStateBudget: { idleTaskMsPerMin: 1 } }), []);
+});
+
+test('the idle lane measures through CDP, not by patching page timers', () => {
+    // Wrapping setTimeout/setInterval in the page was tried and rejected: the
+    // wrappers install before the runtime loads, so they cost ~14 ms of
+    // parse+init and moved the startup numbers this harness also reports. They
+    // also could not see intervals scheduled before the wrapper existed.
+    assert.match(source, /Performance\.getMetrics/,
+        'idle CPU must come from the protocol, not from page instrumentation');
+    assert.doesNotMatch(source, /window\.setInterval = /,
+        'the page timer patch must not come back — it taxes the startup lane it shares');
+    assert.doesNotMatch(source, /window\.setTimeout = /,
+        'the page timer patch must not come back — it taxes the startup lane it shares');
+    assert.match(source, /ScriptDuration/);
+    assert.match(source, /LayoutCount/);
+
+    const shipped = require('../scripts/startup-performance-baseline.json');
+    assert.ok(shipped.steadyStateBudget, 'a budget must be recorded, not just measured');
+    for (const key of benchmark.STEADY_STATE_KEYS) {
+        assert.ok(Number.isFinite(Number(shipped.steadyStateBudget[key])),
+            `steadyStateBudget must bound ${key}`);
+    }
+    assert.equal(packageJson.scripts['check:steady-state'],
+        'node scripts/bench-startup.js --check --allow-synthetic --steady-state');
 });

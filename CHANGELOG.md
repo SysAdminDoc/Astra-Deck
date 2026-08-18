@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Idle cost is now measured and budgeted, not just startup. A new lane holds a
+  captured page open untouched and records CPU time, layout churn and memory
+  growth per minute with the default feature set, so a runaway timer cannot slip
+  through unnoticed.
 - The local transcript search index can no longer grow without limit. It kept a
   cap on the number of videos but none on their size, so in the worst case it
   could reach several hundred megabytes on your disk with nothing showing it and
