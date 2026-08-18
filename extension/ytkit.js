@@ -26098,10 +26098,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 const btn = this._panel?.querySelector('[data-ytkit-translate-btn]');
                 if (btn) { btn.textContent = t('transcriptTranslating', 'Translating…'); btn.disabled = true; }
+                // Translation spans several awaits and the user can navigate
+                // through any of them — autoplay does it without a click. The
+                // load path guards every await the same way; without it, video
+                // A's translated cues were painted over video B's panel, B's
+                // button was flipped to "Show Original", and _translatedCues
+                // was left holding the wrong video's text.
+                const generation = this._loadGeneration;
+                const panel = this._panel;
+                const videoId = getVideoId();
+                const cues = this._cues;
+                const isStale = () => generation !== this._loadGeneration
+                    || this._panel !== panel
+                    || this._cues !== cues
+                    || getVideoId() !== videoId
+                    || !panel?.isConnected;
                 try {
                     const userLang = (navigator.language || 'en').split('-')[0];
-                    const srcText = this._cues.slice(0, 5).map(c => c.text).join(' ');
+                    const srcText = cues.slice(0, 5).map(c => c.text).join(' ');
                     const sourceLang = await this._detectTranscriptLanguage(srcText);
+                    if (isStale()) return;
                     const targetLang = sourceLang === userLang ? 'en' : userLang;
                     let translated;
                     let lane = 'local';
@@ -26112,12 +26128,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             targetLanguage: targetLang
                         }, window)
                         : (this._hasTranslatorApi() ? 'unknown' : 'unavailable');
+                    if (isStale()) return;
                     if (localAvailability !== 'unavailable' && this._hasTranslatorApi()) {
                         try {
                             translated = await this._translateTranscriptLocal(sourceLang, targetLang);
                         } catch (localError) {
                             DebugManager.log('TranscriptTranslate', `Local lane unavailable: ${localError.message}`);
                         }
+                        if (isStale()) return;
                     }
                     if (!translated) {
                         lane = 'byo-key';
@@ -26125,6 +26143,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             showToast([t('transcriptTranslateUnavailable', 'On-device Translator unavailable'), t('feature_aiVideoSummary_desc', 'using the configured BYO-key provider')].join(' — '), '#f59e0b', { tone: 'warning' });
                         }
                         translated = await this._translateTranscriptByoKey(sourceLang, targetLang);
+                        if (isStale()) return;
                     }
                     this._translatedCues = translated;
                     this._showingTranslation = true;
@@ -26137,6 +26156,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 } catch (e) {
                     DebugManager.log('TranscriptTranslate', `Translation failed: ${e.message}`);
+                    // A failure caused by navigating away belongs to the video
+                    // the user already left; do not toast it over the new one.
+                    if (isStale()) return;
                     if (typeof showToast === 'function') {
                         showToast(t('transcriptTranslationFailedTpl', 'Translation failed: {error}')
                             .replace('{error}', e.message), '#ef4444');
