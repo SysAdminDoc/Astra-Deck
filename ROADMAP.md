@@ -211,16 +211,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
 
 ### P2
 
-- [ ] P2 — Content-script storage preload failure degrades to silent session-long defaults with no signal
-  Category: correctness
-  Where: `extension/core/storage.js:245-254`; consumed by `settingsManager.load()` at `ytkit.js:4378+`.
-  Problem: if `chrome.storage.local.get(null)` rejects, the catch logs `console.warn` and sets `extensionStateReady = true` over an empty cache; `load()` then merges `{}` over defaults, so every feature runs at factory settings for the whole tab session while the popup (its own read path) shows the user's real settings. The two surfaces silently disagree. Data is not lost — `save()` diffs against the same-session baseline and `mutateMany` merges onto the background's fresh read — but the user sees their customizations vanish on the page with no toast or banner.
-  Evidence: traced the catch and the merge; the no-data-loss half is genuinely defended.
-  Fix: surface the preload failure through the existing `_errors` toast/diagnostic-ring machinery, the same way flush failures already are.
-  Acceptance: a simulated preload rejection produces a visible degraded-state indication in-page; a test asserts the error is recorded.
-  Confidence: path Verified; trigger Needs-repro
-  Effort: S
-
 - [ ] P3 — The i18n copy gate fingerprints `<style>.textContent` CSS as "UI copy", and `npm run check` is fail-fast
   Category: testing / maintainability
   Where: `scripts/check-localizable-ui-copy.js:88-124` (`collectJsLiterals` classifies a `styleEl.textContent = \`…css…\`` assignment as sink `assignment:textContent`); chain at `package.json` `scripts.check`.
