@@ -557,26 +557,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: mechanism Verified; reset-trigger frequency Needs-repro (live)
   Effort: M
 
-- [ ] P2 — i18n coverage gate is red at HEAD: cc55df5f shipped 19 EN keys with no baseline/report regen and pushed the UI-copy ratchet UP (pre-existing baseline)
-  Category: i18n / process
-  Where: `scripts/i18n-placeholder-baseline.json` (last regenerated at `66b30e6f`, reference keys 2519 vs 2538 in `extension/_locales/en/messages.json`); `docs/i18n-coverage.md` stale; `scripts/i18n-ui-copy-baseline.json` count for `extension/ytkit.js` moved 926 → 930 in the same commit
-  Problem: `npm run i18n:coverage:gate` fails at HEAD ("reference key count changed from 2519 to 2538"). The 19 transcript-provenance panel keys ARE properly translated in all 11 locales (spot-checked de), but the recipe's baseline/report steps were skipped. Separately, four study-batch UI strings in the same commit bypass `t()` entirely — `'Queue cap ${this._BATCH_MAX}, one recovery pass per video'` (2 sites, ~`ytkit.js:45744/45791`), `'Transcript batch cancelled after navigation'` (~`:45986`), the `'Recovery: one bounded refresh per video'` export line — and were absorbed into the ratchet, violating the tracked "baseline count only ever decreases" acceptance rule.
-  Evidence: gate output captured 2026-08-18; `git diff cc55df5f^..cc55df5f -- scripts/i18n-ui-copy-baseline.json` shows `count: 926` → `930`.
-  Fix: wrap the four batch strings in `t()` with locale keys (translations into the `generate-locales.js` tables first, then ar/zh_CN backfill per the documented recipe), then `node scripts/i18n-coverage.js --update-placeholder-baseline` + `npm run i18n:coverage`, and `--update-baseline` the copy gate downward. Correct signature: only `referenceKeys` moves in the placeholder baseline; the ytkit.js copy count returns to ≤926.
-  Acceptance: `npm run i18n:coverage:gate` passes; `scripts/i18n-ui-copy-baseline.json` ytkit.js count ≤926; the batch status strings render localized.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P2 — Typed-but-unsaved filter-list URL is clobbered by any popup re-render
-  Category: ux / correctness
-  Where: `extension/popup.js:1973` (`render()` unconditionally calls `syncFilterListUrlInput(settings)`), `:4918-4923` (sync overwrites `filterListUrlInput.value` with the stored setting)
-  Problem: the URL persists only on "Refresh list now" (`:5226-5229`). Until then, any `render()` — a quick-toggle click (`:2144`), any relevant `storage.onChanged` (`:6331`), `refreshOptionalHostGrantState` (`:1326`) — resets the input mid-typing. The schema-overview editors carry exactly the missing guard ("never blow away a focused inline editor", `:6349`); this input was not given it.
-  Evidence: all `render()` call sites traced; `syncFilterListUrlInput` has no activeElement check (verified by hand).
-  Fix: skip the rewrite when `document.activeElement === filterListUrlInput` (mirror the schema-overview guard).
-  Acceptance: typing in the filter-list URL while a storage change fires preserves the draft; a test simulates focus + render and asserts the value survives.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — Selector-pack refresh origin is undisclosed and survives only by a CORS accident: `raw.githubusercontent.com` is in the dev manifest but absent from the origin catalogue and every built profile
   Category: security / docs
   Where: `extension/manifest.json:57` (`https://raw.githubusercontent.com/*` host permission) vs zero entries in `extension/core/data-flow.js` (grep-verified); consumers `extension/background.js:739` (EXT_FETCH allowlist), `:791` (`SELECTOR_ASSET_URL` remote selector-pack refresh), `extension/ytkit.js:1197`
@@ -747,15 +727,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Acceptance: the mobile render shows either a clean 2-line ellipsis or full wrapped text — no sheared glyphs; the smoke asserts it.
   Confidence: Verified (observed); root-cause mechanism Needs-repro in the probe
   Effort: S
-
-- [ ] P3 — Make the side panel tell the truth: stale "live" claims, MB-capped byte formatter, misdiagnosed save failures, and two "Settings" numbers that disagree
-  Category: ux
-  Where: (a) `extension/sidepanel.html:22,35,37,109` promise "Live diagnostics"/"stream", but `sidepanel.js` has no `setInterval` and no `tabs.onActivated`/`onUpdated` listener (grep: 0 hits) — dashboards update only on boot and manual Refresh, so tab switches show stale data under a "Live diagnostics updated" status; (b) `sidepanel.js:271-275` `formatBytes` caps at MB with `toFixed(1)` — the exact bug popup.js already fixed (`popup.js:911-923`, GB tier + locale decimals); (c) `sidepanel.js:849-858` funnels a DENIED host-permission prompt into the same "Save failed. Try refreshing the dashboard." copy as a storage write failure (refreshing cannot fix a denied grant; the popup names the real cause at `popup.js:1124`); (d) `sidepanel.html:46` overview stat and `sidepanel.js:538` storage stat both label their number with `panelTitle` ("Settings") while meaning different things — 16 schema entries vs count of sparsely stored keys (e.g. 3) — reading as a bug.
-  Evidence: all four verified against source (grep for interval/listener run by hand).
-  Fix: (a) re-run `refresh()` on `tabs.onActivated` + relevant `onUpdated` (renderers are idempotent), or soften the copy to "On-demand diagnostics"; (b) lift popup's `formatBytes` into a shared core module and use it; (c) branch the message when `granted === false`, reusing the popup's optional-host copy key; (d) relabel the storage stat (`spStatStoredSettings` "Stored settings").
-  Acceptance: switching YouTube tabs refreshes the dashboards (or the copy no longer claims live); a multi-GB store reads in GB with locale decimals; a denied prompt names the permission cause; the two stats carry distinct labels. Locale keys added per the documented recipe.
-  Confidence: Verified
-  Effort: S–M
 
 - [ ] P3 — Popup feedback gaps: "Open Full Settings" gives no busy state and can open duplicate tabs; the external-health empty state is unstyled; copy-status live regions never clear
   Category: ux / visual

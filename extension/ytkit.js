@@ -45869,10 +45869,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 head.className = 'ytkit-transcript-batch-head';
                 const title = document.createElement('div');
                 title.className = 'ytkit-transcript-batch-title';
-                title.textContent = 'Transcript study pack';
+                title.textContent = t('transcriptBatchTitle', 'Transcript study pack');
                 const summary = document.createElement('div');
                 summary.className = 'ytkit-transcript-batch-summary';
-                summary.textContent = `Queue cap ${this._BATCH_MAX}, one recovery pass per video`;
+                summary.textContent = t('transcriptBatchQueueCapTpl', 'Queue cap {count}, one recovery pass per video')
+                    .replace('{count}', String(this._BATCH_MAX));
                 head.append(title, summary);
 
                 const list = document.createElement('ol');
@@ -46112,11 +46113,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         'application/x-ndjson;charset=utf-8'
                     );
                     const successCount = results.filter(row => row.status === 'success').length;
-                    this._setBatchSummary(`Exported ${successCount}/${results.length}; failures are included in JSONL`);
-                    showToast?.(`Exported transcript study pack (${successCount}/${results.length} succeeded)`, '#22c55e', { duration: 4 });
+                    this._setBatchSummary(t('transcriptBatchExportedTpl',
+                        'Exported {done}/{total}; failures are included in JSONL')
+                        .replace('{done}', String(successCount))
+                        .replace('{total}', String(results.length)));
+                    showToast?.(t('transcriptBatchExportedToastTpl',
+                        'Exported transcript study pack ({done}/{total} succeeded)')
+                        .replace('{done}', String(successCount))
+                        .replace('{total}', String(results.length)), '#22c55e', { duration: 4 });
                 } catch (error) {
                     if (error?.name === 'AbortError') {
-                        this._setBatchSummary('Transcript batch cancelled after navigation');
+                        this._setBatchSummary(t('transcriptBatchCancelled',
+                            'Transcript batch cancelled after navigation'));
                         return;
                     }
                     throw error;

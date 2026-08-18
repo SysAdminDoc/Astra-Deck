@@ -4948,6 +4948,9 @@
   "spRiskTpl": {
     "message": "Risque : {risk}"
   },
+  "spRowHostAccessDeniedTpl": {
+    "message": "{name}. Nécessite l'accès au site avant de pouvoir être activé."
+  },
   "spRowSaveFailedTpl": {
     "message": "{name}. Échec de l'enregistrement. Essayez d'actualiser le tableau de bord."
   },
@@ -5065,6 +5068,9 @@
   "spStatSize": {
     "message": "Taille"
   },
+  "spStatStoredSettings": {
+    "message": "Personnalisés"
+  },
   "spStatUnavailable": {
     "message": "Indisponible"
   },
@@ -5088,6 +5094,9 @@
   },
   "spStatusSaveFailed": {
     "message": "Impossible d'enregistrer le réglage"
+  },
+  "spStatusHostAccessDenied": {
+    "message": "Astra Deck a besoin d'un accès à l'hôte pour cette fonctionnalité optionnelle avant de pouvoir l'activer."
   },
   "spStatusSettingsLoadFailed": {
     "message": "Diagnostics actualisés ; impossible de charger les réglages rapides"
@@ -6030,6 +6039,21 @@
   },
   "timestampHighlightNoVideo": {
     "message": "No video is currently open."
+  },
+  "transcriptBatchCancelled": {
+    "message": "Lot de transcriptions annulé après la navigation"
+  },
+  "transcriptBatchExportedToastTpl": {
+    "message": "Pack d'étude de transcriptions exporté ({done}/{total} réussis)"
+  },
+  "transcriptBatchExportedTpl": {
+    "message": "Exportés {done}/{total} ; les échecs sont inclus dans le JSONL"
+  },
+  "transcriptBatchQueueCapTpl": {
+    "message": "Limite de file d'attente {count}, une passe de récupération par vidéo"
+  },
+  "transcriptBatchTitle": {
+    "message": "Pack d'étude de transcriptions"
   },
   "transcriptCaptions": {
     "message": "Captions"
@@ -7586,23 +7610,61 @@
   "filterListStoppedTpl": {
     "message": "La liste de {host} n’est plus suivie. Aucun accès au site propre à cette liste ne subsiste."
   },
-  "transcriptSourcePlayerGlobal": { "message": "les données du lecteur de la page actuelle" },
-  "transcriptSourceInnertube": { "message": "de nouvelles données du lecteur YouTube" },
-  "transcriptSourceWatchPage": { "message": "une page de lecture YouTube actualisée" },
-  "transcriptSourcePanel": { "message": "le panneau de transcription YouTube actuel" },
-  "transcriptSourceUnknown": { "message": "les sous-titres YouTube" },
-  "transcriptLanguageUnknown": { "message": "langue inconnue" },
-  "transcriptPanelFallback": { "message": "Repli sur le panneau" },
-  "transcriptMetaPanelTpl": { "message": "Chargée depuis {source} ({age}) ; {language}." },
-  "transcriptRefreshedTrack": { "message": "Piste actualisée" },
-  "transcriptMetaRefreshedTpl": { "message": "Une URL de sous-titres expirée a été remplacée via {source} ; récupérée {age} ; {language}." },
-  "transcriptExpiryUnknown": { "message": "non indiquée" },
-  "transcriptMetaSourceTpl": { "message": "Chargée depuis {source} ({age}) ; {language} ; expiration de l’URL de piste : {expires}." },
-  "transcriptTimeUnknown": { "message": "à une date inconnue" },
-  "transcriptNoCaptions": { "message": "Aucun sous-titre" },
-  "transcriptUnavailableLabel": { "message": "Indisponible" },
-  "transcriptUnavailableNow": { "message": "La transcription ne peut pas être récupérée depuis YouTube pour le moment." },
-  "transcriptLoadFailed": { "message": "Échec du chargement de la transcription" },
-  "transcriptNoCaptionsHelp": { "message": "Essayez une autre vidéo avec des sous-titres, ou rouvrez ce panneau une fois les sous-titres chargés." },
-  "transcriptRetryHelp": { "message": "Rechargez la page ou réessayez dans un instant si les sous-titres sont encore en cours de traitement." }
+  "transcriptSourcePlayerGlobal": {
+    "message": "les données du lecteur de la page actuelle"
+  },
+  "transcriptSourceInnertube": {
+    "message": "de nouvelles données du lecteur YouTube"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "une page de lecture YouTube actualisée"
+  },
+  "transcriptSourcePanel": {
+    "message": "le panneau de transcription YouTube actuel"
+  },
+  "transcriptSourceUnknown": {
+    "message": "les sous-titres YouTube"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "langue inconnue"
+  },
+  "transcriptPanelFallback": {
+    "message": "Repli sur le panneau"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "Chargée depuis {source} ({age}) ; {language}."
+  },
+  "transcriptRefreshedTrack": {
+    "message": "Piste actualisée"
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "Une URL de sous-titres expirée a été remplacée via {source} ; récupérée {age} ; {language}."
+  },
+  "transcriptExpiryUnknown": {
+    "message": "non indiquée"
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "Chargée depuis {source} ({age}) ; {language} ; expiration de l’URL de piste : {expires}."
+  },
+  "transcriptTimeUnknown": {
+    "message": "à une date inconnue"
+  },
+  "transcriptNoCaptions": {
+    "message": "Aucun sous-titre"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "Indisponible"
+  },
+  "transcriptUnavailableNow": {
+    "message": "La transcription ne peut pas être récupérée depuis YouTube pour le moment."
+  },
+  "transcriptLoadFailed": {
+    "message": "Échec du chargement de la transcription"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "Essayez une autre vidéo avec des sous-titres, ou rouvrez ce panneau une fois les sous-titres chargés."
+  },
+  "transcriptRetryHelp": {
+    "message": "Rechargez la page ou réessayez dans un instant si les sous-titres sont encore en cours de traitement."
+  }
 }

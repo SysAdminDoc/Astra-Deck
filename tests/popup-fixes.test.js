@@ -887,3 +887,98 @@ test('filter-list refresh failures do not echo the bridge error back into the po
         assert.ok(enMessages[key]?.message, `en/messages.json must define ${key}`);
     }
 });
+
+// ── Filter-list URL: uncommitted input must survive an incidental re-render ──
+
+test('syncFilterListUrlInput never overwrites the field the user is typing in', () => {
+    // The URL persists only on submit, so until then the field holds
+    // uncommitted input. render() runs on any quick toggle, any storage
+    // change, and every permission refresh — rewriting the value there
+    // discarded a half-typed address mid-entry.
+    const source = popupSource;
+    const start = source.indexOf('function syncFilterListUrlInput');
+    assert.ok(start > -1, 'syncFilterListUrlInput must exist');
+    const end = source.indexOf('function formatFilterListRelativeTime', start);
+    assert.ok(end > start, 'formatFilterListRelativeTime must follow it');
+    const fn = source.slice(start, end);
+
+    assert.match(fn, /if \(!force && document\.activeElement === filterListUrlInput\) return;/,
+        'an unforced sync must bail while the field has focus');
+    assert.ok(
+        fn.indexOf('return;') < fn.indexOf('filterListUrlInput.value ='),
+        'the guard must precede the assignment'
+    );
+
+    // The incidental caller (render) must NOT force; deliberate actions must.
+    const renderStart = source.indexOf('function render(settings, filter) {');
+    assert.ok(renderStart > -1, 'render must exist');
+    const renderCall = source.slice(renderStart, renderStart + 900);
+    assert.match(renderCall, /syncFilterListUrlInput\(settings\);/,
+        'render must call the guarded form');
+    assert.doesNotMatch(renderCall, /syncFilterListUrlInput\(settings, \{ force/,
+        'render is incidental and must never force a rewrite');
+
+    const forced = source.split('syncFilterListUrlInput(popupState.settings, { force: true })').length - 1;
+    assert.equal(forced, 4,
+        'the four deliberate actions (submit, clear, stop, restore) must force the rewrite');
+});
+
+// ── Side panel: stop overstating what it knows ──
+
+test('the side panel refreshes on tab changes it claims to track live', () => {
+    // sidepanel.html promises "Live diagnostics" and "stream diagnostics", but
+    // nothing re-read anything after boot: switching tabs left every dashboard
+    // showing another tab's data under a "Live diagnostics updated" status.
+    const sidepanel = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8');
+    assert.match(sidepanel, /tabs\.onActivated\.addListener/,
+        'the panel must refresh when the active tab changes');
+    assert.match(sidepanel, /tabs\.onUpdated\?\.addListener/,
+        'the panel must refresh when a tracked tab finishes navigating');
+    assert.match(sidepanel, /changeInfo\?\.status !== 'complete'/,
+        'only a completed navigation should trigger a refresh');
+    assert.match(sidepanel, /isSupportedUrl\(tab\?\.url \|\| ''\)/,
+        'the navigation filter must reuse the shared URL predicate');
+    assert.match(sidepanel, /clearTimeout\(pending\)/,
+        'refreshes must coalesce — one navigation emits several events');
+});
+
+test('side panel byte formatting scales past MB and matches the popup', () => {
+    const sidepanel = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8');
+    const start = sidepanel.indexOf('function formatBytes');
+    assert.ok(start > -1, 'sidepanel must define formatBytes');
+    const fn = sidepanel.slice(start, sidepanel.indexOf('function formatHumanName', start));
+
+    // Evaluate the real function rather than pinning its text.
+    // eslint-disable-next-line no-new-func
+    const formatBytes = new Function(
+        "const BYTE_UNITS = ['B','KB','MB','GB','TB'];" + fn + '; return formatBytes;')();
+    assert.equal(formatBytes(0), '0 B');
+    assert.equal(formatBytes(1024), '1 KB');
+    assert.match(formatBytes(2 * 1024 ** 3), /\bGB$/,
+        'a multi-GB store must not read as thousands of MB');
+    assert.match(formatBytes(1024 ** 4), /\bTB$/);
+});
+
+test('a denied host-permission prompt is not reported as a failed save', () => {
+    // "Save failed. Try refreshing the dashboard." cannot fix a denied grant
+    // and sends the user looking in the wrong place.
+    const sidepanel = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'sidepanel.js'), 'utf8');
+    assert.match(sidepanel, /const deniedGrant = !granted;/,
+        'the save-failure path must distinguish a denied grant');
+    assert.match(sidepanel, /spRowHostAccessDeniedTpl/,
+        'the row description must name the permission cause');
+    assert.match(sidepanel, /spStatusHostAccessDenied/,
+        'the status line must name the permission cause');
+
+    const en = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'));
+    for (const key of ['spRowHostAccessDeniedTpl', 'spStatusHostAccessDenied', 'spStatStoredSettings']) {
+        assert.ok(en[key]?.message, `${key} must exist in the EN catalogue`);
+    }
+    // The storage stat no longer borrows the overview card's label.
+    assert.doesNotMatch(sidepanel, /t\('panelTitle', 'Settings'\), value: String\(Object\.keys\(settings\)/,
+        'the stored-settings stat must not be labelled "Settings" like the schema count');
+});

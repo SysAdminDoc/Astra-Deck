@@ -268,10 +268,19 @@ function sendToTab(tabId, message) {
     return send(tabId, message, { timeoutMs: 2000 });
 }
 
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'];
 function formatBytes(bytes) {
-    if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB';
-    if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
-    return Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    // Matches the popup's formatter: scale through KB/MB/GB/TB instead of
+    // capping at MB (a multi-GB store read "2048.0 MB" here while the popup
+    // said "2 GB"), with locale-aware decimals so German users see "1,5 KB".
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+    if (bytes < 1024) return `${bytes.toLocaleString()} B`;
+    let value = bytes;
+    let unit = 0;
+    while (value >= 1024 && unit < BYTE_UNITS.length - 1) { value /= 1024; unit += 1; }
+    const decimals = value < 10 ? 2 : 1;
+    const num = value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+    return `${num} ${BYTE_UNITS[unit]}`;
 }
 
 function formatHumanName(key) {
@@ -535,7 +544,11 @@ async function renderStorage() {
         const stats = [
             { label: t('statKeys', 'Keys'), value: String(keys.length) },
             { label: t('spStatSize', 'Size'), value: formatBytes(bytes) },
-            { label: t('panelTitle', 'Settings'), value: String(Object.keys(settings).length) },
+            // Settings persist sparsely, so this counts the keys the user has
+            // actually customised — not the schema. Labelling it "Settings"
+            // put a "Settings 3" next to the overview card's "Settings 467"
+            // and read as a bug.
+            { label: t('spStatStoredSettings', 'Customized'), value: String(Object.keys(settings).length) },
             { label: t('statHidden', 'Hidden'), value: String(countStoredItems(data['ytkit-hidden-videos'])) },
         ];
         for (const s of stats) {
@@ -854,8 +867,17 @@ function renderSettings(filter) {
                 if (!saved) {
                     row.dataset.error = 'true';
                     row.setAttribute('aria-checked', String(!next));
-                    row.setAttribute('aria-description', t('spRowSaveFailedTpl', '{name}. Save failed. Try refreshing the dashboard.').replace('{name}', humanName));
-                    setRefreshStatus(t('spStatusSaveFailed', 'Could not save setting'), 'error');
+                    // A denied host-permission prompt is not a storage failure:
+                    // "try refreshing the dashboard" cannot fix it and sends the
+                    // user looking in the wrong place. Name the real cause, the
+                    // way the popup already does.
+                    const deniedGrant = !granted;
+                    row.setAttribute('aria-description', deniedGrant
+                        ? t('spRowHostAccessDeniedTpl', '{name}. Needs site access before it can be enabled.').replace('{name}', humanName)
+                        : t('spRowSaveFailedTpl', '{name}. Save failed. Try refreshing the dashboard.').replace('{name}', humanName));
+                    setRefreshStatus(deniedGrant
+                        ? t('spStatusHostAccessDenied', 'Astra Deck needs host access for this optional feature before it can be enabled.')
+                        : t('spStatusSaveFailed', 'Could not save setting'), 'error');
                     return;
                 }
                 renderSettings(settingsSearch?.value || '');
@@ -962,6 +984,34 @@ async function refresh() {
 }
 
 if (refreshBtn) refreshBtn.addEventListener('click', () => { void refresh(); });
+
+// The panel stays open across tab switches and YouTube navigations, and its
+// copy promises "live diagnostics" — but nothing re-read anything after boot,
+// so switching tabs left every dashboard showing another tab's data under a
+// "Live diagnostics updated" status. The renderers are idempotent, so simply
+// re-running the same refresh the button drives is enough. Coalesced, because
+// a single navigation emits several onUpdated events.
+(() => {
+    const tabs = ext?.tabs;
+    if (!tabs?.onActivated?.addListener) return;
+    let pending = null;
+    const scheduleRefresh = () => {
+        if (pending) clearTimeout(pending);
+        pending = setTimeout(() => { pending = null; void refresh(); }, 250);
+    };
+    try {
+        tabs.onActivated.addListener(scheduleRefresh);
+        tabs.onUpdated?.addListener?.((_tabId, changeInfo, tab) => {
+            // Only a completed navigation changes what the diagnostics say.
+            if (changeInfo?.status !== 'complete') return;
+            if (!isSupportedUrl(tab?.url || '')) return;
+            scheduleRefresh();
+        });
+    } catch (_) {
+        // reason: tab events are unavailable in the static preview; the manual
+        // Refresh control remains the fallback.
+    }
+})();
 
 // Boot: resolve the locale override first so every rendered string —
 // including the cached quick-settings schema labels — reflects the

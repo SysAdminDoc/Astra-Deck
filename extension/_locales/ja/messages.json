@@ -4948,6 +4948,9 @@
   "spRiskTpl": {
     "message": "リスク: {risk}"
   },
+  "spRowHostAccessDeniedTpl": {
+    "message": "{name}。有効にする前にサイトへのアクセスが必要です。"
+  },
   "spRowSaveFailedTpl": {
     "message": "{name}。保存に失敗しました。ダッシュボードを更新してください。"
   },
@@ -5065,6 +5068,9 @@
   "spStatSize": {
     "message": "サイズ"
   },
+  "spStatStoredSettings": {
+    "message": "カスタム済み"
+  },
   "spStatUnavailable": {
     "message": "利用不可"
   },
@@ -5088,6 +5094,9 @@
   },
   "spStatusSaveFailed": {
     "message": "設定を保存できませんでした"
+  },
+  "spStatusHostAccessDenied": {
+    "message": "このオプション機能を有効にする前に、Astra Deck にホストへのアクセス許可が必要です。"
   },
   "spStatusSettingsLoadFailed": {
     "message": "診断を更新しました。クイック設定は読み込めませんでした"
@@ -6030,6 +6039,21 @@
   },
   "timestampHighlightNoVideo": {
     "message": "No video is currently open."
+  },
+  "transcriptBatchCancelled": {
+    "message": "ページ移動により文字起こしの一括処理を中止しました"
+  },
+  "transcriptBatchExportedToastTpl": {
+    "message": "文字起こし学習パックを書き出しました（{done}/{total} 件成功）"
+  },
+  "transcriptBatchExportedTpl": {
+    "message": "{done}/{total} 件を書き出しました。失敗分は JSONL に含まれます"
+  },
+  "transcriptBatchQueueCapTpl": {
+    "message": "キュー上限 {count} 件、動画ごとに再取得は 1 回"
+  },
+  "transcriptBatchTitle": {
+    "message": "文字起こし学習パック"
   },
   "transcriptCaptions": {
     "message": "Captions"
@@ -7586,23 +7610,61 @@
   "filterListStoppedTpl": {
     "message": "{host} の購読を停止しました。フィルターリスト専用のサイトアクセスは残っていません。"
   },
-  "transcriptSourcePlayerGlobal": { "message": "現在のページのプレーヤーデータ" },
-  "transcriptSourceInnertube": { "message": "更新された YouTube プレーヤーデータ" },
-  "transcriptSourceWatchPage": { "message": "更新された YouTube 視聴ページ" },
-  "transcriptSourcePanel": { "message": "現在の YouTube 文字起こしパネル" },
-  "transcriptSourceUnknown": { "message": "YouTube 字幕" },
-  "transcriptLanguageUnknown": { "message": "言語不明" },
-  "transcriptPanelFallback": { "message": "パネルからのフォールバック" },
-  "transcriptMetaPanelTpl": { "message": "{source} から読み込み（{age}、{language}）。" },
-  "transcriptRefreshedTrack": { "message": "トラックを更新" },
-  "transcriptMetaRefreshedTpl": { "message": "期限切れの字幕 URL を {source} で更新しました（取得: {age}、{language}）。" },
-  "transcriptExpiryUnknown": { "message": "未指定" },
-  "transcriptMetaSourceTpl": { "message": "{source} から読み込み（{age}、{language}、トラック URL の期限: {expires}）。" },
-  "transcriptTimeUnknown": { "message": "時刻不明" },
-  "transcriptNoCaptions": { "message": "字幕なし" },
-  "transcriptUnavailableLabel": { "message": "利用不可" },
-  "transcriptUnavailableNow": { "message": "現在、YouTube から文字起こしを取得できません。" },
-  "transcriptLoadFailed": { "message": "文字起こしを読み込めませんでした" },
-  "transcriptNoCaptionsHelp": { "message": "字幕付きの別の動画を試すか、字幕の読み込み完了後にこのパネルを開き直してください。" },
-  "transcriptRetryHelp": { "message": "字幕が処理中の場合は、ページを再読み込みするか、しばらくしてからもう一度お試しください。" }
+  "transcriptSourcePlayerGlobal": {
+    "message": "現在のページのプレーヤーデータ"
+  },
+  "transcriptSourceInnertube": {
+    "message": "更新された YouTube プレーヤーデータ"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "更新された YouTube 視聴ページ"
+  },
+  "transcriptSourcePanel": {
+    "message": "現在の YouTube 文字起こしパネル"
+  },
+  "transcriptSourceUnknown": {
+    "message": "YouTube 字幕"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "言語不明"
+  },
+  "transcriptPanelFallback": {
+    "message": "パネルからのフォールバック"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "{source} から読み込み（{age}、{language}）。"
+  },
+  "transcriptRefreshedTrack": {
+    "message": "トラックを更新"
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "期限切れの字幕 URL を {source} で更新しました（取得: {age}、{language}）。"
+  },
+  "transcriptExpiryUnknown": {
+    "message": "未指定"
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "{source} から読み込み（{age}、{language}、トラック URL の期限: {expires}）。"
+  },
+  "transcriptTimeUnknown": {
+    "message": "時刻不明"
+  },
+  "transcriptNoCaptions": {
+    "message": "字幕なし"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "利用不可"
+  },
+  "transcriptUnavailableNow": {
+    "message": "現在、YouTube から文字起こしを取得できません。"
+  },
+  "transcriptLoadFailed": {
+    "message": "文字起こしを読み込めませんでした"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "字幕付きの別の動画を試すか、字幕の読み込み完了後にこのパネルを開き直してください。"
+  },
+  "transcriptRetryHelp": {
+    "message": "字幕が処理中の場合は、ページを再読み込みするか、しばらくしてからもう一度お試しください。"
+  }
 }

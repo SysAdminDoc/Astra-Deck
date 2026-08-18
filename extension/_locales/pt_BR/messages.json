@@ -4948,6 +4948,9 @@
   "spRiskTpl": {
     "message": "Risco: {risk}"
   },
+  "spRowHostAccessDeniedTpl": {
+    "message": "{name}. Precisa de acesso ao site antes de ser ativado."
+  },
   "spRowSaveFailedTpl": {
     "message": "{name}. Falha ao salvar. Tente atualizar o painel."
   },
@@ -5065,6 +5068,9 @@
   "spStatSize": {
     "message": "Tamanho"
   },
+  "spStatStoredSettings": {
+    "message": "Personalizados"
+  },
   "spStatUnavailable": {
     "message": "Indisponível"
   },
@@ -5088,6 +5094,9 @@
   },
   "spStatusSaveFailed": {
     "message": "Não foi possível salvar a configuração"
+  },
+  "spStatusHostAccessDenied": {
+    "message": "O Astra Deck precisa de acesso ao host para este recurso opcional antes de ativá-lo."
   },
   "spStatusSettingsLoadFailed": {
     "message": "Diagnósticos atualizados; as configurações rápidas não puderam ser carregadas"
@@ -6030,6 +6039,21 @@
   },
   "timestampHighlightNoVideo": {
     "message": "No video is currently open."
+  },
+  "transcriptBatchCancelled": {
+    "message": "Lote de transcrições cancelado após a navegação"
+  },
+  "transcriptBatchExportedToastTpl": {
+    "message": "Pacote de estudo de transcrições exportado ({done}/{total} com sucesso)"
+  },
+  "transcriptBatchExportedTpl": {
+    "message": "Exportados {done}/{total}; as falhas estão incluídas no JSONL"
+  },
+  "transcriptBatchQueueCapTpl": {
+    "message": "Limite da fila {count}, uma passagem de recuperação por vídeo"
+  },
+  "transcriptBatchTitle": {
+    "message": "Pacote de estudo de transcrições"
   },
   "transcriptCaptions": {
     "message": "Captions"
@@ -7586,23 +7610,61 @@
   "filterListStoppedTpl": {
     "message": "A lista de {host} deixou de ser seguida. Nenhum acesso ao site exclusivo da lista de filtros permanece."
   },
-  "transcriptSourcePlayerGlobal": { "message": "os dados do player da página atual" },
-  "transcriptSourceInnertube": { "message": "novos dados do player do YouTube" },
-  "transcriptSourceWatchPage": { "message": "uma página de exibição atualizada do YouTube" },
-  "transcriptSourcePanel": { "message": "o painel de transcrição atual do YouTube" },
-  "transcriptSourceUnknown": { "message": "as legendas do YouTube" },
-  "transcriptLanguageUnknown": { "message": "idioma desconhecido" },
-  "transcriptPanelFallback": { "message": "Alternativa do painel" },
-  "transcriptMetaPanelTpl": { "message": "Carregada de {source} ({age}); {language}." },
-  "transcriptRefreshedTrack": { "message": "Faixa atualizada" },
-  "transcriptMetaRefreshedTpl": { "message": "Uma URL de legenda expirada foi substituída por meio de {source}; obtida {age}; {language}." },
-  "transcriptExpiryUnknown": { "message": "não informada" },
-  "transcriptMetaSourceTpl": { "message": "Carregada de {source} ({age}); {language}; validade da URL da faixa: {expires}." },
-  "transcriptTimeUnknown": { "message": "em um momento desconhecido" },
-  "transcriptNoCaptions": { "message": "Sem legendas" },
-  "transcriptUnavailableLabel": { "message": "Indisponível" },
-  "transcriptUnavailableNow": { "message": "Não foi possível obter a transcrição do YouTube neste momento." },
-  "transcriptLoadFailed": { "message": "Não foi possível carregar a transcrição" },
-  "transcriptNoCaptionsHelp": { "message": "Tente outro vídeo com legendas ou reabra este painel depois que elas terminarem de carregar." },
-  "transcriptRetryHelp": { "message": "Recarregue a página ou tente novamente em instantes se as legendas ainda estiverem sendo processadas." }
+  "transcriptSourcePlayerGlobal": {
+    "message": "os dados do player da página atual"
+  },
+  "transcriptSourceInnertube": {
+    "message": "novos dados do player do YouTube"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "uma página de exibição atualizada do YouTube"
+  },
+  "transcriptSourcePanel": {
+    "message": "o painel de transcrição atual do YouTube"
+  },
+  "transcriptSourceUnknown": {
+    "message": "as legendas do YouTube"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "idioma desconhecido"
+  },
+  "transcriptPanelFallback": {
+    "message": "Alternativa do painel"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "Carregada de {source} ({age}); {language}."
+  },
+  "transcriptRefreshedTrack": {
+    "message": "Faixa atualizada"
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "Uma URL de legenda expirada foi substituída por meio de {source}; obtida {age}; {language}."
+  },
+  "transcriptExpiryUnknown": {
+    "message": "não informada"
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "Carregada de {source} ({age}); {language}; validade da URL da faixa: {expires}."
+  },
+  "transcriptTimeUnknown": {
+    "message": "em um momento desconhecido"
+  },
+  "transcriptNoCaptions": {
+    "message": "Sem legendas"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "Indisponível"
+  },
+  "transcriptUnavailableNow": {
+    "message": "Não foi possível obter a transcrição do YouTube neste momento."
+  },
+  "transcriptLoadFailed": {
+    "message": "Não foi possível carregar a transcrição"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "Tente outro vídeo com legendas ou reabra este painel depois que elas terminarem de carregar."
+  },
+  "transcriptRetryHelp": {
+    "message": "Recarregue a página ou tente novamente em instantes se as legendas ainda estiverem sendo processadas."
+  }
 }

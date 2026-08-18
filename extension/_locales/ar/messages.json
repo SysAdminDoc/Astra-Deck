@@ -4948,6 +4948,9 @@
   "spRiskTpl": {
     "message": "الخطورة: {risk}"
   },
+  "spRowHostAccessDeniedTpl": {
+    "message": "{name}. يتطلب الوصول إلى الموقع قبل التمكين."
+  },
   "spRowSaveFailedTpl": {
     "message": "{name}. فشل الحفظ. جرّب تحديث لوحة المعلومات."
   },
@@ -5065,6 +5068,9 @@
   "spStatSize": {
     "message": "الحجم"
   },
+  "spStatStoredSettings": {
+    "message": "مُخصّص"
+  },
   "spStatUnavailable": {
     "message": "غير متاح"
   },
@@ -5088,6 +5094,9 @@
   },
   "spStatusSaveFailed": {
     "message": "تعذّر حفظ الإعداد"
+  },
+  "spStatusHostAccessDenied": {
+    "message": "يحتاج Astra Deck إلى الوصول إلى المضيف لهذه الميزة الاختيارية قبل تمكينها."
   },
   "spStatusSettingsLoadFailed": {
     "message": "تم تحديث التشخيصات؛ تعذّر تحميل الإعدادات السريعة"
@@ -6030,6 +6039,21 @@
   },
   "timestampHighlightNoVideo": {
     "message": "No video is currently open."
+  },
+  "transcriptBatchCancelled": {
+    "message": "تم إلغاء دفعة النصوص بعد التنقل"
+  },
+  "transcriptBatchExportedToastTpl": {
+    "message": "تم تصدير حزمة دراسة النصوص ({done}/{total} نجحت)"
+  },
+  "transcriptBatchExportedTpl": {
+    "message": "تم تصدير {done}/{total}؛ حالات الفشل مُضمّنة في JSONL"
+  },
+  "transcriptBatchQueueCapTpl": {
+    "message": "حد قائمة الانتظار {count}، تمريرة استرداد واحدة لكل فيديو"
+  },
+  "transcriptBatchTitle": {
+    "message": "حزمة دراسة النصوص"
   },
   "transcriptCaptions": {
     "message": "Captions"
@@ -7586,23 +7610,61 @@
   "filterListStoppedTpl": {
     "message": "تم إيقاف متابعة {host}. لم يعد هناك وصول إلى الموقع مخصص لقائمة عوامل التصفية."
   },
-  "transcriptSourcePlayerGlobal": { "message": "بيانات مشغّل الصفحة الحالية" },
-  "transcriptSourceInnertube": { "message": "بيانات مشغّل YouTube المحدّثة" },
-  "transcriptSourceWatchPage": { "message": "صفحة مشاهدة YouTube محدّثة" },
-  "transcriptSourcePanel": { "message": "لوحة النص الحالية في YouTube" },
-  "transcriptSourceUnknown": { "message": "التسميات التوضيحية في YouTube" },
-  "transcriptLanguageUnknown": { "message": "لغة غير معروفة" },
-  "transcriptPanelFallback": { "message": "استخدام اللوحة كخيار احتياطي" },
-  "transcriptMetaPanelTpl": { "message": "تم التحميل من {source} ({age})؛ {language}." },
-  "transcriptRefreshedTrack": { "message": "تم تحديث المسار" },
-  "transcriptMetaRefreshedTpl": { "message": "تم استبدال رابط تسميات توضيحية منتهي الصلاحية عبر {source}؛ تم جلبه {age}؛ {language}." },
-  "transcriptExpiryUnknown": { "message": "غير معلن" },
-  "transcriptMetaSourceTpl": { "message": "تم التحميل من {source} ({age})؛ {language}؛ انتهاء رابط المسار: {expires}." },
-  "transcriptTimeUnknown": { "message": "في وقت غير معروف" },
-  "transcriptNoCaptions": { "message": "لا توجد تسميات توضيحية" },
-  "transcriptUnavailableLabel": { "message": "غير متاح" },
-  "transcriptUnavailableNow": { "message": "تعذر جلب النص من YouTube الآن." },
-  "transcriptLoadFailed": { "message": "تعذر تحميل النص" },
-  "transcriptNoCaptionsHelp": { "message": "جرّب فيديو آخر يتضمن تسميات توضيحية، أو أعد فتح هذه اللوحة بعد اكتمال تحميلها." },
-  "transcriptRetryHelp": { "message": "أعد تحميل الصفحة أو حاول مجددًا بعد لحظات إذا كانت التسميات التوضيحية لا تزال قيد المعالجة." }
+  "transcriptSourcePlayerGlobal": {
+    "message": "بيانات مشغّل الصفحة الحالية"
+  },
+  "transcriptSourceInnertube": {
+    "message": "بيانات مشغّل YouTube المحدّثة"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "صفحة مشاهدة YouTube محدّثة"
+  },
+  "transcriptSourcePanel": {
+    "message": "لوحة النص الحالية في YouTube"
+  },
+  "transcriptSourceUnknown": {
+    "message": "التسميات التوضيحية في YouTube"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "لغة غير معروفة"
+  },
+  "transcriptPanelFallback": {
+    "message": "استخدام اللوحة كخيار احتياطي"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "تم التحميل من {source} ({age})؛ {language}."
+  },
+  "transcriptRefreshedTrack": {
+    "message": "تم تحديث المسار"
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "تم استبدال رابط تسميات توضيحية منتهي الصلاحية عبر {source}؛ تم جلبه {age}؛ {language}."
+  },
+  "transcriptExpiryUnknown": {
+    "message": "غير معلن"
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "تم التحميل من {source} ({age})؛ {language}؛ انتهاء رابط المسار: {expires}."
+  },
+  "transcriptTimeUnknown": {
+    "message": "في وقت غير معروف"
+  },
+  "transcriptNoCaptions": {
+    "message": "لا توجد تسميات توضيحية"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "غير متاح"
+  },
+  "transcriptUnavailableNow": {
+    "message": "تعذر جلب النص من YouTube الآن."
+  },
+  "transcriptLoadFailed": {
+    "message": "تعذر تحميل النص"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "جرّب فيديو آخر يتضمن تسميات توضيحية، أو أعد فتح هذه اللوحة بعد اكتمال تحميلها."
+  },
+  "transcriptRetryHelp": {
+    "message": "أعد تحميل الصفحة أو حاول مجددًا بعد لحظات إذا كانت التسميات التوضيحية لا تزال قيد المعالجة."
+  }
 }
