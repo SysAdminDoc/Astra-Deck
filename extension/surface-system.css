@@ -104,7 +104,21 @@ summary:active {
 }
 
 @media (forced-colors: active) {
+  /* Forced-colors mode does not paint box-shadow AT ALL, so the global focus
+     ring above — `outline: none` plus `box-shadow: var(--astra-focus)` — leaves
+     Windows High Contrast users with no focus indicator whatsoever. Rewriting
+     the token to another box-shadow value (which is what this block used to do)
+     could never work for the same reason. The ring has to become a real
+     outline, and it has to be done here, on the same universal selector that
+     suppressed it, so every surface loading surface-system.css is covered
+     rather than only the selectors each page happens to have listed. */
   :root {
     --astra-focus: 0 0 0 2px Highlight;
+  }
+
+  *:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
   }
 }

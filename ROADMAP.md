@@ -110,13 +110,6 @@ duplicated here.
   Acceptance: every feature that hides a card stamps a single shared marker naming the feature and the matched rule; one toggle reveals annotations for all of them; the count of cards hidden per feature this navigation is readable from the diagnostics bundle.
   Complexity: M
 
-- [ ] P2 — Unify the focus-ring strategy and finish forced-colors coverage
-  Why: two incompatible strategies ship side by side and the forced-colors fallback for one of them is dead, so Windows High Contrast users lose focus indication on surfaces nothing flags.
-  Evidence: extension pages use `outline: none` + `box-shadow` (`extension/surface-system.css:69-72`, 38 popup + 10 sidepanel rules) while in-page surfaces use a real `outline` (`core/settings-visual-system.js:907-911`); forced-colors never paints `box-shadow`, so `surface-system.css:106-110` — which rewrites the token to another box-shadow — can never work. `extension/live-chat.css` has zero `forced-colors` rules while restyling ~50 chat selectors with hard-coded rgba.
-  Touches: `extension/surface-system.css`, `extension/popup.css`, `extension/sidepanel.css`, `extension/live-chat.css`, `extension/core/settings-visual-system.js`, `scripts/audit-popup-a11y.js`
-  Acceptance: one focus-ring mechanism that survives `forced-colors: active` on every surface, `live-chat.css` gains a forced-colors lane, and the a11y gate detects outline-suppressing rules rather than listing selectors (shares the P1 gate item above).
-  Complexity: M
-
 - [ ] P2 — Ship the heatmap features YouTube already hands us
   Why: jump-to-most-replayed and heatmap-driven speed are the only genuinely new playback ideas in the category this year, ImprovedTube shipped both in 2026, and the heatmap JSON already arrives in the player response Astra Deck parses — so the marginal cost is low and it is a leapfrog on a specialist's own ground.
   Evidence: https://github.com/code-charity/youtube/releases (v4.2026 "Smart Speed"); no `heatmap`/`mostReplayed` key exists in `extension/core/settings-schema.js` (verified 2026-08-11).
