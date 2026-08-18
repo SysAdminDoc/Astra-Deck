@@ -89,7 +89,8 @@ test('transcript translation reports the local lane and preserves source cues', 
         YTKitCore: { localAi },
         getFeatureById: () => null
     });
-    feature._panel = { querySelector: () => button };
+    // A real panel is attached; the translation path bails when it is not.
+    feature._panel = { querySelector: () => button, isConnected: true };
     feature._cues = [{ start: 0, text: 'Bonjour' }, { start: 2, text: 'monde' }];
     feature._detectTranscriptLanguage = async () => 'fr';
     feature._renderCueTexts = () => {};
@@ -125,7 +126,8 @@ test('transcript translation explicitly falls back to BYO-key output', async () 
         showToast: (message) => notices.push(message),
         getFeatureById: (id) => id === 'aiVideoSummary' ? remote : null
     });
-    feature._panel = { querySelector: () => button };
+    // A real panel is attached; the translation path bails when it is not.
+    feature._panel = { querySelector: () => button, isConnected: true };
     feature._cues = [{ start: 0, text: 'Bonjour' }, { start: 2, text: 'monde' }];
     feature._detectTranscriptLanguage = async () => 'fr';
     feature._renderCueTexts = () => {};
@@ -137,4 +139,46 @@ test('transcript translation explicitly falls back to BYO-key output', async () 
     assert.equal(calls[0], 'grant');
     assert.match(calls[1], /untrusted source material/);
     assert.ok(notices.some((message) => /BYO-key/.test(message)));
+});
+
+test('transcript translation started on one video never writes into the next', () => {
+    // Autoplay navigates without a click, so the panel can be torn down and
+    // rebuilt while the translation is still awaiting. Every await in the load
+    // path re-checks the generation; this path checked nothing, so video A's
+    // cues were painted into video B's panel and B's button was flipped to
+    // "Show Original".
+    const button = fakeNode({ tag: 'button' });
+    const localAi = {
+        has: (kind) => kind === 'translator',
+        availability: async () => 'available',
+        create: async () => ({
+            translate: async (text) => `Local(${text})`,
+            destroy() {}
+        })
+    };
+    const feature = loadFeature('transcriptViewer', {
+        document: documentForFeature(),
+        window: { Translator: { create() {} } },
+        navigator: { language: 'en-US' },
+        YTKitCore: { localAi },
+        getFeatureById: () => null
+    });
+    feature._panel = { querySelector: () => button, isConnected: true };
+    feature._cues = [{ start: 0, text: 'Bonjour' }, { start: 2, text: 'monde' }];
+    feature._renderCueTexts = () => assert.fail('a stale translation must not render');
+    // The user navigates while language detection is still in flight — which
+    // is exactly what the navigate rule does to _loadGeneration.
+    feature._detectTranscriptLanguage = async () => {
+        feature._loadGeneration += 1;
+        return 'fr';
+    };
+
+    return feature._translateTranscript().then(() => {
+        assert.equal(feature._translatedCues, null,
+            'a stale translation must not publish cues');
+        assert.equal(feature._showingTranslation, false,
+            'a stale translation must not flip the toggle');
+        assert.notEqual(button.textContent, 'Show Original',
+            'a stale translation must not relabel the new video\'s button');
+    });
 });

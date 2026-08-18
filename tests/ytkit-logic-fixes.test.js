@@ -686,3 +686,46 @@ test('hideVideosSubsLoadHiddenRatio schema min is 0.05 so a schema-legal value c
     assert.match(ytkitSource, /raw <= 0 \|\| raw > 1\) return 0\.8/,
         'ytkit.js consumer must keep the (0,1] fallback guard');
 });
+
+test('transcriptViewer aborts an in-flight translation when the video changes', () => {
+    // _translateTranscript awaits language detection, on-device availability,
+    // and the translation itself. The load path re-checks generation/panel/
+    // videoId after every await; this one checked nothing, so a translation
+    // started on video A painted its cues over video B's panel, flipped B's
+    // button to "Show Original", and left _translatedCues holding A's text.
+    // Bound by the NEXT method signature, not a character count: a fixed
+    // window silently truncates the tail (and its guards) as the method grows.
+    const block = featureBlock('transcriptViewer', 60000);
+    const translateStart = block.indexOf('async _translateTranscript() {');
+    assert.ok(translateStart > -1, '_translateTranscript must exist');
+    const translateEnd = block.indexOf('_buildSrt()', translateStart);
+    assert.ok(translateEnd > translateStart, '_buildSrt must follow _translateTranscript');
+    const translate = block.slice(translateStart, translateEnd);
+
+    assert.match(translate, /const generation = this\._loadGeneration;/,
+        'the translation must latch the load generation before its first await');
+    assert.match(translate, /const isStale = \(\) =>/,
+        'the translation must define a staleness predicate');
+    for (const leg of [
+        /generation !== this\._loadGeneration/,
+        /this\._panel !== panel/,
+        /getVideoId\(\) !== videoId/,
+        /!panel\?\.isConnected/,
+    ]) {
+        assert.match(translate, leg, `the staleness predicate must cover ${leg}`);
+    }
+
+    // Every await must be followed by a bail-out, including the catch: an
+    // error caused by navigating away must not toast over the new video.
+    const awaits = translate.split(/await /).length - 1;
+    const bails = translate.split(/if \(isStale\(\)\) return;/).length - 1;
+    assert.ok(awaits >= 4, `expected the multi-await translation path, saw ${awaits}`);
+    assert.ok(bails >= awaits,
+        `every await needs a staleness bail-out: ${awaits} awaits vs ${bails} guards`);
+
+    // The write-back must not precede the guards.
+    assert.ok(
+        translate.indexOf('if (isStale()) return;') < translate.indexOf('this._translatedCues = translated;'),
+        'the guards must run before the translated cues are published'
+    );
+});

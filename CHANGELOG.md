@@ -19,6 +19,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   (`/@handle`) matched no route, so they lost Video Hider too. Measured
   startup is unchanged. Modules whose features are all switched off are still
   skipped.
+- Translating a transcript and then moving to another video no longer paints the
+  first video's translation into the second one's panel. Translation spans
+  several async steps and autoplay can navigate through any of them; the result
+  is now discarded when the video changes, as the transcript loader already did.
 - SponsorBlock per-channel category overrides now apply on channels whose byline
   link carries a suffix (`/@name/featured`, `?si=…`). The control that saves an
   override normalised the channel link, but the playback-time reader did not, so

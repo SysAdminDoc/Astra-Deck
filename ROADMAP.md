@@ -547,16 +547,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified
   Effort: S
 
-- [ ] P2 — Transcript "Translate" has no navigation guard — a translation started on video A paints over video B's panel
-  Category: correctness
-  Where: `extension/ytkit.js:26085-26140` (`_translateTranscript`)
-  Problem: the handler awaits language detection / on-device translation / LLM translation with no `_loadGeneration`, videoId, or panel recheck after any await. Navigating mid-translation (autoplay included) paints video A's translated cues over the first N cue lines of video B's panel, flips B's Translate button state, and pollutes `_translatedCues`. Contrast `_loadTranscript` in the same file (`:26313-26341`), which carries exemplary generation guards after every await.
-  Evidence: every await in `_translateTranscript` enumerated — zero re-checks; `_loadTranscript`'s guard pattern confirmed adjacent.
-  Fix: capture `_loadGeneration` + panel + cues refs at entry and bail after each await when they no longer match (same pattern as `_loadTranscript`).
-  Acceptance: starting a translation and navigating before it resolves leaves video B's panel untouched; a test resolves a deferred translator after a simulated navigation and asserts no writes.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P2 — perChannelSpeed can delete its own saved speeds, silently fails to apply, and mis-keys dotted handles
   Category: correctness
   Where: `extension/ytkit.js:22834-22838` (ratechange handler), `:22806-22808` (rate===1 deletes the channel entry), `:3265-3273` (250 ms programmatic-write window), `:22820-22829` (single `setTimeout(...,3000)` apply, no retry), `:22786-22799` (`_applySpeed` gives up silently), `:22781` (`_getChannelId` regex `/@[\w-]+|channel\/[\w-]+/`)
