@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.66.0] - 2026-08-18
+
 ### Fixed
 
 - Idle cost is now measured and budgeted, not just startup. A new lane holds a
