@@ -29,6 +29,11 @@
         buildFeatureHealthReport,
         getSelectorAttributionSnapshot,
         withSelectorAttribution,
+        getHideAttributionCounts,
+        markCardHidden,
+        resetHideAttribution,
+        syncHiddenNote,
+        unmarkCardHidden,
         cleanupRetiredCommentUi,
         configureNavigationRuntime,
         flushPendingStorageWrites,
@@ -5516,6 +5521,72 @@ return response;
         return !!feature && !feature._arrayKey && !feature.type && !isRetiredCommentFeature(feature);
     }
 
+    // v4.68.0 — shared "why is this card gone?" plumbing.
+    //
+    // Before this, only Video Hider annotated its hides. Three other features
+    // hid feed cards with private CSS classes and left no trace, which is why
+    // "turn Video Hider off" cleared nothing during the v4.58.1 incident.
+    // Every hider now routes through applyHideAttribution, so the marker, the
+    // note, and the per-navigation counts all come from one place.
+    //
+    // Rule labels are localised here rather than in core/hide-attribution.js
+    // so that module stays DOM-only and headless-testable.
+    const HIDE_RULE_LABELS = {
+        collaboration: ['hiddenRuleCollaboration', 'multi-creator upload'],
+        scheduled: ['hiddenRuleScheduled', 'scheduled livestream or premiere'],
+        shorts: ['hiddenRuleShorts', 'Shorts video']
+    };
+
+    let _hiddenNoteStyleElement = null;
+    function ensureHiddenNoteStyle() {
+        if (_hiddenNoteStyleElement) return;
+        // Injected here, not from any one feature: the note has to look the
+        // same whichever feature hid the card, including when Video Hider —
+        // which owns the visually similar placeholder — is switched off.
+        _hiddenNoteStyleElement = injectStyle(`
+            .ytkit-hidden-note {
+                box-sizing: border-box;
+                display: flex !important;
+                align-items: center;
+                min-height: 44px;
+                margin: 4px 0;
+                padding: 10px 12px;
+                border: 1px solid var(--ytkit-border, rgba(255, 255, 255, 0.12));
+                border-radius: 8px;
+                color: var(--ytkit-text-secondary, #aeb6c3);
+                background: var(--ytkit-surface-raised, rgba(255, 255, 255, 0.04));
+                font: 500 12px/1.4 system-ui, sans-serif;
+            }
+            html:not([dark]) .ytkit-hidden-note {
+                color: var(--ytkit-text-secondary, #5f6875);
+                border-color: var(--ytkit-border, rgba(15, 23, 42, 0.12));
+                background: var(--ytkit-surface-raised, rgba(15, 23, 42, 0.04));
+            }
+        `, 'ytkit-hidden-note', true);
+    }
+
+    function hideRuleLabel(rule) {
+        const entry = HIDE_RULE_LABELS[rule];
+        return entry ? t(entry[0], entry[1]) : rule;
+    }
+
+    function applyHideAttribution(element, { featureId, featureName, rule, hidden }) {
+        if (typeof markCardHidden !== 'function') return;
+        if (!hidden) {
+            unmarkCardHidden?.(element, featureId);
+            return;
+        }
+        markCardHidden(element, { featureId, featureName, rule });
+        const explain = appState.settings.hideVideosShowFilterReason === true;
+        if (explain) ensureHiddenNoteStyle();
+        syncHiddenNote?.(element, {
+            enabled: explain,
+            text: t('hiddenCardNoteTpl', 'Hidden by {feature}: {rule}')
+                .replace('{feature}', featureName || featureId)
+                .replace('{rule}', hideRuleLabel(rule))
+        });
+    }
+
     function updateFeatureHealth(feature, status, source = 'runtime', error = null, elapsedMs = null) {
         if (!feature?.id) return;
         try {
@@ -9209,6 +9280,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (parent instanceof HTMLElement && !parent.dataset.ytkitShortsHidden) {
                         parent.style.display = 'none';
                         parent.dataset.ytkitShortsHidden = '1';
+                        applyHideAttribution(parent, {
+                            featureId: this.id,
+                            featureName: getFeatureName(this) || this.name,
+                            rule: 'shorts',
+                            hidden: true
+                        });
                     }
                 };
 
@@ -9218,6 +9295,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         document.querySelectorAll('[data-ytkit-shorts-hidden]').forEach(el => {
                             el.style.display = '';
                             delete el.dataset.ytkitShortsHidden;
+                            applyHideAttribution(el, { featureId: this.id, hidden: false });
                         });
                         return;
                     }
@@ -9262,6 +9340,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('[data-ytkit-shorts-hidden]').forEach(el => {
                     el.style.display = '';
                     delete el.dataset.ytkitShortsHidden;
+                    applyHideAttribution(el, { featureId: this.id, hidden: false });
                 });
             }
         },
@@ -17700,7 +17779,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const collaborations = cards.filter(card => this._isCollaborationCard(card));
                 if (cards.length >= this._RATIO_GUARD_MIN_CARDS
                     && collaborations.length / cards.length > this._MAX_HIDDEN_RATIO) {
-                    cards.forEach(card => card.classList.remove(this._HIDDEN_CLASS));
+                    cards.forEach(card => {
+                        card.classList.remove(this._HIDDEN_CLASS);
+                        // The bail restores every card, so the attribution has
+                        // to go with it — otherwise the panel would keep
+                        // reporting hides that were just undone.
+                        applyHideAttribution(card, { featureId: this.id, hidden: false });
+                    });
                     DiagnosticLog?.record(
                         'hideCollaborations',
                         `refused to hide ${collaborations.length}/${cards.length} feed cards`
@@ -17711,7 +17796,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const hide = new Set(collaborations);
                 // Toggled BOTH ways rather than removed, so turning the feature
                 // off or a card being re-judged restores it immediately.
-                cards.forEach(card => card.classList.toggle(this._HIDDEN_CLASS, hide.has(card)));
+                cards.forEach(card => {
+                    const hidden = hide.has(card);
+                    card.classList.toggle(this._HIDDEN_CLASS, hidden);
+                    applyHideAttribution(card, {
+                        featureId: this.id,
+                        featureName: getFeatureName(this) || this.name,
+                        rule: 'collaboration',
+                        hidden
+                    });
+                });
             },
 
             _scheduleScan(delay = 250) {
@@ -17757,7 +17851,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._scanTimer = null;
                 removeNavigateRule(this.id);
                 document.querySelectorAll(`.${this._HIDDEN_CLASS}`)
-                    .forEach(card => card.classList.remove(this._HIDDEN_CLASS));
+                    .forEach(card => {
+                        card.classList.remove(this._HIDDEN_CLASS);
+                        applyHideAttribution(card, { featureId: this.id, hidden: false });
+                    });
                 this._styleElement?.remove();
                 this._styleElement = null;
             }
@@ -18975,10 +19072,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     delete element.dataset.ytkitFilterReason;
                     element.classList.remove('ytkit-video-hidden');
                     delete element.dataset.ytkitRemoved;
+                    unmarkCardHidden?.(element, this.id);
                     return false;
                 }
                 const resolvedReason = reason || element.dataset.ytkitFilterReason || 'manual';
                 element.dataset.ytkitFilterReason = resolvedReason;
+                // Video Hider keeps its own richer placeholder (it carries the
+                // restore affordance), but it stamps the SHARED marker too so
+                // the per-feature hide counts cover every hider, not three of
+                // four. markCardHidden, not applyHideAttribution: routing this
+                // through the shared note would put two notes beside one card.
+                markCardHidden?.(element, {
+                    featureId: this.id,
+                    featureName: getFeatureName(this) || this.name,
+                    rule: resolvedReason
+                });
                 this._syncHiddenReasonPlaceholder(element, resolvedReason);
                 if (appState.settings.hideVideosRemoveHiddenCards) {
                     element.classList.add('ytkit-video-hidden');
@@ -39919,7 +40027,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _applyTo(card) {
                 if (!(card instanceof HTMLElement)) return;
-                card.classList.toggle('ytkit-planned-livestream-hidden', this._isNotifyCard(card));
+                const hidden = this._isNotifyCard(card);
+                card.classList.toggle('ytkit-planned-livestream-hidden', hidden);
+                applyHideAttribution(card, {
+                    featureId: this.id,
+                    featureName: getFeatureName(this) || this.name,
+                    rule: 'scheduled',
+                    hidden
+                });
             },
             _collectCards(root, out) {
                 if (!(root instanceof HTMLElement)) return;
@@ -39951,7 +40066,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule('hidePlannedLivestreams');
                 this._rule = null;
                 this._navRule = null;
-                document.querySelectorAll('.ytkit-planned-livestream-hidden').forEach(el => el.classList.remove('ytkit-planned-livestream-hidden'));
+                document.querySelectorAll('.ytkit-planned-livestream-hidden').forEach(el => {
+                    el.classList.remove('ytkit-planned-livestream-hidden');
+                    applyHideAttribution(el, { featureId: this.id, hidden: false });
+                });
                 document.getElementById('yt-suite-style-planned-livestream-hidden')?.remove();
             }
         },
@@ -48150,7 +48268,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 category: feature.group || null,
                 enabled: true
             }));
-        return buildFeatureHealthReport({
+        const report = buildFeatureHealthReport({
             features: reportable,
             registryHealth: typeof getFeatureHealthSnapshot === 'function' ? getFeatureHealthSnapshot() : [],
             attribution: typeof getSelectorAttributionSnapshot === 'function'
@@ -48161,6 +48279,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 ? ExternalApiHealth.snapshot()
                 : []
         });
+        // Per-navigation hide attribution rides along: "which feature made
+        // these cards disappear?" is the same question from the other side,
+        // and shipping it here means the diagnostics bundle carries it too.
+        report.hiddenCards = typeof getHideAttributionCounts === 'function'
+            ? getHideAttributionCounts()
+            : [];
+        return report;
     }
 
     function registerRuntimeFeature(feature) {
@@ -50347,7 +50472,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     behaviorSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosShowFilterReason',
                         title: t('videoHiderShowFilterReasonTitle', 'Explain hidden cards'),
-                        description: t('videoHiderShowFilterReasonDesc', 'Show a small note beside each hidden card explaining which local rule matched.'),
+                        description: t('videoHiderShowFilterReasonDesc', 'Show a small note beside every card Astra Deck hides — from Video Hider, Hide Collaborations, Hide planned livestreams, or Remove Shorts — naming the feature and the rule that matched.'),
                         defaultChecked: false
                     }));
                     const removeCurrentPageBtn = document.createElement('button');

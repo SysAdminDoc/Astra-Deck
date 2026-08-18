@@ -166,6 +166,18 @@
     "message": "{count} ثانية",
     "description": "Buffer target slider value rendered in seconds"
   },
+  "hiddenCardNoteTpl": {
+    "message": "Hidden by {feature}: {rule}"
+  },
+  "hiddenRuleCollaboration": {
+    "message": "multi-creator upload"
+  },
+  "hiddenRuleScheduled": {
+    "message": "scheduled livestream or premiere"
+  },
+  "hiddenRuleShorts": {
+    "message": "Shorts video"
+  },
   "liveLatencyReadout": {
     "message": "Live {latency}s · buffer {buffer}s",
     "description": "Live-stream latency and buffered-ahead player readout"

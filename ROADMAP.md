@@ -88,13 +88,6 @@ duplicated here.
   Acceptance: at least one filter class (blocked channel IDs) is applied to the browse/player response before Polymer renders it, autoplay and playlist integrity are preserved, the post-render path remains as the fallback, and a test drives the real interception rather than stubbing it. Store-review risk of data interception is assessed against the `chromium-store` profile before it ships there.
   Complexity: XL
 
-- [ ] P2 — Explain every hide, not just Video Hider's
-  Why: "show what filter triggered the blocking" is BlockTube's standing unbuilt request and its top usability complaint is a blocked video showing a blank screen with no reason. Astra Deck's `Explain hidden cards` toggle annotates Video Hider hides only — `hideCollaborations`, `hidePlannedLivestreams` and `removeAllShorts` are separate features and get no note, which is why "disable Video Hider" cleared nothing during the v4.58.1 incident.
-  Evidence: https://github.com/amitbl/blocktube/issues/304 , https://addons.mozilla.org/en-US/firefox/addon/blocktube/ (accessed 2026-08-11); repo `CLAUDE.md` v4.58.1 note.
-  Touches: `extension/ytkit.js`, `extension/features/video-hider/index.js`, every feed-hiding feature, `extension/_locales/**`
-  Acceptance: every feature that hides a card stamps a single shared marker naming the feature and the matched rule; one toggle reveals annotations for all of them; the count of cards hidden per feature this navigation is readable from the diagnostics bundle.
-  Complexity: M
-
 - [ ] P2 — Ship the heatmap features YouTube already hands us
   Why: jump-to-most-replayed and heatmap-driven speed are the only genuinely new playback ideas in the category this year, ImprovedTube shipped both in 2026, and the heatmap JSON already arrives in the player response Astra Deck parses — so the marginal cost is low and it is a leapfrog on a specialist's own ground.
   Evidence: https://github.com/code-charity/youtube/releases (v4.2026 "Smart Speed"); no `heatmap`/`mostReplayed` key exists in `extension/core/settings-schema.js` (verified 2026-08-11).
