@@ -238,18 +238,6 @@ Baseline at audit time (clean worktree at origin/main after two in-session fixes
   Confidence: path Verified; trigger Needs-repro
   Effort: S
 
-- [ ] P2 — Notification hide/restore feature has no CSS backstop; its test asserts only the `hidden` IDL property
-  Category: testing / correctness
-  Where: `extension/ytkit.js:31346-31365` (`_setHidden`); test `tests/notification-controls.test.js:98-105`.
-  Problem: `_setHidden` hides `ytd-notification-renderer` items via `item.hidden = true` plus marker attributes only — no CSS rule anywhere targets those markers or `ytd-notification-renderer[hidden]` (grepped `extension/`, both userscripts). The `hidden` attribute is just a UA `display:none`, which any author-level `display` on the Polymer host overrides, so the item can stay painted. The test drives a fake node and asserts `item.hidden === true`, passing regardless of rendered outcome — the exact "hidden but still painted" family whose cure the repo already applied to the popup (`tests/hardening.test.js:4890` pins `.brand-version[hidden]{display:none}`).
-  Evidence: no CSS backstop exists; the assertion is property-only.
-  Fix: add `ytd-notification-renderer[data-ytkit-notification-read-hidden], …[data-ytkit-notification-cap-hidden] { display:none !important; }` to the feature CSS and pin that rule in the test.
-  Acceptance: the rule exists and is pinned; a rendered check confirms a marked notification has zero client rects.
-  Confidence: Verified (absence of backstop); rendered impact Needs-repro on live YouTube
-  Effort: S
-
-### P3
-
 - [ ] P3 — The i18n copy gate fingerprints `<style>.textContent` CSS as "UI copy", and `npm run check` is fail-fast
   Category: testing / maintainability
   Where: `scripts/check-localizable-ui-copy.js:88-124` (`collectJsLiterals` classifies a `styleEl.textContent = \`…css…\`` assignment as sink `assignment:textContent`); chain at `package.json` `scripts.check`.

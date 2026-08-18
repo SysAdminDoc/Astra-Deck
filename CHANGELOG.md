@@ -15,6 +15,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Hidden notifications now actually disappear. Sort Notifications marked read or
+  over-cap items as hidden but had no style rule to enforce it, so YouTube's own
+  styling could keep them on screen.
 - Fixed a silent failure that could stop Astra Deck noticing YouTube page
   changes. The component that tracks navigation installed itself early and gave
   up quietly if it ran before the pieces it needs, which would leave features
