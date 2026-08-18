@@ -12478,9 +12478,6 @@ test('Firefox sidebar fallback reuses the diagnostic dashboard surface', () => {
     const html = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'sidebar.html'), 'utf8'
     );
-    const js = fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'sidebar.js'), 'utf8'
-    );
     for (const id of ['sp-perf', 'sp-selector', 'sp-external', 'sp-storage', 'sp-settings']) {
         assert.match(html, new RegExp(`id="${id}"`),
             'sidebar must expose dashboard section ' + id);
@@ -12489,10 +12486,20 @@ test('Firefox sidebar fallback reuses the diagnostic dashboard surface', () => {
         'sidebar must reuse the sidepanel dashboard stylesheet');
     assert.match(html, /src="sidepanel\.js"/,
         'sidebar must reuse the sidepanel dashboard renderer');
-    assert.match(html, /src="sidebar\.js"/,
-        'sidebar must load its Firefox-specific entry marker');
-    assert.match(js, /firefox-sidebar/,
-        'sidebar entry script must mark the Firefox sidebar surface');
+    // sidebar.js used to set data-astra-surface="firefox-sidebar" and nothing
+    // anywhere read it — no CSS rule, no script, only this assertion. It was
+    // deleted with the clone; the sidebar is now generated from sidepanel.html.
+    assert.doesNotMatch(html, /src="sidebar\.js"/,
+        'the sidebar must not load a script with no consumer');
+    assert.equal(fs.existsSync(path.join(__dirname, '..', 'extension', 'sidebar.js')), false,
+        'extension/sidebar.js was inert and is gone; do not reintroduce it without a reader');
+
+    // The generator is the only thing keeping the two surfaces in step.
+    const generated = require('../scripts/generate-sidebar').render();
+    assert.equal(html, generated,
+        'sidebar.html must match what scripts/generate-sidebar.js produces from sidepanel.html');
+    assert.match(html, /GENERATED FROM sidepanel\.html/,
+        'the generated sidebar must say so, so nobody hand-edits it');
 });
 
 test('sidepanel.js setting rows carry aria-label for screen readers', () => {

@@ -115,13 +115,6 @@ duplicated here.
   Acceptance: one focus-ring mechanism that survives `forced-colors: active` on every surface, `live-chat.css` gains a forced-colors lane, and the a11y gate detects outline-suppressing rules rather than listing selectors (shares the P1 gate item above).
   Complexity: M
 
-- [ ] P2 — Generate the Firefox sidebar from the side panel instead of cloning it
-  Why: `sidebar.html:12-128` is a byte-for-byte clone of `sidepanel.html:12-128` with nothing keeping them in sync, so every a11y and copy fix must be made twice — a smaller instance of the same duplication tax as the module/monolith split.
-  Evidence: the two files; `extension/sidebar.js` is 4 inert lines setting `data-astra-surface="firefox-sidebar"` with no consumer anywhere in the repo.
-  Touches: `extension/sidebar.html`, `extension/sidebar.js`, `build-extension.js`
-  Acceptance: the sidebar markup is generated from the side panel at build time or the divergence is gated byte-for-byte; the inert `sidebar.js` is either given a consumer or deleted.
-  Complexity: S
-
 - [ ] P2 — Ship the heatmap features YouTube already hands us
   Why: jump-to-most-replayed and heatmap-driven speed are the only genuinely new playback ideas in the category this year, ImprovedTube shipped both in 2026, and the heatmap JSON already arrives in the player response Astra Deck parses — so the marginal cost is low and it is a leapfrog on a specialist's own ground.
   Evidence: https://github.com/code-charity/youtube/releases (v4.2026 "Smart Speed"); no `heatmap`/`mostReplayed` key exists in `extension/core/settings-schema.js` (verified 2026-08-11).

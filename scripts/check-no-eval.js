@@ -40,7 +40,6 @@ const SCAN_FILES = [
     'extension/runtime-bootstrap.js',
     'extension/runtime-core-loader.mjs',
     'extension/sidepanel.js',
-    'extension/sidebar.js',
     'extension/live-chat.js',
     'YTKit.user.js',
     'YTKit-core.user.js',

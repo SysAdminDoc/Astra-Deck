@@ -81,7 +81,6 @@ module.exports = [
             'extension/features/**/*.js',
             'extension/live-chat.js',
             'extension/sidepanel.js',
-            'extension/sidebar.js',
             'extension/ytkit.js',
             'extension/ytkit-main.js',
         ],
