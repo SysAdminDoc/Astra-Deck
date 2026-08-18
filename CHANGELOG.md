@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.67.0] - 2026-08-18
+
 ### Fixed
 
 - The settings panel footer no longer pushes its Done button off the edge on a
