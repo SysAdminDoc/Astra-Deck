@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.64.0] - 2026-08-18
+
 ### Fixed
 
 - The Reaction Sender panel now closes with Escape and returns focus to the
