@@ -181,6 +181,23 @@
             riskBand: 'api'
         }),
         Object.freeze({
+            origin: 'https://raw.githubusercontent.com',
+            purpose: 'Repair path: refreshes the YouTube selector packs when a layout change breaks a feature. Contacted only when you run a selector refresh, never automatically.',
+            // Driven by an explicit user action from the selector-health
+            // dashboard rather than a feature toggle, so it is never reported
+            // as currently active. It is catalogued because the extension does
+            // fetch it: the dev manifest declared the permission while the
+            // catalogue did not, so every BUILT artifact dropped it and the
+            // request survived only because GitHub raw sends
+            // Access-Control-Allow-Origin: *. Disclosure should not rest on
+            // another host's CORS policy.
+            requiredByFeatures: [],
+            credentialsPolicy: 'no-cookies',
+            profile: 'store-safe',
+            hostGrant: 'required',
+            riskBand: 'safe'
+        }),
+        Object.freeze({
             origin: 'https://www.reddit.com',
             purpose: 'Reddit discussion panel below the video.',
             requiredByFeatures: ['redditComments'],

@@ -19,6 +19,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   (`/@handle`) matched no route, so they lost Video Hider too. Measured
   startup is unchanged. Modules whose features are all switched off are still
   skipped.
+- The selector-refresh repair path is now disclosed like every other external
+  origin. `raw.githubusercontent.com` was declared in the source manifest but
+  missing from the origin catalogue, so built releases dropped the permission
+  and the request worked only because GitHub sends a permissive CORS header —
+  while the Data Flow panel never listed the host at all. It is now catalogued,
+  disclosed, and documented in the store permission rationale.
 - Video Hider's safety net now covers scrolling, and can actually undo itself.
   The rule that refuses to hide more than a quarter of a feed only ran on
   navigation, so an over-matching keyword, duration, or predicate rule silently
