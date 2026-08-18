@@ -4149,8 +4149,8 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
         'import must default parentId to top-level for legacy v1 payloads');
     assert.match(block, /_exportGroupsOpml\(\)/,
         'subscription groups must export OPML for migration to subscription managers');
-    assert.match(block, /_importGroupsOpml\(opmlText\)/,
-        'subscription groups must import OPML with the same local group model');
+    assert.match(block, /_importGroupsOpml\(opmlText, options = \{\}\)/,
+        'subscription groups must import OPML with the same local group model, honouring the merge/replace mode');
     assert.match(block, /duplicateChannels/,
         'OPML import must report skipped duplicate channels');
     assert.match(block, /text\/x-opml/,

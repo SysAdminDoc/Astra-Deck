@@ -1749,6 +1749,58 @@ test('subscriptionGroups import merges by default and only replaces on request',
     assert.equal(replaceResult.removedGroups, 1);
 });
 
+test('the MONOLITH subscriptionGroups copy also merges on import', () => {
+    // The peeled module is only imported when the session LANDS on the
+    // subscriptions feed; land anywhere else and this copy is what runs. It
+    // kept the destructive full-replace long after the peeled copy was fixed,
+    // so a partial file deleted every group missing from it — and the test
+    // above passed the whole time because it only drove the module.
+    const { loadFallbackFeature } = require('../helpers/monolith');
+    const makeFeature = () => {
+        const appState = {
+            settings: {
+                subscriptionGroupData: {
+                    keep: { name: 'Keep', color: '#7c3aed', channelIds: ['UCkeep1111111111111111'], parentId: '', sortMode: 'default', updatedAt: 1 },
+                    news: { name: 'Old News', color: '#7c3aed', channelIds: ['UCexisting111111111111'], parentId: '', sortMode: 'default', updatedAt: 1 },
+                },
+            },
+        };
+        const feature = loadFallbackFeature('subscriptionGroups', {
+            appState,
+            settingsManager: { save() {} },
+            showToast() {},
+        });
+        feature._renderToolbar = () => {};
+        feature._applyGroupFilter = () => {};
+        feature._renderDeadChannelMarkers = () => {};
+        return { feature, appState };
+    };
+    const payload = JSON.stringify({
+        groups: {
+            news: { name: 'News', color: '#123456', channelIds: ['UCimported11111111111'], sortMode: 'default' },
+        },
+    });
+
+    const merge = makeFeature();
+    const mergeResult = merge.feature._importGroups(payload);
+    const mergedGroups = merge.appState.settings.subscriptionGroupData;
+    assert.equal(mergeResult.ok, true);
+    assert.ok(mergedGroups.keep, 'a group missing from the file must survive an import');
+    assert.equal(mergedGroups.news.name, 'News', 'the imported record wins on presentation');
+    // The fallback runs in a vm realm, so its arrays carry that realm's
+    // prototype; spread them back into this realm before a strict compare.
+    assert.deepEqual([...mergedGroups.news.channelIds], ['UCexisting111111111111', 'UCimported11111111111'],
+        'existing channels are kept and imported ones appended');
+    assert.equal(mergeResult.removedGroups, 0, 'merging never reports removals');
+
+    const replace = makeFeature();
+    const replaceResult = replace.feature._importGroups(payload, { mode: 'replace' });
+    assert.equal(replaceResult.ok, true);
+    assert.deepEqual(Object.keys(replace.appState.settings.subscriptionGroupData), ['news'],
+        'explicit replace still wipes the rest');
+    assert.equal(replaceResult.removedGroups, 1);
+});
+
 test('the watch-time dashboard renders an empty state instead of 30 zero-height bars', () => {
     const ytkitSource = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8'
