@@ -22,6 +22,7 @@ function readSources(overrides = {}) {
         settingsPanel: overrides.settingsPanel ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'settings-panel', 'index.js'), 'utf8'),
         subscriptionGroups: overrides.subscriptionGroups ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8'),
         downloadUi: overrides.downloadUi ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'download-ui', 'index.js'), 'utf8'),
+        liveChat: overrides.liveChat ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'live-chat', 'index.js'), 'utf8'),
         smoke: overrides.smoke ?? fs.readFileSync(path.join(ROOT, 'docs', 'screen-reader-smoke.md'), 'utf8')
     };
 }
@@ -256,7 +257,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     const checks = [];
     const add = (name, ok, failure) => checks.push({ name, ok: Boolean(ok), failure });
 
-    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, smoke } = sources;
+    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, smoke } = sources;
     for (const check of runKeyboardBehaviorChecks()) add(check.name, check.ok, check.failure);
 
     // Toast DOM and inline fallback.
@@ -471,6 +472,23 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         ytkit.includes("close.setAttribute('aria-label', t('whaCloseAria', 'Close watch time dashboard'))") &&
         ytkit.includes("if (event.key === 'Escape')"),
         'Watch-time dashboard must be labelled, modal, and close on Escape');
+
+    // The Reaction Sender was the only role="dialog" in the codebase with
+    // neither Escape nor a trap — it was simply not in this gate's source list,
+    // which is why nothing caught it. It is deliberately NON-modal (chat must
+    // stay readable and reachable behind it), so a focus trap would be wrong;
+    // Escape and a focus return to the launcher are what it owes the user.
+    add('Reaction Sender is a labelled non-modal dialog that closes on Escape',
+        liveChat.includes("panel.setAttribute('role', 'dialog')") &&
+        liveChat.includes("panel.setAttribute('aria-modal', 'false')") &&
+        liveChat.includes("panel.setAttribute('aria-labelledby', 'ytkit-rs-title')") &&
+        liveChat.includes("panel.addEventListener('keydown', handlePanelKeydown)") &&
+        liveChat.includes("if (event.key !== 'Escape' || event.defaultPrevented) return;") &&
+        liveChat.includes('launcher?.focus?.({ preventScroll: true })'),
+        'Reaction Sender must be labelled, declare its non-modality, close on Escape, and return focus to its launcher');
+    add('Reaction Sender removes its key handler when closed',
+        liveChat.includes("panel?.removeEventListener('keydown', handlePanelKeydown)"),
+        'Reaction Sender must not leave a keydown listener bound to a removed panel');
 
     add('Settings panel traps Tab and Shift+Tab in active dialogs',
         settingsPanel.includes("if (e.key === 'Tab' && activeDialog)") &&

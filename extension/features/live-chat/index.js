@@ -408,8 +408,21 @@
                 });
             }
 
+            // Escape must reach the panel from anywhere inside it, so the
+            // listener lives on the panel and not on each control. Registered in
+            // openPanel and dropped in closePanel, so a closed panel leaves no
+            // document-level listener behind.
+            function handlePanelKeydown(event) {
+                if (event.key !== 'Escape' || event.defaultPrevented) return;
+                if (event.altKey || event.ctrlKey || event.metaKey) return;
+                event.preventDefault();
+                event.stopPropagation();
+                closePanel();
+            }
+
             function closePanel() {
                 stop();
+                panel?.removeEventListener('keydown', handlePanelKeydown);
                 panel?.remove();
                 panel = null;
                 launcher?.focus?.({ preventScroll: true });
@@ -422,9 +435,15 @@
                 }
                 panel = doc.createElement('section');
                 panel.id = 'ytkit-reaction-spammer-panel';
+                // Deliberately a NON-modal dialog: the chat behind it stays
+                // usable and readable while the sender runs, which is the whole
+                // point of the feature. A non-modal dialog must not trap focus —
+                // Tab is how the user gets back to chat — but it still owes the
+                // user Escape, which is what was missing.
                 panel.setAttribute('role', 'dialog');
                 panel.setAttribute('aria-modal', 'false');
                 panel.setAttribute('aria-labelledby', 'ytkit-rs-title');
+                panel.addEventListener('keydown', handlePanelKeydown);
 
                 const header = doc.createElement('header');
                 const title = doc.createElement('h2');

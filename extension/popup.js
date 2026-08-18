@@ -1604,9 +1604,15 @@ function getFocusableElements(root = document.body) {
 }
 
 function getActiveFocusRoot() {
-    // v4.47.0 NF14: the confirm-shell modal was retired in favor of the
-    // immediate-apply + undo-toast pattern. The Tab-trap below now
-    // always rotates within the document body.
+    // v4.47.0 NF14 retired the confirm-shell modal in favor of immediate-apply +
+    // undo toasts, so this always returns document.body now.
+    //
+    // That reads like a trap with nothing to trap, and a 2026-08-14 audit logged
+    // it as vestigial — it is not. popup.html declares `role="dialog"
+    // aria-modal="true"` on <body>: the popup IS the dialog, and a modal dialog
+    // owes assistive technology a real focus cycle. The Tab handling below is
+    // what makes that declaration true, and hardening.test.js pins it
+    // deliberately. Removing it would leave a modal that lies.
     return document.body;
 }
 

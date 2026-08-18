@@ -115,13 +115,6 @@ duplicated here.
   Acceptance: one focus-ring mechanism that survives `forced-colors: active` on every surface, `live-chat.css` gains a forced-colors lane, and the a11y gate detects outline-suppressing rules rather than listing selectors (shares the P1 gate item above).
   Complexity: M
 
-- [ ] P2 — Fix the Reaction Sender dialog and the popup's vestigial focus trap
-  Why: one `role="dialog"` has no Escape handler and no focus trap, and the popup runs a document-wide Tab trap with nothing left to trap.
-  Evidence: `extension/features/live-chat/index.js:425-427` declares `role="dialog" aria-modal="false"` — the only dialog in the codebase with neither Escape nor a trap (compare `popup.js:1388-1398` and `ytkit.js:50890-50892`). `popup.js:1386-1426` traps Tab unconditionally while `getActiveFocusRoot()` (`:1371-1376`) always returns `document.body` since the confirm modal was retired, so Shift-Tab wraps instead of leaving. The popup has no skip link despite ~15 sections above its toggle list, while `sidepanel.html:13` has one.
-  Touches: `extension/features/live-chat/index.js`, `extension/popup.js`, `extension/popup.html`, `scripts/audit-overlays-a11y.js`
-  Acceptance: the Reaction Sender closes on Escape and traps focus while open, or drops the `role="dialog"`; the popup's Tab handler is removed or re-scoped to a real modal root; the popup gains a skip link; the overlay a11y gate covers the live-chat surface.
-  Complexity: S
-
 - [ ] P2 — Generate the Firefox sidebar from the side panel instead of cloning it
   Why: `sidebar.html:12-128` is a byte-for-byte clone of `sidepanel.html:12-128` with nothing keeping them in sync, so every a11y and copy fix must be made twice — a smaller instance of the same duplication tax as the module/monolith split.
   Evidence: the two files; `extension/sidebar.js` is 4 inert lines setting `data-astra-surface="firefox-sidebar"` with no consumer anywhere in the repo.
