@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Astra Deck now tells you when it could not read your saved settings. If the
+  one-time settings read failed, the page quietly ran on factory defaults for
+  the rest of the session while the popup kept showing your real values, with
+  nothing to explain the disagreement. That failure now raises a notice on the
+  page and is recorded in the diagnostic log.
+
+### Changed
+
+- The startup performance gate is measured rather than advisory. It now takes
+  seven samples per surface and compares the fastest one, because a busy
+  machine can only make a run slower, never faster. It also states which
+  fixture it measured and refuses to quietly swap in a different budget when
+  the reference captures are missing.
+
 ## [4.63.0] - 2026-08-18
 
 ### Security

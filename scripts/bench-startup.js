@@ -32,7 +32,15 @@ const {
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BASELINE_PATH = path.join(__dirname, 'startup-performance-baseline.json');
-const DEFAULT_ITERATIONS = 3;
+// Seven samples per surface, compared on the MINIMUM. Machine load can only
+// ever inflate a timing sample, never deflate one, so the fastest observed run
+// is the best available estimate of the code's own cost and is the one statistic
+// a busy box cannot push upward. With three samples and a median, a single slow
+// scheduling slice moved the compared number and the gate could not tell a
+// regression from a loaded machine — which is how a real ~5x regression went
+// unremarked. More samples cost wall-clock, not accuracy; seven is the point
+// where the minimum stops moving run to run on the reference hardware.
+const DEFAULT_ITERATIONS = 7;
 const DEFAULT_TIMEOUT_MS = 30000;
 const BOUNDED_SESSION_MS = 750;
 // Photosensitive protection gets one millisecond per presented frame for its
@@ -41,11 +49,20 @@ const BOUNDED_SESSION_MS = 750;
 // startup budget so performance changes are reviewed with the same gate.
 const PHOTOSENSITIVE_FRAME_BUDGET_MS = 1;
 const HEADED_PRIVATE = process.env.YTKIT_BENCH_HEADED_PRIVATE === '1';
+// Tolerance against the MINIMUM, which is far steadier than the median the
+// gate used to compare: 0.35 relative existed to absorb load the statistic now
+// rejects, and at that width a 35% regression on top of the absolute floor was
+// invisible. Keep the absolute floors — they cover genuine sub-millisecond
+// jitter and the heap sampler's granularity.
 const DEFAULT_TOLERANCE = Object.freeze({
-    relative: 0.35,
+    relative: 0.20,
     absoluteMs: 25,
     absoluteBytes: 512 * 1024,
 });
+// The statistic every budget comparison uses. Recorded in the baseline so a
+// baseline captured under the old median rule can never be compared as if it
+// were a minimum.
+const COMPARISON_STATISTIC = 'min';
 const METRIC_KEYS = Object.freeze([
     'parseInitMs',
     'firstFeaturePaintMs',
@@ -190,6 +207,7 @@ const END_DRIVER = `'use strict';
 
 function parseArgs(argv) {
     const opts = {
+        allowSynthetic: false,
         browser: '',
         check: false,
         iterations: DEFAULT_ITERATIONS,
@@ -208,6 +226,8 @@ function parseArgs(argv) {
             opts.timeoutMs = Number(argv[++index]);
         } else if (arg === '--update-baseline') {
             opts.updateBaseline = true;
+        } else if (arg === '--allow-synthetic') {
+            opts.allowSynthetic = true;
         } else {
             throw new Error(`unknown argument: ${arg}`);
         }
@@ -265,6 +285,12 @@ function metricMedian(summary, key) {
     return Number(summary?.[key]?.[`median${METRIC_FIELDS[key]}`]);
 }
 
+// The gated statistic. Separate from metricMedian, which still backs the
+// informational per-metric log lines.
+function metricValue(summary, key) {
+    return Number(summary?.[key]?.[`${COMPARISON_STATISTIC}${METRIC_FIELDS[key]}`]);
+}
+
 function metricUnit(key) {
     return METRIC_FIELDS[key] === 'Bytes' ? 'bytes' : 'ms';
 }
@@ -282,6 +308,7 @@ function buildBaseline(summary, options, browserPath, fallbackSummary = summary)
         metricOrigin: 'performance.now() plus Runtime.getHeapUsage() around the isolated-world stack',
         browser: path.basename(browserPath),
         iterations: options.iterations,
+        comparisonStatistic: COMPARISON_STATISTIC,
         tolerance: { ...DEFAULT_TOLERANCE },
         metrics: summary,
         fallbackMetrics: fallbackSummary,
@@ -304,8 +331,17 @@ function readBaseline(filePath = BASELINE_PATH) {
             || !CAPTURED_SURFACES.every((surface) => baseline.surfaces.some((entry) => entry.id === surface.id))) {
         throw new Error('startup baseline schema or fixture identity is invalid');
     }
+    // A baseline recorded before the gate moved to the minimum carries medians
+    // that were never meant to bound a minimum. Refuse it outright rather than
+    // comparing two different statistics and calling the result a budget.
+    if (baseline.comparisonStatistic !== COMPARISON_STATISTIC) {
+        throw new Error(
+            `startup baseline was recorded for the '${baseline.comparisonStatistic || 'median'}' statistic `
+            + `but this gate compares '${COMPARISON_STATISTIC}'; re-record with npm run bench:startup -- --update-baseline`
+        );
+    }
     for (const key of METRIC_KEYS) {
-        const field = `median${METRIC_FIELDS[key]}`;
+        const field = `${COMPARISON_STATISTIC}${METRIC_FIELDS[key]}`;
         if (!Number.isFinite(Number(baseline.metrics?.[key]?.[field]))) {
             throw new Error(`startup baseline is missing metrics.${key}.${field}`);
         }
@@ -322,25 +358,60 @@ function readBaseline(filePath = BASELINE_PATH) {
     return baseline;
 }
 
+// Debt the gate knowingly carries on top of the reference floor, per metric.
+// This exists so a measured, tracked regression does not force a choice between
+// a permanently red gate (which detects nothing new) and re-recording the
+// reference (which erases the evidence). The reference stays as the goal; the
+// accepted number is the ratchet and may only ever decrease.
+function acceptedRegression(baseline, key) {
+    const value = Number(baseline?.acceptedRegression?.[key]);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 function checkAgainstBaseline(summary, baseline) {
     const tolerance = baseline.tolerance;
     const failures = [];
     for (const key of METRIC_KEYS) {
-        const baselineValue = metricMedian(baseline.metrics, key);
-        const observedValue = metricMedian(summary, key);
+        const baselineValue = metricValue(baseline.metrics, key);
+        const observedValue = metricValue(summary, key);
         const absoluteTolerance = METRIC_FIELDS[key] === 'Bytes'
             ? Number(tolerance.absoluteBytes)
             : Number(tolerance.absoluteMs);
         const allowance = Math.max(absoluteTolerance, Math.max(0, baselineValue) * Number(tolerance.relative));
-        const limit = baselineValue + allowance;
+        const accepted = acceptedRegression(baseline, key);
+        const limit = baselineValue + allowance + accepted;
         if (observedValue > limit) {
             failures.push(
-                `${key} median ${observedValue.toFixed(2)} ${metricUnit(key)} exceeds ${limit.toFixed(2)} ${metricUnit(key)} `
-                + `(baseline ${baselineValue.toFixed(2)} ${metricUnit(key)} + ${allowance.toFixed(2)} ${metricUnit(key)} tolerance)`
+                `${key} ${COMPARISON_STATISTIC} ${observedValue.toFixed(2)} ${metricUnit(key)} exceeds ${limit.toFixed(2)} ${metricUnit(key)} `
+                + `(baseline ${baselineValue.toFixed(2)} ${metricUnit(key)} + ${allowance.toFixed(2)} ${metricUnit(key)} tolerance`
+                + `${accepted ? ` + ${accepted.toFixed(2)} ${metricUnit(key)} accepted regression` : ''})`
             );
         }
     }
     return failures;
+}
+
+// Reports how much of the accepted debt each metric is no longer using, so the
+// ratchet is actionable instead of a number nobody revisits.
+function reportAcceptedRegressionHeadroom(summary, baseline) {
+    const lines = [];
+    for (const key of METRIC_KEYS) {
+        const accepted = acceptedRegression(baseline, key);
+        if (!accepted) continue;
+        const tolerance = baseline.tolerance;
+        const baselineValue = metricValue(baseline.metrics, key);
+        const absoluteTolerance = METRIC_FIELDS[key] === 'Bytes'
+            ? Number(tolerance.absoluteBytes)
+            : Number(tolerance.absoluteMs);
+        const allowance = Math.max(absoluteTolerance, Math.max(0, baselineValue) * Number(tolerance.relative));
+        const used = metricValue(summary, key) - baselineValue - allowance;
+        lines.push(
+            `${key}: carrying ${accepted.toFixed(2)} ${metricUnit(key)} of accepted regression, `
+            + `using ${Math.max(0, used).toFixed(2)} ${metricUnit(key)}`
+            + (used < accepted ? ` — the ratchet can drop to ${Math.max(0, Math.ceil(used)).toFixed(2)}` : '')
+        );
+    }
+    return lines;
 }
 
 function decodeQuotedPrintable(value) {
@@ -694,7 +765,10 @@ async function main(argv = process.argv.slice(2)) {
     console.log(`[bench-startup] fixture mode: ${result.fixtureMode}`);
     console.log(`[bench-startup] photosensitive frame budget: ${PHOTOSENSITIVE_FRAME_BUDGET_MS.toFixed(2)} ms/sample`);
     for (const key of METRIC_KEYS) {
-        console.log(`[bench-startup] median ${key}: ${metricMedian(result.metrics, key).toFixed(2)} ${metricUnit(key)}`);
+        console.log(
+            `[bench-startup] ${COMPARISON_STATISTIC} ${key}: ${metricValue(result.metrics, key).toFixed(2)} ${metricUnit(key)}`
+            + ` (median ${metricMedian(result.metrics, key).toFixed(2)} ${metricUnit(key)}, ${options.iterations} samples/surface)`
+        );
     }
 
     if (options.updateBaseline) {
@@ -708,11 +782,50 @@ async function main(argv = process.argv.slice(2)) {
     }
 
     const baseline = readBaseline();
-    const baselineMetrics = result.fixtureMode === 'captured-mhtml'
-        ? baseline.metrics
-        : baseline.fallbackMetrics;
-    const failures = checkAgainstBaseline(result.metrics, { ...baseline, metrics: baselineMetrics });
+    const usedCaptures = result.fixtureMode === 'captured-mhtml';
+    const baselineMetrics = usedCaptures ? baseline.metrics : baseline.fallbackMetrics;
+    const budgetSource = usedCaptures ? 'metrics (captured mhtml)' : 'fallbackMetrics (synthetic fixture)';
+    console.log(`[bench-startup] budget source: baseline.${budgetSource}`);
+
+    // The mhtml captures are gitignored, so a clean clone silently fell through
+    // to the synthetic fixture AND to a different budget with only a
+    // console.warn. Two budgets that swap themselves out on a missing file are
+    // not a gate. Gating on the fallback is still useful, but it has to be
+    // asked for.
+    if (options.check && !usedCaptures && !options.allowSynthetic) {
+        throw new Error(
+            'startup captures are missing, so the run measured the synthetic fixture and would have been\n'
+            + `  gated against baseline.fallbackMetrics instead of baseline.metrics.\n`
+            + '  Capture mhtml/WatchPage.mhtml + mhtml/YouTube.mhtml, or pass --allow-synthetic to gate\n'
+            + '  against the synthetic budget deliberately.'
+        );
+    }
+
+    // Each budget source carries its own ratchet: the captured and synthetic
+    // fixtures have different reference shapes, so one shared allowance would
+    // have to be widened to the looser lane and would stop gating the tighter
+    // one.
+    const acceptedForSource = usedCaptures
+        ? baseline.acceptedRegression
+        : baseline.fallbackAcceptedRegression;
+    const comparisonBaseline = {
+        ...baseline,
+        metrics: baselineMetrics,
+        acceptedRegression: acceptedForSource,
+    };
+    if (acceptedForSource) {
+        console.warn(
+            `[bench-startup] carrying accepted startup regression recorded ${acceptedForSource.recordedAt}: `
+            + `${acceptedForSource.reason}`
+        );
+        for (const line of reportAcceptedRegressionHeadroom(result.metrics, comparisonBaseline)) {
+            console.warn(`[bench-startup]   ${line}`);
+        }
+    }
+
+    const failures = checkAgainstBaseline(result.metrics, comparisonBaseline);
     if (failures.length) {
+        failures.push(`measured with fixture mode '${result.fixtureMode}' against baseline.${budgetSource}`);
         // `--check` gates (that is `npm run check:startup`); a bare bench run
         // REPORTS. The flag was parsed but never read, so both modes were
         // identical and measuring on a busy machine failed the run instead of
@@ -747,5 +860,6 @@ module.exports = {
     median,
     parseArgs,
     prepareFixture,
+    readBaseline,
     summarize,
 };
