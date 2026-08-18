@@ -149,12 +149,31 @@ test('the shipped baseline records the statistic it was measured with, and its d
     assert.equal(shipped.comparisonStatistic, 'min');
     assert.ok(shipped.iterations >= 7,
         'a load-robust minimum needs enough samples for the floor to settle');
+    // Debt is optional -- when the reference matches reality there is none to
+    // carry -- but any debt that IS carried must say when and why, and that it
+    // only ratchets down.
     for (const lane of ['acceptedRegression', 'fallbackAcceptedRegression']) {
-        assert.ok(shipped[lane], `${lane} must document the debt the gate carries`);
+        if (!shipped[lane]) continue;
         assert.match(shipped[lane].reason, /RATCHET|ratchet/,
             `${lane} must state that it may only decrease`);
         assert.ok(shipped[lane].recordedAt, `${lane} must say when the debt was accepted`);
     }
+
+    // Re-recording the reference is legitimate when the hardware changes, but
+    // it must never erase the evidence that justified the old one -- otherwise
+    // a real regression can be laundered into a new baseline. The 2026-08-08
+    // reference outlived its machine (OS wiped 2026-08-15) and was retired only
+    // after b5c933aa and HEAD were measured back to back and matched.
+    assert.ok(Array.isArray(shipped.history) && shipped.history.length > 0,
+        'a retired reference must be preserved in history, not deleted');
+    const retired = shipped.history[0];
+    assert.ok(retired.metrics && Number.isFinite(Number(retired.metrics.firstFeaturePaintMs)),
+        'the retired reference must keep its numbers');
+    assert.ok(retired.retiredAt && retired.machine, 'a retired reference must say when and why it was retired');
+    assert.match(retired.note, /3c9a5ef2/,
+        'the bisect that made the retired reference meaningful must survive with it');
+    assert.ok(shipped.machineNote && /not a code regression/i.test(shipped.machineNote),
+        'a re-record must record the check that proved it was not covering a regression');
 });
 
 test('startup benchmark CLI and check gate are wired to the real fixture', () => {
