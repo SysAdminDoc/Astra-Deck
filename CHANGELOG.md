@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.65.0] - 2026-08-18
+
 ### Changed
 
 - Astra Deck starts noticeably faster. Its internal modules used to be loaded
