@@ -176,6 +176,23 @@
          consumable beyond the data-flow panel + risk badges. Native
          <details> for collapsibility; defaults closed so the popup
          stays compact for first-time openers. -->
+    <!-- v4.68.0: feature health. The three dashboards below answer
+         "is this selector matching?", "is this API up?", "how long did
+         init take?" — none of them answers the question users actually
+         ask when YouTube ships a breaking change: which of MY features
+         stopped working. This panel joins those signals per feature and
+         is deliberately NOT gated behind a diagnostics toggle: silent
+         failure is the complaint, so the answer has to be one click from
+         the toolbar icon and one more to open. -->
+    <details class="feature-health" id="feature-health" hidden>
+      <summary class="feature-health-summary">
+        <span class="feature-health-eyebrow" data-i18n="featureHealthTitle">Feature health</span>
+        <span class="feature-health-line" id="feature-health-line" aria-live="polite"></span>
+      </summary>
+      <ul class="feature-health-list" id="feature-health-list" role="list"></ul>
+      <p class="feature-health-note" id="feature-health-note" data-i18n="featureHealthNote">Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check.</p>
+    </details>
+
     <details class="schema-overview" id="schema-overview">
       <summary class="schema-overview-summary">
         <span class="schema-overview-eyebrow" data-i18n="schemaOverviewEyebrow">Settings overview</span>
@@ -462,6 +479,12 @@
      existing `core.createSelectorHealth` first so it's a no-op on
      content-script pages where ytkit.js already loaded it. -->
 <script src="core/selector-health.js"></script>
+<!-- v4.68.0: feature-health joins the four health signals into the
+     per-feature answer the popup's "Feature health" panel renders. The
+     content script builds the report (it owns the inputs); the popup
+     only needs the shared summary-line formatter so the collapsed
+     header and the expanded list can never disagree. -->
+<script src="core/feature-health.js"></script>
 <!-- v4.47.0 NF10 follow-up: capability-probe surfaces runtime browser
      capabilities (summarizer API, MediaDL, Ollama) so the schema-overview
      row builder can render an "Unavailable" chip on entries whose

@@ -26,6 +26,9 @@
         addNavigateRule,
         addScopedMutationRule,
         appendStyleSheet,
+        buildFeatureHealthReport,
+        getSelectorAttributionSnapshot,
+        withSelectorAttribution,
         cleanupRetiredCommentUi,
         configureNavigationRuntime,
         flushPendingStorageWrites,
@@ -5539,7 +5542,15 @@ return response;
         if (!feature || feature._arrayKey) return false;
         const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
         try {
-            feature.init?.();
+            // Credit every selector surface this feature resolves during init
+            // to the feature, so the health panel can name what broke rather
+            // than reporting an anonymous surface miss. The mutation-rule
+            // dispatcher does the same for the steady-state path.
+            if (typeof withSelectorAttribution === 'function') {
+                withSelectorAttribution(feature.id, () => feature.init?.());
+            } else {
+                feature.init?.();
+            }
             feature._initialized = true;
             const elapsed = typeof performance !== 'undefined' ? performance.now() - t0 : 0;
             updateFeatureHealth(feature, 'initialized', source, null, elapsed);
@@ -6333,6 +6344,21 @@ return response;
                             mutationRules,
                             selectorAsset
                         });
+                    } catch (e) {
+                        sendResponse?.({ ok: false, error: String(e?.message || e) });
+                    }
+                    return false;
+                }
+
+                // v4.68.0 — the per-feature health answer. Built here rather
+                // than in the popup because every input lives in this world:
+                // the feature array, the registry's lifecycle health, the
+                // selector attribution recorded during init and mutation
+                // rules, the mutation-rule breakers, and the external-API
+                // records. Read-only.
+                if (message.type === 'YTKIT_GET_FEATURE_HEALTH') {
+                    try {
+                        sendResponse?.({ ok: true, report: buildFeatureHealthPayload() });
                     } catch (e) {
                         sendResponse?.({ ok: false, error: String(e?.message || e) });
                     }
@@ -48099,6 +48125,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
     function getFeatureById(featureId) {
         return featureIndex.get(featureId);
+    }
+
+    // v4.68.0 — assemble "which of my features are working right now?".
+    //
+    // Only enabled, non-array, non-retired features are offered to the
+    // report; array-backed sub-entries (blocklist rows) have no lifecycle of
+    // their own and would pad the list with hundreds of unanswerable rows.
+    // The join itself lives in core/feature-health.js so it stays testable
+    // without a DOM.
+    function buildFeatureHealthPayload() {
+        if (typeof buildFeatureHealthReport !== 'function') {
+            return { generatedAt: Date.now(), counts: {}, total: 0, worstStatus: 'healthy', features: [] };
+        }
+        const settings = appState.settings || {};
+        const reportable = features
+            .filter((feature) => feature?.id
+                && !feature._arrayKey
+                && !isRetiredCommentFeature(feature)
+                && isFeatureEnabledInSettings(feature, settings))
+            .map((feature) => ({
+                id: feature.id,
+                name: getFeatureName(feature) || feature.id,
+                category: feature.group || null,
+                enabled: true
+            }));
+        return buildFeatureHealthReport({
+            features: reportable,
+            registryHealth: typeof getFeatureHealthSnapshot === 'function' ? getFeatureHealthSnapshot() : [],
+            attribution: typeof getSelectorAttributionSnapshot === 'function'
+                ? getSelectorAttributionSnapshot()
+                : [],
+            mutationRules: globalThis.YTKitCore?.getMutationRuleHealthSnapshot?.() || [],
+            externalApis: (typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot)
+                ? ExternalApiHealth.snapshot()
+                : []
+        });
     }
 
     function registerRuntimeFeature(feature) {

@@ -73,13 +73,6 @@ duplicated here.
 
 ### P2
 
-- [ ] P2 — Give the user one answer to "which of my features are working right now?"
-  Why: across AMO 1–2 star reviews for every major competitor, breakage cadence is the single largest complaint and silent failure is what makes it unbearable — "it doesn't work anymore… since YouTube keeps updating and breaking the addon". Astra Deck already has the telemetry (`core/selector-health.js`, feature health snapshots, degraded-state pills); it has no surface that answers the question.
-  Evidence: https://addons.mozilla.org/en-US/firefox/addon/particle-iridium/ , https://addons.mozilla.org/en-US/firefox/addon/blocktube/ , https://addons.mozilla.org/en-US/firefox/addon/youtube-recommended-videos/ (accessed 2026-08-11); `extension/core/selector-health.js`; the popup's three dashboards render one-line `<li>` empty states (`popup.js:2192-2195, 2500-2503, 2653-2656`) where the side panel gives three-cause states (`sidepanel.js:328-350`).
-  Touches: `extension/core/selector-health.js`, `extension/core/registry.js`, `extension/popup.js`, `extension/sidepanel.js`
-  Acceptance: one surface lists every enabled feature as healthy / degraded / failed with the selector or API that failed and when, is reachable in two clicks from the toolbar, and is included in the diagnostics bundle. A feature whose selector stops matching flips to degraded within one navigation — bait-verified by breaking a selector pack entry.
-  Complexity: M
-
 - [ ] P3 — Reduce monolith compile time, the last large startup cost
   Why: with the foundation graph now loaded concurrently (16-21 ms), the single biggest remaining startup stage is `monolithMs` — 65-87 ms spent compiling and executing the ~3.1 MB `extension/ytkit.js`. Every bench run prints the stage line, so the number is always visible.
   Context (2026-08-18): the ~2x regression bisected on 2026-08-08..v4.63.0 is CLOSED. Its remaining "debt" turned out to be an artifact of comparing against a reference recorded on hardware that was wiped in the 2026-08-15 rebuild. Verified before retiring that reference: `b5c933aa` (the concurrent-loading fix) and HEAD measured 131.70/93.60 and 134.90/89.00 back to back on the same box — identical within noise. The reference is now re-recorded on the current machine with the retired one and its bisect preserved in `startup-performance-baseline.json`'s `history`, and no accepted-regression allowances are carried.
@@ -189,6 +182,13 @@ duplicated here.
   Touches: `extension/popup.js`, `extension/background.js`, `extension/core/persisted-domains.js`, `extension/ytkit.js`
   Acceptance: the popup reports transcript-index count/bytes alongside extension-local bytes by asking an open YouTube tab (and degrades cleanly when none is open); backups carry the cap and index metadata; a corruption state offers export-then-clear rather than clear alone.
   Complexity: M
+
+- [ ] P3 — `npm run smoke:a11y` dies on a CDP timeout roughly one run in three
+  Why: the rendered accessibility lane is the only proof that surfaces survive 320px, forced colors, and 200% zoom, and it is unreliable enough that a red run is now assumed to be flake — which is exactly how a real failure gets waved through. Confirmed pre-existing: a clean stash of HEAD failed the same way (2026-08-18), so it is not caused by recent surface work.
+  Evidence: `devtools call timed out: Emulation.setDeviceMetricsOverride` and `... Runtime.evaluate`, both on the `settings` surface (8 states, 411 focus visits — the heaviest lane). Also observed once: a sidepanel `.sp-skip-link` focus-indicator failure that did not reproduce.
+  Touches: `scripts/smoke-headless-a11y.js`, `scripts/smoke-settings-overlay.js` (`DevtoolsClient`)
+  Acceptance: ten consecutive runs pass. Either the per-call timeout is raised where the settings surface genuinely needs longer and the wait is made condition-based rather than fixed, or the surface is split so no single CDP call has to cover 411 focus visits. A timeout must name which surface and state it died in.
+  Complexity: S
 
 - [ ] P3 — Add a pseudo-locale long-string lane to the reflow smoke
   Status 2026-08-18: the reflow coverage shipped — `smoke-headless-a11y.js` now renders ALL SIX primary surfaces (popup, sidepanel, sidebar, settings, transcript, download) at exactly 320 CSS pixels in `ar`, `de` and `pt_BR`, checking document-level horizontal scrolling, clipped controls, and (on the surfaces Astra Deck owns) `lang`/`dir`. It found and fixed a real clip: the settings footer was one unwrappable row and pushed its Done button 13px off the panel edge — bait-verified.

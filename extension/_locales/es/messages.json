@@ -1260,6 +1260,60 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "featureHealthAgeDaysTpl": {
+    "message": "{count}d ago"
+  },
+  "featureHealthAgeHoursTpl": {
+    "message": "{count}h ago"
+  },
+  "featureHealthAgeMinutesTpl": {
+    "message": "{count}m ago"
+  },
+  "featureHealthAgeSecondsTpl": {
+    "message": "{count}s ago"
+  },
+  "featureHealthAllWellTpl": {
+    "message": "{healthy} features working"
+  },
+  "featureHealthDegradedTpl": {
+    "message": "{count} degraded"
+  },
+  "featureHealthEmpty": {
+    "message": "No enabled features sampled yet."
+  },
+  "featureHealthFailedTpl": {
+    "message": "{count} failed"
+  },
+  "featureHealthHealthyTpl": {
+    "message": "{count} working"
+  },
+  "featureHealthMoreTpl": {
+    "message": "+{count} more"
+  },
+  "featureHealthNote": {
+    "message": "Degraded means the feature loaded but something it depends on stopped answering. Reload YouTube to re-check."
+  },
+  "featureHealthReasonApiTpl": {
+    "message": "{service}: {detail}"
+  },
+  "featureHealthReasonSelectorTpl": {
+    "message": "Page element “{surface}” no longer found"
+  },
+  "featureHealthStatusDegraded": {
+    "message": "Degraded"
+  },
+  "featureHealthStatusFailed": {
+    "message": "Fallido"
+  },
+  "featureHealthStatusHealthy": {
+    "message": "Working"
+  },
+  "featureHealthStatusIdle": {
+    "message": "Not active here"
+  },
+  "featureHealthTitle": {
+    "message": "Feature health"
+  },
   "featurePerfAria": {
     "message": "Feature performance"
   },

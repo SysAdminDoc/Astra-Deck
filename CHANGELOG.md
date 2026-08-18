@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- **Feature health.** The popup now answers "which of my features are working
+  right now?" — every enabled feature is listed as working, degraded, or failed,
+  with the page element or service that stopped answering and when. It opens
+  automatically when something is wrong, and travels with the diagnostics
+  bundle so a bug report says what broke instead of "it stopped working".
+
 ## [4.67.0] - 2026-08-18
 
 ### Fixed

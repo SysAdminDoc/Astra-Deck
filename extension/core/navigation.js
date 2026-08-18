@@ -447,7 +447,14 @@
         }
         let error = null;
         try {
-            ruleFn(...args);
+            // Mutation-rule ids ARE feature ids (addMutationRule(this.id, …)),
+            // so this is the widest window in which selector resolutions can
+            // be credited to the feature that depends on them. Guarded because
+            // navigation.js and selectors.js are loaded concurrently and
+            // either can be absent in a unit-test harness.
+            const attribute = core.withSelectorAttribution;
+            if (typeof attribute === 'function') attribute(id, () => ruleFn(...args));
+            else ruleFn(...args);
         } catch (caught) {
             error = caught;
         }
