@@ -392,3 +392,64 @@ test('poi_highlight point markers survive normalization and render with a visibl
     assert.equal(feature._isPointSegment(poi), true);
     assert.equal(feature._isPointSegment({ category: 'sponsor', actionType: 'skip' }), false);
 });
+
+test('per-channel profiles resolve the same canonical key the chip writes', () => {
+    // The chip that WRITES a profile canonicalises the owner href via
+    // YTKitCore.channelSettingsKey, but this reader kept the raw href, so a
+    // suffixed owner link (/featured, ?si=…) produced a key the stored
+    // profile could never match: overrides were silently ignored on playback
+    // while the chip still rendered them as active.
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const { loadFallbackFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
+
+    // Use the REAL canonicaliser the writer uses, not a restatement of it.
+    const urlContext = vm.createContext({ globalThis: undefined });
+    urlContext.globalThis = urlContext;
+    vm.runInContext(
+        fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'core', 'url.js'), 'utf8'),
+        urlContext,
+        { filename: 'extension/core/url.js' }
+    );
+    const YTKitCore = urlContext.YTKitCore;
+    assert.equal(typeof YTKitCore.channelSettingsKey, 'function',
+        'the canonical key helper must load');
+
+    const ownerLink = (href) => fakeNode({ tag: 'a', attributes: { href } });
+    const makeFeature = (href) => loadFallbackFeature('sponsorBlock', {
+        YTKitCore,
+        appState: {
+            settings: {
+                sbPerChannelProfiles: true,
+                sbPerChannelProfilesData: {
+                    '/@creator': { categories: { sponsor: false } },
+                },
+                sbCategorySponsor: true,
+            },
+        },
+        document: fakeDocument((selector) =>
+            (selector.includes('/@') ? [ownerLink(href)] : [])),
+    });
+
+    // The canonical key for every spelling of the same owner link.
+    for (const href of ['/@creator', '/@creator/featured', '/@creator?si=abc']) {
+        const feature = makeFeature(href);
+        assert.equal(feature._getChannelId(), '/@creator',
+            `owner href '${href}' must resolve to the canonical profile key`);
+        // …and the override that key selects is actually applied.
+        assert.equal(feature._getEnabledCategories().includes('sponsor'), false,
+            `owner href '${href}' must apply the stored per-channel override`);
+    }
+
+    // The peeled module must resolve identically: it is the copy that runs.
+    const moduleSource = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+    const readerStart = moduleSource.indexOf('_getChannelId() {');
+    assert.ok(readerStart > -1, 'the module must define _getChannelId');
+    const reader = moduleSource.slice(readerStart, moduleSource.indexOf('_getEnabledCategories()', readerStart));
+    assert.match(reader, /channelSettingsKey/,
+        'the peeled reader must canonicalise through the shared helper too');
+    assert.doesNotMatch(reader, /return handleLink\.getAttribute\('href'\)/,
+        'the peeled reader must not return a raw handle href');
+});

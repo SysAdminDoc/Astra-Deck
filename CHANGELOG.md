@@ -19,6 +19,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   (`/@handle`) matched no route, so they lost Video Hider too. Measured
   startup is unchanged. Modules whose features are all switched off are still
   skipped.
+- SponsorBlock per-channel category overrides now apply on channels whose byline
+  link carries a suffix (`/@name/featured`, `?si=…`). The control that saves an
+  override normalised the channel link, but the playback-time reader did not, so
+  the stored override could never be found: skipping fell back to your global
+  categories while the control still showed the override as active.
 - Importing subscription groups now merges instead of silently replacing.
   Which copy of the feature runs depends on the page you land on, and the
   in-page copy still deleted every group missing from the imported file — the
