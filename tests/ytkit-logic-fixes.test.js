@@ -198,7 +198,10 @@ test('in-page import seeds migration start from backupSchemaVersion when inner m
 // ── item 2: videoNotes debounce must capture identity at schedule time ──
 
 test('videoNotes captures videoId/title at schedule time and flushes before teardown', () => {
-    const block = featureBlock('videoNotes', 20000);
+    // The feature lives in its own module since v4.72.0; ytkit.js keeps only a
+    // descriptor stub, so featureBlock() would slice the stub.
+    const block = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'video-notes', 'index.js'), 'utf8');
     assert.match(
         block,
         /_pendingSave\s*=\s*\{\s*value,\s*videoId:\s*getVideoId\(\),\s*title:\s*this\._currentTitle\(\)\s*\}/,

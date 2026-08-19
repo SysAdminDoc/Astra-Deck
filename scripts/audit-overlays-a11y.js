@@ -23,6 +23,7 @@ function readSources(overrides = {}) {
         subscriptionGroups: overrides.subscriptionGroups ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8'),
         downloadUi: overrides.downloadUi ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'download-ui', 'index.js'), 'utf8'),
         liveChat: overrides.liveChat ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'live-chat', 'index.js'), 'utf8'),
+        videoNotes: overrides.videoNotes ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'video-notes', 'index.js'), 'utf8'),
         smoke: overrides.smoke ?? fs.readFileSync(path.join(ROOT, 'docs', 'screen-reader-smoke.md'), 'utf8')
     };
 }
@@ -257,7 +258,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     const checks = [];
     const add = (name, ok, failure) => checks.push({ name, ok: Boolean(ok), failure });
 
-    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, smoke } = sources;
+    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, smoke } = sources;
     for (const check of runKeyboardBehaviorChecks()) add(check.name, check.ok, check.failure);
 
     // Toast DOM and inline fallback.
@@ -393,21 +394,22 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         hasMinTarget(ytkit, '.ytkit-transcript-search-panel__footer button'),
         'Transcript search controls must declare focus-visible and at least 24px target size');
 
-    // Video notes.
+    // Video notes. Peeled out of ytkit.js in v4.72.0; the monolith keeps only
+    // a descriptor stub, so these read the feature module.
     add('Video notes panel is labelled and status is live',
-        ytkit.includes("this._container.setAttribute('role', 'region')") &&
-        ytkit.includes("this._container.setAttribute('aria-label', t('videoNotesRegionAria', 'Per-video notes'))") &&
-        ytkit.includes("status.setAttribute('role', 'status')") &&
-        ytkit.includes("status.setAttribute('aria-live', 'polite')"),
+        videoNotes.includes("this._container.setAttribute('role', 'region')") &&
+        videoNotes.includes("this._container.setAttribute('aria-label', t('videoNotesRegionAria', 'Per-video notes'))") &&
+        videoNotes.includes("status.setAttribute('role', 'status')") &&
+        videoNotes.includes("status.setAttribute('aria-live', 'polite')"),
         'Video notes must be a labelled region with a polite status');
     add('Video notes controls have names, focus-visible, and target size',
-        ytkit.includes("textarea.setAttribute('aria-label', t('videoNotesInputAria', 'Notes for this video'))") &&
-        ytkit.includes("exportBtn.setAttribute('aria-label', t('videoNotesExportAria', 'Export all video notes'))") &&
-        ytkit.includes("deleteBtn.setAttribute('aria-label', t('videoNotesDeleteAria', 'Delete the note for this video'))") &&
-        ytkit.includes('.ytkit-video-notes-actions button:focus-visible') &&
-        ytkit.includes('.ytkit-video-notes-input:focus,.ytkit-video-notes-input:focus-visible') &&
-        hasMinTarget(ytkit, '.ytkit-video-notes-actions button') &&
-        hasMinTarget(ytkit, '.ytkit-video-notes-input'),
+        videoNotes.includes("textarea.setAttribute('aria-label', t('videoNotesInputAria', 'Notes for this video'))") &&
+        videoNotes.includes("exportBtn.setAttribute('aria-label', t('videoNotesExportAria', 'Export all video notes'))") &&
+        videoNotes.includes("deleteBtn.setAttribute('aria-label', t('videoNotesDeleteAria', 'Delete the note for this video'))") &&
+        videoNotes.includes('.ytkit-video-notes-actions button:focus-visible') &&
+        videoNotes.includes('.ytkit-video-notes-input:focus,.ytkit-video-notes-input:focus-visible') &&
+        hasMinTarget(videoNotes, '.ytkit-video-notes-actions button') &&
+        hasMinTarget(videoNotes, '.ytkit-video-notes-input'),
         'Video notes controls must be named, focus-visible, and at least 24px');
 
     // Download health and history.
