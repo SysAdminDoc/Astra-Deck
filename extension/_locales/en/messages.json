@@ -353,7 +353,7 @@
     "message": "Quick toggles are saved now and sync when YouTube is open."
   },
   "contextNoteInlinePanel": {
-    "message": "Open the full workspace on this tab; quick toggles apply immediately."
+    "message": "Open the settings workspace on this tab. Quick toggles apply immediately."
   },
   "contextNoteLaunch": {
     "message": "Open a watchable YouTube tab to use the full in-page workspace."
@@ -449,7 +449,7 @@
     "message": "Cobalt fallback failed: {error}"
   },
   "dlCobaltInstanceRequired": {
-    "message": "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site."
+    "message": "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site."
   },
   "dlCobaltOpened": {
     "message": "Cobalt fallback: opened media URL in new tab."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "No filter list is being followed."
   },
+  "filterListStatusStateReadFail": {
+    "message": "Could not read the filter-list state. Reload the extension, then open the popup again."
+  },
   "filterListStatusRefreshFail": {
     "message": "Could not refresh the list. Check the address, then try again."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "Open Full Settings"
+    "message": "Open Workspace"
   },
   "openYouTube": {
     "message": "Open YouTube"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted — could not stage an undo snapshot. Export a backup first."
+    "message": "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "Reset failed"
   },
   "statusResetSnapshotFail": {
-    "message": "Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first."
+    "message": "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first."
   },
   "statusResetUndoExpired": {
     "message": "Undo no longer available — snapshot expired with the browser session."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip — configure manually"
+    "message": "Skip and configure manually"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

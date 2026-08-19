@@ -353,7 +353,7 @@
     "message": "打开 YouTube 标签页后，快捷开关将开始同步。"
   },
   "contextNoteInlinePanel": {
-    "message": "点击「打开完整设置」即可在当前标签页中启动页面内工作区。"
+    "message": "在此标签页中打开设置工作区。快速开关会立即生效。"
   },
   "contextNoteLaunch": {
     "message": "完整设置位于可观看 YouTube 标签页中的页面内工作区。"
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "当前未订阅任何过滤列表。"
   },
+  "filterListStatusStateReadFail": {
+    "message": "无法读取过滤列表状态。请重新加载扩展程序，然后再次打开弹出窗口。"
+  },
   "filterListStatusRefreshFail": {
     "message": "无法刷新列表。请检查网址后重试。"
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "打开完整设置"
+    "message": "打开工作区"
   },
   "openYouTube": {
     "message": "打开 YouTube"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "已停止导入。Astra Deck 无法在浏览器会话存储中保存撤销点。请先导出备份。"
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "重置失败"
   },
   "statusResetSnapshotFail": {
-    "message": "重置已中止 — 无法暂存撤销快照（数据太大，无法进行可恢复的重置）。请先导出备份。"
+    "message": "已停止重置。Astra Deck 无法在浏览器会话存储中保存撤销点。请先导出备份。"
   },
   "statusResetUndoExpired": {
     "message": "撤销不再可用 — 快照已随浏览器会话过期。"
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "跳过并手动配置"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

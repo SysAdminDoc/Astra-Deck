@@ -1168,7 +1168,7 @@ async function requestOptionalHostsForSetting(key, value) {
         if (!described.ok && (String(value || '').trim()
             || popupState.settings?.downloadCobaltFallback === true)) {
             const error = new Error(t('dlCobaltInstanceRequired',
-                'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.'));
+                'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.'));
             error.code = 'COBALT_INSTANCE_INVALID';
             throw error;
         }
@@ -1181,7 +1181,7 @@ async function requestOptionalHostsForSetting(key, value) {
         const described = getConfiguredCobaltDescriptor();
         if (!described.ok) {
             const error = new Error(t('dlCobaltInstanceRequired',
-                'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings Overview, then grant access to that site.'));
+                'Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.'));
             error.code = 'COBALT_INSTANCE_INVALID';
             throw error;
         }
@@ -1544,8 +1544,9 @@ function getTabContext(tab) {
     if (isSupportedInlinePanelUrl(url)) {
         return {
             label: t('contextStateYouTube', 'YouTube'),
-            note: t('contextNoteInlinePanel', 'Open the full workspace on this tab; quick toggles apply immediately.'),
-            openLabel: t('openFullSettings', 'Open Full Settings'),
+            note: t('contextNoteInlinePanel',
+                'Open the settings workspace on this tab. Quick toggles apply immediately.'),
+            openLabel: t('openFullSettings', 'Open Workspace'),
             mode: 'inline-panel',
             state: 'ready'
         };
@@ -5170,7 +5171,8 @@ function renderFilterListSubscriptionStatus(described, record) {
     const sanitize = persistedDomains?.sanitizeVideoFilterListSubscription;
     const resolve = persistedDomains?.resolveVideoFilterListSubscriptionState;
     if (typeof sanitize !== 'function' || typeof resolve !== 'function') {
-        setFilterListStatus('filterListStatusRefreshFail', 'Could not read filter-list state.', 'error');
+        setFilterListStatus('filterListStatusStateReadFail',
+            'Could not read the filter-list state. Reload the extension, then open the popup again.', 'error');
         return;
     }
 
@@ -5342,7 +5344,8 @@ async function importFilterList(file) {
         const snapped = await writeImportSnapshot(snapshot);
         if (!snapped) {
             await discardCoordinatedSnapshot(snapshot);
-            throw new Error(t('statusImportSnapshotFail', 'Could not stage an undo snapshot.'));
+            throw new Error(t('statusImportSnapshotFail',
+                'Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.'));
         }
         try {
             await storageSet(nonSettingWrites);
@@ -5571,7 +5574,7 @@ async function importSettings(file) {
         if (!snapped) {
             await discardCoordinatedSnapshot(snapshot);
             showStatus(t('statusImportSnapshotFail',
-                'Import aborted - could not stage an undo snapshot. Export a backup first.'),
+                'Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.'),
                 'error', 6000);
             return;
         }
@@ -6278,8 +6281,13 @@ async function resetAllData() {
         const snapped = await writeResetSnapshot(snapshot);
         if (!snapped) {
             await discardCoordinatedSnapshot(snapshot);
+            // The pre-EI2 copy blamed "data too large". The session payload
+            // is a tiny descriptor now (the bulk goes to IndexedDB via
+            // persistedDomains.writeExtensionSnapshot), so the only ways
+            // writeSessionSnapshot returns false are an unavailable session API
+            // or a rejected session write. Name that instead.
             showStatus(t('statusResetSnapshotFail',
-                'Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first.'),
+                'Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.'),
                 'error', 6000);
             return;
         }
@@ -6730,7 +6738,10 @@ function installWheelScrolling() {
         aiCredentialDelete.addEventListener('click', () => { void deleteAiCredential(); });
     }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
-    // Route through the same flow as the primary Reset (undo-backed, no confirm dialog) to prevent
-    // bypassing the PIN when the banner is showing.
+    // The banner's Reset routes through the same resetAllData() flow as the
+    // primary one, so it stages the undo snapshot and re-stamps the onboarding
+    // sentinels. A direct storageClear() here would be an unrecoverable reset
+    // reachable only from the banner. (There is no PIN in this surface; the
+    // comment that claimed one never matched the code.)
     if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', () => { void resetAllData(); });
 })();

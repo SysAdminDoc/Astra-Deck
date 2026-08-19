@@ -353,7 +353,7 @@
     "message": "Os botões rápidos são salvos agora e sincronizados quando o YouTube está aberto."
   },
   "contextNoteInlinePanel": {
-    "message": "Abra o espaço de trabalho completo nesta aba; os botões rápidos são aplicados imediatamente."
+    "message": "Abra o espaço de trabalho de configurações nesta aba. As alternâncias rápidas são aplicadas imediatamente."
   },
   "contextNoteLaunch": {
     "message": "Abra uma aba do YouTube para usar o espaço de trabalho completo na página."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "Nenhuma lista de filtros está sendo seguida."
   },
+  "filterListStatusStateReadFail": {
+    "message": "Não foi possível ler o estado da lista de filtros. Recarregue a extensão e abra o popup novamente."
+  },
   "filterListStatusRefreshFail": {
     "message": "Não foi possível atualizar a lista. Verifique o endereço e tente novamente."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "Abrir configurações completas"
+    "message": "Abrir o espaço de trabalho"
   },
   "openYouTube": {
     "message": "Abrir YouTube"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "Importação interrompida. O Astra Deck não conseguiu salvar um ponto de desfazer no armazenamento de sessão do navegador. Exporte um backup primeiro."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "Falha na redefinição"
   },
   "statusResetSnapshotFail": {
-    "message": "Redefinição cancelada — não foi possível criar um snapshot para desfazer (dados muito grandes para redefinição recuperável). Exporte um backup primeiro."
+    "message": "Redefinição interrompida. O Astra Deck não conseguiu salvar um ponto de desfazer no armazenamento de sessão do navegador. Exporte um backup primeiro."
   },
   "statusResetUndoExpired": {
     "message": "Desfazer não disponível — o snapshot expirou com a sessão do navegador."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "Pular e configurar manualmente"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

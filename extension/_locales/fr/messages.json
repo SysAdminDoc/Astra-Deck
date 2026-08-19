@@ -353,7 +353,7 @@
     "message": "Les commutateurs rapides sont enregistrés et se synchronisent quand YouTube est ouvert."
   },
   "contextNoteInlinePanel": {
-    "message": "Ouvrir l'espace de travail complet sur cet onglet ; les commutateurs rapides s'appliquent immédiatement."
+    "message": "Ouvrez l'espace de travail des paramètres dans cet onglet. Les bascules rapides s'appliquent immédiatement."
   },
   "contextNoteLaunch": {
     "message": "Ouvrez un onglet YouTube pour utiliser l'espace de travail intégré."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "Aucune liste de filtres n'est suivie."
   },
+  "filterListStatusStateReadFail": {
+    "message": "Impossible de lire l'état de la liste de filtres. Rechargez l'extension, puis rouvrez la fenêtre."
+  },
   "filterListStatusRefreshFail": {
     "message": "Impossible d'actualiser la liste. Vérifiez l'adresse, puis réessayez."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "Ouvrir tous les paramètres"
+    "message": "Ouvrir l'espace de travail"
   },
   "openYouTube": {
     "message": "Ouvrir YouTube"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "Import interrompu. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de session du navigateur. Exportez d'abord une sauvegarde."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "Échec de la réinitialisation"
   },
   "statusResetSnapshotFail": {
-    "message": "Réinitialisation annulée — impossible de préparer un instantané d'annulation (données trop volumineuses pour une réinitialisation récupérable). Exportez d'abord une sauvegarde."
+    "message": "Réinitialisation interrompue. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de session du navigateur. Exportez d'abord une sauvegarde."
   },
   "statusResetUndoExpired": {
     "message": "Annulation plus disponible — l'instantané a expiré avec la session du navigateur."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "Ignorer et configurer manuellement"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

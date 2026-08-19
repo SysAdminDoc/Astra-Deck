@@ -353,7 +353,7 @@
     "message": "التبديلات السريعة محفوظة الآن وتُزامَن عند فتح YouTube."
   },
   "contextNoteInlinePanel": {
-    "message": "افتح مساحة العمل الكاملة في هذه التبويبة؛ تُطبَّق التبديلات السريعة فوراً."
+    "message": "افتح مساحة عمل الإعدادات في علامة التبويب هذه. تُطبَّق المفاتيح السريعة فورًا."
   },
   "contextNoteLaunch": {
     "message": "افتح تبويبة YouTube قابلة للمشاهدة لاستخدام مساحة العمل الكاملة داخل الصفحة."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "لا يتم اتباع أي قائمة تصفية."
   },
+  "filterListStatusStateReadFail": {
+    "message": "تعذّرت قراءة حالة قائمة التصفية. أعد تحميل الإضافة ثم افتح النافذة المنبثقة مرة أخرى."
+  },
   "filterListStatusRefreshFail": {
     "message": "تعذّر تحديث القائمة. تحقق من العنوان ثم أعد المحاولة."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "فتح الإعدادات الكاملة"
+    "message": "افتح مساحة العمل"
   },
   "openYouTube": {
     "message": "فتح YouTube"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "تم إيقاف الاستيراد. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين جلسة المتصفح. صدّر نسخة احتياطية أولاً."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "فشلت إعادة التعيين"
   },
   "statusResetSnapshotFail": {
-    "message": "تم إلغاء إعادة التعيين — تعذّر إعداد لقطة للتراجع (البيانات كبيرة جداً لإعادة تعيين قابلة للاسترداد). قم بتصدير نسخة احتياطية أولاً."
+    "message": "تم إيقاف إعادة الضبط. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين جلسة المتصفح. صدّر نسخة احتياطية أولاً."
   },
   "statusResetUndoExpired": {
     "message": "التراجع لم يعد متاحاً — انتهت صلاحية اللقطة مع جلسة المتصفح."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "تخطَّ واضبط يدويًا"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

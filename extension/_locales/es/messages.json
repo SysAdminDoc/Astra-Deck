@@ -353,7 +353,7 @@
     "message": "Los interruptores rápidos se guardan ahora y se sincronizan cuando YouTube está abierto."
   },
   "contextNoteInlinePanel": {
-    "message": "Abre el espacio de trabajo completo en esta pestaña; los interruptores rápidos se aplican de inmediato."
+    "message": "Abre el espacio de trabajo de ajustes en esta pestaña. Los interruptores rápidos se aplican de inmediato."
   },
   "contextNoteLaunch": {
     "message": "Abre una pestaña de YouTube para usar el espacio de trabajo completo integrado."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "No se está siguiendo ninguna lista de filtros."
   },
+  "filterListStatusStateReadFail": {
+    "message": "No se pudo leer el estado de la lista de filtros. Vuelve a cargar la extensión y abre el popup de nuevo."
+  },
   "filterListStatusRefreshFail": {
     "message": "No se pudo actualizar la lista. Comprueba la dirección e inténtalo de nuevo."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "Abrir configuración completa"
+    "message": "Abrir el espacio de trabajo"
   },
   "openYouTube": {
     "message": "Abrir YouTube"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "Importación detenida. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de sesión del navegador. Exporta una copia de seguridad primero."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "Error al restablecer"
   },
   "statusResetSnapshotFail": {
-    "message": "Restablecimiento abortado — no se pudo crear una instantánea de deshacer (datos demasiado grandes para un restablecimiento recuperable). Exporta una copia de seguridad primero."
+    "message": "Restablecimiento detenido. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de sesión del navegador. Exporta una copia de seguridad primero."
   },
   "statusResetUndoExpired": {
     "message": "Deshacer ya no disponible — la instantánea expiró con la sesión del navegador."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "Omitir y configurar manualmente"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

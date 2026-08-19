@@ -7881,6 +7881,132 @@ const SWITCH_PILL_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(SWITCH_PILL_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// Undo-snapshot failures. The English was rewritten to name the real cause:
+// the session-storage write, not "data too large", which stopped being true
+// when the bulk of the snapshot moved to IndexedDB.
+const SNAPSHOT_FAILURE_TRANSLATIONS = {
+  de: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Import gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Sitzungsspeicher des Browsers sichern. Exportieren Sie zuerst eine Sicherung.",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Zur\u00fccksetzen gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Sitzungsspeicher des Browsers sichern. Exportieren Sie zuerst eine Sicherung."
+  },
+  es: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Importaci\u00f3n detenida. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de sesi\u00f3n del navegador. Exporta una copia de seguridad primero.",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Restablecimiento detenido. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de sesi\u00f3n del navegador. Exporta una copia de seguridad primero."
+  },
+  fr: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Import interrompu. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de session du navigateur. Exportez d'abord une sauvegarde.",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "R\u00e9initialisation interrompue. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de session du navigateur. Exportez d'abord une sauvegarde."
+  },
+  it: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Importazione interrotta. Astra Deck non \u00e8 riuscito a salvare un punto di annullamento nell'archivio di sessione del browser. Esporta prima un backup.",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Ripristino interrotto. Astra Deck non \u00e8 riuscito a salvare un punto di annullamento nell'archivio di sessione del browser. Esporta prima un backup."
+  },
+  ja: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\u30a4\u30f3\u30dd\u30fc\u30c8\u3092\u4e2d\u6b62\u3057\u307e\u3057\u305f\u3002Astra Deck \u306f\u30d6\u30e9\u30a6\u30b6\u30fc\u306e\u30bb\u30c3\u30b7\u30e7\u30f3\u30b9\u30c8\u30ec\u30fc\u30b8\u306b\u53d6\u308a\u6d88\u3057\u30dd\u30a4\u30f3\u30c8\u3092\u4fdd\u5b58\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002\u5148\u306b\u30d0\u30c3\u30af\u30a2\u30c3\u30d7\u3092\u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\u30ea\u30bb\u30c3\u30c8\u3092\u4e2d\u6b62\u3057\u307e\u3057\u305f\u3002Astra Deck \u306f\u30d6\u30e9\u30a6\u30b6\u30fc\u306e\u30bb\u30c3\u30b7\u30e7\u30f3\u30b9\u30c8\u30ec\u30fc\u30b8\u306b\u53d6\u308a\u6d88\u3057\u30dd\u30a4\u30f3\u30c8\u3092\u4fdd\u5b58\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002\u5148\u306b\u30d0\u30c3\u30af\u30a2\u30c3\u30d7\u3092\u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u3057\u3066\u304f\u3060\u3055\u3044\u3002"
+  },
+  ko: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\uac00\uc838\uc624\uae30\ub97c \uc911\ub2e8\ud588\uc2b5\ub2c8\ub2e4. Astra Deck\uc774 \ube0c\ub77c\uc6b0\uc800 \uc138\uc158 \uc800\uc7a5\uc18c\uc5d0 \uc2e4\ud589 \ucde8\uc18c \uc9c0\uc810\uc744 \uc800\uc7a5\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \uba3c\uc800 \ubc31\uc5c5\uc744 \ub0b4\ubcf4\ub0b4\uc138\uc694.",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\ucd08\uae30\ud654\ub97c \uc911\ub2e8\ud588\uc2b5\ub2c8\ub2e4. Astra Deck\uc774 \ube0c\ub77c\uc6b0\uc800 \uc138\uc158 \uc800\uc7a5\uc18c\uc5d0 \uc2e4\ud589 \ucde8\uc18c \uc9c0\uc810\uc744 \uc800\uc7a5\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \uba3c\uc800 \ubc31\uc5c5\uc744 \ub0b4\ubcf4\ub0b4\uc138\uc694."
+  },
+  pt_BR: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Importa\u00e7\u00e3o interrompida. O Astra Deck n\u00e3o conseguiu salvar um ponto de desfazer no armazenamento de sess\u00e3o do navegador. Exporte um backup primeiro.",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "Redefini\u00e7\u00e3o interrompida. O Astra Deck n\u00e3o conseguiu salvar um ponto de desfazer no armazenamento de sess\u00e3o do navegador. Exporte um backup primeiro."
+  },
+  ru: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\u0418\u043c\u043f\u043e\u0440\u0442 \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d. Astra Deck \u043d\u0435 \u0441\u043c\u043e\u0433 \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u0442\u043e\u0447\u043a\u0443 \u043e\u0442\u043c\u0435\u043d\u044b \u0432 \u0441\u0435\u0441\u0441\u0438\u043e\u043d\u043d\u043e\u043c \u0445\u0440\u0430\u043d\u0438\u043b\u0438\u0449\u0435 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430. \u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u044d\u043a\u0441\u043f\u043e\u0440\u0442\u0438\u0440\u0443\u0439\u0442\u0435 \u0440\u0435\u0437\u0435\u0440\u0432\u043d\u0443\u044e \u043a\u043e\u043f\u0438\u044e.",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\u0421\u0431\u0440\u043e\u0441 \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d. Astra Deck \u043d\u0435 \u0441\u043c\u043e\u0433 \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u0442\u043e\u0447\u043a\u0443 \u043e\u0442\u043c\u0435\u043d\u044b \u0432 \u0441\u0435\u0441\u0441\u0438\u043e\u043d\u043d\u043e\u043c \u0445\u0440\u0430\u043d\u0438\u043b\u0438\u0449\u0435 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430. \u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u044d\u043a\u0441\u043f\u043e\u0440\u0442\u0438\u0440\u0443\u0439\u0442\u0435 \u0440\u0435\u0437\u0435\u0440\u0432\u043d\u0443\u044e \u043a\u043e\u043f\u0438\u044e."
+  },
+  ar: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\u062a\u0645 \u0625\u064a\u0642\u0627\u0641 \u0627\u0644\u0627\u0633\u062a\u064a\u0631\u0627\u062f. \u062a\u0639\u0630\u0651\u0631 \u0639\u0644\u0649 Astra Deck \u062d\u0641\u0638 \u0646\u0642\u0637\u0629 \u062a\u0631\u0627\u062c\u0639 \u0641\u064a \u062a\u062e\u0632\u064a\u0646 \u062c\u0644\u0633\u0629 \u0627\u0644\u0645\u062a\u0635\u0641\u062d. \u0635\u062f\u0651\u0631 \u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629 \u0623\u0648\u0644\u0627\u064b.",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\u062a\u0645 \u0625\u064a\u0642\u0627\u0641 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0636\u0628\u0637. \u062a\u0639\u0630\u0651\u0631 \u0639\u0644\u0649 Astra Deck \u062d\u0641\u0638 \u0646\u0642\u0637\u0629 \u062a\u0631\u0627\u062c\u0639 \u0641\u064a \u062a\u062e\u0632\u064a\u0646 \u062c\u0644\u0633\u0629 \u0627\u0644\u0645\u062a\u0635\u0641\u062d. \u0635\u062f\u0651\u0631 \u0646\u0633\u062e\u0629 \u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629 \u0623\u0648\u0644\u0627\u064b."
+  },
+  zh_CN: {
+    "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\u5df2\u505c\u6b62\u5bfc\u5165\u3002Astra Deck \u65e0\u6cd5\u5728\u6d4f\u89c8\u5668\u4f1a\u8bdd\u5b58\u50a8\u4e2d\u4fdd\u5b58\u64a4\u9500\u70b9\u3002\u8bf7\u5148\u5bfc\u51fa\u5907\u4efd\u3002",
+    "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.": "\u5df2\u505c\u6b62\u91cd\u7f6e\u3002Astra Deck \u65e0\u6cd5\u5728\u6d4f\u89c8\u5668\u4f1a\u8bdd\u5b58\u50a8\u4e2d\u4fdd\u5b58\u64a4\u9500\u70b9\u3002\u8bf7\u5148\u5bfc\u51fa\u5907\u4efd\u3002"
+  },
+};
+for (const [locale, messages] of Object.entries(SNAPSHOT_FAILURE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+// Microcopy consistency batch: one workspace noun, one cause-accurate
+// filter-list failure, no dash in the welcome skip, and the Settings overview
+// reference matching the heading it points at.
+const MICROCOPY_BATCH_TRANSLATIONS = {
+  de: {
+    "Open Workspace": "Arbeitsbereich öffnen",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "Öffnen Sie den Einstellungs-Arbeitsbereich in diesem Tab. Schnellschalter wirken sofort.",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "Der Filterlisten-Status konnte nicht gelesen werden. Laden Sie die Erweiterung neu und öffnen Sie das Popup erneut.",
+    "Skip and configure manually": "Überspringen und manuell einrichten",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "Konfigurieren Sie im Einstellungsüberblick des Toolbar-Popups den HTTPS-Ursprung einer eigenen Cobalt-Instanz und gewähren Sie dann Zugriff auf diese Website."
+  },
+  es: {
+    "Open Workspace": "Abrir el espacio de trabajo",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "Abre el espacio de trabajo de ajustes en esta pestaña. Los interruptores rápidos se aplican de inmediato.",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "No se pudo leer el estado de la lista de filtros. Vuelve a cargar la extensión y abre el popup de nuevo.",
+    "Skip and configure manually": "Omitir y configurar manualmente",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "Configura el origen HTTPS de una instancia propia de Cobalt en el resumen de ajustes de la ventana de la barra y concede acceso a ese sitio."
+  },
+  fr: {
+    "Open Workspace": "Ouvrir l'espace de travail",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "Ouvrez l'espace de travail des paramètres dans cet onglet. Les bascules rapides s'appliquent immédiatement.",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "Impossible de lire l'état de la liste de filtres. Rechargez l'extension, puis rouvrez la fenêtre.",
+    "Skip and configure manually": "Ignorer et configurer manuellement",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "Configurez l’origine HTTPS d’une instance Cobalt auto-hébergée dans l’aperçu des paramètres de la barre d’outils, puis autorisez ce site."
+  },
+  it: {
+    "Open Workspace": "Apri l'area di lavoro",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "Apri l'area di lavoro delle impostazioni in questa scheda. Gli interruttori rapidi si applicano subito.",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "Impossibile leggere lo stato dell'elenco filtri. Ricarica l'estensione e riapri il popup.",
+    "Skip and configure manually": "Salta e configura manualmente",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "Configura l’origine HTTPS di un’istanza Cobalt self-hosted nella panoramica impostazioni del popup della barra, quindi concedi l’accesso al sito."
+  },
+  ja: {
+    "Open Workspace": "ワークスペースを開く",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "このタブで設定ワークスペースを開きます。クイック切り替えはすぐに反映されます。",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "フィルターリストの状態を読み取れませんでした。拡張機能を再読み込みしてから、ポップアップを開き直してください。",
+    "Skip and configure manually": "スキップして手動で設定",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "ツールバーのポップアップにある設定概要で自己ホスト Cobalt の HTTPS 接続先を設定し、そのサイトへのアクセスを許可してください。"
+  },
+  ko: {
+    "Open Workspace": "작업 공간 열기",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "이 탭에서 설정 작업 공간을 엽니다. 빠른 전환은 즉시 적용됩니다.",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "필터 목록 상태를 읽지 못했습니다. 확장 프로그램을 다시 로드한 후 팝업을 다시 여세요.",
+    "Skip and configure manually": "건너뛰고 직접 설정",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "도구 모음 팝업의 설정 개요에서 자체 호스팅 Cobalt HTTPS 원본을 구성한 다음 해당 사이트에 액세스를 허용하세요."
+  },
+  pt_BR: {
+    "Open Workspace": "Abrir o espaço de trabalho",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "Abra o espaço de trabalho de configurações nesta aba. As alternâncias rápidas são aplicadas imediatamente.",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "Não foi possível ler o estado da lista de filtros. Recarregue a extensão e abra o popup novamente.",
+    "Skip and configure manually": "Pular e configurar manualmente",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "Configure a origem HTTPS de uma instância própria do Cobalt na visão geral de configurações do popup da barra e conceda acesso ao site."
+  },
+  ru: {
+    "Open Workspace": "Открыть рабочую область",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "Откройте рабочую область настроек на этой вкладке. Быстрые переключатели применяются сразу.",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "Не удалось прочитать состояние списка фильтров. Перезагрузите расширение и снова откройте всплывающее окно.",
+    "Skip and configure manually": "Пропустить и настроить вручную",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "Укажите HTTPS-источник собственного экземпляра Cobalt в обзоре настроек всплывающего окна панели инструментов, затем предоставьте доступ к сайту."
+  },
+  ar: {
+    "Open Workspace": "افتح مساحة العمل",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "افتح مساحة عمل الإعدادات في علامة التبويب هذه. تُطبَّق المفاتيح السريعة فورًا.",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "تعذّرت قراءة حالة قائمة التصفية. أعد تحميل الإضافة ثم افتح النافذة المنبثقة مرة أخرى.",
+    "Skip and configure manually": "تخطَّ واضبط يدويًا",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "اضبط أصل HTTPS لمثيل Cobalt مستضاف ذاتيًا في نظرة عامة على الإعدادات بنافذة شريط الأدوات، ثم امنح الوصول إلى الموقع."
+  },
+  zh_CN: {
+    "Open Workspace": "打开工作区",
+    "Open the settings workspace on this tab. Quick toggles apply immediately.": "在此标签页中打开设置工作区。快速开关会立即生效。",
+    "Could not read the filter-list state. Reload the extension, then open the popup again.": "无法读取过滤列表状态。请重新加载扩展程序，然后再次打开弹出窗口。",
+    "Skip and configure manually": "跳过并手动配置",
+    "Configure a self-hosted Cobalt HTTPS origin in the toolbar popup Settings overview, then grant access to that site.": "请在工具栏弹窗的设置概览中配置自托管 Cobalt HTTPS 来源，然后授权访问该站点。"
+  },
+};
+for (const [locale, messages] of Object.entries(MICROCOPY_BATCH_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+
+
 
 
 function readExistingLocale(locale) {
