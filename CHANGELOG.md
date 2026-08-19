@@ -10,6 +10,21 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Four features stopped re-checking their own verdicts on reused elements.
+  YouTube recycles DOM nodes hard: the metadata block above a video survives
+  every navigation, feed cards get reused as you scroll, and live chat cycles
+  a small pool of message rows through the whole stream. Each of these
+  features marked an element as judged and never looked again, so the first
+  verdict stuck to everything that came after it.
+
+  In practice that meant bot messages slipping through because the row had
+  once held a real one, ordinary messages staying invisible because it had
+  once held a bot, a card that used to be a Short staying blank after it
+  became a normal video, precise view counts going quiet after the first
+  navigation, and "restore YouTube's order" in Subscription Groups restoring
+  an order that no longer matched anything. All four now check what they are
+  actually looking at.
+
 - Unchecking every item in the download popup playlist preview now downloads
   the single video, matching the hint printed above the button. It previously
   hard-blocked, contradicting that copy and leaving no way out except closing
