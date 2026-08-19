@@ -12,6 +12,7 @@ const os = require('os');
 const path = require('path');
 const { execFileSync, spawn } = require('child_process');
 const WebSocket = require('ws');
+const { generatePseudolocale } = require('./generate-pseudolocale.js');
 const {
     buildFixture,
     DevtoolsClient,
@@ -40,7 +41,16 @@ const RTL_LOCALES = new Set(['ar', 'he', 'fa', 'ur']);
 // one long-phrase Brazilian Portuguese. Every primary surface renders all three
 // at 320 CSS px, which is what makes the reflow claim hold for the 11 bundled
 // locales rather than for the two that happened to be covered.
-const LOCALE_STATES = Object.freeze(['ar', 'de', 'pt_BR']);
+// The pseudo-locale lane rides in on a real bundled locale code. popup.js and
+// sidepanel.js only fetch _locales/<code>/messages.json for codes on their
+// BUNDLED_LOCALES allowlist — a shipped defence against a hostile override,
+// and not something a test should widen. `es` is bundled, is not otherwise
+// exercised by this smoke, and the stage is a throwaway copy of extension/, so
+// substituting its messages there changes nothing that ships.
+const PSEUDO_LOCALE = 'es';
+const PSEUDO_LOCALE_LABEL = 'pseudo';
+const LOCALE_STATES = Object.freeze(['ar', 'de', 'pt_BR', PSEUDO_LOCALE]);
+const localeLabel = (locale) => (locale === PSEUDO_LOCALE ? PSEUDO_LOCALE_LABEL : locale);
 
 const SURFACES = Object.freeze([
     Object.freeze({
@@ -176,7 +186,25 @@ function createStage(stageDir) {
     injectChromeStub(stageDir, 'popup.html', 'popup-a11y.html');
     injectChromeStub(stageDir, 'sidepanel.html', 'sidepanel-a11y.html');
     injectChromeStub(stageDir, 'sidebar.html', 'sidebar-a11y.html');
+    stagePseudoLocale(stageDir);
     return fixturePath;
+}
+
+// Worst-case string length, generated rather than hoped for: every English
+// message accented and expanded by ~40%, with placeholders isolated so they
+// stay recognisable. Real translations vary; this is the ceiling they vary
+// towards, and it is what the 320px reflow lane needs in order to mean
+// anything. Written into the stage only — never into extension/_locales.
+function stagePseudoLocale(stageDir) {
+    const english = JSON.parse(fs.readFileSync(
+        path.join(REPO_ROOT, 'extension', '_locales', 'en', 'messages.json'), 'utf8'));
+    const pseudo = generatePseudolocale(english);
+    const target = path.join(stageDir, '_locales', PSEUDO_LOCALE, 'messages.json');
+    if (!fs.existsSync(path.dirname(target))) {
+        throw new Error(`the stage is missing _locales/${PSEUDO_LOCALE}; the pseudo lane would silently render real copy`);
+    }
+    fs.writeFileSync(target, `${JSON.stringify(pseudo, null, 2)}\n`, 'utf8');
+    return Object.keys(pseudo).length;
 }
 
 function fileUrl(filePath) {
@@ -1136,9 +1164,34 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
         await client.evaluate(`new Promise((resolve) => requestAnimationFrame(
             () => requestAnimationFrame(() => setTimeout(resolve, 120))
         ))`);
-        const reflowChecks = await auditLocaleReflow(client, surface, locale, `${locale}/reflow-320`);
-        const featureHealthChecks = await auditFeatureHealthPanel(client, surface, `${locale}/reflow-320`);
-        await captureSurface(client, surface, `${locale}-reflow-320`);
+        // Report the pseudo lane by what it is. "es" in a failure would send
+        // the reader looking at the Spanish catalogue, which is not what
+        // rendered.
+        const label = localeLabel(locale);
+        if (locale === PSEUDO_LOCALE && surface.ownsDocument) {
+            // Without this the lane is theatre: a surface that fell back to its
+            // inline English would measure ordinary copy at 320px and pass
+            // while proving nothing about long strings.
+            //
+            // Scoped to ownsDocument on purpose. The three injected surfaces
+            // (settings, transcript, download) draw most of their copy from
+            // feature descriptors that are still hardcoded English — the
+            // grandfathered-literals backlog — so no locale changes what they
+            // render, and asserting otherwise would fail on a defect this lane
+            // does not own. They still get the 320px pass; it just measures
+            // English there until that backlog moves.
+            const rendered = await client.evaluate(
+                `document.documentElement.innerText.includes('⟦')`);
+            if (!rendered) {
+                throw new Error(
+                    `${surface.name}/${label}: pseudo-locale copy did not render, so this lane `
+                    + 'measured real strings; check the staged _locales/' + PSEUDO_LOCALE + ' catalogue'
+                );
+            }
+        }
+        const reflowChecks = await auditLocaleReflow(client, surface, locale, `${label}/reflow-320`);
+        const featureHealthChecks = await auditFeatureHealthPanel(client, surface, `${label}/reflow-320`);
+        await captureSurface(client, surface, `${label}-reflow-320`);
         reports.push({ controls: 0, featureHealthChecks, locale, mode: 'reflow-320', theme: 'dark', viewport, reflowChecks });
     }
     return reports;
@@ -1216,7 +1269,7 @@ async function main(argv = process.argv.slice(2)) {
             );
         }
         console.log(`[headless-a11y] Captures saved to ${OUT_DIR}`);
-        console.log('[headless-a11y] PASS — normal, 200% reflow, 320px reflow x ar/de/pt_BR, themes, and forced colors');
+        console.log('[headless-a11y] PASS — normal, 200% reflow, 320px reflow x ar/de/pt_BR/pseudo, themes, and forced colors');
     } finally {
         if (socket) socket.close();
         const browserExit = browser.exitCode !== null

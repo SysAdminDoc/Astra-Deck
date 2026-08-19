@@ -13160,8 +13160,10 @@ test('the a11y smoke proves 320px reflow on every primary surface in every track
 
     assert.match(smoke, /const REFLOW_CSS_WIDTH = 320;/,
         'the reflow width must be the WCAG figure, not an approximation of it');
-    assert.match(smoke, /const LOCALE_STATES = Object\.freeze\(\['ar', 'de', 'pt_BR'\]\);/,
-        'one RTL locale plus two long-string locales must be covered');
+    // Plus the generated worst-case catalogue: real translations are only as
+    // long as they happen to be. See tests/pseudolocale-reflow.test.js.
+    assert.match(smoke, /const LOCALE_STATES = Object\.freeze\(\['ar', 'de', 'pt_BR', PSEUDO_LOCALE\]\);/,
+        'one RTL locale, two long-string locales, and the pseudo-locale must be covered');
 
     // Locale rendering used to be proven on sidepanel and sidebar only, because
     // auditRtlLayout reaches for .sp-search and could never cover the others.
