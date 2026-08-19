@@ -1144,6 +1144,73 @@
         else delete comment.dataset[flagName];
     }
 
+    // The restyle hides YouTube's own #like-button and #vote-count-middle, so
+    // without a replacement a comment shows neither its like count nor any way
+    // to like it. The badge is that replacement. It was lost when this feature
+    // was peeled out of the monolith: the CSS and all three removal paths came
+    // across, the constructor did not, so the extension styled and removed an
+    // element it never built while the userscript kept rendering it.
+    const THUMB_ICON_PATH = 'M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function buildVoteBadge(comment, translate) {
+        const doc = comment.ownerDocument;
+        if (!doc) return null;
+        const authorText = comment.querySelector('#author-text');
+        if (!authorText) return null;
+
+        const voteText = comment.querySelector('#vote-count-middle')?.textContent?.trim() || '';
+        const likeLabel = translate('ui_commentLikeBadge', 'Like');
+
+        const badge = doc.createElement('span');
+        badge.className = 'ytkit-vote-badge';
+        badge.setAttribute('role', 'button');
+        badge.setAttribute('tabindex', '0');
+
+        const svg = doc.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        const path = doc.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', THUMB_ICON_PATH);
+        svg.appendChild(path);
+        badge.appendChild(svg);
+
+        // Never innerHTML: the count is YouTube-supplied text.
+        const count = doc.createElement('span');
+        count.textContent = voteText && voteText !== '0' ? voteText : '';
+        badge.appendChild(count);
+
+        badge.title = likeLabel;
+        badge.setAttribute('aria-label', voteText && voteText !== '0'
+            ? translate('ui_commentLikeBadgeCountAriaTpl', '{label}. {count} likes')
+                .replace('{label}', likeLabel).replace('{count}', voteText)
+            : likeLabel);
+
+        const liked = !!comment.querySelector('#like-button button[aria-pressed="true"]');
+        badge.classList.toggle('ytkit-liked', liked);
+        badge.setAttribute('aria-pressed', String(liked));
+
+        const activate = (event) => {
+            event.stopPropagation();
+            const likeBtn = comment.querySelector('#like-button button, #like-button yt-button-shape button');
+            if (!likeBtn) return;
+            likeBtn.click();
+            const nowLiked = !badge.classList.contains('ytkit-liked');
+            badge.classList.toggle('ytkit-liked', nowLiked);
+            badge.setAttribute('aria-pressed', String(nowLiked));
+        };
+        badge.addEventListener('click', activate);
+        badge.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+            event.preventDefault();
+            activate(event);
+        });
+
+        authorText.after(badge);
+        return badge;
+    }
+
     // Inline styles written by the normalize passes are recorded on the element
     // so destroy() can remove exactly the properties it set. A hand-maintained
     // list would drift the moment a normalize pass grows a property.
@@ -1276,14 +1343,19 @@
         return true;
     }
 
-    function processComment(comment) {
+    function processComment(comment, options = {}) {
         if (!(comment instanceof Element)) return;
+        const translate = typeof options.t === 'function' ? options.t : (_key, fallback) => fallback;
         const wasStyled = comment.dataset.ytkitChat === '1';
         comment.dataset.ytkitChat = '1';
         setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
         setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted]:not([hidden])'));
         setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
+        // Rebuild rather than leave the old one: YouTube recycles comment hosts,
+        // so a stale badge would keep the previous comment's count and liked
+        // state. Dropping the old node also drops its listeners with it.
         comment.querySelector('.ytkit-vote-badge')?.remove();
+        buildVoteBadge(comment, translate);
         if (wasStyled && isCommentSurfaceNormalized(comment)) return;
         normalizeCommentLayoutSurface(comment);
         normalizeCommentInteractionSurface(comment);
@@ -1354,8 +1426,9 @@
         });
     }
 
-    function processAllComments(doc) {
-        doc.querySelectorAll('ytd-comment-view-model, ytd-comment-renderer').forEach(processComment);
+    function processAllComments(doc, options = {}) {
+        doc.querySelectorAll('ytd-comment-view-model, ytd-comment-renderer')
+            .forEach((comment) => processComment(comment, options));
         doc.querySelectorAll('ytd-comment-view-model.ytkit-replying, ytd-comment-renderer.ytkit-replying').forEach(c => {
             const replyBox = c.querySelector('#reply-dialog ytd-commentbox:not([hidden])');
             const isOpen = replyBox && !replyBox.closest('[hidden]') && replyBox.offsetParent !== null;
@@ -1388,6 +1461,7 @@
         const addRule = typeof options.addMutationRule === 'function' ? options.addMutationRule : null;
         const removeRule = typeof options.removeMutationRule === 'function' ? options.removeMutationRule : null;
         const featureId = options.featureId || 'chatStyleComments';
+        const t = typeof options.t === 'function' ? options.t : (_key, fallback) => fallback;
         let processScheduled = false;
         let destroyed = false;
         const runtime = {
@@ -1402,7 +1476,7 @@
                     e.stopImmediatePropagation?.();
                 };
                 win.addEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
-                processAllComments(doc);
+                processAllComments(doc, { t });
                 this._mutationHandler = () => {
                     if (destroyed || processScheduled) return;
                     processScheduled = true;
@@ -1412,7 +1486,7 @@
                         // without this guard it would re-tag the DOM that
                         // cleanupRuntimeDom() just stripped.
                         if (destroyed) return;
-                        processAllComments(doc);
+                        processAllComments(doc, { t });
                     });
                 };
                 addRule(featureId, this._mutationHandler);
@@ -1440,6 +1514,7 @@
         buildPremiumInteractionCss,
         buildSelectorSupportFallbackCss,
         isCommentTextSelectionTarget,
+        buildVoteBadge,
         processComment,
         processAllComments,
         createChatStyleCommentsRuntime
@@ -1453,6 +1528,7 @@
             buildPremiumInteractionCss,
             buildSelectorSupportFallbackCss,
             isCommentTextSelectionTarget,
+            buildVoteBadge,
             processComment,
             processAllComments,
             createChatStyleCommentsRuntime

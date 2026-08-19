@@ -7864,5 +7864,11 @@
   },
   "zapRuleRemove": {
     "message": "Remove"
+  },
+  "ui_commentLikeBadge": {
+    "message": "좋아요"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}. 좋아요 {count}개"
   }
 }

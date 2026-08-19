@@ -7864,5 +7864,11 @@
   },
   "zapRuleRemove": {
     "message": "Remove"
+  },
+  "ui_commentLikeBadge": {
+    "message": "赞"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}。{count} 个赞"
   }
 }

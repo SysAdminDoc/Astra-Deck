@@ -7864,5 +7864,11 @@
   },
   "zapRuleRemove": {
     "message": "Remove"
+  },
+  "ui_commentLikeBadge": {
+    "message": "Mi piace"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}. {count} Mi piace"
   }
 }
