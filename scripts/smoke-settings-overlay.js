@@ -706,33 +706,66 @@ function httpGetJson(url, timeoutMs = 3000) {
     });
 }
 
+// How long the CDP socket may go completely silent before a pending call is
+// declared dead. This is an idle window, not a per-call budget: see send().
+const DEFAULT_CDP_IDLE_TIMEOUT_MS = 20000;
+
 class DevtoolsClient {
-    constructor(ws) {
+    constructor(ws, { callTimeoutMs = DEFAULT_CDP_IDLE_TIMEOUT_MS } = {}) {
         this.ws = ws;
         this.nextId = 1;
         this.pending = new Map();
+        this.callTimeoutMs = callTimeoutMs;
+        // Set by callers to whatever they are currently auditing. A timeout
+        // that only names the CDP method tells you nothing about which of eight
+        // states on which of six surfaces was in flight.
+        this.context = '';
+        this.lastMessageAt = Date.now();
         ws.on('message', (raw) => {
+            this.lastMessageAt = Date.now();
             let msg;
             try { msg = JSON.parse(raw); } catch { return; }
             if (msg.id && this.pending.has(msg.id)) {
-                const { resolve, reject } = this.pending.get(msg.id);
+                const { resolve, reject, timer } = this.pending.get(msg.id);
+                // The old code never cleared this. The keyboard sweep issues
+                // roughly 850 calls per state across eight states, so a run
+                // accumulated thousands of live 15s timers.
+                clearTimeout(timer);
                 this.pending.delete(msg.id);
                 if (msg.error) reject(new Error(msg.error.message || 'devtools error'));
                 else resolve(msg.result);
             }
         });
     }
-    send(method, params = {}) {
+    send(method, params = {}, { timeoutMs = this.callTimeoutMs } = {}) {
         const id = this.nextId++;
         return new Promise((resolve, reject) => {
-            this.pending.set(id, { resolve, reject });
-            this.ws.send(JSON.stringify({ id, method, params }));
-            setTimeout(() => {
-                if (this.pending.has(id)) {
-                    this.pending.delete(id);
-                    reject(new Error(`devtools call timed out: ${method}`));
+            const armedAt = Date.now();
+            // Idle-based, not a fixed per-call deadline. The settings surface
+            // makes hundreds of calls per state; under load an individual one
+            // could exceed a flat 15s while the connection was plainly alive
+            // and answering, which is what made this lane fail about one run in
+            // three. A call now only fails if NOTHING has come back over the
+            // socket for the whole window — a genuinely wedged target.
+            const check = () => {
+                const entry = this.pending.get(id);
+                if (!entry) return;
+                const quietSince = Math.max(armedAt, this.lastMessageAt);
+                const idleFor = Date.now() - quietSince;
+                if (idleFor < timeoutMs) {
+                    entry.timer = setTimeout(check, timeoutMs - idleFor);
+                    return;
                 }
-            }, 15000);
+                this.pending.delete(id);
+                const where = this.context ? ` during ${this.context}` : '';
+                reject(new Error(
+                    `devtools call timed out: ${method}${where} `
+                    + `(no message from the target for ${Math.round(idleFor / 1000)}s, `
+                    + `${this.pending.size} other call(s) still in flight)`
+                ));
+            };
+            this.pending.set(id, { resolve, reject, timer: setTimeout(check, timeoutMs) });
+            this.ws.send(JSON.stringify({ id, method, params }));
         });
     }
     async evaluate(expression) {

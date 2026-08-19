@@ -379,6 +379,12 @@ function focusStateExpression(selector) {
 }
 
 async function auditKeyboardPath(client, surface, stateName) {
+    // Stamp the client so a CDP timeout anywhere in this sweep names the
+    // surface and state it died in. This is the heaviest lane by far — the
+    // settings surface runs about 850 calls here — and a bare
+    // "devtools call timed out: Runtime.evaluate" gave no way to tell which of
+    // six surfaces and eight states was in flight.
+    client.context = `${surface.name}/${stateName} keyboard sweep`;
     const inventory = await client.evaluate(collectFocusableExpression(surface.selector));
     if (inventory.error) throw new Error(`${surface.name}/${stateName}: ${inventory.error}`);
     if (!inventory.tokens.length) {
@@ -482,6 +488,7 @@ function focusedTokenExpression(selector) {
 }
 
 async function auditFocusTrap(client, surface, stateName) {
+    client.context = `${surface.name}/${stateName} focus trap`;
     const trap = surface.focusTrap;
     if (!trap) return 0;
     const inventory = await client.evaluate(collectFocusableExpression(trap.root));
@@ -601,6 +608,7 @@ async function renderFeatureHealthFixture(client, surface) {
 // during a breakage, which is the worst possible time for it to be unusable.
 async function auditFeatureHealthPanel(client, surface, stateName) {
     if (surface.name !== 'popup') return 0;
+    client.context = `${surface.name}/${stateName} feature health`;
     const result = await client.evaluate(`(() => {
         const rows = Array.from(document.querySelectorAll('#feature-health-list .feature-health-row'));
         const failures = [];
@@ -631,6 +639,9 @@ async function auditFeatureHealthPanel(client, surface, stateName) {
 }
 
 async function configureRenderedState(client, surface, theme, mode) {
+    // Emulation.setDeviceMetricsOverride timed out here more often than
+    // anything else, and named neither the surface nor the state.
+    client.context = `${surface.name}/${theme}/${mode} state setup`;
     const zoomed = mode === 'zoom-200';
     const reflow = mode === 'reflow-320';
     const width = reflow ? REFLOW_CSS_WIDTH : (zoomed ? Math.max(200, Math.floor(surface.width / 2)) : surface.width);
