@@ -1052,3 +1052,105 @@ test('every popup state hook the JS sets has a matching tone rule', () => {
     assert.match(corruption.slice(0, 200), /--error/,
         'the corruption tier must use the error tone');
 });
+
+
+// ── First-run / upgrade surfaces ────────────────────────────────────────
+//
+// renderFirstRunSurfaces decides between two mutually exclusive surfaces and
+// carries an upgrade guard for users who installed before the sentinels
+// existed. The guard's whole job is to stamp silently, and it was doing the
+// opposite: it read lastSeen into a const BEFORE stamping, so the What's New
+// gate still compared '' against the manifest version and fired the banner on
+// the very open that was meant to suppress it. Source pins could not see that
+// — they matched the gate expression, which was correct all along — so this
+// runs the real function.
+
+function loadRenderFirstRunSurfaces(overrides = {}) {
+    const vm = require('node:vm');
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8');
+    const start = source.indexOf('async function renderFirstRunSurfaces()');
+    assert.ok(start > -1, 'popup.js must define renderFirstRunSurfaces');
+    const end = source.indexOf('\nasync function clearFirstRunPending()', start);
+    assert.ok(end > start, 'renderFirstRunSurfaces must be followed by clearFirstRunPending');
+    const fnSource = source.slice(start, end);
+
+    const calls = { welcome: 0, whatsNew: [], writes: [] };
+    const sandbox = {
+        console: { warn() {}, error() {} },
+        FIRST_RUN_SEEN_KEY: 'ytkit_first_run_seen',
+        LAST_SEEN_VERSION_KEY: 'ytkit_last_seen_version',
+        SETTINGS_STORAGE_KEY: 'ytSuiteSettings',
+        manifestVersion: overrides.manifestVersion ?? '4.73.0',
+        isPlainObject: (v) => !!v && typeof v === 'object' && !Array.isArray(v),
+        storageGet: async () => overrides.stored ?? {},
+        storageSet: async (patch) => { calls.writes.push(patch); },
+        showWelcomeCard: () => { calls.welcome += 1; },
+        showWhatsNew: (seen) => { calls.whatsNew.push(seen); },
+        clearFirstRunPending: async () => {}
+    };
+    sandbox.globalThis = sandbox;
+    vm.createContext(sandbox);
+    vm.runInContext(fnSource + '\nglobalThis.__run = renderFirstRunSurfaces;', sandbox);
+    return { run: sandbox.__run, calls };
+}
+
+test('the pre-NF21 upgrade guard stamps silently and shows no What\'s New banner', () => {
+    // A user who installed before the sentinels existed: real settings, no
+    // FIRST_RUN_SEEN_KEY, no LAST_SEEN_VERSION_KEY.
+    const { run, calls } = loadRenderFirstRunSurfaces({
+        stored: { ytSuiteSettings: { hideShorts: true, _errors: [] } }
+    });
+    return run().then(() => {
+        assert.equal(calls.welcome, 0,
+            'an existing install must not be shown the fresh-install welcome card');
+        assert.deepEqual(calls.whatsNew, [],
+            'the guard exists to stamp silently — showing the banner on the stamping open '
+            + 'is the bug it was meant to prevent');
+        assert.equal(calls.writes.length, 1, 'the guard must stamp both sentinels once');
+        assert.equal(calls.writes[0].ytkit_first_run_seen, true);
+        assert.equal(calls.writes[0].ytkit_last_seen_version, '4.73.0',
+            'the stamp must record the current version, not an empty string');
+    });
+});
+
+test('a genuine upgrade still shows the What\'s New banner', () => {
+    // The guard must not become a blanket suppressor: a user already carrying
+    // a stamped older version is exactly who the banner is for.
+    const { run, calls } = loadRenderFirstRunSurfaces({
+        stored: {
+            ytkit_first_run_seen: true,
+            ytkit_last_seen_version: '4.72.0',
+            ytSuiteSettings: { hideShorts: true }
+        }
+    });
+    return run().then(() => {
+        assert.equal(calls.welcome, 0);
+        assert.deepEqual(calls.whatsNew, ['4.72.0'],
+            'an upgrade from a stamped older version must show the banner with that version');
+        assert.equal(calls.writes.length, 0, 'no stamping needed — the sentinels already exist');
+    });
+});
+
+test('a genuinely fresh install gets the welcome card and no banner', () => {
+    const { run, calls } = loadRenderFirstRunSurfaces({ stored: {} });
+    return run().then(() => {
+        assert.equal(calls.welcome, 1, 'a fresh install must see the welcome card');
+        assert.deepEqual(calls.whatsNew, [],
+            'a fresh install must not be told what changed in the only version it has seen');
+        assert.equal(calls.writes.length, 0,
+            'nothing to stamp: there is no pre-existing install to adopt');
+    });
+});
+
+test('an install carrying only diagnostic keys is treated as fresh, not upgraded', () => {
+    // `_errors` / `_settingsVersion` can exist on a barely-touched install, so
+    // they must not be read as evidence of a real prior setup.
+    const { run, calls } = loadRenderFirstRunSurfaces({
+        stored: { ytSuiteSettings: { _errors: [], _settingsVersion: 3 } }
+    });
+    return run().then(() => {
+        assert.equal(calls.welcome, 1, 'diagnostic-only settings must not count as an existing install');
+        assert.deepEqual(calls.whatsNew, []);
+    });
+});

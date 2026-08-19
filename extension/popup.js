@@ -4556,7 +4556,10 @@ async function renderFirstRunSurfaces() {
             SETTINGS_STORAGE_KEY,
         ]);
         let firstRunSeen = items[FIRST_RUN_SEEN_KEY] === true;
-        const lastSeen = typeof items[LAST_SEEN_VERSION_KEY] === 'string'
+        // Mutable: the upgrade guard below can stamp this value during this
+        // same render, and the What's New gate has to see what was stamped
+        // rather than what was on disk when the popup opened.
+        let lastSeen = typeof items[LAST_SEEN_VERSION_KEY] === 'string'
             ? items[LAST_SEEN_VERSION_KEY]
             : '';
 
@@ -4576,15 +4579,20 @@ async function renderFirstRunSurfaces() {
                 (k) => !k.startsWith('_'),
             );
         if (!firstRunSeen && looksLikeExistingInstall) {
+            const stampedVersion = manifestVersion && manifestVersion !== '—'
+                ? manifestVersion
+                : '';
             try {
                 await storageSet({
                     [FIRST_RUN_SEEN_KEY]: true,
-                    [LAST_SEEN_VERSION_KEY]:
-                        manifestVersion && manifestVersion !== '—'
-                            ? manifestVersion
-                            : '',
+                    [LAST_SEEN_VERSION_KEY]: stampedVersion,
                 });
                 firstRunSeen = true;
+                // Adopt what was just written. Leaving lastSeen at its
+                // pre-stamp '' made the gate below fire showWhatsNew('') on
+                // this very open — the banner this guard exists to suppress,
+                // in its tokenless "Updated to vX. See what changed." form.
+                lastSeen = stampedVersion;
             } catch (err) {
                 // reason: storage write failures are non-fatal — the
                 // worst case is the welcome card shows once on the
