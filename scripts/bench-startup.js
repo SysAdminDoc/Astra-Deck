@@ -73,6 +73,61 @@ const DEFAULT_TOLERANCE = Object.freeze({
 // The statistic every budget comparison uses. Recorded in the baseline so a
 // baseline captured under the old median rule can never be compared as if it
 // were a minimum.
+// A fixed CPU-bound workload, timed alongside the real measurement. The gate
+// compares the MINIMUM because load can only ever inflate a sample, but on a
+// machine that is busy for the whole run every sample is inflated, minimum
+// included — so a loaded box reports a regression that does not exist. This
+// probe is the control: its cost is constant, so how far IT has inflated is a
+// direct read on how much of the startup number is the machine rather than the
+// code. Observed 2026-08-19: an unchanged tree measured 110 ms idle and 147-153
+// ms while a game held the CPU at 90%, failing the gate three runs running.
+const CALIBRATION_ITERATIONS = 21;
+// Spread below this is ordinary scheduler jitter, not a busy machine.
+const LOAD_FACTOR_NOTE = 1.15;
+
+// Runs a workload whose real cost is fixed, several times, and reports the
+// spread. Because the true cost cannot change between samples, every bit of
+// spread is contention from other processes — which makes this a load meter
+// that needs no reference value recorded on some other machine.
+function runCalibrationProbe() {
+    const samples = [];
+    for (let sample = 0; sample < CALIBRATION_ITERATIONS; sample += 1) {
+        const started = process.hrtime.bigint();
+        // Integer mix with a data dependency so the optimiser cannot hoist it,
+        // and no allocation so GC timing stays out of the measurement.
+        let acc = 1;
+        for (let i = 1; i <= 2000000; i += 1) {
+            acc = (acc * 31 + i) % 2147483647;
+            acc ^= (acc >>> 7);
+        }
+        const elapsed = Number(process.hrtime.bigint() - started) / 1e6;
+        if (acc === -1) throw new Error('unreachable');
+        samples.push(elapsed);
+    }
+    return { min: Math.min(...samples), median: median(samples) };
+}
+
+// How much a timing sample on this box is expected to read high right now.
+//
+// The gate compares the MINIMUM because load can only inflate a sample. That
+// holds for one sample, but not for a whole run: when the machine is busy for
+// its entire duration every sample is inflated, the minimum included, and an
+// unchanged tree reports a regression. Observed 2026-08-19 — an unchanged tree
+// measured 110 ms idle and 147-153 ms while another process held the CPU at
+// 90%, failing three runs running and costing about forty minutes of bisecting
+// a regression that was never there.
+//
+// A short probe usually finds one uncontended slice, so its minimum stays near
+// the machine's true speed while its median rises with contention. That ratio
+// is the correction, and it is self-contained: nothing has to be recorded on a
+// quiet machine first, so a reference captured on a busy one cannot quietly
+// widen the budget forever.
+function calibrationLoadFactor(probe) {
+    if (!probe || !Number.isFinite(probe.min) || probe.min <= 0) return null;
+    if (!Number.isFinite(probe.median) || probe.median <= 0) return null;
+    return Math.max(1, probe.median / probe.min);
+}
+
 const COMPARISON_STATISTIC = 'min';
 const METRIC_KEYS = Object.freeze([
     'parseInitMs',
@@ -437,22 +492,31 @@ function acceptedRegression(baseline, key) {
     return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
-function checkAgainstBaseline(summary, baseline) {
+function checkAgainstBaseline(summary, baseline, loadFactor = null) {
     const tolerance = baseline.tolerance;
     const failures = [];
+    // Timing metrics scale with machine load; byte counts do not, so the probe
+    // must never widen a size budget.
+    const timingScale = Number.isFinite(loadFactor) && loadFactor > 1 ? loadFactor : 1;
     for (const key of METRIC_KEYS) {
         const baselineValue = metricValue(baseline.metrics, key);
         const observedValue = metricValue(summary, key);
-        const absoluteTolerance = METRIC_FIELDS[key] === 'Bytes'
+        const isBytes = METRIC_FIELDS[key] === 'Bytes';
+        const absoluteTolerance = isBytes
             ? Number(tolerance.absoluteBytes)
             : Number(tolerance.absoluteMs);
         const allowance = Math.max(absoluteTolerance, Math.max(0, baselineValue) * Number(tolerance.relative));
         const accepted = acceptedRegression(baseline, key);
-        const limit = baselineValue + allowance + accepted;
+        const scale = isBytes ? 1 : timingScale;
+        // Scaling the whole expected value, not just the tolerance: if the box
+        // is running 1.4x slow on a workload of known cost, a 1.4x startup
+        // reading is what an unchanged tree produces.
+        const limit = (baselineValue + allowance) * scale + accepted;
         if (observedValue > limit) {
             failures.push(
                 `${key} ${COMPARISON_STATISTIC} ${observedValue.toFixed(2)} ${metricUnit(key)} exceeds ${limit.toFixed(2)} ${metricUnit(key)} `
                 + `(baseline ${baselineValue.toFixed(2)} ${metricUnit(key)} + ${allowance.toFixed(2)} ${metricUnit(key)} tolerance`
+                + `${scale > 1 ? `, scaled x${scale.toFixed(2)} for machine load` : ''}`
                 + `${accepted ? ` + ${accepted.toFixed(2)} ${metricUnit(key)} accepted regression` : ''})`
             );
         }
@@ -971,9 +1035,41 @@ async function main(argv = process.argv.slice(2)) {
         }
     }
 
-    const failures = checkAgainstBaseline(result.metrics, comparisonBaseline);
+    // Read the machine before judging the code. See runCalibrationProbe().
+    const probe = runCalibrationProbe();
+    const loadFactor = calibrationLoadFactor(probe);
+    if (loadFactor !== null) {
+        console.log(
+            `[bench-startup] machine load probe: min ${probe.min.toFixed(1)} ms, `
+            + `median ${probe.median.toFixed(1)} ms (x${loadFactor.toFixed(2)})`
+            + (loadFactor > LOAD_FACTOR_NOTE ? ' — this box is busy; timing budgets are scaled to match' : '')
+        );
+    }
+
+    const failures = checkAgainstBaseline(result.metrics, comparisonBaseline, loadFactor);
     failures.push(...checkSteadyState(idle, baseline));
     if (failures.length) {
+        // Both statistics, always: a reader can tell load from regression at a
+        // glance only if the spread is visible next to the compared number.
+        for (const key of METRIC_KEYS) {
+            const field = METRIC_FIELDS[key];
+            const entry = result.metrics?.[key] || {};
+            const min = Number(entry[`min${field}`]);
+            const med = Number(entry[`median${field}`]);
+            const p95 = Number(entry[`p95${field}`]);
+            if (!Number.isFinite(min)) continue;
+            console.warn(
+                `[bench-startup]   ${key}: min ${min.toFixed(2)} / median ${Number.isFinite(med) ? med.toFixed(2) : 'n/a'}`
+                + ` / p95 ${Number.isFinite(p95) ? p95.toFixed(2) : 'n/a'} ${metricUnit(key)}`
+            );
+        }
+        if (loadFactor !== null && loadFactor > LOAD_FACTOR_NOTE) {
+            console.warn(
+                `[bench-startup] the load probe read x${loadFactor.toFixed(2)} slow, so the budgets above were `
+                + 'already widened by that factor and the overage is on top of it. Re-run on an idle machine '
+                + 'before treating this as a regression.'
+            );
+        }
         failures.push(`measured with fixture mode '${result.fixtureMode}' against baseline.${budgetSource}`);
         // `--check` gates (that is `npm run check:startup`); a bare bench run
         // REPORTS. The flag was parsed but never read, so both modes were
@@ -999,8 +1095,12 @@ if (require.main === module) {
 module.exports = {
     BASELINE_PATH,
     BOUNDED_SESSION_MS,
+    CALIBRATION_ITERATIONS,
     CAPTURED_SURFACES,
     DEFAULT_TOLERANCE,
+    LOAD_FACTOR_NOTE,
+    calibrationLoadFactor,
+    runCalibrationProbe,
     PHOTOSENSITIVE_FRAME_BUDGET_MS,
     METRIC_KEYS,
     buildBaseline,

@@ -330,3 +330,105 @@ test('the idle lane measures through CDP, not by patching page timers', () => {
     assert.equal(packageJson.scripts['check:steady-state'],
         'node scripts/bench-startup.js --check --allow-synthetic --steady-state');
 });
+
+
+// ── Machine-load correction ─────────────────────────────────────────────
+//
+// The gate compares the MINIMUM of seven samples because load can only inflate
+// a timing sample. That reasoning holds for one sample but not for a whole run:
+// when the box is busy for the entire duration, every sample is inflated and
+// the minimum with them. On 2026-08-19 an unchanged tree measured 110 ms idle
+// and 147-153 ms while another process held the CPU at 90%, failing three runs
+// in a row. These pin the correction that tells the two apart.
+
+test('the load probe reports no correction when its samples agree', () => {
+    const { calibrationLoadFactor } = require('../scripts/bench-startup.js');
+    // An idle machine runs a fixed workload in the same time every go.
+    assert.equal(calibrationLoadFactor({ min: 40, median: 40 }), 1);
+    // Never below 1: a fast outlier must not shrink the budget.
+    assert.equal(calibrationLoadFactor({ min: 40, median: 38 }), 1);
+});
+
+test('the load probe reports the spread as the correction factor', () => {
+    const { calibrationLoadFactor } = require('../scripts/bench-startup.js');
+    // The probe's true cost cannot change between samples, so all of its spread
+    // is contention — which is exactly what inflates the startup numbers.
+    assert.equal(calibrationLoadFactor({ min: 40, median: 52 }), 1.3);
+    assert.equal(calibrationLoadFactor({ min: 100, median: 150 }), 1.5);
+});
+
+test('the load probe refuses to guess from unusable samples', () => {
+    const { calibrationLoadFactor } = require('../scripts/bench-startup.js');
+    for (const bad of [null, undefined, {}, { min: 0, median: 10 }, { min: 10, median: 0 }, { min: NaN, median: 1 }]) {
+        assert.equal(calibrationLoadFactor(bad), null,
+            'an unusable probe must yield no factor rather than a fabricated one');
+    }
+});
+
+test('a busy machine widens the timing budget but never the size budget', () => {
+    const { checkAgainstBaseline } = require('../scripts/bench-startup.js');
+    const baseline = {
+        tolerance: { relative: 0.2, absoluteMs: 25, absoluteBytes: 512 * 1024 },
+        metrics: {
+            parseInitMs: { minMs: 110.4 },
+            firstFeaturePaintMs: { minMs: 78.4 },
+            heapDeltaBytes: { minBytes: 0 },
+            observerCallbackMs: { minMs: 0 }
+        }
+    };
+    // The reading an unchanged tree produced while the machine was at 90%.
+    const loaded = {
+        parseInitMs: { minMs: 150.7 },
+        firstFeaturePaintMs: { minMs: 106.5 },
+        heapDeltaBytes: { minBytes: 0 },
+        observerCallbackMs: { minMs: 0 }
+    };
+    assert.ok(checkAgainstBaseline(loaded, baseline, null).length > 0,
+        'without the correction this is the false regression that cost 40 minutes');
+    assert.deepEqual(checkAgainstBaseline(loaded, baseline, 1.36), [],
+        'a probe reading x1.36 must absorb a x1.36 inflation of an unchanged tree');
+
+    // Bytes do not get slower under CPU load, so the factor must not touch them.
+    // Sized to land between the real byte budget (524288) and what that budget
+    // would become if the factor were wrongly applied to it (524288 x 1.36).
+    const fatHeap = { ...loaded, heapDeltaBytes: { minBytes: 600000 } };
+    const failures = checkAgainstBaseline(fatHeap, baseline, 1.36);
+    assert.equal(failures.length, 1, 'the size budget must still fail under a load correction');
+    assert.match(failures[0], /heapDeltaBytes/);
+});
+
+test('a real regression still fails on a busy machine', () => {
+    const { checkAgainstBaseline } = require('../scripts/bench-startup.js');
+    const baseline = {
+        tolerance: { relative: 0.2, absoluteMs: 25, absoluteBytes: 512 * 1024 },
+        metrics: {
+            parseInitMs: { minMs: 110.4 },
+            firstFeaturePaintMs: { minMs: 78.4 },
+            heapDeltaBytes: { minBytes: 0 },
+            observerCallbackMs: { minMs: 0 }
+        }
+    };
+    // x1.36 of load plus 25 ms the code actually got slower by.
+    const regressed = {
+        parseInitMs: { minMs: (110.4 + 25) * 1.36 + 25 },
+        firstFeaturePaintMs: { minMs: 78.4 * 1.36 },
+        heapDeltaBytes: { minBytes: 0 },
+        observerCallbackMs: { minMs: 0 }
+    };
+    const failures = checkAgainstBaseline(regressed, baseline, 1.36);
+    assert.equal(failures.length, 1, 'the correction must not swallow a genuine regression');
+    assert.match(failures[0], /parseInitMs/);
+    assert.match(failures[0], /scaled x1\.36 for machine load/,
+        'the failure must say the budget was already widened, so a reader can tell load from code');
+});
+
+test('the load probe measures a fixed workload, not the clock', () => {
+    const { runCalibrationProbe, CALIBRATION_ITERATIONS, LOAD_FACTOR_NOTE } =
+        require('../scripts/bench-startup.js');
+    assert.ok(CALIBRATION_ITERATIONS >= 9,
+        'too few samples and the spread is noise rather than a load reading');
+    assert.ok(LOAD_FACTOR_NOTE > 1, 'the note threshold must sit above "no load"');
+    const probe = runCalibrationProbe();
+    assert.ok(Number.isFinite(probe.min) && probe.min > 0, 'the probe must produce a real minimum');
+    assert.ok(probe.median >= probe.min, 'a median below the minimum would mean the maths is wrong');
+});
