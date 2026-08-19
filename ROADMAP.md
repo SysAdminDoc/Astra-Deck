@@ -161,36 +161,6 @@ duplicated here.
   Confidence: Verified
   Effort: M
 
-- [ ] P3 — Userscript companion downloads ignore the user's quality/format and lack an in-progress guard
-  Category: correctness
-  Where: `YTKit.user.js:2316` (payload `{url, audioOnly}` only) vs. extension `index.js:1519-1524`; `YTKit.user.js:2259` (`ytKitDownload`, no `_downloadInProgress` guard) vs. extension `:1443-1448`.
-  Problem: the userscript sends no `quality`/`format`, so companion downloads always use server defaults even though the userscript has a `downloadQuality` setting (it only affects the direct-stream fallback). And `ytKitDownload` has no in-progress guard, so double-clicks queue duplicate downloads.
-  Evidence: compared payloads and guards across the two vehicles.
-  Fix: mirror the extension payload (`quality`, `format` from settings) and add the `_downloadInProgress` guard.
-  Acceptance: a userscript companion download honors the chosen quality/format; a double-click queues one download.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Two side-panel state strings are injected via CSS `content:` and can never be localized
-  Category: i18n / a11y
-  Where: `extension/sidepanel.css:1129-1141` (`[data-saving="true"]::after { content:"Saving" }`, `[data-error="true"]::after { content:"Try again" }`); shared by `sidebar.html`.
-  Problem: every other user-facing string in these surfaces goes through `data-i18n`/`t()`; these two render English in all 10 non-EN locales and are structurally unreachable by the messages pipeline (distinct from the tracked "grandfathered EN literals", which is JS-side). SR feedback is separately covered via `aria-description`, so this is the visible/localization side.
-  Evidence: read the CSS; grep confirms no `t()` path feeds them.
-  Fix: render the state text from `sidepanel.js` with `t()` into a real element, drop the `::after` content.
-  Acceptance: switching locale localizes the saving/retry state text; a locale render check covers it.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Inconsistent disclosure ARIA on the download triggers
-  Category: a11y
-  Where: `extension/features/player-dock/index.js:173-182` (`.ytkit-po-dl`) and `extension/ytkit.js:20220-20246` (`.ytkit-local-dl-btn`) declare no `aria-haspopup`/initial `aria-expanded`; the context-menu fallback stamps `aria-expanded` onto the `#movie_player` div (`index.js:2274`).
-  Problem: the speed button correctly declares `aria-haspopup="menu"` + initial `aria-expanded="false"`; the download triggers declare neither, so `aria-expanded` first appears mid-lifecycle, and the `#movie_player` fallback puts an expanded-state ARIA attribute on a non-widget element.
-  Evidence: compared the trigger creation sites.
-  Fix: add `aria-haspopup="dialog"` + `aria-expanded="false"` at creation for the button triggers; skip the attribute for the non-button `#movie_player` anchor.
-  Acceptance: both download buttons expose a stable disclosure state from creation; no ARIA state lands on `#movie_player`.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Userscript duplicates RYD / SponsorBlock / DeArrow / player-handoff features on non-schema keys; bundled modules are never called
   Category: maintainability
   Where: `YTKit.user.js` hand-maintained copies — RYD `:8066` (key `returnYoutubeDislike`, canonical is `returnDislike`), SponsorBlock `:14508`, DeArrow `:14788`/`:14922`; provider/handoff keys `replaceWithCobaltDownloader` `:5783`, `downloadProvider` `:5892`, and seven player-handoff keys (`showVlcButton :6708`, `showMp3DownloadButton :6784`, `showVlcQueueButton :13057`, `showMpvButton :13087`, `preferredMediaPlayer :13163`, `showDownloadPlayButton :13180`, `subsVlcPlaylist :13209`).
@@ -211,16 +181,6 @@ duplicated here.
   Confidence: Verified
   Effort: M
 
-- [ ] P3 — Stale/misleading maintainer comments and drifted microcopy in the popup snapshot paths
-  Category: docs / maintainability
-  Where: `extension/popup.js:6453-6455` (comment cites a "PIN" that does not exist anywhere), `:6025-6027` (`statusResetSnapshotFail` blames "data too large" but post-EI2 the session payload is a tiny descriptor — bulk goes to IndexedDB via `persistedDomains.writeExtensionSnapshot` at `:5836-5841`), `:5089` vs `:5317` (same key `statusImportSnapshotFail` carries two drifted English fallbacks).
-  Problem: comments and error copy steer maintainers and users toward wrong causes; the drifted fallback means the visible string depends on which call site wins.
-  Evidence: grepped for "PIN" (absent), traced the snapshot write path, compared the two fallbacks.
-  Fix: correct the comments, re-point the snapshot-fail copy at the real (session-API) failure cause, and unify the `statusImportSnapshotFail` fallback.
-  Acceptance: no comment references a non-existent PIN; the snapshot-fail copy names the real cause; the import-snapshot fallback is identical at both call sites.
-  Confidence: Verified
-  Effort: S
-
 ## Audit Findings — 2026-08-18
 
 Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae..2b839c33`, v4.62.0; `npm ci` was required first — node_modules was absent on this machine after the OS rebuild): `npm test` **1713/1714 pass** (1 skipped, 0 fail). `npm run check` fails at HEAD on four gates: `check:project-facts` (the machine-local CLAUDE.md generated block was stale at v4.61.0 — regenerated during this audit, passes now; while red it masked the 24 gates after it via the tracked fail-fast `&&` chain), `check:startup` (firstFeaturePaintMs median 116.80 ms > 88.80 ms budget, fixture mode captured-mhtml — pre-existing machine-sensitive baseline, already tracked), `i18n:coverage:gate` and `generate-capability-matrix --check` (both logged below). Rendered smokes pass: settings-overlay 7 states × 445 controls (dark/light/RTL/wide/tablet/mobile), headless-a11y 6 surfaces incl. 200% reflow and forced colors. Delivery state: latest git tag and GitHub release are **v4.59.1**; `release-channels.json` still points every channel at 4.59.0 — see the release-gate item below and the refreshed P0 in `Roadmap_Blocked.md`. Method: five parallel trace-and-verify sweeps (post-08-14 delta, popup/sidepanel UX, background trust boundaries, monolith feature slices incl. peeled-copy drift, tests/gates/release); ~40 candidate findings, 14 re-verified by hand at file:line with zero mismatches; agent-cleared suspicions are omitted. The background trust-boundary sweep found **no high/critical issue** — cookie-handoff capability, remote filter-list sanitization, DNR rules, and optional-host validation all hold as documented.
@@ -236,64 +196,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Acceptance: at least the watch-later-workbench, transcript-viewer, and subscription-groups render paths assert on real built nodes; a bait (render into the wrong node) fails.
   Confidence: Verified
   Effort: M
-
-- [ ] P3 — Nothing gates release staleness: `chore(release)` commits ship with no tag, no channel promotion, and every gate stays green
-  Category: process / testing
-  Where: `release-channels.json` (all five channels: active=4.59.0, lastKnownGood=4.59.0, rollbackTarget=4.58.2) vs product version 4.62.0; `scripts/check-versions.js:153-170` tag-sanity only asserts no tag sorts AHEAD of the product version and has zero coverage of release-channels.json (grep-verified)
-  Problem: v4.60.0, v4.61.0, and v4.62.0 each have a release commit but no tag, no artifacts, no promotion — and even tagged v4.59.1 was never promoted. A release commit that never ships passes every gate silently. (The publication act itself is maintainer-local and stays in `Roadmap_Blocked.md` — this item is the missing gate.)
-  Evidence: `git tag` + `gh release list` + release-channels.json read 2026-08-18.
-  Fix: extend check-versions (or a `release:channels validate` lane) to warn/fail when HEAD's product version has a `chore(release)` commit but no matching tag, and to report channel-pointer lag against the newest tag explicitly.
-  Acceptance: at current HEAD the new lane reports the 3-version lag; after a properly tagged+promoted release it passes.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — npm-chain flag forwarding silently swallows `--bump`/`--profile`/`--crx-key`, and `capture:surface` duplicates `capture:watch`
-  Category: process
-  Where: `package.json:16-18` — `npm run build -- --bump patch` appends the flags to the LAST command of the `&&` chain (`generate-capability-matrix.js`, which ignores them), so `build-extension.js` runs with no bump and default `--profile both`, exit 0, silently wrong (the documented `--no-crx` instance of this trap got a dedicated script + `ASTRA_SKIP_CRX` env escape; bump/profile/key have none). `package.json:45-46` — `capture:watch` and `capture:surface` are byte-identical entries.
-  Evidence: npm arg-forwarding semantics + chain shape; script entries read.
-  Fix: add env-var equivalents in build-extension.js (it already reads `ASTRA_SKIP_CRX`) or restructure so `node build-extension.js` is the chain's last command; give `capture:surface` its intended argument or delete the alias.
-  Acceptance: `npm run build -- --bump patch` either bumps or fails loudly; no byte-identical script aliases remain.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Mobile settings panel clips setting descriptions mid-glyph instead of ellipsizing
-  Category: visual
-  Where: `extension/core/settings-visual-system.js:1513-1519` — the mobile lane switches `.ytkit-feature-desc` to `display:-webkit-box` + `-webkit-line-clamp:2` (inheriting `overflow:hidden` from the base rule at `:851-855`)
-  Problem: observed in the shipped smoke render (`build/settings-overlay-smoke/mobile-light.png`, Codec Selector card): the description paints ~2.5 lines with the third line sheared horizontally mid-glyph behind the select control — no ellipsis, unreadable fragment. The smoke's "readable primary controls" assertion doesn't cover description overflow, so it passes.
-  Evidence: rendered PNG reviewed by hand 2026-08-18; CSS lane read.
-  Fix: verify the clamp interaction in the panel probe (the box height is not collapsing to the clamp — likely the `!important` `display` fight with the base `display:block`); either make the clamp lane self-consistent (`display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical` together, no competing height) or drop the clamp on mobile and let descriptions wrap fully; add a description-overflow check to the mobile smoke states.
-  Acceptance: the mobile render shows either a clean 2-line ellipsis or full wrapped text — no sheared glyphs; the smoke asserts it.
-  Confidence: Verified (observed); root-cause mechanism Needs-repro in the probe
-  Effort: S
-
-- [ ] P3 — Popup feedback gaps: "Open Full Settings" gives no busy state and can open duplicate tabs; the external-health empty state is unstyled; copy-status live regions never clear
-  Category: ux / visual
-  Where: (a) `extension/popup.js:6386-6400` — the click handler never sets `disabled`/`aria-busy` during the up-to-8 s `sendPanelOpenMessage` ack window (`:1751-1771`), and each extra click can fall through to `ext.tabs.create('https://www.youtube.com/')` → duplicate tabs; `#openSidePanel` (`:6409`) has the same unguarded shape; (b) `popup.js:2743` creates `li.className='external-health-empty'` but popup.css styles only `.selector-health-empty` (`:1167`) and `.feature-perf-empty` (`:1332`) — the third dashboard's empty state renders as a plain default list item; (c) `popup.js:2635/2653` and `:2838/2851` write "Copied…" into aria-live regions with no auto-clear (unlike `showStatus` `:1571-1577`), so stale "Copied" lines persist for the popup's lifetime and can coexist.
-  Evidence: all traced by the UX sweep; every OTHER async action in the file was confirmed to carry disable+aria-busy (cleared list), making these the only stragglers.
-  Fix: (a) `disabled` + `aria-busy` for the flight on both CTAs; (b) add `.external-health-empty` to the shared empty-state rule; (c) clear the copy-status lines after ~4 s like the status banner.
-  Acceptance: double-clicking Open Full Settings opens at most one tab and the button shows busy; the empty state matches its siblings in both render states; "Copied" clears itself. Rendered popup smoke re-checked.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Popup speaks raw camelCase setting keys in toasts and accessible names, against its own labeling policy
-  Category: a11y / ux
-  Where: `extension/popup.js:3950-3955` (`schemaResetTitleTpl`/`schemaResetAriaTpl` interpolate `entry.key`), `:3963` (toast "customProgressBarColor reset to default."), `:3618/:3652` (`formatSettingWriteError(entry.key, …)`), while `:3764` passes `entry.labelKey || entry.key` and the row label deliberately humanizes (`:3499-3503`, with an in-code comment about voice-control targeting)
-  Problem: the reset button's accessible name and three status paths contradict the popup's own humanized-label policy; three call sites disagree on which name to use, so voice-control users and toast readers get names that match nothing on screen.
-  Evidence: call sites compared by the UX sweep.
-  Fix: pass the resolved visible label everywhere; keep the raw key in the title/tooltip only.
-  Acceptance: reset toast/aria-name show the humanized label; a test asserts label parity across the three sites.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Microcopy consistency batch (popup + sidepanel)
-  Category: ux / docs
-  Where: (a) `extension/popup.js:4965` vs `:5257` — one key `filterListStatusRefreshFail` serves two different failures; the service-unavailable branch tells users to "Check the address, then try again" when the address is fine and retrying cannot help; (b) `popup.html:85` "Skip - configure manually" uses a hyphen where the surface's style is an em dash; (c) the same destination is named "Open Full Settings", "the full workspace", and "Settings workspace" across `openFullSettings`/`contextNoteInlinePanel`/`workspaceEyebrow`; (d) `popup.js:1138/1151` directs users to "Settings Overview" while the section is titled "Settings overview"; (e) `sidepanel.js:715` renders "Unavailable" where sibling placeholders are `'--'`/`'-'` (`:714`, `sidepanel.html:47`).
-  Problem: each is small; together they read as inattention on the primary surfaces. Same class as the tracked `statusImportSnapshotFail` drift, different keys.
-  Evidence: all verified by the UX sweep at the cited lines.
-  Fix: give the `:4965` branch its own key (`filterListStatusStateReadFail`) with cause-accurate copy; fix the dash; pick one workspace noun; match the section title's case; unify placeholders. Locale keys via the documented recipe (11 locales).
-  Acceptance: each cited string matches its surface's convention; `npm run check` i18n gates stay green after the baseline ratchets.
-  Confidence: Verified
-  Effort: S
 
 ## Research-Driven Additions — 2026-08-19
 
