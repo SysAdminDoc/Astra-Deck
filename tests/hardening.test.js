@@ -4310,9 +4310,11 @@ test('subscriptionGroups stages dead-channel unsubscribe candidates with a 30-da
 });
 
 test('videoNotes stores local per-video notes with export and a 1000-note LRU cap', () => {
-    const start = ytkitSource.indexOf("id: 'videoNotes'");
-    assert.ok(start > -1, 'videoNotes feature must exist');
-    const block = ytkitSource.slice(start, start + 30000);
+    // Reads the feature module: ytkit.js carried a second copy of this feature
+    // until v4.72.0 and now carries only a descriptor stub.
+    const block = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'video-notes', 'index.js'), 'utf8');
+    assert.ok(block.includes("id: 'videoNotes'"), 'videoNotes feature must exist');
     assert.match(block, /_DATA_KEY: 'videoNotesData'/,
         'videoNotes must persist notes into videoNotesData');
     assert.match(block, /_MAX_NOTES: 1000/,
