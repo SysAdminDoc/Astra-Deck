@@ -227,16 +227,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
 
 ### P2
 
-- [ ] P3 — Transcript refresh polish: error-path diagnostics discard the refresh outcome, and a known-dead caption URL is fetched twice before refreshing
-  Category: correctness / perf
-  Where: `extension/core/transcript-service.js:440-448` (thrown-error diagnostic hardcodes `fallbackReason: allowDomFallback ? 'panel-unavailable' : 'dom-disabled'`, overwriting `'refresh-discovery-failed'`/`'refresh-fetch-failed'` set at `:399,:421`); `:912-937` (`_fetchTranscriptContent` format loop: on a 403/404 for json3 it still fetches the SAME URL as xml before throwing)
-  Problem: (1) exactly the case provenance was built to explain — "we tried a refresh and it failed" — never reaches `getDiagnostics()`/DiagnosticLog. (2) A revoked-but-unexpired URL costs two wasted round-trips of latency per refresh (the expired-`expire`-param case is correctly pre-skipped at `:365`).
-  Evidence: both read by hand; verified the hardcoded overwrite at `:447`.
-  Fix: `fallbackReason: fallbackReason || (allowDomFallback ? 'panel-unavailable' : 'dom-disabled')`; and `if (status === 403 || status === 404) break;` out of the format loop.
-  Acceptance: a failed-refresh + no-panel scenario reports `refresh-fetch-failed` in diagnostics; a 403 track fetch issues exactly one request before rediscovery; tests cover both.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Backfill real render assertions onto the features whose DOM half was never covered
   Category: testing
   Where: `tests/features/watch-later-workbench.test.js` (the feature has 26 `appendChild`, 2 `replaceChildren`, and an `isConnected` guard; the test references none of them); same shape for other `loadFeature`-hosted features whose tests exercise only pure helpers
