@@ -136,6 +136,11 @@ function contrast(foreground, background) {
     return (lighter + 0.05) / (darker + 0.05);
 }
 
+// A floor on the gate's own scope. A hand-written list silently shrinks when a
+// file is renamed or a directory moves, and a gate that scans nothing passes
+// loudest of all. `check-userscript-symbols.js` set this pattern.
+const MIN_CONTRAST_CHECKS = 12;
+
 function buildChecks() {
     const checks = [];
     const definitions = [
@@ -181,6 +186,13 @@ function run(log = console.log) {
     let checks;
     try {
         checks = buildChecks();
+        if (checks.length < MIN_CONTRAST_CHECKS) {
+            console.error(
+                `[check-contrast] FAILED — only ${checks.length} token pair(s) resolved, below the `
+                + `floor of ${MIN_CONTRAST_CHECKS}. A renamed token drops out of this gate silently.`
+            );
+            return 1;
+        }
     } catch (error) {
         log(`✗ ${error.message}`);
         return 1;

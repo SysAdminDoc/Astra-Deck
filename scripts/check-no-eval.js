@@ -52,6 +52,11 @@ const SCAN_FILES = [
     ...walk(path.join(REPO_ROOT, 'extension', 'features'), '.js'),
 ];
 
+// A floor on the gate's own scope. A hand-written list silently shrinks when a
+// file is renamed or a directory moves, and a gate that scans nothing passes
+// loudest of all. `check-userscript-symbols.js` set this pattern.
+const MIN_SCAN_FILES = 120;
+
 function walk(dir, ext) {
     const out = [];
     if (!fs.existsSync(dir)) return out;
@@ -135,6 +140,16 @@ function stripStringLiteralContents(lineText) {
 }
 
 const findings = [];
+
+const presentScanFiles = SCAN_FILES.filter((f) => fs.existsSync(path.join(REPO_ROOT, f)));
+if (presentScanFiles.length < MIN_SCAN_FILES) {
+    console.error(
+        `[check-no-eval] FAILED — scope collapsed to ${presentScanFiles.length} file(s), below the `
+        + `floor of ${MIN_SCAN_FILES}. A gate that scans almost nothing passes for the wrong reason. `
+        + 'Fix the paths, or lower the floor deliberately if the tree really did shrink.'
+    );
+    process.exit(1);
+}
 
 for (const rel of SCAN_FILES) {
     const abs = path.join(REPO_ROOT, rel);

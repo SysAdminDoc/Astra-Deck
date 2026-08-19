@@ -19,6 +19,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The AI summary panel and its credential card read correctly on YouTube's
+  light theme. Both were painting light text on a dark panel that only ever
+  looked right in dark mode.
+
 - Refined Comments shows a like count again, and lets you like a comment. The
   restyle hides YouTube's own like button and replaces it with a compact badge
   next to the author name. That badge stopped being built when the feature was

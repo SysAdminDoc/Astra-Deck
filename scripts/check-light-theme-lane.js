@@ -47,6 +47,21 @@ function collectFeatureModules() {
         .filter((rel) => fs.existsSync(path.join(REPO_ROOT, rel)));
 }
 
+// extension/core/*.js injects CSS onto youtube.com as much as the feature
+// modules do, and was outside this gate entirely.
+function collectCoreModules() {
+    const coreDir = path.join(REPO_ROOT, 'extension', 'core');
+    if (!fs.existsSync(coreDir)) return [];
+    return fs.readdirSync(coreDir, { withFileTypes: true })
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.js'))
+        .map((entry) => `extension/core/${entry.name}`);
+}
+
+// A floor on the gate's own scope. A hand-written list silently shrinks when a
+// file is renamed or a directory moves, and a gate that scans nothing passes
+// loudest of all. `check-userscript-symbols.js` set this pattern.
+const MIN_SOURCES = 30;
+
 // A colour that is legible on a dark background and therefore invisible, or
 // close to it, on YouTube's light one.
 const NEAR_WHITE = new RegExp([
@@ -135,7 +150,15 @@ function scan(files) {
 
 function main() {
     const update = process.argv.includes('--update-baseline');
-    const files = [...SOURCES, ...collectFeatureModules()];
+    const files = [...SOURCES, ...collectFeatureModules(), ...collectCoreModules()];
+    if (files.length < MIN_SOURCES) {
+        console.error(
+            `[light-theme-lane] FAILED — scope collapsed to ${files.length} source(s), below the `
+            + `floor of ${MIN_SOURCES}. Peeling a feature out used to drop it from this gate silently.`
+        );
+        process.exitCode = 1;
+        return;
+    }
     const { needsLane, hasLane } = scan(files);
 
     const uncovered = [...needsLane.keys()].filter((token) => !hasLane.has(token)).sort();

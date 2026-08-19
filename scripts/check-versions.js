@@ -159,15 +159,21 @@ function listLocalProductTags() {
         });
         return out.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
     } catch (_) {
-        return null; // git unavailable — skip the gate rather than false-fail
+        // Deliberately not a skip. A gate that quietly passes when its tool is
+        // missing reports success for a check it never ran, which is the same
+        // failure mode as an empty scan list.
+        return null;
     }
 }
 
 function checkProductTagSanity(productVersion) {
     const tags = listLocalProductTags();
     if (tags === null) {
-        console.log('[check-versions] Product-tag sanity: skipped (git unavailable)');
-        return true;
+        console.error(
+            '[check-versions] Product-tag sanity: FAILED — git is not on PATH, so stray release '
+            + 'tags cannot be checked. Install git or put it on PATH; this gate will not pass unrun.'
+        );
+        return false;
     }
     const stray = findStrayProductTags(productVersion, tags);
     if (!stray.length) {
