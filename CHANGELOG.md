@@ -19,6 +19,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- Importing a backup from a newer version now names the settings it had to
+  skip. The validator always knew which keys it dropped; the popup discarded
+  that list and showed only aggregate counts, which cannot tell you whether
+  the one setting you cared about survived.
 - The userscript no longer requests three outbound permissions it never used.
   `@connect localhost` was the important one: the companion is always reached
   by literal IP because Firefox resolves localhost through DNS, where a hostile

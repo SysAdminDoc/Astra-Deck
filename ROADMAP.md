@@ -428,16 +428,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — Future-version imports drop settings with only a count: `skippedKeys` is computed but never shown
-  Category: ux
-  Where: `extension/core/policy-profile.js:245,266,285` (`skippedKeys` built and returned); `extension/popup.js:869-876` (comment claims "persisted-domains' before/after counts report those skips" — nothing names the dropped keys to the user or diagnostics)
-  Problem: importing a backup from a newer schema silently drops unknown keys; the user sees only aggregate counts, not which settings didn't survive — contradicting the import surface's otherwise-explicit preview contract.
-  Evidence: consumer grep — zero readers of `skippedKeys`.
-  Fix: thread `validation.skippedKeys` into the import preview/status ("N settings from a newer version were skipped: key, key, …") and the diagnostics bundle.
-  Acceptance: a future-version import names its skipped keys in the preview; a test asserts the list renders.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Settings-reference generator escapes `|` only in the Purpose cell — a future value containing a pipe silently truncates its README table row
   Category: docs / maintainability
   Where: `scripts/generate-settings-reference.js:165-169` (`escapeCell` used only at `:236`); `formatConstraints`/`formatBehavior`/title go through `code()`/`escapeHtml`, which do not escape `|`

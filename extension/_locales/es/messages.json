@@ -5617,6 +5617,9 @@
   "statusImportPreviewSummaryTpl": {
     "message": "Vista previa: {preview}."
   },
+  "statusImportSkippedKeysTpl": {
+    "message": "{count} setting(s) from a newer version were skipped: {keys}"
+  },
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
