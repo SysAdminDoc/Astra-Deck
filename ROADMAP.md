@@ -268,16 +268,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: dialog Likely (needs a cancel-first fixture), cap + product gap Verified
   Effort: M
 
-- [ ] P3 — Recycled-node once-markers freeze verdicts: preciseViewCounts, live-chat filters, Shorts removal, and the subs-groups order stamp
-  Category: correctness
-  Where: (a) preciseViewCounts stamps `ytkitPrecise`/`ytkitPreciseOriginal` on the recycled watch-metadata element and the navigate rule (`ytkit.js:22401-22405`) clears neither — inert after the first navigation, and `destroy()` (`:22415-22421`) restores video A's saved text onto whatever video is on screen; (b) live-chat bot/keyword filters use `data-ytkit-bot-checked`/`data-ytkit-kw-checked` + sticky `display:none` on recycled `yt-live-chat-text-message-renderer` nodes (`ytkit.js:47802-47853`; same in `YTKit.user.js:15391-15417`) — recycled nodes skip re-evaluation (bots slip through) or keep `display:none` (innocent messages invisibly swallowed); (c) removeAllShorts `hideShort` marks `ytkitShortsHidden` + `display:none` on the ancestor renderer (`ytkit.js:9177-9197`) — a card recycled into a regular video stays invisible; (d) subscription-groups `ytkitOrigIdx` (`index.js:1684-1702`, `ytkit.js:43998-44013`) never re-stamps on recycle, so "YouTube default" order after continuations is neither native nor sorted.
-  Problem: the repo's own invariant ("any state keyed to a DOM node must re-evaluate per pass or track the bound element" — v4.53.0 note) is violated by these four; hideWatchedVideos in the extension was already fixed for exactly this class (`ytkit.js:22879-22886`).
-  Evidence: each marker's set/clear sites enumerated; the cleared-marker list (video-hider `ytkitHideProcessed`, subs `ytkitBlocked`, DeArrow `daProcessed`) confirmed handled — only these four remain.
-  Fix: (a) clear both markers + restore text in the navigate rule (as destroy already does); (b) key the checked-marker to a content hash of `#message`, clearing hide state when it changes; (c) per scan, unhide `[data-ytkit-shorts-hidden]` nodes that no longer contain a `/shorts` link; (d) pair `ytkitOrigIdx` with the video id and re-stamp on mismatch.
-  Acceptance: per-feature: precise count updates on the second video; a recycled chat node is re-evaluated; a recycled ex-Shorts card is visible; restoring default order after a continuation matches native order. Tests drive recycling by mutating a fake node's content in place.
-  Confidence: (a) Verified mechanism / Likely impact; (b)(c)(d) Likely
-  Effort: M
-
 - [ ] P3 — remainingTimeDisplay accumulates a frozen duplicate readout on every watch→watch navigation
   Category: correctness / visual
   Where: `extension/ytkit.js:21822-21826` (navigate rule nulls `this._el` without removing or re-querying the node), `:21785-21791` (`_update` appends a NEW span when `!this._el`); same in `YTKit.user.js:7776` + `:7763-7770`

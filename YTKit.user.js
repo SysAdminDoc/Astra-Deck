@@ -4200,6 +4200,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         });
                         return;
                     }
+                    // Feed cards are recycled. A card hidden as a Short can
+                    // be reused for a regular video, and the marker plus the
+                    // inline display:none ride along with it.
+                    document.querySelectorAll('[data-ytkit-shorts-hidden]').forEach(el => {
+                        if (el.querySelector('a[href^="/shorts"]')) return;
+                        el.style.display = '';
+                        delete el.dataset.ytkitShortsHidden;
+                        applyHideAttribution(el, { featureId: this.id, hidden: false });
+                    });
                     document.querySelectorAll('a[href^="/shorts"]').forEach(hideShort);
                 };
 
@@ -8080,6 +8089,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 addNavigateRule('preciseViews', () => {
                     this._dateEl?.remove();
                     this._dateEl = null;
+                    // ytd-watch-metadata is REUSED across SPA navigations, so
+                    // the markers below survive onto the next video. Left in
+                    // place they make _process() skip forever and they make
+                    // destroy() write video A's saved text onto video B.
+                    document.querySelectorAll('[data-ytkit-precise]').forEach((el) => {
+                        delete el.dataset.ytkitPrecise;
+                        delete el.dataset.ytkitPreciseOriginal;
+                    });
                     this._scheduleProcess(2000);
                 });
             },
@@ -14249,6 +14266,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return Math.round(num * mult);
             },
 
+            // The stamp below describes ONE video. Cards are recycled by
+            // continuations, so the stamp has to name what it was made for.
+            _cardVideoId(card) {
+                const href = card.querySelector('a#thumbnail[href], a[href*="/watch?v="]')?.getAttribute?.('href') || '';
+                const match = /[?&]v=([A-Za-z0-9_-]{11})/.exec(href);
+                return match ? match[1] : '';
+            },
+
             _applySort(modeOverride) {
                 const mode = this._normalizeSubscriptionSortMode(modeOverride || this._getActiveSortMode());
                 const container = document.querySelector('ytd-rich-grid-renderer #contents, ytd-section-list-renderer #contents');
@@ -14268,7 +14293,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return Number.isFinite(idx) && idx >= max ? idx + 1 : max;
                 }, 0);
                 cards.forEach(card => {
-                    if (card.dataset.ytkitOrigIdx === undefined) card.dataset.ytkitOrigIdx = String(nextOrigIdx++);
+                    const videoId = this._cardVideoId(card);
+                    if (card.dataset.ytkitOrigIdx !== undefined && card.dataset.ytkitOrigId === videoId) return;
+                    card.dataset.ytkitOrigIdx = String(nextOrigIdx++);
+                    card.dataset.ytkitOrigId = videoId;
                 });
                 const lastVisit = mode === 'new-since-last-visit' ? this._readLastVisit() : null;
                 const self = this;
@@ -14736,7 +14764,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));
                 document.querySelectorAll('.ytkit-sub-hidden-by-type').forEach(el => el.classList.remove('ytkit-sub-hidden-by-type'));
                 document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
-                document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; });
+                document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; delete el.dataset.ytkitOrigId; });
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 this._styleElement?.remove();
                 this._styleElement = null;
@@ -15686,16 +15714,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
     //  SECTION 3: HELPERS
 
+    // Live chat recycles its renderers: the same node carries message after
+    // message. A marker that only records "judged" freezes the first verdict
+    // onto every later occupant.
+    function liveChatMessageFingerprint(msg) {
+        const author = msg.querySelector('#author-name')?.textContent || '';
+        const text = msg.querySelector('#message')?.textContent || '';
+        const raw = `${author}\u0000${text}`;
+        let hash = 5381;
+        for (let i = 0; i < raw.length; i += 1) hash = ((hash * 33) ^ raw.charCodeAt(i)) >>> 0;
+        return String(hash);
+    }
+
     function applyBotFilter() {
         const path = window.location.pathname;
         if (!path.startsWith('/watch') && !path.startsWith('/live_chat')) return;
-        const messages = document.querySelectorAll('yt-live-chat-text-message-renderer:not([data-ytkit-bot-checked])');
+        const messages = document.querySelectorAll('yt-live-chat-text-message-renderer');
         messages.forEach(msg => {
-            msg.dataset.ytkitBotChecked = '1';
+            const fingerprint = liveChatMessageFingerprint(msg);
+            if (msg.dataset.ytkitBotChecked === fingerprint) return;
+            msg.dataset.ytkitBotChecked = fingerprint;
             const authorName = msg.querySelector('#author-name')?.textContent.toLowerCase() || '';
             if (authorName.includes('bot')) {
                 msg.style.display = 'none';
                 msg.classList.add('yt-suite-hidden-bot');
+            } else if (msg.classList.contains('yt-suite-hidden-bot')) {
+                msg.style.display = '';
+                msg.classList.remove('yt-suite-hidden-bot');
             }
         });
     }
@@ -15715,10 +15760,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             });
         }
 
-        const messages = document.querySelectorAll('yt-live-chat-text-message-renderer:not([data-ytkit-kw-checked])');
+        const messages = document.querySelectorAll('yt-live-chat-text-message-renderer');
         if (!keywordsRaw || !keywordsRaw.trim()) {
             messages.forEach(el => {
-                el.dataset.ytkitKwChecked = '1';
+                el.dataset.ytkitKwChecked = liveChatMessageFingerprint(el);
                 if (el.classList.contains('yt-suite-hidden-keyword')) {
                     el.style.display = '';
                     el.classList.remove('yt-suite-hidden-keyword');
@@ -15728,13 +15773,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }
         const keywords = keywordsRaw.toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
         messages.forEach(msg => {
-            msg.dataset.ytkitKwChecked = '1';
+            const fingerprint = liveChatMessageFingerprint(msg);
+            if (msg.dataset.ytkitKwChecked === fingerprint) return;
+            msg.dataset.ytkitKwChecked = fingerprint;
             const messageText = msg.querySelector('#message')?.textContent.toLowerCase() || '';
             const authorText = msg.querySelector('#author-name')?.textContent.toLowerCase() || '';
             const shouldHide = keywords.some(k => messageText.includes(k) || authorText.includes(k));
             if (shouldHide) {
                 msg.style.display = 'none';
                 msg.classList.add('yt-suite-hidden-keyword');
+            } else if (msg.classList.contains('yt-suite-hidden-keyword')) {
+                msg.style.display = '';
+                msg.classList.remove('yt-suite-hidden-keyword');
             }
         });
     }

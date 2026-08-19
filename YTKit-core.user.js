@@ -29105,6 +29105,16 @@ if (typeof globalThis !== "undefined") {
                 return fn ? fn(text, 0) : 0;
             },
 
+            // The stamp below describes ONE video. Cards are recycled by
+            // continuations, so the stamp has to name what it was made for or
+            // "restore YouTube's order" restores an order that no longer
+            // corresponds to anything.
+            _cardVideoId(card) {
+                const href = card.querySelector('a#thumbnail[href], a[href*="/watch?v="]')?.getAttribute?.('href') || '';
+                const match = /[?&]v=([A-Za-z0-9_-]{11})/.exec(href);
+                return match ? match[1] : '';
+            },
+
             _applySort(modeOverride) {
                 const mode = this._normalizeSubscriptionSortMode(modeOverride || this._getActiveSortMode());
                 const container = document.querySelector('ytd-rich-grid-renderer #contents, ytd-section-list-renderer #contents');
@@ -29133,7 +29143,13 @@ if (typeof globalThis !== "undefined") {
                     return Number.isFinite(idx) && idx >= max ? idx + 1 : max;
                 }, 0);
                 cards.forEach(card => {
-                    if (card.dataset.ytkitOrigIdx === undefined) card.dataset.ytkitOrigIdx = String(nextOrigIdx++);
+                    const videoId = this._cardVideoId(card);
+                    if (card.dataset.ytkitOrigIdx !== undefined && card.dataset.ytkitOrigId === videoId) return;
+                    // Either never stamped, or recycled into a different
+                    // video. A recycled card arrived with a continuation, so
+                    // the end of the native order is where it belongs.
+                    card.dataset.ytkitOrigIdx = String(nextOrigIdx++);
+                    card.dataset.ytkitOrigId = videoId;
                 });
                 const lastVisit = mode === 'new-since-last-visit' ? this._readLastVisit() : null;
                 const score = (card) => {
@@ -29837,7 +29853,7 @@ if (typeof globalThis !== "undefined") {
                     delete el.dataset.ytkitChannelAgeDays;
                     delete el.dataset.ytkitStagedUnsubscribe;
                 });
-                document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; });
+                document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; delete el.dataset.ytkitOrigId; });
                 // Audit pass: kill any orphan new-group dialog so it can't outlive the feature.
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 this._styleElement?.remove();

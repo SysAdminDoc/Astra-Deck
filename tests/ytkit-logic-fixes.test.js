@@ -533,8 +533,10 @@ test('subscriptionGroups init has no pathname hard-return; the nav rule gates by
 test('subscriptionGroups default sort restores stamped original card order', () => {
     const block = featureBlock('subscriptionGroups');
     const sortBlock = methodSlice(block, '_applySort(modeOverride) {', 4200);
-    assert.match(sortBlock, /card\.dataset\.ytkitOrigIdx\s*===\s*undefined/,
-        'cards must be stamped with their original index before the first re-append');
+    assert.match(sortBlock, /card\.dataset\.ytkitOrigIdx\s*!==\s*undefined\s*&&\s*card\.dataset\.ytkitOrigId\s*===\s*videoId/,
+        'cards must be stamped before the first re-append, and RE-stamped when a continuation recycles the card into a different video');
+    assert.match(sortBlock, /const videoId = this\._cardVideoId\(card\);/,
+        'the stamp has to name the video it describes, or restoring it restores nothing meaningful');
     assert.match(
         sortBlock,
         /mode === 'default'[\s\S]{0,700}Number\(a\.dataset\.ytkitOrigIdx\)/,
