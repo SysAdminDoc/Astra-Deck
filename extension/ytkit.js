@@ -10024,6 +10024,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     dlBtn.className = 'ytp-button ytkit-player-btn ytkit-po-dl';
                     dlBtn.title = t('playerDownloadTitle', 'Download Video');
                     dlBtn.setAttribute('aria-label', t('playerDownloadAria', 'Download video'));
+                    // Declared at creation, like the speed button beside it.
+                    // Without these aria-expanded only appears once the popup
+                    // has been opened, so the trigger has no disclosure state
+                    // for the whole first visit.
+                    dlBtn.setAttribute('aria-haspopup', 'dialog');
+                    dlBtn.setAttribute('aria-expanded', 'false');
                     const dlIcon = ICONS.download();
                     dlIcon.setAttribute('aria-hidden', 'true');
                     dlBtn.appendChild(dlIcon);
@@ -15694,6 +15700,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.className = 'ytkit-watch-action-btn ytkit-local-dl-btn';
                 btn.title = t('dlLocalOptionsTitle', 'Show local download options');
                 btn.setAttribute('aria-label', t('dlLocalOptionsTitle', 'Show local download options'));
+                // Same disclosure contract as the in-player download trigger:
+                // stable from creation rather than appearing on first open.
+                btn.setAttribute('aria-haspopup', 'dialog');
+                btn.setAttribute('aria-expanded', 'false');
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.setAttribute('width', '20');

@@ -35251,6 +35251,12 @@ function attachUIEventListeners() {
                     dlBtn.className = 'ytp-button ytkit-player-btn ytkit-po-dl';
                     dlBtn.title = t('playerDownloadTitle', 'Download Video');
                     dlBtn.setAttribute('aria-label', t('playerDownloadAria', 'Download video'));
+                    // Declared at creation, like the speed button beside it.
+                    // Without these aria-expanded only appears once the popup
+                    // has been opened, so the trigger has no disclosure state
+                    // for the whole first visit.
+                    dlBtn.setAttribute('aria-haspopup', 'dialog');
+                    dlBtn.setAttribute('aria-expanded', 'false');
                     const dlIcon = ICONS.download();
                     dlIcon.setAttribute('aria-hidden', 'true');
                     dlBtn.appendChild(dlIcon);
