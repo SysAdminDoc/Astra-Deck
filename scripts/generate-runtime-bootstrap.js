@@ -143,7 +143,8 @@ function render(modules) {
         generation: Number(priorState?.generation || 0) + 1,
         startedAt: Date.now(),
         completedAt: null,
-        failure: null
+        failure: null,
+        failedFeatureModules: []
     };
     globalThis[BOOTSTRAP_STATE_KEY] = bootstrapState;
 
@@ -270,9 +271,34 @@ ${settingsLiteral}
             && shouldLoadFeature(modulePath, settings)
         );
         stageTimings.featureModuleCount = deferredFeatureModules.length;
-        await timeStage('featureModulesMs', () => Promise.all(
+        // allSettled, NOT all -- and the difference is deliberate.
+        //
+        // Fail-closed is right for the FOUNDATION tier: a missing guard module
+        // must never be softened into a partial load. But these are the peeled
+        // FEATURE modules, and Promise.all turned "one feature is broken" into
+        // "the extension does nothing on this page", because a single rejected
+        // import means ytkit.js never executes at all. A truncated store
+        // install or one unfetchable file should cost that feature, not the
+        // whole runtime.
+        const featureResults = await timeStage('featureModulesMs', () => Promise.allSettled(
             deferredFeatureModules.map((modulePath) => import(getURL(modulePath)))
         ));
+        const failedFeatureModules = [];
+        featureResults.forEach((result, index) => {
+            if (result.status !== 'rejected') return;
+            const modulePath = deferredFeatureModules[index];
+            failedFeatureModules.push(modulePath);
+            const reason = result.reason?.message || String(result.reason || 'unknown error');
+            console.error('[YTKit] feature module failed to load: ' + modulePath + ' - ' + reason);
+            globalThis.YTKitCore?.DiagnosticLog?.record?.(
+                'feature-module-load',
+                'feature module failed to load: ' + modulePath + ' - ' + reason
+            );
+        });
+        // Surfaced so the feature-health panel can report a degraded runtime
+        // rather than leaving the user with a silently missing feature.
+        bootstrapState.failedFeatureModules = failedFeatureModules;
+        stageTimings.featureModuleFailureCount = failedFeatureModules.length;
         // The monolith reads YTKitFeatures while constructing its top-level
         // feature array. It must execute only after every selected peeled
         // module has registered its factory; otherwise the inline fallback

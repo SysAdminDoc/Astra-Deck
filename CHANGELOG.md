@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- One unloadable feature module no longer takes the whole extension down with
+  it. The peeled feature modules were imported with Promise.all, so a single
+  rejected import meant the monolith never executed and the page got nothing.
+  Failures are now reported by name to the console and the diagnostic ring and
+  recorded on bootstrap state, while the rest of the runtime continues. The
+  foundation tier still fails closed on purpose -- a missing guard module must
+  never be softened into a partial load.
+
 ### Security
 
 - The AI summary endpoint now proves the provider origin was granted before
