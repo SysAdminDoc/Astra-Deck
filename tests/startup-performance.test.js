@@ -11,6 +11,7 @@ const benchmark = require('../scripts/bench-startup');
 const { buildChromeStub } = require('../scripts/smoke-settings-overlay');
 const source = fs.readFileSync(path.join(repoRoot, 'scripts', 'bench-startup.js'), 'utf8');
 const packageJson = require('../package.json');
+const { checkChainText } = require('./helpers/check-chain');
 
 function baseline(overrides = {}) {
     return {
@@ -183,7 +184,7 @@ test('startup benchmark CLI and check gate are wired to the real fixture', () =>
     // flag the gate refuses to switch budgets rather than doing it silently.
     assert.equal(packageJson.scripts['check:startup'], 'node scripts/bench-startup.js --check --allow-synthetic');
     assert.equal(packageJson.scripts['check:startup:captured'], 'node scripts/bench-startup.js --check');
-    assert.match(packageJson.scripts.check, /npm run check:startup/);
+    assert.match(checkChainText(), /bench-startup\.js --check/);
     assert.match(source, /startup captures are missing/,
         'a silent budget switch must fail loudly instead of warning');
     assert.match(source, /measured with fixture mode '\$\{result\.fixtureMode\}'/,

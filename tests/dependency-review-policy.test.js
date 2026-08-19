@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const { checkChainText } = require('./helpers/check-chain');
 
 const repoRoot = path.join(__dirname, '..');
 
@@ -18,7 +19,7 @@ test('dependency review stays local-only with no validate workflow', () => {
     );
 
     const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
-    assert.match(pkg.scripts.check, /npm run audit:deps/,
+    assert.match(checkChainText(), /npm run audit:deps/,
         'local check script must include dependency auditing');
     assert.equal(
         pkg.scripts['audit:deps'],
@@ -36,7 +37,7 @@ test('dependency review stays local-only with no validate workflow', () => {
     // contains and pass vacuously.
     assert.equal(pkg.scripts['audit:python'], undefined,
         'Python dependency auditing belongs to the AstraDownloader repository');
-    assert.doesNotMatch(pkg.scripts.check, /audit:python/,
+    assert.doesNotMatch(checkChainText(), /audit:python/,
         'the check gate must not reference a Python audit this repo cannot run');
 });
 

@@ -78,13 +78,35 @@ function readLiteralAt(source, start) {
     return null;
 }
 
+// A stylesheet assigned through `styleEl.textContent = \`…\`` hits the same
+// sink as a user-facing label, so the gate fingerprinted whole CSS blobs as UI
+// copy. Every edit to _playerBtnCSS, the speed popup or the download popup
+// then failed with "route new copy through locale keys" and forced a baseline
+// ratchet, for a change that touched no user-visible string at all.
+//
+// Detected by content rather than by variable name: a blob of `selector {
+// prop: value; … }` is CSS whoever assigned it, and a label that happens to
+// contain a brace is not going to carry three declarations and a rule block.
+const CSS_DECLARATION_RE = /[a-zA-Z-]+\s*:\s*[^;{}]+[;}]/g;
+const CSS_RULE_RE = /[^{}]*\{[^{}]*[a-zA-Z-]+\s*:[^{}]*\}/;
+const CSS_MIN_DECLARATIONS = 3;
+
+function looksLikeCss(raw) {
+    const text = String(raw || '');
+    if (!CSS_RULE_RE.test(text)) return false;
+    CSS_DECLARATION_RE.lastIndex = 0;
+    return (text.match(CSS_DECLARATION_RE) || []).length >= CSS_MIN_DECLARATIONS;
+}
+
 function isCandidateText(raw) {
     const text = String(raw || '').trim();
+    if (looksLikeCss(text)) return false;
     return text.length > 0 && /\p{L}/u.test(text) && !isIntentionallyIdenticalMessage(text);
 }
 
 function isStrictCandidateText(raw) {
     const text = String(raw || '').trim();
+    if (looksLikeCss(text)) return false;
     return text.length > 0 && /\p{L}/u.test(text) && !STRICT_UI_COPY_ALLOWLIST.has(text);
 }
 
@@ -262,6 +284,7 @@ module.exports = {
     collectHtmlLiterals,
     collectJsLiterals,
     collectStrictJsLiterals,
+    looksLikeCss,
     parseArgs,
     readLiteralAt
 };
