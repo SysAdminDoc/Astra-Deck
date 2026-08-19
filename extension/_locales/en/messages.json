@@ -860,9 +860,6 @@
   "dlPopupPlaylistSelectAll": {
     "message": "Select all"
   },
-  "dlPopupPlaylistSelectRequired": {
-    "message": "Select at least one playlist item."
-  },
   "dlPopupPlaylistSelectionTpl": {
     "message": "{selected} selected · {shown} shown · {total} total"
   },

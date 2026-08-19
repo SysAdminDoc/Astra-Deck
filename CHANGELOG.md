@@ -8,6 +8,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Unchecking every item in the download popup playlist preview now downloads
+  the single video, matching the hint printed above the button. It previously
+  hard-blocked, contradicting that copy and leaving no way out except closing
+  and reopening the popup - and it was reachable with no effort at all when a
+  playlist had no items or the current video sat outside the shown subset.
+
 - The playback-speed popup now stays on screen in a short window and no longer
   leaks event listeners when reopened quickly. Both are guards the download
   popup already had: without the first, flipping the panel below its button

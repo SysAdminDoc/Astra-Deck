@@ -2268,12 +2268,18 @@
                         );
                         return;
                     }
-                    if (!playlistSelection.size) {
-                        showToast(t('dlPopupPlaylistSelectRequired', 'Select at least one playlist item.'), '#f59e0b');
-                        return;
+                    // An empty selection falls through to the single video,
+                    // which is exactly what the hint above the button promises:
+                    // "Without a selection, this video downloads normally."
+                    // Hard-blocking here contradicted that and created a
+                    // dead end -- reachable with zero effort when the playlist
+                    // has no items, when the current video is outside the shown
+                    // subset, or when the user simply unchecks everything. The
+                    // only escape was closing and reopening the popup.
+                    if (playlistSelection.size) {
+                        opts.playlistItems = Array.from(playlistSelection).sort((a, b) => a - b);
+                        requestUrl = playlistUrl;
                     }
-                    opts.playlistItems = Array.from(playlistSelection).sort((a, b) => a - b);
-                    requestUrl = playlistUrl;
                 }
                 if (appState?.settings) {
                     appState.settings.downloadQuality = selectedQuality;
