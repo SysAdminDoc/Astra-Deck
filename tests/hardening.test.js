@@ -11437,12 +11437,12 @@ test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session
     // when the key changes between ticks, _sessionStart is reset to 0 and this
     // tab's unflushed seconds are dropped. The next iteration anchors the session
     // baseline to the new day's accumulator.
-    const ytkitSrc = fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    // Reads the feature module: ytkit.js carried a second copy of this feature
+    // until v4.72.0 and now carries only a descriptor stub.
+    const slice = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8'
     );
-    const dwIdx = ytkitSrc.indexOf("id: 'digitalWellbeing'");
-    assert.ok(dwIdx > -1, 'digitalWellbeing feature must exist');
-    const slice = ytkitSrc.slice(dwIdx, dwIdx + 34000);
+    assert.ok(slice.includes("id: 'digitalWellbeing'"), 'digitalWellbeing feature must exist');
 
     // 1. _lastTodayKey field is declared on the feature object so the
     // boundary check has somewhere to remember the last seen key.
@@ -12880,9 +12880,7 @@ test('digitalWellbeing merges per-tab watch time instead of overwriting it', () 
     const moduleSource = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8'
     );
-    const dwIdx = ytkitSource.indexOf("id: 'digitalWellbeing'");
-    const fallback = ytkitSource.slice(dwIdx, dwIdx + 34000);
-    for (const [label, source] of [['module', moduleSource], ['ytkit.js fallback', fallback]]) {
+    for (const [label, source] of [['module', moduleSource]]) {
         assert.match(source, /_pendingSeconds: 0/,
             `${label} must track only this tab's unflushed seconds`);
         assert.match(source, /return \{ date: persisted\.date, seconds: persisted\.seconds \+ this\._pendingSeconds \}/,
