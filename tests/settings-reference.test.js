@@ -10,6 +10,7 @@ const {
     BEGIN_MARKER,
     END_MARKER,
     collectReferenceEntries,
+    renderEntry,
     renderSettingsReference,
     replaceReference
 } = require('../scripts/generate-settings-reference');
@@ -52,4 +53,36 @@ test('README reference groups every canonical category in schema order', () => {
         assert.ok(index > previous, `${category} must follow canonical schema category order`);
         previous = index;
     }
+});
+
+test('a pipe anywhere in an entry is escaped, not just in the purpose column', () => {
+    // Latent when this was written: no shipped value contains a pipe. It stays
+    // latent only by luck, and the --check gate cannot catch it — the generator
+    // and README would agree on the same truncated table.
+    const entry = {
+        key: 'pipeFixture',
+        title: 'Title | with pipe',
+        purpose: 'Purpose | with pipe',
+        category: 'general',
+        type: 'string',
+        defaultValue: 'a|b',
+        knownValues: ['left|right', 'plain'],
+        risk: 'safe',
+        profile: 'both',
+        scope: 'global',
+        vehicle: 'both',
+        immediateApply: true,
+        destroyRequired: false,
+        internal: false,
+        since: '4.72.0'
+    };
+
+    const row = renderEntry(entry);
+    const cells = row.split(/(?<!\\)\|/).slice(1, -1);
+    assert.equal(cells.length, 4,
+        `a pipe in any cell must not split the row into extra columns, got ${cells.length}`);
+    assert.match(row, /Title \\\| with pipe/, 'the title pipe must be escaped');
+    assert.match(row, /Purpose \\\| with pipe/, 'the purpose pipe must be escaped');
+    assert.doesNotMatch(row.replace(/\\\|/g, ''), /a\|b|left\|right/,
+        'no unescaped pipe may survive from a default or an enum value');
 });
