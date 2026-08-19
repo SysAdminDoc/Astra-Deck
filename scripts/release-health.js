@@ -139,7 +139,9 @@ function buildHealthReport(options = {}) {
             const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
             version = typeof manifest.version === 'string' ? manifest.version : null;
             manifestSha256 = sha256(manifestPath);
-        } catch (_) { /* artifact readiness contains the actionable parse failure */ }
+        } catch (_) { /* reason: artifact readiness already reports the actionable
+            parse failure; re-raising here would duplicate it and hide the
+            version fallback below. */ }
     }
     if (!version) {
         const packageJson = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));

@@ -57,7 +57,7 @@
     "check:versions": "node scripts/check-versions.js",
     "check:settings": "node scripts/check-settings.js",
     "check:settings-reference": "node scripts/generate-settings-reference.js --check",
-    "lint": "eslint extension/background.js extension/popup.js extension/runtime-bootstrap.js extension/core/*.js extension/core/selector-packs/*.js extension/features/**/*.js extension/live-chat.js extension/sidepanel.js extension/ytkit.js extension/ytkit-main.js",
+    "lint": "eslint extension/background.js extension/popup.js extension/runtime-bootstrap.js extension/core/*.js extension/core/selector-packs/*.js extension/features/**/*.js extension/live-chat.js extension/sidepanel.js extension/ytkit.js extension/ytkit-main.js extension/runtime-core-loader.mjs scripts/**/*.js build-extension.js sync-userscript.js",
     "check:firefox": "node scripts/check-firefox-webext.js",
     "smoke:firefox": "node scripts/smoke-firefox-webext.js",
     "smoke:userscript-managers": "node scripts/smoke-userscript-managers.js",

@@ -962,10 +962,14 @@ async function buildProfileArtifacts(profile, crxSigningConfig = resolveCrxSigni
         console.log(profile + ' Firefox XPI: build/' + firefoxXpiName + ' (' + formatSize(firefoxXpiPath) + ' KB)');
     } finally {
         if (chromeStageDir && fs.existsSync(chromeStageDir)) {
-            try { fs.rmSync(chromeStageDir, { recursive: true, force: true }); } catch (_) {}
+            // reason: staging cleanup is best-effort. A locked or
+            // already-removed temp directory must not fail a build whose
+            // artifacts are already written.
+            try { fs.rmSync(chromeStageDir, { recursive: true, force: true }); } catch (_) { /* reason: see above */ }
         }
         if (firefoxStageDir && fs.existsSync(firefoxStageDir)) {
-            try { fs.rmSync(firefoxStageDir, { recursive: true, force: true }); } catch (_) {}
+            // reason: same as the Chrome stage above -- best-effort cleanup.
+            try { fs.rmSync(firefoxStageDir, { recursive: true, force: true }); } catch (_) { /* reason: see above */ }
         }
     }
 }

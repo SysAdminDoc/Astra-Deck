@@ -48,6 +48,32 @@ const sharedBrowserGlobals = {
     structuredClone: 'readonly',
 };
 
+// The tooling tier runs under Node, not a browser. It is the highest-leverage
+// code in the repository -- 28 gate scripts, the build script and the
+// userscript sync script enforce every invariant the extension relies on --
+// and until v4.70.0 it was the only JavaScript here that was never linted.
+const sharedNodeGlobals = {
+    require: 'readonly',
+    module: 'writable',
+    exports: 'writable',
+    process: 'readonly',
+    console: 'readonly',
+    Buffer: 'readonly',
+    __dirname: 'readonly',
+    __filename: 'readonly',
+    URL: 'readonly',
+    TextEncoder: 'readonly',
+    TextDecoder: 'readonly',
+    setTimeout: 'readonly',
+    clearTimeout: 'readonly',
+    setInterval: 'readonly',
+    clearInterval: 'readonly',
+    globalThis: 'readonly',
+    structuredClone: 'readonly',
+    fetch: 'readonly',
+    AbortController: 'readonly',
+};
+
 const localPlugin = {
     rules: {
         'no-post-await-addlistener': noPostAwaitAddListener,
@@ -90,5 +116,39 @@ module.exports = [
             'no-constant-binary-expression': ['error', { checkRelationalComparisons: true }],
         },
         languageOptions: sharedLanguageOptions,
+    },
+    {
+        // The gates, the build, and the userscript sync. `require-catch-reason`
+        // applies here too: a silently swallowed error in a gate script is how
+        // a gate starts passing without checking anything.
+        files: [
+            'scripts/**/*.js',
+            'build-extension.js',
+            'sync-userscript.js',
+        ],
+        plugins: { local: localPlugin },
+        rules: {
+            'local/require-catch-reason': 'error',
+            'no-constant-binary-expression': ['error', { checkRelationalComparisons: true }],
+        },
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'commonjs',
+            globals: sharedNodeGlobals,
+        },
+    },
+    {
+        // ESM: the runtime core loader is a module, not a script.
+        files: ['extension/runtime-core-loader.mjs'],
+        plugins: { local: localPlugin },
+        rules: {
+            'local/require-catch-reason': 'error',
+            'no-constant-binary-expression': ['error', { checkRelationalComparisons: true }],
+        },
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            globals: sharedBrowserGlobals,
+        },
     },
 ];
