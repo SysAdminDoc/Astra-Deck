@@ -2002,12 +2002,16 @@
                 font-size: 15.5px !important;
             }
 
+            /* No line clamp here. The later top-level .ytkit-feature-desc rule
+               sets overflow: visible, and being later it wins — so the clamp
+               produced a two-line-tall box with a third line painting outside
+               it, sheared horizontally behind the select control. A clamp needs
+               overflow: hidden to be a clamp at all. Descriptions wrap fully at
+               every width now, which is what the later rule already intended. */
             #ytkit-settings-panel .ytkit-feature-desc {
                 font-size: 13px !important;
-                display: -webkit-box !important;
+                display: block !important;
                 white-space: normal !important;
-                -webkit-box-orient: vertical !important;
-                -webkit-line-clamp: 2 !important;
             }
 
             #ytkit-settings-panel .ytkit-select-shell,

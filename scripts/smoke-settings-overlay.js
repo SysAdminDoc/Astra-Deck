@@ -398,6 +398,24 @@ const IN_PAGE_CHECKS = `(() => {
         if (firstNavRect && (firstNavRect.width < 140 || firstNavRect.height < 44 || firstNavRect.right <= 96)) {
             failures.push('mobile navigation target is clipped at ' + Math.round(firstNavRect.width) + 'x' + Math.round(firstNavRect.height));
         }
+        // Descriptions used to paint ~2.5 lines on mobile: a two-line clamp box
+        // with overflow: visible, so the third line sheared out from behind it
+        // mid-glyph with no ellipsis. Content taller than its own box is the
+        // signature, and it is invisible to the readable-controls check above.
+        for (const description of panel.querySelectorAll('.ytkit-feature-desc')) {
+            const text = (description.textContent || '').trim();
+            if (!text) continue;
+            const overflowsBox = description.scrollHeight > description.clientHeight + 1;
+            if (!overflowsBox) continue;
+            const style = getComputedStyle(description);
+            const truncates = style.overflow === 'hidden' || style.overflowY === 'hidden';
+            failures.push(
+                'mobile feature description overflows its box by '
+                + Math.round(description.scrollHeight - description.clientHeight) + 'px'
+                + (truncates ? ' (clipped)' : ' and paints outside it')
+                + ': ' + text.slice(0, 48)
+            );
+        }
     }
     const closeCandidates = Array.from(panel.querySelectorAll('button')).filter((btn) => {
         const label = ((btn.getAttribute('aria-label') || '') + ' ' + (btn.textContent || '')).toLowerCase();
