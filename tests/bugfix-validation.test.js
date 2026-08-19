@@ -583,7 +583,7 @@ test('global comment text selection support covers community posts and comment s
 test('split comment replies keep nested cards readable', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     assert.ok(source.includes('margin: 7px 0 0 12px !important;'),
@@ -646,7 +646,7 @@ test('split comment replies keep nested cards readable', () => {
 test('split title header and comment composer stay visually compact', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     assert.ok(source.includes('border-left: 2px solid rgba(var(--ytkit-split-accent-rgb), 0.42) !important;'),
@@ -677,7 +677,7 @@ test('split title header and comment composer stay visually compact', () => {
 test('split title header shows upload date and docks quick links beside YouTube logo', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     assert.ok(source.includes('_dockSplitHeader()'),
@@ -706,9 +706,12 @@ test('split title header shows upload date and docks quick links beside YouTube 
         'extension split upload date should prefer YouTube microformat publishDate');
     assert.ok(source.includes("actions.appendChild(logoWrap);"),
         'extension split should move the player quick-link launcher into the title header');
-    assert.ok(source.includes("getFeatureById('stickyVideo')?._dockSplitHeader?.();"),
+    // The call site is in ytkit.js, not the feature module: the player
+    // quick-link launcher is monolith code that asks the feature to re-dock.
+    const monolith = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    assert.ok(monolith.includes("getFeatureById('stickyVideo')?._dockSplitHeader?.();"),
         'player quick-link injection should hand off to the split title when split is open');
-    assert.ok(source.includes("logoWrap?.remove();"),
+    assert.ok(monolith.includes("logoWrap?.remove();"),
         'floating launcher cleanup should remove a title-docked launcher when disabled');
 
     assert.ok(theaterSplit.includes('function dockSplitHeader()'),
@@ -740,7 +743,7 @@ test('split title header shows upload date and docks quick links beside YouTube 
 test('split live chat gets a video info header and neutral divider hover', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
     // VideoTypeDetector moved to core/video-type.js
     // so the live-override invariant is asserted against the new source location.
@@ -908,7 +911,7 @@ test('split live chat gets a video info header and neutral divider hover', () =>
 test('split title and owner cards align while quick links stay above the video', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     const blockBetween = (contents, startNeedle, endNeedle, label, { fromStart = false } = {}) => {
@@ -1155,7 +1158,7 @@ test('split title and owner cards align while quick links stay above the video',
 test('split theater supports middle-mouse autoscroll in the right column', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
     assert.ok(source.includes('_middleMouseHandler'),
