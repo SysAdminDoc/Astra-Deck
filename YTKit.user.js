@@ -2324,7 +2324,25 @@
         return failure;
     }
 
+    // Mirrors the extension's guard (features/download-ui/index.js). Without it
+    // a double-click queues two companion jobs for the same video, and the
+    // second one's progress card replaces the first's.
+    let _downloadInProgress = false;
+
     async function ytKitDownload(videoUrl, audioOnly) {
+        if (_downloadInProgress) {
+            showToast('A download is already in progress.', '#f59e0b', { duration: 3 });
+            return;
+        }
+        _downloadInProgress = true;
+        try {
+            await _ytKitDownloadRun(videoUrl, audioOnly);
+        } finally {
+            _downloadInProgress = false;
+        }
+    }
+
+    async function _ytKitDownloadRun(videoUrl, audioOnly) {
         DebugManager.log('Download', `Download requested: ${videoUrl} (audio=${audioOnly})`);
         showToast(audioOnly ? 'Starting audio download...' : 'Starting video download...', '#3b82f6', { duration: 2 });
 
@@ -2381,7 +2399,16 @@
         } else {
             DebugManager.log('MediaDL', 'No streams extracted - server will use yt-dlp fallback');
         }
-        const payload = { url: videoUrl, audioOnly: audioOnly || false };
+        // The companion falls back to its own defaults for anything the payload
+        // omits, so leaving quality/format out meant the userscript's own
+        // Download Quality setting only ever reached the direct-stream path.
+        const s = appState?.settings;
+        const payload = {
+            url: videoUrl,
+            audioOnly: audioOnly || false,
+            quality: s?.downloadQuality || 'best',
+            format: audioOnly ? (s?.downloadAudioFormat || 'mp3') : (s?.downloadVideoFormat || 'mp4')
+        };
         if (streams) payload.streams = streams;
 
         // Extract cookies via GM_cookie (requires ScriptVault with cookies permission).
@@ -2997,6 +3024,8 @@
             showMpvButton: false,
             autoDownloadOnVisit: false,
             downloadQuality: 'best',
+            downloadVideoFormat: 'mp4',
+            downloadAudioFormat: 'mp3',
             preferredMediaPlayer: 'vlc',
             showDownloadPlayButton: false,
             subsVlcPlaylist: false,
@@ -13543,6 +13572,40 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 { value: '1080', label: 'Full HD (1080p)' },
                 { value: '720', label: 'HD (720p)' },
                 { value: '480', label: 'SD (480p)' }
+            ],
+            init() {}, destroy() {}
+        },
+
+        // ── Download Video Format ──
+        {
+            id: 'downloadVideoFormat',
+            name: 'Video Format',
+            description: 'Default container format for video downloads',
+            group: 'Downloads',
+            icon: 'settings-2',
+            type: 'select',
+            options: [
+                { value: 'mp4', label: 'MP4' },
+                { value: 'mkv', label: 'MKV' },
+                { value: 'webm', label: 'WebM' }
+            ],
+            init() {}, destroy() {}
+        },
+
+        // ── Download Audio Format ──
+        {
+            id: 'downloadAudioFormat',
+            name: 'Audio Format',
+            description: 'Default format for audio-only downloads',
+            group: 'Downloads',
+            icon: 'settings-2',
+            type: 'select',
+            options: [
+                { value: 'mp3', label: 'MP3' },
+                { value: 'm4a', label: 'M4A (AAC)' },
+                { value: 'opus', label: 'Opus' },
+                { value: 'flac', label: 'FLAC' },
+                { value: 'wav', label: 'WAV' }
             ],
             init() {}, destroy() {}
         },
