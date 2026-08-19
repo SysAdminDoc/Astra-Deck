@@ -181,16 +181,6 @@ duplicated here.
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — Pre-NF21 upgrade guard stamps the version but still shows the "What's New" banner it exists to suppress
-  Category: correctness
-  Where: `extension/popup.js:4290-4341`.
-  Problem: the guard writes `LAST_SEEN_VERSION_KEY` and flips local `firstRunSeen` true, but the local `lastSeen` const (read at `:4290`, still `''`) is what the gate at `:4339` checks, so `showWhatsNew('')` fires on that same popup open — contradicting the in-code contract ("stamp the sentinels silently so neither surface fires today"). One-shot per upgrading user, low harm, but the tokenless "Updated to vX. See what changed." variant renders when it shouldn't.
-  Evidence: traced the local vs. stored version reads.
-  Fix: re-read the stamped value (or use the just-written `targetVersion`) for the gate, so the banner fires only on the next real bump.
-  Acceptance: an upgrading user does not see the What's New banner on the stamping open; a test covers the pre-NF21 path.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Permanent storage-quota failure silently drops fire-and-forget auxiliary writes
   Category: correctness
   Where: `extension/core/storage.js:332-356` (`storageWrite`/`storageWriteJSON` callers never observe `{ok:false}`).
