@@ -8561,7 +8561,10 @@ test('popup.css declares text, enum, and color editor variants without pill back
         path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
     );
     assert.match(css, /\.so-key-text(?:\s*,|\s*\{)/);
-    assert.match(css, /\.so-key-select/);
+    // A bare selector match passes on a comment or an empty rule; the text and
+    // colour variants below pin a declaration, so this one does too.
+    assert.match(css, /\.so-key-select[^{]*\{[^}]*\bborder-radius:\s*\d+px/,
+        'the enum select variant must carry a real declaration, not just exist as a selector');
     assert.match(css, /\.so-key-color \{/);
     // Both surfaces use 6 px radius — same house-style constraint as
     // the v4.26.0 number input. No half-height stadium aesthetic.

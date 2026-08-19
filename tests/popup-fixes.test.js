@@ -477,7 +477,14 @@ test('finite settings render a constrained select and preserve typed values and 
         'enum changes must use the serialized settings write path');
     assert.match(block, /refocusSchemaOverviewKey\(entry\)/,
         'the rebuilt enum row must restore keyboard focus');
-    assert.match(popupSource, /select\[data-key="\$\{esc\}"\]/,
+    // Scoped to the helper: matching at file scope would keep passing if the
+    // helper lost its select branch while the string survived anywhere else.
+    const helperStart = popupSource.indexOf('function refocusSchemaOverviewKey(entry)');
+    assert.ok(helperStart > -1, 'popup.js must declare the shared key refocus helper');
+    const helperEnd = popupSource.indexOf('\nfunction ', helperStart + 1);
+    assert.ok(helperEnd > helperStart, 'the refocus helper must be followed by another function');
+    const helper = popupSource.slice(helperStart, helperEnd);
+    assert.match(helper, /select\[data-key="\$\{esc\}"\]/,
         'the shared refocus helper must discover enum select controls');
 });
 
