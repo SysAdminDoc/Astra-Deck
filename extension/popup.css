@@ -1974,13 +1974,13 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.schema-overview-list .so-key-switch::before {
-  content: 'off';
-}
+/* The on/off word used to be `content:` on ::before, which is unreachable by
+   the messages pipeline: it rendered English in all ten non-EN locales.
+   popup.js writes it as real text through t() instead. */
 
 /* Hit-area expansion: the switch reads ~17 px tall; a transparent
    ::after overlay lifts the clickable region to ≥24 px without
-   changing the rendered size. (::before is taken by the on/off text.) */
+   changing the rendered size. */
 .schema-overview-list .so-key-switch::after {
   content: '';
   position: absolute;
@@ -1991,10 +1991,6 @@ body {
   background: rgba(78, 200, 165, 0.12);
   border-color: rgba(78, 200, 165, 0.32);
   color: #4ec8a5;
-}
-
-.schema-overview-list .so-key-switch.on::before {
-  content: 'on';
 }
 
 .schema-overview-list .so-key-switch:focus-visible {

@@ -341,7 +341,7 @@
     "message": "Reset"
   },
   "commonTryAgain": {
-    "message": "Try again"
+    "message": "重试"
   },
   "commonUnexpectedError": {
     "message": "unexpected error"
@@ -5329,6 +5329,12 @@
   "spSelectorTotalTpl": {
     "message": "{count} 个界面"
   },
+  "spRowStateRetry": {
+    "message": "重试"
+  },
+  "spRowStateSaving": {
+    "message": "正在保存"
+  },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
   },
@@ -6453,6 +6459,12 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity — github-full only"
+  },
+  "switchLabelOff": {
+    "message": "关"
+  },
+  "switchLabelOn": {
+    "message": "开"
   },
   "toggleStateOff": {
     "message": "已禁用"

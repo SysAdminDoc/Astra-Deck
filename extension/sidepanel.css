@@ -1126,18 +1126,19 @@ button {
   border-color: var(--astra-info);
 }
 
-.sp-setting-row[data-saving="true"]::after {
-  content: "Saving";
+/* These two states used to be `content:` on ::after, which put user-facing
+   English somewhere the messages pipeline structurally cannot reach: every
+   non-EN locale rendered "Saving" and "Try again". sidepanel.js now writes the
+   text through t() into .sp-setting-state. It is aria-hidden because the row
+   already carries the state on aria-busy and aria-description. */
+.sp-setting-state {
   color: var(--astra-info);
   font-size: 10px;
   font-weight: 800;
 }
 
-.sp-setting-row[data-error="true"]::after {
-  content: "Try again";
+.sp-setting-row[data-error="true"] .sp-setting-state {
   color: var(--astra-error);
-  font-size: 10px;
-  font-weight: 800;
 }
 
 .sp-refresh-status {

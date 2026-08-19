@@ -341,7 +341,7 @@
     "message": "Reset"
   },
   "commonTryAgain": {
-    "message": "Try again"
+    "message": "إعادة المحاولة"
   },
   "commonUnexpectedError": {
     "message": "unexpected error"
@@ -5329,6 +5329,12 @@
   "spSelectorTotalTpl": {
     "message": "{count} سطح"
   },
+  "spRowStateRetry": {
+    "message": "إعادة المحاولة"
+  },
+  "spRowStateSaving": {
+    "message": "جارٍ الحفظ"
+  },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
   },
@@ -6453,6 +6459,12 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity — github-full only"
+  },
+  "switchLabelOff": {
+    "message": "إيقاف"
+  },
+  "switchLabelOn": {
+    "message": "تشغيل"
   },
   "toggleStateOff": {
     "message": "معطَّل"
