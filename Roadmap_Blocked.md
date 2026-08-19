@@ -22,6 +22,46 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: The repository-side work is complete; creating the tag, publishing GitHub assets, and promoting release channels are operator actions explicitly excluded from the 2026-08-13 local-only pass. A CRX signing key is not required for the supported no-CRX release path.
 
+## P2 — Research-driven, externally gated (2026-08-19)
+
+- [ ] P2 — Resolve DeArrow API licensing before any store submission
+  Why: dearrow.ajay.app/payment and /free state the DeArrow API is free only for non-browser-extension use — extensions are expected to carry the $1 license-key flow. Astra's dearrow feature calls `GET /api/branding` with no license handling, which is fine for an unpublished GitHub build but a licensing posture problem the moment a store listing exists (and the store-safe profile ships the feature).
+  Evidence: https://dearrow.ajay.app/payment ; https://dearrow.ajay.app/free ; `extension/features/dearrow/index.js:167`. Confidence: Likely — the exact wire contract (param/header, enforcement for read-only GETs) needs confirmation against https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow before implementing.
+  Touches: `extension/features/dearrow/index.js`, `extension/core/settings-schema.js` (optional licenseKey entry, backup-excluded like other credentials), `extension/_locales/**`, docs/privacy-policy.md (disclosure)
+  Acceptance: the DeArrow settings surface carries an optional license-key field passed per the documented contract plus honest copy about upstream's licensing; with no key the feature either uses the documented free tier or states its unlicensed status; RESEARCH.md Open Question resolved with the confirmed contract.
+  Complexity: S
+  Blocker: two things this pass cannot supply. (1) The exact wire contract for a
+  DeArrow license key (parameter vs header, and whether read-only `GET /api/branding` is enforced at all) is not documented in-repo and could not be
+  confirmed without submitting to the live service; shipping a settings field
+  that silently does nothing would be worse than the current honest absence.
+  (2) Whether Astra Deck should pay for / carry a license at all is a maintainer
+  product and licensing decision, in the same family as the existing
+  SponsorBlock-submission item.
+  Unblock by: confirming the contract against https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow
+  (or by asking upstream directly), then deciding whether the key is
+  user-supplied, maintainer-supplied, or the feature stays free-tier with
+  disclosure. The implementation itself is small once those two are settled.
+
+- [ ] P2 — Hide the new AI surfaces: Ask-YouTube chatbot entry points and search AI carousels
+  Why: YouTube rolled the "Ask" chatbot to ALL signed-in US users on 2026-08-12 with no documented opt-out, and tested AI search carousels/"Highlights" through July — top user complaint class, and no competitor ships toggles for these yet (Unhook/BrowseWell verified absent 2026-08-19). Astra already ships `hideAiSummary` + `hideAiContextPanels` (since 4.51.1), so this is an extension of shipped features into new whitespace, not new ground.
+  Evidence: RESEARCH.md §Community (socialmediatoday 2026-08-12; dead Google support thread asking how to turn it off); `extension/core/settings-schema.js:192,195`.
+  Touches: `extension/core/selector-packs/**`, `extension/ytkit.js`, `extension/core/settings-schema.js` (new key(s) via the nine-places checklist), `extension/_locales/**`, `YTKit.user.js`
+  Acceptance: the Ask-YouTube entry button/panel and the search AI carousel are hidden when enabled, via structural selectors captured from the live post-2026-08-12 DOM (browser-gated capture first — do NOT guess selectors; the existing `hideAiSummary` selectors get re-verified in the same capture); hide-attribution marks the hidden nodes; userscript ported or classified.
+  Complexity: M
+  Blocker: the item's own acceptance requires capturing the post-2026-08-12 DOM
+  from a live session before writing selectors, and this repository forbids
+  shipping selectors it could not verify. The Ask-YouTube chatbot is gated to
+  signed-in US accounts, so the capture needs an authenticated browser session
+  that is not available to an autonomous pass. Guessing renderer names here
+  would produce a feature that silently does nothing — the exact failure mode
+  the anti-guessing rule exists to prevent.
+  Unblock by: one authenticated capture of a watch page and a search results
+  page with the Ask entry point and any AI carousel present, recording their
+  outerHTML (tag names, ids, stable attributes) so the selectors can be written
+  from evidence. The same capture should re-verify the existing `hideAiSummary`
+  and `hideAiContextPanels` selectors, which have not been checked against the
+  new surfaces.
+
 ## P1 — Upstream dependency fix (2026-08-13)
 
 - [ ] P1 — Remove the reviewed `image-size` audit exception after an upstream fix
