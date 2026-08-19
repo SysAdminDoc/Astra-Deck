@@ -444,6 +444,7 @@
     "downloadCobaltInstance": ""
   },
   "expectedDefaulted": [
+    "antiTranslateThumbnails",
     "audioAutoGain",
     "audioEqHighGainDb",
     "audioEqLowGainDb",

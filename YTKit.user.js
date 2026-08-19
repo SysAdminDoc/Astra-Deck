@@ -141,6 +141,7 @@
     // ── bundled module: extension/core/feature-health.js ──
     // ── bundled module: extension/core/hide-attribution.js ──
     // ── bundled module: extension/core/heatmap.js ──
+    // ── bundled module: extension/core/youtube-thumbnails.js ──
     // ── bundled module: extension/core/companion-ports.js ──
     // ── bundled module: extension/core/data-flow.js ──
     // ── bundled module: extension/core/toast.js ──
@@ -11351,6 +11352,140 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl = injectStyle(css, this.id, true);
             },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            // v4.69.0 - ported from the extension. Two adaptations for this
+            // vehicle: the player response is read straight off `window`
+            // (userscripts run in page context, so there is no _rw bridge),
+            // and the scoped mutation rule becomes a plain one because this
+            // build has no addScopedMutationRule. The scoped variant is only a
+            // performance optimisation, so dropping it costs work per tick,
+            // not correctness.
+            id: 'antiTranslateThumbnails',
+            name: 'Anti-Translate Thumbnails',
+            description: 'Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube\'s own same-origin oEmbed endpoint elsewhere, so it needs no extra site access.',
+            group: 'Content',
+            icon: 'image',
+            _THUMBNAIL_SELECTOR: 'ytd-thumbnail img[src], ytd-playlist-thumbnail img[src], yt-image img[src]',
+            _oEmbedCache: null,
+            _inFlight: null,
+            _MAX_IN_FLIGHT: 4,
+            _MAX_CACHE: 400,
+            _restore: null,
+            _timer: null,
+            _navRule: null,
+
+            _videoIdFor(img) {
+                const parsed = parseThumbnailUrl?.(img.getAttribute('src') || '');
+                return parsed ? parsed.videoId : null;
+            },
+
+            async _lookupOEmbed(videoId) {
+                if (this._oEmbedCache.has(videoId)) return this._oEmbedCache.get(videoId);
+                if (this._inFlight.size >= this._MAX_IN_FLIGHT) return null;
+                const url = buildOEmbedUrl?.(videoId);
+                if (!url) return null;
+                this._inFlight.add(videoId);
+                try {
+                    const response = await fetch(url, { credentials: 'omit', cache: 'force-cache' });
+                    if (!response.ok) {
+                        this._oEmbedCache.set(videoId, null);
+                        return null;
+                    }
+                    const meta = parseOEmbedMetadata?.(await response.text()) || null;
+                    if (this._oEmbedCache.size >= this._MAX_CACHE) {
+                        const oldest = this._oEmbedCache.keys().next().value;
+                        if (oldest != null) this._oEmbedCache.delete(oldest);
+                    }
+                    this._oEmbedCache.set(videoId, meta);
+                    return meta;
+                } catch (error) {
+                    this._oEmbedCache.set(videoId, null);
+                    DebugManager.log('AntiTranslate', `oEmbed lookup failed for ${videoId}: ${error?.message || error}`);
+                    return null;
+                } finally {
+                    this._inFlight.delete(videoId);
+                }
+            },
+
+            _applyOriginal(img, rendered, playerResponse, oEmbedThumbnailUrl) {
+                const resolved = resolveOriginalThumbnail?.(rendered, {
+                    playerResponse,
+                    oEmbedThumbnailUrl
+                });
+                if (!resolved) return false;
+                if (!this._restore.has(img)) this._restore.set(img, rendered);
+                img.setAttribute('src', resolved.url);
+                img.dataset.ytkitOriginalThumbnail = resolved.source;
+                img.addEventListener('error', () => {
+                    const previous = this._restore.get(img);
+                    if (previous) {
+                        img.setAttribute('src', previous);
+                        delete img.dataset.ytkitOriginalThumbnail;
+                    }
+                }, { once: true });
+                return true;
+            },
+
+            _process() {
+                const playerResponse = isWatchPagePath(window.location.pathname)
+                    ? window.ytInitialPlayerResponse
+                    : null;
+                const images = document.querySelectorAll(this._THUMBNAIL_SELECTOR);
+                for (const img of images) {
+                    if (img.dataset.ytkitOriginalThumbnail) continue;
+                    const rendered = img.getAttribute('src') || '';
+                    const videoId = this._videoIdFor(img);
+                    if (!videoId) continue;
+                    if (this._applyOriginal(img, rendered, playerResponse, null)) continue;
+                    const cached = this._oEmbedCache.get(videoId);
+                    if (cached !== undefined) {
+                        if (cached?.thumbnailUrl) {
+                            this._applyOriginal(img, rendered, playerResponse, cached.thumbnailUrl);
+                        }
+                        continue;
+                    }
+                    this._lookupOEmbed(videoId).then((meta) => {
+                        if (!meta?.thumbnailUrl || !img.isConnected) return;
+                        if (img.dataset.ytkitOriginalThumbnail) return;
+                        this._applyOriginal(img, img.getAttribute('src') || rendered, playerResponse, meta.thumbnailUrl);
+                    });
+                }
+            },
+
+            _schedule(delay = 1200) {
+                if (this._timer) clearTimeout(this._timer);
+                this._timer = setTimeout(() => {
+                    this._timer = null;
+                    this._process();
+                }, delay);
+            },
+
+            init() {
+                this._oEmbedCache = new Map();
+                this._inFlight = new Set();
+                this._restore = new WeakMap();
+                this._navRule = () => this._schedule(1200);
+                addNavigateRule(this.id, this._navRule);
+                addMutationRule(this.id, () => this._schedule(800));
+                this._schedule(1200);
+            },
+
+            destroy() {
+                if (this._timer) clearTimeout(this._timer);
+                this._timer = null;
+                removeNavigateRule(this.id);
+                removeMutationRule(this.id);
+                this._navRule = null;
+                document.querySelectorAll('img[data-ytkit-original-thumbnail]').forEach((img) => {
+                    const previous = this._restore?.get(img);
+                    if (previous) img.setAttribute('src', previous);
+                    delete img.dataset.ytkitOriginalThumbnail;
+                });
+                this._oEmbedCache = null;
+                this._inFlight = null;
+                this._restore = null;
+            }
         },
         {
             id: 'thumbnailQualityUpgrade',

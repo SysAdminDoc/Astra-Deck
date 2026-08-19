@@ -29,6 +29,10 @@
         buildFeatureHealthReport,
         getSelectorAttributionSnapshot,
         withSelectorAttribution,
+        buildOEmbedUrl,
+        parseOEmbedMetadata,
+        parseThumbnailUrl,
+        resolveOriginalThumbnail,
         getHideAttributionCounts,
         markCardHidden,
         resetHideAttribution,
@@ -3960,6 +3964,7 @@ return response;
             qualityDefaultBackground: 'inherit',
             qualityDefaultEmbed: 'inherit',
             antiTranslateAudioTrack: false,            // Force original audio track on every video
+            antiTranslateThumbnails: false,            // Restore the original-language thumbnail image
             antiTranslateTranscript: false,            // Force original-language transcript view
             monetizationIndicator: false,              // Surface 'sponsored', 'monetized off', mid-roll counts
             // v3.29.0 — Subscription manager
@@ -42454,6 +42459,160 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule(this.id);
                 this._navRule = null;
                 document.documentElement.removeAttribute('data-ytkit-audio-original');
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  ANTI-TRANSLATE THUMBNAILS — Restore the original-language image
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            // antiTranslate restores the title while the thumbnail beside it
+            // still shows text baked in the viewer's locale, so the card reads
+            // in two languages at once. The original image is taken from a
+            // locale-independent source rather than by pattern-matching the
+            // localised URL - see core/youtube-thumbnails.js for why.
+            id: 'antiTranslateThumbnails',
+            name: 'Anti-Translate Thumbnails',
+            description: 'Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube\'s own same-origin oEmbed endpoint elsewhere, so it needs no extra site access.',
+            group: 'Content',
+            icon: 'image',
+            _THUMBNAIL_SELECTOR: 'ytd-thumbnail img[src], ytd-playlist-thumbnail img[src], yt-image img[src]',
+            // Cache oEmbed answers for the page session. A feed scroll can put
+            // the same video in front of us repeatedly, and one request per
+            // card per tick would be a self-inflicted rate limit.
+            _oEmbedCache: null,
+            _inFlight: null,
+            // Bound concurrent lookups: an infinite-scroll feed can surface
+            // dozens of unseen ids in a single tick.
+            _MAX_IN_FLIGHT: 4,
+            _MAX_CACHE: 400,
+            _restore: null,
+            _timer: null,
+            _navRule: null,
+
+            _videoIdFor(img) {
+                const parsed = parseThumbnailUrl?.(img.getAttribute('src') || '');
+                return parsed ? parsed.videoId : null;
+            },
+
+            async _lookupOEmbed(videoId) {
+                if (this._oEmbedCache.has(videoId)) return this._oEmbedCache.get(videoId);
+                if (this._inFlight.size >= this._MAX_IN_FLIGHT) return null;
+                const url = buildOEmbedUrl?.(videoId);
+                if (!url) return null;
+                this._inFlight.add(videoId);
+                try {
+                    // Same origin as the page and explicitly credential-free:
+                    // this must never become an identified request.
+                    const response = await fetch(url, { credentials: 'omit', cache: 'force-cache' });
+                    if (!response.ok) {
+                        this._oEmbedCache.set(videoId, null);
+                        return null;
+                    }
+                    const meta = parseOEmbedMetadata?.(await response.text()) || null;
+                    if (this._oEmbedCache.size >= this._MAX_CACHE) {
+                        const oldest = this._oEmbedCache.keys().next().value;
+                        if (oldest != null) this._oEmbedCache.delete(oldest);
+                    }
+                    this._oEmbedCache.set(videoId, meta);
+                    return meta;
+                } catch (error) {
+                    // A failed lookup is cached as a miss so a video whose
+                    // oEmbed is unavailable is not retried on every feed tick.
+                    this._oEmbedCache.set(videoId, null);
+                    DebugManager.log('AntiTranslate', `oEmbed lookup failed for ${videoId}: ${error?.message || error}`);
+                    return null;
+                } finally {
+                    this._inFlight.delete(videoId);
+                }
+            },
+
+            _applyOriginal(img, rendered, playerResponse, oEmbedThumbnailUrl) {
+                const resolved = resolveOriginalThumbnail?.(rendered, {
+                    playerResponse,
+                    oEmbedThumbnailUrl
+                });
+                if (!resolved) return false;
+                if (!this._restore.has(img)) this._restore.set(img, rendered);
+                img.setAttribute('src', resolved.url);
+                img.dataset.ytkitOriginalThumbnail = resolved.source;
+                // If the original 404s, put back exactly what YouTube rendered
+                // rather than leaving a broken image where a card used to be.
+                img.addEventListener('error', () => {
+                    const previous = this._restore.get(img);
+                    if (previous) {
+                        img.setAttribute('src', previous);
+                        delete img.dataset.ytkitOriginalThumbnail;
+                    }
+                }, { once: true });
+                return true;
+            },
+
+            _process() {
+                const playerResponse = isWatchPagePath(window.location.pathname)
+                    ? _rw.ytInitialPlayerResponse
+                    : null;
+                const images = document.querySelectorAll(this._THUMBNAIL_SELECTOR);
+                for (const img of images) {
+                    if (img.dataset.ytkitOriginalThumbnail) continue;
+                    const rendered = img.getAttribute('src') || '';
+                    const videoId = this._videoIdFor(img);
+                    if (!videoId) continue;
+                    // Watch-page hero and canonical-URL paths are synchronous
+                    // and free; only fall through to the network when neither
+                    // produced anything.
+                    if (this._applyOriginal(img, rendered, playerResponse, null)) continue;
+                    const cached = this._oEmbedCache.get(videoId);
+                    if (cached !== undefined) {
+                        if (cached?.thumbnailUrl) {
+                            this._applyOriginal(img, rendered, playerResponse, cached.thumbnailUrl);
+                        }
+                        continue;
+                    }
+                    this._lookupOEmbed(videoId).then((meta) => {
+                        if (!meta?.thumbnailUrl || !img.isConnected) return;
+                        if (img.dataset.ytkitOriginalThumbnail) return;
+                        this._applyOriginal(img, img.getAttribute('src') || rendered, playerResponse, meta.thumbnailUrl);
+                    });
+                }
+            },
+
+            _schedule(delay = 1200) {
+                if (this._timer) clearTimeout(this._timer);
+                this._timer = setTimeout(() => {
+                    this._timer = null;
+                    this._process();
+                }, delay);
+            },
+
+            init() {
+                this._oEmbedCache = new Map();
+                this._inFlight = new Set();
+                this._restore = new WeakMap();
+                this._navRule = () => this._schedule(1200);
+                addNavigateRule(this.id, this._navRule);
+                addScopedMutationRule(
+                    this.id,
+                    'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer',
+                    () => this._schedule(800)
+                );
+                this._schedule(1200);
+            },
+
+            destroy() {
+                if (this._timer) clearTimeout(this._timer);
+                this._timer = null;
+                removeNavigateRule(this.id);
+                removeScopedMutationRule(this.id);
+                this._navRule = null;
+                // Put every swapped image back the way YouTube rendered it.
+                document.querySelectorAll('img[data-ytkit-original-thumbnail]').forEach((img) => {
+                    const previous = this._restore?.get(img);
+                    if (previous) img.setAttribute('src', previous);
+                    delete img.dataset.ytkitOriginalThumbnail;
+                });
+                this._oEmbedCache = null;
+                this._inFlight = null;
+                this._restore = null;
             }
         },
         // ═══════════════════════════════════════════════════════════════════
