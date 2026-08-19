@@ -162,46 +162,6 @@ duplicated here.
   Confidence: Verified (code)
   Effort: S
 
-- [ ] P3 — Anchored download-popup inline clamp silently no-ops on RTL pages
-  Category: correctness
-  Where: `extension/features/download-ui/index.js:2355-2361`.
-  Problem: the edge-overhang clamp computes `shift` from physical `getBoundingClientRect()` coordinates and applies it as `popup.style.marginInlineStart`. The anchored popup is positioned by physical `left: anchor(center)` with `right:auto` and a fixed 292 px width, so on `dir=rtl` pages (YouTube ar/he/fa/ur) `margin-inline-start` maps to `margin-right` — the slack side of a left-constrained fixed box — and moves nothing. A dock button near the viewport edge leaves the popup partially off-screen for RTL users.
-  Evidence: traced the computed-style axis; the measurement is physical but the applied property is logical.
-  Fix: apply the shift on the physical axis the measurement was taken in (`marginLeft`), or compute the whole clamp in logical coordinates.
-  Acceptance: on an `dir=rtl` fixture the anchored popup is nudged back on-screen from an edge trigger; add an RTL case to the placement probe.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Download popup height cap is applied only at open; async content can push the toolbar off the top
-  Category: correctness
-  Where: `extension/features/download-ui/index.js:2347-2350`.
-  Problem: `maxHeight` is set only if `popup.offsetHeight > heightCap` at open, but the playlist preview row (~+200 px) and the two-line quality-chip probe labels render later. Because the anchored popup is pinned `bottom: anchor(top)`, late growth extends upward; `position-try flip-block` can flip it below and the base `max-height: calc(100vh - 16px)` bounds total height, but when neither side alone fits the grown popup the toolbar (tabs + close) exits the viewport top with no way to scroll it back (`__body` scrolls, the fixed popup doesn't). Esc still closes.
-  Evidence: traced the render timing and the anchor pinning.
-  Fix: apply the cap unconditionally (`maxHeight = max(MIN, spaceAbove, spaceBelow)` always), or re-run the clamp in a `ResizeObserver` on the popup.
-  Acceptance: opening the popup then loading a long playlist/probe keeps the toolbar on screen; a probe with late content growth confirms it.
-  Confidence: Verified (geometry); worst case Needs-repro
-  Effort: S
-
-- [ ] P3 — Duplicate/orphaned download health-pill containers when sibling download panels coexist
-  Category: correctness
-  Where: `extension/features/download-ui/index.js:2584-2607` (health dedupe by `anchor.nextElementSibling`) vs. Stream Links (`:2775`), Cobalt (`:2907`), History (`:3232`) each `insertAdjacentElement('afterend', …)` on the same anchor.
-  Problem: the sibling panels insert themselves between the anchor and the health container, so on the next navigate tick the health panel no longer sees itself as `nextElementSibling` and builds a second container; the first is orphaned with stale pills and a live `aria-live="polite"` region. Needs ≥2 of the four panels enabled (all default off).
-  Evidence: traced the dedupe predicate against the sibling insertion points.
-  Fix: dedupe parent-wide like the sibling features do (`anchor.parentElement.querySelector('.ytkit-download-health')`).
-  Acceptance: enabling health + stream-links together across a navigation yields exactly one health container; a test asserts a single node.
-  Confidence: Likely
-  Effort: S
-
-- [ ] P3 — One-click Deno provisioning sends the wrong auth header
-  Category: correctness
-  Where: `extension/features/download-ui/index.js:2560` (`headers: { 'X-MDL-Token': data.token }`).
-  Problem: every other authenticated companion call uses `X-Auth-Token` (`:623,:651,:1534,:1938,:2019,:2168…`); `X-MDL-Token` appears nowhere else in the repo. If the companion expects `X-Auth-Token`, the health-pill "click to provision Deno" action always 401s with a failure toast. Companion source isn't in this repo, so server-side is unconfirmed.
-  Evidence: header-name grep across the file; the endpoint does token comparison (`CHANGELOG.md:2847`).
-  Fix: use `X-Auth-Token`, and build the URL via `MediaDLManager.baseUrl()` instead of hand-concatenating.
-  Acceptance: clicking the provision pill with the companion running succeeds; verified against the running companion.
-  Confidence: Likely / Needs-repro
-  Effort: S
-
 - [ ] P3 — Playlist preview creates a dead-end and its hint copy is then wrong
   Category: correctness / ux
   Where: `extension/features/download-ui/index.js:2244-2255` (empty-selection hard block) vs. hint at `:2121-2124`.
@@ -269,16 +229,6 @@ duplicated here.
   Evidence: compared the trigger creation sites.
   Fix: add `aria-haspopup="dialog"` + `aria-expanded="false"` at creation for the button triggers; skip the attribute for the non-button `#movie_player` anchor.
   Acceptance: both download buttons expose a stable disclosure state from creation; no ARIA state lands on `#movie_player`.
-  Confidence: Verified
-  Effort: S
-
-- [ ] P3 — Stream Links close handler mutates the History panel's private state
-  Category: maintainability
-  Where: `extension/features/download-ui/index.js:2707-2713` (`downloadStreamLinksPanel` close does `this._requestToken++` / clears `this._searchTimer`).
-  Problem: those properties exist only on `downloadHistoryPanel` (copy-paste from `:3113-3119`). Harmless today (`undefined++` → a NaN expando), but it masks the two panels' divergence and will bite the next refactor.
-  Evidence: read both close handlers.
-  Fix: remove the borrowed lines from the Stream Links close handler (it has no async token / search timer).
-  Acceptance: the Stream Links close handler references only its own state; behavior unchanged.
   Confidence: Verified
   Effort: S
 
