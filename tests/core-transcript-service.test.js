@@ -439,3 +439,91 @@ test('ytkit.js no longer declares the inline `const TranscriptService = {` block
     assert.ok(src.includes('createTranscriptService('),
         'ytkit.js should instantiate TranscriptService via the factory');
 });
+
+
+// ── Refresh diagnostics and dead-URL short-circuit ──────────────────────
+
+test('a revoked caption URL costs one request, not one per format', async () => {
+    // Every format hits the same base URL with a different fmt param, so a
+    // 403 is the URL being revoked rather than the format being unsupported.
+    // Trying the next format was a second wasted round trip before the same
+    // throw. The expired-`expire`-param case was already pre-skipped; this is
+    // the revoked-but-unexpired one.
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const requested = [];
+    const svc = createTranscriptService({
+        extensionFetchText: async ({ url }) => {
+            requested.push(url);
+            const err = new Error('HTTP 403');
+            err.status = 403;
+            throw err;
+        }
+    });
+
+    await assert.rejects(
+        () => svc._fetchTranscriptContent('https://example.test/api/timedtext?v=abc', {}),
+        /403/);
+    assert.equal(requested.length, 1,
+        `a revoked URL must be fetched once, but was fetched ${requested.length} times`);
+});
+
+test('a format that merely fails keeps trying the remaining formats', async () => {
+    // The short-circuit must be scoped to the terminal statuses. A parse-level
+    // or transient failure is exactly the case the format loop exists for.
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const requested = [];
+    const svc = createTranscriptService({
+        extensionFetchText: async ({ url }) => {
+            requested.push(url);
+            // A 500 is the server having a bad moment, not the URL being
+            // revoked — the next format may well succeed, so the short-circuit
+            // must stay scoped to 403/404 rather than "any 4xx/5xx".
+            if (requested.length === 1) {
+                const err = new Error('HTTP 500');
+                err.status = 500;
+                throw err;
+            }
+            return { text: '<transcript><text start="0" dur="1">hello</text></transcript>' };
+        }
+    });
+
+    const segments = await svc._fetchTranscriptContent('https://example.test/api/timedtext?v=abc', {});
+    assert.ok(requested.length > 1,
+        'a non-terminal failure must fall through to the next format');
+    assert.ok(Array.isArray(segments) && segments.length > 0,
+        'the surviving format must still produce segments');
+});
+
+test('a 404 short-circuits the format loop the same way a 403 does', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    const requested = [];
+    const svc = createTranscriptService({
+        extensionFetchText: async ({ url }) => {
+            requested.push(url);
+            const err = new Error('HTTP 404');
+            err.status = 404;
+            throw err;
+        }
+    });
+    await assert.rejects(() => svc._fetchTranscriptContent('https://example.test/t', {}), /404/);
+    assert.equal(requested.length, 1);
+});
+
+test('a failed refresh keeps its own reason in the error diagnostic', () => {
+    // The thrown-error path hardcoded the panel reason, overwriting
+    // 'refresh-discovery-failed' / 'refresh-fetch-failed' / 'refresh-expired-url'
+    // — exactly the case the provenance exists to explain never reached
+    // getDiagnostics() or DiagnosticLog.
+    const src = fs.readFileSync(corePath, 'utf8');
+    const idx = src.indexOf("this._setTranscriptDiagnostic(videoId, 'error'");
+    assert.ok(idx > -1, 'the error diagnostic must exist');
+    const block = src.slice(idx, src.indexOf('throw fetchError;', idx));
+    assert.match(block, /fallbackReason: fallbackReason \|\| \(allowDomFallback \? 'panel-unavailable' : 'dom-disabled'\)/,
+        'a reason recorded by the refresh attempt must survive into the diagnostic');
+
+    // And the reasons it must preserve are actually set upstream.
+    for (const reason of ['refresh-discovery-failed', 'refresh-fetch-failed', 'refresh-expired-url']) {
+        assert.match(src, new RegExp(`fallbackReason = '${reason}'`),
+            `${reason} must still be recorded by the refresh path`);
+    }
+});

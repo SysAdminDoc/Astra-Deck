@@ -5982,7 +5982,14 @@ if (typeof globalThis !== "undefined") {
                             fetchedAt: nowFn(),
                             expiresAt,
                             staleReason,
-                            fallbackReason: allowDomFallback ? 'panel-unavailable' : 'dom-disabled'
+                            // Keep whatever the refresh attempt recorded
+                            // ('refresh-discovery-failed', 'refresh-fetch-failed',
+                            // 'refresh-expired-url'). Hardcoding the panel
+                            // reason here overwrote exactly the case this
+                            // provenance exists to explain — "we tried a
+                            // refresh and it failed" never reached
+                            // getDiagnostics() or DiagnosticLog.
+                            fallbackReason: fallbackReason || (allowDomFallback ? 'panel-unavailable' : 'dom-disabled')
                         });
                         throw fetchError;
                     }
@@ -6467,7 +6474,16 @@ if (typeof globalThis !== "undefined") {
                     } catch (e) {
                         if (e?.name === 'AbortError') throw e;
                         const status = getTranscriptHttpStatus(e);
-                        if (status === 403 || status === 404) terminalHttpError = e;
+                        if (status === 403 || status === 404) {
+                            terminalHttpError = e;
+                            // Every format hits the same base URL with a
+                            // different fmt param, so a 403/404 is the URL
+                            // being revoked rather than the format being
+                            // unsupported. Trying the next one is a second
+                            // wasted round trip before the same throw.
+                            this._log(`Format ${fmt} rejected with ${status}; track URL is dead, skipping remaining formats`);
+                            break;
+                        }
                         this._log(`Format ${fmt} failed:`, e.message);
                     }
                 }
