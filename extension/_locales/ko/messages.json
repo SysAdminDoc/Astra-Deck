@@ -1,4 +1,10 @@
 {
+  "advancedFiltersHint": {
+    "message": "risk:, category:, scope: 또는 profile:을 사용하세요. 공백은 필터를 결합하고 쉼표는 대안을 찾습니다."
+  },
+  "advancedFiltersTitle": {
+    "message": "고급 필터"
+  },
   "aiCredentialDeleteFailed": {
     "message": "자격 증명을 삭제하지 못했습니다."
   },
@@ -26,6 +32,9 @@
   "aiCredentialReplaceBtn": {
     "message": "자격 증명 교체"
   },
+  "aiCredentialReplaceHint": {
+    "message": "자격 증명이 설정되어 있습니다. 바꿀 새 값을 입력하세요. 저장된 값은 표시되지 않습니다."
+  },
   "aiCredentialSaveBtn": {
     "message": "자격 증명 저장"
   },
@@ -50,8 +59,14 @@
   "aiCredentialStatusUnavailable": {
     "message": "상태를 확인할 수 없음"
   },
+  "aiCredentialStoreHint": {
+    "message": "userscript 관리자에만 저장되며 Astra Deck 설정 및 내보내기에는 포함되지 않습니다."
+  },
   "aiCredentialTitle": {
     "message": "AI 제공자 자격 증명"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
   },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
@@ -165,64 +180,6 @@
   "bufferTargetSecondsTpl": {
     "message": "{count}초",
     "description": "Buffer target slider value rendered in seconds"
-  },
-  "featureScheduleDaysTpl": {
-    "message": "Active {window} on {days}"
-  },
-  "featureScheduleEveryDayTpl": {
-    "message": "Active {window} every day"
-  },
-  "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
-  },
-  "feature_antiTranslateChapters_name": {
-    "message": "Anti-Translate Chapters"
-  },
-  "feature_antiTranslateThumbnails_desc": {
-    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
-  },
-  "feature_antiTranslateThumbnails_name": {
-    "message": "Anti-Translate Thumbnails"
-  },
-  "feature_feedPrefilter_desc": {
-    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
-  },
-  "feature_feedPrefilter_name": {
-    "message": "Filter Feeds Before Render"
-  },
-  "feature_heatmapSmartSpeed_desc": {
-    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
-  },
-  "feature_heatmapSmartSpeed_name": {
-    "message": "Heatmap Smart Speed"
-  },
-  "feature_jumpToMostReplayed_desc": {
-    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
-  },
-  "feature_jumpToMostReplayed_name": {
-    "message": "Jump to Most Replayed"
-  },
-  "heatmapJumpAria": {
-    "message": "Jump to the most replayed moment"
-  },
-  "heatmapJumpedToast": {
-    "message": "Jumped to the most replayed moment"
-  },
-  "hiddenCardNoteTpl": {
-    "message": "Hidden by {feature}: {rule}"
-  },
-  "hiddenRuleCollaboration": {
-    "message": "multi-creator upload"
-  },
-  "hiddenRuleScheduled": {
-    "message": "scheduled livestream or premiere"
-  },
-  "hiddenRuleShorts": {
-    "message": "Shorts video"
-  },
-  "liveLatencyReadout": {
-    "message": "Live {latency}s · buffer {buffer}s",
-    "description": "Live-stream latency and buffered-ahead player readout"
   },
   "bulkActionsAria": {
     "message": "Bulk card actions"
@@ -431,6 +388,9 @@
   "dataFlowDriver": {
     "message": "드라이버"
   },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "액세스가 제거될 때까지 Video Hider가 이 사이트에서 데이터를 가져올 수 있습니다."
+  },
   "dataFlowGrant": {
     "message": "grant"
   },
@@ -439,6 +399,24 @@
   },
   "dataFlowGrantNeeded": {
     "message": "permission needed"
+  },
+  "dataFlowGrantRemove": {
+    "message": "액세스 제거"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "{host} 사이트 액세스 제거"
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "{host} 사이트 액세스를 제거할 수 없습니다."
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "{host} 사이트 액세스를 제거했습니다."
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "{count}개 허용됨"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "허용된 사이트 액세스"
   },
   "dataFlowInactive": {
     "message": "유휴"
@@ -598,6 +576,9 @@
   },
   "dlHistoryEmpty": {
     "message": "No completed downloads yet."
+  },
+  "dlHistoryExportTruncatedTpl": {
+    "message": "Exported the most recent {count} downloads. Narrow the filters to export older entries."
   },
   "dlHistoryExporting": {
     "message": "Exporting…"
@@ -891,11 +872,11 @@
   "dlPopupQuality": {
     "message": "품질"
   },
-  "dlPopupQualitySizeTpl": {
-    "message": "{quality} · {size}"
-  },
   "dlPopupQualitySizeTitleTpl": {
     "message": "Estimated download size: {size}"
+  },
+  "dlPopupQualitySizeTpl": {
+    "message": "{quality} · {size}"
   },
   "dlPopupQualitySizeUnavailable": {
     "message": "Size unavailable"
@@ -1068,6 +1049,12 @@
   "dualSubtitleTrackAria": {
     "message": "Secondary subtitles"
   },
+  "dwBreakTitle": {
+    "message": "잠시 쉬세요"
+  },
+  "dwDailyLimitTitle": {
+    "message": "일일 한도에 도달했습니다"
+  },
   "dwShortsHardBlockHint": {
     "message": "This hard block resets at your next local midnight."
   },
@@ -1113,153 +1100,6 @@
   "exportFilterListBtn": {
     "message": "규칙 내보내기"
   },
-  "filterListExportFail": {
-    "message": "필터 목록 내보내기 실패"
-  },
-  "filterListExported": {
-    "message": "Video Hider 규칙을 내보냈습니다."
-  },
-  "filterListFailureBadFormat": {
-    "message": "응답이 지원되는 Astra Deck 필터 목록이 아니었습니다"
-  },
-  "filterListFailureExpired": {
-    "message": "마지막 검증이 7일보다 오래되었습니다"
-  },
-  "filterListFailureHttpTpl": {
-    "message": "서버가 HTTP {status}을(를) 반환했습니다"
-  },
-  "filterListFailureIntegrity": {
-    "message": "SHA-256 검증을 사용할 수 없었습니다"
-  },
-  "filterListFailureStorage": {
-    "message": "검증된 목록을 저장할 수 없었습니다"
-  },
-  "filterListFailureTooLarge": {
-    "message": "응답이 1 MiB 제한을 초과했습니다"
-  },
-  "filterListFailureUnreachable": {
-    "message": "소스에 연결할 수 없었습니다"
-  },
-  "filterListHashUnavailable": {
-    "message": "기록되지 않음"
-  },
-  "filterListImportFail": {
-    "message": "필터 목록 가져오기 실패"
-  },
-  "filterListImportNotJson": {
-    "message": "이 파일은 올바른 JSON이 아닙니다."
-  },
-  "filterListImportRollback": {
-    "message": "필터 목록 가져오기에 실패했습니다. 이전 데이터를 복원했습니다."
-  },
-  "filterListImported": {
-    "message": "Video Hider 규칙을 가져왔습니다. 가져오기 실행 취소를 사용할 수 있습니다."
-  },
-  "filterListNotModified": {
-    "message": "필터 목록을 확인했습니다. 캐시된 내용은 변경되지 않았습니다."
-  },
-  "filterListRefreshDaily": {
-    "message": "매일"
-  },
-  "filterListRefreshManual": {
-    "message": "수동만"
-  },
-  "filterListRefreshModeLabel": {
-    "message": "자동 새로 고침"
-  },
-  "filterListRefreshWeekly": {
-    "message": "매주"
-  },
-  "filterListStatusActiveTpl": {
-    "message": "{host} 구독 중. 확인: {age}, 형식 v{version}, SHA-256 {hash}."
-  },
-  "filterListStatusErrorTpl": {
-    "message": "{host}의 활성 규칙이 없습니다. 마지막 새로 고침 실패: {reason}."
-  },
-  "filterListStatusExported": {
-    "message": "로컬 필터 규칙을 내보냈습니다."
-  },
-  "filterListStatusFail": {
-    "message": "문제가 발생했습니다. 저장된 규칙은 변경되지 않았습니다."
-  },
-  "filterListStatusRefreshFail": {
-    "message": "목록을 새로 고칠 수 없습니다. 주소를 확인한 후 다시 시도하세요."
-  },
-  "filterListStatusFollowingTpl": {
-    "message": "{host}의 필터 목록을 사용 중입니다."
-  },
-  "filterListStatusPendingTpl": {
-    "message": "아직 가져오지 않았습니다. {host}을(를) 구독하려면 '지금 목록 새로 고침'을 선택하세요."
-  },
-  "filterListStatusLastFailedTpl": {
-    "message": "{host}의 마지막 새로 고침에 실패했습니다. 캐시된 규칙이 계속 사용됩니다."
-  },
-  "filterListStatusImported": {
-    "message": "필터 규칙을 가져왔습니다. 가져오기 실행 취소를 사용할 수 있습니다."
-  },
-  "filterListStatusInvalidUrl": {
-    "message": "사용자 이름, 비밀번호, # 프래그먼트가 없는 전체 HTTPS 주소를 입력하세요."
-  },
-  "filterListStatusNoTab": {
-    "message": "원격 목록을 새로 고치려면 YouTube 탭을 여세요."
-  },
-  "filterListStatusPrivateHost": {
-    "message": "해당 주소는 사설 또는 로컬 네트워크에 있습니다. 필터 목록은 공개 HTTPS 사이트에서 제공해야 합니다."
-  },
-  "filterListStatusPermissionNeeded": {
-    "message": "해당 사이트를 읽으려면 Astra Deck의 권한이 필요합니다. 브라우저가 물어보면 '허용'을 선택하세요."
-  },
-  "filterListStatusPreferenceFail": {
-    "message": "필터 목록 기본 설정을 저장할 수 없습니다."
-  },
-  "filterListStatusReady": {
-    "message": "구독 중인 필터 목록이 없습니다."
-  },
-  "filterListStatusRefreshed": {
-    "message": "원격 필터 목록을 새로 고쳤습니다."
-  },
-  "filterListStatusRefreshReasonTpl": {
-    "message": "{reason} 때문에 목록을 새로 고칠 수 없습니다."
-  },
-  "filterListStatusStaleActiveTpl": {
-    "message": "캐시된 {host} 규칙이 계속 활성 상태입니다. 확인: {age}, {reason}. 형식 v{version}, SHA-256 {hash}."
-  },
-  "filterListStatusStalePausedTpl": {
-    "message": "캐시된 {host} 규칙이 일시 중지되었습니다. 확인: {age}, {reason}. 형식 v{version}, SHA-256 {hash}."
-  },
-  "filterListTimeUnknown": {
-    "message": "알 수 없는 시각"
-  },
-  "filterListToolsDesc": {
-    "message": "Video Hider 규칙을 백업하거나 파일에서 복원하거나 신뢰하는 사이트에 게시된 필터 목록을 구독할 수 있습니다."
-  },
-  "filterListToolsEyebrow": {
-    "message": "Video Hider"
-  },
-  "filterListToolsTitle": {
-    "message": "필터 목록"
-  },
-  "filterListUrlLabel": {
-    "message": "필터 목록 URL(선택 사항)"
-  },
-  "filterListUrlPlaceholder": {
-    "message": "https://example.com/astra-deck-rules.json"
-  },
-  "filterListUseStaleLabel": {
-    "message": "새로 고침에 실패하거나 7일보다 오래된 경우 마지막으로 검증된 규칙 사용"
-  },
-  "filterListRefreshFail": {
-    "message": "필터 목록 새로 고침 실패"
-  },
-  "filterListRefreshed": {
-    "message": "Video Hider 필터 목록을 새로 고쳤습니다."
-  },
-  "importFilterListBtn": {
-    "message": "규칙 가져오기"
-  },
-  "refreshFilterListBtn": {
-    "message": "지금 목록 새로 고침"
-  },
   "extActionTitle": {
     "message": "Astra Deck",
     "description": "Tooltip text for the toolbar action button."
@@ -1274,6 +1114,9 @@
   },
   "externalHealthAria": {
     "message": "External API health"
+  },
+  "externalHealthAvailabilityTpl": {
+    "message": "availability {state}"
   },
   "externalHealthCopyAria": {
     "message": "Copy external API health report to clipboard"
@@ -1293,23 +1136,20 @@
   "externalHealthCopyPending": {
     "message": "Building report..."
   },
-  "externalHealthAvailabilityTpl": {
-    "message": "availability {state}"
-  },
   "externalHealthDetailEmpty": {
     "message": "No requests observed in this tab yet."
   },
   "externalHealthEmpty": {
     "message": "No external API services tracked yet."
   },
-  "externalHealthTitle": {
-    "message": "External API health"
-  },
   "externalHealthRefreshTpl": {
     "message": "refreshed {age} ago"
   },
   "externalHealthSourceTpl": {
     "message": "source {source}"
+  },
+  "externalHealthTitle": {
+    "message": "External API health"
   },
   "externalHealthTotalTpl": {
     "message": "{count} services"
@@ -1379,6 +1219,12 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureScheduleDaysTpl": {
+    "message": "Active {window} on {days}"
+  },
+  "featureScheduleEveryDayTpl": {
+    "message": "Active {window} every day"
   },
   "feature_abHide_ask_desc": {
     "message": "동영상 아래의 질문/AI 버튼 숨기기"
@@ -1463,6 +1309,18 @@
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "오디오 트랙 자동 번역 방지"
+  },
+  "feature_antiTranslateChapters_desc": {
+    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+  },
+  "feature_antiTranslateChapters_name": {
+    "message": "Anti-Translate Chapters"
+  },
+  "feature_antiTranslateThumbnails_desc": {
+    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
+  },
+  "feature_antiTranslateThumbnails_name": {
+    "message": "Anti-Translate Thumbnails"
   },
   "feature_antiTranslateTranscript_desc": {
     "message": "참여 패널 자막 URL에서 번역 트랙 매개변수를 제거하여 YouTube가 원본 언어 자막을 제공하도록 합니다. 원본 언어 트랙이 있을 때 작동합니다."
@@ -1655,24 +1513,6 @@
   },
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
-  },
-  "feature_photosensitiveDimPercent_desc": {
-    "message": "깜박이는 콘텐츠가 감지되는 동안 플레이어를 얼마나 어둡게 할지 설정합니다."
-  },
-  "feature_photosensitiveDimPercent_name": {
-    "message": "어둡게 하기 강도"
-  },
-  "feature_photosensitiveFlashProtection_desc": {
-    "message": "프레임을 로컬에서 분석하여 큰 휘도 변화가 감지되면 플레이어를 잠시 어둡게 합니다."
-  },
-  "feature_photosensitiveFlashProtection_name": {
-    "message": "광과민성 섬광 보호"
-  },
-  "feature_photosensitiveFlashThreshold_desc": {
-    "message": "보호를 실행하는 최소 프레임 휘도 변화입니다."
-  },
-  "feature_photosensitiveFlashThreshold_name": {
-    "message": "섬광 민감도"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "주문형 동영상을 몇 초 앞까지 버퍼링할지 정합니다. 값이 클수록 긴 연결 끊김을 견딥니다. 긴 동영상에서는 플레이어가 매우 큰 목표값을 제한할 수 있습니다."
@@ -2208,6 +2048,12 @@
   "feature_expandVideoWidth_name": {
     "message": "동영상 너비 확장"
   },
+  "feature_feedPrefilter_desc": {
+    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
+  },
+  "feature_feedPrefilter_name": {
+    "message": "Filter Feeds Before Render"
+  },
   "feature_feedTriageProfile_desc": {
     "message": "큐레이션된 집중 레시피 켜기: Shorts, 실시간 스트림, 예정된 프리미어, 믹스, 시청한 동영상, AI 요약을 숨깁니다. 끄면 이전 값이 복원됩니다."
   },
@@ -2243,6 +2089,12 @@
   },
   "feature_forceDarkEverywhere_name": {
     "message": "모든 YouTube 페이지에 다크 모드 강제 적용"
+  },
+  "feature_forceDvr_desc": {
+    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+  },
+  "feature_forceDvr_name": {
+    "message": "Force DVR for Live Streams"
   },
   "feature_forceH264_desc": {
     "message": "오래된 하드웨어에서 CPU 사용량을 줄이기 위해 VP9/AV1 대신 H.264 (AVC)를 선호합니다. 최대 화질이 제한될 수 있습니다. MAIN 월드 코덱 브릿지를 사용합니다."
@@ -2429,6 +2281,12 @@
   },
   "feature_guideHide_yourVideos_name": {
     "message": "Your Videos"
+  },
+  "feature_heatmapSmartSpeed_desc": {
+    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
+  },
+  "feature_heatmapSmartSpeed_name": {
+    "message": "Heatmap Smart Speed"
   },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "동영상 아래에서 숨길 액션 버튼 선택"
@@ -2718,17 +2576,17 @@
   "feature_hideVideosFromHome_name": {
     "message": "동영상 숨기기 도구"
   },
-  "feature_hideVideosSyntheticNarrationFilter_desc": {
-    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
-  },
-  "feature_hideVideosSyntheticNarrationFilter_name": {
-    "message": "Synthetic narration markers"
-  },
   "feature_hideVideosLowSignalFilter_desc": {
     "message": "Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open."
   },
   "feature_hideVideosLowSignalFilter_name": {
     "message": "Hide low-signal videos"
+  },
+  "feature_hideVideosLowSignalMinAgeDays_desc": {
+    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+  },
+  "feature_hideVideosLowSignalMinAgeDays_name": {
+    "message": "Low-signal age threshold"
   },
   "feature_hideVideosLowSignalMinViews_desc": {
     "message": "Minimum views used by the low-signal heuristic. Set to 0 to disable its view side."
@@ -2736,11 +2594,11 @@
   "feature_hideVideosLowSignalMinViews_name": {
     "message": "Low-signal view threshold"
   },
-  "feature_hideVideosLowSignalMinAgeDays_desc": {
-    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+  "feature_hideVideosSyntheticNarrationFilter_desc": {
+    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
   },
-  "feature_hideVideosLowSignalMinAgeDays_name": {
-    "message": "Low-signal age threshold"
+  "feature_hideVideosSyntheticNarrationFilter_name": {
+    "message": "Synthetic narration markers"
   },
   "feature_hideVideosUploadCadenceFilter_desc": {
     "message": "Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible."
@@ -2784,6 +2642,12 @@
   "feature_initialPlayerStateForeground_name": {
     "message": "초기 플레이어 상태 (포그라운드)"
   },
+  "feature_jumpToMostReplayed_desc": {
+    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
+  },
+  "feature_jumpToMostReplayed_name": {
+    "message": "Jump to Most Replayed"
+  },
   "feature_keyMoments_desc": {
     "message": "빠른 시각적 탐색을 위해 진행 표시줄에 챕터 마커를 색상 세그먼트로 강조 표시"
   },
@@ -2801,12 +2665,6 @@
   },
   "feature_listFeedLayout_name": {
     "message": "List Feed Layout"
-  },
-  "feature_liveSpeedReset_desc": {
-    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
-  },
-  "feature_liveSpeedReset_name": {
-    "message": "Live Catch-Up Speed Reset"
   },
   "feature_liveLatencyCatchup_desc": {
     "message": "Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target."
@@ -2826,26 +2684,11 @@
   "feature_liveLatencyTargetSeconds_name": {
     "message": "Live Latency Target"
   },
-  "feature_forceDvr_desc": {
-    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+  "feature_liveSpeedReset_desc": {
+    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
   },
-  "feature_forceDvr_name": {
-    "message": "Force DVR for Live Streams"
-  },
-  "forceDvrDegraded": {
-    "message": "DVR could not be enabled because the live player response changed."
-  },
-  "feature_replayChatDensity_desc": {
-    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
-  },
-  "feature_replayChatDensity_name": {
-    "message": "Replay Chat Density"
-  },
-  "replayChatDensityAria": {
-    "message": "Chat activity across this video. Click the chart to seek."
-  },
-  "replayChatDensityTitle": {
-    "message": "Chat activity — click to seek"
+  "feature_liveSpeedReset_name": {
+    "message": "Live Catch-Up Speed Reset"
   },
   "feature_localAiSummary_desc": {
     "message": "사용 가능한 경우 Chrome 내장 Summarizer API를 사용합니다. \"사용 불가\" 메시지로 명확히 안내하며, 원격 제공자로 자동 전환하지 않습니다. 기존 AI 요약 버튼 옆에 \"로컬 요약\" 버튼을 추가합니다."
@@ -2858,6 +2701,12 @@
   },
   "feature_localAiTranscriptQa_name": {
     "message": "대본 Q&A (브라우저 내장)"
+  },
+  "feature_logarithmicVolume_desc": {
+    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
+  },
+  "feature_logarithmicVolume_name": {
+    "message": "Logarithmic Volume Curve"
   },
   "feature_logoToSubscriptions_desc": {
     "message": "YouTube 홈 로고를 구독 피드로 연결"
@@ -3056,6 +2905,24 @@
   },
   "feature_persistentSpeed_name": {
     "message": "지속적인 속도"
+  },
+  "feature_photosensitiveDimPercent_desc": {
+    "message": "깜박이는 콘텐츠가 감지되는 동안 플레이어를 얼마나 어둡게 할지 설정합니다."
+  },
+  "feature_photosensitiveDimPercent_name": {
+    "message": "어둡게 하기 강도"
+  },
+  "feature_photosensitiveFlashProtection_desc": {
+    "message": "프레임을 로컬에서 분석하여 큰 휘도 변화가 감지되면 플레이어를 잠시 어둡게 합니다."
+  },
+  "feature_photosensitiveFlashProtection_name": {
+    "message": "광과민성 섬광 보호"
+  },
+  "feature_photosensitiveFlashThreshold_desc": {
+    "message": "보호를 실행하는 최소 프레임 휘도 변화입니다."
+  },
+  "feature_photosensitiveFlashThreshold_name": {
+    "message": "섬광 민감도"
   },
   "feature_pipButton_desc": {
     "message": "네이티브 브라우저 PiP를 위한 원클릭 PiP 버튼을 플레이어 컨트롤에 추가"
@@ -3261,6 +3128,12 @@
   "feature_removeScrubber_name": {
     "message": "Hide Scrubber Handle"
   },
+  "feature_replayChatDensity_desc": {
+    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
+  },
+  "feature_replayChatDensity_name": {
+    "message": "Replay Chat Density"
+  },
   "feature_researchSpacedReview_desc": {
     "message": "학습/작업 모드 데이터를 마크다운 또는 CSV로 내보내기: 시청 시간 총계, 집중 모드 상태, 디지털 웰빙 상태, 딥 링크가 포함된 타임스탬프 북마크."
   },
@@ -3374,27 +3247,6 @@
   },
   "feature_sbPerChannelProfiles_name": {
     "message": "SponsorBlock 채널별 프로필"
-  },
-  "feature_sponsorBlockBaseUrl_desc": {
-    "message": "SponsorBlock과 DeArrow가 사용하는 기본 HTTPS 호스트를 선택합니다."
-  },
-  "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API 호스트"
-  },
-  "feature_sponsorBlockCanonicalHost_label": {
-    "message": "정규 — sponsor.ajay.app"
-  },
-  "feature_sponsorBlockDisabled_label": {
-    "message": "비활성화됨"
-  },
-  "feature_sponsorBlockMirrorHost_label": {
-    "message": "미러 — sponsorblock.kavin.rocks"
-  },
-  "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "기본 API 호스트가 실패하면 승인된 이 미러를 한 번 시도합니다."
-  },
-  "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock 대체 호스트"
   },
   "feature_scrollToPlayer_desc": {
     "message": "새 동영상으로 이동할 때 자동으로 페이지 상단으로 스크롤"
@@ -3546,11 +3398,38 @@
   "feature_speedStep_name": {
     "message": "속도 단계"
   },
+  "feature_sponsorBlockBaseUrl_desc": {
+    "message": "SponsorBlock과 DeArrow가 사용하는 기본 HTTPS 호스트를 선택합니다."
+  },
+  "feature_sponsorBlockBaseUrl_name": {
+    "message": "SponsorBlock API 호스트"
+  },
+  "feature_sponsorBlockCanonicalHost_label": {
+    "message": "정규 — sponsor.ajay.app"
+  },
+  "feature_sponsorBlockDisabled_label": {
+    "message": "비활성화됨"
+  },
+  "feature_sponsorBlockMirrorHost_label": {
+    "message": "미러 — sponsorblock.kavin.rocks"
+  },
+  "feature_sponsorBlockMirrorUrl_desc": {
+    "message": "기본 API 호스트가 실패하면 승인된 이 미러를 한 번 시도합니다."
+  },
+  "feature_sponsorBlockMirrorUrl_name": {
+    "message": "SponsorBlock 대체 호스트"
+  },
   "feature_sponsorBlock_desc": {
     "message": "CC BY-NC-SA 4.0으로 라이선스된 SponsorBlock 데이터를 사용해 스폰서 구간, 인트로, 아웃트로 및 기타 비콘텐츠 구간을 자동으로 건너뜁니다"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
+  },
+  "feature_sponsoredContentFilter_desc": {
+    "message": "스폰서 또는 제휴 홍보로 보이는 댓글과 설명 블록을 접습니다. 각 항목에 일치 이유가 표시되며 항목별로 복원할 수 있습니다."
+  },
+  "feature_sponsoredContentFilter_name": {
+    "message": "스폰서 콘텐츠 필터"
   },
   "feature_squareAvatars_desc": {
     "message": "채널 아바타를 원형 대신 사각형으로 표시"
@@ -3924,6 +3803,156 @@
   "feature_zenMode_name": {
     "message": "젠 모드"
   },
+  "filterListExportFail": {
+    "message": "필터 목록 내보내기 실패"
+  },
+  "filterListExported": {
+    "message": "Video Hider 규칙을 내보냈습니다."
+  },
+  "filterListFailureBadFormat": {
+    "message": "응답이 지원되는 Astra Deck 필터 목록이 아니었습니다"
+  },
+  "filterListFailureExpired": {
+    "message": "마지막 검증이 7일보다 오래되었습니다"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "서버가 HTTP {status}을(를) 반환했습니다"
+  },
+  "filterListFailureIntegrity": {
+    "message": "SHA-256 검증을 사용할 수 없었습니다"
+  },
+  "filterListFailureStorage": {
+    "message": "검증된 목록을 저장할 수 없었습니다"
+  },
+  "filterListFailureTooLarge": {
+    "message": "응답이 1 MiB 제한을 초과했습니다"
+  },
+  "filterListFailureUnreachable": {
+    "message": "소스에 연결할 수 없었습니다"
+  },
+  "filterListHashUnavailable": {
+    "message": "기록되지 않음"
+  },
+  "filterListImportFail": {
+    "message": "필터 목록 가져오기 실패"
+  },
+  "filterListImportNotJson": {
+    "message": "이 파일은 올바른 JSON이 아닙니다."
+  },
+  "filterListImportRollback": {
+    "message": "필터 목록 가져오기에 실패했습니다. 이전 데이터를 복원했습니다."
+  },
+  "filterListImported": {
+    "message": "Video Hider 규칙을 가져왔습니다. 가져오기 실행 취소를 사용할 수 있습니다."
+  },
+  "filterListNotModified": {
+    "message": "필터 목록을 확인했습니다. 캐시된 내용은 변경되지 않았습니다."
+  },
+  "filterListRefreshDaily": {
+    "message": "매일"
+  },
+  "filterListRefreshFail": {
+    "message": "필터 목록 새로 고침 실패"
+  },
+  "filterListRefreshManual": {
+    "message": "수동만"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "자동 새로 고침"
+  },
+  "filterListRefreshWeekly": {
+    "message": "매주"
+  },
+  "filterListRefreshed": {
+    "message": "Video Hider 필터 목록을 새로 고쳤습니다."
+  },
+  "filterListStatusActiveTpl": {
+    "message": "{host} 구독 중. 확인: {age}, 형식 v{version}, SHA-256 {hash}."
+  },
+  "filterListStatusErrorTpl": {
+    "message": "{host}의 활성 규칙이 없습니다. 마지막 새로 고침 실패: {reason}."
+  },
+  "filterListStatusExported": {
+    "message": "로컬 필터 규칙을 내보냈습니다."
+  },
+  "filterListStatusFail": {
+    "message": "문제가 발생했습니다. 저장된 규칙은 변경되지 않았습니다."
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "{host}의 필터 목록을 사용 중입니다."
+  },
+  "filterListStatusImported": {
+    "message": "필터 규칙을 가져왔습니다. 가져오기 실행 취소를 사용할 수 있습니다."
+  },
+  "filterListStatusInvalidUrl": {
+    "message": "사용자 이름, 비밀번호, # 프래그먼트가 없는 전체 HTTPS 주소를 입력하세요."
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "{host}의 마지막 새로 고침에 실패했습니다. 캐시된 규칙이 계속 사용됩니다."
+  },
+  "filterListStatusNoTab": {
+    "message": "원격 목록을 새로 고치려면 YouTube 탭을 여세요."
+  },
+  "filterListStatusPendingTpl": {
+    "message": "아직 가져오지 않았습니다. {host}을(를) 구독하려면 '지금 목록 새로 고침'을 선택하세요."
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "해당 사이트를 읽으려면 Astra Deck의 권한이 필요합니다. 브라우저가 물어보면 '허용'을 선택하세요."
+  },
+  "filterListStatusPreferenceFail": {
+    "message": "필터 목록 기본 설정을 저장할 수 없습니다."
+  },
+  "filterListStatusPrivateHost": {
+    "message": "해당 주소는 사설 또는 로컬 네트워크에 있습니다. 필터 목록은 공개 HTTPS 사이트에서 제공해야 합니다."
+  },
+  "filterListStatusReady": {
+    "message": "구독 중인 필터 목록이 없습니다."
+  },
+  "filterListStatusRefreshFail": {
+    "message": "목록을 새로 고칠 수 없습니다. 주소를 확인한 후 다시 시도하세요."
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "{reason} 때문에 목록을 새로 고칠 수 없습니다."
+  },
+  "filterListStatusRefreshed": {
+    "message": "원격 필터 목록을 새로 고쳤습니다."
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "캐시된 {host} 규칙이 계속 활성 상태입니다. 확인: {age}, {reason}. 형식 v{version}, SHA-256 {hash}."
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "캐시된 {host} 규칙이 일시 중지되었습니다. 확인: {age}, {reason}. 형식 v{version}, SHA-256 {hash}."
+  },
+  "filterListStopFailed": {
+    "message": "필터 목록 구독을 중지할 수 없습니다."
+  },
+  "filterListStoppedTpl": {
+    "message": "{host} 구독을 중지했습니다. 필터 목록 전용 사이트 액세스는 남아 있지 않습니다."
+  },
+  "filterListTimeUnknown": {
+    "message": "알 수 없는 시각"
+  },
+  "filterListToolsDesc": {
+    "message": "Video Hider 규칙을 백업하거나 파일에서 복원하거나 신뢰하는 사이트에 게시된 필터 목록을 구독할 수 있습니다."
+  },
+  "filterListToolsEyebrow": {
+    "message": "Video Hider"
+  },
+  "filterListToolsTitle": {
+    "message": "필터 목록"
+  },
+  "filterListUrlLabel": {
+    "message": "필터 목록 URL(선택 사항)"
+  },
+  "filterListUrlPlaceholder": {
+    "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "새로 고침에 실패하거나 7일보다 오래된 경우 마지막으로 검증된 규칙 사용"
+  },
+  "filterTogglesHelpTitle": {
+    "message": "자유 텍스트는 이름, 설명, 키, 번역된 라벨과 일치합니다. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. 공백(AND)과 쉼표(필드 내 OR)로 결합하세요."
+  },
   "filterTogglesLabel": {
     "message": "빠른 토글 필터"
   },
@@ -3941,6 +3970,9 @@
   },
   "floatingChatOpacityAria": {
     "message": "Chat opacity"
+  },
+  "forceDvrDegraded": {
+    "message": "DVR could not be enabled because the live player response changed."
   },
   "groupQuickControls": {
     "message": "빠른 컨트롤"
@@ -3975,6 +4007,24 @@
   "healthTitle": {
     "message": "진단"
   },
+  "heatmapJumpAria": {
+    "message": "Jump to the most replayed moment"
+  },
+  "heatmapJumpedToast": {
+    "message": "Jumped to the most replayed moment"
+  },
+  "hiddenCardNoteTpl": {
+    "message": "Hidden by {feature}: {rule}"
+  },
+  "hiddenRuleCollaboration": {
+    "message": "multi-creator upload"
+  },
+  "hiddenRuleScheduled": {
+    "message": "scheduled livestream or premiere"
+  },
+  "hiddenRuleShorts": {
+    "message": "Shorts video"
+  },
   "hideAllButtonLabel": {
     "message": "모두 숨기기",
     "description": "Label of the Hide All button"
@@ -3986,11 +4036,17 @@
   "importBtn": {
     "message": "가져오기"
   },
+  "importFilterListBtn": {
+    "message": "규칙 가져오기"
+  },
   "languageAr": {
     "message": "العربية (아랍어)"
   },
   "languageAuto": {
     "message": "자동 (브라우저 기본값)"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
   },
   "languageDe": {
     "message": "Deutsch (독일어)"
@@ -4027,6 +4083,10 @@
   },
   "languageZhCn": {
     "message": "简体中文 (간체 중국어)"
+  },
+  "liveLatencyReadout": {
+    "message": "Live {latency}s · buffer {buffer}s",
+    "description": "Live-stream latency and buffered-ahead player readout"
   },
   "loadingState": {
     "message": "로드 중"
@@ -4146,23 +4206,8 @@
   "panelTitle": {
     "message": "설정"
   },
-  "playerDownloadAria": {
-    "message": "비디오 다운로드"
-  },
-  "playerDownloadTitle": {
-    "message": "비디오 다운로드"
-  },
-  "playerGearAriaTpl": {
-    "message": "{brand} 설정 열기"
-  },
-  "playerGearTitleTpl": {
-    "message": "{brand} 설정"
-  },
-  "playerCcAria": {
-    "message": "자막 켜기 또는 끄기"
-  },
-  "playerCcTitle": {
-    "message": "자막"
+  "photosensitiveFlashDetected": {
+    "message": "깜박이는 콘텐츠 감지됨 — 어둡게 처리"
   },
   "playbackStatsDataChecking": {
     "message": "Checking with Astra Downloader…"
@@ -4175,6 +4220,27 @@
   },
   "playbackStatsDataUsage": {
     "message": "Download size estimates"
+  },
+  "playerCcAria": {
+    "message": "자막 켜기 또는 끄기"
+  },
+  "playerCcTitle": {
+    "message": "자막"
+  },
+  "playerDockHomeLink": {
+    "message": "홈으로 이동"
+  },
+  "playerDownloadAria": {
+    "message": "비디오 다운로드"
+  },
+  "playerDownloadTitle": {
+    "message": "비디오 다운로드"
+  },
+  "playerGearAriaTpl": {
+    "message": "{brand} 설정 열기"
+  },
+  "playerGearTitleTpl": {
+    "message": "{brand} 설정"
   },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
@@ -4275,9 +4341,6 @@
   "playlistVideoCountTpl": {
     "message": "{count} videos"
   },
-  "photosensitiveFlashDetected": {
-    "message": "깜박이는 콘텐츠 감지됨 — 어둡게 처리"
-  },
   "popupTitle": {
     "message": "Astra Deck"
   },
@@ -4333,6 +4396,9 @@
   },
   "qtGroup_Playback": {
     "message": "재생"
+  },
+  "qtGroup_Privacy": {
+    "message": "개인정보 보호"
   },
   "qtGroup_Utilities": {
     "message": "유틸리티"
@@ -4394,11 +4460,11 @@
   "qt_disableInfiniteScroll_name": {
     "message": "무한 스크롤 제한"
   },
-  "qt_syncSettings_desc": {
-    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+  "qt_githubFullProfile_desc": {
+    "message": "github-full 토글 잠금 해제(Cobalt, AI 키 등)"
   },
-  "qt_syncSettings_name": {
-    "message": "Browser Sync"
+  "qt_githubFullProfile_name": {
+    "message": "GitHub-Full 프로필"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "시청 페이지 사이드 레일 비우기"
@@ -4418,11 +4484,23 @@
   "qt_persistentSpeed_name": {
     "message": "지속적인 속도"
   },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Astra Deck이 연결할 수 있는 모든 API 출처 표시"
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "데이터 흐름 패널"
+  },
   "qt_removeAllShorts_desc": {
     "message": "Shorts 선반과 링크 제거"
   },
   "qt_removeAllShorts_name": {
     "message": "Shorts 숨기기"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "github-full 토글을 숨기고 내보낼 때 키 정리"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Store-Safe 프로필"
   },
   "qt_sponsorBlock_desc": {
     "message": "크라우드 마킹된 스폰서 구간 건너뛰기"
@@ -4430,11 +4508,23 @@
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
+  "qt_syncSettings_desc": {
+    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+  },
+  "qt_syncSettings_name": {
+    "message": "Browser Sync"
+  },
   "qt_transcriptViewer_desc": {
     "message": "자막 읽기, 이동, 내보내기"
   },
   "qt_transcriptViewer_name": {
     "message": "대본 사이드바"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
   },
   "quickTogglesAria": {
     "message": "빠른 토글"
@@ -4526,17 +4616,32 @@
   "reenableMediadlBtn": {
     "message": "다운로더 프롬프트 활성화"
   },
+  "refreshFilterListBtn": {
+    "message": "지금 목록 새로 고침"
+  },
+  "replayChatDensityAria": {
+    "message": "Chat activity across this video. Click the chart to seek."
+  },
+  "replayChatDensityTitle": {
+    "message": "Chat activity — click to seek"
+  },
   "resetBtn": {
     "message": "재설정"
   },
   "resultsAllAvailableTpl": {
     "message": "{count}개의 빠른 컨트롤이 이 팝업에서 사용 가능합니다"
   },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
   "resultsMatchTpl": {
     "message": "{total} 중 {visible}개가 이 필터와 일치합니다"
   },
   "resultsMatching": {
     "message": "일치"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count}개 일치"
   },
   "schemaBadgeGithubFullTitle": {
     "message": "이 설정은 GitHub-Full 프로필이 활성화된 경우에만 적용됩니다."
@@ -4565,17 +4670,14 @@
   "schemaJsonInvalidTpl": {
     "message": "잘못된 JSON: {error}"
   },
-  "schemaOverviewCountTpl": {
-    "message": "{categories}개 카테고리에서 {enabled}/{total}개 설정 활성화"
+  "schemaOverviewAllView": {
+    "message": "모든 설정 표시"
   },
   "schemaOverviewChangedCountTpl": {
     "message": "{count}개 변경됨"
   },
   "schemaOverviewChangedView": {
     "message": "기본값과 다른 설정"
-  },
-  "schemaOverviewAllView": {
-    "message": "모든 설정 표시"
   },
   "schemaOverviewCopyDiff": {
     "message": "변경된 설정 복사"
@@ -4588,6 +4690,9 @@
   },
   "schemaOverviewCopyDiffFail": {
     "message": "변경된 설정을 복사하지 못했습니다."
+  },
+  "schemaOverviewCountTpl": {
+    "message": "{categories}개 카테고리에서 {enabled}/{total}개 설정 활성화"
   },
   "schemaOverviewDiffCurrent": {
     "message": "현재"
@@ -4603,6 +4708,12 @@
   },
   "schemaOverviewToolsAria": {
     "message": "설정 변경 도구"
+  },
+  "schemaResetAriaTpl": {
+    "message": "{key}을(를) 기본값으로 재설정"
+  },
+  "schemaResetTitleTpl": {
+    "message": "{key}을(를) 기본값으로 재설정({value})"
   },
   "searchWatchClose": {
     "message": "검색 결과 닫기"
@@ -4643,6 +4754,9 @@
   "searchWatchTitle": {
     "message": "재생을 멈추지 않고 검색"
   },
+  "selectorHealthAssetTpl": {
+    "message": "규칙: {status} · {version} · {source}"
+  },
   "selectorHealthCopyAria": {
     "message": "셀렉터 상태 보고서를 클립보드에 복사"
   },
@@ -4667,11 +4781,14 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
-  "selectorHealthAssetTpl": {
-    "message": "규칙: {status} · {version} · {source}"
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
   },
   "selectorHealthEmpty": {
     "message": "아직 샘플링된 표면이 없습니다."
+  },
+  "selectorHealthExportAria": {
+    "message": "선택기 상태를 JSON으로 내보내기"
   },
   "selectorHealthRefreshAria": {
     "message": "선택자 규칙 새로 고침"
@@ -4690,6 +4807,30 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count}개 표면 추적 중"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "동영상 플레이어"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "자동으로 사용 중지됨: {features} — {reason}"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count}개 항목"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count}개 켜짐"
+  },
+  "settingsCategorySummaryFallback": {
+    "message": "카테고리 설정"
+  },
+  "settingsConflictWithTpl": {
+    "message": "{featureName}과(와) 충돌함"
   },
   "settingsDlActionsAria": {
     "message": "Downloader actions"
@@ -4742,8 +4883,29 @@
   "settingsDlTryingStart": {
     "message": "Trying to start the Astra Downloader service…"
   },
+  "settingsDownloaderSetupTitle": {
+    "message": "Astra Deck 다운로더 설정 파일 다운로드"
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
   "settingsEnableAllAriaTpl": {
     "message": "Enable all settings in {category}"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "{featureName} 지우기"
+  },
+  "settingsFooterSaved": {
+    "message": "저장됨"
+  },
+  "settingsGitHubTitle": {
+    "message": "GitHub에서 보기"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "설정 그룹"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "주의 필요"
   },
   "settingsImportDoneTpl": {
     "message": "{message} Undo is available in the toast."
@@ -4756,6 +4918,9 @@
   },
   "settingsImportInvalid": {
     "message": "Import failed. Choose a valid Astra Deck settings export."
+  },
+  "settingsImportReadFailed": {
+    "message": "가져오기 파일을 읽을 수 없습니다"
   },
   "settingsImportUndoUnavailable": {
     "message": "Import undo is no longer available."
@@ -4802,6 +4967,12 @@
   "settingsInsightsUndoToasts": {
     "message": "Undo toasts"
   },
+  "settingsPaneDescriptionFallback": {
+    "message": "YouTube의 이 부분이 작동하는 방식을 조정합니다."
+  },
+  "settingsPanelContentControls": {
+    "message": "콘텐츠 제어"
+  },
   "settingsResetChooseSection": {
     "message": "Choose a settings section before resetting."
   },
@@ -4838,8 +5009,41 @@
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
   },
+  "settingsSubFeatureBadge": {
+    "message": "하위 기능"
+  },
+  "settingsSyncDesc": {
+    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
+  },
+  "settingsSyncOff": {
+    "message": "Off — this device only."
+  },
+  "settingsSyncOn": {
+    "message": "On — preferences and blocklists sync through your browser account."
+  },
+  "settingsSyncTitle": {
+    "message": "Browser sync"
+  },
+  "settingsSyncUnavailable": {
+    "message": "Browser sync is unavailable in this browser."
+  },
+  "settingsSyncUndo": {
+    "message": "Undo last sync"
+  },
+  "settingsSyncUndoAria": {
+    "message": "Restore the local state from before the last browser sync"
+  },
+  "settingsSyncUndoDone": {
+    "message": "Last browser sync undone locally."
+  },
+  "settingsSyncUndoFailed": {
+    "message": "Could not undo the last browser sync."
+  },
   "settingsTakeoutImportInvalid": {
     "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -5032,6 +5236,9 @@
   "spPerfListAria": {
     "message": "기능 초기화 타이밍 목록"
   },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
   "spPerfTitle": {
     "message": "기능 초기화 타이밍"
   },
@@ -5116,6 +5323,9 @@
   "spSelectorTotalTpl": {
     "message": "표면 {count}개"
   },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
   "spSettingsClearAria": {
     "message": "설정 필터 지우기"
   },
@@ -5191,6 +5401,9 @@
   "spStatusEnabledTpl": {
     "message": "{name} 활성화됨"
   },
+  "spStatusHostAccessDenied": {
+    "message": "이 선택적 기능을 사용하려면 먼저 Astra Deck에 호스트 액세스 권한이 필요합니다."
+  },
   "spStatusOpenYouTube": {
     "message": "실시간 진단을 보려면 YouTube를 여세요"
   },
@@ -5202,9 +5415,6 @@
   },
   "spStatusSaveFailed": {
     "message": "설정을 저장할 수 없습니다"
-  },
-  "spStatusHostAccessDenied": {
-    "message": "이 선택적 기능을 사용하려면 먼저 Astra Deck에 호스트 액세스 권한이 필요합니다."
   },
   "spStatusSettingsLoadFailed": {
     "message": "진단이 갱신되었습니다. 빠른 설정을 불러올 수 없습니다"
@@ -5241,6 +5451,33 @@
   },
   "speedPopupSub": {
     "message": "변경될 때까지 모든 비디오에 적용됩니다."
+  },
+  "sponsorBlockDataAttribution": {
+    "message": "SponsorBlock 데이터"
+  },
+  "sponsorBlockDataAttributionTitle": {
+    "message": "SponsorBlock API/데이터베이스 데이터 — CC BY-NC-SA 4.0"
+  },
+  "sponsorCachedSegmentTitleTpl": {
+    "message": "{label} ({time}에 캐시됨)"
+  },
+  "sponsoredFilterAffiliateReason": {
+    "message": "제휴 홍보"
+  },
+  "sponsoredFilterCommentLabel": {
+    "message": "스폰서 댓글"
+  },
+  "sponsoredFilterDescriptionLabel": {
+    "message": "스폰서 설명"
+  },
+  "sponsoredFilterHideTpl": {
+    "message": "{label} 숨기기 — {reason}"
+  },
+  "sponsoredFilterShowTpl": {
+    "message": "{label} 표시 — {reason}"
+  },
+  "sponsoredFilterSponsorReason": {
+    "message": "스폰서 표시"
   },
   "spq_autoTheaterMode_desc": {
     "message": "동영상을 극장 모드로 엽니다."
@@ -5383,6 +5620,9 @@
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
   "statusImportUndoExpired": {
     "message": "Undo Import is no longer available - the browser session snapshot expired."
   },
@@ -5401,11 +5641,11 @@
   "statusOpenWorkspaceFail": {
     "message": "전체 작업 공간을 열 수 없습니다. 다시 시도하세요."
   },
-  "statusPerKeyResetTpl": {
-    "message": "{key}을(를) 기본값으로 재설정했습니다."
-  },
   "statusPerKeyResetFail": {
     "message": "Could not reset"
+  },
+  "statusPerKeyResetTpl": {
+    "message": "{key}을(를) 기본값으로 재설정했습니다."
   },
   "statusQuickCtrlLoadFail": {
     "message": "빠른 컨트롤을 로드할 수 없습니다. 팝업을 다시 열어보세요."
@@ -5515,6 +5755,30 @@
   "statusYtdlpUpdatedTpl": {
     "message": "yt-dlp updated to v{version}{from}"
   },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "사이드 패널 닫기"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "라이브 동영상 작업"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "실시간"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "라이브 동영상 정보"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "라이브 동영상"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "빠른 링크"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "구독으로 이동"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "동영상 작업"
+  },
   "storageBannerCorruptionTpl": {
     "message": "저장 공간 데이터가 손상됨 — 초기화하여 복구하세요."
   },
@@ -5539,146 +5803,35 @@
   "storageStatsAriaLabel": {
     "message": "스토리지 통계"
   },
-  "settingsSyncDesc": {
-    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
-  },
-  "settingsSyncOff": {
-    "message": "Off — this device only."
-  },
-  "settingsSyncOn": {
-    "message": "On — preferences and blocklists sync through your browser account."
-  },
-  "settingsSyncTitle": {
-    "message": "Browser sync"
-  },
-  "settingsSyncUndo": {
-    "message": "Undo last sync"
-  },
-  "settingsSyncUndoAria": {
-    "message": "Restore the local state from before the last browser sync"
-  },
-  "settingsSyncUndoDone": {
-    "message": "Last browser sync undone locally."
-  },
-  "settingsSyncUndoFailed": {
-    "message": "Could not undo the last browser sync."
-  },
-  "settingsSyncUnavailable": {
-    "message": "Browser sync is unavailable in this browser."
-  },
   "subscriptionAgeDaysShortTpl": {
     "message": "{days}일"
-  },
-  "subscriptionCreateSubgroupDialogAria": {
-    "message": "구독 하위 그룹 만들기"
-  },
-  "subscriptionCreateGroupDialogAria": {
-    "message": "구독 그룹 만들기"
-  },
-  "subscriptionSubgroupNameTpl": {
-    "message": "{group} 아래 하위 그룹 이름 지정"
-  },
-  "subscriptionGroupDialogTitle": {
-    "message": "이 그룹 이름 지정"
-  },
-  "subscriptionSubgroupPlaceholder": {
-    "message": "예: Frontend, DevOps, Jazz"
-  },
-  "subscriptionGroupPlaceholder": {
-    "message": "예: 코딩, 음악, 뉴스"
-  },
-  "subscriptionGroupNameAria": {
-    "message": "그룹 이름"
-  },
-  "subscriptionDialogCancel": {
-    "message": "취소"
-  },
-  "subscriptionDialogCreate": {
-    "message": "만들기"
-  },
-  "subscriptionGroupChipTpl": {
-    "message": "{prefix}{name} ({count}){tags}"
-  },
-  "subscriptionChannelSingular": {
-    "message": "채널"
-  },
-  "subscriptionChannelPlural": {
-    "message": "채널"
-  },
-  "subscriptionSubgroupSuffix": {
-    "message": ". 하위 그룹"
-  },
-  "subscriptionGroupChipAriaTpl": {
-    "message": "{name}. {count} {channels}{subgroup}"
-  },
-  "subscriptionAiTagsRegenerateTitleTpl": {
-    "message": "AI 태그: {tags} · Shift 클릭하여 다시 생성"
   },
   "subscriptionAiTagsGenerateTitle": {
     "message": "Shift 클릭하여 AI 태그 생성"
   },
-  "subscriptionToolbarPlayAllAriaTpl": {
-    "message": "{group}의 모든 동영상 재생"
-  },
-  "subscriptionExportCsvLabel": {
-    "message": "CSV"
-  },
-  "subscriptionExportOpmlLabel": {
-    "message": "OPML"
-  },
-  "subscriptionMembersIncludeChannelAriaTpl": {
-    "message": "{channel}을(를) {group}에 포함"
-  },
-  "subscriptionQueueCappedTpl": {
-    "message": " ({count}개로 제한됨)"
-  },
-  "subscriptionGroupNoVideos": {
-    "message": "이 그룹에 표시할 동영상이 없음"
-  },
-  "subscriptionGroupPlayingTpl": {
-    "message": "{group}에서 동영상 {count}개 재생 중{truncated}"
-  },
-  "subscriptionGroupsExported": {
-    "message": "구독 그룹 내보냄"
-  },
-  "subscriptionGroupsExportedCsv": {
-    "message": "구독 그룹을 CSV로 내보냄"
-  },
-  "subscriptionGroupsExportedOpml": {
-    "message": "구독 그룹을 OPML로 내보냄"
-  },
-  "subscriptionGroupsImportFailedTpl": {
-    "message": "가져오기 실패: {error}"
-  },
-  "subscriptionRenderedSubscriptions": {
-    "message": "표시된 구독"
-  },
-  "subscriptionChannelsMarkedReadTpl": {
-    "message": "{group}의 {count}개 {channels} 읽음으로 표시됨"
-  },
-  "subscriptionAiTagsRequired": {
-    "message": "먼저 구독 그룹의 AI 태그를 사용 설정하세요."
-  },
-  "subscriptionSummarizerUnavailable": {
-    "message": "로컬 요약기를 사용할 수 없음. Chrome AI 오리진 트라이얼을 사용 설정하세요."
-  },
   "subscriptionAiTagsGeneratingTpl": {
     "message": "\"{group}\"의 태그 생성 중…"
-  },
-  "subscriptionAiTagsNoCards": {
-    "message": "일치하는 카드가 아직 표시되지 않음. 피드를 스크롤한 후 다시 시도하세요."
   },
   "subscriptionAiTagsGenerationFailedTpl": {
     "message": "태그 생성 실패: {error}"
   },
+  "subscriptionAiTagsNoCards": {
+    "message": "일치하는 카드가 아직 표시되지 않음. 피드를 스크롤한 후 다시 시도하세요."
+  },
   "subscriptionAiTagsNoUsable": {
     "message": "요약기가 사용할 수 있는 태그를 반환하지 않음."
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "AI 태그: {tags} · Shift 클릭하여 다시 생성"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "먼저 구독 그룹의 AI 태그를 사용 설정하세요."
   },
   "subscriptionAiTagsTaggedTpl": {
     "message": "\"{group}\"에 태그 지정됨: {tags}"
   },
-  "subscriptionGroupsRestored": {
-    "message": "이전 구독 그룹 복원됨"
+  "subscriptionAllSubscriptions": {
+    "message": "모든 구독"
   },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
@@ -5698,29 +5851,26 @@
   "subscriptionBatchFallbackLabel": {
     "message": "subscription-groups:fallback"
   },
-  "subscriptionNewBadge": {
-    "message": "새로움"
+  "subscriptionChannelPlural": {
+    "message": "채널"
   },
-  "subscriptionStaleBadge": {
-    "message": "오래됨"
+  "subscriptionChannelSingular": {
+    "message": "채널"
   },
-  "subscriptionStaleAgeTitleTpl": {
-    "message": "이 카드에 최신 업로드가 표시된 후 {days}일"
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "{group}의 {count}개 {channels} 읽음으로 표시됨"
   },
-  "subscriptionStagedBadge": {
-    "message": "준비됨"
+  "subscriptionCreateGroupDialogAria": {
+    "message": "구독 그룹 만들기"
   },
-  "subscriptionStagedUndoTitleTpl": {
-    "message": "구독 취소가 준비되었습니다. {date}까지 실행 취소할 수 있습니다."
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "구독 하위 그룹 만들기"
   },
-  "subscriptionStagedReviewTitle": {
-    "message": "검토할 구독 취소가 준비되었습니다."
+  "subscriptionDialogCancel": {
+    "message": "취소"
   },
-  "subscriptionAllSubscriptions": {
-    "message": "모든 구독"
-  },
-  "subscriptionImportedOpml": {
-    "message": "가져온 OPML"
+  "subscriptionDialogCreate": {
+    "message": "만들기"
   },
   "subscriptionDigestCloseAria": {
     "message": "Close group notifications digest"
@@ -5773,14 +5923,56 @@
   "subscriptionExportCsvAria": {
     "message": "Export subscription groups as CSV"
   },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
   "subscriptionExportJsonAria": {
     "message": "Export subscription groups as JSON"
   },
   "subscriptionExportOpmlAria": {
     "message": "Export subscription groups as OPML"
   },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}. {count} {channels}{subgroup}"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name} ({count}){tags}"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "이 그룹 이름 지정"
+  },
   "subscriptionGroupEmpty": {
     "message": "No channels in this group yet — click Edit Channels to add some."
+  },
+  "subscriptionGroupNameAria": {
+    "message": "그룹 이름"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "이 그룹에 표시할 동영상이 없음"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "예: 코딩, 음악, 뉴스"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "{group}에서 동영상 {count}개 재생 중{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "구독 그룹 내보냄"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "구독 그룹을 CSV로 내보냄"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "구독 그룹을 OPML로 내보냄"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "가져오기 실패: {error}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "이전 구독 그룹 복원됨"
   },
   "subscriptionHealthCloseAria": {
     "message": "Close subscription health center"
@@ -5881,6 +6073,9 @@
   "subscriptionImportTitle": {
     "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
   },
+  "subscriptionImportedOpml": {
+    "message": "가져온 OPML"
+  },
   "subscriptionLoadedOnlyHint": {
     "message": "최신순은 이 페이지에 로드된 동영상만 정렬합니다. 더 로드하려면 스크롤하세요."
   },
@@ -5892,6 +6087,9 @@
   },
   "subscriptionMembersEmpty": {
     "message": "No channels rendered yet — scroll the subscriptions feed, then reopen this panel."
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "{channel}을(를) {group}에 포함"
   },
   "subscriptionMembersListAria": {
     "message": "Rendered channels"
@@ -5911,6 +6109,9 @@
   "subscriptionMenuUnsubscribe": {
     "message": "Unsubscribe"
   },
+  "subscriptionNewBadge": {
+    "message": "새로움"
+  },
   "subscriptionOrderGroupsHint": {
     "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
   },
@@ -5923,11 +6124,20 @@
   "subscriptionOrderNewestLoaded": {
     "message": "최신순(로드된 항목만)"
   },
-  "subscriptionSortYouTubeDefault": {
-    "message": "YouTube 기본값"
+  "subscriptionQueueCappedTpl": {
+    "message": " ({count}개로 제한됨)"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "표시된 구독"
   },
   "subscriptionSortLatest": {
     "message": "최신순"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "마지막 방문 이후 새 동영상"
+  },
+  "subscriptionSortPopular": {
+    "message": "인기순(조회수)"
   },
   "subscriptionSortShortest": {
     "message": "짧은 영상 먼저"
@@ -5935,11 +6145,35 @@
   "subscriptionSortUnwatched": {
     "message": "미시청 먼저"
   },
-  "subscriptionSortNewSinceLastVisit": {
-    "message": "마지막 방문 이후 새 동영상"
+  "subscriptionSortYouTubeDefault": {
+    "message": "YouTube 기본값"
   },
-  "subscriptionSortPopular": {
-    "message": "인기순(조회수)"
+  "subscriptionStagedBadge": {
+    "message": "준비됨"
+  },
+  "subscriptionStagedReviewTitle": {
+    "message": "검토할 구독 취소가 준비되었습니다."
+  },
+  "subscriptionStagedUndoTitleTpl": {
+    "message": "구독 취소가 준비되었습니다. {date}까지 실행 취소할 수 있습니다."
+  },
+  "subscriptionStaleAgeTitleTpl": {
+    "message": "이 카드에 최신 업로드가 표시된 후 {days}일"
+  },
+  "subscriptionStaleBadge": {
+    "message": "오래됨"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "{group} 아래 하위 그룹 이름 지정"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "예: Frontend, DevOps, Jazz"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": ". 하위 그룹"
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "로컬 요약기를 사용할 수 없음. Chrome AI 오리진 트라이얼을 사용 설정하세요."
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"
@@ -5988,6 +6222,9 @@
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "{group}의 모든 동영상 재생"
   },
   "subscriptionToolbarScanStale": {
     "message": "Scan Stale"
@@ -6070,6 +6307,84 @@
   "subscriptionViewToolbarLabel": {
     "message": "구독 보기 컨트롤"
   },
+  "timestampBookmarkAddedTpl": {
+    "message": "{time}에 북마크함"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "이 위치에는 이미 북마크가 있습니다"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "{time}의 북마크 삭제됨"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "{time}의 북마크 복원됨"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "중요한 이유를 기억할 메모 추가"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "{time} 북마크 삭제"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "‘현재 시간 저장’을 사용해 동영상의 순간을 고정하고 나중에 다시 볼 메모를 추가하세요."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "중요한 순간을 저장해 두면 탐색 막대 없이 다시 볼 수 있습니다."
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "북마크가 아직 없습니다"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "다시 보기"
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "{time}(으)로 이동"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "순간으로 이동"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "{time} 북마크 메모"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "메모"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "메모 추가…"
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "이 동영상의 북마크 {count}개"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "현재 시간 저장"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "저장된 메모 포함"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "저장한 순간으로 돌아가 각 항목 옆에 짧은 메모를 남길 수 있습니다."
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count}개 저장됨"
+  },
+  "timestampHighlightExport": {
+    "message": "Export Highlight Pack"
+  },
+  "timestampHighlightExportAria": {
+    "message": "Export this video’s highlights, notes, bookmarks, and summary"
+  },
+  "timestampHighlightExportFailed": {
+    "message": "Highlight export failed. Your saved data is unchanged."
+  },
+  "timestampHighlightExported": {
+    "message": "Highlight pack exported as Markdown and JSON."
+  },
+  "timestampHighlightExporting": {
+    "message": "Preparing highlight pack…"
+  },
+  "timestampHighlightNoVideo": {
+    "message": "No video is currently open."
+  },
   "toastActionManage": {
     "message": "Manage"
   },
@@ -6130,26 +6445,11 @@
   "toggleStateOnLower": {
     "message": "활성화됨"
   },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}."
+  },
   "toggleUpdateFailTpl": {
     "message": "{name}을(를) 업데이트할 수 없습니다. 다시 시도하세요."
-  },
-  "timestampHighlightExport": {
-    "message": "Export Highlight Pack"
-  },
-  "timestampHighlightExportAria": {
-    "message": "Export this video’s highlights, notes, bookmarks, and summary"
-  },
-  "timestampHighlightExportFailed": {
-    "message": "Highlight export failed. Your saved data is unchanged."
-  },
-  "timestampHighlightExported": {
-    "message": "Highlight pack exported as Markdown and JSON."
-  },
-  "timestampHighlightExporting": {
-    "message": "Preparing highlight pack…"
-  },
-  "timestampHighlightNoVideo": {
-    "message": "No video is currently open."
   },
   "transcriptBatchCancelled": {
     "message": "페이지 이동으로 스크립트 일괄 작업이 취소되었습니다"
@@ -6208,11 +6508,17 @@
   "transcriptDownloadTxtTitle": {
     "message": "Download plain-text transcript"
   },
+  "transcriptDownloadedTpl": {
+    "message": "스크립트를 다운로드했습니다! ({count}개 세그먼트)"
+  },
   "transcriptExpand": {
     "message": "Expand"
   },
   "transcriptExpandAria": {
     "message": "Expand transcript"
+  },
+  "transcriptExpiryUnknown": {
+    "message": "표시되지 않음"
   },
   "transcriptExportActionsAria": {
     "message": "Transcript export actions"
@@ -6220,17 +6526,80 @@
   "transcriptEyebrow": {
     "message": "Captions & Exports"
   },
+  "transcriptFetching": {
+    "message": "스크립트를 가져오는 중…"
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "로컬 색인을 측정할 수 없습니다."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "로컬 색인을 측정하는 중…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "동영상 {maxCount}개 중 {count}개 색인됨, {budget} 중 {size}. 오래된 항목부터 삭제됩니다."
+  },
   "transcriptJumpAriaTpl": {
     "message": "Jump to {time} in the transcript"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "알 수 없는 언어"
   },
   "transcriptLlmPrompt": {
     "message": "LLM prompt"
   },
+  "transcriptLoadFailed": {
+    "message": "스크립트를 불러오지 못했습니다"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "{source}에서 로드됨({age}); {language}."
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "만료된 자막 URL을 {source}에서 교체함; 가져온 시각: {age}; {language}."
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "{source}에서 로드됨({age}); {language}; 트랙 URL 만료: {expires}."
+  },
+  "transcriptNoCaptions": {
+    "message": "자막 없음"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "자막이 있는 다른 동영상을 시도하거나 자막 로드가 끝난 뒤 이 패널을 다시 여세요."
+  },
+  "transcriptNoVideoId": {
+    "message": "동영상 ID를 찾을 수 없습니다"
+  },
+  "transcriptPanelFallback": {
+    "message": "패널 대체 경로"
+  },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptRefreshedTrack": {
+    "message": "트랙 새로 고침"
+  },
+  "transcriptRetryHelp": {
+    "message": "자막 처리 중이라면 페이지를 새로 고치거나 잠시 후 다시 시도하세요."
+  },
   "transcriptShowOriginal": {
     "message": "Show Original"
+  },
+  "transcriptSourceInnertube": {
+    "message": "새로 가져온 YouTube 플레이어 데이터"
+  },
+  "transcriptSourcePanel": {
+    "message": "현재 YouTube 스크립트 패널"
+  },
+  "transcriptSourcePlayerGlobal": {
+    "message": "현재 페이지의 플레이어 데이터"
+  },
+  "transcriptSourceUnknown": {
+    "message": "YouTube 자막"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "새로 가져온 YouTube 시청 페이지"
+  },
+  "transcriptTimeUnknown": {
+    "message": "알 수 없는 시각"
   },
   "transcriptTitle": {
     "message": "Transcript"
@@ -6253,6 +6622,15 @@
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
   },
+  "transcriptUnavailable": {
+    "message": "이 동영상에는 사용할 수 있는 스크립트가 없습니다"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "사용할 수 없음"
+  },
+  "transcriptUnavailableNow": {
+    "message": "현재 YouTube에서 스크립트를 가져올 수 없습니다."
+  },
   "uiFontDefault": {
     "message": "YouTube 기본값"
   },
@@ -6268,8 +6646,44 @@
   "uiFontSystem": {
     "message": "시스템 UI"
   },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Return YouTube Dislike 싫어요 수 캐시됨({hours}시간 전)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Return YouTube Dislike 싫어요 수 캐시됨(1시간 이내)."
+  },
   "ui_rydCardRatioSuffix": {
     "message": "좋아요 · Return YouTube Dislike 추정"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "싫어요 약 {count}개. {estimate}"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "Return YouTube Dislike 수치는 YouTube가 공개 싫어요 총계를 제거한 후의 추정치이며, 조회수가 적은 동영상에서는 정확도가 낮을 수 있습니다."
+  },
+  "ui_rydEstimateShort": {
+    "message": "추정"
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Return YouTube Dislike 실시간 싫어요 수({used}/{limit}/분 사용). {estimate}"
+  },
+  "ui_rydOff": {
+    "message": "RYD 꺼짐"
+  },
+  "ui_rydPaused": {
+    "message": "RYD 일시중지"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike 일시중지 — 요청 제한됨({used}/{limit}/분). {seconds}초 후 재개됩니다."
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "좋아요 비율은 Return YouTube Dislike 추정 수치를 사용합니다. {estimate}"
+  },
+  "ui_rydRatioTpl": {
+    "message": "좋아요 {ratio}%"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike를 사용할 수 없습니다. API가 유효한 응답을 반환하지 않았습니다. 네트워크를 확인하거나 나중에 다시 시도하세요."
   },
   "undo": {
     "message": "실행 취소"
@@ -6304,14 +6718,41 @@
   "videoHiderAddAllowedChannelTitle": {
     "message": "Add Allowed Channel"
   },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "필터에 계속 일치해도 표시하려면 YouTube URL 또는 동영상 ID를 붙여 넣으세요."
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "허용할 동영상 추가"
+  },
   "videoHiderAddBlockedChannelCopy": {
     "message": "Paste a channel URL, handle, or channel ID to add it to the channel blocklist."
   },
   "videoHiderAddBlockedChannelTitle": {
     "message": "Add Blocked Channel"
   },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "YouTube URL 또는 동영상 ID를 붙여 넣어 숨김 목록에 바로 추가하세요."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "숨긴 동영상 추가"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "동영상을 허용 목록에 추가함"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "동영상을 숨김 목록에 추가함"
+  },
   "videoHiderAllowChannelButton": {
     "message": "Allow Channel"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "썸네일 X 버튼을 마우스 오른쪽 버튼으로 클릭하여 채널 전체를 차단합니다."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "마우스 오른쪽 버튼으로 채널 차단 허용"
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "동영상 허용"
   },
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
@@ -6322,14 +6763,44 @@
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "허용된 채널 {count}개"
+  },
   "videoHiderAllowedChannelsStatus": {
     "message": "Allowed"
   },
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
   },
+  "videoHiderAllowedCountTpl": {
+    "message": "동영상 {count}개 허용"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "허용한 동영상 {videoId} 미리보기 썸네일"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "수동 복원으로 허용됨. 예외가 유지되는 동안 자동 필터가 이 동영상을 건너뜁니다."
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "허용한 동영상 복원됨"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "허용한 동영상"
+  },
   "videoHiderAlreadyAllowedChannelToast": {
     "message": "{name} is already allowed"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "동영상이 이미 허용되어 있습니다"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name}은(는) 이미 차단됨"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "동영상이 이미 숨겨져 있습니다"
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "배치"
   },
   "videoHiderBlockChannelButton": {
     "message": "Block Channel"
@@ -6340,446 +6811,17 @@
   "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
+  "videoHiderBlockedChannelToast": {
+    "message": "차단됨: {name}"
+  },
   "videoHiderBlockedChannelsStatus": {
     "message": "차단됨"
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
-  "settingsPanelContentControls": {
-    "message": "콘텐츠 제어"
-  },
-  "videoHiderEnableAria": {
-    "message": "Video Hider 활성화"
-  },
-  "videoHiderTabsAria": {
-    "message": "Video Hider 섹션"
-  },
-  "videoHiderHiddenVideosTab": {
-    "message": "숨긴 동영상"
-  },
-  "videoHiderAllowedVideosTab": {
-    "message": "허용한 동영상"
-  },
-  "videoHiderKeywordRulesTab": {
-    "message": "키워드 규칙"
-  },
-  "videoHiderFiltersLimitsTab": {
-    "message": "필터 및 제한"
-  },
-  "videoHiderFeatureOn": {
-    "message": "기능 켜짐"
-  },
-  "videoHiderFeatureOff": {
-    "message": "기능 꺼짐"
-  },
-  "videoHiderHiddenCountTpl": {
-    "message": "동영상 {count}개 숨김"
-  },
-  "videoHiderAllowedCountTpl": {
-    "message": "동영상 {count}개 허용"
-  },
   "videoHiderBlockedCountTpl": {
     "message": "채널 {count}개 차단"
-  },
-  "videoHiderInvalidVideoInput": {
-    "message": "유효한 YouTube 동영상 URL 또는 11자리 동영상 ID를 입력하세요."
-  },
-  "videoHiderAddHiddenVideoTitle": {
-    "message": "숨긴 동영상 추가"
-  },
-  "videoHiderAddHiddenVideoCopy": {
-    "message": "YouTube URL 또는 동영상 ID를 붙여 넣어 숨김 목록에 바로 추가하세요."
-  },
-  "videoHiderVideoUrlPlaceholder": {
-    "message": "https://youtube.com/watch?v=VIDEO_ID"
-  },
-  "videoHiderHideVideoButton": {
-    "message": "동영상 숨기기"
-  },
-  "videoHiderOpenHiddenVideoAriaTpl": {
-    "message": "숨긴 동영상 {videoId}을(를) YouTube에서 열기"
-  },
-  "videoHiderHiddenVideoPreviewAltTpl": {
-    "message": "숨긴 동영상 {videoId} 미리보기 썸네일"
-  },
-  "videoHiderPreviewUnavailable": {
-    "message": "미리보기를 사용할 수 없음"
-  },
-  "videoHiderVideoIdLabel": {
-    "message": "동영상 ID"
-  },
-  "videoHiderHiddenVideoSummary": {
-    "message": "복원할 때까지 추천에서 숨깁니다. 복원하면 예외를 추가하여 자동 규칙에서도 표시할 수 있습니다."
-  },
-  "videoHiderOpenOnYouTube": {
-    "message": "YouTube에서 열기"
-  },
-  "videoHiderRestoreAllow": {
-    "message": "복원 및 허용"
-  },
-  "videoHiderRestoreHiddenVideoAriaTpl": {
-    "message": "숨긴 동영상 {videoId}을(를) 복원하고 허용 예외 추가"
-  },
-  "videoHiderRemoveFromList": {
-    "message": "목록에서 삭제"
-  },
-  "videoHiderRemoveHiddenVideoAriaTpl": {
-    "message": "예외를 추가하지 않고 숨긴 동영상 {videoId}을(를) 목록에서 삭제"
-  },
-  "videoHiderRestoreAllTpl": {
-    "message": "숨긴 동영상 모두 복원 및 허용({count})"
-  },
-  "videoHiderClearHiddenListTpl": {
-    "message": "숨김 목록만 지우기({count})"
-  },
-  "videoHiderRemovePage": {
-    "message": "이 페이지의 숨긴 동영상 삭제"
-  },
-  "videoHiderAddAllowedVideoTitle": {
-    "message": "허용할 동영상 추가"
-  },
-  "videoHiderAddAllowedVideoCopy": {
-    "message": "필터에 계속 일치해도 표시하려면 YouTube URL 또는 동영상 ID를 붙여 넣으세요."
-  },
-  "videoHiderAllowVideoButton": {
-    "message": "동영상 허용"
-  },
-  "videoHiderOpenAllowedVideoAriaTpl": {
-    "message": "허용한 동영상 {videoId}을(를) YouTube에서 열기"
-  },
-  "videoHiderAllowedVideoPreviewAltTpl": {
-    "message": "허용한 동영상 {videoId} 미리보기 썸네일"
-  },
-  "videoHiderAllowedVideoSummary": {
-    "message": "수동 복원으로 허용됨. 예외가 유지되는 동안 자동 필터가 이 동영상을 건너뜁니다."
-  },
-  "videoHiderRemoveException": {
-    "message": "예외 삭제"
-  },
-  "videoHiderRemoveAllowedVideoAriaTpl": {
-    "message": "허용한 동영상 {videoId}의 예외 삭제"
-  },
-  "videoHiderHideAgain": {
-    "message": "다시 숨기기"
-  },
-  "videoHiderHideAllowedVideoAriaTpl": {
-    "message": "허용한 동영상 {videoId} 다시 숨기기"
-  },
-  "videoHiderClearAllowedTpl": {
-    "message": "허용한 동영상 지우기({count})"
-  },
-  "videoHiderOpenChannel": {
-    "message": "채널 열기"
-  },
-  "videoHiderUnblockChannelAriaTpl": {
-    "message": "채널 {channelName} 차단 해제"
-  },
-  "videoHiderClearBlockedChannelsTpl": {
-    "message": "모든 채널 차단 해제({count})"
-  },
-  "videoHiderUnblockedChannelsTpl": {
-    "message": "채널 {count}개 차단 해제됨"
-  },
-  "videoHiderChannelsRestored": {
-    "message": "채널 복원됨"
-  },
-  "videoHiderKeywordsRulesLabel": {
-    "message": "키워드 및 규칙"
-  },
-  "videoHiderKeywordsRulesCopy": {
-    "message": "항목을 쉼표로 구분하세요. 이 필드를 업데이트하면 규칙이 즉시 적용됩니다."
-  },
-  "videoHiderKeywordsPlaceholder": {
-    "message": "reaction, unboxing, prank, shorts…"
-  },
-  "videoHiderLowViewThresholdLabel": {
-    "message": "조회수 낮음 기준"
-  },
-  "videoHiderLowViewThresholdDesc": {
-    "message": "이 조회수보다 적은 동영상은 낮은 조회수 필터가 켜져 있을 때만 숨깁니다."
-  },
-  "videoHiderWatchedRatioLabel": {
-    "message": "시청 비율 숨기기"
-  },
-  "videoHiderWatchedRatioDesc": {
-    "message": "0으로 비활성화합니다. 이 비율 이상 재생된 카드가 숨겨집니다."
-  },
-  "videoHiderWatchedRatioSuffix": {
-    "message": "시청 %"
-  },
-  "videoHiderMinimumDurationLabel": {
-    "message": "최소 재생 시간"
-  },
-  "videoHiderMinimumDurationDesc": {
-    "message": "0으로 이 규칙을 비활성화합니다."
-  },
-  "videoHiderMinutesSuffix": {
-    "message": "분"
-  },
-  "videoHiderLoadLimiterLabel": {
-    "message": "로드 제한기 사용"
-  },
-  "videoHiderLoadLimiterDesc": {
-    "message": "구독 피드 콘텐츠를 많이 숨기는 경우 권장합니다."
-  },
-  "videoHiderLoadLimiterAria": {
-    "message": "구독 로드 제한기 사용"
-  },
-  "videoHiderConsecutiveBatchesLabel": {
-    "message": "연속 숨김 배치"
-  },
-  "videoHiderConsecutiveBatchesDesc": {
-    "message": "값이 낮으면 더 빨리 중지합니다. 값이 높으면 제한기가 작동하기 전에 더 많이 로드합니다."
-  },
-  "videoHiderBatchesSuffix": {
-    "message": "배치"
-  },
-  "videoHiderRemoveHiddenCardsTitle": {
-    "message": "숨긴 카드 자동 삭제"
-  },
-  "videoHiderRemoveHiddenCardsDesc": {
-    "message": "사용하면 일치하는 동영상이 CSS로만 숨겨지지 않고 피드 DOM에서 삭제됩니다."
-  },
-  "videoHiderShowThumbnailHideButtonTitle": {
-    "message": "썸네일 숨기기 버튼 표시"
-  },
-  "videoHiderShowThumbnailHideButtonDesc": {
-    "message": "지원되는 동영상 썸네일에 X 버튼을 표시하여 한 번에 숨깁니다."
-  },
-  "videoHiderAllowRightClickBlockTitle": {
-    "message": "마우스 오른쪽 버튼으로 채널 차단 허용"
-  },
-  "videoHiderAllowRightClickBlockDesc": {
-    "message": "썸네일 X 버튼을 마우스 오른쪽 버튼으로 클릭하여 채널 전체를 차단합니다."
-  },
-  "videoHiderRememberRestoredTitle": {
-    "message": "복원한 동영상 기억"
-  },
-  "videoHiderRememberRestoredDesc": {
-    "message": "복원한 동영상을 허용한 동영상에 추가하여 다른 규칙과 계속 일치해도 표시합니다."
-  },
-  "videoHiderScopeHomeTitle": {
-    "message": "홈"
-  },
-  "videoHiderScopeHomeDesc": {
-    "message": "YouTube 홈 피드의 일치 항목을 숨깁니다."
-  },
-  "videoHiderScopeSubscriptionsTitle": {
-    "message": "구독"
-  },
-  "videoHiderScopeSubscriptionsDesc": {
-    "message": "구독 피드의 일치 항목을 숨기고 일괄 제어를 표시합니다."
-  },
-  "videoHiderScopeSearchTitle": {
-    "message": "검색 결과"
-  },
-  "videoHiderScopeSearchDesc": {
-    "message": "검색 결과 페이지에 동영상 및 채널 규칙을 적용합니다."
-  },
-  "videoHiderScopeWatchTitle": {
-    "message": "시청 페이지"
-  },
-  "videoHiderScopeWatchDesc": {
-    "message": "플레이어 옆과 아래의 추천에 규칙을 적용합니다."
-  },
-  "videoHiderScopeChannelsTitle": {
-    "message": "채널 페이지"
-  },
-  "videoHiderScopeChannelsDesc": {
-    "message": "채널 홈, 동영상, 라이브 및 재생목록 화면에 규칙을 적용합니다."
-  },
-  "videoHiderScopeOtherTitle": {
-    "message": "기타 YouTube 화면"
-  },
-  "videoHiderScopeOtherDesc": {
-    "message": "기타 탐색 화면에서도 Video Hider를 활성화합니다."
-  },
-  "videoHiderHideLiveTitle": {
-    "message": "라이브 스트림 숨기기"
-  },
-  "videoHiderHideLiveDesc": {
-    "message": "지원되는 피드에 나타나는 현재 라이브 카드와 라이브 추천을 숨깁니다."
-  },
-  "videoHiderHideUpcomingTitle": {
-    "message": "예정된 프리미어 숨기기"
-  },
-  "videoHiderHideUpcomingDesc": {
-    "message": "예약됨, 예정됨 또는 알림이 설정된 동영상 카드를 숨깁니다."
-  },
-  "videoHiderHideMixesTitle": {
-    "message": "YouTube 믹스 숨기기"
-  },
-  "videoHiderHideMixesDesc": {
-    "message": "라디오 스타일 믹스와 자동 생성 추천 믹스를 숨깁니다."
-  },
-  "videoHiderHidePlaylistsTitle": {
-    "message": "재생목록 카드 숨기기"
-  },
-  "videoHiderHidePlaylistsDesc": {
-    "message": "지원되는 피드 화면에서 재생목록 및 여러 동영상 카드를 숨깁니다."
-  },
-  "videoHiderHideMoviesTitle": {
-    "message": "영화 숨기기"
-  },
-  "videoHiderHideMoviesDesc": {
-    "message": "대여, 구매, 광고 포함 무료 및 영화로 표시된 카드를 숨깁니다."
-  },
-  "videoHiderHideAutoDubbedTitle": {
-    "message": "자동 더빙 동영상 숨기기"
-  },
-  "videoHiderHideAutoDubbedDesc": {
-    "message": "더빙, 자동 더빙 또는 대체 오디오로 표시된 카드를 숨깁니다."
-  },
-  "videoHiderHideLowViewTitle": {
-    "message": "조회수가 적은 동영상 숨기기"
-  },
-  "videoHiderHideLowViewDesc": {
-    "message": "YouTube가 카드에 조회수를 표시할 때 기준 조회수보다 적은 동영상을 숨깁니다."
-  },
-  "settingsCategorySummaryFallback": {
-    "message": "카테고리 설정"
-  },
-  "settingsCategoryAriaTpl": {
-    "message": "{category}. {summary}"
-  },
-  "settingsGroupSummaryFallback": {
-    "message": "설정 그룹"
-  },
-  "settingsPaneDescriptionFallback": {
-    "message": "YouTube의 이 부분이 작동하는 방식을 조정합니다."
-  },
-  "settingsCategoryFractionTpl": {
-    "message": "{enabled}/{total}"
-  },
-  "settingsCategoryOnTpl": {
-    "message": "{count}개 켜짐"
-  },
-  "settingsCategoryItemsTpl": {
-    "message": "{count}개 항목"
-  },
-  "settingsGitHubTitle": {
-    "message": "GitHub에서 보기"
-  },
-  "settingsDownloaderSetupTitle": {
-    "message": "Astra Deck 다운로더 설정 파일 다운로드"
-  },
-  "settingsVersionPrefix": {
-    "message": "v"
-  },
-  "settingsFooterSaved": {
-    "message": "저장됨"
-  },
-  "settingsSubFeatureBadge": {
-    "message": "하위 기능"
-  },
-  "settingsFeatureClearAriaTpl": {
-    "message": "{featureName} 지우기"
-  },
-  "settingsActiveSectionFallback": {
-    "message": "동영상 플레이어"
-  },
-  "videoHiderRestoreHiddenVideosTpl": {
-    "message": "숨긴 동영상 {count}개 복원됨"
-  },
-  "videoHiderSubsLoadControlsAria": {
-    "message": "구독 로드 컨트롤 열기"
-  },
-  "videoHiderSubsLoadChipTitle": {
-    "message": "구독 일시중지됨"
-  },
-  "videoHiderSubsLoadSummaryTpl": {
-    "message": "{loaded}개 중 {hidden}개 숨김"
-  },
-  "videoHiderSubsResume": {
-    "message": "재개"
-  },
-  "videoHiderSubsGuard": {
-    "message": "구독 보호"
-  },
-  "videoHiderSubsLoadPaused": {
-    "message": "구독 피드 일시중지됨"
-  },
-  "videoHiderSubsPauseReasonTpl": {
-    "message": "스캔한 동영상의 {percent}가 숨겨져 Astra Deck이 피드가 빈 배치를 더 처리하기 전에 자동 로드를 일시중지했습니다."
-  },
-  "videoHiderSubsResumeLoading": {
-    "message": "로드 재개"
-  },
-  "videoHiderSubsReviewFilters": {
-    "message": "필터 검토"
-  },
-  "videoHiderSubsKeepPaused": {
-    "message": "일시중지 유지"
-  },
-  "videoHiderSubsScannedStat": {
-    "message": "스캔됨"
-  },
-  "videoHiderSubsStreakStat": {
-    "message": "연속"
-  },
-  "videoHiderHiddenToast": {
-    "message": "동영상 숨김"
-  },
-  "videoHiderChannelBlockingDisabled": {
-    "message": "채널 차단이 비활성화됨"
-  },
-  "videoHiderBlockedChannelToast": {
-    "message": "차단됨: {name}"
-  },
-  "videoHiderAlreadyBlockedChannelToast": {
-    "message": "{name}은(는) 이미 차단됨"
-  },
-  "videoHiderRestorePageTitle": {
-    "message": "이 페이지의 숨긴 동영상 복원"
-  },
-  "videoHiderRestorePageNone": {
-    "message": "이 페이지에 숨긴 동영상 없음"
-  },
-  "videoHiderRestorePageTpl": {
-    "message": "이 페이지의 숨긴 동영상 {count}개 복원"
-  },
-  "videoHiderRemovePageNone": {
-    "message": "이 페이지에서 제거할 숨긴 동영상 없음"
-  },
-  "videoHiderRemovePageTpl": {
-    "message": "이 페이지의 숨긴 동영상 {count}개 제거"
-  },
-  "videoHiderNoVisibleVideos": {
-    "message": "숨길 수 있는 표시된 동영상 없음"
-  },
-  "videoHiderUndoAll": {
-    "message": "모두 실행 취소"
-  },
-  "videoHiderRestoredAllVideos": {
-    "message": "모든 동영상 복원됨"
-  },
-  "videoHiderRemovedPageTpl": {
-    "message": "이 페이지에서 숨긴 동영상 {count}개 제거됨"
-  },
-  "videoHiderQuickActionsAria": {
-    "message": "Video Hider 빠른 작업"
-  },
-  "videoHiderHiddenVideosRestored": {
-    "message": "숨긴 동영상 복원됨"
-  },
-  "videoHiderClearHiddenEntriesTpl": {
-    "message": "숨김 목록 항목 {count}개 지움"
-  },
-  "videoHiderHiddenListRestored": {
-    "message": "숨김 목록 복원됨"
-  },
-  "videoHiderClearAllowedVideosTpl": {
-    "message": "허용한 동영상 {count}개 지움"
-  },
-  "videoHiderAllowedVideosRestored": {
-    "message": "허용한 동영상 복원됨"
-  },
-  "settingsConflictWithTpl": {
-    "message": "{featureName}과(와) 충돌함"
-  },
-  "settingsAutoDisabledConflictTpl": {
-    "message": "자동으로 사용 중지됨: {features} — {reason}"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
@@ -6811,6 +6853,9 @@
   "videoHiderChannelAllowlistToggleDesc": {
     "message": "Only channels in Allowed Channels are considered by channel filtering. An empty list is safe and applies no channel filter."
   },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "채널 차단이 비활성화됨"
+  },
   "videoHiderChannelBlocklistCopy": {
     "message": "Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
   },
@@ -6832,11 +6877,92 @@
   "videoHiderChannelListCount": {
     "message": "{count} in Your List"
   },
+  "videoHiderChannelsRestored": {
+    "message": "채널 복원됨"
+  },
   "videoHiderClearAllowedChannels": {
     "message": "Clear Allowed Channels"
   },
+  "videoHiderClearAllowedTpl": {
+    "message": "허용한 동영상 지우기({count})"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "허용한 동영상 {count}개 지움"
+  },
   "videoHiderClearBlockedChannels": {
     "message": "Unblock All Channels"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "모든 채널 차단 해제({count})"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "숨김 목록 항목 {count}개 지움"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "숨김 목록만 지우기({count})"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "값이 낮으면 더 빨리 중지합니다. 값이 높으면 제한기가 작동하기 전에 더 많이 로드합니다."
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "연속 숨김 배치"
+  },
+  "videoHiderDaysSuffix": {
+    "message": "days old"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "선택한 최소 길이보다 짧은 동영상을 자동으로 숨깁니다."
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "길이 필터"
+  },
+  "videoHiderEnableAria": {
+    "message": "Video Hider 활성화"
+  },
+  "videoHiderFeatureOff": {
+    "message": "기능 꺼짐"
+  },
+  "videoHiderFeatureOn": {
+    "message": "기능 켜짐"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "필터 및 제한"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "동영상 {count}개 숨김"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "숨김 목록 복원됨"
+  },
+  "videoHiderHiddenReason": {
+    "message": "Video Hider가 숨김: {reason}"
+  },
+  "videoHiderHiddenToast": {
+    "message": "동영상 숨김"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "숨긴 동영상 {videoId} 미리보기 썸네일"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "복원할 때까지 추천에서 숨깁니다. 복원하면 예외를 추가하여 자동 규칙에서도 표시할 수 있습니다."
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "숨긴 동영상 복원됨"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "숨긴 동영상"
+  },
+  "videoHiderHideAgain": {
+    "message": "다시 숨기기"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "허용한 동영상 {videoId} 다시 숨기기"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "더빙, 자동 더빙 또는 대체 오디오로 표시된 카드를 숨깁니다."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "자동 더빙 동영상 숨기기"
   },
   "videoHiderHideButtonAllowChannel": {
     "message": "Hide this video (right-click to allow channel)"
@@ -6844,11 +6970,101 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
-  "videoHiderHiddenReason": {
-    "message": "Video Hider가 숨김: {reason}"
+  "videoHiderHideLiveDesc": {
+    "message": "지원되는 피드에 나타나는 현재 라이브 카드와 라이브 추천을 숨깁니다."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "라이브 스트림 숨기기"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "YouTube가 카드에 조회수를 표시할 때 기준 조회수보다 적은 동영상을 숨깁니다."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "조회수가 적은 동영상 숨기기"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "라디오 스타일 믹스와 자동 생성 추천 믹스를 숨깁니다."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "YouTube 믹스 숨기기"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "대여, 구매, 광고 포함 무료 및 영화로 표시된 카드를 숨깁니다."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "영화 숨기기"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "지원되는 피드 화면에서 재생목록 및 여러 동영상 카드를 숨깁니다."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "재생목록 카드 숨기기"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "예약됨, 예정됨 또는 알림이 설정된 동영상 카드를 숨깁니다."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "예정된 프리미어 숨기기"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "동영상 숨기기"
   },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
+  },
+  "videoHiderInvalidVideoInput": {
+    "message": "유효한 YouTube 동영상 URL 또는 11자리 동영상 ID를 입력하세요."
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!키워드가 일치를 항상 허용"
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "키워드가 일치 항목을 숨김"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i가 정규식 규칙을 실행함"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "키워드 규칙"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "비어 있음"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "사용 중"
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "reaction, unboxing, prank, shorts…"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "항목을 쉼표로 구분하세요. 이 필드를 업데이트하면 규칙이 즉시 적용됩니다."
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "키워드 및 규칙"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "제목 또는 채널 텍스트로 동영상을 숨깁니다. 쉼표로 구분된 키워드를 추가하고, 항상 일치를 허용하려면 !로, 정규식은 /로 시작하세요."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "구독 로드 제한기 사용"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "구독 피드 콘텐츠를 많이 숨기는 경우 권장합니다."
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "로드 제한기 사용"
+  },
+  "videoHiderLocalHeuristicsDesc": {
+    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+  },
+  "videoHiderLocalHeuristicsTitle": {
+    "message": "Local low-signal heuristics"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "이 조회수보다 적은 동영상은 낮은 조회수 필터가 켜져 있을 때만 숨깁니다."
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "조회수 낮음 기준"
   },
   "videoHiderMarkWatched": {
     "message": "Mark as watched"
@@ -6862,8 +7078,44 @@
   "videoHiderMarkedWatched": {
     "message": "Marked as watched"
   },
+  "videoHiderMinimumDurationDesc": {
+    "message": "0으로 이 규칙을 비활성화합니다."
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "최소 재생 시간"
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "분"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "동영상이 숨김 목록에 없습니다"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "동영상을 숨김 목록에서 허용 목록으로 이동함"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "숨길 수 있는 표시된 동영상 없음"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "허용한 동영상 {videoId}을(를) YouTube에서 열기"
+  },
+  "videoHiderOpenChannel": {
+    "message": "채널 열기"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "숨긴 동영상 {videoId}을(를) YouTube에서 열기"
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "YouTube에서 열기"
+  },
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "미리보기를 사용할 수 없음"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Video Hider 빠른 작업"
   },
   "videoHiderReasonAutoDubbed": {
     "message": "자동 더빙 필터"
@@ -6883,23 +7135,17 @@
   "videoHiderReasonLive": {
     "message": "라이브 스트림 필터"
   },
-  "videoHiderReasonLowView": {
-    "message": "낮은 조회수 필터"
-  },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonLowSignal": {
     "message": "the low-signal view/age filter"
   },
-  "videoHiderReasonUploadCadence": {
-    "message": "the upload-cadence filter"
-  },
-  "videoHiderReasonMarkedWatched": {
-    "message": "로컬 시청 완료 표시"
+  "videoHiderReasonLowView": {
+    "message": "낮은 조회수 필터"
   },
   "videoHiderReasonManual": {
     "message": "저장한 숨김 목록"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "로컬 시청 완료 표시"
   },
   "videoHiderReasonMix": {
     "message": "YouTube Mix 필터"
@@ -6913,17 +7159,122 @@
   "videoHiderReasonPredicate": {
     "message": "고급 로컬 규칙"
   },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
+  },
   "videoHiderReasonUpcoming": {
     "message": "예정된 공개 필터"
+  },
+  "videoHiderReasonUploadCadence": {
+    "message": "the upload-cadence filter"
   },
   "videoHiderReasonWatchedRatio": {
     "message": "시청 비율 필터"
   },
+  "videoHiderRememberRestoredDesc": {
+    "message": "복원한 동영상을 허용한 동영상에 추가하여 다른 규칙과 계속 일치해도 표시합니다."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "복원한 동영상 기억"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "허용한 동영상 {videoId}의 예외 삭제"
+  },
+  "videoHiderRemoveException": {
+    "message": "예외 삭제"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "목록에서 삭제"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "사용하면 일치하는 동영상이 CSS로만 숨겨지지 않고 피드 DOM에서 삭제됩니다."
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "숨긴 카드 자동 삭제"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "예외를 추가하지 않고 숨긴 동영상 {videoId}을(를) 목록에서 삭제"
+  },
+  "videoHiderRemovePage": {
+    "message": "이 페이지의 숨긴 동영상 삭제"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "이 페이지에서 제거할 숨긴 동영상 없음"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "이 페이지의 숨긴 동영상 {count}개 제거"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "동영상을 숨김 목록에서 삭제함"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "이 페이지에서 숨긴 동영상 {count}개 제거됨"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "숨긴 동영상 모두 복원 및 허용({count})"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "복원 및 허용"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "숨긴 동영상 {videoId}을(를) 복원하고 허용 예외 추가"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "숨긴 동영상 {count}개 복원됨"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "이 페이지에 숨긴 동영상 없음"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "이 페이지의 숨긴 동영상 복원"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "이 페이지의 숨긴 동영상 {count}개 복원"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "모든 동영상 복원됨"
+  },
   "videoHiderRuleGuardTpl": {
     "message": "동영상 숨기기 필터가 {total}개 중 {count}개에 일치하여 그대로 표시했습니다."
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "채널 홈, 동영상, 라이브 및 재생목록 화면에 규칙을 적용합니다."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "채널 페이지"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "YouTube 홈 피드의 일치 항목을 숨깁니다."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "홈"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "기타 탐색 화면에서도 Video Hider를 활성화합니다."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "기타 YouTube 화면"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "검색 결과 페이지에 동영상 및 채널 규칙을 적용합니다."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "검색 결과"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "구독 피드의 일치 항목을 숨기고 일괄 제어를 표시합니다."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "구독"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "플레이어 옆과 아래의 추천에 규칙을 적용합니다."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "시청 페이지"
   },
   "videoHiderShowFilterReasonDesc": {
     "message": "각 숨긴 카드 옆에 어떤 로컬 규칙이 일치했는지 설명하는 짧은 메모를 표시합니다."
@@ -6931,29 +7282,95 @@
   "videoHiderShowFilterReasonTitle": {
     "message": "숨긴 카드 이유 표시"
   },
-  "videoHiderLocalHeuristicsTitle": {
-    "message": "Local low-signal heuristics"
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "지원되는 동영상 썸네일에 X 버튼을 표시하여 한 번에 숨깁니다."
   },
-  "videoHiderLocalHeuristicsDesc": {
-    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "썸네일 숨기기 버튼 표시"
   },
-  "videoHiderViewsSuffix": {
-    "message": "views"
+  "videoHiderSubsGuard": {
+    "message": "구독 보호"
   },
-  "videoHiderDaysSuffix": {
-    "message": "days old"
+  "videoHiderSubsKeepPaused": {
+    "message": "일시중지 유지"
   },
-  "videoHiderUploadsPerDaySuffix": {
-    "message": "uploads/day"
+  "videoHiderSubsLoadChipTitle": {
+    "message": "구독 일시중지됨"
+  },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "구독 로드 컨트롤 열기"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "구독 피드 일시중지됨"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "{loaded}개 중 {hidden}개 숨김"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "스캔한 동영상의 {percent}가 숨겨져 Astra Deck이 피드가 빈 배치를 더 처리하기 전에 자동 로드를 일시중지했습니다."
+  },
+  "videoHiderSubsResume": {
+    "message": "재개"
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "로드 재개"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "필터 검토"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "스캔됨"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "연속"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "연속된 배치가 너무 많이 모두 숨겨지면 구독 피드의 무한 로드를 중지합니다."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "구독 로드 제한기"
+  },
+  "videoHiderTabsAria": {
+    "message": "Video Hider 섹션"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "채널 {channelName} 차단 해제"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "채널 {count}개 차단 해제됨"
+  },
+  "videoHiderUndoAll": {
+    "message": "모두 실행 취소"
   },
   "videoHiderUnmarkWatched": {
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
     "message": "시청함 표시를 제거했습니다"
+  },
+  "videoHiderUploadsPerDaySuffix": {
+    "message": "uploads/day"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "동영상 ID"
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderViewsSuffix": {
+    "message": "views"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "0으로 비활성화합니다. 이 비율 이상 재생된 카드가 숨겨집니다."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "시청 비율 숨기기"
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "시청 %"
   },
   "videoInsightsCategory": {
     "message": "카테고리"
@@ -7181,6 +7598,12 @@
     "message": "시청 시간 — 최근 30일",
     "description": "Heading of the watch-time dashboard overlay"
   },
+  "whatsNewDetailFromTpl": {
+    "message": "v{previous}에서 v{version}(으)로 업데이트됨. 변경 사항 보기."
+  },
+  "whatsNewDetailTpl": {
+    "message": "v{version}(으)로 업데이트됨. 변경 사항 보기."
+  },
   "whatsNewDismiss": {
     "message": "Dismiss"
   },
@@ -7193,14 +7616,14 @@
   "whatsNewTitle": {
     "message": "Updated"
   },
-  "wlwbChannelAria": {
-    "message": "채널 이름 필터"
-  },
-  "wlwbChannelPlaceholder": {
-    "message": "채널에 포함…"
-  },
   "wlwbAgeAria": {
     "message": "동영상 최소 경과 일수"
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days}일"
+  },
+  "wlwbAgeLoading": {
+    "message": "업로드 날짜를 불러오는 중…"
   },
   "wlwbAgePlaceholder": {
     "message": "이 일수보다 오래됨…"
@@ -7208,11 +7631,11 @@
   "wlwbAgeUnavailableTpl": {
     "message": "로드된 행 {count}개는 업로드 연령을 읽을 수 없어 연령 필터에서 제외됩니다."
   },
-  "wlwbAgeDaysTpl": {
-    "message": "{days}일"
+  "wlwbChannelAria": {
+    "message": "채널 이름 필터"
   },
-  "wlwbAgeLoading": {
-    "message": "업로드 날짜를 불러오는 중…"
+  "wlwbChannelPlaceholder": {
+    "message": "채널에 포함…"
   },
   "wlwbCloseAria": {
     "message": "워크벤치 닫기"
@@ -7244,6 +7667,9 @@
   "wlwbNoMatches": {
     "message": "제거할 일치 항목이 없습니다"
   },
+  "wlwbNothingToUndo": {
+    "message": "나중에 볼 동영상에서 삭제된 항목 중 실행 취소할 항목이 없습니다."
+  },
   "wlwbOpenAria": {
     "message": "나중에 볼 동영상 워크벤치 열기"
   },
@@ -7253,9 +7679,6 @@
   "wlwbPanelAria": {
     "message": "나중에 볼 동영상 워크벤치"
   },
-  "wlwbRemovalLogBtn": {
-    "message": "제거 기록"
-  },
   "wlwbRecoveryEmpty": {
     "message": "복구를 기다리는 삭제된 동영상이 없습니다."
   },
@@ -7264,6 +7687,9 @@
   },
   "wlwbRecoveryTitle": {
     "message": "복구"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "제거 기록"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "일치 항목 제거(실행당 최대 {limit}개)"
@@ -7276,6 +7702,18 @@
   },
   "wlwbRemovingTpl": {
     "message": "{current} / {total}개 삭제 중…"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "{title}을(를) 복원할 수 없습니다: {error}"
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "삭제된 동영상 {total}개 중 {restored}개를 나중에 볼 동영상으로 복원했습니다."
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "{title}을(를) 나중에 볼 동영상으로 복원했습니다"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
   },
   "wlwbRowTitleTpl": {
     "message": "{title} — {channel}({percent}% 시청함)"
@@ -7295,45 +7733,6 @@
   "wlwbSortTitle": {
     "message": "제목 A–Z"
   },
-  "wlwbStatusTpl": {
-    "message": "불러온 동영상 {loaded}개 중 {matched}개가 일치합니다. 실행 전에 재생목록을 스크롤하여 더 많은 행을 불러오세요."
-  },
-  "wlwbTitleAria": {
-    "message": "제목 필터"
-  },
-  "wlwbTitlePlaceholder": {
-    "message": "제목에 포함…"
-  },
-  "wlwbNothingToUndo": {
-    "message": "나중에 볼 동영상에서 삭제된 항목 중 실행 취소할 항목이 없습니다."
-  },
-  "wlwbRestoredBatchTpl": {
-    "message": "삭제된 동영상 {total}개 중 {restored}개를 나중에 볼 동영상으로 복원했습니다."
-  },
-  "wlwbRestoredItemTpl": {
-    "message": "{title}을(를) 나중에 볼 동영상으로 복원했습니다"
-  },
-  "wlwbRestoreFailedTpl": {
-    "message": "{title}을(를) 복원할 수 없습니다: {error}"
-  },
-  "wlwbRowMetaTpl": {
-    "message": "{percent}% · {duration} · {age}"
-  },
-  "wlwbUndoAll": {
-    "message": "모두 실행 취소"
-  },
-  "wlwbUndoItem": {
-    "message": "실행 취소"
-  },
-  "wlwbWatchedAria": {
-    "message": "최소 시청 비율 필터"
-  },
-  "wlwbWatchedPlaceholder": {
-    "message": "시청 ≥ %(예: 90)"
-  },
-  "wlwbWatchedStateAria": {
-    "message": "시청 상태 필터"
-  },
   "wlwbStateAny": {
     "message": "모든 시청 상태"
   },
@@ -7346,11 +7745,35 @@
   "wlwbStateWatched": {
     "message": "시청함(90% 이상)"
   },
+  "wlwbStatusTpl": {
+    "message": "불러온 동영상 {loaded}개 중 {matched}개가 일치합니다. 실행 전에 재생목록을 스크롤하여 더 많은 행을 불러오세요."
+  },
+  "wlwbTitleAria": {
+    "message": "제목 필터"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "제목에 포함…"
+  },
+  "wlwbUndoAll": {
+    "message": "모두 실행 취소"
+  },
+  "wlwbUndoItem": {
+    "message": "실행 취소"
+  },
   "wlwbUnknownAge": {
     "message": "연령 ?"
   },
   "wlwbUnknownDuration": {
     "message": "길이 ?"
+  },
+  "wlwbWatchedAria": {
+    "message": "최소 시청 비율 필터"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "시청 ≥ %(예: 90)"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "시청 상태 필터"
   },
   "workspaceEyebrow": {
     "message": "설정 작업 공간"
@@ -7366,425 +7789,5 @@
   },
   "youtubeStateRestoreToast": {
     "message": "YouTube state restored ({count}). Reload the page to apply it."
-  },
-  "feature_logarithmicVolume_desc": {
-    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
-  },
-  "feature_logarithmicVolume_name": {
-    "message": "Logarithmic Volume Curve"
-  },
-  "feature_sponsoredContentFilter_desc": {
-    "message": "스폰서 또는 제휴 홍보로 보이는 댓글과 설명 블록을 접습니다. 각 항목에 일치 이유가 표시되며 항목별로 복원할 수 있습니다."
-  },
-  "feature_sponsoredContentFilter_name": {
-    "message": "스폰서 콘텐츠 필터"
-  },
-  "sponsoredFilterCommentLabel": {
-    "message": "스폰서 댓글"
-  },
-  "sponsoredFilterDescriptionLabel": {
-    "message": "스폰서 설명"
-  },
-  "sponsoredFilterHideTpl": {
-    "message": "{label} 숨기기 — {reason}"
-  },
-  "sponsoredFilterShowTpl": {
-    "message": "{label} 표시 — {reason}"
-  },
-  "sponsoredFilterAffiliateReason": {
-    "message": "제휴 홍보"
-  },
-  "sponsoredFilterSponsorReason": {
-    "message": "스폰서 표시"
-  },
-  "languageAutoDetectedTpl": {
-    "message": "{label} — {detected}"
-  },
-  "resultsCountTpl": {
-    "message": "{count} {controls}"
-  },
-  "resultsVisibleTpl": {
-    "message": "{count}개 일치"
-  },
-  "quickGroupCountTpl": {
-    "message": "{enabled}/{total}"
-  },
-  "selectorHealthCtxCountTpl": {
-    "message": "{ctx}: {count}"
-  },
-  "schemaResetTitleTpl": {
-    "message": "{key}을(를) 기본값으로 재설정({value})"
-  },
-  "schemaResetAriaTpl": {
-    "message": "{key}을(를) 기본값으로 재설정"
-  },
-  "whatsNewDetailTpl": {
-    "message": "v{version}(으)로 업데이트됨. 변경 사항 보기."
-  },
-  "whatsNewDetailFromTpl": {
-    "message": "v{previous}에서 v{version}(으)로 업데이트됨. 변경 사항 보기."
-  },
-  "toggleStatusTpl": {
-    "message": "{name}: {state}."
-  },
-  "quickToggleAriaTpl": {
-    "message": "{name}. {description}. {state}.{permission}"
-  },
-  "statusImportSummaryTpl": {
-    "message": "{status} {preview}"
-  },
-  "advancedFiltersTitle": {
-    "message": "고급 필터"
-  },
-  "advancedFiltersHint": {
-    "message": "risk:, category:, scope: 또는 profile:을 사용하세요. 공백은 필터를 결합하고 쉼표는 대안을 찾습니다."
-  },
-  "filterTogglesHelpTitle": {
-    "message": "자유 텍스트는 이름, 설명, 키, 번역된 라벨과 일치합니다. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk, category:<name>, scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup, profile:store-safe|github-full|both. 공백(AND)과 쉼표(필드 내 OR)로 결합하세요."
-  },
-  "qt_privacyDataFlowPanel_name": {
-    "message": "데이터 흐름 패널"
-  },
-  "qt_privacyDataFlowPanel_desc": {
-    "message": "Astra Deck이 연결할 수 있는 모든 API 출처 표시"
-  },
-  "qt_safeStoreProfile_name": {
-    "message": "Store-Safe 프로필"
-  },
-  "qt_safeStoreProfile_desc": {
-    "message": "github-full 토글을 숨기고 내보낼 때 키 정리"
-  },
-  "qt_githubFullProfile_name": {
-    "message": "GitHub-Full 프로필"
-  },
-  "qt_githubFullProfile_desc": {
-    "message": "github-full 토글 잠금 해제(Cobalt, AI 키 등)"
-  },
-  "qtGroup_Privacy": {
-    "message": "개인정보 보호"
-  },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
-  "aiCredentialReplaceHint": {
-    "message": "자격 증명이 설정되어 있습니다. 바꿀 새 값을 입력하세요. 저장된 값은 표시되지 않습니다."
-  },
-  "aiCredentialStoreHint": {
-    "message": "userscript 관리자에만 저장되며 Astra Deck 설정 및 내보내기에는 포함되지 않습니다."
-  },
-  "spPerfRowAriaTpl": {
-    "message": "{feature}: {ms}ms"
-  },
-  "spSettingRowTitleTpl": {
-    "message": "{key} ({category})"
-  },
-  "transcriptNoVideoId": {
-    "message": "동영상 ID를 찾을 수 없습니다"
-  },
-  "transcriptFetching": {
-    "message": "스크립트를 가져오는 중…"
-  },
-  "transcriptUnavailable": {
-    "message": "이 동영상에는 사용할 수 있는 스크립트가 없습니다"
-  },
-  "transcriptDownloadedTpl": {
-    "message": "스크립트를 다운로드했습니다! ({count}개 세그먼트)"
-  },
-  "dwDailyLimitTitle": {
-    "message": "일일 한도에 도달했습니다"
-  },
-  "dwBreakTitle": {
-    "message": "잠시 쉬세요"
-  },
-  "playerDockHomeLink": {
-    "message": "홈으로 이동"
-  },
-  "sponsorBlockDataAttribution": {
-    "message": "SponsorBlock 데이터"
-  },
-  "sponsorBlockDataAttributionTitle": {
-    "message": "SponsorBlock API/데이터베이스 데이터 — CC BY-NC-SA 4.0"
-  },
-  "sponsorCachedSegmentTitleTpl": {
-    "message": "{label} ({time}에 캐시됨)"
-  },
-  "ui_rydEstimateDisclosure": {
-    "message": "Return YouTube Dislike 수치는 YouTube가 공개 싫어요 총계를 제거한 후의 추정치이며, 조회수가 적은 동영상에서는 정확도가 낮을 수 있습니다."
-  },
-  "ui_rydPaused": {
-    "message": "RYD 일시중지"
-  },
-  "ui_rydPausedTitleTpl": {
-    "message": "Return YouTube Dislike 일시중지 — 요청 제한됨({used}/{limit}/분). {seconds}초 후 재개됩니다."
-  },
-  "ui_rydOff": {
-    "message": "RYD 꺼짐"
-  },
-  "ui_rydUnavailableTitle": {
-    "message": "Return YouTube Dislike를 사용할 수 없습니다. API가 유효한 응답을 반환하지 않았습니다. 네트워크를 확인하거나 나중에 다시 시도하세요."
-  },
-  "ui_rydCachedTitleHoursTpl": {
-    "message": "Return YouTube Dislike 싫어요 수 캐시됨({hours}시간 전)."
-  },
-  "ui_rydCachedTitleRecent": {
-    "message": "Return YouTube Dislike 싫어요 수 캐시됨(1시간 이내)."
-  },
-  "ui_rydLiveTitleTpl": {
-    "message": "Return YouTube Dislike 실시간 싫어요 수({used}/{limit}/분 사용). {estimate}"
-  },
-  "ui_rydCountAriaTpl": {
-    "message": "싫어요 약 {count}개. {estimate}"
-  },
-  "ui_rydEstimateShort": {
-    "message": "추정"
-  },
-  "ui_rydRatioTpl": {
-    "message": "좋아요 {ratio}%"
-  },
-  "ui_rydRatioTitleTpl": {
-    "message": "좋아요 비율은 Return YouTube Dislike 추정 수치를 사용합니다. {estimate}"
-  },
-  "stickyVideoSubscriptionsLink": {
-    "message": "구독으로 이동"
-  },
-  "stickyVideoQuickLinksAria": {
-    "message": "빠른 링크"
-  },
-  "stickyVideoLiveVideoFallback": {
-    "message": "라이브 동영상"
-  },
-  "stickyVideoLiveInfoAria": {
-    "message": "라이브 동영상 정보"
-  },
-  "stickyVideoLiveBadge": {
-    "message": "실시간"
-  },
-  "stickyVideoLiveActionsAria": {
-    "message": "라이브 동영상 작업"
-  },
-  "stickyVideoVideoActionsAria": {
-    "message": "동영상 작업"
-  },
-  "stickyVideoCloseSidePanelTitle": {
-    "message": "사이드 패널 닫기"
-  },
-  "timestampBookmarkAlreadyExists": {
-    "message": "이 위치에는 이미 북마크가 있습니다"
-  },
-  "timestampBookmarkAddedTpl": {
-    "message": "{time}에 북마크함"
-  },
-  "timestampBookmarkRemovedTpl": {
-    "message": "{time}의 북마크 삭제됨"
-  },
-  "timestampBookmarkRestoredTpl": {
-    "message": "{time}의 북마크 복원됨"
-  },
-  "timestampBookmarksSavedTpl": {
-    "message": "{count}개 저장됨"
-  },
-  "timestampBookmarksSavedStatus": {
-    "message": "저장한 순간으로 돌아가 각 항목 옆에 짧은 메모를 남길 수 있습니다."
-  },
-  "timestampBookmarksEmptyStatus": {
-    "message": "중요한 순간을 저장해 두면 탐색 막대 없이 다시 볼 수 있습니다."
-  },
-  "timestampBookmarksRegionAriaTpl": {
-    "message": "이 동영상의 북마크 {count}개"
-  },
-  "timestampBookmarksEmptyTitle": {
-    "message": "북마크가 아직 없습니다"
-  },
-  "timestampBookmarksEmptyCopy": {
-    "message": "‘현재 시간 저장’을 사용해 동영상의 순간을 고정하고 나중에 다시 볼 메모를 추가하세요."
-  },
-  "timestampBookmarksJumpAriaTpl": {
-    "message": "{time}(으)로 이동"
-  },
-  "timestampBookmarksJumpLabel": {
-    "message": "순간으로 이동"
-  },
-  "timestampBookmarksSavedNoteMeta": {
-    "message": "저장된 메모 포함"
-  },
-  "timestampBookmarksAddNoteMeta": {
-    "message": "중요한 이유를 기억할 메모 추가"
-  },
-  "timestampBookmarksNotePlaceholder": {
-    "message": "메모 추가…"
-  },
-  "timestampBookmarksNoteAriaTpl": {
-    "message": "{time} 북마크 메모"
-  },
-  "timestampBookmarksNoteLabel": {
-    "message": "메모"
-  },
-  "timestampBookmarksDeleteAriaTpl": {
-    "message": "{time} 북마크 삭제"
-  },
-  "timestampBookmarksEyebrow": {
-    "message": "다시 보기"
-  },
-  "timestampBookmarksSaveCurrentTime": {
-    "message": "현재 시간 저장"
-  },
-  "videoHiderAllowedChannelsCountTpl": {
-    "message": "허용된 채널 {count}개"
-  },
-  "videoHiderKeywordStatusLive": {
-    "message": "사용 중"
-  },
-  "videoHiderKeywordStatusEmpty": {
-    "message": "비어 있음"
-  },
-  "videoHiderAddedHiddenVideoToast": {
-    "message": "동영상을 숨김 목록에 추가함"
-  },
-  "videoHiderAlreadyHiddenVideoToast": {
-    "message": "동영상이 이미 숨겨져 있습니다"
-  },
-  "videoHiderRemovedHiddenVideoToast": {
-    "message": "동영상을 숨김 목록에서 삭제함"
-  },
-  "videoHiderMissingHiddenVideoToast": {
-    "message": "동영상이 숨김 목록에 없습니다"
-  },
-  "videoHiderAddedAllowedVideoToast": {
-    "message": "동영상을 허용 목록에 추가함"
-  },
-  "videoHiderMovedHiddenVideoToast": {
-    "message": "동영상을 숨김 목록에서 허용 목록으로 이동함"
-  },
-  "videoHiderAlreadyAllowedVideoToast": {
-    "message": "동영상이 이미 허용되어 있습니다"
-  },
-  "videoHiderKeywordsRulesSectionCopy": {
-    "message": "제목 또는 채널 텍스트로 동영상을 숨깁니다. 쉼표로 구분된 키워드를 추가하고, 항상 일치를 허용하려면 !로, 정규식은 /로 시작하세요."
-  },
-  "videoHiderKeywordHintHide": {
-    "message": "키워드가 일치 항목을 숨김"
-  },
-  "videoHiderKeywordHintAllow": {
-    "message": "!키워드가 일치를 항상 허용"
-  },
-  "videoHiderKeywordHintRegex": {
-    "message": "/pattern/i가 정규식 규칙을 실행함"
-  },
-  "videoHiderDurationFilterTitle": {
-    "message": "길이 필터"
-  },
-  "videoHiderDurationFilterDesc": {
-    "message": "선택한 최소 길이보다 짧은 동영상을 자동으로 숨깁니다."
-  },
-  "videoHiderSubscriptionLoadLimiterTitle": {
-    "message": "구독 로드 제한기"
-  },
-  "videoHiderSubscriptionLoadLimiterDesc": {
-    "message": "연속된 배치가 너무 많이 모두 숨겨지면 구독 피드의 무한 로드를 중지합니다."
-  },
-  "settingsDownloaderTitle": {
-    "message": "Astra Downloader"
-  },
-  "settingsHealthNeedsAttention": {
-    "message": "주의 필요"
-  },
-  "settingsImportReadFailed": {
-    "message": "가져오기 파일을 읽을 수 없습니다"
-  },
-  "selectorHealthExportAria": {
-    "message": "선택기 상태를 JSON으로 내보내기"
-  },
-  "dataFlowFilterListGrantPurpose": {
-    "message": "액세스가 제거될 때까지 Video Hider가 이 사이트에서 데이터를 가져올 수 있습니다."
-  },
-  "dataFlowGrantedHostsCountTpl": {
-    "message": "{count}개 허용됨"
-  },
-  "dataFlowGrantedHostsTitle": {
-    "message": "허용된 사이트 액세스"
-  },
-  "dataFlowGrantRemove": {
-    "message": "액세스 제거"
-  },
-  "dataFlowGrantRemoveAriaTpl": {
-    "message": "{host} 사이트 액세스 제거"
-  },
-  "dataFlowGrantRemovedTpl": {
-    "message": "{host} 사이트 액세스를 제거했습니다."
-  },
-  "dataFlowGrantRemoveFailedTpl": {
-    "message": "{host} 사이트 액세스를 제거할 수 없습니다."
-  },
-  "filterListStopFailed": {
-    "message": "필터 목록 구독을 중지할 수 없습니다."
-  },
-  "filterListStoppedTpl": {
-    "message": "{host} 구독을 중지했습니다. 필터 목록 전용 사이트 액세스는 남아 있지 않습니다."
-  },
-  "transcriptSourcePlayerGlobal": {
-    "message": "현재 페이지의 플레이어 데이터"
-  },
-  "transcriptSourceInnertube": {
-    "message": "새로 가져온 YouTube 플레이어 데이터"
-  },
-  "transcriptSourceWatchPage": {
-    "message": "새로 가져온 YouTube 시청 페이지"
-  },
-  "transcriptSourcePanel": {
-    "message": "현재 YouTube 스크립트 패널"
-  },
-  "transcriptSourceUnknown": {
-    "message": "YouTube 자막"
-  },
-  "transcriptLanguageUnknown": {
-    "message": "알 수 없는 언어"
-  },
-  "transcriptPanelFallback": {
-    "message": "패널 대체 경로"
-  },
-  "transcriptMetaPanelTpl": {
-    "message": "{source}에서 로드됨({age}); {language}."
-  },
-  "transcriptRefreshedTrack": {
-    "message": "트랙 새로 고침"
-  },
-  "transcriptMetaRefreshedTpl": {
-    "message": "만료된 자막 URL을 {source}에서 교체함; 가져온 시각: {age}; {language}."
-  },
-  "transcriptExpiryUnknown": {
-    "message": "표시되지 않음"
-  },
-  "transcriptMetaSourceTpl": {
-    "message": "{source}에서 로드됨({age}); {language}; 트랙 URL 만료: {expires}."
-  },
-  "transcriptTimeUnknown": {
-    "message": "알 수 없는 시각"
-  },
-  "transcriptNoCaptions": {
-    "message": "자막 없음"
-  },
-  "transcriptUnavailableLabel": {
-    "message": "사용할 수 없음"
-  },
-  "transcriptUnavailableNow": {
-    "message": "현재 YouTube에서 스크립트를 가져올 수 없습니다."
-  },
-  "transcriptLoadFailed": {
-    "message": "스크립트를 불러오지 못했습니다"
-  },
-  "transcriptNoCaptionsHelp": {
-    "message": "자막이 있는 다른 동영상을 시도하거나 자막 로드가 끝난 뒤 이 패널을 다시 여세요."
-  },
-  "transcriptRetryHelp": {
-    "message": "자막 처리 중이라면 페이지를 새로 고치거나 잠시 후 다시 시도하세요."
-  },
-  "transcriptIndexUsageLoading": {
-    "message": "로컬 색인을 측정하는 중…"
-  },
-  "transcriptIndexUsageTpl": {
-    "message": "동영상 {maxCount}개 중 {count}개 색인됨, {budget} 중 {size}. 오래된 항목부터 삭제됩니다."
-  },
-  "transcriptIndexUsageFailed": {
-    "message": "로컬 색인을 측정할 수 없습니다."
   }
 }

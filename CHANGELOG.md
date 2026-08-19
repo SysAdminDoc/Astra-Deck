@@ -19,6 +19,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- CSV exports no longer let a video title execute as a spreadsheet formula.
+  Download history, Watch Later, Subscription Groups and the study/work export
+  each had their own escaper; two quoted cells only, and a third detected a
+  leading `=`, `+`, `-` or `@` but responded by quoting, which does not stop
+  Excel, LibreOffice or Sheets evaluating it. All four now share one writer
+  that neutralizes the formula lead before quoting. A truncated download-history
+  export also says so instead of silently capping at 500 rows.
 - Astra Deck will no longer click a button inside any YouTube dialog that
   identifies itself as an age, identity, consent, captcha, or sign-in surface,
   and will not auto-click anywhere else on the page while one of those is open.

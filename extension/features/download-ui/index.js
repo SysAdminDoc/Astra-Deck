@@ -10,6 +10,8 @@
     // dependencies; this file is the extension's canonical implementation.
 
     const DOWNLOAD_HEALTH_SCHEMA_VERSION = 2;
+    // Rows one CSV export will carry. The user is told when it truncates.
+    const EXPORT_ROW_LIMIT = 500;
     const COOKIE_HANDOFF_DISCLOSURE_KEY = 'ytkit_cookie_handoff_disclosed_v1';
     const COOKIE_HANDOFF_PROTOCOL_VERSION = 1;
     const COOKIE_HANDOFF_MINIMUM_API = 2;
@@ -3001,7 +3003,14 @@
             },
 
             _csvCell(value) {
-                return `"${String(value ?? '').replaceAll('"', '""')}"`;
+                // Shared writer: neutralizes spreadsheet formula injection
+                // before quoting. Titles and filenames are uploader-controlled
+                // text, so a cell can legitimately begin with `=`.
+                const shared = globalThis.YTKitCore && globalThis.YTKitCore.csvCell;
+                if (typeof shared === 'function') return shared(value);
+                const text = String(value ?? '');
+                const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+                return `"${safe.replaceAll('"', '""')}"`;
             },
 
             async _exportFiltered(button) {
@@ -3009,7 +3018,7 @@
                 button.disabled = true;
                 button.textContent = t('dlHistoryExporting', 'Exporting…');
                 try {
-                    const data = await this._fetchHistory({ offset: 0, limit: 500 });
+                    const data = await this._fetchHistory({ offset: 0, limit: EXPORT_ROW_LIMIT });
                     if (!data) {
                         showToast(t('dlHistoryUnreachable', 'Astra Downloader unreachable. Start Astra Downloader and try again.'), '#ef4444');
                         return;
@@ -3033,6 +3042,17 @@
                     anchor.click();
                     anchor.remove();
                     setTimeout(() => URL.revokeObjectURL(href), 0);
+                    // The fetch above is capped at 500 rows. Saying so is the
+                    // difference between a truncated export and a silently
+                    // incomplete one the user believes is their full history.
+                    if (data.history.length >= EXPORT_ROW_LIMIT) {
+                        showToast(
+                            t('dlHistoryExportTruncatedTpl', `Exported the most recent ${EXPORT_ROW_LIMIT} downloads. Narrow the filters to export older entries.`)
+                                .replace('{count}', String(EXPORT_ROW_LIMIT)),
+                            '#f59e0b',
+                            { duration: 6 }
+                        );
+                    }
                 } finally {
                     button.disabled = false;
                     button.textContent = oldText;
