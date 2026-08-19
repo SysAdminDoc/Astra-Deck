@@ -166,6 +166,12 @@
     "message": "{count} 秒",
     "description": "Buffer target slider value rendered in seconds"
   },
+  "featureScheduleDaysTpl": {
+    "message": "Active {window} on {days}"
+  },
+  "featureScheduleEveryDayTpl": {
+    "message": "Active {window} every day"
+  },
   "feature_antiTranslateThumbnails_desc": {
     "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
   },

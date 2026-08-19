@@ -142,6 +142,7 @@
     // ── bundled module: extension/core/hide-attribution.js ──
     // ── bundled module: extension/core/heatmap.js ──
     // ── bundled module: extension/core/youtube-thumbnails.js ──
+    // ── bundled module: extension/core/feature-schedule.js ──
     // ── bundled module: extension/core/companion-ports.js ──
     // ── bundled module: extension/core/data-flow.js ──
     // ── bundled module: extension/core/toast.js ──

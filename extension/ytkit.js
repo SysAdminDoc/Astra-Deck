@@ -33,6 +33,8 @@
         parseOEmbedMetadata,
         parseThumbnailUrl,
         resolveOriginalThumbnail,
+        normalizeFeatureSchedules,
+        planScheduleTransitions,
         getHideAttributionCounts,
         markCardHidden,
         resetHideAttribution,
@@ -3965,6 +3967,8 @@ return response;
             qualityDefaultEmbed: 'inherit',
             antiTranslateAudioTrack: false,            // Force original audio track on every video
             antiTranslateThumbnails: false,            // Restore the original-language thumbnail image
+            featureSchedules: {},                      // featureId -> { start, end, days, enabled } active window
+            _scheduleRestore: {},                      // featureId -> value held from before its window opened
             antiTranslateTranscript: false,            // Force original-language transcript view
             monetizationIndicator: false,              // Surface 'sponsored', 'monetized off', mid-roll counts
             // v3.29.0 — Subscription manager
@@ -5595,6 +5599,97 @@ return response;
         });
     }
 
+    // v4.69.0 — schedule-driven activation ("focus hours").
+    //
+    // Any boolean feature can carry an active window in `featureSchedules`.
+    // Three properties are load-bearing:
+    //
+    //   NO ALARMS PERMISSION. One local setTimeout, re-armed at whatever the
+    //   planner says is the next boundary across all schedules. The page can
+    //   work this out itself, so asking the browser for an alarm would be a
+    //   new permission bought for nothing.
+    //
+    //   RESTORE, NEVER DEFAULT. When a window opens we record what the user
+    //   had; when it closes we put that back. Writing the schema default
+    //   instead would quietly discard a preference the schedule never owned.
+    //
+    //   THE LEDGER IS LOCAL. `_scheduleRestore` is internal and does not
+    //   travel with an export: it describes a moment on one device, and
+    //   importing someone else's mid-window state would restore values the
+    //   importing user never set.
+    let _scheduleTimer = null;
+    // A schedule cannot fire more finely than a minute, and a long timer can
+    // be arbitrarily late after a laptop sleeps, so re-check at least this
+    // often as well as on the computed boundary.
+    const SCHEDULE_MAX_SLEEP_MS = 5 * 60 * 1000;
+
+    function applyFeatureSchedules(source = 'schedule') {
+        if (typeof planScheduleTransitions !== 'function') return null;
+        const settings = appState.settings || {};
+        const plan = planScheduleTransitions({
+            schedules: settings.featureSchedules,
+            settings,
+            saved: settings._scheduleRestore,
+            now: new Date()
+        });
+
+        const nextRestore = { ...plan.saved };
+        let changed = false;
+
+        for (const { featureId } of plan.activate) {
+            if (settings[featureId] !== true) {
+                settings[featureId] = true;
+                changed = true;
+            }
+        }
+        for (const { featureId, value } of plan.restore) {
+            if (settings[featureId] !== value) {
+                settings[featureId] = value;
+                changed = true;
+            }
+            delete nextRestore[featureId];
+        }
+
+        if (JSON.stringify(settings._scheduleRestore || {}) !== JSON.stringify(nextRestore)) {
+            settings._scheduleRestore = nextRestore;
+            changed = true;
+        }
+
+        if (changed) {
+            try {
+                settingsManager.save(settings);
+                applyExternalSettingsUpdate({ source, nextSettings: settings });
+            } catch (error) {
+                DebugManager.log('Schedule', `Failed to apply schedule transition: ${error?.message || error}`);
+            }
+        }
+        return plan;
+    }
+
+    function scheduleNextFeatureScheduleTick(plan) {
+        if (_scheduleTimer) clearTimeout(_scheduleTimer);
+        _scheduleTimer = null;
+        if (!plan || plan.scheduleCount === 0) return;
+        const boundary = Number.isFinite(plan.nextBoundaryMs) ? plan.nextBoundaryMs : SCHEDULE_MAX_SLEEP_MS;
+        // +1s so the timer lands just past the boundary rather than exactly on
+        // it, where a rounding difference could re-read the previous minute.
+        const delay = Math.max(1000, Math.min(boundary + 1000, SCHEDULE_MAX_SLEEP_MS));
+        _scheduleTimer = setTimeout(() => {
+            _scheduleTimer = null;
+            scheduleNextFeatureScheduleTick(applyFeatureSchedules('schedule-timer'));
+        }, delay);
+    }
+
+    function startFeatureScheduleRuntime() {
+        if (typeof normalizeFeatureSchedules !== 'function') return;
+        scheduleNextFeatureScheduleTick(applyFeatureSchedules('schedule-start'));
+    }
+
+    function stopFeatureScheduleRuntime() {
+        if (_scheduleTimer) clearTimeout(_scheduleTimer);
+        _scheduleTimer = null;
+    }
+
     function updateFeatureHealth(feature, status, source = 'runtime', error = null, elapsedMs = null) {
         if (!feature?.id) return;
         try {
@@ -6084,6 +6179,13 @@ return response;
         syncSettingsPanelControls();
         updateAllToggleStates();
         dispatchSettingsChanged({ keys: changedKeys, source });
+        // Editing a schedule must take effect now, not up to one sleep window
+        // later. The source guard is what stops this recursing: the schedule
+        // runtime reaches this same function to reconcile its own writes.
+        if (changedKeysSet.has('featureSchedules') && !String(source).startsWith('schedule')) {
+            stopFeatureScheduleRuntime();
+            startFeatureScheduleRuntime();
+        }
         return changedKeys;
     }
 
@@ -61447,6 +61549,11 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
                 setTimeout(lazyInit, 1500);
             }
         }
+
+        // Focus hours. Started AFTER the normal init pass so the first tick
+        // reconciles against features that already exist, rather than racing
+        // the tiered init it would otherwise duplicate.
+        startFeatureScheduleRuntime();
 
         // Show sub-features for enabled parents
         document.querySelectorAll('.ytkit-sub-features').forEach(container => {

@@ -23,8 +23,8 @@
 | Release | `v4.68.0` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `471` entries across `18` categories |
-| Runtime graph | `104` modules, including `26` peeled feature modules and `289` declared feature IDs |
+| Settings schema | `473` entries across `18` categories |
+| Runtime graph | `105` modules, including `26` peeled feature modules and `289` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -363,7 +363,7 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **467 user-facing settings** in the canonical schema. The remaining 4 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **468 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -933,12 +933,13 @@ This generated knowledgebase documents all **467 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Privacy, profiles, and sync</strong> — 9 settings</summary>
+<summary><strong>Privacy, profiles, and sync</strong> — 10 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
 | <a id="setting-sidebarOrder"></a><strong>Sidebar order</strong><br><code>sidebarOrder</code> | Stores the user-defined settings-sidebar category order; null uses the shipped order. | Default: None until customized | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-settingsProfiles"></a><strong>Settings Profiles</strong><br><code>settingsProfiles</code> | Save, load, switch, import, and export named setting configurations (e.g. Gaming / Work / Music). Controls appear at the top of the settings panel when enabled. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-featureSchedules"></a><strong>Feature schedules</strong><br><code>featureSchedules</code> | Maps a feature id to an optional active window ({ start, end, days, enabled }) evaluated against the local clock, so a toggle can switch itself on during focus hours and hand back your previous value when the window closes. | Default: Empty object | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v4.69.0</code> |
 | <a id="setting-privacyDataFlowPanel"></a><strong>Privacy data flow panel</strong><br><code>privacyDataFlowPanel</code> | Shows the popup data-flow inspector with every API origin and removable runtime host grant. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-syncSettings"></a><strong>Sync settings</strong><br><code>syncSettings</code> | Opts the extension into browser-account sync for the bounded safe preference and Video Hider payload. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.59.1</code> |
 | <a id="setting-safeStoreProfile"></a><strong>Safe store profile</strong><br><code>safeStoreProfile</code> | Keeps the effective profile store-safe, hides GitHub-full controls, and scrubs full-profile values from exports. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |

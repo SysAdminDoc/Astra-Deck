@@ -88,13 +88,6 @@ duplicated here.
   Acceptance: at least one filter class (blocked channel IDs) is applied to the browse/player response before Polymer renders it, autoplay and playlist integrity are preserved, the post-render path remains as the fallback, and a test drives the real interception rather than stubbing it. Store-review risk of data interception is assessed against the `chromium-store` profile before it ships there.
   Complexity: XL
 
-- [ ] P2 — Schedule-driven feature activation ("focus hours")
-  Why: RYS ships time-based hiding and it is the natural completion of the existing `digitalWellbeing` and `focusedMode` features; nothing in the 468-key schema can vary a toggle by time of day.
-  Evidence: https://github.com/lawrencehook/remove-youtube-suggestions ; no `schedule`/`focusHours`/`timeOfDay` key exists in `extension/core/settings-schema.js` (verified 2026-08-11).
-  Touches: `extension/core/settings-schema.js`, `extension/ytkit.js`, `extension/popup.js`
-  Acceptance: any boolean feature can carry an optional active-window; the window is evaluated locally with no alarm permission added; leaving the window restores the prior value rather than writing a new default; the schedule is exported and imported with settings.
-  Complexity: M
-
 ### P3
 
 - [ ] P3 — Delete the five dead helpers in `popup.js` and `ytkit.js`

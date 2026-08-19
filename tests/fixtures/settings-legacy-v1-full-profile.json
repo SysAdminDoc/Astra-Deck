@@ -444,6 +444,7 @@
     "downloadCobaltInstance": ""
   },
   "expectedDefaulted": [
+    "_scheduleRestore",
     "antiTranslateThumbnails",
     "audioAutoGain",
     "audioEqHighGainDb",
@@ -470,6 +471,7 @@
     "deArrowVoting",
     "dualLanguageSubtitles",
     "dualSubtitleLanguage",
+    "featureSchedules",
     "forceDvr",
     "fullscreenScroll",
     "heatmapSmartSpeed",
