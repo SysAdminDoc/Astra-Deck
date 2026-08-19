@@ -3708,8 +3708,15 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     const humanizer = window.__YTKIT_SETTINGS_SCHEMA__
         && window.__YTKIT_SETTINGS_SCHEMA__.humanizeSettingKey;
     const overrideLabel = typeof entry.labelKey === 'string' && entry.labelKey.trim();
-    label.textContent = overrideLabel
+    // One resolved name for every place this row speaks. The reset button's
+    // accessible name, its tooltip, the reset toast and the write-failure
+    // status used to interpolate entry.key directly, so voice-control users
+    // heard "customProgressBarColor" for a row reading "Custom progress bar
+    // colour" — and three call sites disagreed on which name to use. The raw
+    // key stays reachable on the row label's own tooltip below.
+    const visibleLabel = overrideLabel
         || (typeof humanizer === 'function' ? humanizer(entry.key) : entry.key);
+    label.textContent = visibleLabel;
     const overrideDesc = typeof entry.descriptionKey === 'string' && entry.descriptionKey.trim();
     label.title = overrideDesc
         ? `${entry.key} — ${overrideDesc}`
@@ -3813,7 +3820,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         // Accessible name must CONTAIN the visible label, or voice control
         // cannot target the row: the switch used to announce the raw storage
         // key while the row reads a humanised label.
-        btn.setAttribute('aria-label', label.textContent + ' (' + stateWord + ')');
+        btn.setAttribute('aria-label', visibleLabel + ' (' + stateWord + ')');
         btn.dataset.key = entry.key;
         btn.addEventListener('click', async () => {
             // Settings persist sparsely, so an untouched default-on key is
@@ -3831,7 +3838,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                 refocusSchemaOverviewKey(entry);
             } catch (err) {
                 console.warn('[Astra Deck popup] schema-overview toggle failed:', err);
-                showStatus(formatSettingWriteError(entry.key, err), 'error', 5200);
+                showStatus(formatSettingWriteError(visibleLabel, err), 'error', 5200);
             } finally {
                 btn.disabled = false;
             }
@@ -3880,7 +3887,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             } catch (err) {
                 console.warn('[Astra Deck popup] schema-overview enum persist failed:', err);
                 select.value = String(previous);
-                showStatus(formatSettingWriteError(entry.key, err), 'error', 5200);
+                showStatus(formatSettingWriteError(visibleLabel, err), 'error', 5200);
             } finally {
                 select.disabled = false;
             }
@@ -3992,7 +3999,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                 console.warn('[Astra Deck popup] schema-overview string persist failed:', err);
                 input.value = previousValue;
                 input.setAttribute('aria-invalid', 'true');
-                showStatus(formatSettingWriteError(entry.labelKey || entry.key, err), 'error', 5200);
+                showStatus(formatSettingWriteError(visibleLabel, err), 'error', 5200);
             } finally {
                 input.disabled = false;
             }
@@ -4179,11 +4186,11 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             resetBtn.className = 'so-key-reset-btn';
             resetBtn.textContent = '↺';
             resetBtn.title = t('schemaResetTitleTpl', 'Reset {key} to default ({value})')
-                .replace('{key}', entry.key)
+                .replace('{key}', visibleLabel)
                 .replace('{value}', describeDefaultForTooltip(entry.defaultValue));
             resetBtn.setAttribute('aria-label',
                 t('schemaResetAriaTpl', 'Reset {key} to default value')
-                    .replace('{key}', entry.key));
+                    .replace('{key}', visibleLabel));
             resetBtn.addEventListener('click', async () => {
                 resetBtn.disabled = true;
                 try {
@@ -4192,7 +4199,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                     // extension, and the old tokenless message meant every
                     // reset toasted the same context-free "… reset to default."
                     showStatus(t('statusPerKeyResetTpl', '{key} reset to default.')
-                        .replace('{key}', entry.key), 'ok', 2400);
+                        .replace('{key}', visibleLabel), 'ok', 2400);
                     renderSchemaOverview();
                     // The rebuild removed this reset button (value is back
                     // at default) — refocus the row's remaining control so
