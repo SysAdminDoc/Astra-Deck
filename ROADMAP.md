@@ -335,16 +335,6 @@ duplicated here.
   Confidence: Verified (High)
   Effort: L
 
-- [ ] P3 — Dead `@connect` grants in the userscript metadata, including a `localhost` grant the extension deliberately dropped for security
-  Category: security / maintainability
-  Where: `YTKit.user.js:29` (`@connect localhost`), `:24` (`@connect returnyoutubedislikeapi.com`), `:28` (`@connect raw.githubusercontent.com`).
-  Problem: none has a live `GM_xmlhttpRequest` site. `@connect localhost` is the more serious one: every companion URL builds from `127.0.0.1`, and `extension/background.js:713-719` explicitly refuses to allowlist `localhost` because "Firefox still resolves through DNS — a hostile network or compromised resolver can rebind `localhost` to an internal IP and probe the LAN." The userscript still grants exactly that channel. `returnyoutubedislikeapi.com` is reached via bare `fetch()` (CORS-governed, not `@connect`), and `raw.githubusercontent.com` appears only in `@updateURL`/`@downloadURL`/`@require`/`@icon` (not `@connect`-governed).
-  Evidence: enumerated every GM call site; none targets these three hosts.
-  Fix: remove the three dead `@connect` entries; keep only the hosts with a real GM request site (`127.0.0.1`, the AI providers, `sponsor.ajay.app`, `sponsorblock.kavin.rocks`).
-  Acceptance: the userscript `@connect` list contains only hosts it actually requests via GM; installing still works.
-  Confidence: High (localhost, RYD) / Medium (githubusercontent)
-  Effort: S
-
 - [ ] P3 — `.ytkit-vote-badge` / `.ytkit-liked` is styled and removed in the extension but never created (lost in the module peel)
   Category: correctness / maintainability
   Where: `extension/features/chat-style-comments/index.js:18` (5 `.ytkit-vote-badge` style rules), injected at `ytkit.js:7745-7747`; removal-only sites at `chat-style-comments/index.js:307,1286,1374`.

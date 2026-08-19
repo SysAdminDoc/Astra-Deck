@@ -21,12 +21,9 @@
 // @grant        GM.xmlHttpRequest
 // @connect      sponsor.ajay.app
 // @connect      sponsorblock.kavin.rocks
-// @connect      returnyoutubedislikeapi.com
 // @connect      api.openai.com
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
-// @connect      raw.githubusercontent.com
-// @connect      localhost
 // @connect      127.0.0.1
 // @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js
 // @homepageURL      https://github.com/SysAdminDoc/Astra-Deck
@@ -34,6 +31,11 @@
 // @license      MIT
 // @icon      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/extension/icons/128.png
 // ==/UserScript==
+
+// NOTE: localhost is deliberately NOT granted. The companion is always
+// reached by literal IP, and Firefox still resolves localhost through DNS,
+// so a hostile resolver could rebind it to an internal address and use this
+// grant to probe the LAN. The extension refuses it for the same reason.
 
 (function() {
     'use strict';
