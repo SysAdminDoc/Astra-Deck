@@ -1590,3 +1590,128 @@ test('dynamic GET redirects require an exact grant at every hop', async () => {
     assert.deepEqual(checked, ['https://lists.example.com/*']);
     assert.deepEqual(fetched, ['https://lists.example.com/rules.json']);
 });
+
+
+// ── Bounded response reading ────────────────────────────────────────────
+//
+// The content-length pre-check only fires when the server declares one. A
+// chunked response declares nothing, so the old readTextBounded fell through
+// to response.text() and buffered the whole body into the worker before
+// measuring it — the cap was a post-mortem rather than a limit. EXT_FETCH had
+// streamed against an incremental cap since v3.20.4; these pin that the two
+// stragglers now do the same.
+
+function loadReadTextBounded() {
+    const vm = require('node:vm');
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'background.js'), 'utf8');
+    const start = source.indexOf('async function readTextBounded(');
+    assert.ok(start > -1, 'background.js must define readTextBounded');
+    const end = source.indexOf('\n// The broad optional pattern', start);
+    assert.ok(end > start, 'readTextBounded must be followed by the optional-pattern comment');
+    const sandbox = { TextEncoder, TextDecoder, Error };
+    sandbox.globalThis = sandbox;
+    vm.createContext(sandbox);
+    vm.runInContext(source.slice(start, end) + '\nglobalThis.__fn = readTextBounded;', sandbox);
+    return sandbox.__fn;
+}
+
+// A chunked response: no content-length, body delivered in slices. `served`
+// counts the bytes the reader actually pulled, which is what "aborted before
+// fully buffering" means in practice.
+function chunkedResponse(totalBytes, chunkSize = 1024) {
+    const state = { served: 0, cancelled: false };
+    let remaining = totalBytes;
+    return {
+        state,
+        response: {
+            headers: { get: () => null },
+            body: {
+                getReader: () => ({
+                    read: async () => {
+                        if (remaining <= 0) return { done: true, value: undefined };
+                        const size = Math.min(chunkSize, remaining);
+                        remaining -= size;
+                        state.served += size;
+                        return { done: false, value: new Uint8Array(size) };
+                    },
+                    cancel: () => { state.cancelled = true; }
+                })
+            },
+            text: async () => { throw new Error('text() must not be reached on a streamed body'); }
+        }
+    };
+}
+
+test('an oversized chunked response is aborted before the whole body is buffered', async () => {
+    const readTextBounded = loadReadTextBounded();
+    const limit = 8 * 1024;
+    const { response, state } = chunkedResponse(1024 * 1024);
+    let aborted = false;
+    const controller = { abort: () => { aborted = true; } };
+
+    await assert.rejects(
+        () => readTextBounded(response, limit, 'Test body', controller),
+        /exceeds the 8192-byte limit/);
+
+    assert.ok(state.served <= limit + 1024,
+        `the reader must stop within one chunk of the cap, but pulled ${state.served} bytes`);
+    assert.ok(state.served < 1024 * 1024,
+        'the whole body must not be buffered before the cap trips');
+    assert.equal(state.cancelled, true, 'the stream reader must be cancelled');
+    assert.equal(aborted, true, 'the fetch must be aborted so the socket is not left draining');
+});
+
+test('a chunked response inside the cap is returned intact', async () => {
+    const readTextBounded = loadReadTextBounded();
+    const { response, state } = chunkedResponse(3000);
+    const result = await readTextBounded(response, 8 * 1024, 'Test body');
+    assert.equal(result.bytes, 3000, 'the byte count must be the streamed total');
+    assert.equal(result.text.length, 3000, 'every chunk must be concatenated into the result');
+    assert.equal(state.cancelled, false, 'an in-limit body must not be cancelled');
+});
+
+test('a declared over-limit content-length still short-circuits before reading', async () => {
+    const readTextBounded = loadReadTextBounded();
+    const { response, state } = chunkedResponse(1024 * 1024);
+    response.headers = { get: (name) => (name === 'content-length' ? String(1024 * 1024) : null) };
+    let aborted = false;
+
+    await assert.rejects(
+        () => readTextBounded(response, 8 * 1024, 'Test body', { abort: () => { aborted = true; } }),
+        /exceeds the 8192-byte limit/);
+    assert.equal(state.served, 0, 'a declared oversize must be rejected without reading any body');
+    assert.equal(aborted, true, 'the declared-oversize path must abort the fetch too');
+});
+
+test('a response with no streaming body falls back rather than failing', async () => {
+    const readTextBounded = loadReadTextBounded();
+    const response = { headers: { get: () => null }, text: async () => 'hello' };
+    const result = await readTextBounded(response, 1024, 'Test body');
+    assert.equal(result.text, 'hello');
+    assert.equal(result.bytes, 5);
+
+    const oversize = { headers: { get: () => null }, text: async () => 'x'.repeat(2048) };
+    await assert.rejects(
+        () => readTextBounded(oversize, 1024, 'Test body'),
+        /exceeds the 1024-byte limit/,
+        'the fallback path must still enforce the cap');
+});
+
+test('the AI summary and selector-asset paths stream against their caps', () => {
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'background.js'), 'utf8');
+
+    const aiStart = source.indexOf('async function performAiSummaryRequest');
+    assert.ok(aiStart > -1, 'performAiSummaryRequest must exist');
+    const aiEnd = source.indexOf('\nasync function ', aiStart + 1);
+    assert.ok(aiEnd > aiStart, 'performAiSummaryRequest must be followed by another function');
+    const ai = source.slice(aiStart, aiEnd);
+    assert.match(ai, /readTextBounded\(\s*\n?\s*response, MAX_AI_RESPONSE_BYTES/,
+        'the AI response must go through the bounded reader');
+    assert.doesNotMatch(ai, /await response\.text\(\)/,
+        'buffering the provider body before measuring it is the defect this replaced');
+
+    assert.match(source, /readTextBounded\(\s*\n?\s*response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset', selectorAssetController\)/,
+        'the selector asset must pass its controller so an oversize body aborts the fetch');
+});

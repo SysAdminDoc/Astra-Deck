@@ -300,13 +300,18 @@ async function performAiSummaryRequest(details) {
         if (response.url && new URL(response.url).origin !== validated.policy.origin) {
             throw new Error('AI response escaped the approved provider origin.');
         }
-        const contentLength = Number(response.headers.get('content-length'));
-        if (Number.isFinite(contentLength) && contentLength > MAX_AI_RESPONSE_BYTES) {
-            throw new Error('AI response is too large.');
-        }
-        const text = await response.text();
-        if (new TextEncoder().encode(text).byteLength > MAX_AI_RESPONSE_BYTES) {
-            throw new Error('AI response body is too large.');
+        // Streamed against the cap: a chunked provider response declares no
+        // content-length, so buffering first and measuring after let an
+        // oversized body into the worker before the limit could apply.
+        let text;
+        try {
+            ({ text } = await readTextBounded(
+                response, MAX_AI_RESPONSE_BYTES, 'AI response', controller));
+        } catch (err) {
+            if (/exceeds the \d+-byte limit/.test(err?.message || '')) {
+                throw new Error('AI response is too large.');
+            }
+            throw err;
         }
         if (credential && text.includes(credential)) {
             throw new Error('AI provider response contained credential material and was blocked.');
@@ -857,18 +862,63 @@ const MAX_SELECTOR_ASSET_BYTES = 256 * 1024;
 const MAX_COBALT_RESPONSE_BYTES = 512 * 1024;
 const COBALT_REQUEST_TIMEOUT_MS = 15000;
 
-async function readTextBounded(response, maxBytes, label) {
+// Reads a response body with the cap enforced AS IT ARRIVES.
+//
+// The content-length pre-check only helps when the server declares one. A
+// chunked response declares nothing, so the old form fell through to
+// `response.text()` and buffered the entire body into the service worker
+// before measuring it — the cap was a post-mortem, not a limit. EXT_FETCH has
+// streamed against an incremental cap since v3.20.4; this is the same shape,
+// so the two remaining unbounded callers (the selector asset and the Cobalt
+// response) stop being the exception.
+//
+// `controller` is optional: pass the AbortController driving the fetch and an
+// over-limit body tears down the socket instead of being left to drain.
+async function readTextBounded(response, maxBytes, label, controller = null) {
+    const tooLarge = () => new Error(`${label} exceeds the ${maxBytes}-byte limit`);
     const contentLength = response.headers?.get?.('content-length');
     if (contentLength !== null && contentLength !== undefined) {
         const declared = Number.parseInt(contentLength, 10);
         if (Number.isFinite(declared) && declared > maxBytes) {
-            throw new Error(`${label} exceeds the ${maxBytes}-byte limit`);
+            try { controller?.abort?.(); } catch (_) {
+                // reason: controller may already be aborted by a timeout
+            }
+            throw tooLarge();
         }
     }
-    const text = await response.text();
-    const bytes = new TextEncoder().encode(text).byteLength;
-    if (bytes > maxBytes) throw new Error(`${label} exceeds the ${maxBytes}-byte limit`);
-    return { text, bytes };
+
+    const reader = response.body?.getReader?.();
+    if (!reader) {
+        // No streaming body available (a mocked response, or a browser that
+        // does not expose one). Fall back to the old behaviour rather than
+        // failing the request outright.
+        const text = await response.text();
+        const bytes = new TextEncoder().encode(text).byteLength;
+        if (bytes > maxBytes) throw tooLarge();
+        return { text, bytes };
+    }
+
+    const chunks = [];
+    let received = 0;
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        received += value.byteLength;
+        if (received > maxBytes) {
+            try { reader.cancel(); } catch (_) {
+                // reason: the stream may already be closed by an abort
+            }
+            try { controller?.abort?.(); } catch (_) {
+                // reason: controller may already be aborted by a timeout
+            }
+            throw tooLarge();
+        }
+        chunks.push(value);
+    }
+    const merged = new Uint8Array(received);
+    let offset = 0;
+    for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.byteLength; }
+    return { text: new TextDecoder('utf-8').decode(merged), bytes: received };
 }
 
 // The broad optional pattern that makes user-chosen HTTPS origins grantable.
@@ -1317,7 +1367,8 @@ async function performCobaltRequest(sender) {
         if (!response.ok) {
             return cobaltFailure('COBALT_HTTP_ERROR', `Self-hosted Cobalt returned HTTP ${response.status}.`);
         }
-        const { text } = await readTextBounded(response, MAX_COBALT_RESPONSE_BYTES, 'Cobalt response');
+        const { text } = await readTextBounded(
+            response, MAX_COBALT_RESPONSE_BYTES, 'Cobalt response', controller);
         let data;
         try {
             data = JSON.parse(text);
@@ -1678,15 +1729,21 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             sendResponse({ ok: false, error: 'Selector asset origin is not allowlisted.' });
             return false;
         }
+        // The controller exists so an over-limit body can abort the request
+        // rather than being left to drain into a worker that already gave up
+        // on it.
+        const selectorAssetController = new AbortController();
         fetch(SELECTOR_ASSET_URL, {
             method: 'GET',
             headers: { Accept: 'application/json' },
             credentials: 'omit',
             cache: 'no-store',
-            redirect: 'error'
+            redirect: 'error',
+            signal: selectorAssetController.signal
         }).then(async (response) => {
             if (!response.ok) throw new Error(`Selector asset HTTP ${response.status}`);
-            const { text, bytes } = await readTextBounded(response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset');
+            const { text, bytes } = await readTextBounded(
+                response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset', selectorAssetController);
             sendResponse({
                 ok: true,
                 text,
