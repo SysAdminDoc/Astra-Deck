@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- **Anti-Translate Thumbnails** (opt-in). Anti-Translate restored the original
+  title while the thumbnail beside it still showed text baked in your locale, so
+  the card read in two languages at once. The image is now restored too, taken
+  from the player response on a watch page and from YouTube's own oEmbed endpoint
+  on feed cards. Both live on youtube.com, so the feature adds no new site
+  access; if the original image will not load, the card goes straight back to
+  what YouTube rendered.
+
 ## [4.68.0] - 2026-08-18
 
 ### Added

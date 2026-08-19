@@ -498,6 +498,7 @@
   "qualityDefaultEmbed": "inherit",
   "antiTranslateAudioTrack": false,
   "antiTranslateTranscript": false,
+  "antiTranslateThumbnails": false,
   "monetizationIndicator": false,
   "subscriptionGroups": false,
   "subscriptionGroupData": {},

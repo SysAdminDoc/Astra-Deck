@@ -166,6 +166,12 @@
     "message": "{count}s",
     "description": "Buffer target slider value rendered in seconds"
   },
+  "feature_antiTranslateThumbnails_desc": {
+    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
+  },
+  "feature_antiTranslateThumbnails_name": {
+    "message": "Anti-Translate Thumbnails"
+  },
   "feature_heatmapSmartSpeed_desc": {
     "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
   },

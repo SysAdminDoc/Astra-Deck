@@ -18,13 +18,13 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.nodeFloor, '>=22');
     assert.deepEqual(facts.firefoxFloor, 'Firefox 142+');
     assert.equal(facts.locales.length, 11);
-    assert.equal(facts.schemaEntries, 470);
+    assert.equal(facts.schemaEntries, 471);
     assert.equal(facts.schemaCategories, 18);
-    // 103 since core/feature-health.js, core/hide-attribution.js and
-    // core/heatmap.js joined the ISOLATED-world graph.
-    assert.equal(facts.runtimeModules, 103);
+    // 104 since core/youtube-thumbnails.js joined the ISOLATED-world
+    // graph alongside feature-health, hide-attribution and heatmap.
+    assert.equal(facts.runtimeModules, 104);
     assert.equal(facts.featureModules.length, 26);
-    assert.equal(facts.featureIds.length, 288);
+    assert.equal(facts.featureIds.length, 289);
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);
@@ -43,7 +43,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('`470` entries', '`469` entries')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('`471` entries', '`470` entries')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);

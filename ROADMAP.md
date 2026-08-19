@@ -88,13 +88,6 @@ duplicated here.
   Acceptance: at least one filter class (blocked channel IDs) is applied to the browse/player response before Polymer renders it, autoplay and playlist integrity are preserved, the post-render path remains as the fallback, and a test drives the real interception rather than stubbing it. Store-review risk of data interception is assessed against the `chromium-store` profile before it ships there.
   Complexity: XL
 
-- [ ] P2 — Restore original thumbnails, not just original titles
-  Why: YouTube now localises text baked into thumbnails, so `antiTranslate` restores the title while the thumbnail still shows translated text — a visible half-fix. YouTube-No-Translation (1,231 stars) solves it and adds oEmbed as a zero-permission metadata fallback Astra Deck has no equivalent of.
-  Evidence: https://github.com/YouG-o/YouTube-No-Translation ; no `thumbnailOriginal`-shaped key exists in the settings schema (verified 2026-08-11).
-  Touches: `extension/ytkit.js` (`antiTranslate`), `extension/core/data-flow.js`
-  Acceptance: with the feature on, a video whose thumbnail carries localised text renders the original-language thumbnail, with a documented fallback order and no new install-time host permission.
-  Complexity: M
-
 - [ ] P2 — Schedule-driven feature activation ("focus hours")
   Why: RYS ships time-based hiding and it is the natural completion of the existing `digitalWellbeing` and `focusedMode` features; nothing in the 468-key schema can vary a toggle by time of day.
   Evidence: https://github.com/lawrencehook/remove-youtube-suggestions ; no `schedule`/`focusHours`/`timeOfDay` key exists in `extension/core/settings-schema.js` (verified 2026-08-11).
