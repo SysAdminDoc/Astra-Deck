@@ -7879,5 +7879,32 @@
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck не может сохранить данные в этом профиле браузера. Недавние изменения могут быть потеряны."
+  },
+  "subscriptionMembersCapped": {
+    "message": "В группе уже 1000 каналов. Сначала удалите один."
+  },
+  "subscriptionGroupRename": {
+    "message": "Переименовать"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "Переименовать группу {group}"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "Новое имя для этой группы"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "Группа переименована"
+  },
+  "subscriptionGroupDelete": {
+    "message": "Удалить"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "Удалить группу {group}"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "Удалить «{group}» и её каналы ({count})? Подписки не затрагиваются."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "Группа удалена"
   }
 }

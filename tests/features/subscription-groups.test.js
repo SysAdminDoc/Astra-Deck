@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createSubscriptionGroupsFeature } = require('../../extension/features/subscription-groups');
@@ -491,4 +493,164 @@ test('a pre-click unsubscribe label is not evidence of removal', async () => {
     const result = await withFakeDocument(null, () => feature._applyNativeUnsubscribeAction(card));
 
     assert.equal(result, false, 'the label the control was selected by must never prove the click worked');
+});
+
+
+// ── Membership cap, group rename/delete, unsubscribe confirm ────────────
+
+function withStubbedDialogs({ promptWith, confirmWith }, run) {
+    const priorDocument = globalThis.document;
+    const priorPrompt = globalThis.prompt;
+    const priorConfirm = globalThis.confirm;
+    globalThis.document = new FakeDocument();
+    globalThis.prompt = () => promptWith;
+    globalThis.confirm = () => confirmWith;
+    try {
+        return run();
+    } finally {
+        if (priorDocument === undefined) delete globalThis.document; else globalThis.document = priorDocument;
+        if (priorPrompt === undefined) delete globalThis.prompt; else globalThis.prompt = priorPrompt;
+        if (priorConfirm === undefined) delete globalThis.confirm; else globalThis.confirm = priorConfirm;
+    }
+}
+
+test('adding past the 1000-channel cap is refused instead of silently dropped', () => {
+    // The old form added the channel, sliced it straight back off, and still
+    // toasted "added" — a data drop reported to the user as a success.
+    const full = Array.from({ length: 1000 }, (_, i) => `UC${String(i).padStart(22, '0')}`);
+    const { appState, feature, toasts } = makeFeature({
+        subscriptionGroupData: { g_full: { name: 'Full', channelIds: [...full] } }
+    });
+
+    feature._setGroupMembership('g_full', 'UConeTooMany1111111111', true);
+
+    const stored = appState.settings.subscriptionGroupData.g_full.channelIds;
+    assert.equal(stored.length, 1000, 'membership must be unchanged at the cap');
+    assert.equal(stored.includes('UConeTooMany1111111111'), false,
+        'the refused channel must not appear in the group');
+    assert.ok(toasts.some(([m]) => /full at 1000/i.test(m)),
+        'the user must be told the add was refused and why');
+    assert.equal(toasts.some(([m]) => /Channel added/.test(m)), false,
+        'a refused add must never report success');
+});
+
+test('at the cap, removing a channel and re-adding an existing member still work', () => {
+    const full = Array.from({ length: 1000 }, (_, i) => `UC${String(i).padStart(22, '0')}`);
+    const { appState, feature } = makeFeature({
+        subscriptionGroupData: { g_full: { name: 'Full', channelIds: [...full] } }
+    });
+
+    // A removal moves away from the limit; refusing it would strand the user.
+    feature._setGroupMembership('g_full', full[0], false);
+    assert.equal(appState.settings.subscriptionGroupData.g_full.channelIds.length, 999,
+        'a removal at the cap must be allowed');
+
+    // Re-checking a channel that is already a member is a no-op, not an add.
+    feature._setGroupMembership('g_full', full[1], true);
+    assert.equal(appState.settings.subscriptionGroupData.g_full.channelIds.length, 999,
+        're-adding an existing member must not be refused as an overflow');
+
+    // The `included &&` clause is belt-and-braces: `!ids.has(channelId)`
+    // already spares every removal of an actual member, so no reachable state
+    // distinguishes the two. Pin the intent rather than contrive a scenario.
+    for (const [label, file] of [
+        ['module', path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-groups', 'index.js')],
+        ['ytkit.js', path.join(__dirname, '..', '..', 'extension', 'ytkit.js')]
+    ]) {
+        const src = fs.readFileSync(file, 'utf8');
+        assert.match(src, /if \(included && !ids\.has\(channelId\) && ids\.size >= this\._MAX_GROUP_CHANNELS\)/,
+            `${label} must gate the cap refusal on an add, so a removal can never be blocked`);
+    }
+});
+
+test('a group can be renamed from the editor', () => withStubbedDialogs(
+    { promptWith: '  Renamed Group  ', confirmWith: true },
+    () => {
+        const { appState, feature, toasts } = makeFeature({
+            subscriptionGroupData: { g_one: { name: 'Original', channelIds: [] } }
+        });
+        feature._renderMembersPanel = () => {};
+
+        feature._renameGroup('g_one');
+        assert.equal(appState.settings.subscriptionGroupData.g_one.name, 'Renamed Group',
+            'the new name must be trimmed and stored');
+        assert.ok(toasts.some(([m]) => /renamed/i.test(m)));
+    }
+));
+
+test('a cancelled rename prompt changes nothing', () => withStubbedDialogs(
+    { promptWith: null, confirmWith: true },
+    () => {
+        const { appState, feature, toasts } = makeFeature({
+            subscriptionGroupData: { g_one: { name: 'Original', channelIds: [] } }
+        });
+        feature._renderMembersPanel = () => {};
+
+        feature._renameGroup('g_one');
+        assert.equal(appState.settings.subscriptionGroupData.g_one.name, 'Original',
+            'dismissing the prompt must not blank the name');
+        assert.equal(toasts.length, 0, 'a no-op must not claim it renamed anything');
+    }
+));
+
+test('a group can be deleted, and declining the confirm keeps it', () => {
+    const settings = {
+        subscriptionGroupData: {
+            g_keep: { name: 'Keep', channelIds: ['UCkeep1111111111111111'] },
+            g_drop: { name: 'Drop', channelIds: ['UCdrop1111111111111111'] }
+        }
+    };
+
+    withStubbedDialogs({ promptWith: null, confirmWith: false }, () => {
+        const { appState, feature } = makeFeature(JSON.parse(JSON.stringify(settings)));
+        feature._closeMembersPanel = () => {};
+        feature._deleteGroup('g_drop');
+        assert.deepEqual(Object.keys(appState.settings.subscriptionGroupData).sort(), ['g_drop', 'g_keep'],
+            'declining the confirm must leave the group alone');
+    });
+
+    withStubbedDialogs({ promptWith: null, confirmWith: true }, () => {
+        const { appState, feature, toasts } = makeFeature(JSON.parse(JSON.stringify(settings)));
+        feature._closeMembersPanel = () => {};
+        feature._activeGroupId = 'g_drop';
+
+        feature._deleteGroup('g_drop');
+        assert.deepEqual(Object.keys(appState.settings.subscriptionGroupData), ['g_keep'],
+            'only the named group may be removed — a replace-import used to be the only way, '
+            + 'and it took every other group with it');
+        assert.equal(feature._activeGroupId, '',
+            'deleting the active group must clear the filter, not leave it pointing at nothing');
+        assert.ok(toasts.some(([m]) => /deleted/i.test(m)));
+    });
+});
+
+test('the unsubscribe confirm anchors on the confirm id, never a bare role=button', () => {
+    // querySelector returns the FIRST document-order match. In dialog variants
+    // without #confirm-button that is typically Cancel, so the helper clicked
+    // Cancel, returned true, and the caller deleted the 30-day staging record
+    // for a channel that was still subscribed.
+    const sources = [
+        ['module', path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-groups', 'index.js')],
+        ['ytkit.js', path.join(__dirname, '..', '..', 'extension', 'ytkit.js')]
+    ];
+    for (const [label, file] of sources) {
+        const src = fs.readFileSync(file, 'utf8');
+        const start = src.indexOf('async _confirmUnsubscribeDialog()');
+        assert.ok(start > -1, `${label} must define _confirmUnsubscribeDialog`);
+        // Comments stripped first: the explanatory note above the fix names the
+        // very selector this asserts is absent, and an absence check that
+        // matches its own documentation is no check at all.
+        const block = src.slice(start, src.indexOf('\n            },', start))
+            .split('\n').filter((line) => !line.trim().startsWith('//')).join('\n');
+        assert.doesNotMatch(block, /\[role="button"\]/,
+            `${label} must not accept a bare [role="button"] as the confirm control`);
+        assert.doesNotMatch(block, /'button\[aria-label\]'/,
+            `${label} must not accept any labelled button as the confirm control`);
+        assert.match(block, /dialog\.querySelector\('#confirm-button'\)/,
+            `${label} must anchor on YouTube's own confirm id`);
+        assert.match(block, /closest\?\.\('#cancel-button'\)/,
+            `${label} must refuse a control that resolves inside the dismiss button`);
+        assert.doesNotMatch(block, /textContent|innerText/,
+            `${label} must not read the translated button label to decide`);
+    }
 });

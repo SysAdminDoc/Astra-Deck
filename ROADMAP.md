@@ -227,16 +227,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
 
 ### P2
 
-- [ ] P3 — Subscription Groups: confirm-dialog matcher can click Cancel and still record success; 1000-cap silently drops the just-added channel; no way to rename or delete a group
-  Category: correctness / ux
-  Where: `_confirmUnsubscribeDialog` selector `'#confirm-button, button[aria-label], [role="button"]'` takes the first document-order match — `extension/ytkit.js:43809-43826`, `features/subscription-groups/index.js:1479-1496`; staged record deleted on "success" `index.js:1624-1627`. Cap: `_setGroupMembership` appends then `slice(0, 1000)` — `index.js:2546-2560` — dropping the just-added channel while toasting "added". Product gap: group rename/delete/reorder exists in NO copy; the only way to remove a group is Shift+click replace-import.
-  Problem: in dialog variants without `#confirm-button`, the first `[role="button"]` is typically Cancel — the helper clicks it, returns true, the 30-day staging record is deleted, and a still-subscribed channel is logged as unsubscribed. The cap bug turns a hard limit into silent data drop with false success feedback.
-  Evidence: selectors and cap logic read in both copies; absence of rename/delete verified by control enumeration.
-  Fix: match the confirm button by accessible label/test, never bare `[role="button"]`; at the cap, refuse the add with an explanatory toast instead of slicing; add minimal rename + delete controls to the group editor (both copies + `sync-userscript.js`).
-  Acceptance: a cancel-first dialog leaves the staging record intact; adding channel 1001 toasts a refusal and membership is unchanged; a group can be renamed and deleted from the editor.
-  Confidence: dialog Likely (needs a cancel-first fixture), cap + product gap Verified
-  Effort: M
-
 - [ ] P3 — Transcript refresh polish: error-path diagnostics discard the refresh outcome, and a known-dead caption URL is fetched twice before refreshing
   Category: correctness / perf
   Where: `extension/core/transcript-service.js:440-448` (thrown-error diagnostic hardcodes `fallbackReason: allowDomFallback ? 'panel-unavailable' : 'dom-disabled'`, overwriting `'refresh-discovery-failed'`/`'refresh-fetch-failed'` set at `:399,:421`); `:912-937` (`_fetchTranscriptContent` format loop: on a 403/404 for json3 it still fetches the SAME URL as xml before throwing)

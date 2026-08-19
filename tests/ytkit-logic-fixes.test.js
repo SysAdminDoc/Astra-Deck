@@ -639,7 +639,9 @@ test('subscriptionGroups ships an Edit Channels membership editor with empty-sta
     assert.match(panelBlock, /setAttribute\('role', 'dialog'\)/, 'editor panel must be a dialog');
     assert.match(panelBlock, /e\.key === 'Escape'/, 'editor must close on Escape');
     assert.match(panelBlock, /checkbox\.type = 'checkbox'/, 'channels are toggled via checkboxes');
-    const writeBlock = methodSlice(block, '_setGroupMembership(groupId, channelId, included) {', 1400);
+    // Widened when the cap-refusal guard landed ahead of the write; the old
+    // 1400 stopped short of _writeGroups and the pin went quiet.
+    const writeBlock = methodSlice(block, '_setGroupMembership(groupId, channelId, included) {', 2400);
     assert.match(writeBlock, /this\._writeGroups\(next\)/,
         'membership changes must persist through the existing _writeGroups path');
     assert.match(block, /No channels in this group yet/,

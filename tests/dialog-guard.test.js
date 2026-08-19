@@ -137,14 +137,21 @@ test('both unsubscribe-confirm copies consult the guard before clicking', () => 
     const monolith = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
     const peel = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8');
 
-    const monolithStart = monolith.indexOf('async _confirmUnsubscribeDialog()');
-    assert.ok(monolithStart > 0);
-    const monolithBody = monolith.slice(monolithStart, monolithStart + 1200);
+    // Bounded by the method's own closing brace, not a character count: a
+    // fixed window silently stops covering the assertions below as soon as the
+    // method grows, which is how a passing test becomes a vacuous one.
+    const methodBody = (source, marker) => {
+        const start = source.indexOf(marker);
+        assert.ok(start > 0, `${marker} must exist`);
+        const end = source.indexOf('\n            },', start);
+        assert.ok(end > start, `${marker} must terminate`);
+        return source.slice(start, end);
+    };
+
+    const monolithBody = methodBody(monolith, 'async _confirmUnsubscribeDialog()');
     assert.match(monolithBody, /button && isSafeToAutoClick\(button\)/);
 
-    const peelStart = peel.indexOf('async _confirmUnsubscribeDialog()');
-    assert.ok(peelStart > 0);
-    const peelBody = peel.slice(peelStart, peelStart + 1400);
+    const peelBody = methodBody(peel, 'async _confirmUnsubscribeDialog()');
     assert.match(peelBody, /YTKitCore\.isSafeToAutoClick/);
     assert.match(peelBody, /typeof safeToClick !== 'function' \|\| safeToClick\(button\)/);
 });

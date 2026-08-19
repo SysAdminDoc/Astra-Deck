@@ -7436,7 +7436,7 @@
     "message": "تاريخ الرفع"
   },
   "videoNotesDelete": {
-    "message": "Delete"
+    "message": "حذف"
   },
   "videoNotesDeleteAria": {
     "message": "حذف ملاحظة هذا الفيديو"
@@ -7879,5 +7879,32 @@
   },
   "toastStorageWriteFailed": {
     "message": "تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة."
+  },
+  "subscriptionMembersCapped": {
+    "message": "المجموعة ممتلئة بـ 1000 قناة. أزل واحدة أولاً."
+  },
+  "subscriptionGroupRename": {
+    "message": "إعادة تسمية"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "إعادة تسمية المجموعة {group}"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "اسم جديد لهذه المجموعة"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "تمت إعادة تسمية المجموعة"
+  },
+  "subscriptionGroupDelete": {
+    "message": "حذف"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "حذف المجموعة {group}"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "حذف «{group}» وقنواتها البالغ عددها {count}؟ لن تتأثر اشتراكاتك."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "تم حذف المجموعة"
   }
 }

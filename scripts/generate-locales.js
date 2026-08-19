@@ -2090,6 +2090,39 @@ for (const [locale, messages] of Object.entries(SPONSORED_FILTER_TRANSLATIONS)) 
 // Keep the inline fallback and the separately loaded feature module aligned
 // with the catalog. These strings are also used by the userscript fallback,
 // so they must be translated before the locale artifacts are regenerated.
+// Subscription-group rename / delete controls and the membership cap
+// refusal. The cap message names the limit because the refusal is only
+// actionable if the user knows what it is.
+// Kept separate: the English carries double quotes, so it needs a
+// single-quoted JS key while the rest of the CRUD block uses plain words.
+const SUBSCRIPTION_GROUP_DELETE_CONFIRM_TRANSLATIONS = {
+  ar: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': 'حذف «{group}» وقنواتها البالغ عددها {count}؟ لن تتأثر اشتراكاتك.' },
+  de: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': '„{group}“ und die {count} zugehörigen Kanäle löschen? Deine Abos bleiben unverändert.' },
+  es: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': '¿Eliminar «{group}» y sus {count} canales? Tus suscripciones no se verán afectadas.' },
+  fr: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': 'Supprimer « {group} » et ses {count} chaînes ? Vos abonnements ne sont pas affectés.' },
+  it: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': 'Eliminare «{group}» e i suoi {count} canali? Le tue iscrizioni non vengono toccate.' },
+  ja: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': '「{group}」とその {count} チャンネルを削除しますか？登録チャンネルには影響しません。' },
+  ko: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': '“{group}”와 해당 채널 {count}개를 삭제할까요? 구독은 영향을 받지 않습니다.' },
+  pt_BR: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': 'Excluir “{group}” e seus {count} canais? Suas inscrições não são afetadas.' },
+  ru: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': 'Удалить «{group}» и её каналы ({count})? Подписки не затрагиваются.' },
+  zh_CN: { 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.': '删除“{group}”及其 {count} 个频道？不会影响你的订阅。' }
+};
+for (const [locale, messages] of Object.entries(SUBSCRIPTION_GROUP_DELETE_CONFIRM_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+const SUBSCRIPTION_GROUP_CRUD_TRANSLATIONS = {
+  ar: { 'Group is full at 1000 channels. Remove one first.': 'المجموعة ممتلئة بـ 1000 قناة. أزل واحدة أولاً.', 'Rename': 'إعادة تسمية', 'Rename the group {group}': 'إعادة تسمية المجموعة {group}', 'New name for this group': 'اسم جديد لهذه المجموعة', 'Group renamed': 'تمت إعادة تسمية المجموعة', 'Delete': 'حذف', 'Delete the group {group}': 'حذف المجموعة {group}', 'Group deleted': 'تم حذف المجموعة' },
+  de: { 'Group is full at 1000 channels. Remove one first.': 'Die Gruppe ist mit 1000 Kanälen voll. Entferne zuerst einen.', 'Rename': 'Umbenennen', 'Rename the group {group}': 'Gruppe {group} umbenennen', 'New name for this group': 'Neuer Name für diese Gruppe', 'Group renamed': 'Gruppe umbenannt', 'Delete': 'Löschen', 'Delete the group {group}': 'Gruppe {group} löschen', 'Group deleted': 'Gruppe gelöscht' },
+  es: { 'Group is full at 1000 channels. Remove one first.': 'El grupo está lleno con 1000 canales. Quita uno primero.', 'Rename': 'Cambiar nombre', 'Rename the group {group}': 'Cambiar el nombre del grupo {group}', 'New name for this group': 'Nuevo nombre para este grupo', 'Group renamed': 'Grupo renombrado', 'Delete': 'Eliminar', 'Delete the group {group}': 'Eliminar el grupo {group}', 'Group deleted': 'Grupo eliminado' },
+  fr: { 'Group is full at 1000 channels. Remove one first.': 'Le groupe est plein avec 1000 chaînes. Retirez-en une d’abord.', 'Rename': 'Renommer', 'Rename the group {group}': 'Renommer le groupe {group}', 'New name for this group': 'Nouveau nom pour ce groupe', 'Group renamed': 'Groupe renommé', 'Delete': 'Supprimer', 'Delete the group {group}': 'Supprimer le groupe {group}', 'Group deleted': 'Groupe supprimé' },
+  it: { 'Group is full at 1000 channels. Remove one first.': 'Il gruppo è pieno con 1000 canali. Rimuovine uno prima.', 'Rename': 'Rinomina', 'Rename the group {group}': 'Rinomina il gruppo {group}', 'New name for this group': 'Nuovo nome per questo gruppo', 'Group renamed': 'Gruppo rinominato', 'Delete': 'Elimina', 'Delete the group {group}': 'Elimina il gruppo {group}', 'Group deleted': 'Gruppo eliminato' },
+  ja: { 'Group is full at 1000 channels. Remove one first.': 'グループは 1000 チャンネルで一杯です。まず 1 つ削除してください。', 'Rename': '名前を変更', 'Rename the group {group}': 'グループ {group} の名前を変更', 'New name for this group': 'このグループの新しい名前', 'Group renamed': 'グループの名前を変更しました', 'Delete': '削除', 'Delete the group {group}': 'グループ {group} を削除', 'Group deleted': 'グループを削除しました' },
+  ko: { 'Group is full at 1000 channels. Remove one first.': '그룹이 1000개 채널로 가득 찼습니다. 먼저 하나를 제거하세요.', 'Rename': '이름 변경', 'Rename the group {group}': '{group} 그룹 이름 변경', 'New name for this group': '이 그룹의 새 이름', 'Group renamed': '그룹 이름을 변경했습니다', 'Delete': '삭제', 'Delete the group {group}': '{group} 그룹 삭제', 'Group deleted': '그룹을 삭제했습니다' },
+  pt_BR: { 'Group is full at 1000 channels. Remove one first.': 'O grupo está cheio com 1000 canais. Remova um primeiro.', 'Rename': 'Renomear', 'Rename the group {group}': 'Renomear o grupo {group}', 'New name for this group': 'Novo nome para este grupo', 'Group renamed': 'Grupo renomeado', 'Delete': 'Excluir', 'Delete the group {group}': 'Excluir o grupo {group}', 'Group deleted': 'Grupo excluído' },
+  ru: { 'Group is full at 1000 channels. Remove one first.': 'В группе уже 1000 каналов. Сначала удалите один.', 'Rename': 'Переименовать', 'Rename the group {group}': 'Переименовать группу {group}', 'New name for this group': 'Новое имя для этой группы', 'Group renamed': 'Группа переименована', 'Delete': 'Удалить', 'Delete the group {group}': 'Удалить группу {group}', 'Group deleted': 'Группа удалена' },
+  zh_CN: { 'Group is full at 1000 channels. Remove one first.': '分组已满 1000 个频道。请先移除一个。', 'Rename': '重命名', 'Rename the group {group}': '重命名分组 {group}', 'New name for this group': '此分组的新名称', 'Group renamed': '分组已重命名', 'Delete': '删除', 'Delete the group {group}': '删除分组 {group}', 'Group deleted': '分组已删除' }
+};
+for (const [locale, messages] of Object.entries(SUBSCRIPTION_GROUP_CRUD_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The auxiliary-write failure toast. It fires when the store has rejected
 // several flushes in a row, which is the one moment the user needs to know
 // their changes are not being kept.

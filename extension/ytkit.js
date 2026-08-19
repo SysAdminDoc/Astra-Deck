@@ -36461,6 +36461,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _LAST_VISIT_KEY: 'subscriptionLastVisitData',
             _UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData',
             _UNSUB_STAGE_TTL_MS: 30 * 24 * 60 * 60 * 1000,
+            // Import already enforced this ceiling; membership edits
+            // sliced past it instead, which is how adding channel 1001
+            // reported success and changed nothing.
+            _MAX_GROUP_CHANNELS: 1000,
             _UNSUBSCRIBE_BATCH_CAP: 25,
             _UNSUBSCRIBE_PACE_MS: 400,
             _UNSUBSCRIBE_LOG_KEY: 'ytkit-subscription-unsubscribe-sessions',
@@ -36530,7 +36534,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-hidden-by-group,.ytkit-sub-hidden-by-type{display:none !important;}
                     .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 Roboto,Arial,sans-serif;}
                     .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 Roboto,Arial,sans-serif;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
-                    .ytkit-sub-members-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+                    .ytkit-sub-members-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}.ytkit-sub-members-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}.ytkit-sub-members-action{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.06));color:var(--yt-spec-text-primary,#f8fafc);font:700 12px/1 Roboto,Arial,sans-serif;cursor:pointer;}.ytkit-sub-members-action:hover{background:var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));}.ytkit-sub-members-action--danger{color:#fecaca;border-color:rgba(239,68,68,0.4);}html:not([dark]) .ytkit-sub-members-action{background:rgba(0,0,0,0.05);color:var(--yt-spec-text-primary,#0f0f0f);border-color:rgba(0,0,0,0.18);}html:not([dark]) .ytkit-sub-members-action--danger{color:#991b1b;border-color:rgba(153,27,27,0.35);}
                     .ytkit-sub-members-title{margin:0;color:#f8fafc;font:700 13px/1.2 Roboto,Arial,sans-serif;}
                     .ytkit-sub-members-meta{color:rgba(226,232,240,0.62);font:11px/1.3 Roboto,Arial,sans-serif;}
                     .ytkit-sub-members-close{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
@@ -37781,11 +37785,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 for (let attempt = 0; attempt < 3; attempt++) {
                     const dialog = document.querySelector('ytd-confirm-dialog-renderer');
                     if (this._dialogConfirmsUnsubscribe(dialog)) {
-                        const button = dialog.querySelector([
-                            '#confirm-button',
-                            'button[aria-label]',
-                            '[role="button"]'
-                        ].join(','));
+                        // Only YouTube's own confirm id, and never a bare
+                        // [role="button"]. querySelector returns the FIRST
+                        // document-order match, and in dialog variants without
+                        // #confirm-button that is typically Cancel — so the
+                        // helper clicked Cancel, returned true, and the caller
+                        // deleted the 30-day staging record for a channel that
+                        // was still subscribed. Matching on the visible label
+                        // is not an option either: it is translated.
+                        const confirmRoot = dialog.querySelector('#confirm-button');
+                        const button = confirmRoot
+                            ? (confirmRoot.querySelector?.('button') || confirmRoot)
+                            : null;
+                        // Belt and braces: if YouTube ever nests the confirm id
+                        // inside the dismiss control, refuse rather than guess.
+                        if (button && button.closest?.('#cancel-button')) return false;
                         // A verification or consent surface can be open over
                         // the same popup container; answering one on the
                         // user's behalf is an account action, never a
@@ -38690,7 +38704,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._renderToolbar();
                     this._applyGroupFilter();
                 });
-                head.append(titleWrap, close);
+
+                // Rename and delete. Until now the only way to get rid of a
+                // group was a Shift+click replace-import, which takes every
+                // other group with it.
+                const rename = document.createElement('button');
+                rename.type = 'button';
+                rename.className = 'ytkit-sub-members-action';
+                rename.textContent = t('subscriptionGroupRename', 'Rename');
+                rename.setAttribute('aria-label', t('subscriptionGroupRenameAriaTpl', 'Rename the group {group}')
+                    .replace('{group}', group.name || groupId));
+                rename.addEventListener('click', () => this._renameGroup(groupId));
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'ytkit-sub-members-action ytkit-sub-members-action--danger';
+                remove.textContent = t('subscriptionGroupDelete', 'Delete');
+                remove.setAttribute('aria-label', t('subscriptionGroupDeleteAriaTpl', 'Delete the group {group}')
+                    .replace('{group}', group.name || groupId));
+                remove.addEventListener('click', () => this._deleteGroup(groupId));
+
+                const actions = document.createElement('div');
+                actions.className = 'ytkit-sub-members-actions';
+                actions.append(rename, remove, close);
+                head.append(titleWrap, actions);
 
                 const list = document.createElement('div');
                 list.className = 'ytkit-sub-members-list';
@@ -38733,18 +38770,81 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (firstFocusable) try { firstFocusable.focus(); } catch { /* reason: focus is best-effort on detached re-renders */ }
             },
 
+            _renameGroup(groupId) {
+                const groups = this._readGroups();
+                const group = groups[groupId];
+                if (!group) return;
+                const current = group.name || groupId;
+                const raw = typeof prompt === 'function'
+                    ? prompt(t('subscriptionGroupRenamePrompt', 'New name for this group'), current)
+                    : null;
+                if (raw === null) return;
+                // Same shape the import path enforces, so a rename cannot
+                // produce a group an import would have rejected.
+                const name = String(raw).trim().slice(0, 64);
+                if (!name || name === current) return;
+                this._writeGroups({
+                    ...groups,
+                    [groupId]: { ...group, name, updatedAt: Date.now() }
+                });
+                this._renderToolbar();
+                this._renderMembersPanel(groupId);
+                if (typeof showToast === 'function') {
+                    showToast(t('subscriptionGroupRenamed', 'Group renamed'), '#7c3aed', { duration: 2 });
+                }
+            },
+
+            _deleteGroup(groupId) {
+                const groups = this._readGroups();
+                const group = groups[groupId];
+                if (!group) return;
+                const label = group.name || groupId;
+                const count = Array.isArray(group.channelIds) ? group.channelIds.length : 0;
+                // Deleting a group discards a membership list nothing else can
+                // rebuild, so this one gets a confirm.
+                const message = t('subscriptionGroupDeleteConfirmTpl', 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.')
+                    .replace('{group}', label)
+                    .replace('{count}', String(count));
+                if (typeof confirm === 'function' && !confirm(message)) return;
+                const next = { ...groups };
+                delete next[groupId];
+                this._writeGroups(next);
+                if (this._activeGroupId === groupId) this._activeGroupId = '';
+                this._closeMembersPanel(true);
+                this._renderToolbar();
+                this._applyGroupFilter();
+                if (typeof showToast === 'function') {
+                    showToast(t('subscriptionGroupDeleted', 'Group deleted'), '#7c3aed', { duration: 2 });
+                }
+            },
+
             _setGroupMembership(groupId, channelId, included) {
                 const groups = this._readGroups();
                 const group = groups[groupId];
                 if (!group || !channelId) return;
                 const ids = new Set(Array.isArray(group.channelIds) ? group.channelIds : []);
+                // Refuse at the cap instead of appending and slicing. The old
+                // form added the channel, cut it straight back off, and still
+                // toasted "added" — a silent drop reported as a success. A
+                // removal is always allowed: it moves away from the limit.
+                if (included && !ids.has(channelId) && ids.size >= this._MAX_GROUP_CHANNELS) {
+                    if (typeof showToast === 'function') {
+                        showToast(
+                            t('subscriptionMembersCapped', 'Group is full at 1000 channels. Remove one first.'),
+                            '#ef4444',
+                            { role: 'alert', duration: 5 }
+                        );
+                    }
+                    this._renderMembersPanel?.(groupId);
+                    return;
+                }
                 if (included) ids.add(channelId);
                 else ids.delete(channelId);
                 const next = {
                     ...groups,
                     [groupId]: {
                         ...group,
-                        channelIds: Array.from(ids).slice(0, 1000),
+                        channelIds: Array.from(ids).slice(0, this._MAX_GROUP_CHANNELS),
                         updatedAt: Date.now()
                     }
                 };
