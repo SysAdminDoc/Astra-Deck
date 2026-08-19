@@ -388,3 +388,57 @@ test('a root without querySelectorAll yields nothing instead of throwing', () =>
     assert.equal(targets.length, 0);
     assert.equal(report.skippedRules, 1);
 });
+
+// ── Persistence ─────────────────────────────────────────────────────────────
+//
+// Rules are portable user work, so they travel in backups — which makes the
+// import boundary the place a hand-edited selector would arrive. The domain
+// sanitizer must run the same grammar the picker does, not a generic clone.
+
+const persisted = require('../extension/core/persisted-domains');
+
+test('the zapper rule domain is registered as portable user data', () => {
+    const domain = persisted.DURABLE_DOMAIN_REGISTRY.find((entry) => entry.id === 'elementZapperRules');
+    assert.ok(domain, 'the registry is the single inventory of durable state');
+    assert.equal(domain.backup, 'include');
+    assert.equal(domain.key, 'ytkit-element-zapper-rules');
+    assert.equal(domain.strategy, 'replace');
+    assert.equal(domain.credentialScrub, 'not-applicable');
+});
+
+test('an imported backup cannot smuggle a selector the picker would refuse', () => {
+    const sanitized = persisted.sanitizeDomainValue('elementZapperRules', [
+        { selector: 'ytd-browse[page-subtype="home"] ytd-rich-section-renderer', label: 'News' },
+        { selector: 'ytd-player' },
+        { selector: 'ytd-rich-item-renderer' },
+        { selector: 'div:has(video)' },
+        { selector: 'ytkit-settings-panel' }
+    ]);
+    assert.deepEqual(sanitized.map((rule) => rule.selector),
+        ['ytd-browse[page-subtype="home"] ytd-rich-section-renderer']);
+});
+
+test('the domain round-trips through the backup boundary', () => {
+    const rules = [{ selector: 'ytd-merch-shelf-renderer', label: 'Merch', enabled: false }];
+    const domains = persisted.buildIncludedDomainPayload(
+        { 'ytkit-element-zapper-rules': rules },
+        { transcriptIndex: [] }
+    );
+    assert.equal(domains.elementZapperRules.length, 1);
+    assert.equal(domains.elementZapperRules[0].enabled, false);
+
+    const writes = persisted.domainsToExtensionWrites(domains);
+    assert.deepEqual(writes['ytkit-element-zapper-rules'], domains.elementZapperRules);
+
+    const migrated = persisted.migrateBackup({
+        exportVersion: persisted.BACKUP_EXPORT_VERSION,
+        backupSchemaVersion: persisted.BACKUP_SCHEMA_VERSION,
+        domains
+    });
+    assert.deepEqual(migrated.domains.elementZapperRules, domains.elementZapperRules);
+});
+
+test('a missing domain defaults to no rules rather than an object', () => {
+    const domains = persisted.buildIncludedDomainPayload({}, { transcriptIndex: [] });
+    assert.deepEqual(domains.elementZapperRules, []);
+});
