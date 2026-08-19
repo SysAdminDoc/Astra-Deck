@@ -377,7 +377,7 @@ test('player-state retry manager is loaded before MAIN-world quality bridge', ()
     assert.ok(mainEntry, 'manifest must declare a MAIN-world content script entry');
     assert.deepEqual(
         mainEntry.js,
-        ['core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'ytkit-main.js'],
+        ['core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js', 'core/feed-prefilter.js', 'ytkit-main.js'],
         'resource unlock, player, and audio helpers must load before ytkit-main.js in MAIN world'
     );
 
@@ -5682,8 +5682,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (468 → 467).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 473,
-        'SETTINGS_SCHEMA must cover all 473 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 474,
+        'SETTINGS_SCHEMA must cover all 474 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -7950,6 +7950,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/heatmap.js',
         'extension/core/youtube-thumbnails.js',
         'extension/core/feature-schedule.js',
+        'extension/core/feed-prefilter.js',
         'extension/core/companion-ports.js',
         'extension/core/data-flow.js',
         'extension/core/toast.js',

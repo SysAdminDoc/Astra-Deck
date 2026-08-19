@@ -193,6 +193,11 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     liveLatencyTargetSeconds: 'intentional-extension-only',
     liveLatencyMaxRate: 'intentional-extension-only',
     forceDvr: 'intentional-extension-only',
+    // Every line of feedPrefilter is the MAIN/ISOLATED bridge, which a
+    // userscript does not have - it runs in page context already. The pure
+    // decision module IS bundled, so a future userscript hook inherits the
+    // tested rules instead of a second copy of them.
+    feedPrefilter: 'intentional-extension-only',
     replayChatDensity: 'intentional-extension-only',
     // The userscript keeps the inline Video Hider runtime and custom pane,
     // while the extension-only registry cards remain intentionally absent.

@@ -113,6 +113,114 @@
     _syncResourceUnlock();
 
     // ──────────────────────────────────────────────────────────────────
+    // Feature: pre-render feed filter (data-ytkit-feed-prefilter)
+    // ──────────────────────────────────────────────────────────────────
+    // Post-render CSS hiding leaves a blocked card in the response, in the
+    // layout and in every count YouTube derives from it - which is how
+    // hideCollaborations hid a third of a feed for months with no symptom.
+    // This drops blocked entries out of the browse payload before Polymer
+    // builds a card from it.
+    //
+    // The decision half is core/feed-prefilter.js, loaded into this world by
+    // the manifest, so the rules are exercised against captured payloads with
+    // no page involved. This wrapper owns only the hook and the bridge.
+    //
+    // The post-render path is NOT removed. Shapes this does not recognise
+    // still reach the DOM filter exactly as before.
+    (function installFeedPrefilter() {
+        if (typeof document === 'undefined' || !document.documentElement
+            || typeof JSON === 'undefined') return;
+
+        var filterBrowseResponse = globalThis.YTKitCore
+            && globalThis.YTKitCore.filterBrowseResponse;
+        if (typeof filterBrowseResponse !== 'function') return;
+
+        var root = document.documentElement;
+        var ENABLE_ATTR = 'data-ytkit-feed-prefilter';
+        var IDS_ATTR = 'data-ytkit-feed-prefilter-ids';
+        var STATUS_ATTR = 'data-ytkit-feed-prefilter-status';
+        var enabled = false;
+        var blocklist = null;
+        var hookInstalled = false;
+        var originalParse = null;
+        var removedTotal = 0;
+        var refusedTotal = 0;
+
+        function writeStatus() {
+            var status = !enabled
+                ? 'off'
+                : (blocklist && blocklist.size ? 'on' : 'idle');
+            var payload = status + ';removed=' + removedTotal + ';refused=' + refusedTotal;
+            if (root.getAttribute(STATUS_ATTR) !== payload) {
+                root.setAttribute(STATUS_ATTR, payload);
+            }
+        }
+
+        function readBlocklist() {
+            var raw = root.getAttribute(IDS_ATTR);
+            if (!raw) return null;
+            var parsed;
+            try {
+                // The original parse, not the hooked one: this is our own
+                // bridge payload and must never re-enter the filter.
+                parsed = (originalParse || JSON.parse).call(JSON, raw);
+            } catch (error) {
+                return null;
+            }
+            if (!Array.isArray(parsed) || parsed.length === 0) return null;
+            var set = new Set();
+            for (var i = 0; i < parsed.length; i++) {
+                if (typeof parsed[i] === 'string' && parsed[i]) set.add(parsed[i]);
+            }
+            return set.size ? set : null;
+        }
+
+        function applyResponse(value) {
+            if (!enabled || !blocklist || !blocklist.size) return;
+            try {
+                var report = filterBrowseResponse(value, { blocklist: blocklist });
+                if (report.removed > 0 || report.refusedItems > 0) {
+                    removedTotal += report.removed;
+                    refusedTotal += report.refusedItems;
+                    writeStatus();
+                }
+            } catch (error) {
+                // A filter error must never break the page's own parse.
+                if (root.getAttribute(STATUS_ATTR) !== 'degraded') {
+                    root.setAttribute(STATUS_ATTR, 'degraded');
+                }
+            }
+        }
+
+        function installParseHook() {
+            if (hookInstalled) return;
+            var jsonObject = (typeof window !== 'undefined' && window.JSON) || JSON;
+            if (!jsonObject || typeof jsonObject.parse !== 'function') return;
+            originalParse = jsonObject.parse;
+            try {
+                jsonObject.parse = function() {
+                    var parsed = originalParse.apply(this, arguments);
+                    if (enabled) applyResponse(parsed);
+                    return parsed;
+                };
+                hookInstalled = true;
+            } catch (error) {
+                originalParse = null;
+            }
+        }
+
+        function sync() {
+            enabled = root.getAttribute(ENABLE_ATTR) === 'on';
+            blocklist = enabled ? readBlocklist() : null;
+            if (enabled && blocklist) installParseHook();
+            writeStatus();
+        }
+
+        _obsRegister([ENABLE_ATTR, IDS_ATTR], sync);
+        sync();
+    })();
+
+    // ──────────────────────────────────────────────────────────────────
     // Feature: Force DVR (data-ytkit-force-dvr)
     // ──────────────────────────────────────────────────────────────────
     // YouTube decides whether a live seekbar can rewind from the player

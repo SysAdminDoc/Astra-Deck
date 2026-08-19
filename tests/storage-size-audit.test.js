@@ -132,7 +132,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // The two heatmap toggles plus their cold-rate number add 85 bytes.
     // antiTranslateThumbnails adds a further 32, and the focus-hours
     // schedule map plus its device-local restore ledger add 44.
-    assert.equal(assessment.totalBytes, 186067);
+    // feedPrefilter adds a further 22.
+    assert.equal(assessment.totalBytes, 186089);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

@@ -3967,6 +3967,7 @@ return response;
             qualityDefaultEmbed: 'inherit',
             antiTranslateAudioTrack: false,            // Force original audio track on every video
             antiTranslateThumbnails: false,            // Restore the original-language thumbnail image
+            feedPrefilter: false,                      // Drop blocked channels from the browse response before Polymer renders it
             featureSchedules: {},                      // featureId -> { start, end, days, enabled } active window
             _scheduleRestore: {},                      // featureId -> value held from before its window opened
             antiTranslateTranscript: false,            // Force original-language transcript view
@@ -42561,6 +42562,84 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule(this.id);
                 this._navRule = null;
                 document.documentElement.removeAttribute('data-ytkit-audio-original');
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  PRE-RENDER FEED FILTER — Drop blocked channels before Polymer
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            // The decision half lives in core/feed-prefilter.js and the hook in
+            // ytkit-main.js (MAIN world). This feature owns only the bridge:
+            // it publishes the normalised blocklist onto documentElement, which
+            // is the same channel every other MAIN-world feature already uses.
+            //
+            // Nothing here replaces the post-render path. Video Hider still
+            // runs, and still catches everything the response walk does not
+            // recognise.
+            id: 'feedPrefilter',
+            name: 'Filter Feeds Before Render',
+            description: 'Remove blocked channels from YouTube\'s feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched.',
+            group: 'Content',
+            icon: 'filter',
+            // The bridge attribute is a DOM payload, so it is capped. A blocklist
+            // longer than this still filters post-render for the remainder -
+            // the two paths overlap by design.
+            _MAX_BRIDGED_IDS: 500,
+            _ENABLE_ATTR: 'data-ytkit-feed-prefilter',
+            _IDS_ATTR: 'data-ytkit-feed-prefilter-ids',
+            _navRule: null,
+            _settingsHandler: null,
+
+            _collectIds() {
+                const normalize = globalThis.YTKitCore?.normalizeBlockedChannelId;
+                if (typeof normalize !== 'function') return [];
+                const records = StorageManager.get(STORAGE_KEYS.blockedChannels, []) || [];
+                const ids = new Set();
+                for (const record of records) {
+                    if (ids.size >= this._MAX_BRIDGED_IDS) break;
+                    const candidates = typeof record === 'string'
+                        ? [record]
+                        : [record?.channelId, record?.id, record?.handle, record?.url, record?.vanity];
+                    for (const candidate of candidates) {
+                        const normalized = normalize(candidate);
+                        if (normalized) ids.add(normalized);
+                    }
+                }
+                return [...ids].slice(0, this._MAX_BRIDGED_IDS);
+            },
+
+            _publish() {
+                const ids = this._collectIds();
+                const root = document.documentElement;
+                try {
+                    root.setAttribute(this._IDS_ATTR, JSON.stringify(ids));
+                    root.setAttribute(this._ENABLE_ATTR, 'on');
+                } catch (error) {
+                    DebugManager.log('FeedPrefilter', `Failed to publish blocklist: ${error?.message || error}`);
+                }
+            },
+
+            init() {
+                this._publish();
+                // The blocklist changes when the user blocks a channel, and a
+                // stale bridge would keep rendering the card they just blocked
+                // until the next navigation.
+                this._settingsHandler = () => this._publish();
+                document.addEventListener('ytkit-settings-changed', this._settingsHandler);
+                this._navRule = () => this._publish();
+                addNavigateRule(this.id, this._navRule);
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                if (this._settingsHandler) {
+                    document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
+                    this._settingsHandler = null;
+                }
+                const root = document.documentElement;
+                root.removeAttribute(this._ENABLE_ATTR);
+                root.removeAttribute(this._IDS_ATTR);
             }
         },
         // ═══════════════════════════════════════════════════════════════════
