@@ -152,26 +152,6 @@ duplicated here.
   Confidence: Verified
   Effort: M
 
-- [ ] P3 — Speed popup: no vertical clamp / max-height on the JS fallback, and a document-listener leak on fast reopen
-  Category: correctness / a11y
-  Where: `extension/ytkit.js:3122-3133` (fallback placement, no `top+ph>innerHeight` clamp and no `maxHeight`), `:3142-3145` (50 ms `setTimeout` attaching capture-phase `click`+`keydown` with no `popup.isConnected` guard).
-  Problem: two gaps the download popup already fixed but the speed popup did not. (a) The no-anchor fallback branch (Firefox / no CSS anchor positioning) clamps `left` both ways and flips above→below when `top<8`, but never clamps the bottom edge and never caps height, so the ~230 px grid can extend past the viewport bottom after a flip in a short viewport. (b) If `_closeSpeedPopup()` runs inside the 50 ms arm window (a double-click reopen discards the old cleanup closure), the timer still fires and attaches the capture-phase listeners with no remover — leaked for the page lifetime, and the leaked `outsideClick` closes any later speed popup on the first click. The download popup carries the guard + comment at `index.js:2321-2324` and `:2369-2376`.
-  Evidence: compared both popups line-for-line; the guards are present in one and absent in the other.
-  Fix: mirror the download popup's bottom clamp + `maxHeight`, and add `if (!popup.isConnected) return;` before attaching the deferred listeners.
-  Acceptance: the speed popup stays fully on screen from a bottom-bar trigger in a short viewport; rapid reopen adds no permanent document listeners (asserted in a jsdom test).
-  Confidence: Verified (code)
-  Effort: S
-
-- [ ] P3 — Playlist preview creates a dead-end and its hint copy is then wrong
-  Category: correctness / ux
-  Where: `extension/features/download-ui/index.js:2244-2255` (empty-selection hard block) vs. hint at `:2121-2124`.
-  Problem: once `playlistSelection` becomes a Set (any preview), an empty selection hard-blocks the Download button ("Select at least one playlist item") — contradicting the hint "Without a selection, this video downloads normally". Reachable with zero effort when the playlist has 0 items, the current video is outside the shown subset (preselect misses), or the user unchecks everything intending a normal download. The only escape is closing and reopening the popup.
-  Evidence: traced the Set transition and the block.
-  Fix: empty selection falls through to single-video download (matching the hint), or add an explicit "clear preview" affordance.
-  Acceptance: unchecking all preview items and clicking Download downloads the single video; a test covers the empty-Set path.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Userscript companion downloads ignore the user's quality/format and lack an in-progress guard
   Category: correctness
   Where: `YTKit.user.js:2316` (payload `{url, audioOnly}` only) vs. extension `index.js:1519-1524`; `YTKit.user.js:2259` (`ytKitDownload`, no `_downloadInProgress` guard) vs. extension `:1443-1448`.

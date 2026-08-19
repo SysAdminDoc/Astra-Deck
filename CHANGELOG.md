@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The playback-speed popup now stays on screen in a short window and no longer
+  leaks event listeners when reopened quickly. Both are guards the download
+  popup already had: without the first, flipping the panel below its button
+  could push it past the bottom edge with no way to scroll it back; without
+  the second, a fast reopen left an orphaned handler that closed the next
+  speed popup on its first click.
+
 - Download UI correctness batch. The popup's edge clamp now nudges the panel
   back on screen for right-to-left languages, where it previously did nothing
   at all. Its height cap applies from the start, so a playlist preview loading
