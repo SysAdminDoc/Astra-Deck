@@ -1538,7 +1538,14 @@
                         timeout: 5000
                     });
                     DebugManager.log('MediaDL', `Download response: ${response.status} - ${response.responseText}`);
-                    if (resp.id) {
+                    // An empty or non-JSON 2xx body yields a null resp. Reading
+                    // .id off it threw a TypeError that the catch below rethrew
+                    // into the CONNECTION-error handler, so the user was told
+                    // "Astra Downloader stopped. Starting it again..." and shown
+                    // a repair prompt for a downloader that was running fine and
+                    // had simply answered with nothing. The else branch was
+                    // already correct; it was just unreachable.
+                    if (resp?.id) {
                         showDownloadProgress(resp.id, token, audioOnly);
                     } else {
                         showDownloaderFailure(resp || {});

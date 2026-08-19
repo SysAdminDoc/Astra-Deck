@@ -192,16 +192,6 @@ duplicated here.
   Confidence: Verified (path); impact Likely
   Effort: S
 
-- [ ] P3 — Empty 2xx `/download` response is misrouted to the restart/repair flow
-  Category: correctness
-  Where: `extension/features/download-ui/index.js:1539` (`if (resp.id)`).
-  Problem: on an empty or non-JSON 2xx body, `extensionFetchJson` yields `{data:null}`, so `resp.id` throws a `TypeError` that the catch rethrows into `ytKitDownload`'s connection-error handler (`:1492-1510`) → a misleading "Astra Downloader stopped. Starting it again…" + repair prompt instead of `showDownloaderFailure`.
-  Evidence: traced the null shape and the catch routing.
-  Fix: `if (resp?.id) { … } else { showDownloaderFailure(resp || {}); }`.
-  Acceptance: an empty 2xx download response shows the failure UI, not the restart prompt; a test covers the null-body case.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Duplicate/orphaned download health-pill containers when sibling download panels coexist
   Category: correctness
   Where: `extension/features/download-ui/index.js:2584-2607` (health dedupe by `anchor.nextElementSibling`) vs. Stream Links (`:2775`), Cobalt (`:2907`), History (`:3232`) each `insertAdjacentElement('afterend', …)` on the same anchor.
