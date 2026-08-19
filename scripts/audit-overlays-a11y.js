@@ -376,10 +376,16 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         hasMinTarget(ytkit, '.ytkit-dl-popup__dir-btn') &&
         hasMinTarget(ytkit, '.ytkit-dl-popup__go'),
         'Download options controls must declare focus-visible and at least 24px target size');
+    // The anchor is not always a widget: the context-menu path passes
+    // #movie_player when no download button is on the page, purely for
+    // positioning. Mirroring the state is required; mirroring it onto a plain
+    // container is its own defect, so the guard is part of the contract.
     add('Download options popup mirrors aria-expanded on trigger open and close',
-        downloadUi.includes("anchorEl?.setAttribute?.('aria-expanded', 'true')") &&
-        downloadUi.includes("anchorEl?.setAttribute?.('aria-expanded', 'false')"),
-        'Download options popup must mirror aria-expanded on open and close in the canonical module');
+        downloadUi.includes("disclosureAnchor?.setAttribute?.('aria-expanded', 'true')") &&
+        downloadUi.includes("disclosureAnchor?.setAttribute?.('aria-expanded', 'false')") &&
+        downloadUi.includes('const disclosureAnchor = isDisclosureTrigger(anchorEl)') &&
+        !downloadUi.includes("anchorEl?.setAttribute?.('aria-expanded'"),
+        'Download options popup must mirror aria-expanded on open and close in the canonical module, and only onto a real disclosure trigger');
 
     // Transcript viewer and transcript search.
     add('Transcript viewer is a labelled region',
@@ -628,8 +634,16 @@ function runSelfTest(baseSources) {
         {
             name: 'missing aria-expanded close',
             target: 'downloadUi',
-            expected: 'Download options popup must mirror aria-expanded on open and close in the canonical module',
-            mutate: (source) => source.replaceAll("anchorEl?.setAttribute?.('aria-expanded', 'false');", '')
+            expected: 'Download options popup must mirror aria-expanded on open and close in the canonical module, and only onto a real disclosure trigger',
+            mutate: (source) => source.replaceAll("disclosureAnchor?.setAttribute?.('aria-expanded', 'false');", '')
+        },
+        {
+            name: 'aria-expanded stamped onto the positioning anchor',
+            target: 'downloadUi',
+            expected: 'Download options popup must mirror aria-expanded on open and close in the canonical module, and only onto a real disclosure trigger',
+            mutate: (source) => source.replaceAll(
+                "disclosureAnchor?.setAttribute?.('aria-expanded'",
+                "anchorEl?.setAttribute?.('aria-expanded'")
         },
         {
             name: 'missing subscription Enter submit',

@@ -1656,6 +1656,16 @@
         let _dlPopupReturnFocus = null;
         let _dlPopupCloseWatcher = null;
 
+        // aria-expanded belongs on the widget that owns the disclosure. A
+        // <button>, or anything explicitly given a button/widget role, qualifies;
+        // an arbitrary container passed only for positioning does not.
+        function isDisclosureTrigger(el) {
+            if (!el || typeof el.getAttribute !== 'function') return false;
+            if (el.tagName === 'BUTTON') return true;
+            const role = el.getAttribute('role');
+            return role === 'button' || role === 'combobox';
+        }
+
         function _closeDlPopup() {
             const returnFocus = _dlPopupReturnFocus;
             _dlPopupReturnFocus = null;
@@ -2296,7 +2306,12 @@
             document.body.appendChild(popup);
             _dlPopup = popup;
             _dlPopupReturnFocus = anchorEl?.isConnected ? anchorEl : null;
-            anchorEl?.setAttribute?.('aria-expanded', 'true');
+            // The context-menu path passes #movie_player when no download
+            // button is on the page. That is a positioning anchor, not a
+            // widget, and aria-expanded on a plain div announces a disclosure
+            // state for something that has none. Only stamp real triggers.
+            const disclosureAnchor = isDisclosureTrigger(anchorEl) ? anchorEl : null;
+            disclosureAnchor?.setAttribute?.('aria-expanded', 'true');
 
             // Nothing else closes this popup on SPA navigation: YouTube's
             // autoplay advances the page with no user gesture, so the
@@ -2425,14 +2440,14 @@
                     popup.removeEventListener('keydown', dialogKeydown);
                     if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
                     removeNavigateRule(DL_POPUP_NAV_RULE_ID);
-                    anchorEl?.setAttribute?.('aria-expanded', 'false');
+                    disclosureAnchor?.setAttribute?.('aria-expanded', 'false');
                 };
             } else {
                 _dlPopupCleanup = () => {
                     popup.removeEventListener('keydown', dialogKeydown);
                     if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
                     removeNavigateRule(DL_POPUP_NAV_RULE_ID);
-                    anchorEl?.setAttribute?.('aria-expanded', 'false');
+                    disclosureAnchor?.setAttribute?.('aria-expanded', 'false');
                 };
             }
             queueMicrotask(() => { if (popup.isConnected) vidTab.focus(); });
