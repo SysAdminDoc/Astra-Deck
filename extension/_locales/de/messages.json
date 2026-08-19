@@ -7879,5 +7879,32 @@
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck kann in diesem Browserprofil nicht speichern. Aktuelle Änderungen gehen möglicherweise verloren."
+  },
+  "subscriptionMembersCapped": {
+    "message": "Die Gruppe ist mit 1000 Kanälen voll. Entferne zuerst einen."
+  },
+  "subscriptionGroupRename": {
+    "message": "Umbenennen"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "Gruppe {group} umbenennen"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "Neuer Name für diese Gruppe"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "Gruppe umbenannt"
+  },
+  "subscriptionGroupDelete": {
+    "message": "Löschen"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "Gruppe {group} löschen"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "„{group}“ und die {count} zugehörigen Kanäle löschen? Deine Abos bleiben unverändert."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "Gruppe gelöscht"
   }
 }

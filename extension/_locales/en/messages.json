@@ -7879,5 +7879,32 @@
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck cannot save to this browser profile. Recent changes may be lost."
+  },
+  "subscriptionMembersCapped": {
+    "message": "Group is full at 1000 channels. Remove one first."
+  },
+  "subscriptionGroupRename": {
+    "message": "Rename"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "Rename the group {group}"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "New name for this group"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "Group renamed"
+  },
+  "subscriptionGroupDelete": {
+    "message": "Delete"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "Delete the group {group}"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "Delete \"{group}\" and its {count} channels? Your subscriptions are not affected."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "Group deleted"
   }
 }

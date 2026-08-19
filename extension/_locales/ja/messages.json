@@ -7879,5 +7879,32 @@
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck はこのブラウザー プロファイルに保存できません。最近の変更が失われる可能性があります。"
+  },
+  "subscriptionMembersCapped": {
+    "message": "グループは 1000 チャンネルで一杯です。まず 1 つ削除してください。"
+  },
+  "subscriptionGroupRename": {
+    "message": "名前を変更"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "グループ {group} の名前を変更"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "このグループの新しい名前"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "グループの名前を変更しました"
+  },
+  "subscriptionGroupDelete": {
+    "message": "削除"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "グループ {group} を削除"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "「{group}」とその {count} チャンネルを削除しますか？登録チャンネルには影響しません。"
+  },
+  "subscriptionGroupDeleted": {
+    "message": "グループを削除しました"
   }
 }

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "referenceLocale": "en",
-  "referenceKeys": 2617,
+  "referenceKeys": 2626,
   "locales": {
-    "ar": 816,
+    "ar": 815,
     "de": 819,
     "es": 825,
     "fr": 824,
@@ -12,6 +12,6 @@
     "ko": 811,
     "pt_BR": 823,
     "ru": 810,
-    "zh_CN": 803
+    "zh_CN": 802
   }
 }

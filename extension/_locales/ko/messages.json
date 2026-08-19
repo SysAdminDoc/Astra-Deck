@@ -7879,5 +7879,32 @@
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck이 이 브라우저 프로필에 저장할 수 없습니다. 새 변경사항이 손실될 수 있습니다."
+  },
+  "subscriptionMembersCapped": {
+    "message": "그룹이 1000개 채널로 가득 찼습니다. 먼저 하나를 제거하세요."
+  },
+  "subscriptionGroupRename": {
+    "message": "이름 변경"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "{group} 그룹 이름 변경"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "이 그룹의 새 이름"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "그룹 이름을 변경했습니다"
+  },
+  "subscriptionGroupDelete": {
+    "message": "삭제"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "{group} 그룹 삭제"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "“{group}”와 해당 채널 {count}개를 삭제할까요? 구독은 영향을 받지 않습니다."
+  },
+  "subscriptionGroupDeleted": {
+    "message": "그룹을 삭제했습니다"
   }
 }

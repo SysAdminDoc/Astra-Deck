@@ -7436,7 +7436,7 @@
     "message": "上传时间"
   },
   "videoNotesDelete": {
-    "message": "Delete"
+    "message": "删除"
   },
   "videoNotesDeleteAria": {
     "message": "删除此视频的笔记"
@@ -7879,5 +7879,32 @@
   },
   "toastStorageWriteFailed": {
     "message": "Astra Deck 无法保存到此浏览器配置文件。最近的更改可能会丢失。"
+  },
+  "subscriptionMembersCapped": {
+    "message": "分组已满 1000 个频道。请先移除一个。"
+  },
+  "subscriptionGroupRename": {
+    "message": "重命名"
+  },
+  "subscriptionGroupRenameAriaTpl": {
+    "message": "重命名分组 {group}"
+  },
+  "subscriptionGroupRenamePrompt": {
+    "message": "此分组的新名称"
+  },
+  "subscriptionGroupRenamed": {
+    "message": "分组已重命名"
+  },
+  "subscriptionGroupDelete": {
+    "message": "删除"
+  },
+  "subscriptionGroupDeleteAriaTpl": {
+    "message": "删除分组 {group}"
+  },
+  "subscriptionGroupDeleteConfirmTpl": {
+    "message": "删除“{group}”及其 {count} 个频道？不会影响你的订阅。"
+  },
+  "subscriptionGroupDeleted": {
+    "message": "分组已删除"
   }
 }
