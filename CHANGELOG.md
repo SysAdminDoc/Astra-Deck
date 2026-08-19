@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.71.0] - 2026-08-19
+
 ### Fixed
 
 - Unchecking every item in the download popup playlist preview now downloads
