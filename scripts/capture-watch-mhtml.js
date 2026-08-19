@@ -117,6 +117,11 @@ function parseArgs(argv) {
         waitSelectors: [],
         requiredTokens: [],
     };
+    // capture:surface used to be byte-identical to capture:watch, so running it
+    // without --surface silently re-captured the watch page under the name of a
+    // surface capture. It now passes --require-surface and gets an error.
+    let explicitSurface = false;
+    let requireSurface = false;
 
     for (let i = 0; i < argv.length; i += 1) {
         const arg = argv[i];
@@ -126,7 +131,8 @@ function parseArgs(argv) {
             i += 1;
             return value;
         };
-        if (arg === '--surface') raw.surface = next();
+        if (arg === '--surface') { raw.surface = next(); explicitSurface = true; }
+        else if (arg === '--require-surface') requireSurface = true;
         else if (arg === '--url') raw.url = next();
         else if (arg === '--out') raw.out = path.resolve(next());
         else if (arg === '--chrome') raw.chrome = next();
@@ -163,6 +169,9 @@ function parseArgs(argv) {
         }
     }
 
+    if (requireSurface && !explicitSurface) {
+        throw new Error(`capture:surface requires --surface <name>. Expected one of: ${Object.keys(SURFACE_PROFILES).join(', ')} (use npm run capture:watch for the watch page)`);
+    }
     const profile = SURFACE_PROFILES[raw.surface];
     if (!profile) {
         throw new Error(`Unknown --surface "${raw.surface}". Expected one of: ${Object.keys(SURFACE_PROFILES).join(', ')}`);

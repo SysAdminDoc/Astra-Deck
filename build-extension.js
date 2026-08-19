@@ -200,9 +200,14 @@ const crxKeyModeIndex = args.indexOf('--crx-key-mode');
 // Guard: `--bump` with no following arg previously silently no-op'd because
 // `bumpType` was undefined and fell through the `if (bumpType)` check. Fail
 // loudly instead so the user knows the bump didn't apply.
+// `npm run build -- --bump patch` cannot reach here: npm appends the flags to
+// the LAST command of the && chain. ASTRA_BUMP / ASTRA_BUILD_PROFILE are the
+// routes that do, matching the ASTRA_SKIP_CRX / ASTRA_CRX_KEY_PATH idiom above.
+// generate-capability-matrix.js (the chain terminal) now refuses the flags and
+// names these.
 let bumpType = null;
-if (bumpIndex !== -1) {
-    bumpType = args[bumpIndex + 1];
+if (bumpIndex !== -1 || (IS_CLI && process.env.ASTRA_BUMP)) {
+    bumpType = bumpIndex !== -1 ? args[bumpIndex + 1] : process.env.ASTRA_BUMP;
     if (!bumpType || bumpType.startsWith('--')) {
         console.error('--bump requires a type: patch | minor | major');
         process.exit(1);
@@ -213,8 +218,8 @@ if (bumpIndex !== -1) {
     }
 }
 let profileType = 'both';
-if (profileIndex !== -1) {
-    profileType = args[profileIndex + 1];
+if (profileIndex !== -1 || (IS_CLI && process.env.ASTRA_BUILD_PROFILE)) {
+    profileType = profileIndex !== -1 ? args[profileIndex + 1] : process.env.ASTRA_BUILD_PROFILE;
     if (!profileType || profileType.startsWith('--')) {
         console.error('--profile requires a type: store-safe | chromium-store | github-full | both');
         process.exit(1);

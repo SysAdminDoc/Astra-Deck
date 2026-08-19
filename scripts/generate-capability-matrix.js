@@ -7,6 +7,7 @@ const path = require('node:path');
 const REPO_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_OUTPUT_PATH = path.join(REPO_ROOT, 'build', 'browser-capability-matrix.json');
 const { CAPABILITY_MATRIX } = require(path.join(REPO_ROOT, 'extension', 'core', 'capability-probe.js'));
+const { BUILD_FLAG_ENV_ROUTES, assertNoForeignFlags } = require('./cli-flag-guard');
 
 function buildCapabilityMatrix() {
     // The probe exports a deeply frozen runtime object. A JSON round-trip
@@ -51,6 +52,13 @@ function checkCapabilityMatrix(outputPath = DEFAULT_OUTPUT_PATH) {
 
 if (require.main === module) {
     try {
+        // Terminal command of `npm run build`, so it is where a swallowed
+        // `-- --bump patch` lands. See scripts/cli-flag-guard.js.
+        assertNoForeignFlags(process.argv.slice(2), {
+            script: 'generate-capability-matrix.js',
+            own: ['--output', '--check'],
+            envRoutes: BUILD_FLAG_ENV_ROUTES
+        });
         let outputPath = DEFAULT_OUTPUT_PATH;
         const outputFlagIndex = process.argv.indexOf('--output');
         if (outputFlagIndex !== -1) {

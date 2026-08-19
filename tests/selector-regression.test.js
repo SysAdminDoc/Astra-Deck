@@ -288,7 +288,10 @@ test('fresh-capture fixture workflow is documented', () => {
     assert.match(doc, /npm run build:fixtures/);
     assert.match(doc, /ytkit\.exportSelectorHealth\(\)/);
     assert.equal(pkg.scripts['capture:watch'], 'node scripts/capture-watch-mhtml.js');
-    assert.equal(pkg.scripts['capture:surface'], 'node scripts/capture-watch-mhtml.js');
+    // --require-surface: every documented capture:surface invocation below
+    // passes --surface, and without the flag the script silently fell back to
+    // the watch profile. See tests/npm-chain-flags.test.js.
+    assert.equal(pkg.scripts['capture:surface'], 'node scripts/capture-watch-mhtml.js --require-surface');
     assert.match(captureScript, /SURFACE_PROFILES/);
     assert.match(captureScript, /shorts:/);
     assert.match(captureScript, /SearchResults\.mhtml/);
