@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- The AI summary endpoint now proves the provider origin was granted before
+  spending the stored credential, and enforces a per-tab in-flight cap and
+  minimum interval. The key was never exfiltratable, but the spend was
+  unbounded: a compromised content script could drive a paid provider key for
+  arbitrary completions at any rate.
+- The cookie-handoff capability binds the document URL alongside the document
+  id. When a browser omits the document id, both sides held null and the
+  advertised document binding quietly degraded to tab-plus-container.
+
 ## [4.70.0] - 2026-08-19
 
 ### Added
