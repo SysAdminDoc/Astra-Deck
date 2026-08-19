@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "“느린 모드가 켜짐” 알림과 멤버 전용 알림을 숨깁니다"
+  },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck이 이 브라우저 프로필에 저장할 수 없습니다. 새 변경사항이 손실될 수 있습니다."
   }
 }

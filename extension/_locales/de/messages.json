@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "„Zeitlupenmodus ist aktiv“ und ähnliche Hinweise nur für Mitglieder ausblenden"
+  },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck kann in diesem Browserprofil nicht speichern. Aktuelle Änderungen gehen möglicherweise verloren."
   }
 }

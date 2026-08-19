@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "إخفاء إشعار «الوضع البطيء قيد التشغيل» وما يشبهه من إشعارات الأعضاء فقط"
+  },
+  "toastStorageWriteFailed": {
+    "message": "تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة."
   }
 }

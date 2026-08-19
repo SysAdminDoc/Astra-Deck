@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "Oculta o aviso “o modo lento está ativado” e seus equivalentes exclusivos para membros"
+  },
+  "toastStorageWriteFailed": {
+    "message": "O Astra Deck não consegue salvar neste perfil do navegador. As alterações recentes podem ser perdidas."
   }
 }

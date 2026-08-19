@@ -2090,6 +2090,23 @@ for (const [locale, messages] of Object.entries(SPONSORED_FILTER_TRANSLATIONS)) 
 // Keep the inline fallback and the separately loaded feature module aligned
 // with the catalog. These strings are also used by the userscript fallback,
 // so they must be translated before the locale artifacts are regenerated.
+// The auxiliary-write failure toast. It fires when the store has rejected
+// several flushes in a row, which is the one moment the user needs to know
+// their changes are not being kept.
+const STORAGE_WRITE_FAILURE_TRANSLATIONS = {
+  ar: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة.' },
+  de: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck kann in diesem Browserprofil nicht speichern. Aktuelle Änderungen gehen möglicherweise verloren.' },
+  es: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck no puede guardar en este perfil del navegador. Es posible que se pierdan los cambios recientes.' },
+  fr: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck ne peut pas enregistrer dans ce profil de navigateur. Les modifications récentes risquent d’être perdues.' },
+  it: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck non riesce a salvare in questo profilo del browser. Le modifiche recenti potrebbero andare perse.' },
+  ja: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck はこのブラウザー プロファイルに保存できません。最近の変更が失われる可能性があります。' },
+  ko: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck이 이 브라우저 프로필에 저장할 수 없습니다. 새 변경사항이 손실될 수 있습니다.' },
+  pt_BR: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'O Astra Deck não consegue salvar neste perfil do navegador. As alterações recentes podem ser perdidas.' },
+  ru: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck не может сохранить данные в этом профиле браузера. Недавние изменения могут быть потеряны.' },
+  zh_CN: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck 无法保存到此浏览器配置文件。最近的更改可能会丢失。' }
+};
+for (const [locale, messages] of Object.entries(STORAGE_WRITE_FAILURE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The chat mode-change notice toggle hides a renderer tag, so the selector
 // needs no translation, but its settings copy does like any sub-feature.
 const CHAT_MODE_NOTICE_TRANSLATIONS = {

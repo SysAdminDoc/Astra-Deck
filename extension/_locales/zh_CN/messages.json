@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "隐藏“慢速模式已开启”提示及其仅限会员的同类提示"
+  },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck 无法保存到此浏览器配置文件。最近的更改可能会丢失。"
   }
 }
