@@ -4812,7 +4812,7 @@
     "message": "Отслеживается поверхностей: {count}"
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: $VALUE$"
+    "message": "Unrecognized: {value}"
   },
   "settingsActiveSectionFallback": {
     "message": "Видеопроигрыватель"

@@ -204,6 +204,9 @@
             "hideVideosHidePlaylists",
             "hideVideosHideUpcoming"
         ],
+        "features/element-zapper/index.js": [
+            "elementZapper"
+        ],
         "features/video-notes/index.js": [
             "videoNotes"
         ],

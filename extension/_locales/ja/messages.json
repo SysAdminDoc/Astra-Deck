@@ -4812,7 +4812,7 @@
     "message": "{count} 個のサーフェスを追跡中"
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: $VALUE$"
+    "message": "Unrecognized: {value}"
   },
   "settingsActiveSectionFallback": {
     "message": "動画プレーヤー"

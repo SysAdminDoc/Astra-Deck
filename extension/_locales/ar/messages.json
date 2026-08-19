@@ -4812,7 +4812,7 @@
     "message": "{count} سطح مُتتبَّع"
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: $VALUE$"
+    "message": "Unrecognized: {value}"
   },
   "settingsActiveSectionFallback": {
     "message": "مشغّل الفيديو"

@@ -3828,8 +3828,8 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             legacy.value = String(effective);
             legacy.disabled = true;
             legacy.selected = true;
-            legacy.textContent = t('settingValueUnrecognized', 'Unrecognized: $VALUE$')
-                .replace('$VALUE$', String(effective) || '—');
+            legacy.textContent = t('settingValueUnrecognized', 'Unrecognized: {value}')
+                .replace('{value}', String(effective) || '—');
             select.appendChild(legacy);
         }
         for (const value of entry.enum) {
