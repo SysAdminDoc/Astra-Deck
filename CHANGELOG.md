@@ -6,6 +6,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.76.0] - 2026-08-19
+
+Nothing in this release changes what Astra Deck does. It is a maintenance pass
+on the checks that decide whether a release is fit to ship, plus the removal of
+some code that had stopped doing anything.
+
+### Changed
+
+- The verification suite now runs every check and reports them together. It
+  used to stop at the first failure, which meant a single problem could hide
+  seventeen other checks that never ran.
+- The accessibility test that renders each screen at phone width now also
+  renders it with deliberately over-long text, so cramped layouts are caught
+  before a translation finds them. That test also stopped failing at random,
+  which had made a genuine failure easy to dismiss.
+- Editing the extension's stylesheets no longer trips the translation check,
+  which had been treating whole blocks of CSS as untranslated text.
+
 ## [4.75.0] - 2026-08-19
 
 ### Added
