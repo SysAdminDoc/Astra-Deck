@@ -1235,7 +1235,12 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.selector-health-empty {
+/* Three dashboards, one empty state. .external-health-empty used to be absent
+   here, so the external-API dashboard rendered its empty state as a plain
+   default list item while its two siblings were styled. */
+.selector-health-empty,
+.external-health-empty,
+.feature-perf-empty {
   text-align: center;
   padding: 6px 0;
   color: var(--text-subtle);
@@ -1490,13 +1495,6 @@ body {
 }
 .feature-perf-slow .fp-name { color: #ff8585; }
 .feature-perf-slow .fp-bar { background: #ff8585; }
-.feature-perf-empty {
-  text-align: center;
-  padding: 6px 0;
-  color: var(--text-subtle);
-  font-style: italic;
-}
-
 /* ── Schema-driven category overview (v4.23.0) ───────────────────────
    Read-only roll-up of every settings-schema category with live
    enabled/total counts. Schema source of truth: extension/core/
