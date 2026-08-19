@@ -35,6 +35,7 @@
         resolveOriginalThumbnail,
         normalizeFeatureSchedules,
         planScheduleTransitions,
+        csvCell,
         findChapterTitle,
         parseChapterTimestamp,
         parseDescriptionChapters,
@@ -39615,8 +39616,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
             },
             _csvEscape(value) {
+                // Shared writer — see core/csv.js. Quoting alone does NOT stop
+                // a spreadsheet evaluating a leading `=`/`+`/`-`/`@`.
+                if (typeof csvCell === 'function') return csvCell(value);
                 const s = String(value ?? '');
-                return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+                return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
             },
             _exportScan(format) {
                 const entries = this._scanRows().map(({ videoId, title, channel, durationSec, watchedPct, watchedState, ageDays, publishedAt }) => (
@@ -43739,11 +43744,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _csvEscape(value) {
+                // Shared writer — see core/csv.js. This previously DETECTED a
+                // formula lead and responded by quoting, which does not stop a
+                // spreadsheet evaluating it.
+                if (typeof csvCell === 'function') return csvCell(value);
                 const s = String(value ?? '');
-                if (/[",\r\n]/.test(s) || s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@') || s.startsWith('\t')) {
-                    return '"' + s.replace(/"/g, '""') + '"';
-                }
-                return s;
+                const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+                if (/[",\r\n]/.test(safe)) return '"' + safe.replace(/"/g, '""') + '"';
+                return safe;
             },
 
             _exportGroupsCsv() {
@@ -46541,9 +46549,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _csvEscape(value) {
+                // Shared writer - see core/csv.js. Quoting alone does NOT
+                // stop a spreadsheet evaluating a leading =, +, - or @.
+                if (typeof csvCell === 'function') return csvCell(value);
                 const s = String(value == null ? '' : value);
-                if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-                return s;
+                const safe = /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+                if (/[",\r\n]/.test(safe)) return '"' + safe.replace(/"/g, '""') + '"';
+                return safe;
             },
 
             _todayKey() {

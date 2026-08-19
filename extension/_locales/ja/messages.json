@@ -1,4 +1,10 @@
 {
+  "advancedFiltersHint": {
+    "message": "risk:、category:、scope:、profile: を使用します。スペースでフィルターを組み合わせ、コンマで候補を指定します。"
+  },
+  "advancedFiltersTitle": {
+    "message": "詳細フィルター"
+  },
   "aiCredentialDeleteFailed": {
     "message": "資格情報を削除できませんでした。"
   },
@@ -26,6 +32,9 @@
   "aiCredentialReplaceBtn": {
     "message": "資格情報を置き換え"
   },
+  "aiCredentialReplaceHint": {
+    "message": "認証情報が設定されています。置き換える新しい値を入力してください。保存値は表示されません。"
+  },
   "aiCredentialSaveBtn": {
     "message": "資格情報を保存"
   },
@@ -50,8 +59,14 @@
   "aiCredentialStatusUnavailable": {
     "message": "状態を取得できません"
   },
+  "aiCredentialStoreHint": {
+    "message": "ユーザースクリプトマネージャー内だけに保存され、Astra Deck の設定やエクスポートには含まれません。"
+  },
   "aiCredentialTitle": {
     "message": "AI プロバイダーの資格情報"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
   },
   "aiSummaryButtonTitle": {
     "message": "AI Summary (manage credentials in the Astra Deck toolbar popup)"
@@ -165,64 +180,6 @@
   "bufferTargetSecondsTpl": {
     "message": "{count} 秒",
     "description": "Buffer target slider value rendered in seconds"
-  },
-  "featureScheduleDaysTpl": {
-    "message": "Active {window} on {days}"
-  },
-  "featureScheduleEveryDayTpl": {
-    "message": "Active {window} every day"
-  },
-  "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
-  },
-  "feature_antiTranslateChapters_name": {
-    "message": "Anti-Translate Chapters"
-  },
-  "feature_antiTranslateThumbnails_desc": {
-    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
-  },
-  "feature_antiTranslateThumbnails_name": {
-    "message": "Anti-Translate Thumbnails"
-  },
-  "feature_feedPrefilter_desc": {
-    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
-  },
-  "feature_feedPrefilter_name": {
-    "message": "Filter Feeds Before Render"
-  },
-  "feature_heatmapSmartSpeed_desc": {
-    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
-  },
-  "feature_heatmapSmartSpeed_name": {
-    "message": "Heatmap Smart Speed"
-  },
-  "feature_jumpToMostReplayed_desc": {
-    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
-  },
-  "feature_jumpToMostReplayed_name": {
-    "message": "Jump to Most Replayed"
-  },
-  "heatmapJumpAria": {
-    "message": "Jump to the most replayed moment"
-  },
-  "heatmapJumpedToast": {
-    "message": "Jumped to the most replayed moment"
-  },
-  "hiddenCardNoteTpl": {
-    "message": "Hidden by {feature}: {rule}"
-  },
-  "hiddenRuleCollaboration": {
-    "message": "multi-creator upload"
-  },
-  "hiddenRuleScheduled": {
-    "message": "scheduled livestream or premiere"
-  },
-  "hiddenRuleShorts": {
-    "message": "Shorts video"
-  },
-  "liveLatencyReadout": {
-    "message": "Live {latency}s · buffer {buffer}s",
-    "description": "Live-stream latency and buffered-ahead player readout"
   },
   "bulkActionsAria": {
     "message": "Bulk card actions"
@@ -431,6 +388,9 @@
   "dataFlowDriver": {
     "message": "ドライバー"
   },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "アクセスを削除するまで、Video Hider はこのサイトからデータを取得できます。"
+  },
   "dataFlowGrant": {
     "message": "grant"
   },
@@ -439,6 +399,24 @@
   },
   "dataFlowGrantNeeded": {
     "message": "permission needed"
+  },
+  "dataFlowGrantRemove": {
+    "message": "アクセスを削除"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "{host} へのサイトアクセスを削除"
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "{host} へのサイトアクセスを削除できませんでした。"
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "{host} へのサイトアクセスを削除しました。"
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "{count} 件を許可"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "許可済みのサイトアクセス"
   },
   "dataFlowInactive": {
     "message": "待機中"
@@ -598,6 +576,9 @@
   },
   "dlHistoryEmpty": {
     "message": "No completed downloads yet."
+  },
+  "dlHistoryExportTruncatedTpl": {
+    "message": "Exported the most recent {count} downloads. Narrow the filters to export older entries."
   },
   "dlHistoryExporting": {
     "message": "Exporting…"
@@ -891,11 +872,11 @@
   "dlPopupQuality": {
     "message": "画質"
   },
-  "dlPopupQualitySizeTpl": {
-    "message": "{quality} · {size}"
-  },
   "dlPopupQualitySizeTitleTpl": {
     "message": "Estimated download size: {size}"
+  },
+  "dlPopupQualitySizeTpl": {
+    "message": "{quality} · {size}"
   },
   "dlPopupQualitySizeUnavailable": {
     "message": "Size unavailable"
@@ -1068,6 +1049,12 @@
   "dualSubtitleTrackAria": {
     "message": "Secondary subtitles"
   },
+  "dwBreakTitle": {
+    "message": "休憩しましょう"
+  },
+  "dwDailyLimitTitle": {
+    "message": "1日の上限に達しました"
+  },
   "dwShortsHardBlockHint": {
     "message": "This hard block resets at your next local midnight."
   },
@@ -1113,153 +1100,6 @@
   "exportFilterListBtn": {
     "message": "ルールをエクスポート"
   },
-  "filterListExportFail": {
-    "message": "フィルターリストのエクスポートに失敗しました"
-  },
-  "filterListExported": {
-    "message": "Video Hider のルールをエクスポートしました。"
-  },
-  "filterListFailureBadFormat": {
-    "message": "応答が対応する Astra Deck フィルターリストではありませんでした"
-  },
-  "filterListFailureExpired": {
-    "message": "最後の検証から 7 日以上経過しています"
-  },
-  "filterListFailureHttpTpl": {
-    "message": "サーバーが HTTP {status} を返しました"
-  },
-  "filterListFailureIntegrity": {
-    "message": "SHA-256 検証を利用できませんでした"
-  },
-  "filterListFailureStorage": {
-    "message": "検証済みリストを保存できませんでした"
-  },
-  "filterListFailureTooLarge": {
-    "message": "応答が 1 MiB の上限を超えました"
-  },
-  "filterListFailureUnreachable": {
-    "message": "ソースに接続できませんでした"
-  },
-  "filterListHashUnavailable": {
-    "message": "記録なし"
-  },
-  "filterListImportFail": {
-    "message": "フィルターリストのインポートに失敗しました"
-  },
-  "filterListImportNotJson": {
-    "message": "このファイルは有効な JSON ではありません。"
-  },
-  "filterListImportRollback": {
-    "message": "フィルターリストのインポートに失敗しました。以前のデータを復元しました。"
-  },
-  "filterListImported": {
-    "message": "Video Hider のルールをインポートしました。インポートの取り消しが利用できます。"
-  },
-  "filterListNotModified": {
-    "message": "フィルターリストを確認しました。キャッシュ内容に変更はありません。"
-  },
-  "filterListRefreshDaily": {
-    "message": "毎日"
-  },
-  "filterListRefreshManual": {
-    "message": "手動のみ"
-  },
-  "filterListRefreshModeLabel": {
-    "message": "自動更新"
-  },
-  "filterListRefreshWeekly": {
-    "message": "毎週"
-  },
-  "filterListStatusActiveTpl": {
-    "message": "{host} を使用中。確認: {age}、形式 v{version}、SHA-256 {hash}。"
-  },
-  "filterListStatusErrorTpl": {
-    "message": "{host} のルールは有効ではありません。最後の更新に失敗しました: {reason}。"
-  },
-  "filterListStatusExported": {
-    "message": "ローカルのフィルタールールをエクスポートしました。"
-  },
-  "filterListStatusFail": {
-    "message": "問題が発生しました。保存済みのルールは変更されていません。"
-  },
-  "filterListStatusRefreshFail": {
-    "message": "リストを更新できませんでした。アドレスを確認してからもう一度お試しください。"
-  },
-  "filterListStatusFollowingTpl": {
-    "message": "{host} のフィルターリストを使用しています。"
-  },
-  "filterListStatusPendingTpl": {
-    "message": "まだ取得していません。{host} を購読するには「今すぐリストを更新」を選択してください。"
-  },
-  "filterListStatusLastFailedTpl": {
-    "message": "{host} の最後の更新に失敗しました。キャッシュされたルールを引き続き使用します。"
-  },
-  "filterListStatusImported": {
-    "message": "フィルタールールをインポートしました。インポートの取り消しが利用できます。"
-  },
-  "filterListStatusInvalidUrl": {
-    "message": "ユーザー名、パスワード、# フラグメントを含まない完全な HTTPS アドレスを入力してください。"
-  },
-  "filterListStatusNoTab": {
-    "message": "リモートリストを更新するには YouTube のタブを開いてください。"
-  },
-  "filterListStatusPrivateHost": {
-    "message": "そのアドレスはプライベートまたはローカルネットワーク上にあります。フィルターリストは公開された HTTPS サイトから配信する必要があります。"
-  },
-  "filterListStatusPermissionNeeded": {
-    "message": "そのサイトを読み取るには Astra Deck の許可が必要です。ブラウザーが尋ねたら「許可」を選択してください。"
-  },
-  "filterListStatusPreferenceFail": {
-    "message": "フィルターリストの設定を保存できませんでした。"
-  },
-  "filterListStatusReady": {
-    "message": "購読中のフィルターリストはありません。"
-  },
-  "filterListStatusRefreshed": {
-    "message": "リモートのフィルターリストを更新しました。"
-  },
-  "filterListStatusRefreshReasonTpl": {
-    "message": "{reason} のためリストを更新できませんでした。"
-  },
-  "filterListStatusStaleActiveTpl": {
-    "message": "{host} のキャッシュ済みルールは有効です。確認: {age}、{reason}。形式 v{version}、SHA-256 {hash}。"
-  },
-  "filterListStatusStalePausedTpl": {
-    "message": "{host} のキャッシュ済みルールは一時停止中です。確認: {age}、{reason}。形式 v{version}、SHA-256 {hash}。"
-  },
-  "filterListTimeUnknown": {
-    "message": "時刻不明"
-  },
-  "filterListToolsDesc": {
-    "message": "Video Hider のルールをバックアップしたり、ファイルから復元したり、信頼できるサイトで公開されているフィルターリストを購読したりできます。"
-  },
-  "filterListToolsEyebrow": {
-    "message": "Video Hider"
-  },
-  "filterListToolsTitle": {
-    "message": "フィルターリスト"
-  },
-  "filterListUrlLabel": {
-    "message": "フィルターリストの URL（任意）"
-  },
-  "filterListUrlPlaceholder": {
-    "message": "https://example.com/astra-deck-rules.json"
-  },
-  "filterListUseStaleLabel": {
-    "message": "更新に失敗した場合、または 7 日以上経過した場合に、最後に検証されたルールを使用する"
-  },
-  "filterListRefreshFail": {
-    "message": "フィルターリストの更新に失敗しました"
-  },
-  "filterListRefreshed": {
-    "message": "Video Hider のフィルターリストを更新しました。"
-  },
-  "importFilterListBtn": {
-    "message": "ルールをインポート"
-  },
-  "refreshFilterListBtn": {
-    "message": "今すぐリストを更新"
-  },
   "extActionTitle": {
     "message": "Astra Deck",
     "description": "Tooltip text for the toolbar action button."
@@ -1274,6 +1114,9 @@
   },
   "externalHealthAria": {
     "message": "External API health"
+  },
+  "externalHealthAvailabilityTpl": {
+    "message": "availability {state}"
   },
   "externalHealthCopyAria": {
     "message": "Copy external API health report to clipboard"
@@ -1293,23 +1136,20 @@
   "externalHealthCopyPending": {
     "message": "Building report..."
   },
-  "externalHealthAvailabilityTpl": {
-    "message": "availability {state}"
-  },
   "externalHealthDetailEmpty": {
     "message": "No requests observed in this tab yet."
   },
   "externalHealthEmpty": {
     "message": "No external API services tracked yet."
   },
-  "externalHealthTitle": {
-    "message": "External API health"
-  },
   "externalHealthRefreshTpl": {
     "message": "refreshed {age} ago"
   },
   "externalHealthSourceTpl": {
     "message": "source {source}"
+  },
+  "externalHealthTitle": {
+    "message": "External API health"
   },
   "externalHealthTotalTpl": {
     "message": "{count} services"
@@ -1379,6 +1219,12 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureScheduleDaysTpl": {
+    "message": "Active {window} on {days}"
+  },
+  "featureScheduleEveryDayTpl": {
+    "message": "Active {window} every day"
   },
   "feature_abHide_ask_desc": {
     "message": "動画の下にある Ask/AI ボタンを非表示にする"
@@ -1463,6 +1309,18 @@
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "音声トラック翻訳防止"
+  },
+  "feature_antiTranslateChapters_desc": {
+    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+  },
+  "feature_antiTranslateChapters_name": {
+    "message": "Anti-Translate Chapters"
+  },
+  "feature_antiTranslateThumbnails_desc": {
+    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
+  },
+  "feature_antiTranslateThumbnails_name": {
+    "message": "Anti-Translate Thumbnails"
   },
   "feature_antiTranslateTranscript_desc": {
     "message": "エンゲージメントパネルの文字起こし URL から翻訳トラックパラメータを除去し、YouTube に原語字幕を配信させます。ベストエフォート。原語トラックが利用可能な場合に動作します。"
@@ -1655,24 +1513,6 @@
   },
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
-  },
-  "feature_photosensitiveDimPercent_desc": {
-    "message": "点滅するコンテンツを検出している間、プレーヤーをどの程度暗くするか。"
-  },
-  "feature_photosensitiveDimPercent_name": {
-    "message": "暗くする強さ"
-  },
-  "feature_photosensitiveFlashProtection_desc": {
-    "message": "フレームをローカルで解析し、輝度の急激な変化を検出するとプレーヤーを一時的に暗くします。"
-  },
-  "feature_photosensitiveFlashProtection_name": {
-    "message": "光過敏性フラッシュ保護"
-  },
-  "feature_photosensitiveFlashThreshold_desc": {
-    "message": "保護を発動する最小のフレーム輝度変化。"
-  },
-  "feature_photosensitiveFlashThreshold_name": {
-    "message": "フラッシュ感度"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "オンデマンド動画を何秒先までバッファするか。値を大きくすると長い接続切断にも耐えられます。長時間の動画では、プレーヤーが大きな目標値を制限する場合があります。"
@@ -2208,6 +2048,12 @@
   "feature_expandVideoWidth_name": {
     "message": "動画の横幅を拡大"
   },
+  "feature_feedPrefilter_desc": {
+    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
+  },
+  "feature_feedPrefilter_name": {
+    "message": "Filter Feeds Before Render"
+  },
   "feature_feedTriageProfile_desc": {
     "message": "厳選されたフォーカスレシピをオンに: Shorts、ライブ配信、プレミア公開予定、ミックス、視聴済み動画、AI 要約を非表示。オフにすると以前の値を復元。"
   },
@@ -2243,6 +2089,12 @@
   },
   "feature_forceDarkEverywhere_name": {
     "message": "全 YouTube ページでダーク強制"
+  },
+  "feature_forceDvr_desc": {
+    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+  },
+  "feature_forceDvr_name": {
+    "message": "Force DVR for Live Streams"
   },
   "feature_forceH264_desc": {
     "message": "古いハードウェアでの CPU 負荷を低減するため H.264 (AVC) を VP9/AV1 より優先。最大画質が下がる可能性あり。MAIN ワールドコーデックブリッジを使用。"
@@ -2429,6 +2281,12 @@
   },
   "feature_guideHide_yourVideos_name": {
     "message": "Your Videos"
+  },
+  "feature_heatmapSmartSpeed_desc": {
+    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
+  },
+  "feature_heatmapSmartSpeed_name": {
+    "message": "Heatmap Smart Speed"
   },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "動画の下に表示されるアクションボタンのうち、非表示にするものを選択"
@@ -2718,17 +2576,17 @@
   "feature_hideVideosFromHome_name": {
     "message": "動画フィルター"
   },
-  "feature_hideVideosSyntheticNarrationFilter_desc": {
-    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
-  },
-  "feature_hideVideosSyntheticNarrationFilter_name": {
-    "message": "Synthetic narration markers"
-  },
   "feature_hideVideosLowSignalFilter_desc": {
     "message": "Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open."
   },
   "feature_hideVideosLowSignalFilter_name": {
     "message": "Hide low-signal videos"
+  },
+  "feature_hideVideosLowSignalMinAgeDays_desc": {
+    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+  },
+  "feature_hideVideosLowSignalMinAgeDays_name": {
+    "message": "Low-signal age threshold"
   },
   "feature_hideVideosLowSignalMinViews_desc": {
     "message": "Minimum views used by the low-signal heuristic. Set to 0 to disable its view side."
@@ -2736,11 +2594,11 @@
   "feature_hideVideosLowSignalMinViews_name": {
     "message": "Low-signal view threshold"
   },
-  "feature_hideVideosLowSignalMinAgeDays_desc": {
-    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+  "feature_hideVideosSyntheticNarrationFilter_desc": {
+    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
   },
-  "feature_hideVideosLowSignalMinAgeDays_name": {
-    "message": "Low-signal age threshold"
+  "feature_hideVideosSyntheticNarrationFilter_name": {
+    "message": "Synthetic narration markers"
   },
   "feature_hideVideosUploadCadenceFilter_desc": {
     "message": "Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible."
@@ -2784,6 +2642,12 @@
   "feature_initialPlayerStateForeground_name": {
     "message": "初期プレーヤー状態（フォアグラウンド）"
   },
+  "feature_jumpToMostReplayed_desc": {
+    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
+  },
+  "feature_jumpToMostReplayed_name": {
+    "message": "Jump to Most Replayed"
+  },
   "feature_keyMoments_desc": {
     "message": "プログレスバー上のチャプターマーカーを色分けしたセグメントでハイライトし、素早い視覚ナビゲーションを実現"
   },
@@ -2801,12 +2665,6 @@
   },
   "feature_listFeedLayout_name": {
     "message": "List Feed Layout"
-  },
-  "feature_liveSpeedReset_desc": {
-    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
-  },
-  "feature_liveSpeedReset_name": {
-    "message": "Live Catch-Up Speed Reset"
   },
   "feature_liveLatencyCatchup_desc": {
     "message": "Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target."
@@ -2826,26 +2684,11 @@
   "feature_liveLatencyTargetSeconds_name": {
     "message": "Live Latency Target"
   },
-  "feature_forceDvr_desc": {
-    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+  "feature_liveSpeedReset_desc": {
+    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
   },
-  "feature_forceDvr_name": {
-    "message": "Force DVR for Live Streams"
-  },
-  "forceDvrDegraded": {
-    "message": "DVR could not be enabled because the live player response changed."
-  },
-  "feature_replayChatDensity_desc": {
-    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
-  },
-  "feature_replayChatDensity_name": {
-    "message": "Replay Chat Density"
-  },
-  "replayChatDensityAria": {
-    "message": "Chat activity across this video. Click the chart to seek."
-  },
-  "replayChatDensityTitle": {
-    "message": "Chat activity — click to seek"
+  "feature_liveSpeedReset_name": {
+    "message": "Live Catch-Up Speed Reset"
   },
   "feature_localAiSummary_desc": {
     "message": "利用可能な場合に Chrome 内蔵の Summarizer API を使用。利用不可時は明確なメッセージを表示し、リモートプロバイダーに暗黙でルーティングしません。既存の AI 要約ボタンの横に「ローカル要約」ボタンを追加。"
@@ -2858,6 +2701,12 @@
   },
   "feature_localAiTranscriptQa_name": {
     "message": "文字起こし Q&A（ブラウザ内蔵）"
+  },
+  "feature_logarithmicVolume_desc": {
+    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
+  },
+  "feature_logarithmicVolume_name": {
+    "message": "Logarithmic Volume Curve"
   },
   "feature_logoToSubscriptions_desc": {
     "message": "YouTube ロゴのリンク先を登録チャンネルフィードに変更"
@@ -3056,6 +2905,24 @@
   },
   "feature_persistentSpeed_name": {
     "message": "持続的な速度"
+  },
+  "feature_photosensitiveDimPercent_desc": {
+    "message": "点滅するコンテンツを検出している間、プレーヤーをどの程度暗くするか。"
+  },
+  "feature_photosensitiveDimPercent_name": {
+    "message": "暗くする強さ"
+  },
+  "feature_photosensitiveFlashProtection_desc": {
+    "message": "フレームをローカルで解析し、輝度の急激な変化を検出するとプレーヤーを一時的に暗くします。"
+  },
+  "feature_photosensitiveFlashProtection_name": {
+    "message": "光過敏性フラッシュ保護"
+  },
+  "feature_photosensitiveFlashThreshold_desc": {
+    "message": "保護を発動する最小のフレーム輝度変化。"
+  },
+  "feature_photosensitiveFlashThreshold_name": {
+    "message": "フラッシュ感度"
   },
   "feature_pipButton_desc": {
     "message": "ブラウザネイティブのピクチャーインピクチャー用にワンクリック PiP ボタンをプレーヤーコントロールに追加"
@@ -3261,6 +3128,12 @@
   "feature_removeScrubber_name": {
     "message": "Hide Scrubber Handle"
   },
+  "feature_replayChatDensity_desc": {
+    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
+  },
+  "feature_replayChatDensity_name": {
+    "message": "Replay Chat Density"
+  },
   "feature_researchSpacedReview_desc": {
     "message": "学習/仕事モードのデータを Markdown または CSV にエクスポート: 視聴時間合計、集中モード状態、デジタルウェルビーイング状態、ディープリンク付きタイムスタンプブックマーク。"
   },
@@ -3374,27 +3247,6 @@
   },
   "feature_sbPerChannelProfiles_name": {
     "message": "SponsorBlock チャンネル別プロファイル"
-  },
-  "feature_sponsorBlockBaseUrl_desc": {
-    "message": "SponsorBlock と DeArrow が使用する主要な HTTPS ホストを選択します。"
-  },
-  "feature_sponsorBlockBaseUrl_name": {
-    "message": "SponsorBlock API ホスト"
-  },
-  "feature_sponsorBlockCanonicalHost_label": {
-    "message": "正規 — sponsor.ajay.app"
-  },
-  "feature_sponsorBlockDisabled_label": {
-    "message": "無効"
-  },
-  "feature_sponsorBlockMirrorHost_label": {
-    "message": "ミラー — sponsorblock.kavin.rocks"
-  },
-  "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "主要 API ホストが失敗したとき、この承認済みミラーを一度試します。"
-  },
-  "feature_sponsorBlockMirrorUrl_name": {
-    "message": "SponsorBlock 予備ホスト"
   },
   "feature_scrollToPlayer_desc": {
     "message": "新しい動画に移動したとき自動的にページ上部にスクロール"
@@ -3546,11 +3398,38 @@
   "feature_speedStep_name": {
     "message": "速度ステップ量"
   },
+  "feature_sponsorBlockBaseUrl_desc": {
+    "message": "SponsorBlock と DeArrow が使用する主要な HTTPS ホストを選択します。"
+  },
+  "feature_sponsorBlockBaseUrl_name": {
+    "message": "SponsorBlock API ホスト"
+  },
+  "feature_sponsorBlockCanonicalHost_label": {
+    "message": "正規 — sponsor.ajay.app"
+  },
+  "feature_sponsorBlockDisabled_label": {
+    "message": "無効"
+  },
+  "feature_sponsorBlockMirrorHost_label": {
+    "message": "ミラー — sponsorblock.kavin.rocks"
+  },
+  "feature_sponsorBlockMirrorUrl_desc": {
+    "message": "主要 API ホストが失敗したとき、この承認済みミラーを一度試します。"
+  },
+  "feature_sponsorBlockMirrorUrl_name": {
+    "message": "SponsorBlock 予備ホスト"
+  },
   "feature_sponsorBlock_desc": {
     "message": "CC BY-NC-SA 4.0 でライセンスされた SponsorBlock データを使い、スポンサー区間、イントロ、アウトロなど本編以外の区間を自動的にスキップします"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
+  },
+  "feature_sponsoredContentFilter_desc": {
+    "message": "スポンサーやアフィリエイト宣伝と思われるコメントと説明ブロックを折りたたみます。一致理由を表示し、項目ごとに復元できます。"
+  },
+  "feature_sponsoredContentFilter_name": {
+    "message": "スポンサーコンテンツフィルター"
   },
   "feature_squareAvatars_desc": {
     "message": "チャンネルアバターを丸形から四角形に変更"
@@ -3924,6 +3803,156 @@
   "feature_zenMode_name": {
     "message": "Zen モード"
   },
+  "filterListExportFail": {
+    "message": "フィルターリストのエクスポートに失敗しました"
+  },
+  "filterListExported": {
+    "message": "Video Hider のルールをエクスポートしました。"
+  },
+  "filterListFailureBadFormat": {
+    "message": "応答が対応する Astra Deck フィルターリストではありませんでした"
+  },
+  "filterListFailureExpired": {
+    "message": "最後の検証から 7 日以上経過しています"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "サーバーが HTTP {status} を返しました"
+  },
+  "filterListFailureIntegrity": {
+    "message": "SHA-256 検証を利用できませんでした"
+  },
+  "filterListFailureStorage": {
+    "message": "検証済みリストを保存できませんでした"
+  },
+  "filterListFailureTooLarge": {
+    "message": "応答が 1 MiB の上限を超えました"
+  },
+  "filterListFailureUnreachable": {
+    "message": "ソースに接続できませんでした"
+  },
+  "filterListHashUnavailable": {
+    "message": "記録なし"
+  },
+  "filterListImportFail": {
+    "message": "フィルターリストのインポートに失敗しました"
+  },
+  "filterListImportNotJson": {
+    "message": "このファイルは有効な JSON ではありません。"
+  },
+  "filterListImportRollback": {
+    "message": "フィルターリストのインポートに失敗しました。以前のデータを復元しました。"
+  },
+  "filterListImported": {
+    "message": "Video Hider のルールをインポートしました。インポートの取り消しが利用できます。"
+  },
+  "filterListNotModified": {
+    "message": "フィルターリストを確認しました。キャッシュ内容に変更はありません。"
+  },
+  "filterListRefreshDaily": {
+    "message": "毎日"
+  },
+  "filterListRefreshFail": {
+    "message": "フィルターリストの更新に失敗しました"
+  },
+  "filterListRefreshManual": {
+    "message": "手動のみ"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "自動更新"
+  },
+  "filterListRefreshWeekly": {
+    "message": "毎週"
+  },
+  "filterListRefreshed": {
+    "message": "Video Hider のフィルターリストを更新しました。"
+  },
+  "filterListStatusActiveTpl": {
+    "message": "{host} を使用中。確認: {age}、形式 v{version}、SHA-256 {hash}。"
+  },
+  "filterListStatusErrorTpl": {
+    "message": "{host} のルールは有効ではありません。最後の更新に失敗しました: {reason}。"
+  },
+  "filterListStatusExported": {
+    "message": "ローカルのフィルタールールをエクスポートしました。"
+  },
+  "filterListStatusFail": {
+    "message": "問題が発生しました。保存済みのルールは変更されていません。"
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "{host} のフィルターリストを使用しています。"
+  },
+  "filterListStatusImported": {
+    "message": "フィルタールールをインポートしました。インポートの取り消しが利用できます。"
+  },
+  "filterListStatusInvalidUrl": {
+    "message": "ユーザー名、パスワード、# フラグメントを含まない完全な HTTPS アドレスを入力してください。"
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "{host} の最後の更新に失敗しました。キャッシュされたルールを引き続き使用します。"
+  },
+  "filterListStatusNoTab": {
+    "message": "リモートリストを更新するには YouTube のタブを開いてください。"
+  },
+  "filterListStatusPendingTpl": {
+    "message": "まだ取得していません。{host} を購読するには「今すぐリストを更新」を選択してください。"
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "そのサイトを読み取るには Astra Deck の許可が必要です。ブラウザーが尋ねたら「許可」を選択してください。"
+  },
+  "filterListStatusPreferenceFail": {
+    "message": "フィルターリストの設定を保存できませんでした。"
+  },
+  "filterListStatusPrivateHost": {
+    "message": "そのアドレスはプライベートまたはローカルネットワーク上にあります。フィルターリストは公開された HTTPS サイトから配信する必要があります。"
+  },
+  "filterListStatusReady": {
+    "message": "購読中のフィルターリストはありません。"
+  },
+  "filterListStatusRefreshFail": {
+    "message": "リストを更新できませんでした。アドレスを確認してからもう一度お試しください。"
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "{reason} のためリストを更新できませんでした。"
+  },
+  "filterListStatusRefreshed": {
+    "message": "リモートのフィルターリストを更新しました。"
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "{host} のキャッシュ済みルールは有効です。確認: {age}、{reason}。形式 v{version}、SHA-256 {hash}。"
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "{host} のキャッシュ済みルールは一時停止中です。確認: {age}、{reason}。形式 v{version}、SHA-256 {hash}。"
+  },
+  "filterListStopFailed": {
+    "message": "フィルターリストの購読を停止できませんでした。"
+  },
+  "filterListStoppedTpl": {
+    "message": "{host} の購読を停止しました。フィルターリスト専用のサイトアクセスは残っていません。"
+  },
+  "filterListTimeUnknown": {
+    "message": "時刻不明"
+  },
+  "filterListToolsDesc": {
+    "message": "Video Hider のルールをバックアップしたり、ファイルから復元したり、信頼できるサイトで公開されているフィルターリストを購読したりできます。"
+  },
+  "filterListToolsEyebrow": {
+    "message": "Video Hider"
+  },
+  "filterListToolsTitle": {
+    "message": "フィルターリスト"
+  },
+  "filterListUrlLabel": {
+    "message": "フィルターリストの URL（任意）"
+  },
+  "filterListUrlPlaceholder": {
+    "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "更新に失敗した場合、または 7 日以上経過した場合に、最後に検証されたルールを使用する"
+  },
+  "filterTogglesHelpTitle": {
+    "message": "フリーテキストは名前、説明、キー、翻訳済みラベルに一致します。Mini-DSL: risk:safe|api|local-companion|experimental|store-risk、category:<name>、scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup、profile:store-safe|github-full|both。スペース（AND）とコンマ（フィールド内の OR）で組み合わせます。"
+  },
   "filterTogglesLabel": {
     "message": "クイックトグルをフィルター"
   },
@@ -3941,6 +3970,9 @@
   },
   "floatingChatOpacityAria": {
     "message": "Chat opacity"
+  },
+  "forceDvrDegraded": {
+    "message": "DVR could not be enabled because the live player response changed."
   },
   "groupQuickControls": {
     "message": "クイックコントロール"
@@ -3975,6 +4007,24 @@
   "healthTitle": {
     "message": "診断"
   },
+  "heatmapJumpAria": {
+    "message": "Jump to the most replayed moment"
+  },
+  "heatmapJumpedToast": {
+    "message": "Jumped to the most replayed moment"
+  },
+  "hiddenCardNoteTpl": {
+    "message": "Hidden by {feature}: {rule}"
+  },
+  "hiddenRuleCollaboration": {
+    "message": "multi-creator upload"
+  },
+  "hiddenRuleScheduled": {
+    "message": "scheduled livestream or premiere"
+  },
+  "hiddenRuleShorts": {
+    "message": "Shorts video"
+  },
   "hideAllButtonLabel": {
     "message": "すべて非表示",
     "description": "Label of the Hide All button"
@@ -3986,11 +4036,17 @@
   "importBtn": {
     "message": "インポート"
   },
+  "importFilterListBtn": {
+    "message": "ルールをインポート"
+  },
   "languageAr": {
     "message": "العربية (アラビア語)"
   },
   "languageAuto": {
     "message": "自動（ブラウザの既定）"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
   },
   "languageDe": {
     "message": "Deutsch (ドイツ語)"
@@ -4027,6 +4083,10 @@
   },
   "languageZhCn": {
     "message": "简体中文 (簡体字中国語)"
+  },
+  "liveLatencyReadout": {
+    "message": "Live {latency}s · buffer {buffer}s",
+    "description": "Live-stream latency and buffered-ahead player readout"
   },
   "loadingState": {
     "message": "読み込み中"
@@ -4146,23 +4206,8 @@
   "panelTitle": {
     "message": "設定"
   },
-  "playerDownloadAria": {
-    "message": "動画をダウンロード"
-  },
-  "playerDownloadTitle": {
-    "message": "動画をダウンロード"
-  },
-  "playerGearAriaTpl": {
-    "message": "{brand} の設定を開く"
-  },
-  "playerGearTitleTpl": {
-    "message": "{brand} の設定"
-  },
-  "playerCcAria": {
-    "message": "字幕を切り替え"
-  },
-  "playerCcTitle": {
-    "message": "字幕"
+  "photosensitiveFlashDetected": {
+    "message": "点滅するコンテンツを検出 — 暗くしました"
   },
   "playbackStatsDataChecking": {
     "message": "Checking with Astra Downloader…"
@@ -4175,6 +4220,27 @@
   },
   "playbackStatsDataUsage": {
     "message": "Download size estimates"
+  },
+  "playerCcAria": {
+    "message": "字幕を切り替え"
+  },
+  "playerCcTitle": {
+    "message": "字幕"
+  },
+  "playerDockHomeLink": {
+    "message": "ホームへ移動"
+  },
+  "playerDownloadAria": {
+    "message": "動画をダウンロード"
+  },
+  "playerDownloadTitle": {
+    "message": "動画をダウンロード"
+  },
+  "playerGearAriaTpl": {
+    "message": "{brand} の設定を開く"
+  },
+  "playerGearTitleTpl": {
+    "message": "{brand} の設定"
   },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
@@ -4275,9 +4341,6 @@
   "playlistVideoCountTpl": {
     "message": "{count} videos"
   },
-  "photosensitiveFlashDetected": {
-    "message": "点滅するコンテンツを検出 — 暗くしました"
-  },
   "popupTitle": {
     "message": "Astra Deck"
   },
@@ -4333,6 +4396,9 @@
   },
   "qtGroup_Playback": {
     "message": "再生"
+  },
+  "qtGroup_Privacy": {
+    "message": "プライバシー"
   },
   "qtGroup_Utilities": {
     "message": "ユーティリティ"
@@ -4394,11 +4460,11 @@
   "qt_disableInfiniteScroll_name": {
     "message": "無限スクロールを制限"
   },
-  "qt_syncSettings_desc": {
-    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+  "qt_githubFullProfile_desc": {
+    "message": "github-full の切り替えを解除（Cobalt、AI キーなど）"
   },
-  "qt_syncSettings_name": {
-    "message": "Browser Sync"
+  "qt_githubFullProfile_name": {
+    "message": "GitHub-Full プロファイル"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "視聴ページのサイドレールをクリア"
@@ -4418,11 +4484,23 @@
   "qt_persistentSpeed_name": {
     "message": "持続的な速度"
   },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "Astra Deck が接続できるすべての API オリジンを表示"
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "データフローパネル"
+  },
   "qt_removeAllShorts_desc": {
     "message": "Shorts の棚とリンクを削除"
   },
   "qt_removeAllShorts_name": {
     "message": "Shorts を非表示"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "github-full の切り替えを隠し、エクスポート時にキーを消去"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "Store-Safe プロファイル"
   },
   "qt_sponsorBlock_desc": {
     "message": "クラウドマークされたスポンサーセグメントをスキップ"
@@ -4430,11 +4508,23 @@
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
+  "qt_syncSettings_desc": {
+    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+  },
+  "qt_syncSettings_name": {
+    "message": "Browser Sync"
+  },
   "qt_transcriptViewer_desc": {
     "message": "字幕を読み、ジャンプし、エクスポート"
   },
   "qt_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}。{description}。{state}。{permission}"
   },
   "quickTogglesAria": {
     "message": "クイックトグル"
@@ -4526,17 +4616,32 @@
   "reenableMediadlBtn": {
     "message": "ダウンローダープロンプトを有効化"
   },
+  "refreshFilterListBtn": {
+    "message": "今すぐリストを更新"
+  },
+  "replayChatDensityAria": {
+    "message": "Chat activity across this video. Click the chart to seek."
+  },
+  "replayChatDensityTitle": {
+    "message": "Chat activity — click to seek"
+  },
   "resetBtn": {
     "message": "リセット"
   },
   "resultsAllAvailableTpl": {
     "message": "{count} 個のクイックコントロールがこのポップアップで利用可能"
   },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
   "resultsMatchTpl": {
     "message": "{total} 中 {visible} 件がこのフィルターに一致"
   },
   "resultsMatching": {
     "message": "一致"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} 件が一致"
   },
   "schemaBadgeGithubFullTitle": {
     "message": "この設定は GitHub-Full プロファイルが有効な場合にのみ適用されます。"
@@ -4565,17 +4670,14 @@
   "schemaJsonInvalidTpl": {
     "message": "無効な JSON: {error}"
   },
-  "schemaOverviewCountTpl": {
-    "message": "{categories} カテゴリで {enabled}/{total} 個の設定がオン"
+  "schemaOverviewAllView": {
+    "message": "すべての設定を表示"
   },
   "schemaOverviewChangedCountTpl": {
     "message": "{count} 件を変更"
   },
   "schemaOverviewChangedView": {
     "message": "既定値からの変更"
-  },
-  "schemaOverviewAllView": {
-    "message": "すべての設定を表示"
   },
   "schemaOverviewCopyDiff": {
     "message": "変更した設定をコピー"
@@ -4588,6 +4690,9 @@
   },
   "schemaOverviewCopyDiffFail": {
     "message": "変更した設定をコピーできませんでした。"
+  },
+  "schemaOverviewCountTpl": {
+    "message": "{categories} カテゴリで {enabled}/{total} 個の設定がオン"
   },
   "schemaOverviewDiffCurrent": {
     "message": "現在"
@@ -4603,6 +4708,12 @@
   },
   "schemaOverviewToolsAria": {
     "message": "設定変更ツール"
+  },
+  "schemaResetAriaTpl": {
+    "message": "{key} を既定値にリセット"
+  },
+  "schemaResetTitleTpl": {
+    "message": "{key} を既定値にリセット（{value}）"
   },
   "searchWatchClose": {
     "message": "検索結果を閉じる"
@@ -4643,6 +4754,9 @@
   "searchWatchTitle": {
     "message": "再生を止めずに検索"
   },
+  "selectorHealthAssetTpl": {
+    "message": "ルール: {status} · {version} · {source}"
+  },
   "selectorHealthCopyAria": {
     "message": "セレクターヘルスレポートをクリップボードにコピー"
   },
@@ -4667,11 +4781,14 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
-  "selectorHealthAssetTpl": {
-    "message": "ルール: {status} · {version} · {source}"
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
   },
   "selectorHealthEmpty": {
     "message": "まだサーフェスがサンプリングされていません。"
+  },
+  "selectorHealthExportAria": {
+    "message": "セレクターの状態を JSON でエクスポート"
   },
   "selectorHealthRefreshAria": {
     "message": "セレクタールールを更新"
@@ -4690,6 +4807,30 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count} 個のサーフェスを追跡中"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "動画プレーヤー"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "自動的に無効化しました: {features} — {reason}"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}。{summary}"
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} 項目"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count} 件がオン"
+  },
+  "settingsCategorySummaryFallback": {
+    "message": "カテゴリ設定"
+  },
+  "settingsConflictWithTpl": {
+    "message": "{featureName} と競合します"
   },
   "settingsDlActionsAria": {
     "message": "Downloader actions"
@@ -4742,8 +4883,29 @@
   "settingsDlTryingStart": {
     "message": "Trying to start the Astra Downloader service…"
   },
+  "settingsDownloaderSetupTitle": {
+    "message": "Astra Deck ダウンローダーのセットアップファイルをダウンロード"
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
   "settingsEnableAllAriaTpl": {
     "message": "Enable all settings in {category}"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "{featureName} を消去"
+  },
+  "settingsFooterSaved": {
+    "message": "保存済み"
+  },
+  "settingsGitHubTitle": {
+    "message": "GitHub で表示"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "設定グループ"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "要対応"
   },
   "settingsImportDoneTpl": {
     "message": "{message} Undo is available in the toast."
@@ -4756,6 +4918,9 @@
   },
   "settingsImportInvalid": {
     "message": "Import failed. Choose a valid Astra Deck settings export."
+  },
+  "settingsImportReadFailed": {
+    "message": "インポートファイルを読み込めませんでした"
   },
   "settingsImportUndoUnavailable": {
     "message": "Import undo is no longer available."
@@ -4802,6 +4967,12 @@
   "settingsInsightsUndoToasts": {
     "message": "Undo toasts"
   },
+  "settingsPaneDescriptionFallback": {
+    "message": "YouTube のこの部分の動作を調整します。"
+  },
+  "settingsPanelContentControls": {
+    "message": "コンテンツ管理"
+  },
   "settingsResetChooseSection": {
     "message": "Choose a settings section before resetting."
   },
@@ -4838,8 +5009,41 @@
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
   },
+  "settingsSubFeatureBadge": {
+    "message": "サブ機能"
+  },
+  "settingsSyncDesc": {
+    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
+  },
+  "settingsSyncOff": {
+    "message": "Off — this device only."
+  },
+  "settingsSyncOn": {
+    "message": "On — preferences and blocklists sync through your browser account."
+  },
+  "settingsSyncTitle": {
+    "message": "Browser sync"
+  },
+  "settingsSyncUnavailable": {
+    "message": "Browser sync is unavailable in this browser."
+  },
+  "settingsSyncUndo": {
+    "message": "Undo last sync"
+  },
+  "settingsSyncUndoAria": {
+    "message": "Restore the local state from before the last browser sync"
+  },
+  "settingsSyncUndoDone": {
+    "message": "Last browser sync undone locally."
+  },
+  "settingsSyncUndoFailed": {
+    "message": "Could not undo the last browser sync."
+  },
   "settingsTakeoutImportInvalid": {
     "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -5032,6 +5236,9 @@
   "spPerfListAria": {
     "message": "機能初期化タイミングリスト"
   },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
   "spPerfTitle": {
     "message": "機能の初期化タイミング"
   },
@@ -5116,6 +5323,9 @@
   "spSelectorTotalTpl": {
     "message": "サーフェス {count}"
   },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
   "spSettingsClearAria": {
     "message": "設定フィルターをクリア"
   },
@@ -5191,6 +5401,9 @@
   "spStatusEnabledTpl": {
     "message": "{name} を有効にしました"
   },
+  "spStatusHostAccessDenied": {
+    "message": "このオプション機能を有効にする前に、Astra Deck にホストへのアクセス許可が必要です。"
+  },
   "spStatusOpenYouTube": {
     "message": "ライブ診断には YouTube を開いてください"
   },
@@ -5202,9 +5415,6 @@
   },
   "spStatusSaveFailed": {
     "message": "設定を保存できませんでした"
-  },
-  "spStatusHostAccessDenied": {
-    "message": "このオプション機能を有効にする前に、Astra Deck にホストへのアクセス許可が必要です。"
   },
   "spStatusSettingsLoadFailed": {
     "message": "診断を更新しました。クイック設定は読み込めませんでした"
@@ -5241,6 +5451,33 @@
   },
   "speedPopupSub": {
     "message": "変更されるまで、すべての動画に適用されます。"
+  },
+  "sponsorBlockDataAttribution": {
+    "message": "SponsorBlock データ"
+  },
+  "sponsorBlockDataAttributionTitle": {
+    "message": "SponsorBlock API／データベースのデータ — CC BY-NC-SA 4.0"
+  },
+  "sponsorCachedSegmentTitleTpl": {
+    "message": "{label}（{time} にキャッシュ）"
+  },
+  "sponsoredFilterAffiliateReason": {
+    "message": "アフィリエイト宣伝"
+  },
+  "sponsoredFilterCommentLabel": {
+    "message": "スポンサーコメント"
+  },
+  "sponsoredFilterDescriptionLabel": {
+    "message": "スポンサー説明"
+  },
+  "sponsoredFilterHideTpl": {
+    "message": "{label}を非表示 — {reason}"
+  },
+  "sponsoredFilterShowTpl": {
+    "message": "{label}を表示 — {reason}"
+  },
+  "sponsoredFilterSponsorReason": {
+    "message": "スポンサー表記"
   },
   "spq_autoTheaterMode_desc": {
     "message": "動画をシアタービューで開きます。"
@@ -5383,6 +5620,9 @@
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
   "statusImportUndoExpired": {
     "message": "Undo Import is no longer available - the browser session snapshot expired."
   },
@@ -5401,11 +5641,11 @@
   "statusOpenWorkspaceFail": {
     "message": "完全なワークスペースを開けませんでした。再試行してください。"
   },
-  "statusPerKeyResetTpl": {
-    "message": "{key} を既定値にリセットしました。"
-  },
   "statusPerKeyResetFail": {
     "message": "Could not reset"
+  },
+  "statusPerKeyResetTpl": {
+    "message": "{key} を既定値にリセットしました。"
   },
   "statusQuickCtrlLoadFail": {
     "message": "クイックコントロールを読み込めませんでした。ポップアップを再度開いてください。"
@@ -5515,6 +5755,30 @@
   "statusYtdlpUpdatedTpl": {
     "message": "yt-dlp updated to v{version}{from}"
   },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "サイドパネルを閉じる"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "ライブ動画の操作"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "ライブ"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "ライブ動画情報"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "ライブ動画"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "クイックリンク"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "登録チャンネルに移動"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "動画の操作"
+  },
   "storageBannerCorruptionTpl": {
     "message": "ストレージデータが破損しています — リセットして復旧してください。"
   },
@@ -5539,146 +5803,35 @@
   "storageStatsAriaLabel": {
     "message": "ストレージ統計"
   },
-  "settingsSyncDesc": {
-    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
-  },
-  "settingsSyncOff": {
-    "message": "Off — this device only."
-  },
-  "settingsSyncOn": {
-    "message": "On — preferences and blocklists sync through your browser account."
-  },
-  "settingsSyncTitle": {
-    "message": "Browser sync"
-  },
-  "settingsSyncUndo": {
-    "message": "Undo last sync"
-  },
-  "settingsSyncUndoAria": {
-    "message": "Restore the local state from before the last browser sync"
-  },
-  "settingsSyncUndoDone": {
-    "message": "Last browser sync undone locally."
-  },
-  "settingsSyncUndoFailed": {
-    "message": "Could not undo the last browser sync."
-  },
-  "settingsSyncUnavailable": {
-    "message": "Browser sync is unavailable in this browser."
-  },
   "subscriptionAgeDaysShortTpl": {
     "message": "{days}日"
-  },
-  "subscriptionCreateSubgroupDialogAria": {
-    "message": "登録チャンネルのサブグループを作成"
-  },
-  "subscriptionCreateGroupDialogAria": {
-    "message": "登録チャンネルのグループを作成"
-  },
-  "subscriptionSubgroupNameTpl": {
-    "message": "{group} の下にサブグループ名を付ける"
-  },
-  "subscriptionGroupDialogTitle": {
-    "message": "このグループに名前を付ける"
-  },
-  "subscriptionSubgroupPlaceholder": {
-    "message": "例: Frontend、DevOps、Jazz"
-  },
-  "subscriptionGroupPlaceholder": {
-    "message": "例: プログラミング、音楽、ニュース"
-  },
-  "subscriptionGroupNameAria": {
-    "message": "グループ名"
-  },
-  "subscriptionDialogCancel": {
-    "message": "キャンセル"
-  },
-  "subscriptionDialogCreate": {
-    "message": "作成"
-  },
-  "subscriptionGroupChipTpl": {
-    "message": "{prefix}{name}（{count}）{tags}"
-  },
-  "subscriptionChannelSingular": {
-    "message": "チャンネル"
-  },
-  "subscriptionChannelPlural": {
-    "message": "チャンネル"
-  },
-  "subscriptionSubgroupSuffix": {
-    "message": "。サブグループ"
-  },
-  "subscriptionGroupChipAriaTpl": {
-    "message": "{name}。{count}{channels}{subgroup}"
-  },
-  "subscriptionAiTagsRegenerateTitleTpl": {
-    "message": "AI タグ: {tags} · Shift キーを押しながらクリックして再生成"
   },
   "subscriptionAiTagsGenerateTitle": {
     "message": "Shift キーを押しながらクリックして AI タグを生成"
   },
-  "subscriptionToolbarPlayAllAriaTpl": {
-    "message": "{group} のすべての動画を再生"
-  },
-  "subscriptionExportCsvLabel": {
-    "message": "CSV"
-  },
-  "subscriptionExportOpmlLabel": {
-    "message": "OPML"
-  },
-  "subscriptionMembersIncludeChannelAriaTpl": {
-    "message": "{channel} を {group} に含める"
-  },
-  "subscriptionQueueCappedTpl": {
-    "message": "（上限 {count}）"
-  },
-  "subscriptionGroupNoVideos": {
-    "message": "このグループに表示できる動画はありません"
-  },
-  "subscriptionGroupPlayingTpl": {
-    "message": "{group} の {count} 本の動画を再生中{truncated}"
-  },
-  "subscriptionGroupsExported": {
-    "message": "登録チャンネルのグループをエクスポートしました"
-  },
-  "subscriptionGroupsExportedCsv": {
-    "message": "登録チャンネルのグループを CSV でエクスポートしました"
-  },
-  "subscriptionGroupsExportedOpml": {
-    "message": "登録チャンネルのグループを OPML でエクスポートしました"
-  },
-  "subscriptionGroupsImportFailedTpl": {
-    "message": "インポートに失敗しました: {error}"
-  },
-  "subscriptionRenderedSubscriptions": {
-    "message": "表示された登録チャンネル"
-  },
-  "subscriptionChannelsMarkedReadTpl": {
-    "message": "{group} の {count}{channels}を既読にしました"
-  },
-  "subscriptionAiTagsRequired": {
-    "message": "先に登録チャンネルのグループの AI タグを有効にしてください。"
-  },
-  "subscriptionSummarizerUnavailable": {
-    "message": "ローカル要約機能を利用できません。Chrome AI のオリジントライアルを有効にしてください。"
-  },
   "subscriptionAiTagsGeneratingTpl": {
     "message": "「{group}」のタグを生成中…"
-  },
-  "subscriptionAiTagsNoCards": {
-    "message": "一致するカードはまだ表示されていません。フィードをスクロールして再試行してください。"
   },
   "subscriptionAiTagsGenerationFailedTpl": {
     "message": "タグの生成に失敗しました: {error}"
   },
+  "subscriptionAiTagsNoCards": {
+    "message": "一致するカードはまだ表示されていません。フィードをスクロールして再試行してください。"
+  },
   "subscriptionAiTagsNoUsable": {
     "message": "要約機能から使用できるタグが返されませんでした。"
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "AI タグ: {tags} · Shift キーを押しながらクリックして再生成"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "先に登録チャンネルのグループの AI タグを有効にしてください。"
   },
   "subscriptionAiTagsTaggedTpl": {
     "message": "「{group}」にタグを付けました: {tags}"
   },
-  "subscriptionGroupsRestored": {
-    "message": "以前の登録チャンネルのグループを復元しました"
+  "subscriptionAllSubscriptions": {
+    "message": "すべての登録チャンネル"
   },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
@@ -5698,29 +5851,26 @@
   "subscriptionBatchFallbackLabel": {
     "message": "subscription-groups:fallback"
   },
-  "subscriptionNewBadge": {
-    "message": "新着"
+  "subscriptionChannelPlural": {
+    "message": "チャンネル"
   },
-  "subscriptionStaleBadge": {
-    "message": "古い"
+  "subscriptionChannelSingular": {
+    "message": "チャンネル"
   },
-  "subscriptionStaleAgeTitleTpl": {
-    "message": "このカードで最新のアップロードが表示されてから {days} 日"
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "{group} の {count}{channels}を既読にしました"
   },
-  "subscriptionStagedBadge": {
-    "message": "準備済み"
+  "subscriptionCreateGroupDialogAria": {
+    "message": "登録チャンネルのグループを作成"
   },
-  "subscriptionStagedUndoTitleTpl": {
-    "message": "登録解除を準備しました。{date} まで取り消せます。"
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "登録チャンネルのサブグループを作成"
   },
-  "subscriptionStagedReviewTitle": {
-    "message": "確認用に登録解除を準備しました。"
+  "subscriptionDialogCancel": {
+    "message": "キャンセル"
   },
-  "subscriptionAllSubscriptions": {
-    "message": "すべての登録チャンネル"
-  },
-  "subscriptionImportedOpml": {
-    "message": "インポートした OPML"
+  "subscriptionDialogCreate": {
+    "message": "作成"
   },
   "subscriptionDigestCloseAria": {
     "message": "Close group notifications digest"
@@ -5773,14 +5923,56 @@
   "subscriptionExportCsvAria": {
     "message": "Export subscription groups as CSV"
   },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
   "subscriptionExportJsonAria": {
     "message": "Export subscription groups as JSON"
   },
   "subscriptionExportOpmlAria": {
     "message": "Export subscription groups as OPML"
   },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}。{count}{channels}{subgroup}"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name}（{count}）{tags}"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "このグループに名前を付ける"
+  },
   "subscriptionGroupEmpty": {
     "message": "No channels in this group yet — click Edit Channels to add some."
+  },
+  "subscriptionGroupNameAria": {
+    "message": "グループ名"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "このグループに表示できる動画はありません"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "例: プログラミング、音楽、ニュース"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "{group} の {count} 本の動画を再生中{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "登録チャンネルのグループをエクスポートしました"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "登録チャンネルのグループを CSV でエクスポートしました"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "登録チャンネルのグループを OPML でエクスポートしました"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "インポートに失敗しました: {error}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "以前の登録チャンネルのグループを復元しました"
   },
   "subscriptionHealthCloseAria": {
     "message": "Close subscription health center"
@@ -5881,6 +6073,9 @@
   "subscriptionImportTitle": {
     "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
   },
+  "subscriptionImportedOpml": {
+    "message": "インポートした OPML"
+  },
   "subscriptionLoadedOnlyHint": {
     "message": "新しい順では、このページに読み込まれた動画のみを並べ替えます。スクロールしてさらに読み込んでください。"
   },
@@ -5892,6 +6087,9 @@
   },
   "subscriptionMembersEmpty": {
     "message": "No channels rendered yet — scroll the subscriptions feed, then reopen this panel."
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "{channel} を {group} に含める"
   },
   "subscriptionMembersListAria": {
     "message": "Rendered channels"
@@ -5911,6 +6109,9 @@
   "subscriptionMenuUnsubscribe": {
     "message": "Unsubscribe"
   },
+  "subscriptionNewBadge": {
+    "message": "新着"
+  },
   "subscriptionOrderGroupsHint": {
     "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
   },
@@ -5923,11 +6124,20 @@
   "subscriptionOrderNewestLoaded": {
     "message": "新しい順（読み込み済みのみ）"
   },
-  "subscriptionSortYouTubeDefault": {
-    "message": "YouTube の既定"
+  "subscriptionQueueCappedTpl": {
+    "message": "（上限 {count}）"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "表示された登録チャンネル"
   },
   "subscriptionSortLatest": {
     "message": "新しい順"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "前回の訪問後に新しいもの"
+  },
+  "subscriptionSortPopular": {
+    "message": "人気順（再生回数）"
   },
   "subscriptionSortShortest": {
     "message": "短い順"
@@ -5935,11 +6145,35 @@
   "subscriptionSortUnwatched": {
     "message": "未視聴を優先"
   },
-  "subscriptionSortNewSinceLastVisit": {
-    "message": "前回の訪問後に新しいもの"
+  "subscriptionSortYouTubeDefault": {
+    "message": "YouTube の既定"
   },
-  "subscriptionSortPopular": {
-    "message": "人気順（再生回数）"
+  "subscriptionStagedBadge": {
+    "message": "準備済み"
+  },
+  "subscriptionStagedReviewTitle": {
+    "message": "確認用に登録解除を準備しました。"
+  },
+  "subscriptionStagedUndoTitleTpl": {
+    "message": "登録解除を準備しました。{date} まで取り消せます。"
+  },
+  "subscriptionStaleAgeTitleTpl": {
+    "message": "このカードで最新のアップロードが表示されてから {days} 日"
+  },
+  "subscriptionStaleBadge": {
+    "message": "古い"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "{group} の下にサブグループ名を付ける"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "例: Frontend、DevOps、Jazz"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": "。サブグループ"
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "ローカル要約機能を利用できません。Chrome AI のオリジントライアルを有効にしてください。"
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"
@@ -5988,6 +6222,9 @@
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "{group} のすべての動画を再生"
   },
   "subscriptionToolbarScanStale": {
     "message": "Scan Stale"
@@ -6070,6 +6307,84 @@
   "subscriptionViewToolbarLabel": {
     "message": "登録チャンネルの表示コントロール"
   },
+  "timestampBookmarkAddedTpl": {
+    "message": "{time} にブックマークしました"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "この場所にはすでにブックマークがあります"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "{time} のブックマークを削除しました"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "{time} のブックマークを復元しました"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "重要な理由をメモできます"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "{time} のブックマークを削除"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "「現在の時刻を保存」を使うと、動画の場面を保存して後でメモを確認できます。"
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "重要な場面をここに保存すると、シークせずに戻れます。"
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "ブックマークはまだありません"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "もう一度見る"
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "{time} に移動"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "場面に移動"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "{time} のブックマークのメモ"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "メモ"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "メモを追加…"
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "この動画のブックマーク {count} 件"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "現在の時刻を保存"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "保存済みメモあり"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "保存した場面に戻り、それぞれに短いメモを残せます。"
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "{count} 件保存済み"
+  },
+  "timestampHighlightExport": {
+    "message": "Export Highlight Pack"
+  },
+  "timestampHighlightExportAria": {
+    "message": "Export this video’s highlights, notes, bookmarks, and summary"
+  },
+  "timestampHighlightExportFailed": {
+    "message": "Highlight export failed. Your saved data is unchanged."
+  },
+  "timestampHighlightExported": {
+    "message": "Highlight pack exported as Markdown and JSON."
+  },
+  "timestampHighlightExporting": {
+    "message": "Preparing highlight pack…"
+  },
+  "timestampHighlightNoVideo": {
+    "message": "No video is currently open."
+  },
   "toastActionManage": {
     "message": "Manage"
   },
@@ -6130,26 +6445,11 @@
   "toggleStateOnLower": {
     "message": "有効"
   },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}。"
+  },
   "toggleUpdateFailTpl": {
     "message": "{name} を更新できませんでした。再試行してください。"
-  },
-  "timestampHighlightExport": {
-    "message": "Export Highlight Pack"
-  },
-  "timestampHighlightExportAria": {
-    "message": "Export this video’s highlights, notes, bookmarks, and summary"
-  },
-  "timestampHighlightExportFailed": {
-    "message": "Highlight export failed. Your saved data is unchanged."
-  },
-  "timestampHighlightExported": {
-    "message": "Highlight pack exported as Markdown and JSON."
-  },
-  "timestampHighlightExporting": {
-    "message": "Preparing highlight pack…"
-  },
-  "timestampHighlightNoVideo": {
-    "message": "No video is currently open."
   },
   "transcriptBatchCancelled": {
     "message": "ページ移動により文字起こしの一括処理を中止しました"
@@ -6208,11 +6508,17 @@
   "transcriptDownloadTxtTitle": {
     "message": "Download plain-text transcript"
   },
+  "transcriptDownloadedTpl": {
+    "message": "文字起こしをダウンロードしました（{count} セグメント）"
+  },
   "transcriptExpand": {
     "message": "Expand"
   },
   "transcriptExpandAria": {
     "message": "Expand transcript"
+  },
+  "transcriptExpiryUnknown": {
+    "message": "未指定"
   },
   "transcriptExportActionsAria": {
     "message": "Transcript export actions"
@@ -6220,17 +6526,80 @@
   "transcriptEyebrow": {
     "message": "Captions & Exports"
   },
+  "transcriptFetching": {
+    "message": "文字起こしを取得しています…"
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "ローカルインデックスを測定できませんでした。"
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "ローカルインデックスを測定中…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "{maxCount} 本中 {count} 本の動画をインデックス済み、{budget} 中 {size}。古いエントリーから削除されます。"
+  },
   "transcriptJumpAriaTpl": {
     "message": "Jump to {time} in the transcript"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "言語不明"
   },
   "transcriptLlmPrompt": {
     "message": "LLM prompt"
   },
+  "transcriptLoadFailed": {
+    "message": "文字起こしを読み込めませんでした"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "{source} から読み込み（{age}、{language}）。"
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "期限切れの字幕 URL を {source} で更新しました（取得: {age}、{language}）。"
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "{source} から読み込み（{age}、{language}、トラック URL の期限: {expires}）。"
+  },
+  "transcriptNoCaptions": {
+    "message": "字幕なし"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "字幕付きの別の動画を試すか、字幕の読み込み完了後にこのパネルを開き直してください。"
+  },
+  "transcriptNoVideoId": {
+    "message": "動画 ID が見つかりません"
+  },
+  "transcriptPanelFallback": {
+    "message": "パネルからのフォールバック"
+  },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptRefreshedTrack": {
+    "message": "トラックを更新"
+  },
+  "transcriptRetryHelp": {
+    "message": "字幕が処理中の場合は、ページを再読み込みするか、しばらくしてからもう一度お試しください。"
+  },
   "transcriptShowOriginal": {
     "message": "Show Original"
+  },
+  "transcriptSourceInnertube": {
+    "message": "更新された YouTube プレーヤーデータ"
+  },
+  "transcriptSourcePanel": {
+    "message": "現在の YouTube 文字起こしパネル"
+  },
+  "transcriptSourcePlayerGlobal": {
+    "message": "現在のページのプレーヤーデータ"
+  },
+  "transcriptSourceUnknown": {
+    "message": "YouTube 字幕"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "更新された YouTube 視聴ページ"
+  },
+  "transcriptTimeUnknown": {
+    "message": "時刻不明"
   },
   "transcriptTitle": {
     "message": "Transcript"
@@ -6253,6 +6622,15 @@
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
   },
+  "transcriptUnavailable": {
+    "message": "この動画の文字起こしはありません"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "利用不可"
+  },
+  "transcriptUnavailableNow": {
+    "message": "現在、YouTube から文字起こしを取得できません。"
+  },
   "uiFontDefault": {
     "message": "YouTube の既定"
   },
@@ -6268,8 +6646,44 @@
   "uiFontSystem": {
     "message": "システム UI"
   },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "Return YouTube Dislike の低評価数（{hours}時間前のキャッシュ）。"
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "Return YouTube Dislike の低評価数（1時間未満前のキャッシュ）。"
+  },
   "ui_rydCardRatioSuffix": {
     "message": "高評価 · Return YouTube Dislike による推定"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "推定低評価 {count} 件。{estimate}"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "Return YouTube Dislike の件数は、YouTube が公開の低評価数を削除した後の推定値です。視聴数の少ない動画では精度が下がる場合があります。"
+  },
+  "ui_rydEstimateShort": {
+    "message": "推定"
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "Return YouTube Dislike の現在の低評価数（{used}/{limit}/分を使用）。{estimate}"
+  },
+  "ui_rydOff": {
+    "message": "RYD オフ"
+  },
+  "ui_rydPaused": {
+    "message": "RYD 一時停止"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "Return YouTube Dislike はレート制限中（{used}/{limit}/分）。{seconds}秒後に再開します。"
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "高評価率は Return YouTube Dislike の推定件数を使用します。{estimate}"
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% が高評価"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike は利用できません。API が有効な応答を返しませんでした。ネットワークを確認して、後でもう一度お試しください。"
   },
   "undo": {
     "message": "取り消す"
@@ -6304,14 +6718,41 @@
   "videoHiderAddAllowedChannelTitle": {
     "message": "Add Allowed Channel"
   },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "YouTube URL または動画 ID を貼り付けると、フィルターに一致しても表示できます。"
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "許可する動画を追加"
+  },
   "videoHiderAddBlockedChannelCopy": {
     "message": "Paste a channel URL, handle, or channel ID to add it to the channel blocklist."
   },
   "videoHiderAddBlockedChannelTitle": {
     "message": "Add Blocked Channel"
   },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "YouTube URL または動画 ID を貼り付けて、非表示リストに直接追加します。"
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "非表示動画を追加"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "動画を許可リストに追加しました"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "動画を非表示リストに追加しました"
+  },
   "videoHiderAllowChannelButton": {
     "message": "Allow Channel"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "サムネイルの X ボタンを右クリックしてチャンネル全体をブロックします。"
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "右クリックでチャンネルをブロック"
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "動画を許可"
   },
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
@@ -6322,14 +6763,44 @@
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "許可されたチャンネル {count} 件"
+  },
   "videoHiderAllowedChannelsStatus": {
     "message": "Allowed"
   },
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
   },
+  "videoHiderAllowedCountTpl": {
+    "message": "{count}本の動画を許可"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "許可した動画 {videoId} のプレビューサムネイル"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "手動復元で許可されています。例外がある間、自動フィルターはこの動画をスキップします。"
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "許可した動画を復元しました"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "許可した動画"
+  },
   "videoHiderAlreadyAllowedChannelToast": {
     "message": "{name} is already allowed"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "動画はすでに許可されています"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} はすでにブロックされています"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "動画はすでに非表示です"
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "バッチ"
   },
   "videoHiderBlockChannelButton": {
     "message": "Block Channel"
@@ -6340,446 +6811,17 @@
   "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
+  "videoHiderBlockedChannelToast": {
+    "message": "ブロック済み: {name}"
+  },
   "videoHiderBlockedChannelsStatus": {
     "message": "ブロック"
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
-  "settingsPanelContentControls": {
-    "message": "コンテンツ管理"
-  },
-  "videoHiderEnableAria": {
-    "message": "Video Hider を有効化"
-  },
-  "videoHiderTabsAria": {
-    "message": "Video Hider のセクション"
-  },
-  "videoHiderHiddenVideosTab": {
-    "message": "非表示の動画"
-  },
-  "videoHiderAllowedVideosTab": {
-    "message": "許可した動画"
-  },
-  "videoHiderKeywordRulesTab": {
-    "message": "キーワードルール"
-  },
-  "videoHiderFiltersLimitsTab": {
-    "message": "フィルターと上限"
-  },
-  "videoHiderFeatureOn": {
-    "message": "機能オン"
-  },
-  "videoHiderFeatureOff": {
-    "message": "機能オフ"
-  },
-  "videoHiderHiddenCountTpl": {
-    "message": "{count}本の動画を非表示"
-  },
-  "videoHiderAllowedCountTpl": {
-    "message": "{count}本の動画を許可"
-  },
   "videoHiderBlockedCountTpl": {
     "message": "{count}チャンネルをブロック"
-  },
-  "videoHiderInvalidVideoInput": {
-    "message": "有効な YouTube 動画 URL または 11 文字の動画 ID を入力してください。"
-  },
-  "videoHiderAddHiddenVideoTitle": {
-    "message": "非表示動画を追加"
-  },
-  "videoHiderAddHiddenVideoCopy": {
-    "message": "YouTube URL または動画 ID を貼り付けて、非表示リストに直接追加します。"
-  },
-  "videoHiderVideoUrlPlaceholder": {
-    "message": "https://youtube.com/watch?v=VIDEO_ID"
-  },
-  "videoHiderHideVideoButton": {
-    "message": "動画を非表示"
-  },
-  "videoHiderOpenHiddenVideoAriaTpl": {
-    "message": "非表示動画 {videoId} を YouTube で開く"
-  },
-  "videoHiderHiddenVideoPreviewAltTpl": {
-    "message": "非表示動画 {videoId} のプレビューサムネイル"
-  },
-  "videoHiderPreviewUnavailable": {
-    "message": "プレビューを利用できません"
-  },
-  "videoHiderVideoIdLabel": {
-    "message": "動画 ID"
-  },
-  "videoHiderHiddenVideoSummary": {
-    "message": "復元するまでおすすめから非表示にします。復元時に例外を追加すると、自動ルールで表示したままにできます。"
-  },
-  "videoHiderOpenOnYouTube": {
-    "message": "YouTube で開く"
-  },
-  "videoHiderRestoreAllow": {
-    "message": "復元して許可"
-  },
-  "videoHiderRestoreHiddenVideoAriaTpl": {
-    "message": "非表示動画 {videoId} を復元して許可例外を追加"
-  },
-  "videoHiderRemoveFromList": {
-    "message": "リストから削除"
-  },
-  "videoHiderRemoveHiddenVideoAriaTpl": {
-    "message": "非表示動画 {videoId} を例外を追加せずリストから削除"
-  },
-  "videoHiderRestoreAllTpl": {
-    "message": "すべての非表示動画を復元して許可（{count}）"
-  },
-  "videoHiderClearHiddenListTpl": {
-    "message": "非表示リストだけを消去（{count}）"
-  },
-  "videoHiderRemovePage": {
-    "message": "このページの非表示動画を削除"
-  },
-  "videoHiderAddAllowedVideoTitle": {
-    "message": "許可する動画を追加"
-  },
-  "videoHiderAddAllowedVideoCopy": {
-    "message": "YouTube URL または動画 ID を貼り付けると、フィルターに一致しても表示できます。"
-  },
-  "videoHiderAllowVideoButton": {
-    "message": "動画を許可"
-  },
-  "videoHiderOpenAllowedVideoAriaTpl": {
-    "message": "許可した動画 {videoId} を YouTube で開く"
-  },
-  "videoHiderAllowedVideoPreviewAltTpl": {
-    "message": "許可した動画 {videoId} のプレビューサムネイル"
-  },
-  "videoHiderAllowedVideoSummary": {
-    "message": "手動復元で許可されています。例外がある間、自動フィルターはこの動画をスキップします。"
-  },
-  "videoHiderRemoveException": {
-    "message": "例外を削除"
-  },
-  "videoHiderRemoveAllowedVideoAriaTpl": {
-    "message": "許可した動画 {videoId} の例外を削除"
-  },
-  "videoHiderHideAgain": {
-    "message": "再び非表示"
-  },
-  "videoHiderHideAllowedVideoAriaTpl": {
-    "message": "許可した動画 {videoId} を再び非表示"
-  },
-  "videoHiderClearAllowedTpl": {
-    "message": "許可した動画を消去（{count}）"
-  },
-  "videoHiderOpenChannel": {
-    "message": "チャンネルを開く"
-  },
-  "videoHiderUnblockChannelAriaTpl": {
-    "message": "チャンネル {channelName} のブロックを解除"
-  },
-  "videoHiderClearBlockedChannelsTpl": {
-    "message": "すべてのチャンネルのブロックを解除（{count}）"
-  },
-  "videoHiderUnblockedChannelsTpl": {
-    "message": "{count} 個のチャンネルのブロックを解除しました"
-  },
-  "videoHiderChannelsRestored": {
-    "message": "チャンネルを復元しました"
-  },
-  "videoHiderKeywordsRulesLabel": {
-    "message": "キーワードとルール"
-  },
-  "videoHiderKeywordsRulesCopy": {
-    "message": "エントリをカンマで区切ってください。このフィールドを更新するとルールがすぐに適用されます。"
-  },
-  "videoHiderKeywordsPlaceholder": {
-    "message": "reaction, unboxing, prank, shorts…"
-  },
-  "videoHiderLowViewThresholdLabel": {
-    "message": "低再生数のしきい値"
-  },
-  "videoHiderLowViewThresholdDesc": {
-    "message": "この再生数を下回る動画は、低再生数フィルターが有効な場合のみ非表示になります。"
-  },
-  "videoHiderWatchedRatioLabel": {
-    "message": "視聴済み割合を非表示"
-  },
-  "videoHiderWatchedRatioDesc": {
-    "message": "0 で無効化します。この割合以上の再生バーがあるカードを非表示にします。"
-  },
-  "videoHiderWatchedRatioSuffix": {
-    "message": "視聴済み%"
-  },
-  "videoHiderMinimumDurationLabel": {
-    "message": "最小再生時間"
-  },
-  "videoHiderMinimumDurationDesc": {
-    "message": "0 でこのルールを無効化します。"
-  },
-  "videoHiderMinutesSuffix": {
-    "message": "分"
-  },
-  "videoHiderLoadLimiterLabel": {
-    "message": "読み込み制限を有効化"
-  },
-  "videoHiderLoadLimiterDesc": {
-    "message": "登録チャンネルのフィードを大量に非表示にする場合におすすめです。"
-  },
-  "videoHiderLoadLimiterAria": {
-    "message": "登録チャンネルの読み込み制限を有効化"
-  },
-  "videoHiderConsecutiveBatchesLabel": {
-    "message": "連続して非表示になったバッチ数"
-  },
-  "videoHiderConsecutiveBatchesDesc": {
-    "message": "小さい値では早く停止します。大きい値では制限が作動する前に多く読み込めます。"
-  },
-  "videoHiderBatchesSuffix": {
-    "message": "バッチ"
-  },
-  "videoHiderRemoveHiddenCardsTitle": {
-    "message": "非表示カードを自動的に削除"
-  },
-  "videoHiderRemoveHiddenCardsDesc": {
-    "message": "有効にすると、一致する動画は CSS で隠すだけでなくフィードの DOM から削除されます。"
-  },
-  "videoHiderShowThumbnailHideButtonTitle": {
-    "message": "サムネイルの非表示ボタンを表示"
-  },
-  "videoHiderShowThumbnailHideButtonDesc": {
-    "message": "対応する動画サムネイルに X ボタンを表示し、ワンクリックで非表示にします。"
-  },
-  "videoHiderAllowRightClickBlockTitle": {
-    "message": "右クリックでチャンネルをブロック"
-  },
-  "videoHiderAllowRightClickBlockDesc": {
-    "message": "サムネイルの X ボタンを右クリックしてチャンネル全体をブロックします。"
-  },
-  "videoHiderRememberRestoredTitle": {
-    "message": "復元した動画を記憶"
-  },
-  "videoHiderRememberRestoredDesc": {
-    "message": "復元した動画を許可した動画に追加し、別のルールに一致しても表示したままにします。"
-  },
-  "videoHiderScopeHomeTitle": {
-    "message": "ホーム"
-  },
-  "videoHiderScopeHomeDesc": {
-    "message": "YouTube ホームフィードの一致項目を非表示にします。"
-  },
-  "videoHiderScopeSubscriptionsTitle": {
-    "message": "登録チャンネル"
-  },
-  "videoHiderScopeSubscriptionsDesc": {
-    "message": "登録チャンネルフィードの一致項目を非表示にし、一括操作を表示します。"
-  },
-  "videoHiderScopeSearchTitle": {
-    "message": "検索結果"
-  },
-  "videoHiderScopeSearchDesc": {
-    "message": "検索結果ページに動画とチャンネルのルールを適用します。"
-  },
-  "videoHiderScopeWatchTitle": {
-    "message": "再生ページ"
-  },
-  "videoHiderScopeWatchDesc": {
-    "message": "プレーヤーの横と下のおすすめにルールを適用します。"
-  },
-  "videoHiderScopeChannelsTitle": {
-    "message": "チャンネルページ"
-  },
-  "videoHiderScopeChannelsDesc": {
-    "message": "チャンネルホーム、動画、ライブ、再生リストの各画面にルールを適用します。"
-  },
-  "videoHiderScopeOtherTitle": {
-    "message": "その他の YouTube 画面"
-  },
-  "videoHiderScopeOtherDesc": {
-    "message": "その他のブラウジング画面でも Video Hider を有効にします。"
-  },
-  "videoHiderHideLiveTitle": {
-    "message": "ライブ配信を非表示"
-  },
-  "videoHiderHideLiveDesc": {
-    "message": "対応するフィードに表示された配信中カードとライブのおすすめを非表示にします。"
-  },
-  "videoHiderHideUpcomingTitle": {
-    "message": "近日公開のプレミアを非表示"
-  },
-  "videoHiderHideUpcomingDesc": {
-    "message": "予定、近日公開、リマインダー付きの動画カードを非表示にします。"
-  },
-  "videoHiderHideMixesTitle": {
-    "message": "YouTube Mix を非表示"
-  },
-  "videoHiderHideMixesDesc": {
-    "message": "ラジオ形式の Mix と自動生成されたおすすめ Mix を非表示にします。"
-  },
-  "videoHiderHidePlaylistsTitle": {
-    "message": "再生リストカードを非表示"
-  },
-  "videoHiderHidePlaylistsDesc": {
-    "message": "対応するフィード画面の再生リストカードと複数動画カードを非表示にします。"
-  },
-  "videoHiderHideMoviesTitle": {
-    "message": "映画を非表示"
-  },
-  "videoHiderHideMoviesDesc": {
-    "message": "レンタル、購入、広告付き無料、映画ラベルのカードを非表示にします。"
-  },
-  "videoHiderHideAutoDubbedTitle": {
-    "message": "自動吹き替え動画を非表示"
-  },
-  "videoHiderHideAutoDubbedDesc": {
-    "message": "吹き替え、自動吹き替え、別音声と表示されたカードを非表示にします。"
-  },
-  "videoHiderHideLowViewTitle": {
-    "message": "再生数の少ない動画を非表示"
-  },
-  "videoHiderHideLowViewDesc": {
-    "message": "YouTube がカードに再生数を表示している場合、しきい値未満の動画を非表示にします。"
-  },
-  "settingsCategorySummaryFallback": {
-    "message": "カテゴリ設定"
-  },
-  "settingsCategoryAriaTpl": {
-    "message": "{category}。{summary}"
-  },
-  "settingsGroupSummaryFallback": {
-    "message": "設定グループ"
-  },
-  "settingsPaneDescriptionFallback": {
-    "message": "YouTube のこの部分の動作を調整します。"
-  },
-  "settingsCategoryFractionTpl": {
-    "message": "{enabled}/{total}"
-  },
-  "settingsCategoryOnTpl": {
-    "message": "{count} 件がオン"
-  },
-  "settingsCategoryItemsTpl": {
-    "message": "{count} 項目"
-  },
-  "settingsGitHubTitle": {
-    "message": "GitHub で表示"
-  },
-  "settingsDownloaderSetupTitle": {
-    "message": "Astra Deck ダウンローダーのセットアップファイルをダウンロード"
-  },
-  "settingsVersionPrefix": {
-    "message": "v"
-  },
-  "settingsFooterSaved": {
-    "message": "保存済み"
-  },
-  "settingsSubFeatureBadge": {
-    "message": "サブ機能"
-  },
-  "settingsFeatureClearAriaTpl": {
-    "message": "{featureName} を消去"
-  },
-  "settingsActiveSectionFallback": {
-    "message": "動画プレーヤー"
-  },
-  "videoHiderRestoreHiddenVideosTpl": {
-    "message": "{count} 本の非表示動画を復元しました"
-  },
-  "videoHiderSubsLoadControlsAria": {
-    "message": "登録チャンネルの読み込み操作を開く"
-  },
-  "videoHiderSubsLoadChipTitle": {
-    "message": "登録チャンネルを一時停止中"
-  },
-  "videoHiderSubsLoadSummaryTpl": {
-    "message": "{loaded} 件中 {hidden} 件を非表示"
-  },
-  "videoHiderSubsResume": {
-    "message": "再開"
-  },
-  "videoHiderSubsGuard": {
-    "message": "登録チャンネル保護"
-  },
-  "videoHiderSubsLoadPaused": {
-    "message": "登録チャンネルのフィードを一時停止"
-  },
-  "videoHiderSubsPauseReasonTpl": {
-    "message": "スキャンした動画の {percent} が非表示になったため、フィードが空のバッチをさらに処理する前に Astra Deck が自動読み込みを一時停止しました。"
-  },
-  "videoHiderSubsResumeLoading": {
-    "message": "読み込みを再開"
-  },
-  "videoHiderSubsReviewFilters": {
-    "message": "フィルターを確認"
-  },
-  "videoHiderSubsKeepPaused": {
-    "message": "一時停止を維持"
-  },
-  "videoHiderSubsScannedStat": {
-    "message": "スキャン済み"
-  },
-  "videoHiderSubsStreakStat": {
-    "message": "連続"
-  },
-  "videoHiderHiddenToast": {
-    "message": "動画を非表示"
-  },
-  "videoHiderChannelBlockingDisabled": {
-    "message": "チャンネルブロックは無効です"
-  },
-  "videoHiderBlockedChannelToast": {
-    "message": "ブロック済み: {name}"
-  },
-  "videoHiderAlreadyBlockedChannelToast": {
-    "message": "{name} はすでにブロックされています"
-  },
-  "videoHiderRestorePageTitle": {
-    "message": "このページの非表示動画を復元"
-  },
-  "videoHiderRestorePageNone": {
-    "message": "このページに非表示動画はありません"
-  },
-  "videoHiderRestorePageTpl": {
-    "message": "このページの非表示動画 {count} 件を復元"
-  },
-  "videoHiderRemovePageNone": {
-    "message": "このページから削除する非表示動画はありません"
-  },
-  "videoHiderRemovePageTpl": {
-    "message": "このページの非表示動画 {count} 件を削除"
-  },
-  "videoHiderNoVisibleVideos": {
-    "message": "非表示にできる表示中の動画はありません"
-  },
-  "videoHiderUndoAll": {
-    "message": "すべて元に戻す"
-  },
-  "videoHiderRestoredAllVideos": {
-    "message": "すべての動画を復元しました"
-  },
-  "videoHiderRemovedPageTpl": {
-    "message": "このページから非表示動画 {count} 件を削除しました"
-  },
-  "videoHiderQuickActionsAria": {
-    "message": "Video Hider のクイック操作"
-  },
-  "videoHiderHiddenVideosRestored": {
-    "message": "非表示動画を復元しました"
-  },
-  "videoHiderClearHiddenEntriesTpl": {
-    "message": "非表示リストの {count} 件を消去しました"
-  },
-  "videoHiderHiddenListRestored": {
-    "message": "非表示リストを復元しました"
-  },
-  "videoHiderClearAllowedVideosTpl": {
-    "message": "許可した動画 {count} 本を消去しました"
-  },
-  "videoHiderAllowedVideosRestored": {
-    "message": "許可した動画を復元しました"
-  },
-  "settingsConflictWithTpl": {
-    "message": "{featureName} と競合します"
-  },
-  "settingsAutoDisabledConflictTpl": {
-    "message": "自動的に無効化しました: {features} — {reason}"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
@@ -6811,6 +6853,9 @@
   "videoHiderChannelAllowlistToggleDesc": {
     "message": "Only channels in Allowed Channels are considered by channel filtering. An empty list is safe and applies no channel filter."
   },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "チャンネルブロックは無効です"
+  },
   "videoHiderChannelBlocklistCopy": {
     "message": "Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
   },
@@ -6832,11 +6877,92 @@
   "videoHiderChannelListCount": {
     "message": "{count} in Your List"
   },
+  "videoHiderChannelsRestored": {
+    "message": "チャンネルを復元しました"
+  },
   "videoHiderClearAllowedChannels": {
     "message": "Clear Allowed Channels"
   },
+  "videoHiderClearAllowedTpl": {
+    "message": "許可した動画を消去（{count}）"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "許可した動画 {count} 本を消去しました"
+  },
   "videoHiderClearBlockedChannels": {
     "message": "Unblock All Channels"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "すべてのチャンネルのブロックを解除（{count}）"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "非表示リストの {count} 件を消去しました"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "非表示リストだけを消去（{count}）"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "小さい値では早く停止します。大きい値では制限が作動する前に多く読み込めます。"
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "連続して非表示になったバッチ数"
+  },
+  "videoHiderDaysSuffix": {
+    "message": "days old"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "選択した最小時間より短い動画を自動的に非表示にします。"
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "動画の長さフィルター"
+  },
+  "videoHiderEnableAria": {
+    "message": "Video Hider を有効化"
+  },
+  "videoHiderFeatureOff": {
+    "message": "機能オフ"
+  },
+  "videoHiderFeatureOn": {
+    "message": "機能オン"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "フィルターと上限"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "{count}本の動画を非表示"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "非表示リストを復元しました"
+  },
+  "videoHiderHiddenReason": {
+    "message": "Video Hider により非表示: {reason}"
+  },
+  "videoHiderHiddenToast": {
+    "message": "動画を非表示"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "非表示動画 {videoId} のプレビューサムネイル"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "復元するまでおすすめから非表示にします。復元時に例外を追加すると、自動ルールで表示したままにできます。"
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "非表示動画を復元しました"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "非表示の動画"
+  },
+  "videoHiderHideAgain": {
+    "message": "再び非表示"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "許可した動画 {videoId} を再び非表示"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "吹き替え、自動吹き替え、別音声と表示されたカードを非表示にします。"
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "自動吹き替え動画を非表示"
   },
   "videoHiderHideButtonAllowChannel": {
     "message": "Hide this video (right-click to allow channel)"
@@ -6844,11 +6970,101 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
-  "videoHiderHiddenReason": {
-    "message": "Video Hider により非表示: {reason}"
+  "videoHiderHideLiveDesc": {
+    "message": "対応するフィードに表示された配信中カードとライブのおすすめを非表示にします。"
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "ライブ配信を非表示"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "YouTube がカードに再生数を表示している場合、しきい値未満の動画を非表示にします。"
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "再生数の少ない動画を非表示"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "ラジオ形式の Mix と自動生成されたおすすめ Mix を非表示にします。"
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "YouTube Mix を非表示"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "レンタル、購入、広告付き無料、映画ラベルのカードを非表示にします。"
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "映画を非表示"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "対応するフィード画面の再生リストカードと複数動画カードを非表示にします。"
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "再生リストカードを非表示"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "予定、近日公開、リマインダー付きの動画カードを非表示にします。"
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "近日公開のプレミアを非表示"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "動画を非表示"
   },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
+  },
+  "videoHiderInvalidVideoInput": {
+    "message": "有効な YouTube 動画 URL または 11 文字の動画 ID を入力してください。"
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!キーワードで一致を常に許可"
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "キーワードで一致を非表示"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i で正規表現ルールを実行"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "キーワードルール"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "空"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "使用中"
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "reaction, unboxing, prank, shorts…"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "エントリをカンマで区切ってください。このフィールドを更新するとルールがすぐに適用されます。"
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "キーワードとルール"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "タイトルまたはチャンネルのテキストで動画を非表示にします。カンマ区切りのキーワードを追加し、常に一致を許可するには !、正規表現には / で始めます。"
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "登録チャンネルの読み込み制限を有効化"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "登録チャンネルのフィードを大量に非表示にする場合におすすめです。"
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "読み込み制限を有効化"
+  },
+  "videoHiderLocalHeuristicsDesc": {
+    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+  },
+  "videoHiderLocalHeuristicsTitle": {
+    "message": "Local low-signal heuristics"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "この再生数を下回る動画は、低再生数フィルターが有効な場合のみ非表示になります。"
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "低再生数のしきい値"
   },
   "videoHiderMarkWatched": {
     "message": "Mark as watched"
@@ -6862,8 +7078,44 @@
   "videoHiderMarkedWatched": {
     "message": "Marked as watched"
   },
+  "videoHiderMinimumDurationDesc": {
+    "message": "0 でこのルールを無効化します。"
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "最小再生時間"
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "分"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "動画は非表示リストにありません"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "動画を非表示リストから許可リストに移動しました"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "非表示にできる表示中の動画はありません"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "許可した動画 {videoId} を YouTube で開く"
+  },
+  "videoHiderOpenChannel": {
+    "message": "チャンネルを開く"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "非表示動画 {videoId} を YouTube で開く"
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "YouTube で開く"
+  },
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "プレビューを利用できません"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "Video Hider のクイック操作"
   },
   "videoHiderReasonAutoDubbed": {
     "message": "自動吹き替えフィルター"
@@ -6883,23 +7135,17 @@
   "videoHiderReasonLive": {
     "message": "ライブ配信フィルター"
   },
-  "videoHiderReasonLowView": {
-    "message": "低再生数フィルター"
-  },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonLowSignal": {
     "message": "the low-signal view/age filter"
   },
-  "videoHiderReasonUploadCadence": {
-    "message": "the upload-cadence filter"
-  },
-  "videoHiderReasonMarkedWatched": {
-    "message": "ローカルの視聴済みマーカー"
+  "videoHiderReasonLowView": {
+    "message": "低再生数フィルター"
   },
   "videoHiderReasonManual": {
     "message": "保存した非表示リスト"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "ローカルの視聴済みマーカー"
   },
   "videoHiderReasonMix": {
     "message": "YouTube Mix フィルター"
@@ -6913,17 +7159,122 @@
   "videoHiderReasonPredicate": {
     "message": "高度なローカルルール"
   },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
+  },
   "videoHiderReasonUpcoming": {
     "message": "近日公開フィルター"
+  },
+  "videoHiderReasonUploadCadence": {
+    "message": "the upload-cadence filter"
   },
   "videoHiderReasonWatchedRatio": {
     "message": "視聴割合フィルター"
   },
+  "videoHiderRememberRestoredDesc": {
+    "message": "復元した動画を許可した動画に追加し、別のルールに一致しても表示したままにします。"
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "復元した動画を記憶"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "許可した動画 {videoId} の例外を削除"
+  },
+  "videoHiderRemoveException": {
+    "message": "例外を削除"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "リストから削除"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "有効にすると、一致する動画は CSS で隠すだけでなくフィードの DOM から削除されます。"
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "非表示カードを自動的に削除"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "非表示動画 {videoId} を例外を追加せずリストから削除"
+  },
+  "videoHiderRemovePage": {
+    "message": "このページの非表示動画を削除"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "このページから削除する非表示動画はありません"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "このページの非表示動画 {count} 件を削除"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "動画を非表示リストから削除しました"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "このページから非表示動画 {count} 件を削除しました"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "すべての非表示動画を復元して許可（{count}）"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "復元して許可"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "非表示動画 {videoId} を復元して許可例外を追加"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "{count} 本の非表示動画を復元しました"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "このページに非表示動画はありません"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "このページの非表示動画を復元"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "このページの非表示動画 {count} 件を復元"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "すべての動画を復元しました"
+  },
   "videoHiderRuleGuardTpl": {
     "message": "動画非表示のフィルターが {total} 件中 {count} 件に一致したため、表示を維持しました。"
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "チャンネルホーム、動画、ライブ、再生リストの各画面にルールを適用します。"
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "チャンネルページ"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "YouTube ホームフィードの一致項目を非表示にします。"
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "ホーム"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "その他のブラウジング画面でも Video Hider を有効にします。"
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "その他の YouTube 画面"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "検索結果ページに動画とチャンネルのルールを適用します。"
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "検索結果"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "登録チャンネルフィードの一致項目を非表示にし、一括操作を表示します。"
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "登録チャンネル"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "プレーヤーの横と下のおすすめにルールを適用します。"
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "再生ページ"
   },
   "videoHiderShowFilterReasonDesc": {
     "message": "非表示カードの横に、どのローカルルールが一致したかを説明する短いメモを表示します。"
@@ -6931,29 +7282,95 @@
   "videoHiderShowFilterReasonTitle": {
     "message": "非表示カードの理由を表示"
   },
-  "videoHiderLocalHeuristicsTitle": {
-    "message": "Local low-signal heuristics"
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "対応する動画サムネイルに X ボタンを表示し、ワンクリックで非表示にします。"
   },
-  "videoHiderLocalHeuristicsDesc": {
-    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "サムネイルの非表示ボタンを表示"
   },
-  "videoHiderViewsSuffix": {
-    "message": "views"
+  "videoHiderSubsGuard": {
+    "message": "登録チャンネル保護"
   },
-  "videoHiderDaysSuffix": {
-    "message": "days old"
+  "videoHiderSubsKeepPaused": {
+    "message": "一時停止を維持"
   },
-  "videoHiderUploadsPerDaySuffix": {
-    "message": "uploads/day"
+  "videoHiderSubsLoadChipTitle": {
+    "message": "登録チャンネルを一時停止中"
+  },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "登録チャンネルの読み込み操作を開く"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "登録チャンネルのフィードを一時停止"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "{loaded} 件中 {hidden} 件を非表示"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "スキャンした動画の {percent} が非表示になったため、フィードが空のバッチをさらに処理する前に Astra Deck が自動読み込みを一時停止しました。"
+  },
+  "videoHiderSubsResume": {
+    "message": "再開"
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "読み込みを再開"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "フィルターを確認"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "スキャン済み"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "連続"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "連続する複数のバッチが完全に非表示になったとき、登録チャンネルの無限読み込みを停止します。"
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "登録チャンネルの読み込み制限"
+  },
+  "videoHiderTabsAria": {
+    "message": "Video Hider のセクション"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "チャンネル {channelName} のブロックを解除"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "{count} 個のチャンネルのブロックを解除しました"
+  },
+  "videoHiderUndoAll": {
+    "message": "すべて元に戻す"
   },
   "videoHiderUnmarkWatched": {
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
     "message": "視聴済みマークを削除しました"
+  },
+  "videoHiderUploadsPerDaySuffix": {
+    "message": "uploads/day"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "動画 ID"
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderViewsSuffix": {
+    "message": "views"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "0 で無効化します。この割合以上の再生バーがあるカードを非表示にします。"
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "視聴済み割合を非表示"
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "視聴済み%"
   },
   "videoInsightsCategory": {
     "message": "カテゴリ"
@@ -7181,6 +7598,12 @@
     "message": "視聴時間 — 過去30日",
     "description": "Heading of the watch-time dashboard overlay"
   },
+  "whatsNewDetailFromTpl": {
+    "message": "v{previous} から v{version} に更新しました。変更内容を確認してください。"
+  },
+  "whatsNewDetailTpl": {
+    "message": "v{version} に更新しました。変更内容を確認してください。"
+  },
   "whatsNewDismiss": {
     "message": "Dismiss"
   },
@@ -7193,14 +7616,14 @@
   "whatsNewTitle": {
     "message": "Updated"
   },
-  "wlwbChannelAria": {
-    "message": "チャンネル名フィルター"
-  },
-  "wlwbChannelPlaceholder": {
-    "message": "チャンネル名に含む…"
-  },
   "wlwbAgeAria": {
     "message": "動画の最小経過日数"
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days}日"
+  },
+  "wlwbAgeLoading": {
+    "message": "公開日を読み込み中…"
   },
   "wlwbAgePlaceholder": {
     "message": "日数がこれより古い…"
@@ -7208,11 +7631,11 @@
   "wlwbAgeUnavailableTpl": {
     "message": "読み取れる公開時期がない読み込み済みの行が{count}件あり、年齢フィルターから除外されています。"
   },
-  "wlwbAgeDaysTpl": {
-    "message": "{days}日"
+  "wlwbChannelAria": {
+    "message": "チャンネル名フィルター"
   },
-  "wlwbAgeLoading": {
-    "message": "公開日を読み込み中…"
+  "wlwbChannelPlaceholder": {
+    "message": "チャンネル名に含む…"
   },
   "wlwbCloseAria": {
     "message": "ワークベンチを閉じる"
@@ -7244,6 +7667,9 @@
   "wlwbNoMatches": {
     "message": "削除対象に一致する行がありません"
   },
+  "wlwbNothingToUndo": {
+    "message": "後で見るから削除した動画に、取り消し待ちはありません。"
+  },
   "wlwbOpenAria": {
     "message": "「後で見る」ワークベンチを開く"
   },
@@ -7253,9 +7679,6 @@
   "wlwbPanelAria": {
     "message": "「後で見る」ワークベンチ"
   },
-  "wlwbRemovalLogBtn": {
-    "message": "削除ログ"
-  },
   "wlwbRecoveryEmpty": {
     "message": "復元待ちの削除済み動画はありません。"
   },
@@ -7264,6 +7687,9 @@
   },
   "wlwbRecoveryTitle": {
     "message": "復元"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "削除ログ"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "一致項目を削除（1回あたり最大 {limit} 件）"
@@ -7276,6 +7702,18 @@
   },
   "wlwbRemovingTpl": {
     "message": "{current} / {total} 件を削除中…"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "{title}を復元できませんでした: {error}"
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "削除した{total}本中{restored}本を後で見るに復元しました。"
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "{title}を後で見るに復元しました"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
   },
   "wlwbRowTitleTpl": {
     "message": "{title} — {channel}（{percent}% 視聴済み）"
@@ -7295,45 +7733,6 @@
   "wlwbSortTitle": {
     "message": "タイトル順（A–Z）"
   },
-  "wlwbStatusTpl": {
-    "message": "読み込み済みの {loaded} 件中 {matched} 件が一致。実行前に再生リストをスクロールして行をさらに読み込んでください。"
-  },
-  "wlwbTitleAria": {
-    "message": "タイトルフィルター"
-  },
-  "wlwbTitlePlaceholder": {
-    "message": "タイトルに含む…"
-  },
-  "wlwbNothingToUndo": {
-    "message": "後で見るから削除した動画に、取り消し待ちはありません。"
-  },
-  "wlwbRestoredBatchTpl": {
-    "message": "削除した{total}本中{restored}本を後で見るに復元しました。"
-  },
-  "wlwbRestoredItemTpl": {
-    "message": "{title}を後で見るに復元しました"
-  },
-  "wlwbRestoreFailedTpl": {
-    "message": "{title}を復元できませんでした: {error}"
-  },
-  "wlwbRowMetaTpl": {
-    "message": "{percent}% · {duration} · {age}"
-  },
-  "wlwbUndoAll": {
-    "message": "すべて取り消す"
-  },
-  "wlwbUndoItem": {
-    "message": "取り消す"
-  },
-  "wlwbWatchedAria": {
-    "message": "最低視聴率フィルター"
-  },
-  "wlwbWatchedPlaceholder": {
-    "message": "視聴率 ≥ %（例: 90）"
-  },
-  "wlwbWatchedStateAria": {
-    "message": "視聴状態フィルター"
-  },
   "wlwbStateAny": {
     "message": "すべての視聴状態"
   },
@@ -7346,11 +7745,35 @@
   "wlwbStateWatched": {
     "message": "視聴済み（90%以上）"
   },
+  "wlwbStatusTpl": {
+    "message": "読み込み済みの {loaded} 件中 {matched} 件が一致。実行前に再生リストをスクロールして行をさらに読み込んでください。"
+  },
+  "wlwbTitleAria": {
+    "message": "タイトルフィルター"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "タイトルに含む…"
+  },
+  "wlwbUndoAll": {
+    "message": "すべて取り消す"
+  },
+  "wlwbUndoItem": {
+    "message": "取り消す"
+  },
   "wlwbUnknownAge": {
     "message": "年齢 ?"
   },
   "wlwbUnknownDuration": {
     "message": "長さ ?"
+  },
+  "wlwbWatchedAria": {
+    "message": "最低視聴率フィルター"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "視聴率 ≥ %（例: 90）"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "視聴状態フィルター"
   },
   "workspaceEyebrow": {
     "message": "設定ワークスペース"
@@ -7366,425 +7789,5 @@
   },
   "youtubeStateRestoreToast": {
     "message": "YouTube state restored ({count}). Reload the page to apply it."
-  },
-  "feature_logarithmicVolume_desc": {
-    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
-  },
-  "feature_logarithmicVolume_name": {
-    "message": "Logarithmic Volume Curve"
-  },
-  "feature_sponsoredContentFilter_desc": {
-    "message": "スポンサーやアフィリエイト宣伝と思われるコメントと説明ブロックを折りたたみます。一致理由を表示し、項目ごとに復元できます。"
-  },
-  "feature_sponsoredContentFilter_name": {
-    "message": "スポンサーコンテンツフィルター"
-  },
-  "sponsoredFilterCommentLabel": {
-    "message": "スポンサーコメント"
-  },
-  "sponsoredFilterDescriptionLabel": {
-    "message": "スポンサー説明"
-  },
-  "sponsoredFilterHideTpl": {
-    "message": "{label}を非表示 — {reason}"
-  },
-  "sponsoredFilterShowTpl": {
-    "message": "{label}を表示 — {reason}"
-  },
-  "sponsoredFilterAffiliateReason": {
-    "message": "アフィリエイト宣伝"
-  },
-  "sponsoredFilterSponsorReason": {
-    "message": "スポンサー表記"
-  },
-  "languageAutoDetectedTpl": {
-    "message": "{label} — {detected}"
-  },
-  "resultsCountTpl": {
-    "message": "{count} {controls}"
-  },
-  "resultsVisibleTpl": {
-    "message": "{count} 件が一致"
-  },
-  "quickGroupCountTpl": {
-    "message": "{enabled}/{total}"
-  },
-  "selectorHealthCtxCountTpl": {
-    "message": "{ctx}: {count}"
-  },
-  "schemaResetTitleTpl": {
-    "message": "{key} を既定値にリセット（{value}）"
-  },
-  "schemaResetAriaTpl": {
-    "message": "{key} を既定値にリセット"
-  },
-  "whatsNewDetailTpl": {
-    "message": "v{version} に更新しました。変更内容を確認してください。"
-  },
-  "whatsNewDetailFromTpl": {
-    "message": "v{previous} から v{version} に更新しました。変更内容を確認してください。"
-  },
-  "toggleStatusTpl": {
-    "message": "{name}: {state}。"
-  },
-  "quickToggleAriaTpl": {
-    "message": "{name}。{description}。{state}。{permission}"
-  },
-  "statusImportSummaryTpl": {
-    "message": "{status} {preview}"
-  },
-  "advancedFiltersTitle": {
-    "message": "詳細フィルター"
-  },
-  "advancedFiltersHint": {
-    "message": "risk:、category:、scope:、profile: を使用します。スペースでフィルターを組み合わせ、コンマで候補を指定します。"
-  },
-  "filterTogglesHelpTitle": {
-    "message": "フリーテキストは名前、説明、キー、翻訳済みラベルに一致します。Mini-DSL: risk:safe|api|local-companion|experimental|store-risk、category:<name>、scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup、profile:store-safe|github-full|both。スペース（AND）とコンマ（フィールド内の OR）で組み合わせます。"
-  },
-  "qt_privacyDataFlowPanel_name": {
-    "message": "データフローパネル"
-  },
-  "qt_privacyDataFlowPanel_desc": {
-    "message": "Astra Deck が接続できるすべての API オリジンを表示"
-  },
-  "qt_safeStoreProfile_name": {
-    "message": "Store-Safe プロファイル"
-  },
-  "qt_safeStoreProfile_desc": {
-    "message": "github-full の切り替えを隠し、エクスポート時にキーを消去"
-  },
-  "qt_githubFullProfile_name": {
-    "message": "GitHub-Full プロファイル"
-  },
-  "qt_githubFullProfile_desc": {
-    "message": "github-full の切り替えを解除（Cobalt、AI キーなど）"
-  },
-  "qtGroup_Privacy": {
-    "message": "プライバシー"
-  },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
-  "aiCredentialReplaceHint": {
-    "message": "認証情報が設定されています。置き換える新しい値を入力してください。保存値は表示されません。"
-  },
-  "aiCredentialStoreHint": {
-    "message": "ユーザースクリプトマネージャー内だけに保存され、Astra Deck の設定やエクスポートには含まれません。"
-  },
-  "spPerfRowAriaTpl": {
-    "message": "{feature}: {ms}ms"
-  },
-  "spSettingRowTitleTpl": {
-    "message": "{key} ({category})"
-  },
-  "transcriptNoVideoId": {
-    "message": "動画 ID が見つかりません"
-  },
-  "transcriptFetching": {
-    "message": "文字起こしを取得しています…"
-  },
-  "transcriptUnavailable": {
-    "message": "この動画の文字起こしはありません"
-  },
-  "transcriptDownloadedTpl": {
-    "message": "文字起こしをダウンロードしました（{count} セグメント）"
-  },
-  "dwDailyLimitTitle": {
-    "message": "1日の上限に達しました"
-  },
-  "dwBreakTitle": {
-    "message": "休憩しましょう"
-  },
-  "playerDockHomeLink": {
-    "message": "ホームへ移動"
-  },
-  "sponsorBlockDataAttribution": {
-    "message": "SponsorBlock データ"
-  },
-  "sponsorBlockDataAttributionTitle": {
-    "message": "SponsorBlock API／データベースのデータ — CC BY-NC-SA 4.0"
-  },
-  "sponsorCachedSegmentTitleTpl": {
-    "message": "{label}（{time} にキャッシュ）"
-  },
-  "ui_rydEstimateDisclosure": {
-    "message": "Return YouTube Dislike の件数は、YouTube が公開の低評価数を削除した後の推定値です。視聴数の少ない動画では精度が下がる場合があります。"
-  },
-  "ui_rydPaused": {
-    "message": "RYD 一時停止"
-  },
-  "ui_rydPausedTitleTpl": {
-    "message": "Return YouTube Dislike はレート制限中（{used}/{limit}/分）。{seconds}秒後に再開します。"
-  },
-  "ui_rydOff": {
-    "message": "RYD オフ"
-  },
-  "ui_rydUnavailableTitle": {
-    "message": "Return YouTube Dislike は利用できません。API が有効な応答を返しませんでした。ネットワークを確認して、後でもう一度お試しください。"
-  },
-  "ui_rydCachedTitleHoursTpl": {
-    "message": "Return YouTube Dislike の低評価数（{hours}時間前のキャッシュ）。"
-  },
-  "ui_rydCachedTitleRecent": {
-    "message": "Return YouTube Dislike の低評価数（1時間未満前のキャッシュ）。"
-  },
-  "ui_rydLiveTitleTpl": {
-    "message": "Return YouTube Dislike の現在の低評価数（{used}/{limit}/分を使用）。{estimate}"
-  },
-  "ui_rydCountAriaTpl": {
-    "message": "推定低評価 {count} 件。{estimate}"
-  },
-  "ui_rydEstimateShort": {
-    "message": "推定"
-  },
-  "ui_rydRatioTpl": {
-    "message": "{ratio}% が高評価"
-  },
-  "ui_rydRatioTitleTpl": {
-    "message": "高評価率は Return YouTube Dislike の推定件数を使用します。{estimate}"
-  },
-  "stickyVideoSubscriptionsLink": {
-    "message": "登録チャンネルに移動"
-  },
-  "stickyVideoQuickLinksAria": {
-    "message": "クイックリンク"
-  },
-  "stickyVideoLiveVideoFallback": {
-    "message": "ライブ動画"
-  },
-  "stickyVideoLiveInfoAria": {
-    "message": "ライブ動画情報"
-  },
-  "stickyVideoLiveBadge": {
-    "message": "ライブ"
-  },
-  "stickyVideoLiveActionsAria": {
-    "message": "ライブ動画の操作"
-  },
-  "stickyVideoVideoActionsAria": {
-    "message": "動画の操作"
-  },
-  "stickyVideoCloseSidePanelTitle": {
-    "message": "サイドパネルを閉じる"
-  },
-  "timestampBookmarkAlreadyExists": {
-    "message": "この場所にはすでにブックマークがあります"
-  },
-  "timestampBookmarkAddedTpl": {
-    "message": "{time} にブックマークしました"
-  },
-  "timestampBookmarkRemovedTpl": {
-    "message": "{time} のブックマークを削除しました"
-  },
-  "timestampBookmarkRestoredTpl": {
-    "message": "{time} のブックマークを復元しました"
-  },
-  "timestampBookmarksSavedTpl": {
-    "message": "{count} 件保存済み"
-  },
-  "timestampBookmarksSavedStatus": {
-    "message": "保存した場面に戻り、それぞれに短いメモを残せます。"
-  },
-  "timestampBookmarksEmptyStatus": {
-    "message": "重要な場面をここに保存すると、シークせずに戻れます。"
-  },
-  "timestampBookmarksRegionAriaTpl": {
-    "message": "この動画のブックマーク {count} 件"
-  },
-  "timestampBookmarksEmptyTitle": {
-    "message": "ブックマークはまだありません"
-  },
-  "timestampBookmarksEmptyCopy": {
-    "message": "「現在の時刻を保存」を使うと、動画の場面を保存して後でメモを確認できます。"
-  },
-  "timestampBookmarksJumpAriaTpl": {
-    "message": "{time} に移動"
-  },
-  "timestampBookmarksJumpLabel": {
-    "message": "場面に移動"
-  },
-  "timestampBookmarksSavedNoteMeta": {
-    "message": "保存済みメモあり"
-  },
-  "timestampBookmarksAddNoteMeta": {
-    "message": "重要な理由をメモできます"
-  },
-  "timestampBookmarksNotePlaceholder": {
-    "message": "メモを追加…"
-  },
-  "timestampBookmarksNoteAriaTpl": {
-    "message": "{time} のブックマークのメモ"
-  },
-  "timestampBookmarksNoteLabel": {
-    "message": "メモ"
-  },
-  "timestampBookmarksDeleteAriaTpl": {
-    "message": "{time} のブックマークを削除"
-  },
-  "timestampBookmarksEyebrow": {
-    "message": "もう一度見る"
-  },
-  "timestampBookmarksSaveCurrentTime": {
-    "message": "現在の時刻を保存"
-  },
-  "videoHiderAllowedChannelsCountTpl": {
-    "message": "許可されたチャンネル {count} 件"
-  },
-  "videoHiderKeywordStatusLive": {
-    "message": "使用中"
-  },
-  "videoHiderKeywordStatusEmpty": {
-    "message": "空"
-  },
-  "videoHiderAddedHiddenVideoToast": {
-    "message": "動画を非表示リストに追加しました"
-  },
-  "videoHiderAlreadyHiddenVideoToast": {
-    "message": "動画はすでに非表示です"
-  },
-  "videoHiderRemovedHiddenVideoToast": {
-    "message": "動画を非表示リストから削除しました"
-  },
-  "videoHiderMissingHiddenVideoToast": {
-    "message": "動画は非表示リストにありません"
-  },
-  "videoHiderAddedAllowedVideoToast": {
-    "message": "動画を許可リストに追加しました"
-  },
-  "videoHiderMovedHiddenVideoToast": {
-    "message": "動画を非表示リストから許可リストに移動しました"
-  },
-  "videoHiderAlreadyAllowedVideoToast": {
-    "message": "動画はすでに許可されています"
-  },
-  "videoHiderKeywordsRulesSectionCopy": {
-    "message": "タイトルまたはチャンネルのテキストで動画を非表示にします。カンマ区切りのキーワードを追加し、常に一致を許可するには !、正規表現には / で始めます。"
-  },
-  "videoHiderKeywordHintHide": {
-    "message": "キーワードで一致を非表示"
-  },
-  "videoHiderKeywordHintAllow": {
-    "message": "!キーワードで一致を常に許可"
-  },
-  "videoHiderKeywordHintRegex": {
-    "message": "/pattern/i で正規表現ルールを実行"
-  },
-  "videoHiderDurationFilterTitle": {
-    "message": "動画の長さフィルター"
-  },
-  "videoHiderDurationFilterDesc": {
-    "message": "選択した最小時間より短い動画を自動的に非表示にします。"
-  },
-  "videoHiderSubscriptionLoadLimiterTitle": {
-    "message": "登録チャンネルの読み込み制限"
-  },
-  "videoHiderSubscriptionLoadLimiterDesc": {
-    "message": "連続する複数のバッチが完全に非表示になったとき、登録チャンネルの無限読み込みを停止します。"
-  },
-  "settingsDownloaderTitle": {
-    "message": "Astra Downloader"
-  },
-  "settingsHealthNeedsAttention": {
-    "message": "要対応"
-  },
-  "settingsImportReadFailed": {
-    "message": "インポートファイルを読み込めませんでした"
-  },
-  "selectorHealthExportAria": {
-    "message": "セレクターの状態を JSON でエクスポート"
-  },
-  "dataFlowFilterListGrantPurpose": {
-    "message": "アクセスを削除するまで、Video Hider はこのサイトからデータを取得できます。"
-  },
-  "dataFlowGrantedHostsCountTpl": {
-    "message": "{count} 件を許可"
-  },
-  "dataFlowGrantedHostsTitle": {
-    "message": "許可済みのサイトアクセス"
-  },
-  "dataFlowGrantRemove": {
-    "message": "アクセスを削除"
-  },
-  "dataFlowGrantRemoveAriaTpl": {
-    "message": "{host} へのサイトアクセスを削除"
-  },
-  "dataFlowGrantRemovedTpl": {
-    "message": "{host} へのサイトアクセスを削除しました。"
-  },
-  "dataFlowGrantRemoveFailedTpl": {
-    "message": "{host} へのサイトアクセスを削除できませんでした。"
-  },
-  "filterListStopFailed": {
-    "message": "フィルターリストの購読を停止できませんでした。"
-  },
-  "filterListStoppedTpl": {
-    "message": "{host} の購読を停止しました。フィルターリスト専用のサイトアクセスは残っていません。"
-  },
-  "transcriptSourcePlayerGlobal": {
-    "message": "現在のページのプレーヤーデータ"
-  },
-  "transcriptSourceInnertube": {
-    "message": "更新された YouTube プレーヤーデータ"
-  },
-  "transcriptSourceWatchPage": {
-    "message": "更新された YouTube 視聴ページ"
-  },
-  "transcriptSourcePanel": {
-    "message": "現在の YouTube 文字起こしパネル"
-  },
-  "transcriptSourceUnknown": {
-    "message": "YouTube 字幕"
-  },
-  "transcriptLanguageUnknown": {
-    "message": "言語不明"
-  },
-  "transcriptPanelFallback": {
-    "message": "パネルからのフォールバック"
-  },
-  "transcriptMetaPanelTpl": {
-    "message": "{source} から読み込み（{age}、{language}）。"
-  },
-  "transcriptRefreshedTrack": {
-    "message": "トラックを更新"
-  },
-  "transcriptMetaRefreshedTpl": {
-    "message": "期限切れの字幕 URL を {source} で更新しました（取得: {age}、{language}）。"
-  },
-  "transcriptExpiryUnknown": {
-    "message": "未指定"
-  },
-  "transcriptMetaSourceTpl": {
-    "message": "{source} から読み込み（{age}、{language}、トラック URL の期限: {expires}）。"
-  },
-  "transcriptTimeUnknown": {
-    "message": "時刻不明"
-  },
-  "transcriptNoCaptions": {
-    "message": "字幕なし"
-  },
-  "transcriptUnavailableLabel": {
-    "message": "利用不可"
-  },
-  "transcriptUnavailableNow": {
-    "message": "現在、YouTube から文字起こしを取得できません。"
-  },
-  "transcriptLoadFailed": {
-    "message": "文字起こしを読み込めませんでした"
-  },
-  "transcriptNoCaptionsHelp": {
-    "message": "字幕付きの別の動画を試すか、字幕の読み込み完了後にこのパネルを開き直してください。"
-  },
-  "transcriptRetryHelp": {
-    "message": "字幕が処理中の場合は、ページを再読み込みするか、しばらくしてからもう一度お試しください。"
-  },
-  "transcriptIndexUsageLoading": {
-    "message": "ローカルインデックスを測定中…"
-  },
-  "transcriptIndexUsageTpl": {
-    "message": "{maxCount} 本中 {count} 本の動画をインデックス済み、{budget} 中 {size}。古いエントリーから削除されます。"
-  },
-  "transcriptIndexUsageFailed": {
-    "message": "ローカルインデックスを測定できませんでした。"
   }
 }

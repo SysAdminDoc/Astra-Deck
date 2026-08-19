@@ -117,6 +117,7 @@
         "core/selector-health.js",
         "core/feature-health.js",
         "core/chapters.js",
+        "core/csv.js",
         "core/dialog-guard.js",
         "core/hide-attribution.js",
         "core/heatmap.js",

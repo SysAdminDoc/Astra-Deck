@@ -140,6 +140,7 @@
     // ── bundled module: extension/core/selector-health.js ──
     // ── bundled module: extension/core/feature-health.js ──
     // ── bundled module: extension/core/chapters.js ──
+    // ── bundled module: extension/core/csv.js ──
     // ── bundled module: extension/core/dialog-guard.js ──
     // ── bundled module: extension/core/hide-attribution.js ──
     // ── bundled module: extension/core/heatmap.js ──

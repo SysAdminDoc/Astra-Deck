@@ -1,4 +1,10 @@
 {
+  "advancedFiltersHint": {
+    "message": "استخدم risk: أو category: أو scope: أو profile:. تجمع المسافات الفلاتر، وتطابق الفواصل البدائل."
+  },
+  "advancedFiltersTitle": {
+    "message": "فلاتر متقدمة"
+  },
   "aiCredentialDeleteFailed": {
     "message": "تعذّر حذف بيانات الاعتماد."
   },
@@ -26,6 +32,9 @@
   "aiCredentialReplaceBtn": {
     "message": "استبدال بيانات الاعتماد"
   },
+  "aiCredentialReplaceHint": {
+    "message": "تم إعداد بيانات اعتماد. أدخل قيمة جديدة لاستبدالها؛ لا يتم عرض القيمة المخزنة."
+  },
   "aiCredentialSaveBtn": {
     "message": "حفظ بيانات الاعتماد"
   },
@@ -50,8 +59,14 @@
   "aiCredentialStatusUnavailable": {
     "message": "الحالة غير متاحة"
   },
+  "aiCredentialStoreHint": {
+    "message": "يتم تخزينها فقط في مدير userscript، خارج إعدادات Astra Deck وعمليات التصدير."
+  },
   "aiCredentialTitle": {
     "message": "بيانات اعتماد مزوّد الذكاء الاصطناعي"
+  },
+  "aiSummaryArtifactTpl": {
+    "message": "{title} · {date}"
   },
   "aiSummaryButtonTitle": {
     "message": "ملخص بالذكاء الاصطناعي (إدارة بيانات الاعتماد من نافذة شريط أدوات Astra Deck)"
@@ -165,64 +180,6 @@
   "bufferTargetSecondsTpl": {
     "message": "{count} ثانية",
     "description": "Buffer target slider value rendered in seconds"
-  },
-  "featureScheduleDaysTpl": {
-    "message": "Active {window} on {days}"
-  },
-  "featureScheduleEveryDayTpl": {
-    "message": "Active {window} every day"
-  },
-  "feature_antiTranslateChapters_desc": {
-    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
-  },
-  "feature_antiTranslateChapters_name": {
-    "message": "Anti-Translate Chapters"
-  },
-  "feature_antiTranslateThumbnails_desc": {
-    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
-  },
-  "feature_antiTranslateThumbnails_name": {
-    "message": "Anti-Translate Thumbnails"
-  },
-  "feature_feedPrefilter_desc": {
-    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
-  },
-  "feature_feedPrefilter_name": {
-    "message": "Filter Feeds Before Render"
-  },
-  "feature_heatmapSmartSpeed_desc": {
-    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
-  },
-  "feature_heatmapSmartSpeed_name": {
-    "message": "Heatmap Smart Speed"
-  },
-  "feature_jumpToMostReplayed_desc": {
-    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
-  },
-  "feature_jumpToMostReplayed_name": {
-    "message": "Jump to Most Replayed"
-  },
-  "heatmapJumpAria": {
-    "message": "Jump to the most replayed moment"
-  },
-  "heatmapJumpedToast": {
-    "message": "Jumped to the most replayed moment"
-  },
-  "hiddenCardNoteTpl": {
-    "message": "Hidden by {feature}: {rule}"
-  },
-  "hiddenRuleCollaboration": {
-    "message": "multi-creator upload"
-  },
-  "hiddenRuleScheduled": {
-    "message": "scheduled livestream or premiere"
-  },
-  "hiddenRuleShorts": {
-    "message": "Shorts video"
-  },
-  "liveLatencyReadout": {
-    "message": "Live {latency}s · buffer {buffer}s",
-    "description": "Live-stream latency and buffered-ahead player readout"
   },
   "bulkActionsAria": {
     "message": "Bulk card actions"
@@ -431,6 +388,9 @@
   "dataFlowDriver": {
     "message": "المحرِّك"
   },
+  "dataFlowFilterListGrantPurpose": {
+    "message": "يمكن لـ Video Hider جلب البيانات من هذا الموقع حتى تتم إزالة الوصول."
+  },
   "dataFlowGrant": {
     "message": "grant"
   },
@@ -439,6 +399,24 @@
   },
   "dataFlowGrantNeeded": {
     "message": "permission needed"
+  },
+  "dataFlowGrantRemove": {
+    "message": "إزالة الوصول"
+  },
+  "dataFlowGrantRemoveAriaTpl": {
+    "message": "إزالة الوصول إلى موقع {host}"
+  },
+  "dataFlowGrantRemoveFailedTpl": {
+    "message": "تعذرت إزالة الوصول إلى موقع {host}."
+  },
+  "dataFlowGrantRemovedTpl": {
+    "message": "تمت إزالة الوصول إلى موقع {host}."
+  },
+  "dataFlowGrantedHostsCountTpl": {
+    "message": "تم منح {count}"
+  },
+  "dataFlowGrantedHostsTitle": {
+    "message": "الوصول الممنوح إلى المواقع"
   },
   "dataFlowInactive": {
     "message": "خامل"
@@ -598,6 +576,9 @@
   },
   "dlHistoryEmpty": {
     "message": "No completed downloads yet."
+  },
+  "dlHistoryExportTruncatedTpl": {
+    "message": "Exported the most recent {count} downloads. Narrow the filters to export older entries."
   },
   "dlHistoryExporting": {
     "message": "Exporting…"
@@ -891,11 +872,11 @@
   "dlPopupQuality": {
     "message": "الجودة"
   },
-  "dlPopupQualitySizeTpl": {
-    "message": "{quality} · {size}"
-  },
   "dlPopupQualitySizeTitleTpl": {
     "message": "Estimated download size: {size}"
+  },
+  "dlPopupQualitySizeTpl": {
+    "message": "{quality} · {size}"
   },
   "dlPopupQualitySizeUnavailable": {
     "message": "Size unavailable"
@@ -1068,6 +1049,12 @@
   "dualSubtitleTrackAria": {
     "message": "Secondary subtitles"
   },
+  "dwBreakTitle": {
+    "message": "خذ استراحة"
+  },
+  "dwDailyLimitTitle": {
+    "message": "تم بلوغ الحد اليومي"
+  },
   "dwShortsHardBlockHint": {
     "message": "This hard block resets at your next local midnight."
   },
@@ -1113,153 +1100,6 @@
   "exportFilterListBtn": {
     "message": "تصدير القواعد"
   },
-  "filterListExportFail": {
-    "message": "فشل تصدير قائمة التصفية"
-  },
-  "filterListExported": {
-    "message": "تم تصدير قواعد Video Hider."
-  },
-  "filterListFailureBadFormat": {
-    "message": "لم تكن الاستجابة قائمة تصفية Astra Deck مدعومة"
-  },
-  "filterListFailureExpired": {
-    "message": "مرّ أكثر من 7 أيام على آخر تحقق"
-  },
-  "filterListFailureHttpTpl": {
-    "message": "أعاد الخادم HTTP {status}"
-  },
-  "filterListFailureIntegrity": {
-    "message": "لم يكن تحقق SHA-256 متاحًا"
-  },
-  "filterListFailureStorage": {
-    "message": "تعذّر حفظ القائمة المتحقق منها"
-  },
-  "filterListFailureTooLarge": {
-    "message": "تجاوزت الاستجابة حد 1 MiB"
-  },
-  "filterListFailureUnreachable": {
-    "message": "تعذّر الوصول إلى المصدر"
-  },
-  "filterListHashUnavailable": {
-    "message": "غير مسجل"
-  },
-  "filterListImportFail": {
-    "message": "فشل استيراد قائمة التصفية"
-  },
-  "filterListImportNotJson": {
-    "message": "هذا الملف ليس JSON صالحًا."
-  },
-  "filterListImportRollback": {
-    "message": "فشل استيراد قائمة التصفية؛ تمت استعادة البيانات السابقة."
-  },
-  "filterListImported": {
-    "message": "تم استيراد قواعد Video Hider. يمكن التراجع عن الاستيراد."
-  },
-  "filterListNotModified": {
-    "message": "تم التحقق من قائمة التصفية؛ لم يتغير المحتوى المخزن مؤقتًا."
-  },
-  "filterListRefreshDaily": {
-    "message": "يوميًا"
-  },
-  "filterListRefreshManual": {
-    "message": "يدوي فقط"
-  },
-  "filterListRefreshModeLabel": {
-    "message": "التحديث التلقائي"
-  },
-  "filterListRefreshWeekly": {
-    "message": "أسبوعيًا"
-  },
-  "filterListStatusActiveTpl": {
-    "message": "تتم متابعة {host}. تم التحقق {age}؛ التنسيق v{version}؛ SHA-256 {hash}."
-  },
-  "filterListStatusErrorTpl": {
-    "message": "لا توجد قواعد نشطة من {host}. فشل آخر تحديث لأن {reason}."
-  },
-  "filterListStatusExported": {
-    "message": "تم تصدير قواعد التصفية المحلية."
-  },
-  "filterListStatusFail": {
-    "message": "حدث خطأ ما. لم تتغير القواعد المحفوظة."
-  },
-  "filterListStatusRefreshFail": {
-    "message": "تعذّر تحديث القائمة. تحقق من العنوان ثم أعد المحاولة."
-  },
-  "filterListStatusFollowingTpl": {
-    "message": "يتم اتباع قائمة التصفية على {host}."
-  },
-  "filterListStatusPendingTpl": {
-    "message": "لم يتم جلبها بعد. اختر «تحديث القائمة الآن» لمتابعة {host}."
-  },
-  "filterListStatusLastFailedTpl": {
-    "message": "لم ينجح آخر تحديث لـ {host}. لا تزال القواعد المخزنة مؤقتًا قيد الاستخدام."
-  },
-  "filterListStatusImported": {
-    "message": "تم استيراد قواعد التصفية. يمكن التراجع عن الاستيراد."
-  },
-  "filterListStatusInvalidUrl": {
-    "message": "أدخل عنوان HTTPS كاملاً بدون اسم مستخدم أو كلمة مرور أو جزء #."
-  },
-  "filterListStatusNoTab": {
-    "message": "افتح علامة تبويب YouTube لتحديث القائمة البعيدة."
-  },
-  "filterListStatusPrivateHost": {
-    "message": "هذا العنوان على شبكة خاصة أو محلية. يجب تقديم قوائم التصفية من موقع HTTPS عام."
-  },
-  "filterListStatusPermissionNeeded": {
-    "message": "يحتاج Astra Deck إلى إذنك للقراءة من ذلك الموقع. اختر «سماح» عندما يسألك المتصفح."
-  },
-  "filterListStatusPreferenceFail": {
-    "message": "تعذّر حفظ تفضيلات قائمة التصفية."
-  },
-  "filterListStatusReady": {
-    "message": "لا يتم اتباع أي قائمة تصفية."
-  },
-  "filterListStatusRefreshed": {
-    "message": "تم تحديث قائمة التصفية البعيدة."
-  },
-  "filterListStatusRefreshReasonTpl": {
-    "message": "تعذّر تحديث القائمة لأن {reason}."
-  },
-  "filterListStatusStaleActiveTpl": {
-    "message": "تظل قواعد {host} المخزنة مؤقتًا نشطة؛ تم التحقق {age}؛ {reason}. التنسيق v{version}؛ SHA-256 {hash}."
-  },
-  "filterListStatusStalePausedTpl": {
-    "message": "قواعد {host} المخزنة مؤقتًا متوقفة مؤقتًا؛ تم التحقق {age}؛ {reason}. التنسيق v{version}؛ SHA-256 {hash}."
-  },
-  "filterListTimeUnknown": {
-    "message": "في وقت غير معروف"
-  },
-  "filterListToolsDesc": {
-    "message": "أنشئ نسخة احتياطية من قواعد Video Hider، أو استعدها من ملف، أو تابع قائمة تصفية منشورة على موقع تثق به."
-  },
-  "filterListToolsEyebrow": {
-    "message": "Video Hider"
-  },
-  "filterListToolsTitle": {
-    "message": "قوائم التصفية"
-  },
-  "filterListUrlLabel": {
-    "message": "رابط قائمة التصفية (اختياري)"
-  },
-  "filterListUrlPlaceholder": {
-    "message": "https://example.com/astra-deck-rules.json"
-  },
-  "filterListUseStaleLabel": {
-    "message": "استخدام آخر قواعد تم التحقق منها إذا فشل التحديث أو مرّ عليها أكثر من 7 أيام"
-  },
-  "filterListRefreshFail": {
-    "message": "فشل تحديث قائمة التصفية"
-  },
-  "filterListRefreshed": {
-    "message": "تم تحديث قائمة تصفية Video Hider."
-  },
-  "importFilterListBtn": {
-    "message": "استيراد القواعد"
-  },
-  "refreshFilterListBtn": {
-    "message": "تحديث القائمة الآن"
-  },
   "extActionTitle": {
     "message": "Astra Deck",
     "description": "Tooltip text for the toolbar action button."
@@ -1274,6 +1114,9 @@
   },
   "externalHealthAria": {
     "message": "External API health"
+  },
+  "externalHealthAvailabilityTpl": {
+    "message": "availability {state}"
   },
   "externalHealthCopyAria": {
     "message": "Copy external API health report to clipboard"
@@ -1293,23 +1136,20 @@
   "externalHealthCopyPending": {
     "message": "Building report..."
   },
-  "externalHealthAvailabilityTpl": {
-    "message": "availability {state}"
-  },
   "externalHealthDetailEmpty": {
     "message": "No requests observed in this tab yet."
   },
   "externalHealthEmpty": {
     "message": "No external API services tracked yet."
   },
-  "externalHealthTitle": {
-    "message": "External API health"
-  },
   "externalHealthRefreshTpl": {
     "message": "refreshed {age} ago"
   },
   "externalHealthSourceTpl": {
     "message": "source {source}"
+  },
+  "externalHealthTitle": {
+    "message": "External API health"
   },
   "externalHealthTotalTpl": {
     "message": "{count} services"
@@ -1379,6 +1219,12 @@
   },
   "featurePerfTotalTpl": {
     "message": "{count} features measured"
+  },
+  "featureScheduleDaysTpl": {
+    "message": "Active {window} on {days}"
+  },
+  "featureScheduleEveryDayTpl": {
+    "message": "Active {window} every day"
   },
   "feature_abHide_ask_desc": {
     "message": "إخفاء زر السؤال أو الذكاء الاصطناعي أسفل الفيديوهات"
@@ -1463,6 +1309,18 @@
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "منع ترجمة المسار الصوتي"
+  },
+  "feature_antiTranslateChapters_desc": {
+    "message": "Restore original-language chapter titles in the chapter list and the player hover label, read from the original description rather than the translated page."
+  },
+  "feature_antiTranslateChapters_name": {
+    "message": "Anti-Translate Chapters"
+  },
+  "feature_antiTranslateThumbnails_desc": {
+    "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
+  },
+  "feature_antiTranslateThumbnails_name": {
+    "message": "Anti-Translate Thumbnails"
   },
   "feature_antiTranslateTranscript_desc": {
     "message": "يزيل معلمات مسار الترجمة من عنوان URL لنص لوحة التفاعل ليقدّم YouTube الترجمة باللغة الأصلية. أفضل جهد؛ يعمل عند توفر مسار اللغة الأصلية."
@@ -1655,24 +1513,6 @@
   },
   "feature_blueLightIntensity_name": {
     "message": "Blue Light Intensity"
-  },
-  "feature_photosensitiveDimPercent_desc": {
-    "message": "مدى تعتيم المشغل أثناء اكتشاف محتوى وامض."
-  },
-  "feature_photosensitiveDimPercent_name": {
-    "message": "شدة التعتيم"
-  },
-  "feature_photosensitiveFlashProtection_desc": {
-    "message": "يحلل إطارات الفيديو محلياً ويعتم المشغل لفترة وجيزة عند اكتشاف تغيّر كبير في السطوع."
-  },
-  "feature_photosensitiveFlashProtection_name": {
-    "message": "الحماية من الوميض الضوئي"
-  },
-  "feature_photosensitiveFlashThreshold_desc": {
-    "message": "أدنى تغيّر في سطوع الإطار يُفعّل الحماية."
-  },
-  "feature_photosensitiveFlashThreshold_name": {
-    "message": "حساسية الوميض"
   },
   "feature_bufferPreloadSeconds_desc": {
     "message": "عدد الثواني التي يتم تخزينها مؤقتًا مسبقًا من فيديو عند الطلب. القيم الأعلى تتحمل انقطاعات اتصال أطول؛ وقد يظل المشغّل يحدّ من الأهداف الكبيرة جدًا في مقاطع الفيديو الطويلة."
@@ -2208,6 +2048,12 @@
   "feature_expandVideoWidth_name": {
     "message": "توسيع عرض الفيديو"
   },
+  "feature_feedPrefilter_desc": {
+    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
+  },
+  "feature_feedPrefilter_name": {
+    "message": "Filter Feeds Before Render"
+  },
   "feature_feedTriageProfile_desc": {
     "message": "تفعيل وصفة تركيز منسّقة: تخفي Shorts والبث المباشر والعروض الأولى القادمة والمزيج والفيديوهات المشاهدة وملخص الذكاء الاصطناعي. التعطيل يستعيد القيم السابقة."
   },
@@ -2243,6 +2089,12 @@
   },
   "feature_forceDarkEverywhere_name": {
     "message": "فرض الوضع الداكن على جميع صفحات YouTube"
+  },
+  "feature_forceDvr_desc": {
+    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+  },
+  "feature_forceDvr_name": {
+    "message": "Force DVR for Live Streams"
   },
   "feature_forceH264_desc": {
     "message": "تفضيل H.264 (AVC) على VP9/AV1 لاستخدام CPU أقل على الأجهزة القديمة. قد يقلل الجودة القصوى. يستخدم جسر ترميز العالم الرئيسي."
@@ -2429,6 +2281,12 @@
   },
   "feature_guideHide_yourVideos_name": {
     "message": "Your Videos"
+  },
+  "feature_heatmapSmartSpeed_desc": {
+    "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
+  },
+  "feature_heatmapSmartSpeed_name": {
+    "message": "Heatmap Smart Speed"
   },
   "feature_hiddenActionButtonsManager_desc": {
     "message": "اختر أزرار الإجراءات المراد إخفاؤها أسفل الفيديوهات"
@@ -2718,17 +2576,17 @@
   "feature_hideVideosFromHome_name": {
     "message": "إخفاء الفيديوهات"
   },
-  "feature_hideVideosSyntheticNarrationFilter_desc": {
-    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
-  },
-  "feature_hideVideosSyntheticNarrationFilter_name": {
-    "message": "Synthetic narration markers"
-  },
   "feature_hideVideosLowSignalFilter_desc": {
     "message": "Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open."
   },
   "feature_hideVideosLowSignalFilter_name": {
     "message": "Hide low-signal videos"
+  },
+  "feature_hideVideosLowSignalMinAgeDays_desc": {
+    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+  },
+  "feature_hideVideosLowSignalMinAgeDays_name": {
+    "message": "Low-signal age threshold"
   },
   "feature_hideVideosLowSignalMinViews_desc": {
     "message": "Minimum views used by the low-signal heuristic. Set to 0 to disable its view side."
@@ -2736,11 +2594,11 @@
   "feature_hideVideosLowSignalMinViews_name": {
     "message": "Low-signal view threshold"
   },
-  "feature_hideVideosLowSignalMinAgeDays_desc": {
-    "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
+  "feature_hideVideosSyntheticNarrationFilter_desc": {
+    "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
   },
-  "feature_hideVideosLowSignalMinAgeDays_name": {
-    "message": "Low-signal age threshold"
+  "feature_hideVideosSyntheticNarrationFilter_name": {
+    "message": "Synthetic narration markers"
   },
   "feature_hideVideosUploadCadenceFilter_desc": {
     "message": "Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible."
@@ -2784,6 +2642,12 @@
   "feature_initialPlayerStateForeground_name": {
     "message": "حالة المشغّل الأولية (مقدمة)"
   },
+  "feature_jumpToMostReplayed_desc": {
+    "message": "Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap."
+  },
+  "feature_jumpToMostReplayed_name": {
+    "message": "Jump to Most Replayed"
+  },
   "feature_keyMoments_desc": {
     "message": "تمييز علامات الفصول على شريط التقدم بشرائح ملونة للتنقل البصري السريع"
   },
@@ -2801,12 +2665,6 @@
   },
   "feature_listFeedLayout_name": {
     "message": "List Feed Layout"
-  },
-  "feature_liveSpeedReset_desc": {
-    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
-  },
-  "feature_liveSpeedReset_name": {
-    "message": "Live Catch-Up Speed Reset"
   },
   "feature_liveLatencyCatchup_desc": {
     "message": "Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target."
@@ -2826,26 +2684,11 @@
   "feature_liveLatencyTargetSeconds_name": {
     "message": "Live Latency Target"
   },
-  "feature_forceDvr_desc": {
-    "message": "Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation."
+  "feature_liveSpeedReset_desc": {
+    "message": "When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge"
   },
-  "feature_forceDvr_name": {
-    "message": "Force DVR for Live Streams"
-  },
-  "forceDvrDegraded": {
-    "message": "DVR could not be enabled because the live player response changed."
-  },
-  "feature_replayChatDensity_desc": {
-    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
-  },
-  "feature_replayChatDensity_name": {
-    "message": "Replay Chat Density"
-  },
-  "replayChatDensityAria": {
-    "message": "Chat activity across this video. Click the chart to seek."
-  },
-  "replayChatDensityTitle": {
-    "message": "Chat activity — click to seek"
+  "feature_liveSpeedReset_name": {
+    "message": "Live Catch-Up Speed Reset"
   },
   "feature_localAiSummary_desc": {
     "message": "استخدام واجهة Summarizer المدمجة في Chrome عند توفرها. يعود إلى رسالة \"غير متاح\" واضحة — لا يوجّه بصمت إلى مزود بعيد. يضيف زر \"ملخص محلي\" بجانب زر ملخص الذكاء الاصطناعي الحالي."
@@ -2858,6 +2701,12 @@
   },
   "feature_localAiTranscriptQa_name": {
     "message": "أسئلة وأجوبة النص (مدمج في المتصفح)"
+  },
+  "feature_logarithmicVolume_desc": {
+    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
+  },
+  "feature_logarithmicVolume_name": {
+    "message": "Logarithmic Volume Curve"
   },
   "feature_logoToSubscriptions_desc": {
     "message": "توجيه علامة YouTube الرئيسية إلى خلاصة الاشتراكات"
@@ -3056,6 +2905,24 @@
   },
   "feature_persistentSpeed_name": {
     "message": "سرعة التشغيل الثابتة"
+  },
+  "feature_photosensitiveDimPercent_desc": {
+    "message": "مدى تعتيم المشغل أثناء اكتشاف محتوى وامض."
+  },
+  "feature_photosensitiveDimPercent_name": {
+    "message": "شدة التعتيم"
+  },
+  "feature_photosensitiveFlashProtection_desc": {
+    "message": "يحلل إطارات الفيديو محلياً ويعتم المشغل لفترة وجيزة عند اكتشاف تغيّر كبير في السطوع."
+  },
+  "feature_photosensitiveFlashProtection_name": {
+    "message": "الحماية من الوميض الضوئي"
+  },
+  "feature_photosensitiveFlashThreshold_desc": {
+    "message": "أدنى تغيّر في سطوع الإطار يُفعّل الحماية."
+  },
+  "feature_photosensitiveFlashThreshold_name": {
+    "message": "حساسية الوميض"
   },
   "feature_pipButton_desc": {
     "message": "يضيف زر PiP بنقرة واحدة إلى عناصر تحكم المشغّل لوضع صورة داخل صورة الأصلي في المتصفح"
@@ -3261,6 +3128,12 @@
   "feature_removeScrubber_name": {
     "message": "Hide Scrubber Handle"
   },
+  "feature_replayChatDensity_desc": {
+    "message": "Show an optional activity sparkline above the progress bar for videos with replay chat, with click-to-seek highlights."
+  },
+  "feature_replayChatDensity_name": {
+    "message": "Replay Chat Density"
+  },
   "feature_researchSpacedReview_desc": {
     "message": "تصدير بيانات وضع الدراسة/العمل إلى Markdown أو CSV: إجماليات وقت المشاهدة، حالة وضع التركيز، حالة الصحة الرقمية، وإشارات الطوابع الزمنية مع روابط عميقة."
   },
@@ -3374,27 +3247,6 @@
   },
   "feature_sbPerChannelProfiles_name": {
     "message": "ملفات SponsorBlock لكل قناة"
-  },
-  "feature_sponsorBlockBaseUrl_desc": {
-    "message": "يحدد مضيف HTTPS الأساسي المستخدم من SponsorBlock وDeArrow."
-  },
-  "feature_sponsorBlockBaseUrl_name": {
-    "message": "مضيف واجهة SponsorBlock"
-  },
-  "feature_sponsorBlockCanonicalHost_label": {
-    "message": "الأساسي — sponsor.ajay.app"
-  },
-  "feature_sponsorBlockDisabled_label": {
-    "message": "Disabled"
-  },
-  "feature_sponsorBlockMirrorHost_label": {
-    "message": "مرآة — sponsorblock.kavin.rocks"
-  },
-  "feature_sponsorBlockMirrorUrl_desc": {
-    "message": "يجرّب هذه المرآة المعتمدة مرة واحدة عند فشل المضيف الأساسي."
-  },
-  "feature_sponsorBlockMirrorUrl_name": {
-    "message": "مضيف SponsorBlock الاحتياطي"
   },
   "feature_scrollToPlayer_desc": {
     "message": "التمرير تلقائياً إلى أعلى الصفحة عند الانتقال إلى فيديو جديد"
@@ -3546,11 +3398,38 @@
   "feature_speedStep_name": {
     "message": "مقدار خطوة السرعة"
   },
+  "feature_sponsorBlockBaseUrl_desc": {
+    "message": "يحدد مضيف HTTPS الأساسي المستخدم من SponsorBlock وDeArrow."
+  },
+  "feature_sponsorBlockBaseUrl_name": {
+    "message": "مضيف واجهة SponsorBlock"
+  },
+  "feature_sponsorBlockCanonicalHost_label": {
+    "message": "الأساسي — sponsor.ajay.app"
+  },
+  "feature_sponsorBlockDisabled_label": {
+    "message": "Disabled"
+  },
+  "feature_sponsorBlockMirrorHost_label": {
+    "message": "مرآة — sponsorblock.kavin.rocks"
+  },
+  "feature_sponsorBlockMirrorUrl_desc": {
+    "message": "يجرّب هذه المرآة المعتمدة مرة واحدة عند فشل المضيف الأساسي."
+  },
+  "feature_sponsorBlockMirrorUrl_name": {
+    "message": "مضيف SponsorBlock الاحتياطي"
+  },
   "feature_sponsorBlock_desc": {
     "message": "يتخطى تلقائيًا المقاطع الدعائية والمقدمات والنهايات والأجزاء الأخرى غير الأساسية باستخدام بيانات SponsorBlock المرخصة وفق CC BY-NC-SA 4.0"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
+  },
+  "feature_sponsoredContentFilter_desc": {
+    "message": "طي كتل التعليقات والوصف التي تبدو كرعاية أو ترويج تابع. يوضح كل عنصر سبب المطابقة ويمكن استعادته."
+  },
+  "feature_sponsoredContentFilter_name": {
+    "message": "فلتر المحتوى المدعوم"
   },
   "feature_squareAvatars_desc": {
     "message": "جعل الصور الرمزية للقنوات مربعة بدلاً من دائرية"
@@ -3924,6 +3803,156 @@
   "feature_zenMode_name": {
     "message": "وضع الهدوء"
   },
+  "filterListExportFail": {
+    "message": "فشل تصدير قائمة التصفية"
+  },
+  "filterListExported": {
+    "message": "تم تصدير قواعد Video Hider."
+  },
+  "filterListFailureBadFormat": {
+    "message": "لم تكن الاستجابة قائمة تصفية Astra Deck مدعومة"
+  },
+  "filterListFailureExpired": {
+    "message": "مرّ أكثر من 7 أيام على آخر تحقق"
+  },
+  "filterListFailureHttpTpl": {
+    "message": "أعاد الخادم HTTP {status}"
+  },
+  "filterListFailureIntegrity": {
+    "message": "لم يكن تحقق SHA-256 متاحًا"
+  },
+  "filterListFailureStorage": {
+    "message": "تعذّر حفظ القائمة المتحقق منها"
+  },
+  "filterListFailureTooLarge": {
+    "message": "تجاوزت الاستجابة حد 1 MiB"
+  },
+  "filterListFailureUnreachable": {
+    "message": "تعذّر الوصول إلى المصدر"
+  },
+  "filterListHashUnavailable": {
+    "message": "غير مسجل"
+  },
+  "filterListImportFail": {
+    "message": "فشل استيراد قائمة التصفية"
+  },
+  "filterListImportNotJson": {
+    "message": "هذا الملف ليس JSON صالحًا."
+  },
+  "filterListImportRollback": {
+    "message": "فشل استيراد قائمة التصفية؛ تمت استعادة البيانات السابقة."
+  },
+  "filterListImported": {
+    "message": "تم استيراد قواعد Video Hider. يمكن التراجع عن الاستيراد."
+  },
+  "filterListNotModified": {
+    "message": "تم التحقق من قائمة التصفية؛ لم يتغير المحتوى المخزن مؤقتًا."
+  },
+  "filterListRefreshDaily": {
+    "message": "يوميًا"
+  },
+  "filterListRefreshFail": {
+    "message": "فشل تحديث قائمة التصفية"
+  },
+  "filterListRefreshManual": {
+    "message": "يدوي فقط"
+  },
+  "filterListRefreshModeLabel": {
+    "message": "التحديث التلقائي"
+  },
+  "filterListRefreshWeekly": {
+    "message": "أسبوعيًا"
+  },
+  "filterListRefreshed": {
+    "message": "تم تحديث قائمة تصفية Video Hider."
+  },
+  "filterListStatusActiveTpl": {
+    "message": "تتم متابعة {host}. تم التحقق {age}؛ التنسيق v{version}؛ SHA-256 {hash}."
+  },
+  "filterListStatusErrorTpl": {
+    "message": "لا توجد قواعد نشطة من {host}. فشل آخر تحديث لأن {reason}."
+  },
+  "filterListStatusExported": {
+    "message": "تم تصدير قواعد التصفية المحلية."
+  },
+  "filterListStatusFail": {
+    "message": "حدث خطأ ما. لم تتغير القواعد المحفوظة."
+  },
+  "filterListStatusFollowingTpl": {
+    "message": "يتم اتباع قائمة التصفية على {host}."
+  },
+  "filterListStatusImported": {
+    "message": "تم استيراد قواعد التصفية. يمكن التراجع عن الاستيراد."
+  },
+  "filterListStatusInvalidUrl": {
+    "message": "أدخل عنوان HTTPS كاملاً بدون اسم مستخدم أو كلمة مرور أو جزء #."
+  },
+  "filterListStatusLastFailedTpl": {
+    "message": "لم ينجح آخر تحديث لـ {host}. لا تزال القواعد المخزنة مؤقتًا قيد الاستخدام."
+  },
+  "filterListStatusNoTab": {
+    "message": "افتح علامة تبويب YouTube لتحديث القائمة البعيدة."
+  },
+  "filterListStatusPendingTpl": {
+    "message": "لم يتم جلبها بعد. اختر «تحديث القائمة الآن» لمتابعة {host}."
+  },
+  "filterListStatusPermissionNeeded": {
+    "message": "يحتاج Astra Deck إلى إذنك للقراءة من ذلك الموقع. اختر «سماح» عندما يسألك المتصفح."
+  },
+  "filterListStatusPreferenceFail": {
+    "message": "تعذّر حفظ تفضيلات قائمة التصفية."
+  },
+  "filterListStatusPrivateHost": {
+    "message": "هذا العنوان على شبكة خاصة أو محلية. يجب تقديم قوائم التصفية من موقع HTTPS عام."
+  },
+  "filterListStatusReady": {
+    "message": "لا يتم اتباع أي قائمة تصفية."
+  },
+  "filterListStatusRefreshFail": {
+    "message": "تعذّر تحديث القائمة. تحقق من العنوان ثم أعد المحاولة."
+  },
+  "filterListStatusRefreshReasonTpl": {
+    "message": "تعذّر تحديث القائمة لأن {reason}."
+  },
+  "filterListStatusRefreshed": {
+    "message": "تم تحديث قائمة التصفية البعيدة."
+  },
+  "filterListStatusStaleActiveTpl": {
+    "message": "تظل قواعد {host} المخزنة مؤقتًا نشطة؛ تم التحقق {age}؛ {reason}. التنسيق v{version}؛ SHA-256 {hash}."
+  },
+  "filterListStatusStalePausedTpl": {
+    "message": "قواعد {host} المخزنة مؤقتًا متوقفة مؤقتًا؛ تم التحقق {age}؛ {reason}. التنسيق v{version}؛ SHA-256 {hash}."
+  },
+  "filterListStopFailed": {
+    "message": "تعذر إيقاف متابعة قائمة عوامل التصفية."
+  },
+  "filterListStoppedTpl": {
+    "message": "تم إيقاف متابعة {host}. لم يعد هناك وصول إلى الموقع مخصص لقائمة عوامل التصفية."
+  },
+  "filterListTimeUnknown": {
+    "message": "في وقت غير معروف"
+  },
+  "filterListToolsDesc": {
+    "message": "أنشئ نسخة احتياطية من قواعد Video Hider، أو استعدها من ملف، أو تابع قائمة تصفية منشورة على موقع تثق به."
+  },
+  "filterListToolsEyebrow": {
+    "message": "Video Hider"
+  },
+  "filterListToolsTitle": {
+    "message": "قوائم التصفية"
+  },
+  "filterListUrlLabel": {
+    "message": "رابط قائمة التصفية (اختياري)"
+  },
+  "filterListUrlPlaceholder": {
+    "message": "https://example.com/astra-deck-rules.json"
+  },
+  "filterListUseStaleLabel": {
+    "message": "استخدام آخر قواعد تم التحقق منها إذا فشل التحديث أو مرّ عليها أكثر من 7 أيام"
+  },
+  "filterTogglesHelpTitle": {
+    "message": "يطابق النص الحر الأسماء والأوصاف والمفاتيح والتسميات المترجمة. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk، category:<name>، scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup، profile:store-safe|github-full|both. اجمع باستخدام المسافات (AND) والفواصل (OR داخل الحقل)."
+  },
   "filterTogglesLabel": {
     "message": "فلترة التبديلات السريعة"
   },
@@ -3941,6 +3970,9 @@
   },
   "floatingChatOpacityAria": {
     "message": "Chat opacity"
+  },
+  "forceDvrDegraded": {
+    "message": "DVR could not be enabled because the live player response changed."
   },
   "groupQuickControls": {
     "message": "عناصر التحكم السريعة"
@@ -3975,6 +4007,24 @@
   "healthTitle": {
     "message": "التشخيصات"
   },
+  "heatmapJumpAria": {
+    "message": "Jump to the most replayed moment"
+  },
+  "heatmapJumpedToast": {
+    "message": "Jumped to the most replayed moment"
+  },
+  "hiddenCardNoteTpl": {
+    "message": "Hidden by {feature}: {rule}"
+  },
+  "hiddenRuleCollaboration": {
+    "message": "multi-creator upload"
+  },
+  "hiddenRuleScheduled": {
+    "message": "scheduled livestream or premiere"
+  },
+  "hiddenRuleShorts": {
+    "message": "Shorts video"
+  },
   "hideAllButtonLabel": {
     "message": "إخفاء الكل",
     "description": "Label of the Hide All button"
@@ -3986,11 +4036,17 @@
   "importBtn": {
     "message": "استيراد"
   },
+  "importFilterListBtn": {
+    "message": "استيراد القواعد"
+  },
   "languageAr": {
     "message": "العربية (Arabic)"
   },
   "languageAuto": {
     "message": "تلقائي (افتراضي المتصفح)"
+  },
+  "languageAutoDetectedTpl": {
+    "message": "{label} — {detected}"
   },
   "languageDe": {
     "message": "Deutsch (German)"
@@ -4027,6 +4083,10 @@
   },
   "languageZhCn": {
     "message": "简体中文 (Simplified Chinese)"
+  },
+  "liveLatencyReadout": {
+    "message": "Live {latency}s · buffer {buffer}s",
+    "description": "Live-stream latency and buffered-ahead player readout"
   },
   "loadingState": {
     "message": "جارٍ التحميل"
@@ -4146,23 +4206,8 @@
   "panelTitle": {
     "message": "الإعدادات"
   },
-  "playerDownloadAria": {
-    "message": "تنزيل الفيديو"
-  },
-  "playerDownloadTitle": {
-    "message": "تنزيل الفيديو"
-  },
-  "playerGearAriaTpl": {
-    "message": "فتح إعدادات {brand}"
-  },
-  "playerGearTitleTpl": {
-    "message": "إعدادات {brand}"
-  },
-  "playerCcAria": {
-    "message": "تبديل التسميات التوضيحية"
-  },
-  "playerCcTitle": {
-    "message": "التسميات التوضيحية"
+  "photosensitiveFlashDetected": {
+    "message": "تم اكتشاف محتوى وامض — تم التعتيم"
   },
   "playbackStatsDataChecking": {
     "message": "Checking with Astra Downloader…"
@@ -4175,6 +4220,27 @@
   },
   "playbackStatsDataUsage": {
     "message": "Download size estimates"
+  },
+  "playerCcAria": {
+    "message": "تبديل التسميات التوضيحية"
+  },
+  "playerCcTitle": {
+    "message": "التسميات التوضيحية"
+  },
+  "playerDockHomeLink": {
+    "message": "الانتقال إلى الصفحة الرئيسية"
+  },
+  "playerDownloadAria": {
+    "message": "تنزيل الفيديو"
+  },
+  "playerDownloadTitle": {
+    "message": "تنزيل الفيديو"
+  },
+  "playerGearAriaTpl": {
+    "message": "فتح إعدادات {brand}"
+  },
+  "playerGearTitleTpl": {
+    "message": "إعدادات {brand}"
   },
   "playlistAutoSkipOff": {
     "message": "Auto-skip: Off"
@@ -4275,9 +4341,6 @@
   "playlistVideoCountTpl": {
     "message": "{count} videos"
   },
-  "photosensitiveFlashDetected": {
-    "message": "تم اكتشاف محتوى وامض — تم التعتيم"
-  },
   "popupTitle": {
     "message": "Astra Deck"
   },
@@ -4333,6 +4396,9 @@
   },
   "qtGroup_Playback": {
     "message": "التشغيل"
+  },
+  "qtGroup_Privacy": {
+    "message": "الخصوصية"
   },
   "qtGroup_Utilities": {
     "message": "الأدوات"
@@ -4394,11 +4460,11 @@
   "qt_disableInfiniteScroll_name": {
     "message": "تقييد التمرير اللانهائي"
   },
-  "qt_syncSettings_desc": {
-    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+  "qt_githubFullProfile_desc": {
+    "message": "فتح مفاتيح github-full (مثل Cobalt ومفاتيح الذكاء الاصطناعي)"
   },
-  "qt_syncSettings_name": {
-    "message": "Browser Sync"
+  "qt_githubFullProfile_name": {
+    "message": "ملف GitHub-Full"
   },
   "qt_hideRelatedVideos_desc": {
     "message": "إخفاء الشريط الجانبي في صفحة المشاهدة"
@@ -4418,11 +4484,23 @@
   "qt_persistentSpeed_name": {
     "message": "سرعة ثابتة"
   },
+  "qt_privacyDataFlowPanel_desc": {
+    "message": "عرض كل مصدر API يمكن لـ Astra Deck الاتصال به"
+  },
+  "qt_privacyDataFlowPanel_name": {
+    "message": "لوحة تدفق البيانات"
+  },
   "qt_removeAllShorts_desc": {
     "message": "إزالة أرفف وروابط Shorts"
   },
   "qt_removeAllShorts_name": {
     "message": "إخفاء Shorts"
+  },
+  "qt_safeStoreProfile_desc": {
+    "message": "إخفاء مفاتيح github-full وتنظيف المفاتيح عند التصدير"
+  },
+  "qt_safeStoreProfile_name": {
+    "message": "ملف Store-Safe"
   },
   "qt_sponsorBlock_desc": {
     "message": "تخطي مقاطع الرعاة المُحدَّدة جماعياً"
@@ -4430,11 +4508,23 @@
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
+  "qt_syncSettings_desc": {
+    "message": "Opt in to sync safe preferences and Video Hider blocklists"
+  },
+  "qt_syncSettings_name": {
+    "message": "Browser Sync"
+  },
   "qt_transcriptViewer_desc": {
     "message": "قراءة وتنقل وتصدير الترجمات"
   },
   "qt_transcriptViewer_name": {
     "message": "الشريط الجانبي للنص"
+  },
+  "quickGroupCountTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "quickToggleAriaTpl": {
+    "message": "{name}. {description}. {state}.{permission}"
   },
   "quickTogglesAria": {
     "message": "التبديلات السريعة"
@@ -4526,17 +4616,32 @@
   "reenableMediadlBtn": {
     "message": "تفعيل مطالبات المُنزِّل"
   },
+  "refreshFilterListBtn": {
+    "message": "تحديث القائمة الآن"
+  },
+  "replayChatDensityAria": {
+    "message": "Chat activity across this video. Click the chart to seek."
+  },
+  "replayChatDensityTitle": {
+    "message": "Chat activity — click to seek"
+  },
   "resetBtn": {
     "message": "إعادة تعيين"
   },
   "resultsAllAvailableTpl": {
     "message": "{count} عنصر تحكم سريع متاح في هذه النافذة"
   },
+  "resultsCountTpl": {
+    "message": "{count} {controls}"
+  },
   "resultsMatchTpl": {
     "message": "{visible} من {total} {controls} يطابق هذا الفلتر"
   },
   "resultsMatching": {
     "message": "مطابق"
+  },
+  "resultsVisibleTpl": {
+    "message": "{count} متطابق"
   },
   "schemaBadgeGithubFullTitle": {
     "message": "لا يسري هذا الإعداد إلا عند تفعيل ملف GitHub-Full."
@@ -4565,17 +4670,14 @@
   "schemaJsonInvalidTpl": {
     "message": "JSON غير صالح: {error}"
   },
-  "schemaOverviewCountTpl": {
-    "message": "{enabled}/{total} إعداد مُفعَّل عبر {categories} فئة"
+  "schemaOverviewAllView": {
+    "message": "عرض كل الإعدادات"
   },
   "schemaOverviewChangedCountTpl": {
     "message": "{count} تغييرات"
   },
   "schemaOverviewChangedView": {
     "message": "المتغيّرة عن الإعدادات الافتراضية"
-  },
-  "schemaOverviewAllView": {
-    "message": "عرض كل الإعدادات"
   },
   "schemaOverviewCopyDiff": {
     "message": "نسخ الإعدادات المتغيّرة"
@@ -4588,6 +4690,9 @@
   },
   "schemaOverviewCopyDiffFail": {
     "message": "تعذّر نسخ الإعدادات المتغيّرة."
+  },
+  "schemaOverviewCountTpl": {
+    "message": "{enabled}/{total} إعداد مُفعَّل عبر {categories} فئة"
   },
   "schemaOverviewDiffCurrent": {
     "message": "الحالي"
@@ -4603,6 +4708,12 @@
   },
   "schemaOverviewToolsAria": {
     "message": "أدوات مقارنة الإعدادات"
+  },
+  "schemaResetAriaTpl": {
+    "message": "إعادة ضبط {key} إلى القيمة الافتراضية"
+  },
+  "schemaResetTitleTpl": {
+    "message": "إعادة ضبط {key} إلى الإعداد الافتراضي ({value})"
   },
   "searchWatchClose": {
     "message": "إغلاق نتائج البحث"
@@ -4643,6 +4754,9 @@
   "searchWatchTitle": {
     "message": "البحث دون إيقاف التشغيل"
   },
+  "selectorHealthAssetTpl": {
+    "message": "القواعد: {status} · {version} · {source}"
+  },
   "selectorHealthCopyAria": {
     "message": "نسخ تقرير حالة المحدِّد إلى الحافظة"
   },
@@ -4667,11 +4781,14 @@
   "selectorHealthCopySaveFallback": {
     "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
   },
-  "selectorHealthAssetTpl": {
-    "message": "القواعد: {status} · {version} · {source}"
+  "selectorHealthCtxCountTpl": {
+    "message": "{ctx}: {count}"
   },
   "selectorHealthEmpty": {
     "message": "لم يتم أخذ عينات من أي سطح بعد."
+  },
+  "selectorHealthExportAria": {
+    "message": "تصدير صحة المحددات بصيغة JSON"
   },
   "selectorHealthRefreshAria": {
     "message": "تحديث قواعد المحددات"
@@ -4690,6 +4807,30 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count} سطح مُتتبَّع"
+  },
+  "settingsActiveSectionFallback": {
+    "message": "مشغّل الفيديو"
+  },
+  "settingsAutoDisabledConflictTpl": {
+    "message": "تم التعطيل تلقائيًا: {features} — {reason}"
+  },
+  "settingsCategoryAriaTpl": {
+    "message": "{category}. {summary}"
+  },
+  "settingsCategoryFractionTpl": {
+    "message": "{enabled}/{total}"
+  },
+  "settingsCategoryItemsTpl": {
+    "message": "{count} عناصر"
+  },
+  "settingsCategoryOnTpl": {
+    "message": "{count} مفعّلة"
+  },
+  "settingsCategorySummaryFallback": {
+    "message": "إعدادات الفئة"
+  },
+  "settingsConflictWithTpl": {
+    "message": "يتعارض مع {featureName}"
   },
   "settingsDlActionsAria": {
     "message": "Downloader actions"
@@ -4742,8 +4883,29 @@
   "settingsDlTryingStart": {
     "message": "Trying to start the Astra Downloader service…"
   },
+  "settingsDownloaderSetupTitle": {
+    "message": "تنزيل ملف إعداد أداة تنزيل Astra Deck"
+  },
+  "settingsDownloaderTitle": {
+    "message": "Astra Downloader"
+  },
   "settingsEnableAllAriaTpl": {
     "message": "Enable all settings in {category}"
+  },
+  "settingsFeatureClearAriaTpl": {
+    "message": "مسح {featureName}"
+  },
+  "settingsFooterSaved": {
+    "message": "تم الحفظ"
+  },
+  "settingsGitHubTitle": {
+    "message": "عرض على GitHub"
+  },
+  "settingsGroupSummaryFallback": {
+    "message": "مجموعة الإعدادات"
+  },
+  "settingsHealthNeedsAttention": {
+    "message": "يحتاج إلى انتباه"
   },
   "settingsImportDoneTpl": {
     "message": "{message} Undo is available in the toast."
@@ -4756,6 +4918,9 @@
   },
   "settingsImportInvalid": {
     "message": "Import failed. Choose a valid Astra Deck settings export."
+  },
+  "settingsImportReadFailed": {
+    "message": "تعذّر قراءة ملف الاستيراد"
   },
   "settingsImportUndoUnavailable": {
     "message": "Import undo is no longer available."
@@ -4802,6 +4967,12 @@
   "settingsInsightsUndoToasts": {
     "message": "Undo toasts"
   },
+  "settingsPaneDescriptionFallback": {
+    "message": "اضبط طريقة عمل هذا الجزء من YouTube."
+  },
+  "settingsPanelContentControls": {
+    "message": "عناصر التحكم بالمحتوى"
+  },
   "settingsResetChooseSection": {
     "message": "Choose a settings section before resetting."
   },
@@ -4838,8 +5009,41 @@
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
   },
+  "settingsSubFeatureBadge": {
+    "message": "ميزة فرعية"
+  },
+  "settingsSyncDesc": {
+    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
+  },
+  "settingsSyncOff": {
+    "message": "Off — this device only."
+  },
+  "settingsSyncOn": {
+    "message": "On — preferences and blocklists sync through your browser account."
+  },
+  "settingsSyncTitle": {
+    "message": "Browser sync"
+  },
+  "settingsSyncUnavailable": {
+    "message": "Browser sync is unavailable in this browser."
+  },
+  "settingsSyncUndo": {
+    "message": "Undo last sync"
+  },
+  "settingsSyncUndoAria": {
+    "message": "Restore the local state from before the last browser sync"
+  },
+  "settingsSyncUndoDone": {
+    "message": "Last browser sync undone locally."
+  },
+  "settingsSyncUndoFailed": {
+    "message": "Could not undo the last browser sync."
+  },
   "settingsTakeoutImportInvalid": {
     "message": "Import failed. Choose a valid YouTube Takeout watch-history JSON file."
+  },
+  "settingsVersionPrefix": {
+    "message": "v"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -5032,6 +5236,9 @@
   "spPerfListAria": {
     "message": "قائمة توقيتات تهيئة الميزات"
   },
+  "spPerfRowAriaTpl": {
+    "message": "{feature}: {ms}ms"
+  },
   "spPerfTitle": {
     "message": "توقيت تهيئة الميزات"
   },
@@ -5116,6 +5323,9 @@
   "spSelectorTotalTpl": {
     "message": "{count} سطح"
   },
+  "spSettingRowTitleTpl": {
+    "message": "{key} ({category})"
+  },
   "spSettingsClearAria": {
     "message": "مسح عامل تصفية الإعدادات"
   },
@@ -5191,6 +5401,9 @@
   "spStatusEnabledTpl": {
     "message": "تم تفعيل {name}"
   },
+  "spStatusHostAccessDenied": {
+    "message": "يحتاج Astra Deck إلى الوصول إلى المضيف لهذه الميزة الاختيارية قبل تمكينها."
+  },
   "spStatusOpenYouTube": {
     "message": "افتح YouTube للتشخيصات المباشرة"
   },
@@ -5202,9 +5415,6 @@
   },
   "spStatusSaveFailed": {
     "message": "تعذّر حفظ الإعداد"
-  },
-  "spStatusHostAccessDenied": {
-    "message": "يحتاج Astra Deck إلى الوصول إلى المضيف لهذه الميزة الاختيارية قبل تمكينها."
   },
   "spStatusSettingsLoadFailed": {
     "message": "تم تحديث التشخيصات؛ تعذّر تحميل الإعدادات السريعة"
@@ -5241,6 +5451,33 @@
   },
   "speedPopupSub": {
     "message": "تُطبَّق على كل فيديو حتى يتم التغيير."
+  },
+  "sponsorBlockDataAttribution": {
+    "message": "بيانات SponsorBlock"
+  },
+  "sponsorBlockDataAttributionTitle": {
+    "message": "بيانات واجهة API وقاعدة بيانات SponsorBlock — CC BY-NC-SA 4.0"
+  },
+  "sponsorCachedSegmentTitleTpl": {
+    "message": "{label} (مخزّن في {time})"
+  },
+  "sponsoredFilterAffiliateReason": {
+    "message": "ترويج تابع"
+  },
+  "sponsoredFilterCommentLabel": {
+    "message": "تعليق مدعوم"
+  },
+  "sponsoredFilterDescriptionLabel": {
+    "message": "وصف مدعوم"
+  },
+  "sponsoredFilterHideTpl": {
+    "message": "إخفاء {label} — {reason}"
+  },
+  "sponsoredFilterShowTpl": {
+    "message": "إظهار {label} — {reason}"
+  },
+  "sponsoredFilterSponsorReason": {
+    "message": "إفصاح عن رعاية"
   },
   "spq_autoTheaterMode_desc": {
     "message": "يفتح مقاطع الفيديو في وضع المسرح."
@@ -5383,6 +5620,9 @@
   "statusImportSnapshotFail": {
     "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
   },
+  "statusImportSummaryTpl": {
+    "message": "{status} {preview}"
+  },
   "statusImportUndoExpired": {
     "message": "Undo Import is no longer available - the browser session snapshot expired."
   },
@@ -5401,11 +5641,11 @@
   "statusOpenWorkspaceFail": {
     "message": "تعذّر فتح مساحة العمل الكاملة. حاول مرة أخرى."
   },
-  "statusPerKeyResetTpl": {
-    "message": "تمت إعادة تعيين {key} إلى الافتراضي."
-  },
   "statusPerKeyResetFail": {
     "message": "Could not reset"
+  },
+  "statusPerKeyResetTpl": {
+    "message": "تمت إعادة تعيين {key} إلى الافتراضي."
   },
   "statusQuickCtrlLoadFail": {
     "message": "تعذّر تحميل عناصر التحكم السريعة. حاول إعادة فتح النافذة المنبثقة."
@@ -5515,6 +5755,30 @@
   "statusYtdlpUpdatedTpl": {
     "message": "yt-dlp updated to v{version}{from}"
   },
+  "stickyVideoCloseSidePanelTitle": {
+    "message": "إغلاق اللوحة الجانبية"
+  },
+  "stickyVideoLiveActionsAria": {
+    "message": "إجراءات الفيديو المباشر"
+  },
+  "stickyVideoLiveBadge": {
+    "message": "بث مباشر"
+  },
+  "stickyVideoLiveInfoAria": {
+    "message": "معلومات الفيديو المباشر"
+  },
+  "stickyVideoLiveVideoFallback": {
+    "message": "فيديو مباشر"
+  },
+  "stickyVideoQuickLinksAria": {
+    "message": "روابط سريعة"
+  },
+  "stickyVideoSubscriptionsLink": {
+    "message": "الانتقال إلى الاشتراكات"
+  },
+  "stickyVideoVideoActionsAria": {
+    "message": "إجراءات الفيديو"
+  },
   "storageBannerCorruptionTpl": {
     "message": "بيانات التخزين تالفة — أعِد التعيين للاسترداد."
   },
@@ -5539,146 +5803,35 @@
   "storageStatsAriaLabel": {
     "message": "إحصائيات التخزين"
   },
-  "settingsSyncDesc": {
-    "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
-  },
-  "settingsSyncOff": {
-    "message": "Off — this device only."
-  },
-  "settingsSyncOn": {
-    "message": "On — preferences and blocklists sync through your browser account."
-  },
-  "settingsSyncTitle": {
-    "message": "Browser sync"
-  },
-  "settingsSyncUndo": {
-    "message": "Undo last sync"
-  },
-  "settingsSyncUndoAria": {
-    "message": "Restore the local state from before the last browser sync"
-  },
-  "settingsSyncUndoDone": {
-    "message": "Last browser sync undone locally."
-  },
-  "settingsSyncUndoFailed": {
-    "message": "Could not undo the last browser sync."
-  },
-  "settingsSyncUnavailable": {
-    "message": "Browser sync is unavailable in this browser."
-  },
   "subscriptionAgeDaysShortTpl": {
     "message": "{days} يوم"
-  },
-  "subscriptionCreateSubgroupDialogAria": {
-    "message": "إنشاء مجموعة فرعية للاشتراكات"
-  },
-  "subscriptionCreateGroupDialogAria": {
-    "message": "إنشاء مجموعة اشتراكات"
-  },
-  "subscriptionSubgroupNameTpl": {
-    "message": "تسمية مجموعة فرعية ضمن {group}"
-  },
-  "subscriptionGroupDialogTitle": {
-    "message": "تسمية هذه المجموعة"
-  },
-  "subscriptionSubgroupPlaceholder": {
-    "message": "مثل: Frontend وDevOps وJazz"
-  },
-  "subscriptionGroupPlaceholder": {
-    "message": "مثل: البرمجة والموسيقى والأخبار"
-  },
-  "subscriptionGroupNameAria": {
-    "message": "اسم المجموعة"
-  },
-  "subscriptionDialogCancel": {
-    "message": "إلغاء"
-  },
-  "subscriptionDialogCreate": {
-    "message": "إنشاء"
-  },
-  "subscriptionGroupChipTpl": {
-    "message": "{prefix}{name} ({count}){tags}"
-  },
-  "subscriptionChannelSingular": {
-    "message": "قناة"
-  },
-  "subscriptionChannelPlural": {
-    "message": "قنوات"
-  },
-  "subscriptionSubgroupSuffix": {
-    "message": ". مجموعة فرعية"
-  },
-  "subscriptionGroupChipAriaTpl": {
-    "message": "{name}. {count} {channels}{subgroup}"
-  },
-  "subscriptionAiTagsRegenerateTitleTpl": {
-    "message": "علامات الذكاء الاصطناعي: {tags} · انقر مع Shift لإعادة الإنشاء"
   },
   "subscriptionAiTagsGenerateTitle": {
     "message": "انقر مع Shift لإنشاء علامات الذكاء الاصطناعي"
   },
-  "subscriptionToolbarPlayAllAriaTpl": {
-    "message": "تشغيل كل الفيديوهات من {group}"
-  },
-  "subscriptionExportCsvLabel": {
-    "message": "CSV"
-  },
-  "subscriptionExportOpmlLabel": {
-    "message": "OPML"
-  },
-  "subscriptionMembersIncludeChannelAriaTpl": {
-    "message": "تضمين {channel} في {group}"
-  },
-  "subscriptionQueueCappedTpl": {
-    "message": " (بحد أقصى {count})"
-  },
-  "subscriptionGroupNoVideos": {
-    "message": "لا توجد فيديوهات ظاهرة في هذه المجموعة"
-  },
-  "subscriptionGroupPlayingTpl": {
-    "message": "تشغيل {count} من الفيديوهات من {group}{truncated}"
-  },
-  "subscriptionGroupsExported": {
-    "message": "تم تصدير مجموعات الاشتراكات"
-  },
-  "subscriptionGroupsExportedCsv": {
-    "message": "تم تصدير مجموعات الاشتراكات بصيغة CSV"
-  },
-  "subscriptionGroupsExportedOpml": {
-    "message": "تم تصدير مجموعات الاشتراكات بصيغة OPML"
-  },
-  "subscriptionGroupsImportFailedTpl": {
-    "message": "فشل الاستيراد: {error}"
-  },
-  "subscriptionRenderedSubscriptions": {
-    "message": "الاشتراكات المعروضة"
-  },
-  "subscriptionChannelsMarkedReadTpl": {
-    "message": "تم وضع علامة مقروء على {count} {channels} في {group}"
-  },
-  "subscriptionAiTagsRequired": {
-    "message": "فعّل علامات الذكاء الاصطناعي لمجموعات الاشتراكات أولًا."
-  },
-  "subscriptionSummarizerUnavailable": {
-    "message": "الملخّص المحلي غير متاح؛ فعّل الإصدار التجريبي لذكاء Chrome الاصطناعي."
-  },
   "subscriptionAiTagsGeneratingTpl": {
     "message": "جارٍ إنشاء العلامات لـ \"{group}\"…"
-  },
-  "subscriptionAiTagsNoCards": {
-    "message": "لم تُعرض بطاقات مطابقة بعد — مرّر الخلاصة وحاول مجددًا."
   },
   "subscriptionAiTagsGenerationFailedTpl": {
     "message": "فشل إنشاء العلامات: {error}"
   },
+  "subscriptionAiTagsNoCards": {
+    "message": "لم تُعرض بطاقات مطابقة بعد — مرّر الخلاصة وحاول مجددًا."
+  },
   "subscriptionAiTagsNoUsable": {
     "message": "لم يُرجع الملخّص أي علامات قابلة للاستخدام."
+  },
+  "subscriptionAiTagsRegenerateTitleTpl": {
+    "message": "علامات الذكاء الاصطناعي: {tags} · انقر مع Shift لإعادة الإنشاء"
+  },
+  "subscriptionAiTagsRequired": {
+    "message": "فعّل علامات الذكاء الاصطناعي لمجموعات الاشتراكات أولًا."
   },
   "subscriptionAiTagsTaggedTpl": {
     "message": "تم وضع علامات على \"{group}\": {tags}"
   },
-  "subscriptionGroupsRestored": {
-    "message": "تمت استعادة مجموعات الاشتراكات السابقة"
+  "subscriptionAllSubscriptions": {
+    "message": "كل الاشتراكات"
   },
   "subscriptionArchiveAdded": {
     "message": "Scheduled"
@@ -5698,29 +5851,26 @@
   "subscriptionBatchFallbackLabel": {
     "message": "subscription-groups:fallback"
   },
-  "subscriptionNewBadge": {
-    "message": "جديد"
+  "subscriptionChannelPlural": {
+    "message": "قنوات"
   },
-  "subscriptionStaleBadge": {
-    "message": "قديم"
+  "subscriptionChannelSingular": {
+    "message": "قناة"
   },
-  "subscriptionStaleAgeTitleTpl": {
-    "message": "{days} يومًا منذ أحدث تحميل معروض على هذه البطاقة"
+  "subscriptionChannelsMarkedReadTpl": {
+    "message": "تم وضع علامة مقروء على {count} {channels} في {group}"
   },
-  "subscriptionStagedBadge": {
-    "message": "مُجَهّز"
+  "subscriptionCreateGroupDialogAria": {
+    "message": "إنشاء مجموعة اشتراكات"
   },
-  "subscriptionStagedUndoTitleTpl": {
-    "message": "تم تجهيز إلغاء الاشتراك. يمكن التراجع حتى {date}."
+  "subscriptionCreateSubgroupDialogAria": {
+    "message": "إنشاء مجموعة فرعية للاشتراكات"
   },
-  "subscriptionStagedReviewTitle": {
-    "message": "تم تجهيز إلغاء الاشتراك للمراجعة."
+  "subscriptionDialogCancel": {
+    "message": "إلغاء"
   },
-  "subscriptionAllSubscriptions": {
-    "message": "كل الاشتراكات"
-  },
-  "subscriptionImportedOpml": {
-    "message": "OPML مستورد"
+  "subscriptionDialogCreate": {
+    "message": "إنشاء"
   },
   "subscriptionDigestCloseAria": {
     "message": "Close group notifications digest"
@@ -5773,14 +5923,56 @@
   "subscriptionExportCsvAria": {
     "message": "Export subscription groups as CSV"
   },
+  "subscriptionExportCsvLabel": {
+    "message": "CSV"
+  },
   "subscriptionExportJsonAria": {
     "message": "Export subscription groups as JSON"
   },
   "subscriptionExportOpmlAria": {
     "message": "Export subscription groups as OPML"
   },
+  "subscriptionExportOpmlLabel": {
+    "message": "OPML"
+  },
+  "subscriptionGroupChipAriaTpl": {
+    "message": "{name}. {count} {channels}{subgroup}"
+  },
+  "subscriptionGroupChipTpl": {
+    "message": "{prefix}{name} ({count}){tags}"
+  },
+  "subscriptionGroupDialogTitle": {
+    "message": "تسمية هذه المجموعة"
+  },
   "subscriptionGroupEmpty": {
     "message": "No channels in this group yet — click Edit Channels to add some."
+  },
+  "subscriptionGroupNameAria": {
+    "message": "اسم المجموعة"
+  },
+  "subscriptionGroupNoVideos": {
+    "message": "لا توجد فيديوهات ظاهرة في هذه المجموعة"
+  },
+  "subscriptionGroupPlaceholder": {
+    "message": "مثل: البرمجة والموسيقى والأخبار"
+  },
+  "subscriptionGroupPlayingTpl": {
+    "message": "تشغيل {count} من الفيديوهات من {group}{truncated}"
+  },
+  "subscriptionGroupsExported": {
+    "message": "تم تصدير مجموعات الاشتراكات"
+  },
+  "subscriptionGroupsExportedCsv": {
+    "message": "تم تصدير مجموعات الاشتراكات بصيغة CSV"
+  },
+  "subscriptionGroupsExportedOpml": {
+    "message": "تم تصدير مجموعات الاشتراكات بصيغة OPML"
+  },
+  "subscriptionGroupsImportFailedTpl": {
+    "message": "فشل الاستيراد: {error}"
+  },
+  "subscriptionGroupsRestored": {
+    "message": "تمت استعادة مجموعات الاشتراكات السابقة"
   },
   "subscriptionHealthCloseAria": {
     "message": "Close subscription health center"
@@ -5881,6 +6073,9 @@
   "subscriptionImportTitle": {
     "message": "Import subscription groups (merges with your groups; Shift+click replaces them)"
   },
+  "subscriptionImportedOpml": {
+    "message": "OPML مستورد"
+  },
   "subscriptionLoadedOnlyHint": {
     "message": "يرتّب الأحدث أولًا الفيديوهات المحمّلة في هذه الصفحة فقط. مرّر لتحميل المزيد."
   },
@@ -5892,6 +6087,9 @@
   },
   "subscriptionMembersEmpty": {
     "message": "No channels rendered yet — scroll the subscriptions feed, then reopen this panel."
+  },
+  "subscriptionMembersIncludeChannelAriaTpl": {
+    "message": "تضمين {channel} في {group}"
   },
   "subscriptionMembersListAria": {
     "message": "Rendered channels"
@@ -5911,6 +6109,9 @@
   "subscriptionMenuUnsubscribe": {
     "message": "Unsubscribe"
   },
+  "subscriptionNewBadge": {
+    "message": "جديد"
+  },
   "subscriptionOrderGroupsHint": {
     "message": "Sort in the group toolbar orders this feed. Your saved order applies when Subscription Groups is off."
   },
@@ -5923,11 +6124,20 @@
   "subscriptionOrderNewestLoaded": {
     "message": "الأحدث أولًا (المحمّل فقط)"
   },
-  "subscriptionSortYouTubeDefault": {
-    "message": "افتراضي YouTube"
+  "subscriptionQueueCappedTpl": {
+    "message": " (بحد أقصى {count})"
+  },
+  "subscriptionRenderedSubscriptions": {
+    "message": "الاشتراكات المعروضة"
   },
   "subscriptionSortLatest": {
     "message": "الأحدث أولًا"
+  },
+  "subscriptionSortNewSinceLastVisit": {
+    "message": "الجديد منذ آخر زيارة"
+  },
+  "subscriptionSortPopular": {
+    "message": "الأكثر شعبية (المشاهدات)"
   },
   "subscriptionSortShortest": {
     "message": "الأقصر أولًا"
@@ -5935,11 +6145,35 @@
   "subscriptionSortUnwatched": {
     "message": "غير المشاهدة أولًا"
   },
-  "subscriptionSortNewSinceLastVisit": {
-    "message": "الجديد منذ آخر زيارة"
+  "subscriptionSortYouTubeDefault": {
+    "message": "افتراضي YouTube"
   },
-  "subscriptionSortPopular": {
-    "message": "الأكثر شعبية (المشاهدات)"
+  "subscriptionStagedBadge": {
+    "message": "مُجَهّز"
+  },
+  "subscriptionStagedReviewTitle": {
+    "message": "تم تجهيز إلغاء الاشتراك للمراجعة."
+  },
+  "subscriptionStagedUndoTitleTpl": {
+    "message": "تم تجهيز إلغاء الاشتراك. يمكن التراجع حتى {date}."
+  },
+  "subscriptionStaleAgeTitleTpl": {
+    "message": "{days} يومًا منذ أحدث تحميل معروض على هذه البطاقة"
+  },
+  "subscriptionStaleBadge": {
+    "message": "قديم"
+  },
+  "subscriptionSubgroupNameTpl": {
+    "message": "تسمية مجموعة فرعية ضمن {group}"
+  },
+  "subscriptionSubgroupPlaceholder": {
+    "message": "مثل: Frontend وDevOps وJazz"
+  },
+  "subscriptionSubgroupSuffix": {
+    "message": ". مجموعة فرعية"
+  },
+  "subscriptionSummarizerUnavailable": {
+    "message": "الملخّص المحلي غير متاح؛ فعّل الإصدار التجريبي لذكاء Chrome الاصطناعي."
   },
   "subscriptionToolbarAllAria": {
     "message": "Show all subscriptions"
@@ -5988,6 +6222,9 @@
   },
   "subscriptionToolbarPlayAll": {
     "message": "Play All"
+  },
+  "subscriptionToolbarPlayAllAriaTpl": {
+    "message": "تشغيل كل الفيديوهات من {group}"
   },
   "subscriptionToolbarScanStale": {
     "message": "Scan Stale"
@@ -6070,6 +6307,84 @@
   "subscriptionViewToolbarLabel": {
     "message": "عناصر تحكم عرض الاشتراكات"
   },
+  "timestampBookmarkAddedTpl": {
+    "message": "تم وضع إشارة عند {time}"
+  },
+  "timestampBookmarkAlreadyExists": {
+    "message": "الإشارة المرجعية موجودة هنا بالفعل"
+  },
+  "timestampBookmarkRemovedTpl": {
+    "message": "تمت إزالة الإشارة عند {time}"
+  },
+  "timestampBookmarkRestoredTpl": {
+    "message": "تمت استعادة الإشارة عند {time}"
+  },
+  "timestampBookmarksAddNoteMeta": {
+    "message": "أضف ملاحظة لتذكر سبب أهميتها"
+  },
+  "timestampBookmarksDeleteAriaTpl": {
+    "message": "حذف الإشارة عند {time}"
+  },
+  "timestampBookmarksEmptyCopy": {
+    "message": "استخدم «حفظ الوقت الحالي» لتثبيت لحظة وإضافة ملاحظات يمكنك مراجعتها لاحقًا."
+  },
+  "timestampBookmarksEmptyStatus": {
+    "message": "احفظ اللحظات المهمة هنا للعودة إليها دون تمرير."
+  },
+  "timestampBookmarksEmptyTitle": {
+    "message": "لا توجد إشارات مرجعية بعد"
+  },
+  "timestampBookmarksEyebrow": {
+    "message": "استئناف"
+  },
+  "timestampBookmarksJumpAriaTpl": {
+    "message": "الانتقال إلى {time}"
+  },
+  "timestampBookmarksJumpLabel": {
+    "message": "الانتقال إلى اللحظة"
+  },
+  "timestampBookmarksNoteAriaTpl": {
+    "message": "ملاحظة للإشارة عند {time}"
+  },
+  "timestampBookmarksNoteLabel": {
+    "message": "ملاحظة"
+  },
+  "timestampBookmarksNotePlaceholder": {
+    "message": "إضافة ملاحظة…"
+  },
+  "timestampBookmarksRegionAriaTpl": {
+    "message": "{count} من الإشارات المرجعية لهذا الفيديو"
+  },
+  "timestampBookmarksSaveCurrentTime": {
+    "message": "حفظ الوقت الحالي"
+  },
+  "timestampBookmarksSavedNoteMeta": {
+    "message": "تتضمن ملاحظة محفوظة"
+  },
+  "timestampBookmarksSavedStatus": {
+    "message": "العودة إلى اللحظات المحفوظة والاحتفاظ بملاحظات سريعة بجانب كل منها."
+  },
+  "timestampBookmarksSavedTpl": {
+    "message": "تم حفظ {count}"
+  },
+  "timestampHighlightExport": {
+    "message": "Export Highlight Pack"
+  },
+  "timestampHighlightExportAria": {
+    "message": "Export this video’s highlights, notes, bookmarks, and summary"
+  },
+  "timestampHighlightExportFailed": {
+    "message": "Highlight export failed. Your saved data is unchanged."
+  },
+  "timestampHighlightExported": {
+    "message": "Highlight pack exported as Markdown and JSON."
+  },
+  "timestampHighlightExporting": {
+    "message": "Preparing highlight pack…"
+  },
+  "timestampHighlightNoVideo": {
+    "message": "No video is currently open."
+  },
   "toastActionManage": {
     "message": "Manage"
   },
@@ -6130,26 +6445,11 @@
   "toggleStateOnLower": {
     "message": "مُفعَّل"
   },
+  "toggleStatusTpl": {
+    "message": "{name}: {state}."
+  },
   "toggleUpdateFailTpl": {
     "message": "تعذّر تحديث {name}. حاول مرة أخرى."
-  },
-  "timestampHighlightExport": {
-    "message": "Export Highlight Pack"
-  },
-  "timestampHighlightExportAria": {
-    "message": "Export this video’s highlights, notes, bookmarks, and summary"
-  },
-  "timestampHighlightExportFailed": {
-    "message": "Highlight export failed. Your saved data is unchanged."
-  },
-  "timestampHighlightExported": {
-    "message": "Highlight pack exported as Markdown and JSON."
-  },
-  "timestampHighlightExporting": {
-    "message": "Preparing highlight pack…"
-  },
-  "timestampHighlightNoVideo": {
-    "message": "No video is currently open."
   },
   "transcriptBatchCancelled": {
     "message": "تم إلغاء دفعة النصوص بعد التنقل"
@@ -6208,11 +6508,17 @@
   "transcriptDownloadTxtTitle": {
     "message": "Download plain-text transcript"
   },
+  "transcriptDownloadedTpl": {
+    "message": "تم تنزيل النص! ({count} مقطع)"
+  },
   "transcriptExpand": {
     "message": "Expand"
   },
   "transcriptExpandAria": {
     "message": "Expand transcript"
+  },
+  "transcriptExpiryUnknown": {
+    "message": "غير معلن"
   },
   "transcriptExportActionsAria": {
     "message": "Transcript export actions"
@@ -6220,17 +6526,80 @@
   "transcriptEyebrow": {
     "message": "Captions & Exports"
   },
+  "transcriptFetching": {
+    "message": "جارٍ جلب النص…"
+  },
+  "transcriptIndexUsageFailed": {
+    "message": "تعذّر قياس الفهرس المحلي."
+  },
+  "transcriptIndexUsageLoading": {
+    "message": "جارٍ قياس الفهرس المحلي…"
+  },
+  "transcriptIndexUsageTpl": {
+    "message": "تمت فهرسة {count} من {maxCount} فيديو، {size} من {budget}. تُحذف أقدم الإدخالات أولاً."
+  },
   "transcriptJumpAriaTpl": {
     "message": "Jump to {time} in the transcript"
+  },
+  "transcriptLanguageUnknown": {
+    "message": "لغة غير معروفة"
   },
   "transcriptLlmPrompt": {
     "message": "LLM prompt"
   },
+  "transcriptLoadFailed": {
+    "message": "تعذر تحميل النص"
+  },
+  "transcriptMetaPanelTpl": {
+    "message": "تم التحميل من {source} ({age})؛ {language}."
+  },
+  "transcriptMetaRefreshedTpl": {
+    "message": "تم استبدال رابط تسميات توضيحية منتهي الصلاحية عبر {source}؛ تم جلبه {age}؛ {language}."
+  },
+  "transcriptMetaSourceTpl": {
+    "message": "تم التحميل من {source} ({age})؛ {language}؛ انتهاء رابط المسار: {expires}."
+  },
+  "transcriptNoCaptions": {
+    "message": "لا توجد تسميات توضيحية"
+  },
+  "transcriptNoCaptionsHelp": {
+    "message": "جرّب فيديو آخر يتضمن تسميات توضيحية، أو أعد فتح هذه اللوحة بعد اكتمال تحميلها."
+  },
+  "transcriptNoVideoId": {
+    "message": "لم يتم العثور على معرّف الفيديو"
+  },
+  "transcriptPanelFallback": {
+    "message": "استخدام اللوحة كخيار احتياطي"
+  },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptRefreshedTrack": {
+    "message": "تم تحديث المسار"
+  },
+  "transcriptRetryHelp": {
+    "message": "أعد تحميل الصفحة أو حاول مجددًا بعد لحظات إذا كانت التسميات التوضيحية لا تزال قيد المعالجة."
+  },
   "transcriptShowOriginal": {
     "message": "Show Original"
+  },
+  "transcriptSourceInnertube": {
+    "message": "بيانات مشغّل YouTube المحدّثة"
+  },
+  "transcriptSourcePanel": {
+    "message": "لوحة النص الحالية في YouTube"
+  },
+  "transcriptSourcePlayerGlobal": {
+    "message": "بيانات مشغّل الصفحة الحالية"
+  },
+  "transcriptSourceUnknown": {
+    "message": "التسميات التوضيحية في YouTube"
+  },
+  "transcriptSourceWatchPage": {
+    "message": "صفحة مشاهدة YouTube محدّثة"
+  },
+  "transcriptTimeUnknown": {
+    "message": "في وقت غير معروف"
   },
   "transcriptTitle": {
     "message": "Transcript"
@@ -6253,6 +6622,15 @@
   "transcriptTranslationFailedTpl": {
     "message": "Translation failed: {error}"
   },
+  "transcriptUnavailable": {
+    "message": "لا يتوفر نص لهذا الفيديو"
+  },
+  "transcriptUnavailableLabel": {
+    "message": "غير متاح"
+  },
+  "transcriptUnavailableNow": {
+    "message": "تعذر جلب النص من YouTube الآن."
+  },
   "uiFontDefault": {
     "message": "افتراضي YouTube"
   },
@@ -6268,8 +6646,44 @@
   "uiFontSystem": {
     "message": "واجهة النظام"
   },
+  "ui_rydCachedTitleHoursTpl": {
+    "message": "عدد عدم الإعجاب المخزن من Return YouTube Dislike (منذ {hours} ساعة)."
+  },
+  "ui_rydCachedTitleRecent": {
+    "message": "عدد عدم الإعجاب المخزن من Return YouTube Dislike (أقل من ساعة)."
+  },
   "ui_rydCardRatioSuffix": {
     "message": "إعجاب · تقدير Return YouTube Dislike"
+  },
+  "ui_rydCountAriaTpl": {
+    "message": "{count} من عدم الإعجاب التقديري. {estimate}"
+  },
+  "ui_rydEstimateDisclosure": {
+    "message": "أعداد Return YouTube Dislike تقديرية بعد أن أزالت YouTube إجمالي عدم الإعجاب العام؛ قد تكون أقل دقة للفيديوهات منخفضة التفاعل."
+  },
+  "ui_rydEstimateShort": {
+    "message": "تقديري"
+  },
+  "ui_rydLiveTitleTpl": {
+    "message": "عدد عدم الإعجاب المباشر من Return YouTube Dislike (استخدم {used}/{limit} في الدقيقة). {estimate}"
+  },
+  "ui_rydOff": {
+    "message": "RYD متوقف"
+  },
+  "ui_rydPaused": {
+    "message": "تم إيقاف RYD مؤقتًا"
+  },
+  "ui_rydPausedTitleTpl": {
+    "message": "تم إيقاف Return YouTube Dislike مؤقتًا — تم بلوغ حد الطلبات ({used}/{limit}/دقيقة). يُستأنف خلال {seconds} ث."
+  },
+  "ui_rydRatioTitleTpl": {
+    "message": "تستخدم نسبة الإعجاب أعداد Return YouTube Dislike التقديرية. {estimate}"
+  },
+  "ui_rydRatioTpl": {
+    "message": "{ratio}% إعجاب"
+  },
+  "ui_rydUnavailableTitle": {
+    "message": "Return YouTube Dislike غير متاح — لم تُرجع الواجهة استجابة قابلة للاستخدام. تحقق من الشبكة وحاول لاحقًا."
   },
   "undo": {
     "message": "تراجع"
@@ -6304,14 +6718,41 @@
   "videoHiderAddAllowedChannelTitle": {
     "message": "Add Allowed Channel"
   },
+  "videoHiderAddAllowedVideoCopy": {
+    "message": "الصق عنوان YouTube أو معرّف الفيديو لإبقائه ظاهرًا حتى عند تطابق أحد الفلاتر."
+  },
+  "videoHiderAddAllowedVideoTitle": {
+    "message": "إضافة فيديو مسموح"
+  },
   "videoHiderAddBlockedChannelCopy": {
     "message": "Paste a channel URL, handle, or channel ID to add it to the channel blocklist."
   },
   "videoHiderAddBlockedChannelTitle": {
     "message": "Add Blocked Channel"
   },
+  "videoHiderAddHiddenVideoCopy": {
+    "message": "الصق عنوان YouTube أو معرّف الفيديو لإضافته مباشرة إلى قائمة المخفي."
+  },
+  "videoHiderAddHiddenVideoTitle": {
+    "message": "إضافة فيديو مخفي"
+  },
+  "videoHiderAddedAllowedVideoToast": {
+    "message": "تمت إضافة الفيديو إلى قائمة المسموح بها"
+  },
+  "videoHiderAddedHiddenVideoToast": {
+    "message": "تمت إضافة الفيديو إلى قائمة المخفية"
+  },
   "videoHiderAllowChannelButton": {
     "message": "Allow Channel"
+  },
+  "videoHiderAllowRightClickBlockDesc": {
+    "message": "انقر بزر الفأرة الأيمن على زر X في الصورة المصغرة لحظر القناة بأكملها."
+  },
+  "videoHiderAllowRightClickBlockTitle": {
+    "message": "السماح بحظر القنوات بالنقر بزر الفأرة الأيمن"
+  },
+  "videoHiderAllowVideoButton": {
+    "message": "السماح بالفيديو"
   },
   "videoHiderAllowedChannelLabel": {
     "message": "Allowed Channel"
@@ -6322,14 +6763,44 @@
   "videoHiderAllowedChannelToast": {
     "message": "Channel allowed: {name}"
   },
+  "videoHiderAllowedChannelsCountTpl": {
+    "message": "{count} من القنوات المسموح بها"
+  },
   "videoHiderAllowedChannelsStatus": {
     "message": "Allowed"
   },
   "videoHiderAllowedChannelsTab": {
     "message": "Allowed Channels"
   },
+  "videoHiderAllowedCountTpl": {
+    "message": "{count} فيديو مسموح"
+  },
+  "videoHiderAllowedVideoPreviewAltTpl": {
+    "message": "صورة معاينة للفيديو المسموح {videoId}"
+  },
+  "videoHiderAllowedVideoSummary": {
+    "message": "مسموح به بعد الاستعادة اليدوية. تتجاوز الفلاتر التلقائية هذا الفيديو ما دام الاستثناء قائمًا."
+  },
+  "videoHiderAllowedVideosRestored": {
+    "message": "تمت استعادة الفيديوهات المسموح بها"
+  },
+  "videoHiderAllowedVideosTab": {
+    "message": "الفيديوهات المسموح بها"
+  },
   "videoHiderAlreadyAllowedChannelToast": {
     "message": "{name} is already allowed"
+  },
+  "videoHiderAlreadyAllowedVideoToast": {
+    "message": "الفيديو مسموح به بالفعل"
+  },
+  "videoHiderAlreadyBlockedChannelToast": {
+    "message": "{name} محظور بالفعل"
+  },
+  "videoHiderAlreadyHiddenVideoToast": {
+    "message": "الفيديو مخفي بالفعل"
+  },
+  "videoHiderBatchesSuffix": {
+    "message": "دفعات"
   },
   "videoHiderBlockChannelButton": {
     "message": "Block Channel"
@@ -6340,446 +6811,17 @@
   "videoHiderBlockedChannelSingular": {
     "message": "Blocked Channel"
   },
+  "videoHiderBlockedChannelToast": {
+    "message": "محظور: {name}"
+  },
   "videoHiderBlockedChannelsStatus": {
     "message": "Blocked"
   },
   "videoHiderBlockedChannelsTab": {
     "message": "Blocked Channels"
   },
-  "settingsPanelContentControls": {
-    "message": "عناصر التحكم بالمحتوى"
-  },
-  "videoHiderEnableAria": {
-    "message": "تفعيل Video Hider"
-  },
-  "videoHiderTabsAria": {
-    "message": "أقسام Video Hider"
-  },
-  "videoHiderHiddenVideosTab": {
-    "message": "الفيديوهات المخفية"
-  },
-  "videoHiderAllowedVideosTab": {
-    "message": "الفيديوهات المسموح بها"
-  },
-  "videoHiderKeywordRulesTab": {
-    "message": "قواعد الكلمات المفتاحية"
-  },
-  "videoHiderFiltersLimitsTab": {
-    "message": "الفلاتر والحدود"
-  },
-  "videoHiderFeatureOn": {
-    "message": "الميزة مفعّلة"
-  },
-  "videoHiderFeatureOff": {
-    "message": "الميزة متوقفة"
-  },
-  "videoHiderHiddenCountTpl": {
-    "message": "{count} فيديو مخفي"
-  },
-  "videoHiderAllowedCountTpl": {
-    "message": "{count} فيديو مسموح"
-  },
   "videoHiderBlockedCountTpl": {
     "message": "{count} قناة محظورة"
-  },
-  "videoHiderInvalidVideoInput": {
-    "message": "أدخل عنوان فيديو صالحًا على YouTube أو معرّف فيديو من 11 حرفًا."
-  },
-  "videoHiderAddHiddenVideoTitle": {
-    "message": "إضافة فيديو مخفي"
-  },
-  "videoHiderAddHiddenVideoCopy": {
-    "message": "الصق عنوان YouTube أو معرّف الفيديو لإضافته مباشرة إلى قائمة المخفي."
-  },
-  "videoHiderVideoUrlPlaceholder": {
-    "message": "https://youtube.com/watch?v=VIDEO_ID"
-  },
-  "videoHiderHideVideoButton": {
-    "message": "إخفاء الفيديو"
-  },
-  "videoHiderOpenHiddenVideoAriaTpl": {
-    "message": "فتح الفيديو المخفي {videoId} على YouTube"
-  },
-  "videoHiderHiddenVideoPreviewAltTpl": {
-    "message": "صورة معاينة للفيديو المخفي {videoId}"
-  },
-  "videoHiderPreviewUnavailable": {
-    "message": "المعاينة غير متاحة"
-  },
-  "videoHiderVideoIdLabel": {
-    "message": "معرّف الفيديو"
-  },
-  "videoHiderHiddenVideoSummary": {
-    "message": "مخفي من الاقتراحات حتى تستعيده. قد تضيف الاستعادة استثناءً لإبقائه ظاهرًا أمام القواعد التلقائية."
-  },
-  "videoHiderOpenOnYouTube": {
-    "message": "فتح على YouTube"
-  },
-  "videoHiderRestoreAllow": {
-    "message": "استعادة وسماح"
-  },
-  "videoHiderRestoreHiddenVideoAriaTpl": {
-    "message": "استعادة الفيديو المخفي {videoId} وإضافة استثناء للفيديو المسموح"
-  },
-  "videoHiderRemoveFromList": {
-    "message": "إزالة من القائمة"
-  },
-  "videoHiderRemoveHiddenVideoAriaTpl": {
-    "message": "إزالة الفيديو المخفي {videoId} من القائمة دون إضافة استثناء"
-  },
-  "videoHiderRestoreAllTpl": {
-    "message": "استعادة والسماح بكل الفيديوهات المخفية ({count})"
-  },
-  "videoHiderClearHiddenListTpl": {
-    "message": "مسح قائمة المخفي فقط ({count})"
-  },
-  "videoHiderRemovePage": {
-    "message": "إزالة الفيديوهات المخفية في هذه الصفحة"
-  },
-  "videoHiderAddAllowedVideoTitle": {
-    "message": "إضافة فيديو مسموح"
-  },
-  "videoHiderAddAllowedVideoCopy": {
-    "message": "الصق عنوان YouTube أو معرّف الفيديو لإبقائه ظاهرًا حتى عند تطابق أحد الفلاتر."
-  },
-  "videoHiderAllowVideoButton": {
-    "message": "السماح بالفيديو"
-  },
-  "videoHiderOpenAllowedVideoAriaTpl": {
-    "message": "فتح الفيديو المسموح {videoId} على YouTube"
-  },
-  "videoHiderAllowedVideoPreviewAltTpl": {
-    "message": "صورة معاينة للفيديو المسموح {videoId}"
-  },
-  "videoHiderAllowedVideoSummary": {
-    "message": "مسموح به بعد الاستعادة اليدوية. تتجاوز الفلاتر التلقائية هذا الفيديو ما دام الاستثناء قائمًا."
-  },
-  "videoHiderRemoveException": {
-    "message": "إزالة الاستثناء"
-  },
-  "videoHiderRemoveAllowedVideoAriaTpl": {
-    "message": "إزالة استثناء الفيديو المسموح {videoId}"
-  },
-  "videoHiderHideAgain": {
-    "message": "إخفاء مجددًا"
-  },
-  "videoHiderHideAllowedVideoAriaTpl": {
-    "message": "إخفاء الفيديو المسموح {videoId} مجددًا"
-  },
-  "videoHiderClearAllowedTpl": {
-    "message": "مسح الفيديوهات المسموح بها ({count})"
-  },
-  "videoHiderOpenChannel": {
-    "message": "فتح القناة"
-  },
-  "videoHiderUnblockChannelAriaTpl": {
-    "message": "إلغاء حظر القناة {channelName}"
-  },
-  "videoHiderClearBlockedChannelsTpl": {
-    "message": "إلغاء حظر جميع القنوات ({count})"
-  },
-  "videoHiderUnblockedChannelsTpl": {
-    "message": "تم إلغاء حظر {count} من القنوات"
-  },
-  "videoHiderChannelsRestored": {
-    "message": "تمت استعادة القنوات"
-  },
-  "videoHiderKeywordsRulesLabel": {
-    "message": "الكلمات المفتاحية والقواعد"
-  },
-  "videoHiderKeywordsRulesCopy": {
-    "message": "افصل الإدخالات بفواصل. تُطبَّق القواعد فور تحديث هذا الحقل."
-  },
-  "videoHiderKeywordsPlaceholder": {
-    "message": "تفاعل، فتح الصندوق، مزحة، shorts…"
-  },
-  "videoHiderLowViewThresholdLabel": {
-    "message": "حد المشاهدات المنخفضة"
-  },
-  "videoHiderLowViewThresholdDesc": {
-    "message": "تُخفى الفيديوهات التي تقل مشاهداتها عن هذا العدد فقط عند تفعيل فلتر المشاهدات المنخفضة."
-  },
-  "videoHiderWatchedRatioLabel": {
-    "message": "إخفاء نسبة المشاهدة"
-  },
-  "videoHiderWatchedRatioDesc": {
-    "message": "استخدم 0 للتعطيل. تُخفى البطاقات التي يبلغ شريط الاستئناف فيها هذه النسبة أو يتجاوزها."
-  },
-  "videoHiderWatchedRatioSuffix": {
-    "message": "نسبة المشاهدة %"
-  },
-  "videoHiderMinimumDurationLabel": {
-    "message": "المدة الدنيا"
-  },
-  "videoHiderMinimumDurationDesc": {
-    "message": "استخدم 0 لتعطيل هذه القاعدة."
-  },
-  "videoHiderMinutesSuffix": {
-    "message": "دقائق"
-  },
-  "videoHiderLoadLimiterLabel": {
-    "message": "تفعيل محدد التحميل"
-  },
-  "videoHiderLoadLimiterDesc": {
-    "message": "يُنصح به إذا كنت تخفي الكثير من محتوى خلاصة الاشتراكات."
-  },
-  "videoHiderLoadLimiterAria": {
-    "message": "تفعيل محدد تحميل الاشتراكات"
-  },
-  "videoHiderConsecutiveBatchesLabel": {
-    "message": "الدفعات المخفية المتتالية"
-  },
-  "videoHiderConsecutiveBatchesDesc": {
-    "message": "القيم الأقل توقف التحميل أسرع. القيم الأعلى تسمح بتحميل المزيد قبل تدخل المحدد."
-  },
-  "videoHiderBatchesSuffix": {
-    "message": "دفعات"
-  },
-  "videoHiderRemoveHiddenCardsTitle": {
-    "message": "إزالة البطاقات المخفية تلقائيًا"
-  },
-  "videoHiderRemoveHiddenCardsDesc": {
-    "message": "عند التفعيل، تتم إزالة الفيديوهات المطابقة من DOM الخاص بالخلاصة بدلًا من إخفائها باستخدام CSS فقط."
-  },
-  "videoHiderShowThumbnailHideButtonTitle": {
-    "message": "إظهار زر إخفاء الصورة المصغرة"
-  },
-  "videoHiderShowThumbnailHideButtonDesc": {
-    "message": "إظهار زر X على الصور المصغرة المدعومة لإخفائها بنقرة واحدة."
-  },
-  "videoHiderAllowRightClickBlockTitle": {
-    "message": "السماح بحظر القنوات بالنقر بزر الفأرة الأيمن"
-  },
-  "videoHiderAllowRightClickBlockDesc": {
-    "message": "انقر بزر الفأرة الأيمن على زر X في الصورة المصغرة لحظر القناة بأكملها."
-  },
-  "videoHiderRememberRestoredTitle": {
-    "message": "تذكّر الفيديوهات المستعادة"
-  },
-  "videoHiderRememberRestoredDesc": {
-    "message": "أبقِ الفيديوهات المستعادة ظاهرة بإضافتها إلى الفيديوهات المسموح بها، حتى عند استمرار تطابق قاعدة أخرى."
-  },
-  "videoHiderScopeHomeTitle": {
-    "message": "الصفحة الرئيسية"
-  },
-  "videoHiderScopeHomeDesc": {
-    "message": "إخفاء التطابقات في خلاصة YouTube الرئيسية."
-  },
-  "videoHiderScopeSubscriptionsTitle": {
-    "message": "الاشتراكات"
-  },
-  "videoHiderScopeSubscriptionsDesc": {
-    "message": "إخفاء التطابقات وإظهار عناصر التحكم الجماعية في خلاصة الاشتراكات."
-  },
-  "videoHiderScopeSearchTitle": {
-    "message": "نتائج البحث"
-  },
-  "videoHiderScopeSearchDesc": {
-    "message": "تطبيق قواعد الفيديو والقناة على صفحات نتائج البحث."
-  },
-  "videoHiderScopeWatchTitle": {
-    "message": "صفحات المشاهدة"
-  },
-  "videoHiderScopeWatchDesc": {
-    "message": "تطبيق القواعد على الاقتراحات بجانب المشغّل وتحته."
-  },
-  "videoHiderScopeChannelsTitle": {
-    "message": "صفحات القنوات"
-  },
-  "videoHiderScopeChannelsDesc": {
-    "message": "تطبيق القواعد على أسطح الصفحة الرئيسية للقناة والفيديو والبث المباشر وقوائم التشغيل."
-  },
-  "videoHiderScopeOtherTitle": {
-    "message": "أسطح YouTube الأخرى"
-  },
-  "videoHiderScopeOtherDesc": {
-    "message": "إبقاء Video Hider مفعّلًا على أسطح التصفح المتنوعة."
-  },
-  "videoHiderHideLiveTitle": {
-    "message": "إخفاء البثوث المباشرة"
-  },
-  "videoHiderHideLiveDesc": {
-    "message": "إخفاء بطاقات البث الجاري والاقتراحات المباشرة عند ظهورها في الخلاصات المدعومة."
-  },
-  "videoHiderHideUpcomingTitle": {
-    "message": "إخفاء العروض الأولى القادمة"
-  },
-  "videoHiderHideUpcomingDesc": {
-    "message": "إخفاء بطاقات الفيديو المجدولة والقادمة والتي تعتمد على التذكيرات."
-  },
-  "videoHiderHideMixesTitle": {
-    "message": "إخفاء عمليات مزج YouTube"
-  },
-  "videoHiderHideMixesDesc": {
-    "message": "إخفاء عمليات المزج بنمط الراديو وعمليات مزج الاقتراحات المنشأة تلقائيًا."
-  },
-  "videoHiderHidePlaylistsTitle": {
-    "message": "إخفاء بطاقات قوائم التشغيل"
-  },
-  "videoHiderHidePlaylistsDesc": {
-    "message": "إخفاء بطاقات قوائم التشغيل وبطاقات الفيديوهات المتعددة من أسطح الخلاصة المدعومة."
-  },
-  "videoHiderHideMoviesTitle": {
-    "message": "إخفاء الأفلام"
-  },
-  "videoHiderHideMoviesDesc": {
-    "message": "إخفاء بطاقات الاستئجار والشراء والمجانية مع الإعلانات والبطاقات المصنفة كأفلام."
-  },
-  "videoHiderHideAutoDubbedTitle": {
-    "message": "إخفاء الفيديوهات المدبلجة تلقائيًا"
-  },
-  "videoHiderHideAutoDubbedDesc": {
-    "message": "إخفاء البطاقات المصنفة كفيديوهات مدبلجة أو مدبلجة تلقائيًا أو ذات صوت بديل."
-  },
-  "videoHiderHideLowViewTitle": {
-    "message": "إخفاء الفيديوهات قليلة المشاهدات"
-  },
-  "videoHiderHideLowViewDesc": {
-    "message": "إخفاء الفيديوهات التي تقل عن حد المشاهدات عندما يعرض YouTube عدد المشاهدات على البطاقة."
-  },
-  "settingsCategorySummaryFallback": {
-    "message": "إعدادات الفئة"
-  },
-  "settingsCategoryAriaTpl": {
-    "message": "{category}. {summary}"
-  },
-  "settingsGroupSummaryFallback": {
-    "message": "مجموعة الإعدادات"
-  },
-  "settingsPaneDescriptionFallback": {
-    "message": "اضبط طريقة عمل هذا الجزء من YouTube."
-  },
-  "settingsCategoryFractionTpl": {
-    "message": "{enabled}/{total}"
-  },
-  "settingsCategoryOnTpl": {
-    "message": "{count} مفعّلة"
-  },
-  "settingsCategoryItemsTpl": {
-    "message": "{count} عناصر"
-  },
-  "settingsGitHubTitle": {
-    "message": "عرض على GitHub"
-  },
-  "settingsDownloaderSetupTitle": {
-    "message": "تنزيل ملف إعداد أداة تنزيل Astra Deck"
-  },
-  "settingsVersionPrefix": {
-    "message": "v"
-  },
-  "settingsFooterSaved": {
-    "message": "تم الحفظ"
-  },
-  "settingsSubFeatureBadge": {
-    "message": "ميزة فرعية"
-  },
-  "settingsFeatureClearAriaTpl": {
-    "message": "مسح {featureName}"
-  },
-  "settingsActiveSectionFallback": {
-    "message": "مشغّل الفيديو"
-  },
-  "videoHiderRestoreHiddenVideosTpl": {
-    "message": "تمت استعادة {count} من الفيديوهات المخفية"
-  },
-  "videoHiderSubsLoadControlsAria": {
-    "message": "فتح عناصر التحكم في تحميل الاشتراكات"
-  },
-  "videoHiderSubsLoadChipTitle": {
-    "message": "الاشتراكات متوقفة مؤقتًا"
-  },
-  "videoHiderSubsLoadSummaryTpl": {
-    "message": "تم إخفاء {hidden} من أصل {loaded} تم فحصها"
-  },
-  "videoHiderSubsResume": {
-    "message": "استئناف"
-  },
-  "videoHiderSubsGuard": {
-    "message": "حماية الاشتراكات"
-  },
-  "videoHiderSubsLoadPaused": {
-    "message": "تغذية الاشتراكات متوقفة مؤقتًا"
-  },
-  "videoHiderSubsPauseReasonTpl": {
-    "message": "تم إخفاء {percent} من الفيديوهات التي تم فحصها، لذلك أوقف Astra Deck التحميل التلقائي مؤقتًا قبل أن تمر الخلاصة عبر دفعات فارغة إضافية."
-  },
-  "videoHiderSubsResumeLoading": {
-    "message": "استئناف التحميل"
-  },
-  "videoHiderSubsReviewFilters": {
-    "message": "مراجعة الفلاتر"
-  },
-  "videoHiderSubsKeepPaused": {
-    "message": "الإبقاء على الإيقاف المؤقت"
-  },
-  "videoHiderSubsScannedStat": {
-    "message": "تم فحصها"
-  },
-  "videoHiderSubsStreakStat": {
-    "message": "السلسلة"
-  },
-  "videoHiderHiddenToast": {
-    "message": "تم إخفاء الفيديو"
-  },
-  "videoHiderChannelBlockingDisabled": {
-    "message": "حظر القنوات معطل"
-  },
-  "videoHiderBlockedChannelToast": {
-    "message": "محظور: {name}"
-  },
-  "videoHiderAlreadyBlockedChannelToast": {
-    "message": "{name} محظور بالفعل"
-  },
-  "videoHiderRestorePageTitle": {
-    "message": "استعادة الفيديوهات المخفية في هذه الصفحة"
-  },
-  "videoHiderRestorePageNone": {
-    "message": "لا توجد فيديوهات مخفية في هذه الصفحة"
-  },
-  "videoHiderRestorePageTpl": {
-    "message": "استعادة {count} من الفيديوهات المخفية في هذه الصفحة"
-  },
-  "videoHiderRemovePageNone": {
-    "message": "لا توجد فيديوهات مخفية لإزالتها من هذه الصفحة"
-  },
-  "videoHiderRemovePageTpl": {
-    "message": "إزالة {count} من الفيديوهات المخفية من هذه الصفحة"
-  },
-  "videoHiderNoVisibleVideos": {
-    "message": "لا توجد فيديوهات ظاهرة لإخفائها"
-  },
-  "videoHiderUndoAll": {
-    "message": "التراجع عن الكل"
-  },
-  "videoHiderRestoredAllVideos": {
-    "message": "تمت استعادة كل الفيديوهات"
-  },
-  "videoHiderRemovedPageTpl": {
-    "message": "تمت إزالة {count} من الفيديوهات المخفية من هذه الصفحة"
-  },
-  "videoHiderQuickActionsAria": {
-    "message": "الإجراءات السريعة لـ Video Hider"
-  },
-  "videoHiderHiddenVideosRestored": {
-    "message": "تمت استعادة الفيديوهات المخفية"
-  },
-  "videoHiderClearHiddenEntriesTpl": {
-    "message": "تم مسح {count} من إدخالات قائمة المخفي"
-  },
-  "videoHiderHiddenListRestored": {
-    "message": "تمت استعادة قائمة المخفي"
-  },
-  "videoHiderClearAllowedVideosTpl": {
-    "message": "تم مسح {count} من الفيديوهات المسموح بها"
-  },
-  "videoHiderAllowedVideosRestored": {
-    "message": "تمت استعادة الفيديوهات المسموح بها"
-  },
-  "settingsConflictWithTpl": {
-    "message": "يتعارض مع {featureName}"
-  },
-  "settingsAutoDisabledConflictTpl": {
-    "message": "تم التعطيل تلقائيًا: {features} — {reason}"
   },
   "videoHiderChannelActionToggle": {
     "message": "Allow right-click channel actions"
@@ -6811,6 +6853,9 @@
   "videoHiderChannelAllowlistToggleDesc": {
     "message": "Only channels in Allowed Channels are considered by channel filtering. An empty list is safe and applies no channel filter."
   },
+  "videoHiderChannelBlockingDisabled": {
+    "message": "حظر القنوات معطل"
+  },
   "videoHiderChannelBlocklistCopy": {
     "message": "Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID."
   },
@@ -6832,11 +6877,92 @@
   "videoHiderChannelListCount": {
     "message": "{count} in Your List"
   },
+  "videoHiderChannelsRestored": {
+    "message": "تمت استعادة القنوات"
+  },
   "videoHiderClearAllowedChannels": {
     "message": "Clear Allowed Channels"
   },
+  "videoHiderClearAllowedTpl": {
+    "message": "مسح الفيديوهات المسموح بها ({count})"
+  },
+  "videoHiderClearAllowedVideosTpl": {
+    "message": "تم مسح {count} من الفيديوهات المسموح بها"
+  },
   "videoHiderClearBlockedChannels": {
     "message": "Unblock All Channels"
+  },
+  "videoHiderClearBlockedChannelsTpl": {
+    "message": "إلغاء حظر جميع القنوات ({count})"
+  },
+  "videoHiderClearHiddenEntriesTpl": {
+    "message": "تم مسح {count} من إدخالات قائمة المخفي"
+  },
+  "videoHiderClearHiddenListTpl": {
+    "message": "مسح قائمة المخفي فقط ({count})"
+  },
+  "videoHiderConsecutiveBatchesDesc": {
+    "message": "القيم الأقل توقف التحميل أسرع. القيم الأعلى تسمح بتحميل المزيد قبل تدخل المحدد."
+  },
+  "videoHiderConsecutiveBatchesLabel": {
+    "message": "الدفعات المخفية المتتالية"
+  },
+  "videoHiderDaysSuffix": {
+    "message": "days old"
+  },
+  "videoHiderDurationFilterDesc": {
+    "message": "إخفاء الفيديوهات الأقصر من الحد الأدنى المختار تلقائيًا."
+  },
+  "videoHiderDurationFilterTitle": {
+    "message": "عامل تصفية المدة"
+  },
+  "videoHiderEnableAria": {
+    "message": "تفعيل Video Hider"
+  },
+  "videoHiderFeatureOff": {
+    "message": "الميزة متوقفة"
+  },
+  "videoHiderFeatureOn": {
+    "message": "الميزة مفعّلة"
+  },
+  "videoHiderFiltersLimitsTab": {
+    "message": "الفلاتر والحدود"
+  },
+  "videoHiderHiddenCountTpl": {
+    "message": "{count} فيديو مخفي"
+  },
+  "videoHiderHiddenListRestored": {
+    "message": "تمت استعادة قائمة المخفي"
+  },
+  "videoHiderHiddenReason": {
+    "message": "مخفي بواسطة Video Hider: {reason}"
+  },
+  "videoHiderHiddenToast": {
+    "message": "تم إخفاء الفيديو"
+  },
+  "videoHiderHiddenVideoPreviewAltTpl": {
+    "message": "صورة معاينة للفيديو المخفي {videoId}"
+  },
+  "videoHiderHiddenVideoSummary": {
+    "message": "مخفي من الاقتراحات حتى تستعيده. قد تضيف الاستعادة استثناءً لإبقائه ظاهرًا أمام القواعد التلقائية."
+  },
+  "videoHiderHiddenVideosRestored": {
+    "message": "تمت استعادة الفيديوهات المخفية"
+  },
+  "videoHiderHiddenVideosTab": {
+    "message": "الفيديوهات المخفية"
+  },
+  "videoHiderHideAgain": {
+    "message": "إخفاء مجددًا"
+  },
+  "videoHiderHideAllowedVideoAriaTpl": {
+    "message": "إخفاء الفيديو المسموح {videoId} مجددًا"
+  },
+  "videoHiderHideAutoDubbedDesc": {
+    "message": "إخفاء البطاقات المصنفة كفيديوهات مدبلجة أو مدبلجة تلقائيًا أو ذات صوت بديل."
+  },
+  "videoHiderHideAutoDubbedTitle": {
+    "message": "إخفاء الفيديوهات المدبلجة تلقائيًا"
   },
   "videoHiderHideButtonAllowChannel": {
     "message": "Hide this video (right-click to allow channel)"
@@ -6844,11 +6970,101 @@
   "videoHiderHideButtonBlockChannel": {
     "message": "Hide this video (right-click to block channel)"
   },
-  "videoHiderHiddenReason": {
-    "message": "مخفي بواسطة Video Hider: {reason}"
+  "videoHiderHideLiveDesc": {
+    "message": "إخفاء بطاقات البث الجاري والاقتراحات المباشرة عند ظهورها في الخلاصات المدعومة."
+  },
+  "videoHiderHideLiveTitle": {
+    "message": "إخفاء البثوث المباشرة"
+  },
+  "videoHiderHideLowViewDesc": {
+    "message": "إخفاء الفيديوهات التي تقل عن حد المشاهدات عندما يعرض YouTube عدد المشاهدات على البطاقة."
+  },
+  "videoHiderHideLowViewTitle": {
+    "message": "إخفاء الفيديوهات قليلة المشاهدات"
+  },
+  "videoHiderHideMixesDesc": {
+    "message": "إخفاء عمليات المزج بنمط الراديو وعمليات مزج الاقتراحات المنشأة تلقائيًا."
+  },
+  "videoHiderHideMixesTitle": {
+    "message": "إخفاء عمليات مزج YouTube"
+  },
+  "videoHiderHideMoviesDesc": {
+    "message": "إخفاء بطاقات الاستئجار والشراء والمجانية مع الإعلانات والبطاقات المصنفة كأفلام."
+  },
+  "videoHiderHideMoviesTitle": {
+    "message": "إخفاء الأفلام"
+  },
+  "videoHiderHidePlaylistsDesc": {
+    "message": "إخفاء بطاقات قوائم التشغيل وبطاقات الفيديوهات المتعددة من أسطح الخلاصة المدعومة."
+  },
+  "videoHiderHidePlaylistsTitle": {
+    "message": "إخفاء بطاقات قوائم التشغيل"
+  },
+  "videoHiderHideUpcomingDesc": {
+    "message": "إخفاء بطاقات الفيديو المجدولة والقادمة والتي تعتمد على التذكيرات."
+  },
+  "videoHiderHideUpcomingTitle": {
+    "message": "إخفاء العروض الأولى القادمة"
+  },
+  "videoHiderHideVideoButton": {
+    "message": "إخفاء الفيديو"
   },
   "videoHiderInvalidChannelInput": {
     "message": "Enter a valid YouTube channel URL, handle, or channel ID."
+  },
+  "videoHiderInvalidVideoInput": {
+    "message": "أدخل عنوان فيديو صالحًا على YouTube أو معرّف فيديو من 11 حرفًا."
+  },
+  "videoHiderKeywordHintAllow": {
+    "message": "!الكلمة المفتاحية تسمح بالتطابقات دائمًا"
+  },
+  "videoHiderKeywordHintHide": {
+    "message": "الكلمة المفتاحية تخفي التطابقات"
+  },
+  "videoHiderKeywordHintRegex": {
+    "message": "/pattern/i يشغّل قاعدة تعبير نمطي"
+  },
+  "videoHiderKeywordRulesTab": {
+    "message": "قواعد الكلمات المفتاحية"
+  },
+  "videoHiderKeywordStatusEmpty": {
+    "message": "فارغ"
+  },
+  "videoHiderKeywordStatusLive": {
+    "message": "مباشر"
+  },
+  "videoHiderKeywordsPlaceholder": {
+    "message": "تفاعل، فتح الصندوق، مزحة، shorts…"
+  },
+  "videoHiderKeywordsRulesCopy": {
+    "message": "افصل الإدخالات بفواصل. تُطبَّق القواعد فور تحديث هذا الحقل."
+  },
+  "videoHiderKeywordsRulesLabel": {
+    "message": "الكلمات المفتاحية والقواعد"
+  },
+  "videoHiderKeywordsRulesSectionCopy": {
+    "message": "إخفاء الفيديوهات حسب العنوان أو نص القناة. أضف كلمات مفتاحية مفصولة بفواصل، واستخدم ! للسماح بالتطابق دائمًا أو ابدأ بـ / للتعبير النمطي."
+  },
+  "videoHiderLoadLimiterAria": {
+    "message": "تفعيل محدد تحميل الاشتراكات"
+  },
+  "videoHiderLoadLimiterDesc": {
+    "message": "يُنصح به إذا كنت تخفي الكثير من محتوى خلاصة الاشتراكات."
+  },
+  "videoHiderLoadLimiterLabel": {
+    "message": "تفعيل محدد التحميل"
+  },
+  "videoHiderLocalHeuristicsDesc": {
+    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+  },
+  "videoHiderLocalHeuristicsTitle": {
+    "message": "Local low-signal heuristics"
+  },
+  "videoHiderLowViewThresholdDesc": {
+    "message": "تُخفى الفيديوهات التي تقل مشاهداتها عن هذا العدد فقط عند تفعيل فلتر المشاهدات المنخفضة."
+  },
+  "videoHiderLowViewThresholdLabel": {
+    "message": "حد المشاهدات المنخفضة"
   },
   "videoHiderMarkWatched": {
     "message": "Mark as watched"
@@ -6862,8 +7078,44 @@
   "videoHiderMarkedWatched": {
     "message": "Marked as watched"
   },
+  "videoHiderMinimumDurationDesc": {
+    "message": "استخدم 0 لتعطيل هذه القاعدة."
+  },
+  "videoHiderMinimumDurationLabel": {
+    "message": "المدة الدنيا"
+  },
+  "videoHiderMinutesSuffix": {
+    "message": "دقائق"
+  },
+  "videoHiderMissingHiddenVideoToast": {
+    "message": "لم يكن الفيديو في قائمة المخفية"
+  },
+  "videoHiderMovedHiddenVideoToast": {
+    "message": "تم نقل الفيديو من القائمة المخفية إلى المسموح بها"
+  },
+  "videoHiderNoVisibleVideos": {
+    "message": "لا توجد فيديوهات ظاهرة لإخفائها"
+  },
+  "videoHiderOpenAllowedVideoAriaTpl": {
+    "message": "فتح الفيديو المسموح {videoId} على YouTube"
+  },
+  "videoHiderOpenChannel": {
+    "message": "فتح القناة"
+  },
+  "videoHiderOpenHiddenVideoAriaTpl": {
+    "message": "فتح الفيديو المخفي {videoId} على YouTube"
+  },
+  "videoHiderOpenOnYouTube": {
+    "message": "فتح على YouTube"
+  },
   "videoHiderPaneDescription": {
     "message": "Review hidden videos, manage channel lists, and tune automatic filters without leaving the page."
+  },
+  "videoHiderPreviewUnavailable": {
+    "message": "المعاينة غير متاحة"
+  },
+  "videoHiderQuickActionsAria": {
+    "message": "الإجراءات السريعة لـ Video Hider"
   },
   "videoHiderReasonAutoDubbed": {
     "message": "مرشح الدبلجة التلقائية"
@@ -6883,23 +7135,17 @@
   "videoHiderReasonLive": {
     "message": "مرشح البث المباشر"
   },
-  "videoHiderReasonLowView": {
-    "message": "مرشح المشاهدات المنخفضة"
-  },
-  "videoHiderReasonSyntheticNarration": {
-    "message": "the synthetic-narration marker filter"
-  },
   "videoHiderReasonLowSignal": {
     "message": "the low-signal view/age filter"
   },
-  "videoHiderReasonUploadCadence": {
-    "message": "the upload-cadence filter"
-  },
-  "videoHiderReasonMarkedWatched": {
-    "message": "علامة المشاهدة المحلية لديك"
+  "videoHiderReasonLowView": {
+    "message": "مرشح المشاهدات المنخفضة"
   },
   "videoHiderReasonManual": {
     "message": "قائمة الإخفاء المحفوظة لديك"
+  },
+  "videoHiderReasonMarkedWatched": {
+    "message": "علامة المشاهدة المحلية لديك"
   },
   "videoHiderReasonMix": {
     "message": "مرشح YouTube Mix"
@@ -6913,17 +7159,122 @@
   "videoHiderReasonPredicate": {
     "message": "قاعدتك المحلية المتقدمة"
   },
+  "videoHiderReasonSyntheticNarration": {
+    "message": "the synthetic-narration marker filter"
+  },
   "videoHiderReasonUpcoming": {
     "message": "مرشح العرض الأول القادم"
+  },
+  "videoHiderReasonUploadCadence": {
+    "message": "the upload-cadence filter"
   },
   "videoHiderReasonWatchedRatio": {
     "message": "مرشح نسبة المشاهدة"
   },
+  "videoHiderRememberRestoredDesc": {
+    "message": "أبقِ الفيديوهات المستعادة ظاهرة بإضافتها إلى الفيديوهات المسموح بها، حتى عند استمرار تطابق قاعدة أخرى."
+  },
+  "videoHiderRememberRestoredTitle": {
+    "message": "تذكّر الفيديوهات المستعادة"
+  },
   "videoHiderRemoveAllowedChannel": {
     "message": "Remove from Allowlist"
   },
+  "videoHiderRemoveAllowedVideoAriaTpl": {
+    "message": "إزالة استثناء الفيديو المسموح {videoId}"
+  },
+  "videoHiderRemoveException": {
+    "message": "إزالة الاستثناء"
+  },
+  "videoHiderRemoveFromList": {
+    "message": "إزالة من القائمة"
+  },
+  "videoHiderRemoveHiddenCardsDesc": {
+    "message": "عند التفعيل، تتم إزالة الفيديوهات المطابقة من DOM الخاص بالخلاصة بدلًا من إخفائها باستخدام CSS فقط."
+  },
+  "videoHiderRemoveHiddenCardsTitle": {
+    "message": "إزالة البطاقات المخفية تلقائيًا"
+  },
+  "videoHiderRemoveHiddenVideoAriaTpl": {
+    "message": "إزالة الفيديو المخفي {videoId} من القائمة دون إضافة استثناء"
+  },
+  "videoHiderRemovePage": {
+    "message": "إزالة الفيديوهات المخفية في هذه الصفحة"
+  },
+  "videoHiderRemovePageNone": {
+    "message": "لا توجد فيديوهات مخفية لإزالتها من هذه الصفحة"
+  },
+  "videoHiderRemovePageTpl": {
+    "message": "إزالة {count} من الفيديوهات المخفية من هذه الصفحة"
+  },
+  "videoHiderRemovedHiddenVideoToast": {
+    "message": "تمت إزالة الفيديو من قائمة المخفية"
+  },
+  "videoHiderRemovedPageTpl": {
+    "message": "تمت إزالة {count} من الفيديوهات المخفية من هذه الصفحة"
+  },
+  "videoHiderRestoreAllTpl": {
+    "message": "استعادة والسماح بكل الفيديوهات المخفية ({count})"
+  },
+  "videoHiderRestoreAllow": {
+    "message": "استعادة وسماح"
+  },
+  "videoHiderRestoreHiddenVideoAriaTpl": {
+    "message": "استعادة الفيديو المخفي {videoId} وإضافة استثناء للفيديو المسموح"
+  },
+  "videoHiderRestoreHiddenVideosTpl": {
+    "message": "تمت استعادة {count} من الفيديوهات المخفية"
+  },
+  "videoHiderRestorePageNone": {
+    "message": "لا توجد فيديوهات مخفية في هذه الصفحة"
+  },
+  "videoHiderRestorePageTitle": {
+    "message": "استعادة الفيديوهات المخفية في هذه الصفحة"
+  },
+  "videoHiderRestorePageTpl": {
+    "message": "استعادة {count} من الفيديوهات المخفية في هذه الصفحة"
+  },
+  "videoHiderRestoredAllVideos": {
+    "message": "تمت استعادة كل الفيديوهات"
+  },
   "videoHiderRuleGuardTpl": {
     "message": "طابقت مرشحات إخفاء الفيديو {count} من {total} بطاقة، لذا ظلت ظاهرة."
+  },
+  "videoHiderScopeChannelsDesc": {
+    "message": "تطبيق القواعد على أسطح الصفحة الرئيسية للقناة والفيديو والبث المباشر وقوائم التشغيل."
+  },
+  "videoHiderScopeChannelsTitle": {
+    "message": "صفحات القنوات"
+  },
+  "videoHiderScopeHomeDesc": {
+    "message": "إخفاء التطابقات في خلاصة YouTube الرئيسية."
+  },
+  "videoHiderScopeHomeTitle": {
+    "message": "الصفحة الرئيسية"
+  },
+  "videoHiderScopeOtherDesc": {
+    "message": "إبقاء Video Hider مفعّلًا على أسطح التصفح المتنوعة."
+  },
+  "videoHiderScopeOtherTitle": {
+    "message": "أسطح YouTube الأخرى"
+  },
+  "videoHiderScopeSearchDesc": {
+    "message": "تطبيق قواعد الفيديو والقناة على صفحات نتائج البحث."
+  },
+  "videoHiderScopeSearchTitle": {
+    "message": "نتائج البحث"
+  },
+  "videoHiderScopeSubscriptionsDesc": {
+    "message": "إخفاء التطابقات وإظهار عناصر التحكم الجماعية في خلاصة الاشتراكات."
+  },
+  "videoHiderScopeSubscriptionsTitle": {
+    "message": "الاشتراكات"
+  },
+  "videoHiderScopeWatchDesc": {
+    "message": "تطبيق القواعد على الاقتراحات بجانب المشغّل وتحته."
+  },
+  "videoHiderScopeWatchTitle": {
+    "message": "صفحات المشاهدة"
   },
   "videoHiderShowFilterReasonDesc": {
     "message": "إظهار ملاحظة صغيرة بجانب كل بطاقة مخفية توضّح القاعدة المحلية التي طابقتها."
@@ -6931,29 +7282,95 @@
   "videoHiderShowFilterReasonTitle": {
     "message": "توضيح البطاقات المخفية"
   },
-  "videoHiderLocalHeuristicsTitle": {
-    "message": "Local low-signal heuristics"
+  "videoHiderShowThumbnailHideButtonDesc": {
+    "message": "إظهار زر X على الصور المصغرة المدعومة لإخفائها بنقرة واحدة."
   },
-  "videoHiderLocalHeuristicsDesc": {
-    "message": "Optional, card-local checks for explicit synthetic narration, aging low-view uploads, and unusually high upload cadence. No network or crowd database is used."
+  "videoHiderShowThumbnailHideButtonTitle": {
+    "message": "إظهار زر إخفاء الصورة المصغرة"
   },
-  "videoHiderViewsSuffix": {
-    "message": "views"
+  "videoHiderSubsGuard": {
+    "message": "حماية الاشتراكات"
   },
-  "videoHiderDaysSuffix": {
-    "message": "days old"
+  "videoHiderSubsKeepPaused": {
+    "message": "الإبقاء على الإيقاف المؤقت"
   },
-  "videoHiderUploadsPerDaySuffix": {
-    "message": "uploads/day"
+  "videoHiderSubsLoadChipTitle": {
+    "message": "الاشتراكات متوقفة مؤقتًا"
+  },
+  "videoHiderSubsLoadControlsAria": {
+    "message": "فتح عناصر التحكم في تحميل الاشتراكات"
+  },
+  "videoHiderSubsLoadPaused": {
+    "message": "تغذية الاشتراكات متوقفة مؤقتًا"
+  },
+  "videoHiderSubsLoadSummaryTpl": {
+    "message": "تم إخفاء {hidden} من أصل {loaded} تم فحصها"
+  },
+  "videoHiderSubsPauseReasonTpl": {
+    "message": "تم إخفاء {percent} من الفيديوهات التي تم فحصها، لذلك أوقف Astra Deck التحميل التلقائي مؤقتًا قبل أن تمر الخلاصة عبر دفعات فارغة إضافية."
+  },
+  "videoHiderSubsResume": {
+    "message": "استئناف"
+  },
+  "videoHiderSubsResumeLoading": {
+    "message": "استئناف التحميل"
+  },
+  "videoHiderSubsReviewFilters": {
+    "message": "مراجعة الفلاتر"
+  },
+  "videoHiderSubsScannedStat": {
+    "message": "تم فحصها"
+  },
+  "videoHiderSubsStreakStat": {
+    "message": "السلسلة"
+  },
+  "videoHiderSubscriptionLoadLimiterDesc": {
+    "message": "إيقاف التحميل المستمر في الاشتراكات عند إخفاء عدد كبير من الدفعات المتتالية بالكامل."
+  },
+  "videoHiderSubscriptionLoadLimiterTitle": {
+    "message": "محدد تحميل الاشتراكات"
+  },
+  "videoHiderTabsAria": {
+    "message": "أقسام Video Hider"
   },
   "videoHiderUnblockChannel": {
     "message": "Unblock"
+  },
+  "videoHiderUnblockChannelAriaTpl": {
+    "message": "إلغاء حظر القناة {channelName}"
+  },
+  "videoHiderUnblockedChannelsTpl": {
+    "message": "تم إلغاء حظر {count} من القنوات"
+  },
+  "videoHiderUndoAll": {
+    "message": "التراجع عن الكل"
   },
   "videoHiderUnmarkWatched": {
     "message": "Unmark as watched"
   },
   "videoHiderUnmarkedWatched": {
     "message": "تمت إزالة علامة المشاهدة"
+  },
+  "videoHiderUploadsPerDaySuffix": {
+    "message": "uploads/day"
+  },
+  "videoHiderVideoIdLabel": {
+    "message": "معرّف الفيديو"
+  },
+  "videoHiderVideoUrlPlaceholder": {
+    "message": "https://youtube.com/watch?v=VIDEO_ID"
+  },
+  "videoHiderViewsSuffix": {
+    "message": "views"
+  },
+  "videoHiderWatchedRatioDesc": {
+    "message": "استخدم 0 للتعطيل. تُخفى البطاقات التي يبلغ شريط الاستئناف فيها هذه النسبة أو يتجاوزها."
+  },
+  "videoHiderWatchedRatioLabel": {
+    "message": "إخفاء نسبة المشاهدة"
+  },
+  "videoHiderWatchedRatioSuffix": {
+    "message": "نسبة المشاهدة %"
   },
   "videoInsightsCategory": {
     "message": "الفئة"
@@ -7181,6 +7598,12 @@
     "message": "وقت المشاهدة — آخر 30 يومًا",
     "description": "Heading of the watch-time dashboard overlay"
   },
+  "whatsNewDetailFromTpl": {
+    "message": "تم التحديث من v{previous} إلى v{version}. اعرض التغييرات."
+  },
+  "whatsNewDetailTpl": {
+    "message": "تم التحديث إلى الإصدار v{version}. اعرض التغييرات."
+  },
   "whatsNewDismiss": {
     "message": "Dismiss"
   },
@@ -7193,14 +7616,14 @@
   "whatsNewTitle": {
     "message": "Updated"
   },
-  "wlwbChannelAria": {
-    "message": "عامل تصفية اسم القناة"
-  },
-  "wlwbChannelPlaceholder": {
-    "message": "القناة تحتوي على…"
-  },
   "wlwbAgeAria": {
     "message": "الحد الأدنى لعمر الفيديو بالأيام"
+  },
+  "wlwbAgeDaysTpl": {
+    "message": "{days} يوم"
+  },
+  "wlwbAgeLoading": {
+    "message": "جارٍ تحميل تواريخ الرفع…"
   },
   "wlwbAgePlaceholder": {
     "message": "أقدم من (بالأيام)…"
@@ -7208,11 +7631,11 @@
   "wlwbAgeUnavailableTpl": {
     "message": "لا يمكن قراءة عمر الرفع في {count} صفًا محمّلًا، لذلك استُبعدت من تصفية العمر."
   },
-  "wlwbAgeDaysTpl": {
-    "message": "{days} يوم"
+  "wlwbChannelAria": {
+    "message": "عامل تصفية اسم القناة"
   },
-  "wlwbAgeLoading": {
-    "message": "جارٍ تحميل تواريخ الرفع…"
+  "wlwbChannelPlaceholder": {
+    "message": "القناة تحتوي على…"
   },
   "wlwbCloseAria": {
     "message": "إغلاق منضدة العمل"
@@ -7244,6 +7667,9 @@
   "wlwbNoMatches": {
     "message": "لا توجد صفوف مطابقة للإزالة"
   },
+  "wlwbNothingToUndo": {
+    "message": "لا توجد فيديوهات محذوفة من المشاهدة لاحقًا بانتظار التراجع."
+  },
   "wlwbOpenAria": {
     "message": "فتح منضدة عمل «المشاهدة لاحقًا»"
   },
@@ -7253,9 +7679,6 @@
   "wlwbPanelAria": {
     "message": "منضدة عمل «المشاهدة لاحقًا»"
   },
-  "wlwbRemovalLogBtn": {
-    "message": "سجل الإزالة"
-  },
   "wlwbRecoveryEmpty": {
     "message": "لا توجد فيديوهات محذوفة بانتظار الاستعادة."
   },
@@ -7264,6 +7687,9 @@
   },
   "wlwbRecoveryTitle": {
     "message": "استعادة الحذف"
+  },
+  "wlwbRemovalLogBtn": {
+    "message": "سجل الإزالة"
   },
   "wlwbRemoveMatchedTpl": {
     "message": "إزالة المطابقات (بحد أقصى {limit} لكل تشغيل)"
@@ -7276,6 +7702,18 @@
   },
   "wlwbRemovingTpl": {
     "message": "جارٍ إزالة {current} / {total}…"
+  },
+  "wlwbRestoreFailedTpl": {
+    "message": "تعذرت استعادة {title}: {error}"
+  },
+  "wlwbRestoredBatchTpl": {
+    "message": "تمت استعادة {restored} من أصل {total} فيديو محذوف إلى المشاهدة لاحقًا."
+  },
+  "wlwbRestoredItemTpl": {
+    "message": "تمت استعادة {title} إلى المشاهدة لاحقًا"
+  },
+  "wlwbRowMetaTpl": {
+    "message": "{percent}% · {duration} · {age}"
   },
   "wlwbRowTitleTpl": {
     "message": "{title} — {channel} (تمت مشاهدة {percent}%)"
@@ -7295,45 +7733,6 @@
   "wlwbSortTitle": {
     "message": "العنوان من أ إلى ي"
   },
-  "wlwbStatusTpl": {
-    "message": "{matched} من {loaded} فيديو محمّل مطابق. مرّر قائمة التشغيل لتحميل مزيد من الصفوف قبل التشغيل."
-  },
-  "wlwbTitleAria": {
-    "message": "عامل تصفية العنوان"
-  },
-  "wlwbTitlePlaceholder": {
-    "message": "العنوان يحتوي على…"
-  },
-  "wlwbNothingToUndo": {
-    "message": "لا توجد فيديوهات محذوفة من المشاهدة لاحقًا بانتظار التراجع."
-  },
-  "wlwbRestoredBatchTpl": {
-    "message": "تمت استعادة {restored} من أصل {total} فيديو محذوف إلى المشاهدة لاحقًا."
-  },
-  "wlwbRestoredItemTpl": {
-    "message": "تمت استعادة {title} إلى المشاهدة لاحقًا"
-  },
-  "wlwbRestoreFailedTpl": {
-    "message": "تعذرت استعادة {title}: {error}"
-  },
-  "wlwbRowMetaTpl": {
-    "message": "{percent}% · {duration} · {age}"
-  },
-  "wlwbUndoAll": {
-    "message": "التراجع عن الكل"
-  },
-  "wlwbUndoItem": {
-    "message": "تراجع"
-  },
-  "wlwbWatchedAria": {
-    "message": "عامل تصفية الحد الأدنى لنسبة المشاهدة"
-  },
-  "wlwbWatchedPlaceholder": {
-    "message": "نسبة المشاهدة ≥ % (مثال: 90)"
-  },
-  "wlwbWatchedStateAria": {
-    "message": "تصفية حالة المشاهدة"
-  },
   "wlwbStateAny": {
     "message": "أي حالة مشاهدة"
   },
@@ -7346,11 +7745,35 @@
   "wlwbStateWatched": {
     "message": "مشاهد (90%+)"
   },
+  "wlwbStatusTpl": {
+    "message": "{matched} من {loaded} فيديو محمّل مطابق. مرّر قائمة التشغيل لتحميل مزيد من الصفوف قبل التشغيل."
+  },
+  "wlwbTitleAria": {
+    "message": "عامل تصفية العنوان"
+  },
+  "wlwbTitlePlaceholder": {
+    "message": "العنوان يحتوي على…"
+  },
+  "wlwbUndoAll": {
+    "message": "التراجع عن الكل"
+  },
+  "wlwbUndoItem": {
+    "message": "تراجع"
+  },
   "wlwbUnknownAge": {
     "message": "العمر ؟"
   },
   "wlwbUnknownDuration": {
     "message": "المدة ؟"
+  },
+  "wlwbWatchedAria": {
+    "message": "عامل تصفية الحد الأدنى لنسبة المشاهدة"
+  },
+  "wlwbWatchedPlaceholder": {
+    "message": "نسبة المشاهدة ≥ % (مثال: 90)"
+  },
+  "wlwbWatchedStateAria": {
+    "message": "تصفية حالة المشاهدة"
   },
   "workspaceEyebrow": {
     "message": "مساحة عمل الإعدادات"
@@ -7366,425 +7789,5 @@
   },
   "youtubeStateRestoreToast": {
     "message": "YouTube state restored ({count}). Reload the page to apply it."
-  },
-  "feature_logarithmicVolume_desc": {
-    "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
-  },
-  "feature_logarithmicVolume_name": {
-    "message": "Logarithmic Volume Curve"
-  },
-  "feature_sponsoredContentFilter_desc": {
-    "message": "طي كتل التعليقات والوصف التي تبدو كرعاية أو ترويج تابع. يوضح كل عنصر سبب المطابقة ويمكن استعادته."
-  },
-  "feature_sponsoredContentFilter_name": {
-    "message": "فلتر المحتوى المدعوم"
-  },
-  "sponsoredFilterCommentLabel": {
-    "message": "تعليق مدعوم"
-  },
-  "sponsoredFilterDescriptionLabel": {
-    "message": "وصف مدعوم"
-  },
-  "sponsoredFilterHideTpl": {
-    "message": "إخفاء {label} — {reason}"
-  },
-  "sponsoredFilterShowTpl": {
-    "message": "إظهار {label} — {reason}"
-  },
-  "sponsoredFilterAffiliateReason": {
-    "message": "ترويج تابع"
-  },
-  "sponsoredFilterSponsorReason": {
-    "message": "إفصاح عن رعاية"
-  },
-  "languageAutoDetectedTpl": {
-    "message": "{label} — {detected}"
-  },
-  "resultsCountTpl": {
-    "message": "{count} {controls}"
-  },
-  "resultsVisibleTpl": {
-    "message": "{count} متطابق"
-  },
-  "quickGroupCountTpl": {
-    "message": "{enabled}/{total}"
-  },
-  "selectorHealthCtxCountTpl": {
-    "message": "{ctx}: {count}"
-  },
-  "schemaResetTitleTpl": {
-    "message": "إعادة ضبط {key} إلى الإعداد الافتراضي ({value})"
-  },
-  "schemaResetAriaTpl": {
-    "message": "إعادة ضبط {key} إلى القيمة الافتراضية"
-  },
-  "whatsNewDetailTpl": {
-    "message": "تم التحديث إلى الإصدار v{version}. اعرض التغييرات."
-  },
-  "whatsNewDetailFromTpl": {
-    "message": "تم التحديث من v{previous} إلى v{version}. اعرض التغييرات."
-  },
-  "toggleStatusTpl": {
-    "message": "{name}: {state}."
-  },
-  "quickToggleAriaTpl": {
-    "message": "{name}. {description}. {state}.{permission}"
-  },
-  "statusImportSummaryTpl": {
-    "message": "{status} {preview}"
-  },
-  "advancedFiltersTitle": {
-    "message": "فلاتر متقدمة"
-  },
-  "advancedFiltersHint": {
-    "message": "استخدم risk: أو category: أو scope: أو profile:. تجمع المسافات الفلاتر، وتطابق الفواصل البدائل."
-  },
-  "filterTogglesHelpTitle": {
-    "message": "يطابق النص الحر الأسماء والأوصاف والمفاتيح والتسميات المترجمة. Mini-DSL: risk:safe|api|local-companion|experimental|store-risk، category:<name>، scope:global|feed|watch|player|comments|live-chat|subscriptions|downloads|popup، profile:store-safe|github-full|both. اجمع باستخدام المسافات (AND) والفواصل (OR داخل الحقل)."
-  },
-  "qt_privacyDataFlowPanel_name": {
-    "message": "لوحة تدفق البيانات"
-  },
-  "qt_privacyDataFlowPanel_desc": {
-    "message": "عرض كل مصدر API يمكن لـ Astra Deck الاتصال به"
-  },
-  "qt_safeStoreProfile_name": {
-    "message": "ملف Store-Safe"
-  },
-  "qt_safeStoreProfile_desc": {
-    "message": "إخفاء مفاتيح github-full وتنظيف المفاتيح عند التصدير"
-  },
-  "qt_githubFullProfile_name": {
-    "message": "ملف GitHub-Full"
-  },
-  "qt_githubFullProfile_desc": {
-    "message": "فتح مفاتيح github-full (مثل Cobalt ومفاتيح الذكاء الاصطناعي)"
-  },
-  "qtGroup_Privacy": {
-    "message": "الخصوصية"
-  },
-  "aiSummaryArtifactTpl": {
-    "message": "{title} · {date}"
-  },
-  "aiCredentialReplaceHint": {
-    "message": "تم إعداد بيانات اعتماد. أدخل قيمة جديدة لاستبدالها؛ لا يتم عرض القيمة المخزنة."
-  },
-  "aiCredentialStoreHint": {
-    "message": "يتم تخزينها فقط في مدير userscript، خارج إعدادات Astra Deck وعمليات التصدير."
-  },
-  "spPerfRowAriaTpl": {
-    "message": "{feature}: {ms}ms"
-  },
-  "spSettingRowTitleTpl": {
-    "message": "{key} ({category})"
-  },
-  "transcriptNoVideoId": {
-    "message": "لم يتم العثور على معرّف الفيديو"
-  },
-  "transcriptFetching": {
-    "message": "جارٍ جلب النص…"
-  },
-  "transcriptUnavailable": {
-    "message": "لا يتوفر نص لهذا الفيديو"
-  },
-  "transcriptDownloadedTpl": {
-    "message": "تم تنزيل النص! ({count} مقطع)"
-  },
-  "dwDailyLimitTitle": {
-    "message": "تم بلوغ الحد اليومي"
-  },
-  "dwBreakTitle": {
-    "message": "خذ استراحة"
-  },
-  "playerDockHomeLink": {
-    "message": "الانتقال إلى الصفحة الرئيسية"
-  },
-  "sponsorBlockDataAttribution": {
-    "message": "بيانات SponsorBlock"
-  },
-  "sponsorBlockDataAttributionTitle": {
-    "message": "بيانات واجهة API وقاعدة بيانات SponsorBlock — CC BY-NC-SA 4.0"
-  },
-  "sponsorCachedSegmentTitleTpl": {
-    "message": "{label} (مخزّن في {time})"
-  },
-  "ui_rydEstimateDisclosure": {
-    "message": "أعداد Return YouTube Dislike تقديرية بعد أن أزالت YouTube إجمالي عدم الإعجاب العام؛ قد تكون أقل دقة للفيديوهات منخفضة التفاعل."
-  },
-  "ui_rydPaused": {
-    "message": "تم إيقاف RYD مؤقتًا"
-  },
-  "ui_rydPausedTitleTpl": {
-    "message": "تم إيقاف Return YouTube Dislike مؤقتًا — تم بلوغ حد الطلبات ({used}/{limit}/دقيقة). يُستأنف خلال {seconds} ث."
-  },
-  "ui_rydOff": {
-    "message": "RYD متوقف"
-  },
-  "ui_rydUnavailableTitle": {
-    "message": "Return YouTube Dislike غير متاح — لم تُرجع الواجهة استجابة قابلة للاستخدام. تحقق من الشبكة وحاول لاحقًا."
-  },
-  "ui_rydCachedTitleHoursTpl": {
-    "message": "عدد عدم الإعجاب المخزن من Return YouTube Dislike (منذ {hours} ساعة)."
-  },
-  "ui_rydCachedTitleRecent": {
-    "message": "عدد عدم الإعجاب المخزن من Return YouTube Dislike (أقل من ساعة)."
-  },
-  "ui_rydLiveTitleTpl": {
-    "message": "عدد عدم الإعجاب المباشر من Return YouTube Dislike (استخدم {used}/{limit} في الدقيقة). {estimate}"
-  },
-  "ui_rydCountAriaTpl": {
-    "message": "{count} من عدم الإعجاب التقديري. {estimate}"
-  },
-  "ui_rydEstimateShort": {
-    "message": "تقديري"
-  },
-  "ui_rydRatioTpl": {
-    "message": "{ratio}% إعجاب"
-  },
-  "ui_rydRatioTitleTpl": {
-    "message": "تستخدم نسبة الإعجاب أعداد Return YouTube Dislike التقديرية. {estimate}"
-  },
-  "stickyVideoSubscriptionsLink": {
-    "message": "الانتقال إلى الاشتراكات"
-  },
-  "stickyVideoQuickLinksAria": {
-    "message": "روابط سريعة"
-  },
-  "stickyVideoLiveVideoFallback": {
-    "message": "فيديو مباشر"
-  },
-  "stickyVideoLiveInfoAria": {
-    "message": "معلومات الفيديو المباشر"
-  },
-  "stickyVideoLiveBadge": {
-    "message": "بث مباشر"
-  },
-  "stickyVideoLiveActionsAria": {
-    "message": "إجراءات الفيديو المباشر"
-  },
-  "stickyVideoVideoActionsAria": {
-    "message": "إجراءات الفيديو"
-  },
-  "stickyVideoCloseSidePanelTitle": {
-    "message": "إغلاق اللوحة الجانبية"
-  },
-  "timestampBookmarkAlreadyExists": {
-    "message": "الإشارة المرجعية موجودة هنا بالفعل"
-  },
-  "timestampBookmarkAddedTpl": {
-    "message": "تم وضع إشارة عند {time}"
-  },
-  "timestampBookmarkRemovedTpl": {
-    "message": "تمت إزالة الإشارة عند {time}"
-  },
-  "timestampBookmarkRestoredTpl": {
-    "message": "تمت استعادة الإشارة عند {time}"
-  },
-  "timestampBookmarksSavedTpl": {
-    "message": "تم حفظ {count}"
-  },
-  "timestampBookmarksSavedStatus": {
-    "message": "العودة إلى اللحظات المحفوظة والاحتفاظ بملاحظات سريعة بجانب كل منها."
-  },
-  "timestampBookmarksEmptyStatus": {
-    "message": "احفظ اللحظات المهمة هنا للعودة إليها دون تمرير."
-  },
-  "timestampBookmarksRegionAriaTpl": {
-    "message": "{count} من الإشارات المرجعية لهذا الفيديو"
-  },
-  "timestampBookmarksEmptyTitle": {
-    "message": "لا توجد إشارات مرجعية بعد"
-  },
-  "timestampBookmarksEmptyCopy": {
-    "message": "استخدم «حفظ الوقت الحالي» لتثبيت لحظة وإضافة ملاحظات يمكنك مراجعتها لاحقًا."
-  },
-  "timestampBookmarksJumpAriaTpl": {
-    "message": "الانتقال إلى {time}"
-  },
-  "timestampBookmarksJumpLabel": {
-    "message": "الانتقال إلى اللحظة"
-  },
-  "timestampBookmarksSavedNoteMeta": {
-    "message": "تتضمن ملاحظة محفوظة"
-  },
-  "timestampBookmarksAddNoteMeta": {
-    "message": "أضف ملاحظة لتذكر سبب أهميتها"
-  },
-  "timestampBookmarksNotePlaceholder": {
-    "message": "إضافة ملاحظة…"
-  },
-  "timestampBookmarksNoteAriaTpl": {
-    "message": "ملاحظة للإشارة عند {time}"
-  },
-  "timestampBookmarksNoteLabel": {
-    "message": "ملاحظة"
-  },
-  "timestampBookmarksDeleteAriaTpl": {
-    "message": "حذف الإشارة عند {time}"
-  },
-  "timestampBookmarksEyebrow": {
-    "message": "استئناف"
-  },
-  "timestampBookmarksSaveCurrentTime": {
-    "message": "حفظ الوقت الحالي"
-  },
-  "videoHiderAllowedChannelsCountTpl": {
-    "message": "{count} من القنوات المسموح بها"
-  },
-  "videoHiderKeywordStatusLive": {
-    "message": "مباشر"
-  },
-  "videoHiderKeywordStatusEmpty": {
-    "message": "فارغ"
-  },
-  "videoHiderAddedHiddenVideoToast": {
-    "message": "تمت إضافة الفيديو إلى قائمة المخفية"
-  },
-  "videoHiderAlreadyHiddenVideoToast": {
-    "message": "الفيديو مخفي بالفعل"
-  },
-  "videoHiderRemovedHiddenVideoToast": {
-    "message": "تمت إزالة الفيديو من قائمة المخفية"
-  },
-  "videoHiderMissingHiddenVideoToast": {
-    "message": "لم يكن الفيديو في قائمة المخفية"
-  },
-  "videoHiderAddedAllowedVideoToast": {
-    "message": "تمت إضافة الفيديو إلى قائمة المسموح بها"
-  },
-  "videoHiderMovedHiddenVideoToast": {
-    "message": "تم نقل الفيديو من القائمة المخفية إلى المسموح بها"
-  },
-  "videoHiderAlreadyAllowedVideoToast": {
-    "message": "الفيديو مسموح به بالفعل"
-  },
-  "videoHiderKeywordsRulesSectionCopy": {
-    "message": "إخفاء الفيديوهات حسب العنوان أو نص القناة. أضف كلمات مفتاحية مفصولة بفواصل، واستخدم ! للسماح بالتطابق دائمًا أو ابدأ بـ / للتعبير النمطي."
-  },
-  "videoHiderKeywordHintHide": {
-    "message": "الكلمة المفتاحية تخفي التطابقات"
-  },
-  "videoHiderKeywordHintAllow": {
-    "message": "!الكلمة المفتاحية تسمح بالتطابقات دائمًا"
-  },
-  "videoHiderKeywordHintRegex": {
-    "message": "/pattern/i يشغّل قاعدة تعبير نمطي"
-  },
-  "videoHiderDurationFilterTitle": {
-    "message": "عامل تصفية المدة"
-  },
-  "videoHiderDurationFilterDesc": {
-    "message": "إخفاء الفيديوهات الأقصر من الحد الأدنى المختار تلقائيًا."
-  },
-  "videoHiderSubscriptionLoadLimiterTitle": {
-    "message": "محدد تحميل الاشتراكات"
-  },
-  "videoHiderSubscriptionLoadLimiterDesc": {
-    "message": "إيقاف التحميل المستمر في الاشتراكات عند إخفاء عدد كبير من الدفعات المتتالية بالكامل."
-  },
-  "settingsDownloaderTitle": {
-    "message": "Astra Downloader"
-  },
-  "settingsHealthNeedsAttention": {
-    "message": "يحتاج إلى انتباه"
-  },
-  "settingsImportReadFailed": {
-    "message": "تعذّر قراءة ملف الاستيراد"
-  },
-  "selectorHealthExportAria": {
-    "message": "تصدير صحة المحددات بصيغة JSON"
-  },
-  "dataFlowFilterListGrantPurpose": {
-    "message": "يمكن لـ Video Hider جلب البيانات من هذا الموقع حتى تتم إزالة الوصول."
-  },
-  "dataFlowGrantedHostsCountTpl": {
-    "message": "تم منح {count}"
-  },
-  "dataFlowGrantedHostsTitle": {
-    "message": "الوصول الممنوح إلى المواقع"
-  },
-  "dataFlowGrantRemove": {
-    "message": "إزالة الوصول"
-  },
-  "dataFlowGrantRemoveAriaTpl": {
-    "message": "إزالة الوصول إلى موقع {host}"
-  },
-  "dataFlowGrantRemovedTpl": {
-    "message": "تمت إزالة الوصول إلى موقع {host}."
-  },
-  "dataFlowGrantRemoveFailedTpl": {
-    "message": "تعذرت إزالة الوصول إلى موقع {host}."
-  },
-  "filterListStopFailed": {
-    "message": "تعذر إيقاف متابعة قائمة عوامل التصفية."
-  },
-  "filterListStoppedTpl": {
-    "message": "تم إيقاف متابعة {host}. لم يعد هناك وصول إلى الموقع مخصص لقائمة عوامل التصفية."
-  },
-  "transcriptSourcePlayerGlobal": {
-    "message": "بيانات مشغّل الصفحة الحالية"
-  },
-  "transcriptSourceInnertube": {
-    "message": "بيانات مشغّل YouTube المحدّثة"
-  },
-  "transcriptSourceWatchPage": {
-    "message": "صفحة مشاهدة YouTube محدّثة"
-  },
-  "transcriptSourcePanel": {
-    "message": "لوحة النص الحالية في YouTube"
-  },
-  "transcriptSourceUnknown": {
-    "message": "التسميات التوضيحية في YouTube"
-  },
-  "transcriptLanguageUnknown": {
-    "message": "لغة غير معروفة"
-  },
-  "transcriptPanelFallback": {
-    "message": "استخدام اللوحة كخيار احتياطي"
-  },
-  "transcriptMetaPanelTpl": {
-    "message": "تم التحميل من {source} ({age})؛ {language}."
-  },
-  "transcriptRefreshedTrack": {
-    "message": "تم تحديث المسار"
-  },
-  "transcriptMetaRefreshedTpl": {
-    "message": "تم استبدال رابط تسميات توضيحية منتهي الصلاحية عبر {source}؛ تم جلبه {age}؛ {language}."
-  },
-  "transcriptExpiryUnknown": {
-    "message": "غير معلن"
-  },
-  "transcriptMetaSourceTpl": {
-    "message": "تم التحميل من {source} ({age})؛ {language}؛ انتهاء رابط المسار: {expires}."
-  },
-  "transcriptTimeUnknown": {
-    "message": "في وقت غير معروف"
-  },
-  "transcriptNoCaptions": {
-    "message": "لا توجد تسميات توضيحية"
-  },
-  "transcriptUnavailableLabel": {
-    "message": "غير متاح"
-  },
-  "transcriptUnavailableNow": {
-    "message": "تعذر جلب النص من YouTube الآن."
-  },
-  "transcriptLoadFailed": {
-    "message": "تعذر تحميل النص"
-  },
-  "transcriptNoCaptionsHelp": {
-    "message": "جرّب فيديو آخر يتضمن تسميات توضيحية، أو أعد فتح هذه اللوحة بعد اكتمال تحميلها."
-  },
-  "transcriptRetryHelp": {
-    "message": "أعد تحميل الصفحة أو حاول مجددًا بعد لحظات إذا كانت التسميات التوضيحية لا تزال قيد المعالجة."
-  },
-  "transcriptIndexUsageLoading": {
-    "message": "جارٍ قياس الفهرس المحلي…"
-  },
-  "transcriptIndexUsageTpl": {
-    "message": "تمت فهرسة {count} من {maxCount} فيديو، {size} من {budget}. تُحذف أقدم الإدخالات أولاً."
-  },
-  "transcriptIndexUsageFailed": {
-    "message": "تعذّر قياس الفهرس المحلي."
   }
 }

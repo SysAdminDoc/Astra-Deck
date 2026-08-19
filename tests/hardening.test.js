@@ -3951,8 +3951,10 @@ test('downloadHistoryPanel pages, filters, exports, and shows an offline state',
     assert.match(block, /data\.filteredTotal/);
     assert.match(block, /data\.hasMore/);
     assert.match(block, /_exportFiltered/);
-    assert.match(block, /limit:\s*500/,
+    assert.match(block, /limit:\s*EXPORT_ROW_LIMIT/,
         'filtered export may load the bounded retained-history ceiling');
+    assert.match(block, /dlHistoryExportTruncatedTpl/,
+        'a truncated export must tell the user it was truncated');
     assert.match(block, /text\/csv;charset=utf-8/,
         'filtered export must produce a local CSV file');
     assert.match(block, /'X-MDL-Client': 'MediaDL'/,
@@ -4485,8 +4487,10 @@ test('researchSpacedReview exports study/work data to Markdown and CSV', () => {
         'CSV header must expose stable study/work columns');
     assert.match(block, /_csvEscape/,
         'must declare a CSV escaper');
-    assert.match(block, /s\.replace\(\/"\/g, '""'\)/,
+    assert.match(block, /safe\.replace\(\/"\/g, '""'\)/,
         'CSV escaper must double-quote embedded quotes');
+    assert.match(block, /typeof csvCell === 'function'/,
+        'CSV escaper must route through the shared formula-neutralizing writer');
     assert.match(block, /astra-deck-study-work-\$\{today\}\.\$\{isCsv \? 'csv' : 'md'\}/,
         'exports must use a dated study/work filename');
     assert.match(block, /text\/csv;charset=utf-8/,
@@ -7947,6 +7951,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/selector-health.js',
         'extension/core/feature-health.js',
         'extension/core/chapters.js',
+        'extension/core/csv.js',
         'extension/core/dialog-guard.js',
         'extension/core/hide-attribution.js',
         'extension/core/heatmap.js',

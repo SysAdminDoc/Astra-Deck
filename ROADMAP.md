@@ -265,16 +265,6 @@ duplicated here.
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — CSV history/groups export does not neutralize formula-injection prefixes
-  Category: security
-  Where: `extension/features/download-ui/index.js:3003-3005` (`_csvCell`) and `extension/ytkit.js:42596-42602` (`_csvEscape`).
-  Problem: `_csvCell` quotes cells and escapes quotes but does nothing about leading `=`/`+`/`-`/`@`; exported fields include `title`/`filename`/`url` where title is arbitrary uploader text. `_csvEscape` (the group export) detects those prefixes but only to decide whether to *quote* — quoting does not stop Excel evaluating a `"=…"` cell on open. So neither export path actually neutralizes formula injection, despite the changelog advertising it. `_csvCell` also silently truncates at 500 rows with no notice (`:3012`).
-  Evidence: read both helpers; quoting-only is not neutralization.
-  Fix: add a shared helper that prefixes a `'` (or tab) to any cell beginning `=`/`+`/`-`/`@`/tab, used by both exports; surface the 500-row cap.
-  Acceptance: a video titled `=cmd|…` exports as a literal string Excel does not evaluate; a test asserts the prefix on formula-leading cells in both exporters.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Two side-panel state strings are injected via CSS `content:` and can never be localized
   Category: i18n / a11y
   Where: `extension/sidepanel.css:1129-1141` (`[data-saving="true"]::after { content:"Saving" }`, `[data-error="true"]::after { content:"Try again" }`); shared by `sidebar.html`.
@@ -601,6 +591,7 @@ Evidence detail and sources live in `RESEARCH.md` (2026-08-19). Items already tr
   Touches: new feature module (button-triggered picker overlay — no keyboard shortcuts per repo philosophy), `extension/core/selectors.js` surface mapping, video-hider custom-rule storage, `extension/core/hide-attribution.js`, settings schema/locales
   Acceptance: a picker mode lets the user click any feed/watch element; the tool snaps the selection to the nearest known renderer/surface and generates a scoped, structural hide rule (never raw obfuscated classes) stored with the user's video-hider rules; rules refuse player and playlist surfaces (same refusal set as feed-prefilter); every zapped element carries hide-attribution; rules are listed, countable, and individually deletable; fail-open guard applies.
   Complexity: L
+  Scoping note (2026-08-19, drain #8): the item assumed the generated rules could live "with the user's video-hider rules". They cannot, as written. Video Hider's engine is TEXT/PREDICATE-based — keyword filters and `core/predicate-sandbox.js` expressions evaluated against metadata fields (title, channel, duration) — with no selector-matching path anywhere in its 3,003 lines. A zapper that emits structural selectors therefore needs its own persistence domain, its own apply path in the mutation pipeline, and its own entry in the persisted-domain catalogue, on top of the picker overlay. That is the bulk of the cost and it is why this stayed unstarted in drain #8: a partial landing (a pure selector-derivation module with no consumer) would add to the tracked "inert scaffolding" debt rather than reduce it. Plan it as: (1) pure `deriveStructuralSelector(element)` module + tests, (2) new persisted rule domain with export/import coverage, (3) apply path reusing hide-attribution and the fail-open guard, (4) picker overlay last. Steps 1-3 are verifiable without a browser; only step 4 needs one.
 
 - [ ] P3 — Stage-aware anti-adblock detection diagnostics
   Why: YouTube's degradation ladder is now stage-documented (repeated ads → throttling/injected delays → autoplay stops → videos refuse to load), and users blame the extension, not YouTube — the ABP 5.17 incident shows a slowdown reads as "the blocker broke my YouTube." Recognizing the stage and explaining it converts a trust-breaker into a trust-builder.
