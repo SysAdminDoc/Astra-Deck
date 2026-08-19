@@ -1648,6 +1648,9 @@
         const MIN_VIEWPORT_GAP_PX = 8;
         const MIN_POPUP_HEIGHT_PX = 200;
 
+        // Rule id for the popup's own navigate teardown. Registered when the
+        // popup opens, removed by its cleanup closure.
+        const DL_POPUP_NAV_RULE_ID = 'downloadPopupNavClose';
         let _dlPopup = null;
         let _dlPopupCleanup = null;
         let _dlPopupReturnFocus = null;
@@ -1695,9 +1698,16 @@
             let playlistSelection = null;
             let dlBtn = null;
             let chipRowCount = 0;
+            // The video this popup describes. Formats, size estimates, playlist
+            // preview and the clip range are all captured for THIS url; the
+            // download CTA used to re-read window.location.href at click time,
+            // so a YouTube autoplay transition (which fires no user gesture and
+            // therefore never light-dismisses the popover) left the popup
+            // showing video A's formats while the button downloaded video B.
+            const openedUrl = window.location.href;
             let playlistId = '';
             try {
-                playlistId = new URL(window.location.href).searchParams.get('list') || '';
+                playlistId = new URL(openedUrl).searchParams.get('list') || '';
             } catch (_) { /* reason: malformed navigation URL; playlist UI stays hidden */ }
             const playlistUrl = playlistId
                 ? `https://www.youtube.com/playlist?list=${encodeURIComponent(playlistId)}`
@@ -1925,7 +1935,7 @@
 
             const runFormatProbe = async (force = false) => {
                 const videoId = typeof getVideoId === 'function' ? getVideoId() : '';
-                const videoUrl = window.location.href;
+                const videoUrl = openedUrl;
                 if (downloadFormatEstimates?.probe) {
                     const entry = await downloadFormatEstimates.probe(videoId, videoUrl, { force });
                     if (entry?.status !== 'ready') {
@@ -2249,7 +2259,7 @@
                     return;
                 }
                 if (clip.section) opts.section = clip.section;
-                let requestUrl = window.location.href;
+                let requestUrl = openedUrl;
                 if (playlistSelection instanceof Set) {
                     if (clip.section) {
                         showToast(
@@ -2281,6 +2291,13 @@
             _dlPopup = popup;
             _dlPopupReturnFocus = anchorEl?.isConnected ? anchorEl : null;
             anchorEl?.setAttribute?.('aria-expanded', 'true');
+
+            // Nothing else closes this popup on SPA navigation: YouTube's
+            // autoplay advances the page with no user gesture, so the
+            // popover's own light-dismiss never fires. Without this the popup
+            // sits over the next video still showing the previous one's
+            // formats, sizes and playlist preview.
+            addNavigateRule(DL_POPUP_NAV_RULE_ID, () => { _closeDlPopup(); });
 
             const dialogKeydown = (event) => {
                 if (event.key === 'Escape') {
@@ -2388,12 +2405,14 @@
                     document.removeEventListener('keydown', escHandler);
                     popup.removeEventListener('keydown', dialogKeydown);
                     if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
+                    removeNavigateRule(DL_POPUP_NAV_RULE_ID);
                     anchorEl?.setAttribute?.('aria-expanded', 'false');
                 };
             } else {
                 _dlPopupCleanup = () => {
                     popup.removeEventListener('keydown', dialogKeydown);
                     if (popupToggleHandler) popup.removeEventListener('toggle', popupToggleHandler);
+                    removeNavigateRule(DL_POPUP_NAV_RULE_ID);
                     anchorEl?.setAttribute?.('aria-expanded', 'false');
                 };
             }
