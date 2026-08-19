@@ -4811,6 +4811,9 @@
   "selectorHealthTotalTpl": {
     "message": "{count} surfaces suivies"
   },
+  "settingValueUnrecognized": {
+    "message": "Unrecognized: $VALUE$"
+  },
   "settingsActiveSectionFallback": {
     "message": "Lecteur vidéo"
   },

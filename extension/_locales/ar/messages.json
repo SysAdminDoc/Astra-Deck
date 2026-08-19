@@ -4811,6 +4811,9 @@
   "selectorHealthTotalTpl": {
     "message": "{count} سطح مُتتبَّع"
   },
+  "settingValueUnrecognized": {
+    "message": "Unrecognized: $VALUE$"
+  },
   "settingsActiveSectionFallback": {
     "message": "مشغّل الفيديو"
   },

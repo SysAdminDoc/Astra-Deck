@@ -4811,6 +4811,9 @@
   "selectorHealthTotalTpl": {
     "message": "{count} superfici monitorate"
   },
+  "settingValueUnrecognized": {
+    "message": "Unrecognized: $VALUE$"
+  },
   "settingsActiveSectionFallback": {
     "message": "Lettore video"
   },

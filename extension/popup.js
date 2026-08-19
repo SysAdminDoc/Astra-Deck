@@ -3817,11 +3817,26 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         select.dataset.key = entry.key;
         select.setAttribute('aria-label', label.textContent);
         const effective = resolveEffectiveSettingValue(entry, settings);
+        // A stored value from before this key gained an enum still drives the
+        // runtime, but has no option to select - so the browser would show the
+        // FIRST option and quietly claim a value that is not in storage. Show
+        // it instead, disabled, so display and storage agree and picking any
+        // real option is what replaces it.
+        const recognized = entry.enum.some((value) => value === effective);
+        if (!recognized) {
+            const legacy = document.createElement('option');
+            legacy.value = String(effective);
+            legacy.disabled = true;
+            legacy.selected = true;
+            legacy.textContent = t('settingValueUnrecognized', 'Unrecognized: $VALUE$')
+                .replace('$VALUE$', String(effective) || '—');
+            select.appendChild(legacy);
+        }
         for (const value of entry.enum) {
             const option = document.createElement('option');
             option.value = String(value);
             option.textContent = String(value) || '—';
-            option.selected = value === effective;
+            option.selected = recognized && value === effective;
             select.appendChild(option);
         }
         select.addEventListener('change', async () => {

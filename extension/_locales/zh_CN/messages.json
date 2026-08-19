@@ -4811,6 +4811,9 @@
   "selectorHealthTotalTpl": {
     "message": "已跟踪 {count} 个表面"
   },
+  "settingValueUnrecognized": {
+    "message": "Unrecognized: $VALUE$"
+  },
   "settingsActiveSectionFallback": {
     "message": "视频播放器"
   },

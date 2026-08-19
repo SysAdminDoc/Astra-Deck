@@ -10,6 +10,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The remaining-time readout in the player no longer stacks up. Each time you
+  moved to another video it added a fresh countdown and left the old one
+  sitting there, still showing the previous video's number, so a long session
+  ended with a row of dead timers.
+- The settings popup no longer shows the wrong value for a handful of options.
+  Two dozen settings became fixed-choice lists in an earlier release, and if
+  yours still held an older free-form value the popup had nothing to show for
+  it and quietly displayed the first choice instead. Your stored value was
+  still the one in effect. It now says so, and picking any real choice
+  replaces it.
+
 - Four features stopped re-checking their own verdicts on reused elements.
   YouTube recycles DOM nodes hard: the metadata block above a video survives
   every navigation, feed cards get reused as you scroll, and live chat cycles

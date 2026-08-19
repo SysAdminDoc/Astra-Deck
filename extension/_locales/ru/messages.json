@@ -4811,6 +4811,9 @@
   "selectorHealthTotalTpl": {
     "message": "Отслеживается поверхностей: {count}"
   },
+  "settingValueUnrecognized": {
+    "message": "Unrecognized: $VALUE$"
+  },
   "settingsActiveSectionFallback": {
     "message": "Видеопроигрыватель"
   },

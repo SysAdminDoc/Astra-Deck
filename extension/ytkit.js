@@ -22139,12 +22139,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // remaining number negative and render "(--0:05)".
                 const skipDuration = this._skippableSeconds(video);
                 const remaining = Math.max(0, video.duration - video.currentTime - skipDuration) / (video.playbackRate || 1);
-                if (!this._el) {
+                if (!this._el || !this._el.isConnected) {
                     const timeDisplay = document.querySelector('.ytp-time-display');
                     if (!timeDisplay) return;
-                    this._el = document.createElement('span');
-                    this._el.className = 'ytkit-remaining-time';
-                    timeDisplay.appendChild(this._el);
+                    // Adopt the span already there before making another one.
+                    // `.ytp-time-display` persists across SPA navigation, and
+                    // the navigate rule only drops OUR reference to the span —
+                    // the node itself stays in the player, frozen at the
+                    // previous video's remaining time. Appending blindly left
+                    // one extra dead readout per navigation.
+                    this._el = timeDisplay.querySelector('.ytkit-remaining-time');
+                    if (!this._el) {
+                        this._el = document.createElement('span');
+                        this._el.className = 'ytkit-remaining-time';
+                        timeDisplay.appendChild(this._el);
+                    }
                 }
                 const hideFs = appState?.settings?.remainingTimeHideFullscreen && document.fullscreenElement;
                 this._el.style.display = hideFs ? 'none' : '';
@@ -22196,7 +22205,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._handler = null;
                 this._attach = null;
                 removeNavigateRule('remainTime');
-                this._el?.remove(); this._el = null;
+                // Sweep by class, not just the tracked reference: a build
+                // before this fix could have left strays in the player.
+                document.querySelectorAll('.ytkit-remaining-time').forEach((el) => el.remove());
+                this._el = null;
             }
         },
         // Remaining Time sub-features
