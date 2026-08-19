@@ -2603,16 +2603,38 @@ if (selectorHealthRefreshBtn) {
 // in flight so a rapid double-click can't post two reports. Status line
 // announces the outcome through aria-live="polite" so screen readers
 // hear success/failure.
+// The copy-status lines are aria-live regions, and unlike showStatus they had
+// no auto-clear: a "Copied." sat there for the popup's lifetime, so two
+// dashboards could show stale results at once and the next update announced
+// them alongside the new one. Pending states are exempt, since the work they
+// describe can outlast the timer.
+const COPY_STATUS_CLEAR_MS = 4000;
+const _copyStatusTimers = new WeakMap();
+function makeCopyStatusSetter(el) {
+    return (msg, { pending = false } = {}) => {
+        if (!el) return;
+        const queued = _copyStatusTimers.get(el);
+        if (queued) {
+            clearTimeout(queued);
+            _copyStatusTimers.delete(el);
+        }
+        el.textContent = msg;
+        if (!msg || pending) return;
+        _copyStatusTimers.set(el, setTimeout(() => {
+            el.textContent = '';
+            _copyStatusTimers.delete(el);
+        }, COPY_STATUS_CLEAR_MS));
+    };
+}
+
 let _selectorHealthCopyInFlight = false;
 async function copySelectorHealthReport() {
     if (_selectorHealthCopyInFlight) return;
     if (!selectorHealthCopyBtn) return;
-    const setStatus = (msg) => {
-        if (selectorHealthCopyStatus) selectorHealthCopyStatus.textContent = msg;
-    };
+    const setStatus = makeCopyStatusSetter(selectorHealthCopyStatus);
     _selectorHealthCopyInFlight = true;
     selectorHealthCopyBtn.disabled = true;
-    setStatus(t('selectorHealthCopyPending', 'Building report…'));
+    setStatus(t('selectorHealthCopyPending', 'Building report…'), { pending: true });
     try {
         const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
         if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
@@ -2869,10 +2891,10 @@ function formatExternalApiHealthReport(services, meta = {}) {
 let _externalHealthCopyInFlight = false;
 async function copyExternalApiHealthReport() {
     if (_externalHealthCopyInFlight || !externalHealthCopyBtn) return;
-    const setStatus = (msg) => { if (externalHealthCopyStatus) externalHealthCopyStatus.textContent = msg; };
+    const setStatus = makeCopyStatusSetter(externalHealthCopyStatus);
     _externalHealthCopyInFlight = true;
     externalHealthCopyBtn.disabled = true;
-    setStatus(t('externalHealthCopyPending', 'Building report…'));
+    setStatus(t('externalHealthCopyPending', 'Building report…'), { pending: true });
     try {
         const snapshot = await requestExternalApiHealthSnapshot();
         if (!snapshot) {
@@ -6564,6 +6586,13 @@ function installWheelScrolling() {
     }
 
     openPanelButton.addEventListener('click', async () => {
+        // sendPanelOpenMessage waits up to 8s for an ack. Without a busy state
+        // the button looked idle for that whole window, and every extra click
+        // started another flight — each of which could fall through to
+        // tabs.create and open its own YouTube tab.
+        if (openPanelButton.disabled) return;
+        openPanelButton.disabled = true;
+        openPanelButton.setAttribute('aria-busy', 'true');
         try {
             const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
             const nextContext = getTabContext(tab || null);
@@ -6576,6 +6605,9 @@ function installWheelScrolling() {
         } catch (error) {
             console.warn('[Astra Deck popup] Failed to open the full workspace:', error);
             showStatus(t('statusOpenWorkspaceFail', 'Could not open the full workspace. Try again.'), 'error', 4200);
+        } finally {
+            openPanelButton.removeAttribute('aria-busy');
+            openPanelButton.disabled = false;
         }
     });
 
@@ -6587,12 +6619,18 @@ function installWheelScrolling() {
             : null;
         if (openSidePanel) {
             openSidePanelBtn.addEventListener('click', async () => {
+                if (openSidePanelBtn.disabled) return;
+                openSidePanelBtn.disabled = true;
+                openSidePanelBtn.setAttribute('aria-busy', 'true');
                 try {
                     const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
                     await openSidePanel({ tabId: tab?.id });
                     window.close();
                 } catch (err) {
                     showStatus(t('statusOpenDashboardFail', 'Could not open dashboard') + ': ' + err.message, 'error', 3000);
+                } finally {
+                    openSidePanelBtn.removeAttribute('aria-busy');
+                    openSidePanelBtn.disabled = false;
                 }
             });
         } else {
