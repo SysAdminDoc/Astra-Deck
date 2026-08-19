@@ -34,6 +34,21 @@ const schemaModule = require('../extension/core/settings-schema.js');
 
 const LOCALES = ['de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'];
 
+// Every source that ships inline widget CSS into the page. Features are being
+// peeled out of ytkit.js one at a time, so a theming contract that only reads
+// the monolith goes quiet the moment its feature moves. Read the whole shipped
+// set instead: the question is whether the extension injects a light override,
+// not which file the string happens to sit in today.
+const featuresDir = path.join(repoRoot, 'extension', 'features');
+const shippedInlineCss = [
+    ytkitSource,
+    ...fs.readdirSync(featuresDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => path.join(featuresDir, entry.name, 'index.js'))
+        .filter((file) => fs.existsSync(file))
+        .map((file) => fs.readFileSync(file, 'utf8'))
+].join('\n');
+
 // ── 1. Compact Clean UI preset gating ──
 
 test('early.css ships no unguarded owner-preset rules (toast suppression et al.)', () => {
@@ -276,13 +291,13 @@ test('every dark-only inline widget family has a light-theme override block', ()
         'html:not([dark]) .ytkit-monet-pill[data-tone="clean"]'
     ];
     for (const selector of families) {
-        assert.ok(ytkitSource.includes(selector),
-            `ytkit.js must carry a light-theme override for ${selector}`);
+        assert.ok(shippedInlineCss.includes(selector),
+            `the extension must ship a light-theme override for ${selector}`);
     }
     // overrides lean on YouTube's own tokens with sane fallbacks
-    assert.ok(ytkitSource.includes('var(--yt-spec-text-primary,#0f0f0f)'),
+    assert.ok(shippedInlineCss.includes('var(--yt-spec-text-primary,#0f0f0f)'),
         'light overrides must use --yt-spec-text-primary with a fallback');
-    assert.ok(ytkitSource.includes('var(--yt-spec-text-secondary,#606060)'),
+    assert.ok(shippedInlineCss.includes('var(--yt-spec-text-secondary,#606060)'),
         'light overrides must use --yt-spec-text-secondary with a fallback');
 });
 

@@ -341,7 +341,8 @@ test('thumbnail ratio bars expose text equivalents and reduced-motion styling', 
 });
 
 test('Return Dislike uses the RYD API with rate-limit budget', () => {
-    const [block] = extractFeatureBlock(sources.ytkit, 'returnDislike');
+    const block = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
     assert.match(block, /returnyoutubedislikeapi\.com/,
         'returnDislike must query the RYD API');
     assert.match(block, /_budgetWindow|_BUDGET_PER_MIN/,
@@ -354,11 +355,10 @@ test('Return Dislike renders the est. caveat disclosure', () => {
         'returnDislike must surface the estimate caveat');
 });
 
-test('Return Dislike cancels the pending render timer on teardown (both copies)', () => {
+test('Return Dislike cancels the pending render timer on teardown', () => {
     const modSrc = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
-    const [monolith] = extractFeatureBlock(sources.ytkit, 'returnDislike');
-    for (const [label, src] of [['module', modSrc], ['monolith', monolith]]) {
+    for (const [label, src] of [['module', modSrc]]) {
         assert.match(src, /_renderTimer/,
             `${label} must track the nav-render timer so it can be cancelled`);
         assert.match(src, /clearTimeout\(\s*(?:this\.)?_renderTimer\s*\)/,
@@ -366,11 +366,10 @@ test('Return Dislike cancels the pending render timer on teardown (both copies)'
     }
 });
 
-test('Return Dislike guards against a stale video after the fetch await (both copies)', () => {
+test('Return Dislike guards against a stale video after the fetch await', () => {
     const modSrc = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
-    const [monolith] = extractFeatureBlock(sources.ytkit, 'returnDislike');
-    for (const [label, src] of [['module', modSrc], ['monolith', monolith]]) {
+    for (const [label, src] of [['module', modSrc]]) {
         assert.match(src, /getVideoId\??\.?\(\)\s*!==\s*videoId/,
             `${label} _render must bail if the active video changed during the fetch await`);
     }

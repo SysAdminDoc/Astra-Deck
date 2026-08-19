@@ -3965,13 +3965,25 @@ test('downloadHistoryPanel pages, filters, exports, and shows an offline state',
         'must render an explicit offline state, not a blank panel');
 });
 
+// Source of createReturnDislikeFeature() only. The module also exports
+// createReturnDislikeCardsFeature, which carries its own budget window and
+// generation counter; an unbounded file match would let the card feature
+// satisfy assertions meant for the watch-page pill.
+function returnDislikeFactorySource() {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
+    const start = src.indexOf('function createReturnDislikeFeature');
+    assert.ok(start > -1, 'return-dislike module must export createReturnDislikeFeature');
+    const end = src.indexOf('\n    function ', start + 1);
+    assert.ok(end > start, 'createReturnDislikeFeature must be followed by another top-level function');
+    return src.slice(start, end);
+}
+
 // ── v3.28.0 P1: Ratings, clickbait, and metadata trust invariants ──
 
 test('returnDislike enforces a 100 req/min budget, cookieless fetch, and LRU-capped cache', () => {
-    const start = ytkitSource.indexOf("id: 'returnDislike'");
-    assert.ok(start > -1, 'returnDislike feature must exist');
-    const block = ytkitSource.slice(start, start + 12000);
-    assert.match(block, /_BUDGET_PER_MIN:\s*100/,
+    const block = returnDislikeFactorySource();
+    assert.match(block, /_BUDGET_PER_MIN\s*[:=]\s*100/,
         'must declare a 100 req/min budget');
     assert.match(block, /credentials:\s*'omit'/,
         'must fetch without cookies');
@@ -3981,47 +3993,37 @@ test('returnDislike enforces a 100 req/min budget, cookieless fetch, and LRU-cap
         'cache must be LRU-capped (500 entries)');
 });
 
-test('returnDislike fallback matches the module on persistence and teardown', () => {
-    // The ytkit.js fallback (used only when the peeled module fails to load)
-    // had drifted: it wrote the cache on every entry, kept no unload flush,
-    // and let a fetch that resolved after destroy() re-inject a pill.
-    const start = ytkitSource.indexOf("id: 'returnDislike'");
-    // init()/destroy() sit past the 12000-char window the older pins use.
-    const block = ytkitSource.slice(start, start + 20000);
-    assert.match(block, /this\._persistTimer = setTimeout\(/,
+test('returnDislike debounces cache writes and invalidates in-flight renders', () => {
+    // This began as a drift guard between the module and a second copy in
+    // ytkit.js: the copy wrote the cache on every entry, kept no unload flush,
+    // and let a fetch resolving after destroy() re-inject a pill. The copy was
+    // deleted in v4.72.0, so what is left is the contract itself.
+    const moduleSource = returnDislikeFactorySource();
+    assert.match(moduleSource, /_persistTimer = setTimeout\(/,
         'cache writes must be debounced, not one storage write per video');
-    assert.match(block, /window\.addEventListener\('pagehide', this\._pagehideFlush\)/,
+    assert.match(moduleSource, /addEventListener\('pagehide'/,
         'a tab closed inside the debounce window must still flush the cache');
-    assert.match(block, /this\._generation = \(this\._generation \+ 1\) \| 0/,
-        'destroy must invalidate in-flight renders');
-    assert.match(block, /if \(generation !== this\._generation\) return/,
+    assert.match(moduleSource, /_rydGeneration \+= 1/,
+        'destroy must invalidate in-flight renders through a generation counter');
+    assert.match(moduleSource, /if \(generation !== _rydGeneration\) return/,
         'render must bail when the generation moved while awaiting the fetch');
-
-    const moduleSource = fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8'
-    );
-    for (const marker of ['_rydGeneration', "addEventListener('pagehide'", '_persistTimer']) {
-        assert.ok(moduleSource.includes(marker),
-            `module copy must keep ${marker} — the fallback mirrors it`);
-    }
 });
 
 test('returnDislike honors returnDislikeCacheHours TTL with a sane minimum', () => {
-    const start = ytkitSource.indexOf("id: 'returnDislike'");
-    const block = ytkitSource.slice(start, start + 12000);
+    const block = returnDislikeFactorySource();
     assert.match(block, /Math\.max\(1,\s*Number\(appState\?\.settings\?\.returnDislikeCacheHours\)\s*\|\|\s*24\)/,
         'TTL must default to 24 h with a 1 h floor');
 });
 
 test('returnDislike discloses estimated accuracy in the rendered count UI', () => {
-    const start = ytkitSource.indexOf("id: 'returnDislike'");
-    assert.ok(start > -1, 'returnDislike feature must exist');
-    // The fallback now includes the Shorts surface resolver and in-flight
-    // request dedupe before teardown, so keep the static window wide enough
-    // to cover the cleanup assertions as the feature grows.
-    const block = ytkitSource.slice(start, start + 18000);
-    assert.match(block, /description: t\(['"]feature_returnDislike_desc['"],\s*['"]Restore an estimated dislike count/,
+    // The descriptor stub in ytkit.js still supplies the settings-list copy;
+    // everything the render path does lives in the feature module.
+    const stubStart = ytkitSource.indexOf("id: 'returnDislike'");
+    assert.ok(stubStart > -1, 'returnDislike descriptor must exist in ytkit.js');
+    assert.match(ytkitSource.slice(stubStart, stubStart + 1200),
+        /description: t\(['"]feature_returnDislike_desc['"],\s*['"]Restore an estimated dislike count/,
         'feature description must name the restored count as estimated');
+    const block = returnDislikeFactorySource();
     assert.match(block, /_estimateDisclosureText\(\)/,
         'render path must centralize the estimate disclosure copy');
     assert.match(block, /low-traffic videos can be less accurate/,
@@ -11485,16 +11487,12 @@ test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age t
     const ytkitSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
     );
-    const renderIdx = ytkitSrc.indexOf('id: \'returnDislike\'');
-    assert.ok(renderIdx > -1, 'returnDislike feature must exist');
-    // Slice the whole feature block (up to next "id:" entry). Window widened
-    // when the fallback gained the module's persist debounce/pagehide flush.
-    // Keep the whole fallback in view: the Shorts target resolver and
-    // in-flight dedupe add code before the cached-data branch.
-    const slice = ytkitSrc.slice(renderIdx, renderIdx + 18000);
+    // The render path moved to features/return-dislike/index.js in v4.72.0;
+    // ytkit.js keeps only the descriptor stub.
+    const slice = returnDislikeFactorySource();
 
     // The differentiation logic must check the budget window state.
-    assert.match(slice, /const rateLimited = this\._budgetWindow\.count >= this\._BUDGET_PER_MIN/,
+    assert.match(slice, /const rateLimited = _budgetWindow\.count >= _BUDGET_PER_MIN/,
         'render must compute rateLimited from _budgetWindow + _BUDGET_PER_MIN');
     assert.match(slice, /windowAge < 60000/,
         'render must respect the 60s sliding window for rate-limit detection');
