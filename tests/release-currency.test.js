@@ -45,10 +45,21 @@ test('the report names both halves of the staleness', () => {
         assert.match(result.output, /is tagged and every channel points at it/);
         return;
     }
-    assert.match(result.output, /release commit .* but no v[\d.]+ tag/,
-        'an untagged release commit must be named');
-    assert.match(result.output, /newest tag is v[\d.]+, but \d+ of \d+ channel\(s\)/,
-        'channel-pointer lag must be reported against the newest tag');
+    // The two halves are independent. Between bumping the version strings and
+    // committing them there is no chore(release) commit yet, so only the
+    // channel half fires — the notice must still be well-formed in that window.
+    const halves = [
+        /release commit .* but no v[\d.]+ tag/,
+        /newest tag is v[\d.]+, but \d+ of \d+ channel\(s\)/
+    ];
+    assert.ok(halves.some((half) => half.test(result.output)),
+        'a NOTICE must name at least one concrete reason');
+    for (const half of halves) {
+        const loose = half === halves[0] ? /release commit/ : /newest tag is/;
+        if (loose.test(result.output)) {
+            assert.match(result.output, half, 'a reported half must carry its detail');
+        }
+    }
     assert.match(result.output, /git tag v[\d.]+/, 'the report must say how to fix it');
     assert.match(result.output, /--require-release-current/,
         'the report must name the flag that turns it into a failure');
