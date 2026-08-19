@@ -353,7 +353,7 @@
     "message": "Schnellumschalter werden jetzt gespeichert und synchronisiert, wenn YouTube geöffnet ist."
   },
   "contextNoteInlinePanel": {
-    "message": "Öffne den vollständigen Arbeitsbereich in diesem Tab; Schnellumschalter werden sofort angewendet."
+    "message": "Öffnen Sie den Einstellungs-Arbeitsbereich in diesem Tab. Schnellschalter wirken sofort."
   },
   "contextNoteLaunch": {
     "message": "Öffne einen YouTube-Tab, um den vollständigen seiteninternen Arbeitsbereich zu nutzen."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "Es wird keiner Filterliste gefolgt."
   },
+  "filterListStatusStateReadFail": {
+    "message": "Der Filterlisten-Status konnte nicht gelesen werden. Laden Sie die Erweiterung neu und öffnen Sie das Popup erneut."
+  },
   "filterListStatusRefreshFail": {
     "message": "Die Liste konnte nicht aktualisiert werden. Prüfen Sie die Adresse und versuchen Sie es erneut."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "Vollständige Einstellungen öffnen"
+    "message": "Arbeitsbereich öffnen"
   },
   "openYouTube": {
     "message": "YouTube öffnen"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "Import gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Sitzungsspeicher des Browsers sichern. Exportieren Sie zuerst eine Sicherung."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "Zurücksetzen fehlgeschlagen"
   },
   "statusResetSnapshotFail": {
-    "message": "Zurücksetzen abgebrochen — konnte keinen Rückgängig-Snapshot erstellen (Daten zu groß für wiederherstellbares Zurücksetzen). Zuerst ein Backup exportieren."
+    "message": "Zurücksetzen gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Sitzungsspeicher des Browsers sichern. Exportieren Sie zuerst eine Sicherung."
   },
   "statusResetUndoExpired": {
     "message": "Rückgängig nicht mehr verfügbar — Snapshot mit der Browser-Sitzung abgelaufen."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "Überspringen und manuell einrichten"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

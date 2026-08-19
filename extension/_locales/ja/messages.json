@@ -353,7 +353,7 @@
     "message": "クイックトグルは保存済みで、YouTube を開くと同期されます。"
   },
   "contextNoteInlinePanel": {
-    "message": "このタブでフルワークスペースを開きます。クイックトグルは即座に反映されます。"
+    "message": "このタブで設定ワークスペースを開きます。クイック切り替えはすぐに反映されます。"
   },
   "contextNoteLaunch": {
     "message": "フルページ内ワークスペースを使用するには、YouTube タブを開いてください。"
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "購読中のフィルターリストはありません。"
   },
+  "filterListStatusStateReadFail": {
+    "message": "フィルターリストの状態を読み取れませんでした。拡張機能を再読み込みしてから、ポップアップを開き直してください。"
+  },
   "filterListStatusRefreshFail": {
     "message": "リストを更新できませんでした。アドレスを確認してからもう一度お試しください。"
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "完全な設定を開く"
+    "message": "ワークスペースを開く"
   },
   "openYouTube": {
     "message": "YouTube を開く"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "インポートを中止しました。Astra Deck はブラウザーのセッションストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。"
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "リセット失敗"
   },
   "statusResetSnapshotFail": {
-    "message": "リセット中止 — 復元用スナップショットを作成できませんでした（データが大きすぎます）。先にバックアップをエクスポートしてください。"
+    "message": "リセットを中止しました。Astra Deck はブラウザーのセッションストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。"
   },
   "statusResetUndoExpired": {
     "message": "元に戻すが利用できません — スナップショットはブラウザセッションとともに期限切れになりました。"
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "スキップして手動で設定"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

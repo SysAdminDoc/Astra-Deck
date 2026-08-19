@@ -353,7 +353,7 @@
     "message": "Быстрые переключатели сохраняются и синхронизируются при открытии YouTube."
   },
   "contextNoteInlinePanel": {
-    "message": "Откройте полную рабочую область на этой вкладке; быстрые переключатели применяются мгновенно."
+    "message": "Откройте рабочую область настроек на этой вкладке. Быстрые переключатели применяются сразу."
   },
   "contextNoteLaunch": {
     "message": "Откройте вкладку YouTube для доступа к полной рабочей области на странице."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "Ни один список фильтров не используется."
   },
+  "filterListStatusStateReadFail": {
+    "message": "Не удалось прочитать состояние списка фильтров. Перезагрузите расширение и снова откройте всплывающее окно."
+  },
   "filterListStatusRefreshFail": {
     "message": "Не удалось обновить список. Проверьте адрес и повторите попытку."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "Открыть полные настройки"
+    "message": "Открыть рабочую область"
   },
   "openYouTube": {
     "message": "Открыть YouTube"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "Импорт остановлен. Astra Deck не смог сохранить точку отмены в сессионном хранилище браузера. Сначала экспортируйте резервную копию."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "Ошибка сброса"
   },
   "statusResetSnapshotFail": {
-    "message": "Сброс отменён — не удалось создать резервную копию (данные слишком большие). Сначала экспортируйте резервную копию."
+    "message": "Сброс остановлен. Astra Deck не смог сохранить точку отмены в сессионном хранилище браузера. Сначала экспортируйте резервную копию."
   },
   "statusResetUndoExpired": {
     "message": "Отмена больше недоступна — резервная копия истекла с сессией браузера."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "Пропустить и настроить вручную"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

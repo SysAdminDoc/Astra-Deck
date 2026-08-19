@@ -353,7 +353,7 @@
     "message": "Gli interruttori rapidi vengono salvati subito e sincronizzati quando YouTube e aperto."
   },
   "contextNoteInlinePanel": {
-    "message": "Apri l'area di lavoro completa in questa scheda; gli interruttori rapidi si applicano immediatamente."
+    "message": "Apri l'area di lavoro delle impostazioni in questa scheda. Gli interruttori rapidi si applicano subito."
   },
   "contextNoteLaunch": {
     "message": "Apri una scheda YouTube per usare l'area di lavoro completa nella pagina."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "Nessuna lista di filtri è attiva."
   },
+  "filterListStatusStateReadFail": {
+    "message": "Impossibile leggere lo stato dell'elenco filtri. Ricarica l'estensione e riapri il popup."
+  },
   "filterListStatusRefreshFail": {
     "message": "Impossibile aggiornare la lista. Controlla l'indirizzo e riprova."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "Apri impostazioni complete"
+    "message": "Apri l'area di lavoro"
   },
   "openYouTube": {
     "message": "Apri YouTube"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "Importazione interrotta. Astra Deck non è riuscito a salvare un punto di annullamento nell'archivio di sessione del browser. Esporta prima un backup."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "Reset fallito"
   },
   "statusResetSnapshotFail": {
-    "message": "Ripristino annullato -- impossibile creare uno snapshot di annullamento (dati troppo grandi per un ripristino recuperabile). Esporta prima un backup."
+    "message": "Ripristino interrotto. Astra Deck non è riuscito a salvare un punto di annullamento nell'archivio di sessione del browser. Esporta prima un backup."
   },
   "statusResetUndoExpired": {
     "message": "Annullamento non piu disponibile -- lo snapshot e scaduto con la sessione del browser."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "Salta e configura manualmente"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."

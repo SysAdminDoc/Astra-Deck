@@ -353,7 +353,7 @@
     "message": "빠른 토글이 저장되었으며 YouTube가 열리면 동기화됩니다."
   },
   "contextNoteInlinePanel": {
-    "message": "이 탭에서 전체 작업 공간을 엽니다. 빠른 토글은 즉시 적용됩니다."
+    "message": "이 탭에서 설정 작업 공간을 엽니다. 빠른 전환은 즉시 적용됩니다."
   },
   "contextNoteLaunch": {
     "message": "전체 페이지 내 작업 공간을 사용하려면 YouTube 탭을 열어주세요."
@@ -3911,6 +3911,9 @@
   "filterListStatusReady": {
     "message": "구독 중인 필터 목록이 없습니다."
   },
+  "filterListStatusStateReadFail": {
+    "message": "필터 목록 상태를 읽지 못했습니다. 확장 프로그램을 다시 로드한 후 팝업을 다시 여세요."
+  },
   "filterListStatusRefreshFail": {
     "message": "목록을 새로 고칠 수 없습니다. 주소를 확인한 후 다시 시도하세요."
   },
@@ -4101,7 +4104,7 @@
     "message": "Dashboard"
   },
   "openFullSettings": {
-    "message": "전체 설정 열기"
+    "message": "작업 공간 열기"
   },
   "openYouTube": {
     "message": "YouTube 열기"
@@ -5633,7 +5636,7 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import aborted - could not stage an undo snapshot. Export a backup first."
+    "message": "가져오기를 중단했습니다. Astra Deck이 브라우저 세션 저장소에 실행 취소 지점을 저장하지 못했습니다. 먼저 백업을 내보내세요."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
@@ -5675,7 +5678,7 @@
     "message": "재설정 실패"
   },
   "statusResetSnapshotFail": {
-    "message": "재설정 중단 — 실행 취소 스냅샷을 준비할 수 없습니다 (복구 가능한 재설정에 비해 데이터가 너무 큼). 먼저 백업을 내보내세요."
+    "message": "초기화를 중단했습니다. Astra Deck이 브라우저 세션 저장소에 실행 취소 지점을 저장하지 못했습니다. 먼저 백업을 내보내세요."
   },
   "statusResetUndoExpired": {
     "message": "실행 취소를 더 이상 사용할 수 없습니다 — 브라우저 세션이 종료되어 스냅샷이 만료되었습니다."
@@ -7574,7 +7577,7 @@
     "message": "Researcher"
   },
   "welcomePresetSkip": {
-    "message": "Skip - configure manually"
+    "message": "건너뛰고 직접 설정"
   },
   "welcomeProfileFullDesc": {
     "message": "Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers."
