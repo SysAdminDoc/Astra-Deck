@@ -368,26 +368,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified (trace); recommend a 2-navigation live confirm
   Effort: S
 
-- [ ] P3 — `YTKIT_AI_SUMMARY_REQUEST` spends the stored provider credential from content-script context without the grant re-check or rate limit its siblings have
-  Category: security (defense-in-depth)
-  Where: `extension/background.js:1471-1477` (`YTKIT_AI_CREDENTIAL_STATUS/SET/DELETE` reject `sender.tab`) vs `:1501-1515` (`YTKIT_AI_SUMMARY_REQUEST` has no such guard) → `performAiSummaryRequest` `:199-276`
-  Problem: the endpoint is origin-locked (`core/credential-vault.js:44-49`) and the response is scanned so the key cannot be exfiltrated, but a compromised isolated-world content script can drive the user's paid OpenAI/Anthropic/Google key for arbitrary completions: unlike `EXT_FETCH` (`:1877`) there is no `requireRuntimeOptionalHostGrant` re-check, and there is no throttle or in-flight cap. Content-script reachability is by design (the in-page AI summary calls it) — this is a hardening asymmetry, not a vuln.
-  Evidence: dispatch guards compared by hand; vault origin-lock and response scan confirmed by the trust-boundary sweep.
-  Fix: gate the handler behind `requireRuntimeOptionalHostGrant(validated.url)` and add a coarse per-tab rate limit / in-flight cap mirroring `_downloadInProgress`.
-  Acceptance: an ungranted provider origin is refused; a burst of requests from one tab is throttled; existing AI-summary tests stay green.
-  Confidence: Verified (asymmetry); impact bounded
-  Effort: S
-
-- [ ] P3 — Cookie-handoff document binding silently degrades to tab+store when the browser omits `sender.documentId`
-  Category: security (contract accuracy)
-  Where: `extension/background.js:349` (`documentId: … : null`), `sameCookieHandoffBinding` `:356-362`
-  Problem: when the host doesn't populate `documentId`, issue-time and consume-time both hold `null`, so `null === null` passes and the advertised tab+frame+document+container binding quietly loses its document leg — within the 20 s TTL a same-tab top-frame navigation could satisfy a binding a different document originated. Single-use, TTL, frame-lock, and https-youtube-lock all still hold, so exposure is bounded to the four sanitized cookies.
-  Evidence: binding construction and comparison verified by hand; all other legs confirmed enforced by the trust-boundary sweep.
-  Fix: refuse to ISSUE a capability when `documentId` is absent (fail closed), or additionally bind `sender.url` — otherwise document the degradation in the contract instead of asserting document binding unconditionally.
-  Acceptance: with a simulated `documentId`-less sender, issuance is refused (or the fallback binding is asserted and documented); a test covers the null-vs-null path.
-  Confidence: Verified (code path); real-world reachability Needs-repro
-  Effort: S
-
 - [ ] P3 — One rejected deferred feature module fails the entire runtime
   Category: reliability
   Where: `extension/runtime-bootstrap.js:349` (`Promise.all` over deferred feature imports; a single rejection fails the whole runtime and `ytkit.js` never runs)

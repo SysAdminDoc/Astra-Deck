@@ -196,6 +196,57 @@ async function getZeroAdStatus() {
     };
 }
 
+// The AI summary endpoint is reachable from the isolated content script by
+// design -- the in-page summary button calls it. That is a deliberate
+// capability, but unlike EXT_FETCH it carried no grant re-check and no
+// throttle, so a compromised content script could drive the user's paid
+// provider key for arbitrary completions at whatever rate it liked. The key
+// itself is safe (origin-locked vault, response scanned for credential
+// material); what was unbounded was the SPEND.
+const AI_MAX_IN_FLIGHT_PER_TAB = 2;
+const AI_MIN_REQUEST_INTERVAL_MS = 1500;
+const AI_TAB_BUDGET_TTL_MS = 5 * 60 * 1000;
+const _aiTabBudgets = new Map();
+
+function _pruneAiTabBudgets(now) {
+    if (_aiTabBudgets.size < 64) return;
+    for (const [tabId, budget] of _aiTabBudgets) {
+        if (budget.inFlight <= 0 && now - budget.lastStart > AI_TAB_BUDGET_TTL_MS) {
+            _aiTabBudgets.delete(tabId);
+        }
+    }
+}
+
+// Returns a release() the caller MUST invoke, or throws a coded error.
+function acquireAiRequestSlot(sender) {
+    // A popup-originated request has no tab and is already trust-gated.
+    const tabId = sender?.tab?.id;
+    if (!Number.isInteger(tabId)) return () => {};
+    const now = Date.now();
+    _pruneAiTabBudgets(now);
+    const budget = _aiTabBudgets.get(tabId) || { inFlight: 0, lastStart: 0 };
+    if (budget.inFlight >= AI_MAX_IN_FLIGHT_PER_TAB) {
+        const error = new Error('Too many AI requests are already in flight for this tab.');
+        error.code = 'AI_RATE_LIMITED';
+        throw error;
+    }
+    if (now - budget.lastStart < AI_MIN_REQUEST_INTERVAL_MS) {
+        const error = new Error('AI requests from this tab are being sent too quickly.');
+        error.code = 'AI_RATE_LIMITED';
+        throw error;
+    }
+    budget.inFlight += 1;
+    budget.lastStart = now;
+    _aiTabBudgets.set(tabId, budget);
+    let released = false;
+    return () => {
+        if (released) return;
+        released = true;
+        const current = _aiTabBudgets.get(tabId);
+        if (current) current.inFlight = Math.max(0, current.inFlight - 1);
+    };
+}
+
 async function performAiSummaryRequest(details) {
     if (!_credentialVault) throw new Error('AI credential vault is unavailable.');
     const validator = globalThis.YTKitCore?.validateAiProviderEndpoint;
@@ -231,6 +282,10 @@ async function performAiSummaryRequest(details) {
         Number.isFinite(requestedTimeout) && requestedTimeout > 0 ? requestedTimeout : MAX_FETCH_TIMEOUT_MS,
         MAX_FETCH_TIMEOUT_MS
     ));
+    // Same door EXT_FETCH goes through. A provider origin the user never
+    // granted must not be reachable just because a credential exists for it.
+    await requireRuntimeOptionalHostGrant(validated.url);
+
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
         const response = await fetch(validated.url, {
@@ -347,6 +402,14 @@ function cookieHandoffSenderBinding(sender) {
         tabId,
         frameId: 0,
         documentId: typeof sender.documentId === 'string' ? sender.documentId.slice(0, 256) : null,
+        // Second document-identity leg. When the host does not populate
+        // documentId, issue-time and consume-time both hold null and
+        // `null === null` passes -- the advertised document binding quietly
+        // degrades to tab+container, and within the 20s TTL a same-tab
+        // top-frame navigation could satisfy a binding a different document
+        // originated. The document's own URL closes that gap without
+        // requiring documentId support.
+        documentUrl: parsed.origin + parsed.pathname,
         cookieStoreId: typeof sender.tab.cookieStoreId === 'string'
             ? sender.tab.cookieStoreId.slice(0, 128)
             : null
@@ -358,6 +421,7 @@ function sameCookieHandoffBinding(left, right) {
         && left.tabId === right.tabId
         && left.frameId === right.frameId
         && left.documentId === right.documentId
+        && left.documentUrl === right.documentUrl
         && left.cookieStoreId === right.cookieStoreId;
 }
 
@@ -1494,7 +1558,12 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'YTKIT_AI_SUMMARY_REQUEST') {
         (async () => {
             await _credentialMigrationReady;
-            sendResponse(await performAiSummaryRequest(msg));
+            const release = acquireAiRequestSlot(sender);
+            try {
+                sendResponse(await performAiSummaryRequest(msg));
+            } finally {
+                release();
+            }
         })().catch((error) => {
             sendResponse({
                 ok: false,
