@@ -6433,6 +6433,18 @@
   "toastDlStopped": {
     "message": "本地下载器已停止。正在重新启动…"
   },
+  "toggleRiskTooltip_api": {
+    "message": "Talks to an external API server"
+  },
+  "toggleRiskTooltip_experimental": {
+    "message": "Experimental feature; behaviour may change"
+  },
+  "toggleRiskTooltip_local_companion": {
+    "message": "Talks to the local Astra Downloader (127.0.0.1)"
+  },
+  "toggleRiskTooltip_store_risk": {
+    "message": "Higher review-policy sensitivity — github-full only"
+  },
   "toggleStateOff": {
     "message": "已禁用"
   },

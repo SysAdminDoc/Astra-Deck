@@ -526,16 +526,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — Risk-badge tooltips are structurally unlocalizable: the dynamic key contains a hyphen chrome.i18n forbids
-  Category: i18n
-  Where: `extension/popup.js:1960` — `t('toggleRiskTooltip_' + entry.risk, {…inline EN map})`; risk vocabulary includes `local-companion` and `store-risk` (`extension/core/settings-schema.js:34`)
-  Problem: no `toggleRiskTooltip_*` key exists in any locale (grep: 0 in EN), and for the two hyphenated bands none CAN exist on the `ext.i18n` path — message names allow only `[A-Za-z0-9_]`. The tooltip renders inline English in all 11 locales forever, and naively adding keys later would silently fix only 2 of 4 bands.
-  Evidence: verified by hand — key pattern at `:1960`, zero matches in `_locales/en/messages.json`.
-  Fix: normalize the dynamic key (`entry.risk.replace(/-/g,'_')`) and add the four keys through the locale recipe.
-  Acceptance: all four risk tooltips localize; a test asserts every value in the risk vocabulary resolves to an existing key after normalization.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Microcopy consistency batch (popup + sidepanel)
   Category: ux / docs
   Where: (a) `extension/popup.js:4965` vs `:5257` — one key `filterListStatusRefreshFail` serves two different failures; the service-unavailable branch tells users to "Check the address, then try again" when the address is fine and retrying cannot help; (b) `popup.html:85` "Skip - configure manually" uses a hyphen where the surface's style is an em dash; (c) the same destination is named "Open Full Settings", "the full workspace", and "Settings workspace" across `openFullSettings`/`contextNoteInlinePanel`/`workspaceEyebrow`; (d) `popup.js:1138/1151` directs users to "Settings Overview" while the section is titled "Settings overview"; (e) `sidepanel.js:715` renders "Unavailable" where sibling placeholders are `'--'`/`'-'` (`:714`, `sidepanel.html:47`).
