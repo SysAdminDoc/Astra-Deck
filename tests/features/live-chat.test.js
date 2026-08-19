@@ -60,3 +60,42 @@ test('recycled chat renderers re-evaluate instead of keeping the previous messag
     assert.match(premiumBody, /ytkitLivechatAuthor === author/,
         'the premium scan must re-derive when the author changes');
 });
+
+
+test('the chat mode-notice toggle hides the renderer and ships on by default', () => {
+    // "Slow mode is on" (and the members-only / subscribers-only notices that
+    // share the renderer) is a chat message YouTube injects on its own. The
+    // visible copy is translated, so the renderer tag is the only handle that
+    // works outside English — the same lesson the popout selector above
+    // records.
+    const moduleSource = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'live-chat', 'index.js'), 'utf8');
+    const monolith = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
+    const schema = require('../../extension/core/settings-schema.js');
+    const defaults = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'default-settings.json'), 'utf8'));
+
+    for (const [label, source] of [['module', moduleSource], ['ytkit.js', monolith]]) {
+        assert.match(source, /modeNotices: 'yt-live-chat-mode-change-message-renderer'/,
+            `${label} must hide the mode-change renderer by tag, not by its translated text`);
+    }
+    // Scoped to the selector value itself: prose above it may quote the English
+    // notice while explaining why the selector must not match on it.
+    const selectorLine = moduleSource.match(/modeNotices: '[^']*'/)[0];
+    assert.doesNotMatch(selectorLine, /:contains|aria-label=|Slow mode/,
+        'matching the translated notice copy would no-op in every locale but English');
+
+    const entry = (schema.SETTINGS_SCHEMA || schema.settingsSchema || [])
+        .find((item) => item.key === 'hiddenChatElements');
+    assert.ok(entry, 'hiddenChatElements must exist in the schema');
+    assert.ok(entry.knownValues.includes('modeNotices'),
+        'modeNotices must be a known value or the settings UI cannot offer it');
+    assert.ok(entry.defaultValue.includes('modeNotices'),
+        'the toggle ships enabled: the notice is noise for most viewers');
+    assert.ok(defaults.hiddenChatElements.includes('modeNotices'),
+        'default-settings.json must agree with the schema default');
+
+    assert.match(monolith, /\['modeNotices','Mode Notices',/,
+        'the sub-feature row must exist so the toggle is reachable in settings');
+});

@@ -7870,5 +7870,11 @@
   },
   "ui_commentLikeBadgeCountAriaTpl": {
     "message": "{label}. Отметок «Нравится»: {count}"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "Уведомления о режиме"
+  },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "Скрывать уведомление «медленный режим включён» и похожие уведомления для участников"
   }
 }

@@ -7870,5 +7870,11 @@
   },
   "ui_commentLikeBadgeCountAriaTpl": {
     "message": "{label}。高評価 {count} 件"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "モード通知"
+  },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "「低速モードがオンです」の通知やメンバー限定の同様の通知を非表示にします"
   }
 }

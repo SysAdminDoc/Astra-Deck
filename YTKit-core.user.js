@@ -3207,7 +3207,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // JSON textarea). Optional — entries without `knownValues` keep
     // the JSON path. The array MUST be a superset of the default value
     // so a fresh install can deselect any element.
-    Object.freeze({ key: "hiddenChatElements", category: "live-chat", type: "array", defaultValue: ["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"], knownValues: Object.freeze(["header","menu","popout","reactions","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"]), risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "hiddenChatElements", category: "live-chat", type: "array", defaultValue: ["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots","modeNotices"], knownValues: Object.freeze(["header","menu","popout","reactions","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots","modeNotices"]), risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "chatKeywordFilter", category: "live-chat", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── watch-player ───

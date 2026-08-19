@@ -7870,5 +7870,11 @@
   },
   "ui_commentLikeBadgeCountAriaTpl": {
     "message": "{label}. {count} Mal „Gefällt mir“"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "Modushinweise"
+  },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "„Zeitlupenmodus ist aktiv“ und ähnliche Hinweise nur für Mitglieder ausblenden"
   }
 }

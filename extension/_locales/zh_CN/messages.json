@@ -7870,5 +7870,11 @@
   },
   "ui_commentLikeBadgeCountAriaTpl": {
     "message": "{label}。{count} 个赞"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "模式提示"
+  },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "隐藏“慢速模式已开启”提示及其仅限会员的同类提示"
   }
 }

@@ -78,7 +78,8 @@
     "topFan",
     "superChats",
     "levelUp",
-    "bots"
+    "bots",
+    "modeNotices"
   ],
   "chatKeywordFilter": "",
   "hiddenActionButtonsManager": true,
