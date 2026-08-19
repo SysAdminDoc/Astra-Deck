@@ -445,6 +445,7 @@
   },
   "expectedDefaulted": [
     "_scheduleRestore",
+    "antiTranslateChapters",
     "antiTranslateThumbnails",
     "audioAutoGain",
     "audioEqHighGainDb",

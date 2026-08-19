@@ -502,6 +502,7 @@
   "antiTranslateAudioTrack": false,
   "antiTranslateTranscript": false,
   "antiTranslateThumbnails": false,
+  "antiTranslateChapters": false,
   "monetizationIndicator": false,
   "subscriptionGroups": false,
   "subscriptionGroupData": {},

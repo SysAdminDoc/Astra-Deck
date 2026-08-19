@@ -139,6 +139,7 @@
     // ── bundled module: extension/core/external-api-health.js ──
     // ── bundled module: extension/core/selector-health.js ──
     // ── bundled module: extension/core/feature-health.js ──
+    // ── bundled module: extension/core/chapters.js ──
     // ── bundled module: extension/core/dialog-guard.js ──
     // ── bundled module: extension/core/hide-attribution.js ──
     // ── bundled module: extension/core/heatmap.js ──
@@ -11355,6 +11356,91 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl = injectStyle(css, this.id, true);
             },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            // v4.70.0 - ported from the extension. One adaptation for this
+            // vehicle: the player response is read straight off `window`,
+            // because userscripts run in page context and there is no _rw
+            // bridge. The chapter parsing itself comes from the bundled
+            // core/chapters.js, so both vehicles share one rule set.
+            id: 'antiTranslateChapters',
+            name: 'Anti-Translate Chapters',
+            description: 'Restores original-language chapter titles in the chapter list and the player hover label. Reads them from the original description, which is where YouTube builds chapters from in the first place.',
+            group: 'Content',
+            icon: 'list',
+            _navRule: null,
+            _chapters: null,
+            _chapterVideoId: null,
+
+            _readOriginalChapters() {
+                const videoId = getVideoId();
+                if (videoId && videoId === this._chapterVideoId && this._chapters) return this._chapters;
+                if (typeof parseDescriptionChapters !== 'function') return null;
+                let description = '';
+                try {
+                    description = window.ytInitialPlayerResponse?.videoDetails?.shortDescription || '';
+                } catch {
+                    // reason: without the player response there is no original
+                    // text to restore from.
+                    description = '';
+                }
+                const chapters = parseDescriptionChapters(description);
+                this._chapters = chapters.length ? chapters : null;
+                this._chapterVideoId = videoId || null;
+                return this._chapters;
+            },
+
+            _collectRows() {
+                const rows = [];
+                document.querySelectorAll('ytd-macro-markers-list-item-renderer').forEach(el => {
+                    const titleEl = el.querySelector('.macro-markers-list-item-text, #details h4');
+                    const timeEl = el.querySelector('.macro-markers-list-item-time, #time');
+                    const title = titleEl?.textContent?.trim();
+                    const timestampText = timeEl?.textContent?.trim();
+                    if (title && timestampText) rows.push({ title, timestampText, titleEl });
+                });
+                return rows;
+            },
+
+            _process() {
+                const chapters = this._readOriginalChapters();
+                if (!chapters) return;
+                if (typeof planChapterRestore !== 'function') return;
+                const rows = this._collectRows().filter(row => !row.titleEl.hasAttribute('ytkit-antitranslate-chapter'));
+                if (!rows.length) return;
+                const plan = planChapterRestore(rows, chapters);
+                for (const entry of plan) {
+                    entry.row.titleEl.textContent = entry.to;
+                    entry.row.titleEl.setAttribute('ytkit-antitranslate-chapter', '1');
+                }
+                for (const row of rows) {
+                    if (!row.titleEl.hasAttribute('ytkit-antitranslate-chapter')) {
+                        const original = findChapterTitle(chapters, parseChapterTimestamp(row.timestampText));
+                        if (original) row.titleEl.setAttribute('ytkit-antitranslate-chapter', '1');
+                    }
+                }
+            },
+
+            init() {
+                this._navRule = () => {
+                    this._chapters = null;
+                    this._chapterVideoId = null;
+                    document.querySelectorAll('[ytkit-antitranslate-chapter]').forEach(el => el.removeAttribute('ytkit-antitranslate-chapter'));
+                    setTimeout(() => this._process(), 1200);
+                };
+                addNavigateRule(this.id, this._navRule);
+                addMutationRule(this.id, () => this._process());
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                removeMutationRule(this.id);
+                this._navRule = null;
+                this._chapters = null;
+                this._chapterVideoId = null;
+                document.querySelectorAll('[ytkit-antitranslate-chapter]').forEach(el => el.removeAttribute('ytkit-antitranslate-chapter'));
+            }
         },
         {
             // v4.69.0 - ported from the extension. Two adaptations for this

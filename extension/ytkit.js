@@ -35,6 +35,10 @@
         resolveOriginalThumbnail,
         normalizeFeatureSchedules,
         planScheduleTransitions,
+        findChapterTitle,
+        parseChapterTimestamp,
+        parseDescriptionChapters,
+        planChapterRestore,
         findComplianceDialog,
         isSafeToAutoClick,
         getHideAttributionCounts,
@@ -3968,7 +3972,8 @@ return response;
             qualityDefaultBackground: 'inherit',
             qualityDefaultEmbed: 'inherit',
             antiTranslateAudioTrack: false,            // Force original audio track on every video
-            antiTranslateThumbnails: false,            // Restore the original-language thumbnail image
+            antiTranslateThumbnails: false,
+            antiTranslateChapters: false,            // Restore the original-language thumbnail image
             feedPrefilter: false,                      // Drop blocked channels from the browse response before Polymer renders it
             featureSchedules: {},                      // featureId -> { start, end, days, enabled } active window
             _scheduleRestore: {},                      // featureId -> value held from before its window opened
@@ -42836,6 +42841,94 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule(this.id);
                 removeMutationRule(this.id);
                 this._navRule = null;
+            }
+        },
+        {
+            id: 'antiTranslateChapters',
+            name: 'Anti-Translate Chapters',
+            description: 'Restores original-language chapter titles in the chapter list and the player hover label. Reads them from the original description, which is where YouTube builds chapters from in the first place.',
+            group: 'Content',
+            icon: 'list',
+            pages: [PageTypes.WATCH],
+            _navRule: null,
+            _chapters: null,
+            _chapterVideoId: null,
+
+            // The original chapter titles live in the ORIGINAL description,
+            // because that is what YouTube parses to build them. Anything
+            // rendered on the page has already been through translation.
+            _readOriginalChapters() {
+                const videoId = getVideoId();
+                if (videoId && videoId === this._chapterVideoId && this._chapters) return this._chapters;
+                if (typeof parseDescriptionChapters !== 'function') return null;
+                let description = '';
+                try {
+                    description = _rw.ytInitialPlayerResponse?.videoDetails?.shortDescription || '';
+                } catch {
+                    // reason: the page world can withhold the player response;
+                    // without it there is no original text to restore from.
+                    description = '';
+                }
+                const chapters = parseDescriptionChapters(description);
+                this._chapters = chapters.length ? chapters : null;
+                this._chapterVideoId = videoId || null;
+                return this._chapters;
+            },
+
+            // Every rendered chapter row that carries both a timestamp and a
+            // title, from the chapter rail and the description's own list.
+            _collectRows() {
+                const rows = [];
+                document.querySelectorAll('ytd-macro-markers-list-item-renderer').forEach(el => {
+                    const titleEl = el.querySelector('.macro-markers-list-item-text, #details h4');
+                    const timeEl = el.querySelector('.macro-markers-list-item-time, #time');
+                    const title = titleEl?.textContent?.trim();
+                    const timestampText = timeEl?.textContent?.trim();
+                    if (title && timestampText) rows.push({ title, timestampText, titleEl });
+                });
+                return rows;
+            },
+
+            _process() {
+                const chapters = this._readOriginalChapters();
+                if (!chapters) return;
+                if (typeof planChapterRestore !== 'function') return;
+                const rows = this._collectRows().filter(row => !row.titleEl.hasAttribute('ytkit-antitranslate-chapter'));
+                if (!rows.length) return;
+                const plan = planChapterRestore(rows, chapters);
+                for (const entry of plan) {
+                    entry.row.titleEl.textContent = entry.to;
+                    entry.row.titleEl.setAttribute('ytkit-antitranslate-chapter', '1');
+                }
+                // Rows that matched a chapter and already read correctly are
+                // stamped too, so a settled list stops being re-examined.
+                for (const row of rows) {
+                    if (!row.titleEl.hasAttribute('ytkit-antitranslate-chapter')) {
+                        const original = findChapterTitle(chapters, parseChapterTimestamp(row.timestampText));
+                        if (original) row.titleEl.setAttribute('ytkit-antitranslate-chapter', '1');
+                    }
+                }
+            },
+
+            init() {
+                this._navRule = () => {
+                    this._chapters = null;
+                    this._chapterVideoId = null;
+                    document.querySelectorAll('[ytkit-antitranslate-chapter]').forEach(el => el.removeAttribute('ytkit-antitranslate-chapter'));
+                    setTimeout(() => this._process(), 1200);
+                };
+                addNavigateRule(this.id, this._navRule);
+                addMutationRule(this.id, () => this._process());
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                removeMutationRule(this.id);
+                this._navRule = null;
+                this._chapters = null;
+                this._chapterVideoId = null;
+                document.querySelectorAll('[ytkit-antitranslate-chapter]').forEach(el => el.removeAttribute('ytkit-antitranslate-chapter'));
             }
         },
         // ═══════════════════════════════════════════════════════════════════
