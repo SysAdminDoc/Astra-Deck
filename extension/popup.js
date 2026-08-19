@@ -1972,7 +1972,12 @@ function createSchemaRiskBadge(key) {
     span.textContent = entry.risk;
     // Localised tooltip describes what the badge means; falls back to
     // an English sentence so unenglish locales still get a usable hint.
-    span.title = t('toggleRiskTooltip_' + entry.risk,
+    // The i18n message-name grammar allows only [A-Za-z0-9_], so a hyphenated
+    // risk band can never resolve as a key. Normalize before lookup, otherwise
+    // `local-companion` and `store-risk` render English in every locale
+    // forever and adding keys later would silently fix only half the bands.
+    const riskKeySuffix = String(entry.risk || '').replace(/-/g, '_');
+    span.title = t('toggleRiskTooltip_' + riskKeySuffix,
         ({
             api:               'Talks to an external API server',
             'local-companion': 'Talks to the local Astra Downloader (127.0.0.1)',
