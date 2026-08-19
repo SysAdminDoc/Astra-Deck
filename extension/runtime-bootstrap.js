@@ -120,6 +120,7 @@
         "core/chapters.js",
         "core/csv.js",
         "core/dialog-guard.js",
+        "core/element-zapper.js",
         "core/hide-attribution.js",
         "core/heatmap.js",
         "core/youtube-thumbnails.js",

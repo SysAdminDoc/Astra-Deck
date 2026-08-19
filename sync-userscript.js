@@ -57,6 +57,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/chapters.js',
     'extension/core/csv.js',
     'extension/core/dialog-guard.js',
+    'extension/core/element-zapper.js',
     'extension/core/hide-attribution.js',
     'extension/core/heatmap.js',
     'extension/core/youtube-thumbnails.js',
