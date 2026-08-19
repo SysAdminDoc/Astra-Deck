@@ -2373,7 +2373,13 @@
                 const spaceAbove = triggerRect.top - MIN_VIEWPORT_GAP_PX * 2;
                 const spaceBelow = window.innerHeight - triggerRect.bottom - MIN_VIEWPORT_GAP_PX * 2;
                 const heightCap = Math.max(MIN_POPUP_HEIGHT_PX, spaceAbove, spaceBelow);
-                if (popup.offsetHeight > heightCap) popup.style.maxHeight = heightCap + 'px';
+                // Applied unconditionally, not only when the popup already
+                // overflows. Playlist preview rows and two-line quality-chip
+                // labels render after open, and the popup is pinned
+                // bottom:anchor(top) so late growth extends UPWARD -- the
+                // toolbar leaves the viewport top and the fixed popup cannot
+                // be scrolled back (only its body scrolls).
+                popup.style.maxHeight = heightCap + 'px';
 
                 // Inline axis: the panel is centred on the trigger, so a
                 // trigger near a viewport edge overhangs it. Nudge it back
@@ -2384,7 +2390,14 @@
                     shift = (window.innerWidth - MIN_VIEWPORT_GAP_PX) - rect.right;
                 }
                 if (rect.left + shift < MIN_VIEWPORT_GAP_PX) shift = MIN_VIEWPORT_GAP_PX - rect.left;
-                if (shift) popup.style.marginInlineStart = shift + 'px';
+                // marginLeft, NOT marginInlineStart. The shift is measured in
+                // physical coordinates from getBoundingClientRect, and the
+                // popup is positioned by physical `left` with `right:auto`. On
+                // an RTL page the logical property maps to margin-right -- the
+                // slack side of a left-constrained fixed box -- so the clamp
+                // silently did nothing and an edge trigger left the panel
+                // partly offscreen for ar/he/fa/ur users.
+                if (shift) popup.style.marginLeft = shift + 'px';
             }
 
             if (!_usePopover) {
@@ -2584,8 +2597,12 @@
                                 try {
                                     const { data: resp } = await extensionFetchJson({
                                         method: 'POST',
-                                        url: `http://127.0.0.1:${data.port}/provision-deno`,
-                                        headers: { 'X-MDL-Token': data.token }
+                                        // X-Auth-Token: every other authenticated
+                                        // companion call uses it. X-MDL-Token
+                                        // appears nowhere else in the repo, so
+                                        // this request always 401'd.
+                                        url: `${MediaDLManager.baseUrl()}/provision-deno`,
+                                        headers: { 'X-Auth-Token': data.token }
                                     });
                                     if (resp?.ok) {
                                         showToast(t('dlHealthDenoProvisioned', 'Deno provisioned successfully'), '#22c55e');
@@ -2609,8 +2626,16 @@
                 if (!isWatchPagePath()) return;
                 const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn, .ytp-right-controls .ytkit-local-dl-btn');
                 if (!anchor) return;
-                if (anchor.nextElementSibling?.classList?.contains('ytkit-download-health')) {
-                    this._container = anchor.nextElementSibling;
+                // Parent-wide, not nextElementSibling: the sibling panels
+                // (stream links, cobalt, history) insert at this same anchor
+                // and would push the health container out of that slot,
+                // producing a duplicate with a stale aria-live region.
+                const existing = anchor.parentElement?.querySelector('.ytkit-download-health');
+                if (existing) {
+                    // Adopt the container we actually found. nextElementSibling
+                    // is whatever sibling panel inserted itself most recently,
+                    // which is exactly the confusion this dedupe is fixing.
+                    this._container = existing;
                     return;
                 }
                 this._container = document.createElement('span');
@@ -2733,9 +2758,8 @@
                 close.type = 'button';
                 close.textContent = t('commonClose', 'Close');
                 close.addEventListener('click', () => {
-                    this._requestToken++;
-                    if (this._searchTimer) clearTimeout(this._searchTimer);
-                    this._searchTimer = null;
+                    // No async token and no search timer on this panel -- those
+                    // belong to the History panel this handler was copied from.
                     panel.remove();
                     this._panel = null;
                 });

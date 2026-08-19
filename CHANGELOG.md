@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Download UI correctness batch. The popup's edge clamp now nudges the panel
+  back on screen for right-to-left languages, where it previously did nothing
+  at all. Its height cap applies from the start, so a playlist preview loading
+  after you open it can no longer push the toolbar off the top of the screen.
+  The "provision Deno" action sends the auth header the companion actually
+  expects instead of one used nowhere else, so it no longer always fails. The
+  downloader health pills stop duplicating themselves when another download
+  panel is open alongside them.
+
 - The download popup can no longer download the wrong video. It captured
   formats, sizes, the playlist preview and the clip range for the video it was
   opened on, but the Download button re-read the current URL when clicked --
