@@ -11671,8 +11671,8 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'check-versions.js must define readSettingsMetaVersion');
     assert.match(checkSrc, /SETTINGS_VERSION drift detected/,
         'check-versions.js must emit a SETTINGS_VERSION-specific drift message');
-    assert.match(checkSrc, /process\.exit\(productOk && settingsOk && docsOk && tagsOk \? 0 : 1\)/,
-        'check-versions.js must require product, settings, active-doc truth, and product-tag sanity to exit 0');
+    assert.match(checkSrc, /process\.exit\(productOk && settingsOk && docsOk && tagsOk && releaseOk \? 0 : 1\)/,
+        'check-versions.js must require product, settings, active-doc truth, product-tag sanity, and release currency to exit 0');
 
     // 3. The popup-side fallback comment names the parity invariant
     // so a future code reviewer sees the invariant at the constant.

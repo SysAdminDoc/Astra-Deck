@@ -188,6 +188,132 @@ function checkProductTagSanity(productVersion) {
     return false;
 }
 
+// ── Release currency ─────────────────────────────────────────────────────
+//
+// Every gate in this repo passed while v4.60.0 through v4.62.0 each got a
+// chore(release) commit and then no tag, no artifacts and no channel
+// promotion. A release commit that never ships is invisible to every other
+// check here, because every version string agrees with every other one — they
+// just all agree on a version nobody can install.
+//
+// This lane reports by default and fails under --require-release-current, so
+// `npm run check` stays usable between releases while `release:prepare`
+// refuses to build on top of an unshipped one. The publication act itself is
+// maintainer-local and lives in Roadmap_Blocked.md; this is only the gate that
+// stops it being forgotten silently.
+const RELEASE_COMMIT_SCAN_DEPTH = 80;
+
+function gitLines(args) {
+    try {
+        const out = require('child_process').execFileSync('git', args, {
+            cwd: REPO_ROOT,
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        });
+        return out.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    } catch (_) {
+        return null;
+    }
+}
+
+function findReleaseCommitForVersion(productVersion) {
+    const lines = gitLines(['log', `-${RELEASE_COMMIT_SCAN_DEPTH}`, '--format=%h %s']);
+    if (lines === null) return null;
+    // The convention this repo actually uses: "chore(release): bump to vX.Y.Z".
+    const needle = new RegExp(`^(\\S+)\\s+chore\\(release\\)[^\\n]*\\bv?${productVersion.replace(/\./g, '\\.')}\\b`);
+    for (const line of lines) {
+        const match = line.match(needle);
+        if (match) return { sha: match[1], subject: line.slice(match[1].length + 1) };
+    }
+    return undefined;
+}
+
+function newestProductTag(tags) {
+    let newest = null;
+    let newestSegments = null;
+    for (const tag of tags || []) {
+        const segments = parseProductTagSegments(String(tag).trim());
+        if (!segments) continue;
+        if (!newestSegments || compareVersionSegments(segments, newestSegments) > 0) {
+            newest = String(tag).trim();
+            newestSegments = segments;
+        }
+    }
+    return newest;
+}
+
+function readChannelActiveVersions() {
+    const file = path.join(REPO_ROOT, 'release-channels.json');
+    if (!fs.existsSync(file)) return null;
+    try {
+        const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+        const channels = parsed && parsed.channels;
+        if (!channels || typeof channels !== 'object') return null;
+        return Object.entries(channels).map(([name, channel]) => ({
+            name,
+            active: channel?.active?.version || null
+        }));
+    } catch (_) {
+        return null;
+    }
+}
+
+function checkReleaseCurrency(productVersion, strict) {
+    const label = strict ? 'FAILED' : 'NOTICE';
+    const problems = [];
+
+    const tags = listLocalProductTags();
+    if (tags === null) {
+        console.error('[check-versions] Release currency: FAILED — git is not on PATH, so tags cannot be read.');
+        return false;
+    }
+
+    const tagged = tags.includes(`v${productVersion}`);
+    if (!tagged) {
+        const releaseCommit = findReleaseCommitForVersion(productVersion);
+        if (releaseCommit === null) {
+            console.error('[check-versions] Release currency: FAILED — git log is unreadable.');
+            return false;
+        }
+        if (releaseCommit) {
+            problems.push(
+                `v${productVersion} has a release commit (${releaseCommit.sha} ${releaseCommit.subject}) but no v${productVersion} tag`
+            );
+        }
+    }
+
+    const newestTag = newestProductTag(tags);
+    const channels = readChannelActiveVersions();
+    if (channels === null) {
+        problems.push('release-channels.json is missing or unreadable, so channel-pointer lag cannot be reported');
+    } else if (newestTag) {
+        const newestVersion = newestTag.replace(/^v/, '');
+        const lagging = channels.filter((channel) => channel.active && channel.active !== newestVersion);
+        if (lagging.length) {
+            problems.push(`newest tag is ${newestTag}, but ${lagging.length} of ${channels.length} channel(s) still point elsewhere:`);
+            for (const channel of lagging) problems.push(`    ${channel.name}: active ${channel.active}`);
+        }
+    }
+
+    if (!problems.length) {
+        console.log(`[check-versions] Release currency: v${productVersion} is tagged and every channel points at it`);
+        return true;
+    }
+
+    const write = strict ? console.error : console.log;
+    write(`[check-versions] Release currency: ${label} — this build is ahead of what anyone can install:`);
+    for (const problem of problems) write(`  ${problem}`);
+    write('');
+    write('  Tag and publish, then promote:');
+    write(`    git tag v${productVersion} && git push origin v${productVersion}`);
+    write('    npm run release:prepare && npm run release:promote');
+    if (!strict) {
+        write('  Reported, not failed: publication is maintainer-local (Roadmap_Blocked.md).');
+        write('  Pass --require-release-current to make this a hard failure.');
+    }
+    return !strict;
+}
+
 function parseTagFlag(argv) {
     const idx = argv.indexOf('--tag');
     if (idx === -1) return null;
@@ -333,8 +459,10 @@ function main(argv) {
 
     const docsOk = productOk && checkActiveDocumentationTruth(sources[0].value);
     const tagsOk = !productOk || checkProductTagSanity(sources[0].value);
+    const releaseOk = !productOk
+        || checkReleaseCurrency(sources[0].value, argv.includes('--require-release-current'));
 
-    process.exit(productOk && settingsOk && docsOk && tagsOk ? 0 : 1);
+    process.exit(productOk && settingsOk && docsOk && tagsOk && releaseOk ? 0 : 1);
 }
 
 if (require.main === module) {
@@ -347,8 +475,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+    checkReleaseCurrency,
     compareVersionSegments,
     findStrayProductTags,
+    newestProductTag,
+    readChannelActiveVersions,
     parseProductTagSegments,
     readUserscriptNameVersion
 };
