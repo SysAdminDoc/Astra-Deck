@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- **Anti-Translate Chapters** (opt-in). Chapter titles were the last gap in the
+  anti-translation matrix: titles, descriptions, thumbnails, transcripts and
+  audio tracks were already restored, but the chapter rail still showed
+  whatever YouTube translated. The original titles come from the original
+  description, which is where YouTube builds description chapters from in the
+  first place, so no new network call or permission is involved. A description
+  that merely mentions timestamps is not mistaken for a chapter list: the
+  parser enforces YouTube own published rules for chapters.
+
 ### Security
 
 - Astra Deck will no longer click a button inside any YouTube dialog that

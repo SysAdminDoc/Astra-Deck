@@ -172,6 +172,12 @@
   "featureScheduleEveryDayTpl": {
     "message": "Active {window} every day"
   },
+  "feature_antiTranslateChapters_desc": {
+    "message": "Restores original-language chapter titles in the chapter list and the player hover label. Reads them from the original description, which is where YouTube builds chapters from in the first place."
+  },
+  "feature_antiTranslateChapters_name": {
+    "message": "Anti-Translate Chapters"
+  },
   "feature_antiTranslateThumbnails_desc": {
     "message": "Restore the original-language thumbnail image on cards whose text was localised. Uses the player response on the watch page and YouTube's own same-origin oEmbed endpoint elsewhere, so it needs no extra site access."
   },

@@ -133,7 +133,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // antiTranslateThumbnails adds a further 32, and the focus-hours
     // schedule map plus its device-local restore ledger add 44.
     // feedPrefilter adds a further 22.
-    assert.equal(assessment.totalBytes, 186089);
+    // antiTranslateChapters adds a further 30.
+    assert.equal(assessment.totalBytes, 186119);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -162,7 +163,7 @@ test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
     assert.match(report, /Safe-store profile sync candidate: viable \(7\.\d KB/);
-    assert.match(report, /Full UI preferences payload: not viable for sync \(14\.\d KB/);
+    assert.match(report, /Full UI preferences payload: not viable for sync \(15\.\d KB/);
     assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(18[0-9]\.\d KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);
 });

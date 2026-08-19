@@ -595,13 +595,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
 
 Evidence detail and sources live in `RESEARCH.md` (2026-08-19). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication, migration docs, supply-chain doc, SponsorBlock/DeArrow submission) are not duplicated; the MV2-purge adoption window (uBO leaves CWS 2026-08-31) makes the blocked distribution items time-sensitive but does not change their operator-gated status.
 
-- [ ] P2 — Complete the anti-translation matrix: chapters and description
-  Why: auto-dub/auto-translation defeat is the hottest 2026 demand category with the weakest supply (ImprovedTube merged auto-dub fixes 2026-08-05; yt-anti-translate stagnant since April despite owning the niche). Astra covers titles (`antiTranslate`), thumbnails (`antiTranslateThumbnails`), transcript (`antiTranslateTranscript`), and original audio (`core/audio-track.js`) — chapters and description remain translated, so the matrix advertises completeness it doesn't have.
-  Evidence: RESEARCH.md §Competitive (ImprovedTube PR #4179, issue #2716); YouTube-No-Translation's matrix (titles/audio/captions/chapters/thumbnails) as the parity reference.
-  Touches: `extension/ytkit.js` (antiTranslate family), player-response chapter markers, oEmbed/description sources, `extension/core/settings-schema.js`, `extension/_locales/**`
-  Acceptance: with the features enabled, chapter titles in the player bar/description and the watch-page description render in the video's original language, sourced locale-independently (player response first, no URL-pattern guessing — same sourcing discipline as antiTranslateThumbnails); userscript parity classified honestly.
-  Complexity: M
-
 - [ ] P2 — YouTube-semantic element zapper
   Why: the single confirmed leapfrog: no YouTube-specific tool ships an element picker (re-verified 2026-08-19; uBOL's generic MV3 zapper is the only working picker, GPL — study, don't vendor), while users hand-write fragile uBO filters whose Chromium host dies 2026-08-31. Astra's foundations make the L-sized version real: surface taxonomy (35 surfaces), hide-attribution markers + per-navigation counts, video-hider fail-open, and feed-prefilter's refusal set.
   Evidence: RESEARCH.md §Competitive + vault "YouTube Ad Blocking Ecosystem 2026-08-14" (unmet-demand cluster); `extension/core/hide-attribution.js`, `extension/core/feed-prefilter.js` refusals.
