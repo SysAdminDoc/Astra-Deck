@@ -182,16 +182,6 @@ duplicated here.
   Confidence: Verified (geometry); worst case Needs-repro
   Effort: S
 
-- [ ] P3 — Download popup survives SPA navigation and can download the wrong video
-  Category: correctness
-  Where: `extension/features/download-ui/index.js:2243` (CTA reads `window.location.href` at click) vs. formats/estimates/playlist/dir captured at open; no navigate rule closes `_dlPopup`.
-  Problem: nothing closes the popup on SPA navigation (only the popup's own handlers call `_closeDlPopup`). YouTube autoplay navigates without a user click, so the popover's light-dismiss never fires; a popup left open across the transition shows video A's formats/sizes but, on click, downloads video B (current URL).
-  Evidence: traced the open-time captures vs. the click-time URL read; no `addNavigateRule` closes it.
-  Fix: close the popup on navigate (register a navigate rule), or freeze `requestUrl` at open and use it for the CTA and all probes.
-  Acceptance: navigating (incl. autoplay) while the popup is open either closes it or downloads the video it was opened for; a test drives a navigation between open and click.
-  Confidence: Verified (path); impact Likely
-  Effort: S
-
 - [ ] P3 — Duplicate/orphaned download health-pill containers when sibling download panels coexist
   Category: correctness
   Where: `extension/features/download-ui/index.js:2584-2607` (health dedupe by `anchor.nextElementSibling`) vs. Stream Links (`:2775`), Cobalt (`:2907`), History (`:3232`) each `insertAdjacentElement('afterend', …)` on the same anchor.

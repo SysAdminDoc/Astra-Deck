@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The download popup can no longer download the wrong video. It captured
+  formats, sizes, the playlist preview and the clip range for the video it was
+  opened on, but the Download button re-read the current URL when clicked --
+  and YouTube autoplay advances the page with no user gesture, so the popup
+  never light-dismissed. It now downloads the video it was opened for, and
+  closes on navigation.
+
 - One unloadable feature module no longer takes the whole extension down with
   it. The peeled feature modules were imported with Promise.all, so a single
   rejected import meant the monolith never executed and the page got nothing.
