@@ -2090,6 +2090,22 @@ for (const [locale, messages] of Object.entries(SPONSORED_FILTER_TRANSLATIONS)) 
 // Keep the inline fallback and the separately loaded feature module aligned
 // with the catalog. These strings are also used by the userscript fallback,
 // so they must be translated before the locale artifacts are regenerated.
+// The Refined Comments vote badge replaces YouTube's own like button, which the
+// restyle hides, so its label is the only like affordance the user sees.
+const COMMENT_VOTE_BADGE_TRANSLATIONS = {
+  ar: { 'Like': 'إعجاب', '{label}. {count} likes': '{label}. {count} إعجاب' },
+  de: { 'Like': 'Gefällt mir', '{label}. {count} likes': '{label}. {count} Mal „Gefällt mir“' },
+  es: { 'Like': 'Me gusta', '{label}. {count} likes': '{label}. {count} me gusta' },
+  fr: { 'Like': "J'aime", '{label}. {count} likes': "{label}. {count} j'aime" },
+  it: { 'Like': 'Mi piace', '{label}. {count} likes': '{label}. {count} Mi piace' },
+  ja: { 'Like': '高評価', '{label}. {count} likes': '{label}。高評価 {count} 件' },
+  ko: { 'Like': '좋아요', '{label}. {count} likes': '{label}. 좋아요 {count}개' },
+  pt_BR: { 'Like': 'Gostei', '{label}. {count} likes': '{label}. {count} curtidas' },
+  ru: { 'Like': 'Нравится', '{label}. {count} likes': '{label}. Отметок «Нравится»: {count}' },
+  zh_CN: { 'Like': '赞', '{label}. {count} likes': '{label}。{count} 个赞' }
+};
+for (const [locale, messages] of Object.entries(COMMENT_VOTE_BADGE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 const VIDEO_NOTES_TRANSLATIONS = {
   de: {
     'Per-Video Notes': 'Notizen pro Video',

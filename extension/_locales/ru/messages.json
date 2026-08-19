@@ -7864,5 +7864,11 @@
   },
   "zapRuleRemove": {
     "message": "Remove"
+  },
+  "ui_commentLikeBadge": {
+    "message": "Нравится"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}. Отметок «Нравится»: {count}"
   }
 }

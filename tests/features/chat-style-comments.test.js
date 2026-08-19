@@ -299,3 +299,214 @@ test('chat-style comments are legible on YouTube light theme', () => {
             `${selector} must have a light-theme override (it paints white-alpha text on the page background)`);
     }
 });
+
+// ── Vote badge ──────────────────────────────────────────────────────────
+//
+// The restyle hides YouTube's own #like-button and #vote-count-middle. The
+// badge is the replacement, and it was lost when this feature was peeled out
+// of the monolith: the CSS and all three removal paths came across, the
+// constructor did not. These drive the real constructor against a fixture that
+// implements exactly what it touches, so a second loss fails here rather than
+// silently shipping a comment section with no like affordance.
+
+function fakeElement(doc, tag) {
+    const classes = new Set();
+    const attrs = new Map();
+    const listeners = new Map();
+    const el = {
+        tagName: String(tag).toUpperCase(),
+        ownerDocument: doc,
+        children: [],
+        textContent: '',
+        title: '',
+        dataset: {},
+        style: { setProperty() {}, getPropertyValue: () => '' },
+        matches: () => false,
+        querySelectorAll: () => [],
+        classList: {
+            add: (n) => classes.add(n),
+            remove: (n) => classes.delete(n),
+            contains: (n) => classes.has(n),
+            toggle: (n, force) => {
+                const next = force === undefined ? !classes.has(n) : !!force;
+                if (next) classes.add(n); else classes.delete(n);
+                return next;
+            }
+        },
+        get className() { return [...classes].join(' '); },
+        set className(v) { classes.clear(); String(v).split(/\s+/).filter(Boolean).forEach(c => classes.add(c)); },
+        setAttribute: (n, v) => attrs.set(n, String(v)),
+        getAttribute: (n) => (attrs.has(n) ? attrs.get(n) : null),
+        removeAttribute: (n) => attrs.delete(n),
+        hasAttribute: (n) => attrs.has(n),
+        closest: () => null,
+        appendChild(child) { this.children.push(child); child.parentNode = this; return child; },
+        after(node) {
+            const parent = this.parentNode;
+            if (!parent) return;
+            parent.children.splice(parent.children.indexOf(this) + 1, 0, node);
+            node.parentNode = parent;
+        },
+        remove() {
+            const parent = this.parentNode;
+            if (!parent) return;
+            parent.children.splice(parent.children.indexOf(this), 1);
+            this.parentNode = null;
+        },
+        addEventListener(type, fn) { listeners.set(type, fn); },
+        dispatch(type, event = {}) {
+            const fn = listeners.get(type);
+            if (!fn) return false;
+            fn({ stopPropagation() {}, preventDefault() {}, ...event });
+            return true;
+        },
+        hasListener: (type) => listeners.has(type),
+        querySelector() { return null; }
+    };
+    return el;
+}
+
+function fakeDoc() {
+    const doc = {};
+    doc.createElement = (tag) => fakeElement(doc, tag);
+    doc.createElementNS = (_ns, tag) => fakeElement(doc, tag);
+    return doc;
+}
+
+// A comment host that answers only the selectors the constructor asks for.
+// Anything else returns null, so a constructor that starts depending on a new
+// selector shows up as a null rather than a silent pass.
+function fakeComment({ vote = '', liked = false, hasLikeButton = true } = {}) {
+    const doc = fakeDoc();
+    const authorText = fakeElement(doc, 'a');
+    const host = fakeElement(doc, 'ytd-comment-view-model');
+    host.appendChild(authorText);
+    const likeButton = fakeElement(doc, 'button');
+    likeButton.clicks = 0;
+    likeButton.click = () => { likeButton.clicks += 1; };
+    const voteEl = fakeElement(doc, 'span');
+    voteEl.textContent = vote;
+
+    host.querySelector = (selector) => {
+        if (selector === '#author-text') return authorText;
+        if (selector === '#vote-count-middle') return vote ? voteEl : null;
+        if (selector === '#like-button button[aria-pressed="true"]') return liked ? likeButton : null;
+        if (selector.startsWith('#like-button button')) return hasLikeButton ? likeButton : null;
+        if (selector === '.ytkit-vote-badge') return host.children.find(c => c.classList.contains('ytkit-vote-badge')) || null;
+        return null;
+    };
+    return { host, authorText, likeButton, doc };
+}
+
+test('the vote badge is actually built, next to the author name', () => {
+    const { mod } = loadModule();
+    const { host, authorText } = fakeComment({ vote: '412' });
+    const badge = mod.buildVoteBadge(host, (_k, fallback) => fallback);
+
+    assert.ok(badge, 'buildVoteBadge must return the badge it created');
+    assert.equal(badge.className, 'ytkit-vote-badge');
+    assert.equal(host.children[host.children.indexOf(authorText) + 1], badge,
+        'the badge must sit immediately after the author name');
+    assert.equal(badge.children.map(c => c.textContent).join(''), '412',
+        'the badge must show the comment vote count');
+    assert.ok(badge.children.some(c => c.tagName === 'SVG'), 'the badge must carry the thumb icon');
+});
+
+test('the vote badge reflects and toggles the like state', () => {
+    const { mod } = loadModule();
+    const { host, likeButton } = fakeComment({ vote: '5', liked: true });
+    const badge = mod.buildVoteBadge(host, (_k, fallback) => fallback);
+
+    assert.equal(badge.classList.contains('ytkit-liked'), true,
+        'an already-liked comment must render the badge in its liked state');
+    assert.equal(badge.getAttribute('aria-pressed'), 'true');
+
+    badge.dispatch('click');
+    assert.equal(likeButton.clicks, 1, 'clicking the badge must click YouTube\'s own like button');
+    assert.equal(badge.classList.contains('ytkit-liked'), false, 'the badge must un-toggle on the second state');
+    assert.equal(badge.getAttribute('aria-pressed'), 'false');
+});
+
+test('the vote badge is keyboard operable', () => {
+    const { mod } = loadModule();
+    const { host, likeButton } = fakeComment({ vote: '1' });
+    const badge = mod.buildVoteBadge(host, (_k, fallback) => fallback);
+
+    assert.equal(badge.getAttribute('role'), 'button');
+    assert.equal(badge.getAttribute('tabindex'), '0');
+    badge.dispatch('keydown', { key: 'Enter' });
+    assert.equal(likeButton.clicks, 1, 'Enter must activate the badge');
+    badge.dispatch('keydown', { key: ' ' });
+    assert.equal(likeButton.clicks, 2, 'Space must activate the badge');
+    badge.dispatch('keydown', { key: 'a' });
+    assert.equal(likeButton.clicks, 2, 'an unrelated key must not activate the badge');
+});
+
+test('the vote badge hides a zero count and routes its labels through t()', () => {
+    const { mod } = loadModule();
+    const seen = [];
+    const translate = (key, fallback) => { seen.push(key); return fallback; };
+
+    const zero = fakeComment({ vote: '0' });
+    const zeroBadge = mod.buildVoteBadge(zero.host, translate);
+    assert.equal(zeroBadge.children.map(c => c.textContent).join(''), '',
+        'a zero vote count must render as an icon with no number');
+
+    const counted = fakeComment({ vote: '9' });
+    mod.buildVoteBadge(counted.host, translate);
+    assert.ok(seen.includes('ui_commentLikeBadge'),
+        'the badge label must come from a locale key, not a hardcoded literal');
+    assert.ok(seen.includes('ui_commentLikeBadgeCountAriaTpl'),
+        'the counted accessible name must come from a locale key');
+});
+
+test('a comment with no author anchor yields no badge instead of throwing', () => {
+    const { mod } = loadModule();
+    const doc = fakeDoc();
+    const host = fakeElement(doc, 'ytd-comment-view-model');
+    assert.equal(mod.buildVoteBadge(host, (_k, f) => f), null);
+});
+
+test('processComment rebuilds the badge on a recycled comment host', () => {
+    const { mod } = loadModule();
+    // YouTube reuses comment hosts as you scroll. A badge left in place would
+    // keep the previous comment's count and its click handler.
+    const first = fakeComment({ vote: '100' });
+    // processComment also runs the two normalize passes, which walk a much
+    // wider slice of the comment subtree than the badge does. Hand those a
+    // throwaway element so this test stays about the badge; the strict
+    // fixture above is what pins the constructor's own selector list.
+    const strict = first.host.querySelector;
+    first.host.querySelector = (selector) => strict(selector) || fakeElement(first.doc, 'div');
+    const priorElement = globalThis.Element;
+    globalThis.Element = function Element() {};
+    Object.defineProperty(globalThis.Element, Symbol.hasInstance, { value: () => true });
+    try {
+        mod.processComment(first.host, { t: (_k, f) => f });
+        const badges = first.host.children.filter(c => c.classList.contains('ytkit-vote-badge'));
+        assert.equal(badges.length, 1, 'the first pass must leave exactly one badge');
+        assert.equal(badges[0].children.map(c => c.textContent).join(''), '100');
+
+        mod.processComment(first.host, { t: (_k, f) => f });
+        const after = first.host.children.filter(c => c.classList.contains('ytkit-vote-badge'));
+        assert.equal(after.length, 1, 'a second pass must not stack a second badge');
+        assert.notEqual(after[0], badges[0],
+            'the badge must be rebuilt, not reused, so a recycled host cannot keep a stale count');
+    } finally {
+        if (priorElement === undefined) delete globalThis.Element;
+        else globalThis.Element = priorElement;
+    }
+});
+
+test('the restyle hides YouTube\'s own like affordance, so the badge is load-bearing', () => {
+    // If this CSS ever stops hiding the native controls the badge becomes
+    // redundant rather than essential. Pin the dependency so the two move
+    // together.
+    const { mod } = loadModule();
+    const css = mod.buildCommentRestyleCss();
+    assert.match(css, /ytd-comment-engagement-bar #like-button[^}]*display:none/,
+        'the restyle must hide the native like button');
+    assert.match(css, /ytd-comment-engagement-bar #vote-count-middle|#vote-count-middle[^}]*display:none/,
+        'the restyle must hide the native vote count');
+    assert.match(css, /\.ytkit-vote-badge\{/, 'the replacement badge must be styled');
+});

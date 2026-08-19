@@ -9114,7 +9114,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         requestAnimationFrame,
                         addMutationRule,
                         removeMutationRule,
-                        featureId: this.id
+                        featureId: this.id,
+                        t
                     });
                     this._runtime.init();
                     return;

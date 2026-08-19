@@ -10,6 +10,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Refined Comments shows a like count again, and lets you like a comment. The
+  restyle hides YouTube's own like button and replaces it with a compact badge
+  next to the author name. That badge stopped being built when the feature was
+  split into its own file, so for a while the styling and the teardown code
+  were there but nothing ever created it, leaving no way to like a comment or
+  see how many likes it had. The badge is back, and it now works from the
+  keyboard and reads correctly to a screen reader.
+
 - Per-Video Notes now reads correctly on YouTube's light theme. The note panel
   and its title were painting near-white text, which was fine on dark and close
   to unreadable on light. The light-theme styling for it had been written, but

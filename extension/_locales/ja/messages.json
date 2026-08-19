@@ -7864,5 +7864,11 @@
   },
   "zapRuleRemove": {
     "message": "Remove"
+  },
+  "ui_commentLikeBadge": {
+    "message": "高評価"
+  },
+  "ui_commentLikeBadgeCountAriaTpl": {
+    "message": "{label}。高評価 {count} 件"
   }
 }
