@@ -1756,7 +1756,6 @@ return response;
     }
 
     // ── Settings Panel Cleanup Registry ──
-    let _panelCleanups = [];
 
     // ── Timing Constants ──
     const TIMING = {
@@ -42727,21 +42726,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         if (!shouldBuildPrimaryUI()) return;
         if (document.getElementById('ytkit-settings-panel')) return;
 
-        // Centralized cleanup when panel closes
-        _panelCleanups.length = 0;
-        let _wasPanelOpen = false;
-        if (buildSettingsPanel._panelObs) buildSettingsPanel._panelObs.disconnect();
-        buildSettingsPanel._panelObs = new MutationObserver(() => {
-            const isOpen = document.body.classList.contains('ytkit-panel-open');
-            if (_wasPanelOpen && !isOpen) {
-                _panelCleanups.forEach(fn => { try { fn(); } catch(e) { /* reason: one panel cleanup must not block the rest */ } });
-                _panelCleanups.length = 0;
-                // Panel listeners persist on document with isSettingsPanelOpen() guards —
-                // do NOT reset _panelUIListenersAttached here, or duplicates stack on each open.
-            }
-            _wasPanelOpen = isOpen;
-        });
-        buildSettingsPanel._panelObs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        // No per-open cleanup registry here on purpose. This panel's document
+        // listeners are attached once for the page lifetime and guarded by
+        // isSettingsPanelOpen(), which is why _panelUIListenersAttached must not
+        // be reset on close: resetting it stacks duplicates on every open. There
+        // is therefore nothing to drain when the panel closes, and the registry
+        // that used to sit here had zero registrations against three drain
+        // sites — a MutationObserver waking on every document.body class change
+        // to iterate an empty array, and a promise of centralized teardown that
+        // the next widget author would have trusted.
 
         const categoryOrder = ['Video Player', 'Playback', 'Comments', 'Watch Page', 'Content', 'Home / Subscriptions', 'Theme', 'Live Chat', 'Downloads', 'Advanced'];
 

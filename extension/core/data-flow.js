@@ -541,7 +541,6 @@
     core.SPONSORBLOCK_ALLOWED_ORIGINS = SPONSORBLOCK_ALLOWED_ORIGINS;
     core.normalizeSponsorBlockOrigin = normalizeSponsorBlockOrigin;
     core.getSponsorBlockApiOrigins = getSponsorBlockApiOrigins;
-    core.findDataFlowCoverageGaps = findCoverageGaps;
     core.hostPermissionsForDataFlowOrigin = hostPermissionsForOrigin;
     core.isOriginAvailableForProfile = isOriginAvailableForProfile;
     core.getOptionalHostPermissionsForFeature = getOptionalHostPermissionsForFeature;

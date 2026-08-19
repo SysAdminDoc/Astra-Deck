@@ -1103,11 +1103,6 @@ button {
 .sp-overview-card,
 .sp-empty,
 .sp-setting-row,
-.sp-storage-card {
-  border-color: var(--astra-border-subtle);
-  background: var(--astra-surface-raised);
-}
-
 .sp-settings-list {
   max-height: none;
   overflow: visible;
