@@ -139,6 +139,7 @@
     // ── bundled module: extension/core/external-api-health.js ──
     // ── bundled module: extension/core/selector-health.js ──
     // ── bundled module: extension/core/feature-health.js ──
+    // ── bundled module: extension/core/dialog-guard.js ──
     // ── bundled module: extension/core/hide-attribution.js ──
     // ── bundled module: extension/core/heatmap.js ──
     // ── bundled module: extension/core/youtube-thumbnails.js ──

@@ -35,6 +35,8 @@
         resolveOriginalThumbnail,
         normalizeFeatureSchedules,
         planScheduleTransitions,
+        findComplianceDialog,
+        isSafeToAutoClick,
         getHideAttributionCounts,
         markCardHidden,
         resetHideAttribution,
@@ -21972,6 +21974,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!dialog) return false;
                 const text = String(dialog.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
                 if (/continue watching|still watching|video paused/.test(text)) return true;
+                // The paused-video fallback is NOT evidence on its own: an age
+                // or identity verification interstitial also pauses playback,
+                // and answering one of those is an account action. Refuse the
+                // fallback whenever a compliance surface is open.
+                if (findComplianceDialog()) return false;
                 const video = getMainVideoElement();
                 return Boolean(video && video.paused && !video.ended);
             },
@@ -21982,7 +21989,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (playerBtn) { playerBtn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
                 else if (this._isYouTherePrompt()) {
                     const btn = document.querySelector('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
-                    if (btn) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
+                    // Never auto-answer a verification/consent surface, and
+                    // never click while one is open elsewhere on the page.
+                    if (btn && isSafeToAutoClick(btn)) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
                 }
                 const video = getMainVideoElement();
                 if (video && video.paused && !video.ended && document.querySelector('.ytp-pause-overlay, .ytp-error-content-wrap-reason')) {
@@ -44660,7 +44669,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             'button[aria-label]',
                             '[role="button"]'
                         ].join(','));
-                        if (button) {
+                        // A verification or consent surface can be open over
+                        // the same popup container; answering one on the
+                        // user's behalf is an account action, never a
+                        // convenience. Refusing here costs one unconfirmed
+                        // removal, which the caller already handles by
+                        // checking the card's own subscribe control.
+                        if (button && isSafeToAutoClick(button)) {
                             button.click?.();
                             return true;
                         }

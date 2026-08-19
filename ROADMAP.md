@@ -595,13 +595,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
 
 Evidence detail and sources live in `RESEARCH.md` (2026-08-19). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication, migration docs, supply-chain doc, SponsorBlock/DeArrow submission) are not duplicated; the MV2-purge adoption window (uBO leaves CWS 2026-08-31) makes the blocked distribution items time-sensitive but does not change their operator-gated status.
 
-- [ ] P2 — Guard every programmatic click path against YouTube compliance dialogs
-  Why: YouTube's AI age-verification interstitials are compliance dialogs — auto-dismissing them has documented account consequences. Astra ships no generic dialog auto-dismisser (verified 2026-08-19), but `_confirmUnsubscribeDialog`'s first-document-order `[role="button"]` match is exactly the shape that could someday click one, and future auto-click features will copy whatever pattern exists.
-  Evidence: RESEARCH.md §Security (age-verification hazard, Change.org 100k+ petition, account-restriction reports); `extension/ytkit.js:43809-43826` / `features/subscription-groups/index.js:1479-1496`; the tracked subscription-groups matcher item covers the Cancel-click bug — this item adds the shared guard.
-  Touches: `extension/ytkit.js`, `extension/features/subscription-groups/index.js`, a small shared helper (e.g. `core/navigation.js` or a new `core/dialog-guard.js`)
-  Acceptance: a shared `isComplianceDialog(el)` denylist (age/identity-verification and consent renderers, structural not text-matched) is consulted by every programmatic `.click()` on YouTube-owned dialog content; a test seeds a fake verification dialog and asserts no path clicks inside it; existing unsubscribe flow still works.
-  Complexity: S
-
 - [ ] P2 — Resolve DeArrow API licensing before any store submission
   Why: dearrow.ajay.app/payment and /free state the DeArrow API is free only for non-browser-extension use — extensions are expected to carry the $1 license-key flow. Astra's dearrow feature calls `GET /api/branding` with no license handling, which is fine for an unpublished GitHub build but a licensing posture problem the moment a store listing exists (and the store-safe profile ships the feature).
   Evidence: https://dearrow.ajay.app/payment ; https://dearrow.ajay.app/free ; `extension/features/dearrow/index.js:167`. Confidence: Likely — the exact wire contract (param/header, enforcement for read-only GETs) needs confirmation against https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow before implementing.

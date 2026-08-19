@@ -1485,7 +1485,14 @@
                             'button[aria-label]',
                             '[role="button"]'
                         ].join(','));
-                        if (button) {
+                        // A verification or consent surface can be open over
+                        // the same popup container; answering one on the
+                        // user's behalf is an account action, never a
+                        // convenience. Refusing here costs one unconfirmed
+                        // removal, which the caller already handles by
+                        // checking the card's own subscribe control.
+                        const safeToClick = globalThis.YTKitCore && globalThis.YTKitCore.isSafeToAutoClick;
+                        if (button && (typeof safeToClick !== 'function' || safeToClick(button))) {
                             button.click?.();
                             return true;
                         }
