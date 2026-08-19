@@ -116,6 +116,7 @@
         "core/settings-controller.js",
         "core/selector-health.js",
         "core/feature-health.js",
+        "core/dialog-guard.js",
         "core/hide-attribution.js",
         "core/heatmap.js",
         "core/youtube-thumbnails.js",

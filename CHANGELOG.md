@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- Astra Deck will no longer click a button inside any YouTube dialog that
+  identifies itself as an age, identity, consent, captcha, or sign-in surface,
+  and will not auto-click anywhere else on the page while one of those is open.
+  The "Still Watching?" dismisser previously treated "the video is paused" as
+  enough evidence to press a confirm button — but a verification interstitial
+  also pauses playback, so that fallback could answer one on the user's behalf.
+  Answering a verification prompt is an account action, never a convenience.
+
 ## [4.69.0] - 2026-08-19
 
 ### Added

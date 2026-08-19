@@ -7946,6 +7946,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/external-api-health.js',
         'extension/core/selector-health.js',
         'extension/core/feature-health.js',
+        'extension/core/dialog-guard.js',
         'extension/core/hide-attribution.js',
         'extension/core/heatmap.js',
         'extension/core/youtube-thumbnails.js',
