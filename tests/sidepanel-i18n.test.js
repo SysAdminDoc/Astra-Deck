@@ -123,3 +123,58 @@ test('rendered smoke covers Arabic 200% reflow in sidepanel and Firefox sidebar 
     assert.match(a11ySmoke, /checkedTravel < 0/,
         'RTL smoke must prove checked switch travel reverses');
 });
+
+// ── CSS content: strings are unreachable by the messages pipeline ─────────
+
+test('no dashboard or popup state text is rendered through CSS content:', () => {
+    // `content: "Saving"` / `content: "Try again"` in sidepanel.css and
+    // `content: 'on'` / `'off'` in popup.css rendered English in all ten
+    // non-EN locales, and no amount of translation could have reached them.
+    // Symbols (+, −, empty decorative boxes) are fine; words are not.
+    const popupCss = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.css'), 'utf8');
+    for (const [label, css] of [['sidepanel.css', sidepanelCss], ['popup.css', popupCss]]) {
+        const wordy = [...css.matchAll(/(?:^|[\s;{])content:\s*(['"])(.*?)\1/g)]
+            .map((m) => m[2])
+            .filter((value) => /[A-Za-z]{2,}/.test(value));
+        assert.deepEqual(wordy, [],
+            `${label} must not render words through content: — they cannot be localized`);
+    }
+});
+
+test('the side panel writes its save/retry state through t() into a real element', () => {
+    assert.match(sidepanelJs, /state\.className = 'sp-setting-state'/,
+        'the state must live in a real element the messages pipeline can fill');
+    assert.match(sidepanelJs, /showState\(t\('spRowStateSaving', 'Saving'\)\)/,
+        'the saving state must resolve through t()');
+    assert.match(sidepanelJs, /showState\(t\('spRowStateRetry', 'Try again'\)\)/,
+        'the retry state must resolve through t()');
+    assert.match(sidepanelJs, /state\.setAttribute\('aria-hidden', 'true'\)/,
+        'the row already carries the state on aria-description; do not announce it twice');
+    assert.match(sidepanelCss, /\.sp-setting-state \{/,
+        'the element needs the styling the ::after rules used to carry');
+});
+
+test('the popup schema switch writes its on/off word through t()', () => {
+    const popupJs = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
+    assert.match(popupJs, /t\('switchLabelOn', 'on'\)/);
+    assert.match(popupJs, /t\('switchLabelOff', 'off'\)/);
+    assert.match(popupJs, /btn\.textContent = stateWord;/,
+        'the visible word must be real text, not generated content');
+    assert.match(popupJs, /aria-label', label\.textContent \+ ' \(' \+ stateWord \+ '\)'/,
+        'the accessible name must use the same localized word as the pill');
+});
+
+test('every locale carries the four new state keys, actually translated', () => {
+    const locales = fs.readdirSync(path.join(repoRoot, 'extension', '_locales'));
+    const keys = ['spRowStateSaving', 'spRowStateRetry', 'switchLabelOn', 'switchLabelOff'];
+    for (const locale of locales) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(repoRoot, 'extension', '_locales', locale, 'messages.json'), 'utf8'));
+        for (const key of keys) {
+            assert.ok(messages[key], `${locale} is missing ${key}`);
+            if (locale === 'en') continue;
+            assert.notEqual(messages[key].message, enMessages[key].message,
+                `${locale}/${key} still reads English — the whole point of moving it out of CSS`);
+        }
+    }
+});

@@ -7845,6 +7845,44 @@ const COOKIE_HANDOFF_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(COOKIE_HANDOFF_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// The side panel's save/retry row state. These two used to be CSS ::after
+// content: strings, so they rendered English in all ten non-EN locales and
+// nothing in the messages pipeline could reach them.
+const SIDEPANEL_ROW_STATE_TRANSLATIONS = {
+  de: { 'Saving': 'Wird gespeichert' },
+  es: { 'Saving': 'Guardando' },
+  fr: { 'Saving': 'Enregistrement' },
+  it: { 'Saving': 'Salvataggio' },
+  ja: { 'Saving': '保存中' },
+  ko: { 'Saving': '저장 중' },
+  pt_BR: { 'Saving': 'Salvando' },
+  ru: { 'Saving': 'Сохранение' },
+  ar: { 'Saving': 'جارٍ الحفظ', 'Try again': 'إعادة المحاولة' },
+  zh_CN: { 'Saving': '正在保存', 'Try again': '重试' },
+};
+for (const [locale, messages] of Object.entries(SIDEPANEL_ROW_STATE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+// The schema-overview switch pill. Was `content: 'on'/'off'` in popup.css.
+// Each locale gets its own switch convention rather than a uniform
+// abbreviation: German and Russian have short standard forms, the Romance
+// locales use the participle, and CJK uses the usual two-character pair. The
+// pill is auto-width, so a longer word widens it rather than clipping.
+const SWITCH_PILL_TRANSLATIONS = {
+  de: { 'on': 'an', 'off': 'aus' },
+  es: { 'on': 'activado', 'off': 'desactivado' },
+  fr: { 'on': 'activé', 'off': 'désactivé' },
+  it: { 'on': 'attivo', 'off': 'inattivo' },
+  ja: { 'on': 'オン', 'off': 'オフ' },
+  ko: { 'on': '켜짐', 'off': '꺼짐' },
+  pt_BR: { 'on': 'ligado', 'off': 'desligado' },
+  ru: { 'on': 'вкл', 'off': 'выкл' },
+  ar: { 'on': 'تشغيل', 'off': 'إيقاف' },
+  zh_CN: { 'on': '开', 'off': '关' },
+};
+for (const [locale, messages] of Object.entries(SWITCH_PILL_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+
+
 function readExistingLocale(locale) {
     const file = path.join(ROOT, 'extension', '_locales', locale, 'messages.json');
     try {

@@ -5329,6 +5329,12 @@
   "spSelectorTotalTpl": {
     "message": "サーフェス {count}"
   },
+  "spRowStateRetry": {
+    "message": "再試行"
+  },
+  "spRowStateSaving": {
+    "message": "保存中"
+  },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
   },
@@ -6453,6 +6459,12 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity — github-full only"
+  },
+  "switchLabelOff": {
+    "message": "オフ"
+  },
+  "switchLabelOn": {
+    "message": "オン"
   },
   "toggleStateOff": {
     "message": "無効"

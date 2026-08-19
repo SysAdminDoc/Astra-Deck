@@ -3781,10 +3781,17 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         btn.className = 'so-key-switch' + (on ? ' on' : '');
         btn.setAttribute('role', 'switch');
         btn.setAttribute('aria-checked', String(on));
+        // The visible word was a CSS ::before content: string, so it rendered
+        // English in every locale. Short forms rather than the sentence-length
+        // toggleStateOn/Off keys: this is a ~17px pill with 8px of padding.
+        const stateWord = on
+            ? t('switchLabelOn', 'on')
+            : t('switchLabelOff', 'off');
+        btn.textContent = stateWord;
         // Accessible name must CONTAIN the visible label, or voice control
         // cannot target the row: the switch used to announce the raw storage
         // key while the row reads a humanised label.
-        btn.setAttribute('aria-label', label.textContent + ' (' + (on ? 'on' : 'off') + ')');
+        btn.setAttribute('aria-label', label.textContent + ' (' + stateWord + ')');
         btn.dataset.key = entry.key;
         btn.addEventListener('click', async () => {
             // Settings persist sparsely, so an untouched default-on key is

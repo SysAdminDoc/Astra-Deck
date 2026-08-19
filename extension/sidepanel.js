@@ -847,8 +847,23 @@ function renderSettings(filter) {
             sw.className = 'sp-setting-switch';
             sw.setAttribute('aria-hidden', 'true');
 
+            // Visible save/retry state. Was a CSS ::after content: string, which
+            // no locale could reach. Screen readers get the same state through
+            // the row's aria-busy and aria-description, so this stays hidden
+            // from them rather than being announced twice.
+            const state = document.createElement('span');
+            state.className = 'sp-setting-state';
+            state.setAttribute('aria-hidden', 'true');
+            state.hidden = true;
+
             row.appendChild(copy);
             row.appendChild(sw);
+            row.appendChild(state);
+
+            const showState = (text) => {
+                state.textContent = text || '';
+                state.hidden = !text;
+            };
 
             row.addEventListener('click', async () => {
                 if (row.dataset.saving === 'true') return;
@@ -857,6 +872,7 @@ function renderSettings(filter) {
                 row.setAttribute('aria-busy', 'true');
                 row.setAttribute('aria-disabled', 'true');
                 row.removeAttribute('data-error');
+                showState(t('spRowStateSaving', 'Saving'));
                 row.setAttribute('aria-checked', String(next));
                 row.setAttribute('aria-description', rowLabel(humanName, next, entry));
                 const granted = await requestOptionalHostsForToggle(entry.key, next);
@@ -864,8 +880,10 @@ function renderSettings(filter) {
                 row.dataset.saving = 'false';
                 row.removeAttribute('aria-busy');
                 row.removeAttribute('aria-disabled');
+                showState('');
                 if (!saved) {
                     row.dataset.error = 'true';
+                    showState(t('spRowStateRetry', 'Try again'));
                     row.setAttribute('aria-checked', String(!next));
                     // A denied host-permission prompt is not a storage failure:
                     // "try refreshing the dashboard" cannot fix it and sends the

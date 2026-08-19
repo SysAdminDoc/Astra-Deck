@@ -5329,6 +5329,12 @@
   "spSelectorTotalTpl": {
     "message": "표면 {count}개"
   },
+  "spRowStateRetry": {
+    "message": "다시 시도"
+  },
+  "spRowStateSaving": {
+    "message": "저장 중"
+  },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
   },
@@ -6453,6 +6459,12 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity — github-full only"
+  },
+  "switchLabelOff": {
+    "message": "꺼짐"
+  },
+  "switchLabelOn": {
+    "message": "켜짐"
   },
   "toggleStateOff": {
     "message": "비활성화됨"

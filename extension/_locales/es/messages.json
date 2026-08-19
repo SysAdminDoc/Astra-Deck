@@ -5329,6 +5329,12 @@
   "spSelectorTotalTpl": {
     "message": "{count} superficies"
   },
+  "spRowStateRetry": {
+    "message": "Reintentar"
+  },
+  "spRowStateSaving": {
+    "message": "Guardando"
+  },
   "spSettingRowTitleTpl": {
     "message": "{key} ({category})"
   },
@@ -6453,6 +6459,12 @@
   },
   "toggleRiskTooltip_store_risk": {
     "message": "Higher review-policy sensitivity — github-full only"
+  },
+  "switchLabelOff": {
+    "message": "desactivado"
+  },
+  "switchLabelOn": {
+    "message": "activado"
   },
   "toggleStateOff": {
     "message": "Desactivado"
