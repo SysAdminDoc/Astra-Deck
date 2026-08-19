@@ -6,6 +6,30 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.72.0] - 2026-08-19
+
+### Fixed
+
+- Per-Video Notes now reads correctly on YouTube's light theme. The note panel
+  and its title were painting near-white text, which was fine on dark and close
+  to unreadable on light. The light-theme styling for it had been written, but
+  it only ever existed in a copy of the feature the extension doesn't run, so
+  the check that's meant to catch exactly this found the rule and passed.
+
+### Changed
+
+- The main content script is 13% smaller. Eight features were carrying a second
+  full copy of themselves inside it: once as the module that actually runs, and
+  once as a leftover from before they were split out. Every page load parsed
+  both and threw one away. Removing the leftovers takes about 420 KB out of the
+  file, which shaves a few milliseconds off startup.
+
+  The bigger reason to do it is that the two copies had to be edited together.
+  Miss one and the extension keeps working, right up until the day it falls
+  back to the stale copy. That's not hypothetical: the light-theme bug above is
+  what it looks like in practice, and the two copies of Sticky Video and DeArrow
+  had each drifted apart before.
+
 ## [4.71.0] - 2026-08-19
 
 ### Fixed
