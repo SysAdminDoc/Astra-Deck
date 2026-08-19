@@ -19,34 +19,28 @@ const dearrowModulePath = path.join(
 );
 const dearrowModuleSource = fs.readFileSync(dearrowModulePath, 'utf8');
 
-// The ytkit.js `|| { … }` object is the fallback used only when the module
-// content script fails to load. It drifted from the module for months (the
-// module never wrote the voting/peek attributes; the fallback never learned
-// the route token or the lazy-image guard), so the two are now kept
-// character-identical and this pin fails the moment they diverge again.
-function extractObjectBody(source, startIndex) {
-    let depth = 0;
-    for (let i = startIndex; i < source.length; i += 1) {
-        const char = source[i];
-        if (char === '{') depth += 1;
-        else if (char === '}') {
-            depth -= 1;
-            if (depth === 0) return source.slice(startIndex, i + 1);
-        }
+// The ytkit.js `|| { … }` object used to be a full second copy of the feature,
+// reached only when the module content script failed to load. It drifted from
+// the module for months (the module never wrote the voting/peek attributes; the
+// copy never learned the route token or the lazy-image guard), and the remedy
+// was a character-identical pin. v4.72.0 deleted the copy instead, which is the
+// only way the drift cannot come back. What is left must stay a descriptor: the
+// settings list still needs a name, a group, and isParent when the module is
+// missing.
+test('DeArrow monolith keeps only a descriptor stub', () => {
+    const factoryIndex = sources.ytkit.indexOf('createDeArrowFeature');
+    assert.ok(factoryIndex > -1, 'ytkit.js must construct DeArrow through the module factory');
+    const stubStart = sources.ytkit.indexOf('|| {', factoryIndex);
+    const stubEnd = sources.ytkit.indexOf('\n        }),', stubStart);
+    assert.ok(stubEnd > stubStart, 'DeArrow stub must terminate');
+    const stub = sources.ytkit.slice(stubStart, stubEnd);
+    assert.ok(stub.length < 1400,
+        `DeArrow fallback must stay a descriptor stub, got ${stub.length} bytes`);
+    for (const key of ['id', 'name', 'description', 'group', 'icon', 'isParent']) {
+        assert.match(stub, new RegExp(`\\b${key}:`), `stub must still declare ${key}`);
     }
-    throw new Error('extractObjectBody: unbalanced braces');
-}
-
-test('DeArrow monolith fallback is character-identical to the peeled module', () => {
-    const moduleStart = dearrowModuleSource.indexOf('return {') + 'return '.length;
-    const moduleBody = extractObjectBody(dearrowModuleSource, moduleStart)
-        .split('\n').map(line => line.replace(/^\s+/, '')).join('\n');
-    const fallbackStart = sources.ytkit.indexOf('|| {', sources.ytkit.indexOf('createDeArrowFeature')) + 3;
-    const fallbackBody = extractObjectBody(sources.ytkit, fallbackStart)
-        .split('\n').map(line => line.replace(/^\s+/, '')).join('\n');
-    assert.equal(fallbackBody, moduleBody,
-        'extension/ytkit.js DeArrow fallback must mirror features/dearrow/index.js — ' +
-        'fix the module, then copy its object body into the fallback');
+    assert.doesNotMatch(stub, /_renderTitle|_fetchBranding|_processPage/,
+        'stub must not re-inline the implementation the module owns');
 });
 
 test('DeArrow feature block is reachable via the shared helper', () => {
@@ -66,7 +60,7 @@ test('DeArrow watch-page title replacement announces via aria-live (NX5)', () =>
     // refactor can't silently regress the assistive-tech surface.
     // Anchor on the shared title renderer rather than a prose comment: the
     // module and the ytkit.js fallback are kept identical.
-    for (const [label, source] of [['ytkit.js', sources.ytkit], ['module', dearrowModuleSource]]) {
+    for (const [label, source] of [['module', dearrowModuleSource]]) {
         const start = source.indexOf('_renderTitle(titleEl, formatted');
         assert.ok(start > -1, `DeArrow primary-title path must exist in ${label}`);
         const region = source.slice(start, start + 4200);
@@ -80,7 +74,7 @@ test('DeArrow watch-page title replacement announces via aria-live (NX5)', () =>
 });
 
 test('DeArrow paired-title mode covers cards, the watch title, and teardown', () => {
-    for (const [label, source] of [['ytkit.js', sources.ytkit], ['module', dearrowModuleSource]]) {
+    for (const [label, source] of [['module', dearrowModuleSource]]) {
         assert.match(source, /daShowOriginalTitle/,
             `paired-title mode must read daShowOriginalTitle (${label})`);
         assert.match(source, /_WATCH_TITLE_SELECTORS:[\s\S]*?not\(\.daCustomTitle\)/,
@@ -114,7 +108,7 @@ test('DeArrow selectors are resilient to YouTube class-name churn', () => {
     //
     // This test pins the resilient surface so a future "optimization" that
     // swaps in a hashed class would fail loudly.
-    const [block] = extractFeatureBlock(sources.ytkit, 'deArrow');
+    const block = dearrowModuleSource;
 
     // Custom-element tags must be the primary card walker.
     assert.match(block, /ytd-rich-item-renderer/,
@@ -192,7 +186,7 @@ test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision
     // stay unique to us (the "da" prefix is short for "DeArrow"). If
     // YouTube ever shipped a class named .daCustomTitle natively, our
     // duplicate-detection would false-positive.
-    const [block] = extractFeatureBlock(sources.ytkit, 'deArrow');
+    const block = dearrowModuleSource;
     assert.match(block, /\.daCustomTitle/);
     assert.match(block, /\.da-replaced-thumb/);
     assert.match(block, /\[data-da-processed\]|data-da-processed/);
