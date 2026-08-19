@@ -206,12 +206,32 @@ function collectSourceText(dir, sink) {
     }
 }
 
+// A schema key is only "referenced" when it appears as a whole token. Plain
+// substring matching makes this invariant vacuous for every prefix family: a
+// key that is a lexical substring of any other identifier can never be
+// flagged orphaned, so deleting every consumer of `sponsorBlock` would still
+// pass while `sponsorBlockBaseUrl` exists.
+const KEY_BOUNDARY_CACHE = new Map();
+function corpusReferencesKey(corpus, key) {
+    let pattern = KEY_BOUNDARY_CACHE.get(key);
+    if (!pattern) {
+        const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // A key is a whole token when it is not flanked by identifier
+        // characters. `$` and `-` are excluded deliberately: neither appears
+        // in a schema key, and treating `-` as a boundary would let a
+        // kebab-case string satisfy a camelCase key.
+        pattern = new RegExp('(?<![A-Za-z0-9_$])' + escaped + '(?![A-Za-z0-9_$])');
+        KEY_BOUNDARY_CACHE.set(key, pattern);
+    }
+    return pattern.test(corpus);
+}
+
 const referenceChunks = [];
 for (const root of REFERENCE_ROOTS) collectSourceText(root, referenceChunks);
 const referenceCorpus = referenceChunks.join(String.fromCharCode(10));
 const orphanKeys = SETTINGS_SCHEMA
     .map((entry) => entry.key)
-    .filter((key) => !referenceCorpus.includes(key));
+    .filter((key) => !corpusReferencesKey(referenceCorpus, key));
 if (orphanKeys.length) {
     issues.push('schema key(s) referenced nowhere in extension/: ' + orphanKeys.join(', '));
 }
@@ -245,10 +265,80 @@ function collectRuntimeSources(dir, sink) {
     }
 }
 
+// Strip comments WITHOUT crossing string boundaries.
+//
+// The naive `/\/\*[\s\S]*?\*\//g` this replaced could not tell a comment from
+// a string containing comment punctuation. ytkit.js carries the literal
+// `'/*/*'`, which opened a fake block comment that ran 75,662 characters --
+// deleting roughly lines 5877-7300 of runtime code from this gate's corpus.
+// Every schema key implemented only in that region looked unreferenced, and
+// the gate stayed green purely because its substring test matched a longer
+// identifier elsewhere. Whole-token matching exposed it.
+//
+// This is a small scanner rather than a regex: it tracks string, template and
+// regex-literal state so a comment marker inside a literal is left alone.
 function stripJsComments(source) {
-    return String(source || '')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ')
-        .replace(/(^|\n)\s*\/\/[^\n]*/g, '$1');
+    const text = String(source || '');
+    let out = '';
+    let i = 0;
+    // Tracks the last significant character so a `/` can be classified as
+    // division or as the start of a regex literal.
+    let prevSignificant = '';
+    while (i < text.length) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        // Line comment.
+        if (char === '/' && next === '/') {
+            while (i < text.length && text[i] !== '\n') i += 1;
+            continue;
+        }
+        // Block comment.
+        if (char === '/' && next === '*') {
+            i += 2;
+            while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i += 1;
+            i += 2;
+            out += ' ';
+            continue;
+        }
+        // String or template literal — copied through verbatim.
+        if (char === '"' || char === "'" || char === '`') {
+            const quote = char;
+            out += char;
+            i += 1;
+            while (i < text.length) {
+                if (text[i] === '\\') { out += text[i] + (text[i + 1] || ''); i += 2; continue; }
+                out += text[i];
+                if (text[i] === quote) { i += 1; break; }
+                i += 1;
+            }
+            prevSignificant = quote;
+            continue;
+        }
+        // Regex literal. Only after a position where a regex may legally
+        // begin; otherwise the `/` is division.
+        if (char === '/' && (prevSignificant === '' || '=(,:[!&|?{};+-*%<>~^'.includes(prevSignificant))) {
+            out += char;
+            i += 1;
+            let inClass = false;
+            while (i < text.length) {
+                if (text[i] === '\\') { out += text[i] + (text[i + 1] || ''); i += 2; continue; }
+                if (text[i] === '[') inClass = true;
+                else if (text[i] === ']') inClass = false;
+                else if (text[i] === '/' && !inClass) { out += text[i]; i += 1; break; }
+                else if (text[i] === '\n') break;
+                out += text[i];
+                i += 1;
+            }
+            prevSignificant = '/';
+            continue;
+        }
+
+        out += char;
+        if (!/\s/.test(char)) prevSignificant = char;
+        i += 1;
+    }
+    return out;
 }
 
 const runtimeSources = [];
@@ -269,7 +359,7 @@ const runtimeCorpus = runtimeChunks.join('\n');
 const inertKeys = SETTINGS_SCHEMA
     .filter((entry) => !entry.internal)
     .map((entry) => entry.key)
-    .filter((key) => !featureCopy[`feature_${key}_name`] && !runtimeCorpus.includes(key));
+    .filter((key) => !featureCopy[`feature_${key}_name`] && !corpusReferencesKey(runtimeCorpus, key));
 if (inertKeys.length) {
     issues.push('user-facing schema key(s) have no runtime consumer or registered feature: ' + inertKeys.join(', '));
 }

@@ -428,16 +428,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — `check-settings` orphan/consumer invariants are substring-vacuous for prefix-family keys
-  Category: testing
-  Where: `scripts/check-settings.js:210-215` and `:267-273` (`corpus.includes(key)`)
-  Problem: a key that is a lexical substring of any other identifier can never be flagged orphaned — delete every consumer of `sponsorBlock` and the gate stays green because `sponsorBlockBaseUrl` contains it; same for every prefixed family. The gate is real only for unique-named keys. (No current orphan slips through — gate weakness only.)
-  Evidence: verified by hand at `:212`.
-  Fix: word-boundary match (`new RegExp('\\b'+escape(key)+'\\b')`) or quote-delimited/property-access match; bait-verify by deleting a prefix-family key's consumers.
-  Acceptance: the bait fails the gate; current tree still passes.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Future-version imports drop settings with only a count: `skippedKeys` is computed but never shown
   Category: ux
   Where: `extension/core/policy-profile.js:245,266,285` (`skippedKeys` built and returned); `extension/popup.js:869-876` (comment claims "persisted-domains' before/after counts report those skips" — nothing names the dropped keys to the user or diagnostics)
