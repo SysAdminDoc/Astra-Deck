@@ -850,11 +850,29 @@ function mergeImportedSettingsWithDefaults(settings, defaults, settingsVersion, 
     const settingsToValidate = { ...migrated };
     delete settingsToValidate._settingsVersion;
     const validated = validateSettingsForBackupImport(settingsToValidate);
+    const skipped = takeLastImportSkippedKeys();
+    if (skipped.length) reportImportSkippedKeys(skipped);
     return sanitizeSettingsObject({
         ...defaults,
         ...validated,
         _settingsVersion: Math.max(migratedVersion, normalizeSettingsVersion(settingsVersion))
     });
+}
+
+// A future-version backup can carry settings this build has never heard of.
+// Naming them is the difference between "27 settings imported" and the user
+// knowing that the one setting they cared about did not come across.
+function reportImportSkippedKeys(keys) {
+    const MAX_NAMED = 6;
+    const named = keys.slice(0, MAX_NAMED).join(', ');
+    const extra = keys.length > MAX_NAMED ? ` (+${keys.length - MAX_NAMED} more)` : '';
+    const message = t('statusImportSkippedKeysTpl',
+        `${keys.length} setting(s) from a newer version were skipped: ${named}${extra}`)
+        .replace('{count}', String(keys.length))
+        .replace('{keys}', named + extra);
+    // Held longer than a routine status: the user needs time to read a list.
+    showStatus(message, 'info', 9000);
+    console.warn('[Astra Deck] settings import skipped unknown keys:', keys.join(', '));
 }
 
 function formatSchemaValidationError(prefix, validation) {
@@ -864,18 +882,33 @@ function formatSchemaValidationError(prefix, validation) {
     return `${prefix}: ${sample || 'schema validation failed'}${suffix}`;
 }
 
+// Names of settings dropped by the most recent import, so the caller can tell
+// the user WHICH settings did not survive rather than only how many.
+let lastImportSkippedKeys = [];
+
+function takeLastImportSkippedKeys() {
+    const keys = lastImportSkippedKeys;
+    lastImportSkippedKeys = [];
+    return keys;
+}
+
 function validateSettingsForBackupImport(settings) {
+    lastImportSkippedKeys = [];
     const policy = ensurePolicyProfile();
     if (!policy || typeof policy.validateSettingsSnapshot !== 'function') {
         return sanitizeSettingsObject(settings);
     }
     // A backup from a newer build may contain settings this build does not
-    // know. Import every validated key, drop only the unknown keys, and let
-    // persisted-domains' before/after counts report those skips in the import
-    // preview. Type-invalid known keys remain a hard rejection.
+    // know. Import every validated key and drop only the unknown ones -- but
+    // record their names, because an aggregate count cannot tell a user
+    // whether the setting they cared about survived. Type-invalid known keys
+    // remain a hard rejection.
     const validation = policy.validateSettingsSnapshot(settings, { dropUnknown: true });
     if (!validation.ok) {
         throw new Error(formatSchemaValidationError('Settings import rejected', validation));
+    }
+    if (Array.isArray(validation.skippedKeys) && validation.skippedKeys.length) {
+        lastImportSkippedKeys = validation.skippedKeys.slice();
     }
     return sanitizeSettingsObject(validation.settings);
 }
