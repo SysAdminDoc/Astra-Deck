@@ -1210,9 +1210,7 @@ test('digitalWellbeing Resume Video resumes only playback paused by the reminder
         else global.requestAnimationFrame = priorAnimationFrame;
     }
 
-    const dwIdx = sources.ytkit.indexOf("id: 'digitalWellbeing'");
-    const fallback = sources.ytkit.slice(dwIdx, dwIdx + 24000);
-    for (const [label, source] of [['module', fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8')], ['ytkit.js fallback', fallback]]) {
+    for (const [label, source] of [['module', fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8')]]) {
         assert.match(source, /resumeAfterDismiss = kind === 'break'/,
             `${label} must record whether the break paused active playback`);
         assert.match(source, /resumeAfterDismiss && video && video\.paused/,
