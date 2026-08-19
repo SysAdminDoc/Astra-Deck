@@ -22,7 +22,10 @@ function expandText(text) {
         if (!mapped) transformed += char;
         else transformed += char === lower ? mapped : mapped.toUpperCase();
     }
-    const padding = ' ~'.repeat(Math.max(1, Math.ceil(text.length * 0.15)));
+    // Two characters per repeat, so 0.2 gives roughly the 40% expansion the
+    // reflow lane is meant to exercise — the rule of thumb for how much longer
+    // a translation of English runs in the worst case.
+    const padding = ' ~'.repeat(Math.max(1, Math.ceil(text.length * 0.2)));
     return transformed + padding;
 }
 
