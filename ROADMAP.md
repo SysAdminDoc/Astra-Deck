@@ -595,20 +595,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
 
 Evidence detail and sources live in `RESEARCH.md` (2026-08-19). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication, migration docs, supply-chain doc, SponsorBlock/DeArrow submission) are not duplicated; the MV2-purge adoption window (uBO leaves CWS 2026-08-31) makes the blocked distribution items time-sensitive but does not change their operator-gated status.
 
-- [ ] P2 — Resolve DeArrow API licensing before any store submission
-  Why: dearrow.ajay.app/payment and /free state the DeArrow API is free only for non-browser-extension use — extensions are expected to carry the $1 license-key flow. Astra's dearrow feature calls `GET /api/branding` with no license handling, which is fine for an unpublished GitHub build but a licensing posture problem the moment a store listing exists (and the store-safe profile ships the feature).
-  Evidence: https://dearrow.ajay.app/payment ; https://dearrow.ajay.app/free ; `extension/features/dearrow/index.js:167`. Confidence: Likely — the exact wire contract (param/header, enforcement for read-only GETs) needs confirmation against https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow before implementing.
-  Touches: `extension/features/dearrow/index.js`, `extension/core/settings-schema.js` (optional licenseKey entry, backup-excluded like other credentials), `extension/_locales/**`, docs/privacy-policy.md (disclosure)
-  Acceptance: the DeArrow settings surface carries an optional license-key field passed per the documented contract plus honest copy about upstream's licensing; with no key the feature either uses the documented free tier or states its unlicensed status; RESEARCH.md Open Question resolved with the confirmed contract.
-  Complexity: S
-
-- [ ] P2 — Hide the new AI surfaces: Ask-YouTube chatbot entry points and search AI carousels
-  Why: YouTube rolled the "Ask" chatbot to ALL signed-in US users on 2026-08-12 with no documented opt-out, and tested AI search carousels/"Highlights" through July — top user complaint class, and no competitor ships toggles for these yet (Unhook/BrowseWell verified absent 2026-08-19). Astra already ships `hideAiSummary` + `hideAiContextPanels` (since 4.51.1), so this is an extension of shipped features into new whitespace, not new ground.
-  Evidence: RESEARCH.md §Community (socialmediatoday 2026-08-12; dead Google support thread asking how to turn it off); `extension/core/settings-schema.js:192,195`.
-  Touches: `extension/core/selector-packs/**`, `extension/ytkit.js`, `extension/core/settings-schema.js` (new key(s) via the nine-places checklist), `extension/_locales/**`, `YTKit.user.js`
-  Acceptance: the Ask-YouTube entry button/panel and the search AI carousel are hidden when enabled, via structural selectors captured from the live post-2026-08-12 DOM (browser-gated capture first — do NOT guess selectors; the existing `hideAiSummary` selectors get re-verified in the same capture); hide-attribution marks the hidden nodes; userscript ported or classified.
-  Complexity: M
-
 - [ ] P2 — Complete the anti-translation matrix: chapters and description
   Why: auto-dub/auto-translation defeat is the hottest 2026 demand category with the weakest supply (ImprovedTube merged auto-dub fixes 2026-08-05; yt-anti-translate stagnant since April despite owning the niche). Astra covers titles (`antiTranslate`), thumbnails (`antiTranslateThumbnails`), transcript (`antiTranslateTranscript`), and original audio (`core/audio-track.js`) — chapters and description remain translated, so the matrix advertises completeness it doesn't have.
   Evidence: RESEARCH.md §Competitive (ImprovedTube PR #4179, issue #2716); YouTube-No-Translation's matrix (titles/audio/captions/chapters/thumbnails) as the parity reference.
