@@ -368,16 +368,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified (trace); recommend a 2-navigation live confirm
   Effort: S
 
-- [ ] P3 — One rejected deferred feature module fails the entire runtime
-  Category: reliability
-  Where: `extension/runtime-bootstrap.js:349` (`Promise.all` over deferred feature imports; a single rejection fails the whole runtime and `ytkit.js` never runs)
-  Problem: fail-closed is correct for the FOUNDATION modules (a missing guard module must not soften security), but for the 26 peeled feature modules one corrupted/unfetchable file (e.g. a truncated store install) turns "one feature broken" into "extension does nothing on the page" with only a console signal. check-syntax gates shipped syntax errors, so reachability is low — this is resilience hardening.
-  Evidence: load path traced by the trust-boundary sweep (fail-closed confirmed, no security bypass in partial-load).
-  Fix: `Promise.allSettled` for the feature (not foundation) tier: log rejects to the diagnostic ring, mark the affected feature degraded in the health surface, and continue.
-  Acceptance: with one feature module import forced to reject, the page still gets every other feature and the failure is visible in diagnostics; foundation-module failure still fails closed.
-  Confidence: Verified (path); scenario Needs-repro
-  Effort: S
-
 - [ ] P3 — New enum `<select>` editors misrepresent a legacy out-of-enum stored value as the first option
   Category: correctness / ux
   Where: `extension/popup.js:3628-3640` (`option.selected = value === effective`; no coercion or placeholder when `effective` is not in `entry.enum`)
