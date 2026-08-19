@@ -33,15 +33,6 @@ Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.
   Confidence: Verified
   Effort: M
 
-- [ ] P3 — EN messages.json sorted-insert ordering has drifted
-  Category: maintainability
-  Where: `extension/_locales/en/messages.json` (`feature_sponsorBlock*` before `feature_scrollToPlayer`; `playerCcAria` after `playerGearTitleTpl`; `photosensitiveFlashDetected` inside the `playlist*` block)
-  Problem: Tooling convention treats the file as sorted-inserted; drift makes future surgical inserts land inconsistently and inflates diffs. No runtime effect.
-  Fix: re-sort next time the generator rewrites EN.
-  Acceptance: keys sort consistently; locale parity gates stay green.
-  Confidence: Verified
-  Effort: S
-
 ### Follow-up findings — 2026-08-10 (user-reported: hide "X" button missing from thumbnails)
 
 ### Follow-up findings — 2026-08-11 (filter-list / permission audit)
@@ -82,13 +73,6 @@ duplicated here.
   Complexity: L
 
 ### P3
-
-- [ ] P3 — Delete the five dead helpers in `popup.js` and `ytkit.js`
-  Why: four import sanitisers duplicated from `ytkit.js` with zero call sites in `popup.js` are a real fork risk — a future fix to the originals will not reach the copies, and nothing indicates the copies are dead.
-  Evidence: `extension/popup.js:4204` `sanitizeImportedHiddenVideos`, `:4208` `getImportedFilteredVideoPosts`, `:4215` `sanitizeImportedBlockedChannels`, `:4231` `sanitizeImportedBookmarks`; the originals at `ytkit.js:1196/1205/1333/1382` are used at `ytkit.js:4553, 4563, 4565, 4612-4631, 6502`. Also `ytkit.js:5004` `cachedQuery(selector)`, defined and never called.
-  Touches: `extension/popup.js`, `extension/ytkit.js`
-  Acceptance: the five functions are removed, `npm test` and `npm run check` stay green, and nothing in the import path regresses.
-  Complexity: S
 
 - [ ] P3 — Lint the tooling that enforces everything else
   Why: the 28 gate scripts, the build script and the userscript sync script are the highest-leverage code in the repo and are the only JavaScript never linted.
@@ -364,8 +348,6 @@ duplicated here.
   Acceptance: no comment references a non-existent PIN; the snapshot-fail copy names the real cause; the import-snapshot fallback is identical at both call sites.
   Confidence: Verified
   Effort: S
-
-Note — refines the existing "Delete the five dead helpers in `popup.js` and `ytkit.js`" item: its line numbers are stale. The dead import-sanitizers are now at `extension/popup.js:4559` (`sanitizeImportedVideoIdList`), `:4575` (`sanitizeImportedHiddenVideos`), `:4579` (`getImportedFilteredVideoPosts`), `:4586` (`sanitizeImportedBlockedChannels`), `:4602` (`sanitizeImportedBookmarks`) — six functions, not four — and `ytkit.js:5004` no longer holds `cachedQuery` (the file grew). Update the item's `Where:` before implementing.
 
 ## Audit Findings — 2026-08-18
 

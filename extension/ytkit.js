@@ -5147,21 +5147,6 @@ return response;
         return snapshot;
     }
 
-    // ── DOM Element Cache — invalidated on SPA navigation ──
-    const _elCache = new Map();
-    let _elCacheHref = '';
-    function cachedQuery(selector) {
-        const href = window.location.href;
-        if (href !== _elCacheHref) { _elCache.clear(); _elCacheHref = href; }
-        if (_elCache.has(selector)) {
-            const el = _elCache.get(selector);
-            if (el && el.isConnected) return el;
-            _elCache.delete(selector);
-        }
-        const el = document.querySelector(selector);
-        if (el) _elCache.set(selector, el);
-        return el;
-    }
 
     //  SECTION 2: FEATURE DEFINITIONS
     // CSS-only feature factory — eliminates boilerplate for features that just inject/remove a style
