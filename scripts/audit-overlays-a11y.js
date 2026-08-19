@@ -24,8 +24,29 @@ function readSources(overrides = {}) {
         downloadUi: overrides.downloadUi ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'download-ui', 'index.js'), 'utf8'),
         liveChat: overrides.liveChat ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'live-chat', 'index.js'), 'utf8'),
         videoNotes: overrides.videoNotes ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'video-notes', 'index.js'), 'utf8'),
-        smoke: overrides.smoke ?? fs.readFileSync(path.join(ROOT, 'docs', 'screen-reader-smoke.md'), 'utf8')
+        smoke: overrides.smoke ?? fs.readFileSync(path.join(ROOT, 'docs', 'screen-reader-smoke.md'), 'utf8'),
+        // Every feature module, globbed. The named entries above are the ones
+        // individual checks reach for by hand; this is the safety net that keeps
+        // a peeled or renamed feature from leaving the gate's scope unnoticed.
+        allFeatureModules: overrides.allFeatureModules ?? readAllFeatureModules()
     };
+}
+
+// A floor on the gate's own scope. Peeling video-notes out of ytkit.js dropped
+// its overlay checks off this gate silently until the module was added to the
+// list by hand; a shrinking scope must fail instead of quietly passing.
+const MIN_FEATURE_MODULES = 20;
+
+function readAllFeatureModules() {
+    const featuresDir = path.join(ROOT, 'extension', 'features');
+    if (!fs.existsSync(featuresDir)) return {};
+    const out = {};
+    for (const entry of fs.readdirSync(featuresDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const file = path.join(featuresDir, entry.name, 'index.js');
+        if (fs.existsSync(file)) out[entry.name] = fs.readFileSync(file, 'utf8');
+    }
+    return out;
 }
 
 function escapeRegex(value) {
@@ -259,6 +280,11 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     const add = (name, ok, failure) => checks.push({ name, ok: Boolean(ok), failure });
 
     const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, smoke } = sources;
+    const featureModuleCount = Object.keys(sources.allFeatureModules || {}).length;
+    add('Overlay audit still covers the feature modules',
+        featureModuleCount >= MIN_FEATURE_MODULES,
+        `Overlay audit scope collapsed to ${featureModuleCount} feature module(s), below the floor of `
+        + `${MIN_FEATURE_MODULES} — a renamed or moved feature would leave this gate silently`);
     for (const check of runKeyboardBehaviorChecks()) add(check.name, check.ok, check.failure);
 
     // Toast DOM and inline fallback.

@@ -55,7 +55,11 @@ test('the scanner flags a new near-white surface and clears once a lane is added
     const scanner = fs.readFileSync(GATE, 'utf8')
         .replace("path.join(__dirname, '..')", JSON.stringify(stage))
         .replace("path.join(__dirname, 'light-theme-baseline.json')",
-            JSON.stringify(path.join(stage, 'baseline.json')));
+            JSON.stringify(path.join(stage, 'baseline.json')))
+        // The staged tree is one CSS file on purpose; the production scope
+        // floor would reject it before the behaviour under test ever runs.
+        // Neutralised here rather than given a runtime escape hatch in the gate.
+        .replace('const MIN_SOURCES = 30;', 'const MIN_SOURCES = 0;');
     const scannerPath = path.join(stage, 'gate.js');
     fs.writeFileSync(scannerPath, scanner);
     fs.mkdirSync(path.join(stage, 'extension'), { recursive: true });
