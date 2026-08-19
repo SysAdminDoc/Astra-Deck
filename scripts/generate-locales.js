@@ -2090,6 +2090,22 @@ for (const [locale, messages] of Object.entries(SPONSORED_FILTER_TRANSLATIONS)) 
 // Keep the inline fallback and the separately loaded feature module aligned
 // with the catalog. These strings are also used by the userscript fallback,
 // so they must be translated before the locale artifacts are regenerated.
+// The chat mode-change notice toggle hides a renderer tag, so the selector
+// needs no translation, but its settings copy does like any sub-feature.
+const CHAT_MODE_NOTICE_TRANSLATIONS = {
+  ar: { 'Mode Notices': 'إشعارات الوضع', 'Hide the "slow mode is on" notice and its members-only siblings': 'إخفاء إشعار «الوضع البطيء قيد التشغيل» وما يشبهه من إشعارات الأعضاء فقط' },
+  de: { 'Mode Notices': 'Modushinweise', 'Hide the "slow mode is on" notice and its members-only siblings': '„Zeitlupenmodus ist aktiv“ und ähnliche Hinweise nur für Mitglieder ausblenden' },
+  es: { 'Mode Notices': 'Avisos de modo', 'Hide the "slow mode is on" notice and its members-only siblings': 'Oculta el aviso «el modo lento está activado» y sus equivalentes de solo miembros' },
+  fr: { 'Mode Notices': 'Avis de mode', 'Hide the "slow mode is on" notice and its members-only siblings': 'Masquer l’avis « le mode lent est activé » et ses équivalents réservés aux membres' },
+  it: { 'Mode Notices': 'Avvisi di modalità', 'Hide the "slow mode is on" notice and its members-only siblings': 'Nascondi l’avviso «la modalità lenta è attiva» e i suoi equivalenti riservati agli iscritti' },
+  ja: { 'Mode Notices': 'モード通知', 'Hide the "slow mode is on" notice and its members-only siblings': '「低速モードがオンです」の通知やメンバー限定の同様の通知を非表示にします' },
+  ko: { 'Mode Notices': '모드 알림', 'Hide the "slow mode is on" notice and its members-only siblings': '“느린 모드가 켜짐” 알림과 멤버 전용 알림을 숨깁니다' },
+  pt_BR: { 'Mode Notices': 'Avisos de modo', 'Hide the "slow mode is on" notice and its members-only siblings': 'Oculta o aviso “o modo lento está ativado” e seus equivalentes exclusivos para membros' },
+  ru: { 'Mode Notices': 'Уведомления о режиме', 'Hide the "slow mode is on" notice and its members-only siblings': 'Скрывать уведомление «медленный режим включён» и похожие уведомления для участников' },
+  zh_CN: { 'Mode Notices': '模式提示', 'Hide the "slow mode is on" notice and its members-only siblings': '隐藏“慢速模式已开启”提示及其仅限会员的同类提示' }
+};
+for (const [locale, messages] of Object.entries(CHAT_MODE_NOTICE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The Refined Comments vote badge replaces YouTube's own like button, which the
 // restyle hides, so its label is the only like affordance the user sees.
 const COMMENT_VOTE_BADGE_TRANSLATIONS = {

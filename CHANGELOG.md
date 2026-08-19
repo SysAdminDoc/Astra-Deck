@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [4.72.0] - 2026-08-19
 
+### Added
+
+- A toggle for the chat mode notices, on by default. Live chat posts a message
+  into the stream when the host turns on slow mode, and it sits there for the
+  rest of the stream repeating itself every time you scroll past. Settings ->
+  Live Chat -> Hide Chat Elements -> Mode Notices now hides it, along with the
+  members-only and subscribers-only notices that use the same renderer. Turn it
+  off if you want those notices back.
+
 ### Fixed
 
 - Refined Comments shows a like count again, and lets you like a comment. The

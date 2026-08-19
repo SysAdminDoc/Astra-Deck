@@ -7870,5 +7870,11 @@
   },
   "ui_commentLikeBadgeCountAriaTpl": {
     "message": "{label}. {count} me gusta"
+  },
+  "feature_chatHide_modeNotices_name": {
+    "message": "Avisos de modo"
+  },
+  "feature_chatHide_modeNotices_desc": {
+    "message": "Oculta el aviso «el modo lento está activado» y sus equivalentes de solo miembros"
   }
 }

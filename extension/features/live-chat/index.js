@@ -36,7 +36,12 @@
         emoji: '#emoji-picker-button, yt-live-chat-message-input-renderer #picker-buttons yt-icon-button',
         topFan: 'yt-live-chat-author-badge-renderer[type="member"], yt-live-chat-author-badge-renderer[type="top-gifter"]',
         superChats: 'yt-live-chat-paid-message-renderer, yt-live-chat-paid-sticker-renderer',
-        levelUp: 'yt-live-chat-viewer-engagement-message-renderer[engagement-type="VIEWER_ENGAGEMENT_MESSAGE_TYPE_LEVEL_UP"]'
+        levelUp: 'yt-live-chat-viewer-engagement-message-renderer[engagement-type="VIEWER_ENGAGEMENT_MESSAGE_TYPE_LEVEL_UP"]',
+        // "Slow mode is on", "Members-only mode", and the rest of the chat
+        // mode-change notices. The renderer tag is the only language-independent
+        // handle: the visible copy is translated, and matching on it would break
+        // in every locale but English.
+        modeNotices: 'yt-live-chat-mode-change-message-renderer'
     });
     const REACTION_DEPENDENT_CONTROLS = new Set(['reactions', 'support', 'emoji']);
     const FALLBACK_DEFAULTS = Object.freeze({
@@ -46,7 +51,7 @@
         hiddenChatElements: Object.freeze([
             'header', 'menu', 'popout', 'timestamps', 'polls', 'ticker',
             'leaderboard', 'support', 'banner', 'emoji', 'topFan',
-            'superChats', 'levelUp', 'bots'
+            'superChats', 'levelUp', 'bots', 'modeNotices'
         ]),
         reactionSpammer: false,
         reactionSpammerMinIntervalMs: 500,
