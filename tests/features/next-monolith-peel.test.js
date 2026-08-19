@@ -93,17 +93,32 @@ test('floatingLogoOnWatch monolith prefers the module runtime factory before inl
         'factory dependency bag must avoid the later-declared local ICONS binding');
 });
 
-test('youtubeMusicCompat monolith prefers the module runtime factory before inline fallback', () => {
+test('youtubeMusicCompat monolith delegates to the module and keeps only a descriptor stub', () => {
+    // Until v4.72.0 ytkit.js carried a byte-identical second copy of the whole
+    // feature behind the || fallback. The copy is gone; what remains must stay
+    // a descriptor, because the settings list still needs a name and a group
+    // even when the module fails to load.
     const factoryNeedle = 'globalThis.YTKitFeatures?.youtubeMusicCompat?.createYoutubeMusicCompatFeature?.({';
     const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
     assert.ok(factoryIndex > -1, 'ytkit.js must construct youtubeMusicCompat through the module factory');
     const fallbackIndex = sources.ytkit.indexOf("id: 'youtubeMusicCompat'", factoryIndex);
-    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must retain the inline youtubeMusicCompat fallback after the factory call');
+    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must keep a descriptor stub after the factory call');
     const dependencyBag = sources.ytkit.slice(factoryIndex, fallbackIndex);
     assert.ok(dependencyBag.includes('}) || {'),
-        'module factory path must fall back to the inline feature object');
+        'module factory path must fall back to the descriptor stub');
     assert.ok(dependencyBag.includes('injectStyle'),
         'ytkit.js factory dependency bag must include injectStyle');
+
+    const stubEnd = sources.ytkit.indexOf('\n        }),', fallbackIndex);
+    assert.ok(stubEnd > fallbackIndex, 'youtubeMusicCompat stub must terminate');
+    const stub = sources.ytkit.slice(fallbackIndex, stubEnd);
+    assert.ok(stub.length < 1200,
+        `youtubeMusicCompat fallback must stay a descriptor stub, got ${stub.length} bytes`);
+    for (const key of ['id', 'name', 'description', 'group', 'icon']) {
+        assert.match(stub, new RegExp(`\\b${key}:`), `stub must still declare ${key}`);
+    }
+    assert.doesNotMatch(stub, /injectStyle\(`/,
+        'stub must not re-inline the stylesheet the module owns');
 });
 
 test('Next-2 peel modules load before ytkit.js in content scripts', () => {

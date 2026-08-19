@@ -5150,9 +5150,13 @@ test('youtubeMusicCompat only runs on music.youtube.com', () => {
     // v4.47.0 EI-NEW2: substring includes() match was replaced with
     // exact-equality `!==` so a hypothetical music.youtube.com.evil.tld
     // can't be matched. The early-return invariant is preserved.
-    const start = ytkitSource.indexOf("id: 'youtubeMusicCompat'");
+    // Reads the feature module: ytkit.js carried a byte-identical second copy
+    // of this object until v4.72.0 and now carries only a descriptor stub.
+    const musicSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'youtube-music-compat', 'index.js'), 'utf8');
+    const start = musicSource.indexOf("id: 'youtubeMusicCompat'");
     assert.ok(start > -1, 'youtubeMusicCompat must exist');
-    const block = ytkitSource.slice(start, start + 3000);
+    const block = musicSource.slice(start, start + 3000);
     assert.match(block, /location\.hostname !== 'music\.youtube\.com'/,
         'must early-return on non-music hostnames via exact-equality match');
 });
@@ -11254,7 +11258,12 @@ test('v4.47.0 polish batch — EI-NEW2 / EI-NEW3 / EI-NEW4 invariants pinned', (
     // matters, and the positive match below guarantees the new form
     // exists. Banning the old form via regex would false-positive on
     // the comment.)
-    assert.match(ytkitSrc, /location\.hostname !== 'music\.youtube\.com'/,
+    // The expression lives in features/youtube-music-compat/index.js since the
+    // v4.72.0 peel; ytkit.js keeps only the descriptor stub.
+    const musicSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'youtube-music-compat', 'index.js'), 'utf8'
+    );
+    assert.match(musicSrc, /location\.hostname !== 'music\.youtube\.com'/,
         'youtubeMusicCompat must use exact-hostname match (=== or !==)');
 
     // EI-NEW3: reactionSpammer floor reads from settings with hard-floor clamp.
