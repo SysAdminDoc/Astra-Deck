@@ -5682,8 +5682,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // (468 → 467).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 471,
-        'SETTINGS_SCHEMA must cover all 471 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 473,
+        'SETTINGS_SCHEMA must cover all 473 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -7949,6 +7949,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/hide-attribution.js',
         'extension/core/heatmap.js',
         'extension/core/youtube-thumbnails.js',
+        'extension/core/feature-schedule.js',
         'extension/core/companion-ports.js',
         'extension/core/data-flow.js',
         'extension/core/toast.js',

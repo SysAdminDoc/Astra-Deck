@@ -15,6 +15,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   on feed cards. Both live on youtube.com, so the feature adds no new site
   access; if the original image will not load, the card goes straight back to
   what YouTube rendered.
+- **Focus hours.** Any on/off feature can now carry an active window — for
+  example, Focused Mode on weeknights from 22:00 to 06:00. Windows are read
+  against your own clock, including ones that cross midnight, and leaving a
+  window puts back the value you had before it opened rather than a default.
+  It needs no new browser permission, and your schedules export and import with
+  the rest of your settings.
 
 ## [4.68.0] - 2026-08-18
 

@@ -23,6 +23,7 @@ const PURPOSE_OVERRIDES = Object.freeze({
 
     autoSkipChapterPatterns: 'Provides comma-separated chapter-name fragments that Auto-Skip Chapters treats as skippable.',
     persistentSpeedValue: 'Sets the playback rate reapplied by Persistent Playback Speed.',
+    featureSchedules: 'Maps a feature id to an optional active window ({ start, end, days, enabled }) evaluated against the local clock, so a toggle can switch itself on during focus hours and hand back your previous value when the window closes.',
     heatmapSmartSpeedColdRate: 'Sets the playback rate Heatmap Smart Speed uses through the parts of a video nobody rewatches. Never slows playback below your own speed.',
     searchFilterSort: 'Chooses the sort filter automatically added to search URLs that do not already contain a YouTube filter.',
     rememberVolumeLevel: 'Stores the logical volume percentage restored by Remember Volume.',
