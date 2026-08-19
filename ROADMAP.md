@@ -137,13 +137,6 @@ duplicated here.
   Acceptance: the popup reports transcript-index count/bytes alongside extension-local bytes by asking an open YouTube tab (and degrades cleanly when none is open); backups carry the cap and index metadata; a corruption state offers export-then-clear rather than clear alone.
   Complexity: M
 
-- [ ] P3 — Add a pseudo-locale long-string lane to the reflow smoke
-  Status 2026-08-18: the reflow coverage shipped — `smoke-headless-a11y.js` now renders ALL SIX primary surfaces (popup, sidepanel, sidebar, settings, transcript, download) at exactly 320 CSS pixels in `ar`, `de` and `pt_BR`, checking document-level horizontal scrolling, clipped controls, and (on the surfaces Astra Deck owns) `lang`/`dir`. It found and fixed a real clip: the settings footer was one unwrappable row and pushed its Done button 13px off the panel edge — bait-verified.
-  Remaining: the acceptance also asked for a generated long-string/pseudo-locale fixture. `npm run i18n:pseudolocale` exists (`scripts/generate-pseudolocale.js`) but its output is not wired into the smoke's staged `_locales`, so worst-case string length is not yet exercised.
-  Touches: `scripts/smoke-headless-a11y.js`, `scripts/generate-pseudolocale.js`
-  Acceptance: the smoke stages a generated pseudo-locale (accented, ~40% expanded) and renders every surface with it at 320 CSS pixels; failures name the clipped control.
-  Complexity: S
-
 - [ ] P3 — Userscript duplicates RYD / SponsorBlock / DeArrow / player-handoff features on non-schema keys; bundled modules are never called
   Category: maintainability
   Where: `YTKit.user.js` hand-maintained copies — RYD `:8066` (key `returnYoutubeDislike`, canonical is `returnDislike`), SponsorBlock `:14508`, DeArrow `:14788`/`:14922`; provider/handoff keys `replaceWithCobaltDownloader` `:5783`, `downloadProvider` `:5892`, and seven player-handoff keys (`showVlcButton :6708`, `showMp3DownloadButton :6784`, `showVlcQueueButton :13057`, `showMpvButton :13087`, `preferredMediaPlayer :13163`, `showDownloadPlayButton :13180`, `subsVlcPlaylist :13209`).
