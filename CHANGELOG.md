@@ -6,6 +6,38 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.75.0] - 2026-08-19
+
+### Added
+
+- Downloads started from the userscript now use the quality and the container
+  format you picked. The video and audio format settings did not exist in the
+  userscript at all, so it always used whatever the companion defaulted to.
+
+### Fixed
+
+- Clicking Download twice in the userscript no longer starts two downloads of
+  the same video.
+- Setting descriptions on narrow screens wrap properly. The third line used to
+  be sliced through the middle of the letters and hidden behind the control
+  next to it.
+- "Saving", "Try again", and the on/off labels in the popup now appear in your
+  language. They were drawn by the stylesheet, which the translation system
+  cannot reach, so every language saw English.
+- Open Full Settings shows that it is working, and clicking it repeatedly no
+  longer opens several YouTube tabs.
+- The popup uses the setting's readable name when it confirms a reset or
+  reports a failure, instead of the internal name it stores it under.
+- When a reset or import cannot be undone, the message says what actually went
+  wrong. It used to blame the size of your data, which has not been the cause
+  for some time.
+- Both download buttons announce that they open a panel, and stop announcing an
+  open state on the video player itself.
+- The "Copied." confirmations in the diagnostics panels clear themselves rather
+  than sitting there for the rest of the session.
+- The filter-list panel no longer tells you to check the address when the
+  address has nothing to do with the failure.
+
 ## [4.74.0] - 2026-08-19
 
 ### Added
