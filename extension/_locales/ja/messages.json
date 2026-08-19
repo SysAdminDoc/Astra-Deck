@@ -4811,6 +4811,9 @@
   "selectorHealthTotalTpl": {
     "message": "{count} 個のサーフェスを追跡中"
   },
+  "settingValueUnrecognized": {
+    "message": "Unrecognized: $VALUE$"
+  },
   "settingsActiveSectionFallback": {
     "message": "動画プレーヤー"
   },

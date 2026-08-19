@@ -268,26 +268,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: dialog Likely (needs a cancel-first fixture), cap + product gap Verified
   Effort: M
 
-- [ ] P3 — remainingTimeDisplay accumulates a frozen duplicate readout on every watch→watch navigation
-  Category: correctness / visual
-  Where: `extension/ytkit.js:21822-21826` (navigate rule nulls `this._el` without removing or re-querying the node), `:21785-21791` (`_update` appends a NEW span when `!this._el`); same in `YTKit.user.js:7776` + `:7763-7770`
-  Problem: `.ytp-time-display` persists across SPA navigation, so each navigation orphans the old `.ytkit-remaining-time` span (frozen at video A's remaining time) and appends a new one — one extra stale readout per navigation until destroy().
-  Evidence: trace above; the container's persistence is the same recycling fact the sibling features document.
-  Fix: in `_update`, adopt an existing span first (`this._el = timeDisplay.querySelector('.ytkit-remaining-time') || create`), or remove the old node in the navigate rule. Port to the userscript.
-  Acceptance: after three navigations exactly one readout exists and it ticks; a two-navigation live check confirms.
-  Confidence: Verified (trace); recommend a 2-navigation live confirm
-  Effort: S
-
-- [ ] P3 — New enum `<select>` editors misrepresent a legacy out-of-enum stored value as the first option
-  Category: correctness / ux
-  Where: `extension/popup.js:3628-3640` (`option.selected = value === effective`; no coercion or placeholder when `effective` is not in `entry.enum`)
-  Problem: 24 previously free-form schema entries gained `enum` in d1b332ae/2b148ea3, and nothing coerces already-persisted values at content-script `load()` (`clampSettingValue` runs only on popup edits `:3688,:3745` and import `core/policy-profile.js:278`). A stored legacy value outside the enum keeps driving the runtime while the select renders the browser default (first option) — display and storage disagree until the first edit.
-  Evidence: mechanism verified by the delta sweep; requires a pre-enum persisted value to exist in the wild.
-  Fix: when `!entry.enum.includes(effective)`, prepend a disabled "(unrecognized: X)" option and select it — or coerce via `clampSettingValue` on render and persist the clamp.
-  Acceptance: a seeded out-of-enum stored value renders visibly as unrecognized (or is normalized with a diff entry); a test seeds one and asserts the select state.
-  Confidence: mechanism Verified; occurrence Likely
-  Effort: S
-
 - [ ] P3 — Transcript refresh polish: error-path diagnostics discard the refresh outcome, and a known-dead caption URL is fetched twice before refreshing
   Category: correctness / perf
   Where: `extension/core/transcript-service.js:440-448` (thrown-error diagnostic hardcodes `fallbackReason: allowDomFallback ? 'panel-unavailable' : 'dom-disabled'`, overwriting `'refresh-discovery-failed'`/`'refresh-fetch-failed'` set at `:399,:421`); `:912-937` (`_fetchTranscriptContent` format loop: on a 403/404 for json3 it still fetches the SAME URL as xml before throwing)

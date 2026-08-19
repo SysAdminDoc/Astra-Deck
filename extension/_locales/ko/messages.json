@@ -4811,6 +4811,9 @@
   "selectorHealthTotalTpl": {
     "message": "{count}개 표면 추적 중"
   },
+  "settingValueUnrecognized": {
+    "message": "Unrecognized: $VALUE$"
+  },
   "settingsActiveSectionFallback": {
     "message": "동영상 플레이어"
   },

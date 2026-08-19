@@ -463,7 +463,12 @@ test('schema overview editors use their visible labels as accessible names', () 
 test('finite settings render a constrained select and preserve typed values and focus', () => {
     const start = popupSource.indexOf("select.className = 'so-key-select'");
     assert.ok(start > -1, 'enum select editor must exist');
-    const block = popupSource.slice(start, start + 1800);
+    // Bounded by content, not by a magic length: a fixed window silently
+    // stops covering the later assertions as soon as the branch grows, which
+    // is how a passing test turns into a vacuous one.
+    const end = popupSource.indexOf('refocusSchemaOverviewKey(entry)', start);
+    assert.ok(end > start, 'the enum branch must still end in the refocus call');
+    const block = popupSource.slice(start, end + 200);
     assert.match(block, /for \(const value of entry\.enum\)/,
         'the select vocabulary must come from the canonical schema enum');
     assert.match(block, /entry\.type === 'number' \? Number\(select\.value\) : select\.value/,

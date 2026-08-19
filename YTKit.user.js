@@ -7764,13 +7764,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const video = document.querySelector('video.html5-main-video');
                 if (!video || !video.duration) { if (this._el) this._el.textContent = ''; return; }
                 const remaining = (video.duration - video.currentTime) / (video.playbackRate || 1);
-                if (!this._el) {
+                if (!this._el || !this._el.isConnected) {
                     const timeDisplay = document.querySelector('.ytp-time-display');
                     if (!timeDisplay) return;
-                    this._el = document.createElement('span');
-                    this._el.className = 'ytkit-remaining-time';
-                    this._el.style.cssText = 'margin-left:8px;color:rgba(255,255,255,0.7);font-size:inherit;';
-                    timeDisplay.appendChild(this._el);
+                    // Adopt the span already there before making another one.
+                    // The navigate rule only drops OUR reference; the node
+                    // itself stays in the player, frozen at the previous
+                    // video's remaining time.
+                    this._el = timeDisplay.querySelector('.ytkit-remaining-time');
+                    if (!this._el) {
+                        this._el = document.createElement('span');
+                        this._el.className = 'ytkit-remaining-time';
+                        this._el.style.cssText = 'margin-left:8px;color:rgba(255,255,255,0.7);font-size:inherit;';
+                        timeDisplay.appendChild(this._el);
+                    }
                 }
                 this._el.textContent = `(-${this._formatTime(remaining)})`;
             },
@@ -7782,7 +7789,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._interval) { clearInterval(this._interval); this._interval = null; }
                 removeNavigateRule('remainTime');
-                this._el?.remove(); this._el = null;
+                document.querySelectorAll('.ytkit-remaining-time').forEach((el) => el.remove());
+                this._el = null;
             }
         },
         {
