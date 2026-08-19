@@ -118,6 +118,5 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (!core.createBrowserApi) {
         core.createBrowserApi = createBrowserApi;
-        core.resolveBrowserNamespace = resolveBrowserNamespace;
     }
 })();

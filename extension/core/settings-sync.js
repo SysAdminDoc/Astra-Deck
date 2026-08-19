@@ -906,7 +906,6 @@
     });
 
     core.createSettingsSyncController = createSettingsSyncController;
-    core.settingsSync = api;
 
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();
