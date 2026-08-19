@@ -232,8 +232,13 @@ function formatBehavior(entry) {
 }
 
 function renderEntry(entry) {
+    // Every cell goes through escapeCell, not just the purpose column. A pipe
+    // anywhere in a title, an enum value or a default silently ends the table
+    // row early, and the --check gate would still pass because the generator
+    // and the README would agree on the same broken output.
     const setting = `<a id="setting-${escapeHtml(entry.key)}"></a><strong>${escapeHtml(entry.title)}</strong><br>${code(entry.key)}`;
-    return `| ${setting} | ${escapeCell(entry.purpose)} | ${formatConstraints(entry)} | ${formatBehavior(entry)} |`;
+    const cells = [setting, entry.purpose, formatConstraints(entry), formatBehavior(entry)];
+    return `| ${cells.map(escapeCell).join(' | ')} |`;
 }
 
 function renderSettingsReference(entries = collectReferenceEntries()) {
@@ -309,6 +314,7 @@ module.exports = {
     collectReferenceEntries,
     formatBehavior,
     formatConstraints,
+    renderEntry,
     renderSettingsReference,
     replaceReference,
     run

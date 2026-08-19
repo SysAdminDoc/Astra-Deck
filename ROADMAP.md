@@ -277,16 +277,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — Settings-reference generator escapes `|` only in the Purpose cell — a future value containing a pipe silently truncates its README table row
-  Category: docs / maintainability
-  Where: `scripts/generate-settings-reference.js:165-169` (`escapeCell` used only at `:236`); `formatConstraints`/`formatBehavior`/title go through `code()`/`escapeHtml`, which do not escape `|`
-  Problem: latent today (no current value contains `|`), but the `--check` gate would PASS on the broken output since generator and README agree. An enum value or feature name with a pipe breaks the table silently.
-  Evidence: escape call sites enumerated.
-  Fix: run every cell through `escapeCell` after HTML formatting; add a generator unit test with a pipe-bearing fixture entry.
-  Acceptance: a pipe-bearing value renders escaped; the fixture test pins it.
-  Confidence: Verified (latent)
-  Effort: S
-
 - [ ] P3 — Backfill real render assertions onto the features whose DOM half was never covered
   Category: testing
   Where: `tests/features/watch-later-workbench.test.js` (the feature has 26 `appendChild`, 2 `replaceChildren`, and an `isConnected` guard; the test references none of them); same shape for other `loadFeature`-hosted features whose tests exercise only pure helpers
