@@ -176,6 +176,7 @@
   "liveLatencyTargetSeconds": 8,
   "liveLatencyMaxRate": 1.25,
   "forceDvr": false,
+  "feedPrefilter": false,
   "replayChatDensity": false,
   "showPlaylistDuration": false,
   "showTimeInTabTitle": false,

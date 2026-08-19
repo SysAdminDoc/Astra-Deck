@@ -178,6 +178,12 @@
   "feature_antiTranslateThumbnails_name": {
     "message": "Anti-Translate Thumbnails"
   },
+  "feature_feedPrefilter_desc": {
+    "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
+  },
+  "feature_feedPrefilter_name": {
+    "message": "Filter Feeds Before Render"
+  },
   "feature_heatmapSmartSpeed_desc": {
     "message": "Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data."
   },

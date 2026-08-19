@@ -105,6 +105,7 @@
         "core/resource-unlock.js",
         "core/player.js",
         "core/audio-track.js",
+        "core/feed-prefilter.js",
         "ytkit-main.js"
       ],
       "run_at": "document_start",

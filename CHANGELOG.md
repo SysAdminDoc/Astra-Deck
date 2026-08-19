@@ -21,6 +21,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   window puts back the value you had before it opened rather than a default.
   It needs no new browser permission, and your schedules export and import with
   the rest of your settings.
+- **Filter Feeds Before Render** (opt-in). Blocked channels are now removed
+  from YouTube's feed data before the page builds a card from it, rather than
+  being hidden afterwards — so a blocked video never occupies a slot, a count,
+  or a row of the layout. Playlists and the video player are deliberately never
+  touched, because their entry positions drive autoplay and "N of M". The
+  existing hide-after-render path stays on as the fallback for anything the new
+  path does not recognise.
 
 ## [4.68.0] - 2026-08-18
 

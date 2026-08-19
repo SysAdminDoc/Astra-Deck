@@ -472,6 +472,7 @@
     "dualLanguageSubtitles",
     "dualSubtitleLanguage",
     "featureSchedules",
+    "feedPrefilter",
     "forceDvr",
     "fullscreenScroll",
     "heatmapSmartSpeed",

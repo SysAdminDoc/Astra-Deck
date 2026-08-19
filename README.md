@@ -23,8 +23,8 @@
 | Release | `v4.68.0` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `473` entries across `18` categories |
-| Runtime graph | `105` modules, including `26` peeled feature modules and `289` declared feature IDs |
+| Settings schema | `474` entries across `18` categories |
+| Runtime graph | `105` modules, including `26` peeled feature modules and `290` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -363,7 +363,7 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **468 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **469 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -702,7 +702,7 @@ This generated knowledgebase documents all **468 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Video Hider and content filtering</strong> — 45 settings</summary>
+<summary><strong>Video Hider and content filtering</strong> — 46 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -744,6 +744,7 @@ This generated knowledgebase documents all **468 user-facing settings** in the c
 | <a id="setting-hideVideosWatchedRatio"></a><strong>Hide videos watched ratio</strong><br><code>hideVideosWatchedRatio</code> | Hides cards whose visible progress reaches this percentage; zero disables the rule. | Default: <code>0</code><br>Range: <code>0–1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-persistentQueue"></a><strong>Persistent Queue</strong><br><code>persistentQueue</code> | Local play queue that survives tab close and browser restart: add videos from any thumbnail, reorder, and auto-advance | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
 | <a id="setting-persistentQueueAutoAdvance"></a><strong>Queue Auto-Advance</strong><br><code>persistentQueueAutoAdvance</code> | Play the next queue entry automatically when the current video ends | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.48.0</code> |
+| <a id="setting-feedPrefilter"></a><strong>Filter Feeds Before Render</strong><br><code>feedPrefilter</code> | Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v4.69.0</code> |
 | <a id="setting-hideWatchedVideos"></a><strong>Hide Watched Videos</strong><br><code>hideWatchedVideos</code> | Dim or hide videos with a red progress bar (already watched) from feeds | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideWatchedMode"></a><strong>Hide watched mode</strong><br><code>hideWatchedMode</code> | Chooses whether Hide Watched Videos dims matched cards or removes them from view. | Default: <code>dim</code><br>Values: <code>dim</code>, <code>hide</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-advancedLocalPredicate"></a><strong>Advanced local predicate</strong><br><code>advancedLocalPredicate</code> | Enables the bounded local predicate evaluator for advanced card filtering without remote code execution. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v0.1.0</code> |

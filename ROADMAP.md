@@ -81,13 +81,6 @@ duplicated here.
   Acceptance: `monolithMs` drops measurably without splitting the monolith's public behaviour — e.g. by moving rarely-used feature bodies out of the always-parsed path — and `npm run smoke:zero-ads:live` still boots the real extension. Measure before and after at the same commit on the same machine; note that the FIRST bench run after an idle period floors ~15-20 ms high (cold page cache), so compare warm runs.
   Complexity: L
 
-- [ ] P2 — Filter before render instead of hiding after it
-  Why: post-render CSS hiding is why `hideCollaborations` could hide 32 of 102 cards for months with no symptom; the v4.58.1 ">25% of a ≥8-card feed must fail open" invariant patches the symptom at the wrong layer. BlockTube — the benchmark for this — intercepts YouTube's response data so blocked items never exist in the page, and it is decaying (487 open issues, Shorts and comment blocking reported broken, last push 2026-02-07), which leaves the position open.
-  Evidence: https://github.com/amitbl/blocktube ; `extension/features/video-hider/index.js`; the v4.58.1 changelog entry.
-  Touches: `extension/ytkit-main.js` (MAIN world), `extension/features/video-hider/index.js`, `extension/ytkit.js`, `extension/core/data-flow.js`
-  Acceptance: at least one filter class (blocked channel IDs) is applied to the browse/player response before Polymer renders it, autoplay and playlist integrity are preserved, the post-render path remains as the fallback, and a test drives the real interception rather than stubbing it. Store-review risk of data interception is assessed against the `chromium-store` profile before it ships there.
-  Complexity: XL
-
 ### P3
 
 - [ ] P3 — Delete the five dead helpers in `popup.js` and `ytkit.js`
