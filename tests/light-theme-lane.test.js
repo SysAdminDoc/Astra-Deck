@@ -10,6 +10,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const { checkChainText } = require('./helpers/check-chain');
 
 const repoRoot = path.join(__dirname, '..');
 const GATE = path.join(repoRoot, 'scripts', 'check-light-theme-lane.js');
@@ -100,7 +101,7 @@ test('the scanner flags a new near-white surface and clears once a lane is added
 
 test('the light-theme lane runs inside npm run check', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
-    assert.match(pkg.scripts.check, /npm run audit:light-theme/,
+    assert.match(checkChainText(), /check-light-theme-lane\.js/,
         'the gate is only worth having if it runs with the others');
     assert.equal(pkg.scripts['audit:light-theme'], 'node scripts/check-light-theme-lane.js');
 });

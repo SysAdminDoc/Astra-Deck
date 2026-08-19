@@ -1972,7 +1972,7 @@ test('check-versions.js exists and is wired into npm run check', () => {
 
     // Confirm npm run check chains both syntax + version validation.
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-    assert.match(pkg.scripts.check || '', /check-versions/,
+    assert.match(checkChainText(), /check-versions/,
         '`npm run check` must include node scripts/check-versions.js after check-syntax');
 });
 
@@ -2249,9 +2249,9 @@ test('local static security gates replace remote CodeQL workflow', () => {
     assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'codeql.yml')), false,
         'CodeQL workflow must stay absent under the local-build policy');
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-    assert.match(pkg.scripts.check, /scripts\/check-no-eval\.js/,
+    assert.match(checkChainText(), /scripts\/check-no-eval\.js/,
         'local check gate must keep the no-eval source security scan');
-    assert.match(pkg.scripts.check, /npm run audit:deps/,
+    assert.match(checkChainText(), /npm run audit:deps/,
         'local check gate must keep dependency auditing');
 });
 
@@ -2807,7 +2807,7 @@ test('npm run audit:a11y reports no popup a11y issues', () => {
 
 test('npm run audit:overlays covers in-page overlays and mutation canaries', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-    assert.match(pkg.scripts.check, /npm run audit:overlays/,
+    assert.match(checkChainText(), /audit-overlays-a11y\.js/,
         'npm run check must include the in-page overlay a11y audit');
     assert.match(pkg.scripts['audit:overlays'] || '', /scripts\/audit-overlays-a11y\.js/,
         'package.json must expose npm run audit:overlays');
@@ -5638,6 +5638,7 @@ test('subscriptionAiTags renders chip suffix and binds shift+click for regenerat
 
 const settingsSchemaModule = require('../extension/core/settings-schema.js');
 const defaultSettings = require('../extension/default-settings.json');
+const { checkChainText } = require('./helpers/check-chain');
 
 test('v5.0.0 settings-schema exports the required surface', () => {
     const required = [
@@ -9946,7 +9947,7 @@ test('v4.46.0 validation stays local-only with no CI workflow', () => {
 
 test('v4.46.0 dependency auditing is enforced by local scripts', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-    assert.match(pkg.scripts.check, /npm run audit:deps/,
+    assert.match(checkChainText(), /npm run audit:deps/,
         'npm run check must keep the local npm dependency audit');
     assert.equal(pkg.scripts['audit:deps'],
         'npm run audit:deps:production && node scripts/audit-dependencies.js',
@@ -10765,7 +10766,7 @@ test('v4.47.0 NF20 — check-no-eval gate is wired and rejects eval / Function /
     const pkg = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'package.json'), 'utf8'
     ));
-    assert.match(pkg.scripts.check, /scripts\/check-no-eval\.js/,
+    assert.match(checkChainText(), /scripts\/check-no-eval\.js/,
         'npm run check must invoke check-no-eval.js');
 
     // 2. The script's PATTERNS array covers the documented set.
@@ -10788,7 +10789,7 @@ test('v4.47.0 NF20 — check-no-eval gate is wired and rejects eval / Function /
     // 3. Remote validation is retired; the local check gate owns this scan.
     assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'validate.yml')), false,
         'validate workflow must stay absent under the local-build policy');
-    assert.match(pkg.scripts.check, /scripts\/check-no-eval\.js/,
+    assert.match(checkChainText(), /scripts\/check-no-eval\.js/,
         'npm run check must keep no-eval wired locally');
 });
 
@@ -12814,7 +12815,7 @@ test('remaining in-page operations route visible copy through the shared locale 
         'locale extraction must scan feature modules, not only the monolith and popup');
     assert.match(extractor, /--check-en/,
         'locale extraction must expose a non-mutating catalog gate');
-    assert.match(packageJson.scripts.check, /extract-i18n-keys\.js --check-en/,
+    assert.match(checkChainText(), /extract-i18n-keys\.js --check-en/,
         'the full check must reject uncatalogued t() calls');
     assert.match(generator, /T\.ar\s*=\s*\{\}/,
         'Arabic must remain part of generated locale parity');

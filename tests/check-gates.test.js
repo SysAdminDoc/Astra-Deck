@@ -9,12 +9,13 @@ const { spawnSync } = require('node:child_process');
 
 const repoRoot = path.join(__dirname, '..');
 const packageJson = require('../package.json');
+const { checkChainText } = require('./helpers/check-chain');
 const popupAudit = path.join(repoRoot, 'scripts', 'audit-popup-a11y.js');
 
 test('npm run check uses non-mutating capability and overlay gates', () => {
-    assert.match(packageJson.scripts.check, /npm run audit:overlays -- --self-test/,
+    assert.match(checkChainText(), /audit-overlays-a11y\.js --self-test/,
         'npm run check must execute overlay mutation canaries');
-    assert.match(packageJson.scripts.check, /node scripts\/generate-capability-matrix\.js --check/,
+    assert.match(checkChainText(), /node scripts\/generate-capability-matrix\.js --check/,
         'npm run check must verify, not rewrite, the capability matrix');
 });
 

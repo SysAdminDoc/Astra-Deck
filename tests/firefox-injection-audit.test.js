@@ -9,6 +9,7 @@ const path = require('path');
 const REPO_ROOT = path.join(__dirname, '..');
 const { scanFirefoxInjectionApis } = require('../scripts/check-firefox-injection.js');
 const { BUILD_PROFILE_IDS } = require('../build-extension.js');
+const { checkChainText } = require('./helpers/check-chain');
 const {
     createFirefoxStage,
     lintArgsForSource,
@@ -45,7 +46,7 @@ test('Firefox smoke discovers stable, Developer Edition, and Nightly on Windows'
 test('Firefox injection pre-flight gate is wired into npm run check', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
     assert.match(
-        pkg.scripts.check,
+        checkChainText(),
         /node scripts\/check-firefox-injection\.js/,
         'npm run check must include the Firefox programmatic-injection pre-flight gate'
     );
@@ -73,7 +74,7 @@ test('Firefox web-ext lint gate is pinned and wired into npm run check', () => {
     assert.equal(pkg.devDependencies['web-ext'], '10.6.0',
         'web-ext must stay exact-pinned so AMO lint behavior is reproducible');
     assert.equal(pkg.scripts['check:firefox'], 'node scripts/check-firefox-webext.js');
-    assert.match(pkg.scripts.check, /npm run check:firefox/,
+    assert.match(checkChainText(), /check-firefox-webext\.js/,
         'npm run check must include the staged Firefox web-ext lint gate');
     assert.deepEqual(
         lintArgsForSource('stage-dir'),

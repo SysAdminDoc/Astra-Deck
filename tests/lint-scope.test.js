@@ -11,6 +11,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const { checkChainText } = require('./helpers/check-chain');
 
 const repoRoot = path.join(__dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -41,7 +42,7 @@ test('the ESM runtime loader is linted as a module', () => {
 
 test('every gate script the check chain runs is inside the lint glob', () => {
     // A gate that lives outside scripts/ would silently escape the new tier.
-    const chain = pkg.scripts.check;
+    const chain = checkChainText();
     const referenced = Array.from(chain.matchAll(/node (scripts\/[\w.-]+\.js)/g)).map(m => m[1]);
     assert.ok(referenced.length >= 10, `expected the check chain to run many gates, saw ${referenced.length}`);
     for (const script of referenced) {
