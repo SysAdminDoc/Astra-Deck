@@ -3169,14 +3169,30 @@ return response;
         }
 
         if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
+            const GAP = 8;
+            const MIN_HEIGHT = 120;
             const r = anchorEl.getBoundingClientRect();
             const pw = popup.offsetWidth;
             const ph = popup.offsetHeight;
             let left = r.left + r.width / 2 - pw / 2;
-            let top = r.top - ph - 8;
-            if (top < 8) top = r.bottom + 8;
-            if (left < 8) left = 8;
-            if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+            let top = r.top - ph - GAP;
+            if (top < GAP) top = r.bottom + GAP;
+            if (left < GAP) left = GAP;
+            if (left + pw > window.innerWidth - GAP) left = window.innerWidth - pw - GAP;
+            // Cap the height to whichever side has more room, then clamp the
+            // bottom edge. Without this the flip above->below could push the
+            // grid past the viewport bottom in a short window, and the fixed
+            // popup cannot be scrolled back into view. The download popup
+            // already carried both guards; this one did not.
+            const spaceAbove = r.top - GAP * 2;
+            const spaceBelow = window.innerHeight - r.bottom - GAP * 2;
+            const heightCap = Math.max(MIN_HEIGHT, spaceAbove, spaceBelow);
+            popup.style.maxHeight = heightCap + 'px';
+            popup.style.overflowY = 'auto';
+            const effectiveHeight = Math.min(ph, heightCap);
+            if (top + effectiveHeight > window.innerHeight - GAP) {
+                top = Math.max(GAP, window.innerHeight - effectiveHeight - GAP);
+            }
             popup.style.left = left + 'px';
             popup.style.top = top + 'px';
         }
@@ -3189,6 +3205,12 @@ return response;
             };
             const escHandler = (e) => { if (e.key === 'Escape') _closeSpeedPopup(); };
             setTimeout(() => {
+                // If the popup was closed inside the arm window (a fast
+                // reopen discards this closure's cleanup), attaching now
+                // would leak capture-phase listeners for the page lifetime,
+                // and the orphaned outsideClick would close the NEXT speed
+                // popup on its first click.
+                if (!popup.isConnected) return;
                 document.addEventListener('click', outsideClick, true);
                 document.addEventListener('keydown', escHandler);
             }, 50);
