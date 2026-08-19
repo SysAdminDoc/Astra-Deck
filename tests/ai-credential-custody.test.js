@@ -49,8 +49,17 @@ test('popup credential controls are write-only and status-only', () => {
     assert.match(popup, /YTKIT_AI_CREDENTIAL_SET/);
     assert.match(popup, /YTKIT_AI_CREDENTIAL_DELETE/);
     assert.match(popup, /aiCredentialInput\.value\s*=\s*''/);
-    assert.notEqual(background.indexOf("if (msg.type === 'YTKIT_AI_CREDENTIAL_STATUS'"), -1, 'anchor: credential-status dispatch must exist');
-    assert.doesNotMatch(background.slice(background.indexOf("if (msg.type === 'YTKIT_AI_CREDENTIAL_STATUS'"), background.indexOf("if (msg.type === 'YTKIT_AI_SUMMARY_REQUEST'")), /credential:\s*await/);
+    // Both needles, and the end searched FROM the start. Searching the end
+    // needle from 0 meant a dispatch reorder would produce an empty slice, and
+    // doesNotMatch on an empty string passes while asserting nothing.
+    const statusStart = background.indexOf("if (msg.type === 'YTKIT_AI_CREDENTIAL_STATUS'");
+    assert.notEqual(statusStart, -1, 'anchor: credential-status dispatch must exist');
+    const statusEnd = background.indexOf("if (msg.type === 'YTKIT_AI_SUMMARY_REQUEST'", statusStart);
+    assert.ok(statusEnd > statusStart,
+        'the summary-request dispatch must follow the credential-status one, or this window is empty');
+    const statusBlock = background.slice(statusStart, statusEnd);
+    assert.ok(statusBlock.length > 100, 'the credential-status window must hold real source');
+    assert.doesNotMatch(statusBlock, /credential:\s*await/);
 });
 
 test('userscript credentials live in manager-isolated storage and never in request URLs', () => {

@@ -294,16 +294,6 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified (latent)
   Effort: S
 
-- [ ] P3 — Newest source-pin tests carry three latent vacuous windows
-  Category: testing
-  Where: (a) `tests/ai-credential-custody.test.js:52-53` — the slice's end needle `indexOf("…SUMMARY_REQUEST'")` is searched from 0, not from the start index: if dispatch reorder puts SUMMARY_REQUEST before CREDENTIAL_STATUS the slice is empty and `doesNotMatch` passes vacuously (the sibling `_callLLM`/`_run` slices pass a fromIndex; `tests/youtube-state-reset.test.js:170-172` shows the correct pattern); (b) `tests/hardening.test.js` `.so-key-select` pin asserts only that the selector STRING appears in popup.css — an empty rule or a comment passes (the text/color variants pin a declaration); (c) `tests/popup-fixes.test.js` finite-select refocus pin matches `select[data-key="${esc}"]` at global scope — unique at HEAD, but survives the refocus helper losing its select branch if the string appears anywhere else.
-  Problem: all three are non-vacuous at HEAD but in the exact `gotcha-checks-that-always-pass` family the 22c60972 commit was draining.
-  Evidence: (a) verified by hand at `:52-53`; (b)(c) verified by the tests sweep against current file content.
-  Fix: (a) pass the start index as fromIndex + assert end > start; (b) pin one load-bearing declaration inside the block; (c) scope the match to the extracted refocus-helper slice.
-  Acceptance: each pin fails under its bait (reorder / empty rule / moved string) and passes at HEAD.
-  Confidence: Verified
-  Effort: S
-
 - [ ] P3 — Backfill real render assertions onto the features whose DOM half was never covered
   Category: testing
   Where: `tests/features/watch-later-workbench.test.js` (the feature has 26 `appendChild`, 2 `replaceChildren`, and an `isConnected` guard; the test references none of them); same shape for other `loadFeature`-hosted features whose tests exercise only pure helpers
