@@ -19,6 +19,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- The userscript no longer requests three outbound permissions it never used.
+  `@connect localhost` was the important one: the companion is always reached
+  by literal IP because Firefox resolves localhost through DNS, where a hostile
+  resolver can rebind it to an internal address and probe the LAN -- the
+  extension refuses that grant for the same reason. `returnyoutubedislikeapi.com`
+  is reached by plain CORS-governed fetch and `raw.githubusercontent.com` only
+  by the manager itself, so neither was ever `@connect`-governed.
 - CSV exports no longer let a video title execute as a spreadsheet formula.
   Download history, Watch Later, Subscription Groups and the study/work export
   each had their own escaper; two quoted cells only, and a third detected a
