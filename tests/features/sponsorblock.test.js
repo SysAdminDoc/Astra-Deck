@@ -6,12 +6,19 @@
 // land here; pre-existing tests in `tests/hardening.test.js` migrate
 // incrementally.
 
+const fs = require('fs');
+const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { sources, config, extractFeatureBlock } = require('../helpers/source');
 
+// SponsorBlock was peeled out of ytkit.js in v4.72.0; the monolith keeps only a
+// descriptor stub, so source contracts read the module.
+const sponsorBlockSource = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+
 test('SponsorBlock feature block is reachable via the shared helper', () => {
-    const [block] = extractFeatureBlock(sources.ytkit, 'sponsorBlock');
+    const block = sponsorBlockSource;
     assert.ok(block.length > 100,
         'SponsorBlock feature block must contain non-trivial source');
     assert.match(block, /_loadForVideo|_checkSkip|_segments/,
@@ -23,7 +30,7 @@ test('SponsorBlock skip path announces via aria-live with a human-friendly categ
     // already-shipped no-toast invariant. Pin the label map so a
     // refactor can't reduce screen-reader output to "Skipped sponsor"
     // (which is fine but the v3.23.0 surface uses richer labels).
-    const block = sources.ytkit;
+    const block = sponsorBlockSource;
     const idx = block.indexOf('_checkSkip()');
     assert.ok(idx > -1, '_checkSkip must exist');
     const region = block.slice(idx, idx + 3500);
@@ -53,7 +60,7 @@ test('poi_highlight stays a marker, never a skip target (v3.20.1 Pass 8)', () =>
     // Pin the documented SponsorBlock API contract: poi_highlight is
     // a jump-to reference, never an auto-skip end. Pass 8 closed this
     // correctness finding; this regression keeps it closed.
-    const block = sources.ytkit;
+    const block = sponsorBlockSource;
     const idx = block.indexOf('_checkSkip()');
     const region = block.slice(idx, idx + 1500);
     assert.match(region, /poi_highlight/,
@@ -71,7 +78,7 @@ test('SponsorBlock uses event-driven setTimeout scheduling, not requestAnimation
     // `playing` / `seeked` / `ratechange` events), which fire regardless
     // of viewport. This test pins the architecture so a future refactor
     // can't accidentally introduce the same regression.
-    const [block] = extractFeatureBlock(sources.ytkit, 'sponsorBlock');
+    const block = sponsorBlockSource;
     assert.match(block, /_scheduleNextSkip\(\) \{/,
         '_scheduleNextSkip must exist as the boundary-scheduling primitive');
     assert.match(block, /setTimeout\(\(\) => \{[\s\S]*?_checkSkip\(\)/,
@@ -89,7 +96,7 @@ test('SponsorBlock uses event-driven setTimeout scheduling, not requestAnimation
 test('SponsorBlock pauses scheduling when video is paused', () => {
     // The schedule chain self-terminates on a paused video so a long-paused
     // background tab doesn't accumulate dangling timers. Pin the early-return.
-    const [block] = extractFeatureBlock(sources.ytkit, 'sponsorBlock');
+    const block = sponsorBlockSource;
     assert.match(block, /_scheduleNextSkip\(\) \{[\s\S]*?if \(!video \|\| video\.paused/,
         '_scheduleNextSkip must early-return on a missing / paused video element');
 });
@@ -277,7 +284,7 @@ test('SponsorBlock skip detection ignores element visibility', () => {
     // against segment bounds — it does NOT consult IntersectionObserver,
     // getBoundingClientRect, offsetParent, or any other visibility primitive.
     // This is exactly why the scrolled-away bug never reproduces here.
-    const block = sources.ytkit;
+    const block = sponsorBlockSource;
     const idx = block.indexOf('_checkSkip()');
     const region = block.slice(idx, idx + 1800);
     assert.equal(/IntersectionObserver|getBoundingClientRect|offsetParent/.test(region), false,
@@ -297,7 +304,7 @@ test('SponsorBlock per-channel profiles default settings exist', () => {
 });
 
 test('SponsorBlock _getEnabledCategories checks per-channel overrides when sbPerChannelProfiles is on', () => {
-    const [block] = extractFeatureBlock(sources.ytkit, 'sponsorBlock');
+    const block = sponsorBlockSource;
     assert.match(block, /sbPerChannelProfiles/,
         '_getEnabledCategories must reference sbPerChannelProfiles setting');
     assert.match(block, /sbPerChannelProfilesData/,
@@ -416,40 +423,64 @@ test('per-channel profiles resolve the same canonical key the chip writes', () =
     assert.equal(typeof YTKitCore.channelSettingsKey, 'function',
         'the canonical key helper must load');
 
-    const ownerLink = (href) => fakeNode({ tag: 'a', attributes: { href } });
-    const makeFeature = (href) => loadFallbackFeature('sponsorBlock', {
-        YTKitCore,
-        appState: {
-            settings: {
-                sbPerChannelProfiles: true,
-                sbPerChannelProfilesData: {
-                    '/@creator': { categories: { sponsor: false } },
-                },
-                sbCategorySponsor: true,
-            },
-        },
-        document: fakeDocument((selector) =>
-            (selector.includes('/@') ? [ownerLink(href)] : [])),
-    });
+    // This used to build the feature from the ytkit.js inline fallback, which
+    // was the copy nobody ran. Build it from the module instead: the module
+    // reads document and globalThis.YTKitCore directly, so both are stubbed
+    // for the duration of the check.
+    delete require.cache[require.resolve('../../extension/features/sponsorblock/index.js')];
+    const priorFeatures = globalThis.YTKitFeatures;
+    const priorCore = globalThis.YTKitCore;
+    const priorDocument = global.document;
+    globalThis.YTKitFeatures = {};
+    let mod;
+    try {
+        mod = require('../../extension/features/sponsorblock/index.js');
+    } finally {
+        globalThis.YTKitFeatures = priorFeatures;
+    }
+    assert.equal(typeof mod.createSponsorBlockFeature, 'function',
+        'the sponsorblock module must export its factory');
 
-    // The canonical key for every spelling of the same owner link.
-    for (const href of ['/@creator', '/@creator/featured', '/@creator?si=abc']) {
-        const feature = makeFeature(href);
-        assert.equal(feature._getChannelId(), '/@creator',
-            `owner href '${href}' must resolve to the canonical profile key`);
-        // …and the override that key selects is actually applied.
-        assert.equal(feature._getEnabledCategories().includes('sponsor'), false,
-            `owner href '${href}' must apply the stored per-channel override`);
+    const ownerLink = (href) => fakeNode({ tag: 'a', attributes: { href } });
+    const makeFeature = (href) => {
+        global.document = fakeDocument((selector) =>
+            (selector.includes('/@') ? [ownerLink(href)] : []));
+        return mod.createSponsorBlockFeature({
+            appState: {
+                settings: {
+                    sbPerChannelProfiles: true,
+                    sbPerChannelProfilesData: {
+                        '/@creator': { categories: { sponsor: false } },
+                    },
+                    sbCategorySponsor: true,
+                },
+            },
+        });
+    };
+
+    try {
+        globalThis.YTKitCore = YTKitCore;
+        // The canonical key for every spelling of the same owner link.
+        for (const href of ['/@creator', '/@creator/featured', '/@creator?si=abc']) {
+            const feature = makeFeature(href);
+            assert.equal(feature._getChannelId(), '/@creator',
+                `owner href '${href}' must resolve to the canonical profile key`);
+            // …and the override that key selects is actually applied.
+            assert.equal(feature._getEnabledCategories().includes('sponsor'), false,
+                `owner href '${href}' must apply the stored per-channel override`);
+        }
+    } finally {
+        globalThis.YTKitCore = priorCore;
+        if (priorDocument === undefined) delete global.document;
+        else global.document = priorDocument;
     }
 
-    // The peeled module must resolve identically: it is the copy that runs.
-    const moduleSource = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
-    const readerStart = moduleSource.indexOf('_getChannelId() {');
+    const readerStart = sponsorBlockSource.indexOf('_getChannelId() {');
     assert.ok(readerStart > -1, 'the module must define _getChannelId');
-    const reader = moduleSource.slice(readerStart, moduleSource.indexOf('_getEnabledCategories()', readerStart));
+    const reader = sponsorBlockSource.slice(
+        readerStart, sponsorBlockSource.indexOf('_getEnabledCategories()', readerStart));
     assert.match(reader, /channelSettingsKey/,
-        'the peeled reader must canonicalise through the shared helper too');
+        'the reader must canonicalise through the shared helper');
     assert.doesNotMatch(reader, /return handleLink\.getAttribute\('href'\)/,
-        'the peeled reader must not return a raw handle href');
+        'the reader must not return a raw handle href');
 });

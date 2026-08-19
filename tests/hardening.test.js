@@ -835,10 +835,11 @@ test('popup root is a modal dialog with focus trapping and Escape close semantic
 // ── v3.16+ Audit Pass: SponsorBlock destroy is race-proof ──
 
 test('sponsorBlock _loadForVideo aborts if destroy runs mid-fetch', () => {
-    const idx = ytkitSource.indexOf("id: 'sponsorBlock'");
-    assert.ok(idx > -1, 'sponsorBlock feature must exist');
-    const end = ytkitSource.indexOf("id: 'sbCat_sponsor'", idx);
-    const block = ytkitSource.slice(idx, end);
+    // Reads the feature module: ytkit.js carried a second copy of SponsorBlock
+    // until v4.72.0 and now carries only a descriptor stub.
+    const block = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+    assert.ok(block.includes("id: 'sponsorBlock'"), 'sponsorBlock feature must exist');
 
     assert.match(block, /_generation:\s*0/, 'sponsorBlock must track a generation counter');
     assert.match(
@@ -856,10 +857,11 @@ test('sponsorBlock _loadForVideo aborts if destroy runs mid-fetch', () => {
 });
 
 test('sponsorBlock caches segments before network and serves stale cache on failure', () => {
-    const idx = ytkitSource.indexOf("id: 'sponsorBlock'");
-    assert.ok(idx > -1, 'sponsorBlock feature must exist');
-    const end = ytkitSource.indexOf("id: 'sbCat_sponsor'", idx);
-    const block = ytkitSource.slice(idx, end);
+    // Reads the feature module: ytkit.js carried a second copy of SponsorBlock
+    // until v4.72.0 and now carries only a descriptor stub.
+    const block = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+    assert.ok(block.includes("id: 'sponsorBlock'"), 'sponsorBlock feature must exist');
 
     assert.match(block, /_CACHE_KEY:\s*'sb_segments_cache'/,
         'SponsorBlock must store segment cache under a named top-level key');
@@ -908,10 +910,11 @@ test('sponsorBlock caches segments before network and serves stale cache on fail
 });
 
 test('sponsorBlock stale cache markers are category-filtered and annotated', () => {
-    const idx = ytkitSource.indexOf("id: 'sponsorBlock'");
-    assert.ok(idx > -1, 'sponsorBlock feature must exist');
-    const end = ytkitSource.indexOf("id: 'sbCat_sponsor'", idx);
-    const block = ytkitSource.slice(idx, end);
+    // Reads the feature module: ytkit.js carried a second copy of SponsorBlock
+    // until v4.72.0 and now carries only a descriptor stub.
+    const block = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+    assert.ok(block.includes("id: 'sponsorBlock'"), 'sponsorBlock feature must exist');
 
     const renderStart = block.search(/\n\s+_renderBarSegments\(\)\s*\{/);
     assert.ok(renderStart > -1, '_renderBarSegments must exist');
@@ -1479,22 +1482,26 @@ test('SponsorBlock never auto-skips poi_highlight (API contract: marker, not ski
     // scheduler now exclude it explicitly, while the progress-bar render
     // still paints the marker.
     // Match method DEFINITIONS (leading whitespace + name, not call sites).
-    const checkStart = ytkitSource.search(/\n\s+_checkSkip\(\)\s*\{/);
+    // Reads the feature module: ytkit.js carried a second copy of SponsorBlock
+    // until v4.72.0 and now carries only a descriptor stub.
+    const sponsorBlockSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+    const checkStart = sponsorBlockSource.search(/\n\s+_checkSkip\(\)\s*\{/);
     assert.ok(checkStart > -1, '_checkSkip method definition must exist');
-    const checkEnd = ytkitSource.indexOf('            },', checkStart);
+    const checkEnd = sponsorBlockSource.indexOf('\n            },', checkStart);
     assert.ok(checkEnd > checkStart, '_checkSkip must have a closing brace');
-    const checkBody = ytkitSource.slice(checkStart, checkEnd);
+    const checkBody = sponsorBlockSource.slice(checkStart, checkEnd);
     assert.match(
         checkBody,
         /seg\.category\s*===\s*'poi_highlight'/,
         '_checkSkip must explicitly skip the poi_highlight category'
     );
 
-    const schedStart = ytkitSource.search(/\n\s+_scheduleNextSkip\(\)\s*\{/);
+    const schedStart = sponsorBlockSource.search(/\n\s+_scheduleNextSkip\(\)\s*\{/);
     assert.ok(schedStart > -1, '_scheduleNextSkip method definition must exist');
-    const schedEnd = ytkitSource.indexOf('            },', schedStart);
+    const schedEnd = sponsorBlockSource.indexOf('\n            },', schedStart);
     assert.ok(schedEnd > schedStart, '_scheduleNextSkip must have a closing brace');
-    const schedBody = ytkitSource.slice(schedStart, schedEnd);
+    const schedBody = sponsorBlockSource.slice(schedStart, schedEnd);
     assert.match(
         schedBody,
         /seg\.category\s*===\s*'poi_highlight'/,
@@ -2861,9 +2868,13 @@ test('sponsorBlock skip announces via aria-live and never via a toast', () => {
     // Toasts over the video were removed in an earlier pass as
     // distracting. The aria-live announcement replaces that signal
     // for assistive-tech users only — sighted users see no change.
-    const skipStart = ytkitSource.indexOf('_checkSkip()');
+    // Reads the feature module: ytkit.js carried a second copy of SponsorBlock
+    // until v4.72.0 and now carries only a descriptor stub.
+    const sponsorBlockSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+    const skipStart = sponsorBlockSource.indexOf('_checkSkip()');
     assert.ok(skipStart > -1, '_checkSkip method must exist');
-    const block = ytkitSource.slice(skipStart, skipStart + 3000);
+    const block = sponsorBlockSource.slice(skipStart, skipStart + 3000);
     assert.match(block, /announceA11y\(/,
         '_checkSkip must announce skips via announceA11y for SR users');
     // SB skips must NOT call showToast inside _checkSkip — that would

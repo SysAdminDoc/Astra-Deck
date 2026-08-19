@@ -15,9 +15,12 @@ const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8')
 const popup = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
 
 test('SponsorBlock _loadForVideo re-validates the video id after the segment fetch', () => {
-    const i = ytkit.indexOf('async _loadForVideo()');
+    // SponsorBlock moved to its own module in v4.72.0.
+    const sponsorBlock = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sponsorblock', 'index.js'), 'utf8');
+    const i = sponsorBlock.indexOf('async _loadForVideo()');
     assert.ok(i > -1, '_loadForVideo must exist');
-    const block = ytkit.slice(i, i + 1000);
+    const block = sponsorBlock.slice(i, i + 1000);
     assert.ok(
         /getVideoId\(\)\s*!==\s*videoId/.test(block),
         'must bail if the user navigated to a different video before the fetch resolved (stale segments / wrong-timestamp auto-skip)'
