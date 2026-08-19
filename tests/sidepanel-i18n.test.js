@@ -160,7 +160,7 @@ test('the popup schema switch writes its on/off word through t()', () => {
     assert.match(popupJs, /t\('switchLabelOff', 'off'\)/);
     assert.match(popupJs, /btn\.textContent = stateWord;/,
         'the visible word must be real text, not generated content');
-    assert.match(popupJs, /aria-label', label\.textContent \+ ' \(' \+ stateWord \+ '\)'/,
+    assert.match(popupJs, /aria-label', visibleLabel \+ ' \(' \+ stateWord \+ '\)'/,
         'the accessible name must use the same localized word as the pill');
 });
 
