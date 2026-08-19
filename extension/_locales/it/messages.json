@@ -4812,7 +4812,7 @@
     "message": "{count} superfici monitorate"
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: $VALUE$"
+    "message": "Unrecognized: {value}"
   },
   "settingsActiveSectionFallback": {
     "message": "Lettore video"

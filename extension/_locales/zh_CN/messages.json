@@ -4812,7 +4812,7 @@
     "message": "已跟踪 {count} 个表面"
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: $VALUE$"
+    "message": "Unrecognized: {value}"
   },
   "settingsActiveSectionFallback": {
     "message": "视频播放器"

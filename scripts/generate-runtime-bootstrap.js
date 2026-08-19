@@ -19,6 +19,7 @@ const FEATURE_SETTINGS = Object.freeze({
     'features/sticky-video/index.js': ['stickyVideo'],
     'features/sticky-chat/index.js': ['stickyChat'],
     'features/video-hider/index.js': ['hideVideosFromHome', 'hideVideosHideAutoDubbed', 'hideVideosHideLive', 'hideVideosHideMixes', 'hideVideosHideMovies', 'hideVideosHidePlaylists', 'hideVideosHideUpcoming'],
+    'features/element-zapper/index.js': ['elementZapper'],
     'features/video-notes/index.js': ['videoNotes'],
     'features/subscription-view/index.js': ['subscriptionViewControls'],
     'features/subscription-groups/index.js': ['subscriptionGroups'],

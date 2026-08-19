@@ -4812,7 +4812,7 @@
     "message": "{count} surfaces suivies"
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: $VALUE$"
+    "message": "Unrecognized: {value}"
   },
   "settingsActiveSectionFallback": {
     "message": "Lecteur vidéo"

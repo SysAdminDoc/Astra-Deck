@@ -87,6 +87,11 @@ test('the unrecognized label is a real locale key', () => {
     const messages = JSON.parse(
         fs.readFileSync(path.join(repoRoot, 'extension/_locales/en/messages.json'), 'utf8'));
     assert.ok(messages.settingValueUnrecognized, 'EN must define the key');
-    assert.match(messages.settingValueUnrecognized.message, /\$VALUE\$/,
+    assert.match(messages.settingValueUnrecognized.message, /\{value\}/,
         'the substitution token must survive into the message, or every locale prints a bare label');
+    // NOT $VALUE$. Chrome refuses to load an extension whose message carries a
+    // $NAME$ placeholder with no matching `placeholders` entry, and this key
+    // shipped that way for exactly one commit - long enough for the live smoke
+    // to catch it and for check-i18n.js to grow a gate for it.
+    assert.doesNotMatch(messages.settingValueUnrecognized.message, /\$[A-Za-z0-9_]+\$/);
 });

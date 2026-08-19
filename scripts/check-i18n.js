@@ -320,6 +320,37 @@ function main() {
         }
     }
 
+    // Chrome REFUSES TO INSTALL an extension whose message carries a $NAME$
+    // placeholder with no matching `placeholders` entry. Not a warning - the
+    // whole extension fails to load, service worker included, which is exactly
+    // as loud and as late as it sounds: every unit test and every other gate
+    // passes, and the first sign of trouble is a browser that will not run it.
+    //
+    // This repo substitutes in JS with {token} instead (299 keys and counting),
+    // so a $NAME$ here is almost always a slip rather than a real Chrome
+    // placeholder. Both spellings are allowed; only the undeclared one is not.
+    const DOLLAR_PLACEHOLDER = /\$[A-Za-z0-9_]+\$/g;
+    for (const locale of ['en', ...localeDirs]) {
+        const localeMessages = readLocale(locale);
+        if (!localeMessages) continue;
+        for (const [key, entry] of Object.entries(localeMessages)) {
+            const message = entry && entry.message;
+            if (typeof message !== 'string') continue;
+            const used = message.match(DOLLAR_PLACEHOLDER);
+            if (!used) continue;
+            const declared = new Set(Object.keys(entry.placeholders || {}).map((name) => name.toLowerCase()));
+            for (const raw of new Set(used)) {
+                const name = raw.slice(1, -1).toLowerCase();
+                if (declared.has(name)) continue;
+                errors.push(
+                    `_locales/${locale}/messages.json: "${key}" uses the placeholder ${raw} without a matching `
+                    + '"placeholders" entry. Chrome refuses to load the extension. Declare it, or use the '
+                    + `repo's {token} convention and substitute with .replace().`
+                );
+            }
+        }
+    }
+
     if (errors.length === 0) {
         const totalKeys = definedKeys.size;
         const scannedFiles = jsFiles.length;
@@ -330,6 +361,7 @@ function main() {
         console.log(`[check-i18n] Substitution OK — ${consumedTokens.size} key(s) consumed via .replace() carry their tokens in every locale`);
         console.log(`[check-i18n] Scanned ${scannedFiles} JS file(s) under extension/`);
         console.log(`[check-i18n] Locale parity OK — ${localeDirs.length} non-EN locale(s) match EN key set`);
+        console.log('[check-i18n] Placeholder OK — every $NAME$ placeholder is declared; Chrome will accept every catalogue');
         process.exit(0);
     }
 

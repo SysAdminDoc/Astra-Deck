@@ -4812,7 +4812,7 @@
     "message": "{count} superfícies rastreadas"
   },
   "settingValueUnrecognized": {
-    "message": "Unrecognized: $VALUE$"
+    "message": "Unrecognized: {value}"
   },
   "settingsActiveSectionFallback": {
     "message": "Player de vídeo"

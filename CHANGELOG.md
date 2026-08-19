@@ -10,6 +10,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- A translation entry in the last build used a placeholder format Chrome does
+  not accept, and Chrome's response to that is to refuse the whole extension.
+  Fixed, and the release checks now catch this class of mistake before a build
+  goes out.
+
 - The remaining-time readout in the player no longer stacks up. Each time you
   moved to another video it added a fresh countdown and left the old one
   sitting there, still showing the previous video's number, so a long session
