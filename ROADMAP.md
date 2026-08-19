@@ -137,13 +137,6 @@ duplicated here.
   Acceptance: the popup reports transcript-index count/bytes alongside extension-local bytes by asking an open YouTube tab (and degrades cleanly when none is open); backups carry the cap and index metadata; a corruption state offers export-then-clear rather than clear alone.
   Complexity: M
 
-- [ ] P3 — `npm run smoke:a11y` dies on a CDP timeout roughly one run in three
-  Why: the rendered accessibility lane is the only proof that surfaces survive 320px, forced colors, and 200% zoom, and it is unreliable enough that a red run is now assumed to be flake — which is exactly how a real failure gets waved through. Confirmed pre-existing: a clean stash of HEAD failed the same way (2026-08-18), so it is not caused by recent surface work.
-  Evidence: `devtools call timed out: Emulation.setDeviceMetricsOverride` and `... Runtime.evaluate`, both on the `settings` surface (8 states, 411 focus visits — the heaviest lane). Also observed once: a sidepanel `.sp-skip-link` focus-indicator failure that did not reproduce.
-  Touches: `scripts/smoke-headless-a11y.js`, `scripts/smoke-settings-overlay.js` (`DevtoolsClient`)
-  Acceptance: ten consecutive runs pass. Either the per-call timeout is raised where the settings surface genuinely needs longer and the wait is made condition-based rather than fixed, or the surface is split so no single CDP call has to cover 411 focus visits. A timeout must name which surface and state it died in.
-  Complexity: S
-
 - [ ] P3 — Add a pseudo-locale long-string lane to the reflow smoke
   Status 2026-08-18: the reflow coverage shipped — `smoke-headless-a11y.js` now renders ALL SIX primary surfaces (popup, sidepanel, sidebar, settings, transcript, download) at exactly 320 CSS pixels in `ar`, `de` and `pt_BR`, checking document-level horizontal scrolling, clipped controls, and (on the surfaces Astra Deck owns) `lang`/`dir`. It found and fixed a real clip: the settings footer was one unwrappable row and pushed its Done button 13px off the panel edge — bait-verified.
   Remaining: the acceptance also asked for a generated long-string/pseudo-locale fixture. `npm run i18n:pseudolocale` exists (`scripts/generate-pseudolocale.js`) but its output is not wired into the smoke's staged `_locales`, so worst-case string length is not yet exercised.
