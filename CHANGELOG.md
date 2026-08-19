@@ -6,6 +6,36 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.74.0] - 2026-08-19
+
+### Added
+
+- Subscription groups can be renamed and deleted from the Edit Channels panel.
+  Until now the only way to get rid of a group was a replace-import, which took
+  every other group with it.
+
+### Fixed
+
+- Unsubscribing through a group no longer records a channel as removed when it
+  wasn't. On some versions of YouTube's confirmation dialog the extension was
+  clicking Cancel and then logging the removal as done, which quietly threw away
+  the 30-day record that lets you undo it.
+- Adding a channel to a group that already holds 1000 now says so instead of
+  claiming it worked. The channel was being added and immediately dropped, with
+  a success message either way.
+- Astra Deck tells you when it can't save. If the browser profile rejects
+  writes, things like watch progress and chat layout were being lost when the
+  tab closed with nothing on screen to say so.
+- The What's New banner no longer appears the first time you open the popup
+  after upgrading from an older install. The code meant to stamp that quietly
+  was showing the banner it existed to suppress.
+- Transcripts stop re-requesting a caption URL that has already been revoked,
+  and a failed refresh now says what actually went wrong rather than blaming a
+  missing panel.
+- Large responses from the AI provider, the selector list, and a self-hosted
+  Cobalt server are now cut off as they arrive rather than after the whole thing
+  has been read into memory.
+
 ## [4.73.0] - 2026-08-19
 
 ### Added
