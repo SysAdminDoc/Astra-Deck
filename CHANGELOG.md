@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.69.0] - 2026-08-19
+
 ### Added
 
 - **Anti-Translate Thumbnails** (opt-in). Anti-Translate restored the original
