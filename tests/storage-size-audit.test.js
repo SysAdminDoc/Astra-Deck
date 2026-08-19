@@ -134,7 +134,7 @@ test('typical local payload is not storage.sync eligible', () => {
     // schedule map plus its device-local restore ledger add 44.
     // feedPrefilter adds a further 22.
     // antiTranslateChapters adds a further 30.
-    assert.equal(assessment.totalBytes, 186119);
+    assert.equal(assessment.totalBytes, 186141);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

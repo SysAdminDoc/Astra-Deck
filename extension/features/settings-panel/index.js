@@ -2605,6 +2605,10 @@ function buildSettingsPanel() {
 
             // Mounted next to its category so the sidebar order matches.
             if (cat === 'Content') content.appendChild(buildVideoHiderPane(config));
+            if (cat === 'Content') {
+                const zapperPane = globalThis.YTKitFeatures?.elementZapperInstance?.buildElementZapperPane?.();
+                if (zapperPane) content.appendChild(zapperPane);
+            }
         });
 
         function createPanelActionButton({ id, label, icon, variant = 'secondary', ariaLabel }) {

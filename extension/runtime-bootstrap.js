@@ -130,6 +130,7 @@
         "core/toast.js",
         "core/toast-dom.js",
         "core/lifecycle-route-bridge.js",
+        "features/element-zapper/index.js",
         "features/subtitles/index.js",
         "features/video-filters/index.js",
         "features/blue-light-filter/index.js",

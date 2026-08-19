@@ -23,8 +23,8 @@
 | Release | `v4.71.0` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `475` entries across `18` categories |
-| Runtime graph | `109` modules, including `26` peeled feature modules and `291` declared feature IDs |
+| Settings schema | `476` entries across `18` categories |
+| Runtime graph | `110` modules, including `27` peeled feature modules and `291` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -363,7 +363,7 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **470 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **471 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -703,7 +703,7 @@ This generated knowledgebase documents all **470 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Video Hider and content filtering</strong> — 46 settings</summary>
+<summary><strong>Video Hider and content filtering</strong> — 47 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -716,6 +716,7 @@ This generated knowledgebase documents all **470 user-facing settings** in the c
 | <a id="setting-hideVideosSubsLoadHiddenRatio"></a><strong>Hide videos subs load hidden ratio</strong><br><code>hideVideosSubsLoadHiddenRatio</code> | Sets the fraction of a subscriptions batch that must be hidden before it counts toward the load-limiter streak. | Default: <code>0.8</code><br>Range: <code>0.05–1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.47.0</code> |
 | <a id="setting-hideVideosRemoveHiddenCards"></a><strong>Hide videos remove hidden cards</strong><br><code>hideVideosRemoveHiddenCards</code> | Removes matched cards from the current feed DOM instead of only collapsing them with CSS. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosShowFilterReason"></a><strong>Hide videos show filter reason</strong><br><code>hideVideosShowFilterReason</code> | Shows a local placeholder explaining which Video Hider rule hid each matched card. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.57.0</code> |
+| <a id="setting-elementZapper"></a><strong>Element Zapper</strong><br><code>elementZapper</code> | Click a shelf, panel, or promo to hide it, and keep hiding it. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.72.0</code> |
 | <a id="setting-hideVideosShowQuickHideButton"></a><strong>Hide videos show quick hide button</strong><br><code>hideVideosShowQuickHideButton</code> | Shows the per-thumbnail X control for one-click local video hiding. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-markWatchedVideos"></a><strong>Mark watched videos</strong><br><code>markWatchedVideos</code> | Adds a per-card local mark-as-watched control; marked cards dim or are removed when hidden-card removal is enabled. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.52.0</code> |
 | <a id="setting-hideVideosAllowChannelBlock"></a><strong>Hide videos allow channel block</strong><br><code>hideVideosAllowChannelBlock</code> | Allows right-clicking a thumbnail hide control to add its channel to the active channel list. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
