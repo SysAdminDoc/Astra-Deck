@@ -74,6 +74,7 @@
         injectStyle,
         installStorageChangeListener,
         installStorageFlushGuards,
+        setStoragePersistentFailureHandler,
         isLiveChatFrame,
         isLiveChatPath,
         isShortsPagePath,
@@ -1043,6 +1044,23 @@ return response;
     }
 
     installStorageChangeListener();
+    // Auxiliary writes are fire-and-forget: nothing observes {ok:false}, so a
+    // persistently failing store used to lose watch progress, sticky-chat
+    // layout and the low-power backup at tab close behind a console.warn.
+    // Route the episode into the two surfaces a user can actually see.
+    setStoragePersistentFailureHandler?.(({ error, failureCount, keys }) => {
+        const detail = keys.length ? ` (${keys.slice(0, 3).join(', ')})` : '';
+        DiagnosticLog.record(
+            'storage-write-failure',
+            `${failureCount} consecutive flush failures${detail}: ${error?.message || 'unknown error'}`
+        );
+        showToast(
+            t('toastStorageWriteFailed', 'Astra Deck cannot save to this browser profile. Recent changes may be lost.'),
+            '#ef4444',
+            // duration is SECONDS here, not milliseconds.
+            { role: 'alert', tone: 'error', duration: 8 }
+        );
+    });
     installStorageFlushGuards();
     await preloadExtensionState();
     await hydrateStoredSelectorAsset();

@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "Nascondi l’avviso «la modalità lenta è attiva» e i suoi equivalenti riservati agli iscritti"
+  },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck non riesce a salvare in questo profilo del browser. Le modifiche recenti potrebbero andare perse."
   }
 }

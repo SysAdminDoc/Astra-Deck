@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "「低速モードがオンです」の通知やメンバー限定の同様の通知を非表示にします"
+  },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck はこのブラウザー プロファイルに保存できません。最近の変更が失われる可能性があります。"
   }
 }

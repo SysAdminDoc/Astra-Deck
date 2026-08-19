@@ -21,6 +21,40 @@
     let storageFlushBackoffMs = 0;
     let storageFlushFailureCount = 0;
     let storageFlushInFlight = null;
+    // Settings save() surfaces its own failures (rollback + role=alert toast)
+    // and the flush retries with backoff, but fire-and-forget auxiliary writes
+    // — watch progress, sticky-chat layout, the low-power backup — never
+    // observed {ok:false}. On a persistently failing store their data was lost
+    // at tab close behind nothing louder than a console.warn.
+    //
+    // Reported once per failure EPISODE, not once per failed flush: a full
+    // disk fails every retry, and a toast per retry would be its own problem.
+    // Cleared on the first success so a later episode reports again.
+    const STORAGE_PERSISTENT_FAILURE_THRESHOLD = 3;
+    let storagePersistentFailureReported = false;
+    let onStoragePersistentFailure = null;
+
+    function setStoragePersistentFailureHandler(handler) {
+        onStoragePersistentFailure = typeof handler === 'function' ? handler : null;
+    }
+
+    function reportPersistentStorageFailure(error, keys) {
+        if (storagePersistentFailureReported) return;
+        if (storageFlushFailureCount < STORAGE_PERSISTENT_FAILURE_THRESHOLD) return;
+        storagePersistentFailureReported = true;
+        if (!onStoragePersistentFailure) return;
+        try {
+            onStoragePersistentFailure({
+                error,
+                failureCount: storageFlushFailureCount,
+                // Bounded: this reaches a toast and a diagnostic ring entry.
+                keys: Array.isArray(keys) ? keys.slice(0, 10) : []
+            });
+        } catch (_) {
+            // reason: a reporting surface that throws must not take the
+            // storage layer down with it — the retry loop still matters.
+        }
+    }
 
     // Support-only reset surface for stale YouTube page state. This is an
     // exact allowlist: never broaden it to prefixes because YouTube and other
@@ -355,6 +389,7 @@
             // normal debounce schedule instead of the failure cadence.
             storageFlushBackoffMs = 0;
             storageFlushFailureCount = 0;
+            storagePersistentFailureReported = false;
             return { ok: true };
         }).catch((error) => {
             console.warn('[YTKit] Storage flush failed:', error);
@@ -374,6 +409,7 @@
                 STORAGE_FLUSH_MIN_BACKOFF_MS * Math.pow(2, Math.min(storageFlushFailureCount - 1, 8))
             );
             schedulePendingStorageFlush();
+            reportPersistentStorageFailure(error, Object.keys(writes));
             return { ok: false, error };
         }).finally(() => {
             storageFlushInFlight = null;
@@ -470,7 +506,8 @@
         storageReadJSON,
         storageWrite,
         storageWriteJSON,
-        storageWriteMany
+        storageWriteMany,
+        setStoragePersistentFailureHandler
     });
     core.YOUTUBE_RESET_STATE_KEYS = YOUTUBE_RESET_STATE_KEYS;
 })();

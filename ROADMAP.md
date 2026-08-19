@@ -181,16 +181,6 @@ duplicated here.
   Confidence: Verified
   Effort: S
 
-- [ ] P3 — Permanent storage-quota failure silently drops fire-and-forget auxiliary writes
-  Category: correctness
-  Where: `extension/core/storage.js:332-356` (`storageWrite`/`storageWriteJSON` callers never observe `{ok:false}`).
-  Problem: settings `save()` surfaces failure (rollback + `role=alert` toast), and flush failures retry with backoff, but fire-and-forget auxiliary writes (watch progress, sticky-chat layout, low-power backup, etc.) never observe failure; on a persistently full quota the data is lost at tab close with only a `console.warn`. The popup storage banner mitigates only if the user opens the popup.
-  Evidence: traced the fire-and-forget callers vs. the settings save path.
-  Fix: route persistent-quota failures on auxiliary writes into the same diagnostic-ring/banner surface.
-  Acceptance: a simulated full quota produces a user-visible signal for auxiliary writes; a test asserts the failure is recorded.
-  Confidence: Verified (path); user impact Needs-repro
-  Effort: M
-
 - [ ] P3 — Inconsistent disclosure ARIA on the download triggers
   Category: a11y
   Where: `extension/features/player-dock/index.js:173-182` (`.ytkit-po-dl`) and `extension/ytkit.js:20220-20246` (`.ytkit-local-dl-btn`) declare no `aria-haspopup`/initial `aria-expanded`; the context-menu fallback stamps `aria-expanded` onto the `#movie_player` div (`index.js:2274`).

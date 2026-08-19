@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "Hide the \"slow mode is on\" notice and its members-only siblings"
+  },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck cannot save to this browser profile. Recent changes may be lost."
   }
 }

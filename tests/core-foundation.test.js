@@ -995,3 +995,118 @@ test('predicate ! binds tighter than a comparison, exactly as in JavaScript', ()
             `${source} with ${JSON.stringify(ctx)} must match JavaScript`);
     }
 });
+
+
+// ── Auxiliary-write failure signalling ──────────────────────────────────
+//
+// Settings save() surfaces its own failures and the flush retries with
+// backoff, but fire-and-forget auxiliary writes — watch progress, sticky-chat
+// layout, the low-power backup — never observed {ok:false}. On a persistently
+// failing store their data was lost at tab close behind a console.warn.
+
+function loadStorageModule({ setImpl }) {
+    const vm = require('node:vm');
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'storage.js'), 'utf8');
+    const timers = [];
+    const sandbox = {
+        console: { warn() {}, error() {} },
+        chrome: {
+            storage: {
+                local: { set: setImpl, get: async () => ({}) },
+                onChanged: { addListener() {} }
+            },
+            runtime: { id: 'test' }
+        },
+        window: { addEventListener() {} },
+        document: { addEventListener() {}, visibilityState: 'visible' },
+        setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
+        clearTimeout: () => {},
+        Promise, Object, Array, Error, Math, JSON, Number, Date, String
+    };
+    // storage.js reads these off the shared core namespace rather than
+    // defining them, so seed the namespace before the module installs onto it.
+    sandbox.YTKitCore = { hasExtensionContext: () => true };
+    sandbox.globalThis = sandbox;
+    vm.createContext(sandbox);
+    vm.runInContext(src, sandbox);
+    return { core: sandbox.YTKitCore, timers };
+}
+
+test('a persistently failing store reports the episode once, not once per retry', async () => {
+    const quota = new Error('QUOTA_BYTES quota exceeded');
+    const { core } = loadStorageModule({ setImpl: async () => { throw quota; } });
+    assert.equal(typeof core.setStoragePersistentFailureHandler, 'function',
+        'storage.js must expose the failure-handler hook');
+
+    const reports = [];
+    core.setStoragePersistentFailureHandler((report) => reports.push(report));
+
+    // Below the threshold: retries are normal, staying quiet is correct.
+    await core.storageWrite('ytkit-watch-progress', { a: 1 }, { immediate: true });
+    await core.storageWrite('ytkit-watch-progress', { a: 2 }, { immediate: true });
+    assert.deepEqual(reports, [],
+        'a transient failure must not shout at the user on the first retry');
+
+    await core.storageWrite('ytkit-watch-progress', { a: 3 }, { immediate: true });
+    assert.equal(reports.length, 1, 'a persistent failure must be reported');
+    assert.equal(reports[0].error, quota, 'the report must carry the underlying error');
+    assert.ok(reports[0].failureCount >= 3, 'the report must say how many flushes failed');
+    assert.ok(reports[0].keys.includes('ytkit-watch-progress'),
+        'the report must name the keys whose data is being lost');
+
+    // A full disk fails every retry; one toast is a signal, ten is a bug.
+    await core.storageWrite('ytkit-watch-progress', { a: 4 }, { immediate: true });
+    await core.storageWrite('ytkit-watch-progress', { a: 5 }, { immediate: true });
+    assert.equal(reports.length, 1, 'the episode must be reported once, not once per failed flush');
+});
+
+test('a recovered store can report a later failure episode again', async () => {
+    let failing = true;
+    const { core } = loadStorageModule({
+        setImpl: async () => { if (failing) throw new Error('QUOTA_BYTES quota exceeded'); }
+    });
+    const reports = [];
+    core.setStoragePersistentFailureHandler((report) => reports.push(report));
+
+    for (let i = 0; i < 3; i += 1) {
+        await core.storageWrite('ytkit-sticky-chat', { i }, { immediate: true });
+    }
+    assert.equal(reports.length, 1);
+
+    failing = false;
+    await core.storageWrite('ytkit-sticky-chat', { ok: true }, { immediate: true });
+
+    failing = true;
+    for (let i = 0; i < 3; i += 1) {
+        await core.storageWrite('ytkit-sticky-chat', { i }, { immediate: true });
+    }
+    assert.equal(reports.length, 2,
+        'a success clears the episode, so a later outage is reported rather than swallowed');
+});
+
+test('a throwing failure handler cannot take the storage layer down', async () => {
+    const { core } = loadStorageModule({
+        setImpl: async () => { throw new Error('QUOTA_BYTES quota exceeded'); }
+    });
+    core.setStoragePersistentFailureHandler(() => { throw new Error('reporting surface exploded'); });
+    for (let i = 0; i < 3; i += 1) {
+        const result = await core.storageWrite('ytkit-low-power-backup', { i }, { immediate: true });
+        assert.equal(result.ok, false, 'the write result must still be reported to callers that check');
+    }
+});
+
+test('the content script routes the failure into a toast and the diagnostic ring', () => {
+    const ytkit = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const start = ytkit.indexOf('setStoragePersistentFailureHandler?.(');
+    assert.ok(start > -1, 'ytkit.js must register a persistent-failure handler');
+    const block = ytkit.slice(start, start + 900);
+    assert.match(block, /DiagnosticLog\.record\(\s*\n?\s*'storage-write-failure'/,
+        'the failure must reach the diagnostic ring the popup surfaces');
+    assert.match(block, /showToast\(/, 'the user must get a visible signal, not just a console warning');
+    assert.match(block, /toastStorageWriteFailed/,
+        'the toast copy must be localised like every other user-facing string');
+    assert.match(block, /role: 'alert'/,
+        'losing data is an assertive announcement, not a polite one');
+});

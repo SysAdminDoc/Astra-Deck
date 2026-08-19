@@ -7876,5 +7876,8 @@
   },
   "feature_chatHide_modeNotices_desc": {
     "message": "Masquer l’avis « le mode lent est activé » et ses équivalents réservés aux membres"
+  },
+  "toastStorageWriteFailed": {
+    "message": "Astra Deck ne peut pas enregistrer dans ce profil de navigateur. Les modifications récentes risquent d’être perdues."
   }
 }
