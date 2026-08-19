@@ -117,6 +117,7 @@ duplicated here.
   Touches: `extension/ytkit.js` (`returnDislike`), `extension/_locales/**`
   Acceptance: the dislike pill's tooltip states the sample size behind the estimate; a very low `rawDislikes` renders a visibly lower-confidence treatment; the README wording stays "estimated".
   Complexity: S
+  Note (2026-08-19 research): RYD remains frozen at v4.0.4 (2026-05-02) with breakage reports accumulating unanswered — Astra's maintained integration is now a differentiator, strengthening this item. Documented limits confirmed current (100 req/min, 10k/day): keep caching aggressive and never fetch per-thumbnail.
 
 - [ ] P3 — Adopt the platform APIs that delete existing code
   Why: several 2026 platform additions replace hand-rolled machinery already carried in this repo, at low risk behind feature detection.
@@ -124,6 +125,7 @@ duplicated here.
   Touches: `extension/core/browser-api.js`, `extension/core/injection-guard.js`, `extension/ytkit.js`, `extension/live-chat.css`, `package.json`
   Acceptance: each adoption is behind a capability probe recorded in the capability matrix, the Chrome 120 / Firefox 142 floors still work, and `npm run check:startup` does not regress.
   Complexity: M
+  Note (2026-08-19 research): Chrome moves to a TWO-WEEK release cadence starting with 153 (stable 2026-09-08) — https://developer.chrome.com/blog/chrome-two-week-release — so capability probes over version checks becomes mandatory, not preferred. New since the item was written: Chrome 149 `chrome.userScripts.execute()` returns synchronous syntax diagnostics; Chrome 150 `chrome.contextMenus` supports the `'tab'` context and `alarms.create()` enforces a 1024-byte name limit; Chrome 153 experiments with pinning action icons to the toolbar BY DEFAULT (revisit any "pin the extension" onboarding copy); Firefox 154 (2026-08-18) adds the `sandbox` manifest key.
 
 - [ ] P3 — Design against the 2026 YouTube drift shape, not the 2024 one
   Why: the current breakage class is camelCase view-model host classes and heterogeneous container children, not new `ytd-*` tags — and DeArrow shipped three emergency releases in April 2026 alone for exactly this.
@@ -131,6 +133,7 @@ duplicated here.
   Touches: `extension/core/selector-packs/**`, `selector-packs.json`, `extension/core/selector-health.js`, `tests/selector-regression.test.js`
   Acceptance: selector packs carry camelCase view-model host variants as first-class entries rather than fallbacks; any container walk tolerates mixed child types; a missing selector raises a telemetered failure rather than a silent no-op; the fixture set includes at least one modern lockup capture.
   Complexity: M
+  Note (2026-08-19 research): uBlock Origin 1.73.1 betas (2026-08-07..13) added a `content(...)` procedural operator specifically to match elements inside `<template>` tags because YouTube increasingly renders from templates — the fixture set should also include one template-stamped capture, and any card walk should not assume children are live DOM at observation time.
   Note (2026-08-13 live recon): `ytd-page-manager` retains hidden prior-route trees after SPA navigation, so shared surface resolvers must prefer connected, visible nodes under the active route instead of accepting the first selector match.
 
 ### Research-driven gaps — 2026-08-11
@@ -588,4 +591,78 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Confidence: Verified
   Effort: S
 
-Note — extends the existing P3 item "Userscript duplicates RYD / SponsorBlock / DeArrow / player-handoff features on non-schema keys; bundled modules are never called": the 2026-08-18 monolith sweep verified twelve concrete divergences the hand-maintained userscript copies carry versus the extension pair (which are line-for-line identical for SponsorBlock/DeArrow): DeArrow never processes watch pages (`YTKit.user.js:14830-14843` pathname gate) so the related rail — its main target — is untouched; sentence-case renders "THe truth about x" (`:14904` operates on `slice(1)`); a DeArrow 404 yields null instead of empty branding so `daFallbackFormat` never fires (`:14857-14875`); SB drops `[t,t]` `poi_highlight` markers (`:14518`); the SB cache ignores which categories it was fetched for (`:14527-14547`); DeArrow cache has no in-session TTL and "No cache" hydrates 24 h of entries (`:14788,:14846`); the thumbnail path lacks the extension's three guards (videoId pattern, timestamp finiteness, lazy-img deferral; `:14955-14987`); SB lacks skip-timing jitter, stale-cache API-outage fallback, and the progress-bar rebuild observer (declared `:14462`, never armed); perChannelSpeed lacks BOTH extension fixes (untagged programmatic writes `:8285,:8314`; navigate-save reads current DOM `:8308-8309`); hideWatchedVideos still uses the once-marker the extension removed for recycled nodes (`:8336-8338`); Subscription Groups is the oldest third copy (silent full-replace import with no undo `:13589-13626`, no `_sessionLastVisit`, default true vs schema false `:2966`) while the modern factory bundled at `YTKit-core.user.js:24286` has zero call sites — the stickyChat/subtitles/themeCss factories show the wiring pattern to follow. This strengthens that item's case: wire the bundled factories rather than patching twelve divergences one at a time.
+## Research-Driven Additions — 2026-08-19
+
+Evidence detail and sources live in `RESEARCH.md` (2026-08-19). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication, migration docs, supply-chain doc, SponsorBlock/DeArrow submission) are not duplicated; the MV2-purge adoption window (uBO leaves CWS 2026-08-31) makes the blocked distribution items time-sensitive but does not change their operator-gated status.
+
+- [ ] P2 — Guard every programmatic click path against YouTube compliance dialogs
+  Why: YouTube's AI age-verification interstitials are compliance dialogs — auto-dismissing them has documented account consequences. Astra ships no generic dialog auto-dismisser (verified 2026-08-19), but `_confirmUnsubscribeDialog`'s first-document-order `[role="button"]` match is exactly the shape that could someday click one, and future auto-click features will copy whatever pattern exists.
+  Evidence: RESEARCH.md §Security (age-verification hazard, Change.org 100k+ petition, account-restriction reports); `extension/ytkit.js:43809-43826` / `features/subscription-groups/index.js:1479-1496`; the tracked subscription-groups matcher item covers the Cancel-click bug — this item adds the shared guard.
+  Touches: `extension/ytkit.js`, `extension/features/subscription-groups/index.js`, a small shared helper (e.g. `core/navigation.js` or a new `core/dialog-guard.js`)
+  Acceptance: a shared `isComplianceDialog(el)` denylist (age/identity-verification and consent renderers, structural not text-matched) is consulted by every programmatic `.click()` on YouTube-owned dialog content; a test seeds a fake verification dialog and asserts no path clicks inside it; existing unsubscribe flow still works.
+  Complexity: S
+
+- [ ] P2 — Resolve DeArrow API licensing before any store submission
+  Why: dearrow.ajay.app/payment and /free state the DeArrow API is free only for non-browser-extension use — extensions are expected to carry the $1 license-key flow. Astra's dearrow feature calls `GET /api/branding` with no license handling, which is fine for an unpublished GitHub build but a licensing posture problem the moment a store listing exists (and the store-safe profile ships the feature).
+  Evidence: https://dearrow.ajay.app/payment ; https://dearrow.ajay.app/free ; `extension/features/dearrow/index.js:167`. Confidence: Likely — the exact wire contract (param/header, enforcement for read-only GETs) needs confirmation against https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow before implementing.
+  Touches: `extension/features/dearrow/index.js`, `extension/core/settings-schema.js` (optional licenseKey entry, backup-excluded like other credentials), `extension/_locales/**`, docs/privacy-policy.md (disclosure)
+  Acceptance: the DeArrow settings surface carries an optional license-key field passed per the documented contract plus honest copy about upstream's licensing; with no key the feature either uses the documented free tier or states its unlicensed status; RESEARCH.md Open Question resolved with the confirmed contract.
+  Complexity: S
+
+- [ ] P2 — Hide the new AI surfaces: Ask-YouTube chatbot entry points and search AI carousels
+  Why: YouTube rolled the "Ask" chatbot to ALL signed-in US users on 2026-08-12 with no documented opt-out, and tested AI search carousels/"Highlights" through July — top user complaint class, and no competitor ships toggles for these yet (Unhook/BrowseWell verified absent 2026-08-19). Astra already ships `hideAiSummary` + `hideAiContextPanels` (since 4.51.1), so this is an extension of shipped features into new whitespace, not new ground.
+  Evidence: RESEARCH.md §Community (socialmediatoday 2026-08-12; dead Google support thread asking how to turn it off); `extension/core/settings-schema.js:192,195`.
+  Touches: `extension/core/selector-packs/**`, `extension/ytkit.js`, `extension/core/settings-schema.js` (new key(s) via the nine-places checklist), `extension/_locales/**`, `YTKit.user.js`
+  Acceptance: the Ask-YouTube entry button/panel and the search AI carousel are hidden when enabled, via structural selectors captured from the live post-2026-08-12 DOM (browser-gated capture first — do NOT guess selectors; the existing `hideAiSummary` selectors get re-verified in the same capture); hide-attribution marks the hidden nodes; userscript ported or classified.
+  Complexity: M
+
+- [ ] P2 — Complete the anti-translation matrix: chapters and description
+  Why: auto-dub/auto-translation defeat is the hottest 2026 demand category with the weakest supply (ImprovedTube merged auto-dub fixes 2026-08-05; yt-anti-translate stagnant since April despite owning the niche). Astra covers titles (`antiTranslate`), thumbnails (`antiTranslateThumbnails`), transcript (`antiTranslateTranscript`), and original audio (`core/audio-track.js`) — chapters and description remain translated, so the matrix advertises completeness it doesn't have.
+  Evidence: RESEARCH.md §Competitive (ImprovedTube PR #4179, issue #2716); YouTube-No-Translation's matrix (titles/audio/captions/chapters/thumbnails) as the parity reference.
+  Touches: `extension/ytkit.js` (antiTranslate family), player-response chapter markers, oEmbed/description sources, `extension/core/settings-schema.js`, `extension/_locales/**`
+  Acceptance: with the features enabled, chapter titles in the player bar/description and the watch-page description render in the video's original language, sourced locale-independently (player response first, no URL-pattern guessing — same sourcing discipline as antiTranslateThumbnails); userscript parity classified honestly.
+  Complexity: M
+
+- [ ] P2 — YouTube-semantic element zapper
+  Why: the single confirmed leapfrog: no YouTube-specific tool ships an element picker (re-verified 2026-08-19; uBOL's generic MV3 zapper is the only working picker, GPL — study, don't vendor), while users hand-write fragile uBO filters whose Chromium host dies 2026-08-31. Astra's foundations make the L-sized version real: surface taxonomy (35 surfaces), hide-attribution markers + per-navigation counts, video-hider fail-open, and feed-prefilter's refusal set.
+  Evidence: RESEARCH.md §Competitive + vault "YouTube Ad Blocking Ecosystem 2026-08-14" (unmet-demand cluster); `extension/core/hide-attribution.js`, `extension/core/feed-prefilter.js` refusals.
+  Touches: new feature module (button-triggered picker overlay — no keyboard shortcuts per repo philosophy), `extension/core/selectors.js` surface mapping, video-hider custom-rule storage, `extension/core/hide-attribution.js`, settings schema/locales
+  Acceptance: a picker mode lets the user click any feed/watch element; the tool snaps the selection to the nearest known renderer/surface and generates a scoped, structural hide rule (never raw obfuscated classes) stored with the user's video-hider rules; rules refuse player and playlist surfaces (same refusal set as feed-prefilter); every zapped element carries hide-attribution; rules are listed, countable, and individually deletable; fail-open guard applies.
+  Complexity: L
+
+- [ ] P3 — Stage-aware anti-adblock detection diagnostics
+  Why: YouTube's degradation ladder is now stage-documented (repeated ads → throttling/injected delays → autoplay stops → videos refuse to load), and users blame the extension, not YouTube — the ABP 5.17 incident shows a slowdown reads as "the blocker broke my YouTube." Recognizing the stage and explaining it converts a trust-breaker into a trust-builder.
+  Evidence: RESEARCH.md §Security (emarketer 2026-01-08 FAQ, cybernews 2026-08 tests, tomsguide ABP incident); vault 2026-08-15 note (stop/start loop attributed to aggressive quick-fixes rules, not YouTube punishment).
+  Touches: `extension/core/feature-health.js` or a small detector module, `extension/popup.js` (feature-health surface), `extension/core/settings-schema.js`, locales
+  Acceptance: when a ladder stage's observable signature fires (e.g. playback-blocked enforcement dialog present, repeated unskippable pre-rolls despite DNR), the feature-health surface names the stage in plain language and offers a one-click "pause zero-ads for this session" that auto-restores (timed pause survives worker eviction — the Ghostery `revokeAt` alarm pattern); no stage is auto-acted on; detection is structural, never auto-dismissing any dialog.
+  Complexity: M
+
+- [ ] P3 — Per-surface enable masks for API-heavy features
+  Why: DeArrow's own top complaint thread is performance, and its most-requested mitigation is per-surface disabling (issue #92 disable-on-playlists, active 2026-08-16). Astra's attribution layer already records per-surface outcomes, so surface-granular enablement is the natural next use of that data — and a competitive answer no upstream ships.
+  Evidence: RESEARCH.md §Competitive (DeArrow #92, #423); `extension/core/selectors.js` `withSelectorAttribution` surface recording.
+  Touches: `extension/core/settings-schema.js` (per-surface mask entries for dearrow/sponsorblock/returnDislike class features), feature modules' rule registration, settings panel rendering, locales
+  Acceptance: at least DeArrow can be scoped to exclude chosen surfaces (e.g. playlists) without disabling globally; the mask is honored at rule-registration level (no fetch fired for excluded surfaces, not just no render); default masks unchanged (all surfaces on).
+  Complexity: M
+
+- [ ] P3 — Transcript "export for LLM" preset
+  Why: transcript-to-LLM workflows are a live differentiator (YouTube Alchemy v11.11, 2026-08-08, ships channel/collaborator-aware transcript exports); Astra already has the transcript viewer, IndexedDB search, and copy actions — a formatted export (title, URL, chapters, timestamped text) is a small addition squarely inside the research persona.
+  Evidence: RESEARCH.md §Competitive (TimMacy/YouTubeAlchemy).
+  Touches: `extension/core/transcript-service.js` consumers in `extension/ytkit.js` (transcript panel actions), locales
+  Acceptance: the transcript panel offers a one-click copy/download of a structured plain-text/Markdown export (video title, canonical URL, chapter headings, timestamped lines) suitable for pasting into an LLM/NotebookLM; works from the already-fetched transcript with no new network; respects the existing provenance labels (stale/cached text stays labeled in the export).
+  Complexity: S
+
+- [ ] P3 — Opt-in background-tab energy tamer
+  Why: "YouTube CPU Tamer" holds 57k Greasy Fork installs on this demand alone, and idle-CPU complaints are ImprovedTube's recurring uninstall reason. Astra has a steady-state budget gate but no user-facing energy mode.
+  Evidence: RESEARCH.md §Competitive (Greasy Fork top-installs profile); `npm run check:steady-state` (existing budget machinery as the verification harness).
+  Touches: MAIN-world module (timer/rAF coalescing while `document.hidden`), `extension/ytkit-main.js` bridge, settings schema/locales
+  Acceptance: with the feature on and the tab hidden, timer/rAF churn drops measurably (steady-state bench comparison recorded before/after); playback, live chat, and background audio are exempted and verified unaffected; feature is off by default and classified for the userscript honestly.
+  Complexity: M
+
+- [ ] P3 — Verify the toolchain on Node 24 before Node 22 goes maintenance
+  Why: Node 22 (the `engines` floor) enters Maintenance in October 2026 (EOL 2027-04-30); CVE-2026-21717 is fixed in 22.22.2. The move is cheap now and forced later.
+  Evidence: RESEARCH.md §Security (nodejs.org/en/about/eol).
+  Touches: `package.json` engines, CLAUDE.md build notes
+  Acceptance: `npm test` + `npm run check` + a no-CRX build pass on Node 24 with any incompatibilities fixed; the build machine runs ≥22.22.2 meanwhile; engines raised only when 24 is verified.
+  Complexity: S
+
+Note (belongs to the 2026-08-18 audit section above) — extends the existing P3 item "Userscript duplicates RYD / SponsorBlock / DeArrow / player-handoff features on non-schema keys; bundled modules are never called": the 2026-08-18 monolith sweep verified twelve concrete divergences the hand-maintained userscript copies carry versus the extension pair (which are line-for-line identical for SponsorBlock/DeArrow): DeArrow never processes watch pages (`YTKit.user.js:14830-14843` pathname gate) so the related rail — its main target — is untouched; sentence-case renders "THe truth about x" (`:14904` operates on `slice(1)`); a DeArrow 404 yields null instead of empty branding so `daFallbackFormat` never fires (`:14857-14875`); SB drops `[t,t]` `poi_highlight` markers (`:14518`); the SB cache ignores which categories it was fetched for (`:14527-14547`); DeArrow cache has no in-session TTL and "No cache" hydrates 24 h of entries (`:14788,:14846`); the thumbnail path lacks the extension's three guards (videoId pattern, timestamp finiteness, lazy-img deferral; `:14955-14987`); SB lacks skip-timing jitter, stale-cache API-outage fallback, and the progress-bar rebuild observer (declared `:14462`, never armed); perChannelSpeed lacks BOTH extension fixes (untagged programmatic writes `:8285,:8314`; navigate-save reads current DOM `:8308-8309`); hideWatchedVideos still uses the once-marker the extension removed for recycled nodes (`:8336-8338`); Subscription Groups is the oldest third copy (silent full-replace import with no undo `:13589-13626`, no `_sessionLastVisit`, default true vs schema false `:2966`) while the modern factory bundled at `YTKit-core.user.js:24286` has zero call sites — the stickyChat/subtitles/themeCss factories show the wiring pattern to follow. This strengthens that item's case: wire the bundled factories rather than patching twelve divergences one at a time.
