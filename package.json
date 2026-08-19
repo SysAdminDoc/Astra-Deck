@@ -55,6 +55,7 @@
     "audit:deps": "npm run audit:deps:production && node scripts/audit-dependencies.js",
     "audit:deps:production": "npm audit --omit=dev --audit-level=moderate",
     "check:versions": "node scripts/check-versions.js",
+    "check:release-current": "node scripts/check-versions.js --require-release-current",
     "check:settings": "node scripts/check-settings.js",
     "check:settings-reference": "node scripts/generate-settings-reference.js --check",
     "lint": "eslint extension/background.js extension/popup.js extension/runtime-bootstrap.js extension/core/*.js extension/core/selector-packs/*.js extension/features/**/*.js extension/live-chat.js extension/sidepanel.js extension/ytkit.js extension/ytkit-main.js extension/runtime-core-loader.mjs scripts/**/*.js build-extension.js sync-userscript.js",
