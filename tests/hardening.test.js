@@ -12429,11 +12429,13 @@ test('v4.47.0 stickyVideo — fullscreen handler hides positioned overlays on li
     // visibility and force visibility:hidden on every positioned element
     // when entering fullscreen, restore on exit. Same shape as the
     // fix in theater-split.user.js#onFullscreenChange (companion userscript).
-    const start = ytkitSource.indexOf("id: 'stickyVideo'");
-    assert.ok(start > -1, "stickyVideo feature definition must exist");
-    const handlerStart = ytkitSource.indexOf('_fullscreenHandler = () =>', start);
+    // Reads the feature module: ytkit.js used to carry a second copy of this
+    // handler and now carries only a descriptor stub.
+    const stickyVideoSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+    const handlerStart = stickyVideoSource.indexOf('_fullscreenHandler = () =>');
     assert.ok(handlerStart > -1, 'stickyVideo must declare _fullscreenHandler arrow function');
-    const block = ytkitSource.slice(handlerStart, handlerStart + 3000);
+    const block = stickyVideoSource.slice(handlerStart, handlerStart + 3000);
 
     // On entry: positioned overlays get visibility:hidden via a stash array.
     assert.match(block, /this\._fullscreenOverlayStash\s*=\s*\[\]/,
@@ -12451,9 +12453,9 @@ test('v4.47.0 stickyVideo — fullscreen handler hides positioned overlays on li
 
     // Destroy cleans up the stash so a teardown-during-fullscreen leaves no
     // dangling references.
-    const destroyStart = ytkitSource.indexOf("removeEventListener('fullscreenchange'", start);
+    const destroyStart = stickyVideoSource.indexOf("removeEventListener('fullscreenchange'");
     assert.ok(destroyStart > -1, 'stickyVideo must remove fullscreenchange listener on destroy');
-    const destroyTail = ytkitSource.slice(destroyStart, destroyStart + 800);
+    const destroyTail = stickyVideoSource.slice(destroyStart, destroyStart + 800);
     assert.match(destroyTail, /this\._fullscreenOverlayStash\s*=\s*null/,
         'destroy/teardown must clear _fullscreenOverlayStash');
 });

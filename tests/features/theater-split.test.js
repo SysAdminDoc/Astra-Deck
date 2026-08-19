@@ -15,6 +15,13 @@ const { sources, config, extractFeatureBlock } = require('../helpers/source');
 
 const MODULE_PATH = '../../extension/features/sticky-video/index.js';
 
+// The behaviour used to exist twice: once in the feature module and once as an
+// inline fallback inside ytkit.js that every page load parsed and discarded.
+// The fallback is a descriptor stub now, so the module IS the implementation
+// and these assertions read it directly.
+const MODULE_SOURCE = fs.readFileSync(
+    path.join(config.repoRoot, 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
+
 function loadModule() {
     const originalFeatures = globalThis.YTKitFeatures;
     delete require.cache[require.resolve(MODULE_PATH)];
@@ -131,14 +138,6 @@ test('stickyVideo resolves premiered-video chat placeholders back to comments', 
         'premiered videos with a comments surface prefer comments over chat chrome');
 });
 
-test('stickyVideo style builders preserve the monolith fallback CSS', () => {
-    const { mod } = loadModule();
-    const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
-
-    assert.equal(mod.buildSplitShellCss(), extractTemplate(block, 'css'));
-    assert.equal(mod.buildSplitMetaCss(), extractTemplate(block, 'splitMetaCss'));
-    assert.equal(mod.buildSplitCommentsCss(), extractTemplate(block, 'splitCommentsCss'));
-});
 
 test('stickyVideo keeps comment scrolling native and bounds offscreen rendering', () => {
     const { mod } = loadModule();
@@ -148,7 +147,6 @@ test('stickyVideo keeps comment scrolling native and bounds offscreen rendering'
 
     for (const [contents, label] of [
         [moduleSource, 'extension module'],
-        [sources.ytkit, 'extension fallback'],
         [userscriptSource, 'standalone userscript'],
     ]) {
         const nativeScrollGateCount = (
@@ -182,10 +180,7 @@ test('stickyVideo wraps split-pane titles and grows live header height from rend
     const userscriptPath = path.join(config.repoRoot, 'theater-split.user.js');
     const theaterSplit = fs.readFileSync(userscriptPath, 'utf8');
 
-    for (const [contents, label] of [
-        [css, 'extension metadata CSS'],
-        [sources.ytkit, 'extension fallback CSS'],
-    ]) {
+    for (const [contents, label] of [[css, 'extension metadata CSS']]) {
         assert.ok(contents.includes('white-space: normal !important;'),
             `${label} must override YouTube title nowrap/truncation in the split pane`);
         assert.ok(contents.includes('overflow-wrap: anywhere !important;'),
@@ -199,7 +194,7 @@ test('stickyVideo wraps split-pane titles and grows live header height from rend
     }
 
     for (const [contents, label] of [
-        [sources.ytkit, 'extension live header'],
+        [MODULE_SOURCE, 'extension live header'],
         [theaterSplit, 'standalone live header'],
     ]) {
         assert.ok(contents.includes('baseHeaderHeight = compact ? 172'),
@@ -234,19 +229,6 @@ test('stickyVideo wraps split-pane titles and grows live header height from rend
     }
 });
 
-test('stickyVideo monolith delegates style payloads through the feature module', () => {
-    const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
-    assert.match(block, /globalThis\.YTKitFeatures && globalThis\.YTKitFeatures\.stickyVideo/,
-        'ytkit.js must read the stickyVideo feature namespace');
-    for (const builder of [
-        'buildSplitShellCss',
-        'buildSplitMetaCss',
-        'buildSplitCommentsCss'
-    ]) {
-        assert.match(block, new RegExp('stickyVideoFeatures\\.' + builder),
-            'ytkit.js must delegate to ' + builder + ' when the module is loaded');
-    }
-});
 
 test('stickyVideo monolith prefers the module runtime factory before inline fallback', () => {
     const factoryNeedle = 'globalThis.YTKitFeatures?.stickyVideo?.createStickyVideoFeature?.({';
@@ -292,7 +274,7 @@ test('stickyVideo module loads before ytkit.js in content scripts', () => {
 });
 
 test('stickyVideo chat observer lifecycle uses one teardown path (NF32)', () => {
-    const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
+    const block = MODULE_SOURCE;
 
     assert.doesNotMatch(block, /_pendingChatObs|_chatSafetyTimeout|_chatWatcherObs|_chatWatcherStopTimer/,
         'stickyVideo must not reintroduce separate pending-chat and late-chat observer state');
@@ -314,13 +296,13 @@ test('stickyVideo chat observer lifecycle uses one teardown path (NF32)', () => 
         'destroy must stop the shared chat observer even when no overlay is active');
 });
 
-test('stickyVideo inline fallback keeps the comments-first panel resolver', () => {
-    const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
+test('stickyVideo keeps the comments-first panel resolver', () => {
+    const block = MODULE_SOURCE;
 
     assert.match(block, /_resolveSplitPanelType\(rawType, chatEl, below\)/,
-        'inline fallback must keep the split panel type resolver');
+        'the module must keep the split panel type resolver');
     assert.match(block, /_isSplitChatCandidate\(chatEl\)/,
-        'inline fallback must filter hidden chat placeholders');
+        'the module must filter hidden chat placeholders');
     assert.match(block, /Late chat ignored, using \$\{resolvedType\} comments panel/,
         'late stale chat frames must be ignored in favor of the comments panel');
 });
@@ -340,10 +322,7 @@ test('fullscreen exit only pins a px player width while the resize observer is a
     // px width written on fullscreen exit survived every later window resize
     // until the next expand. Collapsed state must stay fluid.
     const moduleSource = fs.readFileSync(path.join(__dirname, MODULE_PATH), 'utf8');
-    for (const [label, source] of [
-        ['sticky-video module', moduleSource],
-        ['ytkit.js fallback', sources.ytkit],
-    ]) {
+    for (const [label, source] of [['sticky-video module', moduleSource]]) {
         const start = source.indexOf('const leftW = this._isSplit');
         assert.ok(start > -1, `${label} must compute a restore width on fullscreen exit`);
         const block = source.slice(start, start + 700);
@@ -364,10 +343,7 @@ const STICKY_MODULE_SOURCE = fs.readFileSync(
 // split away on a 3-tick guard. Collapse is now owned solely by the comments
 // column reaching its top and being pushed past it.
 test('scrolling over the video never collapses the split', () => {
-    for (const [label, source] of [
-        ['module', STICKY_MODULE_SOURCE],
-        ['monolith fallback', sources.ytkit]
-    ]) {
+    for (const [label, source] of [['module', STICKY_MODULE_SOURCE]]) {
         const start = source.indexOf('this._wheelHandler = (e) => {');
         assert.ok(start > -1, `${label} must define the document wheel handler`);
         const handler = source.slice(start, start + 2600);
@@ -393,10 +369,7 @@ test('scrolling over the video never collapses the split', () => {
 });
 
 test('the comments pane collapses only after being pushed past its top', () => {
-    for (const [label, source] of [
-        ['module', STICKY_MODULE_SOURCE],
-        ['monolith fallback', sources.ytkit]
-    ]) {
+    for (const [label, source] of [['module', STICKY_MODULE_SOURCE]]) {
         const start = source.indexOf('this._rightWheelHandler = (e) => {');
         assert.ok(start > -1, `${label} must define the comments-pane wheel handler`);
         const handler = source.slice(start, start + 900);
@@ -448,4 +421,23 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
     const poStart = sources.ytkit.indexOf('#ytkit-po-drop .ytkit-ql-bottom-btn {');
     const poBlock = sources.ytkit.slice(poStart, poStart + 400);
     assert.match(poBlock, /flex:\s*0 0 auto !important/);
+});
+
+test('the monolith carries only a descriptor stub for stickyVideo', () => {
+    // What this replaces: ytkit.js used to hold a second, hand-synchronised
+    // copy of this entire feature - 316,911 bytes and 133 behaviour
+    // properties, parsed on every page load and then discarded by the `||`.
+    // Keeping the two in step was manual, and a fix applied to one and not the
+    // other diverged silently until a module failed to load and the stale copy
+    // took over.
+    const [fallback] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
+    assert.ok(fallback.length < 2000,
+        `the stickyVideo fallback grew back to ${fallback.length} bytes; it must stay a descriptor stub`);
+    for (const key of ['id', 'name', 'description', 'group', 'icon', 'pages']) {
+        assert.match(fallback, new RegExp('\\b' + key + ':'), `the stub still needs ${key} for the settings list`);
+    }
+    assert.doesNotMatch(fallback, /_resolveSplitPanelType|buildSplitShellCss|_dockSplitHeader/,
+        'behaviour belongs in the module, not in a second copy');
+    assert.match(sources.ytkit, /YTKitFeatures\?\.stickyVideo\?\.createStickyVideoFeature/,
+        'ytkit.js must still call the module factory');
 });

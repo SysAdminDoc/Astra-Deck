@@ -666,8 +666,8 @@ test('external settings updates and profile loads preserve a newer settings stam
 
 // ── item 12: sticky-video must not zombie-mount after destroy ──
 
-test('stickyVideo cancels pending element waits and refuses to mount after destroy (both copies)', () => {
-    for (const [name, source] of [['features/sticky-video/index.js', stickySource], ['ytkit.js inline fallback', ytkitSource]]) {
+test('stickyVideo cancels pending element waits and refuses to mount after destroy', () => {
+    for (const [name, source] of [['features/sticky-video/index.js', stickySource]]) {
         assert.match(source, /_pendingWaits:\s*\[\]/,
             `${name}: must track waitForElement cancel fns`);
         assert.match(source, /if\s*\(this\._destroyed\s*\|\|\s*this\._isActive\)\s*return;/,
@@ -682,8 +682,10 @@ test('stickyVideo cancels pending element waits and refuses to mount after destr
     // init must re-arm cleanly after a destroy/init cycle.
     assert.match(stickySource, /init\(\)\s*\{\s*this\._destroyed = false;/,
         'standalone module init must clear the destroyed flag');
-    assert.match(ytkitSource, /init\(\)\s*\{\s*this\._destroyed = false;\s*const stickyVideoFeatures/,
-        'inline fallback init must clear the destroyed flag');
+    // The monolith's copy of this feature is gone; ytkit.js delegates to the
+    // module and keeps only a descriptor stub.
+    assert.match(ytkitSource, /YTKitFeatures\?\.stickyVideo\?\.createStickyVideoFeature/,
+        'ytkit.js must still call the module factory');
 });
 
 // ── item 13: schema min for the subs-load hidden ratio matches consumer floors ──
