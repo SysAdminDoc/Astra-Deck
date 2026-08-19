@@ -1,13 +1,13 @@
 # Astra Deck — Architecture Map
 
-This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.69.0), not prescriptive (which direction to push). Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.69.0. For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog and [RESEARCH.md](../RESEARCH.md) for the current research-backed rationale. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions.
+This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.70.0), not prescriptive (which direction to push). Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.70.0. For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog and [RESEARCH.md](../RESEARCH.md) for the current research-backed rationale. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions.
 
 <!-- BEGIN GENERATED PROJECT FACTS -->
 ### Source-derived project facts
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.69.0` |
+| Release | `v4.70.0` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `475` entries across `18` categories |
