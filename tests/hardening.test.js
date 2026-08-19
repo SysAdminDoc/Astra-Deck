@@ -2877,14 +2877,16 @@ test('DeArrow watch-page title replacement announces via aria-live', () => {
     // Only the watch-page primary title gets announced — grid thumbnails
     // would spam the screen reader. Pin both the announcement and the
     // gating condition.
-    // Anchored on the shared title renderer rather than a prose comment: the
-    // fallback is kept identical to features/dearrow/index.js.
-    const deArrowStart = ytkitSource.indexOf('_renderTitle(titleEl, formatted');
+    // Reads the feature module: ytkit.js carried a second copy of DeArrow until
+    // v4.72.0 and now carries only a descriptor stub.
+    const deArrowSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'dearrow', 'index.js'), 'utf8');
+    const deArrowStart = deArrowSource.indexOf('_renderTitle(titleEl, formatted');
     assert.ok(deArrowStart > -1, 'DeArrow primary-title block must exist');
-    const block = ytkitSource.slice(deArrowStart, deArrowStart + 4200);
+    const block = deArrowSource.slice(deArrowStart, deArrowStart + 4200);
     assert.match(block, /announceA11y\(/,
         'DeArrow watch-page replacement must announce via announceA11y');
-    assert.match(ytkitSource, /announce:\s*isWatchPagePath\(\)/,
+    assert.match(deArrowSource, /announce:\s*isWatchPagePath\(\)/,
         'DeArrow announcement must be gated on isWatchPagePath() to avoid grid spam');
 });
 
@@ -5168,15 +5170,17 @@ test('youtubeMusicCompat only runs on music.youtube.com', () => {
 // ── v4.1.0 P1: Deferred-item follow-ups (DeArrow channel override + per-context quality) ──
 
 test('deArrow honors per-channel override before fetching branding', () => {
-    const idx = ytkitSource.indexOf('_channelOverrideMode(el)');
+    const deArrowSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'dearrow', 'index.js'), 'utf8');
+    const idx = deArrowSource.indexOf('_channelOverrideMode(el)');
     assert.ok(idx > -1, 'deArrow must declare _channelOverrideMode()');
     // The override check must run BEFORE _fetchBranding so we don't waste an
     // API request on overridden channels.
-    const block = ytkitSource.slice(idx, idx + 4000);
+    const block = deArrowSource.slice(idx, idx + 4000);
     assert.match(block, /deArrowChannelOverrides/,
         'must read deArrowChannelOverrides setting');
-    const procIdx = ytkitSource.indexOf('async _processPage()');
-    const procBlock = ytkitSource.slice(procIdx, procIdx + 4000);
+    const procIdx = deArrowSource.indexOf('async _processPage()');
+    const procBlock = deArrowSource.slice(procIdx, procIdx + 4000);
     const overrideCheckPos = procBlock.indexOf('_channelOverrideMode(el)');
     const brandFetchPos = procBlock.indexOf('this._fetchBranding(videoId)');
     assert.ok(overrideCheckPos > -1 && brandFetchPos > -1,
@@ -11279,11 +11283,15 @@ test('v4.47.0 polish batch — EI-NEW2 / EI-NEW3 / EI-NEW4 invariants pinned', (
         'reactionSpammer getter must clamp to the floor — never let the user lower it');
 
     // EI-NEW4: DeArrow TTL=0 warning + fallback opacity rule + fallback marker.
-    assert.match(ytkitSrc, /Cache disabled \(daCacheTTL=0\); every card hit fires an API request/,
+    // DeArrow moved to its own module in v4.72.0.
+    const deArrowSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'dearrow', 'index.js'), 'utf8'
+    );
+    assert.match(deArrowSrc, /Cache disabled \(daCacheTTL=0\); every card hit fires an API request/,
         'DeArrow init must warn when daCacheTTL=0');
-    assert.match(ytkitSrc, /\.daCustomTitle\[data-da-fallback="1"\]\s*\{[^}]*opacity:\s*0\.78/,
+    assert.match(deArrowSrc, /\.daCustomTitle\[data-da-fallback="1"\]\s*\{[^}]*opacity:\s*0\.78/,
         'DeArrow CSS must dim fallback titles via .daCustomTitle[data-da-fallback="1"]');
-    assert.match(ytkitSrc, /clone\.dataset\.daFallback = '1'/,
+    assert.match(deArrowSrc, /clone\.dataset\.daFallback = '1'/,
         'DeArrow fallback path must mark the clone with data-da-fallback="1"');
 
     // Schema entries for the new settings.

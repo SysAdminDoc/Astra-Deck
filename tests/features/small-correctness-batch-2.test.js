@@ -47,9 +47,9 @@ test('both DeArrow override sides go through the shared key', () => {
 
 // ── DeArrow thumbnail timestamp ────────────────────────────────────────
 test('DeArrow validates the remote thumbnail timestamp before it reaches a URL', () => {
+    // The monolith twin was deleted in v4.72.0; one implementation remains.
     for (const [label, src] of [
-        ['module', read('extension', 'features', 'dearrow', 'index.js')],
-        ['monolith twin', sources.ytkit]
+        ['module', read('extension', 'features', 'dearrow', 'index.js')]
     ]) {
         assert.match(src, /const stamp = Number\(thumb\?\.timestamp\);/, `${label} must coerce`);
         assert.match(src, /Number\.isFinite\(stamp\) && stamp >= 0/, `${label} must range-check`);
