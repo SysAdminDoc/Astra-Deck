@@ -20,6 +20,19 @@
         }
     }
 
+    if (!globalThis.YTKitCore?.sanitizeZapperRules
+        && typeof module !== 'undefined' && module.exports
+        && typeof require === 'function') {
+        try {
+            require('./element-zapper');
+        } catch (_) {
+            // reason: same posture as the scope module above. When it is
+            // absent the zapper domain sanitizes to an empty rule list rather
+            // than passing selectors through a generic clone that knows
+            // nothing about the grammar.
+        }
+    }
+
     const BACKUP_EXPORT_VERSION = 5;
     const BACKUP_SCHEMA_VERSION = 2;
     const MAX_BACKUP_BYTES = 512 * 1024 * 1024;
@@ -96,6 +109,7 @@
         { id: 'focusPresetRecovery', location: 'extension-local', key: 'ytkit-preset-focus-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'transcriptIndex', location: 'youtube-indexeddb', db: 'ytkit-transcript-index', store: 'transcripts', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'transcript-index-v1' },
         { id: 'aiSummaries', location: 'extension-local', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
+        { id: 'elementZapperRules', location: 'extension-local', key: 'ytkit-element-zapper-rules', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'element-zapper-rules-v1' },
 
         { id: 'credentialVault', location: 'extension-session-and-indexeddb', key: 'ytkit-credential-vault', backup: 'exclude', reason: 'Credentials are intentionally non-portable and write-only.', credentialScrub: 'entire-domain', migration: 'none' },
         { id: 'deArrowIdentity', location: 'extension-local', key: 'ytkit-da-user-id', backup: 'exclude', reason: 'Pseudonymous API identity must rotate with a new installation.', credentialScrub: 'entire-domain', migration: 'none' },
@@ -656,6 +670,10 @@
         case 'theaterSplitRatio': return Math.max(20, Math.min(85, Number(value) || 75));
         case 'digitalWellbeingDismissal': return typeof value === 'string' ? value.slice(0, 32) : '';
         case 'transcriptIndex': return sanitizeTranscriptRecords(value);
+        case 'elementZapperRules': {
+            const zapperSanitizer = globalThis.YTKitCore?.sanitizeZapperRules;
+            return typeof zapperSanitizer === 'function' ? zapperSanitizer(value) : [];
+        }
         case 'aiSummaries': {
             // Delegates to the artifact service's bounded/validated store
             // sanitizer when it is loaded; falls back to a plain-object clone.
@@ -674,7 +692,7 @@
     }
 
     function defaultDomainValue(id) {
-        if (['hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'transcriptIndex'].includes(id)) return [];
+        if (['hiddenVideos', 'allowedVideos', 'markedWatchedVideos', 'blockedChannels', 'allowedChannels', 'watchLaterRemovalLog', 'recommendationScrubSessions', 'subscriptionUnsubscribeSessions', 'transcriptIndex', 'elementZapperRules'].includes(id)) return [];
         if (id === 'videoFilterListSubscription') return sanitizeVideoFilterListSubscription({});
         if (id === 'persistentQueue') return { v: 1, items: [] };
         if (id === 'reactionSpammerState') return sanitizeReactionState({});
