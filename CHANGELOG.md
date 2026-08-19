@@ -62,6 +62,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- Element Zapper. Turn it on, click "Pick an element to hide", then click a
+  shelf, a promo, or an info panel and it goes away for good. The rule behind
+  it is built from YouTube's own element names rather than the scrambled class
+  names a hand-written filter has to guess at, so it keeps working after a
+  redesign. Rules are listed in Settings under Content, can be switched off
+  without deleting them, and travel with your backup.
+
+  Some things it will not do, on purpose. It leaves the player alone, because
+  hiding part of it breaks playback, and it leaves playlist entries alone,
+  because hiding one renumbers the list. Click a single video and it says so
+  and points you at Video Hider, which is the right tool for hiding videos and
+  channels. Everything it hides is tagged the same way every other Astra hide
+  is, so "which feature hid this?" still has an answer.
+
 - **Anti-Translate Chapters** (opt-in). Chapter titles were the last gap in the
   anti-translation matrix: titles, descriptions, thumbnails, transcripts and
   audio tracks were already restored, but the chapter rail still showed
