@@ -3653,6 +3653,7 @@ return response;
             hideVideosSubsLoadHiddenRatio: 0.8,
             hideVideosRemoveHiddenCards: false,
             hideVideosShowFilterReason: false,
+            elementZapper: false,
             hideVideosShowQuickHideButton: true,
             markWatchedVideos: false,
             hideVideosAllowChannelBlock: true,
@@ -5324,6 +5325,22 @@ return response;
         getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
         })
         : createUnavailableDownloadUIFeature();
+    const _elementZapper = typeof globalThis.YTKitFeatures?.createElementZapperFeature === 'function'
+        ? globalThis.YTKitFeatures.createElementZapperFeature({
+            appState,
+            addMutationRule,
+            removeMutationRule,
+            addNavigateRule,
+            removeNavigateRule,
+            storageReadJSON,
+            storageWriteJSON,
+            injectStyle,
+            showToast,
+            DebugManager,
+            DiagnosticLog,
+            t
+        })
+        : null;
     const {
         AUDIO_FORMATS,
         downloadFormatEstimates,
@@ -9667,6 +9684,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll(this._cardSelector).forEach((card) => this._restoreCard(card));
             }
         },
+        _elementZapper?.elementZapperFeature || { id: 'elementZapper', name: t('feature_elementZapper_name', 'Element Zapper'), description: t('feature_elementZapper_desc', 'Click a shelf, panel, or promo to hide it, and keep hiding it.'), group: 'Home / Subscriptions', init() {}, destroy() {} },
         cssFeature('hideNewsHome', 'Hide News Section', 'Hide news sections from the homepage', 'Home / Subscriptions', 'newspaper',
             `ytd-rich-section-renderer:has([is-news]),
                     ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[type="news"]) { display: none !important; }`),
@@ -51971,6 +51989,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             // Mounted next to its category so the sidebar order matches.
             if (cat === 'Content') content.appendChild(buildVideoHiderPane(config));
+            if (cat === 'Content') {
+                const zapperPane = globalThis.YTKitFeatures?.elementZapperInstance?.buildElementZapperPane?.();
+                if (zapperPane) content.appendChild(zapperPane);
+            }
         });
 
         function createPanelActionButton({ id, label, icon, variant = 'secondary', ariaLabel }) {

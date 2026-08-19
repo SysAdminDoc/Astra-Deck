@@ -145,6 +145,7 @@
     // ── bundled module: extension/core/csv.js ──
     // ── bundled module: extension/core/dialog-guard.js ──
     // ── bundled module: extension/core/element-zapper.js ──
+    // ── bundled module: extension/features/element-zapper/index.js ──
     // ── bundled module: extension/core/hide-attribution.js ──
     // ── bundled module: extension/core/heatmap.js ──
     // ── bundled module: extension/core/youtube-thumbnails.js ──

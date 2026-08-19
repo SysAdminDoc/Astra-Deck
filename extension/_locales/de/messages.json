@@ -2027,6 +2027,12 @@
   "feature_dualSubtitleLanguage_name": {
     "message": "Second Subtitle Language"
   },
+  "feature_elementZapper_desc": {
+    "message": "Click a shelf, panel, or promo to hide it, and keep hiding it."
+  },
+  "feature_elementZapper_name": {
+    "message": "Element Zapper"
+  },
   "feature_enableCPU_Tamer_desc": {
     "message": "CPU-Auslastung reduzieren durch Drosselung von Hintergrund-Timern via requestAnimationFrame-Steuerung"
   },
@@ -7801,5 +7807,59 @@
   },
   "youtubeStateRestoreToast": {
     "message": "YouTube state restored ({count}). Reload the page to apply it."
+  },
+  "zapConfidenceBroad": {
+    "message": "Matches this element anywhere it appears"
+  },
+  "zapConfidenceHigh": {
+    "message": "Scoped to one page section"
+  },
+  "zapHiddenNote": {
+    "message": "Hidden by an element rule you made."
+  },
+  "zapNoRules": {
+    "message": "No rules yet."
+  },
+  "zapPaneDesc": {
+    "message": "Hide a shelf, panel, or promo by clicking it. Rules are built from YouTube’s own element names, so they keep working after a redesign."
+  },
+  "zapPaneTitle": {
+    "message": "Element Zapper"
+  },
+  "zapPickCancel": {
+    "message": "Abbrechen"
+  },
+  "zapPickHint": {
+    "message": "Click a shelf, panel, or promo to hide it. Press Escape to cancel."
+  },
+  "zapPickStart": {
+    "message": "Pick an element to hide"
+  },
+  "zapRefuseOwnUi": {
+    "message": "That is part of Astra Deck."
+  },
+  "zapRefusePlayer": {
+    "message": "The player is off limits. Hiding part of it breaks playback."
+  },
+  "zapRefusePlaylist": {
+    "message": "Playlist items are off limits. Hiding one renumbers the list."
+  },
+  "zapRefuseTooBroad": {
+    "message": "That is the whole page, not an element on it."
+  },
+  "zapRefuseUnknown": {
+    "message": "Nothing here can be turned into a durable rule."
+  },
+  "zapRefuseVideoCard": {
+    "message": "That is a single video. Use Video Hider to hide videos and channels."
+  },
+  "zapRuleAdded": {
+    "message": "Element hidden. The rule is saved."
+  },
+  "zapRuleDuplicate": {
+    "message": "A rule for that element already exists."
+  },
+  "zapRuleRemove": {
+    "message": "Remove"
   }
 }

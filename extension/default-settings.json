@@ -124,6 +124,7 @@
   "hideVideosSubsLoadHiddenRatio": 0.8,
   "hideVideosRemoveHiddenCards": false,
   "hideVideosShowFilterReason": false,
+  "elementZapper": false,
   "hideVideosShowQuickHideButton": true,
   "markWatchedVideos": false,
   "hideVideosAllowChannelBlock": true,
