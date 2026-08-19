@@ -200,7 +200,9 @@ function collectSourceText(dir, sink) {
         if (REFERENCE_SKIP.has(full)) continue;
         if (entry.isDirectory()) { collectSourceText(full, sink); continue; }
         if (!/\.(js|mjs|html|json)$/.test(entry.name)) continue;
-        try { sink.push(fs.readFileSync(full, 'utf8')); } catch { /* unreadable file is not a schema problem */ }
+        try { sink.push(fs.readFileSync(full, 'utf8')); } catch { /* reason: an unreadable file is not a schema problem; the gate
+            reports on what it could read rather than failing on a
+            permissions or encoding error. */ }
     }
 }
 

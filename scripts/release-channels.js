@@ -315,7 +315,8 @@ function writeJsonAtomic(filePath, value) {
         fs.writeFileSync(tempPath, JSON.stringify(value, null, 2) + '\n', 'utf8');
         fs.renameSync(tempPath, absolutePath);
     } catch (error) {
-        try { fs.rmSync(tempPath, { force: true }); } catch (_) { /* preserve the original failure */ }
+        try { fs.rmSync(tempPath, { force: true }); } catch (_) { /* reason: preserve the original write failure -- the
+        cleanup of a temp file must not mask why the write failed. */ }
         throw error;
     }
 }

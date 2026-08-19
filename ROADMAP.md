@@ -74,13 +74,6 @@ duplicated here.
 
 ### P3
 
-- [ ] P3 — Lint the tooling that enforces everything else
-  Why: the 28 gate scripts, the build script and the userscript sync script are the highest-leverage code in the repo and are the only JavaScript never linted.
-  Evidence: `package.json:55` lists only `extension/**` paths; `scripts/**`, `build-extension.js`, `sync-userscript.js`, `tests/**` and `extension/runtime-core-loader.mjs` are excluded. ESLint 10 resolves `eslint.config.*` from each linted file's directory, so a stricter config can be scoped without a monorepo — https://eslint.org/docs/latest/use/migrate-to-10.0.0
-  Touches: `package.json`, `eslint.config.js`
-  Acceptance: `npm run lint` covers `scripts/`, the two root build scripts and `runtime-core-loader.mjs`; the custom `require-catch-reason` rule applies there too.
-  Complexity: S
-
 - [ ] P3 — Put a scope floor on the list-scoped gates
   Why: six gates are scoped by hand-written file lists, so anything off the list is uncontrolled and a renamed file drops out silently. `check-userscript-symbols.js` already implements the right shape.
   Evidence: `scripts/check-userscript-symbols.js:115` `MIN_DERIVED_SINGLETONS = 12` is a floor on the gate's own derived scope. Contrast `scripts/check-no-eval.js:35-54` `SCAN_FILES`; `scripts/check-light-theme-lane.js:34-39` `SOURCES` (excludes all of `extension/core/*.js`, which also inject CSS); `scripts/audit-overlays-a11y.js:18-27` (5 files, while overlays live in ~25 feature modules); `scripts/check-contrast.js:141-150` (6 token pairs). `scripts/check-versions.js:153-170` returns "skipped" and true when `git` is off PATH.
