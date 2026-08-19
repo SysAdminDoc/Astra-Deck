@@ -571,7 +571,12 @@ test('downloadUI playlist chooser uses preview endpoint and canonical subset req
     assert.match(source, /MediaDLManager\.baseUrl\(\) \+ '\/playlist'/);
     assert.match(source, /https:\/\/www\.youtube\.com\/playlist\?list=/);
     assert.match(source, /opts\.playlistItems = Array\.from\(playlistSelection\)\.sort/);
-    assert.match(source, /if \(!playlistSelection\.size\)/);
+    // An EMPTY selection must fall through to the single video, matching the
+    // hint above the button ("Without a selection, this video downloads
+    // normally."). The old hard block contradicted that copy and created a
+    // dead end whose only escape was reopening the popup.
+    assert.match(source, /if \(playlistSelection\.size\) \{/);
+    assert.doesNotMatch(source, /Select at least one playlist item/);
     assert.match(source, /if \(clip\.section\)/);
     assert.match(source, /playlistList\.setAttribute\('aria-label'/);
     assert.match(source, /checkbox\.type = 'checkbox'/);
