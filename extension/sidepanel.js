@@ -725,7 +725,9 @@ function renderSettings(filter) {
     if (_settingsLoadError) {
         setText(overviewSettings, String(schema.length));
         setText(overviewEnabled, '--');
-        if (settingsCount) settingsCount.textContent = t('spStatUnavailable', 'Unavailable');
+        // Sibling placeholders on this card are '--'/'-'. The explanation
+        // lives in the empty state below, which says far more than one word.
+        settingsCount.textContent = '--';
         if (settingsClear) settingsClear.hidden = !query;
         showEmpty(settingsEmpty, t('spSettingsErrorMsg', 'Quick settings could not load because browser storage is unavailable. Reload the panel, or use the toolbar popup after the extension context is ready.'), 'error', {
             title: t('spSettingsErrorTitle', 'Quick settings unavailable'),
