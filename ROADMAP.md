@@ -144,16 +144,6 @@ duplicated here.
   Acceptance: the popup reports transcript-index count/bytes alongside extension-local bytes by asking an open YouTube tab (and degrades cleanly when none is open); backups carry the cap and index metadata; a corruption state offers export-then-clear rather than clear alone.
   Complexity: M
 
-- [ ] P3 — `check:startup` reports a false regression when the machine is busy
-  Category: reliability / tooling
-  Where: `scripts/bench-startup.js` — the gate compares the MIN of 7 samples per surface against `baseline.metrics.parseInitMs.minMs + 25ms`.
-  Problem: the minimum of a small sample is the statistic most sensitive to competing load, so a build or a second bench running alongside inflates it past the tolerance and the gate reports a startup regression that does not exist. Observed 2026-08-19: three consecutive runs on a loaded machine gave min 136-144 ms and failed; on the same commit with the machine idle, min 94-108 ms / median 113-116 ms, indistinguishable from the pre-drain tree (min 91-109 ms / median 114-118 ms). Roughly 40 minutes went into bisecting a regression that was never there.
-  Evidence: the baseline itself records `minMs: 110.4` alongside `p95Ms: 142.4` from the same capture — the spread the gate treats as signal is already in the reference.
-  Fix: compare the MEDIAN (the statistic the summary line already prints) against a median baseline, or keep the min comparison and re-run once before failing. Either way, print both statistics on failure so a reader can tell load from regression at a glance.
-  Acceptance: a bench run under deliberate CPU load does not fail the gate on an unchanged tree; a synthetic +25 ms regression still fails it.
-  Confidence: Verified (reproduced both directions on 2026-08-19)
-  Effort: S
-
 - [ ] P3 — `npm run smoke:a11y` dies on a CDP timeout roughly one run in three
   Why: the rendered accessibility lane is the only proof that surfaces survive 320px, forced colors, and 200% zoom, and it is unreliable enough that a red run is now assumed to be flake — which is exactly how a real failure gets waved through. Confirmed pre-existing: a clean stash of HEAD failed the same way (2026-08-18), so it is not caused by recent surface work.
   Evidence: `devtools call timed out: Emulation.setDeviceMetricsOverride` and `... Runtime.evaluate`, both on the `settings` surface (8 states, 411 focus visits — the heaviest lane). Also observed once: a sidepanel `.sp-skip-link` focus-indicator failure that did not reproduce.
