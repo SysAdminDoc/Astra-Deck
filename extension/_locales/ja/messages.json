@@ -5018,6 +5018,135 @@
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
   },
+  "settingsSectionAiContent": {
+    "message": "AI コンテンツ"
+  },
+  "settingsSectionAudio": {
+    "message": "音声"
+  },
+  "settingsSectionAutomation": {
+    "message": "自動化"
+  },
+  "settingsSectionCaptionsNavigation": {
+    "message": "字幕とナビゲーション"
+  },
+  "settingsSectionCaptureSubtitles": {
+    "message": "キャプチャと字幕"
+  },
+  "settingsSectionComposition": {
+    "message": "入力"
+  },
+  "settingsSectionControls": {
+    "message": "コントロール"
+  },
+  "settingsSectionCustomCss": {
+    "message": "カスタム CSS"
+  },
+  "settingsSectionDensity": {
+    "message": "密度"
+  },
+  "settingsSectionDiagnostics": {
+    "message": "診断"
+  },
+  "settingsSectionDiscovery": {
+    "message": "発見"
+  },
+  "settingsSectionDiscoveryTranslation": {
+    "message": "発見と翻訳"
+  },
+  "settingsSectionEntryPoints": {
+    "message": "エントリーポイント"
+  },
+  "settingsSectionFeedLayout": {
+    "message": "フィードのレイアウト"
+  },
+  "settingsSectionFeedToolsAutomation": {
+    "message": "フィードツールと自動化"
+  },
+  "settingsSectionFeedVisibility": {
+    "message": "フィードの表示"
+  },
+  "settingsSectionFilters": {
+    "message": "フィルター"
+  },
+  "settingsSectionFormats": {
+    "message": "形式"
+  },
+  "settingsSectionFoundation": {
+    "message": "基本"
+  },
+  "settingsSectionHeader": {
+    "message": "ヘッダー"
+  },
+  "settingsSectionInsightsNotes": {
+    "message": "分析とメモ"
+  },
+  "settingsSectionMessages": {
+    "message": "メッセージ"
+  },
+  "settingsSectionNavigation": {
+    "message": "ナビゲーション"
+  },
+  "settingsSectionNotifications": {
+    "message": "通知"
+  },
+  "settingsSectionPageElements": {
+    "message": "ページ要素"
+  },
+  "settingsSectionPerformance": {
+    "message": "パフォーマンス"
+  },
+  "settingsSectionPlaybackQuality": {
+    "message": "再生と画質"
+  },
+  "settingsSectionPlayerChrome": {
+    "message": "プレーヤーの外観"
+  },
+  "settingsSectionPlayerStateControls": {
+    "message": "プレーヤーの状態と操作"
+  },
+  "settingsSectionPresentation": {
+    "message": "表示"
+  },
+  "settingsSectionProfilesWellbeing": {
+    "message": "プロファイルとウェルビーイング"
+  },
+  "settingsSectionRecoveryFullscreen": {
+    "message": "復元と全画面"
+  },
+  "settingsSectionSession": {
+    "message": "セッション"
+  },
+  "settingsSectionSharingActions": {
+    "message": "共有と操作"
+  },
+  "settingsSectionShortsDiscovery": {
+    "message": "Shorts と発見"
+  },
+  "settingsSectionSponsorblockDearrow": {
+    "message": "SponsorBlock と DeArrow"
+  },
+  "settingsSectionSurfaces": {
+    "message": "表示面"
+  },
+  "settingsSectionThreadBehavior": {
+    "message": "スレッドの動作"
+  },
+  "settingsSectionTiming": {
+    "message": "タイミング"
+  },
+  "settingsSectionToolsHealth": {
+    "message": "ツールと状態"
+  },
+  "settingsSectionTranscriptAi": {
+    "message": "文字起こしと AI"
+  },
+  "settingsSectionTransformDisplay": {
+    "message": "変換と表示"
+  },
+  "settingsSectionVisibility": {
+    "message": "表示"
+  },
   "settingsSubFeatureBadge": {
     "message": "サブ機能"
   },

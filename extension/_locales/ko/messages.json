@@ -1803,7 +1803,7 @@
     "message": "YouTube 페이지에 사용자 정의 CSS 규칙 삽입"
   },
   "feature_customCssInjection_name": {
-    "message": "사용자 정의 CSS"
+    "message": "사용자 지정 CSS"
   },
   "feature_customProgressBarColor_desc": {
     "message": "빨간색 진행 표시줄을 원하는 색상으로 변경"
@@ -5017,6 +5017,135 @@
   },
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+  },
+  "settingsSectionAiContent": {
+    "message": "AI 콘텐츠"
+  },
+  "settingsSectionAudio": {
+    "message": "오디오"
+  },
+  "settingsSectionAutomation": {
+    "message": "자동화"
+  },
+  "settingsSectionCaptionsNavigation": {
+    "message": "자막 및 탐색"
+  },
+  "settingsSectionCaptureSubtitles": {
+    "message": "캡처 및 자막"
+  },
+  "settingsSectionComposition": {
+    "message": "작성"
+  },
+  "settingsSectionControls": {
+    "message": "컨트롤"
+  },
+  "settingsSectionCustomCss": {
+    "message": "사용자 지정 CSS"
+  },
+  "settingsSectionDensity": {
+    "message": "밀도"
+  },
+  "settingsSectionDiagnostics": {
+    "message": "진단"
+  },
+  "settingsSectionDiscovery": {
+    "message": "탐색"
+  },
+  "settingsSectionDiscoveryTranslation": {
+    "message": "탐색 및 번역"
+  },
+  "settingsSectionEntryPoints": {
+    "message": "진입점"
+  },
+  "settingsSectionFeedLayout": {
+    "message": "피드 레이아웃"
+  },
+  "settingsSectionFeedToolsAutomation": {
+    "message": "피드 도구 및 자동화"
+  },
+  "settingsSectionFeedVisibility": {
+    "message": "피드 표시"
+  },
+  "settingsSectionFilters": {
+    "message": "필터"
+  },
+  "settingsSectionFormats": {
+    "message": "형식"
+  },
+  "settingsSectionFoundation": {
+    "message": "기본"
+  },
+  "settingsSectionHeader": {
+    "message": "헤더"
+  },
+  "settingsSectionInsightsNotes": {
+    "message": "인사이트 및 메모"
+  },
+  "settingsSectionMessages": {
+    "message": "메시지"
+  },
+  "settingsSectionNavigation": {
+    "message": "탐색"
+  },
+  "settingsSectionNotifications": {
+    "message": "알림"
+  },
+  "settingsSectionPageElements": {
+    "message": "페이지 요소"
+  },
+  "settingsSectionPerformance": {
+    "message": "성능"
+  },
+  "settingsSectionPlaybackQuality": {
+    "message": "재생 및 화질"
+  },
+  "settingsSectionPlayerChrome": {
+    "message": "플레이어 인터페이스"
+  },
+  "settingsSectionPlayerStateControls": {
+    "message": "플레이어 상태 및 컨트롤"
+  },
+  "settingsSectionPresentation": {
+    "message": "표시"
+  },
+  "settingsSectionProfilesWellbeing": {
+    "message": "프로필 및 웰빙"
+  },
+  "settingsSectionRecoveryFullscreen": {
+    "message": "복구 및 전체 화면"
+  },
+  "settingsSectionSession": {
+    "message": "세션"
+  },
+  "settingsSectionSharingActions": {
+    "message": "공유 및 작업"
+  },
+  "settingsSectionShortsDiscovery": {
+    "message": "Shorts 및 탐색"
+  },
+  "settingsSectionSponsorblockDearrow": {
+    "message": "SponsorBlock 및 DeArrow"
+  },
+  "settingsSectionSurfaces": {
+    "message": "표시 영역"
+  },
+  "settingsSectionThreadBehavior": {
+    "message": "스레드 동작"
+  },
+  "settingsSectionTiming": {
+    "message": "타이밍"
+  },
+  "settingsSectionToolsHealth": {
+    "message": "도구 및 상태"
+  },
+  "settingsSectionTranscriptAi": {
+    "message": "스크립트 및 AI"
+  },
+  "settingsSectionTransformDisplay": {
+    "message": "변환 및 표시"
+  },
+  "settingsSectionVisibility": {
+    "message": "표시 여부"
   },
   "settingsSubFeatureBadge": {
     "message": "하위 기능"

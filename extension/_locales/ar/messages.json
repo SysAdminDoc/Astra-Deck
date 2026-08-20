@@ -4011,7 +4011,7 @@
     "message": "حفظ"
   },
   "healthTitle": {
-    "message": "التشخيصات"
+    "message": "التشخيص"
   },
   "heatmapJumpAria": {
     "message": "Jump to the most replayed moment"
@@ -5017,6 +5017,135 @@
   },
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+  },
+  "settingsSectionAiContent": {
+    "message": "محتوى الذكاء الاصطناعي"
+  },
+  "settingsSectionAudio": {
+    "message": "الصوت"
+  },
+  "settingsSectionAutomation": {
+    "message": "الأتمتة"
+  },
+  "settingsSectionCaptionsNavigation": {
+    "message": "التسميات التوضيحية والتنقل"
+  },
+  "settingsSectionCaptureSubtitles": {
+    "message": "الالتقاط والترجمة"
+  },
+  "settingsSectionComposition": {
+    "message": "الكتابة"
+  },
+  "settingsSectionControls": {
+    "message": "عناصر التحكم"
+  },
+  "settingsSectionCustomCss": {
+    "message": "CSS مخصص"
+  },
+  "settingsSectionDensity": {
+    "message": "الكثافة"
+  },
+  "settingsSectionDiagnostics": {
+    "message": "التشخيص"
+  },
+  "settingsSectionDiscovery": {
+    "message": "الاستكشاف"
+  },
+  "settingsSectionDiscoveryTranslation": {
+    "message": "الاستكشاف والترجمة"
+  },
+  "settingsSectionEntryPoints": {
+    "message": "نقاط الدخول"
+  },
+  "settingsSectionFeedLayout": {
+    "message": "تخطيط الموجز"
+  },
+  "settingsSectionFeedToolsAutomation": {
+    "message": "أدوات الموجز والأتمتة"
+  },
+  "settingsSectionFeedVisibility": {
+    "message": "ظهور الموجز"
+  },
+  "settingsSectionFilters": {
+    "message": "عوامل التصفية"
+  },
+  "settingsSectionFormats": {
+    "message": "الصيغ"
+  },
+  "settingsSectionFoundation": {
+    "message": "الأساس"
+  },
+  "settingsSectionHeader": {
+    "message": "الرأس"
+  },
+  "settingsSectionInsightsNotes": {
+    "message": "الرؤى والملاحظات"
+  },
+  "settingsSectionMessages": {
+    "message": "الرسائل"
+  },
+  "settingsSectionNavigation": {
+    "message": "التنقل"
+  },
+  "settingsSectionNotifications": {
+    "message": "الإشعارات"
+  },
+  "settingsSectionPageElements": {
+    "message": "عناصر الصفحة"
+  },
+  "settingsSectionPerformance": {
+    "message": "الأداء"
+  },
+  "settingsSectionPlaybackQuality": {
+    "message": "التشغيل والجودة"
+  },
+  "settingsSectionPlayerChrome": {
+    "message": "واجهة المشغل"
+  },
+  "settingsSectionPlayerStateControls": {
+    "message": "حالة المشغل وعناصر التحكم"
+  },
+  "settingsSectionPresentation": {
+    "message": "العرض"
+  },
+  "settingsSectionProfilesWellbeing": {
+    "message": "الملفات الشخصية والعافية"
+  },
+  "settingsSectionRecoveryFullscreen": {
+    "message": "الاستعادة وملء الشاشة"
+  },
+  "settingsSectionSession": {
+    "message": "الجلسة"
+  },
+  "settingsSectionSharingActions": {
+    "message": "المشاركة والإجراءات"
+  },
+  "settingsSectionShortsDiscovery": {
+    "message": "Shorts والاستكشاف"
+  },
+  "settingsSectionSponsorblockDearrow": {
+    "message": "SponsorBlock و DeArrow"
+  },
+  "settingsSectionSurfaces": {
+    "message": "الأسطح"
+  },
+  "settingsSectionThreadBehavior": {
+    "message": "سلوك المحادثات"
+  },
+  "settingsSectionTiming": {
+    "message": "التوقيت"
+  },
+  "settingsSectionToolsHealth": {
+    "message": "الأدوات والحالة"
+  },
+  "settingsSectionTranscriptAi": {
+    "message": "النص والذكاء الاصطناعي"
+  },
+  "settingsSectionTransformDisplay": {
+    "message": "التحويل والعرض"
+  },
+  "settingsSectionVisibility": {
+    "message": "الظهور"
   },
   "settingsSubFeatureBadge": {
     "message": "ميزة فرعية"

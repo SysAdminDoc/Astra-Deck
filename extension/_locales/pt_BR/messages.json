@@ -1803,7 +1803,7 @@
     "message": "Injetar suas próprias regras CSS personalizadas nas páginas do YouTube"
   },
   "feature_customCssInjection_name": {
-    "message": "CSS Personalizado"
+    "message": "CSS personalizado"
   },
   "feature_customProgressBarColor_desc": {
     "message": "Mudar a barra de progresso vermelha para qualquer cor"
@@ -5017,6 +5017,135 @@
   },
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+  },
+  "settingsSectionAiContent": {
+    "message": "Conteúdo de IA"
+  },
+  "settingsSectionAudio": {
+    "message": "Áudio"
+  },
+  "settingsSectionAutomation": {
+    "message": "Automação"
+  },
+  "settingsSectionCaptionsNavigation": {
+    "message": "Legendas e navegação"
+  },
+  "settingsSectionCaptureSubtitles": {
+    "message": "Captura e legendas"
+  },
+  "settingsSectionComposition": {
+    "message": "Redação"
+  },
+  "settingsSectionControls": {
+    "message": "Controles"
+  },
+  "settingsSectionCustomCss": {
+    "message": "CSS personalizado"
+  },
+  "settingsSectionDensity": {
+    "message": "Densidade"
+  },
+  "settingsSectionDiagnostics": {
+    "message": "Diagnóstico"
+  },
+  "settingsSectionDiscovery": {
+    "message": "Descoberta"
+  },
+  "settingsSectionDiscoveryTranslation": {
+    "message": "Descoberta e tradução"
+  },
+  "settingsSectionEntryPoints": {
+    "message": "Pontos de entrada"
+  },
+  "settingsSectionFeedLayout": {
+    "message": "Layout do feed"
+  },
+  "settingsSectionFeedToolsAutomation": {
+    "message": "Ferramentas do feed e automação"
+  },
+  "settingsSectionFeedVisibility": {
+    "message": "Visibilidade do feed"
+  },
+  "settingsSectionFilters": {
+    "message": "Filtros"
+  },
+  "settingsSectionFormats": {
+    "message": "Formatos"
+  },
+  "settingsSectionFoundation": {
+    "message": "Base"
+  },
+  "settingsSectionHeader": {
+    "message": "Cabeçalho"
+  },
+  "settingsSectionInsightsNotes": {
+    "message": "Insights e notas"
+  },
+  "settingsSectionMessages": {
+    "message": "Mensagens"
+  },
+  "settingsSectionNavigation": {
+    "message": "Navegação"
+  },
+  "settingsSectionNotifications": {
+    "message": "Notificações"
+  },
+  "settingsSectionPageElements": {
+    "message": "Elementos da página"
+  },
+  "settingsSectionPerformance": {
+    "message": "Desempenho"
+  },
+  "settingsSectionPlaybackQuality": {
+    "message": "Reprodução e qualidade"
+  },
+  "settingsSectionPlayerChrome": {
+    "message": "Interface do player"
+  },
+  "settingsSectionPlayerStateControls": {
+    "message": "Estado e controles do player"
+  },
+  "settingsSectionPresentation": {
+    "message": "Apresentação"
+  },
+  "settingsSectionProfilesWellbeing": {
+    "message": "Perfis e bem-estar"
+  },
+  "settingsSectionRecoveryFullscreen": {
+    "message": "Recuperação e tela cheia"
+  },
+  "settingsSectionSession": {
+    "message": "Sessão"
+  },
+  "settingsSectionSharingActions": {
+    "message": "Compartilhamento e ações"
+  },
+  "settingsSectionShortsDiscovery": {
+    "message": "Shorts e descoberta"
+  },
+  "settingsSectionSponsorblockDearrow": {
+    "message": "SponsorBlock e DeArrow"
+  },
+  "settingsSectionSurfaces": {
+    "message": "Superfícies"
+  },
+  "settingsSectionThreadBehavior": {
+    "message": "Comportamento das conversas"
+  },
+  "settingsSectionTiming": {
+    "message": "Temporização"
+  },
+  "settingsSectionToolsHealth": {
+    "message": "Ferramentas e integridade"
+  },
+  "settingsSectionTranscriptAi": {
+    "message": "Transcrição e IA"
+  },
+  "settingsSectionTransformDisplay": {
+    "message": "Transformação e exibição"
+  },
+  "settingsSectionVisibility": {
+    "message": "Visibilidade"
   },
   "settingsSubFeatureBadge": {
     "message": "Sub"

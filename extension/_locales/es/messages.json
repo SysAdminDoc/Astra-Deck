@@ -5018,6 +5018,135 @@
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
   },
+  "settingsSectionAiContent": {
+    "message": "Contenido de IA"
+  },
+  "settingsSectionAudio": {
+    "message": "Audio"
+  },
+  "settingsSectionAutomation": {
+    "message": "Automatización"
+  },
+  "settingsSectionCaptionsNavigation": {
+    "message": "Subtítulos y navegación"
+  },
+  "settingsSectionCaptureSubtitles": {
+    "message": "Captura y subtítulos"
+  },
+  "settingsSectionComposition": {
+    "message": "Redacción"
+  },
+  "settingsSectionControls": {
+    "message": "Controles"
+  },
+  "settingsSectionCustomCss": {
+    "message": "CSS personalizado"
+  },
+  "settingsSectionDensity": {
+    "message": "Densidad"
+  },
+  "settingsSectionDiagnostics": {
+    "message": "Diagnóstico"
+  },
+  "settingsSectionDiscovery": {
+    "message": "Descubrimiento"
+  },
+  "settingsSectionDiscoveryTranslation": {
+    "message": "Descubrimiento y traducción"
+  },
+  "settingsSectionEntryPoints": {
+    "message": "Puntos de entrada"
+  },
+  "settingsSectionFeedLayout": {
+    "message": "Diseño del feed"
+  },
+  "settingsSectionFeedToolsAutomation": {
+    "message": "Herramientas del feed y automatización"
+  },
+  "settingsSectionFeedVisibility": {
+    "message": "Visibilidad del feed"
+  },
+  "settingsSectionFilters": {
+    "message": "Filtros"
+  },
+  "settingsSectionFormats": {
+    "message": "Formatos"
+  },
+  "settingsSectionFoundation": {
+    "message": "Base"
+  },
+  "settingsSectionHeader": {
+    "message": "Encabezado"
+  },
+  "settingsSectionInsightsNotes": {
+    "message": "Estadísticas y notas"
+  },
+  "settingsSectionMessages": {
+    "message": "Mensajes"
+  },
+  "settingsSectionNavigation": {
+    "message": "Navegación"
+  },
+  "settingsSectionNotifications": {
+    "message": "Notificaciones"
+  },
+  "settingsSectionPageElements": {
+    "message": "Elementos de la página"
+  },
+  "settingsSectionPerformance": {
+    "message": "Rendimiento"
+  },
+  "settingsSectionPlaybackQuality": {
+    "message": "Reproducción y calidad"
+  },
+  "settingsSectionPlayerChrome": {
+    "message": "Interfaz del reproductor"
+  },
+  "settingsSectionPlayerStateControls": {
+    "message": "Estado y controles del reproductor"
+  },
+  "settingsSectionPresentation": {
+    "message": "Presentación"
+  },
+  "settingsSectionProfilesWellbeing": {
+    "message": "Perfiles y bienestar"
+  },
+  "settingsSectionRecoveryFullscreen": {
+    "message": "Recuperación y pantalla completa"
+  },
+  "settingsSectionSession": {
+    "message": "Sesión"
+  },
+  "settingsSectionSharingActions": {
+    "message": "Compartir y acciones"
+  },
+  "settingsSectionShortsDiscovery": {
+    "message": "Shorts y descubrimiento"
+  },
+  "settingsSectionSponsorblockDearrow": {
+    "message": "SponsorBlock y DeArrow"
+  },
+  "settingsSectionSurfaces": {
+    "message": "Superficies"
+  },
+  "settingsSectionThreadBehavior": {
+    "message": "Comportamiento de los hilos"
+  },
+  "settingsSectionTiming": {
+    "message": "Sincronización"
+  },
+  "settingsSectionToolsHealth": {
+    "message": "Herramientas y estado"
+  },
+  "settingsSectionTranscriptAi": {
+    "message": "Transcripción e IA"
+  },
+  "settingsSectionTransformDisplay": {
+    "message": "Transformación y visualización"
+  },
+  "settingsSectionVisibility": {
+    "message": "Visibilidad"
+  },
   "settingsSubFeatureBadge": {
     "message": "Sub"
   },

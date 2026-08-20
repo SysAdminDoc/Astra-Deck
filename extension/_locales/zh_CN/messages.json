@@ -5018,6 +5018,135 @@
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
   },
+  "settingsSectionAiContent": {
+    "message": "AI 内容"
+  },
+  "settingsSectionAudio": {
+    "message": "音频"
+  },
+  "settingsSectionAutomation": {
+    "message": "自动化"
+  },
+  "settingsSectionCaptionsNavigation": {
+    "message": "字幕与导航"
+  },
+  "settingsSectionCaptureSubtitles": {
+    "message": "截取与字幕"
+  },
+  "settingsSectionComposition": {
+    "message": "撰写"
+  },
+  "settingsSectionControls": {
+    "message": "控件"
+  },
+  "settingsSectionCustomCss": {
+    "message": "自定义 CSS"
+  },
+  "settingsSectionDensity": {
+    "message": "密度"
+  },
+  "settingsSectionDiagnostics": {
+    "message": "诊断"
+  },
+  "settingsSectionDiscovery": {
+    "message": "发现"
+  },
+  "settingsSectionDiscoveryTranslation": {
+    "message": "发现与翻译"
+  },
+  "settingsSectionEntryPoints": {
+    "message": "入口"
+  },
+  "settingsSectionFeedLayout": {
+    "message": "信息流布局"
+  },
+  "settingsSectionFeedToolsAutomation": {
+    "message": "信息流工具与自动化"
+  },
+  "settingsSectionFeedVisibility": {
+    "message": "信息流可见性"
+  },
+  "settingsSectionFilters": {
+    "message": "筛选器"
+  },
+  "settingsSectionFormats": {
+    "message": "格式"
+  },
+  "settingsSectionFoundation": {
+    "message": "基础"
+  },
+  "settingsSectionHeader": {
+    "message": "页眉"
+  },
+  "settingsSectionInsightsNotes": {
+    "message": "洞察与笔记"
+  },
+  "settingsSectionMessages": {
+    "message": "消息"
+  },
+  "settingsSectionNavigation": {
+    "message": "导航"
+  },
+  "settingsSectionNotifications": {
+    "message": "通知"
+  },
+  "settingsSectionPageElements": {
+    "message": "页面元素"
+  },
+  "settingsSectionPerformance": {
+    "message": "性能"
+  },
+  "settingsSectionPlaybackQuality": {
+    "message": "播放与画质"
+  },
+  "settingsSectionPlayerChrome": {
+    "message": "播放器界面"
+  },
+  "settingsSectionPlayerStateControls": {
+    "message": "播放器状态与控件"
+  },
+  "settingsSectionPresentation": {
+    "message": "呈现"
+  },
+  "settingsSectionProfilesWellbeing": {
+    "message": "配置文件与健康"
+  },
+  "settingsSectionRecoveryFullscreen": {
+    "message": "恢复与全屏"
+  },
+  "settingsSectionSession": {
+    "message": "会话"
+  },
+  "settingsSectionSharingActions": {
+    "message": "分享与操作"
+  },
+  "settingsSectionShortsDiscovery": {
+    "message": "Shorts 与发现"
+  },
+  "settingsSectionSponsorblockDearrow": {
+    "message": "SponsorBlock 与 DeArrow"
+  },
+  "settingsSectionSurfaces": {
+    "message": "显示面"
+  },
+  "settingsSectionThreadBehavior": {
+    "message": "话题串行为"
+  },
+  "settingsSectionTiming": {
+    "message": "计时"
+  },
+  "settingsSectionToolsHealth": {
+    "message": "工具与状态"
+  },
+  "settingsSectionTranscriptAi": {
+    "message": "字幕文本与 AI"
+  },
+  "settingsSectionTransformDisplay": {
+    "message": "变换与显示"
+  },
+  "settingsSectionVisibility": {
+    "message": "可见性"
+  },
   "settingsSubFeatureBadge": {
     "message": "子功能"
   },

@@ -1803,7 +1803,7 @@
     "message": "Вставка собственных CSS-правил на страницы YouTube"
   },
   "feature_customCssInjection_name": {
-    "message": "Пользовательский CSS"
+    "message": "Собственный CSS"
   },
   "feature_customProgressBarColor_desc": {
     "message": "Изменить цвет красной полосы прогресса на любой другой"
@@ -5017,6 +5017,135 @@
   },
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+  },
+  "settingsSectionAiContent": {
+    "message": "ИИ-контент"
+  },
+  "settingsSectionAudio": {
+    "message": "Звук"
+  },
+  "settingsSectionAutomation": {
+    "message": "Автоматизация"
+  },
+  "settingsSectionCaptionsNavigation": {
+    "message": "Субтитры и навигация"
+  },
+  "settingsSectionCaptureSubtitles": {
+    "message": "Захват и субтитры"
+  },
+  "settingsSectionComposition": {
+    "message": "Написание"
+  },
+  "settingsSectionControls": {
+    "message": "Управление"
+  },
+  "settingsSectionCustomCss": {
+    "message": "Собственный CSS"
+  },
+  "settingsSectionDensity": {
+    "message": "Плотность"
+  },
+  "settingsSectionDiagnostics": {
+    "message": "Диагностика"
+  },
+  "settingsSectionDiscovery": {
+    "message": "Обзор"
+  },
+  "settingsSectionDiscoveryTranslation": {
+    "message": "Обзор и перевод"
+  },
+  "settingsSectionEntryPoints": {
+    "message": "Точки входа"
+  },
+  "settingsSectionFeedLayout": {
+    "message": "Макет ленты"
+  },
+  "settingsSectionFeedToolsAutomation": {
+    "message": "Инструменты ленты и автоматизация"
+  },
+  "settingsSectionFeedVisibility": {
+    "message": "Видимость ленты"
+  },
+  "settingsSectionFilters": {
+    "message": "Фильтры"
+  },
+  "settingsSectionFormats": {
+    "message": "Форматы"
+  },
+  "settingsSectionFoundation": {
+    "message": "Основа"
+  },
+  "settingsSectionHeader": {
+    "message": "Шапка"
+  },
+  "settingsSectionInsightsNotes": {
+    "message": "Аналитика и заметки"
+  },
+  "settingsSectionMessages": {
+    "message": "Сообщения"
+  },
+  "settingsSectionNavigation": {
+    "message": "Навигация"
+  },
+  "settingsSectionNotifications": {
+    "message": "Уведомления"
+  },
+  "settingsSectionPageElements": {
+    "message": "Элементы страницы"
+  },
+  "settingsSectionPerformance": {
+    "message": "Производительность"
+  },
+  "settingsSectionPlaybackQuality": {
+    "message": "Воспроизведение и качество"
+  },
+  "settingsSectionPlayerChrome": {
+    "message": "Интерфейс плеера"
+  },
+  "settingsSectionPlayerStateControls": {
+    "message": "Состояние и управление плеером"
+  },
+  "settingsSectionPresentation": {
+    "message": "Оформление"
+  },
+  "settingsSectionProfilesWellbeing": {
+    "message": "Профили и благополучие"
+  },
+  "settingsSectionRecoveryFullscreen": {
+    "message": "Восстановление и полный экран"
+  },
+  "settingsSectionSession": {
+    "message": "Сессия"
+  },
+  "settingsSectionSharingActions": {
+    "message": "Отправка и действия"
+  },
+  "settingsSectionShortsDiscovery": {
+    "message": "Shorts и обзор"
+  },
+  "settingsSectionSponsorblockDearrow": {
+    "message": "SponsorBlock и DeArrow"
+  },
+  "settingsSectionSurfaces": {
+    "message": "Поверхности"
+  },
+  "settingsSectionThreadBehavior": {
+    "message": "Поведение веток"
+  },
+  "settingsSectionTiming": {
+    "message": "Тайминг"
+  },
+  "settingsSectionToolsHealth": {
+    "message": "Инструменты и состояние"
+  },
+  "settingsSectionTranscriptAi": {
+    "message": "Расшифровка и ИИ"
+  },
+  "settingsSectionTransformDisplay": {
+    "message": "Преобразование и отображение"
+  },
+  "settingsSectionVisibility": {
+    "message": "Видимость"
   },
   "settingsSubFeatureBadge": {
     "message": "Подфункция"
