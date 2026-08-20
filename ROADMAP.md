@@ -169,13 +169,6 @@ Evidence detail and sources live in `RESEARCH.md` (2026-08-19). Items already tr
   Acceptance: at least DeArrow can be scoped to exclude chosen surfaces (e.g. playlists) without disabling globally; the mask is honored at rule-registration level (no fetch fired for excluded surfaces, not just no render); default masks unchanged (all surfaces on).
   Complexity: M
 
-- [ ] P3 — Transcript "export for LLM" preset
-  Why: transcript-to-LLM workflows are a live differentiator (YouTube Alchemy v11.11, 2026-08-08, ships channel/collaborator-aware transcript exports); Astra already has the transcript viewer, IndexedDB search, and copy actions — a formatted export (title, URL, chapters, timestamped text) is a small addition squarely inside the research persona.
-  Evidence: RESEARCH.md §Competitive (TimMacy/YouTubeAlchemy).
-  Touches: `extension/core/transcript-service.js` consumers in `extension/ytkit.js` (transcript panel actions), locales
-  Acceptance: the transcript panel offers a one-click copy/download of a structured plain-text/Markdown export (video title, canonical URL, chapter headings, timestamped lines) suitable for pasting into an LLM/NotebookLM; works from the already-fetched transcript with no new network; respects the existing provenance labels (stale/cached text stays labeled in the export).
-  Complexity: S
-
 - [ ] P3 — Opt-in background-tab energy tamer
   Why: "YouTube CPU Tamer" holds 57k Greasy Fork installs on this demand alone, and idle-CPU complaints are ImprovedTube's recurring uninstall reason. Astra has a steady-state budget gate but no user-facing energy mode.
   Evidence: RESEARCH.md §Competitive (Greasy Fork top-installs profile); `npm run check:steady-state` (existing budget machinery as the verification harness).

@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- Copy AI Prompt now hands over a transcript someone else can trust. It carries
+  the video's chapter list, taken from the original description so an
+  auto-translated page cannot put translated headings in your export, and a line
+  saying where the text came from and when, so a cached or fallback transcript
+  stays labelled once it leaves the panel. The link it includes is the plain
+  watch URL: playlist position, the timestamp you were paused at, and any
+  tracking parameters from however you arrived no longer travel with it.
+
 - The estimated dislike count now says how much evidence is behind it. Return
   YouTube Dislike reports the votes it actually recorded alongside the figure it
   extrapolates from them, and those two numbers can be very far apart: one video
