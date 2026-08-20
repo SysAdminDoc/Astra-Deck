@@ -11,6 +11,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: the baseline count only ever decreases; a per-pass target is recorded and the highest-traffic surfaces (Video Notes, settings-panel, download-ui) go first. Translations go into the `generate-locales.js` tables before regenerating so the placeholder ratchet does not move.
   Complexity: L
   Note (2026-08-13 verification): evidence is stale in the item's favour — the baseline now records **928 literals across 2 files** (926 `extension/ytkit.js`, 2 `core/persisted-domains.js`; `strictCount` 343), down from 1,604/20. The item stands; only the numbers moved.
+  Note (2026-08-20 verification): current baseline is **934 across 2 files** (932 ytkit.js, strictCount 335) — the v4.71–4.76 feature work added a few grandfathered literals. The item stands.
 
 - [ ] P3 — Start burning down the 277 light-theme-blind surfaces
   Why: the gate accepts 277 legacy surfaces against 89 that carry a light lane, so YouTube light-theme users still meet near-white text on near-white backgrounds on surfaces nothing flags.
@@ -18,6 +19,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `extension/ytkit.js`, `extension/features/**`, `scripts/light-theme-baseline.json`
   Acceptance: the accepted count only ever decreases; default-ON surfaces are cleared first; a light-fixture render lane confirms the fixes rather than a source-text rule.
   Complexity: L
+  Note (2026-08-20 verification): current baseline is **254 accepted / 136 covered** — coverage grew 15 surfaces during the v4.71–4.76 peel work (video-notes light-theme restoration among them). The item stands.
   Note (2026-08-11 research): current gate output is **253 accepted / 121 covered**, not 277/89. Also note the gate's `SOURCES` list (`scripts/check-light-theme-lane.js:34-39`) excludes all of `extension/core/*.js` even though those modules inject CSS, and `extension/live-chat.css` has zero `html:not([dark])` rules while restyling ~50 chat selectors — so the true uncovered set is larger than 253.
 
 ## Audit Findings — 2026-08-10
@@ -121,6 +123,7 @@ duplicated here.
   Complexity: M
   Note (2026-08-19 research): uBlock Origin 1.73.1 betas (2026-08-07..13) added a `content(...)` procedural operator specifically to match elements inside `<template>` tags because YouTube increasingly renders from templates — the fixture set should also include one template-stamped capture, and any card walk should not assume children are live DOM at observation time.
   Note (2026-08-13 live recon): `ytd-page-manager` retains hidden prior-route trees after SPA navigation, so shared surface resolvers must prefer connected, visible nodes under the active route instead of accepting the first selector match.
+  Note (2026-08-20 research): two cheap additions to this item's acceptance. (a) Key selector-health records to YouTube's build (`INNERTUBE_CLIENT_VERSION` — already read by `core/transcript-service.js`, nowhere else) so drift correlates with a specific YouTube deploy; (b) a startup canary that resolves N critical surfaces and, on aggregate failure, raises one user-visible "YouTube changed — features X/Y degraded" notice instead of silent per-feature no-ops. `core/selector-health.js` currently has telemetry but no canary and no version keying (verified). Technique precedent: apiserpent.com/blog/resilient-scraper-selector-drift.
 
 ### Research-driven gaps — 2026-08-11
 
@@ -203,3 +206,56 @@ Evidence detail and sources live in `RESEARCH.md` (2026-08-19). Items already tr
   Complexity: S
 
 Note (belongs to the 2026-08-18 audit section above) — extends the existing P3 item "Userscript duplicates RYD / SponsorBlock / DeArrow / player-handoff features on non-schema keys; bundled modules are never called": the 2026-08-18 monolith sweep verified twelve concrete divergences the hand-maintained userscript copies carry versus the extension pair (which are line-for-line identical for SponsorBlock/DeArrow): DeArrow never processes watch pages (`YTKit.user.js:14830-14843` pathname gate) so the related rail — its main target — is untouched; sentence-case renders "THe truth about x" (`:14904` operates on `slice(1)`); a DeArrow 404 yields null instead of empty branding so `daFallbackFormat` never fires (`:14857-14875`); SB drops `[t,t]` `poi_highlight` markers (`:14518`); the SB cache ignores which categories it was fetched for (`:14527-14547`); DeArrow cache has no in-session TTL and "No cache" hydrates 24 h of entries (`:14788,:14846`); the thumbnail path lacks the extension's three guards (videoId pattern, timestamp finiteness, lazy-img deferral; `:14955-14987`); SB lacks skip-timing jitter, stale-cache API-outage fallback, and the progress-bar rebuild observer (declared `:14462`, never armed); perChannelSpeed lacks BOTH extension fixes (untagged programmatic writes `:8285,:8314`; navigate-save reads current DOM `:8308-8309`); hideWatchedVideos still uses the once-marker the extension removed for recycled nodes (`:8336-8338`); Subscription Groups is the oldest third copy (silent full-replace import with no undo `:13589-13626`, no `_sessionLastVisit`, default true vs schema false `:2966`) while the modern factory bundled at `YTKit-core.user.js:24286` has zero call sites — the stickyChat/subtitles/themeCss factories show the wiring pattern to follow. This strengthens that item's case: wire the bundled factories rather than patching twelve divergences one at a time.
+
+## Research-Driven Additions — 2026-08-20
+
+Evidence detail and sources live in `RESEARCH.md` (2026-08-20). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication now including Edge, AI-surface hiding, DeArrow licensing, PO-token auto-provision, supply-chain doc) are not duplicated. Companion-repo actions (yt-dlp bump to 2026.08.19, minimum-version enforcement ≥2026.06.09) belong to SysAdminDoc/AstraDownloader and are recorded in RESEARCH.md as pointers.
+
+- [ ] P2 — Adapt view-count-dependent features to the 2026-08-24 view-metric redefinition
+  Why: effective 2026-08-24 YouTube counts a public "view" at first frame with no minimum watch time (old metric survives only as Analytics "engaged views"), so counts inflate and the semantics under `preciseViewCounts`, `hideVideosLowViewFilter`, `hideVideosLowViewThreshold`, and `hideVideosLowSignalMinViews` silently shift — thresholds users tuned against the old metric will misfilter, and "precise" counts will read as inflated without explanation.
+  Evidence: RESEARCH.md §Security (TechCrunch 2026-08-17); schema keys in `extension/core/settings-schema.js`; `preciseViewCounts` at `extension/ytkit.js:17766`.
+  Touches: `extension/ytkit.js` (preciseViewCounts, view parsers), `extension/features/video-hider/` (low-view/low-signal filters), `extension/_locales/**` (tooltip/description copy)
+  Acceptance: view-parsing paths are verified against post-2026-08-24 live values; low-view filter descriptions state which metric they filter on; preciseViewCounts labels or tooltips acknowledge the metric change where the distinction is visible; no threshold is silently rescaled on users' behalf.
+  Complexity: M
+
+- [ ] P3 — Verify dev installs work with `--ignore-scripts` and record it as the install posture
+  Why: the 2026-08-04 ChainDrop npm worm (~444 packages) spread via preinstall hooks; this repo verified clean (keyv 4.5.4, no cacheable, prod tree is crx3 alone), but the vector argues for refusing lifecycle scripts at install time as standing hygiene.
+  Evidence: RESEARCH.md §Security (Datadog/Wiz ChainDrop writeups; `npm audit --omit=dev` = 0 as of 2026-08-20).
+  Touches: `CLAUDE.md` build notes, `package.json` (optional `.npmrc` with `ignore-scripts=true`)
+  Acceptance: `npm ci --ignore-scripts` followed by `npm test` and `npm run check` passes (or the specific dependency needing scripts is documented as the exception); the working posture is recorded in CLAUDE.md.
+  Complexity: S
+
+- [ ] P3 — Verify the Document PiP pop-out on Firefox 151+ and advertise it honestly
+  Why: Firefox 151 shipped the Document Picture-in-Picture API, which until now made `popOutPlayer` Chromium-only; if the existing capability probe lights up on Firefox the feature reaches the second browser for free, and if it does not the capability matrix should say so rather than imply parity.
+  Evidence: RESEARCH.md §Sources (MDN Document PiP, Firefox 151); `extension/core/capability-probe.js` already probes `documentPictureInPicture` (verified).
+  Touches: `extension/core/capability-probe.js`, capability matrix, README feature tables, userscript classification
+  Acceptance: a live Firefox 151+ session confirms whether `documentPictureInPicture` is exposed to the extension's context on YouTube; the capability matrix and README reflect the verified answer; the userscript classification for popOutPlayer is re-derived rather than assumed.
+  Complexity: S
+
+- [ ] P3 — Group the shipped AI-content filters into one discoverable "AI content" surface
+  Why: "hide AI slop" is a demand extensions now monetize (Clarity, AI Content Shield on CWS), and Astra already ships the pieces — `hideVideosSyntheticNarrationFilter`, `hideVideosHideAutoDubbed`, `hideAiSummary`, the anti-translate matrix — but they are scattered across categories, so the user searching "AI" cannot see the whole answer; the blocked Ask-YouTube-surface hiding item will add more toggles to the same theme.
+  Evidence: RESEARCH.md §Community (Clarity / AI Content Shield CWS listings); schema keys verified present 2026-08-20.
+  Touches: `extension/core/settings-schema.js` (category/group metadata only — no new keys), settings panel section rendering, `extension/_locales/**`, README
+  Acceptance: settings search for "AI" surfaces every AI-content control in one named group or cross-linked section; no behavior changes; the settings-taxonomy count pins and i18n baselines are updated per the nine-places checklist.
+  Complexity: S
+
+- [ ] P3 — Per-group subscription-feed sorting
+  Why: it is one of the last PocketTube premium features Astra does not undercut for free (nested subgroups, mark-as-watched, and group management already shipped); their $3.99/mo paywall and its review resentment make free parity a clear switch driver.
+  Evidence: RESEARCH.md §Commercial (pockettube.io/pricing.html); `extension/features/subscription-groups/index.js` subgroup support verified.
+  Touches: `extension/features/subscription-groups/index.js`, `extension/core/settings-schema.js`, locales
+  Acceptance: within a group's feed view the user can sort by upload date, duration, or channel; the sort is remembered per group; no new network requests (sorts operate on already-rendered feed data); userscript classification decided honestly.
+  Complexity: M
+
+- [ ] P3 — Per-channel enable overrides for enrichment features
+  Why: per-context override stacks are FrankerFaceZ's most-loved settings capability, and Astra already carries the substrate (`perChannelSpeed`, `perChannelIntroOutro`, `sbPerChannelProfiles`) — extending the same pattern to DeArrow and RYD (e.g. "never rewrite titles on this channel") answers real DeArrow complaints at a granularity the per-surface masks item does not cover.
+  Evidence: RESEARCH.md §Adjacent (FrankerFaceZ profiles); existing per-channel keys in `extension/core/settings-schema.js` (verified); DeArrow #92/#423 complaint class.
+  Touches: `extension/core/settings-schema.js`, `extension/features/dearrow/index.js`, RYD feature paths in `extension/ytkit.js`, settings panel, locales
+  Acceptance: at least DeArrow honors a per-channel disable list at fetch level (no request fired for excluded channels); the override UI reuses the existing per-channel machinery's storage shape; defaults unchanged.
+  Complexity: M
+
+- [ ] P3 — Local transcript Q&A ("ask this video") on the existing AI provider stack
+  Why: YouTube gates its flagship 2026 AI features ("Ask YouTube") behind Premium, and the demand is validated OSS-side (youtube-ai-extension, ~669★, watch-page chat panel over the transcript); Astra already has the transcript service, IndexedDB search, provider plumbing (BYO key / Chrome built-in / Ollama), and the AI-credential spend cap shipped in v4.71.0 — a Q&A panel is the natural next consumer and the strongest remaining leapfrog now that the element zapper shipped.
+  Evidence: RESEARCH.md §Commercial (YouTube Premium 2026 AI set) and §Competitive (youtube-ai-extension); `extension/core/transcript-service.js`; Chrome Prompt API extensions-stable since 138.
+  Touches: AI summary feature module and its provider layer, `extension/core/transcript-service.js` consumers, `extension/core/settings-schema.js`, settings panel, locales
+  Acceptance: with a transcript loaded, the user can ask free-form questions answered from transcript content via their configured provider (works fully offline with Ollama or Chrome built-in); responses cite timestamps that seek on click; respects the existing per-tab spend cap and provider-origin grants; off by default; store-safe profile exclusion honored like the rest of the AI catalogue.
+  Complexity: L
