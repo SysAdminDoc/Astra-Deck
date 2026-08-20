@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { loadFeature } = require('../helpers/monolith');
+const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
 
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
@@ -172,4 +172,101 @@ test('watchLaterWorkbench verifies the open menu belongs to the row it is removi
         'a menu that names a different video must abort the removal');
     assert.match(block, /remove from/i,
         'the locale-independent text fallback must survive for unreadable endpoints');
+});
+
+// ── Render assertions ───────────────────────────────────────────────────────
+// The tests above prove the data half: what gets logged, restored, filtered.
+// The DOM half was covered only by source pins, so a render path could be
+// broken in any way that still left the right text in ytkit.js and every test
+// stayed green. The shared helper attaches for real now, so these drive
+// _renderRecovery and read the tree it actually builds.
+
+function recoveryHarness(entries) {
+    let log = entries;
+    const status = fakeNode({ tag: 'div', attributes: { class: 'ytkit-wlwb-recovery-status' } });
+    const list = fakeNode({ tag: 'div', attributes: { class: 'ytkit-wlwb-recovery-list' } });
+    const feature = loadFeature('watchLaterWorkbench', {
+        document: fakeDocument(() => []),
+        storageReadJSON: (_key, fallback) => (log.length ? log : fallback),
+        storageWriteJSON: (_key, value) => { log = value; },
+        hasExtensionContext: () => true
+    });
+    feature._panel = fakeNode({ tag: 'div' });
+    feature._panel.querySelector = (selector) => {
+        if (selector === '.ytkit-wlwb-recovery-status') return status;
+        if (selector === '.ytkit-wlwb-recovery-list') return list;
+        return null;
+    };
+    feature._undoAllBtn = fakeNode({ tag: 'button' });
+    return { feature, status, list };
+}
+
+function recoverable(videoId, title, channel) {
+    return {
+        videoId, title, channel,
+        sessionId: 'session-1',
+        removedAt: Date.now(),
+        restoredAt: null
+    };
+}
+
+test('watchLaterWorkbench builds one recovery row per restorable entry', () => {
+    const { feature, status, list } = recoveryHarness([
+        recoverable('videoA123456', 'First video', 'Channel A'),
+        recoverable('videoB123456', 'Second video', 'Channel B')
+    ]);
+
+    feature._renderRecovery();
+
+    assert.equal(list.children.length, 2, 'each recoverable entry should render a row');
+    const [first] = list.children;
+    assert.equal(first.className, 'ytkit-wlwb-recovery-row');
+    assert.equal(first.children.length, 2, 'a row is a label plus its Undo button');
+    assert.equal(first.children[0].textContent, 'First video',
+        'the label should carry the stored title');
+    assert.equal(first.children[1].tagName, 'BUTTON');
+    assert.ok(first.children[1].textContent, 'the Undo control needs a label');
+    assert.equal(first.isConnected, true, 'rows must actually attach to the list');
+    assert.match(status.textContent, /2/, 'the status line should count what it rendered');
+    assert.equal(feature._undoAllBtn.disabled, false, 'Undo all is available when work exists');
+});
+
+test('watchLaterWorkbench empties the recovery list when nothing is restorable', () => {
+    const { feature, status, list } = recoveryHarness([]);
+
+    feature._renderRecovery();
+
+    assert.equal(list.children.length, 0, 'no entries means no rows');
+    assert.ok(status.textContent.length > 0, 'the empty state still needs to say something');
+    assert.doesNotMatch(status.textContent, /\d/,
+        'the empty state should not report a count');
+    assert.equal(feature._undoAllBtn.disabled, true, 'Undo all is disabled with nothing to undo');
+});
+
+test('watchLaterWorkbench replaces previous recovery rows instead of appending to them', () => {
+    // replaceChildren is the only thing standing between a re-render and a
+    // list that grows a duplicate set of rows on every restore.
+    const { feature, list } = recoveryHarness([
+        recoverable('videoA123456', 'First video', 'Channel A')
+    ]);
+
+    feature._renderRecovery();
+    feature._renderRecovery();
+    feature._renderRecovery();
+
+    assert.equal(list.children.length, 1,
+        're-rendering must rebuild the list, not stack onto it');
+});
+
+test('watchLaterWorkbench renders a restorable entry that has no title', () => {
+    // Removal logs written before titles were captured carry only an id.
+    const { feature, list } = recoveryHarness([
+        { videoId: 'videoC123456', sessionId: 's', removedAt: Date.now(), restoredAt: null }
+    ]);
+
+    feature._renderRecovery();
+
+    assert.equal(list.children.length, 1);
+    assert.equal(list.children[0].children[0].textContent, 'videoC123456',
+        'the id stands in for a missing title rather than rendering blank');
 });

@@ -111,3 +111,71 @@ test('provenance is cleared when a new video starts loading', () => {
     assert.match(window, /this\._lastProvenance = null/,
         'the load path must clear provenance alongside the cues');
 });
+
+// ── Render assertions ───────────────────────────────────────────────────────
+// The transcript panel's state views (loading, empty, error) were covered only
+// by source pins, so the tree they build was never read back. These drive the
+// renderer and assert on the nodes it actually attaches.
+
+const { fakeNode, fakeDocument } = require('../helpers/monolith');
+
+function viewerForRender() {
+    return loadFeature('transcriptViewer', {
+        document: fakeDocument(() => []),
+        getVideoId: () => 'abc12345678'
+    });
+}
+
+test('a transcript state renders a titled shell into the body', () => {
+    const feature = viewerForRender();
+    const body = fakeNode({ tag: 'div' });
+
+    feature._renderBodyState(body, 'empty', 'Transcript is empty', 'No readable cue lines yet.');
+
+    assert.equal(body.children.length, 1, 'the state replaces the body with one shell');
+    const [shell] = body.children;
+    assert.equal(shell.className, 'ytkit-transcript-state ytkit-transcript-state--empty',
+        'the state name has to reach the class so CSS can style it');
+    assert.equal(shell.children.length, 2, 'a title and its explanatory copy');
+    assert.equal(shell.children[0].textContent, 'Transcript is empty');
+    assert.equal(shell.children[1].textContent, 'No readable cue lines yet.');
+    assert.equal(shell.isConnected, true, 'the shell must actually attach');
+});
+
+test('a state with no copy renders the title alone', () => {
+    const feature = viewerForRender();
+    const body = fakeNode({ tag: 'div' });
+
+    feature._renderBodyState(body, 'error', 'Unavailable', '');
+
+    const [shell] = body.children;
+    assert.equal(shell.children.length, 1, 'an empty copy string must not render an empty node');
+    assert.equal(shell.children[0].textContent, 'Unavailable');
+});
+
+test('the loading state renders its skeleton lines', () => {
+    const feature = viewerForRender();
+    const body = fakeNode({ tag: 'div' });
+
+    feature._renderBodyState(body, 'loading', 'Loading', '');
+
+    const [shell] = body.children;
+    const skeleton = shell.children.find(child =>
+        child.className === 'ytkit-transcript-state__skeleton');
+    assert.ok(skeleton, 'the loading state should render a skeleton');
+    assert.equal(skeleton.children.length, 4, 'four placeholder lines');
+    assert.ok(skeleton.children.every(line =>
+        line.className === 'ytkit-transcript-state__skeleton-line'));
+});
+
+test('re-rendering a state replaces the previous one', () => {
+    const feature = viewerForRender();
+    const body = fakeNode({ tag: 'div' });
+
+    feature._renderBodyState(body, 'loading', 'Loading', '');
+    feature._renderBodyState(body, 'error', 'Unavailable', 'Try again later.');
+
+    assert.equal(body.children.length, 1, 'states must not stack on top of each other');
+    assert.equal(body.children[0].className,
+        'ytkit-transcript-state ytkit-transcript-state--error');
+});

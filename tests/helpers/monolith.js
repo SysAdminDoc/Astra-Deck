@@ -186,7 +186,7 @@ function fakeNode(options = {}) {
     }
     const node = {
         tagName: tag.toUpperCase(),
-        textContent: text,
+        _text: text,
         data,
         clicked: 0,
         removed: 0,
@@ -254,6 +254,27 @@ function fakeNode(options = {}) {
             }
             return child;
         },
+        // Features that place a notice next to an existing element reach for
+        // this rather than appendChild; without it the notice vanished and the
+        // render looked like a no-op.
+        insertAdjacentElement(position, element) {
+            if (!element) return null;
+            const siblings = this.parentElement?.children;
+            const at = Array.isArray(siblings) ? siblings.indexOf(this) : -1;
+            if (position === 'beforebegin' || position === 'afterend') {
+                if (at === -1) return null;
+                siblings.splice(position === 'afterend' ? at + 1 : at, 0, element);
+                element.parentElement = this.parentElement;
+            } else if (position === 'afterbegin') {
+                this.children.unshift(element);
+                element.parentElement = this;
+            } else {
+                this.children.push(element);
+                element.parentElement = this;
+            }
+            element.isConnected = true;
+            return element;
+        },
         remove() {
             this.removed += 1;
             this.isConnected = false;
@@ -268,6 +289,21 @@ function fakeNode(options = {}) {
     Object.defineProperty(node, 'firstChild', {
         get() { return this.children[0] || null; },
         configurable: true
+    });
+    // `el.textContent = ''` is the idiomatic "empty this node" and a real DOM
+    // drops every child when you write it. A plain string property let a
+    // feature clear and re-render while the fake kept the old subtree, so a
+    // renderer that stacks duplicates looked correct. Reading still returns
+    // this node's own text, which is what leaf assertions want.
+    Object.defineProperty(node, 'textContent', {
+        get() { return this._text; },
+        set(value) {
+            const next = value == null ? '' : String(value);
+            this._text = next;
+            this.children.splice(0, this.children.length);
+        },
+        configurable: true,
+        enumerable: true
     });
     // Features assign `el.className = 'x y'` as often as they call
     // classList.add. Without reflection the classes are invisible to

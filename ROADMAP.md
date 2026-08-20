@@ -147,9 +147,10 @@ Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae.
   Problem: the shared helper's DOM no-ops were fixed on 2026-08-18 (`appendChild`/`replaceChildren` attach, `remove`/`insertBefore` exist, `className` reflects, `isConnected` defaults true, `matches` evaluates class/id/attribute selectors and throws on combinators), so render assertions are now POSSIBLE — but the existing tests still assert only source shape for the render half, which is why a broken render path can still pass.
   Evidence: the helper rewrite landed with the timestampBookmarks regression test as its first consumer (bait-verified); the remaining feature tests were not revisited.
   Fix: for each `loadFeature` test that covers a UI-building feature, assert on the built tree (`children`, `textContent`, class state) rather than on source text; delete the source pins those assertions replace.
-  Acceptance: at least the watch-later-workbench, transcript-viewer, and subscription-groups render paths assert on real built nodes; a bait (render into the wrong node) fails.
+  Acceptance: every UI-building feature test asserts on real built nodes rather than source text, and each conversion is bait-verified by rendering into the wrong node.
   Confidence: Verified
   Effort: M
+  Note (2026-08-20): the three surfaces the original acceptance named are done and bait-verified — watch-later-workbench recovery rows, transcript-viewer body states, and the subscription-groups empty-group notice. Two shared-helper gaps were fixed to make them possible and both had been silently falsifying render tests: `textContent = ''` did not clear children (so a renderer that stacks duplicates looked correct), and `insertAdjacentElement` did not exist (so a notice placed next to an anchor vanished). The item stays open for the remaining UI-building features.
 
 ## Research-Driven Additions — 2026-08-19
 
