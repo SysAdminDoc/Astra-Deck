@@ -148,6 +148,61 @@ test('the page-embedded card family carries a light lane and the overlay family 
     }
 });
 
+test('the palette is injected at bootstrap, not from the settings-panel build', () => {
+    // It used to live inside injectPanelStyles(), which runs only when the
+    // user first opens the settings panel. On every other pageview none of
+    // these tokens existed, so a surface referencing one painted the fallback
+    // literal beside it — a user's accent could not reach it, and opening the
+    // panel once restyled unrelated parts of the page.
+    const src = fs.readFileSync(path.join(ROOT, 'extension', 'ytkit.js'), 'utf8');
+
+    const declared = src.indexOf('const PALETTE_CSS');
+    const panelFn = src.indexOf('function injectPanelStyles()');
+    assert.ok(declared > -1 && panelFn > -1, 'both anchors must exist');
+    assert.ok(declared < panelFn, 'PALETTE_CSS must be declared outside injectPanelStyles');
+
+    const bootstrap = src.indexOf('attachExtensionBridgeListeners();');
+    const call = src.indexOf('injectPalette();', bootstrap);
+    const chatFrameReturn = src.indexOf('if (isLiveChatFrame())', bootstrap);
+    const accentOverride = src.indexOf("'ytkit-accent-vars'");
+    assert.ok(bootstrap > -1 && call > -1 && chatFrameReturn > -1 && accentOverride > -1,
+        'every bootstrap anchor must exist');
+    assert.ok(call < chatFrameReturn,
+        'the palette must be injected before the live-chat frame returns early');
+    assert.ok(call < accentOverride,
+        'the accent override must land after the palette so it still wins');
+});
+
+test('every var() fallback repeats the value its token actually carries', () => {
+    // A fallback that disagrees with the palette is a second source of truth.
+    // It is unreachable now that the palette is injected eagerly, so the only
+    // thing it can do is mislead whoever reads the call site next — which is
+    // how one surface ended up pairing a fixed amber hover with an accent that
+    // had moved to purple.
+    const src = fs.readFileSync(path.join(ROOT, 'extension', 'ytkit.js'), 'utf8');
+    const paletteText = src.slice(src.indexOf('const PALETTE_CSS = `'), src.indexOf('\n`;', src.indexOf('const PALETTE_CSS = `')));
+    const rootBlock = paletteText.slice(paletteText.indexOf(':root {'), paletteText.indexOf('\n}\n'));
+    const laneBlock = paletteText.slice(paletteText.indexOf('html:not([dark]) {'));
+
+    const values = new Map();
+    for (const m of rootBlock.matchAll(/(--ytkit-[A-Za-z0-9-]+)\s*:\s*([^;]+);/g)) values.set(m[1], [m[2].trim()]);
+    for (const m of laneBlock.matchAll(/(--ytkit-[A-Za-z0-9-]+)\s*:\s*([^;]+);/g)) values.get(m[1])?.push(m[2].trim());
+    assert.ok(values.size >= 20, `expected the palette, parsed ${values.size} tokens`);
+
+    const norm = (s) => s.replace(/\s+/g, '');
+    const stale = [];
+    for (const rel of injectedSources()) {
+        const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+        for (const m of text.matchAll(/var\(\s*(--ytkit-[A-Za-z0-9-]+)\s*,\s*([^()]*?(?:\([^()]*\)[^()]*?)*)\)/g)) {
+            const allowed = values.get(m[1]);
+            if (!allowed) continue;
+            if (allowed.some(v => norm(v) === norm(m[2]))) continue;
+            stale.push(`${m[1]} in ${rel}: fallback ${m[2].trim()} but palette says ${allowed.join(' / ')}`);
+        }
+    }
+    assert.deepEqual(stale, [], 'stale fallbacks contradict the palette');
+});
+
 test('text on the accent surface clears the WCAG AA floor on every built-in accent', () => {
     // --ytkit-accent-contrast was undefined and the subscription-group primary
     // dialog button fell back to #fff, which against the shipped accent is
@@ -175,8 +230,30 @@ test('text on the accent surface clears the WCAG AA floor on every built-in acce
 
     const accents = [...src.matchAll(/--ytkit-accent:\s*(#[0-9a-fA-F]{6})\s*(?:!important\s*)?;/g)]
         .map(m => m[1].toLowerCase());
-    const unique = [...new Set(accents)];
-    assert.ok(unique.length >= 2,
+
+    // The variable-based colour themes set --ytkit-accent from a template, so
+    // the literal match above never sees them. Their accents live in
+    // colorThemeManager._themeData as one field of a comma-separated row; the
+    // field index comes from _themeKeys, the same way the runtime reads it, so
+    // reordering the keys cannot quietly point this at the wrong colour.
+    const themeKeys = src.match(/_themeKeys:\s*\[([^\]]*)\]/);
+    assert.ok(themeKeys, 'colorThemeManager._themeKeys must be readable');
+    const accentIndex = themeKeys[1].split(',').map(s => s.trim().replace(/'/g, '')).indexOf('accent');
+    assert.ok(accentIndex >= 0, '_themeKeys must carry an accent field');
+
+    const themeData = src.match(/_themeData:\s*\{([\s\S]*?)\n\s{12}\},/);
+    assert.ok(themeData, 'colorThemeManager._themeData must be readable');
+    const themeAccents = [...themeData[1].matchAll(/'([^']+)':\s*'([0-9a-f,]+)'/g)]
+        .map(m => [m[1], '#' + m[2].split(',')[accentIndex]])
+        .filter(([, hex]) => /^#[0-9a-f]{6}$/.test(hex));
+    assert.ok(themeAccents.length >= 6,
+        `expected the built-in themes, parsed ${themeAccents.length}`);
+
+    // Every theme accent plus at least the default one. Self-scaling rather
+    // than a magic number, which would have to move every time two of these
+    // converge — as the palette default and the bootstrap default just did.
+    const unique = [...new Set(accents.concat(themeAccents.map(([, hex]) => hex)))];
+    assert.ok(unique.length >= themeAccents.length + 1,
         `expected the built-in accent set, found ${unique.length}`);
 
     const failures = unique
