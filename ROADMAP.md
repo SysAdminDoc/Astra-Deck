@@ -26,14 +26,15 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.58.6 work): `npm test` 1514/1514 pass. `npm run check` FAILS at `i18n:copy:gate` (new, from the uncommitted work — item below). Pre-existing baseline failures, already tracked, not re-logged: `audit:deps` (web-ext → addons-linter → image-size advisories; tracked P1 above) and `i18n:coverage:gate` (every locale 16 placeholder-identical keys over baseline, from fa3ebfdd). One `lint` failure during a loaded parallel run did not reproduce on a clean re-run — machine load, not a defect. All other gates pass at the working tree.
 
-- [ ] P3 — Three parallel CSS token systems across popup, sidepanel, and surface-system, already drifting
+- [ ] P3 — Burn down the raw hex literals in popup.css and sidepanel.css
   Category: maintainability / visual
-  Where: `extension/popup.css:10-80`, `extension/sidepanel.css:1-45`, `extension/surface-system.css:1-21`
-  Problem: popup.css and sidepanel.css each declare near-identical `:root` token blocks as duplicated literals (drift present: `--page-bg` vs `--bg`; popup-only `--accent-mid`, `--radius-lg/xl`); surface-system.css — loaded by both pages — defines a third `--astra-*` namespace with different values (`--astra-accent: #ff5d4a` vs `--accent: #ff6b4a`). ~40 raw hex literals in popup.css sit outside any token. A palette change needs three-way sync with no gate.
-  Fix: consolidate on the `--astra-*` namespace in surface-system.css (already shared), alias the legacy names during migration, and burn down the raw hexes; optionally a gate asserting popup/sidepanel declare no duplicate token literals.
-  Acceptance: one source of token truth; both pages render unchanged (screenshot compare); zero drifted duplicates.
+  Why: the token-source half of the old three-token-systems item is done (2026-08-20), but colour literals outside `:root` still bypass the palette entirely, so a theme change silently misses them. They are also where the next drift will start now that duplicate token declarations are gated.
+  Evidence: 85 raw hex uses (29 distinct) in `extension/popup.css` and 22 uses (15 distinct) in `extension/sidepanel.css`, all outside the `:root` block.
+  Touches: `extension/popup.css`, `extension/sidepanel.css`, `extension/surface-system.css`
+  Acceptance: each literal either resolves to an existing `--astra-*` token or gains one in surface-system.css; `npm run audit:contrast` reports the same ratios and `npm run smoke:a11y` still passes, since this must not change rendering; the count only decreases.
   Confidence: Verified
   Effort: M
+  Note (2026-08-20): the parallel-token-systems half is closed. popup.html and sidepanel.html load their page sheet first and `surface-system.css` second, so the 32 popup and 28 sidepanel `:root` declarations were overridden before paint — and all 60 held a different value from the one that shipped (`--radius-md` said 12px while 10px rendered; a documented AA fix on `--text-subtle` was inert from the day it was written). They are deleted and `tests/css-token-source.test.js` fails if a duplicate returns. A `hardening.test.js` pin had encoded the duplicate as the contract by asserting sidepanel.css *declares* `--focus-ring`; it now asserts the page *uses* `var(--focus-ring)`.
 
 ### Follow-up findings — 2026-08-10 (user-reported: hide "X" button missing from thumbnails)
 

@@ -1,40 +1,16 @@
 :root {
   color-scheme: dark;
-  --bg: #08090c;
-  --surface: rgba(14, 18, 26, 0.94);
-  --surface-strong: #0e1219;
-  --surface-raised: rgba(255, 255, 255, 0.04);
-  --surface-hover: rgba(255, 255, 255, 0.065);
-  --surface-inset: rgba(6, 9, 13, 0.78);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.055);
-  --border-hover: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.2);
-  --text-primary: #f4f6fb;
-  --text-secondary: #c8d2e1;
-  --text-muted: #8f9bb0;
-  --text-subtle: #8290a8;
-  --accent: #ff6b4a;
-  --accent-strong: #ff8e74;
+
+  /* Surfaces, borders, text, accent, radii and the focus ring come from
+     surface-system.css, which this page loads SECOND. Only page-specific
+     tokens belong here; see the same note in popup.css. */
   --accent-on: #1a0b06;
-  --accent-soft: rgba(255, 107, 74, 0.14);
-  --accent-border: rgba(255, 107, 74, 0.3);
-  --info: #6aa9ff;
   --info-soft: rgba(106, 169, 255, 0.1);
-  --warning: #ffbe7a;
   --warning-soft: rgba(255, 190, 122, 0.1);
-  --success: #35c77f;
   --success-soft: rgba(53, 199, 127, 0.1);
-  --error: #ff7480;
   --error-soft: rgba(255, 116, 128, 0.1);
-  --radius-tight: 4px;
-  --radius-chip: 6px;
-  --radius-xs: 8px;
-  --radius-sm: 10px;
-  --radius-md: 12px;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
   --shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
-  --focus-ring: 0 0 0 2px rgba(8, 9, 12, 0.98), 0 0 0 4px rgba(255, 107, 74, 0.55);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur-quick: 160ms;

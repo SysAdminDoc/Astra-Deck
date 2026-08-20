@@ -12672,8 +12672,12 @@ test('sidepanel.css carries motion, contrast, and system accessibility contracts
     const css = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'sidepanel.css'), 'utf8'
     );
-    assert.match(css, /--focus-ring:/,
-        'dashboard must use a shared focus ring token');
+    // Asserting on the DECLARATION pinned the duplicate as if it were the
+    // contract: sidepanel.css redeclared --focus-ring with a value that
+    // surface-system.css overrode before it painted. The contract is that
+    // focus styling routes through the shared token, which is a usage check.
+    assert.match(css, /var\(--focus-ring\)/,
+        'dashboard must use the shared focus ring token');
     assert.match(css, /\.sp-search-clear:focus-visible/,
         'filter clear button must have a keyboard focus style');
     assert.match(css, /\.sp-setting-row\[data-saving="true"\]/,
