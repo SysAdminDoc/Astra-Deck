@@ -46755,6 +46755,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     --ytkit-text-muted: #7e8ca3; /* 4.96:1 on --ytkit-bg-surface #181d27 (WCAG AA for the 10px help text) */
     --ytkit-accent: #ff6b4a;
     --ytkit-accent-soft: rgba(255,107,74,0.12);
+    --ytkit-accent-hover: #ffc678;
+    --ytkit-border-strong: rgba(255,255,255,0.2);
+    --ytkit-danger: #ff6b6b;
+    /* Was referenced by the settings-panel preview tooltip with no fallback
+       and defined nowhere, which makes the whole box-shadow declaration
+       invalid, so the tooltip rendered flat. */
+    --ytkit-shadow-md: 0 10px 28px rgba(0,0,0,0.35);
+    /* Deliberately YouTube's own chrome colours, not Astra's palette: the
+       element picker sits in the page and has to read as part of it. Kept as
+       named tokens so the two are not mistaken for --ytkit-bg-surface and
+       --ytkit-text-primary, which are Astra surfaces and differ on purpose. */
+    --ytkit-surface: #212121;
+    --ytkit-text: #f1f1f1;
     /* Shared motion curves so every Astra Deck surface (popup, options,
        in-page panel, toasts, download progress) eases on the same timing.
        Overshoot spring is reserved for tactile controls like toggles. */

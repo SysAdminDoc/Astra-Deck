@@ -6,6 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The preview tooltip in the settings panel has its shadow back. It asked for a
+  shadow value that was never defined anywhere, and a missing value like that
+  throws the whole declaration away, so the tooltip had been floating flat
+  against the panel behind it.
+- Six colours used by the video hider dialog, the element picker, and the
+  floating chat were named in the stylesheets but never actually defined, so
+  they fell back to whatever hex happened to be written beside them. They are
+  real palette entries now, which means changing one changes every place that
+  uses it. Nothing looks different today.
+
 ## [4.79.0] - 2026-08-20
 
 ### Changed
