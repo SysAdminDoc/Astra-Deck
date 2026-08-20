@@ -204,13 +204,6 @@ Note (belongs to the 2026-08-18 audit section above) — extends the existing P3
 
 Evidence detail and sources live in `RESEARCH.md` (2026-08-20). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication now including Edge, AI-surface hiding, DeArrow licensing, PO-token auto-provision, supply-chain doc) are not duplicated. Companion-repo actions (yt-dlp bump to 2026.08.19, minimum-version enforcement ≥2026.06.09) belong to SysAdminDoc/AstraDownloader and are recorded in RESEARCH.md as pointers.
 
-- [ ] P3 — Verify dev installs work with `--ignore-scripts` and record it as the install posture
-  Why: the 2026-08-04 ChainDrop npm worm (~444 packages) spread via preinstall hooks; this repo verified clean (keyv 4.5.4, no cacheable, prod tree is crx3 alone), but the vector argues for refusing lifecycle scripts at install time as standing hygiene.
-  Evidence: RESEARCH.md §Security (Datadog/Wiz ChainDrop writeups; `npm audit --omit=dev` = 0 as of 2026-08-20).
-  Touches: `CLAUDE.md` build notes, `package.json` (optional `.npmrc` with `ignore-scripts=true`)
-  Acceptance: `npm ci --ignore-scripts` followed by `npm test` and `npm run check` passes (or the specific dependency needing scripts is documented as the exception); the working posture is recorded in CLAUDE.md.
-  Complexity: S
-
 - [ ] P3 — Verify the Document PiP pop-out on Firefox 151+ and advertise it honestly
   Why: Firefox 151 shipped the Document Picture-in-Picture API, which until now made `popOutPlayer` Chromium-only; if the existing capability probe lights up on Firefox the feature reaches the second browser for free, and if it does not the capability matrix should say so rather than imply parity.
   Evidence: RESEARCH.md §Sources (MDN Document PiP, Firefox 151); `extension/core/capability-probe.js` already probes `documentPictureInPicture` (verified).
