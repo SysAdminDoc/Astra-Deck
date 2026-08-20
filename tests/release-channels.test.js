@@ -50,6 +50,33 @@ function fixtureBuild(version = '1.2.3') {
     return { buildDir, manifest, manifestPath };
 }
 
+// Promotion and rollback are about the RELATIONSHIP between the three
+// pointers, not about whichever versions happen to be live. These two tests
+// used to seed themselves from the real release-channels.json and assert
+// hardcoded version strings, so shipping a release broke them — which is
+// backwards, since shipping a release is the thing they exist to protect.
+const PRIOR = '4.0.0';      // the rollback target before anything happens
+const BASE = '4.1.0';       // what the channels are serving
+const CANDIDATE = '1.2.3';  // matches fixtureBuild()'s default
+
+function fixtureChannelState() {
+    const channels = {};
+    for (const id of CHANNEL_IDS) {
+        const template = CHANNEL_TEMPLATES[id];
+        channels[id] = {
+            artifactTemplate: template,
+            active: buildReleaseRef(BASE, template, { sha256: digest(`base ${id}`), size: 1 }),
+            lastKnownGood: buildReleaseRef(BASE, template, { sha256: digest(`base ${id}`), size: 1 }),
+            rollbackTarget: buildReleaseRef(PRIOR, template),
+            updatedAt: '2026-08-11T11:00:00.000Z'
+        };
+    }
+    const state = { schemaVersion: 1, product: 'Astra Deck', channels };
+    // Fail loudly here rather than deep inside promote if the shape drifts.
+    validateChannelState(state);
+    return state;
+}
+
 function passingHealth(manifestPath) {
     return {
         status: 'pass',
@@ -147,8 +174,8 @@ test('promotion requires a passing health report tied to the exact manifest', ()
 });
 
 test('promotion records the candidate digest and makes the previous LKG the rollback target', () => {
-    const state = readChannelState(path.join(root, 'release-channels.json'));
-    const fixture = fixtureBuild();
+    const state = fixtureChannelState();
+    const fixture = fixtureBuild(CANDIDATE);
     const next = promoteChannels(state, fixture.manifest, {
         buildDir: fixture.buildDir,
         manifestPath: fixture.manifestPath,
@@ -156,27 +183,31 @@ test('promotion records the candidate digest and makes the previous LKG the roll
         now: '2026-08-11T12:00:00.000Z'
     });
 
-    assert.equal(next.channels.userscript.active.version, '1.2.3');
-    assert.equal(next.channels.userscript.lastKnownGood.version, '1.2.3');
-    assert.equal(next.channels.userscript.rollbackTarget.version, '4.59.0');
+    assert.equal(next.channels.userscript.active.version, CANDIDATE);
+    assert.equal(next.channels.userscript.lastKnownGood.version, CANDIDATE);
+    // The build being replaced becomes the way back, so a bad promotion is
+    // undoable without a rebuild.
+    assert.equal(next.channels.userscript.rollbackTarget.version, BASE);
     assert.match(next.channels.userscript.active.sha256, /^[a-f0-9]{64}$/);
-    assert.equal(next.channels['store-safe-firefox'].active.version, '4.59.0',
+    assert.equal(next.channels['store-safe-firefox'].active.version, BASE,
         'an unselected channel must not be promoted');
     assert.equal(next.lastAction.type, 'promote');
 });
 
 test('rollback swaps pointers to an existing artifact and explicitly records no rebuild', () => {
-    const state = readChannelState(path.join(root, 'release-channels.json'));
+    const state = fixtureChannelState();
     const next = rollbackChannels(state, {
         channelIds: ['userscript'],
         now: '2026-08-11T12:01:00.000Z'
     });
 
-    assert.equal(next.channels.userscript.active.version, '4.58.2');
-    assert.equal(next.channels.userscript.lastKnownGood.version, '4.58.2');
-    assert.equal(next.channels.userscript.rollbackTarget.version, '4.59.0');
+    assert.equal(next.channels.userscript.active.version, PRIOR);
+    assert.equal(next.channels.userscript.lastKnownGood.version, PRIOR);
+    // Straight swap: what was being served becomes the way back.
+    assert.equal(next.channels.userscript.rollbackTarget.version, BASE);
     assert.equal(next.lastAction.rebuilt, false);
-    assert.equal(next.channels['store-safe-chrome'].active.version, '4.59.0');
+    assert.equal(next.channels['store-safe-chrome'].active.version, BASE,
+        'an unselected channel must not be rolled back');
 });
 
 test('release health combines readiness, selector, startup, and no-screenshot smoke results', () => {
