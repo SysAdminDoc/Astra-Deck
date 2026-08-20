@@ -654,3 +654,79 @@ test('the unsubscribe confirm anchors on the confirm id, never a bare role=butto
             `${label} must not read the translated button label to decide`);
     }
 });
+
+// ── Render assertions ───────────────────────────────────────────────────────
+// The empty-group notice is the one piece of feed UI that explains an
+// otherwise blank page, and it was covered only by its own logic, never by
+// reading the node it attaches. These drive the renderer against the fake DOM
+// and assert on what lands next to the toolbar.
+
+function mountedToolbarFeature() {
+    const built = makeFeature({ subscriptionGroupData: {} });
+    const feature = built.feature;
+    // The real toolbar sits inside the feed; the notice is placed after it.
+    const container = new FakeNode('div');
+    const toolbar = new FakeNode('div');
+    toolbar.parentNode = container;
+    container.children.push(toolbar);
+    document.body.children.push(container);
+    container.parentNode = document.body;
+    toolbar.isConnected = true;
+    feature._toolbar = toolbar;
+    return { ...built, container, toolbar };
+}
+
+test('an empty group renders a notice explaining the blank feed', () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = new FakeDocument();
+    try {
+        const { feature, container } = mountedToolbarFeature();
+
+        feature._renderGroupEmptyState(new Set());
+
+        const notice = container.children.find(
+            (child) => child.className === 'ytkit-sub-group-empty');
+        assert.ok(notice, 'an empty group must explain itself');
+        assert.equal(notice.getAttribute('role'), 'status',
+            'the notice has to be announced, not just drawn');
+        assert.ok(notice.textContent.length > 0, 'the notice needs copy');
+    } finally {
+        globalThis.document = previousDocument;
+    }
+});
+
+test('a populated group renders no empty-state notice', () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = new FakeDocument();
+    try {
+        const { feature, container } = mountedToolbarFeature();
+
+        feature._renderGroupEmptyState(new Set(['UCchannel11111111111111']));
+
+        assert.equal(
+            container.children.filter((c) => c.className === 'ytkit-sub-group-empty').length,
+            0,
+            'a group whose channels simply have not rendered yet must not be labelled empty');
+    } finally {
+        globalThis.document = previousDocument;
+    }
+});
+
+test('re-rendering the empty state does not stack duplicate notices', () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = new FakeDocument();
+    try {
+        const { feature, container } = mountedToolbarFeature();
+
+        feature._renderGroupEmptyState(new Set());
+        feature._renderGroupEmptyState(new Set());
+        feature._renderGroupEmptyState(new Set());
+
+        assert.equal(
+            container.children.filter((c) => c.className === 'ytkit-sub-group-empty').length,
+            1,
+            'each render must clear the previous notice first');
+    } finally {
+        globalThis.document = previousDocument;
+    }
+});
