@@ -104,6 +104,20 @@ test('a wash is not a ground, but an opaque colour is', () => {
     assert.ok(!gate.providesOpaqueGround('background: transparent;'));
 });
 
+
+test('a surface inherits the ground of the container it is named under', () => {
+    // .ytkit-pm paints a 98%-opaque ground and .ytkit-pm-title sits inside it,
+    // so the child is as legible on light theme as the parent. A per-class scan
+    // cannot walk the DOM, and without this it flags all eight children of a
+    // perfectly good dark overlay. The class naming is prefix-based throughout,
+    // which makes the prefix a usable stand-in for containment.
+    const { needsLane, hasLane } = gate.scan(['extension/ytkit.js']);
+    const flagged = (token) => needsLane.has(token) && !hasLane.has(token);
+    for (const token of ['ytkit-pm-card-desc', 'ytkit-pm-card-label', 'ytkit-pm-empty-title']) {
+        assert.ok(!flagged(token), `${token} sits on an opaque overlay and must not be reported`);
+    }
+});
+
 test('the scan still reports the real debt and every covered surface', () => {
     const files = ['extension/ytkit.js', 'extension/features/video-hider/index.js'];
     const { needsLane, hasLane } = gate.scan(files);

@@ -302,6 +302,25 @@ function scan(files) {
         }
     }
 
+    // Ground is inherited down the class-name tree. `.ytkit-pm` paints an
+    // opaque ground and `.ytkit-pm-title` sits inside it, so the child is as
+    // legible on light theme as the parent — but a per-class scan cannot walk
+    // the DOM and would flag all eight children of a perfectly good dark
+    // overlay. The naming here is consistently prefix-based (BEM-ish), so the
+    // prefix is a usable stand-in for containment.
+    //
+    // A short prefix like `ytkit-pm` has to qualify — it IS the overlay, and it
+    // paints an opaque ground — but a short prefix backed by a four-percent
+    // wash would ground half the codebase on nothing. So: an opaque ground
+    // qualifies at any depth, a wash only from three segments down, where the
+    // name is specific enough that it cannot be a whole family by accident.
+    const groundPrefixes = [...new Set([
+        ...opaquelyGrounded,
+        ...[...grounded].filter((token) => token.split('-').length >= 3)
+    ])];
+    const inheritsGround = (token) => groundPrefixes.some((prefix) =>
+        token !== prefix && (token.startsWith(`${prefix}-`) || token.startsWith(`${prefix}__`)));
+
     {
         for (const { rel, selector, body } of parsed) {
             const tokens = tokensIn(selector);
@@ -334,7 +353,7 @@ function scan(files) {
             // should aim for: retokenise, do not hand-write a second rule.
             if (!paintsNearWhiteIn(body, 'light')) continue;
             if ([...tokens].some(token => themeAware.has(token))) continue;
-            if ([...tokens].some(token => grounded.has(token))) continue;
+            if ([...tokens].some(token => grounded.has(token) || inheritsGround(token))) continue;
             for (const token of tokens) {
                 if (!needsLane.has(token)) needsLane.set(token, new Set());
                 needsLane.get(token).add(rel);
