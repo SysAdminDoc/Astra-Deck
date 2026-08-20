@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.79.0] - 2026-08-20
+
 ### Changed
 
 - The toolbar popup and side panel no longer carry sixty colour, radius, and
