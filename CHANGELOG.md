@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- The estimated dislike count now says how much evidence is behind it. Return
+  YouTube Dislike reports the votes it actually recorded alongside the figure it
+  extrapolates from them, and those two numbers can be very far apart: one video
+  checked while building this showed 6,267,301 estimated dislikes drawn from
+  10,831 recorded votes. The tooltip now names the recorded number, and when it
+  is small the "est." marker is coloured and underlined so a thin estimate looks
+  different from a solid one. Counts cached before this update carry no recorded
+  figure and are left unmarked rather than being treated as weak.
+
 ### Fixed
 
 - The like-to-view percentage in the userscript no longer reports impossible

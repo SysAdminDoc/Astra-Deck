@@ -6718,6 +6718,9 @@
   "ui_rydRatioTpl": {
     "message": "{ratio}% curtido"
   },
+  "ui_rydSampleTpl": {
+    "message": "Estimado a partir de {sample} votos registrados."
+  },
   "ui_rydUnavailableTitle": {
     "message": "Return YouTube Dislike indisponível — a API não retornou uma resposta utilizável. Verifique sua rede ou tente novamente mais tarde."
   },

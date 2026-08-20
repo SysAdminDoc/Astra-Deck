@@ -374,3 +374,63 @@ test('Return Dislike guards against a stale video after the fetch await', () => 
             `${label} _render must bail if the active video changed during the fetch await`);
     }
 });
+
+// ── Estimate confidence ─────────────────────────────────────────────────────
+// The API returns `rawDislikes`, the votes actually observed, next to the
+// extrapolated `dislikes`. A live probe on 2026-08-11 read 10,831 observed
+// against 6,267,301 estimated, a ~578x multiplier the pill gave the reader no
+// way to see. Surfacing the sample turns the "est." disclaimer into something
+// quantitative without ever claiming a statistical confidence interval.
+
+const { sampleConfidence, SAMPLE_BANDS } = require('../../extension/features/return-dislike/index.js');
+
+test('sample confidence bands are explicit, ordered, and frozen', () => {
+    assert.ok(Object.isFrozen(SAMPLE_BANDS), 'the band list should be frozen');
+    SAMPLE_BANDS.forEach(band => assert.ok(Object.isFrozen(band), 'each band should be frozen'));
+    assert.deepEqual(
+        SAMPLE_BANDS.map(band => [band.minSample, band.confidence]),
+        [[500, 'high'], [50, 'medium']],
+        'the bands should stay where the UI copy was written for them');
+});
+
+test('sample confidence grades on the sample size, not the estimate', () => {
+    assert.equal(sampleConfidence(10831), 'high', 'the live-probe sample is a strong one');
+    assert.equal(sampleConfidence(500), 'high');
+    assert.equal(sampleConfidence(499), 'medium');
+    assert.equal(sampleConfidence(50), 'medium');
+    assert.equal(sampleConfidence(49), 'low');
+    assert.equal(sampleConfidence(0), 'low', 'no observed votes is the weakest evidence, not unknown');
+});
+
+test('a missing sample is unknown rather than a bad grade', () => {
+    // Entries cached before this shipped carry no rawDislikes at all, and a
+    // cached video must not be smeared as low-confidence for that.
+    assert.equal(sampleConfidence(undefined), 'unknown');
+    assert.equal(sampleConfidence(null), 'unknown');
+    assert.equal(sampleConfidence('nonsense'), 'unknown');
+    assert.equal(sampleConfidence(-5), 'unknown', 'a negative sample is not a real one');
+});
+
+test('the fetch keeps rawDislikes and the pill spends it', () => {
+    const modSrc = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
+
+    assert.match(modSrc, /rawDislikes\s*=\s*Number\(data\.rawDislikes\)/,
+        'the normalized record must read the observed sample off the payload');
+    assert.match(modSrc, /sampleConfidence\(data\.rawDislikes\)/,
+        'the pill must grade the sample it was given');
+    assert.match(modSrc, /ui_rydSampleTpl/,
+        'the sample size must reach the user through a locale key');
+    assert.match(modSrc, /dataset\.confidence\s*=\s*confidence/,
+        'the confidence must reach the DOM so CSS can treat a thin sample');
+});
+
+test('a thin sample is marked by shape, not colour alone', () => {
+    const modSrc = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
+
+    assert.match(modSrc, /\[data-confidence="low"\]\{[^}]*text-decoration:underline dotted/,
+        'a colour-only signal is invisible in forced-colors and to colour-blind readers');
+    assert.match(modSrc, /html:not\(\[dark\]\) \.ytkit-ryd-estimate\[data-confidence="low"\]/,
+        'the low-confidence treatment needs a light-theme lane like its siblings');
+});

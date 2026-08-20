@@ -6718,6 +6718,9 @@
   "ui_rydRatioTpl": {
     "message": "{ratio}% 喜欢"
   },
+  "ui_rydSampleTpl": {
+    "message": "根据 {sample} 条已记录的投票估算。"
+  },
   "ui_rydUnavailableTitle": {
     "message": "Return YouTube Dislike 不可用——API 未返回可用响应。请检查网络后重试。"
   },

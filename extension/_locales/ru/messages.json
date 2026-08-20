@@ -6718,6 +6718,9 @@
   "ui_rydRatioTpl": {
     "message": "{ratio}% лайков"
   },
+  "ui_rydSampleTpl": {
+    "message": "Оценка по {sample} учтённым голосам."
+  },
   "ui_rydUnavailableTitle": {
     "message": "Return YouTube Dislike недоступен — API не вернул пригодный ответ. Проверьте сеть или повторите попытку позже."
   },

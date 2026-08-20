@@ -35898,11 +35898,17 @@ function attachUIEventListeners() {
                 .ytkit-ryd-pill[data-tone="cached"]{color:rgba(255,255,255,0.55);}
                 .ytkit-ryd-pill[data-tone="offline"]{color:#f59e0b;}
                 .ytkit-ryd-estimate{margin-inline-start:4px;font:500 10px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}
+                /* A thin sample gets a shape change, not only a colour one, so
+                   it survives forced-colors and colour-blind viewing. */
+                .ytkit-ryd-estimate[data-confidence="low"]{color:#f59e0b;text-decoration:underline dotted;text-underline-offset:2px;}
+                .ytkit-ryd-pill[data-confidence="low"]{color:#f59e0b;}
                 .ytkit-ryd-ratio{margin-inline-start:8px;font:500 11px/1 Roboto,Arial,sans-serif;color:rgba(255,255,255,0.55);}
                 html:not([dark]) .ytkit-ryd-pill{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.05));color:var(--yt-spec-text-primary,#0f0f0f);}
                 html:not([dark]) .ytkit-ryd-pill[data-tone="cached"]{color:var(--yt-spec-text-secondary,#606060);}
                 html:not([dark]) .ytkit-ryd-pill[data-tone="offline"]{color:#b45309;}
                 html:not([dark]) .ytkit-ryd-estimate{color:var(--yt-spec-text-secondary,#606060);}
+                html:not([dark]) .ytkit-ryd-estimate[data-confidence="low"]{color:#b45309;}
+                html:not([dark]) .ytkit-ryd-pill[data-confidence="low"]{color:#b45309;}
                 html:not([dark]) .ytkit-ryd-ratio{color:var(--yt-spec-text-secondary,#606060);}
             `, 'ryd-pill');
         }
@@ -35910,6 +35916,7 @@ function attachUIEventListeners() {
         function _estimateDisclosureText() {
             return t('ui_rydEstimateDisclosure', 'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.');
         }
+
 
         let _rydGeneration = 0;
 
@@ -36045,11 +36052,21 @@ function attachUIEventListeners() {
                     DiagnosticLog?.record?.('returnDislike', `votes payload invalid for ${videoId}`);
                     return null;
                 }
+                // `rawDislikes` is the number of votes the extension actually
+                // observed; `dislikes` is that sample extrapolated to the whole
+                // audience. Keeping the sample is what lets the pill say how
+                // much evidence is behind the estimate instead of only that it
+                // is one. Absent on entries cached before this shipped, so
+                // every consumer treats undefined as "sample unknown".
+                const rawDislikes = Number(data.rawDislikes);
                 const record = {
                     likes: Number(data.likes) || 0,
                     dislikes: Number(data.dislikes) || 0,
                     viewCount: Number(data.viewCount) || 0,
-                    rating: Number(data.rating) || 0
+                    rating: Number(data.rating) || 0,
+                    ...(Number.isFinite(rawDislikes) && rawDislikes >= 0
+                        ? { rawDislikes }
+                        : {})
                 };
                 _writeCache(videoId, record);
                 ExternalApiHealth?.recordSuccess?.('returnDislike', {
@@ -36147,7 +36164,16 @@ function attachUIEventListeners() {
             pill.dataset.tone = data.fromCache ? 'cached' : 'fresh';
             pill.textContent = _formatCount(data.dislikes);
             const countLabel = _formatCount(data.dislikes);
-            const estimateCopy = _estimateDisclosureText();
+            const confidence = sampleConfidence(data.rawDislikes);
+            pill.dataset.confidence = confidence;
+            const sampleCopy = confidence === 'unknown'
+                ? ''
+                : t('ui_rydSampleTpl', 'Estimated from {sample} recorded votes.')
+                    .replace('{sample}', _formatCount(data.rawDislikes));
+            const estimateCopy = sampleCopy
+                // i18n-static: both fragments are already localized.
+                ? `${_estimateDisclosureText()} ${sampleCopy}`
+                : _estimateDisclosureText();
             if (data.fromCache) {
                 const ageMs = Date.now() - (_cache?.[videoId]?.ts || Date.now());
                 const ageH = Math.floor(ageMs / 3600000);
@@ -36171,6 +36197,7 @@ function attachUIEventListeners() {
 
             const estimateEl = document.createElement('span');
             estimateEl.className = 'ytkit-ryd-estimate';
+            estimateEl.dataset.confidence = confidence;
             estimateEl.textContent = t('ui_rydEstimateShort', 'est.');
             estimateEl.title = estimateCopy;
             estimateEl.setAttribute('aria-label', estimateCopy);
@@ -36266,6 +36293,30 @@ function attachUIEventListeners() {
         const total = likes + dislikes;
         if (total <= 0) return null;
         return Math.max(0, Math.min(100, Math.round((likes / total) * 100)));
+    }
+
+    // How many observed votes an estimate rests on. This is a sample size, not
+    // a statistical confidence interval, and the copy says so: a 6,267,301
+    // dislike estimate extrapolated from 10,831 observed votes is a ~578x
+    // multiplier that the pill gave the reader no way to see. Bands are coarse
+    // and named rather than numeric in the UI, because the honest claim is
+    // "small sample", not a percentage. Entries cached before this shipped
+    // carry no sample at all, which is 'unknown' rather than a bad grade.
+    const SAMPLE_BANDS = Object.freeze([
+        Object.freeze({ minSample: 500, confidence: 'high' }),
+        Object.freeze({ minSample: 50, confidence: 'medium' })
+    ]);
+
+    function sampleConfidence(rawDislikes) {
+        // Deliberately `typeof`, not `Number()`: `Number(null)` is 0, which
+        // would grade a record that carries no sample at all as though the
+        // API had observed zero votes. The stored field is always a number
+        // when it is present, so anything else means "no sample".
+        if (typeof rawDislikes !== 'number'
+            || !Number.isFinite(rawDislikes)
+            || rawDislikes < 0) return 'unknown';
+        const band = SAMPLE_BANDS.find(entry => rawDislikes >= entry.minSample);
+        return band ? band.confidence : 'low';
     }
 
     function createReturnDislikeCardsFeature(deps = {}) {
@@ -36730,6 +36781,8 @@ function attachUIEventListeners() {
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             calculateLikeRatio,
+            sampleConfidence,
+            SAMPLE_BANDS,
             createReturnDislikeFeature,
             createReturnDislikeCardsFeature
         };
