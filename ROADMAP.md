@@ -182,13 +182,6 @@ Note (belongs to the 2026-08-18 audit section above) — extends the existing P3
 
 Evidence detail and sources live in `RESEARCH.md` (2026-08-20). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication now including Edge, AI-surface hiding, DeArrow licensing, PO-token auto-provision, supply-chain doc) are not duplicated. Companion-repo actions (yt-dlp bump to 2026.08.19, minimum-version enforcement ≥2026.06.09) belong to SysAdminDoc/AstraDownloader and are recorded in RESEARCH.md as pointers.
 
-- [ ] P3 — Give the settings section labels real locale keys
-  Why: every `labelKey` in `SETTINGS_CATEGORY_SECTIONS` (`extension/core/settings-visual-system.js`) resolves through `t(labelKey, fallback)` to a key that does not exist in `_locales/en/messages.json`, so all ~30 section headings in the settings tree render English in all 11 locales. Found while adding the AI content section on 2026-08-20; the new section follows the existing shape rather than fixing it alone.
-  Evidence: `grep -c settingsSection extension/_locales/en/messages.json` returns 0 against ~30 `labelKey` entries in `settings-visual-system.js`.
-  Touches: `extension/core/settings-visual-system.js`, `extension/_locales/**`, `scripts/generate-locales.js`
-  Acceptance: every section `labelKey` has an EN message and a translation in all ten locale tables; the placeholder baseline does not worsen; `node sync-userscript.js` is run because the module is bundled.
-  Complexity: M
-
 - [ ] P3 — Per-group subscription-feed sorting
   Why: it is one of the last PocketTube premium features Astra does not undercut for free (nested subgroups, mark-as-watched, and group management already shipped); their $3.99/mo paywall and its review resentment make free parity a clear switch driver.
   Evidence: RESEARCH.md §Commercial (pockettube.io/pricing.html); `extension/features/subscription-groups/index.js` subgroup support verified.

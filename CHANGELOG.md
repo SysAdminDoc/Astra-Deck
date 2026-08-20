@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The section headings in the settings panel are translated. All 43 of them,
+  from "Playback & quality" to "Feed tools & automation", were showing English
+  in every language: they were the one part of the settings tree that had never
+  been given a translatable key, so the settings under a heading were in your
+  language while the heading above them was not.
+
 ## [4.77.0] - 2026-08-20
 
 ### Added

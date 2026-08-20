@@ -31,7 +31,26 @@ const REVIEWED_EXACT_MESSAGES = Object.freeze([
     'Video Hider',
     // Example URL in the filter-list field placeholder. Translating a URL
     // would make the field demonstrate an address that does not exist.
-    'https://example.com/astra-deck-rules.json'
+    'https://example.com/astra-deck-rules.json',
+    // Settings-tree section headings that are the same word in at least one
+    // Latin-script target language and are translated normally in the rest:
+    // "Audio" in de/es/fr/it, "Navigation" in de/fr, "Timing" in de, and
+    // "Diagnostics"/"Formats"/"Messages"/"Notifications"/"Session"/"Surfaces"
+    // in fr. Counting these as untranslated would push the ratchet up for
+    // copy that is already right. Verified per locale on 2026-08-20; every
+    // other catalogue does translate them, so a real miss still shows up.
+    'Audio',
+    'Navigation',
+    'Timing',
+    'Diagnostics',
+    'Formats',
+    'Messages',
+    'Notifications',
+    'Session',
+    'Surfaces',
+    // Two brand names joined by an ampersand. German keeps the ampersand;
+    // the other catalogues use their own conjunction.
+    'SponsorBlock & DeArrow'
 ]);
 
 const DO_NOT_TRANSLATE_MESSAGES = new Set(REVIEWED_EXACT_MESSAGES);

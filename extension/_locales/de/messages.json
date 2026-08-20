@@ -1803,7 +1803,7 @@
     "message": "Eigene benutzerdefinierte CSS-Regeln in YouTube-Seiten einfügen"
   },
   "feature_customCssInjection_name": {
-    "message": "Benutzerdefiniertes CSS"
+    "message": "Eigenes CSS"
   },
   "feature_customProgressBarColor_desc": {
     "message": "Den roten Fortschrittsbalken in eine beliebige Farbe ändern"
@@ -5017,6 +5017,135 @@
   },
   "settingsSearchShowingTpl": {
     "message": "Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result."
+  },
+  "settingsSectionAiContent": {
+    "message": "KI-Inhalte"
+  },
+  "settingsSectionAudio": {
+    "message": "Audio"
+  },
+  "settingsSectionAutomation": {
+    "message": "Automatisierung"
+  },
+  "settingsSectionCaptionsNavigation": {
+    "message": "Untertitel & Navigation"
+  },
+  "settingsSectionCaptureSubtitles": {
+    "message": "Aufnahme & Untertitel"
+  },
+  "settingsSectionComposition": {
+    "message": "Verfassen"
+  },
+  "settingsSectionControls": {
+    "message": "Steuerung"
+  },
+  "settingsSectionCustomCss": {
+    "message": "Eigenes CSS"
+  },
+  "settingsSectionDensity": {
+    "message": "Dichte"
+  },
+  "settingsSectionDiagnostics": {
+    "message": "Diagnose"
+  },
+  "settingsSectionDiscovery": {
+    "message": "Entdecken"
+  },
+  "settingsSectionDiscoveryTranslation": {
+    "message": "Entdecken & Übersetzung"
+  },
+  "settingsSectionEntryPoints": {
+    "message": "Einstiegspunkte"
+  },
+  "settingsSectionFeedLayout": {
+    "message": "Feed-Layout"
+  },
+  "settingsSectionFeedToolsAutomation": {
+    "message": "Feed-Tools & Automatisierung"
+  },
+  "settingsSectionFeedVisibility": {
+    "message": "Feed-Sichtbarkeit"
+  },
+  "settingsSectionFilters": {
+    "message": "Filter"
+  },
+  "settingsSectionFormats": {
+    "message": "Formate"
+  },
+  "settingsSectionFoundation": {
+    "message": "Grundlagen"
+  },
+  "settingsSectionHeader": {
+    "message": "Kopfzeile"
+  },
+  "settingsSectionInsightsNotes": {
+    "message": "Einblicke & Notizen"
+  },
+  "settingsSectionMessages": {
+    "message": "Nachrichten"
+  },
+  "settingsSectionNavigation": {
+    "message": "Navigation"
+  },
+  "settingsSectionNotifications": {
+    "message": "Benachrichtigungen"
+  },
+  "settingsSectionPageElements": {
+    "message": "Seitenelemente"
+  },
+  "settingsSectionPerformance": {
+    "message": "Leistung"
+  },
+  "settingsSectionPlaybackQuality": {
+    "message": "Wiedergabe & Qualität"
+  },
+  "settingsSectionPlayerChrome": {
+    "message": "Player-Oberfläche"
+  },
+  "settingsSectionPlayerStateControls": {
+    "message": "Player-Status & Steuerung"
+  },
+  "settingsSectionPresentation": {
+    "message": "Darstellung"
+  },
+  "settingsSectionProfilesWellbeing": {
+    "message": "Profile & Wohlbefinden"
+  },
+  "settingsSectionRecoveryFullscreen": {
+    "message": "Wiederherstellung & Vollbild"
+  },
+  "settingsSectionSession": {
+    "message": "Sitzung"
+  },
+  "settingsSectionSharingActions": {
+    "message": "Teilen & Aktionen"
+  },
+  "settingsSectionShortsDiscovery": {
+    "message": "Shorts & Entdecken"
+  },
+  "settingsSectionSponsorblockDearrow": {
+    "message": "SponsorBlock & DeArrow"
+  },
+  "settingsSectionSurfaces": {
+    "message": "Oberflächen"
+  },
+  "settingsSectionThreadBehavior": {
+    "message": "Thread-Verhalten"
+  },
+  "settingsSectionTiming": {
+    "message": "Timing"
+  },
+  "settingsSectionToolsHealth": {
+    "message": "Tools & Zustand"
+  },
+  "settingsSectionTranscriptAi": {
+    "message": "Transkript & KI"
+  },
+  "settingsSectionTransformDisplay": {
+    "message": "Transformation & Anzeige"
+  },
+  "settingsSectionVisibility": {
+    "message": "Sichtbarkeit"
   },
   "settingsSubFeatureBadge": {
     "message": "Unterfunktion"
