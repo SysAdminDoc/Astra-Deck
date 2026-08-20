@@ -26,6 +26,14 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Research-driven, externally gated (2026-08-19)
 
+- [ ] P3 — Verify the Document PiP pop-out on Firefox 151+ and advertise it honestly
+  Why: Firefox 151 shipped the Document Picture-in-Picture API, which until now made `popOutPlayer` Chromium-only. If the existing capability probe lights up on Firefox the feature reaches the second browser for free; if it does not, the capability matrix should say so rather than imply parity.
+  Evidence: RESEARCH.md 2026-08-20 §Sources (MDN Document PiP, Firefox 151); `extension/core/capability-probe.js` already probes `documentPictureInPicture`.
+  Touches: `extension/core/capability-probe.js`, capability matrix, README feature tables, userscript classification
+  Acceptance: a live Firefox 151+ session confirms whether `documentPictureInPicture` is exposed to the extension's context on YouTube; the capability matrix and README reflect the verified answer; the userscript classification for popOutPlayer is re-derived rather than assumed.
+  Complexity: S
+  Blocker: needs a live Firefox 151+ browser session. Whether a spec is implemented is not the question — whether it is reachable from an extension content script on youtube.com is, and that cannot be answered by reading MDN or the source. Advertising Firefox support for a pop-out player that turns out to be unreachable is worse than the current honest Chromium-only claim, so the matrix must not move until someone has actually opened the window.
+
 - [ ] P3 — Re-derive the like-rate tone bands against post-2026-08-24 view counts
   Why: the bands (`>=8` excellent, `>=4` strong, `>=2` steady) were calibrated against YouTube's pre-2026-08-24 view metric. From that date a view is counted at the first frame with no minimum watch time, so every denominator inflates and real like rates fall as a group — the badge grades conservatively until the bands are re-derived. The code half of this shipped 2026-08-20: the bands are an explicit frozen constant carrying the calibration note, a test pins them so a guessed edit fails, and the badge reports the raw counts it divided so the verdict stays auditable.
   Evidence: `extension/ytkit.js` `likeViewRatio._TONE_BANDS`; `tests/features/like-view-ratio.test.js`; RESEARCH.md 2026-08-20 §Security (TechCrunch 2026-08-17).

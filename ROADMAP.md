@@ -182,19 +182,12 @@ Note (belongs to the 2026-08-18 audit section above) — extends the existing P3
 
 Evidence detail and sources live in `RESEARCH.md` (2026-08-20). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication now including Edge, AI-surface hiding, DeArrow licensing, PO-token auto-provision, supply-chain doc) are not duplicated. Companion-repo actions (yt-dlp bump to 2026.08.19, minimum-version enforcement ≥2026.06.09) belong to SysAdminDoc/AstraDownloader and are recorded in RESEARCH.md as pointers.
 
-- [ ] P3 — Verify the Document PiP pop-out on Firefox 151+ and advertise it honestly
-  Why: Firefox 151 shipped the Document Picture-in-Picture API, which until now made `popOutPlayer` Chromium-only; if the existing capability probe lights up on Firefox the feature reaches the second browser for free, and if it does not the capability matrix should say so rather than imply parity.
-  Evidence: RESEARCH.md §Sources (MDN Document PiP, Firefox 151); `extension/core/capability-probe.js` already probes `documentPictureInPicture` (verified).
-  Touches: `extension/core/capability-probe.js`, capability matrix, README feature tables, userscript classification
-  Acceptance: a live Firefox 151+ session confirms whether `documentPictureInPicture` is exposed to the extension's context on YouTube; the capability matrix and README reflect the verified answer; the userscript classification for popOutPlayer is re-derived rather than assumed.
-  Complexity: S
-
-- [ ] P3 — Group the shipped AI-content filters into one discoverable "AI content" surface
-  Why: "hide AI slop" is a demand extensions now monetize (Clarity, AI Content Shield on CWS), and Astra already ships the pieces — `hideVideosSyntheticNarrationFilter`, `hideVideosHideAutoDubbed`, `hideAiSummary`, the anti-translate matrix — but they are scattered across categories, so the user searching "AI" cannot see the whole answer; the blocked Ask-YouTube-surface hiding item will add more toggles to the same theme.
-  Evidence: RESEARCH.md §Community (Clarity / AI Content Shield CWS listings); schema keys verified present 2026-08-20.
-  Touches: `extension/core/settings-schema.js` (category/group metadata only — no new keys), settings panel section rendering, `extension/_locales/**`, README
-  Acceptance: settings search for "AI" surfaces every AI-content control in one named group or cross-linked section; no behavior changes; the settings-taxonomy count pins and i18n baselines are updated per the nine-places checklist.
-  Complexity: S
+- [ ] P3 — Give the settings section labels real locale keys
+  Why: every `labelKey` in `SETTINGS_CATEGORY_SECTIONS` (`extension/core/settings-visual-system.js`) resolves through `t(labelKey, fallback)` to a key that does not exist in `_locales/en/messages.json`, so all ~30 section headings in the settings tree render English in all 11 locales. Found while adding the AI content section on 2026-08-20; the new section follows the existing shape rather than fixing it alone.
+  Evidence: `grep -c settingsSection extension/_locales/en/messages.json` returns 0 against ~30 `labelKey` entries in `settings-visual-system.js`.
+  Touches: `extension/core/settings-visual-system.js`, `extension/_locales/**`, `scripts/generate-locales.js`
+  Acceptance: every section `labelKey` has an EN message and a translation in all ten locale tables; the placeholder baseline does not worsen; `node sync-userscript.js` is run because the module is bundled.
+  Complexity: M
 
 - [ ] P3 — Per-group subscription-feed sorting
   Why: it is one of the last PocketTube premium features Astra does not undercut for free (nested subgroups, mark-as-watched, and group management already shipped); their $3.99/mo paywall and its review resentment make free parity a clear switch driver.

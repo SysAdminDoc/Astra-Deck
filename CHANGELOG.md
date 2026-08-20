@@ -16,6 +16,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   watch URL: playlist position, the timestamp you were paused at, and any
   tracking parameters from however you arrived no longer travel with it.
 
+- YouTube's AI features now have their own section in settings. Hiding the Ask
+  panel, the Gemini buttons, and the AI summary meant finding three switches
+  scattered among the merch, hashtag, and info-card toggles. They sit together
+  under Watch Page as "AI content" now, so turning the lot off is one visit.
+
 - The estimated dislike count now says how much evidence is behind it. Return
   YouTube Dislike reports the votes it actually recorded alongside the figure it
   extrapolates from them, and those two numbers can be very far apart: one video
