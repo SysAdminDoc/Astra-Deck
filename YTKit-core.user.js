@@ -513,6 +513,12 @@
         'Watch Page': [
             { labelKey: 'settingsSectionTranscriptAi', fallback: 'Transcript & AI', match: /^(transcriptAiHandoff|transcriptViewer|aiVideoSummary|keyMoments|copyChapterMarkdown)$/ },
             { labelKey: 'settingsSectionPlayerChrome', fallback: 'Player chrome', match: /^(removeScrubber|softBottomGradient|alwaysShowProgressBar|autoSkipChapters|chapterNavButtons|hideAutoplayToggle|floatingLogoOnWatch|stickyVideo|scrollToPlayer|playlistEnhancer|playlistSearch|watchPageTabs|focusedMode|zenMode)$/ },
+            // YouTube's own AI surfaces, kept together so the whole answer to
+            // "turn this off" is visible at once. These sit ahead of Page
+            // elements deliberately: that section's alternates are unanchored
+            // and would otherwise absorb hideAskAi/hideGeminiButtons/
+            // hideAiSummary by prefix.
+            { labelKey: 'settingsSectionAiContent', fallback: 'AI content', match: /^(hideAskAi|hideGeminiButtons|hideAiSummary)$/ },
             { labelKey: 'settingsSectionPageElements', fallback: 'Page elements', match: /^(hiddenWatchElementsManager|hidePaidContentOverlay|hideInfoPanels|hideRelatedVideos|hideDescription|hideMerch|hideAsk|hideGemini|hideAi|hideHashtags|hideComment|condenseComments|hidePaidPromotionWatch|hideChannelJoinButton|hideFundraiser|hiddenActionButtonsManager|hideInfoCards)/ },
             { labelKey: 'settingsSectionInsightsNotes', fallback: 'Insights & notes', match: /^(preciseViewCounts|videoInsights|showChannelVideoCount|timestampBookmarks|videoNotes|watchTimeTracker|likeViewRatio|channelAgeDisplay|channelSubCount|redditComments|watchHistoryAnalytics)$/ },
             { labelKey: 'settingsSectionSharingActions', fallback: 'Sharing & actions', match: /.*/ }
