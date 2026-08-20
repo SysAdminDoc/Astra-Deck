@@ -6718,6 +6718,9 @@
   "ui_rydRatioTpl": {
     "message": "{ratio}% が高評価"
   },
+  "ui_rydSampleTpl": {
+    "message": "記録された {sample} 件の投票からの推定値です。"
+  },
   "ui_rydUnavailableTitle": {
     "message": "Return YouTube Dislike は利用できません。API が有効な応答を返しませんでした。ネットワークを確認して、後でもう一度お試しください。"
   },

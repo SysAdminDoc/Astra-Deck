@@ -6718,6 +6718,9 @@
   "ui_rydRatioTpl": {
     "message": "{ratio}% إعجاب"
   },
+  "ui_rydSampleTpl": {
+    "message": "تقدير استنادًا إلى {sample} صوت مسجل."
+  },
   "ui_rydUnavailableTitle": {
     "message": "Return YouTube Dislike غير متاح — لم تُرجع الواجهة استجابة قابلة للاستخدام. تحقق من الشبكة وحاول لاحقًا."
   },

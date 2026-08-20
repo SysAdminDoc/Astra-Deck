@@ -6718,6 +6718,9 @@
   "ui_rydRatioTpl": {
     "message": "좋아요 {ratio}%"
   },
+  "ui_rydSampleTpl": {
+    "message": "기록된 투표 {sample}개를 기준으로 추정했습니다."
+  },
   "ui_rydUnavailableTitle": {
     "message": "Return YouTube Dislike를 사용할 수 없습니다. API가 유효한 응답을 반환하지 않았습니다. 네트워크를 확인하거나 나중에 다시 시도하세요."
   },

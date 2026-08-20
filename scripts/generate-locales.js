@@ -4647,6 +4647,7 @@ for (const [locale, messages] of Object.entries(SPONSOR_RUNTIME_COPY_TRANSLATION
 const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   de: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Die Return YouTube Dislike-Zahlen sind Schätzungen, nachdem YouTube öffentliche Dislike-Summen entfernt hat; Videos mit wenig Traffic können ungenauer sein.',
+    'Estimated from {sample} recorded votes.': 'Geschätzt aus {sample} erfassten Stimmen.',
     'RYD paused': 'RYD pausiert',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike pausiert — Rate-Limit ({used}/{limit}/Min.). Fortsetzung in {seconds} s.',
     'RYD off': 'RYD aus',
@@ -4661,6 +4662,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   es: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Los recuentos de Return YouTube Dislike son estimaciones desde que YouTube retiró los totales públicos de dislikes; los videos con poco tráfico pueden ser menos precisos.',
+    'Estimated from {sample} recorded votes.': 'Estimado a partir de {sample} votos registrados.',
     'RYD paused': 'RYD pausado',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike pausado — límite de solicitudes ({used}/{limit}/min). Se reanuda en {seconds} s.',
     'RYD off': 'RYD desactivado',
@@ -4675,6 +4677,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   fr: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Les nombres de Return YouTube Dislike sont des estimations depuis que YouTube a supprimé les totaux publics de dislikes ; les vidéos peu vues peuvent être moins précises.',
+    'Estimated from {sample} recorded votes.': 'Estimé à partir de {sample} votes enregistrés.',
     'RYD paused': 'RYD en pause',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike en pause — limite de requêtes ({used}/{limit}/min). Reprise dans {seconds} s.',
     'RYD off': 'RYD désactivé',
@@ -4689,6 +4692,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   it: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'I conteggi di Return YouTube Dislike sono stime dopo che YouTube ha rimosso i totali pubblici dei dislike; i video con poco traffico possono essere meno accurati.',
+    'Estimated from {sample} recorded votes.': 'Stimato su {sample} voti registrati.',
     'RYD paused': 'RYD in pausa',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike in pausa — limite di richieste ({used}/{limit}/min). Riprende tra {seconds} s.',
     'RYD off': 'RYD disattivato',
@@ -4703,6 +4707,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   pt_BR: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'As contagens do Return YouTube Dislike são estimativas depois que o YouTube removeu os totais públicos de dislikes; vídeos com pouco tráfego podem ser menos precisos.',
+    'Estimated from {sample} recorded votes.': 'Estimado a partir de {sample} votos registrados.',
     'RYD paused': 'RYD pausado',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike pausado — limite de requisições ({used}/{limit}/min). Retoma em {seconds}s.',
     'RYD off': 'RYD desativado',
@@ -4717,6 +4722,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   ru: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Счетчики Return YouTube Dislike являются оценочными после того, как YouTube убрал общедоступные значения дизлайков; для видео с низким трафиком точность может быть ниже.',
+    'Estimated from {sample} recorded votes.': 'Оценка по {sample} учтённым голосам.',
     'RYD paused': 'RYD приостановлен',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike приостановлен — ограничение запросов ({used}/{limit}/мин). Возобновится через {seconds} с.',
     'RYD off': 'RYD выключен',
@@ -4731,6 +4737,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   ja: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Return YouTube Dislike の件数は、YouTube が公開の低評価数を削除した後の推定値です。視聴数の少ない動画では精度が下がる場合があります。',
+    'Estimated from {sample} recorded votes.': '記録された {sample} 件の投票からの推定値です。',
     'RYD paused': 'RYD 一時停止',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike はレート制限中（{used}/{limit}/分）。{seconds}秒後に再開します。',
     'RYD off': 'RYD オフ',
@@ -4745,6 +4752,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   ko: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Return YouTube Dislike 수치는 YouTube가 공개 싫어요 총계를 제거한 후의 추정치이며, 조회수가 적은 동영상에서는 정확도가 낮을 수 있습니다.',
+    'Estimated from {sample} recorded votes.': '기록된 투표 {sample}개를 기준으로 추정했습니다.',
     'RYD paused': 'RYD 일시중지',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike 일시중지 — 요청 제한됨({used}/{limit}/분). {seconds}초 후 재개됩니다.',
     'RYD off': 'RYD 꺼짐',
@@ -4759,6 +4767,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   ar: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'أعداد Return YouTube Dislike تقديرية بعد أن أزالت YouTube إجمالي عدم الإعجاب العام؛ قد تكون أقل دقة للفيديوهات منخفضة التفاعل.',
+    'Estimated from {sample} recorded votes.': 'تقدير استنادًا إلى {sample} صوت مسجل.',
     'RYD paused': 'تم إيقاف RYD مؤقتًا',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'تم إيقاف Return YouTube Dislike مؤقتًا — تم بلوغ حد الطلبات ({used}/{limit}/دقيقة). يُستأنف خلال {seconds} ث.',
     'RYD off': 'RYD متوقف',
@@ -4773,6 +4782,7 @@ const RETURN_DISLIKE_RUNTIME_TRANSLATIONS = {
   },
   zh_CN: {
     'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.': 'Return YouTube Dislike 数量是估算值，因为 YouTube 已移除公开的点踩总数；低流量视频的准确度可能较低。',
+    'Estimated from {sample} recorded votes.': '根据 {sample} 条已记录的投票估算。',
     'RYD paused': 'RYD 已暂停',
     'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.': 'Return YouTube Dislike 已暂停——达到速率限制（{used}/{limit}/分钟）。将在 {seconds} 秒后恢复。',
     'RYD off': 'RYD 已关闭',
