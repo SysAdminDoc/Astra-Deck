@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.81.0] - 2026-08-20
+
 ### Fixed
 
 - Astra's colour palette only came into existence the first time you opened the
