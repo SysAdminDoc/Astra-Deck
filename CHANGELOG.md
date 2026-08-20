@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The Create button in the subscription-group dialog was drawing white text on
+  the orange accent, which is well under the readable minimum. It uses the dark
+  text colour the rest of the extension already used on accent backgrounds, and
+  a test now checks that pairing against every theme accent that ships.
 - The preview tooltip in the settings panel has its shadow back. It asked for a
   shadow value that was never defined anywhere, and a missing value like that
   throws the whole declaration away, so the tooltip had been floating flat
