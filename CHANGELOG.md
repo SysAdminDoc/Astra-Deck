@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.80.0] - 2026-08-20
+
 ### Fixed
 
 - The Create button in the subscription-group dialog was drawing white text on
