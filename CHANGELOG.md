@@ -6,6 +6,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Astra's colour palette only came into existence the first time you opened the
+  settings panel. Until then every surface that asked for a palette colour drew
+  a hardcoded one instead, so a colour theme you picked never reached eleven of
+  them, and opening the settings panel once quietly restyled parts of the page
+  around it. The palette now loads with the page.
+- The hidden-video note and the hidden-video placeholder had light-theme
+  colours written for them that could never apply, so on YouTube's light theme
+  their text was close to unreadable against the page. Both follow the theme
+  properly now.
+- The "Allow once" button on the blocked-video dialog kept a fixed amber hover
+  no matter which accent colour you had chosen. It now follows the accent.
+
 ## [4.80.0] - 2026-08-20
 
 ### Fixed
