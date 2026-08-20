@@ -21598,12 +21598,72 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return out.join('\n');
             },
 
+            // The canonical watch URL, not `location.href`. The address bar
+            // carries playlist position, a `t=` seek, and whatever tracking
+            // parameters the click arrived with, none of which belong in an
+            // export that gets pasted somewhere else.
+            _canonicalWatchUrl() {
+                const videoId = getVideoId();
+                return videoId
+                    ? `https://www.youtube.com/watch?v=${videoId}`
+                    : location.href;
+            },
+
+            // Chapters come from the ORIGINAL description, which is what
+            // YouTube itself parses to build them, so an auto-translated page
+            // does not put translated headings into the export.
+            _exportChapters() {
+                if (typeof parseDescriptionChapters !== 'function') return [];
+                let description = '';
+                try {
+                    description = _rw.ytInitialPlayerResponse?.videoDetails?.shortDescription || '';
+                } catch {
+                    // reason: the page world can withhold the player response;
+                    // an export without chapters is still a good export.
+                    description = '';
+                }
+                try {
+                    return parseDescriptionChapters(description) || [];
+                } catch {
+                    // reason: chapters are decoration here, never the payload.
+                    return [];
+                }
+            },
+
+            // A one-line, machine-readable statement of where this text came
+            // from. The panel shows the same facts in the reader's language;
+            // this stays in the prompt's language so a model can act on it,
+            // and it exists so a cached or fallback transcript cannot be
+            // pasted somewhere as though it were freshly fetched.
+            _exportProvenanceLine() {
+                const provenance = this._lastProvenance;
+                if (!provenance || typeof provenance !== 'object') return '';
+                const parts = [];
+                if (provenance.source) parts.push(`source=${provenance.source}`);
+                if (provenance.language) parts.push(`language=${provenance.language}`);
+                if (provenance.fetchedAt > 0) {
+                    parts.push(`fetched=${new Date(provenance.fetchedAt).toISOString()}`);
+                }
+                if (provenance.fallbackReason) parts.push(`fallback=${provenance.fallbackReason}`);
+                return parts.length ? parts.join('; ') : '';
+            },
+
             _buildLlmPrompt() {
                 const title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim()
                     || document.title.replace(/ - YouTube$/, '');
-                const url = location.href;
+                const url = this._canonicalWatchUrl();
                 const transcript = this._cues.map(c => `[${this._fmtTimestamp(c.start)}] ${c.text}`).join('\n');
-                return `Summarize this YouTube video transcript. Provide: (1) a 2-3 sentence TL;DR, (2) 5-8 key points with timestamps, (3) any actionable takeaways.\n\nTitle: ${title}\nURL: ${url}\n\nTranscript:\n${transcript}`;
+                const chapters = this._exportChapters()
+                    .map(chapter => `[${this._fmtTimestamp(chapter.startSeconds)}] ${chapter.title}`)
+                    .join('\n');
+                const provenance = this._exportProvenanceLine();
+                const header = [
+                    `Title: ${title}`,
+                    `URL: ${url}`,
+                    provenance ? `Transcript source: ${provenance}` : '',
+                    chapters ? `\nChapters:\n${chapters}` : ''
+                ].filter(Boolean).join('\n');
+                return `Summarize this YouTube video transcript. Provide: (1) a 2-3 sentence TL;DR, (2) 5-8 key points with timestamps, (3) any actionable takeaways.\n\n${header}\n\nTranscript:\n${transcript}`;
             },
 
             async _copyToClipboard(text, label) {
@@ -21770,6 +21830,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (exportBar) exportBar.hidden = true;
                 this._setTranscriptMeta('Loading…', 'Looking for caption tracks & preparing export actions.', 'info');
                 this._cues = [];
+                // Cleared with the cues: an export must never label this
+                // video's transcript with the previous video's provenance.
+                this._lastProvenance = null;
 
                 try {
                     const pageData = document.querySelector('ytd-watch-flexy');
@@ -21841,6 +21904,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._setTranscriptMeta(trackLabel, 'The transcript track loaded, but no readable lines were returned.', 'warning');
                         this._renderBodyState(body, 'empty', 'Transcript is empty', 'YouTube exposed a caption track, but it does not contain readable cue lines yet.');
                     } else {
+                        this._lastProvenance = result.provenance || null;
                         this._showTranscriptProvenance(trackLabel, result.provenance);
                         if (exportBar) exportBar.hidden = false;
                     }
