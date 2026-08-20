@@ -24062,10 +24062,10 @@ if (typeof globalThis !== "undefined") {
                         height: min(70vh, 640px) !important;
                         z-index: 2147483000 !important;
                         opacity: var(--ytkit-floating-chat-opacity, 0.9);
-                        border: 1px solid var(--ytkit-border-strong, rgba(255,255,255,0.2)) !important;
+                        border: 1px solid var(--ytkit-overlay-border, rgba(255,255,255,0.2)) !important;
                         border-radius: 14px !important;
                         overflow: hidden !important;
-                        background: var(--ytkit-surface-elevated, #171b23) !important;
+                        background: var(--ytkit-overlay-bg, #171b23) !important;
                         box-shadow: 0 22px 70px rgba(0,0,0,0.52) !important;
                     }
                     ytd-live-chat-frame.ytkit-floating-chat > iframe { width: 100% !important; height: 100% !important; }
@@ -24078,10 +24078,10 @@ if (typeof globalThis !== "undefined") {
                         align-items: center;
                         gap: 8px;
                         padding: 5px 7px;
-                        border: 1px solid var(--ytkit-border-strong, rgba(255,255,255,0.2));
+                        border: 1px solid var(--ytkit-overlay-border, rgba(255,255,255,0.2));
                         border-radius: 10px;
-                        color: var(--ytkit-text-primary, #f5f7fb);
-                        background: var(--ytkit-surface-elevated, rgba(23,27,35,0.96));
+                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        background: var(--ytkit-overlay-bg-soft, rgba(23,27,35,0.96));
                         box-shadow: 0 8px 24px rgba(0,0,0,0.35);
                     }
                     .ytkit-floating-chat-drag {
@@ -24096,7 +24096,7 @@ if (typeof globalThis !== "undefined") {
                         touch-action: none;
                     }
                     .ytkit-floating-chat-controls input[type="range"] { width: 88px; min-height: 36px; accent-color: var(--ytkit-accent, #ffb454); }
-                    .ytkit-floating-chat-drag:hover { background: var(--ytkit-surface-hover, rgba(255,255,255,0.1)); }
+                    .ytkit-floating-chat-drag:hover { background: var(--ytkit-overlay-hover, rgba(255,255,255,0.1)); }
                     .ytkit-floating-chat-drag:focus-visible,
                     .ytkit-floating-chat-controls input:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 3px #7dd3fc); }
                     @media (max-width: 520px) {
@@ -26864,16 +26864,16 @@ if (typeof globalThis !== "undefined") {
                         min-height: 44px;
                         margin: 4px 0;
                         padding: 10px 12px;
-                        border: 1px solid var(--ytkit-border, rgba(255, 255, 255, 0.12));
+                        border: 1px solid var(--ytkit-card-border, rgba(255, 255, 255, 0.12));
                         border-radius: 8px;
-                        color: var(--ytkit-text-secondary, #aeb6c3);
-                        background: var(--ytkit-surface-raised, rgba(255, 255, 255, 0.04));
+                        color: var(--ytkit-card-text, #aeb6c3);
+                        background: var(--ytkit-card-bg, rgba(255, 255, 255, 0.04));
                         font: 500 12px/1.4 system-ui, sans-serif;
                     }
                     html:not([dark]) .ytkit-video-hidden-placeholder {
-                        color: var(--ytkit-text-secondary, #5f6875);
-                        border-color: var(--ytkit-border, rgba(15, 23, 42, 0.12));
-                        background: var(--ytkit-surface-raised, rgba(15, 23, 42, 0.04));
+                        color: var(--ytkit-card-text, #5f6875);
+                        border-color: var(--ytkit-card-border, rgba(15, 23, 42, 0.12));
+                        background: var(--ytkit-card-bg, rgba(15, 23, 42, 0.04));
                     }
                     .ytkit-blocked-watch-overlay {
                         position: fixed;
@@ -26888,10 +26888,10 @@ if (typeof globalThis !== "undefined") {
                         width: min(520px, 100%);
                         box-sizing: border-box;
                         padding: 28px;
-                        border: 1px solid var(--ytkit-border-strong, rgba(255, 255, 255, 0.2));
+                        border: 1px solid var(--ytkit-overlay-border, rgba(255, 255, 255, 0.2));
                         border-radius: 20px;
-                        color: var(--ytkit-text-primary, #f5f7fb);
-                        background: var(--ytkit-surface-elevated, #171b23);
+                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        background: var(--ytkit-overlay-bg, #171b23);
                         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
                     }
                     .ytkit-blocked-watch-eyebrow {
@@ -26908,12 +26908,12 @@ if (typeof globalThis !== "undefined") {
                     }
                     .ytkit-blocked-watch-dialog > p {
                         margin: 12px 0 0;
-                        color: var(--ytkit-text-secondary, #c1c7d0);
+                        color: var(--ytkit-overlay-text-secondary, #c1c7d0);
                         font: 400 15px/1.55 system-ui, sans-serif;
                     }
                     .ytkit-blocked-watch-channel {
                         overflow-wrap: anywhere;
-                        color: var(--ytkit-text-primary, #f5f7fb) !important;
+                        color: var(--ytkit-overlay-text, #f5f7fb) !important;
                         font-weight: 650 !important;
                     }
                     .ytkit-blocked-watch-actions {
@@ -26927,14 +26927,18 @@ if (typeof globalThis !== "undefined") {
                         min-width: 96px;
                         min-height: 44px;
                         padding: 10px 16px;
-                        border: 1px solid var(--ytkit-border-strong, rgba(255, 255, 255, 0.2));
+                        border: 1px solid var(--ytkit-overlay-border, rgba(255, 255, 255, 0.2));
                         border-radius: 10px;
-                        color: var(--ytkit-text-primary, #f5f7fb);
-                        background: var(--ytkit-surface-raised, #242a35);
+                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        background: var(--ytkit-overlay-raised, #242a35);
                         font: 650 14px/1.2 system-ui, sans-serif;
                         cursor: pointer;
                     }
-                    .ytkit-blocked-watch-action:hover { background: var(--ytkit-surface-hover, #303746); }
+                    /* rgba white rather than #303746 so one hover token works
+                       over both overlay grounds. Over --ytkit-overlay-raised
+                       that composites to about #3a3f49, marginally lighter
+                       than the literal it replaces. */
+                    .ytkit-blocked-watch-action:hover { background: var(--ytkit-overlay-hover, rgba(255, 255, 255, 0.1)); }
                     .ytkit-blocked-watch-action:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 3px #7dd3fc); }
                     .ytkit-blocked-watch-action--allow-once {
                         border-color: transparent;

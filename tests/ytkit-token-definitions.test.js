@@ -35,14 +35,14 @@ const RUNTIME_SET = new Set([
     '--ytkit-vh-accent'
 ]);
 
-// Referenced under names the palette does not carry, with call sites that
-// disagree about the fallback, so each needs a per-site decision before it can
-// be defined. Tracked in ROADMAP.md; this list must only ever shrink.
-const KNOWN_DIVERGENT = new Set([
-    '--ytkit-surface-elevated',
-    '--ytkit-surface-hover',
-    '--ytkit-surface-raised'
-]);
+// Was three tokens whose call sites disagreed about the fallback, so no single
+// definition was a no-op. Emptied on 2026-08-20 by splitting them along the
+// line the disagreement was actually drawn on: page-embedded cards that must
+// follow YouTube's theme (--ytkit-card-*, which has a light lane) versus
+// Astra's own opaque dark overlays that must not (--ytkit-overlay-*, which
+// deliberately does not). Kept as a pin so re-adding a name here is a
+// deliberate act rather than a quiet regression.
+const KNOWN_DIVERGENT = new Set([]);
 
 function injectedSources() {
     const files = [
@@ -118,14 +118,33 @@ test('every var() without a fallback names a token that exists', () => {
         'a var() with no fallback and no definition drops its declaration entirely');
 });
 
-test('the divergent-token list only shrinks', () => {
+test('the divergent-token list stays empty', () => {
+    assert.deepEqual([...KNOWN_DIVERGENT], [],
+        'a token here is referenced but undefined and exempted from the phantom check — '
+        + 'split it by call site instead');
+});
+
+test('the page-embedded card family carries a light lane and the overlay family does not', () => {
+    // The distinction is the whole point of the split. A card sits on
+    // YouTube's own background and must follow YouTube's theme; an overlay
+    // paints its own opaque dark ground and reads correctly on either, so
+    // giving it a light lane would turn the ground light while the near-white
+    // text stayed put — the exact defect check:light-theme exists to catch.
+    const src = fs.readFileSync(path.join(ROOT, 'extension', 'ytkit.js'), 'utf8');
+    const lightLane = src.match(/html:not\(\[dark\]\)\s*\{([^{}]*)\}/);
+    assert.ok(lightLane, 'the palette must carry an html:not([dark]) lane');
+
+    const relit = new Set([...lightLane[1].matchAll(/(--ytkit-[A-Za-z0-9-]+)\s*:/g)].map(m => m[1]));
+    assert.deepEqual([...relit].sort(),
+        ['--ytkit-card-bg', '--ytkit-card-border', '--ytkit-card-text'],
+        'only the page-embedded card family may be relit on light theme');
+
     const { defined, referenced } = scan();
-    const stillDivergent = [...KNOWN_DIVERGENT].filter(
-        name => referenced.has(name) && !defined.has(name));
-    assert.equal(stillDivergent.length <= KNOWN_DIVERGENT.size, true);
-    for (const name of KNOWN_DIVERGENT) {
-        if (!referenced.has(name) || defined.has(name)) continue;
-        assert.ok(stillDivergent.includes(name), `${name} should still be tracked`);
+    const overlay = [...referenced.keys()].filter(name => name.startsWith('--ytkit-overlay-'));
+    assert.ok(overlay.length >= 4, `expected the overlay family in use, found ${overlay.length}`);
+    for (const name of overlay) {
+        assert.ok(defined.has(name), `${name} is used but never defined`);
+        assert.ok(!relit.has(name), `${name} must not be relit on light theme`);
     }
 });
 
