@@ -10,62 +10,25 @@
 :root {
   color-scheme: dark;
 
-  /* ── Surfaces ── */
-  --page-bg: #08090c;
-  --surface: rgba(14, 18, 26, 0.94);
-  --surface-strong: #0e1219;
-  --surface-raised: rgba(255, 255, 255, 0.04);
-  --surface-hover: rgba(255, 255, 255, 0.065);
-  --surface-inset: rgba(6, 9, 13, 0.78);
-
-  /* ── Borders ── */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.055);
-  --border-hover: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.2);
-
-  /* ── Text (tuned for AA on dark surfaces) ── */
-  --text-primary: #f4f6fb;
-  --text-secondary: #c8d2e1;
-  --text-muted: #8f9bb0;
-  /* 6.17:1 on the #08090c page bg (was #6c7789 at 4.40:1, failing AA
-     for the small-text surfaces this token paints). */
-  --text-subtle: #8290a8;
+  /* Surfaces, borders, text, accent, radii and the focus ring all come from
+     surface-system.css, which this page loads SECOND — so anything declared
+     here under one of those names is overridden before it paints. Sixty such
+     declarations lived here and in sidepanel.css until 2026-08-20, every one
+     of them a different value from the one that actually shipped. Add a new
+     token to surface-system.css; only page-specific ones belong below. */
 
   /* ── Accent (flame) ── */
-  --accent: #ff6b4a;
-  --accent-mid: #ff8060;
-  --accent-strong: #ff8e74;
   --accent-on: #1a0b06;
-  --accent-soft: rgba(255, 107, 74, 0.14);
-  --accent-softer: rgba(255, 107, 74, 0.06);
-  --accent-border: rgba(255, 107, 74, 0.3);
 
   /* ── Semantic ── */
-  --info: #6aa9ff;
   --info-soft: rgba(106, 169, 255, 0.1);
   --info-border: rgba(106, 169, 255, 0.22);
-  --warning: #ffbe7a;
   --warning-soft: rgba(255, 190, 122, 0.1);
   --warning-border: rgba(255, 190, 122, 0.22);
-  --success: #35c77f;
   --success-soft: rgba(53, 199, 127, 0.1);
   --success-border: rgba(53, 199, 127, 0.26);
-  --error: #ff7480;
   --error-soft: rgba(255, 116, 128, 0.1);
   --error-border: rgba(255, 116, 128, 0.26);
-
-  /* ── Radii ──
-     House style: 0/4/6/8/10/12 only. No stadium/pill backdrops.
-     --radius-chip is for small inline chips/badges (replaces the
-     misleading --radius-pill token from earlier releases). */
-  --radius-xs: 8px;
-  --radius-sm: 10px;
-  --radius-md: 12px;
-  --radius-lg: 12px;
-  --radius-xl: 12px;
-  --radius-chip: 6px;
-  --radius-tight: 4px;
 
   /* ── Elevation ── */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
@@ -73,9 +36,6 @@
   --shadow-lg: 0 28px 68px rgba(0, 0, 0, 0.5);
   --shadow-primary: 0 8px 22px rgba(255, 95, 74, 0.18);
   --shadow-primary-hover: 0 12px 28px rgba(255, 95, 74, 0.28);
-
-  /* ── Focus (two-stop, works on any surface) ── */
-  --focus-ring: 0 0 0 2px rgba(8, 9, 12, 0.98), 0 0 0 4px rgba(255, 107, 74, 0.55);
 
   /* ── Motion ── */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

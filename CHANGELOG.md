@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- The toolbar popup and side panel no longer carry sixty colour, radius, and
+  focus definitions that never reached the screen. Both pages load the shared
+  stylesheet last, so every one of those definitions was overridden before it
+  painted, and every one of them held a different value from the one that
+  actually shipped: the popup asked for a 12px corner radius and drew 10px, and
+  a contrast fix written into a comment had been inert since the day it was
+  made. Nothing looks different, which is the point. Editing a colour in those
+  files now changes what you see, and a test fails if a duplicate creeps back.
+
 ## [4.78.0] - 2026-08-20
 
 ### Fixed
