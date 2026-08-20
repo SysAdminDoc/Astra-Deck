@@ -206,10 +206,10 @@
                         height: min(70vh, 640px) !important;
                         z-index: 2147483000 !important;
                         opacity: var(--ytkit-floating-chat-opacity, 0.9);
-                        border: 1px solid var(--ytkit-border-strong, rgba(255,255,255,0.2)) !important;
+                        border: 1px solid var(--ytkit-overlay-border, rgba(255,255,255,0.2)) !important;
                         border-radius: 14px !important;
                         overflow: hidden !important;
-                        background: var(--ytkit-surface-elevated, #171b23) !important;
+                        background: var(--ytkit-overlay-bg, #171b23) !important;
                         box-shadow: 0 22px 70px rgba(0,0,0,0.52) !important;
                     }
                     ytd-live-chat-frame.ytkit-floating-chat > iframe { width: 100% !important; height: 100% !important; }
@@ -222,10 +222,10 @@
                         align-items: center;
                         gap: 8px;
                         padding: 5px 7px;
-                        border: 1px solid var(--ytkit-border-strong, rgba(255,255,255,0.2));
+                        border: 1px solid var(--ytkit-overlay-border, rgba(255,255,255,0.2));
                         border-radius: 10px;
-                        color: var(--ytkit-text-primary, #f5f7fb);
-                        background: var(--ytkit-surface-elevated, rgba(23,27,35,0.96));
+                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        background: var(--ytkit-overlay-bg-soft, rgba(23,27,35,0.96));
                         box-shadow: 0 8px 24px rgba(0,0,0,0.35);
                     }
                     .ytkit-floating-chat-drag {
@@ -240,7 +240,7 @@
                         touch-action: none;
                     }
                     .ytkit-floating-chat-controls input[type="range"] { width: 88px; min-height: 36px; accent-color: var(--ytkit-accent, #ffb454); }
-                    .ytkit-floating-chat-drag:hover { background: var(--ytkit-surface-hover, rgba(255,255,255,0.1)); }
+                    .ytkit-floating-chat-drag:hover { background: var(--ytkit-overlay-hover, rgba(255,255,255,0.1)); }
                     .ytkit-floating-chat-drag:focus-visible,
                     .ytkit-floating-chat-controls input:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 3px #7dd3fc); }
                     @media (max-width: 520px) {

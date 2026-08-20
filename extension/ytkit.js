@@ -5613,16 +5613,20 @@ return response;
                 min-height: 44px;
                 margin: 4px 0;
                 padding: 10px 12px;
-                border: 1px solid var(--ytkit-border, rgba(255, 255, 255, 0.12));
+                border: 1px solid var(--ytkit-card-border, rgba(255, 255, 255, 0.12));
                 border-radius: 8px;
-                color: var(--ytkit-text-secondary, #aeb6c3);
-                background: var(--ytkit-surface-raised, rgba(255, 255, 255, 0.04));
+                color: var(--ytkit-card-text, #aeb6c3);
+                background: var(--ytkit-card-bg, rgba(255, 255, 255, 0.04));
                 font: 500 12px/1.4 system-ui, sans-serif;
             }
+            /* The card tokens carry the theme themselves, so this lane repeats
+               them rather than naming a second set of literals. It stays
+               because the light-theme ratchet records this surface as covered
+               and a covered surface may not leave the lane. */
             html:not([dark]) .ytkit-hidden-note {
-                color: var(--ytkit-text-secondary, #5f6875);
-                border-color: var(--ytkit-border, rgba(15, 23, 42, 0.12));
-                background: var(--ytkit-surface-raised, rgba(15, 23, 42, 0.04));
+                color: var(--ytkit-card-text, #5f6875);
+                border-color: var(--ytkit-card-border, rgba(15, 23, 42, 0.12));
+                background: var(--ytkit-card-bg, rgba(15, 23, 42, 0.04));
             }
         `, 'ytkit-hidden-note', true);
     }
@@ -15465,16 +15469,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 44px;
                         margin: 4px 0;
                         padding: 10px 12px;
-                        border: 1px solid var(--ytkit-border, rgba(255, 255, 255, 0.12));
+                        border: 1px solid var(--ytkit-card-border, rgba(255, 255, 255, 0.12));
                         border-radius: 8px;
-                        color: var(--ytkit-text-secondary, #aeb6c3);
-                        background: var(--ytkit-surface-raised, rgba(255, 255, 255, 0.04));
+                        color: var(--ytkit-card-text, #aeb6c3);
+                        background: var(--ytkit-card-bg, rgba(255, 255, 255, 0.04));
                         font: 500 12px/1.4 system-ui, sans-serif;
                     }
                     html:not([dark]) .ytkit-video-hidden-placeholder {
-                        color: var(--ytkit-text-secondary, #5f6875);
-                        border-color: var(--ytkit-border, rgba(15, 23, 42, 0.12));
-                        background: var(--ytkit-surface-raised, rgba(15, 23, 42, 0.04));
+                        color: var(--ytkit-card-text, #5f6875);
+                        border-color: var(--ytkit-card-border, rgba(15, 23, 42, 0.12));
+                        background: var(--ytkit-card-bg, rgba(15, 23, 42, 0.04));
                     }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
@@ -46763,6 +46767,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     --ytkit-accent-contrast: #14181f;
     --ytkit-border-strong: rgba(255,255,255,0.2);
     --ytkit-danger: #ff6b6b;
+    /* Page-embedded cards — the hidden-video note and the hidden-video
+       placeholder. These sit INSIDE YouTube's own layout on top of YouTube's
+       own background, so they have to follow YouTube's theme; that is what the
+       html:not([dark]) lane below is for. Until 2026-08-20 they reached for
+       --ytkit-surface-raised, a name nothing declared, so their light-lane
+       rules only ever worked by falling back to a literal — the surface was
+       hardwired and no palette or theme change could reach it. */
+    --ytkit-card-bg: rgba(255,255,255,0.04);
+    --ytkit-card-border: rgba(255,255,255,0.12);
+    --ytkit-card-text: #aeb6c3;
+    /* Astra's own overlays — the floating live chat and the blocked-watch
+       dialog. Unlike the cards above these paint their OWN opaque dark ground,
+       so they read correctly on either YouTube theme and deliberately have no
+       light lane. Giving them one would turn the ground light while the text
+       stayed near-white, which is the exact defect the light-theme gate
+       exists to catch. Kept separate from the panel tokens for the same
+       reason: the panel's may gain a light lane later, and these must not. */
+    --ytkit-overlay-bg: #171b23;
+    --ytkit-overlay-bg-soft: rgba(23,27,35,0.96);
+    --ytkit-overlay-raised: #242a35;
+    --ytkit-overlay-hover: rgba(255,255,255,0.1);
+    --ytkit-overlay-border: rgba(255,255,255,0.2);
+    --ytkit-overlay-text: #e8ecf4;
+    --ytkit-overlay-text-secondary: #a0acbf;
     /* Was referenced by the settings-panel preview tooltip with no fallback
        and defined nowhere, which makes the whole box-shadow declaration
        invalid, so the tooltip rendered flat. */
@@ -46779,6 +46807,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     --ytkit-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --ytkit-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ytkit-focus-ring: 0 0 0 2px rgba(8,11,16,0.98), 0 0 0 4px rgba(255,107,74,0.55);
+}
+
+/* The light lane of the palette itself. html:not([dark]) is (0,1,1) against
+   the (0,1,0) of :root, so these win without !important. Only the
+   page-embedded card family belongs here — see the comments above for why the
+   overlay and panel families stay dark on both themes. */
+html:not([dark]) {
+    --ytkit-card-bg: rgba(15,23,42,0.04);
+    --ytkit-card-border: rgba(15,23,42,0.12);
+    --ytkit-card-text: #5f6875;
 }
 
 body.ytkit-panel-open {
