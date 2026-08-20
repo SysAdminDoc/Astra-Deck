@@ -6,6 +6,28 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- The like-to-view percentage in the userscript no longer reports impossible
+  numbers when YouTube shows the view count in short form. It read "1.2M views"
+  as 12 views, so a video with fifty thousand likes came out at several hundred
+  thousand percent. It now reads short and localized counts the same way the
+  extension does.
+
+### Changed
+
+- The like rate's wording (excellent, strong, steady, quiet) is now recorded in
+  the code as a dated calibration. On 2026-08-24 YouTube starts counting a view
+  from the first frame, with no minimum watch time, so view numbers go up and
+  like rates come down across the board. Until those bands are worked out again
+  from real numbers they will grade more strictly than they used to, and the
+  badge still shows the like and view counts it divided so you can read past the
+  label.
+
+  Your low-view and low-signal filter thresholds are left exactly as you set
+  them. Nothing is rescaled behind your back, but a threshold you tuned before
+  the change will catch fewer videos afterwards, so it is worth revisiting.
+
 ## [4.76.0] - 2026-08-19
 
 Nothing in this release changes what Astra Deck does. It is a maintenance pass

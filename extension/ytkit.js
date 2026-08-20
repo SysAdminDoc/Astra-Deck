@@ -26109,11 +26109,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     maximumFractionDigits: value < 10 ? 1 : 0
                 }).format(value);
             },
+            // Calibrated against YouTube's public view count. YouTube
+            // redefined that metric on 2026-08-24 to count a view from the
+            // first frame with no minimum watch time, which inflates every
+            // denominator and moves real like rates down as a group. These
+            // bands are therefore dated: they grade conservatively until they
+            // are re-derived from post-change data, and they must not be
+            // adjusted by guess. The badge always carries the raw like and
+            // view counts so the verdict stays auditable whatever the bands
+            // say.
+            _TONE_BANDS: Object.freeze([
+                Object.freeze({ minPercent: 8, tone: 'excellent' }),
+                Object.freeze({ minPercent: 4, tone: 'strong' }),
+                Object.freeze({ minPercent: 2, tone: 'steady' })
+            ]),
             _getTone(ratio) {
-                if (ratio >= 8) return 'excellent';
-                if (ratio >= 4) return 'strong';
-                if (ratio >= 2) return 'steady';
-                return 'quiet';
+                const band = this._TONE_BANDS.find(entry => ratio >= entry.minPercent);
+                return band ? band.tone : 'quiet';
             },
             _scheduleCalculate(delay = 3000) {
                 if (this._calculateTimer) clearTimeout(this._calculateTimer);
