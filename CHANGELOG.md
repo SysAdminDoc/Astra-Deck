@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.78.0] - 2026-08-20
+
 ### Fixed
 
 - The section headings in the settings panel are translated. All 43 of them,
