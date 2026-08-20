@@ -1,4 +1,22 @@
-# Astra Deck — Hardening Audit (v3.14.0 → v4.46.0)
+# Astra Deck — Hardening Audit Archive (v3.14.0 → v4.46.0)
+
+> **This log is closed. It stopped being updated at v4.46.0 and describes a tree
+> that no longer exists.** Nothing here is a statement about current behaviour.
+>
+> Read it only as a record of how a past problem was found and closed. Two
+> things in particular have moved on:
+>
+> - Every "still open" or "candidates for the next pass" list below is spent.
+>   Some of that work shipped, some was reconsidered, and the rest is tracked in
+>   the live files. Do not treat an open item here as outstanding.
+> - The Pass 6 items and anything under a path starting `astra_downloader/`
+>   belong to the companion, which moved to its own repository
+>   ([SysAdminDoc/AstraDownloader](https://github.com/SysAdminDoc/AstraDownloader))
+>   in commit `a6bb685f`. Those paths do not resolve here any more.
+>
+> The live records are `CHANGELOG.md` for what shipped, `ROADMAP.md` for work
+> that is actionable now, `Roadmap_Blocked.md` for work waiting on something
+> external, and `SECURITY.md` for how to report a vulnerability.
 
 > Cumulative hardening log. H1–H19 covered v3.20.x audit passes (Passes 7–18).
 > H20 onward covers v3.23.0 (Pass 19). H25 covers v4.46.0 (extreme audit pass).

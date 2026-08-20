@@ -27,6 +27,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The security policy now says which versions are actually supported. It named
+  a floor of v4.46.x, which had drifted into meaning very little, and it treated
+  signed CRX and XPI packages as the normal case when releases ship ZIPs and an
+  unsigned XPI. Both now describe what really ships.
+- `HARDENING.md` is marked as the closed archive it became. It stopped being
+  updated at v4.46.0, thirty releases ago, and its "still open" lists were
+  reporting work that has since shipped, been reconsidered, or moved out with
+  the downloader companion. The header now points at the files that are current.
+
 - The like rate's wording (excellent, strong, steady, quiet) is now recorded in
   the code as a dated calibration. On 2026-08-24 YouTube starts counting a view
   from the first frame, with no minimum watch time, so view numbers go up and

@@ -4,9 +4,13 @@
 
 | Version | Support status |
 |---------|----------------|
-| v4.46.x and later on the v4 release line | Supported |
-| Older self-distributed CRX, XPI, and userscript snapshots | Best effort only; update to the latest release first unless the report is about upgrade, migration, or signing-key rotation |
+| The latest published GitHub release, and the `main` branch | Supported |
+| Earlier v4 releases | Best effort only; update to the latest release first unless the report is about upgrade, migration, or signing-key rotation |
+| Anything before v4 | Unsupported |
 | Archived snapshots under `archive/` or `docs/archive/` | Unsupported except as forensic evidence for a current vulnerability |
+
+Astra Deck is self-distributed and has no store listing yet, so "latest
+release" means the newest tag on this repository rather than a store version.
 
 ## Report a Vulnerability
 
@@ -47,7 +51,11 @@ documentation mistakes, and feature requests.
 
 ## High-Priority Classes
 
-- CRX, XPI, or userscript signing-key exposure or release-key custody failure.
+- Signing-key exposure or release-key custody failure. Releases currently ship
+  ZIP packages plus an unsigned XPI and the userscript, so this covers the CRX
+  maintainer key held for self-hosted builds and any key used for a future
+  store or AMO listing. Treat the unsigned XPI as unverified by design: report
+  its lack of a signature as a packaging gap only if a release claims otherwise.
 - Extension permission, host-permission, CSP, or fetch-proxy bypass.
 - Astra Downloader loopback authentication, Host-header, DNS-rebinding, or
   request-validation bypass.
