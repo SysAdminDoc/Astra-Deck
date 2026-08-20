@@ -204,13 +204,6 @@ Note (belongs to the 2026-08-18 audit section above) — extends the existing P3
 
 Evidence detail and sources live in `RESEARCH.md` (2026-08-20). Items already tracked above or in `Roadmap_Blocked.md` (distribution/publication now including Edge, AI-surface hiding, DeArrow licensing, PO-token auto-provision, supply-chain doc) are not duplicated. Companion-repo actions (yt-dlp bump to 2026.08.19, minimum-version enforcement ≥2026.06.09) belong to SysAdminDoc/AstraDownloader and are recorded in RESEARCH.md as pointers.
 
-- [ ] P2 — Adapt view-count-dependent features to the 2026-08-24 view-metric redefinition
-  Why: effective 2026-08-24 YouTube counts a public "view" at first frame with no minimum watch time (old metric survives only as Analytics "engaged views"), so counts inflate and the semantics under `preciseViewCounts`, `hideVideosLowViewFilter`, `hideVideosLowViewThreshold`, and `hideVideosLowSignalMinViews` silently shift — thresholds users tuned against the old metric will misfilter, and "precise" counts will read as inflated without explanation.
-  Evidence: RESEARCH.md §Security (TechCrunch 2026-08-17); schema keys in `extension/core/settings-schema.js`; `preciseViewCounts` at `extension/ytkit.js:17766`.
-  Touches: `extension/ytkit.js` (preciseViewCounts, view parsers), `extension/features/video-hider/` (low-view/low-signal filters), `extension/_locales/**` (tooltip/description copy)
-  Acceptance: view-parsing paths are verified against post-2026-08-24 live values; low-view filter descriptions state which metric they filter on; preciseViewCounts labels or tooltips acknowledge the metric change where the distinction is visible; no threshold is silently rescaled on users' behalf.
-  Complexity: M
-
 - [ ] P3 — Verify dev installs work with `--ignore-scripts` and record it as the install posture
   Why: the 2026-08-04 ChainDrop npm worm (~444 packages) spread via preinstall hooks; this repo verified clean (keyv 4.5.4, no cacheable, prod tree is crx3 alone), but the vector argues for refusing lifecycle scripts at install time as standing hygiene.
   Evidence: RESEARCH.md §Security (Datadog/Wiz ChainDrop writeups; `npm audit --omit=dev` = 0 as of 2026-08-20).

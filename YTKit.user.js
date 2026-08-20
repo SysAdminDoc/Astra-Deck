@@ -12485,20 +12485,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!isWatchPagePath()) return;
                 document.querySelector('.ytkit-lv-ratio')?.remove();
 
-                // Get view count
+                // Get view count. Stripping non-digits throws the magnitude
+                // away: "1.2M views" became 12, so a collapsed metadata row
+                // produced a ratio in the hundreds of thousands of percent.
+                // The shared parser understands compact and localized
+                // suffixes, and returns 0 only when there is really no count.
+                const parseCount = globalThis.YTKitCore?.parseCompactCount;
                 const viewEl = document.querySelector('#info-container yt-formatted-string.bold, ytd-watch-metadata #info yt-formatted-string, #info-text #count .view-count');
                 if (!viewEl) return;
-                const viewText = viewEl.textContent?.replace(/[^0-9]/g, '');
-                const views = parseInt(viewText);
+                const views = parseCount
+                    ? parseCount(viewEl.textContent, 0)
+                    : parseInt(String(viewEl.textContent || '').replace(/[^0-9]/g, ''));
                 if (!views || isNaN(views)) return;
 
                 // Get like count - check for RYD first, then native
                 const likeBtn = document.querySelector('like-button-view-model button, ytd-toggle-button-renderer:first-child button[aria-label*="like" i]:not([aria-label*="dislike" i]), segmented-like-dislike-button-view-model button:first-child');
                 if (!likeBtn) return;
                 const likeAria = likeBtn.getAttribute('aria-label') || '';
-                const likeMatch = likeAria.match(/[\d,]+/);
+                // Read the numeric token out of the sentence, then let the
+                // shared parser size it so a compact "1.2K" is not read as 1.
+                const likeMatch = likeAria.match(/[\d][\d., \s]*[kmb]?/i);
                 if (!likeMatch) return;
-                const likes = parseInt(likeMatch[0].replace(/,/g, ''));
+                const likes = parseCount
+                    ? parseCount(likeMatch[0], 0, { allowBare: true })
+                    : parseInt(likeMatch[0].replace(/,/g, ''));
                 if (!likes || isNaN(likes)) return;
 
                 const ratio = ((likes / views) * 100).toFixed(2);

@@ -26,6 +26,15 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 
 ## P2 — Research-driven, externally gated (2026-08-19)
 
+- [ ] P3 — Re-derive the like-rate tone bands against post-2026-08-24 view counts
+  Why: the bands (`>=8` excellent, `>=4` strong, `>=2` steady) were calibrated against YouTube's pre-2026-08-24 view metric. From that date a view is counted at the first frame with no minimum watch time, so every denominator inflates and real like rates fall as a group — the badge grades conservatively until the bands are re-derived. The code half of this shipped 2026-08-20: the bands are an explicit frozen constant carrying the calibration note, a test pins them so a guessed edit fails, and the badge reports the raw counts it divided so the verdict stays auditable.
+  Evidence: `extension/ytkit.js` `likeViewRatio._TONE_BANDS`; `tests/features/like-view-ratio.test.js`; RESEARCH.md 2026-08-20 §Security (TechCrunch 2026-08-17).
+  Touches: `extension/ytkit.js` (`likeViewRatio._TONE_BANDS`), `tests/features/like-view-ratio.test.js`
+  Acceptance: a sample of real watch pages gathered on or after 2026-08-24 establishes the new like-rate distribution; the bands are moved to match it in one commit that also updates the pinned test and the calibration comment; the same videos are spot-checked either side of the change so the shift is measured rather than assumed.
+  Complexity: S
+  Blocker: needs live post-2026-08-24 watch-page data, which does not exist yet (the metric changes four days after this item was written) and requires a browser session this repository's local-only passes deliberately exclude. Re-calibrating by guess is explicitly worse than grading conservatively, so the numbers must not move until the data exists.
+
+
 - [ ] P2 — Resolve DeArrow API licensing before any store submission
   Why: dearrow.ajay.app/payment and /free state the DeArrow API is free only for non-browser-extension use — extensions are expected to carry the $1 license-key flow. Astra's dearrow feature calls `GET /api/branding` with no license handling, which is fine for an unpublished GitHub build but a licensing posture problem the moment a store listing exists (and the store-safe profile ships the feature).
   Evidence: https://dearrow.ajay.app/payment ; https://dearrow.ajay.app/free ; `extension/features/dearrow/index.js:167`. Confidence: Likely — the exact wire contract (param/header, enforcement for read-only GETs) needs confirmation against https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow before implementing.
