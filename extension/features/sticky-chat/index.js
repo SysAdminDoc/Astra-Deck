@@ -224,7 +224,7 @@
                         padding: 5px 7px;
                         border: 1px solid var(--ytkit-overlay-border, rgba(255,255,255,0.2));
                         border-radius: 10px;
-                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        color: var(--ytkit-overlay-text, #e8ecf4);
                         background: var(--ytkit-overlay-bg-soft, rgba(23,27,35,0.96));
                         box-shadow: 0 8px 24px rgba(0,0,0,0.35);
                     }
@@ -239,10 +239,10 @@
                         cursor: move;
                         touch-action: none;
                     }
-                    .ytkit-floating-chat-controls input[type="range"] { width: 88px; min-height: 36px; accent-color: var(--ytkit-accent, #ffb454); }
+                    .ytkit-floating-chat-controls input[type="range"] { width: 88px; min-height: 36px; accent-color: var(--ytkit-accent, #a78bfa); }
                     .ytkit-floating-chat-drag:hover { background: var(--ytkit-overlay-hover, rgba(255,255,255,0.1)); }
                     .ytkit-floating-chat-drag:focus-visible,
-                    .ytkit-floating-chat-controls input:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 3px #7dd3fc); }
+                    .ytkit-floating-chat-controls input:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 2px rgba(8,11,16,0.98), 0 0 0 4px rgba(255,107,74,0.55)); }
                     @media (max-width: 520px) {
                         ytd-live-chat-frame.ytkit-floating-chat { width: calc(100vw - 24px) !important; height: min(65vh, 560px) !important; }
                     }

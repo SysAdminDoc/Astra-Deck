@@ -10503,8 +10503,13 @@ if (typeof globalThis !== "undefined") {
     position: fixed;
     z-index: 2147483646;
     pointer-events: none;
-    border: 2px solid var(--ytkit-accent, #3ea6ff);
-    background: rgba(62, 166, 255, 0.16);
+    /* The picker's own blue, not Astra's accent: the highlight border and its
+       wash are a matched pair, and the wash is not derived from the accent, so
+       following a user-chosen accent would leave a purple border on a blue
+       fill. The picker deliberately reads as part of YouTube's chrome — same
+       reasoning as --ytkit-surface and --ytkit-text above it in the palette. */
+    border: 2px solid var(--ytkit-picker-accent, #3ea6ff);
+    background: var(--ytkit-picker-accent-soft, rgba(62, 166, 255, 0.16));
     border-radius: 6px;
     transition: all 60ms linear;
 }
@@ -10523,7 +10528,7 @@ if (typeof globalThis !== "undefined") {
     border-radius: 10px;
     background: var(--ytkit-surface, #212121);
     color: var(--ytkit-text, #f1f1f1);
-    border: 1px solid var(--ytkit-border, rgba(255, 255, 255, 0.16));
+    border: 1px solid var(--ytkit-picker-border, rgba(255, 255, 255, 0.16));
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     font-size: 13px;
     line-height: 1.5;
@@ -10542,7 +10547,7 @@ if (typeof globalThis !== "undefined") {
     gap: 10px;
     align-items: flex-start;
     padding: 8px 0;
-    border-bottom: 1px solid var(--ytkit-border, rgba(255, 255, 255, 0.1));
+    border-bottom: 1px solid var(--ytkit-picker-divider, rgba(255, 255, 255, 0.1));
 }
 .ytkit-zap-rule__body { flex: 1 1 auto; min-width: 0; }
 .ytkit-zap-rule__selector {
@@ -24080,7 +24085,7 @@ if (typeof globalThis !== "undefined") {
                         padding: 5px 7px;
                         border: 1px solid var(--ytkit-overlay-border, rgba(255,255,255,0.2));
                         border-radius: 10px;
-                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        color: var(--ytkit-overlay-text, #e8ecf4);
                         background: var(--ytkit-overlay-bg-soft, rgba(23,27,35,0.96));
                         box-shadow: 0 8px 24px rgba(0,0,0,0.35);
                     }
@@ -24095,10 +24100,10 @@ if (typeof globalThis !== "undefined") {
                         cursor: move;
                         touch-action: none;
                     }
-                    .ytkit-floating-chat-controls input[type="range"] { width: 88px; min-height: 36px; accent-color: var(--ytkit-accent, #ffb454); }
+                    .ytkit-floating-chat-controls input[type="range"] { width: 88px; min-height: 36px; accent-color: var(--ytkit-accent, #a78bfa); }
                     .ytkit-floating-chat-drag:hover { background: var(--ytkit-overlay-hover, rgba(255,255,255,0.1)); }
                     .ytkit-floating-chat-drag:focus-visible,
-                    .ytkit-floating-chat-controls input:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 3px #7dd3fc); }
+                    .ytkit-floating-chat-controls input:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 2px rgba(8,11,16,0.98), 0 0 0 4px rgba(255,107,74,0.55)); }
                     @media (max-width: 520px) {
                         ytd-live-chat-frame.ytkit-floating-chat { width: calc(100vw - 24px) !important; height: min(65vh, 560px) !important; }
                     }
@@ -26890,7 +26895,7 @@ if (typeof globalThis !== "undefined") {
                         padding: 28px;
                         border: 1px solid var(--ytkit-overlay-border, rgba(255, 255, 255, 0.2));
                         border-radius: 20px;
-                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        color: var(--ytkit-overlay-text, #e8ecf4);
                         background: var(--ytkit-overlay-bg, #171b23);
                         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
                     }
@@ -26908,12 +26913,12 @@ if (typeof globalThis !== "undefined") {
                     }
                     .ytkit-blocked-watch-dialog > p {
                         margin: 12px 0 0;
-                        color: var(--ytkit-overlay-text-secondary, #c1c7d0);
+                        color: var(--ytkit-overlay-text-secondary, #a0acbf);
                         font: 400 15px/1.55 system-ui, sans-serif;
                     }
                     .ytkit-blocked-watch-channel {
                         overflow-wrap: anywhere;
-                        color: var(--ytkit-overlay-text, #f5f7fb) !important;
+                        color: var(--ytkit-overlay-text, #e8ecf4) !important;
                         font-weight: 650 !important;
                     }
                     .ytkit-blocked-watch-actions {
@@ -26929,7 +26934,7 @@ if (typeof globalThis !== "undefined") {
                         padding: 10px 16px;
                         border: 1px solid var(--ytkit-overlay-border, rgba(255, 255, 255, 0.2));
                         border-radius: 10px;
-                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        color: var(--ytkit-overlay-text, #e8ecf4);
                         background: var(--ytkit-overlay-raised, #242a35);
                         font: 650 14px/1.2 system-ui, sans-serif;
                         cursor: pointer;
@@ -26939,13 +26944,19 @@ if (typeof globalThis !== "undefined") {
                        that composites to about #3a3f49, marginally lighter
                        than the literal it replaces. */
                     .ytkit-blocked-watch-action:hover { background: var(--ytkit-overlay-hover, rgba(255, 255, 255, 0.1)); }
-                    .ytkit-blocked-watch-action:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 3px #7dd3fc); }
+                    .ytkit-blocked-watch-action:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 2px rgba(8,11,16,0.98), 0 0 0 4px rgba(255,107,74,0.55)); }
                     .ytkit-blocked-watch-action--allow-once {
                         border-color: transparent;
-                        color: var(--ytkit-accent-contrast, #111318);
-                        background: var(--ytkit-accent, #ffb454);
+                        color: var(--ytkit-accent-contrast, #14181f);
+                        background: var(--ytkit-accent, #a78bfa);
                     }
-                    .ytkit-blocked-watch-action--allow-once:hover { background: var(--ytkit-accent-hover, #ffc678); }
+                    /* --ytkit-accent-light, not --ytkit-accent-hover: the light
+                       variant is re-derived from the accent by every colour
+                       theme, so the button and its hover stay a matched pair.
+                       --ytkit-accent-hover was a fixed amber, which would have
+                       left an amber hover on a purple button the moment the
+                       palette started reaching this surface. */
+                    .ytkit-blocked-watch-action--allow-once:hover { background: var(--ytkit-accent-light, #c4b5fd); }
                     .ytkit-blocked-watch-action:disabled { cursor: wait; opacity: 0.65; }
                     @media (max-width: 520px) {
                         .ytkit-blocked-watch-overlay { padding: 16px; }
@@ -27763,7 +27774,7 @@ if (typeof globalThis !== "undefined") {
                     .ytkit-sub-group-dialog__input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#fff);font:13px Roboto,Arial,sans-serif;box-sizing:border-box;}
                     .ytkit-sub-group-dialog__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
                     .ytkit-sub-group-dialog__button{padding:6px 12px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#e5e7eb);cursor:pointer;font:600 12px/1 Roboto,Arial,sans-serif;}
-                    .ytkit-sub-group-dialog__button--primary{border-color:rgba(var(--ytkit-accent-rgb,124,58,237),0.5);background:var(--ytkit-accent,#7c3aed);color:var(--ytkit-accent-contrast,#fff);}
+                    .ytkit-sub-group-dialog__button--primary{border-color:rgba(var(--ytkit-accent-rgb,124,58,237),0.5);background:var(--ytkit-accent,#a78bfa);color:var(--ytkit-accent-contrast,#14181f);}
                     /* YouTube light theme: cards and dialog must not inherit dark-only text. */
                     html:not([dark]) .ytkit-sub-toolbar{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.04));border-color:rgba(0,0,0,0.1);}
                     html:not([dark]) .ytkit-sub-toolbar__label{color:var(--yt-spec-text-secondary,#606060);}
@@ -27795,7 +27806,7 @@ if (typeof globalThis !== "undefined") {
                     html:not([dark]) .ytkit-sub-health-error{background:rgba(220,38,38,0.08);border-color:rgba(185,28,28,0.28);color:#991b1b;}
                     html:not([dark]) .ytkit-sub-group-dialog{background:rgba(15,23,42,0.28);}
                     html:not([dark]) .ytkit-sub-group-dialog__input{background:#fff;border-color:rgba(15,23,42,0.2);color:var(--yt-spec-text-primary,#0f0f0f);}
-                    html:not([dark]) .ytkit-sub-group-dialog__button--primary{background:var(--ytkit-accent,#7c3aed);color:var(--ytkit-accent-contrast,#fff);}
+                    html:not([dark]) .ytkit-sub-group-dialog__button--primary{background:var(--ytkit-accent,#a78bfa);color:var(--ytkit-accent-contrast,#14181f);}
                     html:not([dark]) .ytkit-sub-toolbar select:focus-visible,html:not([dark]) .ytkit-sub-toolbar button:focus-visible,html:not([dark]) .ytkit-sub-group-chip:focus-visible,html:not([dark]) .ytkit-sub-digest-close:focus-visible,html:not([dark]) .ytkit-sub-digest-row button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(124,58,237,0.42);}
                 `, 'subscription-groups', true);
             },

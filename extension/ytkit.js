@@ -2407,7 +2407,7 @@ return response;
             border: 1px dashed rgba(255,255,255,0.18);
             background: rgba(8,11,16,0.28);
             color: rgba(255,255,255,0.38);
-            font-family: var(--ytkit-font, "Segoe UI", "SF Pro Text", "Helvetica Neue", Arial, sans-serif);
+            font-family: var(--ytkit-font, 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Avenir Next', 'Trebuchet MS', sans-serif);
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
@@ -2482,7 +2482,7 @@ return response;
                 radial-gradient(circle at top right, rgba(var(--ytkit-toast-rgb, 53,199,127),0.18), transparent 42%),
                 linear-gradient(180deg, rgba(18,24,34,0.98), rgba(8,11,16,0.98));
             color: #fff;
-            font-family: var(--ytkit-font, "Segoe UI", "SF Pro Text", "Helvetica Neue", Arial, sans-serif);
+            font-family: var(--ytkit-font, 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Avenir Next', 'Trebuchet MS', sans-serif);
             z-index: var(--ytkit-toast-z, 2147483646);
             box-shadow:
                 0 22px 48px rgba(0,0,0,0.38),
@@ -36642,7 +36642,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-group-dialog__input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#fff);font:13px Roboto,Arial,sans-serif;box-sizing:border-box;}
                     .ytkit-sub-group-dialog__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
                     .ytkit-sub-group-dialog__button{padding:6px 12px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));color:var(--yt-spec-text-primary,#e5e7eb);cursor:pointer;font:600 12px/1 Roboto,Arial,sans-serif;}
-                    .ytkit-sub-group-dialog__button--primary{border-color:rgba(var(--ytkit-accent-rgb,124,58,237),0.5);background:var(--ytkit-accent,#7c3aed);color:var(--ytkit-accent-contrast,#fff);}
+                    .ytkit-sub-group-dialog__button--primary{border-color:rgba(var(--ytkit-accent-rgb,124,58,237),0.5);background:var(--ytkit-accent,#a78bfa);color:var(--ytkit-accent-contrast,#14181f);}
                     /* YouTube light theme: cards and dialog must not inherit dark-only text. */
                     html:not([dark]) .ytkit-sub-toolbar{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.04));border-color:rgba(0,0,0,0.1);}
                     html:not([dark]) .ytkit-sub-toolbar__label{color:var(--yt-spec-text-secondary,#606060);}
@@ -36674,7 +36674,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:not([dark]) .ytkit-sub-health-error{background:rgba(220,38,38,0.08);border-color:rgba(185,28,28,0.28);color:#991b1b;}
                     html:not([dark]) .ytkit-sub-group-dialog{background:rgba(15,23,42,0.28);}
                     html:not([dark]) .ytkit-sub-group-dialog__input{background:#fff;border-color:rgba(15,23,42,0.2);color:var(--yt-spec-text-primary,#0f0f0f);}
-                    html:not([dark]) .ytkit-sub-group-dialog__button--primary{background:var(--ytkit-accent,#7c3aed);color:var(--ytkit-accent-contrast,#fff);}
+                    html:not([dark]) .ytkit-sub-group-dialog__button--primary{background:var(--ytkit-accent,#a78bfa);color:var(--ytkit-accent-contrast,#14181f);}
                     html:not([dark]) .ytkit-sub-toolbar select:focus-visible,html:not([dark]) .ytkit-sub-toolbar button:focus-visible,html:not([dark]) .ytkit-sub-group-chip:focus-visible,html:not([dark]) .ytkit-sub-digest-close:focus-visible,html:not([dark]) .ytkit-sub-digest-row button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog button:focus-visible,html:not([dark]) .ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(124,58,237,0.42);}
                 `, 'subscription-groups');
             },
@@ -46678,6 +46678,118 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     }
 
     //  SECTION 5: STYLES
+    // Astra's palette. Injected EAGERLY, unlike the panel stylesheet below.
+    //
+    // Until 2026-08-20 this block lived inside injectPanelStyles(), which runs
+    // only on the first settings-panel build. On a normal pageview none of the
+    // --ytkit-* tokens existed at all, so every feature surface referencing one
+    // painted the fallback literal written beside it instead. Two consequences,
+    // both observable: a user-chosen accent could not reach eleven surfaces
+    // that ask for --ytkit-accent, and opening the settings panel for the first
+    // time restyled unrelated parts of the page as the tokens sprang into
+    // existence. It is custom properties only, no rules, so parsing it on every
+    // pageview costs nothing measurable.
+    //
+    // Ordering note: the bootstrap injects --ytkit-accent again immediately
+    // after this, scoped `:root, html[dark]`. That is deliberate and it wins —
+    // the accent shipping today is that one, and changing it is a brand
+    // decision, not a refactor.
+    const PALETTE_CSS = `
+:root {
+    --ytkit-font: 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Avenir Next', 'Trebuchet MS', sans-serif;
+    --ytkit-bg-base: #0a0c10;
+    --ytkit-bg-elevated: #12161e;
+    --ytkit-bg-surface: #181d27;
+    --ytkit-bg-hover: #1f2634;
+    --ytkit-bg-active: #283042;
+    --ytkit-border: rgba(255,255,255,0.07);
+    --ytkit-border-subtle: rgba(255,255,255,0.04);
+    --ytkit-text-primary: #e8ecf4;
+    --ytkit-text-secondary: #a0acbf;
+    --ytkit-text-muted: #7e8ca3; /* 4.96:1 on --ytkit-bg-surface #181d27 (WCAG AA for the 10px help text) */
+    /* #a78bfa, not the #ff6b4a this said until 2026-08-20. The bootstrap
+       re-declares --ytkit-accent as #a78bfa scoped to :root and html[dark]
+       right after this sheet, so on a dark page that declaration wins on
+       specificity and on a light one it wins on order — the orange was never
+       reachable from anywhere. It only looked live because the palette itself
+       was not, and the value it stated disagreed with the fallback literal at
+       every call site. Keep in sync with the bootstrap declaration; changing
+       the accent is a brand decision, not a refactor.
+       Anything paired with the accent must be derived FROM it — use
+       --ytkit-accent-light for a hover state, never a second fixed hue, or the
+       pair comes apart under a user-chosen colour theme. */
+    --ytkit-accent: #a78bfa;
+    --ytkit-accent-soft: rgba(167,139,250,0.12);
+    /* Text that sits ON --ytkit-accent. Undefined until 2026-08-20, and the
+       call sites disagreed: two asked for dark, the subscription-group primary
+       button fell back to #fff. Against the real accent that is 2.82:1, below
+       the 4.5:1 AA floor for body text; this dark value is 6.32:1. */
+    --ytkit-accent-contrast: #14181f;
+    --ytkit-border-strong: rgba(255,255,255,0.2);
+    --ytkit-danger: #ff6b6b;
+    /* Page-embedded cards — the hidden-video note and the hidden-video
+       placeholder. These sit INSIDE YouTube's own layout on top of YouTube's
+       own background, so they have to follow YouTube's theme; that is what the
+       html:not([dark]) lane below is for. Until 2026-08-20 they reached for
+       --ytkit-surface-raised, a name nothing declared, so their light-lane
+       rules only ever worked by falling back to a literal — the surface was
+       hardwired and no palette or theme change could reach it. */
+    --ytkit-card-bg: rgba(255,255,255,0.04);
+    --ytkit-card-border: rgba(255,255,255,0.12);
+    --ytkit-card-text: #aeb6c3;
+    /* Astra's own overlays — the floating live chat and the blocked-watch
+       dialog. Unlike the cards above these paint their OWN opaque dark ground,
+       so they read correctly on either YouTube theme and deliberately have no
+       light lane. Giving them one would turn the ground light while the text
+       stayed near-white, which is the exact defect the light-theme gate
+       exists to catch. Kept separate from the panel tokens for the same
+       reason: the panel's may gain a light lane later, and these must not. */
+    --ytkit-overlay-bg: #171b23;
+    --ytkit-overlay-bg-soft: rgba(23,27,35,0.96);
+    --ytkit-overlay-raised: #242a35;
+    --ytkit-overlay-hover: rgba(255,255,255,0.1);
+    --ytkit-overlay-border: rgba(255,255,255,0.2);
+    --ytkit-overlay-text: #e8ecf4;
+    --ytkit-overlay-text-secondary: #a0acbf;
+    /* Was referenced by the settings-panel preview tooltip with no fallback
+       and defined nowhere, which makes the whole box-shadow declaration
+       invalid, so the tooltip rendered flat. */
+    --ytkit-shadow-md: 0 10px 28px rgba(0,0,0,0.35);
+    /* Deliberately YouTube's own chrome colours, not Astra's palette: the
+       element picker sits in the page and has to read as part of it. Kept as
+       named tokens so the two are not mistaken for --ytkit-bg-surface and
+       --ytkit-text-primary, which are Astra surfaces and differ on purpose. */
+    --ytkit-surface: #212121;
+    --ytkit-text: #f1f1f1;
+    --ytkit-picker-accent: #3ea6ff;
+    --ytkit-picker-accent-soft: rgba(62,166,255,0.16);
+    --ytkit-picker-border: rgba(255,255,255,0.16);
+    --ytkit-picker-divider: rgba(255,255,255,0.1);
+    /* Shared motion curves so every Astra Deck surface (popup, options,
+       in-page panel, toasts, download progress) eases on the same timing.
+       Overshoot spring is reserved for tactile controls like toggles. */
+    --ytkit-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ytkit-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ytkit-focus-ring: 0 0 0 2px rgba(8,11,16,0.98), 0 0 0 4px rgba(255,107,74,0.55);
+}
+
+/* The light lane of the palette itself. html:not([dark]) is (0,1,1) against
+   the (0,1,0) of :root, so these win without !important. Only the
+   page-embedded card family belongs here — see the comments above for why the
+   overlay and panel families stay dark on both themes. */
+html:not([dark]) {
+    --ytkit-card-bg: rgba(15,23,42,0.04);
+    --ytkit-card-border: rgba(15,23,42,0.12);
+    --ytkit-card-text: #5f6875;
+}
+`;
+
+    function injectPalette() {
+        if (injectPalette._done) return;
+        appendStyleSheet(PALETTE_CSS);
+        injectPalette._done = true;
+    }
+
     function injectPanelStyles() {
         // Injected lazily on first settings-panel build rather than at page
         // load: this (large) stylesheet only targets #ytkit-settings-panel
@@ -46744,80 +46856,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     .ytkit-sub-card{margin-left:10px;}
     .ytkit-feature-card.ytkit-has-preview::after{display:none;}
 }`);
+        injectPalette();
         appendStyleSheet(`
-:root {
-    --ytkit-font: 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Avenir Next', 'Trebuchet MS', sans-serif;
-    --ytkit-bg-base: #0a0c10;
-    --ytkit-bg-elevated: #12161e;
-    --ytkit-bg-surface: #181d27;
-    --ytkit-bg-hover: #1f2634;
-    --ytkit-bg-active: #283042;
-    --ytkit-border: rgba(255,255,255,0.07);
-    --ytkit-border-subtle: rgba(255,255,255,0.04);
-    --ytkit-text-primary: #e8ecf4;
-    --ytkit-text-secondary: #a0acbf;
-    --ytkit-text-muted: #7e8ca3; /* 4.96:1 on --ytkit-bg-surface #181d27 (WCAG AA for the 10px help text) */
-    --ytkit-accent: #ff6b4a;
-    --ytkit-accent-soft: rgba(255,107,74,0.12);
-    --ytkit-accent-hover: #ffc678;
-    /* Text that sits ON --ytkit-accent. Undefined until 2026-08-20, and the
-       call sites disagreed: two asked for dark, the subscription-group primary
-       button fell back to #fff. Against the real accent that is 2.82:1, below
-       the 4.5:1 AA floor for body text; this dark value is 6.32:1. */
-    --ytkit-accent-contrast: #14181f;
-    --ytkit-border-strong: rgba(255,255,255,0.2);
-    --ytkit-danger: #ff6b6b;
-    /* Page-embedded cards — the hidden-video note and the hidden-video
-       placeholder. These sit INSIDE YouTube's own layout on top of YouTube's
-       own background, so they have to follow YouTube's theme; that is what the
-       html:not([dark]) lane below is for. Until 2026-08-20 they reached for
-       --ytkit-surface-raised, a name nothing declared, so their light-lane
-       rules only ever worked by falling back to a literal — the surface was
-       hardwired and no palette or theme change could reach it. */
-    --ytkit-card-bg: rgba(255,255,255,0.04);
-    --ytkit-card-border: rgba(255,255,255,0.12);
-    --ytkit-card-text: #aeb6c3;
-    /* Astra's own overlays — the floating live chat and the blocked-watch
-       dialog. Unlike the cards above these paint their OWN opaque dark ground,
-       so they read correctly on either YouTube theme and deliberately have no
-       light lane. Giving them one would turn the ground light while the text
-       stayed near-white, which is the exact defect the light-theme gate
-       exists to catch. Kept separate from the panel tokens for the same
-       reason: the panel's may gain a light lane later, and these must not. */
-    --ytkit-overlay-bg: #171b23;
-    --ytkit-overlay-bg-soft: rgba(23,27,35,0.96);
-    --ytkit-overlay-raised: #242a35;
-    --ytkit-overlay-hover: rgba(255,255,255,0.1);
-    --ytkit-overlay-border: rgba(255,255,255,0.2);
-    --ytkit-overlay-text: #e8ecf4;
-    --ytkit-overlay-text-secondary: #a0acbf;
-    /* Was referenced by the settings-panel preview tooltip with no fallback
-       and defined nowhere, which makes the whole box-shadow declaration
-       invalid, so the tooltip rendered flat. */
-    --ytkit-shadow-md: 0 10px 28px rgba(0,0,0,0.35);
-    /* Deliberately YouTube's own chrome colours, not Astra's palette: the
-       element picker sits in the page and has to read as part of it. Kept as
-       named tokens so the two are not mistaken for --ytkit-bg-surface and
-       --ytkit-text-primary, which are Astra surfaces and differ on purpose. */
-    --ytkit-surface: #212121;
-    --ytkit-text: #f1f1f1;
-    /* Shared motion curves so every Astra Deck surface (popup, options,
-       in-page panel, toasts, download progress) eases on the same timing.
-       Overshoot spring is reserved for tactile controls like toggles. */
-    --ytkit-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --ytkit-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --ytkit-focus-ring: 0 0 0 2px rgba(8,11,16,0.98), 0 0 0 4px rgba(255,107,74,0.55);
-}
-
-/* The light lane of the palette itself. html:not([dark]) is (0,1,1) against
-   the (0,1,0) of :root, so these win without !important. Only the
-   page-embedded card family belongs here — see the comments above for why the
-   overlay and panel families stay dark on both themes. */
-html:not([dark]) {
-    --ytkit-card-bg: rgba(15,23,42,0.04);
-    --ytkit-card-border: rgba(15,23,42,0.12);
-    --ytkit-card-text: #5f6875;
-}
 
 body.ytkit-panel-open {
     overflow: hidden !important;
@@ -48238,6 +48278,10 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             addNavigateRule('_retiredCommentCleanup', () => cleanupRetiredCommentUi());
         }
         attachExtensionBridgeListeners();
+
+        // Before the live-chat branch below returns: the chat frame injects its
+        // own surfaces and needs the tokens as much as the main document does.
+        injectPalette();
 
         // Live chat iframe: only initialize chat-related features, skip full UI
         if (isLiveChatFrame()) {

@@ -2742,7 +2742,7 @@
                         padding: 28px;
                         border: 1px solid var(--ytkit-overlay-border, rgba(255, 255, 255, 0.2));
                         border-radius: 20px;
-                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        color: var(--ytkit-overlay-text, #e8ecf4);
                         background: var(--ytkit-overlay-bg, #171b23);
                         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
                     }
@@ -2760,12 +2760,12 @@
                     }
                     .ytkit-blocked-watch-dialog > p {
                         margin: 12px 0 0;
-                        color: var(--ytkit-overlay-text-secondary, #c1c7d0);
+                        color: var(--ytkit-overlay-text-secondary, #a0acbf);
                         font: 400 15px/1.55 system-ui, sans-serif;
                     }
                     .ytkit-blocked-watch-channel {
                         overflow-wrap: anywhere;
-                        color: var(--ytkit-overlay-text, #f5f7fb) !important;
+                        color: var(--ytkit-overlay-text, #e8ecf4) !important;
                         font-weight: 650 !important;
                     }
                     .ytkit-blocked-watch-actions {
@@ -2781,7 +2781,7 @@
                         padding: 10px 16px;
                         border: 1px solid var(--ytkit-overlay-border, rgba(255, 255, 255, 0.2));
                         border-radius: 10px;
-                        color: var(--ytkit-overlay-text, #f5f7fb);
+                        color: var(--ytkit-overlay-text, #e8ecf4);
                         background: var(--ytkit-overlay-raised, #242a35);
                         font: 650 14px/1.2 system-ui, sans-serif;
                         cursor: pointer;
@@ -2791,13 +2791,19 @@
                        that composites to about #3a3f49, marginally lighter
                        than the literal it replaces. */
                     .ytkit-blocked-watch-action:hover { background: var(--ytkit-overlay-hover, rgba(255, 255, 255, 0.1)); }
-                    .ytkit-blocked-watch-action:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 3px #7dd3fc); }
+                    .ytkit-blocked-watch-action:focus-visible { outline: none; box-shadow: var(--ytkit-focus-ring, 0 0 0 2px rgba(8,11,16,0.98), 0 0 0 4px rgba(255,107,74,0.55)); }
                     .ytkit-blocked-watch-action--allow-once {
                         border-color: transparent;
-                        color: var(--ytkit-accent-contrast, #111318);
-                        background: var(--ytkit-accent, #ffb454);
+                        color: var(--ytkit-accent-contrast, #14181f);
+                        background: var(--ytkit-accent, #a78bfa);
                     }
-                    .ytkit-blocked-watch-action--allow-once:hover { background: var(--ytkit-accent-hover, #ffc678); }
+                    /* --ytkit-accent-light, not --ytkit-accent-hover: the light
+                       variant is re-derived from the accent by every colour
+                       theme, so the button and its hover stay a matched pair.
+                       --ytkit-accent-hover was a fixed amber, which would have
+                       left an amber hover on a purple button the moment the
+                       palette started reaching this surface. */
+                    .ytkit-blocked-watch-action--allow-once:hover { background: var(--ytkit-accent-light, #c4b5fd); }
                     .ytkit-blocked-watch-action:disabled { cursor: wait; opacity: 0.65; }
                     @media (max-width: 520px) {
                         .ytkit-blocked-watch-overlay { padding: 16px; }

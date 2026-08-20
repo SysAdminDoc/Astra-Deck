@@ -49,8 +49,13 @@
     position: fixed;
     z-index: 2147483646;
     pointer-events: none;
-    border: 2px solid var(--ytkit-accent, #3ea6ff);
-    background: rgba(62, 166, 255, 0.16);
+    /* The picker's own blue, not Astra's accent: the highlight border and its
+       wash are a matched pair, and the wash is not derived from the accent, so
+       following a user-chosen accent would leave a purple border on a blue
+       fill. The picker deliberately reads as part of YouTube's chrome — same
+       reasoning as --ytkit-surface and --ytkit-text above it in the palette. */
+    border: 2px solid var(--ytkit-picker-accent, #3ea6ff);
+    background: var(--ytkit-picker-accent-soft, rgba(62, 166, 255, 0.16));
     border-radius: 6px;
     transition: all 60ms linear;
 }
@@ -69,7 +74,7 @@
     border-radius: 10px;
     background: var(--ytkit-surface, #212121);
     color: var(--ytkit-text, #f1f1f1);
-    border: 1px solid var(--ytkit-border, rgba(255, 255, 255, 0.16));
+    border: 1px solid var(--ytkit-picker-border, rgba(255, 255, 255, 0.16));
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     font-size: 13px;
     line-height: 1.5;
@@ -88,7 +93,7 @@
     gap: 10px;
     align-items: flex-start;
     padding: 8px 0;
-    border-bottom: 1px solid var(--ytkit-border, rgba(255, 255, 255, 0.1));
+    border-bottom: 1px solid var(--ytkit-picker-divider, rgba(255, 255, 255, 0.1));
 }
 .ytkit-zap-rule__body { flex: 1 1 auto; min-width: 0; }
 .ytkit-zap-rule__selector {
