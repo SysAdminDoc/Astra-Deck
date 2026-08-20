@@ -39,7 +39,6 @@ const RUNTIME_SET = new Set([
 // disagree about the fallback, so each needs a per-site decision before it can
 // be defined. Tracked in ROADMAP.md; this list must only ever shrink.
 const KNOWN_DIVERGENT = new Set([
-    '--ytkit-accent-contrast',
     '--ytkit-surface-elevated',
     '--ytkit-surface-hover',
     '--ytkit-surface-raised'
@@ -128,4 +127,48 @@ test('the divergent-token list only shrinks', () => {
         if (!referenced.has(name) || defined.has(name)) continue;
         assert.ok(stillDivergent.includes(name), `${name} should still be tracked`);
     }
+});
+
+test('text on the accent surface clears the WCAG AA floor on every built-in accent', () => {
+    // --ytkit-accent-contrast was undefined and the subscription-group primary
+    // dialog button fell back to #fff, which against the shipped accent is
+    // 2.82:1 — below the 4.5:1 AA floor for body text. Two other call sites
+    // had already chosen a dark value; defining the token adopts that.
+    //
+    // The accent is themeable, so one fixed contrast colour has to hold across
+    // every accent the product itself declares. A user-chosen accent can still
+    // defeat it, which is why the check runs over the built-in set rather than
+    // claiming a guarantee it cannot make.
+    const src = fs.readFileSync(path.join(ROOT, 'extension', 'ytkit.js'), 'utf8');
+
+    const luminance = (hex) => {
+        const channels = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+            .map(c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const ratio = (a, b) => {
+        const [la, lb] = [luminance(a), luminance(b)];
+        return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+    };
+
+    const contrast = src.match(/--ytkit-accent-contrast:\s*(#[0-9a-fA-F]{6})\s*;/);
+    assert.ok(contrast, '--ytkit-accent-contrast must be defined as a hex in the palette');
+
+    const accents = [...src.matchAll(/--ytkit-accent:\s*(#[0-9a-fA-F]{6})\s*(?:!important\s*)?;/g)]
+        .map(m => m[1].toLowerCase());
+    const unique = [...new Set(accents)];
+    assert.ok(unique.length >= 2,
+        `expected the built-in accent set, found ${unique.length}`);
+
+    const failures = unique
+        .map(accent => ({ accent, value: ratio(accent, contrast[1]) }))
+        .filter(entry => entry.value < 4.5);
+
+    assert.deepEqual(failures.map(f => `${f.accent} ${f.value.toFixed(2)}:1`), [],
+        `${contrast[1]} must clear 4.5:1 on every built-in accent`);
+
+    // Guards the premise: if white ever cleared AA on the shipped accent, the
+    // original #fff fallback would not have been a defect at all.
+    assert.ok(ratio('#ff6b4a', '#ffffff') < 4.5,
+        'white on the shipped accent should still be the failing case this fixed');
 });

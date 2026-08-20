@@ -46756,6 +46756,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     --ytkit-accent: #ff6b4a;
     --ytkit-accent-soft: rgba(255,107,74,0.12);
     --ytkit-accent-hover: #ffc678;
+    /* Text that sits ON --ytkit-accent. Undefined until 2026-08-20, and the
+       call sites disagreed: two asked for dark, the subscription-group primary
+       button fell back to #fff. Against the real accent that is 2.82:1, below
+       the 4.5:1 AA floor for body text; this dark value is 6.32:1. */
+    --ytkit-accent-contrast: #14181f;
     --ytkit-border-strong: rgba(255,255,255,0.2);
     --ytkit-danger: #ff6b6b;
     /* Was referenced by the settings-panel preview tooltip with no fallback
