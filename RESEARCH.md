@@ -1,104 +1,123 @@
 # Research — Astra Deck
-Date: 2026-08-19 — replaces all prior research.
+Date: 2026-08-20 — replaces all prior research.
 
 ## Executive Summary
 
-**Verified.** Astra Deck v4.69.0 is a local-first desktop YouTube enhancement system: an MV3 Chrome/Firefox extension (474 settings, 290 feature IDs, 105 runtime modules), a generated Tampermonkey/Violentmonkey userscript, and an optional local Astra Downloader companion. Its strongest current shape is engineering depth the field cannot match — 1,859 tests, 28 verification gates, selector fixtures, feature-health/attribution telemetry that stays on-device, and a drained P0–P2 roadmap — while its weakest is distribution: no store listing, no signed XPI, no Greasy Fork record, and a release pipeline whose channels point ten versions behind the tree. The 2026-08-19 external pass found the competitive field largely **frozen** (SponsorBlock, DeArrow, RYD, BlockTube, Unhook all unchanged since mid-July or long before) at exactly the moment the Chrome MV2 purge (2026-08-31, uBO delisted) will push displaced users toward YouTube-specific MV3 tools. The highest-value directions, in order: (1) ship the wave-timed distribution work already staged in Roadmap_Blocked.md; (2) hide the new AI surfaces (Ask-YouTube chatbot, search AI carousels — rolled to all US users 2026-08-12 with no opt-out, and no competitor ships toggles yet); (3) finish the anti-translation matrix (auto-dub defeat is the hottest demand category of 2026 with the weakest supply); (4) resolve DeArrow API licensing before any store submission; (5) build the YouTube-semantic element zapper — the leapfrog feature the whole field has conspicuously failed to ship, for which Astra's hide-attribution and surface-taxonomy foundations are already built.
+**Verified.** Astra Deck v4.76.0 is a local-first desktop YouTube enhancement system: an MV3 Chrome/Firefox extension (476 settings across 18 categories, 291 feature IDs, 110 runtime modules), a generated Tampermonkey/Violentmonkey userscript, and the separate Astra Downloader companion. Since the 2026-08-19 pass, six releases (v4.71–v4.76) shipped in one day: the element zapper (previously listed here as the field's missing leapfrog — now shipped), seven monolith inline-fallback peels (-13% ytkit.js), a download-popup correctness wave, an AI-credential spend cap, and gate hardening. The competitive field remains frozen (SponsorBlock/DeArrow quiet since July, RYD since May, uBO 1.73.1 still beta) while the Chrome MV2 purge lands 2026-08-31 and Edge follows the same month — the distribution items staged in Roadmap_Blocked.md are the highest-value work and are now doubly time-sensitive. Highest-value directions, in order: (1) ship the blocked distribution work before the 2026-09-01 adoption window (now including Edge); (2) adapt view-count-dependent features before YouTube's 2026-08-24 view-metric redefinition; (3) hide the new AI surfaces (blocked on a live DOM capture) and group the already-shipped AI-content filters into one discoverable surface; (4) local transcript Q&A — the free, local answer to YouTube Premium's flagship 2026 AI features; (5) selector build-version keying + startup canary so drift degrades loudly instead of silently; (6) finish the last three monolith fallback peels (floating-logo, video-hider, subscription-groups).
 
 ## Product Map
 
-- **Core workflows:** transform YouTube watch/feed/player/chat surfaces; filter content pre-render (feed prefilter) and post-render (video-hider with fail-open + hide attribution); enrich via SponsorBlock, DeArrow, RYD, heatmap, thumbnails, transcripts; research via notes, bookmarks, AI summaries (BYO key / Chrome built-in / Ollama), transcript IndexedDB search; manage 474 settings across popup/sidepanel/sidebar/in-page panel with profiles, schedules (focus hours), import/export, undo; hand explicit downloads to the local companion.
-- **Personas:** privacy-conscious local-first users; power users wanting granular playback/layout/filtering; researchers needing transcript search and exports; accessibility/focus users; Firefox users on the userscript path; self-hosters on companion-capable profiles.
-- **Platforms:** Chrome/Edge/Brave MV3 (Chrome 120+), Firefox MV3 (142+, unsigned XPI today), desktop userscript managers. Profiles: `store-safe`, `chromium-store` (download-free), `github-full`. Desktop only; mobile and YouTube Studio explicitly excluded.
-- **Data flows:** MAIN-world bridges (player, audio graph, JSON.parse feed prefilter) ↔ ISOLATED runtime via `data-ytkit-*` attributes; service worker owns allowlisted cross-origin fetches, optional permissions, cookies, native messaging; storage split across `chrome.storage.local/session/sync`, extension IndexedDB, page-origin transcript IndexedDB; no Astra server, no telemetry.
+- **Core workflows:** transform YouTube watch/feed/player/chat surfaces; filter content pre-render (feed prefilter) and post-render (video-hider with fail-open + hide attribution, element zapper since v4.71.0); enrich via SponsorBlock, DeArrow, RYD, heatmap, thumbnails, transcripts; research via notes, bookmarks, AI summaries (BYO key / Chrome built-in / Ollama), transcript IndexedDB search; manage settings across popup/sidepanel/sidebar/in-page panel with profiles, presets (Focus/PowerUser/Privacy/Researcher), schedules, import/export, undo; hand explicit downloads to the local companion.
+- **Personas:** privacy-conscious local-first users; power users; researchers (transcript search/export); accessibility/focus users; Firefox users on the userscript path; self-hosters on companion-capable profiles.
+- **Platforms:** Chrome/Edge/Brave MV3 (Chrome 120+), Firefox MV3 (142+, unsigned XPI today), desktop userscript managers. Profiles: `store-safe`, `chromium-store` (download-free), `github-full`. Desktop only.
+- **Data flows:** MAIN-world bridges ↔ ISOLATED runtime via `data-ytkit-*` attributes; service worker owns allowlisted cross-origin fetches, optional permissions, cookies, native messaging; storage split across `chrome.storage.local/session/sync`, extension IndexedDB, page-origin transcript IndexedDB; no Astra server, no telemetry.
 
 ## Competitive Landscape
 
-Field state verified 2026-08-19 (delta vs the 2026-08-15 baseline in the vault note "YouTube Ad Blocking Ecosystem 2026-08-14"):
+### OSS field (delta vs 2026-08-19; fast movers re-verified 2026-08-20)
 
-- **SponsorBlock 6.1.7 / DeArrow 2.3.10** (both 2026-07-13, no release since; maintenance mode) — learn: their most-wanted unbuilt feature is crowdsourced sponsored-text hiding in descriptions/comments (SponsorBlock #649, 40 reactions, assigned but unshipped); DeArrow's top complaint is performance (#423 Firefox slowdown, #92 disable-on-playlists, active 2026-08-16) — per-surface perf scoping is the winning answer. Avoid: single-backend dependence; AMO 1-star reviews show submission 403s and silently lost user work — never lose local data to a remote failure.
-- **DeArrow licensing (new finding, Likely):** dearrow.ajay.app/payment and /free state the API is free only for **non-browser-extension** use; extensions are expected to carry the $1 license-key flow. Astra consumes `GET /api/branding` from an extension without any license handling — resolve before store publication (roadmap item added).
-- **Return YouTube Dislike** — still frozen at v4.0.4 (2026-05-02); breakage reports (#1274, #1293) accumulate unanswered. Astra's own RYD integration that tracks DOM changes is now a differentiator; the confidence-signal roadmap item stands. API limits confirmed current: 100 req/min, 10k/day — cache aggressively, never per-thumbnail.
-- **ImprovedTube (code-charity/youtube)** — the only living Swiss-army competitor: release v4.2027 (2026-05-30) but actively merging (Volume Boost player button PR #4178 2026-08-12; auto-dubbed-audio-track fixes #4179 2026-08-05). Learn: auto-dub defeat is their hottest merged work; volume-boost-as-player-button UX beats settings-page toggles. Avoid: their recurring idle-CPU complaints — Astra's steady-state budget gate is the moat.
-- **Enhancer for YouTube** — Chrome 3.0.19 (2026-07-15), Firefox 2.0.136 restored 2026-08-04 (a secondary source claiming it is "completely broken for Firefox" is contradicted by the AMO versions page — primary wins). Coasting, maintenance-only. Its earlier Firefox absence created the refugee pool the blocked migration-doc item targets.
-- **BlockTube** (abandoned, 2026-02-07), **Unhook** (1.6.9, 2026-03-22, community "Unhook NG" fork signals stagnation), **yt-anti-translate** (stagnant since April despite owning the hottest demand), **FilterTube 3.3.5** (active; family/parental angle: protected profiles, time limits — but still no element picker).
-- **uBlock Origin 1.73.0** + betas 1.73.1b0–b4 (2026-08-07..13): new `content(...)` procedural operator matches inside `<template>` tags — YouTube increasingly renders from templates; Astra's drift-shape item gains a fixture requirement. **2026-08-31: uBO leaves CWS with the MV2 purge** (HN 1,746 pts); Firefox is the last full-uBO browser; uBO publicly stopped chasing Facebook ads (2026-08-12, HN 724 pts) — the community reads capacity limits, raising demand for dedicated YouTube tools. This is the adoption window the blocked distribution items should target.
-- **New/trending 2026:** YouTubeTweak (xlch88, pushed 2026-08-12) — nearest new suite; Control Panel for YouTube (insin) — mobile-browser wedge, out of Astra's contract; TubeSize — per-quality file-size transparency (Astra's download popup already probes sizes); thumbnail-rating-bar (elliotwaite, active again 2026-08-11) — RYD-powered ratio bars, rate-budget-hostile to a frozen upstream; ZeroDelay — live-latency nudging.
-- **Greasy Fork top-installs profile:** dominated by downloaders, an ad-remover, hotkey tools (out of contract), **YouTube CPU Tamer** (57k installs — energy demand is real), and age-restriction bypass (rejected, see below). Alchemy (TimMacy, v11.11 2026-08-08) ships transcript-export-for-LLM workflows — a small, natural addition to Astra's research persona.
-- **Players (FreeTube 0.25.2, Grayjay):** both are consumed by bot-protection plumbing (poToken scraping, SABR support) — evidence that the extractor path keeps getting more expensive, validating Astra's browser-context + local-companion architecture.
+- **SponsorBlock / DeArrow** — still quiet (SB last commits 2026-07-26, DeArrow 2026-07-13; no August activity). Standing lessons hold: per-surface perf scoping answers DeArrow's top complaint (#92/#423); never lose local data to a remote failure (AMO 403 reviews). DeArrow API licensing question unchanged (blocked item).
+- **Return YouTube Dislike** — frozen at v4.0.4 (2026-05-02); Astra's maintained integration is a differentiator; confidence-signal item stands. Separately, the 2025 "RYD injecting ads" incident (HN id 45696329) is still the active trust narrative around YouTube extensions — it strengthens the blocked supply-chain-transparency doc item: "no telemetry, no ad injection, reproducible builds" is the pledge users now audit for.
+- **ImprovedTube** — still the only living Swiss-army competitor: 2026-08-12 merges shipped volume boost (Astra parity: `volumeBoost` exists) and Shorts container refinements; their 2026-07-22 playlist-quick-delete breakage is a canary for playlist-endpoint drift.
+- **uBlock Origin** — 1.73.1 (template-tag `content()` operator) still beta as of 2026-08-20; stable is 1.73.0. MV2 purge 2026-08-31; **Edge announced the same lockout 2026-08-08 (Verge, 193-pt HN thread)** — the displaced-user wave now covers both stores, making the blocked Edge/CWS submissions time-sensitive together.
+- **yt-dlp 2026.08.19 stable is out** (new `visionos` player client, `web_embedded` fallbacks) — new clients usually mean old ones started failing; the companion repo (SysAdminDoc/AstraDownloader) should bump promptly. SABR PR #13515 remains open but actively maintained — plausible within months; do not build against it yet.
+- **Others unchanged:** BlockTube (abandoned), Unhook (stale), yt-anti-translate (stagnant), FilterTube (active, no zapper), YouTubeTweak, Control Panel for YouTube (mobile wedge, out of contract), thumbnail-rating-bar, TubeSize, FreeTube/Grayjay (bot-protection plumbing validates the browser-context + local-companion architecture).
+- **New from awesome-list/topic harvest:** remove-youtube-suggestions (~576★) — distraction-removal-as-identity retains users; Astra's `presetFocus` already answers this, worth store-listing prominence. youtube-ai-extension (~669★, watch-page chat panel over the transcript via OpenAI) — validates the transcript-Q&A direction and shows the UX shape. Simple Sponsor Skipper — SB API is frontend-agnostic (no action needed). YouTube Classic userscripts — "revert the redesign" demand; Astra's `classicPlayerChrome`/`classicLayoutProfile` already ship this; again a positioning asset, not a gap.
+
+### Commercial / closed-source (new class this pass)
+
+- **PocketTube** ($3.99/mo premium): paywalls nested groups, auto-tags, deck view, feed sorting, unlimited mark-as-watched, community-posts tab. **Astra already ships free:** subgroups (`subscription-groups` since v4.74 rename/delete wave), mark-as-watched (`markWatchedVideos`), group management. Remaining genuine gaps: per-group feed sorting and a deck/board view. PocketTube's AMO reviews show paywall resentment — Astra's free coverage is the clearest "why switch" pitch for store listings.
+- **Magic Actions for YouTube:** feature subset of Astra (AutoHD, wheel volume, cinema mode, snapshot — Astra: `videoScreenshot`); its nag-driven upsell popups destroyed its reputation. Negative lesson only: never inject upsell UI.
+- **Turn Off the Lights:** free/donation; signature ambient-glow feature — Astra parity exists (`cinemaAmbientGlow`). Transferable idea: a separate beta listing as a volunteer channel for selector-drift fixes.
+- **YouTube Premium 2026:** differentiates on AI now — "Jump Ahead" (≈ SB highlight jump, covered), "Ask YouTube" conversational Q&A (Premium-gated, rolling out). A local BYO-key/Chrome-Prompt-API transcript Q&A matches Google's flagship paid feature for free — the strongest remaining leapfrog now that the zapper shipped. Sleep timer (Astra: `sleepTimer` exists) and background play (mobile, out of contract) are already answered.
+- **Paid sponsor-skip market: does not exist** on desktop (only a $2.99 Safari port of SB) — nothing to copy; bundling SB+DeArrow+RYD in one install remains the differentiator.
+
+### Adjacent-domain architecture lessons (new class this pass)
+
+- **FrankerFaceZ:** per-context settings profiles with priority-ordered overrides — Astra already has per-channel speed/intro-outro and `sbPerChannelProfiles`; generalizing per-channel overrides to DeArrow/RYD is the transferable increment. Their never-shipped, long-requested shareable-preset gallery (FFZ #326) is demand evidence for Astra's existing export/import + presets.
+- **7TV:** evaluate-only-what's-in-view (IntersectionObserver) for per-card work; per-origin site-script folders; config mirrored across contexts by a thin worker. Astra's steady-state gate already polices the cost; the pattern is a fallback if a future filter feature regresses it.
+- **Dark Reader:** the measured ceiling of runtime CSS rewriting (312 MB / 14% CPU, multi-second render delays) — Astra's static-stylesheet-first theming is correct; never adopt per-rule runtime rewriting.
+- **Stylus/Violentmonkey:** `@updateURL`/`@downloadURL` metadata is the whole userscript update story — Astra's YTKit.user.js already carries both pointed at raw.githubusercontent (verified), which also sidesteps Violentmonkey's known GitHub-release-asset update bug (#1673). Correct as-is.
+- **Vencord vs BetterDiscord:** in-tree centrally-reviewed features (Vencord, thriving) vs third-party plugin marketplace (BetterDiscord, chronic breakage) — reinforces the standing plugin-marketplace rejection; filter-list *data* remains the right extensibility surface.
 
 ## Security, Privacy, and Reliability
 
-- **Dependency stack: clean (Verified via registry + GHSA, 2026-08-19).** eslint ^10.6.0 (10.8.1 in range), web-ext 10.6.0 current, ws 8.21.2 clears both 2026 advisories, crx3 2.0.0 clean. All three overrides are load-bearing and exactly the patched lines: adm-zip ^0.6.0 (GHSA-xcpc-8h2w-3j85, patched 0.6.0), brace-expansion ^5.0.9 (GHSA-rgw5-rvv9-x895 2026-08-03, patched 5.0.9), shell-quote ^1.10.0 (GHSA-395f-4hp3-45gv + June critical, patched ≤1.10.0). Keep all three. The image-size dev-only exception remains blocked upstream (Roadmap_Blocked P1).
-- **Node 22 goes Maintenance in October 2026** (EOL 2027-04-30); CVE-2026-21717 fixed in 22.22.2 — build machine should be ≥22.22.2 now, and a Node 24 verification pass belongs on the roadmap before October.
-- **Companion-repo pointer:** yt-dlp 2026.07.04 fixed CVE-2026-55404 (command injection via `--write-link`); SysAdminDoc/AstraDownloader should confirm its pinned yt-dlp is ≥2026.07.04. SABR downloader PR #13515 remains unmerged — stable yt-dlp still routes around SABR via non-web clients + PO tokens, so the companion handoff path holds.
-- **2026 extension-ecosystem attack patterns** (defensive posture, no exposure found): 108-extension credential-theft campaign; OAuth phishing of CWS developer accounts leading to trojaned updates (Cyberhaven pattern); ownership-transfer permission creep. Astra's mitigations are structural — local build, no CI publish tokens, no remote code — plus operator hygiene: 2FA on store accounts, treat "CWS policy violation" emails as phishing. Strengthens the blocked supply-chain-transparency doc item.
-- **CWS policy (effective 2026-08-01) explicitly prohibits extensions "designed to circumvent safety guardrails or usage restrictions on AI-powered services."** Astra's BYO-key AI summary is compliant, but store listing copy must never frame it as bypassing provider limits.
-- **Compliance-dialog hazard (account safety):** YouTube's AI age-verification interstitials are compliance dialogs; auto-dismissing them has account consequences. Astra ships no generic dialog auto-dismisser (verified — PageControl dismissal is user-initiated), but `_confirmUnsubscribeDialog`'s first-match `[role="button"]` selector is exactly the shape that could someday click one; a shared never-click denylist is cheap insurance (roadmap item added).
-- **Anti-adblock ladder is now stage-documented:** repeated ads → throttling/5s injected delays → autoplay stops → videos refuse to load; Jan 2026 data shows 11% deterred, 22% more motivated. Blame lands on the extension (the ABP 5.17 slowdown incident). A stage-aware diagnostic with a one-click session pause converts a trust-breaker into a trust-builder (roadmap item added).
-- **Upstream APIs stable:** SponsorBlock server (status page green through 2026-08-18, k-anonymity endpoint unchanged) and RYD (documented limits stand). No 2026 deprecations found for either.
+- **ChainDrop npm worm (2026-08-04, ~444 packages incl. keyv 6.0.0 / cacheable): no exposure (Verified 2026-08-20).** package-lock.json carries keyv **4.5.4** only, no cacheable. Prod dep tree is one package (crx3). `npm audit --omit=dev`: **0 vulnerabilities**; full audit: 3 high, all the known dev-only image-size chain via web-ext→addons-linter (blocked upstream, tracked). The worm's preinstall-hook vector still argues for an `--ignore-scripts` install posture (roadmap item added).
+- **brace-expansion 2026 CVE cluster** (CVE-2026-13149/-14257/-33750): already neutralized by the existing `brace-expansion ^5.0.9` override. adm-zip and shell-quote overrides likewise remain load-bearing — keep all three.
+- **Node.js July security release (2026-07-29)** patched 22.x/24.x (TLS session-reuse hostname bypass follow-up, dns.resolveAny DoS) — build machine should be on the patched 22.x line; the existing Node-24 verification item covers the migration.
+- **Companion-repo pointers (SysAdminDoc/AstraDownloader):** yt-dlp advisory chain through 2026 (CVE-2026-26331 netrc-cmd, CVE-2026-50574 aria2c file-write fixed 2026.06.09, CVE-2026-55404 --write-link) argues the companion enforce a minimum yt-dlp ≥2026.06.09 and never pass those flags from extension-controllable input; bump to 2026.08.19 for the new player clients. Community signal says PO-token provisioning is the single biggest "wish it just worked" in downloads — the blocked auto-provision item is well-aimed.
+- **CWS policy effective 2026-08-01** tightened limited-use ("data collected must be strictly necessary to the single disclosed purpose") on top of the AI-guardrail-circumvention prohibition — audit `docs/privacy-policy.md` and store copy against it during the blocked CWS submission (noted there; no separate item).
+- **View-count redefinition effective 2026-08-24:** views counted at first frame, no minimum watch time; the old metric survives as "engaged views" in Analytics. This shifts semantics under `preciseViewCounts`, `hideVideosLowViewFilter`, `hideVideosLowSignalMinViews`, and any parser reading view strings (roadmap item added).
+- **Anti-adblock ladder, compliance-dialog hazard, extension-ecosystem attack patterns:** unchanged from 2026-08-19; the never-auto-click denylist shipped (`1418b9ae`), the stage-aware diagnostics item stands. No new named extension-attack campaign in August 2026.
+- **Upstream APIs stable:** SponsorBlock server and RYD limits unchanged; no new deprecations found.
 
 ## Architecture Assessment
 
-- **Inline debt is effectively zero (Verified):** no TODO/FIXME/HACK anywhere in extension/, scripts/, tests/, or the build scripts — debt is routed into ROADMAP.md by convention (catch-reason lint rule, gate-enforced). The only genuine limitation markers are the SABR user-facing string (download-ui/index.js:2532, honest) and one loud-failure shim (ytkit.js:1924).
-- **Fix-the-fix chains from the last 200 commits identify the real friction:** settings-panel CSS took five corrective passes in four days (2026-08-10..14) — correlating with the documented "do not reason about panel CSS by reading it" wart and the tracked three-token-systems item; startup perf took 5 commits over 12 days to settle after the deferral optimization. The panel-CSS consolidation item is therefore under-prioritized relative to its churn cost.
-- **Monolith/peel duplication is visible in copied code** (identical comment at ytkit.js:36424 and features/digital-wellbeing/index.js:66); the blocked "one canonical implementation per extracted feature" item and the userscript-factory-wiring item remain the structural fixes. The ~3.1 MB monolith's compile time (65–87 ms) is the last large startup cost (tracked).
-- **Foundations now exist for the zapper:** hide-attribution markers with per-navigation counts, surface taxonomy (35 surfaces), fail-open guards, and feed-prefilter's refusal set (player response, playlist renderers) are exactly the substrate a YouTube-semantic element picker needs — the L-sized leapfrog is cheaper than it was in any prior pass.
-- **Test/doc gaps are already fully itemized in ROADMAP.md** (render-assertion backfill, vacuous-pin windows, gate scope floors, HARDENING.md staleness) — this pass found no new structural gap beyond those.
+- **Monolith peel: 7 of 10 full inline fallbacks removed in v4.72–4.73** (-416 KB, ytkit.js now 2,796,252 bytes; 14 `}) || {` fallbacks remain, 11 of them already minimal stubs). The three full ones left — `floatingLogoOnWatch` (ytkit.js:9905), `hideVideosFromHome` (:13434), `subscriptionGroups` (:36454) — are each their own session per the tracked item; the video-notes peel proved the copies hide real bugs (light-theme rule existed only in dead code).
+- **Userscript duplication unchanged (Verified 2026-08-20):** YTKit.user.js still runs hand-maintained RYD/SB/DeArrow copies on non-schema keys; zero call sites for the bundled factories (25 SB refs, 26 DeArrow refs hand-maintained). The tracked wiring item remains the structural fix, with twelve documented behavioral divergences as its case.
+- **Inline debt still zero:** no real TODO/FIXME/HACK anywhere in extension/, scripts/, tests/ (only `\uXXXX` literals in check-i18n.js error text).
+- **Selector resilience gap:** `core/selector-health.js` has telemetry but no startup canary and no keying to YouTube's build (`INNERTUBE_CLIENT_VERSION` is read only by transcript-service.js). Version-keyed health records plus a canary that fails loud with a user-visible "YouTube changed, features X/Y degraded" notice is the cheap next increment on the tracked drift-shape item (note added there).
+- **HARDENING.md still v4.46-era** (30 versions behind; item stands). Stale roadmap evidence corrected this pass: i18n grandfathered literals now **934** across 2 files (was 928); light-theme baseline now **254 accepted / 136 covered** (was 253/121) — notes added inline.
+- **MV3 service-worker lifetime:** repo already ships `smoke:mv3-lifecycle` and stores state outside worker memory; the 2025 practitioner consensus (alarms + storage, no keepalive hacks) matches current practice. No action.
+- **Perf measurement:** the in-house interleaved A/B + CDP `Performance.getMetrics` method is stronger than the DebugBear Lighthouse-diff approach the literature offers; the arXiv 2404.06827 finding (parse cost of even-inactive extensions) is already answered by `FEATURE_SETTINGS` gating and the peel work.
 
 ## Rejected Ideas
 
-- **Sponsored-text hiding in descriptions/comments (SponsorBlock #649):** local heuristics guarantee false positives on legitimate text; the crowdsourced dataset it needs does not exist upstream yet. Revisit only if SponsorBlock ships the category. Source: github.com/ajayyy/SponsorBlock/issues/649.
-- **Age-restriction bypass** (top Greasy Fork install-driver): ToS/account risk and an explicit store-removal ground; contradicts the compliance-dialog posture. Source: greasyfork.org/en/scripts/by-site/youtube.com.
-- **Per-thumbnail RYD ratio bars** (elliotwaite pattern): 100 req/min upstream budget on a frozen project makes fleet-wide per-thumbnail fetching commons-hostile. Source: returnyoutubedislike.com/docs.
-- **Cobalt public-instance fallback:** upstream dormant since 2026-04-06, public instances gated/unreliable; existing exact-origin self-host posture stands. Source: github.com/imputnet/cobalt.
-- **Buffer-whole-video** (ImprovedTube #581): SABR/serverAbrStreamingUrl makes client-side full-buffer infeasible; ImprovedTube tags it "Impossible?". Source: github.com/yt-dlp/yt-dlp/pull/13515.
-- **Synced-lyrics pane** (ytify): music-app scope creep beyond bounded YouTube Music compatibility. **Mobile support** (Control Panel for YouTube's wedge): desktop contract. **General-web blocking, cloud accounts/sync, plugin marketplace, remote code, default cloud AI:** rejected in prior passes; nothing in this pass weakens those rejections.
+- **Plugin/add-on marketplace:** Vencord (in-tree, thriving) vs BetterDiscord (marketplace, chronic breakage) settles it; also incompatible with MV3 no-remote-code. Source: vencord.dev/faq.
+- **Lighthouse-diff CI perf gate (DebugBear method):** inferior to the existing interleaved A/B + CDP metrics harness; would add tooling for less signal.
+- **Runtime CSS rewriting for theming (Dark Reader dynamic mode):** measured 3× memory / multi-second render ceiling; static-first is already the architecture. Source: darkreader issues/1295, DebugBear measurements.
+- **Paid/premium tier of any kind:** PocketTube's paywall resentment is the counter-evidence; Astra's position is the free undercut.
+- **COPPA miniplayer unblock (unblock-miniplayer):** niche, unverified demand, adjacent to platform-restriction bypass posture. Source: awesome-userscripts.
+- **Watch-history private tracking/export (Magic Actions):** weak signal, YouTube's own history covers it, new storage surface for little value.
+- **MV3 SW keepalive tricks:** Google restricts to enterprise; alarms+storage pattern already in place.
+- Carried forward from 2026-08-19 (unchanged): sponsored-text hiding heuristics (SB #649 dataset doesn't exist), age-restriction bypass, per-thumbnail RYD ratio bars, Cobalt public-instance fallback, buffer-whole-video, synced-lyrics pane, mobile support, general-web blocking, cloud accounts/sync, default cloud AI.
 
 ## Sources
 
 ### OSS competitors and adjacent
-- https://github.com/ajayyy/SponsorBlock/issues/649
-- https://github.com/ajayyy/DeArrow (issues #39, #92, #381, #423)
-- https://dearrow.ajay.app/payment · https://dearrow.ajay.app/free · https://wiki.sponsor.ajay.app/w/API_Docs
+- https://github.com/ajayyy/SponsorBlock/commits/master · https://github.com/ajayyy/DeArrow/commits/master (issues #92, #423, #649)
+- https://dearrow.ajay.app/payment · https://wiki.sponsor.ajay.app/w/API_Docs
 - https://github.com/Anarios/return-youtube-dislike · https://returnyoutubedislike.com/docs
-- https://github.com/code-charity/youtube (PRs #4178, #4179; issues #2716, #3593, #3658)
-- https://github.com/varshneydevansh/FilterTube · https://github.com/amitbl/blocktube
-- https://github.com/gorhill/uBlock/releases (1.73.1b content() operator)
-- https://github.com/TimMacy/YouTubeAlchemy · https://github.com/xlch88/YouTubeTweak · https://github.com/insin/control-panel-for-youtube · https://github.com/elliotwaite/thumbnail-rating-bar-for-youtube · https://github.com/MohamedSayed0573/TubeSize_Extension
-- https://github.com/FreeTubeApp/FreeTube/releases · https://github.com/futo-org/grayjay-android
-- https://greasyfork.org/en/scripts/by-site/youtube.com
-- https://github.com/yt-dlp/yt-dlp/releases/tag/2026.07.04 · https://github.com/yt-dlp/yt-dlp/pull/13515 · https://github.com/imputnet/cobalt
+- https://github.com/code-charity/youtube/commits/master
+- https://github.com/gorhill/uBlock/releases
+- https://github.com/yt-dlp/yt-dlp/releases · https://github.com/yt-dlp/yt-dlp/pull/13515 · https://github.com/yt-dlp/yt-dlp/security
+- https://github.com/lawrencehook/remove-youtube-suggestions · https://github.com/topics/youtube-extension?s=stars · https://github.com/awesome-scripts/awesome-userscripts
+
+### Commercial and adjacent-domain
+- https://pockettube.io/pricing.html · https://www.turnoffthelights.com/ · https://www.chromeactions.com/
+- https://mavic.ai/how-much-is-youtube-premium-pricing-features-is-it-worth-it-in-2026/ · https://www.androidauthority.com/youtube-premium-features-that-matter-3679143/
+- https://github.com/FrankerFaceZ/FrankerFaceZ/issues/326 · https://github.com/SevenTV/Extension · https://darkreader.org/blog/dynamic-theme/ · https://github.com/darkreader/darkreader/issues/1295
+- https://violentmonkey.github.io/api/metadata-block/ · https://github.com/violentmonkey/violentmonkey/issues/1673 · https://vencord.dev/faq/
 
 ### Community and market
-- https://www.pcworld.com/article/3212428/ (Firefox last uBO browser; HN 49303202, 1,746 pts)
-- https://digitalescapetools.com/2026/08/ublock-origin-stops-chasing (HN 724 pts)
-- https://www.socialmediatoday.com/news/youtube-expands-access-to-its-in-app-ai-chatbot/827757/ (Ask YouTube, 2026-08-12)
-- https://9to5google.com/2026/08/17/youtube-view-counts-change/ · https://9to5google.com/2026/08/10/youtube-premium-lite-expansion-monetization-changes/ · https://9to5google.com/2026/07/18/youtube-pip-broken/
-- https://www.emarketer.com/content/faq-on-ad-blocking-preparing-platform-crackdowns-user-response-what-s-changing-2026
-- https://www.emarketer.com/content/youtube-age-verification-friction-could-threaten-engagement-loyalty
-- https://addons.mozilla.org/en-US/firefox/addon/sponsorblock/reviews/?score=1
-- https://addons.mozilla.org/en-US/firefox/addon/enhancer-for-youtube/versions/
-- https://www.tomsguide.com/news/youtube-is-loading-slower-for-users-with-ad-blockers-yet-again
+- https://www.theverge.com/tech/976880/microsoft-edge-extensions-ad-blockers-mv2-mv3 (Edge MV2 purge, 2026-08-08)
+- https://www.neowin.net/news/google-chrome-is-killing-all-ublock-origin-bypasses-microsoft-edge-opera-to-follow/ · https://9to5google.com/2026/06/15/google-chromes-next-update-will-mark-the-end-of-popular-ad-blockers/
+- https://techcrunch.com/2026/08/17/youtube-will-now-count-a-view-as-soon-as-a-video-starts-playing/ (view metric, effective 2026-08-24)
+- https://www.androidauthority.com/youtube-embed-player-redesign-3652875/ · https://techcrunch.com/2025/06/26/youtube-adds-an-ai-overviews-like-search-results-carousel
+- HN id 45696329 (RYD ad-injection trust incident)
+- https://dev.to/ali_ibrahim/bypassing-the-2026-youtube-great-wall-a-guide-to-yt-dlp-v2rayng-and-sabr-blocks-1dk8
 
 ### Platform and store policy
-- https://developer.chrome.com/blog/chrome-two-week-release (153 → two-week cadence, 2026-09-08)
-- https://developer.chrome.com/docs/extensions/whats-new (149 userScripts.execute diagnostics; 150 contextMenus 'tab'; 153 toolbar-pin experiment)
-- https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/154 (sandbox manifest key)
-- https://blog.mozilla.org/addons/ (publicSuffix API, 2026-08-06)
-- https://developer.chrome.com/blog/cws-policy-updates-2026 (AI-guardrail-circumvention prohibition)
-- https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/ (unlisted signing free/functional)
-- https://developer.chrome.com/docs/ai/prompt-api · https://developer.chrome.com/docs/ai/summarizer-api
+- https://developer.chrome.com/docs/extensions/whats-new (149 userScripts.execute; 150 contextMenus 'tab'; 153 toolbar-pin default experiment; two-week cadence from 2026-09-08)
+- https://developer.chrome.com/docs/ai/built-in-apis (Prompt API extensions-stable since 138; Writer/Rewriter still OT)
+- https://blog.mozilla.org/addons/ (Firefox 153 WebExtensions: publicSuffix API, local-file permission changes)
+- https://developer.chrome.com/blog/cws-policy-updates-2026 (limited-use tightening, effective 2026-08-01)
+- https://caniuse.com/customizable-select · https://developer.mozilla.org/en-US/docs/Web/API/Document_Picture-in-Picture_API (Firefox 151 support)
 
 ### Security
-- GHSA-xcpc-8h2w-3j85 · GHSA-rgw5-rvv9-x895 · GHSA-395f-4hp3-45gv · GHSA-96hv-2xvq-fx4p · GHSA-6v4j-43gg-vj32 (CVE-2026-55404)
-- https://nodejs.org/en/about/eol
-- https://www.bankinfosecurity.com (CWS developer OAuth phishing) · https://pluto.security (ownership-transfer creep)
+- https://securitylabs.datadoghq.com/articles/npm-worm-compromises-popular-npm-packages/ · https://www.wiz.io/blog/keyv-and-cacheable-npm-supply-chain-attack (ChainDrop, 2026-08-04)
+- GHSA-mh99-v99m-4gvg + CVE-2026-13149/-33750/-25547 (brace-expansion cluster)
+- https://nodejs.org/en/blog/vulnerability/july-2026-security-releases · https://nodejs.org/en/about/eol
+- CVE-2026-26331 · CVE-2026-50574 (GHSA-vx4q-3cr2-7cg2) · CVE-2026-50023 · CVE-2026-55404 (yt-dlp chain)
+
+### Engineering technique
+- https://arxiv.org/abs/2404.06827 (extension perf empirical study)
+- https://apiserpent.com/blog/resilient-scraper-selector-drift (build-version-keyed selectors, canary checks)
 
 ## Open Questions
 
-- **DeArrow license contract shape:** the payment pages establish the expectation, but the exact wire format (query param? header?) and enforcement posture for read-only branding GETs needs confirmation against wiki API docs or upstream before implementing the key pass-through.
-- **Ask-YouTube DOM stability:** the chatbot entry points and search AI carousels rolled out 2026-08-12; structural selectors need a live DOM capture (browser-gated) before the hiding item can ship non-guessed selectors.
-- **Needs external protocol coordination (carried forward):** which minimum YouTube cookie names/domains/partitions the released Astra Downloader accepts, and whether it can advertise that contract with a protocol version.
-- **Needs live validation (carried forward):** Firefox extension rendering, userscript-manager grants, a real cookie-bearing companion handoff.
-- **Needs operator decision (carried forward, now time-sensitive):** which of CWS / AMO / Greasy Fork publishes first — the MV2-purge adoption window opens 2026-09-01.
+- **DeArrow license contract shape** (carried): exact wire format and enforcement posture for read-only branding GETs — confirm against wiki API docs before implementing the key pass-through.
+- **Ask-YouTube DOM stability** (carried): the chatbot entry points and search AI carousels need a live DOM capture (browser-gated) before the hiding item can ship non-guessed selectors. Desktop rollout is still partial/experimental as of 2026-08-20.
+- **Firefox 151 Document PiP reach:** MDN lists Firefox 151 support, but whether `documentPictureInPicture` is exposed to extension content scripts on YouTube (and to userscript managers) needs live validation before `popOutPlayer` can be advertised on Firefox.
+- **Needs external protocol coordination** (carried): minimum YouTube cookie names/domains/partitions the released Astra Downloader accepts, and a protocol version to advertise it.
+- **Needs operator decision** (carried, now more time-sensitive): distribution order across CWS / Edge Add-ons / AMO / Greasy Fork — the Chrome MV2 purge lands 2026-08-31 and Edge announced the same lockout 2026-08-08, so both stores' displaced-user waves open together on 2026-09-01.
