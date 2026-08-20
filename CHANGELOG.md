@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.77.0] - 2026-08-20
+
 ### Added
 
 - Copy AI Prompt now hands over a transcript someone else can trust. It carries
