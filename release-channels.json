@@ -15,107 +15,144 @@
     "store-safe-chrome": {
       "artifactTemplate": "astra-deck-store-safe-chrome-v{version}.zip",
       "active": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "astra-deck-store-safe-chrome-v4.59.0.zip",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-store-safe-chrome-v4.59.0.zip"
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "astra-deck-store-safe-chrome-v4.81.0.zip",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/astra-deck-store-safe-chrome-v4.81.0.zip",
+        "sha256": "a138a3e55b5a75db243ef63c8f6de3c4f02ef8fec556a455391811883b0aef03",
+        "size": 2074781
       },
       "lastKnownGood": {
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "astra-deck-store-safe-chrome-v4.81.0.zip",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/astra-deck-store-safe-chrome-v4.81.0.zip",
+        "sha256": "a138a3e55b5a75db243ef63c8f6de3c4f02ef8fec556a455391811883b0aef03",
+        "size": 2074781
+      },
+      "rollbackTarget": {
         "version": "4.59.0",
         "tag": "v4.59.0",
         "artifact": "astra-deck-store-safe-chrome-v4.59.0.zip",
         "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-store-safe-chrome-v4.59.0.zip"
       },
-      "rollbackTarget": {
-        "version": "4.58.2",
-        "tag": "v4.58.2",
-        "artifact": "astra-deck-store-safe-chrome-v4.58.2.zip",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.58.2/astra-deck-store-safe-chrome-v4.58.2.zip"
-      }
+      "updatedAt": "2026-08-20T16:35:23.535Z"
     },
     "store-safe-firefox": {
       "artifactTemplate": "astra-deck-store-safe-firefox-v{version}.xpi",
       "active": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "astra-deck-store-safe-firefox-v4.59.0.xpi",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-store-safe-firefox-v4.59.0.xpi"
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "astra-deck-store-safe-firefox-v4.81.0.xpi",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/astra-deck-store-safe-firefox-v4.81.0.xpi",
+        "sha256": "62d2506bc1c44dad55d9310e36e88ca5156846603e36d01e5625a30484228a2c",
+        "size": 2074947
       },
       "lastKnownGood": {
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "astra-deck-store-safe-firefox-v4.81.0.xpi",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/astra-deck-store-safe-firefox-v4.81.0.xpi",
+        "sha256": "62d2506bc1c44dad55d9310e36e88ca5156846603e36d01e5625a30484228a2c",
+        "size": 2074947
+      },
+      "rollbackTarget": {
         "version": "4.59.0",
         "tag": "v4.59.0",
         "artifact": "astra-deck-store-safe-firefox-v4.59.0.xpi",
         "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-store-safe-firefox-v4.59.0.xpi"
       },
-      "rollbackTarget": {
-        "version": "4.58.2",
-        "tag": "v4.58.2",
-        "artifact": "astra-deck-store-safe-firefox-v4.58.2.xpi",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.58.2/astra-deck-store-safe-firefox-v4.58.2.xpi"
-      }
+      "updatedAt": "2026-08-20T16:35:23.536Z"
     },
     "github-full-chrome": {
       "artifactTemplate": "astra-deck-github-full-chrome-v{version}.zip",
       "active": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "astra-deck-github-full-chrome-v4.59.0.zip",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-github-full-chrome-v4.59.0.zip"
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "astra-deck-github-full-chrome-v4.81.0.zip",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/astra-deck-github-full-chrome-v4.81.0.zip",
+        "sha256": "e04306a2c19c4db240260a31d937e81143e39d8bb845e2193133387cca5b9a3c",
+        "size": 2074844
       },
       "lastKnownGood": {
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "astra-deck-github-full-chrome-v4.81.0.zip",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/astra-deck-github-full-chrome-v4.81.0.zip",
+        "sha256": "e04306a2c19c4db240260a31d937e81143e39d8bb845e2193133387cca5b9a3c",
+        "size": 2074844
+      },
+      "rollbackTarget": {
         "version": "4.59.0",
         "tag": "v4.59.0",
         "artifact": "astra-deck-github-full-chrome-v4.59.0.zip",
         "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-github-full-chrome-v4.59.0.zip"
       },
-      "rollbackTarget": {
-        "version": "4.58.2",
-        "tag": "v4.58.2",
-        "artifact": "astra-deck-github-full-chrome-v4.58.2.zip",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.58.2/astra-deck-github-full-chrome-v4.58.2.zip"
-      }
+      "updatedAt": "2026-08-20T16:35:23.536Z"
     },
     "github-full-firefox": {
       "artifactTemplate": "astra-deck-github-full-firefox-v{version}.xpi",
       "active": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "astra-deck-github-full-firefox-v4.59.0.xpi",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-github-full-firefox-v4.59.0.xpi"
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "astra-deck-github-full-firefox-v4.81.0.xpi",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/astra-deck-github-full-firefox-v4.81.0.xpi",
+        "sha256": "b7aeb875eca128a9510c9e2d7963a85ab03a635504fd7eb2a85446867f4e25ac",
+        "size": 2074983
       },
       "lastKnownGood": {
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "astra-deck-github-full-firefox-v4.81.0.xpi",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/astra-deck-github-full-firefox-v4.81.0.xpi",
+        "sha256": "b7aeb875eca128a9510c9e2d7963a85ab03a635504fd7eb2a85446867f4e25ac",
+        "size": 2074983
+      },
+      "rollbackTarget": {
         "version": "4.59.0",
         "tag": "v4.59.0",
         "artifact": "astra-deck-github-full-firefox-v4.59.0.xpi",
         "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/astra-deck-github-full-firefox-v4.59.0.xpi"
       },
-      "rollbackTarget": {
-        "version": "4.58.2",
-        "tag": "v4.58.2",
-        "artifact": "astra-deck-github-full-firefox-v4.58.2.xpi",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.58.2/astra-deck-github-full-firefox-v4.58.2.xpi"
-      }
+      "updatedAt": "2026-08-20T16:35:23.536Z"
     },
     "userscript": {
       "artifactTemplate": "ytkit-v{version}.user.js",
       "active": {
-        "version": "4.59.0",
-        "tag": "v4.59.0",
-        "artifact": "ytkit-v4.59.0.user.js",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/ytkit-v4.59.0.user.js"
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "ytkit-v4.81.0.user.js",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/ytkit-v4.81.0.user.js",
+        "sha256": "32759846cdbed1f6218be3fb7bdc69f9083459b0d7c944587d3ab155b9bc6267",
+        "size": 1062727
       },
       "lastKnownGood": {
+        "version": "4.81.0",
+        "tag": "v4.81.0",
+        "artifact": "ytkit-v4.81.0.user.js",
+        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.81.0/ytkit-v4.81.0.user.js",
+        "sha256": "32759846cdbed1f6218be3fb7bdc69f9083459b0d7c944587d3ab155b9bc6267",
+        "size": 1062727
+      },
+      "rollbackTarget": {
         "version": "4.59.0",
         "tag": "v4.59.0",
         "artifact": "ytkit-v4.59.0.user.js",
         "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.59.0/ytkit-v4.59.0.user.js"
       },
-      "rollbackTarget": {
-        "version": "4.58.2",
-        "tag": "v4.58.2",
-        "artifact": "ytkit-v4.58.2.user.js",
-        "url": "https://github.com/SysAdminDoc/Astra-Deck/releases/download/v4.58.2/ytkit-v4.58.2.user.js"
-      }
+      "updatedAt": "2026-08-20T16:35:23.536Z"
     }
+  },
+  "lastAction": {
+    "type": "promote",
+    "version": "4.81.0",
+    "channels": [
+      "store-safe-chrome",
+      "store-safe-firefox",
+      "github-full-chrome",
+      "github-full-firefox",
+      "userscript"
+    ],
+    "at": "2026-08-20T16:35:23.536Z"
   }
 }
