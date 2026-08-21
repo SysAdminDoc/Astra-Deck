@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "開始できません。このブラウザー プロファイルでは絞り込みセッションを保存できません。"
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "「{term}」に一致する設定はありません。機能名、カテゴリ、watch や feed のようなページ、boolean のようなコントロールの種類を試してください。"
+  },
+  "schemaSurfaceHere": {
+    "message": "ここ"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "この設定はポップアップで変更できます。"
+  },
+  "schemaSurfacePanel": {
+    "message": "ページ内パネル"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "この設定は YouTube 上の Astra Deck パネルで編集します。押すと開きます。"
   }
 }

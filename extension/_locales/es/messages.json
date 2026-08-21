@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "No se pudo iniciar: este perfil del navegador no guardará la sesión de búsqueda."
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "Ningún ajuste coincide con «{term}». Prueba con un nombre de función, una categoría, una página como watch o feed, o un tipo de control como boolean."
+  },
+  "schemaSurfaceHere": {
+    "message": "aquí"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "Este ajuste se puede cambiar en la ventana emergente."
+  },
+  "schemaSurfacePanel": {
+    "message": "panel en la página"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "Este ajuste se edita en el panel de Astra Deck en YouTube. Lo abre."
   }
 }
