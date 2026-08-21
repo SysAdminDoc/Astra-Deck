@@ -1,0 +1,24 @@
+# Astra Deck release signing keys, in OpenSSH allowed_signers format.
+#
+# Every published release carries build/SHA256SUMS plus a detached
+# build/SHA256SUMS.sig made with one of the keys below. Verifying that
+# signature is what makes the checksum file a provenance claim rather than a
+# corruption check: releases are built locally, so without it the artifacts and
+# their hashes share one origin and forging both is one step.
+#
+# To verify a download, from the directory holding SHA256SUMS, SHA256SUMS.sig,
+# and this file:
+#
+#   ssh-keygen -Y verify -f allowed-signers -I releases@astra-deck \
+#     -n astra-deck-release -s SHA256SUMS.sig < SHA256SUMS
+#   sha256sum -c SHA256SUMS
+#
+# The first command proves who produced the list. The second proves your files
+# match it. Both must pass.
+#
+# Format: <principal> <key-type> <key-body>
+# The private half never enters this repository. See docs/signing-keys.md §9.
+#
+# No release signing key is published yet. Until a key line appears below,
+# releases carry an unsigned checksum file and `npm run release:readiness`
+# reports the gap as a warning rather than a failure. See Roadmap_Blocked.md.

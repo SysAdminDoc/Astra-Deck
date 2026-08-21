@@ -226,15 +226,6 @@ dropped after local verification and are recorded as rejected in `RESEARCH.md` r
 listed here (store-profile permission stripping, Greasy Fork size/minification, DNR
 `topDomains`, comment search, anti-translation parity, `use_dynamic_url` coverage).
 
-### P1
-
-- [ ] P1 — Sign the release checksum file locally and publish the verification command
-  Why: releases are built locally with no CI, so `SHA256SUMS` and the artifacts share one origin — anyone who can forge an artifact forges its hash, and the checksum proves nothing about provenance. Post-2025 users are explicitly told to check whether the shipped artifact matches the source before installing an unknown extension.
-  Evidence: 12 release assets carry `SHA256SUMS` with no signature; no CI exists to produce attestations. GitHub Artifact Attestations are the stronger primitive but require an Actions build, which contradicts the deliberate local-builds-only decision (`a61b5d5e`) — that conflict is recorded in `RESEARCH.md` §Rejected rather than resolved here.
-  Touches: `scripts/generate-release-manifest.js`, `scripts/release-health.js`, `docs/signing-keys.md`, `README.md`, `SECURITY.md`
-  Acceptance: every release carries a detached signature over the checksum file, the public key is published in-repo and in `docs/signing-keys.md`, `README.md` shows the exact verify command, and `npm run release:readiness` fails when the signature is missing or does not verify.
-  Complexity: M
-
 ### P2
 
 - [ ] P2 — User-run feature bisect wizard

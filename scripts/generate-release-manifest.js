@@ -22,6 +22,11 @@ const CAPABILITY_MATRIX_NAME = 'browser-capability-matrix.json';
 // Never listed as a release asset; its `mode` field is folded into the
 // manifest as `crxSigningMode` so release readiness can gate on it.
 const CRX_SIGNING_PROVENANCE_NAME = 'crx-signing-provenance.json';
+// Detached signature over SHA256SUMS, written by scripts/release-signature.js
+// AFTER this script runs. It is uploaded alongside the checksum file but is
+// not itself checksummed there — a file that signs a list cannot be an entry
+// in the list it signs.
+const SIGNATURE_NAME = 'SHA256SUMS.sig';
 
 function readJson(relPath) {
     return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8'));
@@ -143,6 +148,7 @@ function listBuildAssets() {
         .map((entry) => entry.name)
         .filter((name) => name !== MANIFEST_NAME
             && name !== SHA256SUMS_NAME
+            && name !== SIGNATURE_NAME
             && name !== RELEASE_HEALTH_NAME
             && name !== CRX_SIGNING_PROVENANCE_NAME)
         .sort();
@@ -259,6 +265,7 @@ if (require.main === module) {
 
 module.exports = {
     CRX_SIGNING_PROVENANCE_NAME,
+    SIGNATURE_NAME,
     FIREFOX_UPDATE_MANIFEST_NAME,
     RELEASE_HEALTH_NAME,
     expectedReleaseNames,

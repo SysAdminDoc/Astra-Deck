@@ -261,13 +261,15 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
    that repo's `/releases/latest`. Staging the exe in
    `build/` fails the `companion-not-republished` readiness gate, and listing
    it fails `companion-not-manifested`.
-7. Generate the release-readiness report and require a pass:
+7. Sign the checksum file: `npm run release:sign` (see §9). Confirm it with
+   `npm run release:verify-signature`.
+8. Generate the release-readiness report and require a pass:
    `npm run release:readiness -- --require-pass`.
-8. Verify `build/SHA256SUMS` names every uploaded artifact and that
+9. Verify `build/SHA256SUMS` names every uploaded artifact and that
    `build/release-manifest.json` marks `localSigningRequired: true`, and that
    neither `AstraDownloader.exe` nor its `.sha256` sidecar appears in either.
-9. Create or update the GitHub Release from local `build/*` assets.
-10. After upload, compare GitHub Release asset digests against the local
+10. Create or update the GitHub Release from local `build/*` assets.
+11. After upload, compare GitHub Release asset digests against the local
    checksum file: `npm run release:verify-digests -- --tag vX.Y.Z`.
    Run this from the same maintainer-local build directory whose signed CRX/XPI
    files were uploaded; validation builds that use ephemeral CRX keys are not
@@ -284,7 +286,99 @@ User-facing companion setup docs must stay in sync with the live release:
   sidecar can prove the updater path, but it does not satisfy the signed
   Windows installer trust milestone.
 
-## 9. CWS / AMO publication paths
+## 9. The release signing key (`release-signing-key`)
+
+`ytkit.pem` signs the CRX/XPI envelope. It does not sign `SHA256SUMS`, and
+until it does, that file proves only that a download was not corrupted:
+releases are built locally, so the artifacts and their hashes share one origin
+and forging both is one step. The release signing key closes that gap.
+
+It is a **separate** key from `ytkit.pem` on purpose. Rotating the CRX key
+changes the extension ID and forces every user to reinstall (§5); rotating the
+checksum-signing key costs nothing but a line in `allowed-signers`. Tying them
+together would make the cheap rotation as expensive as the expensive one.
+
+### Format
+
+An OpenSSH key, verified with `ssh-keygen -Y verify`. Not GPG, not minisign:
+`ssh-keygen` ships with Git for Windows, macOS, and every Linux, so nobody
+verifying a download has to install anything, and the public half is one line
+that fits in a committed file a reader can eyeball.
+
+### Generating it
+
+```bash
+# Windows default: %LOCALAPPDATA%\Astra-Deck\keys
+elease-signing-key
+# macOS/Linux default: ${XDG_CONFIG_HOME:-$HOME/.config}/Astra-Deck/keys/release-signing-key
+KEY="${ASTRA_RELEASE_SIGNING_KEY:-$HOME/.config/Astra-Deck/keys/release-signing-key}"
+mkdir -p "$(dirname "$KEY")"
+ssh-keygen -t ed25519 -C 'Astra Deck release signing' -f "$KEY"
+```
+
+Use a passphrase. Signing happens once per release by hand, so the cost is one
+prompt and the benefit is that a stolen laptop is not a stolen signing
+identity.
+
+### Publishing the public half
+
+Append one line to `allowed-signers` in the repo root:
+
+```
+releases@astra-deck ssh-ed25519 AAAA...
+```
+
+`releases@astra-deck` is the principal the verify command names; it is a label,
+not an address. Take the key type and body verbatim from `<key>.pub`, dropping
+the trailing comment. Commit it. The private half never enters the repository,
+and `scripts/release-signature.js` refuses to sign with any key path inside the
+worktree.
+
+### Signing a release
+
+`npm run release:sign` runs after `npm run release:manifest` and writes
+`build/SHA256SUMS.sig`. It is already wired into `build:userscript`, so a
+normal release build signs on its own. While `allowed-signers` publishes no
+key, the step reports that it skipped and continues; the moment a key line
+lands it becomes a real requirement in both the signing step and the readiness
+gate at once.
+
+`npm run release:readiness` reports the result as `release-signature`:
+
+| Situation | Readiness |
+|---|---|
+| Signature present and valid | pass |
+| `allowed-signers` publishes no key | warning |
+| `ssh-keygen` missing on the build machine | warning |
+| A key is published and no signature was produced | **fail** |
+| A signature exists and does not verify | **fail** |
+
+### Verifying, from the other side
+
+This is what the README tells users, and it is also the maintainer's own
+pre-upload check:
+
+```bash
+ssh-keygen -Y verify -f allowed-signers -I releases@astra-deck   -n astra-deck-release -s SHA256SUMS.sig < SHA256SUMS
+sha256sum -c SHA256SUMS
+```
+
+The `-n astra-deck-release` namespace scopes the signature to this purpose, so
+a signature the maintainer made for anything else cannot be replayed as a
+release attestation. `tests/release-signature.test.js` proves that, along with
+tamper detection and wrong-key rejection, against a throwaway key.
+
+### Rotation
+
+Cheap, unlike §5. Generate a new key, append its line to `allowed-signers`,
+and sign the next release with it. Leave the old line in place for as long as
+old releases are still downloadable — removing it makes every past signature
+unverifiable. Delete a line only when the key is known compromised, and say so
+in `HARDENING.md` alongside the affected release tags.
+
+---
+
+## 10. CWS / AMO publication paths
 
 Per the current roadmap NX4, Astra Deck does not have an AMO listing.
 The self-distribution model is:
@@ -309,7 +403,7 @@ the `ytkit.pem` updates.
 
 ---
 
-## 10. Audit trail
+## 11. Audit trail
 
 Every rotation lands in `HARDENING.md` with an Hn entry naming:
 

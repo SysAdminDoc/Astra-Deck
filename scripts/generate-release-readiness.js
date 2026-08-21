@@ -11,6 +11,11 @@ const {
     unexpectedReleaseNames
 } = require('./generate-release-manifest');
 const { findStrayProductTags } = require('./check-versions');
+const {
+    ALLOWED_SIGNERS_NAME,
+    SIGNATURE_NAME,
+    verifyChecksums: verifyReleaseSignature
+} = require('./release-signature');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
@@ -157,7 +162,12 @@ function listBuildFiles(buildDir = BUILD_DIR) {
             // The health report is a local promotion gate, not a release
             // asset. It may be generated before a later readiness/manifest
             // pass and must not poison the closed artifact inventory.
-            .filter((name) => name !== RELEASE_HEALTH_NAME)
+            //
+            // The checksum signature IS uploaded, but it is written after the
+            // manifest and cannot appear inside the checksum list it signs, so
+            // it is not part of the closed inventory either. Its own check
+            // (release-signature) is what covers it.
+            .filter((name) => name !== RELEASE_HEALTH_NAME && name !== SIGNATURE_NAME)
             .sort();
     } catch (err) {
         if (err && err.code === 'ENOENT') return null;
@@ -414,6 +424,35 @@ function buildReadinessReport(options = {}) {
             checks.push(check('sha256sums', 'SHA256SUMS exists and parses', 'fail', err.message));
         }
     }
+
+    // A checksum file produced on the same machine as the artifacts proves the
+    // download was not corrupted, and nothing about who produced it. The
+    // signature is what carries provenance, so its absence is a real gap and is
+    // reported as one — as a failure once the project publishes a signing key,
+    // and as a warning until then so the gap stays visible without locking the
+    // release path behind work that has not happened yet.
+    // Read the allowed-signers file from the repo root under test, not the
+    // process's own. A readiness report built against a fixture tree must
+    // answer for that tree.
+    const signature = verifyReleaseSignature({
+        buildDir,
+        allowedSignersPath: path.join(repoRoot, ALLOWED_SIGNERS_NAME)
+    });
+    const SIGNATURE_STATUS_LEVEL = {
+        verified: 'pass',
+        'no-published-key': 'warning',
+        unavailable: 'warning',
+        missing: 'fail',
+        invalid: 'fail'
+    };
+    checks.push(check(
+        'release-signature',
+        'SHA256SUMS carries a valid detached signature',
+        SIGNATURE_STATUS_LEVEL[signature.status] || 'fail',
+        signature.status === 'no-published-key'
+            ? `${signature.details}; see Roadmap_Blocked.md and docs/signing-keys.md §9`
+            : signature.details
+    ));
 
     if (releaseManifest && Array.isArray(releaseManifest.assets) && buildFiles) {
         const manifestAssetNames = releaseManifest.assets.map((asset) => asset.name).sort();
