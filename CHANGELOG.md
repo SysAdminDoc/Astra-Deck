@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Removed
+
+- `.github/codeql.yml` is gone. It was a CodeQL config file, which only does
+  anything when a workflow points at it with `config-file:`, and the workflows
+  were deleted back in June when builds moved local. So the repo carried a
+  security control that had never run once. Static security coverage stays where
+  it actually runs, in `npm run check`.
+
 ## [4.82.0] (2026-08-20)
 
 ### Changed

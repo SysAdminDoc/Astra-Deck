@@ -2248,6 +2248,8 @@ test('GitHub workflow files stay absent under local-build policy', () => {
 test('local static security gates replace remote CodeQL workflow', () => {
     assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'workflows', 'codeql.yml')), false,
         'CodeQL workflow must stay absent under the local-build policy');
+    assert.equal(fs.existsSync(path.join(__dirname, '..', '.github', 'codeql.yml')), false,
+        'the CodeQL config file must stay absent too; without a workflow reading it, it advertises a scan that never runs');
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
     assert.match(checkChainText(), /scripts\/check-no-eval\.js/,
         'local check gate must keep the no-eval source security scan');

@@ -235,13 +235,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
   Acceptance: an undo point written before a reset or import is still offered after a full browser restart (backed by `chrome.storage.local`, not `session`, with an explicit retention bound so it cannot grow unbounded); import writes a timestamped backup export before the first write, and names the file in the success message; a test restarts the storage layer between snapshot and undo and the undo still restores.
   Complexity: M
 
-- [ ] P1 — Delete `.github/codeql.yml` or restore the workflow that reads it
-  Why: it is a CodeQL *config* file that only takes effect through a workflow's `config-file:` input, and no workflow exists — so the repo advertises a security control that has never run once.
-  Evidence: `.github/workflows` returns 404 via the API and does not exist locally; `gh api repos/SysAdminDoc/Astra-Deck/code-scanning/default-setup` reports `state: "not-configured"`; the four workflows including `codeql.yml` were deleted in `a61b5d5e` (2026-06-26, "Remove GitHub Actions workflows — local builds only") and the config file was left behind.
-  Touches: `.github/codeql.yml`
-  Acceptance: either the file is deleted, or a workflow references it and one scan completes — no third state where the config exists unreferenced. If deleted, `SECURITY.md` and `HARDENING.md` are checked for any claim of static analysis that no longer holds.
-  Complexity: S
-
 - [ ] P1 — Sign the release checksum file locally and publish the verification command
   Why: releases are built locally with no CI, so `SHA256SUMS` and the artifacts share one origin — anyone who can forge an artifact forges its hash, and the checksum proves nothing about provenance. Post-2025 users are explicitly told to check whether the shipped artifact matches the source before installing an unknown extension.
   Evidence: 12 release assets carry `SHA256SUMS` with no signature; no CI exists to produce attestations. GitHub Artifact Attestations are the stronger primitive but require an Actions build, which contradicts the deliberate local-builds-only decision (`a61b5d5e`) — that conflict is recorded in `RESEARCH.md` §Rejected rather than resolved here.
