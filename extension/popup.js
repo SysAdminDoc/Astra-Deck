@@ -628,6 +628,15 @@ const schemaOverviewDiffCount = $('#schema-overview-diff-count');
 const schemaOverviewDiffToggle = $('#schema-overview-diff-toggle');
 const schemaOverviewDiffCopy = $('#schema-overview-diff-copy');
 const featureReportCopy = $('#feature-report-copy');
+const bisectPanel = $('#bisect-panel');
+const bisectStart = $('#bisect-start');
+const bisectStep = $('#bisect-step');
+const bisectPrompt = $('#bisect-prompt');
+const bisectYes = $('#bisect-yes');
+const bisectNo = $('#bisect-no');
+const bisectResult = $('#bisect-result');
+const bisectCopy = $('#bisect-copy');
+const bisectAbort = $('#bisect-abort');
 const schemaOverviewDiff = $('#schema-overview-diff');
 const schemaOverviewDiffEmpty = $('#schema-overview-diff-empty');
 const schemaOverviewDiffList = $('#schema-overview-diff-list');
@@ -3470,6 +3479,209 @@ async function copyEnabledFeatureReport() {
     }
 }
 
+// ── Feature bisect ──
+//
+// "When something breaks for you but not for me, your report is the only
+// signal I get." With 291 features a reporter cannot say which one, and this
+// moves that work to the only person who can reproduce it: about ten reloads
+// of a binary search over their own enabled set.
+//
+// The state machine lives in core/feature-bisect.js and is pure. Everything
+// here is the parts it deliberately does not own: persisting the session,
+// applying a step to real settings, and putting the snapshot back.
+const BISECT_SESSION_KEY = 'ytkit-feature-bisect';
+
+let _bisectFinishedSession = null;
+
+function bisectCore() {
+    return (typeof window !== 'undefined' && window.YTKitCore) || {};
+}
+
+// Boolean feature settings that are currently on. A colour or a speed is a
+// value, not a feature, and cannot be "the one that broke it"; internal keys
+// are not the user's choices at all.
+function enabledFeatureIdsForBisect(settings = popupState.settings || {}) {
+    const scope = window.__YTKIT_SETTINGS_SCHEMA__;
+    if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA)) return [];
+    return scope.SETTINGS_SCHEMA
+        .filter((entry) => !entry.internal && entry.type === 'boolean' && settings[entry.key] === true)
+        .map((entry) => entry.key);
+}
+
+async function readBisectSession() {
+    try {
+        const stored = await storageGet(BISECT_SESSION_KEY);
+        const session = stored?.[BISECT_SESSION_KEY];
+        return session && Array.isArray(session.snapshot) ? session : null;
+    } catch (_) {
+        // reason: an unreadable session is no session; never block the popup
+        return null;
+    }
+}
+
+async function writeBisectSession(session) {
+    try {
+        if (session) await storageSet({ [BISECT_SESSION_KEY]: session });
+        else await storageRemove([BISECT_SESSION_KEY]);
+    } catch (_) {
+        // reason: persistence is best-effort; the restore path is what
+        // actually protects the user's settings
+    }
+}
+
+// Writes the settings a step needs. The base is always the SNAPSHOT's view of
+// the world, never the half-state the previous step left behind, so no
+// sequence of steps can drift the user's real configuration.
+async function applyBisectSettings(session, offIds) {
+    const off = new Set(offIds);
+    const next = { ...popupState.settings };
+    for (const id of session.snapshot) next[id] = !off.has(id);
+    await replaceSettings(next);
+}
+
+async function restoreBisectSnapshot(session) {
+    if (!session) return;
+    const next = { ...popupState.settings };
+    for (const id of session.snapshot) next[id] = true;
+    await replaceSettings(next);
+}
+
+async function startFeatureBisectRun() {
+    const core = bisectCore();
+    if (typeof core.createFeatureBisect !== 'function') return;
+    const enabled = enabledFeatureIdsForBisect();
+    if (!enabled.length) {
+        showStatus(t('bisectNothingEnabled',
+            'No features are switched on, so there is nothing to search.'), 'info', 3200);
+        return;
+    }
+    const session = core.createFeatureBisect(enabled, Date.now());
+    await writeBisectSession(session);
+    await applyBisectSettings(session, core.disabledForBisectStep(session));
+    renderBisect(session);
+    showStatus(t('bisectStarted', 'Reload YouTube, then answer below.'), 'ok', 3600);
+}
+
+async function answerFeatureBisectRun(stillHappens) {
+    const core = bisectCore();
+    const session = await readBisectSession();
+    if (!session || typeof core.answerFeatureBisect !== 'function') return;
+    const next = core.answerFeatureBisect(session, stillHappens);
+
+    if (core.isBisectFinished(next)) {
+        // Put the user's world back before showing the answer. A finished run
+        // that leaves features switched off is a worse outcome than not
+        // running one at all.
+        await restoreBisectSnapshot(next);
+        await writeBisectSession(null);
+        renderBisect(next);
+        return;
+    }
+    await writeBisectSession(next);
+    await applyBisectSettings(next, core.disabledForBisectStep(next));
+    renderBisect(next);
+}
+
+async function abortFeatureBisectRun() {
+    const session = await readBisectSession();
+    if (!session) return;
+    await restoreBisectSnapshot(session);
+    await writeBisectSession(null);
+    renderBisect(null);
+    showStatus(t('bisectAborted', 'Bisect stopped. Your features are back on.'), 'ok', 3000);
+}
+
+// Called on every popup open. An abandoned run is the expected ending, not the
+// exception: the problem being investigated is often "the page is unusable",
+// which is exactly the state someone closes the tab on. The deadline is what
+// gives their settings back, not the user remembering.
+async function resumeOrExpireFeatureBisect() {
+    const core = bisectCore();
+    const session = await readBisectSession();
+    if (!session) {
+        renderBisect(null);
+        return;
+    }
+    if (core.isBisectExpired?.(session, Date.now())) {
+        await restoreBisectSnapshot(session);
+        await writeBisectSession(null);
+        renderBisect(null);
+        showStatus(t('bisectExpired',
+            'An unfinished bisect expired. Your features are back on.'), 'info', 4200);
+        return;
+    }
+    renderBisect(session);
+}
+
+async function copyFeatureBisectResult() {
+    const core = bisectCore();
+    const session = _bisectFinishedSession;
+    if (!session || typeof core.formatBisectResult !== 'function') return;
+    let pageType = 'unknown';
+    try {
+        const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
+        pageType = describeBisectPageType(tab?.url || '');
+    } catch (_) {
+        // reason: page type is context, not the answer; unknown is fine
+    }
+    const report = core.formatBisectResult(session, {
+        version: manifestVersion,
+        browser: describeBrowserForReport(),
+        pageType
+    });
+    const copied = await copyTextToClipboard(report);
+    showStatus(copied
+        ? t('bisectCopyDone', 'Result copied. Nothing was sent anywhere.')
+        : t('bisectCopyFail', 'Could not copy the result.'),
+    copied ? 'ok' : 'error', copied ? 3200 : 3600);
+}
+
+// Which kind of YouTube page the problem was on. A path shape, never the URL
+// itself: a bisect result is pasted in public like the feature report is, and
+// a watch URL names what the user was watching.
+function describeBisectPageType(url) {
+    let parsed;
+    try { parsed = new URL(String(url || '')); } catch (_) { return 'unknown'; }
+    if (!/(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(parsed.hostname)) return 'not-youtube';
+    const path = parsed.pathname;
+    if (path === '/watch') return 'watch';
+    if (path.startsWith('/shorts')) return 'shorts';
+    if (path.startsWith('/results')) return 'search';
+    if (path.startsWith('/feed/subscriptions')) return 'subscriptions';
+    if (path.startsWith('/playlist')) return 'playlist';
+    if (path.startsWith('/@') || path.startsWith('/channel') || path.startsWith('/c/')) return 'channel';
+    if (path === '/' ) return 'home';
+    return 'other';
+}
+
+function renderBisect(session) {
+    if (!bisectPanel) return;
+    const core = bisectCore();
+    const finished = !!session && core.isBisectFinished?.(session) === true;
+    const running = !!session && !finished;
+
+    if (bisectStart) bisectStart.hidden = running;
+    if (bisectStep) bisectStep.hidden = !running;
+    if (bisectAbort) bisectAbort.hidden = !running;
+    if (bisectResult) bisectResult.hidden = !finished;
+    if (bisectCopy) bisectCopy.hidden = !finished;
+
+    if (running && bisectPrompt) {
+        bisectPrompt.textContent = t('bisectStepTpl',
+            'Step {step} of about {total}. Reload YouTube, then answer: does the problem still happen?')
+            .replace('{step}', String(session.step))
+            .replace('{total}', String(core.bisectTotalSteps?.(session) || 0));
+    }
+    if (finished && bisectResult) {
+        bisectResult.textContent = session.phase === core.BISECT_PHASES?.CULPRIT
+            ? t('bisectCulpritTpl', 'It is {feature}.').replace('{feature}', session.candidates[0])
+            : t('bisectNoCulprit',
+                'No single feature is responsible. Something outside Astra Deck, or a combination of features, is causing it.');
+        _bisectFinishedSession = session;
+    }
+    if (!session) _bisectFinishedSession = null;
+}
+
 function formatSchemaDiffReport(changes) {
     return JSON.stringify({
         astraDeckSettingsDiff: true,
@@ -3723,6 +3935,12 @@ if (schemaOverviewDiffToggle) {
 if (featureReportCopy) {
     featureReportCopy.addEventListener('click', () => { void copyEnabledFeatureReport(); });
 }
+if (bisectStart) bisectStart.addEventListener('click', () => { void startFeatureBisectRun(); });
+if (bisectYes) bisectYes.addEventListener('click', () => { void answerFeatureBisectRun(true); });
+if (bisectNo) bisectNo.addEventListener('click', () => { void answerFeatureBisectRun(false); });
+if (bisectAbort) bisectAbort.addEventListener('click', () => { void abortFeatureBisectRun(); });
+if (bisectCopy) bisectCopy.addEventListener('click', () => { void copyFeatureBisectResult(); });
+if (bisectPanel) void resumeOrExpireFeatureBisect();
 if (schemaOverviewDiffCopy) {
     schemaOverviewDiffCopy.addEventListener('click', () => { void copySchemaOverviewDiff(); });
 }

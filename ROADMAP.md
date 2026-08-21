@@ -228,13 +228,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
 
 ### P2
 
-- [ ] P2 — User-run feature bisect wizard
-  Why: the maintainer's own words in discussion #43 are "when something breaks for you but not for me, your report is the only signal I get" — and with 291 features there is no way for a reporter to say *which* one. A binary search over the enabled set reaches one culprit in about ten reloads and moves the triage work to the person who can reproduce it.
-  Evidence: discussions #43 and #44 (2026-07-30) both ask for exactly this information and both have zero replies; the tracker has never carried a bug report. Source: refined-github `source/helpers/bisect.tsx` — snapshots the enabled list, halves it per reload, `ceil(log2(n)) + 1` steps, with an explicit "could not identify" terminal state rather than a guess.
-  Touches: a new `extension/features/bisect/` module or `extension/core/` helper, `extension/popup.js` (entry point), `extension/ytkit.js` (in-page prompt), locales
-  Acceptance: starting a bisect snapshots the current enabled set and restores it exactly on finish or abort, including on abandonment (bounded by a stored expiry, not by the user remembering); each step shows remaining count and a "does the problem still happen?" choice; the result is a copyable block naming the feature ID, Astra version, browser version, and page type; the miss case reports that no single feature is responsible rather than blaming the last one standing.
-  Complexity: M
-
 - [ ] P2 — Surface enrichment-API failure on the watch page instead of only in the diagnostic log
   Why: SponsorBlock and DeArrow failures are invisible where the user is looking, so an upstream outage or a rate limit reads as "Astra broke YouTube." The pattern that users blame the extension rather than the site is the documented reason enrichment tools lose trust.
   Evidence: `extension/features/sponsorblock/index.js:361-366` and `extension/features/dearrow/index.js:290-291` route failure to `DiagnosticLog`/`ExternalApiHealth` with no page-level signal; RYD already does this correctly with an "RYD off"/"RYD paused" pill (`extension/features/return-dislike/index.js:285-303`), so the pattern to copy is in-tree.

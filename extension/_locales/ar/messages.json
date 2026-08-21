@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "الأسماء فقط، بدون قيم. لم يُرسل أي شيء إلى أي جهة. هذا موجود في حافظتك وأنت من يقرر أين تلصقه."
+  },
+  "bisectAbort": {
+    "message": "إيقاف واستعادة"
+  },
+  "bisectAborted": {
+    "message": "تم إيقاف البحث الثنائي. عادت ميزاتك للعمل."
+  },
+  "bisectCopy": {
+    "message": "نسخ النتيجة"
+  },
+  "bisectCopyDone": {
+    "message": "تم نسخ النتيجة. لم يُرسل أي شيء إلى أي جهة."
+  },
+  "bisectCopyFail": {
+    "message": "تعذّر نسخ النتيجة."
+  },
+  "bisectCulpritTpl": {
+    "message": "إنها {feature}."
+  },
+  "bisectExpired": {
+    "message": "انتهت صلاحية بحث ثنائي غير مكتمل. عادت ميزاتك للعمل."
+  },
+  "bisectIntro": {
+    "message": "يُطفئ ميزاتك ويعيد تشغيلها على شكل أنصاف حتى تتمكن من تضييق 291 ميزة إلى ميزة واحدة خلال نحو عشر عمليات إعادة تحميل. تُستعاد إعداداتك عند الانتهاء، وعند إيقاف العملية، وتلقائيًا إذا ابتعدت."
+  },
+  "bisectNo": {
+    "message": "اختفت"
+  },
+  "bisectNoCulprit": {
+    "message": "لا توجد ميزة واحدة مسؤولة. السبب شيء خارج Astra Deck، أو مزيج من الميزات."
+  },
+  "bisectNothingEnabled": {
+    "message": "لا توجد ميزات مفعّلة، لذا لا يوجد ما يمكن البحث فيه."
+  },
+  "bisectStart": {
+    "message": "بدء البحث الثنائي"
+  },
+  "bisectStarted": {
+    "message": "أعد تحميل YouTube ثم أجب أدناه."
+  },
+  "bisectStepTpl": {
+    "message": "الخطوة {step} من نحو {total}. أعد تحميل YouTube ثم أجب: هل ما زالت المشكلة تحدث؟"
+  },
+  "bisectTitle": {
+    "message": "ابحث عن الميزة التي تسببت في المشكلة"
+  },
+  "bisectYes": {
+    "message": "ما زالت تحدث"
   }
 }

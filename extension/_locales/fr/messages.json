@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "Noms seulement, aucune valeur. Rien n’a été envoyé nulle part. C’est dans votre presse-papiers et vous décidez si vous le collez."
+  },
+  "bisectAbort": {
+    "message": "Arrêter et restaurer"
+  },
+  "bisectAborted": {
+    "message": "Recherche arrêtée. Vos fonctions sont réactivées."
+  },
+  "bisectCopy": {
+    "message": "Copier le résultat"
+  },
+  "bisectCopyDone": {
+    "message": "Résultat copié. Rien n’a été envoyé nulle part."
+  },
+  "bisectCopyFail": {
+    "message": "Impossible de copier le résultat."
+  },
+  "bisectCulpritTpl": {
+    "message": "C’est {feature}."
+  },
+  "bisectExpired": {
+    "message": "Une recherche inachevée a expiré. Vos fonctions sont réactivées."
+  },
+  "bisectIntro": {
+    "message": "Désactive et réactive vos fonctions par moitiés pour réduire 291 d’entre elles à une seule en une dizaine de rechargements. Vos réglages sont restaurés à la fin, si vous arrêtez, et automatiquement si vous partez."
+  },
+  "bisectNo": {
+    "message": "Disparu"
+  },
+  "bisectNoCulprit": {
+    "message": "Aucune fonction seule n’est responsable. La cause est extérieure à Astra Deck, ou vient d’une combinaison de fonctions."
+  },
+  "bisectNothingEnabled": {
+    "message": "Aucune fonction n’est activée, il n’y a donc rien à chercher."
+  },
+  "bisectStart": {
+    "message": "Lancer la recherche"
+  },
+  "bisectStarted": {
+    "message": "Rechargez YouTube, puis répondez ci-dessous."
+  },
+  "bisectStepTpl": {
+    "message": "Étape {step} sur environ {total}. Rechargez YouTube, puis répondez : le problème se produit-il encore ?"
+  },
+  "bisectTitle": {
+    "message": "Trouver la fonction qui a tout cassé"
+  },
+  "bisectYes": {
+    "message": "Toujours là"
   }
 }

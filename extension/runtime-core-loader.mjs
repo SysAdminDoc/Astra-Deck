@@ -77,6 +77,7 @@ export const FOUNDATION_MODULES = Object.freeze(
         "core/selector-health.js",
         "core/feature-health.js",
         "core/feature-disable-feed.js",
+        "core/feature-bisect.js",
         "core/chapters.js",
         "core/csv.js",
         "core/dialog-guard.js",

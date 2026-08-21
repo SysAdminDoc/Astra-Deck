@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "이름만 있고 값은 없습니다. 어디에도 전송되지 않았습니다. 클립보드에 있으며 붙여넣을지는 사용자가 결정합니다."
+  },
+  "bisectAbort": {
+    "message": "중단하고 복원"
+  },
+  "bisectAborted": {
+    "message": "이진 탐색을 중단했습니다. 기능이 다시 켜졌습니다."
+  },
+  "bisectCopy": {
+    "message": "결과 복사"
+  },
+  "bisectCopyDone": {
+    "message": "결과를 복사했습니다. 어디에도 전송되지 않았습니다."
+  },
+  "bisectCopyFail": {
+    "message": "결과를 복사하지 못했습니다."
+  },
+  "bisectCulpritTpl": {
+    "message": "{feature} 때문입니다."
+  },
+  "bisectExpired": {
+    "message": "완료되지 않은 이진 탐색이 만료되었습니다. 기능이 다시 켜졌습니다."
+  },
+  "bisectIntro": {
+    "message": "기능을 절반씩 껐다 켜서 291개를 약 10번의 새로고침으로 하나까지 좁힙니다. 설정은 완료할 때, 중단할 때, 그리고 그냥 자리를 떠도 자동으로 복원됩니다."
+  },
+  "bisectNo": {
+    "message": "사라짐"
+  },
+  "bisectNoCulprit": {
+    "message": "단일 기능이 원인이 아닙니다. Astra Deck 바깥의 무언가이거나 여러 기능의 조합입니다."
+  },
+  "bisectNothingEnabled": {
+    "message": "켜져 있는 기능이 없어 검색할 대상이 없습니다."
+  },
+  "bisectStart": {
+    "message": "이진 탐색 시작"
+  },
+  "bisectStarted": {
+    "message": "YouTube를 새로고침한 뒤 아래에서 답해 주세요."
+  },
+  "bisectStepTpl": {
+    "message": "{total}단계 중 {step}단계. YouTube를 새로고침한 뒤 답해 주세요. 문제가 아직 발생하나요?"
+  },
+  "bisectTitle": {
+    "message": "문제를 일으킨 기능 찾기"
+  },
+  "bisectYes": {
+    "message": "아직 발생함"
   }
 }

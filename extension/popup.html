@@ -204,6 +204,19 @@
         <button id="schema-overview-diff-copy" type="button" class="schema-overview-tool" data-i18n="schemaOverviewCopyDiff">Copy changed settings</button>
         <button id="feature-report-copy" type="button" class="schema-overview-tool" data-i18n="featureReportCopy" data-i18n-attr-title="featureReportCopyTitle" title="Copies setting names only, never their values. Nothing is sent anywhere.">Copy feature list</button>
       </div>
+      <section class="bisect-panel" id="bisect-panel" aria-labelledby="bisect-title">
+        <h3 id="bisect-title" class="bisect-title" data-i18n="bisectTitle">Find the feature that broke it</h3>
+        <p class="bisect-intro" data-i18n="bisectIntro">Switches your features off and back on in halves so you can narrow 291 of them down to one in about ten reloads. Your settings are restored when it finishes, when you stop it, and automatically if you walk away.</p>
+        <button id="bisect-start" type="button" class="schema-overview-tool" data-i18n="bisectStart">Start bisect</button>
+        <div class="bisect-step" id="bisect-step" hidden>
+          <p class="bisect-prompt" id="bisect-prompt" aria-live="polite"></p>
+          <button id="bisect-yes" type="button" class="schema-overview-tool" data-i18n="bisectYes">Still happens</button>
+          <button id="bisect-no" type="button" class="schema-overview-tool" data-i18n="bisectNo">Gone</button>
+        </div>
+        <p class="bisect-result" id="bisect-result" aria-live="polite" hidden></p>
+        <button id="bisect-copy" type="button" class="schema-overview-tool" data-i18n="bisectCopy" hidden>Copy result</button>
+        <button id="bisect-abort" type="button" class="schema-overview-tool" data-i18n="bisectAbort" hidden>Stop and restore</button>
+      </section>
       <section class="schema-overview-diff" id="schema-overview-diff" aria-labelledby="schema-overview-diff-title" hidden>
         <h3 id="schema-overview-diff-title" class="schema-overview-diff-title" data-i18n="schemaOverviewChangedView">Changed from defaults</h3>
         <p id="schema-overview-diff-empty" class="schema-overview-diff-empty" data-i18n="schemaOverviewDiffEmpty">All settings use their defaults.</p>
@@ -486,6 +499,7 @@
      only needs the shared summary-line formatter so the collapsed
      header and the expanded list can never disagree. -->
 <script src="core/feature-health.js"></script>
+<script src="core/feature-bisect.js"></script>
 <!-- v4.47.0 NF10 follow-up: capability-probe surfaces runtime browser
      capabilities (summarizer API, MediaDL, Ollama) so the schema-overview
      row builder can render an "Unavailable" chip on entries whose

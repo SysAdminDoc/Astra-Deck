@@ -48,6 +48,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   It exists because the project collects no telemetry and still needs some way
   to learn which of 291 features people actually use.
 
+- A bisect wizard in the popup, for when something breaks and you have no idea
+  which feature did it. It switches your features off and back on in halves,
+  asks after each reload whether the problem is still there, and narrows 291 of
+  them down to one in about ten rounds. The last round turns only the accused
+  back on to confirm it, so a run that cannot actually pin one down says "no
+  single feature is responsible" instead of naming whoever was left standing.
+
+  Your settings come back when it finishes, when you stop it, and on their own
+  if you close the tab and never return. The result is a copyable block naming
+  the feature, both versions, and the kind of page it happened on, and nothing
+  else. Nothing is sent anywhere.
+
 ## [4.83.0] (2026-08-21)
 
 ### Added

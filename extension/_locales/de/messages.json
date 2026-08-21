@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "Nur Namen, keine Werte. Es wurde nichts irgendwohin gesendet. Das liegt in deiner Zwischenablage und du entscheidest, ob du es einfügst."
+  },
+  "bisectAbort": {
+    "message": "Stoppen und wiederherstellen"
+  },
+  "bisectAborted": {
+    "message": "Bisect gestoppt. Deine Funktionen sind wieder aktiv."
+  },
+  "bisectCopy": {
+    "message": "Ergebnis kopieren"
+  },
+  "bisectCopyDone": {
+    "message": "Ergebnis kopiert. Es wurde nichts irgendwohin gesendet."
+  },
+  "bisectCopyFail": {
+    "message": "Das Ergebnis konnte nicht kopiert werden."
+  },
+  "bisectCulpritTpl": {
+    "message": "Es ist {feature}."
+  },
+  "bisectExpired": {
+    "message": "Ein unvollendeter Bisect ist abgelaufen. Deine Funktionen sind wieder aktiv."
+  },
+  "bisectIntro": {
+    "message": "Schaltet deine Funktionen halbweise aus und wieder ein, sodass du 291 davon in etwa zehn Neuladevorgängen auf eine eingrenzen kannst. Deine Einstellungen werden wiederhergestellt: am Ende, beim Abbrechen und automatisch, wenn du weggehst."
+  },
+  "bisectNo": {
+    "message": "Weg"
+  },
+  "bisectNoCulprit": {
+    "message": "Keine einzelne Funktion ist verantwortlich. Etwas außerhalb von Astra Deck oder eine Kombination von Funktionen verursacht es."
+  },
+  "bisectNothingEnabled": {
+    "message": "Es sind keine Funktionen aktiv, also gibt es nichts zu durchsuchen."
+  },
+  "bisectStart": {
+    "message": "Bisect starten"
+  },
+  "bisectStarted": {
+    "message": "Lade YouTube neu und antworte dann unten."
+  },
+  "bisectStepTpl": {
+    "message": "Schritt {step} von etwa {total}. Lade YouTube neu und antworte dann: Tritt das Problem weiterhin auf?"
+  },
+  "bisectTitle": {
+    "message": "Finde die Funktion, die es kaputt gemacht hat"
+  },
+  "bisectYes": {
+    "message": "Tritt weiterhin auf"
   }
 }
