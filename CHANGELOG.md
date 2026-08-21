@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- Settings now keeps every Shorts control in one localized section. Popup
+  search and the generated reference use the same nine-key index, while daily
+  limits still point back to Digital Wellbeing when its master control is off.
+
 - Subscription Groups now points new users to + Group when nothing has been
   made yet. Watch Later Workbench and Video Notes also replace blank space with
   a labelled prompt that says what to do next.
@@ -40,6 +44,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   destructive action you could not take back once you had answered it.
 
 ### Fixed
+
+- Chromium smoke runs now close the browser through its debugging connection
+  before deleting the disposable profile. A guarded Windows fallback clears
+  profile folders that Node can leave behind after the browser has exited.
 
 - The first-run profile and preset choices now collapse to one column at 200%
   zoom. The real popup check found the old two-column layout spilling outside

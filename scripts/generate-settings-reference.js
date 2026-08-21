@@ -14,6 +14,7 @@ const {
     SETTINGS_SCHEMA,
     humanizeSettingKey
 } = require('../extension/core/settings-schema');
+const { SHORTS_SETTING_KEYS } = require('../extension/core/settings-visual-system');
 const { extractFeatureCopyFromSource, normalizeFeatureCopy } = require('./catalog-utils');
 const { PURPOSE_OVERRIDES } = require('./settings-reference-overrides');
 
@@ -258,12 +259,18 @@ function renderSettingsReference(entries = collectReferenceEntries()) {
         ''
     ];
 
+    const shortsKeySet = new Set(SHORTS_SETTING_KEYS);
     for (const category of CATEGORIES) {
-        const categoryEntries = entries.filter((entry) => entry.category === category);
+        const isShortsSection = category === 'shorts';
+        const categoryEntries = isShortsSection
+            ? SHORTS_SETTING_KEYS.map((key) => entries.find((entry) => entry.key === key)).filter(Boolean)
+            : entries.filter((entry) => entry.category === category && !shortsKeySet.has(entry.key));
         if (!categoryEntries.length) continue;
-        const label = CATEGORY_LABELS[category] || humanizeSettingKey(category.replace(/-/g, '_'));
+        const label = isShortsSection
+            ? 'Shorts controls'
+            : CATEGORY_LABELS[category] || humanizeSettingKey(category.replace(/-/g, '_'));
         lines.push(
-            '<details>',
+            isShortsSection ? '<details data-settings-section="shorts-controls">' : '<details>',
             `<summary><strong>${escapeHtml(label)}</strong>: ${categoryEntries.length} settings</summary>`,
             '',
             '| Setting | Purpose | Default and accepted values | Availability and behavior |',

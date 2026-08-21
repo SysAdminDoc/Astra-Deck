@@ -5127,7 +5127,7 @@
     "message": "Partage et actions"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts et découverte"
+    "message": "Commandes Shorts"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock et DeArrow"
@@ -5152,6 +5152,12 @@
   },
   "settingsSectionVisibility": {
     "message": "Visibilité"
+  },
+  "settingsShortsDependencyAction": {
+    "message": "Ouvrir Bien-être numérique"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "Les limites quotidiennes de Shorts passent par Bien-être numérique."
   },
   "settingsSubFeatureBadge": {
     "message": "Sous-fonction"

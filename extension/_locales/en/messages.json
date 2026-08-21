@@ -5127,7 +5127,7 @@
     "message": "Sharing & actions"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts & discovery"
+    "message": "Shorts controls"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock & DeArrow"
@@ -5153,6 +5153,8 @@
   "settingsSectionVisibility": {
     "message": "Visibility"
   },
+  "settingsShortsDependencyAction": { "message": "Open Digital Wellbeing" },
+  "settingsShortsDependencyCopy": { "message": "Daily Shorts limits run through Digital Wellbeing." },
   "settingsSubFeatureBadge": {
     "message": "Sub"
   },

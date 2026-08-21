@@ -19,6 +19,7 @@ const popupSource = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'popup.js'
 const panelSource = fs.readFileSync(
     path.join(REPO_ROOT, 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
 const schema = require('../extension/core/settings-schema.js');
+const { SHORTS_SETTING_KEYS } = require('../extension/core/settings-visual-system');
 
 // The popup's matcher, sliced out and run against the real schema. popup.js is
 // not a module, and asserting on its source text could not tell a matcher that
@@ -76,6 +77,13 @@ test('name, category, and description matching still work', () => {
 test('an empty term matches everything rather than nothing', () => {
     assert.equal(matches('').length,
         schema.SETTINGS_SCHEMA.filter((entry) => !entry.internal).length);
+});
+
+test('searching Shorts reaches every Shorts setting from the popup', () => {
+    const matchedKeys = new Set(matches('shorts').map((entry) => entry.key));
+    for (const key of SHORTS_SETTING_KEYS) {
+        assert.equal(matchedKeys.has(key), true, `${key} must be reachable through popup search`);
+    }
 });
 
 test('a search that matches nothing renders guidance, not a blank list', () => {

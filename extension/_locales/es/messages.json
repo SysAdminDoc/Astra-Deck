@@ -5127,7 +5127,7 @@
     "message": "Compartir y acciones"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts y descubrimiento"
+    "message": "Controles de Shorts"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock y DeArrow"
@@ -5152,6 +5152,12 @@
   },
   "settingsSectionVisibility": {
     "message": "Visibilidad"
+  },
+  "settingsShortsDependencyAction": {
+    "message": "Abrir Bienestar digital"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "Los límites diarios de Shorts funcionan mediante Bienestar digital."
   },
   "settingsSubFeatureBadge": {
     "message": "Sub"

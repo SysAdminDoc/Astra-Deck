@@ -459,8 +459,8 @@ This generated knowledgebase documents all **472 user-facing settings** in the c
 
 </details>
 
-<details>
-<summary><strong>Shorts</strong>: 6 settings</summary>
+<details data-settings-section="shorts-controls">
+<summary><strong>Shorts controls</strong>: 9 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -470,6 +470,9 @@ This generated knowledgebase documents all **472 user-facing settings** in the c
 | <a id="setting-shortsSpeedControl"></a><strong>Shorts Speed Control</strong><br><code>shortsSpeedControl</code> | Adds a click-to-cycle playback speed chip to the Shorts player (0.5x-2x), honoring your persistent speed default | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
 | <a id="setting-shortsAutoAdvance"></a><strong>Shorts Auto-Advance</strong><br><code>shortsAutoAdvance</code> | Stop Shorts from looping and scroll to the next Short automatically when one finishes | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
 | <a id="setting-shortsAsRegularVideo"></a><strong>Shorts Player Controls</strong><br><code>shortsAsRegularVideo</code> | Add native browser playback controls and scrubbing to YouTube Shorts | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-shortsDailyLimitMin"></a><strong>Shorts Daily Limit</strong><br><code>shortsDailyLimitMin</code> | Maximum minutes of Shorts playback per local day. Set to 0 to disable. | Default: <code>0</code><br>Range: <code>0 to 1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
+| <a id="setting-shortsDailyLimitMode"></a><strong>Shorts Limit Action</strong><br><code>shortsDailyLimitMode</code> | Choose whether reaching the limit blocks Shorts or offers five-minute snoozes. | Default: <code>hard</code><br>Values: <code>hard</code>, <code>snooze</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
+| <a id="setting-shortsWatchTimeToday"></a><strong>Shorts watch time today</strong><br><code>shortsWatchTimeToday</code> | Stores the dated Shorts budget ledger and any active snooze deadline. | Default: <code>{&quot;date&quot;:&quot;&quot;,&quot;seconds&quot;:0,&quot;snoozeUntil&quot;:0}</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
 
 </details>
 
@@ -919,7 +922,7 @@ This generated knowledgebase documents all **472 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Research, wellbeing, and AI</strong>: 20 settings</summary>
+<summary><strong>Research, wellbeing, and AI</strong>: 17 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -927,9 +930,6 @@ This generated knowledgebase documents all **472 user-facing settings** in the c
 | <a id="setting-dwBreakIntervalMin"></a><strong>DW break interval min</strong><br><code>dwBreakIntervalMin</code> | Sets the continuous-watch interval after which Digital Wellbeing prompts for a break; zero disables break prompts. | Default: <code>30</code><br>Range: <code>0 to 1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-dwDailyCapMin"></a><strong>DW daily cap min</strong><br><code>dwDailyCapMin</code> | Sets the daily watch-time cap enforced by Digital Wellbeing; zero disables the cap. | Default: <code>0</code><br>Range: <code>0 to 1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-dwWatchTimeToday"></a><strong>DW watch time today</strong><br><code>dwWatchTimeToday</code> | Stores the dated, merge-safe daily watch-time accumulator used by Digital Wellbeing. | Default: <code>{&quot;date&quot;:&quot;&quot;,&quot;seconds&quot;:0}</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-shortsDailyLimitMin"></a><strong>Shorts Daily Limit</strong><br><code>shortsDailyLimitMin</code> | Maximum minutes of Shorts playback per local day. Set to 0 to disable. | Default: <code>0</code><br>Range: <code>0 to 1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
-| <a id="setting-shortsDailyLimitMode"></a><strong>Shorts Limit Action</strong><br><code>shortsDailyLimitMode</code> | Choose whether reaching the limit blocks Shorts or offers five-minute snoozes. | Default: <code>hard</code><br>Values: <code>hard</code>, <code>snooze</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
-| <a id="setting-shortsWatchTimeToday"></a><strong>Shorts watch time today</strong><br><code>shortsWatchTimeToday</code> | Stores the dated Shorts budget ledger and any active snooze deadline. | Default: <code>{&quot;date&quot;:&quot;&quot;,&quot;seconds&quot;:0,&quot;snoozeUntil&quot;:0}</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
 | <a id="setting-localAiSummary"></a><strong>Local AI Summary (browser built-in)</strong><br><code>localAiSummary</code> | Use Chrome's built-in Summarizer API when available; use the configured BYO-key lane when it is unavailable. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v0.1.0</code> |
 | <a id="setting-localAiTranscriptQa"></a><strong>Transcript Q&amp;A (browser built-in)</strong><br><code>localAiTranscriptQa</code> | Ask questions about the current video transcript using the Chrome on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Requires <code>promptApi</code><br>Since <code>v0.1.0</code> |
 | <a id="setting-researchSpacedReview"></a><strong>Study / Work Export</strong><br><code>researchSpacedReview</code> | Export study/work-mode data to Markdown or CSV, or build a bounded local transcript study pack from visible videos. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |

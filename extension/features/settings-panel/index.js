@@ -8,6 +8,20 @@
     // delegated UI listeners, and toggle state refresh path; ytkit.js keeps
     // the inline functions as a compatibility fallback.
 
+    function resolveSettingsPresentationCategory(feature, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
+        if (shortsSettingKeys.includes(feature?.id)) return 'Content';
+        return feature?.group || '';
+    }
+
+    function groupFeaturesBySettingsPresentation(featureList, categoryOrder, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
+        const grouped = categoryOrder.reduce((acc, category) => ({ ...acc, [category]: [] }), {});
+        for (const feature of featureList || []) {
+            const category = resolveSettingsPresentationCategory(feature, shortsSettingKeys);
+            if (grouped[category]) grouped[category].push(feature);
+        }
+        return grouped;
+    }
+
     function createSettingsPanelRuntime(deps = {}) {
         const {
             BRAND,
@@ -273,10 +287,12 @@ function buildSettingsPanel() {
             'Advanced': t('panelNavGroupSystem', 'System'),
         };
         const categorySections = globalThis.YTKitCore?.SETTINGS_CATEGORY_SECTIONS || {};
-        const featuresByCategory = categoryOrder.reduce((acc, cat) => ({...acc, [cat]: []}), {});
-        liveFeatureList.forEach(f => {
-            if (f.group && featuresByCategory[f.group]) featuresByCategory[f.group].push(f);
-        });
+        const shortsPanelSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || [];
+        const featuresByCategory = groupFeaturesBySettingsPresentation(
+            liveFeatureList,
+            categoryOrder,
+            shortsPanelSettingKeys
+        );
         // v3.17.0: the sidebar "Workspace / Home controls" summary card was
         // removed to reclaim vertical space for feature toggles. The four
         // stats (enabled count, total features, populated sections,
@@ -2160,6 +2176,9 @@ function buildSettingsPanel() {
             const catId = cat.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
             const parentFeatures = categoryFeatures.filter(f => !f.isSubFeature);
             const subFeatures = categoryFeatures.filter(f => f.isSubFeature);
+            const promotedSubFeatures = subFeatures.filter((feature) =>
+                resolveSettingsPresentationCategory(feature, shortsPanelSettingKeys) !== feature.group
+            );
             // Keep the established preference-first ordering, then use the
             // first three select controls as a compact category snapshot.
             const sortedParentFeatures = [...parentFeatures].sort((a, b) => {
@@ -2561,6 +2580,10 @@ function buildSettingsPanel() {
                 const sectionIndex = sectionDefinitions.findIndex((section) => section.match.test(feature.id));
                 sectionBuckets[Math.max(0, sectionIndex)].push(feature);
             });
+            promotedSubFeatures.forEach((feature) => {
+                const sectionIndex = sectionDefinitions.findIndex((section) => section.match.test(feature.id));
+                sectionBuckets[Math.max(0, sectionIndex)].push(feature);
+            });
             sectionDefinitions.forEach((sectionDefinition, sectionIndex) => {
                 const sectionFeatures = sectionBuckets[sectionIndex];
                 if (!sectionFeatures.length) return;
@@ -2575,7 +2598,10 @@ function buildSettingsPanel() {
                 featureSection.setAttribute('aria-labelledby', sectionHeading.id);
                 const sectionBody = document.createElement('div');
                 sectionBody.className = 'ytkit-feature-section-body';
-                sectionFeatures.forEach((feature) => {
+                const sectionPromotedSubFeatures = sectionFeatures.filter(
+                    (feature) => promotedSubFeatures.includes(feature)
+                );
+                sectionFeatures.filter((feature) => !sectionPromotedSubFeatures.includes(feature)).forEach((feature) => {
                     sectionBody.appendChild(buildFeatureCard(feature, config.color));
                     const children = subFeatures.filter((subFeature) => subFeature.parentId === feature.id);
                     if (children.length > 0) {
@@ -2588,6 +2614,51 @@ function buildSettingsPanel() {
                         setSubFeatureAvailability(subContainer, !!appState.settings[feature.id]);
                         sectionBody.appendChild(subContainer);
                     }
+                });
+                const promotedByParent = new Map();
+                sectionPromotedSubFeatures.forEach((feature) => {
+                    const parentId = feature.parentId || '';
+                    if (!promotedByParent.has(parentId)) promotedByParent.set(parentId, []);
+                    promotedByParent.get(parentId).push(feature);
+                });
+                promotedByParent.forEach((promotedFeatures, parentId) => {
+                    const dependency = document.createElement('div');
+                    dependency.className = 'ytkit-shorts-dependency';
+                    const dependencyCopy = document.createElement('span');
+                    dependencyCopy.textContent = t(
+                        'settingsShortsDependencyCopy',
+                        'Daily Shorts limits run through Digital Wellbeing.'
+                    );
+                    const dependencyAction = document.createElement('button');
+                    dependencyAction.type = 'button';
+                    dependencyAction.textContent = t(
+                        'settingsShortsDependencyAction',
+                        'Open Digital Wellbeing'
+                    );
+                    dependencyAction.addEventListener('click', () => {
+                        const parentFeature = getFeatureById(parentId);
+                        const parentCategoryId = String(parentFeature?.group || 'Advanced')
+                            .replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
+                        const parentNav = document.querySelector(`.ytkit-nav-btn[data-tab="${parentCategoryId}"]`);
+                        if (!parentNav) return;
+                        syncPanelCategorySelection(parentNav);
+                        const parentPane = document.getElementById(`ytkit-pane-${parentCategoryId}`);
+                        if (parentPane) parentPane.scrollTop = 0;
+                        const parentCard = document.querySelector(`.ytkit-feature-card[data-feature-id="${parentId}"]`);
+                        parentCard?.scrollIntoView?.({ block: 'center' });
+                        parentCard?.querySelector('input, select, textarea, button')?.focus?.({ preventScroll: true });
+                    });
+                    dependency.append(dependencyCopy, dependencyAction);
+                    sectionBody.appendChild(dependency);
+
+                    const subContainer = document.createElement('div');
+                    subContainer.className = 'ytkit-sub-features ytkit-promoted-sub-features';
+                    subContainer.dataset.parentId = parentId;
+                    promotedFeatures.forEach((feature) => {
+                        subContainer.appendChild(buildFeatureCard(feature, config.color, true));
+                    });
+                    setSubFeatureAvailability(subContainer, !!appState.settings[parentId]);
+                    sectionBody.appendChild(subContainer);
                 });
                 featureSection.appendChild(sectionHeading);
                 featureSection.appendChild(sectionBody);
@@ -3950,12 +4021,16 @@ function attachUIEventListeners() {
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     features.settingsPanel = Object.freeze({
-        createSettingsPanelRuntime
+        createSettingsPanelRuntime,
+        resolveSettingsPresentationCategory,
+        groupFeaturesBySettingsPresentation
     });
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            createSettingsPanelRuntime
+            createSettingsPanelRuntime,
+            resolveSettingsPresentationCategory,
+            groupFeaturesBySettingsPresentation
         };
     }
 })();

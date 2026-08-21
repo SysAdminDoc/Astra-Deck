@@ -2,7 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const http = require('http');
+const os = require('os');
 const path = require('path');
+const { EventEmitter } = require('events');
 
 const repoRoot = path.join(__dirname, '..');
 const pkg = require('../package.json');
@@ -237,6 +239,33 @@ test('optional-host Chromium smoke bounds stalled DevTools HTTP requests', async
     } finally {
         server.close();
     }
+});
+
+test('Chromium shutdown asks the browser to close before removing its profile', async () => {
+    const proc = new EventEmitter();
+    proc.exitCode = null;
+    const calls = [];
+    const client = {
+        async send(method) {
+            calls.push(method);
+            proc.exitCode = 0;
+            proc.emit('exit', 0);
+        },
+    };
+
+    await smoke.shutdownChromiumProcess(proc, client, 25);
+
+    assert.deepEqual(calls, ['Browser.close']);
+    assert.equal(proc.exitCode, 0);
+});
+
+test('Chromium cleanup removes a disposable profile tree', async () => {
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-cleanup-contract-'));
+    fs.mkdirSync(path.join(profile, 'Default', 'Cache'), { recursive: true });
+    fs.writeFileSync(path.join(profile, 'Default', 'Cache', 'entry'), 'fixture');
+
+    assert.equal(await smoke.removeDirWithRetries(profile), true);
+    assert.equal(fs.existsSync(profile), false);
 });
 
 test('optional-host smoke helper validates missing values and prompt readiness', () => {

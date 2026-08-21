@@ -5127,7 +5127,7 @@
     "message": "공유 및 작업"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts 및 탐색"
+    "message": "Shorts 컨트롤"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock 및 DeArrow"
@@ -5152,6 +5152,12 @@
   },
   "settingsSectionVisibility": {
     "message": "표시 여부"
+  },
+  "settingsShortsDependencyAction": {
+    "message": "디지털 웰빙 열기"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "Shorts 일일 한도는 디지털 웰빙에서 작동합니다."
   },
   "settingsSubFeatureBadge": {
     "message": "하위 기능"
