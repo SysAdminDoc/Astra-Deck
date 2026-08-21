@@ -18,6 +18,10 @@
 //   7. Every user-facing key has a runtime consumer or a registered feature.
 //   8. Every in-page array sub-toggle token is exposed by the popup's
 //      schema `knownValues` editor vocabulary.
+//   9. Every setting key and feature ID that has shipped in a tagged release
+//      still resolves: it is in the schema, an alias points at a schema key,
+//      or it is explicitly retired. A rename that skips the alias table
+//      orphans stored user state silently, so it fails the build instead.
 //
 // Exit 0 if all invariants hold; exit 1 with a per-issue list otherwise.
 // Hooked into the `check` npm script alongside check-versions / check-i18n.
@@ -51,6 +55,7 @@ try {
 }
 
 const { SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, TYPES, CAPABILITIES, buildDefaultsFromSchema } = schemaModule;
+const { SETTING_ALIASES, RETIRED_SHIPPED_IDS, resolveSettingKey } = schemaModule;
 for (const named of ['SETTINGS_SCHEMA', 'CATEGORIES', 'RISKS', 'PROFILES', 'SCOPES', 'TYPES', 'CAPABILITIES', 'buildDefaultsFromSchema']) {
     if (!schemaModule[named]) issues.push('settings-schema.js missing export: ' + named);
 }
@@ -410,10 +415,75 @@ for (const entry of SETTINGS_SCHEMA.filter((candidate) => Array.isArray(candidat
     }
 }
 
+// ── 9. Shipped identity still resolves ──────────────────────────────────
+//
+// scripts/shipped-identity-baseline.json records every setting key and feature
+// ID that has appeared in a tagged release. Anything in it that is no longer
+// in the schema (or in the live feature-ID set) must resolve through the alias
+// table or be named in RETIRED_SHIPPED_IDS. Without this, a rename ships as a
+// silent reset of that setting for every existing user.
+const IDENTITY_BASELINE_PATH = path.join(__dirname, 'shipped-identity-baseline.json');
+if (!fs.existsSync(IDENTITY_BASELINE_PATH)) {
+    issues.push('scripts/shipped-identity-baseline.json is missing; run node scripts/generate-shipped-identity-baseline.js');
+} else if (!Array.isArray(RETIRED_SHIPPED_IDS) || !SETTING_ALIASES || typeof resolveSettingKey !== 'function') {
+    issues.push('settings-schema.js must export SETTING_ALIASES, RETIRED_SHIPPED_IDS, and resolveSettingKey');
+} else {
+    const identityBaseline = JSON.parse(fs.readFileSync(IDENTITY_BASELINE_PATH, 'utf8'));
+    const retiredSet = new Set(RETIRED_SHIPPED_IDS);
+    const aliasTargets = Object.values(SETTING_ALIASES);
+    for (const [from, to] of Object.entries(SETTING_ALIASES)) {
+        if (!schemaSet.has(to)) {
+            issues.push(`alias "${from}" points at "${to}", which is not a current schema key`);
+        }
+        if (retiredSet.has(from)) {
+            issues.push(`"${from}" is both aliased and retired; it can only be one`);
+        }
+    }
+    if (new Set(aliasTargets).size !== aliasTargets.length) {
+        issues.push('two aliases resolve to the same current key; the later stored value would be ambiguous');
+    }
+    for (const key of identityBaseline.settingKeys || []) {
+        if (schemaSet.has(key)) continue;
+        if (schemaSet.has(resolveSettingKey(key))) continue;
+        if (retiredSet.has(key)) continue;
+        issues.push(`setting key "${key}" shipped in a release but is now in neither the schema, the alias table, nor RETIRED_SHIPPED_IDS`);
+    }
+    // Feature IDs are declared in the monolith and in the peeled feature
+    // modules, the same two places project-facts.js counts them from.
+    const featureIdSources = [path.join(REPO_ROOT, 'extension', 'ytkit.js')];
+    const featureDir = path.join(REPO_ROOT, 'extension', 'features');
+    for (const entry of fs.readdirSync(featureDir, { withFileTypes: true })) {
+        if (entry.isDirectory()) featureIdSources.push(path.join(featureDir, entry.name, 'index.js'));
+    }
+    const liveFeatureIds = new Set();
+    for (const file of featureIdSources) {
+        if (!fs.existsSync(file)) continue;
+        const source = fs.readFileSync(file, 'utf8');
+        const pattern = /^\s+id:\s*'([a-zA-Z][a-zA-Z0-9]*)'/gm;
+        let match;
+        while ((match = pattern.exec(source)) !== null) liveFeatureIds.add(match[1]);
+    }
+    for (const id of identityBaseline.featureIds || []) {
+        if (liveFeatureIds.has(id)) continue;
+        if (liveFeatureIds.has(resolveSettingKey(id))) continue;
+        if (schemaSet.has(id) || schemaSet.has(resolveSettingKey(id))) continue;
+        if (retiredSet.has(id)) continue;
+        issues.push(`feature ID "${id}" shipped in a release but is now in neither the runtime, the alias table, nor RETIRED_SHIPPED_IDS`);
+    }
+    // A retirement that names a key still in the schema is stale bookkeeping,
+    // and it would make the gate blind to that key being renamed later.
+    for (const id of RETIRED_SHIPPED_IDS) {
+        if (schemaSet.has(id) || liveFeatureIds.has(id)) {
+            issues.push(`"${id}" is listed as retired but is still live; remove it from RETIRED_SHIPPED_IDS`);
+        }
+    }
+}
+
 // Final verdict
 if (issues.length === 0) {
     ok(`OK — ${SETTINGS_SCHEMA.length} schema entries match default-settings.json byte-for-byte`);
     ok(`Categories represented: ${CATEGORIES.length}, Risks: ${RISKS.length}, Profiles: ${PROFILES.length}`);
+    ok(`Shipped identity resolves: ${Object.keys(SETTING_ALIASES).length} alias(es), ${RETIRED_SHIPPED_IDS.length} retired`);
     process.exit(0);
 }
 

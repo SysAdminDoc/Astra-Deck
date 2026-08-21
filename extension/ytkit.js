@@ -4399,8 +4399,13 @@ return response;
 
         _sanitize(settings = {}) {
             if (!isPlainObject(settings)) return {};
+            // Resolve renamed keys first. A value stored under a key that has
+            // since been renamed would otherwise fall through to the default
+            // silently, which is the whole point of the alias table.
+            const aliased = globalThis.__YTKIT_SETTINGS_SCHEMA__?.applySettingAliases?.(settings);
+            const source = isPlainObject(aliased?.settings) ? aliased.settings : settings;
             const sanitized = {};
-            for (const [key, value] of Object.entries(settings)) {
+            for (const [key, value] of Object.entries(source)) {
                 if (isSafeObjectKey(key) && !RETIRED_SETTING_KEYS.has(key)) {
                     sanitized[key] = value;
                 }
@@ -5330,6 +5335,11 @@ return response;
         triggerDownload,
         requestCobaltDownload: () => sendRuntimeMessage({ type: 'YTKIT_COBALT_REQUEST' }),
         requestNativeDownloaderToken,
+        getExtensionRuntimeId: () => (
+            typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id
+                ? String(chrome.runtime.id)
+                : ''
+        ),
         browserCookies,
         getProfileExportMode,
         PageTypes,

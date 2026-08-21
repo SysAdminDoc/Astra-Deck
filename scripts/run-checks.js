@@ -35,6 +35,7 @@ const GATES = Object.freeze([
     { id: 'i18n-keys', script: 'extract-i18n-keys.js', args: ['--check-en'] },
     { id: 'i18n-copy', script: 'check-localizable-ui-copy.js' },
     { id: 'localized-selectors', script: 'check-localized-selectors.js' },
+    { id: 'shipped-identity', script: 'generate-shipped-identity-baseline.js', args: ['--check'] },
     { id: 'settings', script: 'check-settings.js' },
     { id: 'no-eval', script: 'check-no-eval.js' },
     { id: 'userscript-size', script: 'check-userscript-size.js' },

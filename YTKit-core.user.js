@@ -1621,6 +1621,124 @@ function getGithubFullKeys(schema) {
 //   3. Insert spaces around digit runs (vvf1 -> vvf 1).
 //   4. Short-form acronyms get all-caps (api -> API, css -> CSS).
 //   5. Lowercase + capitalise the first character of the joined string.
+// ── Identity across renames ──────────────────────────────────────────────
+//
+// A rename orphans stored user state. The browser still holds the value under
+// the old key, the loader reads the new one, finds nothing, and the setting
+// silently reverts to its default — no error, no diagnostic, and the user's
+// only clue is that a toggle they set months ago is back to how it shipped.
+// This table is the one place that keeps an old name resolvable. Left side is
+// the historical key, right side is the key it is now.
+//
+// The table is empty, and that is a measurement rather than an oversight.
+// Every commit that touched the settings source of truth was walked on
+// 2026-08-21 — extension/ytkit.js settingsManager.defaults for the pre-v4.6.0
+// era, extension/core/settings-schema.js after it — and every tagged release
+// back to v3.0.1 was compared key by key. Seven key-removal events, twenty-five
+// identities gone, and not one of them a rename: keys have been retired or
+// their data relocated, never renamed in place. Nothing is aliased here on a
+// guess, because a wrong alias is worse than no alias — it pushes a stale
+// value, possibly of the wrong type, into a live setting.
+//
+// Two rules for adding an entry. The rename must be verifiable in the commit
+// that made it, and the two keys must carry the same value type; a rename that
+// also changes the shape of the value is a retirement plus a new setting.
+//
+// scripts/check-settings.js fails the build if a key or feature ID that
+// shipped in a tagged release stops resolving through this table, the schema,
+// or the retirement list below.
+const SETTING_ALIASES = Object.freeze({});
+
+// Identities that shipped in a tagged release and were removed outright. A
+// retired identity has no current equivalent, so stored values under these
+// names are dropped rather than migrated. This is the gate's accounting of
+// history; the runtime's own strip-on-load list lives in ytkit.js, is a
+// subset of this one, and covers only the keys that could still be sitting
+// in a user's settings bag.
+const RETIRED_SHIPPED_IDS = Object.freeze([
+    // v3.18.0: Auto Quality replaced its select and sub-features with a
+    // single Premium-aware MAIN-world toggle.
+    "preferredQuality",
+    "useEnhancedBitrate",
+    "hideQualityPopup",
+    // v4.49.0: credentials moved behind the background worker.
+    "aiSummaryApiKey",
+    // v4.62.0: low-power restore state has always lived in the dedicated
+    // top-level ytkit-low-power-backup store; the schema key was never read.
+    "lowPowerProfileBackup",
+    // v4.0.0 (b73fa623): the bundled ad blocker was replaced by static
+    // declarativeNetRequest rules, which carry no per-user setting.
+    "ytAdBlock",
+    "adblockCosmeticHide",
+    "adblockSsapAutoSkip",
+    "adblockAntiDetect",
+    "muteAdAudio",
+    // v4.0.0 (b73fa623): the download stack was rebuilt around the Astra
+    // Downloader companion and the Cobalt fallback. None of these map onto a
+    // current key — the new settings model different things.
+    "replaceWithCobaltDownloader",
+    "cobaltUrl",
+    "downloadProvider",
+    "showMp3DownloadButton",
+    "showDownloadPlayButton",
+    "showVlcButton",
+    "showVlcQueueButton",
+    "showMpvButton",
+    "preferredMediaPlayer",
+    "subsVlcPlaylist",
+    // v4.0.0 (b73fa623): audio processing removed with the Web Audio graph.
+    "skipSilence",
+    "audioEqualizer",
+    "volumeScrollWheel",
+    "enableEmbedPlayer",
+    // v4.0.0 (b73fa623): SponsorBlock was rewritten against the public API.
+    "skipSponsors",
+    // v3.22.0 (8649fc8f): Return YouTube Dislike was rewritten as its own
+    // feature module with a different settings model.
+    "returnYoutubeDislike"
+]);
+
+const RETIRED_SHIPPED_ID_SET = new Set(RETIRED_SHIPPED_IDS);
+
+// Resolves a stored key to the key it is known by now. Unknown keys pass
+// through unchanged — this is not a validator, and rejecting anything it does
+// not recognise would break every forward-compatible read.
+function resolveSettingKey(key) {
+    if (typeof key !== "string" || key.length === 0) return "";
+    return Object.prototype.hasOwnProperty.call(SETTING_ALIASES, key)
+        ? SETTING_ALIASES[key]
+        : key;
+}
+
+function isRetiredShippedId(id) {
+    return RETIRED_SHIPPED_ID_SET.has(id);
+}
+
+// Rewrites a stored settings bag onto current key names. A value already
+// stored under the current name wins: it is the later, deliberate choice, and
+// an alias must never overwrite one. Returns the rewritten bag plus the list
+// of keys it moved so callers can log the migration.
+function applySettingAliases(settings) {
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+        return { settings: {}, renamed: [] };
+    }
+    const out = {};
+    const renamed = [];
+    // Two passes: current-name values are claimed first so a stale aliased
+    // value cannot win by iterating earlier.
+    for (const [key, value] of Object.entries(settings)) {
+        if (resolveSettingKey(key) === key) out[key] = value;
+    }
+    for (const [key, value] of Object.entries(settings)) {
+        const resolved = resolveSettingKey(key);
+        if (resolved === key) continue;
+        if (Object.prototype.hasOwnProperty.call(out, resolved)) continue;
+        out[resolved] = value;
+        renamed.push({ from: key, to: resolved });
+    }
+    return { settings: out, renamed };
+}
+
 const HUMANISE_SHORT_FORMS = new Set([
     "api", "ai", "url", "osd", "rgb", "rgba", "css", "bg", "fps",
     "hd", "id", "ids", "ip", "json", "kb", "lru", "nsfw",
@@ -1661,20 +1779,24 @@ if (typeof module !== "undefined" && module.exports) {
     module.exports = {
         SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
         CAPABILITIES,
+        SETTING_ALIASES, RETIRED_SHIPPED_IDS,
         buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,
         settingsValuesEqual, getChangedSettings,
         isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
-        humanizeSettingKey
+        humanizeSettingKey, resolveSettingKey, applySettingAliases,
+        isRetiredShippedId
     };
 }
 if (typeof globalThis !== "undefined") {
     globalThis.__YTKIT_SETTINGS_SCHEMA__ = {
         SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
         CAPABILITIES,
+        SETTING_ALIASES, RETIRED_SHIPPED_IDS,
         buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,
         settingsValuesEqual, getChangedSettings,
         isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
-        humanizeSettingKey
+        humanizeSettingKey, resolveSettingKey, applySettingAliases,
+        isRetiredShippedId
     };
 }
 

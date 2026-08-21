@@ -6,14 +6,36 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- A rename of any setting or feature can no longer quietly reset it. Renaming a
+  key used to leave the old value stranded in the browser while the code read
+  the new name and fell back to the default, with nothing to say it had
+  happened. There is now one table mapping old names to current ones, both
+  settings loaders consult it before they read anything, and `npm run check`
+  fails if a name that shipped in a release stops resolving. Checked against
+  every tagged release back to v3.0.1: nothing has actually been renamed yet,
+  so the table starts empty and the 26 identities that have left are recorded
+  as removals.
+
 ### Fixed
 
+- Download buttons now pair Chrome and Edge with Astra Downloader on first
+  use. The companion no longer echoes its session token over `/health`, so
+  Chromium needed a native-messaging host allowlist entry that nobody wrote
+  unless you pasted the extension ID by hand. The extension now introduces
+  its ID over loopback, retries native messaging, and sends `X-MDL-Api` on
+  companion requests.
 - Undo Reset and Undo Import now survive closing the browser. The data they
   restore from was always durable, in extension IndexedDB, but the small
   pointer to it sat in session storage, which the browser wipes on exit. Reset,
   quit, reopen, and there was no way back. The pointer is durable now and the
   undo stays on offer for 7 days, after which it expires and takes its stored
   payload with it rather than leaving it behind.
+- The toolbar popup and the in-page runtime agree on which settings are
+  retired. `lowPowerProfileBackup` was retired in the runtime in v4.62.0 and
+  never removed from the popup's list, so the popup kept writing a key the
+  runtime strips on every load.
 - Importing a backup writes a copy of your previous data to a file before it
   overwrites anything, and the success message names that file. Undo Import
   still covers a mistake you spot straight away; the file covers everything
