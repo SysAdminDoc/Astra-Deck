@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- Known-Breakage Notices. When YouTube changes something and a feature stops
+  working, the only fix used to be a new release, which means waiting on store
+  review while the feature keeps not working in front of you. Astra Deck now
+  reads a short list from its own repository, at most once every six hours, and
+  pauses the features that list names for the versions they are broken in. The
+  card in Settings says so and links the issue.
+
+  The list can pause a feature and nothing else. It cannot switch anything on,
+  cannot change or read a setting, carries no code and no links, and cannot
+  name anything the extension does not already ship. Your own toggle is left
+  exactly as you set it, so a fix simply restores the feature. It is on by
+  default and lives in Settings under Advanced; turn it off and no request is
+  made at all.
+
 ## [4.83.0] (2026-08-21)
 
 ### Added

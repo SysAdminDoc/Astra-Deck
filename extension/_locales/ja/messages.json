@@ -2051,6 +2051,12 @@
   "feature_expandVideoWidth_name": {
     "message": "動画の横幅を拡大"
   },
+  "feature_featureDisableFeed_desc": {
+    "message": "YouTube の変更で壊れたとプロジェクトが確認した機能を、修正が届くまで一時停止します。Astra Deck リポジトリから小さなテキスト ファイルを取得します。機能を一時停止することしかできず、有効化することはありません。"
+  },
+  "feature_featureDisableFeed_name": {
+    "message": "既知の不具合通知"
+  },
   "feature_feedPrefilter_desc": {
     "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
   },
@@ -8064,5 +8070,11 @@
   },
   "subscriptionGroupDeleted": {
     "message": "グループを削除しました"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "一時停止中: YouTube の変更により、このバージョンの Astra Deck ではこの機能が動作しません。設定はそのままで、修正が届くと再び動作します。"
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "課題 #{issue}"
   }
 }

@@ -182,16 +182,20 @@
         }),
         Object.freeze({
             origin: 'https://raw.githubusercontent.com',
-            purpose: 'Repair path: refreshes the YouTube selector packs when a layout change breaks a feature. Contacted only when you run a selector refresh, never automatically.',
-            // Driven by an explicit user action from the selector-health
-            // dashboard rather than a feature toggle, so it is never reported
-            // as currently active. It is catalogued because the extension does
-            // fetch it: the dev manifest declared the permission while the
-            // catalogue did not, so every BUILT artifact dropped it and the
-            // request survived only because GitHub raw sends
-            // Access-Control-Allow-Origin: *. Disclosure should not rest on
-            // another host's CORS policy.
-            requiredByFeatures: [],
+            purpose: 'Repair paths, both anonymous and data-only: refreshing the YouTube selector packs when a layout change breaks a feature (only when you run a selector refresh), and reading the list of features the project has confirmed broken by a YouTube change (at most once every six hours, and only while Known-Breakage Notices is on).',
+            // The selector refresh is driven by an explicit user action from
+            // the selector-health dashboard rather than a feature toggle. It is
+            // catalogued because the extension does fetch it: the dev manifest
+            // declared the permission while the catalogue did not, so every
+            // BUILT artifact dropped it and the request survived only because
+            // GitHub raw sends Access-Control-Allow-Origin: *. Disclosure
+            // should not rest on another host's CORS policy.
+            //
+            // The disable feed IS automatic, which is why it is named in the
+            // purpose above and listed below: a user reading this panel must
+            // not have to infer a recurring request from a line that says
+            // "never automatically".
+            requiredByFeatures: ['featureDisableFeed'],
             credentialsPolicy: 'no-cookies',
             profile: 'store-safe',
             hostGrant: 'required',

@@ -135,7 +135,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // feedPrefilter adds a further 22.
     // antiTranslateChapters adds a further 30.
     // The modeNotices chat-hide entry adds a further 14.
-    assert.equal(assessment.totalBytes, 186155);
+    // The known-breakage feed toggle adds a further 26.
+    assert.equal(assessment.totalBytes, 186181);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

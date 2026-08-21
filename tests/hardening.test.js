@@ -489,10 +489,17 @@ test('background.js reveals downloads via onChanged, not setTimeout', () => {
     );
 
     // Confirm the legacy setTimeout(900, downloads.show) is gone.
-    // Use multiline-aware regex since setTimeout callback spans newlines.
+    //
+    // The gap between the callback brace and the reveal call is bounded to a
+    // single statement body. It used to be `[\s\S]*?`, which is unbounded and
+    // matched ANY setTimeout anywhere in the file as long as some later line
+    // called downloads.show — so the first unrelated timeout added to
+    // background.js failed this test while the legacy pattern it names stayed
+    // absent. What the assertion is for is a reveal deferred inside its own
+    // timeout callback, and that shape has no closing brace before the call.
     assert.doesNotMatch(
         backgroundSource,
-        /setTimeout\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?callExtensionApi\(ext\.downloads, 'show'/,
+        /setTimeout\(\s*\(\s*\)\s*=>\s*\{[^}]*?callExtensionApi\(ext\.downloads, 'show'/,
         'Legacy setTimeout + downloads.show pattern must be removed'
     );
 });
@@ -5710,10 +5717,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // The retired lowPowerProfileBackup compatibility placeholder was removed
     // after the audit confirmed the real backup lives in its own storage key
     // (468 → 467).
+    // The remote known-breakage feed adds its own default-on toggle (476 -> 477).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 476,
-        'SETTINGS_SCHEMA must cover all 476 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 477,
+        'SETTINGS_SCHEMA must cover all 477 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

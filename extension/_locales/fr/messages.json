@@ -2051,6 +2051,12 @@
   "feature_expandVideoWidth_name": {
     "message": "Élargir la vidéo"
   },
+  "feature_featureDisableFeed_desc": {
+    "message": "Met en pause les fonctions dont le projet a confirmé la panne après un changement de YouTube, jusqu’à un correctif. Télécharge un petit fichier texte du dépôt Astra Deck ; il ne peut que mettre une fonction en pause, jamais l’activer."
+  },
+  "feature_featureDisableFeed_name": {
+    "message": "Avis de pannes connues"
+  },
   "feature_feedPrefilter_desc": {
     "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
   },
@@ -8064,5 +8070,11 @@
   },
   "subscriptionGroupDeleted": {
     "message": "Groupe supprimé"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "En pause : un changement de YouTube a cassé cette fonction dans cette version d’Astra Deck. Votre réglage est intact et elle refonctionnera dès qu’un correctif sera publié."
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "Ticket n° {issue}"
   }
 }

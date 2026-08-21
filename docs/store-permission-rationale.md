@@ -160,7 +160,7 @@ before proxying requests to these optional origins.
 | `https://returnyoutubedislikeapi.com/*` | Fetches estimated Return YouTube Dislike counts for the optional dislike-count restoration feature. |
 | `https://www.reddit.com/*` | Fetches Reddit search results for the optional Reddit discussion panel under a YouTube video. |
 | `https://old.reddit.com/*` | Allows Reddit permalink handling for the optional Reddit discussion panel without broad Reddit host access. |
-| `https://raw.githubusercontent.com/*` | Repair path only. When a YouTube layout change breaks a feature, the user can run a selector refresh that downloads this extension's own published `selector-packs.json`. It is fetched from a fixed URL held in the background script, not a caller-supplied one, without cookies, with `redirect: 'error'`, and under a 256 KB cap. Nothing is uploaded, and no automatic or background request is made to this host. |
+| `https://raw.githubusercontent.com/*` | Repair paths only, both anonymous and data-only. (1) When a YouTube layout change breaks a feature, the user can run a selector refresh that downloads this extension's own published `selector-packs.json`, under a 256 KB cap. (2) Known-Breakage Notices reads this extension's own published `feature-disable-feed.csv` at most once every six hours, under a 64 KB cap, and stops running the features it names. Both are fetched from fixed URLs held in the background script, not caller-supplied ones, without cookies and with `redirect: 'error'`. Nothing is uploaded. The disable feed is the only automatic request to this host, it is off when the user turns the feature off, and it can only ever stop a feature running — see the section below. |
 
 ## GitHub-Full Additional Host Permissions
 
@@ -174,6 +174,46 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 | `https://generativelanguage.googleapis.com/*` | Runtime-optional GitHub-full fallback. Sends user-selected transcript/video context directly to Gemini only after the selected BYO-key provider is granted; Chrome's built-in AI lane uses no host permission or key. |
 | `https://*/*` | Runtime-optional, GitHub-full only, and never granted as a whole. It lets the browser prompt for **one** user-typed host for either a Video Hider filter list or an authorized self-hosted Cobalt instance; Astra Deck requests `https://<that host>/*` and the worker refuses an origin the user did not grant. Filter-list traffic is anonymous GET-only and capped at 1 MiB. A strict versioned parser rejects unknown or malformed fields and strips publisher predicate code before persistence. Successful content is recorded as a SHA-256-addressed last-known-good payload with ETag/Last-Modified validators; stale use is visible, user-disableable, and controllable with daily, weekly, or manual checks. Cobalt uses a separate fixed POST contract: the destination comes from validated settings, only the canonical YouTube watch URL is sent, credentials are omitted, redirects are refused, timeout is 15 s, and the JSON response is capped at 512 KiB. Origins must be root HTTPS URLs without credentials, query strings, fragments, IP literals, private/reserved addresses, or internal-only names. `api.cobalt.tools` is explicitly rejected because Astra Deck has no authorization to use that public service. This capability and its `https://*` CSP lane are stripped from store-safe artifacts. |
 | `http://127.0.0.1:11434/*` | Talks to the user's local Ollama runtime for offline AI summaries; no remote host is contacted. |
+
+## Known-Breakage Notices and the remote-logic rule
+
+Mozilla forbids an add-on concealing functionality by making "control flow
+decisions based on external resources". Chrome's policy is narrower and
+concerns remote *code*. Known-Breakage Notices is a control-flow decision based
+on an external resource, so it is worth stating plainly what it is and why it
+ships in every profile rather than only in the GitHub build.
+
+What the feed can do: name a feature ID that this extension already ships, an
+issue number, and a version range, and thereby stop that feature activating.
+That is the entire mechanism. It terminates in one `Set` in the content script
+whose only consumer is a `return false` inside `shouldFeatureBeActive`, and it
+is read *after* the user's own setting, never before it.
+
+What the feed cannot do, enforced by `extension/core/feature-disable-feed.js`
+and asserted by a hostile-row battery in `tests/feature-disable-feed.test.js`:
+
+- It cannot enable a feature. There is no shape in the parser's output that
+  means "on", so there is nothing for a hostile row to aim at.
+- It cannot write, read, or change any setting. The user's toggle keeps its
+  value; turning the feature off restores everything with no migration.
+- It cannot introduce behaviour. It carries no code, no selectors, no rules,
+  and no URLs.
+- It cannot put its own words or its own links in front of the user. The row
+  copy is a localized string in this extension, and the tracker link is built
+  here from the row's issue *number*.
+- It cannot name anything outside the shipped schema. An unrecognised ID is
+  dropped, resolved through the same alias table stored settings use.
+
+Why it ships everywhere. The alternative to a disable feed is not "no remote
+influence" — it is leaving a feature the maintainer *knows* is broken running
+against a changed YouTube until a new version clears review, which is the
+behaviour users experience as the extension breaking the site. Refined GitHub
+ships this same mechanism on both AMO and the Chrome Web Store, which is the
+practical evidence it passes review. Restricting it to the GitHub build would
+withhold the repair channel from exactly the users who cannot self-update.
+
+The feature is default-on, disclosed in the data-flow panel, and switchable off
+in Settings under Advanced. With it off, no request to the feed is made.
 
 ## Reviewer Notes
 

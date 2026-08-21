@@ -2051,6 +2051,12 @@
   "feature_expandVideoWidth_name": {
     "message": "동영상 너비 확장"
   },
+  "feature_featureDisableFeed_desc": {
+    "message": "YouTube 변경으로 고장난 것이 확인된 기능을 수정이 배포될 때까지 일시 중지합니다. Astra Deck 저장소에서 작은 텍스트 파일을 가져옵니다. 기능을 일시 중지할 수만 있고 켤 수는 없습니다."
+  },
+  "feature_featureDisableFeed_name": {
+    "message": "알려진 오류 알림"
+  },
   "feature_feedPrefilter_desc": {
     "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
   },
@@ -8064,5 +8070,11 @@
   },
   "subscriptionGroupDeleted": {
     "message": "그룹을 삭제했습니다"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "일시 중지됨: YouTube 변경으로 이 버전의 Astra Deck에서 이 기능이 작동하지 않습니다. 설정은 그대로이며 수정이 배포되면 다시 작동합니다."
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "이슈 #{issue}"
   }
 }

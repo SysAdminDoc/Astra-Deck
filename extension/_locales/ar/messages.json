@@ -2051,6 +2051,12 @@
   "feature_expandVideoWidth_name": {
     "message": "توسيع عرض الفيديو"
   },
+  "feature_featureDisableFeed_desc": {
+    "message": "إيقاف الميزات التي أكد المشروع تعطلها بسبب تغيير في YouTube، إلى أن يصدر إصلاح. يجلب ملفًا نصيًا صغيرًا من مستودع Astra Deck؛ ولا يمكنه سوى إيقاف ميزة، لا تفعيلها أبدًا."
+  },
+  "feature_featureDisableFeed_name": {
+    "message": "إشعارات الأعطال المعروفة"
+  },
   "feature_feedPrefilter_desc": {
     "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
   },
@@ -8064,5 +8070,11 @@
   },
   "subscriptionGroupDeleted": {
     "message": "تم حذف المجموعة"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "موقوفة مؤقتًا: أدى تغيير في YouTube إلى تعطل هذه الميزة في هذا الإصدار من Astra Deck. إعدادك لم يتغير وستعمل الميزة مجددًا عند صدور إصلاح."
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "المشكلة رقم {issue}"
   }
 }

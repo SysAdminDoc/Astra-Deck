@@ -557,6 +557,7 @@
   "watchPageTabs": false,
   "redditComments": false,
   "diagnosticLog": false,
+  "featureDisableFeed": true,
   "_errors": [],
   "storageQuotaLRU": false,
   "apiRetryBackoff": true,

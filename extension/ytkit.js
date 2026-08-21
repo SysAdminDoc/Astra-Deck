@@ -4076,6 +4076,7 @@ return response;
             videoAgeColors: false,
             watchPageTabs: false,
             redditComments: false,
+            featureDisableFeed: true,
             diagnosticLog: false,
             _errors: [],                     // { ts, ctx, msg }
             storageQuotaLRU: false,
@@ -5580,13 +5581,118 @@ return response;
         return !!settings[feature.id];
     }
 
+    // v4.84.0 — remote known-breakage notices.
+    //
+    // A YouTube layout change can break a feature between releases, and with
+    // no store channel and no CI the only remedy was cutting a build. The feed
+    // shortens that to one cache window. What it cannot do is anything else:
+    // the whole mechanism terminates in this Map, and the only thing this Map
+    // does is make shouldFeatureBeActive return false one step AFTER the
+    // user's own setting has been read. Nothing here writes appState.settings,
+    // so a user's toggle keeps its value, the popup keeps showing what they
+    // chose, and switching the feed off restores the feature with no migration
+    // and no stored state to unwind.
+    const FEATURE_DISABLE_FEED_STORAGE_KEY = 'ytkit-feature-disable-feed';
+    let _featureDisableNotices = new Map();
+
+    function getFeatureDisableNotice(featureId) {
+        if (!featureId) return null;
+        return _featureDisableNotices.get(featureId) || null;
+    }
+
     function shouldFeatureBeActive(feature, settings = appState.settings || {}, page = appState.currentPage || getCurrentPage()) {
         if (!feature || feature._arrayKey) return false;
         if (isRetiredCommentFeature(feature)) return false;
         if (!isFeatureEnabledInSettings(feature, settings)) return false;
+        if (getFeatureDisableNotice(feature.id)) return false;
         if (feature.pages && !feature.pages.includes(page)) return false;
         if (feature.dependsOn && !settings[feature.dependsOn]) return false;
         return true;
+    }
+
+    // Always deferred, never called straight from a feature lifecycle hook.
+    // The refresh ends in applyExternalSettingsUpdate, which is the same
+    // reconciler that runs init/destroy, so a direct call from init() or
+    // destroy() would re-enter a loop that is mid-iteration over the feature
+    // list. One tick of distance removes the whole question.
+    let _featureDisableRefreshTimer = null;
+    function scheduleFeatureDisableRefresh() {
+        if (_featureDisableRefreshTimer) return;
+        _featureDisableRefreshTimer = setTimeout(() => {
+            _featureDisableRefreshTimer = null;
+            void refreshFeatureDisableNotices().catch(() => {
+                // reason: the feed contributing nothing is the designed failure
+            });
+        }, 0);
+    }
+
+    // Reads the feed and, if it changed anything, reconciles. Deliberately not
+    // on the boot path: a feature that starts and is torn down a moment later
+    // is a far better trade than every feature on the page waiting for a
+    // network round trip that usually returns the list it returned six hours
+    // ago. The worker answers from cache, so this is a message round trip on
+    // almost every pageview and a real fetch on very few.
+    async function refreshFeatureDisableNotices() {
+        const feedCore = globalThis.YTKitCore || {};
+        if (typeof feedCore.parseFeatureDisableFeed !== 'function') return null;
+        if (!appState.settings?.featureDisableFeed) {
+            if (_featureDisableNotices.size) {
+                _featureDisableNotices = new Map();
+                applyExternalSettingsUpdate({ source: 'feature-disable-feed' });
+            }
+            return null;
+        }
+
+        let text = null;
+        try {
+            const response = await sendRuntimeMessage({ type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
+            if (response?.ok && typeof response.text === 'string') text = response.text;
+        } catch (_) {
+            // reason: an unreachable feed is a no-op by design, never an error
+        }
+        if (text === null) {
+            // Last known-good list, so a GitHub outage does not un-disable a
+            // feature that is still broken. Written by this same function, so
+            // it can only ever contain rows this parser already accepted.
+            text = storageReadJSON(FEATURE_DISABLE_FEED_STORAGE_KEY, null);
+            if (typeof text !== 'string') return null;
+        } else {
+            try { await storageWriteJSON(FEATURE_DISABLE_FEED_STORAGE_KEY, text); } catch (_) {
+                // reason: caching is best-effort; the live fetch already applied
+            }
+        }
+
+        const knownIds = new Set(features.map((feature) => feature?.id).filter(Boolean));
+        const schema = globalThis.__YTKIT_SETTINGS_SCHEMA__ || {};
+        const { entries, rejected } = feedCore.parseFeatureDisableFeed(text, {
+            version: YTKIT_VERSION,
+            resolveId: typeof schema.resolveSettingKey === 'function' ? schema.resolveSettingKey : undefined,
+            knownIds
+        });
+
+        const next = new Map();
+        for (const entry of entries) next.set(entry.featureId, entry);
+
+        const changed = next.size !== _featureDisableNotices.size
+            || [...next.keys()].some((id) => !_featureDisableNotices.has(id));
+        _featureDisableNotices = next;
+
+        if (rejected.length) {
+            DiagnosticLog.record(
+                'feature-disable-feed',
+                `${rejected.length} feed row(s) rejected: ${rejected.slice(0, 5).map((row) => row.reason).join(', ')}`
+            );
+        }
+        if (changed) {
+            DiagnosticLog.record(
+                'feature-disable-feed',
+                next.size
+                    ? `Known-breakage notice for: ${[...next.keys()].join(', ')}`
+                    : 'No features are under a known-breakage notice.'
+            );
+            applyExternalSettingsUpdate({ source: 'feature-disable-feed' });
+        }
+        return next;
     }
 
     function isToggleFeature(feature) {
@@ -6052,6 +6158,7 @@ return response;
                 getPinSessionUnlocked: () => _pinSessionUnlocked,
                 getPageModalOpen: () => _pageModalOpen,
                 getFeatureCrashCounts: () => _featureCrashCounts,
+                getFeatureDisableNotice,
                 persistCrashCounts: () => _persistCrashCounts()
             });
         } catch (error) {
@@ -31175,6 +31282,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._panel?.remove(); this._panel = null;
                 this._styleEl?.remove(); this._styleEl = null;
             }
+        },
+
+        // ── Known-breakage notices ──
+        {
+            id: 'featureDisableFeed',
+            name: 'Known-Breakage Notices',
+            description: 'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.',
+            group: 'Advanced',
+            icon: 'alert-triangle',
+            // Both halves go through the same scheduler. Turning the feed OFF
+            // has to CLEAR existing notices, not just stop fetching, so
+            // destroy() does real work here rather than being a no-op.
+            init() { scheduleFeatureDisableRefresh(); },
+            destroy() { scheduleFeatureDisableRefresh(); }
         },
 
         // ── Diagnostic Log ──

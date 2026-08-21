@@ -444,11 +444,17 @@ Stated so a later reader does not mistake absence for oversight.
 
 ## Open Questions
 
-- **Does a remote disable-only feed survive AMO's remote-logic rule as Astra would ship
-  it?** Mozilla forbids concealing functionality via "control flow decisions based on
-  these external resources"; Refined GitHub ships exactly this mechanism on AMO, which is
-  strong precedent but not a ruling. Decide before implementing whether the feed is
-  github-full-only or store-wide.
+- **Answered 2026-08-21 (shipped store-wide).** The question was whether a remote
+  disable-only feed survives AMO's remote-logic rule. Decision: it ships in every
+  profile, and the reasoning is recorded in `docs/store-permission-rationale.md`
+  under "Known-Breakage Notices and the remote-logic rule". The short version:
+  restricting it to the GitHub build would withhold the repair channel from exactly
+  the users who cannot self-update, and the mechanism is narrow enough to state in
+  full — a row names a shipped feature ID, an issue number, and a version range, and
+  the only thing that can happen as a result is `shouldFeatureBeActive` returning
+  false one step after the user's own setting was read. It carries no code, no
+  copy, no links, and no way to enable anything. Still not a ruling from Mozilla;
+  Refined GitHub shipping the same mechanism on AMO remains the strongest evidence.
 - **Are content scripts still excluded from V8 code caching?** The Chrome 123 change
   covered `chrome-extension://` pages; no commit was found enabling it for content
   scripts. This changes the size of the monolith-peel payoff and needs a tracing
