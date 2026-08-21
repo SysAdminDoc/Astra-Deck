@@ -17,6 +17,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `package.json` cannot carry comments, and a pin that looks current is not
   evidence that it is.
 
+- Deleting a subscription group no longer opens a browser confirmation box. It
+  deletes right away and offers an undo for eight seconds, which restores the
+  group with every channel and any subgroups that were nested under it. It was
+  the last place in Astra Deck still asking a native confirm, and the only
+  destructive action you could not take back once you had answered it.
+
 ## [4.84.0] (2026-08-21)
 
 ### Added

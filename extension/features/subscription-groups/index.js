@@ -2634,11 +2634,19 @@
                 const label = group.name || groupId;
                 const count = Array.isArray(group.channelIds) ? group.channelIds.length : 0;
                 // Deleting a group discards a membership list nothing else can
-                // rebuild, so this one gets a confirm.
-                const message = t('subscriptionGroupDeleteConfirmTpl', 'Delete "{group}" and its {count} channels? Your subscriptions are not affected.')
-                    .replace('{group}', label)
-                    .replace('{count}', String(count));
-                if (typeof confirm === 'function' && !confirm(message)) return;
+                // rebuild, which is why this used to be the one place left
+                // asking `confirm()`. The project's answer to destructive
+                // actions everywhere else is immediate-apply plus undo, and a
+                // native confirm was inconsistent in both directions: it was
+                // the only modal left, and it was the only destructive action
+                // with no way back once you had answered it.
+                //
+                // Restoring the record is enough to restore the nesting too.
+                // A child's `parentId` is untouched by the delete —
+                // `_getGroupParentId` simply stops resolving it while the
+                // parent is missing — so putting the parent back re-adopts
+                // every child exactly as it was.
+                const removed = JSON.parse(JSON.stringify(group));
                 const next = { ...groups };
                 delete next[groupId];
                 this._writeGroups(next);
@@ -2647,7 +2655,37 @@
                 this._renderToolbar();
                 this._applyGroupFilter();
                 if (typeof showToast === 'function') {
-                    showToast(t('subscriptionGroupDeleted', 'Group deleted'), '#7c3aed', { duration: 2 });
+                    showToast(
+                        t('subscriptionGroupDeletedTpl', 'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.')
+                            .replace('{group}', label)
+                            .replace('{count}', String(count)),
+                        '#7c3aed',
+                        {
+                            duration: 8,
+                            tone: 'neutral',
+                            action: {
+                                text: t('toastActionUndo', 'Undo'),
+                                onClick: () => {
+                                    // Merge into the CURRENT groups, not the
+                                    // snapshot: anything the user changed
+                                    // while the toast was up is theirs to
+                                    // keep. And if the id is live again, a
+                                    // restore would overwrite whatever now
+                                    // holds it.
+                                    const current = this._readGroups();
+                                    if (current[groupId]) {
+                                        showToast(t('subscriptionGroupRestoreConflict',
+                                            'That group name is in use again, so it was not restored.'), '#ef4444', { duration: 5 });
+                                        return;
+                                    }
+                                    this._writeGroups({ ...current, [groupId]: removed });
+                                    this._renderToolbar();
+                                    this._applyGroupFilter();
+                                    showToast(t('subscriptionGroupRestored', 'Group restored'), '#22c55e');
+                                }
+                            }
+                        }
+                    );
                 }
             },
 

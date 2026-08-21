@@ -8175,5 +8175,23 @@
   },
   "schemaSurfacePanelTitle": {
     "message": "この設定は YouTube 上の Astra Deck パネルで編集します。押すと開きます。"
+  },
+  "dlHealthApiTooNew": {
+    "message": "この拡張機能より新しい"
+  },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader は動作していますが、この Astra Deck は受け付けられる API より古い API を使っています{versions}。拡張機能を更新してから、もう一度「確認」を選んでください。"
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": "（少なくとも API {minimum} が必要です）"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "「{group}」とその {count} 件のチャンネルを削除しました。登録チャンネルには影響しません。"
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "そのグループ名は再び使われているため、復元しませんでした。"
+  },
+  "subscriptionGroupRestored": {
+    "message": "グループを復元しました"
   }
 }

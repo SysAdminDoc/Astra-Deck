@@ -8175,5 +8175,23 @@
   },
   "schemaSurfacePanelTitle": {
     "message": "يُحرَّر هذا الإعداد في لوحة Astra Deck على YouTube. اضغط للفتح."
+  },
+  "dlHealthApiTooNew": {
+    "message": "أحدث من هذه الإضافة"
+  },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader يعمل، لكن نسخة Astra Deck هذه تتحدث بواجهة برمجية أقدم مما يقبله{versions}. حدّث الإضافة ثم اختر «تحقق مجددًا»."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (يحتاج إلى الواجهة {minimum} على الأقل)"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "تم حذف «{group}» و{count} قناة فيها. اشتراكاتك لم تتأثر."
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "اسم المجموعة هذا قيد الاستخدام مجددًا، لذا لم تتم الاستعادة."
+  },
+  "subscriptionGroupRestored": {
+    "message": "تمت استعادة المجموعة"
   }
 }
