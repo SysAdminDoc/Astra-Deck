@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Problem #{issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "Von den Standardwerten abweichende Einstellungen ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "Funktionsliste kopieren"
+  },
+  "featureReportCopyDone": {
+    "message": "Funktionsliste kopiert. Es wurde nichts irgendwohin gesendet."
+  },
+  "featureReportCopyFail": {
+    "message": "Die Funktionsliste konnte nicht kopiert werden."
+  },
+  "featureReportCopyTitle": {
+    "message": "Kopiert nur Einstellungsnamen, niemals deren Werte. Es wird nichts irgendwohin gesendet."
+  },
+  "featureReportNoneChanged": {
+    "message": "keine"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Nur Namen, keine Werte. Es wurde nichts irgendwohin gesendet. Das liegt in deiner Zwischenablage und du entscheidest, ob du es einfügst."
   }
 }

@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "المشكلة رقم {issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "الإعدادات المختلفة عن الافتراضية ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "نسخ قائمة الميزات"
+  },
+  "featureReportCopyDone": {
+    "message": "تم نسخ قائمة الميزات. لم يُرسل أي شيء إلى أي جهة."
+  },
+  "featureReportCopyFail": {
+    "message": "تعذّر نسخ قائمة الميزات."
+  },
+  "featureReportCopyTitle": {
+    "message": "ينسخ أسماء الإعدادات فقط، وليس قيمها أبدًا. ولا يُرسل أي شيء إلى أي جهة."
+  },
+  "featureReportNoneChanged": {
+    "message": "لا شيء"
+  },
+  "featureReportPrivacyNote": {
+    "message": "الأسماء فقط، بدون قيم. لم يُرسل أي شيء إلى أي جهة. هذا موجود في حافظتك وأنت من يقرر أين تلصقه."
   }
 }

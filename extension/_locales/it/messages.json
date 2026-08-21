@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Problema n. {issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "Impostazioni diverse dai valori predefiniti ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "Copia elenco funzioni"
+  },
+  "featureReportCopyDone": {
+    "message": "Elenco funzioni copiato. Non è stato inviato nulla da nessuna parte."
+  },
+  "featureReportCopyFail": {
+    "message": "Impossibile copiare l’elenco delle funzioni."
+  },
+  "featureReportCopyTitle": {
+    "message": "Copia solo i nomi delle impostazioni, mai i loro valori. Non viene inviato nulla da nessuna parte."
+  },
+  "featureReportNoneChanged": {
+    "message": "nessuna"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Solo nomi, nessun valore. Non è stato inviato nulla da nessuna parte. È nei tuoi appunti e decidi tu se incollarlo."
   }
 }

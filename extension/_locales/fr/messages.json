@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Ticket n° {issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "Réglages différents de leur valeur par défaut ({count}) :"
+  },
+  "featureReportCopy": {
+    "message": "Copier la liste des fonctions"
+  },
+  "featureReportCopyDone": {
+    "message": "Liste des fonctions copiée. Rien n’a été envoyé nulle part."
+  },
+  "featureReportCopyFail": {
+    "message": "Impossible de copier la liste des fonctions."
+  },
+  "featureReportCopyTitle": {
+    "message": "Copie uniquement les noms des réglages, jamais leurs valeurs. Rien n’est envoyé nulle part."
+  },
+  "featureReportNoneChanged": {
+    "message": "aucun"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Noms seulement, aucune valeur. Rien n’a été envoyé nulle part. C’est dans votre presse-papiers et vous décidez si vous le collez."
   }
 }

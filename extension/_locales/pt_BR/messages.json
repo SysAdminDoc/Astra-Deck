@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Problema nº {issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "Configurações diferentes dos padrões ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "Copiar lista de recursos"
+  },
+  "featureReportCopyDone": {
+    "message": "Lista de recursos copiada. Nada foi enviado para lugar nenhum."
+  },
+  "featureReportCopyFail": {
+    "message": "Não foi possível copiar a lista de recursos."
+  },
+  "featureReportCopyTitle": {
+    "message": "Copia apenas os nomes das configurações, nunca seus valores. Nada é enviado para lugar nenhum."
+  },
+  "featureReportNoneChanged": {
+    "message": "nenhuma"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Somente nomes, sem valores. Nada foi enviado para lugar nenhum. Está na sua área de transferência e você decide se cola."
   }
 }

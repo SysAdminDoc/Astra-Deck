@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "課題 #{issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "既定値から変更された設定 ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "機能リストをコピー"
+  },
+  "featureReportCopyDone": {
+    "message": "機能リストをコピーしました。どこにも送信していません。"
+  },
+  "featureReportCopyFail": {
+    "message": "機能リストをコピーできませんでした。"
+  },
+  "featureReportCopyTitle": {
+    "message": "設定の名前だけをコピーします。値は決してコピーせず、どこにも送信しません。"
+  },
+  "featureReportNoneChanged": {
+    "message": "なし"
+  },
+  "featureReportPrivacyNote": {
+    "message": "名前のみで、値は含みません。どこにも送信されていません。クリップボードにあるので、貼り付けるかどうかはあなたが決めます。"
   }
 }

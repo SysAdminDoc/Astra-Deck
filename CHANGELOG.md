@@ -38,6 +38,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   APIs that were not there. The manifest declares it, and a build check fails
   if the manifest and the compatibility docs ever disagree.
 
+### Added
+
+- A "Copy feature list" button in the popup, next to the changed-settings copy.
+  It puts the names of every setting you have moved off its default on your
+  clipboard, along with your Astra Deck and browser versions. Names only, never
+  values, so a filter-list address, a channel you hid, a note, or an API key
+  cannot ride along. Nothing is sent anywhere; you decide whether to paste it.
+  It exists because the project collects no telemetry and still needs some way
+  to learn which of 291 features people actually use.
+
 ## [4.83.0] (2026-08-21)
 
 ### Added

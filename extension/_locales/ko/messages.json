@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "이슈 #{issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "기본값과 다른 설정 ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "기능 목록 복사"
+  },
+  "featureReportCopyDone": {
+    "message": "기능 목록을 복사했습니다. 어디에도 전송되지 않았습니다."
+  },
+  "featureReportCopyFail": {
+    "message": "기능 목록을 복사하지 못했습니다."
+  },
+  "featureReportCopyTitle": {
+    "message": "설정 이름만 복사하며 값은 절대 복사하지 않습니다. 아무 곳에도 전송되지 않습니다."
+  },
+  "featureReportNoneChanged": {
+    "message": "없음"
+  },
+  "featureReportPrivacyNote": {
+    "message": "이름만 있고 값은 없습니다. 어디에도 전송되지 않았습니다. 클립보드에 있으며 붙여넣을지는 사용자가 결정합니다."
   }
 }
