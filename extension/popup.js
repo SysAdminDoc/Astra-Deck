@@ -331,11 +331,15 @@ const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
 const PANEL_OPEN_MESSAGE = 'YTKIT_OPEN_PANEL';
 const QUICK_TOGGLE_KEYS = QUICK_TOGGLES.map((toggle) => toggle.key);
 const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+// Must stay in step with ytkit.js#RETIRED_SETTING_KEYS. It had drifted:
+// lowPowerProfileBackup was retired in v4.62.0 in the monolith and never added
+// here, so the popup carried a key the runtime strips.
 const RETIRED_SETTING_KEYS = new Set([
     'preferredQuality',
     'useEnhancedBitrate',
     'hideQualityPopup',
     'aiSummaryApiKey',
+    'lowPowerProfileBackup',
 ]);
 // v4.47.0 NF25: must match ytkit.js#SETTINGS_VERSION and
 // settings-meta.json#settingsVersion. The check-versions.js gate
@@ -757,8 +761,13 @@ function isSafeObjectKey(key) {
 
 function sanitizeSettingsObject(settings) {
     if (!isPlainObject(settings)) return {};
+    // Resolve renamed keys before anything reads them. A value stored under a
+    // key that has since been renamed would otherwise be dropped here and the
+    // setting would revert to its default with nothing on screen to say so.
+    const aliased = globalThis.__YTKIT_SETTINGS_SCHEMA__?.applySettingAliases?.(settings);
+    const source = isPlainObject(aliased?.settings) ? aliased.settings : settings;
     const sanitized = {};
-    for (const [key, value] of Object.entries(settings)) {
+    for (const [key, value] of Object.entries(source)) {
         if (isSafeObjectKey(key) && !RETIRED_SETTING_KEYS.has(key)) sanitized[key] = value;
     }
     return sanitized;
