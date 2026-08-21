@@ -255,7 +255,15 @@ const CHROME_STUB = `'use strict';
         },
         listenerCount: () => messageListeners.length,
         permissionOrigins: () => Array.from(permissionOrigins),
-        readSettings: () => clone(store.ytSuiteSettings || {})
+        readSettings: () => clone(store.ytSuiteSettings || {}),
+        writeSettings(patch) {
+            const oldValue = clone(store.ytSuiteSettings || {});
+            const newValue = { ...oldValue, ...clone(patch || {}) };
+            store.ytSuiteSettings = newValue;
+            const changes = { ytSuiteSettings: { oldValue, newValue: clone(newValue) } };
+            for (const listener of changeListeners) listener(changes, 'local');
+            return clone(newValue);
+        }
     };
 })();
 `;

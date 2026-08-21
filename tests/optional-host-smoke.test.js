@@ -278,6 +278,24 @@ test('Chromium shutdown terminates the Windows tree before the parent PID disapp
     assert.equal(proc.exitCode, 1);
 });
 
+test('Chromium shutdown fails when bounded tree termination leaves the process alive', async () => {
+    const proc = new EventEmitter();
+    proc.pid = 424242;
+    proc.exitCode = null;
+    proc.signalCode = null;
+    let kills = 0;
+
+    await assert.rejects(
+        () => smoke.shutdownChromiumProcess(proc, { send: async () => undefined }, 1, {
+            platform: 'win32',
+            sleep: async () => undefined,
+            killProcessTree() { kills += 1; }
+        }),
+        /Chromium process 424242 did not exit after bounded shutdown/
+    );
+    assert.equal(kills, 2, 'shutdown must attempt the tree before and after the graceful wait');
+});
+
 test('Chromium cleanup removes a disposable profile tree', async () => {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-cleanup-contract-'));
     fs.mkdirSync(path.join(profile, 'Default', 'Cache'), { recursive: true });

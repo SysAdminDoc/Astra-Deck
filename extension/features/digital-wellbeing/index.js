@@ -173,6 +173,13 @@
 
             _saveToday(state, key = 'dwWatchTimeToday') {
                 appState.settings[key] = state;
+                if (key === 'shortsWatchTimeToday') {
+                    globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(
+                        globalThis.document,
+                        appState.settings,
+                        t
+                    );
+                }
                 if (typeof settingsManager !== 'undefined' && settingsManager.save) {
                     try { settingsManager.save(appState.settings); } catch (e) {
                         DebugManager.log('DigitalWellbeing', `save failed: ${e.message}`);

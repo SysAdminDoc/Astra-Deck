@@ -6288,6 +6288,9 @@ return response;
         if (!document.body || !shouldBuildPrimaryUI()) return false;
         const wasOpen = isSettingsPanelOpen();
         if (open && !document.getElementById('ytkit-settings-panel')) buildSettingsPanel();
+        if (open) {
+            globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
+        }
         const panel = document.getElementById('ytkit-settings-panel');
         if (open && !wasOpen && document.activeElement instanceof HTMLElement && !panel?.contains(document.activeElement)) {
             _settingsPanelLastFocus = document.activeElement;
@@ -46116,6 +46119,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     function updateAllToggleStates() {
         const runtime = getSettingsPanelRuntime();
         if (runtime?.updateAllToggleStates) return runtime.updateAllToggleStates();
+        globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
         document.querySelectorAll('.ytkit-toggle-all-cb').forEach(cb => {
             const catId = cb.dataset.category;
             const pane = document.getElementById(`ytkit-pane-${catId}`);
