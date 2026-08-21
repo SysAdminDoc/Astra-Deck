@@ -2148,6 +2148,73 @@ const STORAGE_WRITE_FAILURE_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(STORAGE_WRITE_FAILURE_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// Known-breakage notices. The feed itself carries no prose — the row copy is
+// localized here and only the issue NUMBER comes from the feed — so this table
+// is the whole user-facing surface of the mechanism.
+const FEATURE_DISABLE_FEED_TRANSLATIONS = {
+  ar: {
+    'Known-Breakage Notices': 'إشعارات الأعطال المعروفة',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'إيقاف الميزات التي أكد المشروع تعطلها بسبب تغيير في YouTube، إلى أن يصدر إصلاح. يجلب ملفًا نصيًا صغيرًا من مستودع Astra Deck؛ ولا يمكنه سوى إيقاف ميزة، لا تفعيلها أبدًا.',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': 'موقوفة مؤقتًا: أدى تغيير في YouTube إلى تعطل هذه الميزة في هذا الإصدار من Astra Deck. إعدادك لم يتغير وستعمل الميزة مجددًا عند صدور إصلاح.',
+    'Issue #{issue}': 'المشكلة رقم {issue}'
+  },
+  de: {
+    'Known-Breakage Notices': 'Hinweise zu bekannten Fehlern',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'Pausiert Funktionen, deren Ausfall durch eine YouTube-Änderung bestätigt wurde, bis eine Korrektur erscheint. Lädt eine kleine Textdatei aus dem Astra-Deck-Repository; sie kann eine Funktion nur pausieren, niemals aktivieren.',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': 'Pausiert: Eine YouTube-Änderung hat diese Funktion in dieser Version von Astra Deck außer Kraft gesetzt. Deine Einstellung bleibt unverändert, und sie funktioniert wieder, sobald eine Korrektur erscheint.',
+    'Issue #{issue}': 'Problem #{issue}'
+  },
+  es: {
+    'Known-Breakage Notices': 'Avisos de fallos conocidos',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'Pausa las funciones cuya rotura por un cambio de YouTube ha confirmado el proyecto, hasta que llegue una corrección. Descarga un pequeño archivo de texto del repositorio de Astra Deck; solo puede pausar una función, nunca activarla.',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': 'En pausa: un cambio de YouTube rompió esta función en esta versión de Astra Deck. Tu ajuste no se ha tocado y volverá a funcionar cuando llegue una corrección.',
+    'Issue #{issue}': 'Incidencia n.º {issue}'
+  },
+  fr: {
+    'Known-Breakage Notices': 'Avis de pannes connues',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'Met en pause les fonctions dont le projet a confirmé la panne après un changement de YouTube, jusqu’à un correctif. Télécharge un petit fichier texte du dépôt Astra Deck ; il ne peut que mettre une fonction en pause, jamais l’activer.',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': 'En pause : un changement de YouTube a cassé cette fonction dans cette version d’Astra Deck. Votre réglage est intact et elle refonctionnera dès qu’un correctif sera publié.',
+    'Issue #{issue}': 'Ticket n° {issue}'
+  },
+  it: {
+    'Known-Breakage Notices': 'Avvisi di guasti noti',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'Mette in pausa le funzioni che il progetto ha confermato rotte da una modifica di YouTube, finché non arriva una correzione. Scarica un piccolo file di testo dal repository di Astra Deck; può solo mettere in pausa una funzione, mai attivarla.',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': 'In pausa: una modifica di YouTube ha rotto questa funzione in questa versione di Astra Deck. La tua impostazione è intatta e tornerà a funzionare quando arriverà una correzione.',
+    'Issue #{issue}': 'Problema n. {issue}'
+  },
+  ja: {
+    'Known-Breakage Notices': '既知の不具合通知',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'YouTube の変更で壊れたとプロジェクトが確認した機能を、修正が届くまで一時停止します。Astra Deck リポジトリから小さなテキスト ファイルを取得します。機能を一時停止することしかできず、有効化することはありません。',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': '一時停止中: YouTube の変更により、このバージョンの Astra Deck ではこの機能が動作しません。設定はそのままで、修正が届くと再び動作します。',
+    'Issue #{issue}': '課題 #{issue}'
+  },
+  ko: {
+    'Known-Breakage Notices': '알려진 오류 알림',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'YouTube 변경으로 고장난 것이 확인된 기능을 수정이 배포될 때까지 일시 중지합니다. Astra Deck 저장소에서 작은 텍스트 파일을 가져옵니다. 기능을 일시 중지할 수만 있고 켤 수는 없습니다.',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': '일시 중지됨: YouTube 변경으로 이 버전의 Astra Deck에서 이 기능이 작동하지 않습니다. 설정은 그대로이며 수정이 배포되면 다시 작동합니다.',
+    'Issue #{issue}': '이슈 #{issue}'
+  },
+  pt_BR: {
+    'Known-Breakage Notices': 'Avisos de falhas conhecidas',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'Pausa recursos cuja quebra por uma mudança do YouTube foi confirmada pelo projeto, até que saia uma correção. Baixa um pequeno arquivo de texto do repositório do Astra Deck; ele só pode pausar um recurso, nunca ativá-lo.',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': 'Pausado: uma mudança do YouTube quebrou este recurso nesta versão do Astra Deck. Sua configuração continua intacta e ele volta a funcionar quando sair uma correção.',
+    'Issue #{issue}': 'Problema nº {issue}'
+  },
+  ru: {
+    'Known-Breakage Notices': 'Уведомления об известных сбоях',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': 'Приостанавливает функции, поломку которых из-за изменения в YouTube подтвердил проект, до выхода исправления. Загружает небольшой текстовый файл из репозитория Astra Deck; он может только приостановить функцию, но никогда не включить её.',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': 'Приостановлено: изменение в YouTube сломало эту функцию в данной версии Astra Deck. Ваша настройка не изменена, функция заработает снова после выхода исправления.',
+    'Issue #{issue}': 'Задача №{issue}'
+  },
+  zh_CN: {
+    'Known-Breakage Notices': '已知故障通知',
+    'Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one.': '在修复发布前，暂停项目已确认因 YouTube 改动而失效的功能。会从 Astra Deck 仓库获取一个很小的文本文件；它只能暂停功能，永远无法启用功能。',
+    'Paused: a YouTube change broke this feature in this version of Astra Deck. Your setting is untouched and it starts working again when a fix ships.': '已暂停：YouTube 的改动使该功能在此版本的 Astra Deck 中失效。你的设置未被更改，修复发布后会自动恢复。',
+    'Issue #{issue}': '问题 #{issue}'
+  }
+};
+for (const [locale, messages] of Object.entries(FEATURE_DISABLE_FEED_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The chat mode-change notice toggle hides a renderer tag, so the selector
 // needs no translation, but its settings copy does like any sub-feature.
 const CHAT_MODE_NOTICE_TRANSLATIONS = {

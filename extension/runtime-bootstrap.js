@@ -117,6 +117,7 @@
         "core/settings-controller.js",
         "core/selector-health.js",
         "core/feature-health.js",
+        "core/feature-disable-feed.js",
         "core/chapters.js",
         "core/csv.js",
         "core/dialog-guard.js",

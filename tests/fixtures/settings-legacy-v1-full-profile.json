@@ -473,6 +473,7 @@
     "dualLanguageSubtitles",
     "dualSubtitleLanguage",
     "elementZapper",
+    "featureDisableFeed",
     "featureSchedules",
     "feedPrefilter",
     "forceDvr",

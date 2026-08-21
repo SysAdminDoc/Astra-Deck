@@ -191,7 +191,19 @@ function fakeNode(options = {}) {
         clicked: 0,
         removed: 0,
         dataset: {},
-        style: {},
+        // A bare object made every setProperty() call throw, which is not a
+        // no-op the way the other gaps in this helper were — it aborted the
+        // whole render and read as a test-authoring mistake rather than a
+        // missing affordance. Custom properties are how every feature colour
+        // reaches a card, so they have to round-trip.
+        style: (() => {
+            const custom = new Map();
+            return {
+                setProperty(name, value) { custom.set(String(name), String(value)); },
+                getPropertyValue(name) { return custom.get(String(name)) || ''; },
+                removeProperty(name) { custom.delete(String(name)); }
+            };
+        })(),
         children,
         // Real nodes are attached until something detaches them. A falsy
         // default made every `if (!el.isConnected) return` guard skip its whole
@@ -293,10 +305,22 @@ function fakeNode(options = {}) {
     // `el.textContent = ''` is the idiomatic "empty this node" and a real DOM
     // drops every child when you write it. A plain string property let a
     // feature clear and re-render while the fake kept the old subtree, so a
-    // renderer that stacks duplicates looked correct. Reading still returns
-    // this node's own text, which is what leaf assertions want.
+    // renderer that stacks duplicates looked correct.
+    //
+    // Reading concatenates descendants, as the real DOM does. Returning only
+    // this node's own text was the third silent falsification in this helper:
+    // any copy assembled from createTextNode() plus child elements — which is
+    // how every notice, badge, and link-bearing line in this codebase is built
+    // — read as the empty string, so `textContent` assertions on a container
+    // could only ever be written to expect nothing. A leaf node has no
+    // children, so leaf assertions are unchanged.
     Object.defineProperty(node, 'textContent', {
-        get() { return this._text; },
+        get() {
+            return this.children.reduce(
+                (text, child) => text + (child?.textContent ?? ''),
+                this._text
+            );
+        },
         set(value) {
             const next = value == null ? '' : String(value);
             this._text = next;
@@ -317,6 +341,20 @@ function fakeNode(options = {}) {
         configurable: true,
         enumerable: true
     });
+    // IDL attributes that reflect to the content attribute in a real DOM. The
+    // codebase assigns `link.href = url` rather than setAttribute (see every
+    // link builder in extension/features/), and without reflection those
+    // assignments landed on a plain expando: getAttribute('href') returned
+    // null and an `[href]` selector matched nothing, so a correctly built link
+    // was indistinguishable from a missing one.
+    for (const name of ['href', 'src', 'rel', 'target', 'id', 'title', 'alt']) {
+        Object.defineProperty(node, name, {
+            get() { return attrs.has(name) ? attrs.get(name) : ''; },
+            set(value) { attrs.set(name, String(value ?? '')); },
+            configurable: true,
+            enumerable: true
+        });
+    }
     children.forEach((child) => { child.parentElement = node; });
     return node;
 }

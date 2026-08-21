@@ -23,8 +23,8 @@
 | Release | `v4.83.0` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `476` entries across `18` categories |
-| Runtime graph | `110` modules, including `27` peeled feature modules and `291` declared feature IDs |
+| Settings schema | `477` entries across `18` categories |
+| Runtime graph | `111` modules, including `27` peeled feature modules and `292` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -147,8 +147,19 @@ are not browser extension install steps.
 | Video Hider, hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
 | Video Context Menu, right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
 | Settings Panel, searchable, categorized, instant-apply, export/import/reset | On |
+| Known-Breakage Notices, pause features YouTube has broken until a fix ships | On |
 | Comment Search, filter watch-page comments inline | Off |
 | DeArrow, replace clickbait titles/thumbnails via crowdsourced database | Off |
+
+YouTube changes its layout without warning, and when it does, some features
+stop working. Cutting a release is a slow answer to that, so Known-Breakage
+Notices reads a short list from this repository at most once every six hours
+and pauses the features that list names for the versions they are broken in.
+The card in Settings says so and links the issue. The list can pause a feature
+and nothing else: it cannot switch anything on, cannot read or change a
+setting, carries no code and no links, and cannot name anything the extension
+does not already ship. Your own toggle is left exactly as you set it. It is on
+by default, under Advanced, and with it off no request is made.
 
 GitHub-full builds can optionally follow one user-selected HTTPS Video Hider
 filter list after an exact-origin browser prompt. Remote lists are anonymous,
@@ -363,7 +374,7 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **471 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **472 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -973,12 +984,13 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Diagnostics</strong>: 2 settings</summary>
+<summary><strong>Diagnostics</strong>: 3 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
 | <a id="setting-debugMode"></a><strong>Debug Mode</strong><br><code>debugMode</code> | Enable verbose diagnostic logging to the console | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-diagnosticLog"></a><strong>Diagnostic Error Log</strong><br><code>diagnosticLog</code> | Capture a rolling log of YTKit errors and export as JSON for bug reports | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-featureDisableFeed"></a><strong>Known-Breakage Notices</strong><br><code>featureDisableFeed</code> | Pause features the project has confirmed broken by a YouTube change, until a fix ships. Fetches a small text file from the Astra Deck repository; it can only ever pause a feature, never enable one. | Default: On | Extension only<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v4.84.0</code> |
 
 </details>
 
@@ -1043,6 +1055,9 @@ document_idle
   hashed last-known-good payload with HTTP validators and visible freshness;
   stale rules are explicit and user-disableable, never silently replaced by a
   malformed response
+- **A repair channel that can only ever pause**, the known-breakage feed names a
+  shipped feature, an issue, and a version range; it cannot enable anything,
+  write a setting, or supply copy, code, or links, and it is switchable off
 - **26+ hardening passes** documented in CHANGELOG with per-fix CVE/audit traceability
 - **Privacy policy** covers data handling for every API origin the extension contacts
 - **SponsorBlock data attribution**, the SponsorBlock and DeArrow features use

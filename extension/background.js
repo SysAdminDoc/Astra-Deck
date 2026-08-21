@@ -862,6 +862,94 @@ const MAX_SELECTOR_ASSET_BYTES = 256 * 1024;
 const MAX_COBALT_RESPONSE_BYTES = 512 * 1024;
 const COBALT_REQUEST_TIMEOUT_MS = 15000;
 
+// The broken-feature disable feed. Same host and same shape as the selector
+// asset above: a fixed project-owned URL, fetched through its own message so a
+// compromised page cannot redirect it, data only, credentials omitted.
+//
+// The worker owns the cache rather than each tab because every YouTube tab
+// asks on boot and they would otherwise each hit the network. Cached in
+// storage.local (not session) so a worker eviction does not turn one fetch per
+// six hours into one fetch per wake.
+const FEATURE_DISABLE_FEED_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/feature-disable-feed.csv';
+const MAX_FEATURE_DISABLE_FEED_BYTES = 64 * 1024;
+const FEATURE_DISABLE_FEED_CACHE_KEY = 'ytkit-feature-disable-feed';
+const FEATURE_DISABLE_FEED_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const FEATURE_DISABLE_FEED_STALE_MS = 30 * 24 * 60 * 60 * 1000;
+const FEATURE_DISABLE_FEED_TIMEOUT_MS = 10000;
+
+// One in-flight fetch per worker lifetime. Ten tabs opening at once must not
+// become ten requests to the same file.
+let _featureDisableFeedInflight = null;
+
+function classifyFeatureDisableFeedCache(cachedAt, now) {
+    if (!Number.isFinite(cachedAt) || cachedAt <= 0) return 'expired';
+    const age = now - cachedAt;
+    if (age < 0) return 'expired';
+    if (age <= FEATURE_DISABLE_FEED_MAX_AGE_MS) return 'fresh';
+    if (age <= FEATURE_DISABLE_FEED_STALE_MS) return 'stale';
+    return 'expired';
+}
+
+async function readFeatureDisableFeedCache() {
+    if (!ext.storage?.local?.get) return null;
+    try {
+        const stored = await callExtensionApi(ext.storage.local, 'get', FEATURE_DISABLE_FEED_CACHE_KEY);
+        const entry = stored?.[FEATURE_DISABLE_FEED_CACHE_KEY];
+        if (!entry || typeof entry.text !== 'string') return null;
+        return { text: entry.text, cachedAt: Number(entry.cachedAt) || 0 };
+    } catch (_) {
+        // reason: a corrupt or unreadable cache is a cache miss, never an error
+        return null;
+    }
+}
+
+async function writeFeatureDisableFeedCache(text) {
+    if (!ext.storage?.local?.set) return;
+    try {
+        await callExtensionApi(ext.storage.local, 'set', {
+            [FEATURE_DISABLE_FEED_CACHE_KEY]: { text, cachedAt: Date.now() }
+        });
+    } catch (_) {
+        // reason: failing to cache costs a refetch, nothing more
+    }
+}
+
+function fetchFeatureDisableFeed() {
+    if (_featureDisableFeedInflight) return _featureDisableFeedInflight;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+        try { controller.abort(); } catch (_) {
+            // reason: already aborted
+        }
+    }, FEATURE_DISABLE_FEED_TIMEOUT_MS);
+
+    _featureDisableFeedInflight = (async () => {
+        try {
+            if (!isUrlAllowed(FEATURE_DISABLE_FEED_URL)) return null;
+            const response = await fetch(FEATURE_DISABLE_FEED_URL, {
+                method: 'GET',
+                headers: { Accept: 'text/csv,text/plain' },
+                credentials: 'omit',
+                cache: 'no-store',
+                redirect: 'error',
+                signal: controller.signal
+            });
+            if (!response.ok) return null;
+            const { text } = await readTextBounded(
+                response, MAX_FEATURE_DISABLE_FEED_BYTES, 'Feature disable feed', controller);
+            await writeFeatureDisableFeedCache(text);
+            return text;
+        } catch (_) {
+            // reason: a feed that cannot be fetched is a silent no-op by design
+            return null;
+        } finally {
+            clearTimeout(timer);
+            _featureDisableFeedInflight = null;
+        }
+    })();
+    return _featureDisableFeedInflight;
+}
+
 // Reads a response body with the cap enforced AS IT ARRIVES.
 //
 // The content-length pre-check only helps when the server declares one. A
@@ -1755,6 +1843,39 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }).catch((error) => {
             sendResponse({ ok: false, error: error?.message || 'Selector asset fetch failed.' });
         });
+        return true;
+    }
+
+    if (msg.type === 'YTKIT_FETCH_FEATURE_DISABLE_FEED') {
+        // Answers from cache whenever the cache is usable, so the common case
+        // costs no network at all. A stale-but-usable cache is returned
+        // immediately and refreshed behind the response; the caller never
+        // waits on the network for a list it already has.
+        (async () => {
+            const cached = await readFeatureDisableFeedCache();
+            const freshness = cached
+                ? classifyFeatureDisableFeedCache(cached.cachedAt, Date.now())
+                : 'expired';
+
+            if (freshness === 'fresh') {
+                sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'cache' });
+                return;
+            }
+            if (freshness === 'stale') {
+                sendResponse({ ok: true, text: cached.text, cachedAt: cached.cachedAt, source: 'stale' });
+                void fetchFeatureDisableFeed();
+                return;
+            }
+            const text = await fetchFeatureDisableFeed();
+            if (typeof text === 'string') {
+                sendResponse({ ok: true, text, cachedAt: Date.now(), source: 'network' });
+                return;
+            }
+            // No usable cache and no network. The feed contributing nothing is
+            // the designed failure: features keep running exactly as the user
+            // configured them.
+            sendResponse({ ok: false, text: '', source: 'unavailable' });
+        })();
         return true;
     }
 

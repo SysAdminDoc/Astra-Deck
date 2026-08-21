@@ -33,6 +33,7 @@
             getFeatureById,
             getFeatureDescription,
             getFeatureName,
+            getFeatureDisableNotice = () => null,
             getFocusableUiElements,
             handleExternalStorageChanges,
             handleFileExport,
@@ -2940,6 +2941,32 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             description.textContent = descriptionText;
             info.appendChild(description);
         }
+        // Known-breakage notice. The feature's own toggle is untouched — the
+        // user's choice is still their choice — so without this the row would
+        // read as ON while nothing happened on the page. The copy is localized
+        // here and the link is built from the entry's issue NUMBER, so nothing
+        // the feed says reaches the user verbatim.
+        const disableNotice = getFeatureDisableNotice(f.id);
+        if (disableNotice) {
+            card.classList.add('ytkit-feature-known-broken');
+            const notice = document.createElement('p');
+            notice.className = 'ytkit-feature-broken-note';
+            notice.appendChild(document.createTextNode(t(
+                'settingsFeatureKnownBroken',
+                'Paused: a YouTube change broke this feature in this version of Astra Deck. '
+                + 'Your setting is untouched and it starts working again when a fix ships.'
+            ) + ' '));
+            const issueLink = document.createElement('a');
+            issueLink.className = 'ytkit-feature-broken-link';
+            issueLink.href = disableNotice.issueUrl;
+            issueLink.target = '_blank';
+            issueLink.rel = 'noopener noreferrer';
+            issueLink.textContent = t('settingsFeatureKnownBrokenIssueTpl', 'Issue #{issue}')
+                .replace('{issue}', String(disableNotice.issue));
+            notice.appendChild(issueLink);
+            info.appendChild(notice);
+        }
+
         featureMain.appendChild(glyph);
         featureMain.appendChild(info);
 

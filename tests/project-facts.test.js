@@ -18,13 +18,13 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.nodeFloor, '>=22');
     assert.deepEqual(facts.firefoxFloor, 'Firefox 142+');
     assert.equal(facts.locales.length, 11);
-    assert.equal(facts.schemaEntries, 476);
+    assert.equal(facts.schemaEntries, 477);
     assert.equal(facts.schemaCategories, 18);
     // 106 ISOLATED-world modules. core/feed-prefilter.js is NOT counted
     // here: it loads into the MAIN world, where the JSON.parse hook is.
-    assert.equal(facts.runtimeModules, 110);
+    assert.equal(facts.runtimeModules, 111);
     assert.equal(facts.featureModules.length, 27);
-    assert.equal(facts.featureIds.length, 291);
+    assert.equal(facts.featureIds.length, 292);
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);
@@ -43,7 +43,7 @@ test('project-facts validation rejects missing and stale rendered blocks', () =>
 
     assert.deepEqual(validateDocument(`intro\n${block}\n`, facts), []);
     assert.match(
-        validateDocument(`intro\n${block.replace('`476` entries', '`475` entries')}\n`, facts)[0],
+        validateDocument(`intro\n${block.replace('`477` entries', '`476` entries')}\n`, facts)[0],
         /stale/
     );
     assert.match(validateDocument('intro\n', facts)[0], /exactly one/);

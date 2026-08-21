@@ -235,13 +235,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
   Acceptance: every release carries a detached signature over the checksum file, the public key is published in-repo and in `docs/signing-keys.md`, `README.md` shows the exact verify command, and `npm run release:readiness` fails when the signature is missing or does not verify.
   Complexity: M
 
-- [ ] P1 — Ship a remote broken-feature disable feed so a YouTube change can be neutralised without a release
-  Why: 291 DOM-coupled features, one maintainer, no CI, and a site that changed the watch page and Shorts player on 2026-08-13. Today the only remedy for "feature X broke on YouTube's new layout" is cut a release and wait for store review — and there is no store channel yet at all. Refined GitHub disables a named feature across every install inside six hours with a CSV on GitHub Pages, and ships that mechanism on both CWS and AMO, which is the practical evidence it passes review.
-  Evidence: no `brokenFeature`/`killSwitch`/`hotfix`/`remoteDisable` path exists (verified by search 2026-08-20). Source: refined-github `source/helpers/hotfix.tsx` (GitHub Pages host chosen over the API for rate limits, `cache: 'no-store'`, 6h `maxAge`, 30d `staleWhileRevalidate`, skipped on dev builds) and the live `refined-github/yolo` feed, columns `feature, issue, min-working-version`. Counter-evidence to respect: uBlock Origin's volunteers abandoned Facebook filters on 2026-08-05 rather than defend an ever-growing match list — a disable feed is cheaper to staff than a selector list.
-  Touches: a new `extension/core/feature-disable-feed.js`, `extension/background.js` (fetch + alarm), `extension/core/settings-schema.js`, `extension/core/data-flow.js` (host allowlist), `extension/manifest.json` + build profiles, `gh-pages` or a sibling feed repo, locales
-  Acceptance: the feed can only ever *disable* a feature, never enable one or change any other behaviour, and that constraint is enforced by a test that feeds it hostile rows; entries are scoped to a version range and resolved through the alias table above; failure to fetch is a silent no-op; the affected feature's settings row explains in plain language that it is disabled by a known-breakage notice and links the issue; the feature is default-on but user-disableable; a decision is recorded on whether the feed ships in the store profiles at all, against Mozilla's remote-logic rule (see `RESEARCH.md` §Open Questions).
-  Complexity: L
-
 ### P2
 
 - [ ] P2 — User-run feature bisect wizard

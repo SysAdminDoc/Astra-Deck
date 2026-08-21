@@ -2051,6 +2051,12 @@
   "feature_expandVideoWidth_name": {
     "message": "Expandir ancho del video"
   },
+  "feature_featureDisableFeed_desc": {
+    "message": "Pausa las funciones cuya rotura por un cambio de YouTube ha confirmado el proyecto, hasta que llegue una corrección. Descarga un pequeño archivo de texto del repositorio de Astra Deck; solo puede pausar una función, nunca activarla."
+  },
+  "feature_featureDisableFeed_name": {
+    "message": "Avisos de fallos conocidos"
+  },
   "feature_feedPrefilter_desc": {
     "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
   },
@@ -8064,5 +8070,11 @@
   },
   "subscriptionGroupDeleted": {
     "message": "Grupo eliminado"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "En pausa: un cambio de YouTube rompió esta función en esta versión de Astra Deck. Tu ajuste no se ha tocado y volverá a funcionar cuando llegue una corrección."
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "Incidencia n.º {issue}"
   }
 }

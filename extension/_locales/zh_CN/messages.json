@@ -2051,6 +2051,12 @@
   "feature_expandVideoWidth_name": {
     "message": "扩展视频宽度"
   },
+  "feature_featureDisableFeed_desc": {
+    "message": "在修复发布前，暂停项目已确认因 YouTube 改动而失效的功能。会从 Astra Deck 仓库获取一个很小的文本文件；它只能暂停功能，永远无法启用功能。"
+  },
+  "feature_featureDisableFeed_name": {
+    "message": "已知故障通知"
+  },
   "feature_feedPrefilter_desc": {
     "message": "Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched."
   },
@@ -8064,5 +8070,11 @@
   },
   "subscriptionGroupDeleted": {
     "message": "分组已删除"
+  },
+  "settingsFeatureKnownBroken": {
+    "message": "已暂停：YouTube 的改动使该功能在此版本的 Astra Deck 中失效。你的设置未被更改，修复发布后会自动恢复。"
+  },
+  "settingsFeatureKnownBrokenIssueTpl": {
+    "message": "问题 #{issue}"
   }
 }

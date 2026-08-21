@@ -103,6 +103,8 @@
             --ytkit-v3-accent-fill: #cf352f;
             --ytkit-v3-accent-fill-hover: #b92c27;
             --ytkit-v3-success: #45d978;
+            /* Known-breakage notices. 10.77:1 on --ytkit-v3-bg. */
+            --ytkit-v3-warning: #f6b863;
             /* Above YouTube player chrome and ad overlays (was the folded
                "premium refresh" layer's job before v4 became the SSOT). */
             z-index: 2147483646 !important;
@@ -867,6 +869,24 @@
             white-space: nowrap !important;
         }
 
+        /* Known-breakage notice. Wraps, unlike the description above it: this
+           is the one line on the card the user has to actually read. */
+        #ytkit-settings-panel .ytkit-feature-broken-note {
+            display: block !important;
+            max-width: 640px !important;
+            margin: 6px 0 0 !important;
+            color: var(--ytkit-v3-warning) !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            line-height: 1.45 !important;
+            white-space: normal !important;
+        }
+
+        #ytkit-settings-panel .ytkit-feature-broken-link {
+            color: inherit !important;
+            text-decoration: underline !important;
+        }
+
         #ytkit-settings-panel .ytkit-select-shell,
         #ytkit-settings-panel .ytkit-field-shell,
         #ytkit-settings-panel .ytkit-range-shell,
@@ -1246,6 +1266,8 @@
             --ytkit-v3-accent: #cf352f;
             --ytkit-v3-accent-rgb: 207,53,47;
             --ytkit-v3-success: #168845;
+            /* The dark lane's amber is 1.36:1 on this ground. 6.01:1 here. */
+            --ytkit-v3-warning: #8a5200;
             color-scheme: light !important;
             background: var(--ytkit-v3-bg) !important;
             color: var(--ytkit-v3-text) !important;

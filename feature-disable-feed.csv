@@ -1,0 +1,21 @@
+# Astra Deck known-breakage feed.
+#
+# One row per feature the project has confirmed broken by a change on YouTube's
+# side. Installs read this file at most once every six hours and stop running
+# the features it names, until the version that fixes them.
+#
+# A row can only ever PAUSE a feature. It cannot enable one, change a setting,
+# or put text or links in front of the user: the extension renders its own
+# localized copy and builds the link from the issue NUMBER below. Anything
+# malformed is dropped row by row, and a feature ID the shipped schema does not
+# recognise is ignored.
+#
+#   feature      the schema/feature ID, exactly as it appears in settings
+#   issue        the tracker issue number, digits only
+#   broken-from  first affected version, inclusive
+#   fixed-in     first version that is fine again, exclusive; empty if unfixed
+#
+# Example (do not leave uncommented):
+#   returnDislike,412,4.80.0,4.84.0
+#
+feature,issue,broken-from,fixed-in

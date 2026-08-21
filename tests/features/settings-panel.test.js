@@ -318,3 +318,79 @@ test('Video Hider toggle rolls back the optimistic state after a rejected save',
         globalThis.document = originalDocument;
     }
 });
+
+// ── Known-breakage notices on the card ──
+//
+// The feed never writes the user's setting, so a paused feature's toggle still
+// reads ON. Without this notice the card would say the feature is enabled while
+// nothing happened on the page, which is exactly the silent-failure shape the
+// feed exists to remove. Rendered from the built tree, not from source text.
+
+const { fakeNode, fakeDocument } = require('../helpers/monolith');
+
+function buildCardWith(notice) {
+    const originalDocument = globalThis.document;
+    globalThis.document = fakeDocument(() => []);
+    globalThis.document.body = fakeNode({ tag: 'body' });
+    try {
+        const api = loadModule().createSettingsPanelRuntime({
+            PANEL_OPEN_CLASS,
+            appState: { settings: { returnDislike: true } },
+            DebugManager: { log() {} },
+            StorageManager: { get: (_k, d) => d, set() {} },
+            ICONS: new Proxy({}, { get: () => () => fakeNode({ tag: 'svg' }) }),
+            FEATURE_PREVIEWS: {},
+            shouldBuildPrimaryUI: () => true,
+            isBooleanFeature: (feature) => feature?.type === 'checkbox',
+            getFeatureName: (feature) => feature.name,
+            getFeatureDescription: (feature) => feature.description,
+            getFeatureDisableNotice: () => notice,
+            formatPageLabel: (page) => page,
+            normalizeSelectOptions: (options) => options,
+            t: (_key, fallback) => fallback,
+            injectStyle: () => ({ remove() {} })
+        });
+        return api.buildFeatureCard(
+            { id: 'returnDislike', name: 'Return Dislike', description: 'Show dislike counts.', icon: 'settings' },
+            '#ff4e45'
+        );
+    } finally {
+        globalThis.document = originalDocument;
+    }
+}
+
+function findByClass(node, className, out = []) {
+    for (const child of node.children || []) {
+        if (child.classList?.contains?.(className)) out.push(child);
+        findByClass(child, className, out);
+    }
+    return out;
+}
+
+test('a feature under a known-breakage notice explains itself and links the issue', () => {
+    const card = buildCardWith({
+        featureId: 'returnDislike',
+        issue: 412,
+        issueUrl: 'https://github.com/SysAdminDoc/Astra-Deck/issues/412'
+    });
+
+    assert.equal(card.classList.contains('ytkit-feature-known-broken'), true,
+        'the card must be marked so the notice can be styled and found');
+
+    const notes = findByClass(card, 'ytkit-feature-broken-note');
+    assert.equal(notes.length, 1, 'exactly one notice must be rendered');
+    assert.match(notes[0].textContent, /Paused/,
+        'the notice must say the feature is paused, in the extension\'s own words');
+
+    const links = findByClass(card, 'ytkit-feature-broken-link');
+    assert.equal(links.length, 1);
+    assert.equal(links[0].getAttribute('href'), 'https://github.com/SysAdminDoc/Astra-Deck/issues/412');
+    assert.equal(links[0].getAttribute('rel'), 'noopener noreferrer');
+    assert.equal(links[0].textContent, 'Issue #412');
+});
+
+test('a feature with no notice renders no notice and no marker class', () => {
+    const card = buildCardWith(null);
+    assert.equal(card.classList.contains('ytkit-feature-known-broken'), false);
+    assert.equal(findByClass(card, 'ytkit-feature-broken-note').length, 0);
+});

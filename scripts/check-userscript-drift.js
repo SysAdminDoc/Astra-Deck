@@ -107,6 +107,11 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     // added to the manifest now fails this gate until someone decides
     // whether userscript users should get it.
     'core/browser-api.js': 'intentional-extension-only',
+    // The disable feed is fetched by the background worker through its own
+    // message. A userscript has no worker and no equivalent fixed-URL channel,
+    // and routing it through GM_xmlhttpRequest would hand the page's own
+    // manager a new remote-fetch grant for a file only the extension consumes.
+    'core/feature-disable-feed.js': 'chrome-api',
     'core/diagnostic-log.js': 'intentional-extension-only',
     'core/env.js': 'intentional-extension-only',
     'core/icons.js': 'intentional-extension-only',
@@ -168,6 +173,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     antiTranslateAudioTrack: 'not-yet-ported',
     antiTranslateTranscript: 'not-yet-ported',
     astraContextMenu: 'chrome-api',
+    featureDisableFeed: 'chrome-api',
     audioNormalization: 'intentional-extension-only',
     audioAutoGain: 'intentional-extension-only',
     audioHighPass: 'intentional-extension-only',
