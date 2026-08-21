@@ -503,9 +503,47 @@
         'shortsDailyLimitMode',
         'shortsWatchTimeToday'
     ]);
-    const SHORTS_PANEL_SETTING_KEYS = Object.freeze(
-        SHORTS_SETTING_KEYS.filter((key) => key !== 'shortsWatchTimeToday')
-    );
+    const SHORTS_PANEL_SETTING_KEYS = SHORTS_SETTING_KEYS;
+
+    function createShortsLedgerPresentation(settings = {}, translate = (_key, fallback) => fallback, nowValue = new Date()) {
+        let now = nowValue instanceof Date ? new Date(nowValue.getTime()) : new Date(nowValue);
+        if (!Number.isFinite(now.getTime())) now = new Date();
+        const today = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, '0'),
+            String(now.getDate()).padStart(2, '0')
+        ].join('-');
+        const raw = settings?.shortsWatchTimeToday || {};
+        const isToday = raw.date === today;
+        const seconds = isToday && Number.isFinite(Number(raw.seconds))
+            ? Math.max(0, Math.floor(Number(raw.seconds)))
+            : 0;
+        const snoozeUntil = isToday && Number.isFinite(Number(raw.snoozeUntil))
+            ? Math.max(0, Math.floor(Number(raw.snoozeUntil)))
+            : 0;
+        const minutes = seconds > 0 ? Math.max(1, Math.ceil(seconds / 60)) : 0;
+        const parts = [minutes > 0
+            ? String(translate('settingsShortsLedgerSummary', '{minutes} min watched today.'))
+                .replace('{minutes}', String(minutes))
+            : String(translate('settingsShortsLedgerEmpty', 'No Shorts watch time recorded today.'))];
+        if (snoozeUntil > now.getTime()) {
+            const time = new Intl.DateTimeFormat(undefined, {
+                hour: 'numeric',
+                minute: '2-digit'
+            }).format(new Date(snoozeUntil));
+            parts.push(String(translate('settingsShortsLedgerSnooze', 'Snoozed until {time}.'))
+                .replace('{time}', time));
+        }
+        return {
+            id: 'shortsWatchTimeToday',
+            name: String(translate('settingsShortsLedgerName', 'Shorts today')),
+            description: parts.join(' '),
+            group: 'Content',
+            icon: 'clock',
+            type: 'info',
+            i18nResolved: true
+        };
+    }
 
     const SETTINGS_CATEGORY_SECTIONS = Object.freeze({
         'Video Player': [
@@ -542,7 +580,7 @@
         ],
         Content: [
             { labelKey: 'settingsSectionFeedVisibility', fallback: 'Feed visibility', match: /^(hideWatchedVideos|searchFilterDefaults|searchHide|hideCollaborations|hideVideosFromHome|titleNormalization|watchProgress|antiTranslate|notInterestedButton|thumbnail|watchLaterQuickAdd|grayscaleThumbnails|openInNewTab|hideLatestPosts)$/ },
-            { labelKey: 'settingsSectionShortsDiscovery', fallback: 'Shorts controls', match: /^(removeAllShorts|redirectShorts|disablePlayOnHover|shortsSpeedControl|shortsAutoAdvance|shortsAsRegularVideo|shortsDailyLimitMin|shortsDailyLimitMode)$/ },
+            { labelKey: 'settingsSectionShortsDiscovery', fallback: 'Shorts controls', match: /^(removeAllShorts|redirectShorts|disablePlayOnHover|shortsSpeedControl|shortsAutoAdvance|shortsAsRegularVideo|shortsDailyLimitMin|shortsDailyLimitMode|shortsWatchTimeToday)$/ },
             { labelKey: 'settingsSectionSponsorblockDearrow', fallback: 'SponsorBlock & DeArrow', match: /^(sponsorBlock|sbPerChannelProfiles|deArrow)/ },
             { labelKey: 'settingsSectionFeedToolsAutomation', fallback: 'Feed tools & automation', match: /.*/ }
         ],
@@ -604,6 +642,7 @@
         SETTINGS_CATEGORY_SECTIONS,
         SHORTS_SETTING_KEYS,
         SHORTS_PANEL_SETTING_KEYS,
+        createShortsLedgerPresentation,
         SETTINGS_VISUAL_SYSTEM_CSS,
         SURFACE_VISUAL_SYSTEM_CSS,
         ensureSettingsVisualSystem,
@@ -617,6 +656,7 @@
             SETTINGS_CATEGORY_SECTIONS,
             SHORTS_SETTING_KEYS,
             SHORTS_PANEL_SETTING_KEYS,
+            createShortsLedgerPresentation,
             SETTINGS_VISUAL_SYSTEM_CSS,
             SURFACE_VISUAL_SYSTEM_CSS,
             STYLE_ID,
@@ -26745,8 +26785,14 @@ function buildSettingsPanel() {
         };
         const categorySections = globalThis.YTKitCore?.SETTINGS_CATEGORY_SECTIONS || {};
         const shortsPanelSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || [];
+        const panelFeatureList = [...liveFeatureList];
+        const createShortsLedgerPresentation = globalThis.YTKitCore?.createShortsLedgerPresentation;
+        if (typeof createShortsLedgerPresentation === 'function'
+            && !panelFeatureList.some((feature) => feature.id === 'shortsWatchTimeToday')) {
+            panelFeatureList.push(createShortsLedgerPresentation(appState.settings, t));
+        }
         const featuresByCategory = groupFeaturesBySettingsPresentation(
-            liveFeatureList,
+            panelFeatureList,
             categoryOrder,
             shortsPanelSettingKeys
         );

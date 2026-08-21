@@ -5159,6 +5159,18 @@
   "settingsShortsDependencyCopy": {
     "message": "I limiti giornalieri di Shorts usano Benessere digitale."
   },
+  "settingsShortsLedgerEmpty": {
+    "message": "Nessun tempo di visione degli Shorts registrato oggi."
+  },
+  "settingsShortsLedgerName": {
+    "message": "Shorts di oggi"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "Posticipato fino alle {time}."
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "{minutes} min guardati oggi."
+  },
   "settingsSubFeatureBadge": {
     "message": "Sottofunzione"
   },

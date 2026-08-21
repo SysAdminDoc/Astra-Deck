@@ -5159,6 +5159,18 @@
   "settingsShortsDependencyCopy": {
     "message": "تعمل حدود Shorts اليومية من خلال ميزة الرفاهية الرقمية."
   },
+  "settingsShortsLedgerEmpty": {
+    "message": "لم يُسجّل وقت مشاهدة Shorts اليوم."
+  },
+  "settingsShortsLedgerName": {
+    "message": "Shorts اليوم"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "تم التأجيل حتى {time}."
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "تمت مشاهدة {minutes} دقيقة اليوم."
+  },
   "settingsSubFeatureBadge": {
     "message": "ميزة فرعية"
   },

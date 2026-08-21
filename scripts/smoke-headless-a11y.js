@@ -13,6 +13,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const WebSocket = require('ws');
 const { generatePseudolocale } = require('./generate-pseudolocale.js');
+const { SHORTS_SETTING_KEYS } = require('../extension/core/settings-visual-system.js');
 const {
     buildFixture,
     DevtoolsClient,
@@ -230,21 +231,6 @@ function parseArgs(argv) {
         throw new Error('--mutate-real-page requires --real-extension-pages');
     }
     return options;
-}
-
-async function removeTreeWithRetry(targetPath) {
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-        try {
-            fs.rmSync(targetPath, { recursive: true, force: true });
-            return;
-        } catch (error) {
-            const retryable = error?.code === 'EPERM'
-                || error?.code === 'EACCES'
-                || error?.code === 'ENOTEMPTY';
-            if (!retryable || attempt === 7) throw error;
-            await sleep(250 * (attempt + 1));
-        }
-    }
 }
 
 function injectChromeStub(stageDir, sourceName, targetName) {
@@ -1146,6 +1132,47 @@ async function auditPopupFilterGrant(client, surface, stateName) {
     return 5;
 }
 
+async function auditShortsSettingsSection(client, surface, stateName) {
+    if (surface.name !== 'settings') return 0;
+    const result = await client.evaluate(`(() => {
+        const nav = document.querySelector('.ytkit-nav-btn[data-tab="Content"]');
+        nav?.click();
+        const pane = document.getElementById('ytkit-pane-Content');
+        const expected = ${JSON.stringify(SHORTS_SETTING_KEYS)};
+        const counts = Object.fromEntries(expected.map((id) => [id,
+            pane?.querySelectorAll('.ytkit-feature-card[data-feature-id="' + id + '"]').length || 0
+        ]));
+        const ledger = pane?.querySelector('.ytkit-feature-card[data-feature-id="shortsWatchTimeToday"]');
+        const dependency = pane?.querySelector('.ytkit-shorts-dependency');
+        return {
+            active: Boolean(pane?.classList.contains('active')),
+            counts,
+            dependencyAction: dependency?.querySelector('button')?.textContent?.trim() || '',
+            dependencyCopy: dependency?.textContent?.trim() || '',
+            ledgerDescription: ledger?.querySelector('.ytkit-feature-desc')?.textContent?.trim() || '',
+            ledgerType: ledger?.dataset.featureType || ''
+        };
+    })()`);
+    const failures = [];
+    if (!result.active) failures.push('Content pane did not activate');
+    for (const [id, count] of Object.entries(result.counts || {})) {
+        if (count !== 1) failures.push(`${id} rendered ${count} times`);
+    }
+    if (result.ledgerType !== 'info') failures.push(`ledger type is ${JSON.stringify(result.ledgerType)}`);
+    if (!/Shorts.+today|today.+Shorts/i.test(result.ledgerDescription)) {
+        failures.push(`ledger status is ${JSON.stringify(result.ledgerDescription)}`);
+    }
+    if (!result.dependencyCopy || !result.dependencyAction) {
+        failures.push('Digital Wellbeing dependency callout is incomplete');
+    }
+    if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+    await client.evaluate(`document.querySelector(
+        '.ytkit-feature-card[data-feature-id="shortsWatchTimeToday"]'
+    )?.scrollIntoView({ block: 'center' })`);
+    await captureSurface(client, surface, 'shorts-dark');
+    return SHORTS_SETTING_KEYS.length + 3;
+}
+
 async function auditSurface(client, stageDir, surface, timeoutMs) {
     const reports = [];
     for (const theme of surface.themes) {
@@ -1172,8 +1199,11 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             const filterGrantChecks = mode === 'normal' && theme === 'dark'
                 ? await auditPopupFilterGrant(client, surface, `${theme}/${mode}`)
                 : 0;
+            const shortsSettingsChecks = mode === 'normal' && theme === 'dark'
+                ? await auditShortsSettingsSection(client, surface, `${theme}/${mode}`)
+                : 0;
             const featureHealthChecks = await auditFeatureHealthPanel(client, surface, `${theme}/${mode}`);
-            reports.push({ controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, theme, viewport });
+            reports.push({ controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, shortsSettingsChecks, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -1344,6 +1374,19 @@ async function auditRealExtensionPage(client, surface, extensionId, mode) {
     return { controls, mode, snapshot };
 }
 
+function assertNoRuntimeExceptions(events, startIndex = 0, context = 'extension page') {
+    const failures = (events || []).slice(startIndex)
+        .filter((event) => event?.method === 'Runtime.exceptionThrown')
+        .map((event) => {
+            const details = event.params?.exceptionDetails || {};
+            return details.exception?.description || details.text || 'Unknown runtime exception';
+        });
+    if (failures.length > 0) {
+        throw new Error(`${context} threw during boot: ${failures.join(' | ')}`);
+    }
+    return true;
+}
+
 async function runRealExtensionCandidate(candidate, stageDir, options) {
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-a11y-extension-profile-'));
     const port = await reserveLoopbackPort();
@@ -1380,6 +1423,7 @@ async function runRealExtensionCandidate(candidate, stageDir, options) {
                 await pageClient.send('Page.enable');
                 await pageClient.send('Runtime.enable');
                 for (const mode of ['normal', 'zoom-200', 'forced-colors']) {
+                    const runtimeEventStart = pageClient.events.length;
                     await pageClient.send('Page.navigate', {
                         url: `chrome-extension://${extensionId}/${surface.page}?astra_a11y=${mode}`,
                     });
@@ -1395,9 +1439,13 @@ async function runRealExtensionCandidate(candidate, stageDir, options) {
                     );
                     await configureRealExtensionState(pageClient, surface, mode);
                     await sleep(250);
-                    reports.push({ surface: surface.name, ...(await auditRealExtensionPage(
-                        pageClient, surface, extensionId, mode
-                    )) });
+                    const report = await auditRealExtensionPage(pageClient, surface, extensionId, mode);
+                    assertNoRuntimeExceptions(
+                        pageClient.events,
+                        runtimeEventStart,
+                        `${surface.name}/${mode}`
+                    );
+                    reports.push({ surface: surface.name, ...report });
                 }
             } finally {
                 pageClient.close();
@@ -1520,9 +1568,9 @@ async function runFixtureStates(options) {
     } finally {
         await shutdownChromiumProcess(browser, client);
         if (socket) socket.close();
-        if (process.platform === 'win32') await sleep(250);
-        if (!options.keepStage) await removeTreeWithRetry(stageDir);
-        await removeTreeWithRetry(profileDir);
+        if (process.platform === 'win32') await sleep(750);
+        if (!options.keepStage) await removeDirWithRetries(stageDir);
+        await removeDirWithRetries(profileDir);
     }
 }
 
@@ -1545,10 +1593,12 @@ if (require.main === module) {
 }
 
 module.exports = {
+    assertNoRuntimeExceptions,
     auditKeyboardPath,
     auditFocusTrap,
     auditPopupSettingsDiff,
     auditRtlLayout,
+    auditShortsSettingsSection,
     collectFocusableExpression,
     configureRenderedState,
     createStage,

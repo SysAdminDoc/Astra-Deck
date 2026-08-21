@@ -259,6 +259,25 @@ test('Chromium shutdown asks the browser to close before removing its profile', 
     assert.equal(proc.exitCode, 0);
 });
 
+test('Chromium shutdown terminates the Windows tree before the parent PID disappears', async () => {
+    const proc = new EventEmitter();
+    proc.exitCode = null;
+    const calls = [];
+    await smoke.shutdownChromiumProcess(proc, {
+        async send(method) { calls.push(method); }
+    }, 25, {
+        platform: 'win32',
+        sleep: async () => {},
+        killProcessTree(target) {
+            calls.push('kill-tree');
+            target.exitCode = 1;
+            target.emit('exit', 1);
+        }
+    });
+    assert.deepEqual(calls, ['Browser.close', 'kill-tree']);
+    assert.equal(proc.exitCode, 1);
+});
+
 test('Chromium cleanup removes a disposable profile tree', async () => {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-cleanup-contract-'));
     fs.mkdirSync(path.join(profile, 'Default', 'Cache'), { recursive: true });
@@ -266,6 +285,50 @@ test('Chromium cleanup removes a disposable profile tree', async () => {
 
     assert.equal(await smoke.removeDirWithRetries(profile), true);
     assert.equal(fs.existsSync(profile), false);
+});
+
+test('Chromium cleanup refuses paths outside its named temporary roots', async () => {
+    await assert.rejects(
+        () => smoke.removeDirWithRetries(path.join(repoRoot, 'astra-cleanup-bait')),
+        /Refusing non-disposable cleanup target/
+    );
+});
+
+test('Chromium cleanup failure is fatal after its bounded fallback', async () => {
+    const target = path.join(os.tmpdir(), 'astra-cleanup-contract-bait');
+    await assert.rejects(
+        () => smoke.removeDirWithRetries(target, {
+            rmSync() {
+                const error = new Error('baited EPERM');
+                error.code = 'EPERM';
+                throw error;
+            },
+            spawnSync: () => ({ status: 1, stderr: 'baited fallback failure' }),
+            existsSync: () => true,
+            sleep: async () => {},
+            platform: 'win32',
+            maxAttempts: 2,
+        }),
+        /Could not remove disposable browser directory.*baited fallback failure/
+    );
+});
+
+test('Chromium cleanup passes the validated target to PowerShell through a dedicated environment value', async () => {
+    const target = path.join(os.tmpdir(), 'astra-cleanup-contract-fallback');
+    let receivedTarget = '';
+    const result = await smoke.removeDirWithRetries(target, {
+        rmSync() { throw new Error('baited lock'); },
+        spawnSync(_command, _args, options) {
+            receivedTarget = options.env.ASTRA_DECK_DISPOSABLE_CLEANUP_TARGET;
+            return { status: 0, stderr: '' };
+        },
+        existsSync: () => false,
+        sleep: async () => {},
+        platform: 'win32',
+        maxAttempts: 1,
+    });
+    assert.equal(result, true);
+    assert.equal(receivedTarget, path.resolve(target));
 });
 
 test('optional-host smoke helper validates missing values and prompt readiness', () => {

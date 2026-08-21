@@ -8,9 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
-- Settings now keeps every Shorts control in one localized section. Popup
-  search and the generated reference use the same nine-key index, while daily
-  limits still point back to Digital Wellbeing when its master control is off.
+- Settings now keeps every Shorts control in one localized section. The ninth
+  entry shows today's watch-time ledger as read-only status. Popup search and
+  the generated reference use the same index, while daily limits still point
+  back to Digital Wellbeing when its master control is off.
 
 - Subscription Groups now points new users to + Group when nothing has been
   made yet. Watch Later Workbench and Video Notes also replace blank space with
@@ -45,9 +46,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
-- Chromium smoke runs now close the browser through its debugging connection
-  before deleting the disposable profile. A guarded Windows fallback clears
-  profile folders that Node can leave behind after the browser has exited.
+- The inline settings fallback now keeps the same Shorts grouping and Digital
+  Wellbeing dependency link as the primary feature module.
+
+- Chromium smoke runs now close through the debugging connection and terminate
+  the Windows child tree before its parent PID disappears. Cleanup retries are
+  bounded, guarded against broad paths, and fatal if a disposable directory is
+  still present. The live-chat lane uses the same shutdown path.
+
+- Release browser checks now include the real popup and side-panel origin lane.
+  Any uncaught page exception fails that lane even if a loading flag reaches its
+  ready state.
+
+- The live-chat smoke now sends YouTube's live-only search filter with one URL
+  encoding pass and reports the loaded page state when external access fails.
 
 - The first-run profile and preset choices now collapse to one column at 200%
   zoom. The real popup check found the old two-column layout spilling outside

@@ -288,8 +288,14 @@ function buildSettingsPanel() {
         };
         const categorySections = globalThis.YTKitCore?.SETTINGS_CATEGORY_SECTIONS || {};
         const shortsPanelSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || [];
+        const panelFeatureList = [...liveFeatureList];
+        const createShortsLedgerPresentation = globalThis.YTKitCore?.createShortsLedgerPresentation;
+        if (typeof createShortsLedgerPresentation === 'function'
+            && !panelFeatureList.some((feature) => feature.id === 'shortsWatchTimeToday')) {
+            panelFeatureList.push(createShortsLedgerPresentation(appState.settings, t));
+        }
         const featuresByCategory = groupFeaturesBySettingsPresentation(
-            liveFeatureList,
+            panelFeatureList,
             categoryOrder,
             shortsPanelSettingKeys
         );

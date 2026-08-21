@@ -18,9 +18,9 @@ const {
     extensionIdFromTarget,
     fetchJsonFromDevTools,
     hasLoadExtensionPolicyBlock,
-    killProcessTree,
     removeDirWithRetries,
     reserveLoopbackPort,
+    shutdownChromiumProcess,
     sleep,
     waitForBackgroundTarget,
     waitForDevTools,
@@ -29,7 +29,7 @@ const {
 const REPO_ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'live-chat-smoke');
 const RUNTIME_ATTRIBUTE = 'data-ytkit-live-chat-runtime';
-const LIVE_SEARCH_URL = 'https://www.youtube.com/results?search_query=live+news&sp=EgJAAQ%253D%253D';
+const LIVE_SEARCH_URL = 'https://www.youtube.com/results?search_query=live+news&sp=EgJAAQ%3D%3D';
 
 function parseArgs(argv) {
     const options = { browser: '', keepStage: false, mutateRuntime: false, timeoutMs: 60000 };
@@ -82,16 +82,20 @@ function liveResultExpression() {
     return `(() => {
         const links = [];
         const seen = new Set();
+        const filteredToLive = new URL(location.href).searchParams.get('sp') === 'EgJAAQ==';
         for (const link of document.querySelectorAll(
-            'ytd-video-renderer a#thumbnail[href*="/watch?v="], ytd-rich-item-renderer a[href*="/watch?v="]'
+            'ytd-video-renderer a[href*="/watch?v="], '
+                + 'ytd-rich-item-renderer a[href*="/watch?v="], '
+                + 'yt-lockup-view-model a[href*="/watch?v="]'
         )) {
-            const card = link.closest('ytd-video-renderer, ytd-rich-item-renderer');
+            const card = link.closest('ytd-video-renderer, ytd-rich-item-renderer, yt-lockup-view-model');
             if (!card) continue;
             const structuralLive = card.querySelector(
-                '.badge-style-type-live-now, [class*="badge-style-type-live-now"], yt-badge-view-model[is-live]'
+                '.badge-style-type-live-now, [class*="badge-style-type-live-now"], '
+                    + 'yt-badge-view-model[is-live], [aria-label*="live" i]'
             );
             const visibleLive = /(^|\\s)live(\\s|$)/i.test(card.textContent || '');
-            if (!structuralLive && !visibleLive) continue;
+            if (!filteredToLive && !structuralLive && !visibleLive) continue;
             const href = new URL(link.getAttribute('href'), location.href).href;
             if (seen.has(href)) continue;
             seen.add(href);
@@ -165,11 +169,22 @@ async function discoverLiveCandidates(client, timeoutMs) {
         timeoutMs,
         'the live-search YouTube shell'
     );
-    return waitForValue(
-        () => evaluate(client, liveResultExpression()).then((links) => links?.length ? links : null),
-        timeoutMs,
-        'a structurally live YouTube search result'
-    );
+    try {
+        return await waitForValue(
+            () => evaluate(client, liveResultExpression()).then((links) => links?.length ? links : null),
+            timeoutMs,
+            'a structurally live YouTube search result'
+        );
+    } catch (error) {
+        const diagnostic = await evaluate(client, `(() => ({
+            href: location.href,
+            title: document.title,
+            text: (document.body?.innerText || '').replace(/\\s+/g, ' ').slice(0, 500),
+            renderers: document.querySelectorAll('ytd-video-renderer, ytd-rich-item-renderer, yt-lockup-view-model').length,
+            watchLinks: document.querySelectorAll('a[href*="/watch?v="]').length
+        }))()`).catch(() => null);
+        throw new Error(`${error.message}; page diagnostic: ${JSON.stringify(diagnostic)}`);
+    }
 }
 
 async function openLiveChatFrame(client, candidates, timeoutMs) {
@@ -231,7 +246,6 @@ async function runCandidate(candidate, stageDir, options) {
     browser.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
     let client = null;
     let browserClient = null;
-    const browserExit = new Promise((resolve) => browser.once('exit', resolve));
     try {
         await waitForDevTools(port, options.timeoutMs);
         const version = await fetchJsonFromDevTools(port, '/json/version');
@@ -258,10 +272,8 @@ async function runCandidate(candidate, stageDir, options) {
         throw error;
     } finally {
         client?.close();
-        await browserClient?.send('Browser.close').catch(() => undefined); // reason: shutdown can close CDP before it acknowledges
+        await shutdownChromiumProcess(browser, browserClient);
         browserClient?.close();
-        killProcessTree(browser);
-        await Promise.race([browserExit, sleep(3000)]);
         await sleep(750);
         await removeDirWithRetries(profileDir);
     }

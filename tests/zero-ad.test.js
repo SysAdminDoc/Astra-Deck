@@ -139,7 +139,7 @@ test('release preparation gates the Chromium, live-chat, Firefox, and real-manag
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
     assert.equal(
         pkg.scripts['release:browser-smokes'],
-        'npm run smoke:zero-ads:live && npm run smoke:live-chat && npm run smoke:firefox && npm run smoke:userscript-managers'
+        'npm run smoke:a11y && npm run smoke:zero-ads:live && npm run smoke:live-chat && npm run smoke:firefox && npm run smoke:userscript-managers'
     );
     assert.match(pkg.scripts['release:prepare'], /npm run release:browser-smokes/);
     assert.match(pkg.scripts['release:prepare:no-crx'], /npm run release:browser-smokes/);

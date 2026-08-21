@@ -109,7 +109,7 @@ const PURPOSE_OVERRIDES = Object.freeze({
     dwBreakIntervalMin: 'Sets the continuous-watch interval after which Digital Wellbeing prompts for a break; zero disables break prompts.',
     dwDailyCapMin: 'Sets the daily watch-time cap enforced by Digital Wellbeing; zero disables the cap.',
     dwWatchTimeToday: 'Stores the dated, merge-safe daily watch-time accumulator used by Digital Wellbeing.',
-    shortsWatchTimeToday: 'Stores the dated Shorts budget ledger and any active snooze deadline.',
+    shortsWatchTimeToday: 'Stores the dated Shorts budget ledger and any active snooze deadline. Settings shows the current-day value as read-only status.',
     aiSummaryModel: 'Sets the provider-specific model identifier sent with AI video-summary requests.',
     transcriptAiTarget: 'Chooses the external AI workspace opened by Transcript to AI Handoff after copying the prepared transcript.',
 

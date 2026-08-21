@@ -9210,6 +9210,70 @@ const UNDO_RETENTION_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(UNDO_RETENTION_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+const SHORTS_LEDGER_TRANSLATIONS = {
+  de: {
+    "Shorts today": "Shorts heute",
+    "No Shorts watch time recorded today.": "Heute wurde keine Shorts-Wiedergabezeit aufgezeichnet.",
+    "{minutes} min watched today.": "Heute {minutes} Min. angesehen.",
+    "Snoozed until {time}.": "Pausiert bis {time}."
+  },
+  es: {
+    "Shorts today": "Shorts de hoy",
+    "No Shorts watch time recorded today.": "Hoy no se ha registrado tiempo de reproducción de Shorts.",
+    "{minutes} min watched today.": "{minutes} min vistos hoy.",
+    "Snoozed until {time}.": "Pospuesto hasta las {time}."
+  },
+  fr: {
+    "Shorts today": "Shorts aujourd'hui",
+    "No Shorts watch time recorded today.": "Aucun temps de visionnage de Shorts enregistré aujourd'hui.",
+    "{minutes} min watched today.": "{minutes} min de Shorts aujourd'hui.",
+    "Snoozed until {time}.": "Reporté jusqu'à {time}."
+  },
+  it: {
+    "Shorts today": "Shorts di oggi",
+    "No Shorts watch time recorded today.": "Nessun tempo di visione degli Shorts registrato oggi.",
+    "{minutes} min watched today.": "{minutes} min guardati oggi.",
+    "Snoozed until {time}.": "Posticipato fino alle {time}."
+  },
+  pt_BR: {
+    "Shorts today": "Shorts de hoje",
+    "No Shorts watch time recorded today.": "Nenhum tempo de exibição de Shorts registrado hoje.",
+    "{minutes} min watched today.": "{minutes} min assistidos hoje.",
+    "Snoozed until {time}.": "Adiado até {time}."
+  },
+  ru: {
+    "Shorts today": "Shorts сегодня",
+    "No Shorts watch time recorded today.": "Сегодня время просмотра Shorts не записано.",
+    "{minutes} min watched today.": "Сегодня просмотрено {minutes} мин.",
+    "Snoozed until {time}.": "Отложено до {time}."
+  },
+  ja: {
+    "Shorts today": "今日の Shorts",
+    "No Shorts watch time recorded today.": "今日の Shorts 視聴時間はまだ記録されていません。",
+    "{minutes} min watched today.": "今日は {minutes} 分視聴しました。",
+    "Snoozed until {time}.": "{time} までスヌーズ中です。"
+  },
+  ko: {
+    "Shorts today": "오늘의 Shorts",
+    "No Shorts watch time recorded today.": "오늘 기록된 Shorts 시청 시간이 없습니다.",
+    "{minutes} min watched today.": "오늘 {minutes}분 시청했습니다.",
+    "Snoozed until {time}.": "{time}까지 미뤘습니다."
+  },
+  ar: {
+    "Shorts today": "Shorts اليوم",
+    "No Shorts watch time recorded today.": "لم يُسجّل وقت مشاهدة Shorts اليوم.",
+    "{minutes} min watched today.": "تمت مشاهدة {minutes} دقيقة اليوم.",
+    "Snoozed until {time}.": "تم التأجيل حتى {time}."
+  },
+  zh_CN: {
+    "Shorts today": "今日 Shorts",
+    "No Shorts watch time recorded today.": "今天尚未记录 Shorts 观看时间。",
+    "{minutes} min watched today.": "今天已观看 {minutes} 分钟。",
+    "Snoozed until {time}.": "已暂停至 {time}。"
+  }
+};
+for (const [locale, messages] of Object.entries(SHORTS_LEDGER_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 
 
 

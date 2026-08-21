@@ -730,58 +730,89 @@ function waitForProcessExit(proc) {
     });
 }
 
-async function shutdownChromiumProcess(proc, client, timeoutMs = 3000) {
+async function shutdownChromiumProcess(proc, client, timeoutMs = 3000, overrides = {}) {
     if (!proc) return;
+    const stopTree = overrides.killProcessTree || killProcessTree;
+    const wait = overrides.sleep || sleep;
+    const platform = overrides.platform || process.platform;
     const processExit = waitForProcessExit(proc);
     if (proc.exitCode === null && client && typeof client.send === 'function') {
+        const closeRequest = Promise.resolve(client.send('Browser.close')).catch(() => undefined);
+        // CDP can acknowledge Browser.close only after the Windows parent PID
+        // has vanished. Send the graceful request first, then terminate the
+        // still-addressable tree before awaiting that acknowledgement.
+        if (platform === 'win32' && proc.exitCode === null) stopTree(proc);
         await Promise.race([
-            Promise.resolve(client.send('Browser.close')).catch(() => undefined),
-            sleep(Math.min(timeoutMs, 1000)),
+            closeRequest,
+            wait(Math.min(timeoutMs, 1000)),
         ]);
     }
-    await Promise.race([processExit, sleep(timeoutMs)]);
+    await Promise.race([processExit, wait(timeoutMs)]);
     if (proc.exitCode === null) {
-        killProcessTree(proc);
-        await Promise.race([processExit, sleep(timeoutMs)]);
+        stopTree(proc);
+        await Promise.race([processExit, wait(timeoutMs)]);
     }
 }
 
-async function removeDirWithRetries(dir) {
-    const maxAttempts = 12;
+async function removeDirWithRetries(dir, overrides = {}) {
+    const resolved = path.resolve(dir);
+    const protectedPaths = new Set([
+        path.parse(resolved).root.toLowerCase(),
+        path.resolve(os.homedir()).toLowerCase(),
+        path.resolve(REPO_ROOT).toLowerCase(),
+    ]);
+    if (protectedPaths.has(resolved.toLowerCase())) {
+        throw new Error(`Refusing unsafe cleanup target: ${resolved}`);
+    }
+    const allowedRoots = [
+        path.resolve(os.tmpdir()),
+        path.resolve(path.parse(resolved).root, 'Temp'),
+    ];
+    const isDisposableTarget = /^astra-[A-Za-z0-9._-]+$/.test(path.basename(resolved))
+        && allowedRoots.some((root) => {
+            const relative = path.relative(root, resolved);
+            return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative);
+        });
+    if (!isDisposableTarget) {
+        throw new Error(`Refusing non-disposable cleanup target: ${resolved}`);
+    }
+    const removeSync = overrides.rmSync || fs.rmSync;
+    const runProcess = overrides.spawnSync || spawnSync;
+    const existsSync = overrides.existsSync || fs.existsSync;
+    const wait = overrides.sleep || sleep;
+    const platform = overrides.platform || process.platform;
+    const maxAttempts = overrides.maxAttempts || 60;
     let lastError = null;
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
-            fs.rmSync(dir, { recursive: true, force: true, maxRetries: 2, retryDelay: 100 });
+            removeSync(resolved, { recursive: true, force: true });
             return true;
         } catch (error) {
             lastError = error;
             if (attempt === maxAttempts - 1) break;
-            await sleep(500);
+            await wait(500);
         }
     }
-    if (process.platform === 'win32') {
-        const resolved = path.resolve(dir);
-        const protectedPaths = new Set([
-            path.parse(resolved).root.toLowerCase(),
-            path.resolve(os.homedir()).toLowerCase(),
-            path.resolve(REPO_ROOT).toLowerCase(),
-        ]);
-        if (protectedPaths.has(resolved.toLowerCase())) {
-            throw new Error(`Refusing unsafe cleanup target: ${resolved}`);
-        }
-        const cleanup = spawnSync('powershell.exe', [
+    if (platform === 'win32') {
+        const cleanup = runProcess('powershell.exe', [
             '-NoProfile',
             '-NonInteractive',
             '-Command',
-            'Remove-Item -LiteralPath $args[0] -Recurse -Force -ErrorAction Stop',
-            resolved,
-        ], { encoding: 'utf8', windowsHide: true });
-        if (cleanup.status === 0 && !fs.existsSync(resolved)) return true;
+            '$target = $env:ASTRA_DECK_DISPOSABLE_CLEANUP_TARGET; '
+                + 'if ([string]::IsNullOrWhiteSpace($target)) { throw "Missing cleanup target" }; '
+                + 'Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction Stop',
+        ], {
+            encoding: 'utf8',
+            env: { ...process.env, ASTRA_DECK_DISPOSABLE_CLEANUP_TARGET: resolved },
+            windowsHide: true
+        });
+        if (cleanup.status === 0 && !existsSync(resolved)) return true;
         const detail = String(cleanup.stderr || cleanup.stdout || '').trim();
         if (detail) lastError = new Error(detail);
     }
-    console.warn(`[smoke-chromium-optional-hosts] cleanup warning: ${lastError?.message || dir}`);
-    return false;
+    throw new Error(
+        `Could not remove disposable browser directory ${resolved}: ${lastError?.message || 'unknown cleanup failure'}`
+    );
 }
 
 async function runWithBrowser(candidate, manifest, stageDir, opts) {
