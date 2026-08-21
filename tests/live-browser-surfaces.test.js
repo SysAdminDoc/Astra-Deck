@@ -7,10 +7,12 @@ const path = require('node:path');
 
 const repoRoot = path.join(__dirname, '..');
 const {
+    assertNoRuntimeExceptions,
     parseArgs: parseA11yArgs,
     validateRealExtensionPageSnapshot,
 } = require('../scripts/smoke-headless-a11y');
 const {
+    LIVE_SEARCH_URL,
     parseArgs: parseLiveChatArgs,
     validateLiveChatSnapshot,
 } = require('../scripts/smoke-live-chat-frame');
@@ -56,6 +58,24 @@ test('every real extension-page assertion is baited with a broken observation', 
             );
         });
     }
+});
+
+test('real extension-page smoke fails on page runtime exceptions', () => {
+    assert.equal(assertNoRuntimeExceptions([{ method: 'Page.loadEventFired' }], 0, 'popup/normal'), true);
+    assert.throws(
+        () => assertNoRuntimeExceptions([
+            { method: 'Runtime.consoleAPICalled' },
+            {
+                method: 'Runtime.exceptionThrown',
+                params: { exceptionDetails: { exception: { description: 'Error: boot exploded' } } }
+            }
+        ], 0, 'sidepanel/forced-colors'),
+        /sidepanel\/forced-colors threw during boot: Error: boot exploded/
+    );
+    assert.equal(assertNoRuntimeExceptions([
+        { method: 'Runtime.exceptionThrown', params: { exceptionDetails: { text: 'old navigation' } } },
+        { method: 'Page.loadEventFired' }
+    ], 1, 'popup/normal'), true, 'the mode marker must isolate prior navigation events');
 });
 
 const liveChatSnapshot = Object.freeze({
@@ -108,10 +128,20 @@ test('live-chat runtime publishes and removes the frame attachment marker', () =
     assert.match(source, /setAttribute\?\.\(RUNTIME_ATTRIBUTE, 'active'\)/);
     assert.match(source, /removeAttribute\?\.\(RUNTIME_ATTRIBUTE\)/);
     assert.equal(parseLiveChatArgs(['--mutate-runtime']).mutateRuntime, true);
+    assert.equal(new URL(LIVE_SEARCH_URL).searchParams.get('sp'), 'EgJAAQ==',
+        'the live-only YouTube filter must be encoded exactly once');
 });
 
-test('release browser smokes include the real live-chat frame lane', () => {
+test('live-chat smoke uses the shared bounded Chromium shutdown contract', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-live-chat-frame.js'), 'utf8');
+    assert.match(source, /await shutdownChromiumProcess\(browser, browserClient\)/);
+    assert.doesNotMatch(source, /killProcessTree\(browser\)/);
+    assert.match(source, /await removeDirWithRetries\(profileDir\)/);
+});
+
+test('release browser smokes include real extension pages and the live-chat frame lane', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
     assert.equal(pkg.scripts['smoke:live-chat'], 'node scripts/smoke-live-chat-frame.js');
+    assert.match(pkg.scripts['release:browser-smokes'], /smoke:a11y/);
     assert.match(pkg.scripts['release:browser-smokes'], /smoke:live-chat/);
 });

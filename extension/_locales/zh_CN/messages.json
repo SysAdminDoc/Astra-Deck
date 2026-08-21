@@ -5159,6 +5159,18 @@
   "settingsShortsDependencyCopy": {
     "message": "Shorts 每日限额由数字健康管理。"
   },
+  "settingsShortsLedgerEmpty": {
+    "message": "今天尚未记录 Shorts 观看时间。"
+  },
+  "settingsShortsLedgerName": {
+    "message": "今日 Shorts"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "已暂停至 {time}。"
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "今天已观看 {minutes} 分钟。"
+  },
   "settingsSubFeatureBadge": {
     "message": "子功能"
   },

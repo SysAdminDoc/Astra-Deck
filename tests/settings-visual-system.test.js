@@ -221,6 +221,7 @@ test('the Shorts section owns every Shorts schema key without changing schema ca
 
     try {
         const {
+            createShortsLedgerPresentation,
             SETTINGS_CATEGORY_SECTIONS,
             SHORTS_SETTING_KEYS,
             SHORTS_PANEL_SETTING_KEYS
@@ -233,8 +234,8 @@ test('the Shorts section owns every Shorts schema key without changing schema ca
             'the presentation index must cover the canonical Shorts category plus cross-category Shorts keys');
         assert.deepEqual(
             SHORTS_PANEL_SETTING_KEYS,
-            expected.filter((key) => key !== 'shortsWatchTimeToday'),
-            'the in-page control list excludes only the read-only daily ledger'
+            expected,
+            'the in-page section must include the read-only daily ledger'
         );
         const section = SETTINGS_CATEGORY_SECTIONS.Content.find(
             ({ labelKey }) => labelKey === 'settingsSectionShortsDiscovery');
@@ -244,6 +245,26 @@ test('the Shorts section owns every Shorts schema key without changing schema ca
         }
         assert.equal(SETTINGS_SCHEMA.find((entry) => entry.key === 'shortsDailyLimitMin').category, 'research-ai',
             'the grouping is presentation-only; the persisted schema category must stay put');
+
+        const now = new Date(2026, 7, 21, 14, 5, 0);
+        const today = '2026-08-21';
+        const ledger = createShortsLedgerPresentation({
+            shortsWatchTimeToday: {
+                date: today,
+                seconds: (12 * 60) + 1,
+                snoozeUntil: now.getTime() + (30 * 60 * 1000)
+            }
+        }, (_key, fallback) => fallback, now);
+        assert.equal(ledger.id, 'shortsWatchTimeToday');
+        assert.equal(ledger.group, 'Content');
+        assert.equal(ledger.type, 'info');
+        assert.equal(ledger.i18nResolved, true);
+        assert.match(ledger.description, /^13 min watched today\. Snoozed until .+\.$/);
+
+        const staleLedger = createShortsLedgerPresentation({
+            shortsWatchTimeToday: { date: '2026-08-20', seconds: 9999, snoozeUntil: now.getTime() + 1000 }
+        }, (_key, fallback) => fallback, now);
+        assert.equal(staleLedger.description, 'No Shorts watch time recorded today.');
     } finally {
         globalThis.YTKitCore = previousCore;
         delete require.cache[modulePath];

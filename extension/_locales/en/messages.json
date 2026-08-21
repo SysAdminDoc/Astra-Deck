@@ -5155,6 +5155,10 @@
   },
   "settingsShortsDependencyAction": { "message": "Open Digital Wellbeing" },
   "settingsShortsDependencyCopy": { "message": "Daily Shorts limits run through Digital Wellbeing." },
+  "settingsShortsLedgerEmpty": { "message": "No Shorts watch time recorded today." },
+  "settingsShortsLedgerName": { "message": "Shorts today" },
+  "settingsShortsLedgerSnooze": { "message": "Snoozed until {time}." },
+  "settingsShortsLedgerSummary": { "message": "{minutes} min watched today." },
   "settingsSubFeatureBadge": {
     "message": "Sub"
   },

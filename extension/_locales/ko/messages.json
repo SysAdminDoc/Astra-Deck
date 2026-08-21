@@ -5159,6 +5159,18 @@
   "settingsShortsDependencyCopy": {
     "message": "Shorts 일일 한도는 디지털 웰빙에서 작동합니다."
   },
+  "settingsShortsLedgerEmpty": {
+    "message": "오늘 기록된 Shorts 시청 시간이 없습니다."
+  },
+  "settingsShortsLedgerName": {
+    "message": "오늘의 Shorts"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "{time}까지 미뤘습니다."
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "오늘 {minutes}분 시청했습니다."
+  },
   "settingsSubFeatureBadge": {
     "message": "하위 기능"
   },

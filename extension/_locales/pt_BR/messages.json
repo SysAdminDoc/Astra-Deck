@@ -5159,6 +5159,18 @@
   "settingsShortsDependencyCopy": {
     "message": "Os limites diários dos Shorts usam o Bem-estar digital."
   },
+  "settingsShortsLedgerEmpty": {
+    "message": "Nenhum tempo de exibição de Shorts registrado hoje."
+  },
+  "settingsShortsLedgerName": {
+    "message": "Shorts de hoje"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "Adiado até {time}."
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "{minutes} min assistidos hoje."
+  },
   "settingsSubFeatureBadge": {
     "message": "Sub"
   },

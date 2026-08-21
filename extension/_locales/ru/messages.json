@@ -5159,6 +5159,18 @@
   "settingsShortsDependencyCopy": {
     "message": "Дневные лимиты Shorts работают через «Цифровое благополучие»."
   },
+  "settingsShortsLedgerEmpty": {
+    "message": "Сегодня время просмотра Shorts не записано."
+  },
+  "settingsShortsLedgerName": {
+    "message": "Shorts сегодня"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "Отложено до {time}."
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "Сегодня просмотрено {minutes} мин."
+  },
   "settingsSubFeatureBadge": {
     "message": "Подфункция"
   },

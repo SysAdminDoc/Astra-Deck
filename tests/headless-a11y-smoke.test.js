@@ -30,6 +30,8 @@ test('headless accessibility smoke covers every roadmap surface through real UI 
     assert.match(source, /injectChromeStub\(stageDir, 'sidepanel\.html', 'sidepanel-a11y\.html'\)/);
     assert.match(source, /injectChromeStub\(stageDir, 'sidebar\.html', 'sidebar-a11y\.html'\)/);
     assert.match(source, /globalThis\.__ytkitSmoke\.openPanel\(\)/);
+    assert.match(source, /auditShortsSettingsSection/);
+    assert.match(source, /shortsWatchTimeToday/);
     assert.match(source, /#ytkit-transcript-panel/);
     assert.match(source, /globalThis\.__ytkitA11y\.openDownload\(\)/);
     assert.match(overlaySmoke.CHROME_STUB, /transcriptViewer: true/);

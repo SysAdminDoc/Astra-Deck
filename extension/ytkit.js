@@ -340,8 +340,13 @@
 
     function getFeatureI18nText(feature, field) {
         if (!feature) return '';
-        ensureFeatureI18nKeys(feature);
         const isDescription = field === 'description' || field === 'desc';
+        if (feature.i18nResolved === true) {
+            return isDescription
+                ? String(feature.description || '')
+                : String(feature.name || feature.id || '');
+        }
+        ensureFeatureI18nKeys(feature);
         const key = isDescription ? feature.descriptionKey : feature.nameKey;
         const fallback = isDescription
             ? String(feature.description || '')
@@ -43031,11 +43036,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const categoryOrder = ['Video Player', 'Playback', 'Comments', 'Watch Page', 'Content', 'Home / Subscriptions', 'Theme', 'Live Chat', 'Downloads', 'Advanced'];
 
         // Group labels: maps first category of each group → label text
-        const categoryGroupLabels = {};
+        const categoryGroupLabels = {
+            'Video Player': t('panelNavGroupPlayer', 'Player'),
+            'Comments': t('panelNavGroupInteraction', 'Interaction'),
+            'Home / Subscriptions': t('panelNavGroupPersonalization', 'Personalization'),
+            'Live Chat': t('panelNavGroupCommunity', 'Community'),
+            'Advanced': t('panelNavGroupSystem', 'System'),
+        };
         const categorySections = globalThis.YTKitCore?.SETTINGS_CATEGORY_SECTIONS || {};
+        const shortsPanelSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || [];
+        const panelFeatureList = [...liveFeatureList];
+        const createShortsLedgerPresentation = globalThis.YTKitCore?.createShortsLedgerPresentation;
+        if (typeof createShortsLedgerPresentation === 'function'
+            && !panelFeatureList.some((feature) => feature.id === 'shortsWatchTimeToday')) {
+            panelFeatureList.push(createShortsLedgerPresentation(appState.settings, t));
+        }
         const featuresByCategory = categoryOrder.reduce((acc, cat) => ({...acc, [cat]: []}), {});
-        liveFeatureList.forEach(f => {
-            if (f.group && featuresByCategory[f.group]) featuresByCategory[f.group].push(f);
+        panelFeatureList.forEach(f => {
+            const presentationCategory = shortsPanelSettingKeys.includes(f?.id) ? 'Content' : f?.group;
+            if (presentationCategory && featuresByCategory[presentationCategory]) {
+                featuresByCategory[presentationCategory].push(f);
+            }
         });
         // v3.17.0: the sidebar "Workspace / Home controls" summary card was
         // removed to reclaim vertical space for feature toggles. The four
@@ -44969,6 +44990,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const catId = cat.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
             const parentFeatures = categoryFeatures.filter(f => !f.isSubFeature);
             const subFeatures = categoryFeatures.filter(f => f.isSubFeature);
+            const promotedSubFeatures = subFeatures.filter((feature) => {
+                const presentationCategory = shortsPanelSettingKeys.includes(feature?.id)
+                    ? 'Content'
+                    : feature.group;
+                return presentationCategory !== feature.group;
+            });
             const sortedParentFeatures = [...parentFeatures].sort((a, b) => {
                 const aIsDropdown = a.type === 'select';
                 const bIsDropdown = b.type === 'select';
@@ -45357,6 +45384,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const sectionIndex = sectionDefinitions.findIndex((section) => section.match.test(feature.id));
                 sectionBuckets[Math.max(0, sectionIndex)].push(feature);
             });
+            promotedSubFeatures.forEach((feature) => {
+                const sectionIndex = sectionDefinitions.findIndex((section) => section.match.test(feature.id));
+                sectionBuckets[Math.max(0, sectionIndex)].push(feature);
+            });
             sectionDefinitions.forEach((sectionDefinition, sectionIndex) => {
                 const sectionFeatures = sectionBuckets[sectionIndex];
                 if (!sectionFeatures.length) return;
@@ -45371,7 +45402,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 featureSection.setAttribute('aria-labelledby', sectionHeading.id);
                 const sectionBody = document.createElement('div');
                 sectionBody.className = 'ytkit-feature-section-body';
-                sectionFeatures.forEach((feature) => {
+                const sectionPromotedSubFeatures = sectionFeatures.filter(
+                    (feature) => promotedSubFeatures.includes(feature)
+                );
+                sectionFeatures.filter((feature) => !sectionPromotedSubFeatures.includes(feature)).forEach((feature) => {
                     sectionBody.appendChild(buildFeatureCard(feature, config.color));
                     const children = subFeatures.filter((subFeature) => subFeature.parentId === feature.id);
                     if (children.length > 0) {
@@ -45384,6 +45418,51 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         setSubFeatureAvailability(subContainer, !!appState.settings[feature.id]);
                         sectionBody.appendChild(subContainer);
                     }
+                });
+                const promotedByParent = new Map();
+                sectionPromotedSubFeatures.forEach((feature) => {
+                    const parentId = feature.parentId || '';
+                    if (!promotedByParent.has(parentId)) promotedByParent.set(parentId, []);
+                    promotedByParent.get(parentId).push(feature);
+                });
+                promotedByParent.forEach((promotedFeatures, parentId) => {
+                    const dependency = document.createElement('div');
+                    dependency.className = 'ytkit-shorts-dependency';
+                    const dependencyCopy = document.createElement('span');
+                    dependencyCopy.textContent = t(
+                        'settingsShortsDependencyCopy',
+                        'Daily Shorts limits run through Digital Wellbeing.'
+                    );
+                    const dependencyAction = document.createElement('button');
+                    dependencyAction.type = 'button';
+                    dependencyAction.textContent = t(
+                        'settingsShortsDependencyAction',
+                        'Open Digital Wellbeing'
+                    );
+                    dependencyAction.addEventListener('click', () => {
+                        const parentFeature = getFeatureById(parentId);
+                        const parentCategoryId = String(parentFeature?.group || 'Advanced')
+                            .replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
+                        const parentNav = document.querySelector(`.ytkit-nav-btn[data-tab="${parentCategoryId}"]`);
+                        if (!parentNav) return;
+                        syncPanelCategorySelection(parentNav);
+                        const parentPane = document.getElementById(`ytkit-pane-${parentCategoryId}`);
+                        if (parentPane) parentPane.scrollTop = 0;
+                        const parentCard = document.querySelector(`.ytkit-feature-card[data-feature-id="${parentId}"]`);
+                        parentCard?.scrollIntoView?.({ block: 'center' });
+                        parentCard?.querySelector('input, select, textarea, button')?.focus?.({ preventScroll: true });
+                    });
+                    dependency.append(dependencyCopy, dependencyAction);
+                    sectionBody.appendChild(dependency);
+
+                    const subContainer = document.createElement('div');
+                    subContainer.className = 'ytkit-sub-features ytkit-promoted-sub-features';
+                    subContainer.dataset.parentId = parentId;
+                    promotedFeatures.forEach((feature) => {
+                        subContainer.appendChild(buildFeatureCard(feature, config.color, true));
+                    });
+                    setSubFeatureAvailability(subContainer, !!appState.settings[parentId]);
+                    sectionBody.appendChild(subContainer);
                 });
                 featureSection.appendChild(sectionHeading);
                 featureSection.appendChild(sectionBody);

@@ -5159,6 +5159,18 @@
   "settingsShortsDependencyCopy": {
     "message": "Tägliche Shorts-Limits werden über Digital Wellbeing gesteuert."
   },
+  "settingsShortsLedgerEmpty": {
+    "message": "Heute wurde keine Shorts-Wiedergabezeit aufgezeichnet."
+  },
+  "settingsShortsLedgerName": {
+    "message": "Shorts heute"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "Pausiert bis {time}."
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "Heute {minutes} Min. angesehen."
+  },
   "settingsSubFeatureBadge": {
     "message": "Unterfunktion"
   },

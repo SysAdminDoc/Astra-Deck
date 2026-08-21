@@ -5159,6 +5159,18 @@
   "settingsShortsDependencyCopy": {
     "message": "Shorts の1日制限はデジタル ウェルビーイングで管理されます。"
   },
+  "settingsShortsLedgerEmpty": {
+    "message": "今日の Shorts 視聴時間はまだ記録されていません。"
+  },
+  "settingsShortsLedgerName": {
+    "message": "今日の Shorts"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "{time} までスヌーズ中です。"
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "今日は {minutes} 分視聴しました。"
+  },
   "settingsSubFeatureBadge": {
     "message": "サブ機能"
   },
