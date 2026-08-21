@@ -138,6 +138,37 @@ test('settingsPanel counting tolerates an empty or missing feature list', () => 
     });
 });
 
+test('settingsPanel promotes every actionable Shorts control into Content without mutating features', () => {
+    const {
+        groupFeaturesBySettingsPresentation,
+        resolveSettingsPresentationCategory
+    } = loadModule();
+    const { SHORTS_PANEL_SETTING_KEYS } = require('../../extension/core/settings-visual-system');
+    const features = SHORTS_PANEL_SETTING_KEYS.map((id) => ({
+        id,
+        group: id === 'disablePlayOnHover'
+            ? 'Home / Subscriptions'
+            : id.startsWith('shortsDailyLimit') ? 'Advanced' : 'Content',
+        isSubFeature: id.startsWith('shortsDailyLimit'),
+        parentId: id.startsWith('shortsDailyLimit') ? 'digitalWellbeing' : undefined
+    }));
+    const originalGroups = features.map((feature) => feature.group);
+    const grouped = groupFeaturesBySettingsPresentation(
+        features,
+        ['Content', 'Home / Subscriptions', 'Advanced'],
+        SHORTS_PANEL_SETTING_KEYS
+    );
+
+    assert.deepEqual(grouped.Content.map((feature) => feature.id), SHORTS_PANEL_SETTING_KEYS);
+    assert.deepEqual(grouped['Home / Subscriptions'], []);
+    assert.deepEqual(grouped.Advanced, []);
+    assert.deepEqual(features.map((feature) => feature.group), originalGroups,
+        'presentation grouping must not rewrite the runtime feature metadata');
+    for (const feature of features) {
+        assert.equal(resolveSettingsPresentationCategory(feature, SHORTS_PANEL_SETTING_KEYS), 'Content');
+    }
+});
+
 test('settingsPanel does not count a feature whose setting is absent from the sparse bag', () => {
     // Only changed keys are persisted, so an untouched default is `undefined`
     // in appState.settings. Counting it as enabled would overstate every

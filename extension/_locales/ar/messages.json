@@ -5127,7 +5127,7 @@
     "message": "المشاركة والإجراءات"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts والاستكشاف"
+    "message": "عناصر تحكم Shorts"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock و DeArrow"
@@ -5152,6 +5152,12 @@
   },
   "settingsSectionVisibility": {
     "message": "الظهور"
+  },
+  "settingsShortsDependencyAction": {
+    "message": "فتح الرفاهية الرقمية"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "تعمل حدود Shorts اليومية من خلال ميزة الرفاهية الرقمية."
   },
   "settingsSubFeatureBadge": {
     "message": "ميزة فرعية"

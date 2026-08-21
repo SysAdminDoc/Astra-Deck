@@ -14,6 +14,7 @@ const {
     renderSettingsReference,
     replaceReference
 } = require('../scripts/generate-settings-reference');
+const { SHORTS_SETTING_KEYS } = require('../extension/core/settings-visual-system');
 
 const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
 
@@ -52,6 +53,21 @@ test('README reference groups every canonical category in schema order', () => {
         const index = readme.indexOf(`id="setting-${firstEntry.key}"`);
         assert.ok(index > previous, `${category} must follow canonical schema category order`);
         previous = index;
+    }
+});
+
+test('README reference collects every Shorts setting in one named section', () => {
+    const block = renderSettingsReference(collectReferenceEntries());
+    const start = block.indexOf('<details data-settings-section="shorts-controls">');
+    const end = block.indexOf('</details>', start);
+    assert.ok(start > -1 && end > start, 'the generated reference needs a named Shorts section');
+    const shortsSection = block.slice(start, end);
+    assert.match(shortsSection, /<strong>Shorts controls<\/strong>: 9 settings/);
+    for (const key of SHORTS_SETTING_KEYS) {
+        assert.match(shortsSection, new RegExp(`id="setting-${key}"`),
+            `${key} must be inside the Shorts controls section`);
+        assert.equal(block.split(`id="setting-${key}"`).length - 1, 1,
+            `${key} must not remain duplicated under its schema category`);
     }
 });
 

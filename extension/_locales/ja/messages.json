@@ -5127,7 +5127,7 @@
     "message": "共有と操作"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts と発見"
+    "message": "Shorts のコントロール"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock と DeArrow"
@@ -5152,6 +5152,12 @@
   },
   "settingsSectionVisibility": {
     "message": "表示"
+  },
+  "settingsShortsDependencyAction": {
+    "message": "デジタル ウェルビーイングを開く"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "Shorts の1日制限はデジタル ウェルビーイングで管理されます。"
   },
   "settingsSubFeatureBadge": {
     "message": "サブ機能"

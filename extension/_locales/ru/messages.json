@@ -5127,7 +5127,7 @@
     "message": "Отправка и действия"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts и обзор"
+    "message": "Управление Shorts"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock и DeArrow"
@@ -5152,6 +5152,12 @@
   },
   "settingsSectionVisibility": {
     "message": "Видимость"
+  },
+  "settingsShortsDependencyAction": {
+    "message": "Открыть «Цифровое благополучие»"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "Дневные лимиты Shorts работают через «Цифровое благополучие»."
   },
   "settingsSubFeatureBadge": {
     "message": "Подфункция"

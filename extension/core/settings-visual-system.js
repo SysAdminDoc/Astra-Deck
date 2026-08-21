@@ -4,6 +4,23 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     const STYLE_ID = 'ytkit-settings-visual-v5';
 
+    // Presentation-only index shared by the in-page panel, popup-search tests,
+    // and the generated README. Canonical schema categories stay untouched.
+    const SHORTS_SETTING_KEYS = Object.freeze([
+        'removeAllShorts',
+        'redirectShorts',
+        'disablePlayOnHover',
+        'shortsSpeedControl',
+        'shortsAutoAdvance',
+        'shortsAsRegularVideo',
+        'shortsDailyLimitMin',
+        'shortsDailyLimitMode',
+        'shortsWatchTimeToday'
+    ]);
+    const SHORTS_PANEL_SETTING_KEYS = Object.freeze(
+        SHORTS_SETTING_KEYS.filter((key) => key !== 'shortsWatchTimeToday')
+    );
+
     const SETTINGS_CATEGORY_SECTIONS = Object.freeze({
         'Video Player': [
             { labelKey: 'settingsSectionPlaybackQuality', fallback: 'Playback & quality', match: /^(persistentSpeed|codecSelector|autoMaxResolution|forceH264|forceStandardFps|musicVideoSpeedLock|qualityProfileMatrix|perChannelSpeed|fineSpeedControl|customSpeedButtons|speedIndicatorOverlay)$/ },
@@ -39,7 +56,7 @@
         ],
         Content: [
             { labelKey: 'settingsSectionFeedVisibility', fallback: 'Feed visibility', match: /^(hideWatchedVideos|searchFilterDefaults|searchHide|hideCollaborations|hideVideosFromHome|titleNormalization|watchProgress|antiTranslate|notInterestedButton|thumbnail|watchLaterQuickAdd|grayscaleThumbnails|openInNewTab|hideLatestPosts)$/ },
-            { labelKey: 'settingsSectionShortsDiscovery', fallback: 'Shorts & discovery', match: /^(removeAllShorts|redirectShorts|shorts)/ },
+            { labelKey: 'settingsSectionShortsDiscovery', fallback: 'Shorts controls', match: /^(removeAllShorts|redirectShorts|disablePlayOnHover|shortsSpeedControl|shortsAutoAdvance|shortsAsRegularVideo|shortsDailyLimitMin|shortsDailyLimitMode)$/ },
             { labelKey: 'settingsSectionSponsorblockDearrow', fallback: 'SponsorBlock & DeArrow', match: /^(sponsorBlock|sbPerChannelProfiles|deArrow)/ },
             { labelKey: 'settingsSectionFeedToolsAutomation', fallback: 'Feed tools & automation', match: /.*/ }
         ],
@@ -1896,6 +1913,36 @@
             background: var(--ytkit-v3-panel) !important;
         }
 
+        #ytkit-settings-panel .ytkit-shorts-dependency {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 12px !important;
+            padding: 10px 14px !important;
+            border-top: 1px solid var(--ytkit-v3-border) !important;
+            color: var(--ytkit-v3-muted) !important;
+            font-size: 12px !important;
+        }
+
+        #ytkit-settings-panel .ytkit-shorts-dependency button {
+            flex: none !important;
+            min-height: 32px !important;
+            padding: 6px 10px !important;
+            border: 1px solid var(--ytkit-v3-border-strong) !important;
+            border-radius: 6px !important;
+            background: var(--ytkit-v3-surface) !important;
+            color: var(--ytkit-v3-text) !important;
+            font: inherit !important;
+            font-size: 12px !important;
+            font-weight: 650 !important;
+            line-height: 1.2 !important;
+            cursor: pointer !important;
+        }
+
+        #ytkit-settings-panel .ytkit-shorts-dependency button:hover {
+            background: var(--ytkit-v3-surface-raised) !important;
+        }
+
         #ytkit-settings-panel .ytkit-feature-card {
             grid-template-columns: minmax(0, 1fr) minmax(190px, 300px) !important;
             gap: 28px !important;
@@ -3243,6 +3290,8 @@
 
     Object.assign(core, {
         SETTINGS_CATEGORY_SECTIONS,
+        SHORTS_SETTING_KEYS,
+        SHORTS_PANEL_SETTING_KEYS,
         SETTINGS_VISUAL_SYSTEM_CSS,
         SURFACE_VISUAL_SYSTEM_CSS,
         ensureSettingsVisualSystem,
@@ -3254,6 +3303,8 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             SETTINGS_CATEGORY_SECTIONS,
+            SHORTS_SETTING_KEYS,
+            SHORTS_PANEL_SETTING_KEYS,
             SETTINGS_VISUAL_SYSTEM_CSS,
             SURFACE_VISUAL_SYSTEM_CSS,
             STYLE_ID,

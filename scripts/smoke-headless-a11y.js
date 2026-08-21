@@ -10,7 +10,7 @@ const fs = require('fs');
 const http = require('http');
 const os = require('os');
 const path = require('path');
-const { execFileSync, spawn } = require('child_process');
+const { spawn } = require('child_process');
 const WebSocket = require('ws');
 const { generatePseudolocale } = require('./generate-pseudolocale.js');
 const {
@@ -30,9 +30,9 @@ const {
     extensionIdFromTarget,
     fetchJsonFromDevTools,
     hasLoadExtensionPolicyBlock,
-    killProcessTree,
     removeDirWithRetries,
     reserveLoopbackPort,
+    shutdownChromiumProcess,
     waitForBackgroundTarget,
     waitForDevTools,
 } = require('./smoke-chromium-optional-hosts.js');
@@ -1410,8 +1410,8 @@ async function runRealExtensionCandidate(candidate, stageDir, options) {
         error.stderr = stderr;
         throw error;
     } finally {
+        await shutdownChromiumProcess(browser, browserClient);
         browserClient?.close();
-        killProcessTree(browser);
         await sleep(750);
         await removeDirWithRetries(profileDir);
     }
@@ -1482,6 +1482,7 @@ async function runFixtureStates(options) {
     });
 
     let socket;
+    let client;
     try {
         const port = new URL(devtoolsUrl).port;
         const page = await waitFor(async () => {
@@ -1493,7 +1494,7 @@ async function runFixtureStates(options) {
             socket.once('open', resolve);
             socket.once('error', reject);
         });
-        const client = new DevtoolsClient(socket);
+        client = new DevtoolsClient(socket);
         await client.send('Page.enable');
         await client.send('Runtime.enable');
 
@@ -1517,25 +1518,8 @@ async function runFixtureStates(options) {
         console.log(`[headless-a11y] Captures saved to ${OUT_DIR}`);
         console.log('[headless-a11y] PASS — normal, 200% reflow, 320px reflow x ar/de/pt_BR/pseudo, themes, and forced colors');
     } finally {
+        await shutdownChromiumProcess(browser, client);
         if (socket) socket.close();
-        const browserExit = browser.exitCode !== null
-            ? Promise.resolve()
-            : new Promise((resolve) => browser.once('exit', resolve));
-        browser.kill();
-        await Promise.race([browserExit, sleep(3000)]);
-        if (browser.exitCode === null && browser.pid) {
-            if (process.platform === 'win32') {
-                try {
-                    execFileSync('taskkill', ['/PID', String(browser.pid), '/T', '/F'], {
-                        stdio: 'ignore',
-                        windowsHide: true,
-                    });
-                } catch (_) { /* reason: browser may exit between the state check and taskkill */ }
-            } else {
-                browser.kill('SIGKILL');
-            }
-            await Promise.race([browserExit, sleep(3000)]);
-        }
         if (process.platform === 'win32') await sleep(250);
         if (!options.keepStage) await removeTreeWithRetry(stageDir);
         await removeTreeWithRetry(profileDir);

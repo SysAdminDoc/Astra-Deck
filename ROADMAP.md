@@ -234,10 +234,3 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
   Touches: `extension/popup.js`, `extension/ytkit.js`, `extension/features/download-ui/index.js`, locales, `scripts/check-localizable-ui-copy.js`
   Acceptance: each converted surface maps the failure to a small closed set of localized causes with a stated next action, and the raw text goes to the diagnostic log only; a gate or test forbids `${...message}` and bare status interpolation in the converted files so the pattern cannot return; the copy-gate baseline only decreases.
   Complexity: M
-
-- [ ] P3 — Group the Shorts settings into one discoverable surface
-  Why: hiding Shorts is the single largest YouTube-extension demand signal of 2026 and Astra already implements it comprehensively — but the thirteen Shorts-related schema keys are spread across categories, so the capability is invisible next to 3–28★ single-purpose extensions that own the search term.
-  Evidence: 13 case-insensitive `shorts` matches in `extension/core/settings-schema.js` including `removeAllShorts` and `redirectShorts`; HN "uBlock filter list to hide all YouTube Shorts" (2026-02-14) at 1,172 points / 343 comments with no quality leader in the field. The settings section taxonomy already exists in `extension/core/settings-visual-system.js` (`SETTINGS_CATEGORY_SECTIONS`).
-  Touches: `extension/core/settings-visual-system.js`, `extension/features/settings-panel/index.js`, `extension/_locales/**`, `docs/settings-reference.md` via `scripts/generate-settings-reference.js`
-  Acceptance: one named section collects every Shorts key with a localized heading, reachable from both the in-page panel and the popup search; no schema key is moved between categories (section grouping is presentation only, so `check:settings` stays byte-identical); the generated settings reference shows the section.
-  Complexity: S

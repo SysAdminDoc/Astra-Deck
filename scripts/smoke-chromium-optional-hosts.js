@@ -718,20 +718,69 @@ function killProcessTree(proc) {
     }
 }
 
+function waitForProcessExit(proc) {
+    if (!proc || proc.exitCode !== null) return Promise.resolve();
+    return new Promise((resolve) => {
+        const handleExit = () => resolve();
+        proc.once('exit', handleExit);
+        if (proc.exitCode !== null) {
+            proc.removeListener('exit', handleExit);
+            resolve();
+        }
+    });
+}
+
+async function shutdownChromiumProcess(proc, client, timeoutMs = 3000) {
+    if (!proc) return;
+    const processExit = waitForProcessExit(proc);
+    if (proc.exitCode === null && client && typeof client.send === 'function') {
+        await Promise.race([
+            Promise.resolve(client.send('Browser.close')).catch(() => undefined),
+            sleep(Math.min(timeoutMs, 1000)),
+        ]);
+    }
+    await Promise.race([processExit, sleep(timeoutMs)]);
+    if (proc.exitCode === null) {
+        killProcessTree(proc);
+        await Promise.race([processExit, sleep(timeoutMs)]);
+    }
+}
+
 async function removeDirWithRetries(dir) {
     const maxAttempts = 12;
+    let lastError = null;
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
             fs.rmSync(dir, { recursive: true, force: true, maxRetries: 2, retryDelay: 100 });
             return true;
         } catch (error) {
-            if (attempt === maxAttempts - 1) {
-                console.warn(`[smoke-chromium-optional-hosts] cleanup warning: ${error.message}`);
-                return false;
-            }
+            lastError = error;
+            if (attempt === maxAttempts - 1) break;
             await sleep(500);
         }
     }
+    if (process.platform === 'win32') {
+        const resolved = path.resolve(dir);
+        const protectedPaths = new Set([
+            path.parse(resolved).root.toLowerCase(),
+            path.resolve(os.homedir()).toLowerCase(),
+            path.resolve(REPO_ROOT).toLowerCase(),
+        ]);
+        if (protectedPaths.has(resolved.toLowerCase())) {
+            throw new Error(`Refusing unsafe cleanup target: ${resolved}`);
+        }
+        const cleanup = spawnSync('powershell.exe', [
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            'Remove-Item -LiteralPath $args[0] -Recurse -Force -ErrorAction Stop',
+            resolved,
+        ], { encoding: 'utf8', windowsHide: true });
+        if (cleanup.status === 0 && !fs.existsSync(resolved)) return true;
+        const detail = String(cleanup.stderr || cleanup.stdout || '').trim();
+        if (detail) lastError = new Error(detail);
+    }
+    console.warn(`[smoke-chromium-optional-hosts] cleanup warning: ${lastError?.message || dir}`);
     return false;
 }
 
@@ -830,8 +879,8 @@ async function runWithBrowser(candidate, manifest, stageDir, opts) {
         error.stderr = stderr;
         throw error;
     } finally {
+        await shutdownChromiumProcess(proc, client);
         if (client) client.close();
-        killProcessTree(proc);
         await removeDirWithRetries(browserProfile);
     }
 }
@@ -930,6 +979,7 @@ module.exports = {
     removeDirWithRetries,
     reserveLoopbackPort,
     shouldStageEntry,
+    shutdownChromiumProcess,
     sleep,
     validateGrantCompleted,
     validateGrantDenied,

@@ -213,6 +213,43 @@ test('all ten menu pages define semantic command-deck sections', () => {
     }
 });
 
+test('the Shorts section owns every Shorts schema key without changing schema categories', () => {
+    const previousCore = globalThis.YTKitCore;
+    const modulePath = require.resolve(visualSystemPath);
+    delete require.cache[modulePath];
+    globalThis.YTKitCore = {};
+
+    try {
+        const {
+            SETTINGS_CATEGORY_SECTIONS,
+            SHORTS_SETTING_KEYS,
+            SHORTS_PANEL_SETTING_KEYS
+        } = require(modulePath);
+        const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema');
+        const expected = SETTINGS_SCHEMA
+            .filter((entry) => entry.category === 'shorts' || /shorts/i.test(entry.key))
+            .map((entry) => entry.key);
+        assert.deepEqual(SHORTS_SETTING_KEYS, expected,
+            'the presentation index must cover the canonical Shorts category plus cross-category Shorts keys');
+        assert.deepEqual(
+            SHORTS_PANEL_SETTING_KEYS,
+            expected.filter((key) => key !== 'shortsWatchTimeToday'),
+            'the in-page control list excludes only the read-only daily ledger'
+        );
+        const section = SETTINGS_CATEGORY_SECTIONS.Content.find(
+            ({ labelKey }) => labelKey === 'settingsSectionShortsDiscovery');
+        assert.equal(section.fallback, 'Shorts controls');
+        for (const key of SHORTS_PANEL_SETTING_KEYS) {
+            assert.equal(section.match.test(key), true, `${key} must land in the Shorts controls section`);
+        }
+        assert.equal(SETTINGS_SCHEMA.find((entry) => entry.key === 'shortsDailyLimitMin').category, 'research-ai',
+            'the grouping is presentation-only; the persisted schema category must stay put');
+    } finally {
+        globalThis.YTKitCore = previousCore;
+        delete require.cache[modulePath];
+    }
+});
+
 test('insight-rail curation keys on stable data attributes, not nth-child position', () => {
     // Inserting one makeStatusRow/makeInsightSection call used to silently
     // swap which stats were visible because the visual system selected by

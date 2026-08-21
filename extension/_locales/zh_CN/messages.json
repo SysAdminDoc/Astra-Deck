@@ -5127,7 +5127,7 @@
     "message": "分享与操作"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts 与发现"
+    "message": "Shorts 控制"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock 与 DeArrow"
@@ -5152,6 +5152,12 @@
   },
   "settingsSectionVisibility": {
     "message": "可见性"
+  },
+  "settingsShortsDependencyAction": {
+    "message": "打开数字健康"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "Shorts 每日限额由数字健康管理。"
   },
   "settingsSubFeatureBadge": {
     "message": "子功能"

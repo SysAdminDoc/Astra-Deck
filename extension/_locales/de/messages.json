@@ -5127,7 +5127,7 @@
     "message": "Teilen & Aktionen"
   },
   "settingsSectionShortsDiscovery": {
-    "message": "Shorts & Entdecken"
+    "message": "Shorts-Steuerung"
   },
   "settingsSectionSponsorblockDearrow": {
     "message": "SponsorBlock & DeArrow"
@@ -5152,6 +5152,12 @@
   },
   "settingsSectionVisibility": {
     "message": "Sichtbarkeit"
+  },
+  "settingsShortsDependencyAction": {
+    "message": "Digital Wellbeing öffnen"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "Tägliche Shorts-Limits werden über Digital Wellbeing gesteuert."
   },
   "settingsSubFeatureBadge": {
     "message": "Unterfunktion"
