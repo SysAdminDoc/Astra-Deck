@@ -3497,6 +3497,14 @@ function bisectCore() {
     return (typeof window !== 'undefined' && window.YTKitCore) || {};
 }
 
+// Booleans that are modes, not features. Switching one of these does not turn
+// a behaviour off — it re-derives OTHER settings. The profile pair is the
+// example that bit: the settings controller keeps exactly one of them true, so
+// a step that switched safeStoreProfile off flipped githubFullProfile on, and
+// the run both searched a differently-configured extension and left the user
+// on the other profile afterwards.
+const BISECT_EXCLUDED_KEYS = new Set(['safeStoreProfile', 'githubFullProfile']);
+
 // Boolean feature settings that are currently on. A colour or a speed is a
 // value, not a feature, and cannot be "the one that broke it"; internal keys
 // are not the user's choices at all.
@@ -3504,8 +3512,32 @@ function enabledFeatureIdsForBisect(settings = popupState.settings || {}) {
     const scope = window.__YTKIT_SETTINGS_SCHEMA__;
     if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA)) return [];
     return scope.SETTINGS_SCHEMA
-        .filter((entry) => !entry.internal && entry.type === 'boolean' && settings[entry.key] === true)
+        .filter((entry) => !entry.internal
+            && entry.type === 'boolean'
+            && !BISECT_EXCLUDED_KEYS.has(entry.key)
+            && settings[entry.key] === true)
         .map((entry) => entry.key);
+}
+
+// Drops keys the running schema no longer ships.
+//
+// A session can outlive an update by up to its 24-hour deadline, and the
+// settings controller rejects a replacement containing a key it does not
+// recognise. Without this, one renamed or retired feature made every restore
+// path throw — forever, because each of them restores before clearing the
+// session, so the failure repeated on every attempt with the user's features
+// still switched off.
+function sanitizeBisectSettings(settings) {
+    const scope = window.__YTKIT_SETTINGS_SCHEMA__;
+    if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA) || !isPlainObject(settings)) {
+        return { ...settings };
+    }
+    const known = new Set(scope.SETTINGS_SCHEMA.map((entry) => entry.key));
+    const out = {};
+    for (const [key, value] of Object.entries(settings)) {
+        if (known.has(key) || key.startsWith('_')) out[key] = value;
+    }
+    return out;
 }
 
 async function readBisectSession() {
@@ -3519,31 +3551,37 @@ async function readBisectSession() {
     }
 }
 
+// Persisting is NOT best-effort. Without a stored session the Yes/No and Stop
+// buttons all read null and return, so a swallowed write failure left every
+// feature switched off with no route back and a UI that looked like a run in
+// progress. The caller has to know.
 async function writeBisectSession(session) {
-    try {
-        if (session) await storageSet({ [BISECT_SESSION_KEY]: session });
-        else await storageRemove([BISECT_SESSION_KEY]);
-    } catch (_) {
-        // reason: persistence is best-effort; the restore path is what
-        // actually protects the user's settings
-    }
+    if (session) await storageSet({ [BISECT_SESSION_KEY]: session });
+    else await storageRemove([BISECT_SESSION_KEY]);
 }
 
-// Writes the settings a step needs. The base is always the SNAPSHOT's view of
-// the world, never the half-state the previous step left behind, so no
-// sequence of steps can drift the user's real configuration.
+// Writes the settings a step needs. The base is the settings the run STARTED
+// with, not the half-state the previous step left and not whatever
+// popupState happens to hold, so no sequence of steps can drift the user's
+// real configuration and no ordering of popup startup can lose a key.
 async function applyBisectSettings(session, offIds) {
     const off = new Set(offIds);
-    const next = { ...popupState.settings };
+    const next = sanitizeBisectSettings(session.settings);
     for (const id of session.snapshot) next[id] = !off.has(id);
     await replaceSettings(next);
 }
 
+// Restores the whole bag the run started with, key for key.
+//
+// It used to force the snapshot's feature IDs back to true on top of
+// popupState.settings, which was wrong twice over. Anything the step had
+// changed INDIRECTLY was not in the snapshot and stayed changed. And on the
+// expiry path this runs before the popup has loaded settings at all, so
+// popupState.settings was still {} and replacing with it dropped every key the
+// snapshot did not name.
 async function restoreBisectSnapshot(session) {
-    if (!session) return;
-    const next = { ...popupState.settings };
-    for (const id of session.snapshot) next[id] = true;
-    await replaceSettings(next);
+    if (!session || !isPlainObject(session.settings)) return;
+    await replaceSettings(sanitizeBisectSettings(session.settings));
 }
 
 async function startFeatureBisectRun() {
@@ -3555,11 +3593,53 @@ async function startFeatureBisectRun() {
             'No features are switched on, so there is nothing to search.'), 'info', 3200);
         return;
     }
-    const session = core.createFeatureBisect(enabled, Date.now());
-    await writeBisectSession(session);
+    const session = {
+        ...core.createFeatureBisect(enabled, Date.now()),
+        // The entire settings bag as it stands right now. Restoring from this
+        // is what makes "exactly" true: an indirect change a step causes, a
+        // key no step ever names, and a popup that has not finished loading
+        // are all covered by replacing the whole object.
+        settings: sanitizeBisectSettings(popupState.settings || {})
+    };
+    // Persist BEFORE touching settings. A session that failed to save cannot
+    // be answered or stopped, so applying a step first would strand every
+    // feature switched off.
+    try {
+        await writeBisectSession(session);
+    } catch (error) {
+        showStatus(t('bisectStartFailed',
+            'Could not start: this browser profile will not save the bisect session.'), 'error', 4200);
+        return;
+    }
     await applyBisectSettings(session, core.disabledForBisectStep(session));
     renderBisect(session);
     showStatus(t('bisectStarted', 'Reload YouTube, then answer below.'), 'ok', 3600);
+}
+
+// Restores and clears, in that order, and clears even when the restore throws.
+//
+// Order matters: clearing first would drop the only record of what to put
+// back. But a restore that throws must not keep the session either, because
+// every entry point restores before clearing and the same failure would
+// repeat on every attempt with the features still off. So the session goes
+// either way, and the user is told rather than left with a silent rejection.
+async function endFeatureBisectRun(session) {
+    let failure = null;
+    try {
+        await restoreBisectSnapshot(session);
+    } catch (error) {
+        failure = error;
+    }
+    try {
+        await writeBisectSession(null);
+    } catch (_) {
+        // reason: an unwritable store is already the worse problem above
+    }
+    if (failure) {
+        showStatus(t('bisectRestoreFailed',
+            'Could not put your settings back. Open Settings and check them.'), 'error', 6000);
+    }
+    return !failure;
 }
 
 async function answerFeatureBisectRun(stillHappens) {
@@ -3572,12 +3652,21 @@ async function answerFeatureBisectRun(stillHappens) {
         // Put the user's world back before showing the answer. A finished run
         // that leaves features switched off is a worse outcome than not
         // running one at all.
-        await restoreBisectSnapshot(next);
-        await writeBisectSession(null);
+        await endFeatureBisectRun(next);
         renderBisect(next);
         return;
     }
-    await writeBisectSession(next);
+    // Same ordering as the start: a step that cannot be recorded must not be
+    // applied, or the run becomes unanswerable with features off.
+    try {
+        await writeBisectSession(next);
+    } catch (error) {
+        await endFeatureBisectRun(session);
+        renderBisect(null);
+        showStatus(t('bisectStartFailed',
+            'Could not start: this browser profile will not save the bisect session.'), 'error', 4200);
+        return;
+    }
     await applyBisectSettings(next, core.disabledForBisectStep(next));
     renderBisect(next);
 }
@@ -3585,10 +3674,11 @@ async function answerFeatureBisectRun(stillHappens) {
 async function abortFeatureBisectRun() {
     const session = await readBisectSession();
     if (!session) return;
-    await restoreBisectSnapshot(session);
-    await writeBisectSession(null);
+    const restored = await endFeatureBisectRun(session);
     renderBisect(null);
-    showStatus(t('bisectAborted', 'Bisect stopped. Your features are back on.'), 'ok', 3000);
+    if (restored) {
+        showStatus(t('bisectAborted', 'Bisect stopped. Your features are back on.'), 'ok', 3000);
+    }
 }
 
 // Called on every popup open. An abandoned run is the expected ending, not the
@@ -3603,11 +3693,12 @@ async function resumeOrExpireFeatureBisect() {
         return;
     }
     if (core.isBisectExpired?.(session, Date.now())) {
-        await restoreBisectSnapshot(session);
-        await writeBisectSession(null);
+        const restored = await endFeatureBisectRun(session);
         renderBisect(null);
-        showStatus(t('bisectExpired',
-            'An unfinished bisect expired. Your features are back on.'), 'info', 4200);
+        if (restored) {
+            showStatus(t('bisectExpired',
+                'An unfinished bisect expired. Your features are back on.'), 'info', 4200);
+        }
         return;
     }
     renderBisect(session);
@@ -3935,12 +4026,18 @@ if (schemaOverviewDiffToggle) {
 if (featureReportCopy) {
     featureReportCopy.addEventListener('click', () => { void copyEnabledFeatureReport(); });
 }
-if (bisectStart) bisectStart.addEventListener('click', () => { void startFeatureBisectRun(); });
-if (bisectYes) bisectYes.addEventListener('click', () => { void answerFeatureBisectRun(true); });
-if (bisectNo) bisectNo.addEventListener('click', () => { void answerFeatureBisectRun(false); });
-if (bisectAbort) bisectAbort.addEventListener('click', () => { void abortFeatureBisectRun(); });
-if (bisectCopy) bisectCopy.addEventListener('click', () => { void copyFeatureBisectResult(); });
-if (bisectPanel) void resumeOrExpireFeatureBisect();
+// Every one of these ends in a settings write that can reject. Left as bare
+// `void`, a rejection was an unhandled promise with no status message and no
+// UI change — the user saw a button that did nothing.
+function reportBisectFailure() {
+    showStatus(t('bisectFailed', 'The bisect could not continue. Check Settings.'), 'error', 5000);
+}
+if (bisectStart) bisectStart.addEventListener('click', () => { startFeatureBisectRun().catch(reportBisectFailure); });
+if (bisectYes) bisectYes.addEventListener('click', () => { answerFeatureBisectRun(true).catch(reportBisectFailure); });
+if (bisectNo) bisectNo.addEventListener('click', () => { answerFeatureBisectRun(false).catch(reportBisectFailure); });
+if (bisectAbort) bisectAbort.addEventListener('click', () => { abortFeatureBisectRun().catch(reportBisectFailure); });
+if (bisectCopy) bisectCopy.addEventListener('click', () => { copyFeatureBisectResult().catch(reportBisectFailure); });
+if (bisectPanel) resumeOrExpireFeatureBisect().catch(reportBisectFailure);
 if (schemaOverviewDiffCopy) {
     schemaOverviewDiffCopy.addEventListener('click', () => { void copySchemaOverviewDiff(); });
 }

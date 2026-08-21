@@ -228,13 +228,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
 
 ### P2
 
-- [ ] P2 — Add a `build-for-amo` script and prove the build reproduces in Mozilla's reviewer environment
-  Why: AMO now auto-builds submitted source and compares it against the uploaded package, and a match "can move through review much more quickly" — otherwise review runs 3 days to 5 weeks. `build-extension.js` is exactly the generator that triggers mandatory source submission, and the reviewer environment is published and specific, so reproducibility is testable before submitting rather than discovered during review.
-  Evidence: Mozilla's source-code-submission rules require the reviewer's rebuild to produce *no differences*, and the default reviewer environment is Ubuntu 24.04.4 LTS on **ARM64** with Node 24.14.0 / npm 11.9.0. `package.json` has no `build-for-amo` script; `.nvmrc` says 22; `crx3` has never been exercised on ARM64. Blocked companion item "Firefox AMO submission" depends on this and cannot be de-risked without it.
-  Touches: `package.json` (scripts), a source-upload `SOURCE-README.md`, `build-extension.js`, `.nvmrc`
-  Acceptance: `npm run build-for-amo` produces the Firefox artifact from a clean checkout plus `package-lock.json` alone, with no network fetches beyond `npm ci`; the produced zip is byte-identical across two runs on the same machine and the diff against a run on Ubuntu ARM64 / Node 24.14.0 is empty or its causes are documented; `SOURCE-README.md` states the environment and any deviation.
-  Complexity: M
-
 - [ ] P2 — Replace the hand-rolled focus traps with `<dialog>` + `showModal()`
   Why: focus-trap, inert-background, and Escape machinery is reimplemented in five places, which is five places for the trap to drift out of agreement with the a11y gates. `<dialog>` provides all three natively and has been Baseline widely available since 2022-03-14 (Chrome 37 / Firefox 98), far below both declared floors — this is the largest safe deletion currently available.
   Evidence: `showModal(`/`<dialog` appears nowhere in `extension/` (verified 2026-08-20), while `focusTrap`/`trapFocus`/`FOCUSABLE_SELECTOR` machinery appears in `extension/popup.js`, `extension/ytkit.js`, `extension/features/settings-panel/index.js`, `extension/features/subscription-groups/index.js`, and `extension/features/digital-wellbeing/index.js`. `popover` is already used in four places, so native dismissal primitives are not new to the codebase.

@@ -8151,5 +8151,14 @@
   },
   "serviceOutageTpl": {
     "message": "{service} ne répond pas. Cela vient du service, pas d’Astra Deck."
+  },
+  "bisectFailed": {
+    "message": "La recherche n’a pas pu continuer. Vérifiez les réglages."
+  },
+  "bisectRestoreFailed": {
+    "message": "Impossible de restaurer vos réglages. Ouvrez les réglages et vérifiez-les."
+  },
+  "bisectStartFailed": {
+    "message": "Démarrage impossible : ce profil de navigateur n’enregistrera pas la session de recherche."
   }
 }

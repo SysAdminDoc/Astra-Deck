@@ -246,7 +246,7 @@ const BISECT_CORE_SHIM = {
     BISECT_PHASES: bisect.BISECT_PHASES
 };
 
-function loadPopupBisectHelpers(popupState) {
+function loadPopupBisectHelpers(popupState, options = {}) {
     // From the storage key, not from the first function: BISECT_SESSION_KEY is
     // declared above them and a slice that omits it throws inside a
     // best-effort catch, so every write silently does nothing.
@@ -259,12 +259,12 @@ function loadPopupBisectHelpers(popupState) {
         'window', 'popupState', 'storageGet', 'storageSet', 'storageRemove',
         'replaceSettings', 'showStatus', 't', 'callExtensionApi',
         'ext', 'manifestVersion', 'describeBrowserForReport', 'copyTextToClipboard',
-        'renderBisect', 'writes',
+        'renderBisect', 'isPlainObject', 'writes',
         `${block}
         return {
             enabledFeatureIdsForBisect, applyBisectSettings, restoreBisectSnapshot,
             describeBisectPageType, startFeatureBisectRun, answerFeatureBisectRun,
-            abortFeatureBisectRun, resumeOrExpireFeatureBisect,
+            abortFeatureBisectRun, resumeOrExpireFeatureBisect, sanitizeBisectSettings,
             __persistStale: writeBisectSession
         };`
     );
@@ -276,12 +276,16 @@ function loadPopupBisectHelpers(popupState) {
         },
         popupState,
         async () => (stored ? { 'ytkit-feature-bisect': stored } : {}),
-        async (entries) => { stored = entries['ytkit-feature-bisect']; },
+        options.storageSet || (async (entries) => { stored = entries['ytkit-feature-bisect']; }),
         async () => { stored = null; },
-        async (settings) => { writes.push(settings); popupState.settings = settings; },
+        options.replaceSettings || (async (settings) => {
+            writes.push(settings);
+            popupState.settings = settings;
+        }),
         () => {}, (_k, fallback) => fallback,
         async () => [{ url: 'https://www.youtube.com/watch?v=abc' }],
         { tabs: {} }, '4.84.0', () => 'Chrome 129', async () => true, () => {},
+        (value) => !!value && typeof value === 'object' && !Array.isArray(value),
         writes
     );
     return { api, writes, session: () => stored };
@@ -308,18 +312,22 @@ test('only boolean features that are on become bisect candidates', () => {
 });
 
 test('a step writes the snapshot view of the world, not the previous step\'s', async () => {
-    const settings = { a: true, b: true, c: true, d: true, unrelated: 'keep me' };
+    const settings = { a: true, b: true, c: true, d: true, _unrelated: 'keep me' };
     const { api, writes } = loadPopupBisectHelpers({ settings });
-    const session = bisect.startFeatureBisect(['a', 'b', 'c', 'd'], NOW);
+    const session = {
+        ...bisect.startFeatureBisect(['a', 'b', 'c', 'd'], NOW),
+        settings: { ...settings }
+    };
 
     await api.applyBisectSettings(session, ['c', 'd']);
-    assert.deepEqual(writes[0], { a: true, b: true, c: false, d: false, unrelated: 'keep me' });
+    assert.deepEqual(writes[0], { a: true, b: true, c: false, d: false, _unrelated: 'keep me' });
 
-    // The next step switches a DIFFERENT half off. Derived from the snapshot,
-    // c and d come back on; derived from the previous step's state they would
-    // stay off and the search would be reading a page it never asked for.
+    // The next step switches a DIFFERENT half off. Derived from the settings
+    // the run started with, c and d come back on; derived from the previous
+    // step's state they would stay off and the search would read a page it
+    // never asked for.
     await api.applyBisectSettings(session, ['a', 'b']);
-    assert.deepEqual(writes[1], { a: false, b: false, c: true, d: true, unrelated: 'keep me' });
+    assert.deepEqual(writes[1], { a: false, b: false, c: true, d: true, _unrelated: 'keep me' });
 });
 
 test('finishing, aborting, and abandoning all restore the snapshot exactly', async () => {
@@ -327,7 +335,17 @@ test('finishing, aborting, and abandoning all restore the snapshot exactly', asy
     // decide what is a feature, so invented names would give it nothing to
     // search and the test would pass by doing nothing.
     const [A, B, C, D] = ['hideCreateButton', 'hideVoiceSearch', 'logoToSubscriptions', 'widenSearchBar'];
-    const original = { [A]: true, [B]: true, [C]: true, [D]: true, other: false };
+    // safeStoreProfile is the key that made this test worth writing: it is a
+    // default-on non-internal boolean, so it landed in the candidate set, and
+    // switching it off made the settings controller switch githubFullProfile
+    // ON — a key no snapshot named and no restore put back.
+    const original = {
+        [A]: true, [B]: true, [C]: true, [D]: true,
+        safeStoreProfile: true,
+        githubFullProfile: false,
+        customCssCode: '.ytkit { color: red }',
+        _settingsVersion: 9
+    };
     for (const ending of ['finish', 'abort', 'abandon']) {
         const popupState = { settings: { ...original } };
         const { api, writes, session } = loadPopupBisectHelpers(popupState);
@@ -382,4 +400,95 @@ test('the popup offers the bisect and wires every control', () => {
         'abortFeatureBisectRun', 'copyFeatureBisectResult', 'resumeOrExpireFeatureBisect']) {
         assert.ok(popupSource.includes(`${handler}(`), `popup.js must call ${handler}`);
     }
+});
+
+// ── Regressions found by adversarial review of the shipping commit ──
+
+test('a run never leaves the user on a different profile than it found them', () => {
+    // safeStoreProfile is a default-on, non-internal boolean, so it was a
+    // bisect candidate; switching it off made the settings controller switch
+    // githubFullProfile on. That key was in no snapshot, so no restore put it
+    // back and every run silently moved a default install to github-full.
+    const schema = require('../extension/core/settings-schema.js');
+    const settings = { ...schema.buildDefaultsFromSchema(), diagnosticLog: true };
+    assert.equal(settings.safeStoreProfile, true, 'the fixture must reproduce the default install');
+
+    const { api } = loadPopupBisectHelpers({ settings });
+    const ids = api.enabledFeatureIdsForBisect(settings);
+    assert.equal(ids.includes('safeStoreProfile'), false,
+        'a mode that re-derives other settings is not a feature to bisect');
+    assert.equal(ids.includes('githubFullProfile'), false);
+});
+
+test('a settings key the schema no longer ships cannot wedge the restore', async () => {
+    // A session can outlive an update by up to its deadline. The settings
+    // controller rejects a replacement containing a key it does not know, and
+    // every path restores before clearing, so one retired key made the restore
+    // throw on every attempt with the features still off.
+    const { api } = loadPopupBisectHelpers({ settings: {} });
+    const cleaned = api.sanitizeBisectSettings({
+        diagnosticLog: true,
+        retiredGhostFeature: true,
+        _settingsVersion: 9
+    });
+    assert.equal('retiredGhostFeature' in cleaned, false, 'an unknown key must be dropped');
+    assert.equal(cleaned.diagnosticLog, true, 'a known key must survive');
+    assert.equal(cleaned._settingsVersion, 9, 'internal bookkeeping must survive');
+});
+
+test('a restore that throws still clears the session and says so', async () => {
+    const popupState = { settings: { diagnosticLog: true } };
+    let cleared = false;
+    const { api, session } = loadPopupBisectHelpers(popupState, {
+        replaceSettings: async () => { throw new Error('UNKNOWN_SETTING'); }
+    });
+    void cleared;
+    await api.startFeatureBisectRun().catch(() => {});
+    // Starting failed at the first write, which is itself correct; drive the
+    // abort path directly against a stored session instead.
+    await api.__persistStale({
+        schemaVersion: 1, startedAt: Date.now(), snapshot: ['diagnosticLog'],
+        candidates: ['diagnosticLog'], phase: 'baseline', step: 1, answers: [],
+        settings: { diagnosticLog: true }
+    });
+    await api.abortFeatureBisectRun();
+    assert.equal(session(), null,
+        'a failed restore must not keep a session that would fail again forever');
+});
+
+test('a session that cannot be saved never switches a feature off', async () => {
+    // Without a stored session, Yes, No, and Stop all read null and return, so
+    // applying a step first left every feature off with no route back.
+    const schema = require('../extension/core/settings-schema.js');
+    const settings = { ...schema.buildDefaultsFromSchema(), diagnosticLog: true };
+    const { api, writes } = loadPopupBisectHelpers({ settings }, {
+        storageSet: async () => { throw new Error('QUOTA_BYTES exceeded'); }
+    });
+    await api.startFeatureBisectRun();
+    assert.deepEqual(writes, [],
+        'a run that cannot be recorded must not touch settings at all');
+});
+
+test('the expiry restore does not depend on the popup having loaded settings', async () => {
+    // resumeOrExpireFeatureBisect runs at module scope, before the bootstrap
+    // has loaded settings, so popupState.settings is still {}. Restoring by
+    // merging onto that dropped every key the snapshot did not name.
+    const stored = {
+        schemaVersion: 1,
+        startedAt: Date.now() - bisect.BISECT_MAX_AGE_MS - 1,
+        snapshot: ['diagnosticLog'],
+        candidates: ['diagnosticLog'],
+        phase: 'baseline',
+        step: 1,
+        answers: [],
+        settings: { diagnosticLog: true, customCssCode: '.x{}', _settingsVersion: 9 }
+    };
+    const popupState = { settings: {} };   // the popup has not loaded yet
+    const { api, writes, session } = loadPopupBisectHelpers(popupState);
+    await api.__persistStale(stored);
+    await api.resumeOrExpireFeatureBisect();
+
+    assert.equal(session(), null, 'an expired session must be cleared');
+    assert.deepEqual(writes[writes.length - 1], stored.settings,
+        'the restore must replay the whole stored bag, not merge onto an empty one');
 });

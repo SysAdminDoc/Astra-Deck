@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const { execFileSync } = require('child_process');
 const crx3 = require('crx3');
 const { getUserscriptBasename, resolveUserscriptPath } = require('./scripts/repo-paths');
@@ -435,25 +436,153 @@ function copyDir(src, dest, options = {}) {
     }
 }
 
-function createZip(sourceDir, zipPath) {
-    if (process.platform === 'win32') {
-        // Windows ships bsdtar at System32\tar.exe; `-a` infers ZIP format
-        // from the .zip suffix. PowerShell 5.1's archive cmdlet writes
-        // backslash entry separators, which AMO rejects for XPIs and which
-        // break unzip on Linux — bsdtar writes forward slashes. The full
-        // System32 path matters: a bare `tar` resolves to GNU tar inside
-        // Git Bash, which silently emits a POSIX tar instead of a ZIP.
-        // Enumerating top-level entries (instead of `.`) includes dotfiles
-        // while avoiding bsdtar's `./` entry-name prefix.
-        const bsdtar = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
-        const entries = fs.readdirSync(sourceDir);
-        if (!entries.length) {
-            throw new Error('createZip: nothing to package in ' + sourceDir);
-        }
-        execFileSync(bsdtar, ['-a', '-cf', zipPath, '-C', sourceDir, ...entries], { stdio: 'inherit' });
-    } else {
-        execFileSync('zip', ['-r', zipPath, '.'], { cwd: sourceDir, stdio: 'inherit' });
+// Fixed modification time stamped onto every staged file before packaging.
+//
+// A ZIP records each entry's mtime, and staging copies files at build time, so
+// two builds of identical source produced two different archives. That makes
+// the artifact unverifiable: AMO rebuilds a submitted source tree and compares
+// it against the uploaded package, and a review that has to investigate a
+// timestamp diff runs days instead of hours.
+//
+// SOURCE_DATE_EPOCH is the reproducible-builds convention and is honoured when
+// set. The default is a constant rather than the commit date so a clean
+// checkout reproduces with nothing but `npm ci`, which is exactly what the
+// reviewer's environment has. 2020-01-01 is arbitrary but safely above the
+// 1980 floor the ZIP format imposes.
+const DEFAULT_SOURCE_DATE_EPOCH = 1577836800; // 2020-01-01T00:00:00Z
+
+function resolveSourceDateEpoch() {
+    const raw = Number.parseInt(process.env.SOURCE_DATE_EPOCH || '', 10);
+    return Number.isFinite(raw) && raw > 315532800 ? raw : DEFAULT_SOURCE_DATE_EPOCH;
+}
+
+// Sorted, relative, forward-slash paths of every file under `dir`. Sorting is
+// not cosmetic: both packagers write entries in the order they are given, and
+// readdir order is filesystem-dependent, so an unsorted list reproduces only
+// by luck.
+function listStagedFiles(dir, prefix = '', out = []) {
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
+        .sort((a, b) => (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0)));
+    for (const entry of entries) {
+        const relativePath = prefix ? prefix + '/' + entry.name : entry.name;
+        if (entry.isDirectory()) listStagedFiles(path.join(dir, entry.name), relativePath, out);
+        else out.push(relativePath);
     }
+    return out;
+}
+
+// Deterministic ZIP writer.
+//
+// The packaging step used to shell out: bsdtar on Windows, Info-ZIP elsewhere.
+// Two problems with that, and the second is the one that matters.
+//
+// It was not reproducible. bsdtar records each entry's ACCESS time in an extra
+// field, and reading a file to compress it is what updates that time on NTFS,
+// so two builds of byte-identical source produced two different archives no
+// amount of mtime normalisation could fix.
+//
+// And it was not the same packager as the reviewer's. AMO rebuilds a submitted
+// source tree and compares the result against the uploaded package; their
+// environment is Ubuntu on ARM64, which would have run Info-ZIP against our
+// bsdtar output. Even with both made deterministic, two different packagers
+// agreeing byte-for-byte would have been a coincidence to hope for rather than
+// a property to rely on.
+//
+// Writing the archive here removes both. Node's zlib is the same deflate
+// implementation on every platform this builds on, so the bytes depend on the
+// staged tree and nothing else.
+//
+// Deliberately minimal: STORE and DEFLATE, no Zip64, no encryption, no extra
+// fields at all. Everything an extension package needs and nothing that varies.
+function zipDosTime(date) {
+    // MS-DOS packed date/time, the format every ZIP entry header carries.
+    // Two-second resolution, and 1980 is the floor the format imposes.
+    const year = Math.max(1980, date.getUTCFullYear());
+    const dosTime = (date.getUTCHours() << 11)
+        | (date.getUTCMinutes() << 5)
+        | (Math.floor(date.getUTCSeconds() / 2));
+    const dosDate = ((year - 1980) << 9)
+        | ((date.getUTCMonth() + 1) << 5)
+        | date.getUTCDate();
+    return { dosTime, dosDate };
+}
+
+function createZip(sourceDir, zipPath) {
+    const entries = listStagedFiles(sourceDir);
+    if (!entries.length) {
+        throw new Error('createZip: nothing to package in ' + sourceDir);
+    }
+    const { dosTime, dosDate } = zipDosTime(new Date(resolveSourceDateEpoch() * 1000));
+    const chunks = [];
+    const central = [];
+    let offset = 0;
+
+    for (const name of entries) {
+        const nameBytes = Buffer.from(name, 'utf8');
+        const raw = fs.readFileSync(path.join(sourceDir, name));
+        const crc = zlib.crc32(raw);
+        const deflated = zlib.deflateRawSync(raw, { level: 9 });
+        // Storing is smaller than deflating for already-compressed or tiny
+        // files, and picking the smaller of the two is deterministic because
+        // it depends only on the bytes.
+        const useDeflate = deflated.length < raw.length;
+        const body = useDeflate ? deflated : raw;
+        const method = useDeflate ? 8 : 0;
+
+        const local = Buffer.alloc(30);
+        local.writeUInt32LE(0x04034b50, 0);
+        local.writeUInt16LE(20, 4);            // version needed: 2.0
+        // Bit 11 marks the name as UTF-8. Every name here is ASCII, but
+        // declaring it removes any dependence on the reader's code page.
+        local.writeUInt16LE(0x0800, 6);
+        local.writeUInt16LE(method, 8);
+        local.writeUInt16LE(dosTime, 10);
+        local.writeUInt16LE(dosDate, 12);
+        local.writeUInt32LE(crc, 14);
+        local.writeUInt32LE(body.length, 18);
+        local.writeUInt32LE(raw.length, 22);
+        local.writeUInt16LE(nameBytes.length, 26);
+        local.writeUInt16LE(0, 28);            // no extra field, ever
+        chunks.push(local, nameBytes, body);
+
+        const header = Buffer.alloc(46);
+        header.writeUInt32LE(0x02014b50, 0);
+        header.writeUInt16LE(20, 4);           // version made by
+        header.writeUInt16LE(20, 6);           // version needed
+        header.writeUInt16LE(0x0800, 8);
+        header.writeUInt16LE(method, 10);
+        header.writeUInt16LE(dosTime, 12);
+        header.writeUInt16LE(dosDate, 14);
+        header.writeUInt32LE(crc, 16);
+        header.writeUInt32LE(body.length, 20);
+        header.writeUInt32LE(raw.length, 24);
+        header.writeUInt16LE(nameBytes.length, 28);
+        header.writeUInt16LE(0, 30);           // extra length
+        header.writeUInt16LE(0, 32);           // comment length
+        header.writeUInt16LE(0, 34);           // disk number
+        header.writeUInt16LE(0, 36);           // internal attributes
+        // 0644, shifted into the high word where the unix mode lives. A fixed
+        // mode rather than the staged file's own, which varies by umask.
+        header.writeUInt32LE((0o644 << 16), 38);
+        header.writeUInt32LE(offset, 42);
+        central.push(header, nameBytes);
+
+        offset += local.length + nameBytes.length + body.length;
+    }
+
+    const centralBuffer = Buffer.concat(central);
+    const end = Buffer.alloc(22);
+    end.writeUInt32LE(0x06054b50, 0);
+    end.writeUInt16LE(0, 4);
+    end.writeUInt16LE(0, 6);
+    end.writeUInt16LE(entries.length, 8);
+    end.writeUInt16LE(entries.length, 10);
+    end.writeUInt32LE(centralBuffer.length, 12);
+    end.writeUInt32LE(offset, 16);
+    end.writeUInt16LE(0, 20);                  // no archive comment
+
+    fs.writeFileSync(zipPath, Buffer.concat([...chunks, centralBuffer, end]));
+
     const size = fs.statSync(zipPath).size;
     return (size / 1024).toFixed(1);
 }

@@ -8151,5 +8151,14 @@
   },
   "serviceOutageTpl": {
     "message": "{service} is not answering. That is the service, not Astra Deck."
+  },
+  "bisectFailed": {
+    "message": "The bisect could not continue. Check Settings."
+  },
+  "bisectRestoreFailed": {
+    "message": "Could not put your settings back. Open Settings and check them."
+  },
+  "bisectStartFailed": {
+    "message": "Could not start: this browser profile will not save the bisect session."
   }
 }
