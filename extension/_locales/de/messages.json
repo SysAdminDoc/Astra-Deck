@@ -5717,7 +5717,15 @@
     "message": "Erweiterungsdaten wurden mit verfügbarer Rückgängig-Funktion importiert. Der Transkriptindex blieb unverändert, da kein antwortender YouTube-Tab verfügbar war."
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "Sicherung importiert. Klicken Sie auf „Import rückgängig“, um den vorherigen Zustand wiederherzustellen. Der Wiederherstellungspunkt bleibt 7 Tage lang erhalten, auch nach dem Schließen des Browsers."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "Ihre vorherigen Daten wurden zuvor in {file} gesichert.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck konnte zuvor keine Sicherungsdatei Ihrer vorherigen Daten speichern; „Import rückgängig“ ist daher der einzige Weg zurück.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "Zwischenablage nicht verfügbar — siehe Browser-Konsole."
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Sitzungsspeicher des Browsers sichern. Exportieren Sie zuerst eine Sicherung."
+    "message": "Import gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Erweiterungsspeicher sichern. Exportieren Sie zuerst eine Sicherung."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "„Import rückgängig“ ist nicht mehr verfügbar – der Wiederherstellungspunkt ist nach 7 Tagen abgelaufen."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "Erweiterungsdaten wurden mit verfügbarer Rückgängig-Funktion gelöscht. Transkriptdaten blieben unverändert, da kein antwortender YouTube-Tab verfügbar war. Gespeicherte KI-Zugangsdaten wurden beibehalten."
   },
   "statusResetDoneUndo": {
-    "message": "Portable Einstellungen, Verläufe, Warteschlangen und Transkriptdaten gelöscht. Gespeicherte KI-Anmeldedaten bleiben erhalten; verwenden Sie „Anmeldedaten löschen“, um sie zu entfernen. Klicken Sie auf „Zurücksetzen rückgängig“, um bis zum Schließen des Browsers wiederherzustellen."
+    "message": "Portable Einstellungen, Verläufe, Warteschlangen und Transkriptdaten gelöscht. Gespeicherte KI-Zugangsdaten bleiben erhalten; verwenden Sie „Zugangsdaten löschen“, um sie zu entfernen. Klicken Sie auf „Zurücksetzen rückgängig“, um sie wiederherzustellen. Der Wiederherstellungspunkt bleibt 7 Tage lang erhalten, auch nach dem Schließen des Browsers."
   },
   "statusResetFail": {
     "message": "Zurücksetzen fehlgeschlagen"
   },
   "statusResetSnapshotFail": {
-    "message": "Zurücksetzen gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Sitzungsspeicher des Browsers sichern. Exportieren Sie zuerst eine Sicherung."
+    "message": "Zurücksetzen gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Erweiterungsspeicher sichern. Exportieren Sie zuerst eine Sicherung."
   },
   "statusResetUndoExpired": {
-    "message": "Rückgängig nicht mehr verfügbar — Snapshot mit der Browser-Sitzung abgelaufen."
+    "message": "Rückgängig nicht mehr verfügbar — der Wiederherstellungspunkt ist nach 7 Tagen abgelaufen."
   },
   "statusResetUndoFail": {
     "message": "Rückgängig fehlgeschlagen"

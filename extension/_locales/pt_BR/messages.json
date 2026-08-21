@@ -5717,7 +5717,15 @@
     "message": "Dados da extensão importados com a opção Desfazer disponível. O índice de transcrições não foi alterado porque nenhuma aba responsiva do YouTube estava disponível."
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "Backup importado. Clique em «Desfazer importação» para restaurar o estado anterior. O ponto de desfazer dura 7 dias e continua disponível mesmo se você fechar o navegador."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "Seus dados anteriores foram salvos primeiro em {file}.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "O Astra Deck não conseguiu salvar antes um arquivo de backup dos seus dados anteriores, então «Desfazer importação» é o único caminho de volta.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "Área de transferência indisponível — veja o console do navegador."
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Importação interrompida. O Astra Deck não conseguiu salvar um ponto de desfazer no armazenamento de sessão do navegador. Exporte um backup primeiro."
+    "message": "Importação interrompida. O Astra Deck não conseguiu salvar um ponto de desfazer no armazenamento da extensão. Exporte um backup primeiro."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "«Desfazer importação» não está mais disponível: o ponto de desfazer expirou após 7 dias."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "Dados da extensão apagados com a opção Desfazer disponível. As transcrições não foram alteradas porque nenhuma aba responsiva do YouTube estava disponível. As credenciais de IA armazenadas foram mantidas."
   },
   "statusResetDoneUndo": {
-    "message": "Configurações portáteis, históricos, filas e dados de transcrição apagados. As credenciais de IA armazenadas são mantidas; use Excluir credencial para removê-las. Clique em Desfazer redefinição para restaurar até fechar o navegador."
+    "message": "Configurações portáteis, históricos, filas e dados de transcrição apagados. As credenciais de IA salvas são mantidas; use «Excluir credencial» para removê-las. Clique em «Desfazer redefinição» para restaurá-los. O ponto de desfazer dura 7 dias e continua disponível mesmo se você fechar o navegador."
   },
   "statusResetFail": {
     "message": "Falha na redefinição"
   },
   "statusResetSnapshotFail": {
-    "message": "Redefinição interrompida. O Astra Deck não conseguiu salvar um ponto de desfazer no armazenamento de sessão do navegador. Exporte um backup primeiro."
+    "message": "Redefinição interrompida. O Astra Deck não conseguiu salvar um ponto de desfazer no armazenamento da extensão. Exporte um backup primeiro."
   },
   "statusResetUndoExpired": {
-    "message": "Desfazer não disponível — o snapshot expirou com a sessão do navegador."
+    "message": "Desfazer não está mais disponível — o ponto de desfazer expirou após 7 dias."
   },
   "statusResetUndoFail": {
     "message": "Falha ao desfazer"

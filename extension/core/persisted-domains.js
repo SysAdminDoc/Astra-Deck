@@ -129,6 +129,8 @@
         { id: 'pendingDownloadReveals', location: 'extension-session', key: '_pendingReveals', backup: 'exclude', reason: 'Service-worker recovery state, not user data.', credentialScrub: 'sensitive-keys', migration: 'none' },
         { id: 'serviceWorkerLifecycle', location: 'extension-session', key: '_swLifecycle', backup: 'exclude', reason: 'Service-worker diagnostics.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'updateRecovery', location: 'extension-local', key: '_updateRecovery', backup: 'exclude', reason: 'Service-worker update checkpoint; importing stale operations could replay completed recovery.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'resetUndoPointer', location: 'extension-local', key: '_resetSnapshot', backup: 'exclude', reason: 'Pointer to a local IndexedDB undo payload; it means nothing in another browser profile.', credentialScrub: 'not-applicable', migration: 'none' },
+        { id: 'importUndoPointer', location: 'extension-local', key: '_importSnapshot', backup: 'exclude', reason: 'Pointer to a local IndexedDB undo payload; it means nothing in another browser profile.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'playbackRecovery', location: 'youtube-session-storage', key: 'ytkit-playback-recovery', backup: 'exclude', reason: 'Short-lived tab recovery state expires after one minute.', credentialScrub: 'not-applicable', migration: 'none' },
         { id: 'pageCrashGuard', location: 'youtube-local-storage', key: '_ytkit_crash_guard', backup: 'exclude', reason: 'Installation-specific crash-loop guard.', credentialScrub: 'not-applicable', migration: 'none' }
     ].map(Object.freeze));

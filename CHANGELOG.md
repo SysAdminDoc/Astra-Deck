@@ -6,6 +6,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Undo Reset and Undo Import now survive closing the browser. The data they
+  restore from was always durable, in extension IndexedDB, but the small
+  pointer to it sat in session storage, which the browser wipes on exit. Reset,
+  quit, reopen, and there was no way back. The pointer is durable now and the
+  undo stays on offer for 7 days, after which it expires and takes its stored
+  payload with it rather than leaving it behind.
+- Importing a backup writes a copy of your previous data to a file before it
+  overwrites anything, and the success message names that file. Undo Import
+  still covers a mistake you spot straight away; the file covers everything
+  else. If the file cannot be written the import goes ahead and says so.
+
 ### Removed
 
 - `.github/codeql.yml` is gone. It was a CodeQL config file, which only does

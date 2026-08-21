@@ -5717,7 +5717,15 @@
     "message": "拡張機能のデータをインポートしました。元に戻すことができます。応答する YouTube タブがなかったため、文字起こしインデックスは変更していません。"
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "バックアップをインポートしました。「インポートを取り消す」をクリックすると以前の状態に戻せます。取り消しポイントは 7 日間有効で、ブラウザーを閉じても失われません。"
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "以前のデータは先に {file} に保存されました。",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck は以前のデータのバックアップファイルを先に保存できませんでした。「インポートを取り消す」が唯一の復元手段です。",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "クリップボードが利用できません — ブラウザコンソールを参照。"
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "インポートを中止しました。Astra Deck はブラウザーのセッションストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。"
+    "message": "インポートを中止しました。Astra Deck は拡張機能のストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。"
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "「インポートを取り消す」は利用できません。取り消しポイントは 7 日後に期限切れになりました。"
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "拡張機能のデータを消去しました。元に戻すことができます。応答する YouTube タブがなかったため、文字起こしデータは変更していません。保存済みの AI 認証情報は保持しました。"
   },
   "statusResetDoneUndo": {
-    "message": "ポータブルな設定、履歴、キュー、文字起こしデータを消去しました。保存済みの AI 資格情報は保持されます。削除するには「資格情報を削除」を使用してください。ブラウザーを閉じるまでは「リセットを元に戻す」で復元できます。"
+    "message": "ポータブル設定、履歴、キュー、文字起こしデータを消去しました。保存済みの AI 認証情報は保持されます。削除するには「認証情報を削除」を使用してください。「リセットを取り消す」をクリックすると復元できます。取り消しポイントは 7 日間有効で、ブラウザーを閉じても失われません。"
   },
   "statusResetFail": {
     "message": "リセット失敗"
   },
   "statusResetSnapshotFail": {
-    "message": "リセットを中止しました。Astra Deck はブラウザーのセッションストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。"
+    "message": "リセットを中止しました。Astra Deck は拡張機能のストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。"
   },
   "statusResetUndoExpired": {
-    "message": "元に戻すが利用できません — スナップショットはブラウザセッションとともに期限切れになりました。"
+    "message": "取り消しは利用できません — 取り消しポイントは 7 日後に期限切れになりました。"
   },
   "statusResetUndoFail": {
     "message": "元に戻す失敗"

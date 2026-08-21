@@ -5717,7 +5717,15 @@
     "message": "Extension data imported with Undo available. The transcript index was left unchanged because no responsive YouTube tab was available."
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "Your previous data was saved to {file} first.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "Clipboard unavailable — see browser console."
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first."
+    "message": "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available — the browser session snapshot expired."
+    "message": "Undo Import is no longer available - the undo point expired after 7 days."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "Extension data cleared with Undo available. Transcript data was left unchanged because no responsive YouTube tab was available. Stored AI credentials were retained."
   },
   "statusResetDoneUndo": {
-    "message": "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser."
+    "message": "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser."
   },
   "statusResetFail": {
     "message": "Reset failed"
   },
   "statusResetSnapshotFail": {
-    "message": "Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first."
+    "message": "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first."
   },
   "statusResetUndoExpired": {
-    "message": "Undo no longer available — snapshot expired with the browser session."
+    "message": "Undo no longer available — the undo point expired after 7 days."
   },
   "statusResetUndoFail": {
     "message": "Undo failed"

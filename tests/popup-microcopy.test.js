@@ -5,8 +5,10 @@
 //
 //  * statusResetSnapshotFail blamed "data too large for recoverable reset".
 //    That stopped being true when the bulk of the snapshot moved to IndexedDB
-//    and the session payload became a tiny descriptor — the only real causes
-//    are an unavailable session API or a rejected session write.
+//    and the stored payload became a tiny descriptor — the only real causes
+//    are an unavailable storage API or a rejected pointer write. The pointer
+//    then moved from session storage to local storage so the undo survives a
+//    browser restart, and the copy moved with it.
 //  * filterListStatusRefreshFail served two different failures, and the
 //    helpers-unavailable branch told users to "Check the address, then try
 //    again" when the address is fine and retrying cannot help.
@@ -46,12 +48,35 @@ test('the import-snapshot failure reads the same at both call sites', () => {
 });
 
 test('the reset-snapshot failure names the real cause', () => {
+    // This assertion used to require the words "session storage". That was
+    // right while the undo pointer lived in chrome.storage.session; it is
+    // wrong now that the pointer is durable, and naming the wrong storage area
+    // is exactly the defect this test exists to catch.
     const message = enMessages.statusResetSnapshotFail.message;
-    assert.match(message, /session storage/i,
-        'the failure is a session-storage write, and the copy should say so');
+    assert.match(message, /extension storage/i,
+        'the failure is a write to extension storage, and the copy should say so');
+    assert.doesNotMatch(message, /session storage/i,
+        'the undo pointer no longer lives in session storage');
     assert.doesNotMatch(message, /too large/i,
         'the payload is a small descriptor now; the bulk lives in IndexedDB');
     assert.equal(fallbacksFor('statusResetSnapshotFail')[0], message);
+});
+
+test('the undo copy no longer promises recovery only until the browser closes', () => {
+    // Reset and Import both told the user the undo lasted "until you close the
+    // browser". It outlives a restart now, bounded by a 7-day retention
+    // window, so the promise had to be restated rather than quietly dropped.
+    for (const key of ['statusResetDoneUndo', 'statusBackupImportedUndo']) {
+        const message = enMessages[key].message;
+        assert.doesNotMatch(message, /until you close the browser/i,
+            `${key} must not promise an undo that dies with the browser session`);
+        assert.match(message, /7 days/,
+            `${key} must state the retention window the undo actually has`);
+    }
+    for (const key of ['statusResetUndoExpired', 'statusImportUndoExpired']) {
+        assert.doesNotMatch(enMessages[key].message, /session/i,
+            `${key} must not blame the browser session for an expiry it no longer causes`);
+    }
 });
 
 test('the filter-list state read has its own key, separate from a refresh failure', () => {

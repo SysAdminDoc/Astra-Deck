@@ -155,7 +155,7 @@ User opens the popup:
 ## Conventions a contributor should know
 
 1. **No keyboard shortcuts.** The entire `commands` manifest block was retired in v4.5.3. Competitor shortcut features become visible buttons, wheel gestures, pointer modifiers, command-palette actions, or context menu items.
-2. **No confirmation dialogs.** Destructive actions either apply immediately when reversible, or use undo toasts / soft-delete staging (see Reset → Undo Reset, v4.47.0 EI2).
+2. **No confirmation dialogs.** Destructive actions either apply immediately when reversible, or use undo toasts / soft-delete staging (see Reset → Undo Reset). The Reset and Import undo points are durable: the payload lives in extension IndexedDB and the pointer in `storage.local`, bounded by a 7-day retention window, so the undo is still offered after a browser restart.
 3. **Dark / OLED only.** Never ship a light theme. popup.css and ytkit.js style injectors must honour `prefers-reduced-motion: reduce` (popup.css ships a universal `* { animation: none; transition: none; }` guard).
 4. **Every feature has `init()` + `destroy()`.** `destroy()` must fully remove DOM, observers, listeners, timers, pending async work, body/html classes, injected styles, and storage listeners.
 5. **TrustedTypes-safe DOM injection.** All `innerHTML`-shaped writes go through `core/trusted-html.js#setTrustedHTML` or DOM API construction. `el.innerHTML = ''` is also forbidden, use `el.textContent = ''`.

@@ -5717,7 +5717,15 @@
     "message": "Données de l’extension importées avec possibilité d’annulation. L’index des transcriptions est resté inchangé, car aucun onglet YouTube réactif n’était disponible."
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "Sauvegarde importée. Cliquez sur « Annuler l'import » pour restaurer l'état précédent. Le point d'annulation reste valable 7 jours et survit à la fermeture du navigateur."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "Vos données précédentes ont d'abord été enregistrées dans {file}.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck n'a pas pu enregistrer au préalable un fichier de sauvegarde de vos données précédentes ; « Annuler l'import » est donc le seul retour possible.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "Presse-papiers indisponible — voir la console du navigateur."
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Import interrompu. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de session du navigateur. Exportez d'abord une sauvegarde."
+    "message": "Import interrompu. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de l'extension. Exportez d'abord une sauvegarde."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "« Annuler l'import » n'est plus disponible : le point d'annulation a expiré au bout de 7 jours."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "Données de l’extension effacées avec possibilité d’annulation. Les transcriptions sont restées inchangées, car aucun onglet YouTube réactif n’était disponible. Les identifiants d’IA enregistrés ont été conservés."
   },
   "statusResetDoneUndo": {
-    "message": "Réglages portables, historiques, files d'attente et données de transcription effacés. Les identifiants IA stockés sont conservés ; utilisez Supprimer l'identifiant pour les retirer. Cliquez sur Annuler la réinitialisation pour restaurer jusqu'à la fermeture du navigateur."
+    "message": "Paramètres portables, historiques, files d'attente et données de transcription effacés. Les identifiants d'IA enregistrés sont conservés ; utilisez « Supprimer l'identifiant » pour les retirer. Cliquez sur « Annuler la réinitialisation » pour les restaurer. Le point d'annulation reste valable 7 jours et survit à la fermeture du navigateur."
   },
   "statusResetFail": {
     "message": "Échec de la réinitialisation"
   },
   "statusResetSnapshotFail": {
-    "message": "Réinitialisation interrompue. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de session du navigateur. Exportez d'abord une sauvegarde."
+    "message": "Réinitialisation interrompue. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de l'extension. Exportez d'abord une sauvegarde."
   },
   "statusResetUndoExpired": {
-    "message": "Annulation plus disponible — l'instantané a expiré avec la session du navigateur."
+    "message": "Annulation plus disponible — le point d'annulation a expiré au bout de 7 jours."
   },
   "statusResetUndoFail": {
     "message": "Échec de l'annulation"

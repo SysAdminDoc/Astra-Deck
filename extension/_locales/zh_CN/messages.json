@@ -5717,7 +5717,15 @@
     "message": "扩展数据已导入，并可撤销。由于没有响应的 YouTube 标签页，转录索引保持不变。"
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "已导入备份。点击“撤销导入”可恢复到先前状态。撤销点可保留 7 天，关闭浏览器后依然有效。"
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "你之前的数据已先保存到 {file}。",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck 未能先保存你之前数据的备份文件，因此“撤销导入”是唯一的回退方式。",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "剪贴板不可用 — 请查看浏览器控制台。"
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "已停止导入。Astra Deck 无法在浏览器会话存储中保存撤销点。请先导出备份。"
+    "message": "已停止导入。Astra Deck 无法在扩展程序存储中保存撤销点。请先导出备份。"
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "“撤销导入”已不可用：撤销点已在 7 天后过期。"
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "扩展数据已清除，并可撤销。由于没有响应的 YouTube 标签页，转录数据保持不变。已保留存储的 AI 凭据。"
   },
   "statusResetDoneUndo": {
-    "message": "已清除便携设置、历史记录、队列和转录数据。存储的 AI 凭据将保留;如需移除,请使用删除凭据。在关闭浏览器之前,点击撤销重置即可恢复。"
+    "message": "已清除可迁移设置、历史记录、队列和字幕数据。已保存的 AI 凭据会保留；如需删除，请使用“删除凭据”。点击“撤销重置”即可恢复。撤销点可保留 7 天，关闭浏览器后依然有效。"
   },
   "statusResetFail": {
     "message": "重置失败"
   },
   "statusResetSnapshotFail": {
-    "message": "已停止重置。Astra Deck 无法在浏览器会话存储中保存撤销点。请先导出备份。"
+    "message": "已停止重置。Astra Deck 无法在扩展程序存储中保存撤销点。请先导出备份。"
   },
   "statusResetUndoExpired": {
-    "message": "撤销不再可用 — 快照已随浏览器会话过期。"
+    "message": "撤销已不可用 — 撤销点已在 7 天后过期。"
   },
   "statusResetUndoFail": {
     "message": "撤销失败"
