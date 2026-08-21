@@ -19,6 +19,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
@@ -157,18 +158,26 @@ test('the shipped-identity baseline only grows', () => {
 
 test('check-settings fails when a shipped identity stops resolving', () => {
     // The gate is the only thing that makes the alias table non-optional, so
-    // prove it fails rather than trusting that it would.
+    // prove it fails rather than trusting that it would. Use a private
+    // baseline file so this mutation cannot race another test file that runs
+    // check-settings against the repository baseline.
     const baselinePath = path.join(repoRoot, 'scripts', 'shipped-identity-baseline.json');
-    const original = fs.readFileSync(baselinePath, 'utf8');
-    const tampered = JSON.parse(original);
+    const tampered = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
     tampered.settingKeys = [...tampered.settingKeys, 'aKeyThatWasRenamedAndForgotten'].sort();
-    fs.writeFileSync(baselinePath, JSON.stringify(tampered, null, 2) + '\n');
+    const testBaselinePath = path.join(
+        os.tmpdir(),
+        `astra-settings-identity-${process.pid}-${Date.now()}.json`
+    );
+    fs.writeFileSync(testBaselinePath, JSON.stringify(tampered, null, 2) + '\n');
     try {
         let failed = false;
         let output = '';
         try {
             execFileSync(process.execPath, [path.join(repoRoot, 'scripts', 'check-settings.js')], {
-                cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']
+                cwd: repoRoot,
+                encoding: 'utf8',
+                stdio: ['ignore', 'pipe', 'pipe'],
+                env: { ...process.env, ASTRA_SETTINGS_IDENTITY_BASELINE: testBaselinePath }
             });
         } catch (error) {
             failed = true;
@@ -178,7 +187,7 @@ test('check-settings fails when a shipped identity stops resolving', () => {
         assert.match(output, /aKeyThatWasRenamedAndForgotten/,
             'the failure must name the key that stopped resolving');
     } finally {
-        fs.writeFileSync(baselinePath, original);
+        fs.unlinkSync(testBaselinePath);
     }
 });
 
