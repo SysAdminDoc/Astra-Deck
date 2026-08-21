@@ -97,9 +97,12 @@ filtering, redacted diagnostics, and UI health-pill assertions.
 
 ## Remaining validation and retirement gates
 
-1. **Chrome extension IDs.** Firefox uses the fixed Gecko ID by default. Chrome
-   IDs must be configured through `NativeChromeExtensionIds` or
-   `ASTRA_NATIVE_CHROME_EXTENSION_IDS` once the release/store IDs are known.
+1. **Chrome extension IDs.** Firefox uses the fixed Gecko ID by default.
+   Chrome and Edge pair automatically: Astra Deck posts its `chrome.runtime.id`
+   to the companion's loopback `/pair-extension` route, which writes
+   `NativeChromeExtensionIds` and refreshes the native-host manifest. Manual
+   entry on the Browser extension page remains as a fallback. Store-profile
+   artifacts that omit `nativeMessaging` still cannot use this channel.
 2. **Real browser validation.** Verify Chrome and Firefox can launch the
    registered native host from the packaged extension, receive the token over
    native messaging, and still detect the running HTTP service on the selected

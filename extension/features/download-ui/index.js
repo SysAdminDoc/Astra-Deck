@@ -397,6 +397,7 @@
                 error: { code: 'COBALT_REQUEST_UNAVAILABLE', message: 'Self-hosted Cobalt requests are unavailable.' }
             }),
             requestNativeDownloaderToken = async () => ({ token: null, error: 'Native messaging unavailable' }),
+            getExtensionRuntimeId = () => '',
             browserCookies = {},
             getProfileExportMode = () => 'safe-store',
             PageTypes = { WATCH: 'watch' },
@@ -462,7 +463,10 @@
             },
 
             _headers(extra = {}) {
-                const headers = { ...extra };
+                const headers = {
+                    'X-MDL-Api': String(DOWNLOAD_HEALTH_SCHEMA_VERSION),
+                    ...extra
+                };
                 if (this._tokenSource) headers['X-MDL-Token-Source'] = this._tokenSource;
                 return headers;
             },
@@ -505,14 +509,38 @@
                 return this._checkPromise;
             },
 
+            async _pairWithCompanion(port) {
+                const extensionId = String(getExtensionRuntimeId() || '').trim();
+                if (!extensionId) return false;
+                try {
+                    const { data } = await extensionFetchJson({
+                        method: 'POST',
+                        url: 'http://127.0.0.1:' + port + '/pair-extension',
+                        headers: this._headers({
+                            'Content-Type': 'application/json',
+                            'X-MDL-Client': 'MediaDL'
+                        }),
+                        data: JSON.stringify({ id: extensionId }),
+                        timeout: 2000
+                    });
+                    if (data?.ok === true && data?.paired === true) {
+                        DebugManager.log('MediaDL', `Paired extension ${extensionId} with Astra Downloader on port ${port}`);
+                        return true;
+                    }
+                } catch (error) {
+                    DebugManager.log('MediaDL', `Pairing failed on port ${port}: ${error?.message || error}`);
+                }
+                return false;
+            },
+
             async _checkImpl(force) {
                 const now = Date.now();
-                const nativeToken = await this._requestNativeToken();
+                let nativeToken = await this._requestNativeToken();
                 // First non-Astra server found squatting a companion port, if any.
                 let foreignServer = null;
                 const tryPort = async (port) => {
                     try {
-                        const headers = { 'X-MDL-Client': 'MediaDL' };
+                        const headers = this._headers({ 'X-MDL-Client': 'MediaDL' });
                         if (nativeToken.token) headers['X-MDL-Token-Source'] = 'native';
                         const { data } = await extensionFetchJson({
                             method: 'GET',
@@ -543,6 +571,10 @@
                 for (const port of order) {
                     const data = await tryPort(port);
                     if (data) {
+                        if (!nativeToken.token && !data.token) {
+                            const paired = await this._pairWithCompanion(port);
+                            if (paired) nativeToken = await this._requestNativeToken();
+                        }
                         const token = nativeToken.token || data.token || null;
                         if (!token) {
                             if (data.nativeChannelRequired === true || data.legacyTokenEcho === false) {
@@ -622,7 +654,7 @@
                     const { response, data } = await extensionFetchJson({
                         method: 'POST',
                         url: this.baseUrl() + '/update-ytdlp',
-                        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': probe.token },
+                        headers: this._headers({ 'Content-Type': 'application/json', 'X-Auth-Token': probe.token }),
                         data: '{}',
                         timeout: 130000,
                     });
@@ -650,7 +682,7 @@
                     const { response, data } = await extensionFetchJson({
                         method: 'POST',
                         url: this.baseUrl() + '/update',
-                        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': probe.token },
+                        headers: this._headers({ 'Content-Type': 'application/json', 'X-Auth-Token': probe.token }),
                         data: '{}',
                         timeout: 180000,
                     });
@@ -1533,7 +1565,10 @@
                     const { response, data: resp } = await extensionFetchJson({
                         method: 'POST',
                         url: MediaDLManager.baseUrl() + '/download',
-                        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+                        headers: MediaDLManager._headers({
+                            'Content-Type': 'application/json',
+                            'X-Auth-Token': token
+                        }),
                         data: JSON.stringify(payload),
                         timeout: 5000
                     });
