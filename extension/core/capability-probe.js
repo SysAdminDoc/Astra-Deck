@@ -64,6 +64,25 @@
                 label: 'Chrome / Edge / Brave',
                 vehicle: 'MV3 extension or userscript',
                 baseline: 'Chrome 120+ / equivalent Chromium release',
+                // Declared in the manifest as `minimum_chrome_version`, so a
+                // Chrome below it is told the extension is unsupported instead
+                // of installing and then behaving oddly.
+                //
+                // What actually forces a floor, audited 2026-08-21 rather than
+                // carried forward: the `side_panel` manifest key and the
+                // `sidePanel` permission (Chrome 114), `sidePanel.open()`
+                // (116), and `text-wrap` (114). Everything the codebase uses
+                // above that is behind a capability probe and degrades on its
+                // own: CloseWatcher (120), CSS `@scope` (118), CSS anchor
+                // positioning (125), `CSS.highlights` (105), popover (114),
+                // and the built-in AI APIs. So 114 is the hard requirement and
+                // 120 is the floor the project actually documents, builds
+                // against, and tests. The gap is deliberate and conservative:
+                // claiming 114 would be a compatibility promise nobody has
+                // exercised on a Chrome 114 build, which is a worse failure
+                // than asking a handful of users on a two-year-old browser to
+                // update. Lower it only alongside a real run on that version.
+                minimumChromeVersion: '120',
                 note: 'Optional built-in AI APIs remain conditional on browser rollout, model readiness, device policy, and flags.'
             },
             firefox: {

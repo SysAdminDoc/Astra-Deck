@@ -30,6 +30,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   yet, so today's releases are still unsigned and the release check says so out
   loud rather than passing quietly.
 
+### Fixed
+
+- Chrome now says "unsupported" instead of installing and then behaving oddly.
+  The docs have said Chrome 120 or newer since forever, but the extension
+  itself declared no minimum, so an older Chrome installed happily and then hit
+  APIs that were not there. The manifest declares it, and a build check fails
+  if the manifest and the compatibility docs ever disagree.
+
 ## [4.83.0] (2026-08-21)
 
 ### Added

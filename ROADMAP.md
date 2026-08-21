@@ -249,13 +249,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
   Acceptance: one action produces a copyable block listing only feature IDs that differ from their defaults plus the Astra/browser versions — no URLs, channel names, keys, filter lists, notes, or bookmarks; a test asserts the payload contains none of those field names even when they are populated; the copy states plainly that nothing is sent anywhere and that the user chooses where to paste it.
   Complexity: S
 
-- [ ] P2 — Declare `minimum_chrome_version` in the manifest to match the documented floor
-  Why: the project documents a Chrome 120 floor in `CLAUDE.md`, `README.md`, and the capability matrix, but the manifest declares nothing — so a Chrome 119 user installs successfully and then hits undefined behaviour instead of being told the version is unsupported.
-  Evidence: `extension/manifest.json` has no `minimum_chrome_version` key (verified 2026-08-20); the Firefox side does enforce its floor via `scripts/manifest-patch.js:7` (`strict_min_version 142.0`), so the asymmetry is unintentional.
-  Touches: `extension/manifest.json`, `build-extension.js` (per-profile patch), `scripts/generate-capability-matrix.js`, `tests/project-facts.test.js`
-  Acceptance: the manifest declares the same Chrome floor the capability matrix claims; a gate fails if the two disagree; the floor is justified by the highest actually-required API rather than copied forward, and any API in use above it is behind a capability probe.
-  Complexity: S
-
 - [ ] P2 — Add a `build-for-amo` script and prove the build reproduces in Mozilla's reviewer environment
   Why: AMO now auto-builds submitted source and compares it against the uploaded package, and a match "can move through review much more quickly" — otherwise review runs 3 days to 5 weeks. `build-extension.js` is exactly the generator that triggers mandatory source submission, and the reviewer environment is published and specific, so reproducibility is testable before submitting rather than discovered during review.
   Evidence: Mozilla's source-code-submission rules require the reviewer's rebuild to produce *no differences*, and the default reviewer environment is Ubuntu 24.04.4 LTS on **ARM64** with Node 24.14.0 / npm 11.9.0. `package.json` has no `build-for-amo` script; `.nvmrc` says 22; `crx3` has never been exercised on ARM64. Blocked companion item "Firefox AMO submission" depends on this and cannot be de-risked without it.
