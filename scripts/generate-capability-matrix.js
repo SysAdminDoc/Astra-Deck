@@ -9,7 +9,45 @@ const DEFAULT_OUTPUT_PATH = path.join(REPO_ROOT, 'build', 'browser-capability-ma
 const { CAPABILITY_MATRIX } = require(path.join(REPO_ROOT, 'extension', 'core', 'capability-probe.js'));
 const { BUILD_FLAG_ENV_ROUTES, assertNoForeignFlags } = require('./cli-flag-guard');
 
+const MANIFEST_PATH = path.join(REPO_ROOT, 'extension', 'manifest.json');
+
+// The capability matrix has claimed a Chrome floor since it existed while the
+// manifest declared nothing, so a Chrome below the floor installed happily and
+// then met undefined behaviour instead of being told it was unsupported. Now
+// both state it, which means both can drift. This is the only place that reads
+// them together, so it is where they are held equal.
+function assertChromeFloorAgrees() {
+    const declared = CAPABILITY_MATRIX.browsers?.chromium?.minimumChromeVersion;
+    if (typeof declared !== 'string' || !/^\d+$/.test(declared)) {
+        throw new Error(
+            'capability-probe.js browsers.chromium.minimumChromeVersion must be a major-version string'
+        );
+    }
+
+    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    if (manifest.minimum_chrome_version !== declared) {
+        throw new Error(
+            `Chrome floor disagreement: extension/manifest.json declares `
+            + `${JSON.stringify(manifest.minimum_chrome_version)} but the capability matrix claims `
+            + `${JSON.stringify(declared)}. Both must name the same version.`
+        );
+    }
+
+    // The prose baseline is what users and reviewers read; a matrix that says
+    // "Chrome 120+" beside a manifest floor of 118 would be the same defect
+    // wearing a different hat.
+    const baseline = String(CAPABILITY_MATRIX.browsers.chromium.baseline || '');
+    const stated = /Chrome\s+(\d+)/.exec(baseline);
+    if (!stated || stated[1] !== declared) {
+        throw new Error(
+            `Chrome floor disagreement: the capability matrix baseline reads ${JSON.stringify(baseline)} `
+            + `but minimumChromeVersion is ${JSON.stringify(declared)}.`
+        );
+    }
+}
+
 function buildCapabilityMatrix() {
+    assertChromeFloorAgrees();
     // The probe exports a deeply frozen runtime object. A JSON round-trip
     // gives the build artifact a stable, serialization-safe snapshot without
     // exposing functions or mutable references to the runtime module.
@@ -83,6 +121,7 @@ if (require.main === module) {
 
 module.exports = {
     DEFAULT_OUTPUT_PATH,
+    assertChromeFloorAgrees,
     buildCapabilityMatrix,
     checkCapabilityMatrix,
     renderCapabilityMatrix,

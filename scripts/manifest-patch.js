@@ -51,6 +51,10 @@ function patchManifestForFirefox(ffManifest, profile = FIREFOX_AUTO_UPDATE_PROFI
     // sidebar_action which has a different API surface. Strip both so
     // Firefox builds don't carry unsupported keys.
     delete ffManifest.side_panel;
+    // Chrome-only compatibility declaration. Firefox states its own floor
+    // through browser_specific_settings.gecko.strict_min_version above, and
+    // addons-linter reports an unknown manifest key rather than ignoring it.
+    delete ffManifest.minimum_chrome_version;
     if (Array.isArray(ffManifest.permissions)) {
         ffManifest.permissions = ffManifest.permissions.filter(p => p !== 'sidePanel');
     }

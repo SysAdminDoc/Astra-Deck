@@ -67,3 +67,55 @@ test('capability matrix generator emits the runtime contract without executable 
         generator.checkCapabilityMatrix(output);
     }
 });
+
+// ── The declared Chrome floor ──
+//
+// The matrix has claimed "Chrome 120+" since it existed while the manifest
+// declared nothing, so a Chrome 119 user installed successfully and then met
+// undefined behaviour instead of being told the version is unsupported. Both
+// now state it, so both can drift apart; these hold them together.
+
+test('the manifest declares the same Chrome floor the capability matrix claims', () => {
+    const probe = loadFreshProbe();
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
+    const chromium = probe.CAPABILITY_MATRIX.browsers.chromium;
+
+    assert.equal(typeof manifest.minimum_chrome_version, 'string',
+        'the manifest must declare a Chrome floor, not leave it to documentation');
+    assert.match(manifest.minimum_chrome_version, /^\d+$/);
+    assert.equal(manifest.minimum_chrome_version, chromium.minimumChromeVersion);
+    assert.match(chromium.baseline, new RegExp(`Chrome ${chromium.minimumChromeVersion}\\b`));
+});
+
+test('the generator refuses to emit a matrix that disagrees with the manifest', () => {
+    const probe = loadFreshProbe();
+    const generator = require('../scripts/generate-capability-matrix');
+    const chromium = probe.CAPABILITY_MATRIX.browsers.chromium;
+    const declared = chromium.minimumChromeVersion;
+    const manifestPath = path.join(__dirname, '..', 'extension', 'manifest.json');
+    const original = fs.readFileSync(manifestPath, 'utf8');
+    try {
+        fs.writeFileSync(manifestPath, original.replace(
+            `"minimum_chrome_version": "${declared}"`,
+            '"minimum_chrome_version": "1"'
+        ));
+        assert.throws(() => generator.buildCapabilityMatrix(), /floor disagreement/);
+    } finally {
+        fs.writeFileSync(manifestPath, original);
+    }
+    // And the restore must leave the gate happy again, so a failed run of this
+    // test cannot quietly leave the manifest edited.
+    assert.doesNotThrow(() => generator.buildCapabilityMatrix());
+});
+
+test('the Firefox build strips the Chrome-only floor declaration', () => {
+    const { patchManifestForFirefox } = require('../scripts/manifest-patch');
+    const patched = patchManifestForFirefox({
+        minimum_chrome_version: '120',
+        side_panel: { default_path: 'sidepanel.html' },
+        permissions: ['storage', 'sidePanel']
+    });
+    assert.equal('minimum_chrome_version' in patched, false,
+        'Firefox states its floor through strict_min_version; addons-linter reports this key as unknown');
+});
