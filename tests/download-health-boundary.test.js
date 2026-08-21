@@ -8,6 +8,7 @@ const {
     createDownloadUIFeature,
     formatByteSize,
     normalizeDownloadHealthSnapshot,
+    companionApiMismatchFromError,
     summarizeFormatProbe,
     DOWNLOAD_HEALTH_SCHEMA_VERSION,
     AUTO_START_RETRY_BUDGET,
@@ -19,6 +20,55 @@ const fixture = JSON.parse(fs.readFileSync(
     path.join(__dirname, 'fixtures', 'download-health-v2.json'),
     'utf8'
 ));
+
+test('a companion that refuses this extension is named, not reported as offline', () => {
+    // The downloader answers /download with 426 and explains itself in the
+    // body. extensionFetchJson throws on a 426, and rethrowing sent the user
+    // to the CONNECTION-error handler, which offers to repair a downloader
+    // that is running fine.
+    const refusal = Object.assign(new Error('HTTP 426'), {
+        response: { status: 426 },
+        data: {
+            error: 'This Astra Deck speaks API 1; Astra Downloader 2.9.0 needs at least 2.',
+            code: 'client-api-too-old',
+            api: 2,
+            minimumClientApi: 2,
+            remediation: 'Update the Astra Deck browser extension.',
+        },
+    });
+
+    const mismatch = companionApiMismatchFromError(refusal);
+    assert.equal(mismatch.error_code, 'client-api-too-old');
+    assert.equal(mismatch.minimumClientApi, 2);
+    assert.equal(mismatch.companionApi, 2);
+    assert.equal(mismatch.next_action, 'update-extension');
+    assert.match(mismatch.error, /needs at least 2/);
+    assert.equal(mismatch.advice, 'Update the Astra Deck browser extension.');
+
+    assert.equal(companionApiMismatchFromError(null), null);
+    assert.equal(
+        companionApiMismatchFromError(Object.assign(new Error('HTTP 500'), {
+            response: { status: 500 },
+        })),
+        null,
+        'only a 426 is the handshake refusal',
+    );
+    assert.equal(
+        companionApiMismatchFromError(Object.assign(new Error('HTTP 426'), {
+            response: { status: 426 },
+            data: { code: 'something-else' },
+        })),
+        null,
+        'a 426 raised for another reason must not be renamed',
+    );
+
+    const bare = companionApiMismatchFromError(Object.assign(new Error('HTTP 426'), {
+        response: { status: 426 },
+    }));
+    assert.equal(bare.error_code, 'client-api-too-old');
+    assert.equal(bare.minimumClientApi, null,
+        'a refusal with no parseable body still gets the named state');
+});
 
 test('versioned downloader health crosses the UI boundary without diagnostics or echoed tokens', () => {
     const normalized = normalizeDownloadHealthSnapshot({
@@ -40,7 +90,15 @@ test('versioned downloader health crosses the UI boundary without diagnostics or
     assert.deepEqual(normalized.ffmpegCapabilities, { version: '7.1.1', current: true });
     assert.deepEqual(normalized.poTokenProvider, { ok: true });
     assert.equal(normalizeDownloadHealthSnapshot(fixture, {}).tokenSource, null);
-    assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, api: 3 }, {}), null);
+    // A companion that speaks a newer API is not "not Astra Downloader"; it is
+    // a named mismatch the health strip renders, so the extension stops telling
+    // the user to install a downloader that is already running.
+    assert.deepEqual(
+        normalizeDownloadHealthSnapshot({ ...fixture, api: 3 }, {}),
+        { companionApiTooNew: true, api: 3, minimumClientApi: null },
+    );
+    assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, api: 0 }, {}), null);
+    assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, api: 'two' }, {}), null);
     assert.equal(normalizeDownloadHealthSnapshot({ ...fixture, service: 'other', token_required: false }, {}), null);
 });
 

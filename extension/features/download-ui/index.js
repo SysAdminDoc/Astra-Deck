@@ -318,6 +318,28 @@
         return { section: { start, end }, error: '' };
     }
 
+    // A 426 carries its own explanation in the body; extensionFetchJson throws
+    // on it, so the payload has to be recovered from the error rather than the
+    // resolved response. Module scope so the boundary can be tested without
+    // driving the whole feature.
+    function companionApiMismatchFromError(error) {
+        if (!error || error.response?.status !== 426) return null;
+        const data = error.data && typeof error.data === 'object' ? error.data : {};
+        if (data.code && data.code !== 'client-api-too-old') return null;
+        return {
+            error_code: 'client-api-too-old',
+            error: typeof data.error === 'string' && data.error
+                ? data.error.slice(0, 220)
+                : undefined,
+            advice: typeof data.remediation === 'string' && data.remediation
+                ? data.remediation.slice(0, 220)
+                : undefined,
+            next_action: 'update-extension',
+            companionApi: Number.isInteger(data.api) ? data.api : null,
+            minimumClientApi: Number.isInteger(data.minimumClientApi) ? data.minimumClientApi : null,
+        };
+    }
+
     function normalizeDownloadHealthSnapshot(raw, authenticatedStatus = {}) {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
         const port = Number(raw.port);
@@ -1481,27 +1503,6 @@
                 duration: 12,
             },
         });
-
-        // A 426 carries its own explanation in the body; extensionFetchJson
-        // throws on it, so the payload has to be recovered from the error
-        // rather than the resolved response.
-        function companionApiMismatchFromError(error) {
-            if (!error || error.response?.status !== 426) return null;
-            const data = error.data && typeof error.data === 'object' ? error.data : {};
-            if (data.code && data.code !== 'client-api-too-old') return null;
-            return {
-                error_code: 'client-api-too-old',
-                error: typeof data.error === 'string' && data.error
-                    ? data.error.slice(0, 220)
-                    : undefined,
-                advice: typeof data.remediation === 'string' && data.remediation
-                    ? data.remediation.slice(0, 220)
-                    : undefined,
-                next_action: 'update-extension',
-                companionApi: Number.isInteger(data.api) ? data.api : null,
-                minimumClientApi: Number.isInteger(data.minimumClientApi) ? data.minimumClientApi : null,
-            };
-        }
 
         function classifyDownloaderFailureResponse(resp = {}) {
             const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
@@ -3505,11 +3506,13 @@
     const ns = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     ns.createDownloadUIFeature = createDownloadUIFeature;
     ns.normalizeDownloadHealthSnapshot = normalizeDownloadHealthSnapshot;
+    ns.companionApiMismatchFromError = companionApiMismatchFromError;
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             createDownloadUIFeature,
             normalizeDownloadHealthSnapshot,
+            companionApiMismatchFromError,
             summarizeFormatProbe,
             estimateFormatSize,
             formatByteSize,
