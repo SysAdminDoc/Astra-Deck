@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "4.83.0",
+  "version": "4.84.0",
   "minimum_chrome_version": "120",
   "x-ytkit-build-profile": "development",
   "description": "__MSG_extDescription__",
