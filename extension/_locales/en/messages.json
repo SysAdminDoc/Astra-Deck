@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "Comment Search"
   },
+  "commentSearchCountThread": {
+    "message": "{count} thread"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} threads"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} match"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} matches"
+  },
+  "commentSearchNoMatches": {
+    "message": "No matches"
+  },
+  "commentSearchWaiting": {
+    "message": "Waiting for comments to load…"
+  },
+  "commentSearchSyncHint": {
+    "message": "The search bar will stay in sync as more comments arrive."
+  },
+  "commentSearchReadyThread": {
+    "message": "{count} comment thread is ready to scan. Search creators, phrases, or topics."
+  },
+  "commentSearchReadyThreads": {
+    "message": "{count} comment threads are ready to scan. Search creators, phrases, or topics."
+  },
+  "commentSearchEscapeHint": {
+    "message": "Press Esc to clear anytime. New comments stay counted automatically."
+  },
+  "commentSearchShowingMatches": {
+    "message": "Showing {visible} of {total} comment threads for “{query}”."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Use Next or Previous in Comment Navigator to jump between matches."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "Waiting for comments to load for “{query}”…"
+  },
+  "commentSearchActiveHint": {
+    "message": "Your search stays active while YouTube loads the comment list."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "No comment threads match “{query}”."
+  },
+  "commentSearchShorterHint": {
+    "message": "Try a shorter phrase, a creator name, or clear the filter."
+  },
+  "commentSearchEyebrow": {
+    "message": "Find in Comments"
+  },
+  "commentSearchPlaceholder": {
+    "message": "Search creators, phrases, or topics…"
+  },
+  "commentSearchAria": {
+    "message": "Search comments"
+  },
+  "commentSearchClearAria": {
+    "message": "Clear comment search"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "No matching comments"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Try a shorter phrase, a creator name, or clear the filter to bring every thread back."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "Language to translate comments into. Auto follows your browser language."
   },

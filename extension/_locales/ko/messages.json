@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "댓글 검색"
   },
+  "commentSearchCountThread": {
+    "message": "{count}개 스레드"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count}개 스레드"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count}개 일치"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count}개 일치"
+  },
+  "commentSearchNoMatches": {
+    "message": "일치 항목 없음"
+  },
+  "commentSearchWaiting": {
+    "message": "댓글을 불러오는 중입니다…"
+  },
+  "commentSearchSyncHint": {
+    "message": "새 댓글이 들어오면 검색창도 자동으로 동기화됩니다."
+  },
+  "commentSearchReadyThread": {
+    "message": "검색할 수 있는 댓글 스레드가 {count}개 있습니다. 작성자, 문구 또는 주제를 검색하세요."
+  },
+  "commentSearchReadyThreads": {
+    "message": "검색할 수 있는 댓글 스레드가 {count}개 있습니다. 작성자, 문구 또는 주제를 검색하세요."
+  },
+  "commentSearchEscapeHint": {
+    "message": "언제든 Esc를 눌러 지울 수 있습니다. 새 댓글도 자동으로 집계됩니다."
+  },
+  "commentSearchShowingMatches": {
+    "message": "“{query}”에 대한 댓글 스레드 {total}개 중 {visible}개를 표시합니다."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "댓글 탐색기의 다음 또는 이전을 사용해 일치 항목 사이를 이동하세요."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "“{query}”에 대한 댓글을 불러오는 중입니다…"
+  },
+  "commentSearchActiveHint": {
+    "message": "YouTube가 댓글 목록을 불러오는 동안에도 검색은 유지됩니다."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "“{query}”와 일치하는 댓글 스레드가 없습니다."
+  },
+  "commentSearchShorterHint": {
+    "message": "더 짧은 문구나 작성자 이름을 시도하거나 필터를 지우세요."
+  },
+  "commentSearchEyebrow": {
+    "message": "댓글에서 찾기"
+  },
+  "commentSearchPlaceholder": {
+    "message": "작성자, 문구 또는 주제 검색…"
+  },
+  "commentSearchAria": {
+    "message": "댓글 검색"
+  },
+  "commentSearchClearAria": {
+    "message": "댓글 검색 지우기"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "일치하는 댓글 없음"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "더 짧은 문구나 작성자 이름을 시도하거나 필터를 지워 모든 스레드를 다시 표시하세요."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "댓글을 번역할 언어입니다. 자동은 브라우저 언어를 따릅니다."
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count}개 일치"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "일치 항목 없음"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

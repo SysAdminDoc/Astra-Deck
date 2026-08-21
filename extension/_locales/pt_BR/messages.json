@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "Pesquisar comentários"
   },
+  "commentSearchCountThread": {
+    "message": "{count} conversa"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} conversas"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} resultado"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} resultados"
+  },
+  "commentSearchNoMatches": {
+    "message": "Nenhum resultado"
+  },
+  "commentSearchWaiting": {
+    "message": "Aguardando o carregamento dos comentários…"
+  },
+  "commentSearchSyncHint": {
+    "message": "A barra de pesquisa será atualizada conforme novos comentários chegarem."
+  },
+  "commentSearchReadyThread": {
+    "message": "{count} conversa de comentários está pronta para busca. Pesquise criadores, frases ou assuntos."
+  },
+  "commentSearchReadyThreads": {
+    "message": "{count} conversas de comentários estão prontas para busca. Pesquise criadores, frases ou assuntos."
+  },
+  "commentSearchEscapeHint": {
+    "message": "Pressione Esc para limpar quando quiser. Novos comentários continuam sendo contados automaticamente."
+  },
+  "commentSearchShowingMatches": {
+    "message": "Mostrando {visible} de {total} conversas de comentários para “{query}”."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Use Próximo ou Anterior no navegador de comentários para alternar entre os resultados."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "Aguardando comentários para “{query}”…"
+  },
+  "commentSearchActiveHint": {
+    "message": "Sua pesquisa continua ativa enquanto o YouTube carrega a lista de comentários."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "Nenhuma conversa de comentários corresponde a “{query}”."
+  },
+  "commentSearchShorterHint": {
+    "message": "Tente uma frase mais curta, o nome de um criador ou limpe o filtro."
+  },
+  "commentSearchEyebrow": {
+    "message": "Buscar nos comentários"
+  },
+  "commentSearchPlaceholder": {
+    "message": "Buscar criadores, frases ou assuntos…"
+  },
+  "commentSearchAria": {
+    "message": "Buscar comentários"
+  },
+  "commentSearchClearAria": {
+    "message": "Limpar busca nos comentários"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "Nenhum comentário correspondente"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Tente uma frase mais curta, o nome de um criador ou limpe o filtro para trazer todas as conversas de volta."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "Idioma para o qual traduzir os comentários. Automático segue o idioma do navegador."
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} resultados"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "Nenhum resultado"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

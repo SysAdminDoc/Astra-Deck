@@ -76,12 +76,12 @@ test('a missing staged catalogue fails loudly instead of rendering English', () 
 });
 
 test('the lane proves the pseudo copy actually rendered', () => {
-    assert.match(smoke, /locale === PSEUDO_LOCALE && surface\.ownsDocument/,
-        'the check is scoped to the surfaces whose copy goes through the messages pipeline');
+    assert.match(smoke, /locale === PSEUDO_LOCALE && \(surface\.ownsDocument \|\| surface\.localizedInjectedCopy\)/,
+        'the check must cover owned pages and localized injected surfaces');
     assert.match(smoke, /pseudo-locale copy did not render/,
         'a fallback to English must fail the lane, not pass it');
     assert.match(smoke, /grandfathered-literals backlog/,
-        'the reason the injected surfaces are exempt must be written down');
+        'the reason the remaining injected surfaces are exempt must be written down');
 });
 
 test('failures name the lane as pseudo, not as the locale it borrows', () => {
@@ -96,5 +96,13 @@ test('failures name the lane as pseudo, not as the locale it borrows', () => {
 test('every surface runs the pseudo state', () => {
     assert.match(smoke, /const LOCALE_STATES = Object\.freeze\(\['ar', 'de', 'pt_BR', PSEUDO_LOCALE\]\);/);
     const surfaces = [...smoke.matchAll(/localeStates: LOCALE_STATES/g)];
-    assert.equal(surfaces.length, 6, 'all six primary surfaces must share the locale set');
+    assert.equal(surfaces.length, 7, 'all seven primary surfaces must share the locale set');
+});
+
+test('Comment Search pseudo copy has browser-checked line spacing and separation', () => {
+    assert.match(smoke, /surface\.name === 'comment-search' && locale === PSEUDO_LOCALE/);
+    assert.match(smoke, /localized eyebrow gap is/);
+    assert.match(smoke, /localized count gap is/);
+    assert.match(smoke, /metrics\[key\]\.ratio < 1\.65/);
+    assert.match(smoke, /metrics\.count\.ratio < 1\.45/);
 });

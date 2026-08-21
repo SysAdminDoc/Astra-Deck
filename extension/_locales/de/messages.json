@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "Kommentarsuche"
   },
+  "commentSearchCountThread": {
+    "message": "{count} Thread"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} Threads"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} Treffer"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} Treffer"
+  },
+  "commentSearchNoMatches": {
+    "message": "Keine Treffer"
+  },
+  "commentSearchWaiting": {
+    "message": "Kommentare werden geladen…"
+  },
+  "commentSearchSyncHint": {
+    "message": "Die Suchleiste wird automatisch aktualisiert, wenn weitere Kommentare eintreffen."
+  },
+  "commentSearchReadyThread": {
+    "message": "{count} Kommentar-Thread ist zur Suche bereit. Suche nach Erstellern, Ausdrücken oder Themen."
+  },
+  "commentSearchReadyThreads": {
+    "message": "{count} Kommentar-Threads sind zur Suche bereit. Suche nach Erstellern, Ausdrücken oder Themen."
+  },
+  "commentSearchEscapeHint": {
+    "message": "Drücke Esc, um die Suche jederzeit zu löschen. Neue Kommentare werden automatisch mitgezählt."
+  },
+  "commentSearchShowingMatches": {
+    "message": "{visible} von {total} Kommentar-Threads für „{query}“ werden angezeigt."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Mit Weiter oder Zurück im Kommentar-Navigator springst du zwischen Treffern."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "Kommentare für „{query}“ werden geladen…"
+  },
+  "commentSearchActiveHint": {
+    "message": "Deine Suche bleibt aktiv, während YouTube die Kommentarliste lädt."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "Keine Kommentar-Threads entsprechen „{query}“."
+  },
+  "commentSearchShorterHint": {
+    "message": "Versuche einen kürzeren Ausdruck, einen Namen oder lösche den Filter."
+  },
+  "commentSearchEyebrow": {
+    "message": "In Kommentaren suchen"
+  },
+  "commentSearchPlaceholder": {
+    "message": "Ersteller, Ausdrücke oder Themen suchen…"
+  },
+  "commentSearchAria": {
+    "message": "Kommentare durchsuchen"
+  },
+  "commentSearchClearAria": {
+    "message": "Kommentarsuche löschen"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "Keine passenden Kommentare"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Versuche einen kürzeren Ausdruck, einen Namen oder lösche den Filter, um alle Threads zurückzubringen."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "Sprache, in die Kommentare übersetzt werden. Automatisch folgt der Browsersprache."
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} Treffer"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "Keine Treffer"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

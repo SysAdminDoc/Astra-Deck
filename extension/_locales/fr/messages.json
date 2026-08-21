@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "Recherche commentaires"
   },
+  "commentSearchCountThread": {
+    "message": "{count} fil"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} fils"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} résultat"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} résultats"
+  },
+  "commentSearchNoMatches": {
+    "message": "Aucun résultat"
+  },
+  "commentSearchWaiting": {
+    "message": "En attente du chargement des commentaires…"
+  },
+  "commentSearchSyncHint": {
+    "message": "La barre de recherche se mettra à jour à mesure que de nouveaux commentaires arrivent."
+  },
+  "commentSearchReadyThread": {
+    "message": "{count} fil de commentaires est prêt à être parcouru. Recherchez des créateurs, des expressions ou des sujets."
+  },
+  "commentSearchReadyThreads": {
+    "message": "{count} fils de commentaires sont prêts à être parcourus. Recherchez des créateurs, des expressions ou des sujets."
+  },
+  "commentSearchEscapeHint": {
+    "message": "Appuyez sur Échap pour effacer à tout moment. Les nouveaux commentaires restent comptés automatiquement."
+  },
+  "commentSearchShowingMatches": {
+    "message": "Affichage de {visible} fils de commentaires sur {total} pour « {query} »."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Utilisez Suivant ou Précédent dans le navigateur de commentaires pour passer d’un résultat à l’autre."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "En attente du chargement des commentaires pour « {query} »…"
+  },
+  "commentSearchActiveHint": {
+    "message": "Votre recherche reste active pendant que YouTube charge la liste des commentaires."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "Aucun fil de commentaires ne correspond à « {query} »."
+  },
+  "commentSearchShorterHint": {
+    "message": "Essayez une expression plus courte, un nom de créateur ou effacez le filtre."
+  },
+  "commentSearchEyebrow": {
+    "message": "Rechercher dans les commentaires"
+  },
+  "commentSearchPlaceholder": {
+    "message": "Rechercher des créateurs, des expressions ou des sujets…"
+  },
+  "commentSearchAria": {
+    "message": "Rechercher des commentaires"
+  },
+  "commentSearchClearAria": {
+    "message": "Effacer la recherche dans les commentaires"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "Aucun commentaire correspondant"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Essayez une expression plus courte, un nom de créateur ou effacez le filtre pour réafficher tous les fils."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "Langue de traduction des commentaires. Automatique suit la langue du navigateur."
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} résultats"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "Aucun résultat"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

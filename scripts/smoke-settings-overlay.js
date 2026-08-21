@@ -212,7 +212,8 @@ const CHROME_STUB = `'use strict';
         },
         i18n: {
             getMessage: () => '',
-            getUILanguage: () => document.documentElement.dir === 'rtl' ? 'ar' : 'en'
+            getUILanguage: () => new URLSearchParams(location.search).get('locale')
+                || (document.documentElement.dir === 'rtl' ? 'ar' : 'en')
         },
         permissions: {
             contains: (request, cb) => settle(
@@ -255,6 +256,7 @@ const CHROME_STUB = `'use strict';
         },
         listenerCount: () => messageListeners.length,
         permissionOrigins: () => Array.from(permissionOrigins),
+        readLocale: () => store._localeOverride || '',
         readSettings: () => clone(store.ytSuiteSettings || {}),
         writeSettings(patch) {
             const oldValue = clone(store.ytSuiteSettings || {});
@@ -682,6 +684,11 @@ if (new URLSearchParams(location.search).get('theme') === 'light') {
 <style>
 body{margin:0;background:#0f0f0f;color:#e5e7eb;font-family:Roboto,system-ui,sans-serif;}
 html:not([dark]) body{background:#f7f8fa;color:#17202b;}
+ytd-comments,ytd-comments-header-renderer,ytd-comment-thread-renderer{display:block;}
+ytd-comments{max-width:860px;margin:24px auto;padding:0 20px;}
+ytd-comments-header-renderer{font-size:22px;font-weight:700;margin-bottom:16px;}
+ytd-comment-thread-renderer{margin:10px 0;padding:14px 16px;border:1px solid rgba(148,163,184,.24);border-radius:14px;background:rgba(30,41,59,.38);}
+html:not([dark]) ytd-comment-thread-renderer{background:#fff;border-color:#d9dee8;}
 </style>
 </head>
 <body>
@@ -690,6 +697,12 @@ html:not([dark]) body{background:#f7f8fa;color:#17202b;}
         <div id="top-level-buttons-computed"></div>
         <div id="secondary"></div>
     </ytd-watch-flexy>
+    <ytd-comments id="comments">
+        <ytd-comments-header-renderer id="header">Comments</ytd-comments-header-renderer>
+        <ytd-comment-thread-renderer><div id="content-text">The accessibility details made this workflow much easier.</div></ytd-comment-thread-renderer>
+        <ytd-comment-thread-renderer><div id="content-text">A thoughtful chapter about keyboard navigation.</div></ytd-comment-thread-renderer>
+        <ytd-comment-thread-renderer><div id="content-text">The color palette looks excellent on my display.</div></ytd-comment-thread-renderer>
+    </ytd-comments>
     <button id="fixture-download-anchor" type="button">Download fixture</button>
 ${scriptTags}
 </body>
@@ -779,7 +792,11 @@ class DevtoolsClient {
     async evaluate(expression) {
         const result = await this.send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
         if (result.exceptionDetails) {
-            throw new Error(`page evaluate failed: ${result.exceptionDetails.text || 'exception'}`);
+            const detail = result.exceptionDetails.exception?.description
+                || result.exceptionDetails.exception?.value
+                || result.exceptionDetails.text
+                || 'exception';
+            throw new Error(`page evaluate failed: ${detail}`);
         }
         return result.result?.value;
     }

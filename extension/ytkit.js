@@ -300,9 +300,6 @@
         })();
         return _i18n.loading;
     }
-    // Kick off override load early; t() uses chrome.i18n until it resolves.
-    _loadLocaleOverride();
-
     function t(key, fallback) {
         try {
             if (_i18n.overrideMap && Object.prototype.hasOwnProperty.call(_i18n.overrideMap, key)) {
@@ -1108,6 +1105,10 @@ return response;
     });
     installStorageFlushGuards();
     await preloadExtensionState();
+    // storageRead() is cache-backed. Resolve the manual locale only after the
+    // extension-local preload has populated that cache, otherwise injected
+    // YouTube surfaces silently fall back to English for the whole page.
+    await _loadLocaleOverride();
     await hydrateStoredSelectorAsset();
 
     // Bridge to page context for reading ytInitialPlayerResponse from DOM
@@ -8990,8 +8991,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     #comments .ytkit-comment-search-copy {
                         display: grid !important;
-                        gap: 4px !important;
+                        gap: 8px !important;
                         min-width: 0 !important;
+                        overflow-wrap: anywhere !important;
                     }
 
                     #comments .ytkit-comment-search-eyebrow {
@@ -8999,6 +9001,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         font-size: 10px !important;
                         font-weight: 800 !important;
                         letter-spacing: 0.12em !important;
+                        line-height: 1.7 !important;
                         text-transform: uppercase !important;
                     }
 
@@ -9006,7 +9009,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0 !important;
                         color: rgba(255, 255, 255, 0.92) !important;
                         font-size: 12.5px !important;
-                        line-height: 1.45 !important;
+                        line-height: 1.7 !important;
                         font-weight: 600 !important;
                         text-wrap: pretty !important;
                     }
@@ -9016,6 +9019,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         grid-template-columns: auto minmax(0, 1fr) auto !important;
                         align-items: center !important;
                         gap: 10px !important;
+                        min-width: 0 !important;
                         min-height: 48px !important;
                         padding: 0 14px !important;
                         border-radius: 12px !important;
@@ -9039,6 +9043,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         font-size: 13px !important;
                         font-weight: 600 !important;
                         outline: none !important;
+                        text-overflow: ellipsis !important;
                     }
 
                     #comments .ytkit-comment-search-input:focus-visible,
@@ -9097,9 +9102,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
-                        min-height: 34px !important;
+                        min-height: 38px !important;
                         min-width: 96px !important;
-                        padding: 0 12px !important;
+                        padding: 4px 12px !important;
                         border-radius: 10px !important;
                         background: rgba(255, 255, 255, 0.05) !important;
                         border: 1px solid rgba(255, 255, 255, 0.06) !important;
@@ -9107,8 +9112,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         font-size: 10px !important;
                         font-weight: 800 !important;
                         letter-spacing: 0.08em !important;
+                        line-height: 1.5 !important;
+                        text-align: center !important;
                         text-transform: uppercase !important;
-                        white-space: nowrap !important;
+                        white-space: normal !important;
                         font-variant-numeric: tabular-nums !important;
                     }
 
@@ -9116,7 +9123,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: rgba(255, 255, 255, 0.56) !important;
                         font-size: 11px !important;
                         font-weight: 600 !important;
-                        line-height: 1.45 !important;
+                        line-height: 1.7 !important;
+                        overflow-wrap: anywhere !important;
                         text-wrap: pretty !important;
                     }
 
@@ -9137,12 +9145,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: rgba(255, 255, 255, 0.96) !important;
                         font-size: 13px !important;
                         font-weight: 700 !important;
+                        line-height: 1.55 !important;
                     }
 
                     #comments .ytkit-comment-search-empty-copy {
                         color: rgba(255, 255, 255, 0.68) !important;
                         font-size: 11.5px !important;
-                        line-height: 1.5 !important;
+                        line-height: 1.65 !important;
                         text-wrap: pretty !important;
                     }
 
@@ -25473,8 +25482,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'commentSearch',
-            name: 'Comment Search',
-            description: 'Adds a search bar above comments to filter and find specific comments',
+            name: t('feature_commentSearch_name', 'Comment Search'),
+            description: t('feature_commentSearch_desc', 'Adds a search bar above comments to filter and find specific comments'),
             group: 'Comments',
             icon: 'search',
             _bar: null,
@@ -25486,6 +25495,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _emptyEl: null,
             _createTimer: null,
             _applyTimer: null,
+            _styleEl: null,
             _textCache: null,
             _lastThreadCount: 0,
             _scheduleCreate(delay = 3000) {
@@ -25558,26 +25568,63 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._bar.dataset.searchEmpty = hasQuery && hasThreads && !hasMatches ? '1' : '0';
 
                 this._countEl.textContent = !hasQuery
-                    ? `${formattedTotal} Thread${total === 1 ? '' : 's'}`
+                    ? t(
+                        total === 1 ? 'commentSearchCountThread' : 'commentSearchCountThreads',
+                        total === 1 ? '{count} thread' : '{count} threads'
+                    ).replace('{count}', formattedTotal)
                     : hasMatches
-                        ? `${formattedVisible} Match${visible === 1 ? '' : 'es'}`
-                        : 'No Matches';
+                        ? t(
+                            visible === 1 ? 'commentSearchCountMatch' : 'commentSearchCountMatches',
+                            visible === 1 ? '{count} match' : '{count} matches'
+                        ).replace('{count}', formattedVisible)
+                        : t('commentSearchNoMatches', 'No matches');
 
                 if (!hasQuery && !hasThreads) {
-                    this._summaryEl.textContent = 'Waiting for comments to load…';
-                    this._hintEl.textContent = 'The search bar will stay in sync as more comments arrive.';
+                    this._summaryEl.textContent = t('commentSearchWaiting', 'Waiting for comments to load…');
+                    this._hintEl.textContent = t(
+                        'commentSearchSyncHint',
+                        'The search bar will stay in sync as more comments arrive.'
+                    );
                 } else if (!hasQuery) {
-                    this._summaryEl.textContent = `${formattedTotal} comment thread${total === 1 ? ' is' : 's are'} ready to scan. Search creators, phrases, or topics.`;
-                    this._hintEl.textContent = 'Press Esc to clear anytime. New comments stay counted automatically.';
+                    this._summaryEl.textContent = t(
+                        total === 1 ? 'commentSearchReadyThread' : 'commentSearchReadyThreads',
+                        total === 1
+                            ? '{count} comment thread is ready to scan. Search creators, phrases, or topics.'
+                            : '{count} comment threads are ready to scan. Search creators, phrases, or topics.'
+                    ).replace('{count}', formattedTotal);
+                    this._hintEl.textContent = t(
+                        'commentSearchEscapeHint',
+                        'Press Esc to clear anytime. New comments stay counted automatically.'
+                    );
                 } else if (hasMatches) {
-                    this._summaryEl.textContent = `Showing ${formattedVisible} of ${formattedTotal} comment threads for “${query}”.`;
-                    this._hintEl.textContent = 'Use Next or Previous in Comment Navigator to jump between matches.';
+                    this._summaryEl.textContent = t(
+                        'commentSearchShowingMatches',
+                        'Showing {visible} of {total} comment threads for “{query}”.'
+                    ).replace('{visible}', formattedVisible)
+                        .replace('{total}', formattedTotal)
+                        .replace('{query}', query);
+                    this._hintEl.textContent = t(
+                        'commentSearchNavigatorHint',
+                        'Use Next or Previous in Comment Navigator to jump between matches.'
+                    );
                 } else if (!hasThreads) {
-                    this._summaryEl.textContent = `Waiting for comments to load for “${query}”…`;
-                    this._hintEl.textContent = 'Your search stays active while YouTube loads the comment list.';
+                    this._summaryEl.textContent = t(
+                        'commentSearchWaitingForQuery',
+                        'Waiting for comments to load for “{query}”…'
+                    ).replace('{query}', query);
+                    this._hintEl.textContent = t(
+                        'commentSearchActiveHint',
+                        'Your search stays active while YouTube loads the comment list.'
+                    );
                 } else {
-                    this._summaryEl.textContent = `No comment threads match “${query}”.`;
-                    this._hintEl.textContent = 'Try a shorter phrase, a creator name, or clear the filter.';
+                    this._summaryEl.textContent = t(
+                        'commentSearchNoThreadsForQuery',
+                        'No comment threads match “{query}”.'
+                    ).replace('{query}', query);
+                    this._hintEl.textContent = t(
+                        'commentSearchShorterHint',
+                        'Try a shorter phrase, a creator name, or clear the filter.'
+                    );
                 }
 
                 this._clearBtn.disabled = !hasQuery;
@@ -25632,11 +25679,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const eyebrow = document.createElement('span');
                 eyebrow.className = 'ytkit-comment-search-eyebrow';
-                eyebrow.textContent = 'Find in Comments';
+                eyebrow.textContent = t('commentSearchEyebrow', 'Find in Comments');
 
                 const summary = document.createElement('p');
                 summary.className = 'ytkit-comment-search-summary';
-                summary.textContent = 'Waiting for comments to load…';
+                summary.textContent = t('commentSearchWaiting', 'Waiting for comments to load…');
                 summary.setAttribute('aria-live', 'polite');
                 summary.setAttribute('aria-atomic', 'true');
 
@@ -25652,23 +25699,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 input.type = 'search';
                 input.className = 'ytkit-comment-search-input';
                 input.name = 'commentSearch';
-                input.placeholder = 'Search creators, phrases, or topics…';
+                input.placeholder = t('commentSearchPlaceholder', 'Search creators, phrases, or topics…');
                 input.autocomplete = 'off';
                 input.inputMode = 'search';
                 input.spellcheck = false;
-                input.setAttribute('aria-label', 'Search comments');
+                input.setAttribute('aria-label', t('commentSearchAria', 'Search comments'));
 
                 const countEl = document.createElement('span');
                 countEl.className = 'ytkit-search-count';
-                countEl.textContent = '0 Threads';
+                countEl.textContent = t('commentSearchCountThreads', '{count} threads').replace('{count}', '0');
                 countEl.setAttribute('aria-live', 'polite');
                 countEl.setAttribute('aria-atomic', 'true');
 
                 const clearBtn = document.createElement('button');
                 clearBtn.type = 'button';
                 clearBtn.className = 'ytkit-comment-search-clear';
-                clearBtn.setAttribute('aria-label', 'Clear comment search');
-                clearBtn.title = 'Clear search';
+                clearBtn.setAttribute('aria-label', t('commentSearchClearAria', 'Clear comment search'));
+                clearBtn.title = t('panelSearchClearTitle', 'Clear search');
                 clearBtn.hidden = true;
                 clearBtn.disabled = true;
                 const clearIcon = ICONS.close();
@@ -25692,7 +25739,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const hint = document.createElement('div');
                 hint.className = 'ytkit-comment-search-hint';
-                hint.textContent = 'The search bar will stay in sync as more comments arrive.';
+                hint.textContent = t(
+                    'commentSearchSyncHint',
+                    'The search bar will stay in sync as more comments arrive.'
+                );
 
                 const empty = document.createElement('div');
                 empty.className = 'ytkit-comment-search-empty';
@@ -25701,16 +25751,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const emptyTitle = document.createElement('div');
                 emptyTitle.className = 'ytkit-comment-search-empty-title';
-                emptyTitle.textContent = 'No Matching Comments';
+                emptyTitle.textContent = t('commentSearchEmptyTitle', 'No matching comments');
 
                 const emptyCopy = document.createElement('div');
                 emptyCopy.className = 'ytkit-comment-search-empty-copy';
-                emptyCopy.textContent = 'Try a shorter phrase, a creator name, or clear the filter to bring every thread back.';
+                emptyCopy.textContent = t(
+                    'commentSearchEmptyCopy',
+                    'Try a shorter phrase, a creator name, or clear the filter to bring every thread back.'
+                );
 
                 const emptyClear = document.createElement('button');
                 emptyClear.type = 'button';
                 emptyClear.className = 'ytkit-comment-search-empty-btn';
-                emptyClear.textContent = 'Clear Search';
+                emptyClear.textContent = t('panelSearchStateClear', 'Clear search');
                 emptyClear.addEventListener('click', () => {
                     this._clearSearch({ focusInput: true });
                 });
@@ -25747,6 +25800,252 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
+                this._styleEl?.remove();
+                this._styleEl = injectStyle(`
+                    #comments .ytkit-comment-search {
+                        --ytkit-comment-search-surface: rgba(8, 11, 18, 0.94);
+                        --ytkit-comment-search-surface-raised: rgba(255, 255, 255, 0.045);
+                        --ytkit-comment-search-border: rgba(255, 255, 255, 0.09);
+                        --ytkit-comment-search-text: rgba(255, 255, 255, 0.94);
+                        --ytkit-comment-search-muted: rgba(255, 255, 255, 0.62);
+                        --ytkit-comment-search-subtle: rgba(255, 255, 255, 0.46);
+                        box-sizing: border-box !important;
+                        display: grid !important;
+                        gap: 12px !important;
+                        width: 100% !important;
+                        margin: 12px 0 16px !important;
+                        padding: 14px !important;
+                        border: 1px solid var(--ytkit-comment-search-border) !important;
+                        border-radius: 14px !important;
+                        background:
+                            radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.13), transparent 44%),
+                            var(--ytkit-comment-search-surface) !important;
+                        color: var(--ytkit-comment-search-text) !important;
+                        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+                    }
+                    #comments .ytkit-comment-search *,
+                    #comments .ytkit-comment-search *::before,
+                    #comments .ytkit-comment-search *::after {
+                        box-sizing: border-box !important;
+                    }
+                    #comments .ytkit-comment-search[data-search-empty="1"] {
+                        border-color: rgba(245, 158, 11, 0.34) !important;
+                    }
+                    #comments .ytkit-comment-search-head {
+                        display: flex !important;
+                        align-items: flex-start !important;
+                        justify-content: space-between !important;
+                        gap: 12px !important;
+                    }
+                    #comments .ytkit-comment-search-copy {
+                        display: grid !important;
+                        gap: 8px !important;
+                        min-width: 0 !important;
+                    }
+                    #comments .ytkit-comment-search-eyebrow {
+                        color: var(--ytkit-comment-search-subtle) !important;
+                        font-size: 10px !important;
+                        font-weight: 800 !important;
+                        letter-spacing: 0.12em !important;
+                        line-height: 1.7 !important;
+                        text-transform: uppercase !important;
+                    }
+                    #comments .ytkit-comment-search-summary {
+                        margin: 0 !important;
+                        color: var(--ytkit-comment-search-text) !important;
+                        font-size: 12.5px !important;
+                        font-weight: 600 !important;
+                        line-height: 1.7 !important;
+                        text-wrap: pretty !important;
+                    }
+                    #comments .ytkit-search-count {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        min-width: 96px !important;
+                        min-height: 38px !important;
+                        padding: 4px 12px !important;
+                        border: 1px solid var(--ytkit-comment-search-border) !important;
+                        border-radius: 10px !important;
+                        background: var(--ytkit-comment-search-surface-raised) !important;
+                        color: var(--ytkit-comment-search-muted) !important;
+                        font-size: 10px !important;
+                        font-weight: 800 !important;
+                        font-variant-numeric: tabular-nums !important;
+                        letter-spacing: 0.08em !important;
+                        line-height: 1.5 !important;
+                        text-align: center !important;
+                        text-transform: uppercase !important;
+                        white-space: normal !important;
+                    }
+                    #comments .ytkit-comment-search-field {
+                        display: grid !important;
+                        grid-template-columns: auto minmax(0, 1fr) auto !important;
+                        align-items: center !important;
+                        gap: 10px !important;
+                        min-height: 48px !important;
+                        padding: 0 14px !important;
+                        border: 1px solid var(--ytkit-comment-search-border) !important;
+                        border-radius: 12px !important;
+                        background: var(--ytkit-comment-search-surface-raised) !important;
+                        transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease !important;
+                    }
+                    #comments .ytkit-comment-search-field:focus-within {
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.42) !important;
+                        box-shadow: 0 0 0 4px rgba(var(--ytkit-accent-rgb), 0.1) !important;
+                    }
+                    #comments .ytkit-comment-search-input {
+                        width: 100% !important;
+                        min-width: 0 !important;
+                        min-height: 42px !important;
+                        padding: 0 !important;
+                        border: 0 !important;
+                        outline: 0 !important;
+                        background: transparent !important;
+                        color: var(--ytkit-comment-search-text) !important;
+                        font: 600 13px/1.4 Roboto, Arial, sans-serif !important;
+                        appearance: none !important;
+                        text-overflow: ellipsis !important;
+                    }
+                    #comments .ytkit-comment-search-input::-webkit-search-cancel-button {
+                        display: none !important;
+                    }
+                    #comments .ytkit-comment-search-input::placeholder {
+                        color: var(--ytkit-comment-search-subtle) !important;
+                        opacity: 1 !important;
+                    }
+                    #comments .ytkit-comment-search-icon {
+                        display: block !important;
+                        width: 17px !important;
+                        height: 17px !important;
+                        color: var(--ytkit-comment-search-muted) !important;
+                        fill: none !important;
+                        flex: 0 0 17px !important;
+                    }
+                    #comments .ytkit-comment-search-clear,
+                    #comments .ytkit-comment-search-empty-btn {
+                        border: 1px solid var(--ytkit-comment-search-border) !important;
+                        background: var(--ytkit-comment-search-surface-raised) !important;
+                        color: var(--ytkit-comment-search-text) !important;
+                        cursor: pointer !important;
+                        touch-action: manipulation !important;
+                    }
+                    #comments .ytkit-comment-search-clear {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: 34px !important;
+                        height: 34px !important;
+                        padding: 0 !important;
+                        border-radius: 10px !important;
+                    }
+                    #comments .ytkit-comment-search-clear[hidden] {
+                        display: none !important;
+                    }
+                    #comments .ytkit-comment-search-clear svg {
+                        width: 14px !important;
+                        height: 14px !important;
+                    }
+                    #comments .ytkit-comment-search-clear:hover:not(:disabled),
+                    #comments .ytkit-comment-search-empty-btn:hover {
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.34) !important;
+                        background: rgba(var(--ytkit-accent-rgb), 0.16) !important;
+                    }
+                    #comments .ytkit-comment-search-input:focus-visible,
+                    #comments .ytkit-comment-search-clear:focus-visible,
+                    #comments .ytkit-comment-search-empty-btn:focus-visible {
+                        outline: 2px solid rgba(var(--ytkit-accent-rgb), 0.62) !important;
+                        outline-offset: 2px !important;
+                    }
+                    #comments .ytkit-comment-search-hint {
+                        color: var(--ytkit-comment-search-muted) !important;
+                        font-size: 11px !important;
+                        font-weight: 600 !important;
+                        line-height: 1.7 !important;
+                        overflow-wrap: anywhere !important;
+                        text-wrap: pretty !important;
+                    }
+                    #comments .ytkit-comment-search-empty {
+                        display: grid !important;
+                        gap: 9px !important;
+                        padding: 14px !important;
+                        border: 1px solid rgba(245, 158, 11, 0.24) !important;
+                        border-radius: 12px !important;
+                        background: rgba(245, 158, 11, 0.08) !important;
+                    }
+                    #comments .ytkit-comment-search-empty[hidden] {
+                        display: none !important;
+                    }
+                    #comments .ytkit-comment-search-empty-title {
+                        color: var(--ytkit-comment-search-text) !important;
+                        font-size: 13px !important;
+                        font-weight: 750 !important;
+                        line-height: 1.55 !important;
+                    }
+                    #comments .ytkit-comment-search-empty-copy {
+                        color: var(--ytkit-comment-search-muted) !important;
+                        font-size: 11.5px !important;
+                        line-height: 1.65 !important;
+                    }
+                    #comments .ytkit-comment-search-empty-btn {
+                        justify-self: start !important;
+                        min-height: 36px !important;
+                        padding: 0 14px !important;
+                        border-radius: 10px !important;
+                        font-size: 11px !important;
+                        font-weight: 700 !important;
+                    }
+                    html:not([dark]) #comments .ytkit-comment-search {
+                        --ytkit-comment-search-surface: rgba(255, 255, 255, 0.98);
+                        --ytkit-comment-search-surface-raised: rgba(15, 23, 42, 0.045);
+                        --ytkit-comment-search-border: rgba(15, 23, 42, 0.14);
+                        --ytkit-comment-search-text: rgba(15, 23, 42, 0.94);
+                        --ytkit-comment-search-muted: rgba(30, 41, 59, 0.74);
+                        --ytkit-comment-search-subtle: rgba(51, 65, 85, 0.72);
+                        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments .ytkit-comment-search {
+                        padding: 12px !important;
+                        gap: 10px !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments .ytkit-comment-search-head {
+                        flex-direction: column !important;
+                        align-items: stretch !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments .ytkit-search-count {
+                        align-self: flex-start !important;
+                    }
+                    @media (max-width: 520px) {
+                        #comments .ytkit-comment-search {
+                            padding: 12px !important;
+                            gap: 10px !important;
+                        }
+                        #comments .ytkit-comment-search-head {
+                            flex-direction: column !important;
+                            align-items: stretch !important;
+                        }
+                        #comments .ytkit-search-count {
+                            align-self: flex-start !important;
+                        }
+                    }
+                    @media (forced-colors: active) {
+                        #comments .ytkit-comment-search,
+                        #comments .ytkit-comment-search-field,
+                        #comments .ytkit-comment-search-empty,
+                        #comments .ytkit-comment-search-clear,
+                        #comments .ytkit-comment-search-empty-btn {
+                            border-color: CanvasText !important;
+                            background: Canvas !important;
+                            color: CanvasText !important;
+                            box-shadow: none !important;
+                        }
+                    }
+                    @media (prefers-reduced-motion: reduce) {
+                        #comments .ytkit-comment-search * {
+                            transition: none !important;
+                        }
+                    }
+                `, `${this.id}-ui`, true);
                 addNavigateRule('commentSearch', () => {
                     this._bar?.remove(); this._bar = null;
                     this._input = null;
@@ -25778,6 +26077,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._applyTimer) clearTimeout(this._applyTimer);
                 this._createTimer = null;
                 this._applyTimer = null;
+                this._styleEl?.remove();
+                this._styleEl = null;
                 removeNavigateRule('commentSearch');
                 removeMutationRule('commentSearch');
                 document.querySelectorAll('ytd-comment-thread-renderer[data-ytkit-comment-search-hidden="1"]').forEach((thread) => {

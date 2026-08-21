@@ -147,6 +147,25 @@ const SURFACES = Object.freeze([
         focusTrap: Object.freeze({ root: '.ytkit-dl-popup' }),
         localeStates: LOCALE_STATES,
     }),
+    Object.freeze({
+        name: 'comment-search',
+        page: 'fixture.html',
+        httpPath: '/watch?v=comment-search-smoke',
+        selector: '.ytkit-comment-search',
+        ready: 'Boolean(document.querySelector(".ytkit-comment-search")?.querySelector("input[type=search]"))',
+        prepare: `(() => {
+            document.getElementById('fixture-note')?.setAttribute('hidden', '');
+            const downloadAnchor = document.getElementById('fixture-download-anchor');
+            if (downloadAnchor) downloadAnchor.style.display = 'none';
+            return globalThis.__ytkitSmoke.writeSettings({ commentSearch: true });
+        })()`,
+        width: 960,
+        height: 800,
+        settleMs: 300,
+        themes: Object.freeze(['dark', 'light']),
+        localeStates: LOCALE_STATES,
+        localizedInjectedCopy: true,
+    }),
 ]);
 
 const REAL_EXTENSION_SURFACES = Object.freeze([
@@ -271,6 +290,51 @@ function stagePseudoLocale(stageDir) {
 
 function fileUrl(filePath) {
     return `file:///${filePath.split(path.sep).join('/')}`;
+}
+
+async function startFixtureServer(stageDir) {
+    const root = path.resolve(stageDir);
+    const contentTypes = {
+        '.css': 'text/css; charset=utf-8',
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'text/javascript; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+        '.mjs': 'text/javascript; charset=utf-8',
+        '.svg': 'image/svg+xml',
+    };
+    const server = http.createServer((request, response) => {
+        const requestUrl = new URL(request.url || '/', 'http://127.0.0.1');
+        const relative = requestUrl.pathname === '/watch'
+            ? 'fixture.html'
+            : decodeURIComponent(requestUrl.pathname).replace(/^\/+/, '');
+        const target = path.resolve(root, relative || 'fixture.html');
+        if (target !== root && !target.startsWith(`${root}${path.sep}`)) {
+            response.writeHead(403).end('Forbidden');
+            return;
+        }
+        fs.readFile(target, (error, body) => {
+            if (error) {
+                response.writeHead(error.code === 'ENOENT' ? 404 : 500).end('Not found');
+                return;
+            }
+            response.writeHead(200, {
+                'Cache-Control': 'no-store',
+                'Content-Type': contentTypes[path.extname(target).toLowerCase()] || 'application/octet-stream',
+            });
+            response.end(body);
+        });
+    });
+    await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', resolve);
+    });
+    const address = server.address();
+    return {
+        origin: `http://127.0.0.1:${address.port}`,
+        async close() {
+            await new Promise((resolve) => server.close(resolve));
+        },
+    };
 }
 
 function httpGetJson(url, timeoutMs = 3000) {
@@ -767,8 +831,10 @@ async function configureRenderedState(client, surface, theme, mode) {
     return { width, height };
 }
 
-async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = 'dark', locale = '') {
-    const url = new URL(fileUrl(path.join(stageDir, surface.page)));
+async function navigateToSurface(client, stageDir, surface, timeoutMs, theme = 'dark', locale = '', fixtureOrigin = '') {
+    const url = surface.httpPath
+        ? new URL(surface.httpPath, fixtureOrigin)
+        : new URL(fileUrl(path.join(stageDir, surface.page)));
     url.searchParams.set('theme', theme);
     if (locale) url.searchParams.set('locale', locale);
     if (surface.settingsDiff) url.searchParams.set('settingsDiff', '1');
@@ -809,6 +875,23 @@ async function auditLocaleReflow(client, surface, locale, stateName) {
             document.body ? document.body.scrollWidth - root.clientWidth : 0
         );
         const viewport = root.clientWidth;
+        const commentSearch = document.querySelector('.ytkit-comment-search');
+        const textMetric = (selector) => {
+            const element = commentSearch?.querySelector(selector);
+            if (!element) return null;
+            const style = getComputedStyle(element);
+            const fontSize = Number.parseFloat(style.fontSize);
+            const lineHeight = Number.parseFloat(style.lineHeight);
+            return {
+                fontSize,
+                lineHeight,
+                ratio: fontSize > 0 ? lineHeight / fontSize : 0,
+            };
+        };
+        const eyebrowRect = commentSearch?.querySelector('.ytkit-comment-search-eyebrow')?.getBoundingClientRect();
+        const summaryRect = commentSearch?.querySelector('.ytkit-comment-search-summary')?.getBoundingClientRect();
+        const copyRect = commentSearch?.querySelector('.ytkit-comment-search-copy')?.getBoundingClientRect();
+        const countRect = commentSearch?.querySelector('.ytkit-search-count')?.getBoundingClientRect();
         // Report the worst offenders so a failure names the element to fix
         // rather than only the surface.
         const wide = [];
@@ -833,6 +916,14 @@ async function auditLocaleReflow(client, surface, locale, stateName) {
             viewport,
             lang: root.lang || '',
             dir: root.dir || getComputedStyle(root).direction || '',
+            commentSearchTypography: commentSearch ? {
+                copyGap: eyebrowRect && summaryRect ? summaryRect.top - eyebrowRect.bottom : -1,
+                headGap: copyRect && countRect ? countRect.top - copyRect.bottom : -1,
+                eyebrow: textMetric('.ytkit-comment-search-eyebrow'),
+                summary: textMetric('.ytkit-comment-search-summary'),
+                hint: textMetric('.ytkit-comment-search-hint'),
+                count: textMetric('.ytkit-search-count'),
+            } : null,
             wide
         };
     })()`);
@@ -844,6 +935,23 @@ async function auditLocaleReflow(client, surface, locale, stateName) {
     }
     if (result.wide.length) {
         failures.push(`controls spill outside the viewport: ${result.wide.join(', ')}`);
+    }
+    if (surface.name === 'comment-search' && locale === PSEUDO_LOCALE) {
+        const metrics = result.commentSearchTypography;
+        if (!metrics) {
+            failures.push('Comment Search typography metrics are missing');
+        } else {
+            if (metrics.copyGap < 7) failures.push(`localized eyebrow gap is ${metrics.copyGap.toFixed(1)}px`);
+            if (metrics.headGap < 11) failures.push(`localized count gap is ${metrics.headGap.toFixed(1)}px`);
+            for (const key of ['eyebrow', 'summary', 'hint']) {
+                if (!metrics[key] || metrics[key].ratio < 1.65) {
+                    failures.push(`${key} line-height ratio is ${metrics[key]?.ratio?.toFixed(2) || 'missing'}`);
+                }
+            }
+            if (!metrics.count || metrics.count.ratio < 1.45) {
+                failures.push(`count line-height ratio is ${metrics.count?.ratio?.toFixed(2) || 'missing'}`);
+            }
+        }
     }
     // lang/dir belong to whoever owns the document. The in-page surfaces
     // (settings, transcript, download) are injected into YouTube's document and
@@ -921,6 +1029,80 @@ async function captureSurface(client, surface, theme) {
     });
     const output = path.join(OUT_DIR, `${surface.name}-${theme}.png`);
     fs.writeFileSync(output, Buffer.from(image.data, 'base64'));
+}
+
+async function auditCommentSearchStates(client, surface, stateName) {
+    if (surface.name !== 'comment-search') return 0;
+    client.context = `${surface.name}/${stateName} rendered states`;
+    const result = await client.evaluate(`(async () => {
+        const bar = document.querySelector('.ytkit-comment-search');
+        const input = bar?.querySelector('.ytkit-comment-search-input');
+        const clear = bar?.querySelector('.ytkit-comment-search-clear');
+        const empty = bar?.querySelector('.ytkit-comment-search-empty');
+        const emptyClear = bar?.querySelector('.ytkit-comment-search-empty-btn');
+        const field = bar?.querySelector('.ytkit-comment-search-field');
+        const icon = bar?.querySelector('.ytkit-comment-search-icon');
+        const threads = Array.from(document.querySelectorAll('ytd-comment-thread-renderer'));
+        const failures = [];
+        const waitForFilter = () => new Promise((resolve) => setTimeout(resolve, 260));
+        if (!bar || !input || !clear || !empty || !emptyClear || !field || !icon) {
+            return { failures: ['Comment Search controls are missing'], checks: 0 };
+        }
+        const barRect = bar.getBoundingClientRect();
+        const inputRect = input.getBoundingClientRect();
+        const iconRect = icon.getBoundingClientRect();
+        if (barRect.height < 120 || barRect.height > 420) failures.push('surface height is ' + Math.round(barRect.height) + 'px');
+        if (inputRect.width < 120 || inputRect.height < 36) failures.push('search input is collapsed at ' + Math.round(inputRect.width) + 'x' + Math.round(inputRect.height));
+        if (iconRect.width > 24 || iconRect.height > 24) failures.push('search icon escaped its 24px bounds');
+        if (getComputedStyle(field).display !== 'grid') failures.push('search field component styles are missing');
+        if (!clear.hidden) failures.push('initial clear control should be hidden');
+        if (threads.length !== 3) failures.push('fixture expected 3 comment threads, found ' + threads.length);
+        if (bar.dataset.searchActive !== '0') failures.push('initial state is marked active');
+        if (threads.some((thread) => thread.style.display === 'none')) failures.push('initial state hides a thread');
+
+        input.value = 'accessibility';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await waitForFilter();
+        const matchHidden = threads.filter((thread) => thread.style.display === 'none').length;
+        if (bar.dataset.searchActive !== '1' || bar.dataset.searchEmpty !== '0') {
+            failures.push('matching query state flags are wrong');
+        }
+        if (matchHidden !== 2) failures.push('matching query hid ' + matchHidden + ' threads, expected 2');
+
+        input.value = 'no such comment';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await waitForFilter();
+        const noMatchHidden = threads.filter((thread) => thread.style.display === 'none').length;
+        if (bar.dataset.searchEmpty !== '1') failures.push('no-match state is not marked empty');
+        if (noMatchHidden !== 3) failures.push('no-match query hid ' + noMatchHidden + ' threads, expected 3');
+        if (empty.hidden || !empty.getClientRects().length) failures.push('no-match recovery card is not visible');
+        if (clear.hidden || clear.disabled) failures.push('no-match clear control is unavailable');
+
+        return {
+            failures,
+            checks: 14,
+            emptyTitle: empty.querySelector('.ytkit-comment-search-empty-title')?.textContent?.trim() || ''
+        };
+    })()`);
+    if (result.failures.length) {
+        throw new Error(`${surface.name}/${stateName}: ${result.failures.join('; ')}`);
+    }
+    await captureSurface(client, surface, `${stateName.replace('/', '-')}-empty`);
+    const restored = await client.evaluate(`(async () => {
+        document.querySelector('.ytkit-comment-search-empty-btn')?.click();
+        await new Promise((resolve) => setTimeout(resolve, 60));
+        const input = document.querySelector('.ytkit-comment-search-input');
+        const hidden = Array.from(document.querySelectorAll('ytd-comment-thread-renderer'))
+            .filter((thread) => thread.style.display === 'none').length;
+        return { hidden, value: input?.value || '', focused: document.activeElement === input };
+    })()`);
+    if (restored.hidden !== 0 || restored.value !== '' || !restored.focused) {
+        throw new Error(
+            `${surface.name}/${stateName}: clear recovery left ${restored.hidden} hidden thread(s), `
+            + `value ${JSON.stringify(restored.value)}, focused ${restored.focused}`
+        );
+    }
+    return result.checks + 3;
 }
 
 async function auditPopupSettingsDiff(client, surface, stateName) {
@@ -1206,16 +1388,16 @@ async function auditShortsSettingsSection(client, surface, stateName) {
     return (SHORTS_SETTING_KEYS.length * 2) + 5;
 }
 
-async function auditSurface(client, stageDir, surface, timeoutMs) {
+async function auditSurface(client, stageDir, surface, timeoutMs, fixtureOrigin = '') {
     const reports = [];
     for (const theme of surface.themes) {
         if (!surface.reopenEachState) {
-            await navigateToSurface(client, stageDir, surface, timeoutMs, theme);
+            await navigateToSurface(client, stageDir, surface, timeoutMs, theme, '', fixtureOrigin);
         }
         for (const mode of ['normal', 'zoom-200']) {
             let viewport = await configureRenderedState(client, surface, theme, mode);
             if (surface.reopenEachState) {
-                await navigateToSurface(client, stageDir, surface, timeoutMs, theme);
+                await navigateToSurface(client, stageDir, surface, timeoutMs, theme, '', fixtureOrigin);
                 viewport = await configureRenderedState(client, surface, theme, mode);
             }
             if (mode === 'normal') await captureSurface(client, surface, theme);
@@ -1235,8 +1417,11 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             const shortsSettingsChecks = mode === 'normal' && theme === 'dark'
                 ? await auditShortsSettingsSection(client, surface, `${theme}/${mode}`)
                 : 0;
+            const commentSearchChecks = mode === 'normal'
+                ? await auditCommentSearchStates(client, surface, `${theme}/${mode}`)
+                : 0;
             const featureHealthChecks = await auditFeatureHealthPanel(client, surface, `${theme}/${mode}`);
-            reports.push({ controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, shortsSettingsChecks, theme, viewport });
+            reports.push({ commentSearchChecks, controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, shortsSettingsChecks, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -1246,7 +1431,7 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
         'forced-colors'
     );
     if (surface.reopenEachState) {
-        await navigateToSurface(client, stageDir, surface, timeoutMs, surface.themes[0]);
+        await navigateToSurface(client, stageDir, surface, timeoutMs, surface.themes[0], '', fixtureOrigin);
         forcedViewport = await configureRenderedState(
             client,
             surface,
@@ -1272,7 +1457,7 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
         viewport: forcedViewport,
     });
     for (const locale of surface.rtlLocales || []) {
-        await navigateToSurface(client, stageDir, surface, timeoutMs, 'dark', locale);
+        await navigateToSurface(client, stageDir, surface, timeoutMs, 'dark', locale, fixtureOrigin);
         const viewport = await configureRenderedState(client, surface, 'dark', 'zoom-200');
         await auditRtlLayout(client, surface, locale);
         await captureSurface(client, surface, `${locale}-dark-zoom-200`);
@@ -1285,7 +1470,7 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
     // that one proves the side panel's search row mirrors correctly, this one
     // proves nothing anywhere overflows or gets clipped in any of them.
     for (const locale of surface.localeStates || []) {
-        await navigateToSurface(client, stageDir, surface, timeoutMs, 'dark', locale);
+        await navigateToSurface(client, stageDir, surface, timeoutMs, 'dark', locale, fixtureOrigin);
         const viewport = await configureRenderedState(client, surface, 'dark', 'reflow-320');
         // Open every disclosure before measuring. The first run of this lane
         // found the popup's maintenance dropdown hanging 177px off-screen only
@@ -1307,7 +1492,7 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
         // the reader looking at the Spanish catalogue, which is not what
         // rendered.
         const label = localeLabel(locale);
-        if (locale === PSEUDO_LOCALE && surface.ownsDocument) {
+        if (locale === PSEUDO_LOCALE && (surface.ownsDocument || surface.localizedInjectedCopy)) {
             // Without this the lane is theatre: a surface that fell back to its
             // inline English would measure ordinary copy at 320px and pass
             // while proving nothing about long strings.
@@ -1322,9 +1507,16 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
             const rendered = await client.evaluate(
                 `document.documentElement.innerText.includes('⟦')`);
             if (!rendered) {
+                const localeSnapshot = await client.evaluate(`({
+                    text: document.querySelector(${JSON.stringify(surface.selector)})?.innerText?.slice(0, 240) || '',
+                    placeholder: document.querySelector(${JSON.stringify(surface.selector)} + ' input')?.placeholder || '',
+                    override: globalThis.__ytkitSmoke?.readLocale?.() || '',
+                    url: location.href
+                })`);
                 throw new Error(
                     `${surface.name}/${label}: pseudo-locale copy did not render, so this lane `
-                    + 'measured real strings; check the staged _locales/' + PSEUDO_LOCALE + ' catalogue'
+                    + 'measured real strings; check the staged _locales/' + PSEUDO_LOCALE + ' catalogue. '
+                    + JSON.stringify(localeSnapshot)
                 );
             }
         }
@@ -1534,6 +1726,7 @@ async function runFixtureStates(options) {
     const stageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-headless-a11y-stage-'));
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-headless-a11y-profile-'));
     const fixturePath = createStage(stageDir);
+    const fixtureServer = await startFixtureServer(stageDir);
     const browser = spawn(browserPath, [
         '--headless=new',
         '--disable-gpu',
@@ -1583,7 +1776,7 @@ async function runFixtureStates(options) {
             ? SURFACES.filter((surface) => options.surfaces.includes(surface.name))
             : SURFACES;
         for (const surface of selectedSurfaces) {
-            const reports = await auditSurface(client, stageDir, surface, options.timeoutMs);
+            const reports = await auditSurface(client, stageDir, surface, options.timeoutMs, fixtureServer.origin);
             const total = reports.reduce((sum, report) => sum + report.controls, 0);
             console.log(
                 `[headless-a11y] ${surface.name}: ${reports.length} state(s), `
@@ -1593,6 +1786,7 @@ async function runFixtureStates(options) {
                 + `${reports.reduce((sum, report) => sum + (report.finiteSelectChecks || 0), 0)} finite-select assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.filterGrantChecks || 0), 0)} filter-grant assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.featureHealthChecks || 0), 0)} feature-health assertions, `
+                + `${reports.reduce((sum, report) => sum + (report.commentSearchChecks || 0), 0)} Comment Search assertions, `
                 + 'no obscuring/overflow failures'
             );
         }
@@ -1602,6 +1796,7 @@ async function runFixtureStates(options) {
         await shutdownChromiumProcess(browser, client);
         if (socket) socket.close();
         if (process.platform === 'win32') await sleep(750);
+        await fixtureServer.close();
         if (!options.keepStage) await removeDirWithRetries(stageDir);
         await removeDirWithRetries(profileDir);
     }

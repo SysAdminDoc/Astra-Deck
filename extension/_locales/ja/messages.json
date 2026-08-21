@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "コメント検索"
   },
+  "commentSearchCountThread": {
+    "message": "{count} 件のスレッド"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} 件のスレッド"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} 件の一致"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} 件の一致"
+  },
+  "commentSearchNoMatches": {
+    "message": "一致なし"
+  },
+  "commentSearchWaiting": {
+    "message": "コメントの読み込みを待っています…"
+  },
+  "commentSearchSyncHint": {
+    "message": "新しいコメントが届くと、検索バーも自動で更新されます。"
+  },
+  "commentSearchReadyThread": {
+    "message": "検索できるコメントスレッドは {count} 件です。投稿者、フレーズ、トピックを検索できます。"
+  },
+  "commentSearchReadyThreads": {
+    "message": "検索できるコメントスレッドは {count} 件です。投稿者、フレーズ、トピックを検索できます。"
+  },
+  "commentSearchEscapeHint": {
+    "message": "Esc キーでいつでも消去できます。新しいコメントも自動で件数に加わります。"
+  },
+  "commentSearchShowingMatches": {
+    "message": "「{query}」に一致するコメントスレッドを {total} 件中 {visible} 件表示しています。"
+  },
+  "commentSearchNavigatorHint": {
+    "message": "コメントナビゲーターの「次へ」または「前へ」で一致項目間を移動できます。"
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "「{query}」のコメントを読み込んでいます…"
+  },
+  "commentSearchActiveHint": {
+    "message": "YouTube がコメント一覧を読み込んでいる間も検索は有効です。"
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "「{query}」に一致するコメントスレッドはありません。"
+  },
+  "commentSearchShorterHint": {
+    "message": "短いフレーズ、投稿者名を試すか、フィルターを解除してください。"
+  },
+  "commentSearchEyebrow": {
+    "message": "コメント内を検索"
+  },
+  "commentSearchPlaceholder": {
+    "message": "投稿者、フレーズ、トピックを検索…"
+  },
+  "commentSearchAria": {
+    "message": "コメントを検索"
+  },
+  "commentSearchClearAria": {
+    "message": "コメント検索を消去"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "一致するコメントなし"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "短いフレーズ、投稿者名を試すか、フィルターを解除してすべてのスレッドを戻してください。"
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "コメントの翻訳先言語。自動はブラウザの言語に従います。"
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} 件の一致"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "一致なし"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"
