@@ -151,6 +151,29 @@ function validateExceptionPolicy(report, policy, lockfile) {
     return exception;
 }
 
+// package.json cannot carry comments, so an `overrides` pin arrives with no
+// record of which advisory it answers or when anyone last looked at it — and a
+// pin that looks current is not evidence that it is. The record lives beside
+// the audit exceptions and is checked against package.json here, so it cannot
+// drift out of agreement with the pins it describes.
+function validateResolutionOverrides(policy, manifest) {
+    const documented = Array.isArray(policy.resolutionOverrides) ? policy.resolutionOverrides : [];
+    const pinned = manifest.overrides || {};
+    equalJson(
+        Object.fromEntries(documented.map((item) => [item.package, item.range])),
+        pinned,
+        'documented resolution overrides vs package.json overrides'
+    );
+    for (const item of documented) {
+        if (!item.reason || !/^\d{4}-\d{2}-\d{2}$/.test(String(item.lastCheckedOn || ''))) {
+            throw new Error(
+                `resolution override ${item.package} needs a reason and an ISO lastCheckedOn date`
+            );
+        }
+    }
+    return documented;
+}
+
 function parseAuditOutput(output) {
     const text = String(output || '').trim();
     const start = text.indexOf('{');
@@ -199,16 +222,22 @@ function run() {
     }
 
     const report = parseAuditOutput(result.stdout || result.stderr);
+    const policy = readJson(exceptionPath);
+    // Checked before the clean-audit exit below. The overrides are WHY the
+    // audit is clean, so skipping their record on a clean run would leave the
+    // one thing worth re-reading unchecked exactly when nothing else is.
+    const overrides = validateResolutionOverrides(policy, readJson(path.join(repoRoot, 'package.json')));
+    for (const item of overrides) {
+        const advisory = item.answersAdvisory ? ` (${item.answersAdvisory})` : '';
+        console.log(`[audit-deps] override ${item.package}@${item.range}${advisory}, last checked ${item.lastCheckedOn}`);
+    }
+
     if (result.status === 0 && report.metadata?.vulnerabilities?.total === 0) {
         console.log('[audit-deps] development dependency audit is clean');
         return;
     }
 
-    const exception = validateExceptionPolicy(
-        report,
-        readJson(exceptionPath),
-        readJson(lockfilePath)
-    );
+    const exception = validateExceptionPolicy(report, policy, readJson(lockfilePath));
     console.log(`[audit-deps] accepted one reviewed development-only exception: ${exception.package}@${exception.version}`);
     console.log(`[audit-deps] advisories: ${exception.advisories.map((item) => item.id).join(', ')}`);
     console.log(`[audit-deps] upstream status: ${exception.upstreamStatus}`);

@@ -324,7 +324,13 @@
         const legacyIdentity = raw.token_required === true && Number.isInteger(port);
         if (raw.service !== 'astra-downloader' && !legacyIdentity) return null;
         const api = raw.api == null ? 1 : Number(raw.api);
-        if (!Number.isInteger(api) || api < 1 || api > DOWNLOAD_HEALTH_SCHEMA_VERSION) return null;
+        if (!Number.isInteger(api) || api < 1) return null;
+        if (api > DOWNLOAD_HEALTH_SCHEMA_VERSION) {
+            // The other half of the handshake. Returning null here read as
+            // "that is not Astra Downloader" and the user got the install
+            // prompt for a companion that was simply newer than this build.
+            return { companionApiTooNew: true, api, minimumClientApi: null };
+        }
         const isObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
         const boundedText = (value, maxLength = 64) => typeof value === 'string'
             ? value.slice(0, maxLength)
@@ -432,6 +438,7 @@
             // the user exactly what is shadowing the companion instead of
             // failing with a generic "not installed" message. { port, version }.
             _foreignServer: null,
+            _apiMismatch: null,
             _lastCheck: 0,
             _serverVersion: null,
             _autoStartAttempted: false,
@@ -729,7 +736,7 @@
                 return { ok: false };
             },
 
-            resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._nativeChannelRequired = false; this._foreignServer = null; },
+            resetAutoStart() { this._autoStartAttempted = false; this._status = null; this._nativeChannelRequired = false; this._foreignServer = null; this._apiMismatch = null; },
 
             async copyInstallCommand() {
                 try {
@@ -852,6 +859,19 @@
                 // new one appears), and a stale blame line sent users chasing
                 // a program that was already gone.
                 const renderPromptDesc = () => {
+                    const mismatch = this._apiMismatch;
+                    if (mismatch) {
+                        // The downloader is running and reachable. Saying
+                        // "install it" here is the wrong instruction.
+                        desc.textContent = t('dlInstallApiMismatchTpl',
+                            'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.')
+                            .replace('{versions}', Number.isInteger(mismatch.minimumClientApi)
+                                ? t('dlInstallApiVersionsTpl', ' (it needs at least API {minimum})')
+                                    .replace('{minimum}', String(mismatch.minimumClientApi))
+                                : '');
+                        prompt.dataset.state = 'error';
+                        return;
+                    }
                     const foreign = this._foreignServer;
                     if (foreign && foreign.port) {
                         desc.textContent = t('dlInstallPortConflictTpl',
@@ -1366,6 +1386,22 @@
         }
 
         const DOWNLOADER_FAILURE_COPY = Object.freeze({
+            // Two independently-versioned products share one port catalogue.
+            // Without these the mismatch surfaced as an unexplained connection
+            // failure and the user was told to repair a downloader that was
+            // running fine.
+            'client-api-too-old': {
+                message: 'This Astra Deck is older than the installed Astra Downloader accepts.',
+                advice: 'Update the Astra Deck extension, then retry.',
+                tone: '#f59e0b',
+                duration: 12,
+            },
+            'companion-api-too-new': {
+                message: 'The installed Astra Downloader speaks a newer API than this Astra Deck understands.',
+                advice: 'Update the Astra Deck extension, then retry.',
+                tone: '#f59e0b',
+                duration: 12,
+            },
             'po-token-required': {
                 message: 'YouTube requires a PO token for this video.',
                 advice: 'Start the PO-token provider on 127.0.0.1:4416, then retry.',
@@ -1445,6 +1481,27 @@
                 duration: 12,
             },
         });
+
+        // A 426 carries its own explanation in the body; extensionFetchJson
+        // throws on it, so the payload has to be recovered from the error
+        // rather than the resolved response.
+        function companionApiMismatchFromError(error) {
+            if (!error || error.response?.status !== 426) return null;
+            const data = error.data && typeof error.data === 'object' ? error.data : {};
+            if (data.code && data.code !== 'client-api-too-old') return null;
+            return {
+                error_code: 'client-api-too-old',
+                error: typeof data.error === 'string' && data.error
+                    ? data.error.slice(0, 220)
+                    : undefined,
+                advice: typeof data.remediation === 'string' && data.remediation
+                    ? data.remediation.slice(0, 220)
+                    : undefined,
+                next_action: 'update-extension',
+                companionApi: Number.isInteger(data.api) ? data.api : null,
+                minimumClientApi: Number.isInteger(data.minimumClientApi) ? data.minimumClientApi : null,
+            };
+        }
 
         function classifyDownloaderFailureResponse(resp = {}) {
             const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
@@ -1596,6 +1653,16 @@
                     }
                 } catch (error) {
                     DebugManager.log('MediaDL', `Download request error: ${error.message}`);
+                    const mismatch = companionApiMismatchFromError(error);
+                    if (mismatch) {
+                        // Rethrowing sends this to the CONNECTION-error handler,
+                        // which tells the user the downloader stopped and offers
+                        // to repair it. The downloader is fine; the extension is
+                        // the thing that is out of date.
+                        MediaDLManager._apiMismatch = mismatch;
+                        showDownloaderFailure(mismatch);
+                        return;
+                    }
                     throw error;
                 }
             };
@@ -2595,6 +2662,20 @@
                 const data = await this._fetchHealth();
                 if (!this._container?.isConnected) return;
                 this._container.replaceChildren();
+                if (data?.companionApiTooNew) {
+                    MediaDLManager._apiMismatch = {
+                        error_code: 'companion-api-too-new',
+                        next_action: 'update-extension',
+                        companionApi: data.api,
+                        minimumClientApi: null,
+                    };
+                    this._container.appendChild(this._renderPill(
+                        t('dlHealthDownloader', 'Downloader'),
+                        t('dlHealthApiTooNew', 'newer than this extension'),
+                        'warn'
+                    ));
+                    return;
+                }
                 if (!data) {
                     this._container.appendChild(this._renderPill(
                         t('dlHealthDownloader', 'Downloader'),

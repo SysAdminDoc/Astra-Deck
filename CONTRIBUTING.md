@@ -8,7 +8,7 @@ Thanks for your interest in contributing to Astra Deck! This guide will help you
 | Fact | Current source value |
 | --- | --- |
 | Release | `v4.84.0` |
-| Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
+| Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `477` entries across `18` categories |
 | Runtime graph | `112` modules, including `27` peeled feature modules and `292` declared feature IDs |
