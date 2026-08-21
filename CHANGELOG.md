@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.84.0] (2026-08-21)
+
 ### Added
 
 - Known-Breakage Notices. When YouTube changes something and a feature stops
