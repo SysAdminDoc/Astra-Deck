@@ -15,6 +15,7 @@ const {
     buildIsolatedUserscript,
     parseArgs: parseManagerSmokeArgs,
     readManagerFixtures,
+    runManager,
     selectManagers
 } = require('../scripts/smoke-userscript-managers');
 const {
@@ -111,6 +112,27 @@ test('Firefox smoke CLI separates live automation from the headed manual permiss
     const manager = parseManagerSmokeArgs(['--manager', 'violentmonkey', '--headed']);
     assert.deepEqual(manager.managers, ['violentmonkey']);
     assert.equal(manager.headed, true);
+});
+
+test('userscript-manager smoke closes its fixture when Firefox startup fails', async () => {
+    let fixtureClosed = false;
+    await assert.rejects(
+        runManager(
+            { id: 'tampermonkey', name: 'Tampermonkey' },
+            { geckodriver: '', headed: false, timeoutMs: 10000 },
+            'C:/Program Files/Mozilla Firefox/firefox.exe',
+            'C:/tmp/tampermonkey.xpi',
+            {
+                startFixtureServer: async () => ({
+                    baseUrl: 'http://127.0.0.1:43123',
+                    close: async () => { fixtureClosed = true; }
+                }),
+                startFirefoxSession: async () => { throw new Error('driver unavailable'); }
+            }
+        ),
+        /driver unavailable/
+    );
+    assert.equal(fixtureClosed, true);
 });
 
 test('release preparation gates the Chromium, Firefox, and real-manager desktop contracts', () => {

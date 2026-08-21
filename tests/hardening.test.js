@@ -7865,8 +7865,45 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
     }
 });
 
-test('v4.20.0 userscript bundles every v5.0.0 module byte-for-byte', () => {
-    // Real verbatim parity: rebuild the bundle region with the same transform
+test('userscript core compacts static visual CSS without changing other modules', () => {
+    const sync = require(path.join(__dirname, '..', 'sync-userscript.js'));
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-visual-system.js'),
+        'utf8'
+    );
+    const compacted = sync.compactBundledCssTemplates(
+        source,
+        'extension/core/settings-visual-system.js'
+    );
+
+    assert.ok(Buffer.byteLength(source, 'utf8') - Buffer.byteLength(compacted, 'utf8') > 10_000,
+        'static visual CSS compaction must recover enough space for the Greasy Fork cap');
+    assert.doesNotMatch(compacted, /const SETTINGS_VISUAL_SYSTEM_CSS = `\r?\n/);
+    assert.doesNotMatch(compacted, /const SURFACE_VISUAL_SYSTEM_CSS = `\r?\n/);
+    assert.match(compacted, /const id = `yt-suite-style-\$\{STYLE_ID\}`;/,
+        'unrelated JavaScript template literals must remain unchanged');
+
+    const stickySource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'),
+        'utf8'
+    );
+    const compactedSticky = sync.compactBundledCssTemplates(
+        stickySource,
+        'extension/features/sticky-video/index.js'
+    );
+    assert.ok(Buffer.byteLength(stickySource, 'utf8') - Buffer.byteLength(compactedSticky, 'utf8') > 20_000,
+        'Theater Split CSS compaction must recover userscript library headroom');
+    assert.doesNotMatch(compactedSticky, /function buildSplitMetaCss\(\) \{\s*return `\r?\n/);
+    assert.match(compactedSticky, /_applyDividerRatio\(left, right, newLeftPct\)/,
+        'Theater Split runtime code must remain in the generated module');
+    assert.equal(
+        sync.compactBundledCssTemplates('const KEEP = `a\n b`;', 'extension/core/styles.js'),
+        'const KEEP = `a\n b`;'
+    );
+});
+
+test('v4.20.0 userscript bundle matches the generated v5.0.0 module output', () => {
+    // Rebuild the bundle region with the same transform
     // sync-userscript.js applies and compare it to the shipped bundle. The
     // fingerprint assertions below are kept as a fast, readable canary, but
     // they are NOT the contract — a module edit that misses its one

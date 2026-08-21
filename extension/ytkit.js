@@ -1157,7 +1157,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.81.0';
+    const YTKIT_VERSION = '4.82.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -7972,6 +7972,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         white-space: normal !important;
                     }
                 `;
+                document.documentElement.classList.add('ytkit-watch-restyle');
                 this._styleElement = injectStyle(stripCommentRestyleCss(saferCss), this.id, true);
                 this._popupStyleElement?.remove();
                 this._popupStyleElement = injectStyle(popupCss, `${this.id}-popup`, true);
@@ -7979,6 +7980,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._commentHeaderStyleElement = null;
             },
             destroy() {
+                document.documentElement.classList.remove('ytkit-watch-restyle');
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._popupStyleElement?.remove();
@@ -11348,7 +11350,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium],
                     html[data-ytkit-livechat-premium] body {
                         color-scheme: dark;
-                        background: radial-gradient(circle at top, rgba(245,158,11,0.08), transparent 32%), linear-gradient(180deg, #0a0d14 0%, #0d1119 44%, #090c13 100%) !important;
+                        background: #07101b !important;
                         --ytkit-livechat-panel: rgba(15,20,30,0.86);
                         --ytkit-livechat-panel-strong: rgba(18,24,35,0.94);
                         --ytkit-livechat-surface: rgba(255,255,255,0.04);
@@ -11382,8 +11384,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         padding: 14px 16px !important;
                         border: 1px solid var(--ytkit-livechat-border);
                         border-radius: 12px;
-                        background: linear-gradient(180deg, rgba(24,30,41,0.94), rgba(14,18,27,0.92)) !important;
-                        box-shadow: 0 22px 64px rgba(2,6,12,0.46);
+                        background: #0d1928 !important;
+                        box-shadow: none;
                         backdrop-filter: none;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #primary-content {
@@ -11405,7 +11407,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #live-chat-header-context-menu button,
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #close-button button {
                         min-height: 36px !important;
-                        border-radius: 10px !important;
+                        border-radius: 6px !important;
                         border: 1px solid rgba(255,255,255,0.08) !important;
                         background: rgba(255,255,255,0.045) !important;
                         color: var(--ytkit-livechat-text) !important;
@@ -11434,12 +11436,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 0 !important;
                         margin: 0 0 10px !important;
                         padding: 10px 48px 10px 12px !important;
-                        border-radius: 12px !important;
+                        border-radius: 8px !important;
                         border: 1px solid var(--ytkit-livechat-border) !important;
-                        background:
-                            linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.022)),
-                            rgba(12,16,24,0.82) !important;
-                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.035), 0 14px 30px rgba(2,6,12,0.22);
+                        background: #0d1928 !important;
+                        box-shadow: none;
                         backdrop-filter: none;
                         overflow: visible !important;
                         transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
@@ -11447,13 +11447,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer:hover,
                     html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer:focus-within {
                         border-color: rgba(245,158,11,0.2) !important;
-                        background:
-                            linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.028)),
-                            rgba(14,19,29,0.9) !important;
+                        background: #122238 !important;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[author-is-owner] {
                         border-color: rgba(245,158,11,0.24) !important;
-                        background: linear-gradient(180deg, rgba(245,158,11,0.12), rgba(255,255,255,0.03)) !important;
+                        background: rgba(245,158,11,0.10) !important;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-text-message-renderer[data-ytkit-livechat-avatar-missing="1"] {
                         padding-inline-start: 60px !important;
@@ -11469,9 +11467,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         justify-content: center;
                         width: 36px;
                         height: 36px;
-                        border-radius: 12px;
+                        border-radius: 8px;
                         border: 1px solid rgba(255,255,255,0.1);
-                        background: linear-gradient(135deg, rgba(245,158,11,0.72), rgba(56,189,248,0.55));
+                        background: #f59e0b;
                         color: rgba(8,11,16,0.92);
                         font-size: 15px;
                         font-weight: 800;
@@ -11547,8 +11545,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] #author-name.owner.yt-live-chat-author-chip,
                     html[data-ytkit-livechat-premium] yt-live-chat-author-chip[is-highlighted] #author-name.owner.yt-live-chat-author-chip {
                         padding: 4px 10px !important;
-                        border-radius: 10px !important;
-                        background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+                        border-radius: 6px !important;
+                        background: #f59e0b !important;
                         color: #16181d !important;
                     }
                     html[data-ytkit-livechat-premium] #chip-badges.yt-live-chat-author-chip:empty,
@@ -11586,7 +11584,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] #menu.yt-live-chat-paid-message-renderer button {
                         width: 30px;
                         height: 30px;
-                        border-radius: 10px;
+                        border-radius: 6px;
                         border: 1px solid rgba(255,255,255,0.08);
                         background: rgba(7,10,16,0.72);
                         color: var(--ytkit-livechat-muted);
@@ -11595,9 +11593,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] #card.yt-live-chat-paid-message-renderer,
                     html[data-ytkit-livechat-premium] #card.yt-live-chat-paid-sticker-renderer,
                     html[data-ytkit-livechat-premium] #card.yt-live-chat-membership-item-renderer {
-                        border-radius: 12px !important;
+                        border-radius: 8px !important;
                         border: 1px solid rgba(255,255,255,0.14);
-                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 22px 52px rgba(2,6,12,0.38);
+                        box-shadow: none;
                         overflow: hidden;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-viewer-engagement-message-renderer,
@@ -11605,9 +11603,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] yt-live-chat-item-bumper-view-model {
                         margin: 10px 0 !important;
                         padding: 12px 14px !important;
-                        border-radius: 12px !important;
+                        border-radius: 8px !important;
                         border: 1px solid var(--ytkit-livechat-border);
-                        background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03)) !important;
+                        background: #122238 !important;
                         color: var(--ytkit-livechat-muted) !important;
                     }
 
@@ -11618,15 +11616,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin-top: 4px;
                         padding: 16px 14px 18px !important;
                         border-top: 1px solid var(--ytkit-livechat-border);
-                        background: linear-gradient(180deg, rgba(7,10,16,0), rgba(7,10,16,0.92) 18%, rgba(9,12,18,0.98) 100%) !important;
+                        background: #07101b !important;
                         backdrop-filter: none;
                     }
                     html[data-ytkit-livechat-premium] #input-container.yt-live-chat-message-input-renderer {
                         min-height: 44px !important;
-                        border-radius: 12px !important;
+                        border-radius: 8px !important;
                         border: 1px solid rgba(255,255,255,0.08);
                         background: rgba(15,20,28,0.84) !important;
-                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 16px 36px rgba(2,6,12,0.24);
+                        box-shadow: none;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-message-input-renderer:focus-within #input-container.yt-live-chat-message-input-renderer {
                         border-color: rgba(245,158,11,0.28);
@@ -11637,17 +11635,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] #picker-buttons.yt-live-chat-message-input-renderer yt-icon-button button {
                         width: 34px;
                         height: 34px;
-                        border-radius: 12px;
+                        border-radius: 6px;
                         background: rgba(255,255,255,0.04);
                         color: var(--ytkit-livechat-muted);
                     }
                     html[data-ytkit-livechat-premium] #send-button.yt-live-chat-message-input-renderer > .yt-live-chat-message-input-renderer {
                         min-width: 38px;
                         height: 38px;
-                        border-radius: 12px !important;
-                        background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+                        border-radius: 6px !important;
+                        background: #f59e0b !important;
                         color: #14181f !important;
-                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.26), 0 14px 26px rgba(245,158,11,0.22);
+                        box-shadow: none;
                     }
                     html[data-ytkit-livechat-premium] #send-button.yt-live-chat-message-input-renderer > .yt-live-chat-message-input-renderer[disabled] {
                         background: rgba(255,255,255,0.05) !important;

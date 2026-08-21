@@ -1,4 +1,4 @@
-# Astra Deck — Signing-Key Policy
+# Astra Deck, Signing-Key Policy
 
 > **Audience:** the project maintainer. This document is the authoritative
 > reference for `ytkit.pem` rotation, recovery, and the post-rotation
@@ -38,11 +38,11 @@ a legitimate update.
 
 Rotation responsibilities:
 
-- **Periodic** — even without a leak, generate a fresh key on a slow
+- **Periodic**, even without a leak, generate a fresh key on a slow
   cadence to limit the blast radius of an undetected compromise.
-- **On compromise** — immediate rotation if the key ever ends up in
+- **On compromise**, immediate rotation if the key ever ends up in
   a public commit, a leaked archive, or any non-maintainer's hands.
-- **On hardware replacement** — when the maintainer migrates between
+- **On hardware replacement**, when the maintainer migrates between
   machines, the key transfers but a copy on the old machine should be
   securely deleted.
 
@@ -61,7 +61,7 @@ The slow annual cadence is a working compromise. The blast radius of a
 forgotten rotation on a maintenance-mode extension is small (the user
 installs are already pinned to the current key); the cost of frequent
 rotation is real (every rotation invalidates auto-update for existing
-users — see §5).
+users, see §5).
 
 ---
 
@@ -125,17 +125,17 @@ git status --ignored --short -- ytkit.pem
 ## 5. Migration path on rotation
 
 Rotating `ytkit.pem` produces a new extension ID. Chrome and Firefox both
-treat the new ID as a completely separate extension — users on the old
+treat the new ID as a completely separate extension, users on the old
 CRX/XPI **will not** auto-update to the new build.
 
 ### Pre-rotation announcement (T-7 days)
 
-1. Open an issue titled "Signing key rotation — required manual reinstall"
+1. Open an issue titled "Signing key rotation, required manual reinstall"
    on `SysAdminDoc/Astra-Deck` and pin it.
 2. Add a section to README.md explaining what's about to happen and
    linking to the issue.
 3. Tag a final release on the OLD key with a deprecation banner in the
-   popup ("This build will not auto-update past vN.N.N — install the
+   popup ("This build will not auto-update past vN.N.N, install the
    next release manually from GitHub").
 4. Push a CHANGELOG entry under `[Unreleased]` documenting the planned
    rotation date.
@@ -145,7 +145,7 @@ CRX/XPI **will not** auto-update to the new build.
 1. Generate the new key per §4.
 2. Compute and record the new extension ID.
 3. Build a release on the new key (`node build-extension.js --bump
-   patch`) — this produces fresh `.crx` / `.xpi` / `.zip` artifacts.
+   patch`), this produces fresh `.crx` / `.xpi` / `.zip` artifacts.
 4. Tag the release with a `--key-rotation-vN` suffix in the release
    notes so the GH Releases page makes the discontinuity legible.
 5. Update README install instructions:
@@ -174,7 +174,7 @@ CRX/XPI **will not** auto-update to the new build.
 
 ### Leaked
 
-1. **Immediately** generate a new key per §4 — even before announcing.
+1. **Immediately** generate a new key per §4, even before announcing.
 2. Push a release on the new key the same day. Follow `SECURITY.md` and use a
    private vulnerability report or GitHub Security Advisory for the embargoed
    response. The advisory should explain the leak's blast radius: whoever has
@@ -289,11 +289,11 @@ User-facing companion setup docs must stay in sync with the live release:
 Per the current roadmap NX4, Astra Deck does not have an AMO listing.
 The self-distribution model is:
 
-- **Chrome** — `chrome://extensions` "Load unpacked" (always works) +
+- **Chrome**, `chrome://extensions` "Load unpacked" (always works) +
   CRX sideload (works when Chrome's per-user-script-extension Allow
   toggle is on, post-Chrome 138 default-off requires a manual flip per
   the CONTRIBUTING.md note).
-- **Firefox** — `.xpi` sideload via `about:addons` → gear → Install
+- **Firefox**, `.xpi` sideload via `about:addons` → gear → Install
   Add-on From File. Requires `xpinstall.signatures.required = false`
   in `about:config` on Firefox stable, OR a published unlisted
   signature from AMO (NX4 unblocks this).

@@ -5920,6 +5920,9 @@
   "stickyVideoQuickLinksAria": {
     "message": "Schnellzugriffe"
   },
+  "stickyVideoResizePanelsLabel": {
+    "message": "Größe der Theater-Split-Bereiche ändern"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "Zu den Abos"
   },

@@ -401,19 +401,22 @@ function assertManagerFixture(manager, state, parserRequestObserved) {
     if (failures.length) throw new Error(`${manager.name}: ${failures.join('; ')}`);
 }
 
-async function runManager(manager, options, firefox, xpiPath) {
-    const fixture = await startFixtureServer();
+async function runManager(manager, options, firefox, xpiPath, dependencies = {}) {
+    const openFixture = dependencies.startFixtureServer || startFixtureServer;
+    const openFirefox = dependencies.startFirefoxSession || startFirefoxSession;
+    const fixture = await openFixture();
     const token = `${manager.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const session = await startFirefoxSession({
-        cwd: REPO_ROOT,
-        firefox,
-        geckodriver: options.geckodriver,
-        headed: options.headed,
-        commandTimeoutMs: options.timeoutMs,
-        startupTimeoutMs: Math.min(options.timeoutMs, 30000)
-    });
-    const { client } = session;
+    let session = null;
     try {
+        session = await openFirefox({
+            cwd: REPO_ROOT,
+            firefox,
+            geckodriver: options.geckodriver,
+            headed: options.headed,
+            commandTimeoutMs: options.timeoutMs,
+            startupTimeoutMs: Math.min(options.timeoutMs, 30000)
+        });
+        const { client } = session;
         const installed = await client.command('webExtension.install', {
             extensionData: { type: 'archivePath', path: xpiPath.split(path.sep).join('/') }
         });
@@ -495,11 +498,11 @@ async function runManager(manager, options, firefox, xpiPath) {
         fs.writeFileSync(path.join(managerDir, 'result.json'), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
         return result;
     } catch (error) {
-        const logs = session.logs().trim();
+        const logs = session?.logs().trim() || '';
         if (logs) error.message += `\n${logs.slice(-4000)}`;
         throw error;
     } finally {
-        await session.close();
+        if (session) await session.close();
         await fixture.close();
     }
 }
@@ -560,6 +563,7 @@ module.exports = {
     managerFixtureExpression,
     parseArgs,
     readManagerFixtures,
+    runManager,
     selectManagers,
     sha256,
     startFixtureServer

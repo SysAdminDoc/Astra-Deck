@@ -83,6 +83,39 @@ test('stickyVideo module exports the Theater Split style builders', () => {
     assert.equal(typeof exported.createStickyVideoFeature, 'function');
 });
 
+test('Theater Split keeps the premium theme and accessible divider in both builds', () => {
+    const { mod } = loadModule();
+    const commentsCss = mod.buildSplitCommentsCss();
+    const standalone = fs.readFileSync(
+        path.join(config.repoRoot, 'theater-split.user.js'),
+        'utf8'
+    );
+
+    for (const [source, label] of [
+        [MODULE_SOURCE, 'extension module'],
+        [standalone, 'standalone userscript'],
+    ]) {
+        assert.match(source, /setAttribute\('role', 'separator'\)/,
+            `${label} must expose the resize divider as a separator`);
+        assert.match(source, /setAttribute\('aria-orientation', 'vertical'\)/,
+            `${label} must expose the divider orientation`);
+        assert.match(source, /setAttribute\('aria-valuenow'/,
+            `${label} must keep the divider value current`);
+        assert.match(source, /e\.key === 'ArrowLeft'/,
+            `${label} must support keyboard resizing`);
+        assert.match(source, /e\.detail >= 2/,
+            `${label} must reset on the second divider press`);
+        assert.match(source, /68/,
+            `${label} must retain the balanced 68\/32 default`);
+    }
+
+    assert.match(commentsCss, /--ytkit-split-panel: #0d1928/);
+    assert.match(commentsCss, /#ytkit-split-divider:focus-visible/);
+    assert.match(commentsCss, /border-radius: 6px !important/);
+    assert.match(standalone, /--ts-panel: #0d1928/);
+    assert.match(standalone, /#ts-divider:focus-visible/);
+});
+
 test('stickyVideo factory returns the full Theater Split runtime surface', () => {
     const { mod } = loadModule();
     const feature = mod.createStickyVideoFeature();

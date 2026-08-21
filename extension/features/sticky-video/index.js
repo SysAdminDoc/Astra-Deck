@@ -2715,6 +2715,173 @@
                         color: rgba(255, 112, 122, 0.98) !important;
                         fill: currentColor !important;
                     }
+
+                    /* Final premium surface layer. Preserve native YouTube layout. */
+                    html:is(.ytkit-split-active, .ytkit-split-open) {
+                        --ytkit-split-canvas: #07101b;
+                        --ytkit-split-panel: #0d1928;
+                        --ytkit-split-raised: #122238;
+                        --ytkit-split-hover: #172a42;
+                        --ytkit-split-border: rgba(151, 178, 208, 0.22);
+                        --ytkit-split-border-strong: rgba(151, 178, 208, 0.36);
+                        --ytkit-split-text: #f5f7fb;
+                        --ytkit-split-muted: #aab7c8;
+                        --ytkit-split-accent: #ff5d4a;
+                        background: var(--ytkit-split-canvas) !important;
+                        color-scheme: dark !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-wrapper,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-left {
+                        background: transparent !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-right,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface {
+                        border-inline-start: 1px solid var(--ytkit-split-border) !important;
+                        background: var(--ytkit-split-panel) !important;
+                        color: var(--ytkit-split-text) !important;
+                        scrollbar-color: rgba(151, 178, 208, 0.34) transparent !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider {
+                        width: 8px !important;
+                        flex-basis: 8px !important;
+                        border-inline: 1px solid var(--ytkit-split-border) !important;
+                        background: var(--ytkit-split-canvas) !important;
+                        overflow: visible !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider:hover {
+                        border-color: rgba(255, 93, 74, 0.62) !important;
+                        background: rgba(255, 93, 74, 0.08) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider:focus-visible {
+                        outline: 2px solid var(--ytkit-split-accent) !important;
+                        outline-offset: -2px !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider .ytkit-divider-pip {
+                        width: 2px !important;
+                        height: 46px !important;
+                        border-radius: 0 !important;
+                        background: var(--ytkit-split-muted) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-close {
+                        width: 34px !important;
+                        height: 34px !important;
+                        border: 1px solid var(--ytkit-split-border-strong) !important;
+                        border-radius: 6px !important;
+                        background: var(--ytkit-split-raised) !important;
+                        color: var(--ytkit-split-text) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-close:hover {
+                        border-color: rgba(255, 93, 74, 0.62) !important;
+                        background: var(--ytkit-split-hover) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-collapse-strip {
+                        background: transparent !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #title,
+                    html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-card,
+                    html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-actions-docked {
+                        border: 1px solid var(--ytkit-split-border) !important;
+                        border-left: 2px solid rgba(255, 93, 74, 0.64) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-split-panel) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #description-inline-expander,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata ytd-text-inline-expander {
+                        border: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-split-raised) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface :is(
+                        #actions,
+                        #owner,
+                        #top-level-buttons-computed,
+                        ytd-menu-renderer
+                    ) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button) {
+                        border-radius: 6px !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer {
+                        border: 0 !important;
+                        border-bottom: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments :is(
+                        ytd-comment-simplebox-renderer,
+                        ytd-commentbox
+                    ) {
+                        border: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-split-raised) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments :is(
+                        ytd-comment-view-model,
+                        ytd-comment-renderer
+                    ) {
+                        border: 0 !important;
+                        border-bottom: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer :is(
+                        ytd-comment-view-model,
+                        ytd-comment-renderer
+                    ) {
+                        border: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-split-raised) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) {
+                        border-radius: 6px !important;
+                        background-image: none !important;
+                        box-shadow: none !important;
+                        transform: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-header {
+                        border-bottom: 1px solid var(--ytkit-split-border) !important;
+                        background: var(--ytkit-split-panel) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) :is(button, input, textarea, select, a):focus-visible {
+                        outline: 2px solid var(--ytkit-split-accent) !important;
+                        outline-offset: 2px !important;
+                        box-shadow: none !important;
+                    }
+
+                    @media (prefers-reduced-motion: reduce) {
+                        html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-wrapper *,
+                        html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-wrapper *::before,
+                        html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-wrapper *::after {
+                            transition-duration: 0.01ms !important;
+                            animation-duration: 0.01ms !important;
+                            animation-iteration-count: 1 !important;
+                        }
+                    }
+
+                    @media (forced-colors: active) {
+                        html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider,
+                        html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-close,
+                        html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface {
+                            border-color: CanvasText !important;
+                        }
+                        html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider:focus-visible,
+                        html:is(.ytkit-split-active, .ytkit-split-open) :is(button, input, textarea, select, a):focus-visible {
+                            outline: 2px solid Highlight !important;
+                            outline-offset: 2px !important;
+                        }
+                    }
                 `;
     }
 
@@ -2869,7 +3036,7 @@
                     height:heightStr||'100vh', margin:'0',
                     'overflow-y':'auto', 'overflow-x':'hidden',
                     'overscroll-behavior-y':'contain',
-                    'z-index':'10001', background:'linear-gradient(180deg, #0b0f16 0%, #070a10 100%)', padding:'0',
+                    'z-index':'10001', background:'#0b1624', padding:'0',
                     'box-sizing':'border-box', visibility:'visible',
                     'pointer-events':'auto', display:'block',
                     'scrollbar-width':'thin', 'scrollbar-color':'rgba(255,255,255,0.15) transparent'
@@ -4055,10 +4222,17 @@
                 // DIVIDER — hidden until split
                 const divider = document.createElement('div');
                 divider.id = 'ytkit-split-divider';
-                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:#0a0d13;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;pointer-events:auto;scrollbar-width:none;color:rgba(148,163,184,0.64);`;
+                divider.tabIndex = 0;
+                divider.setAttribute('role', 'separator');
+                divider.setAttribute('aria-orientation', 'vertical');
+                divider.setAttribute('aria-label', t('stickyVideoResizePanelsLabel', 'Resize Theater Split panels'));
+                divider.setAttribute('aria-valuemin', '25');
+                divider.setAttribute('aria-valuemax', '85');
+                divider.setAttribute('aria-valuenow', '68');
+                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:#07101b;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;pointer-events:auto;scrollbar-width:none;color:rgba(148,163,184,0.64);`;
                 const pip = document.createElement('div');
                 pip.className = 'ytkit-divider-pip';
-                pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:40px;border-radius:2px;background:rgba(148,163,184,0.30);pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:rgba(148,163,184,0.64);`;
+                pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:46px;border-radius:0;background:rgba(148,163,184,0.44);pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:rgba(148,163,184,0.64);`;
                 // Three-dot grip pattern — universal drag indicator
                 for (let i = 0; i < 3; i++) {
                     const dot = document.createElement('div');
@@ -4066,15 +4240,15 @@
                     pip.appendChild(dot);
                 }
                 divider.appendChild(pip);
-                divider.addEventListener('mouseenter', () => { divider.style.background='#111827'; pip.style.background='rgba(203,213,225,0.52)'; pip.style.color='rgba(226,232,240,0.92)'; });
-                divider.addEventListener('mouseleave', () => { divider.style.background='#0a0d13'; pip.style.background='rgba(148,163,184,0.30)'; pip.style.color='rgba(148,163,184,0.64)'; });
+                divider.addEventListener('mouseenter', () => { divider.style.background='rgba(255,93,74,0.08)'; pip.style.background='rgba(255,93,74,0.82)'; pip.style.color='rgba(255,255,255,0.92)'; });
+                divider.addEventListener('mouseleave', () => { divider.style.background='#07101b'; pip.style.background='rgba(148,163,184,0.44)'; pip.style.color='rgba(148,163,184,0.64)'; });
 
                 // RIGHT — collapsed initially
                 const right = document.createElement('div');
                 right.id = 'ytkit-split-right';
                 // flex:0 0 0 — right starts at zero width, grows to a fixed size.
                 // Left (flex:1) automatically shrinks as right expands.
-                right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:#0f0f0f;border-left:1px solid rgba(255,255,255,0.06);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;pointer-events:auto;`;
+                right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:#0b1624;border-left:1px solid rgba(151,178,208,0.22);scrollbar-width:thin;scrollbar-color:rgba(151,178,208,0.34) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;pointer-events:auto;`;
                 // wire divider to right panel now that it exists
                 this._initDividerDrag(divider, left, right);
 
@@ -4103,10 +4277,12 @@
                 const newRightPct = 100 - newLeftPct;
                 const wrapper = this._splitWrapper;
                 const player = this._getPlayer();
+                const divider = wrapper?.querySelector('#ytkit-split-divider');
                 const strip = wrapper?.querySelector('#ytkit-split-collapse-strip');
                 const positioned = this._positionedEls || [];
                 right.style.flexBasis = newRightPct + '%';
                 right.style.width     = newRightPct + '%';
+                divider?.setAttribute('aria-valuenow', String(Math.round(newLeftPct)));
                 document.documentElement.style.setProperty('--ytkit-split-right-width', `calc(${newRightPct}vw - 6px)`);
                 if (player) player.style.setProperty('width', newLeftPct + '%', 'important');
                 positioned.forEach(el => {
@@ -4123,12 +4299,24 @@
             _initDividerDrag(divider, left, right) {
                 if (!right) return;
 
-                // Double-click to reset ratio to default 75/25
+                divider.addEventListener('keydown', (e) => {
+                    if (!this._isSplit || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+                    e.preventDefault();
+                    const current = Number(divider.getAttribute('aria-valuenow')) || 68;
+                    this._applyDividerRatio(left, right, Math.max(25, Math.min(85,
+                        current + (e.key === 'ArrowLeft' ? -2 : 2))));
+                    divider.style.flexBasis = '8px';
+                    divider.style.width = '8px';
+                    this._triggerPlayerResize();
+                });
+
+                // Double-click to reset ratio to the default 68/32 layout
                 divider.addEventListener('dblclick', (e) => {
                     if (!this._isSplit) return;
                     e.preventDefault();
-                    this._applyDividerRatio(left, right, 75);
-                    divider.style.flexBasis = '6px';
+                    this._applyDividerRatio(left, right, 68);
+                    divider.style.flexBasis = '8px';
+                    divider.style.width = '8px';
                     this._triggerPlayerResize();
                 });
 
@@ -4152,7 +4340,8 @@
                             const dx = clientX - startX;
                             const newLeftPct = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
                             this._applyDividerRatio(left, right, newLeftPct);
-                            divider.style.flexBasis = '6px';
+                            divider.style.flexBasis = '8px';
+                            divider.style.width = '8px';
                         });
                     };
                     const cleanup = () => {
@@ -4167,6 +4356,14 @@
 
                 // Mouse drag
                 divider.addEventListener('mousedown', (e) => {
+                    if (e.detail >= 2) {
+                        e.preventDefault();
+                        this._applyDividerRatio(left, right, 68);
+                        divider.style.flexBasis = '8px';
+                        divider.style.width = '8px';
+                        this._triggerPlayerResize();
+                        return;
+                    }
                     e.preventDefault();
                     const ctx = startDrag(e.clientX);
                     if (!ctx) return;
@@ -4564,10 +4761,10 @@
                 document.documentElement.classList.toggle('ytkit-split-live', type === 'live');
 
                 const closeBtn = wrapper.querySelector('#ytkit-split-close');
-                if (closeBtn) { closeBtn.style.display = 'flex'; closeBtn.style.opacity = '0.3'; }
+                if (closeBtn) { closeBtn.style.display = 'flex'; closeBtn.style.opacity = '1'; }
 
-                let leftPct = parseFloat(storageRead('ytkit_split_ratio', 75));
-                if (!Number.isFinite(leftPct)) leftPct = 75;
+                let leftPct = parseFloat(storageRead('ytkit_split_ratio', 68));
+                if (!Number.isFinite(leftPct)) leftPct = 68;
                 leftPct = Math.max(25, Math.min(85, leftPct));
                 const rightPct = 100 - leftPct;
                 document.documentElement.classList.add('ytkit-split-open');
@@ -4576,8 +4773,9 @@
                 // Expand overlay's right panel placeholder
                 right.style.flexBasis = rightPct + '%';
                 right.style.width     = rightPct + '%';
-                divider.style.flexBasis = '6px';
-                divider.style.width     = '6px';
+                divider.style.flexBasis = '8px';
+                divider.style.width     = '8px';
+                divider.setAttribute('aria-valuenow', String(Math.round(leftPct)));
 
                 // Sync player width — player is fixed-positioned separately
                 const player = this._getPlayer();

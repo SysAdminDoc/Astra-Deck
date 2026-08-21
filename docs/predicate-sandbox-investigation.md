@@ -1,4 +1,4 @@
-# Advanced Local Predicate Sandbox — Investigation
+# Advanced Local Predicate Sandbox, Investigation
 
 > Status: SHIPPED. Default off, opt-in per user. The evaluator in
 > `extension/core/predicate-sandbox.js` backs the Video Hider advanced filter:
@@ -29,7 +29,7 @@ The predicate must never be able to:
 1. Exfiltrate cookies, tokens, history, settings, or transcripts.
 2. Reach the network (fetch / XHR / WebSocket / EventSource / SendBeacon /
    `new Image().src` / dynamic `<script>`).
-3. Mutate the page beyond the card the resolver is asking about — and even then
+3. Mutate the page beyond the card the resolver is asking about, and even then
    only via the explicit `ctx` surface, never raw DOM nodes.
 4. Mutate Astra Deck settings, blocklists, or the feature registry.
 5. Hang the renderer (infinite loops, heavy regex, sync XHR).
@@ -52,7 +52,7 @@ the user's machine. The browser is already lost in that scenario.
 
 ## Sandbox Options Considered
 
-### Option A — `new Function(...)` in isolated world (rejected as primary)
+### Option A, `new Function(...)` in isolated world (rejected as primary)
 
 - Body runs in our content script's isolated-world realm.
 - We *can* shadow `window`, `document`, `chrome`, `fetch`, etc. with `undefined`
@@ -64,7 +64,7 @@ the user's machine. The browser is already lost in that scenario.
 - **Verdict:** workable for trusted users but not robust enough to ship default-
   off as "safe."
 
-### Option B — `iframe[sandbox]` worker (rejected — too heavy)
+### Option B, `iframe[sandbox]` worker (rejected, too heavy)
 
 - Spin up a hidden `<iframe sandbox="allow-scripts">` per surface eval.
 - Postmessage `(predicate, ctx)` in, `boolean` out.
@@ -75,7 +75,7 @@ the user's machine. The browser is already lost in that scenario.
   would chew 60 postMessages.
 - **Verdict:** correct but unaffordable.
 
-### Option C — Static AST allowlist (rejected as primary)
+### Option C, Static AST allowlist (rejected as primary)
 
 - Parse the body with a tiny expression parser (jsep-style).
 - Allow only: property access on `ctx`, comparisons, `&&`/`||`/`!`, string
@@ -87,7 +87,7 @@ the user's machine. The browser is already lost in that scenario.
 - **Verdict:** safest, also the smallest behavioural surface. Locks the user
   into expression-only predicates, no `let foo = …` lines. **Recommended.**
 
-### Option D — Hybrid (recommended for v3.26+)
+### Option D, Hybrid (recommended for v3.26+)
 
 - v3.25: ship Option C as **the only path**. Document it as "expression
   predicates."
@@ -120,8 +120,7 @@ ReDoS guard `videoHider` already enforces against the keyword filter).
 Forbidden constructs: `function`, `=>`, `let`/`const`/`var`, `;`, `,` outside
 arg lists, `[]` indexing, `new`, template literals, `await`, `typeof`,
 `instanceof`, `in`, `delete`, `void`. The parser reports the first invalid
-token and refuses to compile. The user sees the error in the settings panel —
-no silent fallback.
+token and refuses to compile. The user sees the error in the settings panel, no silent fallback.
 
 ## The `ctx` Surface (frozen)
 

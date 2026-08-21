@@ -7,7 +7,7 @@ Thanks for your interest in contributing to Astra Deck! This guide will help you
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.81.0` |
+| Release | `v4.82.0` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `476` entries across `18` categories |
@@ -26,7 +26,7 @@ Thanks for your interest in contributing to Astra Deck! This guide will help you
 4. Run `npm ci`
 5. If you are testing the userscript build, install [Tampermonkey](https://www.tampermonkey.net/) (Chrome) or [Violentmonkey](https://violentmonkey.github.io/) (Firefox). Note: Chrome 138+ moved the "Allow User Scripts" toggle to a per-extension control; fresh Tampermonkey installs default OFF and must be enabled manually under `chrome://extensions` → Tampermonkey → Details
 
-> **New contributor?** Start with [docs/architecture.md](docs/architecture.md) — it walks the four moving parts (MV3 extension, userscript, Astra Downloader, popup), end-to-end data flow on a watch page load and a download, where things live, the five trust boundaries, conventions, and a worked example of adding a CSS-only feature.
+> **New contributor?** Start with [docs/architecture.md](docs/architecture.md). It walks the four moving parts (MV3 extension, userscript, Astra Downloader, popup), end-to-end data flow on a watch page load and a download, where things live, the five trust boundaries, conventions, and a worked example of adding a CSS-only feature.
 
 ## Project Structure
 
@@ -113,8 +113,8 @@ For YouTube DOM drift or refreshed MHTML captures, follow
 `npm run <script>` fails on a checkout served from a UNC path
 (`\\host\share\...`, e.g. a mapped VMware/SMB share) with
 *"CMD.EXE ... UNC paths are not supported. Defaulting to Windows directory."*
-This is a `cmd.exe` limitation — it refuses any working directory on a UNC
-path — and it affects every npm script, not just one. Two workarounds:
+This is a `cmd.exe` limitation. It refuses any working directory on a UNC
+path, and it affects every npm script, not just one. Two workarounds:
 
 - **Map the share to a drive letter** and work from there
   (`net use Z: \\host\share`), or
@@ -124,7 +124,7 @@ path — and it affects every npm script, not just one. Two workarounds:
   node ./node_modules/eslint/bin/eslint.js extension/background.js extension/popup.js extension/core/*.js extension/ytkit.js
   ```
 
-Do not commit an `.npmrc` `script-shell` override to "fix" this — it would
+Do not commit an `.npmrc` `script-shell` override to "fix" this. It would
 force a shell that does not exist on other contributors' machines.
 
 ## Dev Scripts (Manual, Not in `npm run check`)
@@ -133,7 +133,7 @@ The `scripts/` directory holds two manual generators that are
 intentionally not wired into `package.json` because they're run on
 demand, not on every commit:
 
-- **`scripts/_gen-schema.js`** — One-shot ROADMAP → settings-schema
+- **`scripts/_gen-schema.js`:** One-shot ROADMAP to settings-schema
   re-generator. Re-extracts the per-category schema embedded in
   `ROADMAP.md §Full Per-Toggle Settings Schema` and emits a draft
   `extension/core/settings-schema.js`. Used to re-validate the
@@ -145,7 +145,7 @@ demand, not on every commit:
   - When to run: after a meaningful ROADMAP schema-section edit, or
     when sanity-checking the schema after a large refactor.
 
-- **`scripts/generate-locales.js`** — Translation-table → locale-file
+- **`scripts/generate-locales.js`:** Translation-table to locale-file
   generator. Reads `extension/_locales/en/messages.json`, applies the
   inline per-locale translation tables embedded in the script, and
   writes `extension/_locales/<lang>/messages.json` for every non-EN
@@ -159,7 +159,7 @@ demand, not on every commit:
     then re-run); reviewers should treat the generated locales as
     machine-authored and queue native-speaker proofing.
 
-- **`npm run i18n:coverage` / `npm run i18n:coverage:warn`** — Locale
+- **`npm run i18n:coverage` / `npm run i18n:coverage:warn`:** Locale
   proofing report. Refreshes `docs/i18n-coverage.md`, separates exact
   do-not-translate brand/technical matches from unresolved
   identical-to-EN placeholders, and lists the per-locale
@@ -171,7 +171,7 @@ demand, not on every commit:
     reviewed brand/technical terms, run the generator, then refresh the
     coverage report.
 
-- **`npm run i18n:proofing-export`** — Translator handoff export. Writes
+- **`npm run i18n:proofing-export`:** Translator handoff export. Writes
   per-locale CSV files plus `index.json` under ignored `build/i18n-proofing/`
   with one row for each unresolved feature name/description placeholder.
   Translators fill `proposed_translation` and `notes`; accepted entries are

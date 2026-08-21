@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.11
+// @name         Theater Split v1.0.12
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.11
+// @version      1.0.12
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -25,6 +25,8 @@
 //                     bound native metadata so full titles fit the split pane.
 //   @version 1.0.11 - Reapply live-title wrapping on each metadata refresh and
 //                     let the header measure the full wrapped title height.
+//   @version 1.0.12 - Add the flat Astra surface theme, accessible keyboard
+//                     resizing, and a reliable 68/32 divider reset.
 
 (function() {
     'use strict';
@@ -1360,6 +1362,170 @@
             max-width: 15px !important;
             max-height: 15px !important;
         }
+
+        /* Astra Deck premium surface pass. Keep YouTube structure intact. */
+        body.ts-active {
+            --ts-accent-rgb: 255, 93, 74;
+            --ts-canvas: #07101b;
+            --ts-panel: #0d1928;
+            --ts-raised: #122238;
+            --ts-hover: #172a42;
+            --ts-border: rgba(151, 178, 208, 0.22);
+            --ts-border-strong: rgba(151, 178, 208, 0.36);
+            --ts-text: #f5f7fb;
+            --ts-muted: #aab7c8;
+        }
+        body.ts-active #ts-wrapper {
+            background: var(--ts-canvas) !important;
+            color: var(--ts-text) !important;
+            color-scheme: dark !important;
+        }
+        body.ts-active #ts-left {
+            background: #02060b !important;
+        }
+        body.ts-split #ts-right,
+        body.ts-split #below.ytkit-split-scroll-surface {
+            border-inline-start: 1px solid var(--ts-border) !important;
+            background: var(--ts-panel) !important;
+            color: var(--ts-text) !important;
+            scrollbar-color: rgba(151, 178, 208, 0.34) transparent !important;
+        }
+        body.ts-split #ts-divider {
+            width: 8px !important;
+            flex-basis: 8px !important;
+            border-inline: 1px solid var(--ts-border) !important;
+            background: var(--ts-canvas) !important;
+            overflow: visible !important;
+        }
+        body.ts-split #ts-divider:hover {
+            border-color: rgba(var(--ts-accent-rgb), 0.62) !important;
+            background: rgba(var(--ts-accent-rgb), 0.08) !important;
+        }
+        body.ts-split #ts-divider:focus-visible {
+            outline: 2px solid rgb(var(--ts-accent-rgb)) !important;
+            outline-offset: -2px !important;
+        }
+        body.ts-split #ts-divider .ts-divider-pip {
+            width: 2px !important;
+            height: 46px !important;
+            border-radius: 0 !important;
+            background: var(--ts-muted) !important;
+        }
+        body.ts-split #ts-close {
+            width: 34px !important;
+            height: 34px !important;
+            border: 1px solid var(--ts-border-strong) !important;
+            border-radius: 6px !important;
+            background: var(--ts-raised) !important;
+            color: var(--ts-text) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #ts-close:hover {
+            border-color: rgba(var(--ts-accent-rgb), 0.62) !important;
+            background: var(--ts-hover) !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title,
+        body.ts-split .ytkit-split-live-card,
+        body.ts-split .ytkit-split-actions-docked {
+            border: 1px solid var(--ts-border) !important;
+            border-left: 2px solid rgba(var(--ts-accent-rgb), 0.64) !important;
+            border-radius: 8px !important;
+            background: var(--ts-panel) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #description-inline-expander,
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata ytd-text-inline-expander {
+            border: 1px solid var(--ts-border) !important;
+            border-radius: 8px !important;
+            background: var(--ts-raised) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface :is(
+            #actions,
+            #owner,
+            #top-level-buttons-computed,
+            ytd-menu-renderer
+        ) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button) {
+            border-radius: 6px !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer {
+            border: 0 !important;
+            border-bottom: 1px solid var(--ts-border) !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-simplebox-renderer,
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-commentbox {
+            border: 1px solid var(--ts-border) !important;
+            border-radius: 8px !important;
+            background: var(--ts-raised) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #comments :is(
+            ytd-comment-view-model,
+            ytd-comment-renderer
+        ) {
+            border: 0 !important;
+            border-bottom: 1px solid var(--ts-border) !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer :is(
+            ytd-comment-view-model,
+            ytd-comment-renderer
+        ) {
+            border: 1px solid var(--ts-border) !important;
+            border-radius: 8px !important;
+            background: var(--ts-raised) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #comments :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        ) {
+            border-radius: 6px !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        body.ts-split .ytkit-split-live-header {
+            border-bottom: 1px solid var(--ts-border) !important;
+            background: var(--ts-panel) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split :is(button, input, textarea, select, a):focus-visible {
+            outline: 2px solid rgb(var(--ts-accent-rgb)) !important;
+            outline-offset: 2px !important;
+            box-shadow: none !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body.ts-active #ts-wrapper *,
+            body.ts-active #ts-wrapper *::before,
+            body.ts-active #ts-wrapper *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+            }
+        }
+
+        @media (forced-colors: active) {
+            body.ts-split #ts-divider,
+            body.ts-split #ts-close,
+            body.ts-split #below.ytkit-split-scroll-surface {
+                border-color: CanvasText !important;
+            }
+            body.ts-split #ts-divider:focus-visible,
+            body.ts-split :is(button, input, textarea, select, a):focus-visible {
+                outline: 2px solid Highlight !important;
+                outline-offset: 2px !important;
+            }
+        }
     `;
     (document.head || document.documentElement).appendChild(earlyStyle);
 
@@ -1449,8 +1615,8 @@
     }
 
     function getSavedRatio() {
-        try { return parseFloat(localStorage.getItem(SPLIT_RATIO_KEY)) || 75; }
-        catch { return 75; }
+        try { return parseFloat(localStorage.getItem(SPLIT_RATIO_KEY)) || 68; }
+        catch { return 68; }
     }
 
     function saveRatio(v) {
@@ -1548,7 +1714,7 @@
             'min-height': '0', margin: '0',
             'overflow-y': 'auto', 'overflow-x': 'hidden',
             'overscroll-behavior-y': 'contain',
-            'z-index': '10001', background: 'linear-gradient(180deg, #0b0f16 0%, #070a10 100%)', padding: '0',
+            'z-index': '10001', background: '#0b1624', padding: '0',
             'box-sizing': 'border-box', visibility: 'visible',
             'pointer-events': 'auto',
             'scrollbar-width': 'thin', 'scrollbar-color': 'rgba(255,255,255,0.15) transparent'
@@ -2711,31 +2877,39 @@
     function buildOverlay() {
         const wrapper = document.createElement('div');
         wrapper.id = 'ts-wrapper';
-        wrapper.style.cssText = `display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#000;overflow:hidden;`;
+        wrapper.style.cssText = `display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#07101b;overflow:hidden;`;
 
         const left = document.createElement('div');
         left.id = 'ts-left';
-        left.style.cssText = `flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;background:#000;position:relative;`;
+        left.style.cssText = `flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;background:#02060b;position:relative;`;
 
         const divider = document.createElement('div');
         divider.id = 'ts-divider';
-        divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:#0a0d13;transition:flex-basis ${TRANSITION};overflow:hidden;z-index:10;color:rgba(148,163,184,0.64);`;
+        divider.tabIndex = 0;
+        divider.setAttribute('role', 'separator');
+        divider.setAttribute('aria-orientation', 'vertical');
+        divider.setAttribute('aria-label', 'Resize Theater Split panels');
+        divider.setAttribute('aria-valuemin', '25');
+        divider.setAttribute('aria-valuemax', '85');
+        divider.setAttribute('aria-valuenow', '68');
+        divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:#07101b;transition:flex-basis ${TRANSITION};overflow:hidden;z-index:10;color:rgba(148,163,184,0.64);`;
         const pip = document.createElement('div');
-        pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:40px;border-radius:2px;background:rgba(148,163,184,0.30);pointer-events:none;color:rgba(148,163,184,0.64);`;
+        pip.className = 'ts-divider-pip';
+        pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:46px;border-radius:0;background:rgba(148,163,184,0.44);pointer-events:none;color:rgba(148,163,184,0.64);`;
         divider.appendChild(pip);
-        divider.addEventListener('mouseenter', () => { divider.style.background = '#111827'; pip.style.background = 'rgba(203,213,225,0.52)'; pip.style.color = 'rgba(226,232,240,0.92)'; });
-        divider.addEventListener('mouseleave', () => { divider.style.background = '#0a0d13'; pip.style.background = 'rgba(148,163,184,0.30)'; pip.style.color = 'rgba(148,163,184,0.64)'; });
+        divider.addEventListener('mouseenter', () => { divider.style.background = 'rgba(255,93,74,0.08)'; pip.style.background = 'rgba(255,93,74,0.82)'; pip.style.color = 'rgba(255,255,255,0.92)'; });
+        divider.addEventListener('mouseleave', () => { divider.style.background = '#07101b'; pip.style.background = 'rgba(148,163,184,0.44)'; pip.style.color = 'rgba(148,163,184,0.64)'; });
 
         const right = document.createElement('div');
         right.id = 'ts-right';
-        right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:#0f0f0f;border-left:1px solid rgba(255,255,255,0.06);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis ${TRANSITION},opacity 0.3s;`;
+        right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:#0b1624;border-left:1px solid rgba(151,178,208,0.22);scrollbar-width:thin;scrollbar-color:rgba(151,178,208,0.34) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis ${TRANSITION},opacity 0.3s;`;
 
         initDividerDrag(divider, left, right);
 
         const closeBtn = document.createElement('button');
         closeBtn.id = 'ts-close';
         closeBtn.title = 'Close side panel';
-        closeBtn.style.cssText = `position:absolute;top:8px;right:8px;z-index:10010;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s;color:rgba(255,255,255,0.7);padding:0;`;
+        closeBtn.style.cssText = `position:absolute;top:10px;right:10px;z-index:10010;background:#122238;border:1px solid rgba(151,178,208,0.28);border-radius:6px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;color:rgba(245,247,251,0.82);padding:0;`;
         // Build the "X" via DOM APIs — innerHTML can throw under strict
         // TrustedTypes CSP and is unnecessary for a fixed icon glyph.
         const _TS_SVG_NS = 'http://www.w3.org/2000/svg';
@@ -2783,8 +2957,48 @@
     }
 
     function initDividerDrag(divider, left, right) {
+        const applyDividerRatio = (nextLeftPct) => {
+            const leftPct = Math.max(25, Math.min(85, nextLeftPct));
+            const rightPct = 100 - leftPct;
+            right.style.flexBasis = rightPct + '%';
+            right.style.width = rightPct + '%';
+            divider.style.flexBasis = '8px';
+            divider.style.width = '8px';
+            divider.setAttribute('aria-valuenow', String(Math.round(leftPct)));
+            positionedEls.forEach(el => {
+                el.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+            });
+            if (splitLiveHeader) {
+                splitLiveHeader.style.width = `calc(${rightPct}% - 2px)`;
+                layoutLiveHeaderActions();
+            }
+            saveRatio(leftPct);
+        };
+
+        divider.addEventListener('keydown', (e) => {
+            if (!isSplit || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+            e.preventDefault();
+            const current = Number(divider.getAttribute('aria-valuenow')) || getSavedRatio();
+            applyDividerRatio(current + (e.key === 'ArrowLeft' ? -2 : 2));
+            triggerPlayerResize();
+        });
+
+        divider.addEventListener('dblclick', (e) => {
+            if (!isSplit) return;
+            e.preventDefault();
+            applyDividerRatio(68);
+            triggerPlayerResize();
+        });
+
         divider.addEventListener('mousedown', (e) => {
             if (!isSplit) return;
+            if (e.detail >= 2) {
+                abortDividerDrag();
+                e.preventDefault();
+                applyDividerRatio(68);
+                triggerPlayerResize();
+                return;
+            }
             // Defensive: if a previous drag was orphaned (rare — would
             // require a browser bug or extension conflict), clear it
             // before starting a new one. Also covers re-entrancy if a
@@ -2805,18 +3019,7 @@
             dragOnMove = (me) => {
                 const dx = me.clientX - startX;
                 const newLeftPct = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
-                const newRightPct = 100 - newLeftPct;
-                right.style.flexBasis = newRightPct + '%';
-                right.style.width = newRightPct + '%';
-                divider.style.flexBasis = '6px';
-                positionedEls.forEach(el => {
-                    el.style.setProperty('width', `calc(${newRightPct}% - 2px)`, 'important');
-                });
-                if (splitLiveHeader) {
-                    splitLiveHeader.style.width = `calc(${newRightPct}% - 2px)`;
-                    layoutLiveHeaderActions();
-                }
-                saveRatio(100 - newRightPct);
+                applyDividerRatio(newLeftPct);
             };
             dragOnUp = () => {
                 abortDividerDrag();
@@ -3011,7 +3214,7 @@
         document.body.classList.toggle('ts-live', type === 'live');
 
         const closeBtn = wrapper.querySelector('#ts-close');
-        if (closeBtn) closeBtn.style.opacity = '0.3';
+        if (closeBtn) closeBtn.style.opacity = '1';
 
         let leftPct = getSavedRatio();
         leftPct = Math.max(25, Math.min(85, leftPct));
@@ -3019,8 +3222,9 @@
 
         right.style.flexBasis = rightPct + '%';
         right.style.width = rightPct + '%';
-        divider.style.flexBasis = '6px';
-        divider.style.width = '6px';
+        divider.style.flexBasis = '8px';
+        divider.style.width = '8px';
+        divider.setAttribute('aria-valuenow', String(Math.round(leftPct)));
 
         if (type === 'live' || type === 'vod') {
             right.style.opacity = '0';

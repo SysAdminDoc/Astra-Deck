@@ -5920,6 +5920,9 @@
   "stickyVideoQuickLinksAria": {
     "message": "クイックリンク"
   },
+  "stickyVideoResizePanelsLabel": {
+    "message": "シアター分割パネルのサイズを変更"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "登録チャンネルに移動"
   },

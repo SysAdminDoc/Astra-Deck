@@ -5920,6 +5920,9 @@
   "stickyVideoQuickLinksAria": {
     "message": "روابط سريعة"
   },
+  "stickyVideoResizePanelsLabel": {
+    "message": "تغيير حجم لوحتي Theater Split"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "الانتقال إلى الاشتراكات"
   },

@@ -72,9 +72,69 @@
 }
 
 body {
-  background:
-    linear-gradient(150deg, rgba(255, 93, 74, 0.045), transparent 28%),
-    var(--astra-canvas);
+  background: var(--astra-canvas);
+}
+
+:is(
+  .workspace-command,
+  .stat-card,
+  .settings-sync-card,
+  .schema-overview,
+  .data-flow,
+  .ai-credential-manager,
+  .health-banner,
+  .storage-banner,
+  .optional-host-banner,
+  .welcome-card,
+  .whats-new,
+  .toggle-group,
+  .selector-health,
+  .external-health,
+  .feature-health,
+  .feature-perf,
+  .sp-section,
+  .sp-overview-card,
+  .sp-stat,
+  .sp-settings-group
+) {
+  border: 1px solid var(--astra-border);
+  border-radius: var(--astra-radius-4);
+  background: var(--astra-surface);
+  box-shadow: none;
+}
+
+:is(
+  .brand-icon-shell,
+  .sp-mark,
+  .workspace-command,
+  .sp-section--hero
+) {
+  background-image: none;
+}
+
+:is(
+  .brand-version,
+  .app-status,
+  .sp-version,
+  .sp-context-chip,
+  .toggle-risk-badge,
+  .data-flow-active-flag,
+  .external-health-state,
+  .feature-perf-slow
+) {
+  border-radius: var(--astra-radius-2);
+}
+
+:is(
+  .cta-button,
+  .main-action,
+  .welcome-preset-btn,
+  .welcome-profile-btn,
+  .sp-refresh-btn
+) {
+  border-radius: var(--astra-radius-2);
+  background-image: none;
+  box-shadow: none;
 }
 
 button,

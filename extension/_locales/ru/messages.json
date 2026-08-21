@@ -5920,6 +5920,9 @@
   "stickyVideoQuickLinksAria": {
     "message": "Быстрые ссылки"
   },
+  "stickyVideoResizePanelsLabel": {
+    "message": "Изменить размер панелей Theater Split"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "Перейти к подпискам"
   },

@@ -110,7 +110,7 @@
             height: min(94vh, 920px) !important;
             max-height: min(94vh, 920px) !important;
             border: 1px solid var(--ytkit-v3-border-strong) !important;
-            border-radius: 18px !important;
+            border-radius: 12px !important;
             background: var(--ytkit-v3-bg) !important;
             color: var(--ytkit-v3-text) !important;
             box-shadow: 0 28px 80px rgba(0,0,0,0.52) !important;
@@ -391,7 +391,7 @@
             margin: 0 !important;
             padding: 0 12px !important;
             border: 0 !important;
-            border-radius: 7px !important;
+            border-radius: 6px !important;
             background: transparent !important;
             color: var(--ytkit-v3-muted) !important;
             box-shadow: none !important;
@@ -405,7 +405,7 @@
             bottom: 10px !important;
             inset-inline-start: 0 !important;
             width: 2px !important;
-            border-radius: 2px !important;
+            border-radius: 0 !important;
             background: transparent !important;
         }
 
@@ -887,7 +887,7 @@
             min-height: 44px !important;
             padding: 0 42px 0 14px !important;
             border: 0 !important;
-            border-radius: 7px !important;
+            border-radius: 6px !important;
             background: var(--ytkit-v3-surface) !important;
             color: var(--ytkit-v3-text) !important;
             font-size: 14px !important;
@@ -928,7 +928,7 @@
             height: 26px !important;
             min-height: 26px !important;
             border: 0 !important;
-            border-radius: 12px !important;
+            border-radius: 6px !important;
             background: transparent !important;
             box-shadow: none !important;
         }
@@ -937,7 +937,7 @@
             position: absolute !important;
             inset: 0 !important;
             border: 0 !important;
-            border-radius: 12px !important;
+            border-radius: 6px !important;
             background: var(--ytkit-v3-surface-raised) !important;
             box-shadow: none !important;
         }
@@ -949,7 +949,7 @@
             width: 20px !important;
             height: 20px !important;
             border: 0 !important;
-            border-radius: 50% !important;
+            border-radius: 4px !important;
             background: #e8edf2 !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.32) !important;
             transform: none !important;
@@ -992,7 +992,7 @@
         #ytkit-settings-panel .ytkit-input,
         #ytkit-settings-panel .ytkit-vh-number {
             border: 0 !important;
-            border-radius: 7px !important;
+            border-radius: 6px !important;
             background: var(--ytkit-v3-surface) !important;
             color: var(--ytkit-v3-text) !important;
             font-size: 14px !important;
@@ -1194,7 +1194,7 @@
             min-height: 40px !important;
             padding: 0 14px !important;
             border: 1px solid transparent !important;
-            border-radius: 7px !important;
+            border-radius: 6px !important;
             background: var(--ytkit-v3-surface) !important;
             color: var(--ytkit-v3-muted) !important;
             font-size: 14px !important;
@@ -1306,7 +1306,7 @@
                 width: min(100vw - 20px, 760px) !important;
                 height: min(95vh, 920px) !important;
                 max-height: min(95vh, 920px) !important;
-                border-radius: 14px !important;
+                border-radius: 12px !important;
             }
 
             #ytkit-settings-panel .ytkit-header {
@@ -1597,12 +1597,9 @@
             width: min(1540px, calc(100vw - 24px)) !important;
             height: min(96vh, 980px) !important;
             max-height: min(96vh, 980px) !important;
-            border-radius: 14px !important;
-            background:
-                radial-gradient(circle at 8% 0%, rgba(16,185,129,0.07), transparent 28%),
-                radial-gradient(circle at 92% 0%, rgba(var(--ytkit-v3-accent-rgb),0.06), transparent 26%),
-                var(--ytkit-v3-bg) !important;
-            box-shadow: 0 30px 90px rgba(0,0,0,0.58) !important;
+            border-radius: 12px !important;
+            background: var(--ytkit-v3-bg) !important;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.52) !important;
         }
 
         #ytkit-settings-panel .ytkit-header {
@@ -1616,7 +1613,7 @@
         #ytkit-settings-panel .ytkit-command-search {
             height: 48px !important;
             min-height: 48px !important;
-            border-radius: 9px !important;
+            border-radius: 8px !important;
             background: rgba(17,29,43,0.92) !important;
         }
 
@@ -1632,7 +1629,7 @@
             width: 38px !important;
             height: 22px !important;
             margin-inline-start: 2px !important;
-            border-radius: 12px !important;
+            border-radius: 6px !important;
             background: var(--ytkit-v3-accent) !important;
             box-shadow: inset 0 0 0 1px rgba(255,255,255,0.13) !important;
         }
@@ -1644,7 +1641,7 @@
             display: block !important;
             width: 16px !important;
             height: 16px !important;
-            border-radius: 50% !important;
+            border-radius: 4px !important;
             background: #fff !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.34) !important;
         }
@@ -1656,9 +1653,7 @@
 
         #ytkit-settings-panel .ytkit-sidebar {
             padding: 20px 16px 14px !important;
-            background:
-                linear-gradient(180deg, rgba(12,25,42,0.96), rgba(8,17,29,0.99)),
-                var(--ytkit-v3-rail) !important;
+            background: var(--ytkit-v3-rail) !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-list {
@@ -1684,8 +1679,7 @@
         }
 
         #ytkit-settings-panel .ytkit-nav-btn.active {
-            background:
-                linear-gradient(90deg, rgba(var(--ytkit-v3-accent-rgb),0.15), rgba(var(--ytkit-v3-accent-rgb),0.06)) !important;
+            background: rgba(var(--ytkit-v3-accent-rgb),0.11) !important;
         }
 
         #ytkit-settings-panel .ytkit-nav-label {
@@ -1696,7 +1690,7 @@
         #ytkit-settings-panel .ytkit-nav-count {
             min-width: 39px !important;
             padding: 3px 6px !important;
-            border-radius: 5px !important;
+            border-radius: 4px !important;
             background: rgba(151,178,208,0.07) !important;
             color: var(--ytkit-v3-muted) !important;
             font-size: 11.5px !important;
@@ -1711,9 +1705,7 @@
 
         #ytkit-settings-panel .ytkit-content {
             padding: 18px 22px 30px !important;
-            background:
-                radial-gradient(circle at 12% 5%, rgba(31,119,180,0.06), transparent 34%),
-                transparent !important;
+            background: transparent !important;
         }
 
         #ytkit-settings-panel .ytkit-pane-header {
@@ -1727,9 +1719,7 @@
             padding: 16px 18px !important;
             border: 1px solid var(--ytkit-v3-border) !important;
             border-radius: 12px !important;
-            background:
-                linear-gradient(110deg, rgba(32,49,73,0.82), rgba(17,29,43,0.95) 58%, rgba(14,26,42,0.98)),
-                var(--ytkit-v3-bg) !important;
+            background: var(--ytkit-v3-panel) !important;
             background-color: var(--ytkit-v3-bg) !important;
             box-shadow: 0 -20px 0 var(--ytkit-v3-bg), 0 10px 28px rgba(0,0,0,0.18) !important;
         }
@@ -1750,9 +1740,8 @@
             width: 78px !important;
             height: 78px !important;
             border: 1px solid color-mix(in srgb, var(--cat-color, var(--ytkit-v3-accent)) 38%, transparent) !important;
-            border-radius: 15px !important;
-            background:
-                linear-gradient(145deg, rgba(16,185,129,0.18), rgba(245,158,11,0.17) 68%, rgba(var(--ytkit-v3-accent-rgb),0.16)) !important;
+            border-radius: 12px !important;
+            background: color-mix(in srgb, var(--cat-color, var(--ytkit-v3-accent)) 12%, var(--ytkit-v3-surface)) !important;
             color: var(--ytkit-v3-text) !important;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 24px rgba(0,0,0,0.16) !important;
         }
@@ -1806,7 +1795,7 @@
             min-height: 60px !important;
             padding: 9px 11px !important;
             border: 1px solid var(--ytkit-v3-border) !important;
-            border-radius: 9px !important;
+            border-radius: 8px !important;
             background: rgba(8,17,29,0.28) !important;
         }
 
@@ -1882,9 +1871,7 @@
             overflow: hidden !important;
             border: 1px solid var(--ytkit-v3-border) !important;
             border-radius: 10px !important;
-            background:
-                linear-gradient(100deg, rgba(20,34,51,0.96), rgba(17,29,43,0.92)),
-                var(--ytkit-v3-panel) !important;
+            background: var(--ytkit-v3-panel) !important;
         }
 
         #ytkit-settings-panel .ytkit-feature-card {
@@ -1896,8 +1883,7 @@
         }
 
         #ytkit-settings-panel .ytkit-feature-card.ytkit-card-enabled {
-            background:
-                linear-gradient(90deg, rgba(var(--ytkit-v3-accent-rgb),0.095), rgba(var(--ytkit-v3-accent-rgb),0.035)) !important;
+            background: rgba(var(--ytkit-v3-accent-rgb),0.075) !important;
         }
 
         #ytkit-settings-panel .ytkit-feature-card.ytkit-card-enabled::before {
@@ -2008,7 +1994,7 @@
         #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
             min-width: 126px !important;
             border-color: transparent !important;
-            background: linear-gradient(135deg, var(--ytkit-v3-accent-fill), #ef3c35) !important;
+            background: var(--ytkit-v3-accent-fill) !important;
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-header,
@@ -2028,16 +2014,16 @@
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-footer-actions .ytkit-btn-primary {
-            background: linear-gradient(135deg, var(--ytkit-v3-accent-fill), #ef3c35) !important;
+            background: var(--ytkit-v3-accent-fill) !important;
             color: #fff !important;
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-sidebar {
-            background: linear-gradient(180deg, rgba(239,243,247,0.98), rgba(232,237,243,0.99)) !important;
+            background: var(--ytkit-v3-rail) !important;
         }
 
         html:not([dark]) #ytkit-settings-panel .ytkit-pane-header {
-            background: linear-gradient(110deg, rgba(255,255,255,0.99), rgba(243,246,250,0.98)), var(--ytkit-v3-bg) !important;
+            background: rgba(255,255,255,0.96) !important;
             background-color: var(--ytkit-v3-bg) !important;
         }
 
@@ -2176,7 +2162,7 @@
             #ytkit-settings-panel .ytkit-pane-icon {
                 width: 52px !important;
                 height: 52px !important;
-                border-radius: 11px !important;
+                border-radius: 10px !important;
             }
 
             #ytkit-settings-panel .ytkit-pane-icon svg {
@@ -2305,10 +2291,8 @@
             min-height: 82px !important;
             padding: 14px 16px !important;
             border: 1px solid var(--ytkit-v3-border) !important;
-            border-radius: 11px !important;
-            background:
-                linear-gradient(135deg, rgba(255,255,255,0.035), transparent 70%),
-                rgba(8,17,29,0.42) !important;
+            border-radius: 10px !important;
+            background: rgba(8,17,29,0.42) !important;
         }
 
         #ytkit-settings-panel .ytkit-vh-summary-card__icon {
@@ -2472,6 +2456,751 @@
         }
     `;
 
+    const SURFACE_STYLE_ID = 'ytkit-surface-visual-v1';
+    const SURFACE_VISUAL_SYSTEM_CSS = `
+        :root {
+            --ytkit-premium-canvas: #07101b;
+            --ytkit-premium-panel: #0d1928;
+            --ytkit-premium-raised: #122238;
+            --ytkit-premium-hover: #172a42;
+            --ytkit-premium-border: rgba(151,178,208,0.22);
+            --ytkit-premium-border-strong: rgba(151,178,208,0.36);
+            --ytkit-premium-text: #f5f7fb;
+            --ytkit-premium-muted: #aab7c8;
+            --ytkit-premium-subtle: #8190a5;
+            --ytkit-premium-accent: #ff5d4a;
+            --ytkit-premium-accent-rgb: 255,93,74;
+            --ytkit-premium-accent-fill: #cf352f;
+            --ytkit-premium-success: #45d978;
+            --ytkit-premium-warning: #f6b863;
+            --ytkit-premium-danger: #ff7a86;
+            --ytkit-premium-focus: 0 0 0 2px #07101b, 0 0 0 4px rgba(255,93,74,0.72);
+            --ytkit-premium-shadow: 0 20px 56px rgba(0,0,0,0.42);
+        }
+
+        html:not([dark]) {
+            --ytkit-premium-canvas: #eef2f6;
+            --ytkit-premium-panel: #ffffff;
+            --ytkit-premium-raised: #f3f6f9;
+            --ytkit-premium-hover: #e8edf3;
+            --ytkit-premium-border: rgba(30,53,78,0.18);
+            --ytkit-premium-border-strong: rgba(30,53,78,0.30);
+            --ytkit-premium-text: #172335;
+            --ytkit-premium-muted: #536278;
+            --ytkit-premium-subtle: #6d7c91;
+            --ytkit-premium-focus: 0 0 0 2px #ffffff, 0 0 0 4px rgba(207,53,47,0.55);
+            --ytkit-premium-shadow: 0 18px 48px rgba(20,35,54,0.18);
+        }
+
+        :is(
+            .ytkit-ai-qa-modal,
+            .ytkit-local-ai-modal,
+            .ytkit-aisum-panel,
+            .ytkit-transcript-panel,
+            .ytkit-transcript-search-panel,
+            .ytkit-transcript-batch-panel,
+            .ytkit-dl-popup,
+            .ytkit-dl-history-panel,
+            .ytkit-stream-links-panel,
+            .ytkit-stats-overlay,
+            .ytkit-vvf-panel,
+            .ytkit-wha-overlay,
+            .ytkit-sub-group-dialog,
+            .ytkit-sub-members-panel,
+            .ytkit-sub-digest-panel,
+            .ytkit-search-watch-panel,
+            .ytkit-video-notes-container,
+            .ytkit-bookmarks-container,
+            .ytkit-queue-panel,
+            .ytkit-wlwb-panel,
+            .ytkit-rc-panel,
+            .ytkit-reaction-spammer-panel,
+            .ytkit-speed-popup,
+            .ytkit-sleep-popover,
+            .ytkit-ql-menu,
+            .ytkit-context-menu,
+            .ytkit-wellbeing-card,
+            .ytkit-blocked-watch-dialog
+        ) {
+            border: 1px solid var(--ytkit-premium-border-strong) !important;
+            border-radius: 12px !important;
+            background: var(--ytkit-premium-panel) !important;
+            color: var(--ytkit-premium-text) !important;
+            box-shadow: var(--ytkit-premium-shadow) !important;
+            color-scheme: dark !important;
+            font-family: Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif !important;
+        }
+
+        html:not([dark]) :is(
+            .ytkit-ai-qa-modal,
+            .ytkit-local-ai-modal,
+            .ytkit-aisum-panel,
+            .ytkit-transcript-panel,
+            .ytkit-transcript-search-panel,
+            .ytkit-transcript-batch-panel,
+            .ytkit-dl-popup,
+            .ytkit-dl-history-panel,
+            .ytkit-stream-links-panel,
+            .ytkit-wha-overlay,
+            .ytkit-sub-group-dialog,
+            .ytkit-sub-members-panel,
+            .ytkit-sub-digest-panel,
+            .ytkit-search-watch-panel,
+            .ytkit-video-notes-container,
+            .ytkit-bookmarks-container,
+            .ytkit-queue-panel,
+            .ytkit-wlwb-panel
+        ) {
+            color-scheme: light !important;
+        }
+
+        :is(
+            .ytkit-dl-progress,
+            .ytkit-subs-load-banner,
+            .ytkit-sub-toolbar,
+            .ytkit-wl-workbench,
+            .ytkit-search-container,
+            .ytkit-pm-overlay,
+            .ytkit-mediadl-banner,
+            .ytkit-mediadl-install-prompt,
+            .ytkit-playlist-enhance,
+            .ytkit-speed-presets,
+            .ytkit-mini-player-bar,
+            .ytkit-photosensitive-alert,
+            .ytkit-playback-recovery
+        ) {
+            border: 1px solid var(--ytkit-premium-border-strong) !important;
+            border-radius: 10px !important;
+            background: var(--ytkit-premium-panel) !important;
+            color: var(--ytkit-premium-text) !important;
+            box-shadow: var(--ytkit-premium-shadow) !important;
+            color-scheme: dark !important;
+            font-family: Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif !important;
+        }
+
+        html:not([dark]) :is(
+            .ytkit-dl-progress,
+            .ytkit-subs-load-banner,
+            .ytkit-sub-toolbar,
+            .ytkit-wl-workbench,
+            .ytkit-search-container,
+            .ytkit-pm-overlay,
+            .ytkit-mediadl-banner,
+            .ytkit-mediadl-install-prompt,
+            .ytkit-playlist-enhance,
+            .ytkit-speed-presets,
+            .ytkit-mini-player-bar,
+            .ytkit-photosensitive-alert,
+            .ytkit-playback-recovery
+        ) {
+            color-scheme: light !important;
+        }
+
+        :is(
+            .ytkit-dl-progress,
+            .ytkit-subs-load-banner,
+            .ytkit-sub-toolbar,
+            .ytkit-wl-workbench,
+            .ytkit-search-container,
+            .ytkit-pm-overlay,
+            .ytkit-mediadl-banner,
+            .ytkit-mediadl-install-prompt,
+            .ytkit-playlist-enhance,
+            .ytkit-speed-presets,
+            .ytkit-mini-player-bar,
+            .ytkit-photosensitive-alert,
+            .ytkit-playback-recovery
+        ) :is(button, input, select, textarea) {
+            border-radius: 6px !important;
+            box-shadow: none !important;
+            font: inherit !important;
+        }
+
+        :is(
+            .ytkit-dl-progress,
+            .ytkit-subs-load-banner,
+            .ytkit-sub-toolbar,
+            .ytkit-wl-workbench,
+            .ytkit-search-container,
+            .ytkit-pm-overlay,
+            .ytkit-mediadl-banner,
+            .ytkit-mediadl-install-prompt,
+            .ytkit-playlist-enhance,
+            .ytkit-speed-presets,
+            .ytkit-mini-player-bar,
+            .ytkit-photosensitive-alert,
+            .ytkit-playback-recovery
+        ) :is(button, input, select, textarea, a):focus-visible {
+            outline: 0 !important;
+            border-color: var(--ytkit-premium-accent) !important;
+            box-shadow: var(--ytkit-premium-focus) !important;
+        }
+
+        :is(
+            .ytkit-ai-qa-modal,
+            .ytkit-local-ai-modal,
+            .ytkit-aisum-panel,
+            .ytkit-transcript-search-panel,
+            .ytkit-transcript-batch-panel,
+            .ytkit-dl-popup,
+            .ytkit-dl-history-panel,
+            .ytkit-stream-links-panel,
+            .ytkit-vvf-panel,
+            .ytkit-wha-overlay,
+            .ytkit-sub-group-dialog,
+            .ytkit-sub-members-panel,
+            .ytkit-sub-digest-panel,
+            .ytkit-search-watch-panel,
+            .ytkit-video-notes-container,
+            .ytkit-bookmarks-container,
+            .ytkit-queue-panel,
+            .ytkit-wlwb-panel,
+            .ytkit-rc-panel,
+            .ytkit-reaction-spammer-panel,
+            .ytkit-speed-popup,
+            .ytkit-sleep-popover,
+            .ytkit-ql-menu,
+            .ytkit-context-menu,
+            .ytkit-wellbeing-card,
+            .ytkit-blocked-watch-dialog
+        ) :is(button, input, select, textarea) {
+            border-radius: 6px !important;
+            border-color: var(--ytkit-premium-border) !important;
+            box-shadow: none !important;
+            font: inherit !important;
+        }
+
+        :is(
+            .ytkit-ai-qa-modal,
+            .ytkit-local-ai-modal,
+            .ytkit-aisum-panel,
+            .ytkit-transcript-search-panel,
+            .ytkit-transcript-batch-panel,
+            .ytkit-dl-popup,
+            .ytkit-dl-history-panel,
+            .ytkit-stream-links-panel,
+            .ytkit-vvf-panel,
+            .ytkit-wha-overlay,
+            .ytkit-sub-group-dialog,
+            .ytkit-sub-members-panel,
+            .ytkit-sub-digest-panel,
+            .ytkit-search-watch-panel,
+            .ytkit-video-notes-container,
+            .ytkit-bookmarks-container,
+            .ytkit-queue-panel,
+            .ytkit-wlwb-panel,
+            .ytkit-rc-panel,
+            .ytkit-reaction-spammer-panel,
+            .ytkit-speed-popup,
+            .ytkit-sleep-popover,
+            .ytkit-ql-menu,
+            .ytkit-context-menu,
+            .ytkit-wellbeing-card,
+            .ytkit-blocked-watch-dialog
+        ) :is(button, input, select, textarea, a):focus-visible {
+            outline: 0 !important;
+            border-color: var(--ytkit-premium-accent) !important;
+            box-shadow: var(--ytkit-premium-focus) !important;
+        }
+
+        :is(
+            .ytkit-service-state-pill,
+            .ytkit-pane-chip,
+            .ytkit-meta-chip,
+            .ytkit-badge,
+            .ytkit-feature-badge,
+            .ytkit-wellbeing-badge,
+            .ytkit-transcript-meta__pill,
+            .ytkit-audio-only-pill,
+            .ytkit-subs-load-chip,
+            .ytkit-sub-count-badge,
+            .ytkit-sub-group-chip,
+            .ytkit-download-health__pill,
+            .ytkit-queue-pill,
+            .ytkit-ryd-pill,
+            .ytkit-monet-pill,
+            .ytkit-dock-pill,
+            .ytkit-vh-pill,
+            .ytkit-speed-badge,
+            .ytkit-dl-progress__badge
+        ) {
+            border-radius: 6px !important;
+        }
+
+        :is(
+            .ytkit-progress-bar,
+            .ytkit-dl-progress__bar,
+            .ytkit-dl-progress__fill,
+            .ytkit-wha-bar,
+            .ytkit-volume-hud__bar,
+            .ytkit-volume-hud__fill,
+            .ytkit-mini-player-progress,
+            .ytkit-mini-player-progress-fill
+        ) {
+            border-radius: 4px !important;
+        }
+
+        .ytkit-transcript-panel {
+            max-height: min(620px, calc(100vh - 120px)) !important;
+            overflow: hidden !important;
+        }
+
+        .ytkit-transcript-header {
+            min-height: 58px !important;
+            padding: 12px 16px !important;
+            border-bottom: 1px solid var(--ytkit-premium-border) !important;
+            background: var(--ytkit-premium-panel) !important;
+        }
+
+        .ytkit-transcript-heading {
+            gap: 3px !important;
+        }
+
+        .ytkit-transcript-eyebrow {
+            min-height: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            color: var(--ytkit-premium-subtle) !important;
+        }
+
+        .ytkit-transcript-title {
+            color: var(--ytkit-premium-text) !important;
+            font-size: 16px !important;
+            font-weight: 680 !important;
+        }
+
+        .ytkit-transcript-toggle {
+            min-width: 40px !important;
+            min-height: 40px !important;
+            border-radius: 6px !important;
+            background: var(--ytkit-premium-raised) !important;
+            color: var(--ytkit-premium-muted) !important;
+        }
+
+        .ytkit-transcript-meta {
+            min-height: 46px !important;
+            padding: 8px 16px !important;
+            border-bottom: 1px solid var(--ytkit-premium-border) !important;
+        }
+
+        .ytkit-transcript-export {
+            display: grid !important;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 0 !important;
+            padding: 0 !important;
+            border-bottom: 1px solid var(--ytkit-premium-border) !important;
+            background: var(--ytkit-premium-raised) !important;
+        }
+
+        .ytkit-transcript-export__btn {
+            min-height: 42px !important;
+            border: 0 !important;
+            border-inline-end: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            color: var(--ytkit-premium-text) !important;
+            transform: none !important;
+        }
+
+        .ytkit-transcript-export__btn:last-child {
+            border-inline-end: 0 !important;
+        }
+
+        .ytkit-transcript-export__btn:hover {
+            background: var(--ytkit-premium-hover) !important;
+            border-color: var(--ytkit-premium-border) !important;
+            transform: none !important;
+        }
+
+        .ytkit-transcript-body {
+            padding: 0 !important;
+            color: var(--ytkit-premium-muted) !important;
+        }
+
+        .ytkit-transcript-line {
+            display: grid !important;
+            grid-template-columns: 72px minmax(0, 1fr) !important;
+            align-items: center !important;
+            gap: 16px !important;
+            min-height: 52px !important;
+            padding: 10px 16px !important;
+            border: 0 !important;
+            border-bottom: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 0 !important;
+        }
+
+        .ytkit-transcript-line:hover {
+            background: var(--ytkit-premium-hover) !important;
+        }
+
+        .ytkit-transcript-line.is-active {
+            background: rgba(var(--ytkit-premium-accent-rgb),0.12) !important;
+            box-shadow: inset 3px 0 0 var(--ytkit-premium-accent) !important;
+        }
+
+        .ytkit-transcript-line__ts {
+            min-width: 0 !important;
+            color: var(--ytkit-premium-subtle) !important;
+            font-variant-numeric: tabular-nums !important;
+        }
+
+        .ytkit-transcript-line.is-active .ytkit-transcript-line__ts,
+        .ytkit-transcript-line.is-active .ytkit-transcript-line__text {
+            color: var(--ytkit-premium-accent) !important;
+        }
+
+        .ytkit-transcript-line__text {
+            color: var(--ytkit-premium-text) !important;
+            font-size: 14px !important;
+            line-height: 1.45 !important;
+        }
+
+        .ytkit-transcript-state {
+            margin: 12px !important;
+            border-color: var(--ytkit-premium-border) !important;
+            border-radius: 8px !important;
+            background: var(--ytkit-premium-raised) !important;
+        }
+
+        .ytkit-dl-popup {
+            width: min(440px, calc(100vw - 24px)) !important;
+            max-width: min(440px, calc(100vw - 24px)) !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+
+        .ytkit-dl-popup::backdrop {
+            background: rgba(2,7,14,0.68) !important;
+        }
+
+        .ytkit-dl-popup__toolbar {
+            min-height: 54px !important;
+            padding: 0 12px !important;
+            border-bottom: 1px solid var(--ytkit-premium-border) !important;
+            background: var(--ytkit-premium-panel) !important;
+        }
+
+        .ytkit-dl-popup__tabs {
+            gap: 0 !important;
+            align-self: stretch !important;
+        }
+
+        .ytkit-dl-popup__tab {
+            min-width: 92px !important;
+            min-height: 100% !important;
+            border: 0 !important;
+            border-bottom: 2px solid transparent !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            color: var(--ytkit-premium-muted) !important;
+        }
+
+        .ytkit-dl-popup__tab.is-active,
+        .ytkit-dl-popup__tab[aria-selected="true"] {
+            border-bottom-color: var(--ytkit-premium-accent) !important;
+            background: rgba(var(--ytkit-premium-accent-rgb),0.06) !important;
+            color: var(--ytkit-premium-accent) !important;
+        }
+
+        .ytkit-dl-popup__close {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 6px !important;
+            background: transparent !important;
+        }
+
+        .ytkit-dl-popup__body {
+            gap: 14px !important;
+            padding: 14px 16px 16px !important;
+            background: var(--ytkit-premium-panel) !important;
+        }
+
+        .ytkit-dl-popup__row {
+            gap: 7px !important;
+        }
+
+        .ytkit-dl-popup__label {
+            color: var(--ytkit-premium-muted) !important;
+            letter-spacing: 0.06em !important;
+        }
+
+        .ytkit-dl-popup__chips {
+            gap: 6px !important;
+        }
+
+        .ytkit-dl-popup__chip,
+        .ytkit-dl-popup__dir-btn,
+        .ytkit-dl-popup__clip-input {
+            min-height: 38px !important;
+            border: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 6px !important;
+            background: var(--ytkit-premium-raised) !important;
+            color: var(--ytkit-premium-text) !important;
+        }
+
+        .ytkit-dl-popup__chip.is-active,
+        .ytkit-dl-popup__chip[aria-pressed="true"] {
+            border-color: var(--ytkit-premium-accent) !important;
+            background: rgba(var(--ytkit-premium-accent-rgb),0.10) !important;
+            color: var(--ytkit-premium-accent) !important;
+        }
+
+        .ytkit-dl-popup__go {
+            min-height: 44px !important;
+            border: 1px solid transparent !important;
+            border-radius: 6px !important;
+            background: var(--ytkit-premium-accent-fill) !important;
+            color: #fff !important;
+            box-shadow: none !important;
+        }
+
+        .ytkit-global-toast {
+            border: 1px solid var(--ytkit-premium-border-strong) !important;
+            border-radius: 10px !important;
+            background: var(--ytkit-premium-panel) !important;
+            color: var(--ytkit-premium-text) !important;
+            box-shadow: var(--ytkit-premium-shadow) !important;
+        }
+
+        :is(
+            .ytkit-seek-hud,
+            .ytkit-volume-hud,
+            .ytkit-speed-osd,
+            .ytkit-audio-only-status,
+            .ytkit-buffer-status,
+            .ytkit-photosensitive-status,
+            .ytkit-live-latency-readout
+        ) {
+            border: 1px solid var(--ytkit-premium-border-strong) !important;
+            border-radius: 8px !important;
+            background: rgba(7,16,27,0.96) !important;
+            color: var(--ytkit-premium-text) !important;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.34) !important;
+            text-shadow: none !important;
+        }
+
+        .ytkit-context-menu {
+            padding: 6px !important;
+        }
+
+        .ytkit-context-menu-item {
+            min-height: 38px !important;
+            border-radius: 6px !important;
+        }
+
+        #ytkit-player-controls {
+            border-radius: 8px !important;
+            border-color: var(--ytkit-premium-border) !important;
+            background: rgba(7,16,27,0.94) !important;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.34) !important;
+        }
+
+        #ytkit-player-controls :is(.ytkit-player-btn, .ytkit-ql-launcher--player, .ytkit-ql-toggle) {
+            border-radius: 6px !important;
+            background: rgba(255,255,255,0.035) !important;
+            box-shadow: none !important;
+        }
+
+        #ytkit-po-drop {
+            border-radius: 10px !important;
+            background: rgba(7,16,27,0.98) !important;
+            box-shadow: 0 20px 48px rgba(0,0,0,0.42) !important;
+        }
+
+        #ytkit-po-drop :is(.ytkit-ql-item, .ytkit-ql-del, .ytkit-ql-bottom-btn, .ytkit-ql-input, .ytkit-ql-add-btn) {
+            border-radius: 6px !important;
+        }
+
+        html.ytkit-watch-restyle ytd-watch-metadata {
+            margin-top: 10px !important;
+            padding: 10px 0 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        html.ytkit-watch-restyle ytd-watch-metadata h1.ytd-watch-metadata,
+        html.ytkit-watch-restyle ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string {
+            margin: 0 !important;
+            color: var(--yt-spec-text-primary, var(--ytkit-premium-text)) !important;
+            font-size: clamp(20px, 1.55vw, 25px) !important;
+            font-weight: 690 !important;
+            line-height: 1.28 !important;
+            text-align: start !important;
+            text-transform: none !important;
+            text-shadow: none !important;
+        }
+
+        html.ytkit-watch-restyle ytd-watch-metadata #top-row {
+            gap: 10px !important;
+            padding: 12px 0 8px !important;
+        }
+
+        html.ytkit-watch-restyle ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next,
+        html.ytkit-watch-restyle .ytkit-local-dl-btn,
+        html.ytkit-watch-restyle ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next,
+        html.ytkit-watch-restyle #notification-preference-button .yt-spec-button-shape-next {
+            min-height: 36px !important;
+            height: 36px !important;
+            padding-inline: 12px !important;
+            border: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 6px !important;
+            background: var(--ytkit-premium-raised) !important;
+            color: var(--yt-spec-text-primary, var(--ytkit-premium-text)) !important;
+            box-shadow: none !important;
+        }
+
+        html.ytkit-watch-restyle ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover,
+        html.ytkit-watch-restyle .ytkit-local-dl-btn:hover {
+            border-color: var(--ytkit-premium-border-strong) !important;
+            background: var(--ytkit-premium-hover) !important;
+        }
+
+        html.ytkit-watch-restyle ytd-watch-metadata #description.ytd-watch-metadata,
+        html.ytkit-watch-restyle ytd-watch-metadata ytd-text-inline-expander {
+            margin-top: 10px !important;
+            padding: 12px 14px !important;
+            border: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 8px !important;
+            background: var(--ytkit-premium-raised) !important;
+        }
+
+        html.ytkit-watch-restyle ytd-comments#comments {
+            margin-top: 18px !important;
+            padding: 14px 0 20px !important;
+            border: 0 !important;
+            border-top: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+        }
+
+        html.ytkit-watch-restyle :is(ytd-comment-view-model, ytd-comment-renderer) {
+            padding-block: 12px !important;
+            border-bottom: 1px solid var(--ytkit-premium-border) !important;
+            background: transparent !important;
+        }
+
+        html.ytkit-watch-restyle ytd-commentbox #contenteditable-textarea,
+        html.ytkit-watch-restyle ytd-comments-header-renderer ytd-comment-simplebox-renderer #placeholder-area {
+            min-height: 44px !important;
+            border: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 8px !important;
+            background: var(--ytkit-premium-raised) !important;
+        }
+
+        html.ytkit-split-active,
+        html.ytkit-split-active body {
+            background: var(--ytkit-premium-canvas) !important;
+        }
+
+        html.ytkit-split-active #ytkit-split-wrapper,
+        html.ytkit-split-active #ytkit-split-left {
+            background: transparent !important;
+        }
+
+        html.ytkit-split-active #ytkit-split-right {
+            border-inline-start: 1px solid var(--ytkit-premium-border) !important;
+            background: var(--ytkit-premium-panel) !important;
+            color: var(--ytkit-premium-text) !important;
+        }
+
+        html.ytkit-split-active #ytkit-split-divider {
+            width: 8px !important;
+            border: 0 !important;
+            border-inline-start: 1px solid var(--ytkit-premium-border) !important;
+            border-inline-end: 1px solid var(--ytkit-premium-border) !important;
+            background: var(--ytkit-premium-canvas) !important;
+        }
+
+        html.ytkit-split-active #ytkit-split-divider:hover {
+            border-color: rgba(var(--ytkit-premium-accent-rgb),0.54) !important;
+            background: rgba(var(--ytkit-premium-accent-rgb),0.08) !important;
+        }
+
+        html.ytkit-split-active .ytkit-divider-pip {
+            width: 2px !important;
+            border-radius: 0 !important;
+            background: var(--ytkit-premium-subtle) !important;
+        }
+
+        html.ytkit-split-active :is(#ytkit-split-title-bar, .ytkit-split-live-header) {
+            border-bottom: 1px solid var(--ytkit-premium-border) !important;
+            background: var(--ytkit-premium-panel) !important;
+            color: var(--ytkit-premium-text) !important;
+        }
+
+        html.ytkit-split-active :is(.ytkit-split-live-card, .ytkit-split-actions-docked) {
+            border: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 8px !important;
+            background: var(--ytkit-premium-raised) !important;
+            box-shadow: none !important;
+        }
+
+        html.ytkit-split-active #ytkit-split-close {
+            width: 36px !important;
+            height: 36px !important;
+            border: 1px solid var(--ytkit-premium-border) !important;
+            border-radius: 6px !important;
+            background: var(--ytkit-premium-raised) !important;
+            color: var(--ytkit-premium-muted) !important;
+        }
+
+        @media (max-width: 720px) {
+            .ytkit-transcript-export {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            .ytkit-transcript-export__btn {
+                border-bottom: 1px solid var(--ytkit-premium-border) !important;
+            }
+
+            .ytkit-transcript-line {
+                grid-template-columns: 58px minmax(0, 1fr) !important;
+                gap: 10px !important;
+                padding-inline: 12px !important;
+            }
+        }
+
+        @media (forced-colors: active) {
+            :is(
+                .ytkit-ai-qa-modal,
+                .ytkit-local-ai-modal,
+                .ytkit-aisum-panel,
+                .ytkit-transcript-panel,
+                .ytkit-transcript-search-panel,
+                .ytkit-transcript-batch-panel,
+                .ytkit-dl-popup,
+                .ytkit-dl-history-panel,
+                .ytkit-stream-links-panel,
+                .ytkit-stats-overlay,
+                .ytkit-vvf-panel,
+                .ytkit-wha-overlay,
+                .ytkit-sub-group-dialog,
+                .ytkit-sub-members-panel,
+                .ytkit-sub-digest-panel,
+                .ytkit-search-watch-panel,
+                .ytkit-video-notes-container,
+                .ytkit-bookmarks-container,
+                .ytkit-queue-panel,
+                .ytkit-wlwb-panel,
+                .ytkit-context-menu,
+                .ytkit-global-toast
+            ) {
+                border-color: CanvasText !important;
+                box-shadow: none !important;
+            }
+
+            :is(button, input, select, textarea, a):focus-visible {
+                outline: 2px solid Highlight !important;
+                outline-offset: 2px !important;
+                box-shadow: none !important;
+            }
+        }
+    `;
+
     function ensureSettingsVisualSystem(doc = globalThis.document) {
         if (!doc?.getElementById) return null;
         const id = `yt-suite-style-${STYLE_ID}`;
@@ -2481,18 +3210,34 @@
         return core.injectStyle(SETTINGS_VISUAL_SYSTEM_CSS, STYLE_ID, true);
     }
 
+    function ensureSurfaceVisualSystem(doc = globalThis.document) {
+        if (!doc?.getElementById) return null;
+        const id = `yt-suite-style-${SURFACE_STYLE_ID}`;
+        const existing = doc.getElementById(id);
+        if (existing) return existing;
+        if (doc !== globalThis.document || typeof core.injectStyle !== 'function') return null;
+        return core.injectStyle(SURFACE_VISUAL_SYSTEM_CSS, SURFACE_STYLE_ID, true);
+    }
+
     Object.assign(core, {
         SETTINGS_CATEGORY_SECTIONS,
         SETTINGS_VISUAL_SYSTEM_CSS,
-        ensureSettingsVisualSystem
+        SURFACE_VISUAL_SYSTEM_CSS,
+        ensureSettingsVisualSystem,
+        ensureSurfaceVisualSystem
     });
+
+    ensureSurfaceVisualSystem();
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             SETTINGS_CATEGORY_SECTIONS,
             SETTINGS_VISUAL_SYSTEM_CSS,
+            SURFACE_VISUAL_SYSTEM_CSS,
             STYLE_ID,
-            ensureSettingsVisualSystem
+            SURFACE_STYLE_ID,
+            ensureSettingsVisualSystem,
+            ensureSurfaceVisualSystem
         };
     }
 })();

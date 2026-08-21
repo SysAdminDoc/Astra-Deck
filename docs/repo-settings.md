@@ -174,13 +174,13 @@ gone stale: the description advertised "150+ features" while the README said
 distribution format nor any integration. Fourteen days of traffic showed 22
 views / 12 uniques and 11 asset downloads on the newest release.
 
-These are the intended values. They live here so drift is detectable — compare
+These are the intended values. They live here so drift is detectable, compare
 with `gh api repos/SysAdminDoc/Astra-Deck --jq '{description, homepage, topics}'`.
 
 **Description**
 
 ```
-Astra Deck — Premium YouTube enhancement extension for Chrome & Firefox, plus a Tampermonkey userscript. 200+ features: SponsorBlock, DeArrow, theater split, feed/comment filtering, transcript viewer, downloads, and deep playback control. No telemetry, no accounts.
+Astra Deck, Premium YouTube enhancement extension for Chrome & Firefox, plus a Tampermonkey userscript. 200+ features: SponsorBlock, DeArrow, theater split, feed/comment filtering, transcript viewer, downloads, and deep playback control. No telemetry, no accounts.
 ```
 
 **Homepage**
@@ -208,5 +208,5 @@ no-telemetry posture that is this project's differentiator against Return
 YouTube Dislike's freemium turn. `userscript` and `tampermonkey` keep the
 second distribution tier findable.
 
-**Social preview image** — still unset. It is an upload-only setting with no
+**Social preview image**, still unset. It is an upload-only setting with no
 REST endpoint, so it stays an operator action; see `Roadmap_Blocked.md`.

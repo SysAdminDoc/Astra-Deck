@@ -160,7 +160,7 @@ before proxying requests to these optional origins.
 | `https://returnyoutubedislikeapi.com/*` | Fetches estimated Return YouTube Dislike counts for the optional dislike-count restoration feature. |
 | `https://www.reddit.com/*` | Fetches Reddit search results for the optional Reddit discussion panel under a YouTube video. |
 | `https://old.reddit.com/*` | Allows Reddit permalink handling for the optional Reddit discussion panel without broad Reddit host access. |
-| `https://raw.githubusercontent.com/*` | Repair path only. When a YouTube layout change breaks a feature, the user can run a selector refresh that downloads this extension's own published `selector-packs.json`. It is fetched from a fixed URL held in the background script — not a caller-supplied one — without cookies, with `redirect: 'error'`, and under a 256 KB cap. Nothing is uploaded, and no automatic or background request is made to this host. |
+| `https://raw.githubusercontent.com/*` | Repair path only. When a YouTube layout change breaks a feature, the user can run a selector refresh that downloads this extension's own published `selector-packs.json`. It is fetched from a fixed URL held in the background script, not a caller-supplied one, without cookies, with `redirect: 'error'`, and under a 256 KB cap. Nothing is uploaded, and no automatic or background request is made to this host. |
 
 ## GitHub-Full Additional Host Permissions
 
@@ -205,8 +205,7 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
   no body; Cobalt POSTs use their own fixed message contract. Residual risk,
   accepted and documented: the denylist is literal-only,
   so a granted public hostname that later resolves to a private address is not
-  re-checked at fetch time. Resolving at validation time would not fix this —
-  DNS can change between the check and the request.
+  re-checked at fetch time. Resolving at validation time would not fix this, DNS can change between the check and the request.
 - GitHub-full is intentionally broader and should not be submitted as the public
   Chrome Web Store package.
 - No `<all_urls>` host permission is requested.

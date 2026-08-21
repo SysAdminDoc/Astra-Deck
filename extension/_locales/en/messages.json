@@ -5920,6 +5920,9 @@
   "stickyVideoQuickLinksAria": {
     "message": "Quick links"
   },
+  "stickyVideoResizePanelsLabel": {
+    "message": "Resize Theater Split panels"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "Go to subscriptions"
   },

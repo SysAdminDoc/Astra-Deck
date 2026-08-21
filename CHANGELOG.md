@@ -6,7 +6,34 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
-## [4.81.0] - 2026-08-20
+## [4.82.0] (2026-08-20)
+
+### Changed
+
+- The toolbar popup, side panels, Command Deck, transcript tools, downloader,
+  AI dialogs, queues, notes, search, live chat, and recovery panels now share
+  one flat navy surface system. Corners are tighter, borders are clearer, and
+  coral is reserved for the controls that need attention.
+- The normal YouTube watch page now carries the same theme without boxing in
+  the video metadata. The action row, description, comment composer, and
+  comment list follow the Astra palette while keeping YouTube's layout intact.
+- Theater Split now opens at 68/32 with an eight-pixel divider, a calmer right
+  pane, compact metadata cards, and flat comment rows. The divider is a real
+  keyboard-accessible separator and reports its current ratio to assistive
+  technology.
+- Userscript builds now compact the large static visual-system templates before
+  bundling them. This keeps the core record below Greasy Fork's size ceiling
+  while preserving the source CSS byte for byte at runtime.
+
+### Fixed
+
+- Double-clicking the Theater Split divider now resets it reliably. The drag
+  handler used to consume the click sequence before the reset handler could run.
+- The refreshed theme now loads at page startup, so overlays and watch-page
+  controls no longer wait for the settings panel to open before receiving their
+  shared tokens.
+
+## [4.81.0] (2026-08-20)
 
 ### Fixed
 
@@ -22,7 +49,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The "Allow once" button on the blocked-video dialog kept a fixed amber hover
   no matter which accent colour you had chosen. It now follows the accent.
 
-## [4.80.0] - 2026-08-20
+## [4.80.0] (2026-08-20)
 
 ### Fixed
 
@@ -40,7 +67,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   real palette entries now, which means changing one changes every place that
   uses it. Nothing looks different today.
 
-## [4.79.0] - 2026-08-20
+## [4.79.0] (2026-08-20)
 
 ### Changed
 
@@ -53,7 +80,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   made. Nothing looks different, which is the point. Editing a colour in those
   files now changes what you see, and a test fails if a duplicate creeps back.
 
-## [4.78.0] - 2026-08-20
+## [4.78.0] (2026-08-20)
 
 ### Fixed
 
@@ -63,7 +90,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   been given a translatable key, so the settings under a heading were in your
   language while the heading above them was not.
 
-## [4.77.0] - 2026-08-20
+## [4.77.0] (2026-08-20)
 
 ### Added
 
@@ -120,7 +147,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   them. Nothing is rescaled behind your back, but a threshold you tuned before
   the change will catch fewer videos afterwards, so it is worth revisiting.
 
-## [4.76.0] - 2026-08-19
+## [4.76.0] (2026-08-19)
 
 Nothing in this release changes what Astra Deck does. It is a maintenance pass
 on the checks that decide whether a release is fit to ship, plus the removal of
@@ -138,7 +165,7 @@ some code that had stopped doing anything.
 - Editing the extension's stylesheets no longer trips the translation check,
   which had been treating whole blocks of CSS as untranslated text.
 
-## [4.75.0] - 2026-08-19
+## [4.75.0] (2026-08-19)
 
 ### Added
 
@@ -170,7 +197,7 @@ some code that had stopped doing anything.
 - The filter-list panel no longer tells you to check the address when the
   address has nothing to do with the failure.
 
-## [4.74.0] - 2026-08-19
+## [4.74.0] (2026-08-19)
 
 ### Added
 
@@ -200,7 +227,7 @@ some code that had stopped doing anything.
   Cobalt server are now cut off as they arrive rather than after the whole thing
   has been read into memory.
 
-## [4.73.0] - 2026-08-19
+## [4.73.0] (2026-08-19)
 
 ### Added
 
@@ -245,7 +272,7 @@ some code that had stopped doing anything.
   what it looks like in practice, and the two copies of Sticky Video and DeArrow
   had each drifted apart before.
 
-## [4.71.0] - 2026-08-19
+## [4.71.0] (2026-08-19)
 
 ### Fixed
 
@@ -283,7 +310,7 @@ some code that had stopped doing anything.
 - Unchecking every item in the download popup playlist preview now downloads
   the single video, matching the hint printed above the button. It previously
   hard-blocked, contradicting that copy and leaving no way out except closing
-  and reopening the popup - and it was reachable with no effort at all when a
+and reopening the popup. It was reachable with no effort at all when a
   playlist had no items or the current video sat outside the shown subset.
 
 - The playback-speed popup now stays on screen in a short window and no longer
@@ -328,7 +355,7 @@ some code that had stopped doing anything.
   id. When a browser omits the document id, both sides held null and the
   advertised document binding quietly degraded to tab-plus-container.
 
-## [4.70.0] - 2026-08-19
+## [4.70.0] (2026-08-19)
 
 ### Added
 
@@ -379,11 +406,11 @@ some code that had stopped doing anything.
   identifies itself as an age, identity, consent, captcha, or sign-in surface,
   and will not auto-click anywhere else on the page while one of those is open.
   The "Still Watching?" dismisser previously treated "the video is paused" as
-  enough evidence to press a confirm button — but a verification interstitial
+  enough evidence to press a confirm button, but a verification interstitial
   also pauses playback, so that fallback could answer one on the user's behalf.
   Answering a verification prompt is an account action, never a convenience.
 
-## [4.69.0] - 2026-08-19
+## [4.69.0] (2026-08-19)
 
 ### Added
 
@@ -394,7 +421,7 @@ some code that had stopped doing anything.
   on feed cards. Both live on youtube.com, so the feature adds no new site
   access; if the original image will not load, the card goes straight back to
   what YouTube rendered.
-- **Focus hours.** Any on/off feature can now carry an active window — for
+- **Focus hours.** Any on/off feature can now carry an active window, for
   example, Focused Mode on weeknights from 22:00 to 06:00. Windows are read
   against your own clock, including ones that cross midnight, and leaving a
   window puts back the value you had before it opened rather than a default.
@@ -402,18 +429,18 @@ some code that had stopped doing anything.
   the rest of your settings.
 - **Filter Feeds Before Render** (opt-in). Blocked channels are now removed
   from YouTube's feed data before the page builds a card from it, rather than
-  being hidden afterwards — so a blocked video never occupies a slot, a count,
+  being hidden afterwards, so a blocked video never occupies a slot, a count,
   or a row of the layout. Playlists and the video player are deliberately never
   touched, because their entry positions drive autoplay and "N of M". The
   existing hide-after-render path stays on as the fallback for anything the new
   path does not recognise.
 
-## [4.68.0] - 2026-08-18
+## [4.68.0] (2026-08-18)
 
 ### Added
 
 - **Feature health.** The popup now answers "which of my features are working
-  right now?" — every enabled feature is listed as working, degraded, or failed,
+  right now?", every enabled feature is listed as working, degraded, or failed,
   with the page element or service that stopped answering and when. It opens
   automatically when something is wrong, and travels with the diagnostics
   bundle so a bug report says what broke instead of "it stopped working".
@@ -433,7 +460,7 @@ some code that had stopped doing anything.
   through the same guarded path as the other speed features so a saved
   per-channel or persistent speed is never overwritten.
 
-## [4.67.0] - 2026-08-18
+## [4.67.0] (2026-08-18)
 
 ### Fixed
 
@@ -443,7 +470,7 @@ some code that had stopped doing anything.
   in Arabic, German and Brazilian Portuguese, so clipped controls and sideways
   scrolling are caught before release rather than reported by users.
 
-## [4.66.0] - 2026-08-18
+## [4.66.0] (2026-08-18)
 
 ### Fixed
 
@@ -457,7 +484,7 @@ some code that had stopped doing anything.
   no way to see it. It now also has a size budget and removes the oldest entries
   first, and the search panel shows how much space it is using.
 
-## [4.65.0] - 2026-08-18
+## [4.65.0] (2026-08-18)
 
 ### Changed
 
@@ -487,7 +514,7 @@ some code that had stopped doing anything.
   acting on the previous video. It is now installed explicitly, and a failure is
   reported instead of ignored.
 
-## [4.64.0] - 2026-08-18
+## [4.64.0] (2026-08-18)
 
 ### Fixed
 
@@ -498,8 +525,8 @@ some code that had stopped doing anything.
 - Destructive actions now behave consistently. Removing a single video from the
   hidden list offers Undo, the same as the two bulk buttons beside it. Undoing a
   YouTube Takeout import works even on a first-ever import, which previously got
-  no Undo at all. And deleting a stored AI key — the one action that genuinely
-  cannot be reversed, since the key is never shown again — now says so instead
+  no Undo at all. And deleting a stored AI key, the one action that genuinely
+  cannot be reversed, since the key is never shown again, now says so instead
   of reading like the reversible ones.
 - Astra Deck now tells you when it could not read your saved settings. If the
   one-time settings read failed, the page quietly ran on factory defaults for
@@ -515,13 +542,13 @@ some code that had stopped doing anything.
   fixture it measured and refuses to quietly swap in a different budget when
   the reference captures are missing.
 
-## [4.63.0] - 2026-08-18
+## [4.63.0] (2026-08-18)
 
 ### Security
 
 - The userscript no longer sends your whole YouTube cookie jar to any local
   program that answers on a companion port. It attached every `.youtube.com`
-  cookie — including the httpOnly sign-in cookies — to whichever local server
+  cookie, including the httpOnly sign-in cookies, to whichever local server
   responded to a health check in a shape it recognised, and one of those shapes
   proves nothing about who is listening. Cookies now require the companion to
   identify itself by exact service name, and only the four authentication
@@ -537,7 +564,7 @@ some code that had stopped doing anything.
 
 - Feature modules no longer load based on which page you happened to open
   first. YouTube is a single-page app, but the runtime bootstrap ran once on
-  the landing URL and skipped every module whose route did not match — and
+  the landing URL and skipped every module whose route did not match, and
   because the monolith builds its feature list at load time, those modules
   could never take over later. A session that started on a watch page ran an
   older in-page copy of Video Hider and Subscription Groups for its entire
@@ -557,8 +584,7 @@ some code that had stopped doing anything.
 - The selector-refresh repair path is now disclosed like every other external
   origin. `raw.githubusercontent.com` was declared in the source manifest but
   missing from the origin catalogue, so built releases dropped the permission
-  and the request worked only because GitHub sends a permissive CORS header —
-  while the Data Flow panel never listed the host at all. It is now catalogued,
+  and the request worked only because GitHub sends a permissive CORS header, while the Data Flow panel never listed the host at all. It is now catalogued,
   disclosed, and documented in the store permission rationale.
 - Finishing first-run setup now confirms which profile is active, instead of the
   welcome card silently disappearing. The two confirmation messages already
@@ -567,13 +593,13 @@ some code that had stopped doing anything.
   filter-list address, a storage-corruption warning, and a failing selector-rules
   asset all rendered in the same grey as their idle state, so a size nudge and
   malformed data looked identical. The wording still states the outcome on its
-  own — the colour reinforces it rather than replacing it.
+  own, the colour reinforces it rather than replacing it.
 - Video Hider's safety net now covers scrolling, and can actually undo itself.
   The rule that refuses to hide more than a quarter of a feed only ran on
   navigation, so an over-matching keyword, duration, or predicate rule silently
   emptied every batch loaded by scrolling until you navigated away; it is now
   checked after each batch, and after a scan that was cut short. When "remove
-  hidden cards from layout" is on it also puts the cards back — previously it
+  hidden cards from layout" is on it also puts the cards back, previously it
   announced that it had left them visible while the feed stayed empty.
 - The filter-list address you are typing is no longer wiped by a background
   refresh. The field is only saved when you submit it, but any toggle, storage
@@ -597,7 +623,7 @@ some code that had stopped doing anything.
   categories while the control still showed the override as active.
 - Importing subscription groups now merges instead of silently replacing.
   Which copy of the feature runs depends on the page you land on, and the
-  in-page copy still deleted every group missing from the imported file — the
+  in-page copy still deleted every group missing from the imported file, the
   button's own tooltip promised a merge, and a six-second toast was the only
   recovery. Both copies now merge by default and replace only on the
   deliberate Shift+click the tooltip describes.
@@ -619,11 +645,11 @@ some code that had stopped doing anything.
   no-opping it: `appendChild`/`replaceChildren` now attach children, `remove()`
   and `insertBefore()` exist, `className` reflects into the class list,
   `isConnected` defaults to true, and `matches()` evaluates class, id, and
-  attribute selectors — throwing on combinators it cannot honestly evaluate
+  attribute selectors, throwing on combinators it cannot honestly evaluate
   rather than reporting a false "no match". Feature UI built during a test is
   now observable, so render regressions can fail a test.
 
-## [4.62.0] - 2026-08-14
+## [4.62.0] (2026-08-14)
 
 ### Added
 
@@ -636,7 +662,7 @@ some code that had stopped doing anything.
 
 - The first settings edit after a page load now persists. The mutable runtime
   state previously shared its object with the save-diff baseline, so the first
-  scalar edit—and in-place array edits—could update the UI without emitting a
+  scalar edit, and in-place array edits, could update the UI without emitting a
   storage mutation.
 - Finite settings now expose only valid choices, numeric settings carry
   source-backed bounds, and validation rejects user-facing numbers without a
@@ -655,14 +681,14 @@ some code that had stopped doing anything.
   default, inline editors use readable accessible names, and late capability
   probes no longer replace the control currently being edited.
 
-## [4.61.0] - 2026-08-14
+## [4.61.0] (2026-08-14)
 
 ### Fixed
 
 - **Download options and playback-speed popups no longer open off-screen.** A defensive `inset` reset outranked both the JS and CSS-anchor positioning paths and pinned the panel to the viewport origin; positioning is now scoped, clamped on both axes, and mirrored for the no-anchor (Firefox) path.
 - **The popup keeps Ctrl/Cmd+wheel zoom.** The wheel handler no longer cancels the browser zoom gesture over scrollable regions.
-- **Data Flow loopback risk dots render their risk color** — the emitted `df-risk-local-companion` class had no matching rule, so companion and Ollama origins showed no risk color.
-- **`audit-dependencies` runs standalone on Windows** — Node's CVE-2024-27980 hardening rejected the bare `npm.cmd` launcher (EINVAL); the launch is branched so the dependency-exception policy is exercisable outside `npm run`.
+- **Data Flow loopback risk dots render their risk color**, the emitted `df-risk-local-companion` class had no matching rule, so companion and Ollama origins showed no risk color.
+- **`audit-dependencies` runs standalone on Windows**, Node's CVE-2024-27980 hardening rejected the bare `npm.cmd` launcher (EINVAL); the launch is branched so the dependency-exception policy is exercisable outside `npm run`.
 
 ### Added
 
@@ -737,7 +763,7 @@ some code that had stopped doing anything.
   revokes the previous filter-list-only host grant. Wildcard host input is
   rejected, and required manifest hosts are excluded from the revocation UI.
 
-## [4.60.1] - 2026-08-13
+## [4.60.1] (2026-08-13)
 
 ### Added
 
@@ -790,7 +816,7 @@ some code that had stopped doing anything.
   escalate one list into blanket web access. Statically allowlisted origins
   keep their previous path unchanged. Fetches stay anonymous (`credentials:
   'omit'`, no `Authorization`), `GET` only, 15 s timeout, 1 MiB cap, and a
-  fetched list can only ever supply data — never executable predicate code.
+  fetched list can only ever supply data, never executable predicate code.
 - The persisted-domain sanitizer and both Video Hider fallback normalizers now
   delegate to the shared scope rules instead of restating weaker copies, so a
   settings import cannot persist a private-network filter-list URL.
@@ -842,7 +868,7 @@ some code that had stopped doing anything.
 
 - The filter-list surface is fully localized in all ten non-English locales;
   it had shipped as English placeholders. Reviewer jargon is gone from the
-  copy — the panel no longer offers to "refresh an optional HTTPS list through
+  copy, the panel no longer offers to "refresh an optional HTTPS list through
   the reviewed extension network bridge".
 
 
@@ -1021,7 +1047,7 @@ some code that had stopped doing anything.
 
 ---
 
-## [4.59.1] - 2026-08-10
+## [4.59.1] (2026-08-10)
 
 ### Changed
 
@@ -1036,7 +1062,7 @@ some code that had stopped doing anything.
 
 ---
 
-## [4.59.0] - 2026-08-10
+## [4.59.0] (2026-08-10)
 
 ### Changed
 
@@ -1067,7 +1093,7 @@ some code that had stopped doing anything.
   shown.
 - The companion and Ollama capability checks now require the service to
   identify itself instead of treating any answer on the port as proof it is
-  there - the same false positive a co-installed legacy server caused before.
+  there. A co-installed legacy server caused the same false positive before.
 - Imported backups can no longer carry unbounded strings through sanitisation
   and push every later save into a long retry backoff.
 - Reading a setting that has never been written no longer caches one call
@@ -1081,8 +1107,8 @@ some code that had stopped doing anything.
 - Video Hider's keyword, duration and predicate filters now refuse to hide
   more than a quarter of a feed. A rule that over-matches leaves the cards
   visible and says so instead of silently emptying the page. Hides you chose
-  yourself - single videos, blocked channels, watched markers and allowlist
-  mode - are never second-guessed.
+  yourself, including single videos, blocked channels, watched markers, and
+  allowlist mode, are never second-guessed.
 - Release preparation now runs the full verification suite and re-derives the
   userscript bundle before certifying a release, so an unsynced module can no
   longer ship a stale bundle to userscript installs.
@@ -1138,7 +1164,7 @@ some code that had stopped doing anything.
 
 ---
 
-## [4.58.6] - 2026-08-10
+## [4.58.6] (2026-08-10)
 
 ### Fixed
 
@@ -1150,7 +1176,7 @@ some code that had stopped doing anything.
 
 ---
 
-## [4.58.5] - 2026-08-10
+## [4.58.5] (2026-08-10)
 
 ### Fixed
 
@@ -1160,7 +1186,7 @@ some code that had stopped doing anything.
 
 ---
 
-## [4.58.4] - 2026-08-10
+## [4.58.4] (2026-08-10)
 
 ### Fixed
 
@@ -1168,7 +1194,7 @@ some code that had stopped doing anything.
 
 ---
 
-## [4.58.3] - 2026-08-10
+## [4.58.3] (2026-08-10)
 
 ### Added
 
@@ -1180,13 +1206,13 @@ some code that had stopped doing anything.
 
 ---
 
-## [4.58.2] - 2026-08-09
+## [4.58.2] (2026-08-09)
 
 ### Fixed
 
 - **"SponsorBlock: unexpected response" no longer appears over ordinary
   videos.** The hash-prefix `skipSegments` endpoint answers `404` for any
-  prefix with no submissions — the normal result for most videos, not an
+  prefix with no submissions, the normal result for most videos, not an
   error. It was treated as a failed request, so the lookup failed over to the
   mirror host, spent a second request, and surfaced the mirror's reply as an
   in-page degraded-state pill. A 404 is now answered as an empty segment list,
@@ -1196,17 +1222,17 @@ some code that had stopped doing anything.
 ### Changed
 
 - **The in-page degraded-state strip only shows states you can act on.**
-  A revoked host permission ("host access needed — re-enable in Settings")
+  A revoked host permission ("host access needed, re-enable in Settings")
   still surfaces immediately. Rate limits, transient server errors, stale-cache
   fallbacks and malformed payloads recover on their own, so pinning them to the
-  corner of every watch page was noise — they now go to the diagnostic log and
+  corner of every watch page was noise, they now go to the diagnostic log and
   the popup's External API Health card only. Enabling **Debug Mode** restores
   the full strip for triage. `describeDegradation()` carries a new `actionable`
   flag so every surface makes the same call.
 
 ---
 
-## [4.58.1] - 2026-08-09
+## [4.58.1] (2026-08-09)
 
 ### Fixed
 
@@ -1217,14 +1243,13 @@ some code that had stopped doing anything.
   section of that page and never followed a continuation, so on any account
   with more subscriptions than the first batch the rest were treated as
   unsubscribed. On a real feed it hid **32 of 102 cards across 21 subscribed
-  channels** — ordinary uploads — while leaving both genuine collaborations
+  channels**, ordinary uploads, while leaving both genuine collaborations
   visible, because a collaboration byline ("X and 2 more") carries no `/@handle`
   link and so failed open. The feature defaults ON, is scoped to the
   subscriptions feed, and is independent of Video Hider, so turning Video Hider
   off did not stop it.
 
-  The scrape is retired. Detection now keys on `yt-avatar-stack-view-model` —
-  the stacked-avatar cluster YouTube puts on multi-creator uploads — which is
+  The scrape is retired. Detection now keys on `yt-avatar-stack-view-model`, the stacked-avatar cluster YouTube puts on multi-creator uploads, which is
   structural, locale-free, local, and needs no network request. Verified
   against a captured feed: exactly the 2 collaboration cards hide, the other
   100 stay.
@@ -1243,14 +1268,14 @@ some code that had stopped doing anything.
 
 ---
 
-## [4.58.0] - 2026-08-09
+## [4.58.0] (2026-08-09)
 
 ### Fixed
 
 - **The Video Hider list manager is reachable.** Settings now carries a Video
   Hider destination in the sidebar, next to Content, holding the pane that
   restores or deletes individual hidden videos, drops allowed-video exceptions,
-  and unblocks channels — with per-entry and clear-all actions, each undoable
+  and unblocks channels, with per-entry and clear-all actions, each undoable
   from a toast. The pane itself has existed since v3.0.0 but was never mounted
   in either the peeled settings-panel module or the ytkit.js fallback, so the
   three stores it manages (`ytkit-hidden-videos`,
@@ -1303,12 +1328,12 @@ some code that had stopped doing anything.
   The modular extension and userscript fallback share the same responsive,
   light-theme, and RTL visual contract.
 
-## [4.57.0] - 2026-08-06
+## [4.57.0] (2026-08-06)
 
 ### Fixed
 
 - **The watch-time dashboard explains itself when there is nothing to show.**
-  With no tracked days it rendered 30 zero-height bars and four zeroes — a flat
+  With no tracked days it rendered 30 zero-height bars and four zeroes, a flat
   axis that reads as a broken chart rather than an empty one. It now says the
   tracker is off, points at the setting that turns it on, and notes the data
   never leaves the device, in all 11 locales.
@@ -1316,13 +1341,13 @@ some code that had stopped doing anything.
   no-op.** The whole onboarding flow ran only from the popup, so a user who
   installed Astra Deck and went straight to YouTube got nothing. A fresh
   install now stages an onboarding sentinel and badges the toolbar action, and
-  opening the popup clears it. Updates — extension or browser — deliberately do
+  opening the popup clears it. Updates, extension or browser, deliberately do
   not re-trigger it, and a reinstall over an already-onboarded profile is left
   alone.
 - **A corrupt settings backup no longer reports the JSON parser's own error.**
   Picking the wrong file surfaced "Import failed: Unexpected token < in JSON at
-  position 0" — a byte offset, which tells you nothing about which file to
-  choose — while every other import failure path in the popup had hand-written
+  position 0", a byte offset, which tells you nothing about which file to
+  choose, while every other import failure path in the popup had hand-written
   copy. It now says the file is not an Astra Deck backup and names the
   `exportVersion` field a real one carries, in all 11 locales. The raw parser
   error still goes to the console for diagnostics.
@@ -1338,7 +1363,7 @@ some code that had stopped doing anything.
 - **Importing an empty or unrecognised backup no longer wipes your settings.**
   The guard meant to reject a settings-less legacy import tested
   `exportVersion < 2`, but a legacy export carries no `exportVersion` at all
-  and `undefined < 2` is false — so `{}` sailed through, spread over the
+  and `undefined < 2` is false, so `{}` sailed through, spread over the
   defaults, and reset every setting while reporting success.
 - **Settings import in the userscript is now transactional.** It shares the
   extension's snapshot/rollback/undo engine rather than a second inline
@@ -1357,7 +1382,7 @@ some code that had stopped doing anything.
 - **The README no longer documents a Firefox install that cannot work.** It
   told every reader to use `about:addons` → "Install Add-on From File", which
   Firefox Release and Beta reject outright because the released XPI is
-  unsigned — the build copies the Firefox ZIP to `.xpi` with no signing step,
+  unsigned, the build copies the Firefox ZIP to `.xpi` with no signing step,
   and the shipped v4.56.0 artifacts contain zero `META-INF/` entries. The
   Firefox section now names the three real options (userscript, temporary load
   via `about:debugging`, or a permanent install on Developer Edition / Nightly
@@ -1367,7 +1392,7 @@ some code that had stopped doing anything.
 
 - **`npm audit` is clean at every severity again.** The one standing HIGH
   (`js-yaml` 4.3.0, CVE-2026-59870 quadratic CPU) reached the tree only through
-  the lint toolchain — `web-ext` -> `addons-linter` -> `eslint`. Bumping
+  the lint toolchain, `web-ext` -> `addons-linter` -> `eslint`. Bumping
   `web-ext` 10.4.0 -> 10.6.0 resolves it to the patched 4.3.1; `ws` moves
   8.21.0 -> 8.21.2. The `brace-expansion` override also relaxes from an exact
   `5.0.9` to `^5.0.9`, matching its two sibling overrides: that package has
@@ -1376,12 +1401,12 @@ some code that had stopped doing anything.
 - **Video Hider's Movies and Auto-dubbed filters now work outside English.**
   `isMovie` and `isAutoDubbed` were the last two of the six type predicates
   still matching English metadata only, so both were permanently false on 10 of
-  the 11 shipped locales — the toggles appeared to work and filtered nothing.
+  the 11 shipped locales, the toggles appeared to work and filtered nothing.
   Both now carry the same ES/DE/FR/IT/PT/RU/JA/KO/ZH/AR alternations their
   siblings have.
 - **All six Video Hider type predicates were dead on Korean.** The metadata
   normaliser ran NFD and stripped combining marks so patterns could be written
-  unaccented — but NFD also decomposes every Hangul syllable into conjoining
+  unaccented, but NFD also decomposes every Hangul syllable into conjoining
   Jamo, which are letters rather than marks, so `\p{M}` left them decomposed and
   no precomposed Korean literal could ever match. `isLive`, `isUpcoming`,
   `isMix` and `isPlaylist` had shipped this way since they were localised; the
@@ -1389,7 +1414,7 @@ some code that had stopped doing anything.
   cannot restore the stripped accents.
 - **The store-safe build no longer asks for `cookies` or `nativeMessaging`.**
   The profile split rewrote host permissions, optional host permissions, CSP and
-  web-accessible resources — but never `permissions`. So the store-safe artifact
+  web-accessible resources, but never `permissions`. So the store-safe artifact
   declared two of Chrome's most review-sensitive permissions while stripping
   every loopback origin that consumes them: it requested capability it could not
   exercise, and the store rationale document justified both to reviewers on that
@@ -1399,7 +1424,7 @@ some code that had stopped doing anything.
 
 ### Added
 
-- **`--no-crx` — cut a release without a CRX, and without the maintainer key.**
+- **`--no-crx`, cut a release without a CRX, and without the maintainer key.**
   A release build with no key aborted in `resolveCrxSigningConfig` before
   producing anything, which made the key look like it gated the whole release.
   It never did: self-hosted CRX installs are Linux-only on modern Chrome and
@@ -1409,14 +1434,14 @@ some code that had stopped doing anything.
   present. The build records `crxSigningMode: "none"`, and the readiness gate
   confirms `build/` really contains no CRX rather than taking the flag's word
   for it.
-- `npm run check:userscript-symbols` — a gate that resolves every
+- `npm run check:userscript-symbols`, a gate that resolves every
   `<singleton>.<method>()` call made from the userscript's bundled modules
   against the monolith that has to define it. The byte-for-byte bundle parity
   check could not catch the defect above, because the bundle was correct and
   its callees were missing. The singleton scope is derived from the monolith
   itself rather than hand-listed, so a new singleton is covered automatically.
 
-## [4.56.0] - 2026-08-06
+## [4.56.0] (2026-08-06)
 
 ### Changed
 
@@ -1424,12 +1449,12 @@ some code that had stopped doing anything.
   was `#090e14`, and the panel shell, the nav rail, the header, the content
   column and the footer all used it. With no elevation anywhere and
   `rgba(220,230,242,0.10)` hairlines between rows, a 57-item category read as
-  one undifferentiated slab. There are now three planes — the rail sits below
-  the content, the settings table sits above it — and the borders came up to
+  one undifferentiated slab. There are now three planes, the rail sits below
+  the content, the settings table sits above it, and the borders came up to
   match, because a hairline tuned against black disappears against anything
   lighter. The light theme gained the same two planes.
 - **An enabled setting looks enabled.** `.ytkit-card-enabled` was
-  `background: transparent; box-shadow: none` — the state had no visual
+  `background: transparent; box-shadow: none`, the state had no visual
   treatment at all, so in a 57-row category the only signal that a feature was
   on was its switch, at the far right of a 1300px row. Enabled rows now carry a
   tint and a leading accent rail, using the same idiom the active nav button
@@ -1438,7 +1463,7 @@ some code that had stopped doing anything.
 - **Every category shows its enabled/total count**, not only the open one.
   The counts existed but were `display: none` on all but the active row, so
   finding which category held your settings meant clicking through all ten.
-- Row hover went from `rgba(255,255,255,0.018)` to `0.045` — the old value was
+- Row hover went from `rgba(255,255,255,0.018)` to `0.045`, the old value was
   not perceptible on the surface it sat on.
 
 ### Added
@@ -1457,13 +1482,13 @@ some code that had stopped doing anything.
   bounded to their rule block, and both were verified to fail against the
   previous design before being kept.
 
-## [4.55.0] - 2026-08-06
+## [4.55.0] (2026-08-06)
 
 ### Changed
 
 - **Theater Split now collapses only from the comments column.** Scrolling up
   while the pointer happened to rest over the video threw the split away
-  mid-read — it had its own 3-tick collapse trigger on the player. That
+  mid-read, it had its own 3-tick collapse trigger on the player. That
   trigger is gone, along with the equivalent swipe-down-on-video gesture and
   the collapse hidden in the forwarded-touch path. A wheel or swipe over the
   player still scrolls the comments column, in both directions; it just cannot
@@ -1472,23 +1497,22 @@ some code that had stopped doing anything.
 - **Quick Links dropdown footer redesigned.** Edit and Settings are icon-only
   controls, but the footer was a two-column `1fr 1fr` grid with
   `align-items: stretch`, and both buttons also carry `.ytkit-ql-item`
-  (`flex: 1 1 auto`) — so each was drawn as a half-width, 34px-tall slab
+  (`flex: 1 1 auto`), so each was drawn as a half-width, 34px-tall slab
   holding a 12px glyph. They are now 28px square icon buttons in a
   right-aligned cluster, with a hover surface and a light-theme lane.
 
-## [4.54.1] - 2026-08-06
+## [4.54.1] (2026-08-06)
 
 ### Changed
 
 - **Audio-only mode now works on live streams.** v4.54.0 excluded them, which
   was doctrine inherited from the buffer-target feature rather than a reason
   that applied here: that feature skips live because changing the buffering
-  goal breaks live latency, while pinning a quality has no such hazard —
-  YouTube offers quality selection on live streams itself. A multi-hour stream
+  goal breaks live latency, while pinning a quality has no such hazard, YouTube offers quality selection on live streams itself. A multi-hour stream
   is the longest, most expensive session a viewer has, so it is exactly where
   a bandwidth saver earns its keep.
 
-## [4.54.0] - 2026-08-06
+## [4.54.0] (2026-08-06)
 
 Five new features, sourced by diffing the top-voted open feature requests of
 ImprovedTube, Enhancer for YouTube and Control Panel for YouTube against
@@ -1506,8 +1530,7 @@ are still asking for; these are what survived that diff.
 - **Audio-only mode.** Collapses the video and asks the player for the
   cheapest stream it has, so a watch page costs roughly what a podcast does.
   YouTube exposes no true audio-only stream to extensions, so the pill states
-  which you actually got — "Audio only" or "Audio mode · lowest quality" —
-  and the feature never claims one it did not get. Live streams are left
+  which you actually got, "Audio only" or "Audio mode · lowest quality", and the feature never claims one it did not get. Live streams are left
   alone, and disabling hands the quality pin back instead of leaving the
   player at 144p.
 - **Comment translation.** A Translate link under comments that are not
@@ -1521,7 +1544,7 @@ are still asking for; these are what survived that diff.
   PiP entry points participate, and a browser that denies site-data APIs
   degrades to the previous behaviour.
 - **UI font.** A curated typeface list including a high-legibility option, as
-  a select rather than a free-text field — an arbitrary font-family is a CSS
+  a select rather than a free-text field, an arbitrary font-family is a CSS
   injection surface, and Custom CSS already exists for that. The player is
   deliberately untouched.
 
@@ -1530,8 +1553,8 @@ are still asking for; these are what survived that diff.
 - **"Disable Loudness Normalization" is now "Keep Volume At Full."** It never
   disabled loudness normalization and could not: the gain runs in a Web Audio
   node neither world can reach, and the MAIN-world bridge its comment pointed
-  at was never built. What it does — stop the player volume drifting below
-  100% — is now what it says.
+  at was never built. What it does, stop the player volume drifting below
+  100%, is now what it says.
 
 ### Notes
 
@@ -1540,16 +1563,16 @@ are still asking for; these are what survived that diff.
   and the userscript-tier competitive survey are tracked in Roadmap_Blocked.md
   with the specific evidence each needs.
 
-## [4.53.0] - 2026-08-06
+## [4.53.0] (2026-08-06)
 
 Second half of the audit-backlog drain: every remaining P3 finding. ROADMAP.md
-is now empty — what is left is operator-gated and tracked in Roadmap_Blocked.md.
+is now empty, what is left is operator-gated and tracked in Roadmap_Blocked.md.
 
-### Fixed — features that were inert or wrong on 10 of 11 locales
+### Fixed, features that were inert or wrong on 10 of 11 locales
 
 - **Five features identified YouTube's own controls by matching English words.**
   Comment sort, auto-like, Watch Later quick-add, Not Interested and precise
-  view counts were inert everywhere else — and comment sort was worse than
+  view counts were inert everywhere else, and comment sort was worse than
   inert, re-opening the sort dropdown every ~2 seconds for the whole session
   because nothing matched and nothing closed it. Each now reads the Polymer
   data YouTube exposes (iconType, playlistEditEndpoint, subscribed,
@@ -1557,14 +1580,14 @@ is now empty — what is left is operator-gated and tracked in Roadmap_Blocked.m
   retries, because menu items render asynchronously and the old
   next-animation-frame lookup usually missed even in English while the card
   hid locally anyway.
-- **Every Cyrillic comment was classified as Russian** — both arms of the
+- **Every Cyrillic comment was classified as Russian**, both arms of the
   language detector's ternary returned `'ru'`. Ukrainian, Serbian and
   Macedonian are now distinguished and anything else reports unknown, which
   the caller fails open on instead of hiding.
 - **The whole "search" scope of the list feed layout was inert**: search
   results render under `ytd-search`, not `ytd-browse`.
 
-### Fixed — Polymer node recycling
+### Fixed, Polymer node recycling
 
 - Hide Watched Videos stamped a permanent marker, so a recycled card stayed
   dimmed or hidden over an unwatched video, and a card read before its resume
@@ -1575,7 +1598,7 @@ is now empty — what is left is operator-gated and tracked in Roadmap_Blocked.m
 - The comment filter's checked stamp carried only the rules hash, so a
   recycled thread kept the previous comment's verdict.
 
-### Fixed — twenty-one small correctness defects
+### Fixed, twenty-one small correctness defects
 
 Channel-page redirects mangled `?bp=` query strings and reassigned the same
 URL on every load; the settings-rollback toast asked for a colour named
@@ -1597,14 +1620,14 @@ fetch per commenter; and dual captions accepted the previous page's response,
 looped forever on mount failure, and compared the browser locale instead of
 the caption track on screen.
 
-### Fixed — settings search
+### Fixed, settings search
 
 The search field's icon declared a left offset while statically positioned, so
 it sat in flow beside an input that was never sized. The input stopped at its
 intrinsic width while the container painted its background across the header,
 and the placeholder read "Search settings, pages, co" in every rendered state.
 
-### Added — gates that can fail
+### Added, gates that can fail
 
 - **A light-theme lane for injected surfaces.** Every theming defect in this
   audit shared one root cause: nothing checked injected CSS against YouTube's
@@ -1626,16 +1649,16 @@ and the placeholder read "Search settings, pages, co" in every rendered state.
   storage manager's unload guard is module-scoped, which is what its comment
   always claimed.
 
-## [4.52.0] - 2026-08-06
+## [4.52.0] (2026-08-06)
 
 Audit-backlog drain: every P0/P1/P2 finding from the 2026-08-06 deep audit,
 plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
 
-### Fixed — features that were silently inert or wrong
+### Fixed, features that were silently inert or wrong
 
 - **Comment Filter never filtered lazily-loaded comments.** Its mutation rule
   was registered as a broad rule, whose dispatcher passes `document.body`, but
-  the callback iterated its argument as MutationRecords — so it threw on every
+  the callback iterated its argument as MutationRecords, so it threw on every
   mutation batch, before the rescan, and flooded the diagnostics ring. Now a
   scoped rule, which is the one that receives the added elements.
 - **Bulk unsubscribe could report success without unsubscribing**, then delete
@@ -1643,7 +1666,7 @@ plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
   unsubscribe dialog or the control flipping away from its unsubscribe label;
   the confirm step no longer accepts YouTube's generic `#confirm-button`, which
   is shared with clear-watch-history and delete-playlist.
-- **Hide Collaborations (default on) was inert after any SPA navigation** — it
+- **Hide Collaborations (default on) was inert after any SPA navigation**, it
   declared no page scope, so landing on Home and clicking Subscriptions left it
   dormant all session. It also removed cards outright, so a truncated
   subscription fetch destroyed real videos; hiding is now reversible.
@@ -1653,7 +1676,7 @@ plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
   Triage, Privacy, Researcher, Power User, Focus): they mutated settings in
   place, which defeated every reconciliation path, so no feature started or
   stopped until a reload.
-- **Volume wheel was pinned to 45–55%** — it read the volume from a MAIN-world
+- **Volume wheel was pinned to 45-55%**, it read the volume from a MAIN-world
   player API invisible to the content script and fell back to a literal 50.
 - **Repeat Takeout imports double-counted watch time**, compounding on each
   import.
@@ -1665,7 +1688,7 @@ plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
   subscription-groups fallback lost the frozen NEW-badge map and never
   content-type-filtered infinite-scroll cards.
 
-### Fixed — accessibility, theming, and copy
+### Fixed, accessibility, theming, and copy
 
 - **Closed captions no longer ship hidden.** The default hidden-player-controls
   set included `captions`, which hides the subtitle text overlay itself, so CC
@@ -1675,15 +1698,15 @@ plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
   watch-page restyle, thin scrollbar, Download / Hide All buttons and the
   masthead quick-link launcher were white-on-white. Chat-style comments,
   video notes, the DeArrow chip, the AI buttons and early.css followed.
-- **The watch-time dashboard is a real dialog** — role, modal, labelled close,
-  Escape, focus restore — and no longer overflows below ~700px.
+- **The watch-time dashboard is a real dialog**, role, modal, labelled close,
+  Escape, focus restore, and no longer overflows below ~700px.
 - Eleven template messages shipped a literal ellipsis where their substitution
   token belonged ("…% complete."); the flagship injected controls and preset
   toasts were English-only. All are catalogued and translated in ten locales.
 - Toast dismissal fades again, and toasts re-enter the top layer above the
   settings panel; the install prompt and download progress card go with them.
 
-### Fixed — gates that could not fail
+### Fixed, gates that could not fail
 
 - The shipped userscript bundled a stale core module through three releases;
   the "verbatim contents" test only checked one substring per module. Both the
@@ -1695,7 +1718,7 @@ plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
 - The release checklist, native-messaging doc, CODEOWNERS and the blocked
   tracker no longer point at files the companion split removed.
 
-## [4.51.4] - 2026-08-06
+## [4.51.4] (2026-08-06)
 
 ### Changed
 
@@ -1723,8 +1746,7 @@ plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
   reported as unexpected, and `npm run release:readiness` fails if it appears
   in `build/` (`companion-not-republished`) or in the release manifest
   (`companion-not-manifested`).
-- The port catalogue's shape — the ordered port list and the loopback host —
-  is pinned here as well as in the companion repository. The two copies of
+- The port catalogue's shape, the ordered port list and the loopback host, is pinned here as well as in the companion repository. The two copies of
   `scripts/companion-port-catalogue.json` are the contract; a reordered list
   would otherwise satisfy every consumer assertion while breaking probe order.
 
@@ -1738,7 +1760,7 @@ plus the quicker P3s. Behaviour fixes first, then the gates that let them ship.
 - Companion components from the release SBOM, which now describes the npm
   dependency graph only. The companion carries its own inventory.
 
-## [4.51.3] - 2026-08-05 (Astra Downloader v1.9.1)
+## [4.51.3] (2026-08-05) (Astra Downloader v1.9.1)
 
 Audit-driven pass over the v1.8.0 any-site download work and the v1.9.0
 sign-in store.
@@ -1746,10 +1768,10 @@ sign-in store.
 ### Fixed
 - **A `skipped` download was invisible.** The companion bucketed "recent"
   against a hardcoded status tuple, so a download that wrote no file appeared
-  in no section at all — the silent outcome the status exists to expose. It now
+  in no section at all, the silent outcome the status exists to expose. It now
   reads `DOWNLOAD_TERMINAL_STATES`, offers a Retry, and notifies from the tray
   with the reason.
-- **The extension called every skipped result "Already Downloaded"** — copy
+- **The extension called every skipped result "Already Downloaded"**, copy
   from the download-archive feature deleted in companion v1.3.0, which v1.8.0
   gave the opposite meaning. Retired across all 11 locales in favour of
   "Nothing Downloaded"; the progress bar no longer fills to 100% for a run that
@@ -1765,7 +1787,7 @@ sign-in store.
 - **The site-login index is written atomically** like every other companion
   store, and a failed index write no longer strands a jar holding a live
   session with no way to remove it.
-- **Single videos no longer land in a folder named `NA`** — playlist markers
+- **Single videos no longer land in a folder named `NA`**, playlist markers
   match whole path segments, and the folder falls back through `playlist_id`.
 - `check-versions` now enforces `docs/architecture.md`'s version claims, which
   it listed but never checked.
@@ -1774,7 +1796,7 @@ sign-in store.
 
 ### Added
 - **Max file size** control in Settings. It gates every download and produced
-  the most common `skipped` result, but had no UI — the only way to change it
+  the most common `skipped` result, but had no UI, the only way to change it
   was editing `config.json`.
 - **Add sign-in** action on a blocked non-YouTube download, opening the
   Sign-ins page with the site prefilled.
@@ -1785,7 +1807,7 @@ sign-in store.
   `npm run check` exits 0.
 - A stored sign-in resolves in one index read per download instead of two.
 
-### Astra Downloader v1.9.0 — Site sign-ins for private and members-only video
+### Astra Downloader v1.9.0, Site sign-ins for private and members-only video
 
 Downloading from any site (v1.8.0) only gets you as far as what a signed-out
 visitor can see. This adds a per-site session store so X, Instagram, Facebook,
@@ -1796,7 +1818,7 @@ members-only Vimeo, and paywalled video download too.
   **Import cookies.txt** (any browser's Netscape export) or **Read from
   browser**, which drives yt-dlp's own browser cookie reader. Stored sign-ins
   are listed with their cookie count, source, and expiry, and can be removed.
-- **`SiteLoginStore`** — one protected Netscape jar per registrable domain
+- **`SiteLoginStore`**, one protected Netscape jar per registrable domain
   under `%LOCALAPPDATA%\AstraDownloader\site-logins`, written with the same
   owner-only ACL as the transient YouTube jars.
 - **`/site-logins` (GET / POST / DELETE)**, token-authenticated. POST accepts
@@ -1807,14 +1829,14 @@ members-only Vimeo, and paywalled video download too.
 
 #### Security properties
 - **One site per jar.** Cookies are filtered to the target registrable domain
-  at import, at export, and at write time — importing a whole-browser export
+  at import, at export, and at write time, importing a whole-browser export
   stores only the site being signed in to. Suffix matching is exact, so
   `notx.com` never matches `x.com`.
 - **Write-only for secrets.** No API, GUI view, log line, or diagnostics bundle
   can read a cookie name or value back out.
 - **Jars are scoped to their own site at spawn time.** `Download.cookies_scope`
   records which site a jar was built for, and `--cookies` is passed only when
-  it matches the URL being fetched — so a request pairing one site's URL with
+  it matches the URL being fetched, so a request pairing one site's URL with
   another site's cookies sends nothing.
 - **A per-download copy** reaches yt-dlp, never the stored file: `--cookies` is
   also a write path, so concurrent downloads for one site would otherwise race
@@ -1826,7 +1848,7 @@ members-only Vimeo, and paywalled video download too.
 - Chrome/Edge/Brave 127+ app-bound encryption is reported as the specific,
   actionable failure it is (yt-dlp #10927) instead of a generic error.
 
-### Astra Downloader v1.8.0 — Downloads from any site, not just YouTube
+### Astra Downloader v1.8.0, Downloads from any site, not just YouTube
 
 The companion is now a general video downloader. Every site yt-dlp has an
 extractor for works from the standalone Quick download box, the clipboard
@@ -1857,7 +1879,7 @@ grabber, and the HTTP API.
   `2130706433`) are refused with a specific `code` and user-facing reason.
 - **Cookies are YouTube-scoped.** `--cookies` is attached only for YouTube URLs.
   The jar was already YouTube-only by content, but `--cookies` is also a write
-  path — yt-dlp would otherwise persist another site's session into it.
+  path, yt-dlp would otherwise persist another site's session into it.
 - **The JavaScript-runtime hard gate applies to YouTube only.** Deno solves
   YouTube's n/sig challenges; no other extractor needs it, so a missing runtime
   no longer blocks a Reddit or X download.
@@ -1873,7 +1895,7 @@ grabber, and the HTTP API.
   that named YouTube is now site-neutral. GUI copy, the clipboard-grabber
   setting, and `docs/yt-dlp-cookie-threat-model.md` were updated to match.
 
-## [4.51.2] - 2026-08-03
+## [4.51.2] (2026-08-03)
 
 ### Added
 - **Parametric EQ.** The shared MAIN-world audio graph now offers an
@@ -1957,7 +1979,7 @@ grabber, and the HTTP API.
   suites now pin companion fallback probing, repair guidance, cold-start retries,
   recovery-code copy, group editing, sorting, and import counters.
 
-## [4.51.1] - 2026-08-02 (companion v1.7.0)
+## [4.51.1] (2026-08-02) (companion v1.7.0)
 
 ### Added
 - **Scheduled subscriptions.** Astra Downloader now stores channel and playlist
@@ -2068,7 +2090,7 @@ grabber, and the HTTP API.
   top-level hidden-video and blocked-channel stores instead of dead settings
   keys, retaining their newest bounded entries.
 
-## [4.51.0] - 2026-08-02 (companion v1.6.0)
+## [4.51.0] (2026-08-02) (companion v1.6.0)
 
 ### Added
 - **Native companion localization scaffold.** The Qt GUI now resolves system
@@ -2113,11 +2135,11 @@ grabber, and the HTTP API.
 - **Power-efficient codec mode.** A new Codec Selector option asks this device
   which codec it decodes both smoothly and power-efficiently, then prefers only
   that one. When the browser has no answer, rejects the query, or reports every
-  supported codec as equally efficient, it changes nothing — YouTube's own
+  supported codec as equally efficient, it changes nothing, YouTube's own
   selection stands.
 - **The download dialog can ask what this video actually has.** A "Check
   available" control in the quality row calls the companion's format endpoint
-  and strikes out every resolution the video cannot honor — asking for 4K on a
+  and strikes out every resolution the video cannot honor, asking for 4K on a
   720p upload, or 480p on a video whose lowest stream is 1080p, previously
   looked like it worked while yt-dlp quietly downloaded something else. A
   selection that stops being valid falls back to Best and says so.
@@ -2131,20 +2153,20 @@ grabber, and the HTTP API.
 - **Microcopy pass.** One ellipsis and one dash convention across the interface,
   side-panel labels no longer borrow wording from unrelated surfaces, the
   disabled "Mark all read" control explains that nothing is new, and the
-  companion's maintenance copy now describes what it actually does — yt-dlp is
+  companion's maintenance copy now describes what it actually does, yt-dlp is
   checked at most every twelve hours (at start and when the queue goes idle),
   and a refreshed ffmpeg replaces the installed copy only after it verifies.
 - **Importing subscription groups merges instead of replacing.** An import used
   to delete every group missing from the file, recoverable only through a
-  six-second toast. Imports now merge — existing groups and their channels
-  survive, imported records win on name and color — and the destructive
+  six-second toast. Imports now merge, existing groups and their channels
+  survive, imported records win on name and color, and the destructive
   replace-everything path takes a deliberate Shift+click on Import.
 
 ### Security
 - **The companion update check follows the published Release, not a branch.**
   Whether an update exists was decided by reading the version from `main`, so a
   premature or bad commit could drive update logic before any release existed.
-  The version now comes from the newest published Release tag — draft and
+  The version now comes from the newest published Release tag, draft and
   pre-release entries are ignored, the tag shape is validated before it reaches
   a URL, and no release means no update.
 
@@ -2152,12 +2174,12 @@ grabber, and the HTTP API.
 - **Failures a PO-token provider would fix now say so.** No token-free client
   covers the whole catalogue, so age-gated, members-only, and SABR-limited
   downloads fail with advice that never mentioned the one thing that fixes
-  them. Those failures now name the provider when none is running — and stay
+  them. Those failures now name the provider when none is running, and stay
   quiet when one is. Bare `LOGIN_REQUIRED` / `UNPLAYABLE` playability statuses,
   previously unclassified, are recognised as sign-in failures.
 - **The cookie-less retry for ended live streams shares one parser.** It ran a
   cloned copy of the progress parser with no test coverage, which had already
-  drifted — a late output line could flip a cancelled download back to
+  drifted, a late output line could flip a cancelled download back to
   "merging". Both attempts now use the same code, covered by tests for cookie
   stripping, retry progress, and the cancelled guard.
 - **Video Insights distinguishes "not looked up" from "not published".** A
@@ -2165,7 +2187,7 @@ grabber, and the HTTP API.
   published no category or tags. The panel now says the lookup did not run and
   marks those fields as unchecked.
 - **Custom filter predicates follow JavaScript's `!` precedence.** `!ctx.a ===
-  true` was evaluated as `!(ctx.a === true)` — the opposite result for an
+  true` was evaluated as `!(ctx.a === true)`, the opposite result for an
   expression written to look like JavaScript. Predicates that relied on the old
   grouping need explicit parentheses.
 - **Chat-style comments stop restyling the whole thread on every change.** Each
@@ -2174,7 +2196,7 @@ grabber, and the HTTP API.
   and one whose markup YouTube replaced is detected and restyled.
 - **The subscriptions feed says who is ordering it.** With Subscription Groups
   active, the saved feed order stopped applying because the group toolbar's
-  Sort owns ordering — with nothing on screen explaining the change. The view
+  Sort owns ordering, with nothing on screen explaining the change. The view
   controls now say so.
 - **Three toggles now work outside English.** Hide Create button, the live-chat
   popout entry, and the live-chat subscribe-privacy tooltip were matched by
@@ -2210,8 +2232,7 @@ grabber, and the HTTP API.
   leaving them inert, so a matching card looked enabled and ignored every
   click. They now stay dimmed and labelled unavailable while they match.
 - **Section Reset and its Undo now cover every setting in the section.** Both
-  keyed on the feature id, so features that store under a different key —
-  playback speed, theme, custom CSS and about twenty more — were skipped
+  keyed on the feature id, so features that store under a different key, playback speed, theme, custom CSS and about twenty more, were skipped
   entirely, and only checkboxes were refreshed, leaving dropdowns, sliders and
   color pickers displaying the value that had just been reset away.
 - **Settings explains a session-only port fallback.** When the configured port
@@ -2224,8 +2245,8 @@ grabber, and the HTTP API.
   attributes those two features query, so voting found nothing to vote on and
   holding Alt revealed an empty overlay.
 - **Monolith fallback copies match their peeled modules.** The DeArrow,
-  SponsorBlock, and Return YouTube Dislike objects in `ytkit.js` — used when a
-  feature content script fails to load — had drifted for months. They now carry
+  SponsorBlock, and Return YouTube Dislike objects in `ytkit.js`, used when a
+  feature content script fails to load, had drifted for months. They now carry
   the route-token and lazy-image guards, the self-disarming progress-bar
   observer, anti-adblock detection, skip-timing jitter, API health reporting,
   and the debounced cache persist with an unload flush and teardown guard.
@@ -2266,17 +2287,17 @@ grabber, and the HTTP API.
   yt-dlp/ffmpeg versions through the existing worker-backed signal after
   `MainWindow` construction.
 
-## [4.50.7] - 2026-07-28
+## [4.50.7] (2026-07-28)
 
 Deep-audit release (companion v1.5.6). Four parallel auditors over the
-v4.50.2–v4.50.6 wave; ~20 verified findings fixed across correctness,
+v4.50.2-v4.50.6 wave; ~20 verified findings fixed across correctness,
 security posture, UX, theming, i18n, and release distribution.
 
 ### Fixed
 - **Session-only port fallback truly session-only.** The bind-conflict
   fallback wrote the fallback port into the shared config dict, and any later
   full-config save (yt-dlp update-check timestamp, ffmpeg setup stamp,
-  settings save) persisted it — permanently rewriting the user's configured
+  settings save) persisted it, permanently rewriting the user's configured
   port, the exact bug the v4.50.6 fix set out to prevent. Config now has a
   session-override layer excluded from every save, and an unrelated settings
   save during a fallback session no longer surprise-restarts the server.
@@ -2308,7 +2329,7 @@ security posture, UX, theming, i18n, and release distribution.
   feature's pending apply.
 - **Monolith RYD fallback cache-clobber** ported from the module fix.
 - **/formats concurrency bounded.** Concurrent yt-dlp probe processes are
-  capped (2) with a 429 `formats-busy` + Retry-After response — saturating
+  capped (2) with a 429 `formats-busy` + Retry-After response, saturating
   format lookups could occupy the whole HTTP worker pool for up to 60s and
   starve /health//status//download.
 - **SABR pill via the async readiness probe.** No more cold 5s yt-dlp
@@ -2335,7 +2356,7 @@ security posture, UX, theming, i18n, and release distribution.
   premium palette snapped to the active quiet-desktop tokens; active
   stylesheet radii aligned to the sanctioned 4/6 scale.
 
-## [4.50.6] - 2026-07-27
+## [4.50.6] (2026-07-27)
 
 ### Added
 - **Configurable filename template.** A new "Filename template" setting (companion Storage settings) accepts a yt-dlp output template relative to the download folder (e.g. `%(uploader)s/%(title)s.%(ext)s`). Validated against a field allowlist with no path traversal and a required `%(ext)s`; blank uses the default.
@@ -2343,8 +2364,8 @@ security posture, UX, theming, i18n, and release distribution.
   companion window is minimized to the tray, a one-shot notification is raised
   (toggle in Tray behavior settings, on by default).
 - **Configurable simultaneous downloads and retries.** New "Simultaneous
-  downloads" (1–10, default 3 — previously a hardcoded limit) and "Download
-  retries" (0–50, default 10) settings in the companion's Performance settings;
+  downloads" (1-10, default 3, previously a hardcoded limit) and "Download
+  retries" (0-50, default 10) settings in the companion's Performance settings;
   retries map to yt-dlp `--retries`/`--fragment-retries`.
 - **Per-URL format listing (`POST /formats`).** The companion can now report a
   video's real available formats (id, ext, resolution, codec, filesize, has
@@ -2357,7 +2378,7 @@ security posture, UX, theming, i18n, and release distribution.
 - **Transient port conflicts no longer rewrite the configured server port.**
   When the primary port is briefly held (e.g. by a stale instance), the
   companion binds a fallback for that session only instead of permanently
-  saving it — the user's chosen port is retried on the next start once the
+  saving it, the user's chosen port is retried on the next start once the
   conflict clears.
 
 ### Security
@@ -2373,21 +2394,21 @@ security posture, UX, theming, i18n, and release distribution.
   fixes; the monthly stable channel lagged breakage by weeks. Rollback is
   unchanged.
 
-## [4.50.5] - 2026-07-27
+## [4.50.5] (2026-07-27)
 
 ### Changed
 - **Auto-start the companion on download with a cold-start-safe wait.**
   Initiating a download while Astra Downloader is stopped already fires the
   registered `mediadl://start` protocol to launch it, but the initial attempt
-  used the shortest poll window (4 × 1.5s ≈ 6s) — too tight for a cold start of
+  used the shortest poll window (4 × 1.5s ≈ 6s), too tight for a cold start of
   the 40 MB one-file companion (self-unpack + Qt init + server bind can take
-  8–10s). The initial auto-start now waits up to 8 × 1.5s ≈ 12s, so a download
+  8-10s). The initial auto-start now waits up to 8 × 1.5s ≈ 12s, so a download
   clicked against a stopped companion reliably starts it and proceeds instead of
   falling through to the install/repair prompt. (Requires the companion to have
   run once so the protocol is registered; the first protocol launch shows a
   one-time browser "Open Astra Downloader?" confirmation.)
 
-## [4.50.4] - 2026-07-27
+## [4.50.4] (2026-07-27)
 
 ### Changed
 - **yt-dlp now auto-updates from the download path, not just at startup.**
@@ -2398,12 +2419,12 @@ security posture, UX, theming, i18n, and release distribution.
   the **queue drains to idle** (the race-free moment to swap the binary). The
   updater still stages a sibling copy, verifies `--version`, keeps a
   byte-verified rollback, and only replaces the live binary when no download is
-  running — so in-flight downloads are never blocked or corrupted. Check
+  running, so in-flight downloads are never blocked or corrupted. Check
   throttle lowered 24h → 12h. This keeps yt-dlp current without shipping a new
   extension or companion build: fresh yt-dlp releases land automatically the
   next time the user downloads.
 
-## [4.50.3] - 2026-07-27
+## [4.50.3] (2026-07-27)
 
 ### Fixed
 - **Downloads silently routed to a stale/legacy companion.** The extension
@@ -2422,7 +2443,7 @@ security posture, UX, theming, i18n, and release distribution.
   warning/progress lines, falls back to a clear exit-code message, and attaches
   an actionable failure classification (advice + next action).
 
-## [4.50.2] - 2026-07-26
+## [4.50.2] (2026-07-26)
 
 ### Changed
 
@@ -2449,20 +2470,20 @@ security posture, UX, theming, i18n, and release distribution.
   `releases/latest/download` alias resolved against an extension-only release
   and returned an HTML/404 response instead of the executable.
 
-## [4.50.1] - 2026-07-23
+## [4.50.1] (2026-07-23)
 
 Deep engineering + product-quality audit: ~45 verified fixes across seven
 commits. Highlights below; the full detail is in the individual commit
 messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
 
-### Fixed — correctness
+### Fixed, correctness
 
 - **hidePlannedLivestreams no longer hides finished premieres.** The
   scheduled-metadata fallback regex substring-matched "Premiered N hours
   ago" (and channel-name bylines via "live in"), permanently hiding
   published videos for every user of the new on-by-default feature. The
   regex is now future-anchored and pinned by regression tests.
-- **Six download-adjacent features were dead since v4.49.x** — their anchor
+- **Six download-adjacent features were dead since v4.49.x**, their anchor
   queries still targeted `.ytkit-download-btn`, a class the download-UI
   canonicalization stopped creating. Download-health pills, Stream Links,
   Cobalt fallback, History, transcript-search, and the VLC/MPV handoff
@@ -2474,7 +2495,7 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
 - **Video Hider could hide the wrong video**: quick-hide buttons captured
   the video id at creation while YouTube re-binds recycled cards on chip
   clicks. Type filters (Mix/Movie/Playlist/Auto-dubbed) matched against
-  titles — "How to mix audio" was hidden by Hide Mixes.
+  titles, "How to mix audio" was hidden by Hide Mixes.
 - **Theater Split**: hidden placeholder chat frames kept
   `pointer-events:none` after teardown (next live stream's chat
   unclickable); live/vod expand after a standard→live SPA nav left
@@ -2486,7 +2507,7 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
   the output tail no longer shadow the real failure cause; BtbN
   `n8.x`-tagged ffmpeg builds are now compared against the 8.1.2 CVE floor;
   a stale bgutil provider routes to the token-exempt chain
-  (`tv,web_embedded,android_vr` — bare `web` removed) instead of minting
+  (`tv,web_embedded,android_vr`, bare `web` removed) instead of minting
   rejected tokens; the post-setup GUI freeze from on-thread version probes
   is gone.
 - **Audio features**: disable→re-enable summed the dry passthrough with the
@@ -2509,10 +2530,10 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
   button actually persists (dispatched `change` where persistence listens
   on `input`).
 - **Sidepanel quick-settings** request runtime-optional host grants inside
-  the click gesture — on store-safe builds SponsorBlock/DeArrow toggled
+  the click gesture, on store-safe builds SponsorBlock/DeArrow toggled
   "enabled" while every fetch was rejected for a missing grant.
 
-### Fixed — UX / accessibility / theming
+### Fixed, UX / accessibility / theming
 
 - Toasts stack above the settings panel (panel-fired Undo affordances were
   invisible behind the modal); scrub and Watch Later cleanup report
@@ -2534,13 +2555,13 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
 - ROADMAP: token-exempt client chain P1 implemented and removed; 20
   verified-but-unfixed audit findings filed as a prioritized backlog.
 
-## [4.50.0] - 2026-07-23
+## [4.50.0] (2026-07-23)
 
 ### Added
 
 - **Hide planned livestreams on the Subscriptions page (on by default).** New
   `hidePlannedLivestreams` feature that hides scheduled livestreams and
-  premieres — the entries that only show a "Notify me" (set reminder) button
+  premieres, the entries that only show a "Notify me" (set reminder) button
   and "Scheduled for …" metadata instead of a view count. Detection keys on the
   card's "Notify me" action button (with a scheduled/upcoming metadata fallback
   scoped to the metadata rows and thumbnail badge, never the title, to avoid
@@ -2570,7 +2591,7 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
 
 - **Astra Downloader now uses a quieter four-page desktop system.** Dashboard,
   Downloads, History, and Settings follow the same imagegen-guided graphite
-  layout with readable 12–14 px supporting type, a compact rail and headers,
+  layout with readable 12-14 px supporting type, a compact rail and headers,
   line icons, semantic state dots, and hairline grouping in place of stacked
   outlined cards and status pills.
 - **Operational pages prioritize the next useful action.** Dashboard condenses
@@ -2591,7 +2612,7 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
 
 ### Security
 
-- **The companion flags a known-vulnerable ffmpeg against an exact version floor.** The ffmpeg capability probe compared only the major version (≥7), so a tagged 8.0.x on PATH — inside the RV60 out-of-bounds-read range and below the 8.1.2 MagicYUV-decoder RCE fix (CVE-2026-8461, CVSS 8.8) — passed silently. The probe now enforces an exact `8.1.2` semver floor for tagged builds while leaving the bundled master build (which reports no numeric version and is always newer) unflagged; `/health` surfaces the below-floor state.
+- **The companion flags a known-vulnerable ffmpeg against an exact version floor.** The ffmpeg capability probe compared only the major version (≥7), so a tagged 8.0.x on PATH, inside the RV60 out-of-bounds-read range and below the 8.1.2 MagicYUV-decoder RCE fix (CVE-2026-8461, CVSS 8.8), passed silently. The probe now enforces an exact `8.1.2` semver floor for tagged builds while leaving the bundled master build (which reports no numeric version and is always newer) unflagged; `/health` surfaces the below-floor state.
 
 ### Fixed
 
@@ -2614,7 +2635,7 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
   The smoke path now skips the guard entirely, matching its side-effect-free
   intent.
 
-## [4.49.10] - 2026-07-15
+## [4.49.10] (2026-07-15)
 
 ### Fixed
 
@@ -2624,7 +2645,7 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
   Home action groups now synchronize immediately and whenever YouTube replaces
   its masthead controls, without polling every page mutation.
 
-## [4.49.9] - 2026-07-15
+## [4.49.9] (2026-07-15)
 
 ### Fixed
 
@@ -2633,7 +2654,7 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
   offset. Thumb motion now follows the inline direction in both LTR and RTL,
   with rendered geometry coverage for active and inactive states.
 
-## [4.49.8] - 2026-07-15
+## [4.49.8] (2026-07-15)
 
 ### Changed
 
@@ -2657,7 +2678,7 @@ messages (6cb68b4, dc86508, 09b2d2d, ea74cd3, 9a9fe31, ef8a532).
   descriptions remain available through native title text when visually
   truncated.
 
-## [4.49.7] - 2026-07-15
+## [4.49.7] (2026-07-15)
 
 Roadmap drain: both remaining P2 engineering items and every actionable P3
 localization/theming item.
@@ -2674,14 +2695,14 @@ localization/theming item.
 - **The settings panel's five stacked style layers are folded into one.**
   3,129 lines of superseded `!important` restyle passes were deleted; the v3
   visual system is now the single source of truth (it absorbed the two
-  load-bearing declarations the old layers still provided — the mobile nav
+  load-bearing declarations the old layers still provided, the mobile nav
   grid reset and the above-player z-index contract).
 
 ### Added
 
 - **The side panel / Firefox sidebar is fully localized** (137 new keys in
   all 11 locales) with RTL document handling, matching the popup.
-- **The popup's last hardcoded-English flows are localized** — AI credential
+- **The popup's last hardcoded-English flows are localized**, AI credential
   section, credential statuses, import preview, Reset success copy, and
   schema-overview badges/tooltips (32 new keys, hand-translated).
 - **The Watch Later Workbench and reaction sender are localized** (~58 call
@@ -2698,10 +2719,10 @@ localization/theming item.
 ### Blocked
 
 - The live-chat popout/tooltip English-only structural fallbacks moved to
-  Roadmap_Blocked.md — replacing them safely needs live-DOM verification on
+  Roadmap_Blocked.md, replacing them safely needs live-DOM verification on
   an actual live stream.
 
-## [4.49.6] - 2026-07-15
+## [4.49.6] (2026-07-15)
 
 Deep-audit backlog drain plus a fresh audit sweep over the companion app,
 popup, and build tooling.
@@ -2763,7 +2784,7 @@ popup, and build tooling.
   (`exists`/`status_of`/`snapshot_of`) instead of reaching into the manager's
   private lock and map.
 
-## [4.49.5] - 2026-07-15
+## [4.49.5] (2026-07-15)
 
 ### Fixed
 
@@ -2781,19 +2802,19 @@ popup, and build tooling.
   and fallback headless smoke lanes scroll and validate all ten category
   headers in dark and light themes, preventing a submenu-specific regression.
 
-## [4.49.4] - 2026-07-15
+## [4.49.4] (2026-07-15)
 
 ### Fixed
 
 - **Settings section headers remain readable while scrolling.** The active category header now owns an opaque, theme-aware sticky surface and explicit stacking context, preventing feature names, descriptions, and toggles from showing through the Playback/section title in dark or light mode. The headless settings smoke now scrolls the real panel and captures this state in both extension-module and userscript-fallback paths.
 
-## [4.49.3] - 2026-07-15
+## [4.49.3] (2026-07-15)
 
 ### Fixed
 
 - **Split Theater comment scrolling no longer degrades video playback over long sessions.** Auto-expand and pinned-comment handling now process only newly inserted comment subtrees instead of repeatedly rescanning the growing comments DOM; unchanged `hidden` writes can no longer feed back into the shared mutation observer. The split pane leaves in-panel wheel and touch gestures on the native scroller, contains overscroll, skips rendering offscreen comment threads, and uses a stable lifecycle class instead of hundreds of inline-style substring selectors. The standalone Theater Split userscript carries the same rendering and selector safeguards.
 
-## [4.49.2] - 2026-07-15
+## [4.49.2] (2026-07-15)
 
 Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
 
@@ -2835,7 +2856,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   animation respects reduced motion.
 - **Data safety.** The YouTube state-reset undo snapshot survives
   transport-level failures (the channel can die after state was already
-  cleared — deleting the snapshot destroyed the only recovery); overlapping
+  cleared, deleting the snapshot destroyed the only recovery); overlapping
   storage flushes are serialized so a failed older write cannot resurrect
   stale values over newer persisted ones; AI summary artifact saves surface
   async persistence failures; Return YouTube Dislike session caches are
@@ -2844,7 +2865,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
 
 ### Accessibility
 
-- **Settings toggles regained a visible keyboard focus ring** — the v3 visual
+- **Settings toggles regained a visible keyboard focus ring**, the v3 visual
   system's box-shadow reset had silenced every focus cue on the panel's
   primary control in both themes.
 - **AA contrast repaired**: filled coral controls (Save) moved from 3.08:1 to
@@ -2860,7 +2881,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   keys now exist in all 11 locales with `{count}` templates for dynamic
   values.
 
-## [4.49.1] - 2026-07-15
+## [4.49.1] (2026-07-15)
 
 ### Changed
 
@@ -2917,14 +2938,14 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   checks the production graph and the complete development/tooling graph.
 - **Predicate-sandbox ReDoS gap closed.** The regex safety screen for
   user-authored filter predicates rejected nested catastrophic forms but let
-  *sequential quantified groups* through — `(a+)(a+)(a+)(a+)(a+)b` and
+  *sequential quantified groups* through, `(a+)(a+)(a+)(a+)(a+)b` and
   `(.*)(.*)(.*)(.*)(.*)x` passed as "safe" yet backtrack in O(n^k), freezing the
   tab for tens of seconds on an ordinary title. Open-ended quantifiers are now
   counted across the whole pattern (regardless of grouping) with the same
   4-quantifier ceiling, so these are rejected at compile time. Patterns with up
   to four quantifiers (real-world URL/title filters) still compile.
 - **Trusted-HTML DOMParser fallback now sanitizes.** On engines without the
-  Sanitizer API (`Element.setHTML`) — most stable browsers today — the fallback
+  Sanitizer API (`Element.setHTML`), most stable browsers today, the fallback
   parsed via `text/html` but did not strip `on*` event-handler attributes or
   `javascript:`/`data:`/`vbscript:` URLs. Every current caller passes static SVG
   literals, but the sink is now hardened so a future untrusted caller cannot
@@ -3056,7 +3077,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   writes + tab broadcasts + re-renders per edit. An unchanged-value check (like
   the number editor's) now short-circuits.
 - **`capabilityProbe.probe()` mis-reported async capabilities.** For async
-  probes it returned a raw promise, which is always truthy — `if (probe('mediaDL'))`
+  probes it returned a raw promise, which is always truthy, `if (probe('mediaDL'))`
   read `true` unconditionally. It now uniformly resolves a real boolean.
 - **Service-worker reveal hydration could stall on storage pressure.** The
   pending-reveals `storage.session.get` had no timeout; every awaiter (reveal
@@ -3073,7 +3094,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   video changed, matching the DeArrow/SponsorBlock route guards.
 - **CSS lifecycle `apply()` could never inject a style that started at its
   default.** `init()` skips creating a record when the initial CSS is falsy, and
-  `apply()` bailed with no record — so a color/accent spec left at its default
+  `apply()` bailed with no record, so a color/accent spec left at its default
   value would never render once the user picked a non-default. `apply()` now
   injects when `buildCss` first returns truthy CSS.
 - **SponsorBlock anti-adblock diagnostic logged `[object Object]`.**
@@ -3091,9 +3112,9 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   popup, and player-chrome surfaces instead of rematching every DOM element on
   each feed mutation.
 
-## [4.49.0] - 2026-07-11
+## [4.49.0] (2026-07-11)
 
-- **Wave 11 — external-userscript feature ingestion (all off by default).** A
+- **Wave 11, external-userscript feature ingestion (all off by default).** A
   first wave of features added after a competitive userscript review, chosen for
   being conflict-free and stable:
   - **Hide Guide Elements.** A granular left-navigation (Guide) hider that
@@ -3109,10 +3130,10 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
     Handle, Soften Bottom Gradient, Hide Comment Composer, Hide Comment Reply
     Button.
   - **UI Font Size.** Optional base interface font-size override (0 = YouTube
-    default, otherwise clamped 8–20px).
+    default, otherwise clamped 8-20px).
   - Schema grows 399 → 408 keys; feature copy is seeded across all 11 locales.
 
-## [4.48.2] - 2026-07-10
+## [4.48.2] (2026-07-10)
 
 - **Blue-light control clarity.** Blue Light Filter remains disabled on clean
   installs and now appears in the main settings overlay as an explicit master
@@ -3121,7 +3142,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   surfaces share the same hierarchy, with rendered module/fallback smoke
   coverage pinning the off-by-default state.
 
-## [4.48.1] - 2026-07-09
+## [4.48.1] (2026-07-09)
 
 - **Companion interaction finish.** The native companion now uses checkable,
   mutually-exclusive navigation with distinct keyboard focus, announces its
@@ -3150,7 +3171,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   and the rendered smoke rebuilds dark/light/RTL/mobile states while enforcing
   those parity and accessibility contracts.
 
-## [4.48.0] - 2026-07-09
+## [4.48.0] (2026-07-09)
 
 - **Contextual caption triggers.** Two new subtitle toggles: Subtitles While
   Muted turns captions on while the video is muted and restores the previous
@@ -3166,7 +3187,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   remove matches through the native row menus in bounded sessions (25 per
   run, 400ms pacing). Every removal is appended to a capped local recovery
   log that exports as JSON. The status line discloses that only loaded rows
-  are covered — scroll the playlist to extend coverage.
+  are covered, scroll the playlist to extend coverage.
 - **Scroll in Fullscreen.** New toggle that restores the removed native
   fullscreen-scroll layout: scroll down while fullscreen to read the
   description, comments, and related videos, scroll back up to return to the
@@ -3199,7 +3220,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   fullscreen (re-shown on exit via a `fullscreenchange` rebind). The remaining
   math was already playback-speed- and SponsorBlock-aware.
 
-## [4.47.1] - 2026-07-09
+## [4.47.1] (2026-07-09)
 
 - **Style: premium extension command surfaces.** The toolbar popup and
   Chrome/Firefox diagnostics sidebars now share a single graphite/ember design
@@ -3226,15 +3247,14 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   `npm run smoke:companion-gui` renders all four native views offscreen for
   deterministic visual review.
 
-## [4.47.0] - 2026-07-09
+## [4.47.0] (2026-07-09)
 
 - **Feat: cross-browser extension API wrapper.** `core/browser-api.js`
   resolves the standards-track `browser.*` namespace (Firefox today,
   Chrome 148+) with a `chrome.*` fallback and exposes
   `globalThis.YTKitBrowser` plus a scope-injectable factory. It loads
   before every other ISOLATED-world script and on the popup, side panel,
-  and sidebar pages. sidepanel.js is the first fully migrated batch —
-  zero direct `chrome.*` API calls remain there; popup.js and
+  and sidebar pages. sidepanel.js is the first fully migrated batch, zero direct `chrome.*` API calls remain there; popup.js and
   background.js follow in later bounded batches (tracked on the
   roadmap).
 - **Feat: rendered visual smoke for the in-page settings overlay.**
@@ -3245,14 +3265,14 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   states, and fails on blank render, horizontal overflow, a missing
   close/focus target, or primary-control contrast under 4.5:1. First run
   found the settingsOverlay selector pack's stable set missing the live
-  overlay root `#ytkit-settings-panel` — now fixed and pinned.
+  overlay root `#ytkit-settings-panel`, now fixed and pinned.
 - **Feat: recoverable recommendation scrub sessions.** Bulk Card Actions
   select-mode gains "Not interested" and "Don't recommend channel"
   actions that apply YouTube's own feedback menu item to up to 25
   selected cards per run (paced at 400 ms per card so a session never
   looks like burst automation), hide the cards locally with a one-click
   Undo that honestly notes native feedback stays applied, and record
-  each session in a capped local log exportable as JSON — nothing
+  each session in a capped local log exportable as JSON, nothing
   leaves the device. Select-mode now also works on the watch page's
   related rail.
 - **Feat: subscription health center.** The subscriptions toolbar gains a
@@ -3262,11 +3282,11 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   deadline, new-since-last-visit summary with Open Digest / Mark all read,
   and JSON/CSV/OPML export actions. Every section has an explanatory empty
   state, the panel renders an error state instead of blanking, and staging
-  remains review-only — no YouTube unsubscribe controls are ever clicked.
+  remains review-only, no YouTube unsubscribe controls are ever clicked.
   Shipped in both the peeled module and the ytkit.js fallback copy.
 - **Chore: lint ratchet + build-tool hardening.** ESLint upgraded to
   10.6 with `no-constant-binary-expression` (relational checks) enabled
-  across all shipped extension JS — zero violations found.
+  across all shipped extension JS, zero violations found.
   `sync-userscript.js` now refuses to bundle a module whose source
   contains a v5.0.0 bundle marker (which would corrupt the next sync
   run's regex region), and the `check-no-eval` scanner keeps template
@@ -3277,15 +3297,14 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   Return YouTube Dislike.** The external-API health tracker now supports
   subscriptions and produces compact degradation copy (retry reason,
   request-budget reset, cache age). While a service is rate-limited,
-  serving stale cache, or erroring — and the owning feature is enabled —
-  a small bottom-left pill explains the state, then disappears on the
+  serving stale cache, or erroring, and the owning feature is enabled, a small bottom-left pill explains the state, then disappears on the
   next successful request (or after a 90-second quiet window). Pills are
   a polite ARIA live region, carry a light-theme override, and respect
   reduced motion.
 - **Perf: watch time tracker persists once per minute.** The 10-second
   tick now accumulates in memory and writes to `chrome.storage.local` at
   most once per minute, flushing immediately on pause, teardown, and
-  pagehide — the old cadence burned 6 of the shared ~120 writes/min
+  pagehide, the old cadence burned 6 of the shared ~120 writes/min
   budget on stats alone.
 - **Perf: Reaction Spammer observer throttled.** The full-document
   MutationObserver now collapses each mutation burst into at most one
@@ -3314,11 +3333,11 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   or an ephemeral validation key. The release manifest folds that in as
   `crxSigningMode`, and `release:readiness --require-pass` fails
   ephemeral-signed builds unless the manifest was explicitly labeled with
-  `--validation-build` / `ASTRA_VALIDATION_RELEASE=1` — a throwaway CRX key
+  `--validation-build` / `ASTRA_VALIDATION_RELEASE=1`, a throwaway CRX key
   means a throwaway extension ID, so a validation-signed public upload would
   strand every existing install off the update path.
 
-## [4.46.35] - 2026-07-09
+## [4.46.35] (2026-07-09)
 
 - **Security: harden sidepanel/sidebar inline CSP.** Both extension
   side surfaces now match popup.html's strict `default-src 'none'`
@@ -3380,7 +3399,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   uses `lstatSync` and skips symbolic links, preventing scan of
   unintended targets outside the repo tree.
 
-## [4.46.34] - 2026-07-09
+## [4.46.34] (2026-07-09)
 
 - **Polish: extension settings executive command deck.** Re-imagined the
   in-page extension settings overlay from a fresh imagegen mockup and pushed
@@ -3389,13 +3408,13 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   rows, right-side operational status/profile/health inspector, and a persistent
   bottom saved/action bar with Export, Import, Reset, and Close.
 
-## [4.46.33] - 2026-07-09
+## [4.46.33] (2026-07-09)
 
 - **Fix: optional-host smoke timeout hardening.** The Chromium optional-host
   release smoke now bounds stalled DevTools HTTP requests, so a wedged
   browser endpoint fails fast instead of hanging local release verification.
 
-## [4.46.32] - 2026-07-09
+## [4.46.32] (2026-07-09)
 
 - **Fix: companion recent-download retention.** Astra Downloader now stamps
   terminal time on completed, failed, and cancelled downloads, so long-running
@@ -3460,7 +3479,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   status/profile/backup inspector, recent export/import rows, and a centered
   saved-state footer.
 
-- **Fix: v4.46.29 roadmap drain — deep audit follow-through.**
+- **Fix: v4.46.29 roadmap drain, deep audit follow-through.**
   Implemented all programmatically fixable items from the v4.46.28 deep-audit
   backlog. MAIN-world audio graph: cached MediaElementSourceNode per video in
   a WeakMap and kept the AudioContext alive to prevent InvalidStateError on
@@ -3482,13 +3501,13 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   generate-locales: prefers mapped translations for current EN over stale
   existing translations. Added 8 i18n keys for import/Takeout surfaces
   across all 11 locales.
-- **Fix: v4.46.28 deep audit pass — correctness, teardown, and security.**
+- **Fix: v4.46.28 deep audit pass, correctness, teardown, and security.**
   Multi-pass engineering + product audit. Repaired: Subscription Groups init/
   destroy crashing with a `ReferenceError` (the peeled factory never received
   the scoped mutation-rule helpers, so the feature silently never filtered the
   feed and left group-hidden cards stuck after disable); Subscription Groups
   CSV export emitting header-only rows (read `group.channels`, which is never
-  populated — membership is stored as `channelIds`); the Digital Wellbeing
+  populated, membership is stored as `channelIds`); the Digital Wellbeing
   watch-time counter freezing at 30s forever (the tick cache advanced only on
   the non-save branch, so break reminders and the daily cap could never fire and
   storage wrote every second); the budgeted feed-scan runner leaving its promise
@@ -3500,7 +3519,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   their caches after teardown; the download-history button re-attaching after
   destroy; and the Takeout import accepting future-dated entries that evicted
   genuine recent days. Security: the EXT_FETCH proxy now treats BYO API-key
-  headers (`x-api-key`, `x-goog-api-key`, `api-key`) as credentials — scoping
+  headers (`x-api-key`, `x-goog-api-key`, `api-key`) as credentials, scoping
   them to the AI-provider origin allowlist and forcing manual redirects so a
   redirect from an allowlisted API host cannot leak the key; the companion
   `/provision-deno` endpoint now uses a constant-time token comparison. Tooling:
@@ -3683,7 +3702,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
 - **i18n: complete Russian locale translation.** Translated 66 placeholder-
   identical keys to Russian. Coverage jumped from 92.2% to 98.9% (1 remaining
   placeholder-identical key). All 11 locales now above 97%.
-- **Fix: userscript drift checker — exclude extension-only download-ui module.**
+- **Fix: userscript drift checker, exclude extension-only download-ui module.**
   Added `EXTENSION_ONLY_FEATURES` allowlist to `check-userscript-drift.js` so
   `features/download-ui/index.js` (which depends on chrome.downloads) is not
   flagged as a missing V5_BUNDLE_MODULES entry. Drift check now passes clean.
@@ -3705,7 +3724,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   no `--external-downloader` flag in the download subprocess construction.
 - **Fix: merge all MAIN world audio into single AudioContext.** Mono-to-stereo
   (Feature 3) and volume boost/normalization (Feature 4) each had independent
-  AudioContexts calling `createMediaElementSource()` on the same video — a
+  AudioContexts calling `createMediaElementSource()` on the same video, a
   Web Audio API spec violation that causes `InvalidStateError`. Consolidated
   into a single shared graph: source -> monoMerge -> compressor -> gain ->
   destination. Each node passes through when its feature is disabled.
@@ -3770,7 +3789,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   All `feature_*_name` and `feature_*_desc` keys translated from English
   to Arabic, German, Spanish, French, Italian, Japanese, Korean, Brazilian
   Portuguese, Russian, and Simplified Chinese. Coverage jumped from
-  21–27% to 92–99% across all non-EN locales (889 EN keys). Unblocks
+  21-27% to 92-99% across all non-EN locales (889 EN keys). Unblocks
   credible CWS/AMO multi-language submission claims.
 - **Security: cap regex input length for user-supplied filter patterns.**
   `hideVideosFromHome` regex tests now cap title at 500 chars, channel at 200.
@@ -3839,7 +3858,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   storage stats. Opens via the "Dashboard" button in the popup. Chrome-only
   progressive enhancement (Firefox hides the button; the `sidePanel` permission
   and `side_panel` manifest entry are stripped from Firefox builds by
-  `manifest-patch.js`). The side panel runs in the extension context — no
+  `manifest-patch.js`). The side panel runs in the extension context, no
   Trusted Types concerns. Permission rationale doc updated.
 - **Mono-to-stereo audio conversion:** new `monoToStereo` feature uses the MAIN
   world Web Audio API bridge to force mono downmix via a channelCount=1 gain node,
@@ -3849,7 +3868,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   when disabled so stereo content is unaffected.
 - **Onboarding wizard:** the first-run welcome card now has a second step after
   profile selection (Store-Safe / GitHub-Full). Step 2 offers three preset
-  profiles — Privacy, Researcher, Power User — or a "Skip" option for manual
+  profiles, Privacy, Researcher, Power User, or a "Skip" option for manual
   configuration. Selecting a preset applies it via the existing recipe-toggle
   system with backup snapshots for safe toggle-off.
 - **Structured companion error log:** `write_persistent_log` now records entries
@@ -3930,7 +3949,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
 - **Threaded comment DOM adaptation:** updated `core/selector-packs/comments.js`
   with threaded reply container selectors (`#more-replies-sub-thread`,
   `#expanded-threads`, `#expander-contents`) for YouTube's 3-level nested
-  comment threading (Jan–March 2026 rollout). Verified that `commentSearch`,
+  comment threading (Jan-March 2026 rollout). Verified that `commentSearch`,
   `commentNavigator`, `sortCommentsNewest`, and `commentEnhancements` all
   handle nested replies correctly through existing `textContent` and
   thread-level traversal patterns.
@@ -3939,7 +3958,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   when available. Popups are anchored to their trigger buttons with automatic
   flip-block fallback. JS `getBoundingClientRect` positioning is kept as a
   fallback for browsers that don't support `anchor-name`. No visual change
-  on supported browsers — positioning is identical but now handled by CSS.
+  on supported browsers, positioning is identical but now handled by CSS.
 - **Transcript Q&A (Chrome Prompt API / Gemini Nano):** new
   `localAiTranscriptQa` feature adds a "Q&A" button next to the AI summary
   controls. When Chrome 138+'s Prompt API is available, users can ask
@@ -3998,13 +4017,13 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   auto-downloads Deno into `%LOCALAPPDATA%\AstraDownloader\deno\` during
   setup. New `/provision-deno` POST endpoint lets the extension trigger
   on-demand provisioning. The health panel Deno pill is now clickable when
-  Deno is missing — one click triggers auto-provision. `probe_deno_runtime`
+  Deno is missing, one click triggers auto-provision. `probe_deno_runtime`
   now returns a `source` field (`bundled` or `system`). The yt-dlp
   subprocess PATH is prepended with the bundled Deno directory when present.
 - **Subscription group CSV export:** new CSV button alongside the existing
   JSON export on the subscription groups toolbar. RFC 4180 compliant with
   formula-injection neutralization. Columns: Group, Channel, Handle, URL.
-- **Onboarding preset profiles:** three curated settings bundles — Privacy
+- **Onboarding preset profiles:** three curated settings bundles, Privacy
   (clean URLs, no Shorts, no AI Summary), Researcher (transcript viewer,
   bookmarks, watch time, AI summary), and Power User (speed, stats, A-B
   loop, focused mode). Each follows the existing recipe-toggle pattern with
@@ -4018,7 +4037,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
 - **Document PiP cross-browser:** updated `popOutPlayer` for Firefox 151+
   stable Document PiP support (no about:config flag needed). Added
   `documentPip` capability probe so the popup can surface availability.
-  Firefox fallback message now version-aware — 151+ gets a generic retry
+  Firefox fallback message now version-aware, 151+ gets a generic retry
   hint, older Firefox gets an upgrade suggestion.
 - **Per-feature performance timing:** `initFeatureLifecycle` and
   `destroyFeatureLifecycle` now capture `performance.now()` elapsed time.
@@ -4072,7 +4091,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   on-device with auto-detected source language; "Show Original" toggles back.
   Graceful degradation when API unavailable.
 - **Classic Player Chrome:** new `classicPlayerChrome` toggle restores the
-  pre-Delhi/Liquid Glass player look in one click — opaque square controls,
+  pre-Delhi/Liquid Glass player look in one click, opaque square controls,
   solid red 3px progress bar, transparent time wrapper, no frosted glass on
   player overlays. CSS-only, no DOM rebuild.
 - **Video age newest highlight:** `videoAgeColors` now highlights the freshest
@@ -4083,7 +4102,7 @@ Deep audit pass over the 2026-07-14/15 feature wave and companion refactor.
   module parity contract. New peeled features that land in the manifest without
   a matching bundle entry fail CI.
 
-## [4.46.3] - 2026-06-10
+## [4.46.3] (2026-06-10)
 
 Deep engineering + product-quality audit pass across the extension, userscript,
 companion app, build system, and CI.
@@ -4117,8 +4136,7 @@ companion app, build system, and CI.
   exception path now terminates the process tree before the in-use cookie
   jar is deleted.
 - **Companion: self-update can no longer reinstall the same binary in a loop**
-  when the main-branch version is bumped ahead of the published release —
-  the downloaded artifact's digest is compared against the running binary
+  when the main-branch version is bumped ahead of the published release, the downloaded artifact's digest is compared against the running binary
   and the last-installed digest.
 - **Companion: bounded helper downloads** (yt-dlp/ffmpeg/update fetches now
   enforce a 500 MB ceiling while streaming) and the yt-dlp/ffmpeg version
@@ -4129,12 +4147,12 @@ companion app, build system, and CI.
 - **Bug-report bundles** now redact via the same scrub patterns as settings
   exports, so the two redaction surfaces can't drift.
 
-### Fixed — extension
+### Fixed, extension
 - **Video Notes:** a note typed within the save-debounce window of a
   navigation was saved under the *next* video's id (and clearing a note could
   delete the next video's note). Pending saves are captured per-video and
   flushed before teardown.
-- **Subscription Groups:** groups can finally be populated from the UI — an
+- **Subscription Groups:** groups can finally be populated from the UI, an
   "Edit channels" panel adds/removes the channels rendered in the feed
   (the old description promised drag-in that never existed); selecting an
   empty group now shows an explanatory notice instead of a blank feed;
@@ -4146,14 +4164,13 @@ companion app, build system, and CI.
   toggling the feature on from a non-subscriptions page no longer leaves it
   inert until the second visit.
 - **Stream Links panel:** no longer serves the cold-load video's expired
-  stream URLs after SPA navigation — it reads the live player response,
+  stream URLs after SPA navigation, it reads the live player response,
   validates the video id, and closes on navigation.
 - **Download health pill / Cobalt fallback:** untracked navigation timers
   could resurrect the UI (and fire health probes) after the feature was
   disabled; timers are tracked and cleared.
 - **Theater Split:** disabling the feature while a watch page was still
-  loading could mount a style-less zombie overlay with no teardown path —
-  pending element-waits are now cancelled on destroy (module and fallback).
+  loading could mount a style-less zombie overlay with no teardown path, pending element-waits are now cancelled on destroy (module and fallback).
 - **Transcripts:** the DOM-panel fallback emitted Innertube continuation
   tokens as fetch URLs (turning "no transcript" into a fake network error),
   and a valid-but-empty json3 response blocked the XML fallback.
@@ -4164,7 +4181,7 @@ companion app, build system, and CI.
   imports; a storage-corruption warning no longer triggers an endless
   diagnostic write/render loop while the popup is open.
 
-### Fixed — userscript & standalone scripts
+### Fixed, userscript & standalone scripts
 - **The MediaDL install prompt pointed at a deleted PowerShell installer
   (HTTP 404) and asked users to `irm | iex` it.** All four install surfaces
   now download the signed-release `AstraDownloader.exe` directly.
@@ -4190,7 +4207,7 @@ companion app, build system, and CI.
   white-on-white on YouTube's light theme (≈1:1 contrast); each family now
   carries light-mode overrides.
 - **Focus visibility:** the settings panel's generic `:focus-visible` ring
-  computed to 1.26:1 — it now uses the strong focus-ring token; muted help
+  computed to 1.26:1, it now uses the strong focus-ring token; muted help
   text was bumped from 3.87:1 to ≥4.5:1 contrast.
 - **Reduced motion** now covers the install-prompt/download-panel entrance
   animations and the What's New badge; **forced-colors (Windows High
@@ -4220,7 +4237,7 @@ companion app, build system, and CI.
   new parity test pins the two duplicated manifest `content_scripts` lists
   to each other.
 
-## [4.46.2] - 2026-06-08
+## [4.46.2] (2026-06-08)
 
 ### Fixed
 - **Downloads:** the Cobalt fallback and the folder picker sent empty request
@@ -4248,7 +4265,7 @@ companion app, build system, and CI.
 - Added [INSTALL.md](INSTALL.md) with step-by-step install instructions for
   Chrome/Edge, Firefox, and the userscript.
 
-## [4.46.1] - 2026-06-08
+## [4.46.1] (2026-06-08)
 
 ### Security & reliability
 - **EXT_FETCH credential-redirect leak closed.** Requests carrying cookies or an
@@ -4383,10 +4400,10 @@ companion app, build system, and CI.
   labels, accessible action names, focus-visible rules, and explicit target
   size floors where needed.
 
-- **Repo working notes reconciled.** `the project notes` now points first-read workers at
-  tracked loop/planning/audit files, describes where to find protected-main and
-  maintainer-local release policy, states that ignored `CLAUDE.md` is optional
-  local scratch, and removes the committed dependency on stale local-only notes.
+- **Repo working notes reconciled.** The project notes now point first-read workers at
+  tracked loop, planning, and audit files. They describe where to find protected-main
+  and maintainer-local release policy, treat ignored working notes as optional local
+  scratch, and remove the committed dependency on stale local-only notes.
 
 - **CodeQL PR alerts resolved.** CSP hardening tests now parse exact
   `connect-src` directive tokens instead of checking URL substrings, and the
@@ -4771,14 +4788,14 @@ companion app, build system, and CI.
   committed watch fixture from the new chrome.
 
 - **Deep audit hardening pass (H26).** Repo-wide principal-engineer audit
-  across every surface — service worker, popup, core modules, the `ytkit.js`
-  content script, the userscripts, and the Python downloader — verified
+  across every surface, service worker, popup, core modules, the `ytkit.js`
+  content script, the userscripts, and the Python downloader, verified
   adversarially before applying. 23 real fixes landed; 8 candidate findings
   were rejected as intentional design / false positives. 574 JS + 111 Python
   tests stay green; `npm run check` and the four-artifact build pass.
   - **High:** Reset now aborts (instead of silently wiping with no Undo) when
     the recovery snapshot can't be staged because storage exceeds the
-    `storage.session` quota — while still allowing the intentional no-undo path
+    `storage.session` quota, while still allowing the intentional no-undo path
     on browsers without session storage. The predicate-sandbox / videoHider /
     commentFilter ReDoS guards now reject overlapping-alternation patterns
     (`(a|a|a)+`, `(a|aa)+`) that previously slipped past and could freeze the
@@ -4829,14 +4846,14 @@ companion app, build system, and CI.
     See what changed."` (brand-prefixed). The `→` character
     translates poorly and screen readers either skip it or
     announce "right arrow" inconsistently. Polished forms:
-    `yt-dlp already at v${after}` (no terminal period — outcome
+    `yt-dlp already at v${after}` (no terminal period, outcome
     state, not a sentence); `yt-dlp updated to v${after} (from
     v${before})` (parenthetical for the prior version, easier to
     parse than an arrow); `Updated to v${manifestVersion} (from
-    v${lastSeen}). See what changed.` (brand name removed — the
+    v${lastSeen}). See what changed.` (brand name removed, the
     popup header already carries it; redundant). All three were
     also incorrectly routed through `t(key, fallback)`, whose
-    helper does NOT interpolate placeholders — so a translation
+    helper does NOT interpolate placeholders, so a translation
     key would have erased the version delta in any localized
     build. Dynamic-content strings now render directly with a
     comment explaining the deliberate t()-bypass, with the static
@@ -4870,7 +4887,7 @@ companion app, build system, and CI.
     either persisted can no longer slip past the cap. The race
     path surfaces a toast pointing the user at the
     remove-to-add workflow.
-  Pinned by a new `v4.47.0 — Quick Links menu caps at 10 slots`
+  Pinned by a new `v4.47.0, Quick Links menu caps at 10 slots`
   hardening test asserting the constant value, the `_parseItems`
   truncate, the `validateForm` cap-gate + status copy, and the
   defensive click-time re-check + toast. 574/574 JS tests pass
@@ -4878,29 +4895,27 @@ companion app, build system, and CI.
   consolidated roadmap.
 
 - **PyQt6 GUI smoke tests for the downloader (NF22).** Previously the
-  GUI side had only source-shape pins (FolderPickerWatchdogTests) —
-  a regression in the dialog code-path would only surface via the
+  GUI side had only source-shape pins (FolderPickerWatchdogTests), a regression in the dialog code-path would only surface via the
   user reports the watchdog was supposed to make easier to file. This
   adds a live `GuiSmokeTests` class that constructs a real
   `QApplication` and exercises the `FolderPickerService` timer-driven
   dispatch end-to-end. Six new tests:
-  - `test_qapplication_constructs` — proves the QApplication
+  - `test_qapplication_constructs`, proves the QApplication
     singleton can be instantiated. Tests gracefully skip if Qt is
     unavailable (CI runner without a display server).
-  - `test_folder_picker_service_constructs_and_starts_timer` — the
+  - `test_folder_picker_service_constructs_and_starts_timer`, the
     QTimer that drives the dispatch loop is active and runs at the
     documented 150 ms cadence.
-  - `test_folder_picker_tick_no_pending_request_is_noop` — empty
+  - `test_folder_picker_tick_no_pending_request_is_noop`, empty
     queue must not raise.
-  - `test_folder_picker_tick_returns_accepted_path` — mocks
+  - `test_folder_picker_tick_returns_accepted_path`, mocks
     `QFileDialog.exec()` → `Accepted` + `selectedFiles()`,
     verifies the response queue carries the chosen path.
-  - `test_folder_picker_tick_returns_cancelled_on_reject` — same
+  - `test_folder_picker_tick_returns_cancelled_on_reject`, same
     path, `Rejected`, asserts `cancelled=True`.
-  - `test_folder_picker_watchdog_fires_when_dialog_blocks_past_threshold`
-    — uses `time.time()` mocking to simulate a `threshold + 5 s`
+  - `test_folder_picker_watchdog_fires_when_dialog_blocks_past_threshold`, uses `time.time()` mocking to simulate a `threshold + 5 s`
     dialog block; verifies the watchdog log line shape (NF35
-    invariant). No new dependency added — pytest-qt was scoped in
+    invariant). No new dependency added, pytest-qt was scoped in
     the backlog item but a hand-rolled `_get_qapp_or_skip` helper
     avoids the install-time cost while preserving CI-portable
     skip-on-no-display semantics. 111/111 Python tests pass
@@ -4957,13 +4972,12 @@ companion app, build system, and CI.
 
 - **Wheel-seek on the progress bar (NF9).** Scroll the mouse wheel
   over the YouTube progress bar to seek forward/backward by
-  `wheelSeekStepSec` seconds (default 5 — matches YouTube's
+  `wheelSeekStepSec` seconds (default 5, matches YouTube's
   native arrow-key seek step). Hooks `wheel` events on
   `.ytp-progress-bar-container, .ytp-progress-bar` with
   `capture: true` + `passive: false` and calls
   `e.stopImmediatePropagation()` so the existing `volumeWheelMode`
-  listener at the `.html5-video-player` root never co-fires —
-  scrolling over the bar seeks, scrolling anywhere else over the
+  listener at the `.html5-video-player` root never co-fires, scrolling over the bar seeks, scrolling anywhere else over the
   player still drives Volume Wheel. HUD chip (`.ytkit-seek-hud`)
   surfaces the new playback position + direction arrow for 1.2 s
   using the same palette as the volume HUD so the two features
@@ -4981,7 +4995,7 @@ companion app, build system, and CI.
   off, store-safe profile) + `wheelSeekStepSec: 5` (step size).
   No keyboard shortcut added (house style). Schema-count pin
   bumped 357 → 359; storage-size baseline +39 bytes. Pinned by
-  a new `v4.47.0 NF9 — wheelSeek` hardening test asserting the
+  a new `v4.47.0 NF9, wheelSeek` hardening test asserting the
   progress-bar selector, the capture+passive:false registration,
   `stopImmediatePropagation` (prevents volumeWheelMode co-fire),
   `preventDefault` (suppresses page scroll), the step clamp,
@@ -4992,14 +5006,13 @@ companion app, build system, and CI.
 - **CHANGELOG rotation (NEW-8): v3.33.0 and earlier moved to
   `CHANGELOG-v3-archive.md`.** Active CHANGELOG.md was approaching
   6000 lines and getting hard to scan in browser-rendered Markdown
-  viewers. Split point is the major-version boundary at v3.33.0 —
-  the v4.0.0 "Beats Every Competitor" milestone stays in the active
+  viewers. Split point is the major-version boundary at v3.33.0, the v4.0.0 "Beats Every Competitor" milestone stays in the active
   file as the historical anchor. Archive carries the full v3.x
   hardening-pass history, the v3.21.0 i18n foundation, the iter-N
   research-loop pre-cursor work, and the original YouTube-Kit-era
   entries before the Astra Deck rebrand. Active file gains a
   footer pointer so a reader can find older entries without
-  grepping the repo. Pinned by a new `v4.47.0 NEW-8 — CHANGELOG
+  grepping the repo. Pinned by a new `v4.47.0 NEW-8, CHANGELOG
   rotation` hardening test asserting (a) active file carries no
   v0/v1/v2/v3 release headings, (b) archive exists and starts at
   v3.33.0, (c) archive carries no v4.x headings, (d) active file
@@ -5008,7 +5021,7 @@ companion app, build system, and CI.
 
 - **Inline "local only" trust signal on credential-bearing schema-overview
   rows.** The privacy data-flow panel (v4.12.0) explained the
-  storage-locality guarantee, but it ships off-by-default — a user
+  storage-locality guarantee, but it ships off-by-default, a user
   pasting a BYO API key into the schema-overview editor had no visible
   reassurance about where the key lives. A small green `.so-key-trust-local`
   chip now surfaces on the `aiSummaryApiKey` + `aiSummaryEndpoint` rows
@@ -5022,11 +5035,11 @@ companion app, build system, and CI.
   from bundle" claim stays true; pinned at test time so adding a key
   to one set without the other fails CI. Public default URLs (Cobalt
   instance, alternative frontend, custom CSS) are redacted from
-  bundles but don't get the chip — the "local only" reassurance is
+  bundles but don't get the chip, the "local only" reassurance is
   specifically about secrets. CSS adds the green-tone variant to the
   existing `.so-key-profile-badge` pattern (matches the v4.16.0 risk-
   badge palette: amber for gated, red for unavailable, green for
-  trusted). Pinned by a new `v4.47.0 — schema-overview rows for
+  trusted). Pinned by a new `v4.47.0, schema-overview rows for
   credential-bearing keys carry an inline "local only" trust signal`
   hardening test asserting the set declaration, the subset relationship
   with BUG_REPORT_REDACTED_KEYS, the well-known BYO-key entries, the
@@ -5038,10 +5051,10 @@ companion app, build system, and CI.
 - **Audit pass: three real bugs fixed in the just-shipped Pass-3 batch.**
   Deep audit of recent changes caught two real
   defects + one polish gap before they reached users:
-  - **NF21 upgrade regression — existing users were going to see
+  - **NF21 upgrade regression, existing users were going to see
     the welcome card on every popup open after upgrading.** The
     first-run detection was `firstRunSeen = items[FIRST_RUN_SEEN_KEY] === true`,
-    and the sentinel only exists in builds that ship NF21 — every
+    and the sentinel only exists in builds that ship NF21, every
     pre-NF21 user had `firstRunSeen=false` after upgrading. Fix:
     `renderFirstRunSurfaces` now also reads `SETTINGS_STORAGE_KEY`,
     detects "at least one non-internal key" (anything not starting
@@ -5083,13 +5096,13 @@ companion app, build system, and CI.
   fire-and-forget; if the reveal failed (file moved between download
   completion and the reveal call, user revoked downloads access on
   Firefox, removable volume detached) the only signal the maintainer
-  used to get from a user report was "nothing happened" — the catch
+  used to get from a user report was "nothing happened", the catch
   was a silent `catch (_)` swallow. The handler now (a) console.warn's
   with the `[Astra Deck]` prefix + the download id + the error so
   support traces see the context, and (b) drops a
   `reveal-failed:<msg>` entry into the SW lifecycle ring (NEW-7) so
   the bug-report bundle surfaces it without any new telemetry. No
-  user-facing toast — the failure is rare enough that an explicit
+  user-facing toast, the failure is rare enough that an explicit
   banner would be more noise than signal, and the bundle path is
   already wired through the diagnostics flow. Pinned by a new
   `v4.47.0 R3` hardening test asserting the binding capture (was
@@ -5114,7 +5127,7 @@ companion app, build system, and CI.
   prompt. 568/568 JS tests pass (+1 new).
 
 - **Service-worker lifecycle ring (NEW-7).**
-  MV3 service workers restart unpredictably — ~30 s idle kill,
+  MV3 service workers restart unpredictably, ~30 s idle kill,
   suspension on memory pressure, post-install restarts. Several
   Astra Deck bugs surfaced only because the maintainer happened to
   hit a SW restart in dev (H25's cap-bypass-on-hydration is the
@@ -5128,8 +5141,7 @@ companion app, build system, and CI.
     before snapshotting `_pendingReveals.size` so the recorded
     `inFlightReveals` count reflects the persisted state, not
     just the freshly-restarted SW's empty in-memory Set.
-  - Module body fires `_recordSwLifecycle('sw-start')` at SW boot
-    — every fresh SW process invocation hits that line, which is
+  - Module body fires `_recordSwLifecycle('sw-start')` at SW boot, every fresh SW process invocation hits that line, which is
     the signal that distinguishes "SW restarted between user
     actions" from "SW was alive across the user's whole session."
   - New `GET_SW_LIFECYCLE` message handler returns the ring to
@@ -5142,7 +5154,7 @@ companion app, build system, and CI.
     without it. Bundle `schemaVersion` bumped 1 → 2 to reflect
     the shape addition; the bug-report consumer tooling keys
     schema migrations on this field.
-  Pinned by a new `v4.47.0 NEW-7 — SW lifecycle ring` hardening
+  Pinned by a new `v4.47.0 NEW-7, SW lifecycle ring` hardening
   test asserting the storage key + cap constants, the record
   helper (hydration wait + size capture + head-trim), the
   sw-start boot call, the message handler shape (storage read +
@@ -5155,7 +5167,7 @@ companion app, build system, and CI.
   A user who set one feature to a breaking value (e.g. pasted CSS
   into `customCssCode` that broke rendering, or set `vvfBrightness`
   to 0 making the page invisible) previously had to either remember
-  the schema default or hit global Reset — which nukes every other
+  the schema default or hit global Reset, which nukes every other
   setting too. The schema overview now renders a compact `↺` button
   at the end of every row whose current value differs from the
   schema-declared `defaultValue`. Click calls the same
@@ -5163,21 +5175,21 @@ companion app, build system, and CI.
   editor uses, surfaces a confirmation status (`<key> reset to
   default.`), and re-renders the overview so the (now-default) row
   drops its reset button. Two helpers underpin the gate:
-  - `isDefaultValue(currentValue, defaultValue)` — short-circuits
+  - `isDefaultValue(currentValue, defaultValue)`, short-circuits
     on `===` for booleans / numbers / strings; falls through to
     `JSON.stringify` deep-compare for arrays + objects (cheap +
     correct for the small payloads the schema overview deals
     with; the heaviest is `hiddenChatElements` at ~10 short
     strings). `null` / `undefined` treated as equivalent so an
     unset storage slot doesn't surface a spurious reset button.
-  - `describeDefaultForTooltip(value)` — pretty-prints the default
+  - `describeDefaultForTooltip(value)`, pretty-prints the default
     in the button's tooltip (`Reset <key> to default (<value>)`)
     and truncates anything over 48 chars so the tooltip stays
     readable.
-  CSS adds `.so-key-reset-btn` — square 6px radius (house style:
+  CSS adds `.so-key-reset-btn`, square 6px radius (house style:
   no pill backdrops), amber hover accent matching the existing
   schema-overview gating chips, disabled-state dimming while a
-  write is in flight. Pinned by a new `v4.47.0 NEW-6 — per-key
+  write is in flight. Pinned by a new `v4.47.0 NEW-6, per-key
   Reset button` hardening test asserting the gate (defaultValue
   + isDefaultValue check), the click handler (writeSetting +
   re-render), the helpers (strict-equality short-circuit + JSON
@@ -5192,7 +5204,7 @@ companion app, build system, and CI.
     intro plus two profile picker buttons (Store-Safe / GitHub-Full)
     and a "Skip" dismiss. Picking a profile writes
     `githubFullProfile` (true for GitHub-Full, explicit false for
-    Store-Safe — recording the user's choice matters for the popup
+    Store-Safe, recording the user's choice matters for the popup
     overview's profile-gating badges + future export round-trips)
     via the existing `writeSetting` choke point, sets the sentinel,
     stamps `ytkit_last_seen_version` so the very next open doesn't
@@ -5220,7 +5232,7 @@ companion app, build system, and CI.
   accent palette (matching the schema-overview profile-gating
   chip from v4.39.0) so the relationship reads visually. WCAG
   contrast audit passes against the new surfaces. Pinned by a new
-  `v4.47.0 NF21 — first-run welcome card + What's New banner`
+  `v4.47.0 NF21, first-run welcome card + What's New banner`
   hardening test that asserts the HTML element ids + hidden-by-
   default, the storage-key + URL constants, the boot wiring, the
   mutual-exclusion gate, the profile-pick writes, the dismiss
@@ -5228,7 +5240,7 @@ companion app, build system, and CI.
   (+1 new); `npm run check` clean.
 
 - **Userscript drift health check (NEW-2, Pass 3).**
-  Three top-level userscripts exist in the repo — `YTKit.user.js`
+  Three top-level userscripts exist in the repo, `YTKit.user.js`
   (auto-synced by `build-extension.js`), `theater-split.user.js` and
   `YT_Reaction_Spammer.user.js` (both hand-maintained). The hand-
   maintained pair could drift silently against YouTube DOM changes
@@ -5246,7 +5258,7 @@ companion app, build system, and CI.
     `@match` only `/live_chat` routes.
   - Header `@version` matches the version suffix embedded in
     `@name` when present (closes the v1.0.5/v1.0.6 silent-drift
-    class CLAUDE.md flagged 2026-04-24 — Tampermonkey keys some
+    class found during the 2026-04-24 audit, Tampermonkey keys some
     update-check paths on `@name` and a desynced bump never
     lands).
   - `@version` is a clean `x.y.z` semver triple.
@@ -5266,8 +5278,7 @@ companion app, build system, and CI.
 - **Bug-report bundle: diagnostic save expanded into a self-identifying
   bundle with sanitized settings + capability map (NEW-1, Pass 3).**
   The existing healthSave button used to write a JSON file containing
-  only the extension version, user agent, and `_errors` ring buffer —
-  not enough context for an issue triager to diagnose most bugs. The
+  only the extension version, user agent, and `_errors` ring buffer, not enough context for an issue triager to diagnose most bugs. The
   bundle now carries:
   `{ astraDeckBugReport: true, schemaVersion: 1, exportedAt,
      extensionVersion, userAgent, capabilities, settings, errors }`
@@ -5277,18 +5288,18 @@ companion app, build system, and CI.
   `redactBugReportSettings()`:
   `aiSummaryApiKey`, `aiSummaryEndpoint`, `customCssCode`,
   `downloadCobaltInstance`, `alternativeFrontendInstance`. Each
-  redacted value becomes `[redacted — N chars]` so triagers can still
+  redacted value becomes `[redacted, N chars]` so triagers can still
   tell that the field was set (signal: "user had a key configured")
   without leaking the content. The `_errors` ring is dropped out of
   the sanitized settings object because it ships separately in the
-  `errors` field — avoids double-shipping. The `astraDeckBugReport`
+  `errors` field, avoids double-shipping. The `astraDeckBugReport`
   marker key lets the issue template + future tooling identify the
   payload at a glance. Bug report issue template updated to reference
   the bundle by name + filename pattern and to skip the manual
   environment fields when the bundle is attached. Pinned by a new
-  `v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS`
+  `v4.47.0 NEW-1, bug-report bundle redacts BYO keys/endpoints/CSS`
   hardening test asserting the redaction list, the redaction helper
-  shape (`[redacted — N chars]` placeholder + skip-empty guard), the
+  shape (`[redacted, N chars]` placeholder + skip-empty guard), the
   payload marker + schema version + capability/settings fields, and
   the issue-template references. 550/550 JS tests pass (+1 new).
 
@@ -5299,7 +5310,7 @@ companion app, build system, and CI.
   `popupState._capabilities` slot holds the probe result; an async
   `ensureCapabilityMap()` helper calls `capabilityProbe.runAll()` once
   at boot and caches the `{capability: bool}` map. The boot path fires
-  the probe in the background (not awaited inline — `mediaDL` and
+  the probe in the background (not awaited inline, `mediaDL` and
   `ollama` probes do HTTP fetches with a 1.5s timeout) and re-renders
   the schema overview once it resolves. `buildSchemaOverviewKeyRow`
   consults the cache via `capabilityProbe.isEntryAvailable(entry, caps)`
@@ -5311,7 +5322,7 @@ companion app, build system, and CI.
   running). Tooltip lists the missing capability names so users
   understand the no-op. Same compact-pill geometry as the v4.39.0
   `.so-key-profile-gated` chip; red tone instead of amber. Pinned by
-  a new `v4.47.0 NF10 follow-up — popup renders capability-probe
+  a new `v4.47.0 NF10 follow-up, popup renders capability-probe
   Unavailable chip` hardening test that asserts script load order,
   the boot wiring, the row-builder hook, and the CSS variant.
   549/549 JS tests pass (+1 new).
@@ -5324,7 +5335,7 @@ companion app, build system, and CI.
   on `fullscreenchange`, leaving every entry in `_positionedEls` (chat
   frame on live + previously-live; `#below` on plain VODs) painting
   over the native fullscreen player. On live and previously-live videos
-  this looked like "fullscreen doesn't work" — the player went
+  this looked like "fullscreen doesn't work", the player went
   fullscreen but the chat panel overlaid the right third of the screen.
   Fix: on enter, stash each positioned overlay's current `visibility`
   in a `_fullscreenOverlayStash` array and force
@@ -5334,11 +5345,11 @@ companion app, build system, and CI.
   patch (`fullscreenStash` state + `enterFullscreenStash` /
   `exitFullscreenStash` helpers, plus an extra step that moves the
   player out of `#ts-wrapper` before hiding the wrapper, because in
-  the userscript the player IS a child of the wrapper — the extension
+  the userscript the player IS a child of the wrapper, the extension
   already mounts the player at `position:fixed` from its natural-flow
   location so wrapper `display:none` doesn't trip Chromium's
   ancestor-display-none → exit-fullscreen rule). Pinned by a new
-  `v4.47.0 stickyVideo — fullscreen handler hides positioned overlays`
+  `v4.47.0 stickyVideo, fullscreen handler hides positioned overlays`
   hardening test that asserts the enter branch initialises the stash +
   iterates `_positionedEls` + sets visibility hidden important, the
   exit branch iterates the stash + clears it, and destroy nulls the
@@ -5372,7 +5383,7 @@ companion app, build system, and CI.
   enqueued the request used to time out at 120s with no GUI-side
   diagnostic pointing at the cause. The watchdog times each `exec()`
   call and writes a persistent log line if the dialog blocked past
-  the documented threshold (60 seconds — leaves a 60s margin before
+  the documented threshold (60 seconds, leaves a 60s margin before
   the Flask 120s timeout so the log gets written before the HTTP
   request gives up). Threshold lives on
   `FolderPickerService.DIALOG_WATCHDOG_THRESHOLD_SECONDS = 60` so a
@@ -5383,7 +5394,7 @@ companion app, build system, and CI.
 
 - **Polish batch: EI-NEW2 / EI-NEW3 / EI-NEW4 / Phase V.** Four small
   fixes shipped together because each is under 200 lines:
-    - **EI-NEW2 — `youtubeMusicCompat` exact-hostname match.** Replaced
+    - **EI-NEW2, `youtubeMusicCompat` exact-hostname match.** Replaced
       `location.hostname.includes('music.youtube.com')` with
       `location.hostname !== 'music.youtube.com'`. The previous
       substring match would have matched a hypothetical
@@ -5392,18 +5403,18 @@ companion app, build system, and CI.
       uses exact equality. Existing
       `youtubeMusicCompat only runs on music.youtube.com` hardening
       test updated to match the new shape.
-    - **EI-NEW3 — `reactionSpammer` configurable safety floor.** The
+    - **EI-NEW3, `reactionSpammer` configurable safety floor.** The
       hardcoded `_INTERVAL_MIN_MS: 500` constant became a settings-
       aware getter that reads
       `appState.settings.reactionSpammerMinIntervalMs` (default 500,
       schema risk `store-risk`/profile `github-full`) and clamps to a
       hard floor `_INTERVAL_MIN_MS_FLOOR: 500`. Admins of high-traffic
       streams can raise the floor (e.g. 1000 ms) to keep further from
-      YouTube's automated-behavior heuristics — but cannot lower it
+      YouTube's automated-behavior heuristics, but cannot lower it
       below 500 ms because that defeats the safety guarantee from
       v3.23.0 N3. The existing v3.23 test that pinned the constant
       shape updated to pin the new floor constant name.
-    - **EI-NEW4 — DeArrow TTL=0 warning + fallback indicator.** When
+    - **EI-NEW4, DeArrow TTL=0 warning + fallback indicator.** When
       `daCacheTTL === 0`, init now logs a `DebugManager` warning:
       "Cache disabled (daCacheTTL=0); every card hit fires an API
       request. Expect rate limits." Fallback titles (sentence/title-
@@ -5411,7 +5422,7 @@ companion app, build system, and CI.
       `data-da-fallback="1"` attribute on the clone; new CSS rule
       `opacity: 0.78` dims them so power users can tell the
       difference at a glance from real DeArrow submissions.
-    - **Phase V — Iridium + Control Panel promoted into ROADMAP
+    - **Phase V, Iridium + Control Panel promoted into ROADMAP
       §Phase 1 matrix.** Both CWS competitors were noted in
       noted earlier but never
       formally scored. Added rows 21 + 22 with the standard
@@ -5427,7 +5438,7 @@ companion app, build system, and CI.
 - **hideVideosFromHome: configurable subs-load pause threshold (NF33).**
   Before NF33: the subs-load pause gate halted pagination after any
   3-batch streak of 100%-hidden batches. Users hit this on healthy
-  feeds where one unlucky batch happened to be all-spam — the next
+  feeds where one unlucky batch happened to be all-spam, the next
   batch could have been 80% non-hidden but the streak was already past
   the gate. After NF33: a configurable
   `hideVideosSubsLoadHiddenRatio` setting (default 0.8) defines the
@@ -5472,7 +5483,7 @@ companion app, build system, and CI.
 - **returnDislike: budget-vs-network observability + cache-age titles
   (NF30).** Before NF30: any null from `_fetch` (whether 100/min budget
   cap or network error) collapsed into a single "RYD off" pill with no
-  actionable copy — users assumed the feature was broken. After NF30:
+  actionable copy, users assumed the feature was broken. After NF30:
   `_render` consults `_budgetWindow` to differentiate the two cases.
   Rate-limited path shows "RYD paused" + a title with the running
   counter (`<count>/100/min`) and seconds-until-window-reset
@@ -5497,7 +5508,7 @@ companion app, build system, and CI.
        `transcriptPreferredLanguage` setting (when not `auto`/empty)
     2. exact `languageCode` match for `navigator.language` base
        (e.g. `es-MX` → `es`)
-    3. exact `'en'` (the v4.46.0 hardcoded fallback — preserved so the
+    3. exact `'en'` (the v4.46.0 hardcoded fallback, preserved so the
        behaviour change is opt-in for users who don't set a preference)
     4. first available track
   All three transcript track-selection call sites in ytkit.js now
@@ -5516,7 +5527,7 @@ companion app, build system, and CI.
   recent yt-dlp builds silently return empty format lists and the
   download fails late with an opaque error. The `/health` probe
   already exposed `denoRuntime.ytdlpNeedsRuntime` + `installed`, and
-  the extension rendered a "Deno: missing" warn pill — but `/download`
+  the extension rendered a "Deno: missing" warn pill, but `/download`
   accepted the request anyway. NF27 turns this into an actionable
   upfront 422 with `code: "deno-runtime-missing"` and an `advice`
   field carrying the Deno install command. The extension MediaDL
@@ -5532,13 +5543,12 @@ companion app, build system, and CI.
   fire-and-forget; `yt-dlp.exe -U` atomically replaces the binary, and
   on Windows an in-flight `subprocess.Popen([YTDLP_PATH, ...])` could
   race the replace with file-in-use errors. New optional
-  `active_count_fn` parameter — when supplied and returns > 0, the
+  `active_count_fn` parameter, when supplied and returns > 0, the
   update is deferred and the next 24h throttle window picks it up.
   Caller in the GUI server-start path now passes
   `self.dl_manager.active_count` so the check consults the live queue
   without coupling the function to the manager instance. Probe
-  failures (raising callable) fall through to "proceed with warning"
-  — failure mode of an under-construction probe is at least as bad
+  failures (raising callable) fall through to "proceed with warning", failure mode of an under-construction probe is at least as bad
   as racing the self-replace. Back-compat preserved: calling
   `maybe_auto_update_ytdlp(config)` without the new arg still works
   exactly as before. Pinned by four new `AutoUpdateActiveDownloadGuardTests`
@@ -5552,7 +5562,7 @@ companion app, build system, and CI.
   fallback was `6` while `ytkit.js#SETTINGS_VERSION` was `7` and
   `settings-meta.json#settingsVersion` was `7`. The fallback only
   fires when the meta JSON fails to load, but when it does, the
-  popup falls back to v6 schema while ytkit migrates to v7 — silent
+  popup falls back to v6 schema while ytkit migrates to v7, silent
   profile-import corruption. Closed by (a) bumping the popup
   fallback to `7` with a comment naming the NF25 invariant, and
   (b) extending `scripts/check-versions.js` with three new readers
@@ -5566,8 +5576,7 @@ companion app, build system, and CI.
 
 - **ytkit.js: nyan-cat theme asset bundled inside the extension origin
   (NF23).** The `nyan-cat` theme's scrubber CSS used to load
-  `assets/cat.gif` from a hardcoded `raw.githubusercontent.com` URL —
-  both a remote-content surface and a CSP escape hatch. NF23 closes
+  `assets/cat.gif` from a hardcoded `raw.githubusercontent.com` URL, both a remote-content surface and a CSP escape hatch. NF23 closes
   that: a new `getRepoAssetUrl(fileName)` helper alongside the existing
   `getBrandAssetUrl` returns `chrome.runtime.getURL('assets/' + name)`
   in extension contexts and falls back to the GitHub raw URL for the
@@ -5580,10 +5589,9 @@ companion app, build system, and CI.
   interpolation is in place, the hardcoded URL is gone, the asset is
   bundled, and the manifest grants access.
 
-- **scripts/i18n-coverage.js — locale coverage report (NF24).**
+- **scripts/i18n-coverage.js, locale coverage report (NF24).**
   `check-i18n.js` enforces structural parity (every EN key present
-  everywhere, no orphans). What it doesn't flag is *content drift* —
-  a locale shipping byte-identical to EN for most keys is silently
+  everywhere, no orphans). What it doesn't flag is *content drift*, a locale shipping byte-identical to EN for most keys is silently
   incomplete because `chrome.i18n.getMessage` falls through to
   default_locale anyway. New `node scripts/i18n-coverage.js` (or
   `npm run i18n:coverage`) emits a human-readable
@@ -5602,10 +5610,10 @@ companion app, build system, and CI.
   user-supplied key named `apikey_v2`, `bearerToken`, `webhookSecret`,
   or `authToken` would have slipped through into a shared export. R6
   adds four broader patterns:
-    - `/apikey(?!_id$)/i` — catches `apikey_v2`, `api_key`, `apiKey1`
-    - `/bearer/i` — catches `bearerToken`, `accessBearer`
-    - `/secret/i` — catches `webhookSecret` etc.
-    - `/^auth/i` + `/[a-z]Auth/` — catches `authToken` / `userAuth`
+    - `/apikey(?!_id$)/i`, catches `apikey_v2`, `api_key`, `apiKey1`
+    - `/bearer/i`, catches `bearerToken`, `accessBearer`
+    - `/secret/i`, catches `webhookSecret` etc.
+    - `/^auth/i` + `/[a-z]Auth/`, catches `authToken` / `userAuth`
       while sparing camelCase mid-word
   Verified no false positives against the current 354-key schema
   (no entry contains `auth*`, `bearer`, `apikey`, or `secret` today;
@@ -5623,7 +5631,7 @@ companion app, build system, and CI.
        implicit-eval interface) appear in any of the 64 JS files the
        extension ships (extension/*.js + extension/core/**/*.js +
        extension/features/**/*.js + YTKit.user.js). Scope intentionally
-       excludes tests/ and scripts/ — those are dev-time tooling that
+       excludes tests/ and scripts/, those are dev-time tooling that
        legitimately needs sandbox-evaluation. An `// allow-eval`
        same-line annotation provides an explicit per-line escape
        hatch for intentional cases.
@@ -5631,7 +5639,7 @@ companion app, build system, and CI.
        workflow) gains an SBOM step that runs `npm ls --omit=dev
        --json > sbom.json` and uploads it as a named artifact for
        future store-submission attachment.
-  Currently passes with 0 findings — Astra was already CSP-compliant
+  Currently passes with 0 findings, Astra was already CSP-compliant
   in practice; this is the belt-and-suspenders gate so a future
   contributor introducing `eval(` is flagged at npm-run-check time
   instead of at runtime CSP rejection time. Wired into
@@ -5642,14 +5650,14 @@ companion app, build system, and CI.
   `// allow-eval` escape hatch is documented, (d) validate.yml carries
   the SBOM emission + upload steps. 538/538 JS tests pass (+1 new).
 
-- **extension/core/capability-probe.js — runtime capability detection
+- **extension/core/capability-probe.js, runtime capability detection
   (NF10).** Pairs with the NF17 schema `requires:` field shipped in
   the same v4.47 sprint. Exposes a PROBES table keyed by every
   CAPABILITIES enum entry (`summarizerApi`, `mediaDL`, `ollama`), a
   `runAll()` that resolves the full {name: boolean} map (async probes
   run in parallel), and an `isEntryAvailable(entry, capabilityMap)`
   helper that ANDs across every required capability. Probes are
-  capability checks only — they never invoke the API, which keeps
+  capability checks only, they never invoke the API, which keeps
   the probe surface store-policy-safe.
 
   Probe internals:
@@ -5692,7 +5700,7 @@ companion app, build system, and CI.
   Phase L. The v4.47.0 ESLint rule was previously enforced only on
   `extension/background.js`; the prior research file estimated 41
   catches in popup.js. An audit found that the rule only triggers on
-  empty / comment-only bodies — popup.js carries 8 such catches total,
+  empty / comment-only bodies, popup.js carries 8 such catches total,
   7 already documented and 1 (line 2112, the diagnostic-log writeback
   best-effort guard) annotated in the same commit, plus 4 in the
   broadcast / broadcastSettingsReplaced fan-out helpers that had
@@ -5713,15 +5721,15 @@ companion app, build system, and CI.
   (NF5 wave 2).** Wave 1 (commit `3f22e0e`) registered 21 peeled
   CSS-only feature ids with the v4.7.0 lifecycle module but kept the
   inline `cssFeature()` blocks as the sole source of init/destroy
-  work — so `lifecycle.snapshot()` always returned `started:false`
+  work, so `lifecycle.snapshot()` always returned `started:false`
   even when the feature was visibly active. Wave 2 routes the state
   transitions through the lifecycle: `cssFeature.init` now calls
   `Lifecycle.start(id)` after the CSS is injected, and
   `cssFeature.destroy` calls `Lifecycle.destroy(id)` after teardown.
   Production state and `snapshot()` state now match. The CSS injection
   + body-class toggle still happens in the cssFeature closure (full
-  delegate — moving `injectStyle` into the peel modules or passing it
-  through ctx — stays a wave-3 refactor). Guarded on
+  delegate, moving `injectStyle` into the peel modules or passing it
+  through ctx, stays a wave-3 refactor). Guarded on
   `Lifecycle._features.has(id)` so unregistered feature ids skip the
   notification path. Pinned by a new `v4.47.0 NF5 wave 2` hardening
   test that asserts (a) the lifecycle singleton capture site,
@@ -5737,10 +5745,10 @@ companion app, build system, and CI.
   popup nonetheless shipped a fully styled `<div class="confirm-shell">`
   modal in popup.html with a `confirmAction()` helper in popup.js +
   ~100 lines of supporting CSS. Two callers existed:
-    - `resetAllData` — now safe to apply immediately because EI2's
+    - `resetAllData`, now safe to apply immediately because EI2's
       Undo Reset button (shipped in the same v4.47 sprint) provides
       the recovery surface via a session-scoped storage snapshot.
-    - `clearDiagnosticLog` — applies immediately because the
+    - `clearDiagnosticLog`, applies immediately because the
       diagnostic log is a runtime ring buffer of past errors, not
       user-authored data.
   Removed: the confirm-shell HTML, the confirmAction() function, the
@@ -5776,32 +5784,32 @@ companion app, build system, and CI.
   shape: must be a non-empty array of unique strings, every entry
   must be in the CAPABILITIES allowlist; the empty `[]` sentinel is
   banned (omit the field entirely instead). Pinned by two new
-  `v4.47.0 NF17` hardening tests: (1) schema-side — CAPABILITIES
+  `v4.47.0 NF17` hardening tests: (1) schema-side, CAPABILITIES
   enum shape + frozen-ness + lowerCamelCase + uniqueness, every
   `requires:` field well-formed, seeded entries present;
-  (2) script-side — check-settings.js carries the validation block
+  (2) script-side, check-settings.js carries the validation block
   shape + the four banned-shape assertions. 382/382 JS tests pass
   (+2 new). check-settings still reports 354 entries match
   default-settings.json byte-for-byte.
 
-- **CONTRIBUTING.md — document the two manual dev scripts (NF13).**
+- **CONTRIBUTING.md, document the two manual dev scripts (NF13).**
   Closes NF13 from RESEARCH_FEATURE_PLAN. The audit flagged
   `scripts/_gen-schema.js` and `scripts/generate-locales.js` as
   unreferenced by any `npm` script. After reading both, they are
   intentional one-shot generators kept for on-demand re-runs, not dead
-  code — but a contributor reading the repo cold has no way to know
+  code, but a contributor reading the repo cold has no way to know
   that. CONTRIBUTING.md now carries a "Dev Scripts (Manual, Not in
   `npm run check`)" section that documents what each script does, how
   to run it, and when to run it.
 
-- **extension/core/runtime-flags.js — typed accessors for the three
+- **extension/core/runtime-flags.js, typed accessors for the three
   internal coordination flags (NF12).** Closes NF12 from
   RESEARCH_FEATURE_PLAN. The flags `__ytkit_videoPopped` (popOutPlayer
   ↔ pipButton ↔ fullscreenOnDoubleClick coordination),
   `__ytkit_cpu_tamer` (CPU Tamer re-entry guard), and `__ytkit_debug`
   (Debug Mode marker) used to live as untyped writes directly on
   `window`. A misspelled flag would silently break the cooperation
-  chain — and the `// reason:` ESLint rule couldn't catch a silent
+  chain, and the `// reason:` ESLint rule couldn't catch a silent
   global typo. The new module exposes typed get/set for each flag
   while keeping `window.__ytkit_*` as the underlying storage (so
   console power users and the userscript build's globalThis-bound
@@ -5830,7 +5838,7 @@ companion app, build system, and CI.
   skip the validate workflow by design (the `push: branches: [main]`
   trigger does not fire on tag-only refs).
 
-- **RESEARCH_FEATURE_PLAN.md — consolidated active backlog.** Folds the
+- **RESEARCH_FEATURE_PLAN.md, consolidated active backlog.** Folds the
   2026-05-25 reconciliation companion back into the canonical research
   plan. The file is now an open-items-only backlog organised by
   readiness (browser-bounded captures, CI/DX, lint widening, lifecycle
@@ -5841,7 +5849,7 @@ companion app, build system, and CI.
   docs/architecture.md. The dated companion file
   RESEARCH_FEATURE_PLAN_2026-05-25.md is deleted (folded back in).
 
-- **docs/architecture.md — contributor orientation map.** Covers the
+- **docs/architecture.md, contributor orientation map.** Covers the
   four moving parts (MV3 extension, userscript, Astra Downloader
   Python companion, toolbar popup), end-to-end data flow for a watch
   page load and a download, where things live (settings schema,
@@ -5865,32 +5873,31 @@ companion app, build system, and CI.
   truncation) would ship silently. New `EndToEndDownloadTests` class
   uses `unittest.mock.patch` to replace `subprocess.Popen` with a
   fake that yields synthetic yt-dlp stdout lines + a controlled
-  returncode — no real yt-dlp invocation, no fixture file, sub-second
+  returncode, no real yt-dlp invocation, no fixture file, sub-second
   hermetic. Two cases:
-    • `test_full_download_flow_marks_complete_and_writes_history` —
-      3 progress lines + a Merger line; asserts status=complete,
+    • `test_full_download_flow_marks_complete_and_writes_history`, 3 progress lines + a Merger line; asserts status=complete,
       progress=100, filename parsed, history entry written with the
       right url/format/audioOnly.
-    • `test_yt_dlp_nonzero_exit_with_error_marks_failed` — returncode=1
+    • `test_yt_dlp_nonzero_exit_with_error_marks_failed`, returncode=1
       with an ERROR line; asserts status=failed, error surfaces the
       yt-dlp text, no history entry written.
   88/88 Python tests pass (+2 new).
 
-- **Astra Downloader v1.5.1 — HTTP-surface size cap (both directions).**
+- **Astra Downloader v1.5.1, HTTP-surface size cap (both directions).**
   Closes EI12 from RESEARCH_FEATURE_PLAN. The Flask process previously
   had no explicit Content-Length cap on either incoming bodies or
-  outgoing responses — relied entirely on Waitress's internal limits.
+  outgoing responses, relied entirely on Waitress's internal limits.
   Two new constants harden both edges:
-    • `MAX_REQUEST_BYTES = 1 MB` — wired into Flask via
+    • `MAX_REQUEST_BYTES = 1 MB`, wired into Flask via
       `app.config['MAX_CONTENT_LENGTH']` so an oversized POST gets a
-      413 before any handler runs (all legitimate payloads — the
-      extension popup + ytkit.js EXT_FETCH — are <2 KB; 1 MB is the
+      413 before any handler runs (all legitimate payloads, the
+      extension popup + ytkit.js EXT_FETCH, are <2 KB; 1 MB is the
       defensive margin)
-    • `MAX_RESPONSE_BYTES = 10 MB` — enforced inside `cors_response`,
+    • `MAX_RESPONSE_BYTES = 10 MB`, enforced inside `cors_response`,
       which measures `len(resp.get_data())` and swaps oversized
       payloads for a 413 error body before the wire layer transmits
       anything. /history already caps to 500 entries and /health is
-      tiny, so the ceiling never trips today — but a future
+      tiny, so the ceiling never trips today, but a future
       /streamlinks or /logs endpoint can't silently stream megabytes.
   APP_VERSION bumps 1.5.0 → 1.5.1; `SERVICE_API_VERSION` stays at 2
   (additive, backward-compatible). 4 new pytest cases pin the
@@ -5900,17 +5907,17 @@ companion app, build system, and CI.
 - **Array settings get a checkbox-grid editor.** Previously, array-type
   schema entries like `hiddenChatElements`, `hiddenActionButtons`,
   `hiddenPlayerControls`, and `hiddenWatchElements` were edited in the
-  popup as raw JSON textareas (v4.41.0 surface) — power-user-only UX
+  popup as raw JSON textareas (v4.41.0 surface), power-user-only UX
   for what is conceptually a multi-select. New optional `knownValues`
   field on a schema entry declares the canonical enumeration; the
   popup's array-editor branch now forks on knownValues presence and
   renders a flex-wrap checkbox grid (one box per token, click to
   add/remove from the array). The 4 hidden-* entries now carry
   knownValues; `syncSafePrefsAllowlist` (70+ items) deliberately keeps
-  the JSON path. Persist is order-preserving — known-values order
+  the JSON path. Persist is order-preserving, known-values order
   first (deterministic for export/import round-trips), unknown tokens
   preserved at the tail so a saved value with deprecated tokens
-  doesn't lose them. New `v4.47.0 NF7 — array schema entries with
+  doesn't lose them. New `v4.47.0 NF7, array schema entries with
   knownValues render checkbox grids` hardening test pins the schema
   invariant (knownValues must be a superset of defaultValue), the
   popup branch ordering, and the CSS surface. 528/528 tests pass (+1).
@@ -5919,13 +5926,13 @@ companion app, build system, and CI.
   `MediaDLManager.showInstallPrompt` writes `ytkit_mediadl_prompt_dismissed
   = true` to `chrome.storage.local` when the user clicks "Skip for now"
   in the in-page install dialog. That dismiss was permanent and there
-  was no obvious recovery path — users who later changed their mind had
+  was no obvious recovery path, users who later changed their mind had
   to manually edit storage. The popup now surfaces a small recovery
   button (hidden by default, auto-revealed on boot when the flag is
   set) that removes the key via `chrome.storage.local.remove`.
   Subsequent YouTube page loads naturally re-enable the install
   prompt via the existing `storageRead` gate. 4 new i18n keys added
-  to en + 9 non-EN locales. New `v4.47.0 NF6 — Reinstall Astra
+  to en + 9 non-EN locales. New `v4.47.0 NF6, Reinstall Astra
   Downloader popup action clears the dismissed flag` hardening test
   pins the button + storage-key constant + click listener wiring +
   cross-file key parity with the ytkit.js write site. 527/527 tests
@@ -5933,23 +5940,23 @@ companion app, build system, and CI.
 
 - **Reset action is now reversible (within the browser session).**
   Previously, the popup Reset wiped `chrome.storage.local` after one
-  confirm dialog and there was no recovery — a misclick destroyed all
+  confirm dialog and there was no recovery, a misclick destroyed all
   354 settings, hidden lists, blocked channels, and bookmarks. Now
   `resetAllData` snapshots every key in `chrome.storage.local` into a
   `_resetSnapshot` entry on `chrome.storage.session` BEFORE the wipe,
   and an "Undo Reset" button (hidden by default, auto-revealed when a
   snapshot exists) restores the snapshot byte-for-byte. Session
-  storage is the right home — the snapshot deliberately does NOT
+  storage is the right home, the snapshot deliberately does NOT
   survive a browser restart (stale snapshots overwriting later real
   edits would be worse than the original problem) but does survive a
   popup close/reopen so the user sees the Undo button on the next
   launch. 6 new i18n keys added to en + 9 non-EN locales. New
-  `v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo
+  `v4.47.0 EI2, Reset writes a session-scoped snapshot and Undo
   restores it` hardening test pins the snapshot-before-wipe ordering,
   the snapshot-key constant, the click-listener wiring, and the
   locale parity. 526/526 tests pass (+1).
 
-- **NF5 wave 1 — feature-lifecycle module is no longer unused.** The
+- **NF5 wave 1, feature-lifecycle module is no longer unused.** The
   v4.7.0 `core/feature-lifecycle.js` shipped `createLifecycle()` +
   `defineFeature()` but had zero callers anywhere in the codebase
   until now. All 6 CSS-only peel modules
@@ -5960,18 +5967,17 @@ companion app, build system, and CI.
   `getLifecycle().defineFeature(spec)` at module-evaluation time. Each
   spec carries the canonical id + category (verified against
   `core/settings-schema.js` so the categories don't drift) + no-op
-  `init`/`destroy` for now. This is a "register-only" wave —
-  `ytkit.js`'s inline `cssFeature()` blocks still own the real
+  `init`/`destroy` for now. This is a "register-only" wave, `ytkit.js`'s inline `cssFeature()` blocks still own the real
   `injectStyle` / cleanup. Wave 2 will flip the inline blocks to
   delegate via `lifecycle.start(id)` / `lifecycle.destroy(id)` one
   category at a time without touching the registration glue. Pinned
-  by `v4.47.0 NF5 wave 1 — every CSS-only peel module registers with
+  by `v4.47.0 NF5 wave 1, every CSS-only peel module registers with
   the lifecycle` hardening test (source-level call-site checks for
   every peel + a sandboxed `snapshot()` round-trip against the
   lifecycle module). 525/525 tests pass (+1).
 
 - **New ESLint rule `local/require-catch-reason`.** Pins the v3.14.0
-  hardening invariant — every empty catch body must carry a
+  hardening invariant, every empty catch body must carry a
   `// reason:` (or `/* reason: */`) comment explaining why swallowing
   the error is correct, otherwise it must contain at least one
   executable statement (logging, returning, anything that leaves a
@@ -5980,7 +5986,7 @@ companion app, build system, and CI.
   compliant (one inner `catch (__) { /* */ }` at `background.js:414`
   got the `// reason:` it was missing). Wider rollout to popup.js
   (41 catches), ytkit.js (175), and core/*.js (50) is gated behind
-  a per-file violation audit + bulk annotation pass — the rule itself
+  a per-file violation audit + bulk annotation pass, the rule itself
   is identical for each file. New
   `v4.47.0 ESLint require-catch-reason rule is wired and enforces
   v3.14.0 invariant` hardening test exercises six contract cases
@@ -6027,13 +6033,13 @@ companion app, build system, and CI.
   autoPauseOnSwitch + pauseOtherTabs, popOutPlayer + pipButton +
   fullscreenOnDoubleClick, hideEndCards parent/sub of hideVideoEndContent) so
   a future audit doesn't mechanically re-add pairs whose mutual exclusion has
-  been intentionally engineered away. CLAUDE.md §Architecture Notes synced
-  to match the actual code (was claiming 6 conflict pairs that the in-code
+  been intentionally engineered away. Maintainer architecture notes now match
+  the actual code (they claimed 6 conflict pairs that the in-code
   comments explicitly named as cooperative). 521/521 tests pass (+1).
 
 - **`npm run check` now runs `npm audit --omit=dev --audit-level=moderate`**
   via a new `audit:deps` script. Closes the G4 finding from
-  RESEARCH_FEATURE_PLAN — vulnerability advisories were spot-checked per
+  RESEARCH_FEATURE_PLAN, vulnerability advisories were spot-checked per
   hardening pass but not gated per-PR. Currently passes with 0 advisories.
 - **Pinned the popup's `prefers-reduced-motion` global guard.** `popup.css`
   has always carried the universal `* { animation: none !important;
@@ -6055,10 +6061,10 @@ companion app, build system, and CI.
   `YTKit-v1.2.0.user.js` from the repo root. `*.bak` was already in
   `.gitignore`; canonical archive copy lives at `archive/YTKit-v1.2.0.user.js`.
 - **Research companion**: `RESEARCH_FEATURE_PLAN.md` added as the v4.46.0+
-  code-audit punch list. Phases A–H with Quick-Wins and Larger-Bets sections;
+  code-audit punch list. Phases A-H with Quick-Wins and Larger-Bets sections;
   references but does not duplicate `ROADMAP.md`.
 
-## [4.46.0] - 2026-05-24 - extreme audit cut (H25): SW + popup + Python downloader hardening
+## [4.46.0] (2026-05-24): extreme audit cut (H25): SW + popup + Python downloader hardening
 
 Deep audit pass across the three production-critical surfaces (service
 worker, toolbar popup, Astra Downloader companion). Three defensive
@@ -6067,7 +6073,7 @@ fix for the Python test suite.
 
 ### Service worker (`extension/background.js`)
 
-- **Hydration bypass of `PENDING_REVEALS_CAP`** — `_pendingRevealsReady`
+- **Hydration bypass of `PENDING_REVEALS_CAP`**, `_pendingRevealsReady`
   loaded the persisted "show in folder" id list from
   `chrome.storage.session` straight into the in-memory `Set` with an
   unbounded `for (const id of ids) _pendingReveals.add(id)`. The runtime
@@ -6078,7 +6084,7 @@ fix for the Python test suite.
   against. Hydration now `Math.max(0, ids.length - PENDING_REVEALS_CAP)`
   slices from the tail and validates each entry is a `number` before
   inserting.
-- **Silent fallthrough on unknown `msg.type`** — the
+- **Silent fallthrough on unknown `msg.type`**, the
   `chrome.runtime.onMessage` listener used to return implicitly when no
   `if (msg.type === ...)` branch matched, leaving the caller's
   `chrome.runtime.sendMessage` Promise to reject with the generic
@@ -6089,11 +6095,11 @@ fix for the Python test suite.
 
 ### Toolbar popup (`extension/popup.js`)
 
-- **Firefox export anchor fallback** — when
+- **Firefox export anchor fallback**, when
   `chrome.downloads.download` is unavailable, the export flow falls
   back to an `<a download>` click. The anchor was previously created
   via `Object.assign(document.createElement('a'), …)` and clicked
-  without being appended to the DOM — historically a no-op on Firefox.
+  without being appended to the DOM, historically a no-op on Firefox.
   In production the fallback is unreachable (the manifest declares the
   `downloads` permission so `chrome.downloads.download` is always
   available), but defensive coding mandates the fallback work on both
@@ -6102,7 +6108,7 @@ fix for the Python test suite.
 
 ### Python test suite (`pytest.ini`)
 
-- **`asyncio_default_fixture_loop_scope` deprecation** — pytest-asyncio
+- **`asyncio_default_fixture_loop_scope` deprecation**, pytest-asyncio
   ≥0.23 warns on every test run that the value is unset; the upcoming
   1.0 release will change the default. Pinned the value to `function`
   (the future default) so every `python -m pytest astra_downloader`
@@ -6114,7 +6120,7 @@ fix for the Python test suite.
   `tests/hardening.test.js` covering the three SW/popup fixes and the
   pytest.ini pin).
 - **`npm run check`** → lint + a11y audit + WCAG-AA contrast + i18n +
-  version + syntax — all green.
+  version + syntax, all green.
 - **`python -m pytest astra_downloader -q`** → **82 / 82 passing**, no
   deprecation warnings.
 - **`node build-extension.js --bump minor`** → all four artifacts
@@ -6130,10 +6136,10 @@ echo dedupe invariants hold), `extension/core/predicate-sandbox.js`
 `astra_downloader/astra_downloader.py` cookie/path/URL normalisers
 (consistent input validation across the bridge boundary).
 
-## [4.45.0] - 2026-05-24 - premium UX polish: rectangular toggles + typography rhythm
+## [4.45.0] (2026-05-24): premium UX polish: rectangular toggles + typography rhythm
 
 Aggressive premium-polish pass on the two primary user surfaces (the
-toolbar popup and the in-page settings panel) — no feature changes,
+toolbar popup and the in-page settings panel), no feature changes,
 no behaviour changes, just a tighter, more intentional finish.
 
 ### Pill-backdrop hard-rule sweep
@@ -6142,21 +6148,21 @@ The house style allows backdrop radii of `0/4/6/8/10/12` only. Earlier
 releases left a handful of borderline stadium/pill shapes (radius ≥ ½
 of element height) that read as "default AI styling" instead of
 deliberate design. This pass replaces every one with a rectangular
-small-radius equivalent — thumbs, dots, and avatars stay circular as
+small-radius equivalent, thumbs, dots, and avatars stay circular as
 the rule allows.
 
-- **`.switch` toolbar toggle** — 20 px tall track, was `border-radius:
+- **`.switch` toolbar toggle**, 20 px tall track, was `border-radius:
   10px` (exact stadium-pill ratio); now `6 px` rectangular. Thumb stays
   a true circle.
 - **`.ytkit-switch-track` in-page toggle** (visible on every feature
-  card in the settings panel — the single most-touched control in the
-  product) — same fix: `10 px` → `6 px`. Settings panel scrollbar thumb
+  card in the settings panel, the single most-touched control in the
+  product), same fix: `10 px` → `6 px`. Settings panel scrollbar thumb
   follows down from `10 px` → `3 px`.
-- **Popup chips** — `.brand-version` (`10 px` → `6 px`), `.app-status`
+- **Popup chips**, `.brand-version` (`10 px` → `6 px`), `.app-status`
   (`10 px` → `8 px`), `.toggle-group-count` (`10 px` → `4 px`),
   `.clear-search` (`10 px` → `6 px`), `.toggle-skeleton::after`,
   `.skeleton-line` all updated.
-- **Tokens** — retired the misleading `--radius-pill: 10px` token. The
+- **Tokens**, retired the misleading `--radius-pill: 10px` token. The
   new explicit scale is `--radius-tight: 4px`, `--radius-chip: 6px`,
   `--radius-xs: 8px`, `--radius-sm: 10px`, `--radius-md/lg/xl: 12px`.
   Future surfaces grab a value with intent, not "the round one".
@@ -6170,13 +6176,13 @@ the rule allows.
 - **Stat-card labels** bumped from `9 px` to `9.5 px` with `0.1 em`
   letter-spacing for better tabular legibility; padding nudged from
   `8 8` → `10 8` so the value/label pair has more breathing room.
-- **Quick-toggle description** `10.5 px` → `11 px` — easier to scan
+- **Quick-toggle description** `10.5 px` → `11 px`, easier to scan
   the secondary line without crowding the title row.
 
 ### Language select chevron
 
 The `<select>` dropdown indicator was two diagonal CSS gradients
-combined into a triangle — sharp at 100 % zoom, fuzzy everywhere
+combined into a triangle, sharp at 100 % zoom, fuzzy everywhere
 else. Replaced with an inline-SVG chevron data URI so it stays crisp
 at any DPI, plus a switch to the shared `--accent-border` +
 `--focus-ring` tokens so its hover/focus state matches the rest of
@@ -6189,13 +6195,13 @@ the popup (was hand-rolled rgba values).
   `:3971`).
 - `npm run check` → lint + a11y audit + WCAG-AA contrast audit + i18n
   all green. Contrast ratios on the touched colours: primary text
-  18.4 : 1, banner text 8 : 1+ — well above target.
+  18.4 : 1, banner text 8 : 1+, well above target.
 - `node build-extension.js --bump minor` → all four artifacts (Chrome
   ZIP/CRX, Firefox ZIP/XPI) produced.
 
-## [4.44.0] - 2026-05-21 - v5.1.0 carry-forward arc closed (documentation tag)
+## [4.44.0] (2026-05-21): v5.1.0 carry-forward arc closed (documentation tag)
 
-No code changes from v4.43.0 — version bump + documentation tag
+No code changes from v4.43.0, version bump + documentation tag
 declaring the v5.1.0 carry-forward arc complete. Every
 acceptance-criterion item in the v5.0.0-foundation carry-forward
 list (ROADMAP.md L40-49) is now either checked `[x]` or marked
@@ -6208,10 +6214,10 @@ list (ROADMAP.md L40-49) is now either checked `[x]` or marked
 | Versions shipped | 14 (v4.31.0 → v4.44.0) |
 | Tests added | +64 (451 → 515) |
 | Carry-forward items closed `[x]` | 5 of 8 (#1, #4, #5, #7, #8) |
-| Carry-forward items deferred `[~]` | 3 of 8 (#2, #3, #6 — all with v5.2.0+ scope notes) |
-| New `extension/core/` modules | 1 (toast-dom — paired with the existing 7 v5.0.0 core modules) |
+| Carry-forward items deferred `[~]` | 3 of 8 (#2, #3, #6, all with v5.2.0+ scope notes) |
+| New `extension/core/` modules | 1 (toast-dom, paired with the existing 7 v5.0.0 core modules) |
 | New `extension/core/selector-packs/` files | 26 (full migration; `INLINE_SURFACES` now `{}`) |
-| New `extension/features/` modules | 2 (wave-8-css + home-subs-css — 11 CSS-only features peeled) |
+| New `extension/features/` modules | 2 (wave-8-css + home-subs-css, 11 CSS-only features peeled) |
 | Popup editor coverage | 354 of 354 schema keys (was ~340) |
 | New popup surfaces | profile-badge chip on github-full-gated rows + array/object JSON textarea editor |
 | New popup labels | labelKey/descriptionKey overrides on 4 brand-name schema entries |
@@ -6219,43 +6225,43 @@ list (ROADMAP.md L40-49) is now either checked `[x]` or marked
 
 ### Closed `[x]` carry-forward items
 
-1. **Selector-pack file split** — v4.31.0 → v4.37.0 (7 batches).
+1. **Selector-pack file split**, v4.31.0 → v4.37.0 (7 batches).
    All 28 surfaces (+ 2 aliases) live in
    `extension/core/selector-packs/<surface>.js` with
    `captureEvidence` + `lastVerified`. `INLINE_SURFACES = {}`;
    the pack registry drives `SurfaceSelectorMap`.
-4. **DOM-layer toast extraction** — v4.42.0.
+4. **DOM-layer toast extraction**, v4.42.0.
    `core/toast-dom.js#createToastSystem` is the canonical
    implementation; ytkit.js delegates via a cached system with
    byte-identical inline fallback.
-5. **Array / object editors in the popup** — v4.41.0.
+5. **Array / object editors in the popup**, v4.41.0.
    `<textarea.so-key-json>` + `.so-key-json-error` pill; commit
    via `JSON.parse` with type-shape guards. Popup editor
    coverage is now **354 / 354** schema keys.
-7. **Profile-badge integration** — v4.39.0.
+7. **Profile-badge integration**, v4.39.0.
    `.so-key-profile-badge.so-key-profile-gated` chip on
    github-full rows when the effective profile is store-safe;
    cached `createPolicyProfile()` instance.
-8. **`labelKey` / `descriptionKey` override fields** — v4.40.0.
+8. **`labelKey` / `descriptionKey` override fields**, v4.40.0.
    Four brand-name overrides applied so far
    (`downloadCobaltFallback`, `downloadCobaltInstance`,
    `aiSummaryEndpoint`, `aiSummaryProvider`).
 
 ### Deferred `[~]` carry-forward items (v5.2.0+ scope)
 
-2. **Feature peels (long tail)** — 21 of ~200 monolith blocks
+2. **Feature peels (long tail)**, 21 of ~200 monolith blocks
    peeled this session (wave-8-css quintet + home-subs-css
    sextet + 10 prior v5.0.0 peels). Continue batch-by-batch in
    v5.2.0+; DOM-walking observers are blocked on #3 and stay
    v5.2.0+.
-3. **Per-feature lifecycle adoption** — multi-slice initiative
+3. **Per-feature lifecycle adoption**, multi-slice initiative
    that changes feature-internal init/destroy semantics. Needs
    paired DOM-walking peels + visible-behaviour QA per
    category. The v4.7.0 contract + v4.9.0 lifecycle-route
    bridge are ready for adoption when category owners are
    available.
-4. ~~_(toast extraction — closed above)_~~
-6. **i18n translation pass** — 13 placeholder keys still ship
+4. ~~_(toast extraction, closed above)_~~
+6. **i18n translation pass**, 13 placeholder keys still ship
    English-everywhere across all 10 locales. The `t()` helper
    already falls through to inline English, so user-visible
    behaviour stays correct. Shipping unverified machine
@@ -6277,7 +6283,7 @@ two DOM primitives the v5.2.0 "control center" surface will
 build on (`toastDom`, `policyProfile`) are both factory-shaped
 and unit-testable in isolation.
 
-## [4.43.0] - 2026-05-21 - feature-peel batch 2 (6 home / subs CSS-only features)
+## [4.43.0] (2026-05-21): feature-peel batch 2 (6 home / subs CSS-only features)
 
 Continues carry-forward item #2. Six Home / Subscriptions
 cssFeature() callsites peel into
@@ -6298,7 +6304,7 @@ the userscript / module-unavailable path, manifest +
 - `node sync-userscript.js` + `node build-extension.js` green at
   v4.43.0.
 
-## [4.42.0] - 2026-05-21 - DOM-layer toast extraction (core/toast-dom.js)
+## [4.42.0] (2026-05-21): DOM-layer toast extraction (core/toast-dom.js)
 
 Closes carry-forward item #4. The DOM-touching `showToast` /
 `dismissToast` functions move into
@@ -6316,18 +6322,18 @@ before.
   them off the global) so the module is unit-testable in
   isolation. Both DOM functions match the prior monolith bodies
   for the parity check.
-- `extension/ytkit.js` — `_getToastSystem()` builds the system
+- `extension/ytkit.js`, `_getToastSystem()` builds the system
   on first call and caches it. `showToast` + `dismissToast`
   delegate via the cached system; the existing inline bodies
   remain as the byte-identical fallback when the module isn't
   loaded.
-- `extension/manifest.json` — both ISOLATED content-script
+- `extension/manifest.json`, both ISOLATED content-script
   blocks load `core/toast-dom.js` immediately after
   `core/toast.js` (the pure-helpers module it depends on) and
   before `ytkit.js`.
-- `sync-userscript.js` — `V5_BUNDLE_MODULES` extended with
+- `sync-userscript.js`, `V5_BUNDLE_MODULES` extended with
   `core/toast-dom.js` so the userscript ships the module too.
-- `tests/hardening.test.js` — 6 new v4.42.0 regressions: module
+- `tests/hardening.test.js`, 6 new v4.42.0 regressions: module
   existence + createToastSystem export, factory produces the
   showToast + dismissToast pair, monolith wires `_getToastSystem`
   + delegation, byte-stable parity markers across both
@@ -6350,15 +6356,15 @@ the inline byte-stable fallback per the existing peel pattern").
 - `node sync-userscript.js` + `node build-extension.js` green at
   v4.42.0.
 
-## [4.41.0] - 2026-05-21 - array / object JSON editors in the schema overview
+## [4.41.0] (2026-05-21): array / object JSON editors in the schema overview
 
 Closes carry-forward item #5. The popup schema overview can now
-edit every type — closes editor coverage from ~340 to **354 of 354**
+edit every type, closes editor coverage from ~340 to **354 of 354**
 schema keys.
 
 ### Added
 
-- `extension/popup.js` — `buildSchemaOverviewKeyRow` gains an
+- `extension/popup.js`, `buildSchemaOverviewKeyRow` gains an
   `array | object` branch that renders a `<textarea.so-key-json>`
   pre-populated with `JSON.stringify(value, null, 2)` and a
   `.so-key-json-error` pill below. Commit happens on change/blur
@@ -6366,10 +6372,10 @@ schema keys.
   `"Invalid JSON: <reason>"` and skip persistence. Type-shape
   guards reject array→object and object→array shape flips
   up-front so a paste accident can't silently corrupt the store.
-- `extension/popup.css` — `.so-key-json-wrap`, `.so-key-json`
-  (6 px backdrop radius — house style), `.so-key-json-error`
+- `extension/popup.css`, `.so-key-json-wrap`, `.so-key-json`
+  (6 px backdrop radius, house style), `.so-key-json-error`
   (4 px radius, amber-red tone).
-- `tests/hardening.test.js` — 6 new v4.41.0 regressions:
+- `tests/hardening.test.js`, 6 new v4.41.0 regressions:
   textarea + error-pill branch wired, pretty-print + parse
   round-trip, type-shape guards, persist-skips-on-parse-error
   ordering, sub-8 px CSS radii on both the editor and the pill,
@@ -6383,7 +6389,7 @@ The remaining 14 array + object schema keys
 (`hiddenChatElements`, `hiddenVideos`, `hiddenChannels`,
 `hiddenWatchElements`, `subscriptionGroupData`, etc.) were the
 last bucket the popup couldn't edit. The JSON-textarea editor
-matches the per-slice instruction in CLAUDE.md / the v5.1.0 brief
+matches the per-slice instruction in the v5.1.0 brief
 exactly: round-trip via `JSON.stringify(value, null, 2)` and
 `JSON.parse` on commit, parse-error pill below an invalid
 textarea. Real per-key custom UIs (multi-select for
@@ -6399,7 +6405,7 @@ without breaking the JSON-fallback path.
 - `node sync-userscript.js` + `node build-extension.js` green at
   v4.41.0.
 
-## [4.40.0] - 2026-05-21 - labelKey/descriptionKey override fields on schema entries
+## [4.40.0] (2026-05-21): labelKey/descriptionKey override fields on schema entries
 
 Closes carry-forward item #8. Schema entries gain optional
 `labelKey` + `descriptionKey` fields that override the v4.28.0
@@ -6408,33 +6414,33 @@ where the algorithmic label is imprecise.
 
 ### Added
 
-- `extension/core/settings-schema.js` — four brand-name entries
+- `extension/core/settings-schema.js`, four brand-name entries
   gain overrides:
   - `downloadCobaltFallback` → "Cobalt download fallback"
   - `downloadCobaltInstance` → "Cobalt API instance URL"
   - `aiSummaryEndpoint` → "AI summary endpoint URL"
   - `aiSummaryProvider` → "AI summary provider"
-- `extension/popup.js` — `buildSchemaOverviewKeyRow` consults
+- `extension/popup.js`, `buildSchemaOverviewKeyRow` consults
   `entry.labelKey` first (trimmed-non-empty guard) and falls back
   to the v4.28.0 humaniser. The tooltip surfaces the raw storage
   key plus, when present, the `descriptionKey` text so power
   users see both.
-- `tests/hardening.test.js` — 4 new v4.40.0 regressions covering
+- `tests/hardening.test.js`, 4 new v4.40.0 regressions covering
   the override branch in popup, brand-name canary markers in the
   schema, a defensive non-empty-string parser canary across every
   override in the schema, and a freeze/round-trip canary on the
   `downloadCobaltInstance` entry.
-- `tests/hardening.test.js` — the v4.28.0 label-resolution
+- `tests/hardening.test.js`, the v4.28.0 label-resolution
   invariant test is rewritten as fragment matches so both v4.28.0
   and v4.40.0 implementations satisfy it.
 
 ### Why
 
 The humaniser is great for the bulk of the 354-key schema but
-loses precision on brand names — "Download cobalt instance"
+loses precision on brand names, "Download cobalt instance"
 reads worse than "Cobalt API instance URL", and "Ai summary
 endpoint" looks like a typo. A lightweight per-entry override
-field gives the popup precise labels for the ~10–20 brand /
+field gives the popup precise labels for the ~10-20 brand /
 endpoint settings without paying for full i18n yet (the upcoming
 i18n pass can hang real translations off the same field).
 
@@ -6446,7 +6452,7 @@ i18n pass can hang real translations off the same field).
 - `node sync-userscript.js` + `node build-extension.js` green at
   v4.40.0.
 
-## [4.39.0] - 2026-05-21 - profile-badge integration in the schema overview
+## [4.39.0] (2026-05-21): profile-badge integration in the schema overview
 
 Closes carry-forward item #7. `github-full`-gated entries in the
 popup schema overview now display a small "github-full" badge so
@@ -6455,18 +6461,18 @@ users immediately understand that the toggle is a no-op until
 
 ### Added
 
-- `extension/popup.js` — `popupState._policyProfile` caches a
+- `extension/popup.js`, `popupState._policyProfile` caches a
   single `createPolicyProfile()` instance. `ensurePolicyProfile()`
   is idempotent and seeded from `renderSchemaOverview()` so the
   per-row badge check doesn't rebuild the resolver on every call.
-- `extension/popup.js` — `buildSchemaOverviewKeyRow` branches on
+- `extension/popup.js`, `buildSchemaOverviewKeyRow` branches on
   `entry.profile === 'github-full'` and appends a
   `.so-key-profile-badge.so-key-profile-gated` chip with a tooltip
   explaining the gate when the effective profile is store-safe.
-- `extension/popup.css` — `.so-key-profile-badge` declared at the
+- `extension/popup.css`, `.so-key-profile-badge` declared at the
   house-style 4 px backdrop radius (no pill backdrops) with an
   amber tone so it reads as informational, not warning.
-- `tests/hardening.test.js` — 5 new v4.39.0 regressions: badge
+- `tests/hardening.test.js`, 5 new v4.39.0 regressions: badge
   branch is wired, resolver is cached + seeded before rows
   render, CSS uses sub-8 px radius, ≥1 schema entry still carries
   `profile: 'github-full'` (the badge has live coverage), and the
@@ -6479,7 +6485,7 @@ The v4.7.0 `policy-profile.js` resolver shipped without a popup
 surface; users had no way to know that flipping a Cobalt or
 BYO-API-key toggle did nothing under the default store-safe
 profile. The badge resolves that confusion at the row level and
-reuses the resolver from the existing core module — no new
+reuses the resolver from the existing core module, no new
 profile logic.
 
 ### Verification
@@ -6489,7 +6495,7 @@ profile logic.
 - `node sync-userscript.js` + `node build-extension.js` green at
   v4.39.0.
 
-## [4.38.0] - 2026-05-21 - feature-peel batch (wave-8 CSS-only quintet)
+## [4.38.0] (2026-05-21): feature-peel batch (wave-8 CSS-only quintet)
 
 Picks the v5.1.x feature-peel work back up after the selector-pack
 arc closed. Five wave-8 CSS-only features
@@ -6502,15 +6508,15 @@ arc closed. Five wave-8 CSS-only features
 - `extension/features/wave-8-css/index.js` exposing five pure
   builders. The `nyanCatProgressBar` builder ships the multi-rule
   CSS + `@keyframes ytkit-nyan-rainbow` block.
-- `extension/ytkit.js` — the five `cssFeature()` callsites now
+- `extension/ytkit.js`, the five `cssFeature()` callsites now
   delegate via `globalThis.YTKitFeatures.wave8Css.*` with the
   inline literal preserved as a byte-identical fallback for
   userscript / module-unavailable contexts.
-- `extension/manifest.json` — both ISOLATED content-script blocks
+- `extension/manifest.json`, both ISOLATED content-script blocks
   load `features/wave-8-css/index.js` before `ytkit.js`.
-- `sync-userscript.js` — `V5_BUNDLE_MODULES` extended with the new
+- `sync-userscript.js`, `V5_BUNDLE_MODULES` extended with the new
   module so the userscript build inlines it.
-- `tests/hardening.test.js` — 5 new v4.38.0 regressions: module
+- `tests/hardening.test.js`, 5 new v4.38.0 regressions: module
   exports five named builders, helper output matches the inline
   fallback (marker substring), monolith callsite uses the
   delegation chain (catches accidental literal-reversion),
@@ -6536,11 +6542,11 @@ CSS.
 - `node sync-userscript.js` + `node build-extension.js` green at
   v4.38.0.
 
-## [4.37.0] - 2026-05-21 - v5.1.0 #7: selector-pack migration COMPLETE (final batch — live-chat trio)
+## [4.37.0] (2026-05-21): v5.1.0 #7: selector-pack migration COMPLETE (final batch, live-chat trio)
 
 Final batch of the v5.1.0 selector-pack migration. The three
-live-chat surfaces — `liveChatFrame`, `liveChat`,
-`liveChatPlaceholder` — move out of `INLINE_SURFACES`, which is
+live-chat surfaces, `liveChatFrame`, `liveChat`,
+`liveChatPlaceholder`, move out of `INLINE_SURFACES`, which is
 now an empty object literal: **every surface lives in its own
 pack file**. Carry-forward item #1 closes.
 
@@ -6556,17 +6562,17 @@ pack file**. Carry-forward item #1 closes.
 
 ### Changed
 
-- `extension/core/selectors.js` — `INLINE_SURFACES` is now `{}`.
+- `extension/core/selectors.js`, `INLINE_SURFACES` is now `{}`.
   The merge logic stays: any future diagnostic / temporary surface
   can be declared inline without writing a pack file, and packs
   still override inline entries when both exist.
-- `extension/manifest.json` — 26 pack files load before
+- `extension/manifest.json`, 26 pack files load before
   `core/selectors.js`. `tests/core-foundation.test.js` mirrors the
   manifest order.
 
 ### Added (tests)
 
-- `tests/hardening.test.js` — 5 new v4.37.0 regressions: pack-file
+- `tests/hardening.test.js`, 5 new v4.37.0 regressions: pack-file
   existence + the live-chat needsFreshCapture invariant, registry
   origin + needsFreshCapture round-trip, an `INLINE_SURFACES = {}`
   canary that fails loudly if anyone adds an inline surface back
@@ -6574,7 +6580,7 @@ pack file**. Carry-forward item #1 closes.
   check (every pack file on disk must appear in both ISOLATED
   content_scripts blocks), and a surface-count parity check
   (pack-file count + 2 aliases = SurfaceSelectorMap size).
-- `tests/hardening.test.js` — the v4.31.0 inline-still-resolves
+- `tests/hardening.test.js`, the v4.31.0 inline-still-resolves
   canary is rewritten as an "every-surface-comes-from-a-pack"
   spot-check (one surface from each of the 7 batches must carry
   capture evidence).
@@ -6599,7 +6605,7 @@ prerequisite.
 - `node sync-userscript.js` + `node build-extension.js` green at
   v4.37.0.
 
-## [4.36.0] - 2026-05-21 - v5.1.0 #6: selector-pack file split (batch 6 — misc)
+## [4.36.0] (2026-05-21): v5.1.0 #6: selector-pack file split (batch 6, misc)
 
 Sixth batch of the v5.1.0 selector-pack migration. Five surfaces
 move out of `INLINE_SURFACES`: `settingsOverlay` (Astra-owned),
@@ -6612,10 +6618,10 @@ move out of `INLINE_SURFACES`: `settingsOverlay` (Astra-owned),
   because the surface is Astra-owned, not YouTube-owned),
   `profile.js` (covers the `channelProfile` alias too),
   `notifications.js`, `media.js`.
-- `extension/manifest.json` — 23 pack files load before
+- `extension/manifest.json`, 23 pack files load before
   `core/selectors.js`.
-- `tests/core-foundation.test.js` — vm loader seeds the 23 packs.
-- `tests/hardening.test.js` — 5 new v4.36.0 regressions covering
+- `tests/core-foundation.test.js`, vm loader seeds the 23 packs.
+- `tests/hardening.test.js`, 5 new v4.36.0 regressions covering
   pack-file schema, registry-vs-inline origin, profile/
   channelProfile spine parity, the Astra-owned evidence
   convention for `settingsOverlay`, and manifest load order.
@@ -6627,21 +6633,21 @@ move out of `INLINE_SURFACES`: `settingsOverlay` (Astra-owned),
 - `node sync-userscript.js` + `node build-extension.js` green at
   v4.36.0.
 
-## [4.35.0] - 2026-05-21 - v5.1.0 #5: selector-pack file split (batch 5 — engagement)
+## [4.35.0] (2026-05-21): v5.1.0 #5: selector-pack file split (batch 5, engagement)
 
 Fifth batch of the v5.1.0 selector-pack migration. The three
-engagement surfaces — `comments`, `commentComposer`,
-`engagementPanels` — move out of `INLINE_SURFACES`.
+engagement surfaces, `comments`, `commentComposer`,
+`engagementPanels`, move out of `INLINE_SURFACES`.
 
 ### Added
 
 - `extension/core/selector-packs/comments.js` (keeps both old and
   new comment-shape selectors during the A/B rollout),
   `commentComposer.js`, `engagementPanels.js`.
-- `extension/manifest.json` — 19 pack files load before
+- `extension/manifest.json`, 19 pack files load before
   `core/selectors.js`.
-- `tests/core-foundation.test.js` — vm loader seeds the 19 packs.
-- `tests/hardening.test.js` — 4 new v4.35.0 regressions including
+- `tests/core-foundation.test.js`, vm loader seeds the 19 packs.
+- `tests/hardening.test.js`, 4 new v4.35.0 regressions including
   a parity check that the comments pack keeps both `ytd-comment-
   view-model` and `ytd-comment-renderer` in the selector chain.
 
@@ -6652,10 +6658,9 @@ engagement surfaces — `comments`, `commentComposer`,
 - `node sync-userscript.js` and `node build-extension.js` green
   at v4.35.0.
 
-## [4.34.0] - 2026-05-21 - v5.1.0 #4: selector-pack file split (batch 4 — player-chrome + sidebar + modals)
+## [4.34.0] (2026-05-21): v5.1.0 #4: selector-pack file split (batch 4, player-chrome + sidebar + modals)
 
-Fourth batch of the v5.1.0 selector-pack migration. Four surfaces —
-`playerChrome`, `playerSettings`, `sidebar`, `modals` — move out of
+Fourth batch of the v5.1.0 selector-pack migration. Four surfaces, `playerChrome`, `playerSettings`, `sidebar`, `modals`, move out of
 `INLINE_SURFACES`.
 
 ### Added
@@ -6665,14 +6670,14 @@ Fourth batch of the v5.1.0 selector-pack migration. Four surfaces —
   `extension/core/selector-packs/sidebar.js`,
   `extension/core/selector-packs/modals.js`. The `playerChrome`
   pack inlines a comment explaining why `needsFreshCapture` stays
-  `false` despite the upcoming liquid-glass redesign — flipping
+  `false` despite the upcoming liquid-glass redesign, flipping
   the flag would change `selector-health.js` summary counts and
   belongs in a slice paired with the actual fresh capture.
-- `extension/manifest.json` — both ISOLATED content-script blocks
+- `extension/manifest.json`, both ISOLATED content-script blocks
   now load all 16 pack files before `core/selectors.js`.
-- `tests/core-foundation.test.js` — vm loader now seeds the 16
+- `tests/core-foundation.test.js`, vm loader now seeds the 16
   pack files.
-- `tests/hardening.test.js` — 4 new v4.34.0 regressions covering
+- `tests/hardening.test.js`, 4 new v4.34.0 regressions covering
   pack-file schema, registry-vs-inline origin, the
   legacy + Delhi/new-player fallback bundle on `playerChrome`,
   and manifest pack-before-selectors load order. The
@@ -6687,11 +6692,10 @@ Fourth batch of the v5.1.0 selector-pack migration. Four surfaces —
 - `node build-extension.js` emits Chrome ZIP/CRX + Firefox ZIP/XPI
   at v4.34.0.
 
-## [4.33.0] - 2026-05-21 - v5.1.0 #3: selector-pack file split (batch 3 — watch-shell)
+## [4.33.0] (2026-05-21): v5.1.0 #3: selector-pack file split (batch 3, watch-shell)
 
 Third batch of the v5.1.0 selector-pack migration. The four watch-
-shell surfaces — `watch`, `relatedSidebar`, `player`, `mainVideo` —
-move out of `INLINE_SURFACES` into per-surface files under
+shell surfaces, `watch`, `relatedSidebar`, `player`, `mainVideo`, move out of `INLINE_SURFACES` into per-surface files under
 `core/selector-packs/`.
 
 ### Added
@@ -6699,18 +6703,18 @@ move out of `INLINE_SURFACES` into per-surface files under
 - `extension/core/selector-packs/watch.js`,
   `extension/core/selector-packs/relatedSidebar.js`,
   `extension/core/selector-packs/player.js`,
-  `extension/core/selector-packs/mainVideo.js` — four packs at the
+  `extension/core/selector-packs/mainVideo.js`, four packs at the
   v4.31.0 schema, verified against `mhtml/WatchPage.mhtml` +
   `Worldwide Societal Collapse... - YouTube.mhtml` (2026-05-19).
   The `watch` pack notes that `ytd-watch-flexy[video-id]` is the
   best route-state probe (lifecycle-route-bridge.js observes it);
   the `player` pack warns ISOLATED-world callers to use the
   MAIN-world bridge for `window.movie_player`.
-- `extension/manifest.json` — both ISOLATED content-script blocks
+- `extension/manifest.json`, both ISOLATED content-script blocks
   now load all 12 pack files before `core/selectors.js`.
-- `tests/core-foundation.test.js` — vm loader now seeds the 12
+- `tests/core-foundation.test.js`, vm loader now seeds the 12
   pack files.
-- `tests/hardening.test.js` — 4 new v4.33.0 regressions and the
+- `tests/hardening.test.js`, 4 new v4.33.0 regressions and the
   v4.31.0 inline-still-resolves canary is repointed to
   `playerChrome` (the next-batch unmigrated probe).
 
@@ -6722,11 +6726,10 @@ move out of `INLINE_SURFACES` into per-surface files under
 - `node build-extension.js` emits Chrome ZIP/CRX + Firefox ZIP/XPI
   at v4.33.0.
 
-## [4.32.0] - 2026-05-21 - v5.1.0 #2: selector-pack file split (batch 2 — feed-shell)
+## [4.32.0] (2026-05-21): v5.1.0 #2: selector-pack file split (batch 2, feed-shell)
 
 Second batch of the v5.1.0 selector-pack migration. The four
-feed-shell surfaces — `feed`, `feedCard`, `thumbnail`, `shortsShelf` —
-move out of `INLINE_SURFACES` in `core/selectors.js` into
+feed-shell surfaces, `feed`, `feedCard`, `thumbnail`, `shortsShelf`, move out of `INLINE_SURFACES` in `core/selectors.js` into
 per-surface files under `core/selector-packs/`. Each pack carries
 its own `captureEvidence` + `lastVerified` (2026-05-19, against
 the YouTube / Subscriptions / Worldwide-Societal-Collapse captures).
@@ -6736,26 +6739,26 @@ the YouTube / Subscriptions / Worldwide-Societal-Collapse captures).
 - `extension/core/selector-packs/feed.js`,
   `extension/core/selector-packs/feedCard.js`,
   `extension/core/selector-packs/thumbnail.js`,
-  `extension/core/selector-packs/shortsShelf.js` — four packs
+  `extension/core/selector-packs/shortsShelf.js`, four packs
   following the v4.31.0 schema. The `feed` pack notes the
   filter-chip recycling gotcha (added nodes only); the `feedCard`
   pack keeps both the old `ytd-rich-item-renderer` and the new
   `yt-lockup-view-model` shapes; the `shortsShelf` pack keeps the
   URL-anchored `a[href^="/shorts"]` selector first because the
   shelf wrapper class churns constantly.
-- `extension/manifest.json` — both ISOLATED content-script blocks
+- `extension/manifest.json`, both ISOLATED content-script blocks
   now load all 8 pack files before `core/selectors.js`.
-- `tests/core-foundation.test.js` — vm loader now seeds the 8
+- `tests/core-foundation.test.js`, vm loader now seeds the 8
   pack files (was 4) so the foundation `surface selector map`
   assertion still sees every promoted surface.
-- `tests/hardening.test.js` — 4 new v4.32.0 regressions:
+- `tests/hardening.test.js`, 4 new v4.32.0 regressions:
   pack-file existence + schema, feed-shell surfaces now come from
   the registry (verified by checking `captureEvidence.length >= 1`),
   the pre-peel selectors round-trip byte-stably, manifest pack-
   before-selectors load order. The shared `loadSelectorPackContext`
   helper now discovers pack files from disk so future batches
   don't require updating the test setup block.
-- `tests/hardening.test.js` — the v4.31.0 "inline surfaces still
+- `tests/hardening.test.js`, the v4.31.0 "inline surfaces still
   resolve" test now checks the still-inline surfaces (watch /
   player / comments / liveChat) and uses `watch` as the
   un-packed-yet probe for `getSurfaceSelectorEntry` defaults.
@@ -6767,7 +6770,7 @@ the pattern scales by migrating the next four surfaces with zero
 selector changes. The feed-shell is the right second batch
 because the existing selector-regression fixtures
 (`yt-home.tokens.txt`, `yt-watch.tokens.txt`) already exercise it
-heavily — any regression in the resolver would surface
+heavily, any regression in the resolver would surface
 immediately.
 
 ### Verification
@@ -6778,7 +6781,7 @@ immediately.
 - `node build-extension.js` emits Chrome ZIP/CRX + Firefox ZIP/XPI
   at v4.32.0.
 
-## [4.31.0] - 2026-05-21 - v5.1.0 #1: versioned selector-pack file split (batch 1)
+## [4.31.0] (2026-05-21): v5.1.0 #1: versioned selector-pack file split (batch 1)
 
 First batch of the v5.1.0 selector-pack migration. Four shell
 surfaces move out of `extension/core/selectors.js` and into
@@ -6793,31 +6796,31 @@ against 4 captures on 2026-05-19" instead of just a live counter.
 - `extension/core/selector-packs/appShell.js`,
   `extension/core/selector-packs/nav.js` (covers the `masthead`
   alias), `extension/core/selector-packs/search.js`,
-  `extension/core/selector-packs/leftNav.js` — four pack files
+  `extension/core/selector-packs/leftNav.js`, four pack files
   declaring `{ surface, stable, fallback, captureEvidence,
   lastVerified, highChurn, needsFreshCapture, notes }`. Each pack
   is an idempotent IIFE that registers itself into
   `globalThis.YTKitCore.SurfacePackRegistry` and bails on
   re-registration (Firefox hot-reload / userscript safety).
-- `extension/core/selectors.js` — `freezeEntry()` extended to
+- `extension/core/selectors.js`, `freezeEntry()` extended to
   preserve `captureEvidence` (frozen array) and `lastVerified`
   (ISO date string or null). The inline 28-entry map is now
-  `INLINE_SURFACES` (24 entries — first batch peeled out), and
+  `INLINE_SURFACES` (24 entries, first batch peeled out), and
   `SurfaceSelectorMap` is built from `INLINE_SURFACES` + every
   registered pack. Packs win when both define a surface so a future
   pack file can override a stale inline entry without editing
   `selectors.js`. `getSurfaceSelectorEntry()` now exposes
   `captureEvidence` (defaults to `[]`) and `lastVerified`
   (defaults to `null`) so consumers can iterate without a guard.
-- `extension/manifest.json` — both ISOLATED content-script blocks
+- `extension/manifest.json`, both ISOLATED content-script blocks
   load every selector pack BEFORE `core/selectors.js` so the pack
   registry is populated when the map is built.
-- `tests/core-foundation.test.js` — the foundation test now loads
+- `tests/core-foundation.test.js`, the foundation test now loads
   the pack files in front of `selectors.js`, matching manifest
   order, so the existing `surface selector map promotes roadmap
   surfaces` assertion continues to see appShell / nav / search /
   leftNav after they peeled out of the inline map.
-- `tests/hardening.test.js` — 7 new regressions: pack-file
+- `tests/hardening.test.js`, 7 new regressions: pack-file
   existence + schema-field declaration, registry duck-type +
   population, nav/masthead spine parity, manifest pack-before-
   selectors load order, `freezeEntry` preserves capture provenance,
@@ -6828,7 +6831,7 @@ against 4 captures on 2026-05-19" instead of just a live counter.
 ### Changed
 
 - `extension/core/selectors.js` no longer hard-codes the appShell /
-  nav / masthead / search / leftNav entries — they live next to
+  nav / masthead / search / leftNav entries, they live next to
   their captures in `selector-packs/`. Net change ≈ -65 / +28 lines.
 
 ### Why
@@ -6853,15 +6856,15 @@ named as the remaining v5.1.0 work.
   lint / a11y / contrast).
 - `node sync-userscript.js` re-bundles the v5.0.0 modules at
   v4.31.0; the userscript path keeps the inline selectors map
-  (the pack split is extension-only — userscript selectors are
+  (the pack split is extension-only, userscript selectors are
   inlined in the monolith already and not routed through the
   registry).
 - `node build-extension.js` emits Chrome ZIP/CRX + Firefox ZIP/XPI
   at v4.31.0.
 
-## [4.30.0] - 2026-05-21 - v5.0.0 foundation arc closed (documentation tag)
+## [4.30.0] (2026-05-21): v5.0.0 foundation arc closed (documentation tag)
 
-No code changes from v4.29.0 — version bump + documentation tag
+No code changes from v4.29.0, version bump + documentation tag
 declaring the v5.0.0 foundation arc effectively complete. Every
 acceptance-criterion item in `ROADMAP.md` under v5.0.0 is now
 either checked or marked partial with the specific remaining work
@@ -6888,7 +6891,7 @@ A standalone tag commit gives a clean reference point future
 sessions can cite when starting v5.1+ work, and matches the
 v4.30.0 binary artifacts shipped in `build/`.
 
-## [4.29.0] - 2026-05-21 - v5.0.0 foundation #24: persist popup expansion across opens
+## [4.29.0] (2026-05-21): v5.0.0 foundation #24: persist popup expansion across opens
 
 Final UX polish on the schema-overview surface. Categories the user
 has open survive popup close + reopen via a new
@@ -6896,7 +6899,7 @@ has open survive popup close + reopen via a new
 
 ### Added
 
-- `extension/popup.js` — `SCHEMA_OVERVIEW_EXPANDED_KEY` storage
+- `extension/popup.js`, `SCHEMA_OVERVIEW_EXPANDED_KEY` storage
   constant + `persistSchemaOverviewExpanded()` /
   `restoreSchemaOverviewExpanded()` async helpers routing through
   the existing `storageGet` / `storageSet` wrappers. Persist
@@ -6904,13 +6907,13 @@ has open survive popup close + reopen via a new
   rejects non-Array stored values and filters entries to safe
   strings (length 1-63) so a corrupted store can't blow up the UI
   with a million open categories.
-- `extension/popup.js` — init flow now awaits
+- `extension/popup.js`, init flow now awaits
   `restoreSchemaOverviewExpanded()` BEFORE the first
   `renderSchemaOverview()` call, so the popup opens with the user's
   last expansion already applied. The click handler dispatches
   `void persistSchemaOverviewExpanded()` fire-and-forget after
   every toggle.
-- `tests/hardening.test.js` — 5 new regressions: storage key
+- `tests/hardening.test.js`, 5 new regressions: storage key
   constant declared, persist + restore helpers route through
   storageGet/storageSet, restore guards against malformed values
   (non-array + non-string-entry + length filter), click handler
@@ -6923,21 +6926,21 @@ The schema overview is now the popup's primary edit surface for
 ~340 of 354 schema keys. Forcing every category to re-collapse
 between popup opens punished users who edit one area repeatedly
 (e.g. tweaking SponsorBlock toggles or video-filter sliders). The
-persistence layer is minimal — one storage key, two functions, a
-filter that bounds restore-side input — and the popup keeps
+persistence layer is minimal, one storage key, two functions, a
+filter that bounds restore-side input, and the popup keeps
 working unchanged if persistence fails.
 
-## [4.28.0] - 2026-05-21 - v5.0.0 foundation #23: humanizeSettingKey + popup label upgrade
+## [4.28.0] (2026-05-21): v5.0.0 foundation #23: humanizeSettingKey + popup label upgrade
 
 Generic deterministic fallback labeller for every schema entry. Users
-no longer see raw camelCase keys in the schema overview — the popup
+no longer see raw camelCase keys in the schema overview, the popup
 now displays "Custom progress bar color" instead of
 "customProgressBarColor", with the raw key still surfaced as a
 tooltip for support workflows.
 
 ### Added
 
-- `extension/core/settings-schema.js` — `humanizeSettingKey(rawKey)`
+- `extension/core/settings-schema.js`, `humanizeSettingKey(rawKey)`
   helper. Strips leading underscores, splits on camel-case
   boundaries (allowing digits on the left so `vp9Codec` →
   `VP9 codec`), keeps letter↔digit pairs together so embedded
@@ -6945,12 +6948,12 @@ tooltip for support workflows.
   cleanly through a `HUMANISE_SHORT_FORMS` Set with ~50 entries
   (general short-forms + Astra Deck-specific ones: `vvf`, `sbcat`,
   `dw`). Defensive on `null` / `undefined` / `''`.
-- `extension/popup.js` — schema-overview key-row label now resolves
+- `extension/popup.js`, schema-overview key-row label now resolves
   through `window.__YTKIT_SETTINGS_SCHEMA__.humanizeSettingKey` when
   available, falling back to the raw key when the schema module
   didn't load. The raw key remains accessible via `label.title` so
   users filing support tickets can still cite it.
-- `tests/hardening.test.js` — 6 new regressions: helper exports,
+- `tests/hardening.test.js`, 6 new regressions: helper exports,
   camel-case split + first-letter capitalisation, short-form
   acronyms (VVF, AI, API, DW, CSS, RSS), leading-underscore strip +
   null/undefined safety, digit-run handling (VP9, AV1), and popup
@@ -6965,12 +6968,12 @@ new i18n keys. A deterministic humaniser sidesteps that:
 - ≈340 of 354 entries get a reasonable English label "for free".
 - The 14 array+object entries still show their raw key (the in-page
   workspace owns editing).
-- A future labelKey override field can stack on top — present the
+- A future labelKey override field can stack on top, present the
   i18n string when set, fall back to `humanizeSettingKey(key)`
   otherwise.
 - No 708 stub i18n keys to maintain across 10 locales.
 
-## [4.27.0] - 2026-05-21 - v5.0.0 foundation #22: string-type editor (incl. auto color picker)
+## [4.27.0] (2026-05-21): v5.0.0 foundation #22: string-type editor (incl. auto color picker)
 
 Extends the v4.24.0 / v4.26.0 schema-overview editor to strings.
 Most string-typed entries get a compact text input; entries whose
@@ -6980,7 +6983,7 @@ picker.
 
 ### Added
 
-- `extension/popup.js` — string-type branch in
+- `extension/popup.js`, string-type branch in
   `buildSchemaOverviewKeyRow`. `looksHex` regex detects hex-coloured
   defaults so the colour picker swaps in automatically. For color
   inputs, the schema's short-form `#RGB` is mirrored into the
@@ -6989,11 +6992,11 @@ picker.
   both render as native pickers). Empty-value short-circuit, equal-
   value short-circuit, and `writeSetting` persistence path mirror
   the v4.26.0 number branch.
-- `extension/popup.css` — `.so-key-text` (mono text field) and
-  `.so-key-color` (native picker chrome stripped — appearance: none
+- `extension/popup.css`, `.so-key-text` (mono text field) and
+  `.so-key-color` (native picker chrome stripped, appearance: none
   plus per-vendor `::-webkit-color-swatch` + `::-moz-color-swatch`
   rules). Both use the house-style 6 px radius.
-- `tests/hardening.test.js` — 5 new regressions: the input element
+- `tests/hardening.test.js`, 5 new regressions: the input element
   branches by type, persist short-circuits when unchanged, color
   inputs coerce short-hex into the 6-digit form, CSS surface
   declared with sub-8 px radii, and a canary asserting the schema
@@ -7009,9 +7012,9 @@ keywords, locale codes, etc.) still required a trip through the
 in-page workspace. v4.27.0 closes that gap. The colour-picker
 auto-detection means `customProgressBarColor`, `selectionColor`,
 `subStyleColor`, `subStyleBgColor`, and any future hex-default
-string just works — no schema annotation required.
+string just works, no schema annotation required.
 
-## [4.26.0] - 2026-05-21 - v5.0.0 foundation #21: number-type inline editor in schema overview
+## [4.26.0] (2026-05-21): v5.0.0 foundation #21: number-type inline editor in schema overview
 
 Extends the v4.24.0 schema-overview per-key editor to number types.
 Roughly 22 number-typed schema entries (blueLightIntensity,
@@ -7021,7 +7024,7 @@ field instead of just showing as read-only badges.
 
 ### Added
 
-- `extension/popup.js` — number-type branch in
+- `extension/popup.js`, number-type branch in
   `buildSchemaOverviewKeyRow`. Creates an `<input type="number">`
   seeded with the schema default as placeholder + the live value
   pre-filled. Persists on both `change` (Enter / native commit)
@@ -7030,11 +7033,11 @@ field instead of just showing as read-only badges.
   short-circuits so users can clear the field without nuking the
   prior value. Routes through `writeSetting` so the existing
   chained-Promise serialisation applies.
-- `extension/popup.css` — `.so-key-number` styles: monospace,
+- `extension/popup.css`, `.so-key-number` styles: monospace,
   square 6 px backdrop, right-aligned tabular-nums, native spinner
   buttons stripped (Chrome + Firefox) to keep the dense layout
   clean.
-- `tests/hardening.test.js` — 4 new regressions: input element
+- `tests/hardening.test.js`, 4 new regressions: input element
   shape + `change`/`blur` wiring + placeholder, persist routes
   through `writeSetting` with `Number.isFinite` and empty-input
   guards, CSS surface declared with sub-8 px radius and spinner
@@ -7047,14 +7050,14 @@ field instead of just showing as read-only badges.
 After v4.24.0 the popup let users toggle ~264 booleans but still
 sent them to the in-page workspace for any numeric tweak (blue-
 light intensity, video filter strength, subtitle font size).
-v4.26.0 closes that gap with a minimal editor surface — no
+v4.26.0 closes that gap with a minimal editor surface, no
 slider yet (sliders need declared min/max in the schema, which is
 a follow-up), but a `<input type="number">` covers the common case
 and trusts the user to enter a sensible value. The remaining
 type editors (string, array, object) will land in subsequent
 slices.
 
-## [4.25.0] - 2026-05-21 - v5.0.0 foundation #20: schema-overview search integration
+## [4.25.0] (2026-05-21): v5.0.0 foundation #20: schema-overview search integration
 
 The popup's existing `#q` filter input now drives the schema
 overview too. Typing a search term filters categories to those
@@ -7063,16 +7066,16 @@ filters the per-key sub-list to just the matches.
 
 ### Added
 
-- `extension/popup.js` — `renderSchemaOverview()` now reads
+- `extension/popup.js`, `renderSchemaOverview()` now reads
   `q.value` into a normalised term. Inline `matchEntry(entry)`
   helper checks both the storage key and the category name (so
   searching for `subtitle` finds the seven subtitles keys via key
   prefix; searching for `downloads` finds every downloads-category
   key via category name).
-- `extension/popup.js` — `q.addEventListener('input', …)` debounced
+- `extension/popup.js`, `q.addEventListener('input', …)` debounced
   handler now also calls `renderSchemaOverview()` after `render()`,
   so both surfaces stay in sync at the same 120 ms cadence.
-- `tests/hardening.test.js` — 5 new regressions: term normalisation,
+- `tests/hardening.test.js`, 5 new regressions: term normalisation,
   matchEntry's key + category branches, zero-match categories
   hidden, term-match force-expands the row, input handler refreshes
   both surfaces, and a smoke test running the matcher against the
@@ -7082,12 +7085,11 @@ filters the per-key sub-list to just the matches.
 
 The v4.24.0 per-key editor unlocked editing for ~264 boolean keys.
 Without search the user has to click through 18 categories to find
-one. v4.25.0 closes that loop by reusing the existing filter input
-— no extra UI surface, no extra keyboard handler, no separate state
+one. v4.25.0 closes that loop by reusing the existing filter input, no extra UI surface, no extra keyboard handler, no separate state
 to maintain. Force-expanding matching categories means the search
 result list is one click away from being toggled instead of two.
 
-## [4.24.0] - 2026-05-21 - v5.0.0 foundation #19: interactive category expansion + per-key edit
+## [4.24.0] (2026-05-21): v5.0.0 foundation #19: interactive category expansion + per-key edit
 
 Promotes the v4.23.0 read-only category overview to a real editor.
 Clicking a category row now expands a per-key sub-list. Boolean
@@ -7098,24 +7100,24 @@ remains the editing surface for non-boolean types).
 
 ### Added
 
-- `extension/popup.js` — `schemaOverviewState.expanded` Set
+- `extension/popup.js`, `schemaOverviewState.expanded` Set
   tracking which category rows are currently disclosed. The
   category head becomes a real `<button>` with `aria-expanded` so
   screen readers + keyboard activation work out of the box.
   Toggling re-renders the section while preserving open state.
-- `extension/popup.js` — `buildSchemaOverviewKeyRow(entry, settings)`
+- `extension/popup.js`, `buildSchemaOverviewKeyRow(entry, settings)`
   helper. Boolean entries render a `role="switch"` button bound to
   `writeSetting`; other types render a read-only badge with
   type-aware display: strings truncate at 24 chars, numbers show
   raw value, arrays show `[length]`, objects show `{keyCount}`,
-  null/undefined show `—`.
-- `extension/popup.css` — `.so-row-head`, `.so-key-list`,
+  null/undefined show `, `.
+- `extension/popup.css`, `.so-row-head`, `.so-key-list`,
   `.so-key-row`, `.so-key-switch`, `.so-key-value` styles. Switch
   uses 6 px radius (well under half-height of the ~15 px button
   so it stays distinctly rectangular per house style). Two-column
-  grid retired in favour of a single-column flex layout — needed
+  grid retired in favour of a single-column flex layout, needed
   so expanded rows can grow vertically without breaking layout.
-- `tests/hardening.test.js` — 5 new regressions: state Set is
+- `tests/hardening.test.js`, 5 new regressions: state Set is
   declared, head element is a real button with `aria-expanded`,
   buildSchemaOverviewKeyRow exists with the right shape (switch
   path + read-only badge path), switch radius stays ≤8 px (no
@@ -7126,16 +7128,15 @@ remains the editing surface for non-boolean types).
 
 The v4.23.0 read-only overview made the schema visible; v4.24.0
 makes it actually edit-driving. The popup is now the first place
-in the product where every boolean schema key can be toggled —
-the existing QUICK_TOGGLES surface only exposed 18 keys; this
+in the product where every boolean schema key can be toggled, the existing QUICK_TOGGLES surface only exposed 18 keys; this
 slice opens up access to all 264 boolean keys (the remaining ~90
 non-boolean entries stay read-only for now since rendering each
-type's right editor — color picker, textarea, multi-select — is
+type's right editor, color picker, textarea, multi-select, is
 a follow-up). Keeping `writeSetting` as the single write entry-
 point means the existing `chrome.storage.onChanged` listener fans
 the update out to all open tabs identically.
 
-## [4.23.0] - 2026-05-21 - v5.0.0 foundation #18: schema-driven category overview in popup
+## [4.23.0] (2026-05-21): v5.0.0 foundation #18: schema-driven category overview in popup
 
 Closes the visible end of the v5.0.0 schema-consumption arc: the
 popup now ships a read-only "Settings overview" surface that
@@ -7145,11 +7146,11 @@ accessibility; reactive to `chrome.storage.onChanged`.
 
 ### Added
 
-- `extension/popup.html` — `<details class="schema-overview">`
+- `extension/popup.html`, `<details class="schema-overview">`
   surface between the storage stats and the data-flow panel. Native
   collapsible disclosure pattern; defaults closed so first-time
   openers see only the summary line.
-- `extension/popup.js` — `renderSchemaOverview()` renderer + new
+- `extension/popup.js`, `renderSchemaOverview()` renderer + new
   `isToggleEnabled(entry, settings)` helper (mirrors the data-flow
   panel's "currently active" heuristic across booleans, strings,
   numbers, arrays, objects). Reads
@@ -7157,16 +7158,16 @@ accessibility; reactive to `chrome.storage.onChanged`.
   popup.html via the v4.12.0 core-module script tags). Wired into
   both the initial `loadSettings()` flow and the
   `chrome.storage.onChanged` reactive re-render. Non-internal
-  entries only — `_`-prefixed storage state is excluded.
-- `extension/popup.css` — `.schema-overview` surface styled to match
+  entries only, `_`-prefixed storage state is excluded.
+- `extension/popup.css`, `.schema-overview` surface styled to match
   the existing health/data-flow lanes: dense, OLED-friendly, dark
   only. Two-column grid for the per-category list keeps the popup
   height bounded even with 18 categories.
-- `extension/_locales/*/messages.json` — two new i18n keys
+- `extension/_locales/*/messages.json`, two new i18n keys
   (`schemaOverviewEyebrow`, `schemaOverviewCountTpl` with
   `{enabled}/{total}/{categories}` placeholders). All 10 locales
   seeded with English fallbacks.
-- `tests/hardening.test.js` — 5 new regressions: details surface
+- `tests/hardening.test.js`, 5 new regressions: details surface
   exists and defaults closed, popup.js wires the renderer in three
   places (definition + init + storage.onChanged), CSS uses no pill
   backdrops, every locale defines both new keys, and the count
@@ -7180,41 +7181,40 @@ the pattern with a read-only category roll-up that demonstrates
 the schema is consumable for any future popup or in-page UI
 surface that needs per-category state. The native `<details>`
 choice keeps it discoverable without permanently adding 18 rows of
-popup chrome — closed by default, opens on click for users who
+popup chrome, closed by default, opens on click for users who
 want the full landscape.
 
-## [4.22.0] - 2026-05-21 - v5.0.0 foundation #17: theme-css extends (+compactUnfixedHeader, +hideVideoEndContent)
+## [4.22.0] (2026-05-21): v5.0.0 foundation #17: theme-css extends (+compactUnfixedHeader, +hideVideoEndContent)
 
 Two more bulk peels into the existing `extension/features/theme-css/`
 module, bringing the theme-css consumer count to seven.
 
 ### Added
 
-- `extension/features/theme-css/index.js` —
-  `buildCompactUnfixedHeaderCss()` (parameter-less; masthead height
+- `extension/features/theme-css/index.js`, `buildCompactUnfixedHeaderCss()` (parameter-less; masthead height
   + page-manager margin trims) and `buildHideVideoEndContentCss()`
   (parameter-less; covers eight end-screen/end-card surfaces +
   `div.ytp-fullscreen-grid-stills-container`).
-- `tests/hardening.test.js` — 5 new regressions covering the two
+- `tests/hardening.test.js`, 5 new regressions covering the two
   new builders, surface coverage, monolith fallback parity
   contracts, and a roster check that pins the seven theme-css
   builders in alphabetical order.
 
 ### Changed
 
-- `extension/ytkit.js` — `compactUnfixedHeader` and
+- `extension/ytkit.js`, `compactUnfixedHeader` and
   `hideVideoEndContent` feature blocks delegate CSS construction to
   `globalThis.YTKitFeatures.themeCss.*` when present. Inline
   byte-identical fallbacks remain for the userscript path.
 
-## [4.21.0] - 2026-05-21 - v5.0.0 foundation #16: theme-css extends (+forceDarkEverywhere, +themeAccentColor)
+## [4.21.0] (2026-05-21): v5.0.0 foundation #16: theme-css extends (+forceDarkEverywhere, +themeAccentColor)
 
 Two more bulk peels into the existing `extension/features/theme-css/`
 module, bringing the theme-css consumer count to five.
 
 ### Added
 
-- `extension/features/theme-css/index.js` — two more pure CSS
+- `extension/features/theme-css/index.js`, two more pure CSS
   builders: `buildForceDarkEverywhereCss()` (parameter-less; emits
   the four rule blocks that drag YouTube's non-standard pages into
   dark surface tokens) and `buildAccentColorCss(settings)` (returns
@@ -7222,7 +7222,7 @@ module, bringing the theme-css consumer count to five.
   `#RGBA` / `#RRGGBBAA`). Both attach to
   `globalThis.YTKitFeatures.themeCss`. The userscript bundle picks
   them up automatically on next `node sync-userscript.js`.
-- `tests/hardening.test.js` — 5 new regressions: exports of the two
+- `tests/hardening.test.js`, 5 new regressions: exports of the two
   new builders, force-dark four-block rule coverage, accent-color
   hex validation across all four valid hex variants + null on
   malformed input, monolith fallback parity contracts for both
@@ -7230,7 +7230,7 @@ module, bringing the theme-css consumer count to five.
 
 ### Changed
 
-- `extension/ytkit.js` — `forceDarkEverywhere` and `themeAccentColor`
+- `extension/ytkit.js`, `forceDarkEverywhere` and `themeAccentColor`
   feature blocks now delegate CSS construction to
   `globalThis.YTKitFeatures.themeCss.*`. Inline byte-identical
   fallbacks remain for the userscript path; tests pin each parity
@@ -7239,14 +7239,14 @@ module, bringing the theme-css consumer count to five.
 ### Why
 
 Continued monolith peel cadence. Both features are pure CSS with
-no SPA coupling, no async, and tiny code surfaces — the cost of
+no SPA coupling, no async, and tiny code surfaces, the cost of
 keeping them in the monolith is higher than the cost of the
 delegating consumer wrapper. The accent-color hex validation regex
 now also has a hardening test pinning it across both the module
 and the inline fallback so a future hand-edit can't silently allow
 a malformed hex string.
 
-## [4.20.0] - 2026-05-21 - v5.0.0 foundation #15: userscript bundle of core modules
+## [4.20.0] (2026-05-21): v5.0.0 foundation #15: userscript bundle of core modules
 
 Closes a major v5.0.0 gap: the YTKit.user.js userscript no longer
 lags the MV3 extension on the v5.0.0 core surface. The 11 modules
@@ -7257,10 +7257,10 @@ the userscript inside its outer IIFE.
 
 ### Added
 
-- `YTKit.user.js` — `// ── BEGIN v5.0.0 bundled core modules ──` /
+- `YTKit.user.js`, `// ── BEGIN v5.0.0 bundled core modules ──` /
   `// ── END v5.0.0 bundled core modules ──` marker pair right
   inside the outer IIFE. Auto-bundled content sits between them.
-- `sync-userscript.js` — `V5_BUNDLE_MODULES` constant declaring the
+- `sync-userscript.js`, `V5_BUNDLE_MODULES` constant declaring the
   11 module file paths plus a regex-driven replace pass that swaps
   the bundle contents on every sync. Modules are concatenated in
   the same order the manifest's content_scripts entries declare,
@@ -7268,7 +7268,7 @@ the userscript inside its outer IIFE.
   sequence as the extension. Each bundled module preserves its
   IIFE wrapper and its `globalThis.YTKitCore` /
   `globalThis.YTKitFeatures` attachment.
-- `tests/hardening.test.js` — 5 new regressions: marker presence,
+- `tests/hardening.test.js`, 5 new regressions: marker presence,
   every module appears by name in the bundle, every module's
   unique signature appears verbatim (parity fingerprint), bundle
   order matches V5_BUNDLE_MODULES, and the V5_BUNDLE_MODULES list
@@ -7279,7 +7279,7 @@ the userscript inside its outer IIFE.
 
 The v5.0.0 architecture has been growing on the extension side
 since v4.6.0 (settings-schema). The userscript was stuck at
-metadata-sync only — none of the new core modules ran there. The
+metadata-sync only, none of the new core modules ran there. The
 v4.20.0 bundling pass closes that gap with a single hand-curated
 `V5_BUNDLE_MODULES` array, leaving the per-module IIFE shape
 untouched so the runtime semantics are byte-identical between
@@ -7287,7 +7287,7 @@ the two artifacts. A future bulk peel that introduces a new core
 module just appends to the array; the test suite immediately
 flags any drift.
 
-## [4.19.0] - 2026-05-21 - v5.0.0 foundation #14: bundled theme-css peels (×3)
+## [4.19.0] (2026-05-21): v5.0.0 foundation #14: bundled theme-css peels (×3)
 
 Bundled fourth, fifth, and sixth feature peels in a single slice.
 Three small CSS-only theme features in `extension/ytkit.js` share
@@ -7297,17 +7297,17 @@ CSS string), so they cohabit nicely in a single
 
 ### Added
 
-- `extension/features/theme-css/index.js` — three pure CSS builders:
-  * `buildProgressBarCss(settings)` — returns `null` for the default
+- `extension/features/theme-css/index.js`, three pure CSS builders:
+  * `buildProgressBarCss(settings)`, returns `null` for the default
     `#ff0000` colour (preserving the monolith's short-circuit-skip
     behaviour) and a two-rule string for any other valid hex.
-  * `buildSelectionColorCss(settings)` — emits `::selection` +
+  * `buildSelectionColorCss(settings)`, emits `::selection` +
     `::-moz-selection` rules. Falls back to the schema default
     `#2dd36f` for malformed input.
-  * `buildGrayscaleThumbnailsCss()` — parameter-less constant; covers
+  * `buildGrayscaleThumbnailsCss()`, parameter-less constant; covers
     four feed renderers + their `:hover` restore variants.
   All three attach to `globalThis.YTKitFeatures.themeCss`.
-- `tests/hardening.test.js` — 7 new regressions covering the helper
+- `tests/hardening.test.js`, 7 new regressions covering the helper
   exports, default-skip behaviour, swatch rule emission for a custom
   colour, both selection pseudo-elements + fallback, four-renderer
   coverage + hover restore, monolith parity contracts for all three
@@ -7315,12 +7315,12 @@ CSS string), so they cohabit nicely in a single
 
 ### Changed
 
-- `extension/ytkit.js` — three feature blocks (`customProgressBarColor`,
+- `extension/ytkit.js`, three feature blocks (`customProgressBarColor`,
   `customSelectionColor`, `grayscaleThumbnails`) now delegate CSS
   construction to `globalThis.YTKitFeatures.themeCss.*`. Inline
   byte-identical fallbacks remain for the userscript path; tests pin
   each parity contract.
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries load `features/theme-css/index.js` immediately after
   `features/blue-light-filter/index.js`.
 
@@ -7331,9 +7331,9 @@ in bulk: three small features with no SPA coupling, no async, no
 inter-feature dependencies. Bundling them in a single module keeps
 the `features/` directory tree from sprawling for the long tail of
 "two-line CSS rule" features, and demonstrates the peel pattern
-scales — the next bulk peel can group more.
+scales, the next bulk peel can group more.
 
-## [4.18.0] - 2026-05-21 - v5.0.0 foundation #13: third feature peel (blueLightFilter)
+## [4.18.0] (2026-05-21): v5.0.0 foundation #13: third feature peel (blueLightFilter)
 
 Third feature peel from `extension/ytkit.js`, following the v4.13.0
 subtitles and v4.17.0 video-filters pattern. The warm-tint RGBA
@@ -7343,14 +7343,14 @@ monolith.
 
 ### Added
 
-- `extension/features/blue-light-filter/index.js` — pure helper
+- `extension/features/blue-light-filter/index.js`, pure helper
   `buildBlueLightRgba(settings)` plus a frozen `OVERLAY_FIXED_CSS`
   declaring the overlay element's static styles (position, z-index,
   mix-blend-mode, etc.) so a future popup preview swatch can render
   the same overlay without duplicating CSS rules. Clamps
   `blueLightIntensity` to the schema-declared 10..80 range and falls
   back to the default 30 for missing/non-numeric input.
-- `tests/hardening.test.js` — 5 new regressions covering module
+- `tests/hardening.test.js`, 5 new regressions covering module
   surface exports, byte-stable RGBA output at three intensity
   values, out-of-range clamping, the monolith fallback parity
   contract (delegates + inline-formula matches), and the manifest
@@ -7358,12 +7358,12 @@ monolith.
 
 ### Changed
 
-- `extension/ytkit.js` — `blueLightFilter._apply()` delegates the
+- `extension/ytkit.js`, `blueLightFilter._apply()` delegates the
   tint RGBA computation to
   `globalThis.YTKitFeatures.blueLightFilter.buildBlueLightRgba`
   when present. Inline fallback formula preserved unchanged for the
   userscript path; tests pin the parity contract.
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries load `features/blue-light-filter/index.js` immediately
   after `features/video-filters/index.js`.
 
@@ -7371,12 +7371,12 @@ monolith.
 
 Third installment of the monolith carve-out per ROADMAP.md v5.0.0.
 Blue-light filtering is a self-contained CSS computation that
-benefits the most from being testable in isolation — the JS-float
+benefits the most from being testable in isolation, the JS-float
 precision in the alpha channel (`0.1 * 0.35 → 0.034999999999999996`)
 is now locked by a test, so any future "tidy-up" refactor that
 silently rounds the precision will also be flagged at build time.
 
-## [4.17.0] - 2026-05-21 - v5.0.0 foundation #12: second feature peel (video-filters)
+## [4.17.0] (2026-05-21): v5.0.0 foundation #12: second feature peel (video-filters)
 
 Second feature carve-out from `extension/ytkit.js`, mirroring the
 v4.13.0 subtitles pattern. The video-element CSS-`filter` chain
@@ -7386,7 +7386,7 @@ with a byte-identical inline fallback for the userscript path.
 
 ### Added
 
-- `extension/features/video-filters/index.js` — pure helpers
+- `extension/features/video-filters/index.js`, pure helpers
   `buildVideoFilterCss(settings)` and `isVideoFilterIdentity(settings)`,
   plus a frozen `featureSpec` ready for the v4.7.0 lifecycle
   adoption. Exports `FIELD_BOUNDS` (declared min/max/fallback for
@@ -7394,7 +7394,7 @@ with a byte-identical inline fallback for the userscript path.
   0-200%, hue −180-180 deg, grayscale/sepia 0-100%) so a future
   popup or in-page slider UI consumes the same clamping rules.
   Attaches to `globalThis.YTKitFeatures.videoFilters`.
-- `tests/hardening.test.js` — 6 new regressions: module surface
+- `tests/hardening.test.js`, 6 new regressions: module surface
   exports, default-value six-channel chain, out-of-range clamping
   per channel, `isVideoFilterIdentity` truthiness for all-default
   settings, monolith fallback parity contract, and the manifest
@@ -7402,12 +7402,12 @@ with a byte-identical inline fallback for the userscript path.
 
 ### Changed
 
-- `extension/ytkit.js` — `videoVisualFilters._apply()` delegates CSS
+- `extension/ytkit.js`, `videoVisualFilters._apply()` delegates CSS
   construction to `globalThis.YTKitFeatures.videoFilters.buildVideoFilterCss`
   when present. Inline byte-identical fallback preserved for the
   single-file userscript path; tests pin parity. The DOM-touching
   `_togglePanel` (slider UI) stays in the monolith for now.
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries load `features/video-filters/index.js` immediately after
   `features/subtitles/index.js`. Full v4.17.0 load order:
   `navigation → feature-lifecycle → policy-profile → selector-health
@@ -7425,7 +7425,7 @@ pure function. Splitting it lets the popup eventually render a
 visual-filter preview directly without round-tripping through the
 content script.
 
-## [4.16.0] - 2026-05-21 - v5.0.0 foundation #11: schema-driven risk badges on popup toggles
+## [4.16.0] (2026-05-21): v5.0.0 foundation #11: schema-driven risk badges on popup toggles
 
 First popup surface that consumes the v4.6.0 settings-schema risk
 metadata beyond the data-flow panel. Each quick-toggle row whose
@@ -7437,21 +7437,21 @@ palette so the popup speaks one consistent visual language for
 
 ### Added
 
-- `extension/popup.js` — `createSchemaRiskBadge(key)` helper that
+- `extension/popup.js`, `createSchemaRiskBadge(key)` helper that
   consults `window.YTKitCore.findSettingEntry(key)` and returns a
   rendered `<span>` for `api` / `local-companion` / `experimental` /
   `store-risk` entries (and `null` for `safe` entries or when the
   schema module didn't load). Tooltip + `aria-label` carry a
   human-readable risk description with sensible English fallbacks.
-- `extension/popup.js` — toggle-row renderer now wraps the name in
+- `extension/popup.js`, toggle-row renderer now wraps the name in
   a flex `.name-row` container and appends the risk badge to its
   right when present.
-- `extension/popup.css` — `.toggle-risk-badge` base style + four
+- `extension/popup.css`, `.toggle-risk-badge` base style + four
   tone-specific variants (`toggle-risk-api`, `-local-companion`,
   `-experimental`, `-store-risk`). Square-cornered 4 px radius per
   house style, monospace label, semi-transparent tinted background
   + matching border. No pill / stadium backdrops.
-- `tests/hardening.test.js` — 4 new regressions: helper exists +
+- `tests/hardening.test.js`, 4 new regressions: helper exists +
   consults the schema, render() inserts the badge in the name-row,
   CSS declares all four tone variants with a 4 px radius (no pill
   backdrop check), and a canary test pinning the current
@@ -7463,35 +7463,35 @@ palette so the popup speaks one consistent visual language for
 The risk metadata has been in the schema since v4.6.0 but only the
 data-flow panel consumed it. Surfacing the same risk band on the
 quick-toggle row puts the trust signal exactly where users make the
-toggle decision — no extra clicks, no extra panel. The canary test
+toggle decision, no extra clicks, no extra panel. The canary test
 on the non-safe surface keeps the badge subset small + meaningful:
 adding a new quick toggle that talks to an external service forces
 a deliberate update to the test, preventing accidental visual
 clutter.
 
-## [4.15.0] - 2026-05-21 - v5.0.0 foundation #10: privacy quick-toggles in popup
+## [4.15.0] (2026-05-21): v5.0.0 foundation #10: privacy quick-toggles in popup
 
 Makes the v4.12.0 data-flow panel and the v4.7.0 store-safe vs
 github-full profile machinery discoverable without leaving the
 popup. Three new quick toggles + a new "Privacy" group rendered
-with a padlock glyph (square-cornered, house-style — no pill
+with a padlock glyph (square-cornered, house-style, no pill
 backdrop).
 
 ### Added
 
-- `extension/popup.js` — `QUICK_TOGGLES` array gains three entries
+- `extension/popup.js`, `QUICK_TOGGLES` array gains three entries
   in a new `Privacy` group:
-  * `privacyDataFlowPanel` — Show every API origin Astra Deck can
+  * `privacyDataFlowPanel`, Show every API origin Astra Deck can
     contact (drives the v4.12.0 popup data-flow section).
-  * `safeStoreProfile` — Hide github-full toggles + scrub keys on
+  * `safeStoreProfile`, Hide github-full toggles + scrub keys on
     export.
-  * `githubFullProfile` — Unlock github-full toggles (e.g. Cobalt,
+  * `githubFullProfile`, Unlock github-full toggles (e.g. Cobalt,
     AI keys).
-- `extension/popup.js` — `GROUP_ICONS['Privacy']` declares the
+- `extension/popup.js`, `GROUP_ICONS['Privacy']` declares the
   padlock glyph (rect body + U-shaped shackle path) so the
   Privacy group renders consistently alongside the other five
   groups.
-- `tests/hardening.test.js` — 4 new regressions: QUICK_TOGGLES
+- `tests/hardening.test.js`, 4 new regressions: QUICK_TOGGLES
   contains the three new keys under group `Privacy`, GROUP_ICONS
   defines the padlock body+shackle, popup.html advertises the new
   total (18 controls), and every new toggle key exists in the
@@ -7499,7 +7499,7 @@ backdrop).
 
 ### Changed
 
-- `extension/popup.html` — `#resultsState` text bumped from "15
+- `extension/popup.html`, `#resultsState` text bumped from "15
   controls" to "18 controls" to match the new total. (The actual
   count is computed dynamically by popup.js; the static HTML value
   is just the initial-paint placeholder before the JS hydrates.)
@@ -7508,14 +7508,14 @@ backdrop).
 
 The v4.12.0 popup data-flow panel was schema-gated on
 `privacyDataFlowPanel` but there was no popup-level way to flip
-that setting — users had to open the in-page workspace overlay to
+that setting, users had to open the in-page workspace overlay to
 enable it. Adding the three privacy toggles to the popup makes the
 v5.0.0 trust surface a one-click discovery from the toolbar.
 `safeStoreProfile` is already on by default (declared in the
 schema), so the "Privacy: 1/3 enabled" badge gives users a quick
 read on their effective profile.
 
-## [4.14.0] - 2026-05-21 - v5.0.0 foundation #9: core/toast.js helper peel
+## [4.14.0] (2026-05-21): v5.0.0 foundation #9: core/toast.js helper peel
 
 Second peel pass from the `extension/ytkit.js` monolith. The pure
 tone classification + brand-palette RGB + badge label helpers move
@@ -7523,19 +7523,19 @@ into their own module so the popup, the in-monolith
 `showToast`/`dismissToast`, and any future feature/UI module share
 one semantic-color contract. DOM-touching code (the actual toast
 element + dismiss timer + focus restoration) stays in the monolith
-for now — the v5.0.0 "single live region" overlay primitive will
+for now, the v5.0.0 "single live region" overlay primitive will
 land alongside the categorised settings panel.
 
 ### Added
 
-- `extension/core/toast.js` — `inferToastTone`, `getToastRgb`,
+- `extension/core/toast.js`, `inferToastTone`, `getToastRgb`,
   `getToastBadgeLabel`, plus a new `getToastAriaDefaults` helper
   that returns `{role,ariaLive}` per tone (error → assertive
   alert; everything else → polite status). Brand palette anchors
   documented in source: `#35c77f` success / `#ff7480` error /
   `#ffbe7a` warning / `#6aa9ff` info / `#8b97ab` neutral. Attaches
   to `globalThis.YTKitCore.toast` so ytkit.js can pick it up.
-- `tests/hardening.test.js` — 6 new regressions covering the full
+- `tests/hardening.test.js`, 6 new regressions covering the full
   helper surface, deterministic tone mapping (case-insensitive +
   graceful default), brand-palette parity between module and
   monolith fallback, ARIA defaults, the byte-stable inline-
@@ -7544,12 +7544,12 @@ land alongside the categorised settings panel.
 
 ### Changed
 
-- `extension/ytkit.js` — `inferToastTone`, `getToastRgb`, and
+- `extension/ytkit.js`, `inferToastTone`, `getToastRgb`, and
   `getToastBadgeLabel` now delegate to the new `core/toast.js`
   module when `globalThis.YTKitCore.toast` is present. Inline
   byte-identical fallbacks remain for the userscript path that
   doesn't load the module yet; tests pin the parity contract.
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries load `core/toast.js` between `core/data-flow.js` and
   `features/subtitles/index.js`. Full v4.14.0 load order:
   `navigation → feature-lifecycle → policy-profile → selector-health
@@ -7560,13 +7560,13 @@ land alongside the categorised settings panel.
 
 `ROADMAP.md` v5.0.0 calls for `toast.js` extraction as a v5.0.0
 follow-up. Splitting the pure helpers first (and leaving the DOM
-surface in place) mirrors the v4.13.0 subtitles peel pattern — pure
+surface in place) mirrors the v4.13.0 subtitles peel pattern, pure
 logic out, lifecycle/DOM adoption next, monolith inline finally
 retired in a follow-up. The new `getToastAriaDefaults` helper is the
 seed for the v5.0.0 "single live region" overlay primitive that the
 popup data-flow panel + the in-monolith toast will eventually share.
 
-## [4.13.0] - 2026-05-21 - v5.0.0 foundation #8: first feature peel (subtitles)
+## [4.13.0] (2026-05-21): v5.0.0 foundation #8: first feature peel (subtitles)
 
 First feature carve-out from the 43k-line `extension/ytkit.js`
 monolith. The subtitle-caption styling CSS construction moves into
@@ -7577,7 +7577,7 @@ single-file userscript path.
 
 ### Added
 
-- `extension/features/subtitles/index.js` — pure helper
+- `extension/features/subtitles/index.js`, pure helper
   `buildSubtitleCss(settings)` plus a frozen `featureSpec` ready for
   the v4.7.0 lifecycle adoption. Exports `FONT_FAMILY_MAP` so future
   consumers (popup font-family picker) reuse the same lookup. Defends
@@ -7586,7 +7586,7 @@ single-file userscript path.
   non-hex colour input with a documented fallback to white/black; expands
   `#RGB` short-form hex to `#RRGGBB`. Attaches to
   `globalThis.YTKitFeatures.subtitles` so ytkit.js can pick it up.
-- `tests/hardening.test.js` — 6 new regressions: module surface
+- `tests/hardening.test.js`, 6 new regressions: module surface
   exports, deterministic byte-stable CSS output for a known input,
   clamping of out-of-range numeric inputs (no throw, sane fallback),
   text-shadow on/off, the monolith fallback contract, and the
@@ -7595,14 +7595,14 @@ single-file userscript path.
 
 ### Changed
 
-- `extension/ytkit.js` — `subtitleStyling._apply()` now delegates CSS
+- `extension/ytkit.js`, `subtitleStyling._apply()` now delegates CSS
   construction to `globalThis.YTKitFeatures.subtitles.buildSubtitleCss`
   when present. The inline fallback (used by the single-file
   userscript that doesn't load the module yet) is preserved unchanged
   and exercised in parallel by tests. The fallback comment documents
   the "MUST stay byte-identical" parity contract so future hand-edits
   to either copy surface as test failures.
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries now load `features/subtitles/index.js` immediately before
   `ytkit.js`, after the `core/*` module run.
 
@@ -7613,16 +7613,16 @@ modules from the monolith by category. The `subtitles` category is
 the smallest, most isolated of the 18 categories: 8 schema keys, no
 SPA coupling, no MAIN-world bridge, no observer or async dependency,
 no inter-feature conflicts. That makes it the ideal pilot for the
-peel pattern — pure logic out first, lifecycle adoption next, monolith
+peel pattern, pure logic out first, lifecycle adoption next, monolith
 inline finally retired in a follow-up slice when every consumer is
 known to ship the module. The byte-stable fallback contract keeps the
 userscript path working unchanged while the extension path migrates.
 
-## [4.12.0] - 2026-05-21 - v5.0.0 foundation #7: popup data-flow panel UI
+## [4.12.0] (2026-05-21): v5.0.0 foundation #7: popup data-flow panel UI
 
 First user-visible slice of the v5.0.0 architecture. The popup now
 ships a "Data flow" section that renders `core/data-flow.js`'s
-catalogue against the live settings bag — every external origin
+catalogue against the live settings bag, every external origin
 Astra Deck can reach, with risk-tone dot + origin + purpose +
 profile/creds/risk/driver metadata, and an active/idle flag based
 on whether any driving feature is currently enabled. Schema-gated
@@ -7632,32 +7632,31 @@ it from the in-page workspace, the popup re-renders reactively via
 
 ### Added
 
-- `extension/popup.html` — `<section class="data-flow">` between the
+- `extension/popup.html`, `<section class="data-flow">` between the
   selector-health and health-banner surfaces. Three new bundled
   `<script>` tags load `core/settings-schema.js` +
   `core/policy-profile.js` + `core/data-flow.js` before `popup.js`
   so the popup can call `window.YTKitCore.createDataFlow()` directly
   without a content-script round-trip.
-- `extension/popup.js` — `dataFlowSection`/`dataFlowSummary`/
+- `extension/popup.js`, `dataFlowSection`/`dataFlowSummary`/
   `dataFlowList` refs + `renderDataFlowPanel()` renderer +
   `appendDataFlowMeta()` helper. Wired into both the initial
   `loadSettings()` flow and the `chrome.storage.onChanged` reactive
   re-render. Section stays hidden whenever
   `privacyDataFlowPanel !== true` or the core factory failed to load
   (CSP regression guard).
-- `extension/popup.css` — `.data-flow` surface styled to match the
+- `extension/popup.css`, `.data-flow` surface styled to match the
   selector-health visual lane: dense, OLED-friendly, dark only. Per
-  the project house style, no pill/stadium backdrops — chips use 8 px
+  the project house style, no pill/stadium backdrops, chips use 8 px
   radius rectangles; the only `border-radius: 50%` is on a 6 px round
   risk-tone indicator dot. Five risk-band colour classes
   (`df-risk-safe`/`api`/`local`/`experimental`/`store-risk`).
-- `extension/_locales/{en,de,es,fr,it,ja,ko,pt_BR,ru,zh_CN}/messages.json` —
-  9 new i18n keys (`dataFlowTitle`, `dataFlowNote`,
+- `extension/_locales/{en,de,es,fr,it,ja,ko,pt_BR,ru,zh_CN}/messages.json`, 9 new i18n keys (`dataFlowTitle`, `dataFlowNote`,
   `dataFlowSummaryTpl`, `dataFlowActive`, `dataFlowInactive`,
   `dataFlowProfile`, `dataFlowCreds`, `dataFlowRisk`,
   `dataFlowDriver`). All 10 locales seeded with English fallbacks;
   translation is a follow-up.
-- `tests/hardening.test.js` — 7 new regressions: popup.html hooks
+- `tests/hardening.test.js`, 7 new regressions: popup.html hooks
   present + default-hidden, popup.html bundles the three core
   modules before popup.js, popup.js wires refs + gate + factory
   resolution, renderer is called at init + on storage.onChanged, all
@@ -7676,7 +7675,7 @@ background↔catalogue origin parity at test time means a future
 contributor can't silently add a new fetch target without also
 listing it in the data-flow catalogue (or vice versa).
 
-## [4.11.0] - 2026-05-21 - v5.0.0 foundation #6: schema ↔ data-flow coverage gate + Cobalt entry
+## [4.11.0] (2026-05-21): v5.0.0 foundation #6: schema ↔ data-flow coverage gate + Cobalt entry
 
 Closes the conceptual gap between the v4.6.0 settings-schema risk
 metadata and the v4.10.0 data-flow origin catalogue. Every
@@ -7687,7 +7686,7 @@ toggle without listing its origin.
 
 ### Added
 
-- `extension/core/data-flow.js` — `PARENT_FEATURE` inheritance map.
+- `extension/core/data-flow.js`, `PARENT_FEATURE` inheritance map.
   Sub-toggles inherit their driving status from a parent feature
   (e.g. `sbCat_sponsor` inherits from `sponsorBlock`, `daReplaceTitles`
   inherits from `deArrow`, `aiSummaryProvider` inherits from
@@ -7695,27 +7694,26 @@ toggle without listing its origin.
   `showLocalDownloadButton`, etc.). One intentional exemption:
   `subscriptionAiTags` uses Chrome's built-in Summarizer (no remote
   origin) and stays absent from the catalogue.
-- `extension/core/data-flow.js` — new `https://api.cobalt.tools`
+- `extension/core/data-flow.js`, new `https://api.cobalt.tools`
   catalogue entry. The Cobalt fallback origin was previously absent
   from the catalogue despite being referenced by `downloadCobaltFallback`
   / `downloadCobaltInstance`. Profile `github-full`, credentialsPolicy
   `no-cookies`, riskBand `api`.
-- `extension/core/data-flow.js` — `findCoverageGaps(schema, catalogue,
+- `extension/core/data-flow.js`, `findCoverageGaps(schema, catalogue,
   parentMap)` helper used by the new hardening test. Returns the list
   of api/local-companion schema entries that are NOT covered after
   applying the parent-feature inheritance map.
-- `tests/hardening.test.js` — 3 new regressions: zero-coverage-gap
+- `tests/hardening.test.js`, 3 new regressions: zero-coverage-gap
   invariant against the live schema, presence of the Cobalt catalogue
   entry, and PARENT_FEATURE keys-and-parents all exist in the schema.
 
 ### Why
 
-A 21-key drift was found at audit time before this slice landed —
-the data-flow catalogue described 5 driving features per origin while
+A 21-key drift was found at audit time before this slice landed, the data-flow catalogue described 5 driving features per origin while
 the schema declared 21 keys with risk `api`/`local-companion`. Most
 were legitimate sub-toggles (SponsorBlock categories, DeArrow shape
 options, AI summary knobs) that the catalogue intentionally leaves
-implicit, but one — `downloadCobaltFallback` — was a real missing
+implicit, but one, `downloadCobaltFallback`, was a real missing
 origin. The PARENT_FEATURE map makes the sub-toggle convention
 explicit, the new origin closes the genuine gap, and the test ensures
 the next time someone adds `xyzApi` they're prompted to either add a
@@ -7727,7 +7725,7 @@ enable `downloadCobaltFallback`) is expected to ship with extended
 permissions; pinning it into the store-safe manifest would
 unnecessarily flag CWS/AMO review.
 
-## [4.10.0] - 2026-05-21 - v5.0.0 foundation #5: data-flow origin catalogue
+## [4.10.0] (2026-05-21): v5.0.0 foundation #5: data-flow origin catalogue
 
 Fifth foundation slice. Pure-data backing for the v5.0.0/v5.8.0
 data-flow panel: enumerates every external origin Astra Deck can
@@ -7737,7 +7735,7 @@ and the profile under which the origin is available.
 
 ### Added
 
-- `extension/core/data-flow.js` — `createDataFlow()` factory plus a
+- `extension/core/data-flow.js`, `createDataFlow()` factory plus a
   frozen `ORIGIN_CATALOGUE`. Each catalogue entry declares
   `{ origin, purpose, requiredByFeatures, credentialsPolicy
     ('no-cookies' | 'byo-key' | 'local-loopback' | 'none'), profile,
@@ -7750,7 +7748,7 @@ and the profile under which the origin is available.
   ytimg, SponsorBlock/DeArrow, RYD, Reddit, OpenAI/Anthropic/Gemini
   BYO endpoints, Ollama loopback, and the Astra Downloader port
   range.
-- `tests/hardening.test.js` — 6 new regressions: catalogue shape
+- `tests/hardening.test.js`, 6 new regressions: catalogue shape
   validation, `currentlyActive` toggle flips, manifest-permission
   resolution, summarise partition rollup, the store-safe ⊂ manifest
   host_permissions coverage gate, and the manifest load-order
@@ -7758,7 +7756,7 @@ and the profile under which the origin is available.
 
 ### Changed
 
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries now load `core/data-flow.js` between
   `core/selector-health.js` and `core/lifecycle-route-bridge.js`.
   Full v4.10.0 load order:
@@ -7776,7 +7774,7 @@ appear in `host_permissions`, preventing a future profile-mix
 mistake where a "store-safe" feature silently relies on a
 github-full-gated origin.
 
-## [4.9.0] - 2026-05-21 - v5.0.0 foundation #4: lifecycle ↔ navigation bridge
+## [4.9.0] (2026-05-21): v5.0.0 foundation #4: lifecycle ↔ navigation bridge
 
 Fourth foundation slice. Wires `core/navigation.js`'s SPA-navigation
 event stream into the lifecycle singleton, so every
@@ -7788,7 +7786,7 @@ completion.
 
 ### Added
 
-- `extension/core/lifecycle-route-bridge.js` — idempotent
+- `extension/core/lifecycle-route-bridge.js`, idempotent
   self-installing bridge module. Auto-runs on production load (after
   `core/navigation.js` + `core/feature-lifecycle.js` per the
   manifest order); degrades to a no-op if either dependency is
@@ -7797,14 +7795,14 @@ completion.
   providers. Lifecycle-side throws are caught + logged through
   `logger.warn` so a misbehaving lifecycle implementation can never
   break navigation processing.
-- `tests/hardening.test.js` — 4 new regressions: no-op-without-deps
+- `tests/hardening.test.js`, 4 new regressions: no-op-without-deps
   guard, route-token bump-per-navigate, error-swallow with
   diagnostic log, and the manifest load-order invariant
   (bridge AFTER navigation + lifecycle, BEFORE `ytkit.js`).
 
 ### Changed
 
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries now load `core/lifecycle-route-bridge.js` immediately
   before `ytkit.js`. The relative load order
   `navigation → feature-lifecycle → policy-profile → selector-health
@@ -7820,7 +7818,7 @@ the bridge in place, every v5.1+ feature peel can rely on a single
 authoritative route token without each feature subscribing to
 navigation independently.
 
-## [4.8.0] - 2026-05-21 - v5.0.0/v5.1.0 foundation #3: selector-health + lifecycle singleton
+## [4.8.0] (2026-05-21): v5.0.0/v5.1.0 foundation #3: selector-health + lifecycle singleton
 
 Third slice of the v5.0.0 architecture and the first taste of the
 v5.1.0 selector-health system. Adds a small consumer module on top of
@@ -7831,7 +7829,7 @@ instance. No existing feature is rewired yet.
 
 ### Added
 
-- `extension/core/selector-health.js` — `createSelectorHealth()`
+- `extension/core/selector-health.js`, `createSelectorHealth()`
   factory plus stand-alone helpers `summarizeSelectorHealth`,
   `rankSelectorProblems`, `formatSelectorCopyReport`. The summarizer
   aggregates hits/misses/errors/high-churn/needs-fresh-capture
@@ -7842,15 +7840,15 @@ instance. No existing feature is rewired yet.
   version + exported-at + browserUA header, per-surface flags,
   closing investigation guidance, "no problem surfaces" short-form
   when the tracker is clean). The module never mutates
-  `core/selectors.js` state — read-only by design so tests can feed
+  `core/selectors.js` state, read-only by design so tests can feed
   synthetic snapshots.
-- `extension/core/feature-lifecycle.js` — `getLifecycle()` lazy
+- `extension/core/feature-lifecycle.js`, `getLifecycle()` lazy
   singleton accessor and `_resetLifecycleForTests()` helper. First
   caller seeds the instance with `options`; every later caller in
   the same world receives the same instance. The original
   `createLifecycle()` factory remains exposed for tests and for
   callers that need an isolated instance.
-- `tests/hardening.test.js` — 7 new regressions: summarize counts,
+- `tests/hardening.test.js`, 7 new regressions: summarize counts,
   rank exclusion of zero-attempt surfaces, copy-report header +
   problem-surface formatting, "no problems" clean-form copy report,
   pluggable provider wiring, singleton stability, and the manifest
@@ -7858,7 +7856,7 @@ instance. No existing feature is rewired yet.
 
 ### Changed
 
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries now load `core/selector-health.js` between
   `core/policy-profile.js` and `ytkit.js`. The relative load order
   is pinned by a new invariant test.
@@ -7872,32 +7870,31 @@ v4.8.0 slice supplies the read-side façade the popup diagnostics
 panel + the future "Copy report" affordance will consume, with
 zero risk to the well-tested selectors module. The lifecycle
 singleton lands now (rather than in v4.7.0) because the first real
-consumer — the SPA-navigation bridge that bumps the route token —
-will be staged on top of `core/navigation.js` in the next slice.
+consumer, the SPA-navigation bridge that bumps the route token, will be staged on top of `core/navigation.js` in the next slice.
 
-## [4.7.0] - 2026-05-21 - v5.0.0 foundation #2: feature-lifecycle + policy-profile
+## [4.7.0] (2026-05-21): v5.0.0 foundation #2: feature-lifecycle + policy-profile
 
 Second slice of the v5.0.0 architecture from ROADMAP.md. Adds the
 two clean-room contract modules new features build on top of: a
 deterministic lifecycle wrapper around init/apply/destroy + the
 store-safe vs github-full policy resolver. No existing feature is
-rewired yet — these are additive primitives that v5.1+ features will
+rewired yet, these are additive primitives that v5.1+ features will
 adopt incrementally.
 
 ### Added
 
-- `extension/core/feature-lifecycle.js` — `createLifecycle()`
+- `extension/core/feature-lifecycle.js`, `createLifecycle()`
   factory wrapping the ROADMAP contract: `defineFeature({ id,
   category, init, apply, destroy })` validates required hooks and
   the category enum, `start()` provisions a fresh AbortController
   whose `signal` is exposed on the context object, `apply()` hot-
   applies a new value without teardown, `destroy()` aborts the
-  controller first then runs teardown (best-effort — sub-failures
+  controller first then runs teardown (best-effort, sub-failures
   are captured on `lastError` so callers can always tear down). A
   monotonic route token bumps on `notifyRouteChange()` so async work
   can drop stale results after an SPA navigation. `snapshot()`
   returns per-feature health for diagnostics.
-- `extension/core/policy-profile.js` — `createPolicyProfile()`
+- `extension/core/policy-profile.js`, `createPolicyProfile()`
   factory built on the v4.6.0 schema. `resolveEffectiveProfile()`
   maps `{safeStoreProfile, githubFullProfile}` to `'store-safe'` or
   `'github-full'` with the "most permissive wins" rule. Helpers:
@@ -7907,7 +7904,7 @@ adopt incrementally.
   key matching `/apiKey$/i` or `/token$/i` from exports and reverts
   github-full-only entries to their schema defaults when exporting
   under store-safe.
-- `tests/hardening.test.js` — 11 new regressions pinning lifecycle
+- `tests/hardening.test.js`, 11 new regressions pinning lifecycle
   hook validation, category gate, AbortController lifecycle, route-
   token monotonicity, best-effort destroy, profile resolution,
   github-full hiding under store-safe, secret scrubbing, export
@@ -7916,7 +7913,7 @@ adopt incrementally.
 
 ### Changed
 
-- `extension/manifest.json` — both ISOLATED-world content_script
+- `extension/manifest.json`, both ISOLATED-world content_script
   entries (top-level + all-frame live-chat) now load
   `core/settings-schema.js`, `core/feature-lifecycle.js`, and
   `core/policy-profile.js` immediately before `ytkit.js`. The
@@ -7932,11 +7929,11 @@ ships. Building them as clean-room modules (with no current
 consumers) lets the upcoming feature-by-feature peel from
 `ytkit.js`'s 43k-line monolith adopt them incrementally without
 breaking the existing surface area. `toast.js` extraction is
-deferred — `showToast()` inside `ytkit.js` already meets the
+deferred, `showToast()` inside `ytkit.js` already meets the
 single-live-region contract; carving it into a module is a
 non-functional refactor best done alongside the first feature peel.
 
-## [4.6.0] - 2026-05-21 - v5.0.0 foundation #1: settings-schema single source of truth
+## [4.6.0] (2026-05-21): v5.0.0 foundation #1: settings-schema single source of truth
 
 First slice of the v5.0.0 architecture refactor from `ROADMAP.md`. The
 schema is now the canonical reference for every Astra Deck setting,
@@ -7946,31 +7943,31 @@ in-code defaults, and `extension/default-settings.json`.
 
 ### Added
 
-- `extension/core/settings-schema.js` — 354-entry frozen array. Every
+- `extension/core/settings-schema.js`, 354-entry frozen array. Every
   entry carries `key`, `category`, `type`, `defaultValue`, `risk`,
   `profile`, `scope`, `vehicle`, `immediateApply`, `destroyRequired`,
   `internal`, and `since`. Helpers exported: `buildDefaultsFromSchema`,
   `getKeysByCategory`, `findSettingEntry`, `isInternalSettingKey`,
   `getStoreSafeKeys`, `getGithubFullKeys`. Loadable as both a Node
   CommonJS module and an ISOLATED-world classic content script.
-- `scripts/check-settings.js` — schema parity gate. Validates exports,
+- `scripts/check-settings.js`, schema parity gate. Validates exports,
   per-entry metadata against the canonical enums, no-duplicate keys,
   schema↔default-settings key set parity, insertion-order match, and
   byte-for-byte round-trip. Hooked into `npm run check` between
   `check-i18n` and `lint`. Standalone runner is `npm run check:settings`.
-- `tests/hardening.test.js` — 10 new regression tests pinning the
+- `tests/hardening.test.js`, 10 new regression tests pinning the
   schema invariants (surface exports, metadata validity, no dupes,
   key-set parity, ordering, round-trip, category coverage,
   store-safe/github-full partition, internal-key exclusion,
   findSettingEntry resolution).
-- `scripts/_gen-schema.js` — one-shot generator that rebuilt the
+- `scripts/_gen-schema.js`, one-shot generator that rebuilt the
   initial schema from `ROADMAP.md` "Full Per-Toggle Settings Schema"
   and `default-settings.json`. Retained so future ROADMAP narrative
   updates can be re-synced into the schema on demand.
 
 ### Changed
 
-- `build-extension.js` — `writeDefaultSettingsCatalog` now emits
+- `build-extension.js`, `writeDefaultSettingsCatalog` now emits
   `extension/default-settings.json` from `buildDefaultsFromSchema()`.
   The legacy `extractDefaultsFromSource(ytkitSource)` extractor still
   runs as a belt-and-braces drift check; any disagreement between the
@@ -7989,7 +7986,7 @@ data-flow panel, dual-profile build, and import/export scrubbing
 features queued for v5.0.0+ without piling new responsibilities onto
 the 43k-line monolith.
 
-## [4.5.3] - 2026-05-21 - Retire keyboard shortcut surface (house-style alignment)
+## [4.5.3] (2026-05-21): Retire keyboard shortcut surface (house-style alignment)
 
 The "no keyboard shortcuts" rule in the v5 roadmap is now enforced in
 code. The only remaining activators for the Astra Deck control center
@@ -7997,26 +7994,25 @@ are the toolbar action button, the in-page gear icon, and the popup.
 
 ### Removed
 
-- `extension/manifest.json` — entire `commands` block (the
+- `extension/manifest.json`, entire `commands` block (the
   `toggle-control-center` entry with `Ctrl+Shift+Y`).
-- `extension/background.js` — `chrome.commands.onCommand` listener
+- `extension/background.js`, `chrome.commands.onCommand` listener
   plus the now-orphaned `togglePanelForTab`/`sendTabMessage` helpers
   and the `PANEL_MESSAGE.toggle` key.
-- `extension/ytkit.js` — the `Ctrl+Alt+Y` in-page keydown handler, the
+- `extension/ytkit.js`, the `Ctrl+Alt+Y` in-page keydown handler, the
   `SETTINGS_SHORTCUTS` constant, the shortcut label on trigger-button
   tooltips, the shortcut badge in the panel hero, and the footer
   shortcut span. The `PANEL_MESSAGE_TYPES.toggle` handler was retired
   with the rest (the `open`/`close` messages remain in use by the
   popup).
-- `extension/_locales/{en,de,es,fr,it,ja,ko,pt_BR,ru,zh_CN}/messages.json` —
-  the `toggleControlCenterDesc` message key (10 locales).
-- `scripts/manifest-patch.js` — the Firefox `Ctrl+Shift+Y → Ctrl+Alt+Y`
+- `extension/_locales/{en,de,es,fr,it,ja,ko,pt_BR,ru,zh_CN}/messages.json`, the `toggleControlCenterDesc` message key (10 locales).
+- `scripts/manifest-patch.js`, the Firefox `Ctrl+Shift+Y → Ctrl+Alt+Y`
   rebind. There is no longer a shortcut to collide with Firefox's
   reserved "Show Downloads" binding.
 
 ### Tests
 
-- `tests/hardening.test.js` — replaced the Firefox-rebind regression
+- `tests/hardening.test.js`, replaced the Firefox-rebind regression
   test with a positive assertion that neither the Chrome nor the
   Firefox-patched manifest declares a `commands` block. Updated the
   i18n required-keys test to assert `toggleControlCenterDesc` is
@@ -8025,14 +8021,14 @@ are the toolbar action button, the in-page gear icon, and the popup.
 
 ### Rationale
 
-The roadmap and `CLAUDE.md` both mandate "no keyboard shortcuts" — every
+The roadmap mandates "no keyboard shortcuts", so every
 competitor shortcut feature must become a visible button, pointer
 gesture, context-menu action, or popup control. The previous shortcut
 was the single in-tree violation; clearing it unblocks v5.0.0
 settings-schema work (which gates on the toolbar action button being
 the visible activator).
 
-## [4.5.2] - 2026-05-21 - Extreme audit hardening: permissions, audits, CI, pytest, uninstall cleanup
+## [4.5.2] (2026-05-21): Extreme audit hardening: permissions, audits, CI, pytest, uninstall cleanup
 
 Deep reliability/security pass on top of v4.5.1. No feature expansion;
 the work tightens trust boundaries, validation coverage, and release
@@ -8076,7 +8072,7 @@ ergonomics.
   `python -m pytest astra_downloader`, `npm audit --omit=dev`, and the
   release build path.
 
-## [4.5.1] - 2026-05-20 — architectural regression pins
+## [4.5.1] (2026-05-20), architectural regression pins
 
 Test-and-extraction patch on top of v4.5.0. No user-visible behavior
 change. Three additions:
@@ -8086,13 +8082,13 @@ change. Three additions:
 - **ICONS + createSVG extracted to `extension/core/icons.js`**. The 404-line inline block (createSVG SVG
   builder + `_S` default-stroke const + ICONS object with ~80 named
   factories) moves out of ytkit.js into a focused core module.
-  Library has zero ytkit.js-internal deps — only
-  `document.createElementNS` — so the extraction is a plain
+  Library has zero ytkit.js-internal deps, only
+  `document.createElementNS`, so the extraction is a plain
   top-level move; 29 call sites continue to consume the same
   `ICONS.foo()` invocation via a local-variable rebinding. Defensive
   fallback if the core module fails to load: `createSVG` becomes an
   empty-SVG stub, `ICONS` becomes a Proxy that returns the same stub
-  for any key — page stays renderable with blank icon slots instead
+  for any key, page stays renderable with blank icon slots instead
   of NPE-ing.
 - `extension/ytkit.js` LOC: **43,407 → 43,081 (-326)**. Cumulative
   since start: **44,264 → 43,081 = -1,183 LOC
@@ -8102,7 +8098,7 @@ change. Three additions:
 
 - **SponsorBlock event-driven scheduling pinned**. Upstream
   SponsorBlock v6.1.5 (2026-04-21) fixed "segments not skipping when
-  video is scrolled away" — their old path was gated on a `requestAnimationFrame`
+  video is scrolled away", their old path was gated on a `requestAnimationFrame`
   loop that stops firing when YouTube hides the off-screen video via
   IntersectionObserver. Our SB has always used event-driven setTimeout
   boundaries (scheduled from playing / seeked / ratechange), viewport-
@@ -8111,7 +8107,7 @@ change. Three additions:
   drops the paused-video early-return, OR consults IntersectionObserver /
   getBoundingClientRect / offsetParent.
 - **DeArrow selector chain resilience pinned**. Upstream
-  DeArrow shipped v2.3.4 / v2.3.5 / v2.3.6 in April 2026 — three rapid
+  DeArrow shipped v2.3.4 / v2.3.5 / v2.3.6 in April 2026, three rapid
   patches for YouTube swapping one CSS class at a time on title /
   thumbnail nodes. Our DeArrow uses durable primitives: custom-element
   tags, stable IDs, attribute matchers, our own "da"-prefixed marker
@@ -8128,7 +8124,7 @@ change. Three additions:
   options handling + manifest load order + inline-removal guard).
 - All existing tests stay green. Python 80/80 unchanged.
 
-## [4.5.0] - 2026-05-20 — -#5 + yt-dlp 2026 external runtime surface
+## [4.5.0] (2026-05-20), -#5 + yt-dlp 2026 external runtime surface
 
 Rolling-release cut bundling / / / hardening
 plus three deliveries: TranscriptService + StorageManager
@@ -8157,13 +8153,12 @@ download failures.
   focused factory module exposing
   `globalThis.YTKitCore.createStorageCache` (renamed to disambiguate
   from `core/storage.js`, which is the LOW-LEVEL `chrome.storage`
-  wrapper — the two used to share a name). The factory passes
+  wrapper, the two used to share a name). The factory passes
   `storageRead` / `storageWrite` / `storageWriteMany` /
   `flushPendingStorageWrites` / `getSaveDebounceMs` accessors so the
   module is unit-testable with plain backing-store mocks. The
   `_initUnloadFlush()` hook is WeakSet-guarded so the `beforeunload`
-  and `yt-navigate-start` listeners only register once per window —
-  was previously a memory-leak risk on re-instantiation.
+  and `yt-navigate-start` listeners only register once per window, was previously a memory-leak risk on re-instantiation.
 - **`extension/ytkit.js` LOC** dropped 43,924 → 43,407 across N18 +
   N19 (-517 lines net; the inline implementations were 446 + 99 = 545
   lines, replaced by 27 + 27 = 54 lines of factory + defensive
@@ -8178,8 +8173,7 @@ download failures.
   (Deno is the documented option). Field installs that auto-update
   yt-dlp.exe to a 2026.04+ build but lack Deno hit silent download
   failures. The `/health` endpoint gains a `denoRuntime` field
-  `{ installed, version, path, ytdlpNeedsRuntime, advice }` —
-  additive, `SERVICE_API_VERSION` stays at 2.
+  `{ installed, version, path, ytdlpNeedsRuntime, advice }`, additive, `SERVICE_API_VERSION` stays at 2.
 - **`extension/ytkit.js downloadHealthPanel`** renders a Deno pill
   next to the download button when `ytdlpNeedsRuntime` is true.
   Tone `warn` with label `missing` and install advice in the
@@ -8190,7 +8184,7 @@ download failures.
 - **`README.md`** astra_downloader section gains a "External
   JavaScript runtime (yt-dlp 2026+)" subsection with winget + curl
   install commands.
-- **Detection primitive** is `shutil.which('deno')` — no shell-out,
+- **Detection primitive** is `shutil.which('deno')`, no shell-out,
   no shell-injection surface. Version is parsed permissively from
   `deno --version` first-line semver.
 - **Conservative cutoff**: `YTDLP_EXTERNAL_RUNTIME_CUTOFF = (2026, 4, 1)`.
@@ -8213,7 +8207,7 @@ download failures.
   first read. Wrong-order bug from the in-line implementation (push
   → resync → increment) fixed during extraction.
 - **Popup selector-health dashboard**. Surfaces the
-  DOM-shape drift detection in the popup — pills per
+  DOM-shape drift detection in the popup, pills per
   surface showing live drift status. `schemaVersion 2` for the
   export.
 - **`extension/popup.html` inline CSP meta tag**.
@@ -8242,7 +8236,7 @@ download failures.
 - **PredicateSandbox extracted to `extension/core/predicate-sandbox.js`**. The custom-JS predicate evaluator and its
   PredicateError class moved into a 343-line core module. The
   sandbox uses `new Function('ctx', userCode)` against a frozen
-  context — no eval, no Function constructor with arbitrary deps.
+  context, no eval, no Function constructor with arbitrary deps.
 - **VideoTypeDetector extracted to `extension/core/video-type.js`**. The "is this video a Short / livestream /
   premiere / normal" heuristic moved to a 128-line core module.
 
@@ -8257,7 +8251,7 @@ download failures.
   badge) and fourteen sites in `theater-split.user.js` (live badge,
   view-count badge, twelve button overrides) used `border-radius: 999px`
   and now use 4-8 px. Two new hardening tests guard against the next
-  regression — `tests/hardening.test.js` "no Astra-injected CSS uses
+  regression, `tests/hardening.test.js` "no Astra-injected CSS uses
   pill (999px) backdrops anywhere in ytkit.js" and the matching
   theater-split assertion.
 - **`core/api-limiter.js clear()` no longer drops queued promises.**
@@ -8281,7 +8275,7 @@ download failures.
   branch already applied; a yt-dlp ERROR with a Python traceback could
   round-trip unbounded to the popup. Both branches now truncate
   consistently.
-- **Defensive `versionEl` null-guard** in `popup.js` — any future
+- **Defensive `versionEl` null-guard** in `popup.js`, any future
   `popup.html` edit that removes `#version` would crash the popup
   bootstrap; now degrades gracefully.
 - **Perf**: `popup.js` switched two hot-path size accounting sites
@@ -8304,19 +8298,18 @@ download failures.
   EN; not referenced anywhere in code).
 - **`scripts/check-i18n.js` extended** with a per-locale parity gate
   that fails CI on missing-key drift AND on orphan keys. Output now
-  reports "Locale parity OK — N non-EN locales match EN key set".
+  reports "Locale parity OK, N non-EN locales match EN key set".
 
 ### Networking
 
-- **`extensionRequestWithRetry` honors `Retry-After`** (RFC 7231 §7.1.3 —
-  delta-seconds OR HTTP-date), capped at 60 s ceiling so a hostile or
+- **`extensionRequestWithRetry` honors `Retry-After`** (RFC 7231 §7.1.3, delta-seconds OR HTTP-date), capped at 60 s ceiling so a hostile or
   buggy server can't park a request indefinitely. Falls back to the
   exponential schedule as a floor when the server hint is shorter.
 
 ### Dependencies
 
 - **`brace-expansion` 5.0.5 → 5.0.6** to address GHSA-jxxr-4gwj-5jf2
-  (moderate DoS via large numeric range). Dev-only — transitive through
+  (moderate DoS via large numeric range). Dev-only, transitive through
   `eslint`.
 
 ### Tests + CI
@@ -8340,13 +8333,12 @@ download failures.
   (`scripts/check-versions.js` + `check-syntax.js` + `check-i18n.js`
   + `check-contrast.js`).
 
-## [4.4.0] - Audit-Pass Hardening
+## [4.4.0]: Audit-Pass Hardening
 
-Repo-wide audit pass — defensive hardening of security boundaries,
+Repo-wide audit pass, defensive hardening of security boundaries,
 storage growth limits, lifecycle gaps, and UX rough edges flagged by
 parallel deep-dives across `background.js`, `popup.js`, `core/*`,
-`ytkit-main.js`, and `astra_downloader.py`. No new user-facing features
-— this release is purely "make existing surfaces more robust."
+`ytkit-main.js`, and `astra_downloader.py`. No new user-facing features, this release is purely "make existing surfaces more robust."
 
 ### Security (extension)
 
@@ -8391,7 +8383,7 @@ parallel deep-dives across `background.js`, `popup.js`, `core/*`,
   selector) tuple.
 - **`commentFilterManager._lastRulesHash` is now an 8-char djb2-style
   digest** instead of the raw rule body. The hash is stamped onto
-  every comment thread's `dataset` attribute — pinning the full rule
+  every comment thread's `dataset` attribute, pinning the full rule
   text onto every DOM node was an obvious memory leak waiting to
   happen.
 
@@ -8404,13 +8396,12 @@ parallel deep-dives across `background.js`, `popup.js`, `core/*`,
   side-effects to fire on the new instance.
 - **`videoHider` resets the PredicateSandbox circuit on every SPA
   navigate.** Matches the design-doc contract ("auto-disabled for
-  the remainder of the SPA route") — without this hook a single
+  the remainder of the SPA route"), without this hook a single
   noisy eval could permanently disable filters across the whole
   session.
 - **`downloadHealthPanel` polls only on `/watch` AND when the tab is
   visible.** Previously it pinged the local downloader every 30 s
-  from every YouTube tab regardless of route or foreground state —
-  wasteful network chatter and an unnecessary keepalive for the MV3
+  from every YouTube tab regardless of route or foreground state, wasteful network chatter and an unnecessary keepalive for the MV3
   service worker.
 
 ### UX
@@ -8440,7 +8431,7 @@ parallel deep-dives across `background.js`, `popup.js`, `core/*`,
   registry replace-cleanup, and health-poll route/visibility gate.
   258/258 JS tests pass.
 
-## [4.3.0] - AI Tags For Subscription Groups
+## [4.3.0]: AI Tags For Subscription Groups
 
 Closes the last concrete deferred item from the v4.0.0 milestone:
 optional AI tags for `subscriptionGroups`, riding on the same Chrome
@@ -8450,7 +8441,7 @@ fall-through; if the API isn't exposed the user gets an explicit
 
 ### Added (extension)
 
-- **`subscriptionAiTags`** master toggle. Default off — gates the
+- **`subscriptionAiTags`** master toggle. Default off, gates the
   whole AI-tag surface so the chip behaves identically to v4.2.0
   when not in use.
 - **`subscriptionAiTagData`** local-only storage:
@@ -8478,7 +8469,7 @@ fall-through; if the API isn't exposed the user gets an explicit
   shape (`generatedAt` timestamp + 8-tag cap), and chip render +
   shift+click gate. 246/246 JS tests pass.
 
-## [4.2.0] - Subscription Popularity + Transcript Search UI
+## [4.2.0]: Subscription Popularity + Transcript Search UI
 
 Picks up two more deferred items from the v4.0.0 milestone: the
 popularity sort for the subscription feed and a visible search UI on
@@ -8499,7 +8490,7 @@ top of the local IndexedDB transcript index.
   phrase, footer Close button, and a danger-styled "Clear local
   index" button. All search/clear calls go through the existing
   `window.__ytkitSearchTranscripts` / `__ytkitClearTranscriptIndex`
-  helpers — no new storage code path.
+  helpers, no new storage code path.
 
 ### Tests
 
@@ -8509,7 +8500,7 @@ top of the local IndexedDB transcript index.
   off, and destroy cleanup of button + panel + style tag.
   243/243 JS tests pass.
 
-## [4.1.0] - Deferred-Item Follow-Ups
+## [4.1.0]: Deferred-Item Follow-Ups
 
 Picks up the two deferred items called out in the v4.0.0 milestone:
 DeArrow channel override UI and the per-context quality matrix.
@@ -8521,7 +8512,7 @@ DeArrow channel override UI and the per-context quality matrix.
   extracted; if `overrides[channelId].mode` is `'off'` or `'original'`,
   the runtime stamps `data-da-override` on the card and skips both
   title and thumbnail replacement before any API call fires. `mode
-  === 'dearrow'` is the default — no override row in the data model
+  === 'dearrow'` is the default, no override row in the data model
   is required.
 - **DeArrow per-channel override chip (`deArrowChannelOverridesPanel`).**
   Adds a chip next to the channel name on the watch page. Click
@@ -8540,8 +8531,7 @@ DeArrow channel override UI and the per-context quality matrix.
   `Background` / `Embed`) default to `inherit`.
 - **MAIN-world bridge reads `data-ytkit-quality-target`.** New
   `applyContextQuality()` block in `ytkit-main.js` listens to the
-  attribute mutation, `loadedmetadata`, and `yt-navigate-finish` —
-  calls `movie_player.setPlaybackQualityRange(target, target)` when
+  attribute mutation, `loadedmetadata`, and `yt-navigate-finish`, calls `movie_player.setPlaybackQualityRange(target, target)` when
   a non-empty target is present. Idempotent via the
   `vid:ctx:target` key.
 
@@ -8559,40 +8549,40 @@ DeArrow channel override UI and the per-context quality matrix.
   attribute observer), destroy cleanup of both data attributes, and
   the MAIN-world bridge attribute filter. 240/240 JS tests pass.
 
-## [4.0.0] - Beats Every Competitor — Milestone Release
+## [4.0.0]: Beats Every Competitor, Milestone Release
 
 Astra Deck v4.0.0 is the milestone marker for the v3.25 → v3.33 push.
-No new features ship in 4.0.0 itself — the version bump records that
+No new features ship in 4.0.0 itself, the version bump records that
 every roadmap line item across nine release waves is either shipped,
 explicitly store-profile-gated, or documented as technically /
 policy-bounded with the next-action follow-up.
 
 ### What landed in the v3.25 → v3.33 push
 
-- **v3.25** Content filtering superset — predicate sandbox, comment
+- **v3.25** Content filtering superset, predicate sandbox, comment
   filter, bulk card actions, Feed Triage profile.
-- **v3.26** Player control superset — screenshot format + subtitle
+- **v3.26** Player control superset, screenshot format + subtitle
   baking, expanded speed range, volume wheel, initial player state,
   loudness normalization, per-channel intro/outro.
-- **v3.27** Downloads & local media library — download health pills,
+- **v3.27** Downloads & local media library, download health pills,
   stream-links panel, Cobalt fallback (GitHub-only), history panel.
-- **v3.28** Ratings + clickbait + metadata trust — Return YouTube
+- **v3.28** Ratings + clickbait + metadata trust, Return YouTube
   Dislike with rate limiter, anti-translate audio/transcript,
   monetization indicator.
-- **v3.29** Subscription manager — local groups + sort + new-since
+- **v3.29** Subscription manager, local groups + sort + new-since
   markers + group export/import.
-- **v3.30** Research workspace — local AI summary (Chrome built-in),
+- **v3.30** Research workspace, local AI summary (Chrome built-in),
   spaced-review CSV export, IndexedDB transcript search index.
-- **v3.31** Accessibility, mobile, low power — strong reduced motion,
+- **v3.31** Accessibility, mobile, low power, strong reduced motion,
   forced-colors support, global aria-live region, Low Power profile.
-- **v3.32** Premium visual system — OLED token rewrites, dense mode,
+- **v3.32** Premium visual system, OLED token rewrites, dense mode,
   rectangularize-YouTube, classic layout profiles, new-player UI
   restore, token theme bridge.
-- **v3.33** Integrations & interop — alternative-frontend handoff,
+- **v3.33** Integrations & interop, alternative-frontend handoff,
   VLC/MPV protocol handoff (GitHub-only), Astra context menu,
   YouTube Music compatibility.
 
-### Definition Of Done — v4.0.0 status
+### Definition Of Done, v4.0.0 status
 
 - [x] Ships as MV3 Chrome, MV3 Firefox, and readable single-file
       userscript artifacts.
@@ -8616,7 +8606,7 @@ policy-bounded with the next-action follow-up.
       assert this scoping via `[class*="ytkit-"]`.)
 - [x] Trusted Types and DOM injection paths are audited. (Every new
       feature uses `document.createElement` + `textContent` /
-      `appendChild` — no innerHTML on user-supplied or YouTube-derived
+      `appendChild`, no innerHTML on user-supplied or YouTube-derived
       strings.)
 - [x] MutationObservers process added nodes only. (commentFilterManager,
       subscriptionGroups, and existing observers all loop
@@ -8636,26 +8626,23 @@ policy-bounded with the next-action follow-up.
       bumped to 4.0.0; intro rewritten to reflect the 200+ feature
       surface.)
 - [ ] Fresh Chrome and Firefox clean-profile smoke tests pass.
-      (Manual QA gate — `npm run check` + `npm test` automated path
+      (Manual QA gate, `npm run check` + `npm test` automated path
       is green; clean-profile smoke is the next operator action.)
-- [ ] Userscript install/update path is verified. (Manual QA gate —
-      automated metadata sync passes; install-from-raw path is the
+- [ ] Userscript install/update path is verified. (Manual QA gate, automated metadata sync passes; install-from-raw path is the
       next operator action.)
 
 ### What's deferred
 
 - **DeArrow channel override UI** (data model shipped in v3.28; the
   settings-panel surface ships in a follow-up).
-- **Per-context quality matrix** (v3.26 line item — needs MAIN-world
+- **Per-context quality matrix** (v3.26 line item, needs MAIN-world
   fullscreenchange + per-context listener wiring).
-- **Popularity sort for subscriptions** (v3.29 line item — needs
+- **Popularity sort for subscriptions** (v3.29 line item, needs
   view-count-per-day extraction; date-desc covers the common case
   via YouTube's native default).
-- **Optional AI tags for subscription groups** (v3.29 line item —
-  hooked via the data model; surface depends on the local-AI backbone
+- **Optional AI tags for subscription groups** (v3.29 line item, hooked via the data model; surface depends on the local-AI backbone
   added in v3.30 evolving further).
-- **Markdown/JSON/SRT/VTT export consolidation** (v3.30 line item —
-  already covered by the existing transcript export buttons; the
+- **Markdown/JSON/SRT/VTT export consolidation** (v3.30 line item, already covered by the existing transcript export buttons; the
   consolidation pass is cosmetic).
 
 235/235 JS tests pass. Version drift check clean (all four sources at
@@ -8672,215 +8659,215 @@ The archive carries the full v3.x hardening-pass history, the v3.21.0
 i18n foundation, the iter-N research-loop pre-cursor work, and the
 original YouTube-Kit-era entries before the Astra Deck rebrand.
 
-## Roadmap archive — 2026-08-10 — ROADMAP.md
+## Roadmap archive, 2026-08-10, ROADMAP.md
 
 <details>
 <summary>Original roadmap snapshot</summary>
 
 ```markdown
-# Roadmap - Astra Deck
+# Astra Deck Roadmap
 
 Blocked / operator-gated work lives in `Roadmap_Blocked.md`.
 
 ### Notes on existing tracked items
 
-- `Roadmap_Blocked.md` "P2 — Side-panel toggles bypass optional-host permission + profile gating" is **partly stale**: `extension/sidepanel.js` now implements the gating (`requestOptionalHostsForToggle` at `:616-637`, called from the toggle handler at `:818`, which only writes when the grant succeeds). What remains blocked is the live-browser half — verifying that `chrome.permissions.request()` actually resolves from the side panel's user-gesture context. Narrow the item to that verification rather than re-implementing the gating.
+- `Roadmap_Blocked.md` "P2, Side-panel toggles bypass optional-host permission + profile gating" is **partly stale**: `extension/sidepanel.js` now implements the gating (`requestOptionalHostsForToggle` at `:616-637`, called from the toggle handler at `:818`, which only writes when the grant succeeds). What remains blocked is the live-browser half, verifying that `chrome.permissions.request()` actually resolves from the side panel's user-gesture context. Narrow the item to that verification rather than re-implementing the gating.
 
-- `Roadmap_Blocked.md` "P1 — Companion release EXE + SHA256 sidecar + clean-machine verification" is **half-unblocked as of 2026-08-02**: its stated blocker includes "maintainer GitHub authentication ... `gh auth status` reports the SysAdminDoc token is invalid", but `gh auth status` now reports a valid `SysAdminDoc` token with `repo` scope. Only the clean-Windows-machine verification half remains blocked, and the asset itself now ships from `SysAdminDoc/AstraDownloader`. Rewrite the blocker accordingly.
+- `Roadmap_Blocked.md` "P1, Companion release EXE + SHA256 sidecar + clean-machine verification" is **half-unblocked as of 2026-08-02**: its stated blocker includes "maintainer GitHub authentication ... `gh auth status` reports the SysAdminDoc token is invalid", but `gh auth status` now reports a valid `SysAdminDoc` token with `repo` scope. Only the clean-Windows-machine verification half remains blocked, and the asset itself now ships from `SysAdminDoc/AstraDownloader`. Rewrite the blocker accordingly.
 
-- `Roadmap_Blocked.md` "P2 — Competitor migration documentation" is **better supported now, not stale**: Iridium was archived 2026-01-31 (last real commit 2024-09-18) and its users are being routed to Enhancer, Unhook and Zenith — none of which is OSS-and-maintained, so there is no OSS successor. BlockTube is stalled (last push 2026-02-07, 484 open issues). A BlockTube migration guide plus an Iridium-successor note is the highest-yield addition to that item. No separate roadmap entry — extend the blocked one.
+- `Roadmap_Blocked.md` "P2, Competitor migration documentation" is **better supported now, not stale**: Iridium was archived 2026-01-31 (last real commit 2024-09-18) and its users are being routed to Enhancer, Unhook and Zenith, none of which is OSS-and-maintained, so there is no OSS successor. BlockTube is stalled (last push 2026-02-07, 484 open issues). A BlockTube migration guide plus an Iridium-successor note is the highest-yield addition to that item. No separate roadmap entry, extend the blocked one.
 
-- `Roadmap_Blocked.md` "P0 — Tag and publish the v4.51.1 release" was **version-stale and mis-blocked**. **Rewritten in place 2026-08-06** — retargeted to v4.56.0 and its blocker corrected. For the record: the CRX-key framing was wrong, because self-hosted CRX installs are Linux-only on modern Chrome and the last two published releases (v4.50.2, v4.50.7) shipped **no CRX at all**, so the missing `ytkit.pem` never gated a ZIP/XPI/userscript release. What actually fails is `node scripts/generate-release-readiness.js`, on three checks only (missing `build/release-manifest.json`, `build/astra-deck-npm-sbom.cdx.json`, `build/SHA256SUMS`) — all produced by `npm run build:userscript`, and the CRX check is not among them. See "Cut a release without a CRX" below for the code change that makes this a one-command path.
+- `Roadmap_Blocked.md` "P0, Tag and publish the v4.51.1 release" was **version-stale and mis-blocked**. **Rewritten in place 2026-08-06**, retargeted to v4.56.0 and its blocker corrected. For the record: the CRX-key framing was wrong, because self-hosted CRX installs are Linux-only on modern Chrome and the last two published releases (v4.50.2, v4.50.7) shipped **no CRX at all**, so the missing `ytkit.pem` never gated a ZIP/XPI/userscript release. What actually fails is `node scripts/generate-release-readiness.js`, on three checks only (missing `build/release-manifest.json`, `build/astra-deck-npm-sbom.cdx.json`, `build/SHA256SUMS`), all produced by `npm run build:userscript`, and the CRX check is not among them. See "Cut a release without a CRX" below for the code change that makes this a one-command path.
 
-- `Roadmap_Blocked.md` "P2 — Userscript bundle is stale; next sync will break Import" had **already materialised** — the bundle was resynced and the breakage shipped. **Narrowed in place 2026-08-06** to the Tampermonkey verification half and retitled; the porting half is programmatic and is tracked below as a P0. The two are no longer duplicates: do the P0 here, confirm it there.
+- `Roadmap_Blocked.md` "P2, Userscript bundle is stale; next sync will break Import" had **already materialised**, the bundle was resynced and the breakage shipped. **Narrowed in place 2026-08-06** to the Tampermonkey verification half and retitled; the porting half is programmatic and is tracked below as a P0. The two are no longer duplicates: do the P0 here, confirm it there.
 
-- `Roadmap_Blocked.md` "P2 — Audio auto-gain / high-pass chain" should **absorb multi-band EQ** rather than spawning a second item: `BiquadFilterNode` stages sit on the same MAIN-world audio graph the item already covers, and a 5-band EQ is the specific thing Enhancer's users ask for and Zenith paywalls. Its stated blocker is the stale "this run forbids staging Markdown" session constraint, which does not apply now.
+- `Roadmap_Blocked.md` "P2, Audio auto-gain / high-pass chain" should **absorb multi-band EQ** rather than spawning a second item: `BiquadFilterNode` stages sit on the same MAIN-world audio graph the item already covers, and a 5-band EQ is the specific thing Enhancer's users ask for and Zenith paywalls. Its stated blocker is the stale "this run forbids staging Markdown" session constraint, which does not apply now.
 
-- `Roadmap_Blocked.md` "P3 — Chrome Writer/Rewriter API" is correctly blocked (still Developer Trial), but it should **not** be read as covering Chrome's built-in AI generally: Translator, Language Detector, Summarizer and the Prompt API have been **stable in extensions since Chrome 138**. That lane is unblocked and is tracked separately below.
+- `Roadmap_Blocked.md` "P3, Chrome Writer/Rewriter API" is correctly blocked (still Developer Trial), but it should **not** be read as covering Chrome's built-in AI generally: Translator, Language Detector, Summarizer and the Prompt API have been **stable in extensions since Chrome 138**. That lane is unblocked and is tracked separately below.
 
 - Six `Roadmap_Blocked.md` items (Force DVR, replay chat-density chart, opt-in settings sync, logarithmic volume curve, volatile-project-facts gate, immutable build-profile ceilings) cite a self-imposed "this run forbids staging Markdown other than README/CHANGELOG" constraint as their blocker. That is not an external blocker. Move them back to this file on the next pass.
 
-- `Roadmap_Blocked.md:314` "P2 — Opt-in settings/blocklist sync (`storage.sync`)" and "Subscribable and exportable filter lists" below are **adjacent, not duplicates** — do not build both without deciding which. Sync moves a user's own rules between their own devices; subscribable lists move *other people's* rules to everyone. Note also that `chrome.storage.sync` caps at 102,400 B total / 8,192 B per item / 512 items, which the 446-key settings bag cannot fit — only a diff-from-default could, which the sync item does not currently say.
+- `Roadmap_Blocked.md:314` "P2, Opt-in settings/blocklist sync (`storage.sync`)" and "Subscribable and exportable filter lists" below are **adjacent, not duplicates**, do not build both without deciding which. Sync moves a user's own rules between their own devices; subscribable lists move *other people's* rules to everyone. Note also that `chrome.storage.sync` caps at 102,400 B total / 8,192 B per item / 512 items, which the 446-key settings bag cannot fit, only a diff-from-default could, which the sync item does not currently say.
 
-- `Roadmap_Blocked.md:419,427` "P3 — Userscript-tier survey (Greasy Fork)" (filed twice, near-duplicates — merge them) is **partly unblocked**: Greasy Fork still 403s automated fetches, but the same Rails application serves its help and CDN-allowlist pages at `sleazyfork.org`, which does not, and the rules themselves are readable in `greasyfork-org/greasyfork` (`app/models/script_version.rb`, `config/locales/en.yml`). Install counts still need a manual paste. That is enough to have settled the listing mechanics this pass — see "List the userscript on Greasy Fork" below.
+- `Roadmap_Blocked.md:419,427` "P3, Userscript-tier survey (Greasy Fork)" (filed twice, near-duplicates, merge them) is **partly unblocked**: Greasy Fork still 403s automated fetches, but the same Rails application serves its help and CDN-allowlist pages at `sleazyfork.org`, which does not, and the rules themselves are readable in `greasyfork-org/greasyfork` (`app/models/script_version.rb`, `config/locales/en.yml`). Install counts still need a manual paste. That is enough to have settled the listing mechanics this pass, see "List the userscript on Greasy Fork" below.
 
 ## Status
 
 Open items below are from the 2026-08-06 research pass. Earlier backlogs
 (competitive-feature additions, audit drains, research and hardening waves) are
-drained — shipped work lives in git history and `CHANGELOG.md`.
+drained, shipped work lives in git history and `CHANGELOG.md`.
 
 ## Research-Driven Additions
 
-### P0 — Shipped defects and delivery
+### P0, Shipped defects and delivery
 
-### P1 — Trust, correctness, and distribution mechanics
+### P1, Trust, correctness, and distribution mechanics
 
-### P2 — Quick wins with direct demand evidence
+### P2, Quick wins with direct demand evidence
 
-### P2 — Features with strong external demand
+### P2, Features with strong external demand
 
-- [ ] P2 — Local AI lane on Chrome's built-in APIs
+- [ ] P2, Local AI lane on Chrome's built-in APIs
   Why: Translator, Language Detector, Summarizer and the Prompt API have been stable in extensions since Chrome 138. A local lane makes summaries and translation work offline with no key, and removes three high-risk remote hosts from the GitHub-full permission string.
   Evidence: `extension/manifest.json:45-47` declares `api.openai.com`, `api.anthropic.com`, `generativelanguage.googleapis.com`; the on-device comment translator shipped in v4.54.0 already proves the pattern. Not covered by the blocked Writer/Rewriter item, which tracks a Developer-Trial API.
   Touches: `extension/core/userscript-ai-summary.js`, the AI-summary feature path in `extension/ytkit.js`, `extension/core/capability-probe.js`, `extension/core/data-flow.js`
   Acceptance: with a supported device the summary and transcript-translation paths run with no host permission and no key; without one they fall back to the existing BYO-key lane and say so; the capability probe reports which lane is active.
   Complexity: M
 
-- [ ] P2 — Live-stream latency catch-up
-  Why: a single-idea extension took 433 stars in six weeks doing only this, and Astra already ships both halves — a configurable buffer target and programmatic playback-rate control.
+- [ ] P2, Live-stream latency catch-up
+  Why: a single-idea extension took 433 stars in six weeks doing only this, and Astra already ships both halves, a configurable buffer target and programmatic playback-rate control.
   Evidence: `joaogfc/ZeroDelay`; ImprovedTube #4090.
   Touches: `extension/ytkit.js` (live-stream player features), `extension/core/player.js`
   Acceptance: on a live stream, latency above a configurable threshold raises playback rate within bounds until the edge is reached, with a latency/buffer readout in the player chrome; writes go through `setProgrammaticPlaybackRate()` so per-channel saved speeds survive.
   Complexity: M
 
-- [ ] P2 — Local AI-slop / low-signal filtering
+- [ ] P2, Local AI-slop / low-signal filtering
   Why: the one 2026 demand wave with clear volume and no incumbent coverage, and it composes with filters Astra already has rather than needing a server.
   Evidence: SponsorBlock #1963 (22 👍), #2317, #2429; ImprovedTube #3150 (8 👍), #1833; FilterTube #22; the 2026 `combatslop-yt` extension.
   Touches: `extension/features/video-hider/index.js`, `extension/core/predicate-sandbox.js`, `extension/core/settings-schema.js`
   Acceptance: local heuristics (synthetic-narration markers in title/description/channel patterns, view-count and age thresholds, upload cadence) expose new predicate fields usable from the existing DSL, each independently toggleable, with the hidden-card reason naming which heuristic fired. No network call and no crowd database.
   Complexity: L
 
-- [ ] P2 — Timestamped-highlight export loop
-  Why: this is what the commercial tier actually paywalls — Glasp gates auto-sync to Notion at $12.50–$30/mo and Readwise Reader's $9.99/mo is the highlight→export loop — while Astra already owns transcripts, bookmarks, notes and AI artifacts and gives them no coherent way out.
+- [ ] P2, Timestamped-highlight export loop
+  Why: this is what the commercial tier actually paywalls, Glasp gates auto-sync to Notion at $12.50-$30/mo and Readwise Reader's $9.99/mo is the highlight→export loop, while Astra already owns transcripts, bookmarks, notes and AI artifacts and gives them no coherent way out.
   Evidence: `glasp.co/pricing`; Astra ships `researchTranscriptIndex`, timestamp bookmarks, video notes and `ytkit-ai-summaries` as separate stores with separate exports.
   Touches: `extension/core/transcript-service.js`, `extension/core/ai-summary-artifacts.js`, the notes and bookmarks features in `extension/ytkit.js`, `extension/core/persisted-domains.js`
   Acceptance: one action exports a video's highlights, notes, bookmarks and summary as Markdown with clickable timestamps (Obsidian-compatible) and as JSON; round-trips through the existing schema-versioned import.
   Complexity: M
 
-- [ ] P2 — Per-quality data-usage estimate before playback
+- [ ] P2, Per-quality data-usage estimate before playback
   Why: a dedicated extension took 256 stars since 2026-02 on this alone, and the companion already enumerates formats with their sizes.
   Evidence: `MohamedSayed0573/TubeSize_Extension`; ImprovedTube #566 (5 👍); the `/formats` path in `extension/features/download-ui/index.js`.
   Touches: `extension/features/download-ui/index.js`, `extension/ytkit.js` (playback-stats overlay)
   Acceptance: the quality picker and stats overlay show an estimated size per quality for the current video; the estimate degrades to "unavailable" rather than guessing when the companion is offline.
   Complexity: S
 
-- [ ] P2 — Restore dislikes on Shorts
+- [ ] P2, Restore dislikes on Shorts
   Why: YouTube removed the Shorts dislike button, Return YouTube Dislike has not restored it and has not committed since 2026-05-02, and Astra's own module is watch-page and thumbnail scoped.
   Evidence: RYD #1294 (27 👍, filed 2026-06-29, open); `extension/features/return-dislike/index.js:383,522` covers cards and the watch page only.
   Touches: `extension/features/return-dislike/index.js`, `extension/core/selector-packs/` (Shorts surfaces)
   Acceptance: the estimated dislike count renders on the Shorts player with the same `est.` disclosure as the watch page, and survives Shorts navigation.
   Complexity: M
 
-- [ ] P2 — Filter sponsored and affiliate content out of comments and descriptions
-  Why: the second-highest single feature request in the landscape, and Astra already ships both halves — comment filtering and SponsorBlock reads.
+- [ ] P2, Filter sponsored and affiliate content out of comments and descriptions
+  Why: the second-highest single feature request in the landscape, and Astra already ships both halves, comment filtering and SponsorBlock reads.
   Evidence: SponsorBlock #649 (40 👍).
   Touches: `extension/ytkit.js` (comment filter manager, description handling), `extension/core/settings-schema.js`
   Acceptance: an opt-in filter collapses comments and description blocks matching affiliate/sponsor patterns, shows the reason, and is reversible per item.
   Complexity: M
 
-- [ ] P2 — Watch Later bulk management
+- [ ] P2, Watch Later bulk management
   Why: repeatedly requested across trackers, and Astra already has the bounded-session + Undo `bulkCardActions` pattern and a Watch Later workbench to host it.
   Evidence: ImprovedTube #231 (6 👍), #652 (6 👍), #4085; the existing workbench in `extension/ytkit.js:33087-33610`.
   Touches: `extension/ytkit.js` (Watch Later workbench)
   Acceptance: bulk remove by age, duration, watched state and channel runs inside the existing bounded-session cap with per-item and "undo all" recovery.
   Complexity: M
 
-### P2 — Platform and delivery engineering
+### P2, Platform and delivery engineering
 
-- [ ] P2 — Move YouTube selectors into a hot-updatable rule asset
+- [ ] P2, Move YouTube selectors into a hot-updatable rule asset
   Why: DOM knowledge is compiled into releases, so a YouTube change costs a release cycle on a channel whose last release is 174 commits old. This is the failure mode killing every competitor: Control Panel for YouTube spent eight of eleven 2026 releases on breakage repair, DeArrow shipped seven emergency fixes, and YouTube changed CSS variables twice in May 2026.
   Evidence: 33 packs under `extension/core/selector-packs/` plus inline selectors ship frozen; uBlock Origin solves the same problem with versioned assets, differential updates (`Diff-Path`/`Diff-Expires`, per-block SHA-1) and randomised multi-CDN fetch (`gorhill/uBlock` `assets/assets.json`, `uBlockOrigin/uAssetsCDN`).
   Touches: `extension/core/selector-packs/`, `extension/core/selectors.js`, `extension/core/selector-health.js`, `extension/background.js`, `scripts/build-selector-fixtures.js`
   Acceptance: selector packs load from a signed, versioned asset with the shipped copy as the offline default; updates verify a digest before applying, are bounded in size, roll back on parse failure, and are visible in the diagnostics panel. No new origin outside the existing allowlist.
   Complexity: XL
 
-- [ ] P2 — List the userscript on Greasy Fork, under the 2 MB cap
-  Why: Greasy Fork is the only channel that will carry this product **intact** — it has no downloader prohibition, unlike CWS and Edge — it is the only tier with working auto-update, and listing there auto-feeds userscript.zone and Tampermonkey's script index. The file is 30.2% over the hard limit and the rules forbid minifying to fit.
-  Evidence: `YTKit.user.js` is 2,729,479 B against `MAX_CODE_LENGTH = 2.megabytes` (2,097,152 B), enforced on create in `greasyfork-org/greasyfork` `app/models/script_version.rb`. Two compliant mechanisms: **libraries** are separate script records with their own 2 MB budget and are on the `@require` allowlist (`update.greasyfork.org/scripts/…`), keeping the code on Greasy Fork as `code_rules.hosting` demands; and **`@resource` is exempt from the CDN allowlist** — "these rules only apply to external, executable code. Loading non-executable code, for example JSON or CSS, is not restricted." That covers the 644 KB (23.7%) of CSS in template literals, the locale catalogues and the SVG icons. `raw.githubusercontent.com` is not on the `@require` allowlist; jsDelivr is, only with a 40-hex commit SHA, and would still violate the hosting rule. Greasy Fork has no antifeature category for local-companion traffic or media downloading — it needs only an accurate description and `@connect 127.0.0.1`, which the header already has.
+- [ ] P2, List the userscript on Greasy Fork, under the 2 MB cap
+  Why: Greasy Fork is the only channel that will carry this product **intact**, it has no downloader prohibition, unlike CWS and Edge, it is the only tier with working auto-update, and listing there auto-feeds userscript.zone and Tampermonkey's script index. The file is 30.2% over the hard limit and the rules forbid minifying to fit.
+  Evidence: `YTKit.user.js` is 2,729,479 B against `MAX_CODE_LENGTH = 2.megabytes` (2,097,152 B), enforced on create in `greasyfork-org/greasyfork` `app/models/script_version.rb`. Two compliant mechanisms: **libraries** are separate script records with their own 2 MB budget and are on the `@require` allowlist (`update.greasyfork.org/scripts/…`), keeping the code on Greasy Fork as `code_rules.hosting` demands; and **`@resource` is exempt from the CDN allowlist**, "these rules only apply to external, executable code. Loading non-executable code, for example JSON or CSS, is not restricted." That covers the 644 KB (23.7%) of CSS in template literals, the locale catalogues and the SVG icons. `raw.githubusercontent.com` is not on the `@require` allowlist; jsDelivr is, only with a 40-hex commit SHA, and would still violate the hosting rule. Greasy Fork has no antifeature category for local-companion traffic or media downloading, it needs only an accurate description and `@connect 127.0.0.1`, which the header already has.
   Touches: `sync-userscript.js`, `YTKit.user.js` header (`@resource`, `@require`, plus the missing `@homepageURL`/`@supportURL`/`@license`/`@icon`, and a `@description` that still says "115+ features"), the CSS template literals in `extension/ytkit.js` and `extension/core/settings-visual-system.js`, `scripts/check-userscript-drift.js`
   Acceptance: the generated `YTKit.user.js` is under 2,097,152 B with no minification; feature parity is unchanged at 159/270; the drift and symbol gates pass; the listing is live with the companion dependency stated in the description. Cheaper if the lazy-injection refactor lands first.
   Complexity: L
 
-- [ ] P2 — Prepare a download-free build for the Chromium stores
-  Why: CWS and Edge are the only discovery surfaces with real volume, and both reject the download capability — but not the rest of the product. Edge is the cheaper door: $0 (versus $5) and its §1.2.3 explicitly permits a non-integrated companion app when disclosed in the description, while Google's own 2026-04-23 PSA reports a submission surge and ~28 business-day queues.
+- [ ] P2, Prepare a download-free build for the Chromium stores
+  Why: CWS and Edge are the only discovery surfaces with real volume, and both reject the download capability, but not the rest of the product. Edge is the cheaper door: $0 (versus $5) and its §1.2.3 explicitly permits a non-integrated companion app when disclosed in the description, while Google's own 2026-04-23 PSA reports a submission surge and ~28 business-day queues.
   Evidence: CWS program policies prohibit extensions that "encourage, facilitate, or enable the unauthorized access, download, or streaming of copyrighted content or media"; Edge §2.8 is verbatim the same. Video Downloader Ultimate states publicly that it removed YouTube downloading from its Chrome build to stay listed. Three manifest facts drive the risk: `https://api.cobalt.tools/*` in `host_permissions`, **seven** `http://127.0.0.1:*` origins against the "narrowest permissions necessary" rule, and a `features/download-ui/` module beside the `downloads` permission. `docs/cws-submission-checklist.md` and `docs/store-permission-rationale.md` already exist.
   Touches: `build-extension.js` (a third profile), `extension/core/data-flow.js`, `extension/manifest.json`, `docs/cws-submission-checklist.md`, `docs/store-permission-rationale.md`
-  Acceptance: a store profile builds with no `downloads` permission, no `api.cobalt.tools` host, no loopback origins and no download feature module or naming, and passes `npm run check`. Submission itself is an operator action — Edge additionally requires government-ID verification — so track that half in `Roadmap_Blocked.md` alongside the existing CWS/AMO submission items.
+  Acceptance: a store profile builds with no `downloads` permission, no `api.cobalt.tools` host, no loopback origins and no download feature module or naming, and passes `npm run check`. Submission itself is an operator action, Edge additionally requires government-ID verification, so track that half in `Roadmap_Blocked.md` alongside the existing CWS/AMO submission items.
   Complexity: M
 
-- [ ] P2 — Emit a Firefox update manifest from the release pipeline
+- [ ] P2, Emit a Firefox update manifest from the release pipeline
   Why: Firefox is the only target where silent auto-update is achievable outside a store, and the release tooling that would produce the manifest already exists. Chrome self-hosted CRX installs are Linux-only, so this is the one auto-update lever the project has.
   Evidence: `scripts/generate-release-manifest.js` and `scripts/generate-release-sbom.js` already run per release; `browser_specific_settings.gecko.update_url` requires an HTTPS JSON manifest of `{version, update_link, update_hash}`.
   Touches: `scripts/generate-release-manifest.js` (or a new emitter), `scripts/manifest-patch.js`, `build-extension.js`, `docs/hosted-policy-closure.md`
-  Acceptance: a release emits `updates.json` with the version, an HTTPS `update_link` to the release asset and a `update_hash` matching `SHA256SUMS`; the patched Firefox manifest points `gecko.update_url` at it. Effective only once the XPI is signed — track the signing decision separately.
+  Acceptance: a release emits `updates.json` with the version, an HTTPS `update_link` to the release asset and a `update_hash` matching `SHA256SUMS`; the patched Firefox manifest points `gecko.update_url` at it. Effective only once the XPI is signed, track the signing decision separately.
   Complexity: M
 
-- [ ] P2 — Adopt the platform APIs that replace hand-rolled machinery
+- [ ] P2, Adopt the platform APIs that replace hand-rolled machinery
   Why: several long-standing sources of breakage now have first-class platform answers on both targets.
-  Evidence: Chrome 148 makes `browser` native and lets `runtime.onMessage` return a Promise; Firefox 153 adds `runtime.getDocumentId()` and content-script `adoptedStyleSheets`; Popover, `@scope`, `::highlight`, the Navigation API, `Intl.DurationFormat` and `RegExp.escape()` all reached Baseline in 2025–2026; Document Picture-in-Picture is Chrome 130+ and **Firefox 151+**.
+  Evidence: Chrome 148 makes `browser` native and lets `runtime.onMessage` return a Promise; Firefox 153 adds `runtime.getDocumentId()` and content-script `adoptedStyleSheets`; Popover, `@scope`, `::highlight`, the Navigation API, `Intl.DurationFormat` and `RegExp.escape()` all reached Baseline in 2025-2026; Document Picture-in-Picture is Chrome 130+ and **Firefox 151+**.
   Touches: `extension/core/browser-api.js`, `extension/core/navigation.js`, `extension/core/toast-dom.js`, `extension/core/text-metrics.js`, `extension/core/date-time.js`, the transcript search path in `extension/ytkit.js`
-  Acceptance: taken one API at a time behind `extension/core/capability-probe.js` — `@scope` around injected CSS, `::highlight` for transcript and segment marking (no DOM mutation), `Intl.DurationFormat` for durations across all 11 locales, `RegExp.escape()` on every user-supplied filter string. Each lands with a fallback and a test; none regresses `npm run check:startup`.
-  Note: `Roadmap_Blocked.md` already holds three items of this same family, blocked on live-browser verification — `appearance: base-select`, `@starting-style`, and `<details name>` exclusive accordion. Deliberately excluded here: the four APIs above are verifiable against the existing fixture and headless lanes, those three are not. Do not re-file them.
+  Acceptance: taken one API at a time behind `extension/core/capability-probe.js`, `@scope` around injected CSS, `::highlight` for transcript and segment marking (no DOM mutation), `Intl.DurationFormat` for durations across all 11 locales, `RegExp.escape()` on every user-supplied filter string. Each lands with a fallback and a test; none regresses `npm run check:startup`.
+  Note: `Roadmap_Blocked.md` already holds three items of this same family, blocked on live-browser verification, `appearance: base-select`, `@starting-style`, and `<details name>` exclusive accordion. Deliberately excluded here: the four APIs above are verifiable against the existing fixture and headless lanes, those three are not. Do not re-file them.
   Complexity: L
 
-### P3 — Debt burn-down and tooling honesty
+### P3, Debt burn-down and tooling honesty
 
-- [ ] P3 — Start burning down the 1,604 grandfathered English literals
+- [ ] P3, Start burning down the 1,604 grandfathered English literals
   Why: the copy gate passes because the debt is fingerprinted as accepted, not because it is fixed, so 11 locales ship large English surfaces.
-  Evidence: `scripts/i18n-ui-copy-baseline.json` grandfathers 1,604 literals across 20 files — 1,273 in `extension/ytkit.js`, 134 in `settings-panel`, 40 in `subscription-groups`, 30 in `download-ui`, 28 in `video-hider`, 26 in `popup.js`. The Video Notes panel (`extension/ytkit.js:22902-22942`) is entirely unwrapped while siblings in the same file use `t()`.
+  Evidence: `scripts/i18n-ui-copy-baseline.json` grandfathers 1,604 literals across 20 files, 1,273 in `extension/ytkit.js`, 134 in `settings-panel`, 40 in `subscription-groups`, 30 in `download-ui`, 28 in `video-hider`, 26 in `popup.js`. The Video Notes panel (`extension/ytkit.js:22902-22942`) is entirely unwrapped while siblings in the same file use `t()`.
   Touches: `extension/ytkit.js`, `extension/features/**`, `extension/_locales/**`, `scripts/i18n-ui-copy-baseline.json`, `scripts/generate-locales.js`
   Acceptance: the baseline count only ever decreases; a per-pass target is recorded and the highest-traffic surfaces (Video Notes, settings-panel, download-ui) go first. Translations go into the `generate-locales.js` tables before regenerating so the placeholder ratchet does not move.
   Complexity: L
 
-- [ ] P3 — Start burning down the 277 light-theme-blind surfaces
+- [ ] P3, Start burning down the 277 light-theme-blind surfaces
   Why: the gate accepts 277 legacy surfaces against 89 that carry a light lane, so YouTube light-theme users still meet near-white text on near-white backgrounds on surfaces nothing flags.
   Evidence: `npm run audit:light-theme` reports 89 covered / 277 accepted; `scripts/light-theme-baseline.json`.
   Touches: `extension/ytkit.js`, `extension/features/**`, `scripts/light-theme-baseline.json`
   Acceptance: the accepted count only ever decreases; default-ON surfaces are cleared first; a light-fixture render lane confirms the fixes rather than a source-text rule.
   Complexity: L
 
-- [ ] P3 — Make the accessibility and contrast audits see real rendered output
-  Why: all four audits are static string-presence checks over source text, so they only catch regressions of already-fixed patterns — which is exactly how the watch-time dialog shipped with no dialog semantics.
+- [ ] P3, Make the accessibility and contrast audits see real rendered output
+  Why: all four audits are static string-presence checks over source text, so they only catch regressions of already-fixed patterns, which is exactly how the watch-time dialog shipped with no dialog semantics.
   Evidence: `scripts/audit-overlays-a11y.js:7` states "This is intentionally static"; `scripts/check-contrast.js:37-56` hardcodes six colour pairs from `popup.css` and reads no stylesheet; `docs/screen-reader-smoke.md` is a manual checklist outside `npm run check`.
   Touches: `scripts/audit-overlays-a11y.js`, `scripts/check-contrast.js`, `scripts/smoke-headless-a11y.js`
   Acceptance: contrast is computed from the actual custom-property values in `popup.css`/`sidepanel.css` rather than a literal list; the headless a11y smoke asserts focus order and focus-trap behaviour on at least the settings panel and one injected overlay against a real DOM.
-  Note: distinct from `Roadmap_Blocked.md` "P2 — Visual regression testing for popup" — that item compares screenshots against a committed baseline and is blocked on browser binaries; this one computes contrast and asserts focus behaviour, and runs in the headless lane `npm run smoke:settings-overlay` already uses. The rendered light-theme lane the P3 above wants is the natural place to host both.
+  Note: distinct from `Roadmap_Blocked.md` "P2, Visual regression testing for popup", that item compares screenshots against a committed baseline and is blocked on browser binaries; this one computes contrast and asserts focus behaviour, and runs in the headless lane `npm run smoke:settings-overlay` already uses. The rendered light-theme lane the P3 above wants is the natural place to host both.
   Complexity: M
 
-- [ ] P3 — Show which settings differ from their defaults
+- [ ] P3, Show which settings differ from their defaults
   Why: 446 keys with per-key reset but no aggregate view of what a user changed, which is the first thing anyone needs when a feature misbehaves or before filing a bug.
   Evidence: `extension/popup.js:2588-2920` renders the Schema Overview key-by-key with a per-key reset (`:3167`) and no diff view; settings are stored sparsely so the data is already exactly the diff.
   Touches: `extension/popup.js`, `extension/core/settings-schema.js`
   Acceptance: a "changed from defaults" view lists every non-default key with its current and default value, is copyable into a bug report, and is included in the diagnostics bundle.
   Complexity: S
 
-- [ ] P3 — Clear the references the companion split left behind
+- [ ] P3, Clear the references the companion split left behind
   Why: a published design doc and a local audit-tooling config both point at code that no longer exists, so the doc misinforms the next reader and two audit tasks silently scan nothing.
   Evidence: `docs/predicate-sandbox-investigation.md` says the sandbox is "not yet enabled in any shipped feature" while `extension/core/predicate-sandbox.js` is the live DSL evaluator behind Video Hider; `.factory/audit-workflow.js:94-100` (gitignored, local tooling) still targets `astra_downloader/astra_downloader.py` for its security and threading audits.
   Touches: `docs/predicate-sandbox-investigation.md`, `.factory/audit-workflow.js`
   Acceptance: the predicate-sandbox doc describes the shipped wiring; no file in `docs/` or `extension/` references a path that left in `a6bb685f` as if it were current; the two audit tasks target extension paths.
   Complexity: S
 
-- [ ] P1 — Restore a clean dependency-security gate for Firefox tooling
+- [ ] P1, Restore a clean dependency-security gate for Firefox tooling
   Why: npm run check is not green even though production dependencies pass audit. The failing chain is development-only, but it is part of the release and verification path.
   Evidence: [image-size ICNS advisory](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr), [image-size JXL/HEIF advisory](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq), and the verified local graph web-ext 10.6.0 → addons-linter 10.10.0 → image-size 2.0.2; npm audit fix --force proposes a breaking web-ext 5.5.0 downgrade.
   Touches: package.json and lockfile, Firefox lint/build scripts, check orchestration, and release/security documentation if a bounded exception is unavoidable.
   Acceptance: npm run check passes without high-severity findings, or emits a machine-readable, narrowly scoped exception naming the exact transitive package, advisory, reachability, and upstream status; Firefox lint/build coverage still runs; production bundles and the production-only audit remain unchanged.
   Complexity: M
 
-- [ ] P1 — Maintain a browser capability matrix and fallback contract
+- [ ] P1, Maintain a browser capability matrix and fallback contract
   Why: optional APIs span Chrome-only, Chrome-conditional, and Firefox-different behaviour. A feature can pass static checks while silently losing a fallback on a supported browser.
   Evidence: [Chrome scripting and userScripts conditions](https://developer.chrome.com/docs/extensions/reference/api/scripting), [Chrome userScripts](https://developer.chrome.com/docs/extensions/reference/api/userScripts), [Chrome built-in AI availability](https://developer.chrome.com/docs/ai/built-in-apis), and [Firefox content-script timing/world differences](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts).
   Touches: extension/core/capability-probe.js, browser-api and permission helpers, scripts/check-firefox-webext.js, headless tests, and the supported-browser section of README.md.
   Acceptance: a generated matrix records API availability, required permission, execution world, minimum browser, fallback, and user-visible degradation for each adopted optional API; Chrome and Firefox lanes test both available and unavailable branches; no unsupported API is called before its capability probe.
   Complexity: M
 
-- [ ] P1 — Prove idempotent injection across SPA navigation and extension updates
+- [ ] P1, Prove idempotent injection across SPA navigation and extension updates
   Why: YouTube is a long-lived SPA, and extension updates can leave already injected code in tabs. A second bootstrap must not create duplicate observers, listeners, styles, feature registrations, or top-level declarations.
   Evidence: [Chrome scripting documentation](https://developer.chrome.com/docs/extensions/reference/api/scripting) states that unregistering a content script does not remove code already injected into a page; [FilterTube](https://github.com/varshneydevansh/FilterTube) identifies duplicate runtime injection in its recent fix history; [ImprovedTube’s active breakage queue](https://github.com/code-charity/youtube/pulls) shows the practical cost of lifecycle drift.
   Touches: content-script bootstrap and feature registry, lifecycle cleanup, navigation/update test fixtures, and the existing startup/long-session test lanes.
   Acceptance: repeated bootstrap, client-side navigation, iframe recreation, and extension-update simulation produce one active registry per tab; no duplicate CSS, observer, message listener, or global declaration is created; tests cover Chrome and Firefox injection paths and expose a diagnostic failure rather than silently degrading.
   Complexity: M
 
-- [ ] P2 — Make external enrichment provenance and rate limits visible
+- [ ] P2, Make external enrichment provenance and rate limits visible
   Why: Sponsor, dislike, title, and related enrichment can be stale, unavailable, rate-limited, or privacy-sensitive. Silent fallbacks make a correct "no result" indistinguishable from a broken feature.
   Evidence: [SponsorBlock’s API/database model](https://github.com/ajayyy/SponsorBlock/wiki) and [Return YouTube Dislike’s API](https://github.com/Anarios/return-youtube-dislike), including its [privacy discussion](https://github.com/Anarios/return-youtube-dislike/issues/344).
   Touches: external service adapters, cache metadata, popup/diagnostics status surfaces, settings copy, and tests for 200/empty/304/429/timeout responses.
   Acceptance: each external enrichment reports source, last-refresh age, availability, and cooldown/retry state; a user can disable each source and understand what local fallback remains; cached data is visibly stale after its TTL; identifiers are not sent to an optional service without the existing user-facing opt-in/permission contract.
   Complexity: M
 
-- [ ] P2 — Add rollback-safe release channels and artifact health checks
+- [ ] P2, Add rollback-safe release channels and artifact health checks
   Why: a selector or browser-specific release can fail after static build gates pass. The project needs a bounded way to stop propagation and return to the last known-good artifact across extension and userscript channels.
   Evidence: [uBlock’s versioned filter assets](https://github.com/gorhill/uBlock/wiki/Dashboard%3A-Filter-lists/b902569784469ad2bf326efb82d9fd3f92f2fe8d), [yt-dlp’s release cadence](https://github.com/yt-dlp/yt-dlp/releases), and [Firefox’s update-link/hash model](https://extensionworkshop.com/documentation/manage/updating-your-extension/).
   Touches: release manifest/SBOM/digest scripts, GitHub release workflow, selector-asset metadata, userscript metadata, and release documentation.

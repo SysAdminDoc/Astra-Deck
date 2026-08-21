@@ -23,7 +23,7 @@ const commandDeckCss = visualSystemSource.slice(
     visualSystemSource.indexOf('/* v5 command-deck parity overrides')
 );
 
-test('settings visual system renders the imagegen-matched command-deck hierarchy', () => {
+test('settings visual system renders the flat command-deck hierarchy', () => {
     assert.match(visualSystemSource, /settings visual system v5 — imagegen-matched command deck/);
     assert.match(
         commandDeckCss,
@@ -38,7 +38,9 @@ test('settings visual system renders the imagegen-matched command-deck hierarchy
     );
     assert.match(commandDeckCss, /\.ytkit-nav-group-label\s*\{[\s\S]*?display:\s*none/);
     assert.match(commandDeckCss, /\.ytkit-pane-context\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
-    assert.match(commandDeckCss, /\.ytkit-pane-icon\s*\{[\s\S]*?width:\s*78px[\s\S]*?linear-gradient/);
+    assert.match(commandDeckCss, /\.ytkit-pane-icon\s*\{[\s\S]*?width:\s*78px[\s\S]*?background:\s*color-mix/);
+    assert.doesNotMatch(commandDeckCss, /(?:linear|radial)-gradient\(/,
+        'command deck should use flat fills without decorative gradients');
     assert.match(commandDeckCss, /\.ytkit-feature-section-title\s*\{[\s\S]*?text-transform:\s*uppercase/);
     assert.match(commandDeckCss, /\.ytkit-feature-section-body\s*\{[\s\S]*?background:[\s\S]*?var\(--ytkit-v3-panel\)/);
     assert.match(commandDeckCss, /\.ytkit-header-live-switch\s*\{[\s\S]*?background:\s*var\(--ytkit-v3-accent\)/);
@@ -345,6 +347,40 @@ test('extension and userscript load the shared settings visual system before the
         shell,
         /globalThis\.YTKitCore\?\.ensureSettingsVisualSystem\?\.\(\);\s*injectPanelStyles\._done = true;/
     );
+});
+
+test('shared surface system covers the polished YouTube and injected UI families', () => {
+    const visualSystem = require(visualSystemPath);
+    const css = visualSystem.SURFACE_VISUAL_SYSTEM_CSS;
+    for (const selector of [
+        '.ytkit-ai-qa-modal',
+        '.ytkit-aisum-panel',
+        '.ytkit-transcript-panel',
+        '.ytkit-dl-popup',
+        '.ytkit-dl-progress',
+        '.ytkit-sub-toolbar',
+        '.ytkit-queue-panel',
+        '.ytkit-wl-workbench',
+        '.ytkit-bookmarks-container',
+        '.ytkit-search-container',
+        '.ytkit-wha-overlay',
+        '.ytkit-global-toast',
+        'html.ytkit-watch-restyle',
+        'html.ytkit-split-active',
+    ]) {
+        assert.ok(css.includes(selector), `surface system must cover ${selector}`);
+    }
+    assert.match(css, /html:not\(\[dark\]\)/,
+        'surface tokens must include a light theme lane');
+    assert.match(css, /@media \(forced-colors: active\)/);
+    assert.doesNotMatch(css, /(?:linear|radial)-gradient\(/,
+        'premium surfaces must use flat fills');
+
+    const allowedRadii = new Set([0, 4, 6, 8, 10, 12]);
+    for (const match of css.matchAll(/border-radius:\s*([0-9.]+)px/g)) {
+        assert.ok(allowedRadii.has(Number(match[1])),
+            `surface radius ${match[1]}px must use the compact token scale`);
+    }
 });
 
 test('settings visual-system injection is safe and idempotent', () => {
