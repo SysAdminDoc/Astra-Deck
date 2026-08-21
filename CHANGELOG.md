@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.83.0] (2026-08-21)
+
 ### Added
 
 - A rename of any setting or feature can no longer quietly reset it. Renaming a
