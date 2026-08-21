@@ -8175,5 +8175,23 @@
   },
   "schemaSurfacePanelTitle": {
     "message": "Эта настройка редактируется на панели Astra Deck в YouTube. Открывает её."
+  },
+  "dlHealthApiTooNew": {
+    "message": "новее этого расширения"
+  },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader работает, но этот Astra Deck использует более старый API, чем он принимает{versions}. Обновите расширение и снова выберите «Проверить»."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (нужен как минимум API {minimum})"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "«{group}» и его каналы ({count}) удалены. На ваши подписки это не влияет."
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "Это имя группы снова занято, поэтому восстановление не выполнено."
+  },
+  "subscriptionGroupRestored": {
+    "message": "Группа восстановлена"
   }
 }

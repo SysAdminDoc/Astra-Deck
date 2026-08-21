@@ -8175,5 +8175,23 @@
   },
   "schemaSurfacePanelTitle": {
     "message": "此设置在 YouTube 上的 Astra Deck 面板中编辑。点击可打开。"
+  },
+  "dlHealthApiTooNew": {
+    "message": "比此扩展更新"
+  },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader 正在运行，但此 Astra Deck 使用的 API 比它接受的更旧{versions}。请更新扩展，然后再次选择“检查”。"
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": "（它至少需要 API {minimum}）"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "已删除“{group}”及其中的 {count} 个频道。你的订阅不受影响。"
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "该分组名称又被占用了，因此没有恢复。"
+  },
+  "subscriptionGroupRestored": {
+    "message": "已恢复分组"
   }
 }

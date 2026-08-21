@@ -8175,5 +8175,23 @@
   },
   "schemaSurfacePanelTitle": {
     "message": "Ce réglage se modifie dans le panneau Astra Deck sur YouTube. Ouvre celui-ci."
+  },
+  "dlHealthApiTooNew": {
+    "message": "plus récent que cette extension"
+  },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader fonctionne, mais cet Astra Deck parle une API plus ancienne que celle qu’il accepte{versions}. Mettez l’extension à jour, puis choisissez Vérifier à nouveau."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (il lui faut au moins l’API {minimum})"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "« {group} » et ses {count} chaînes ont été supprimés. Vos abonnements ne sont pas touchés."
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "Ce nom de groupe est de nouveau utilisé, rien n’a donc été restauré."
+  },
+  "subscriptionGroupRestored": {
+    "message": "Groupe restauré"
   }
 }

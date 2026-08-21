@@ -8175,5 +8175,23 @@
   },
   "schemaSurfacePanelTitle": {
     "message": "This setting is edited in the Astra Deck panel on YouTube. Opens it."
+  },
+  "dlHealthApiTooNew": {
+    "message": "newer than this extension"
+  },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (it needs at least API {minimum})"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "Deleted \"{group}\" and its {count} channels. Your subscriptions are not affected."
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "That group name is in use again, so it was not restored."
+  },
+  "subscriptionGroupRestored": {
+    "message": "Group restored"
   }
 }

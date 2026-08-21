@@ -593,7 +593,13 @@ test('a cancelled rename prompt changes nothing', () => withStubbedDialogs(
     }
 ));
 
-test('a group can be deleted, and declining the confirm keeps it', () => {
+test('a group is deleted immediately, and only that group', () => {
+    // This half used to also assert that declining a native confirm kept the
+    // group. The confirm is gone: it was the only modal left in a project that
+    // answers destruction with immediate-apply plus undo, and the only
+    // destructive action you could not take back once you had answered it. The
+    // rule the old test really guarded — deleting one group must not touch any
+    // other — is unchanged and asserted below; the undo is covered separately.
     const settings = {
         subscriptionGroupData: {
             g_keep: { name: 'Keep', channelIds: ['UCkeep1111111111111111'] },
@@ -601,15 +607,7 @@ test('a group can be deleted, and declining the confirm keeps it', () => {
         }
     };
 
-    withStubbedDialogs({ promptWith: null, confirmWith: false }, () => {
-        const { appState, feature } = makeFeature(JSON.parse(JSON.stringify(settings)));
-        feature._closeMembersPanel = () => {};
-        feature._deleteGroup('g_drop');
-        assert.deepEqual(Object.keys(appState.settings.subscriptionGroupData).sort(), ['g_drop', 'g_keep'],
-            'declining the confirm must leave the group alone');
-    });
-
-    withStubbedDialogs({ promptWith: null, confirmWith: true }, () => {
+    withStubbedDialogs({ promptWith: null }, () => {
         const { appState, feature, toasts } = makeFeature(JSON.parse(JSON.stringify(settings)));
         feature._closeMembersPanel = () => {};
         feature._activeGroupId = 'g_drop';
@@ -729,4 +727,81 @@ test('re-rendering the empty state does not stack duplicate notices', () => {
     } finally {
         globalThis.document = previousDocument;
     }
+});
+
+// ── Undoing a delete ──
+
+test('the undo restores a deleted group whole, membership and nesting included', () => {
+    const settings = {
+        subscriptionGroupData: {
+            g_parent: { name: 'Parent', channelIds: ['UCparent111111111111'], parentId: '' },
+            g_child: { name: 'Child', channelIds: ['UCchild1111111111111'], parentId: 'g_parent' },
+            g_other: { name: 'Other', channelIds: ['UCother1111111111111'], parentId: '' }
+        }
+    };
+    withStubbedDialogs({ promptWith: null }, () => {
+        const { appState, feature, toasts } = makeFeature(JSON.parse(JSON.stringify(settings)));
+        feature._closeMembersPanel = () => {};
+        const before = JSON.parse(JSON.stringify(appState.settings.subscriptionGroupData));
+        assert.equal(feature._getGroupParentId('g_child'), 'g_parent', 'the child must start nested');
+
+        toasts.length = 0;
+        feature._deleteGroup('g_parent');
+
+        assert.equal(appState.settings.subscriptionGroupData.g_parent, undefined);
+        assert.ok(appState.settings.subscriptionGroupData.g_child,
+            'deleting a parent must not delete its children');
+        assert.equal(feature._getGroupParentId('g_child'), '',
+            'a child whose parent is gone reads as top-level');
+
+        const [message, , options] = toasts[toasts.length - 1];
+        assert.match(String(message), /Deleted/);
+        assert.equal(typeof options?.action?.onClick, 'function', 'the toast must offer an undo');
+
+        options.action.onClick();
+
+        assert.deepEqual(appState.settings.subscriptionGroupData, before,
+            'undo must restore the tree exactly as it was, membership and nesting included');
+        assert.equal(feature._getGroupParentId('g_child'), 'g_parent',
+            'restoring the parent re-adopts its children');
+    });
+});
+
+test('deleting a group never asks for confirmation', () => {
+    const previousConfirm = globalThis.confirm;
+    let asked = 0;
+    globalThis.confirm = () => { asked += 1; return false; };
+    try {
+        withStubbedDialogs({ promptWith: null }, () => {
+            const { appState, feature } = makeFeature({
+                subscriptionGroupData: { g_doomed: { name: 'Doomed', channelIds: [], parentId: '' } }
+            });
+            feature._closeMembersPanel = () => {};
+            feature._deleteGroup('g_doomed');
+            assert.equal(asked, 0, 'no native confirm may be involved');
+            assert.equal(appState.settings.subscriptionGroupData.g_doomed, undefined,
+                'and a confirm that would have said no must not have blocked the delete');
+        });
+    } finally {
+        globalThis.confirm = previousConfirm;
+    }
+});
+
+test('undo refuses to overwrite a group that has taken the id back', () => {
+    withStubbedDialogs({ promptWith: null }, () => {
+        const { appState, feature, toasts } = makeFeature({
+            subscriptionGroupData: { g_first: { name: 'First', channelIds: [], parentId: '' } }
+        });
+        feature._closeMembersPanel = () => {};
+        feature._deleteGroup('g_first');
+        const [, , options] = toasts[toasts.length - 1];
+
+        // Something else holds that id now. Restoring would silently replace it.
+        feature._writeGroups({ g_first: { name: 'Different group', channelIds: ['UCx'], parentId: '' } });
+        options.action.onClick();
+
+        assert.equal(appState.settings.subscriptionGroupData.g_first.name, 'Different group',
+            'undo must not clobber whatever holds the id now');
+        assert.match(String(toasts[toasts.length - 1][0]), /not restored/);
+    });
 });

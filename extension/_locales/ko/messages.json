@@ -8175,5 +8175,23 @@
   },
   "schemaSurfacePanelTitle": {
     "message": "이 설정은 YouTube의 Astra Deck 패널에서 편집합니다. 눌러서 엽니다."
+  },
+  "dlHealthApiTooNew": {
+    "message": "이 확장 프로그램보다 최신"
+  },
+  "dlInstallApiMismatchTpl": {
+    "message": "Astra Downloader는 실행 중이지만, 이 Astra Deck은 허용되는 것보다 오래된 API를 사용합니다{versions}. 확장 프로그램을 업데이트한 뒤 다시 확인을 선택해 주세요."
+  },
+  "dlInstallApiVersionsTpl": {
+    "message": " (최소 API {minimum}이(가) 필요합니다)"
+  },
+  "subscriptionGroupDeletedTpl": {
+    "message": "“{group}”과(와) 여기에 속한 채널 {count}개를 삭제했습니다. 구독에는 영향이 없습니다."
+  },
+  "subscriptionGroupRestoreConflict": {
+    "message": "해당 그룹 이름이 다시 사용 중이라 복원하지 않았습니다."
+  },
+  "subscriptionGroupRestored": {
+    "message": "그룹을 복원했습니다"
   }
 }

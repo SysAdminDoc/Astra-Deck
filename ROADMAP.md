@@ -238,13 +238,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
 
 ### P3
 
-- [ ] P3 — Give subscription-group delete an undo instead of a `window.confirm`
-  Why: the project deliberately removed confirmation modals in favour of immediate-apply-plus-undo, and group delete is the one destructive action still using a native browser confirm — and it is also one of the few with no undo at all, so it is inconsistent in both directions.
-  Evidence: policy at `extension/popup.js:4972-4984`; `window.confirm` at `extension/features/subscription-groups/index.js:2641`; the undo-toast pattern already exists for video-note delete (`extension/features/video-notes/index.js:193-220`) and category reset (`extension/features/settings-panel/index.js:2355-2368`).
-  Touches: `extension/features/subscription-groups/index.js`, locales, `tests/features/`
-  Acceptance: deleting a group removes it immediately and offers an undo toast that restores the group with its full membership and nesting; `window.confirm` is gone from the module; a test deletes a nested group and asserts the restored tree matches the pre-delete tree exactly.
-  Complexity: S
-
 - [ ] P3 — Add the three missing empty states
   Why: three list surfaces render a bare container instead of guidance, which reads as broken rather than empty — and one of them is the first thing a new user sees after enabling subscription groups.
   Evidence: subscription groups has a per-group empty state (`_renderGroupEmptyState`, `extension/features/subscription-groups/index.js:2454-2465`) but nothing for zero groups total; Watch Later Workbench replaces children and leaves an empty `.ytkit-wlwb-list` with only a count line (`extension/ytkit.js:32966-33005`); video notes shows an inline status string rather than an empty block (`extension/features/video-notes/index.js:262-264`).

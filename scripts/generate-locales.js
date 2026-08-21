@@ -2680,6 +2680,93 @@ const SETTINGS_SEARCH_SURFACE_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(SETTINGS_SEARCH_SURFACE_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// Undo copy for group delete, plus three download-ui strings that reached the
+// catalogue without translations. The undo one matters most: it is the only
+// thing standing between a user and a membership list nothing else can rebuild.
+const GROUP_UNDO_AND_DOWNLOAD_API_TRANSLATIONS = {
+  ar: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': 'تم حذف «{group}» و{count} قناة فيها. اشتراكاتك لم تتأثر.',
+    'Group restored': 'تمت استعادة المجموعة',
+    'That group name is in use again, so it was not restored.': 'اسم المجموعة هذا قيد الاستخدام مجددًا، لذا لم تتم الاستعادة.',
+    'newer than this extension': 'أحدث من هذه الإضافة',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader يعمل، لكن نسخة Astra Deck هذه تتحدث بواجهة برمجية أقدم مما يقبله{versions}. حدّث الإضافة ثم اختر «تحقق مجددًا».',
+    ' (it needs at least API {minimum})': ' (يحتاج إلى الواجهة {minimum} على الأقل)'
+  },
+  de: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': '„{group}“ und die {count} zugehörigen Kanäle gelöscht. Deine Abos sind nicht betroffen.',
+    'Group restored': 'Gruppe wiederhergestellt',
+    'That group name is in use again, so it was not restored.': 'Dieser Gruppenname ist wieder in Gebrauch, deshalb wurde nichts wiederhergestellt.',
+    'newer than this extension': 'neuer als diese Erweiterung',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader läuft, aber dieses Astra Deck spricht eine ältere API, als er akzeptiert{versions}. Aktualisiere die Erweiterung und wähle dann erneut „Prüfen“.',
+    ' (it needs at least API {minimum})': ' (er benötigt mindestens API {minimum})'
+  },
+  es: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': 'Se eliminó «{group}» y sus {count} canales. Tus suscripciones no se ven afectadas.',
+    'Group restored': 'Grupo restaurado',
+    'That group name is in use again, so it was not restored.': 'Ese nombre de grupo está en uso otra vez, así que no se restauró.',
+    'newer than this extension': 'más reciente que esta extensión',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader está en marcha, pero este Astra Deck habla una API más antigua de la que acepta{versions}. Actualiza la extensión y vuelve a elegir Comprobar.',
+    ' (it needs at least API {minimum})': ' (necesita al menos la API {minimum})'
+  },
+  fr: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': '« {group} » et ses {count} chaînes ont été supprimés. Vos abonnements ne sont pas touchés.',
+    'Group restored': 'Groupe restauré',
+    'That group name is in use again, so it was not restored.': 'Ce nom de groupe est de nouveau utilisé, rien n’a donc été restauré.',
+    'newer than this extension': 'plus récent que cette extension',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader fonctionne, mais cet Astra Deck parle une API plus ancienne que celle qu’il accepte{versions}. Mettez l’extension à jour, puis choisissez Vérifier à nouveau.',
+    ' (it needs at least API {minimum})': ' (il lui faut au moins l’API {minimum})'
+  },
+  it: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': '«{group}» e i suoi {count} canali sono stati eliminati. I tuoi abbonamenti non sono toccati.',
+    'Group restored': 'Gruppo ripristinato',
+    'That group name is in use again, so it was not restored.': 'Quel nome di gruppo è di nuovo in uso, quindi non è stato ripristinato.',
+    'newer than this extension': 'più recente di questa estensione',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader è in esecuzione, ma questo Astra Deck parla un’API più vecchia di quella che accetta{versions}. Aggiorna l’estensione, poi scegli di nuovo Controlla.',
+    ' (it needs at least API {minimum})': ' (gli serve almeno l’API {minimum})'
+  },
+  ja: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': '「{group}」とその {count} 件のチャンネルを削除しました。登録チャンネルには影響しません。',
+    'Group restored': 'グループを復元しました',
+    'That group name is in use again, so it was not restored.': 'そのグループ名は再び使われているため、復元しませんでした。',
+    'newer than this extension': 'この拡張機能より新しい',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader は動作していますが、この Astra Deck は受け付けられる API より古い API を使っています{versions}。拡張機能を更新してから、もう一度「確認」を選んでください。',
+    ' (it needs at least API {minimum})': '（少なくとも API {minimum} が必要です）'
+  },
+  ko: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': '“{group}”과(와) 여기에 속한 채널 {count}개를 삭제했습니다. 구독에는 영향이 없습니다.',
+    'Group restored': '그룹을 복원했습니다',
+    'That group name is in use again, so it was not restored.': '해당 그룹 이름이 다시 사용 중이라 복원하지 않았습니다.',
+    'newer than this extension': '이 확장 프로그램보다 최신',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader는 실행 중이지만, 이 Astra Deck은 허용되는 것보다 오래된 API를 사용합니다{versions}. 확장 프로그램을 업데이트한 뒤 다시 확인을 선택해 주세요.',
+    ' (it needs at least API {minimum})': ' (최소 API {minimum}이(가) 필요합니다)'
+  },
+  pt_BR: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': '“{group}” e seus {count} canais foram excluídos. Suas inscrições não são afetadas.',
+    'Group restored': 'Grupo restaurado',
+    'That group name is in use again, so it was not restored.': 'Esse nome de grupo está em uso de novo, então nada foi restaurado.',
+    'newer than this extension': 'mais recente que esta extensão',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'O Astra Downloader está em execução, mas este Astra Deck fala uma API mais antiga do que ele aceita{versions}. Atualize a extensão e escolha Verificar de novo.',
+    ' (it needs at least API {minimum})': ' (ele precisa pelo menos da API {minimum})'
+  },
+  ru: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': '«{group}» и его каналы ({count}) удалены. На ваши подписки это не влияет.',
+    'Group restored': 'Группа восстановлена',
+    'That group name is in use again, so it was not restored.': 'Это имя группы снова занято, поэтому восстановление не выполнено.',
+    'newer than this extension': 'новее этого расширения',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader работает, но этот Astra Deck использует более старый API, чем он принимает{versions}. Обновите расширение и снова выберите «Проверить».',
+    ' (it needs at least API {minimum})': ' (нужен как минимум API {minimum})'
+  },
+  zh_CN: {
+    'Deleted "{group}" and its {count} channels. Your subscriptions are not affected.': '已删除“{group}”及其中的 {count} 个频道。你的订阅不受影响。',
+    'Group restored': '已恢复分组',
+    'That group name is in use again, so it was not restored.': '该分组名称又被占用了，因此没有恢复。',
+    'newer than this extension': '比此扩展更新',
+    'Astra Downloader is running, but this Astra Deck speaks an older API than it accepts{versions}. Update the extension, then choose Check again.': 'Astra Downloader 正在运行，但此 Astra Deck 使用的 API 比它接受的更旧{versions}。请更新扩展，然后再次选择“检查”。',
+    ' (it needs at least API {minimum})': '（它至少需要 API {minimum}）'
+  }
+};
+for (const [locale, messages] of Object.entries(GROUP_UNDO_AND_DOWNLOAD_API_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The chat mode-change notice toggle hides a renderer tag, so the selector
 // needs no translation, but its settings copy does like any sub-feature.
 const CHAT_MODE_NOTICE_TRANSLATIONS = {
