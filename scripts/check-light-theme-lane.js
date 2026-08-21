@@ -5,12 +5,12 @@
 //
 // Every theming defect found in the 2026-08-06 audit shared one root cause:
 // nothing checked injected CSS against YouTube's light theme, so surfaces
-// shipped dark-first and painted near-white text onto a near-white page. Five
+// shipped dark-first and painted low-contrast text onto a light page. Five
 // of them were on by default.
 //
 // YouTube's light theme simply omits the `dark` attribute on <html>, so
 // `html:not([dark])` is the lane. This gate finds every injected rule that
-// paints near-white text without a `[dark]` scope, and requires the same
+// paints text below the near-invisible floor without a `[dark]` scope, and requires the same
 // surface to be re-specified inside that lane.
 //
 // It is a RATCHET: scripts/light-theme-baseline.json records the surfaces that
@@ -24,6 +24,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { compositeColor, contrast, parseColor } = require('./check-contrast.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const BASELINE_PATH = path.join(__dirname, 'light-theme-baseline.json');
@@ -62,15 +63,16 @@ function collectCoreModules() {
 // loudest of all. `check-userscript-symbols.js` set this pattern.
 const MIN_SOURCES = 30;
 
-// A colour that is legible on a dark background and therefore invisible, or
-// close to it, on YouTube's light one.
-const NEAR_WHITE = new RegExp([
-    '#f{3}\\b',
-    '#f{6}\\b',
-    '#[ef][0-9a-f]{5}\\b',
-    'rgba?\\(\\s*2[3-5][0-9]\\s*,\\s*2[3-5][0-9]\\s*,\\s*2[3-5][0-9]',
-    '\\bwhite\\b'
-].join('|'), 'i');
+// YouTube's light lane resolves --yt-spec-base-background to white. This gate
+// intentionally detects catastrophic near-invisibility, not every WCAG AA
+// miss: popup/sidepanel contrast and rendered a11y lanes own the 4.5:1 audit.
+// A measured ratio below 2.00:1 catches pale neutrals such as #d8d8d8 while
+// keeping chromatically distinct red, salmon, and 2.00:1 amber out of this
+// narrow source-level ratchet. Ratios are classified at the same two-decimal
+// precision the contrast audit reports, avoiding floating-point boundary noise.
+const YOUTUBE_LIGHT_BACKGROUND = '#ffffff';
+const LIGHT_THEME_CONTRAST_FLOOR = 2;
+const YOUTUBE_LIGHT_BACKGROUND_RGB = parseColor(YOUTUBE_LIGHT_BACKGROUND);
 
 // `color:` only. Backgrounds and borders degrade to "low contrast"; text
 // colour degrades to "invisible", which is the failure this gate exists for.
@@ -246,11 +248,32 @@ function providesOpaqueGround(body) {
     return backgroundsIn(body).some(isOpaqueGround);
 }
 
-function paintsNearWhiteIn(body, lane) {
+function lightThemeContrast(value) {
+    const normalized = String(value || '').replace(/\s*!important\s*$/i, '').trim();
+    try {
+        return contrast(
+            compositeColor(normalized, YOUTUBE_LIGHT_BACKGROUND_RGB),
+            YOUTUBE_LIGHT_BACKGROUND_RGB
+        );
+    } catch (_) {
+        // inherit/currentColor and unresolved host tokens have no standalone
+        // colour to measure. YouTube owns --yt-spec-* values in the rendered
+        // theme, so their dark fallback is not evidence of the light colour.
+        // Astra tokens are resolved through the two parsed palettes above.
+        return null;
+    }
+}
+
+function isNearInvisibleOnLight(value) {
+    const ratio = lightThemeContrast(value);
+    return ratio !== null && Number(ratio.toFixed(2)) < LIGHT_THEME_CONTRAST_FLOOR;
+}
+
+function paintsNearInvisibleOnLight(body, lane) {
     COLOR_DECL.lastIndex = 0;
     let decl;
     while ((decl = COLOR_DECL.exec(body)) !== null) {
-        if (NEAR_WHITE.test(resolveColor(decl[1], lane))) return true;
+        if (isNearInvisibleOnLight(resolveColor(decl[1], lane))) return true;
     }
     return false;
 }
@@ -297,7 +320,7 @@ function scan(files) {
         if (/(?:^|[;{\s])color\s*:\s*(?:inherit|currentColor)\b/i.test(body)) {
             for (const token of tokens) themeAware.add(token);
         }
-        if (paintsNearWhiteIn(body, 'dark') && !paintsNearWhiteIn(body, 'light')) {
+        if (paintsNearInvisibleOnLight(body, 'dark') && !paintsNearInvisibleOnLight(body, 'light')) {
             for (const token of tokens) themeAware.add(token);
         }
     }
@@ -333,7 +356,7 @@ function scan(files) {
                 // dark value on screen, which is worse than no lane at all
                 // because it stops anyone looking again.
                 const selfGrounded = [...tokens].some(token => opaquelyGrounded.has(token));
-                if (paintsNearWhiteIn(body, 'light') && !selfGrounded) {
+                if (paintsNearInvisibleOnLight(body, 'light') && !selfGrounded) {
                     for (const token of tokens) {
                         if (!inertLane.has(token)) inertLane.set(token, new Set());
                         inertLane.get(token).add(rel);
@@ -345,13 +368,13 @@ function scan(files) {
             }
             if (darkScoped(selector)) continue;
 
-            if (!paintsNearWhiteIn(body, 'dark')) continue;
+            if (!paintsNearInvisibleOnLight(body, 'dark')) continue;
             // Near-white in the dark lane but not in the light one means the
             // colour comes from a token that relights, so the surface is
             // already theme-aware and demanding a separate html:not([dark])
             // rule for it would be busywork. This is the shape the burndown
             // should aim for: retokenise, do not hand-write a second rule.
-            if (!paintsNearWhiteIn(body, 'light')) continue;
+            if (!paintsNearInvisibleOnLight(body, 'light')) continue;
             if ([...tokens].some(token => themeAware.has(token))) continue;
             if ([...tokens].some(token => grounded.has(token) || inheritsGround(token))) continue;
             for (const token of tokens) {
@@ -388,7 +411,7 @@ function main() {
 
     if (update) {
         const next = {
-            note: 'Surfaces that paint near-white text with no html:not([dark]) lane. '
+            note: 'Surfaces whose text measures below 2.00:1 against YouTube light background #ffffff with no html:not([dark]) lane. '
                 + 'accepted = predates the gate, shrink freely. '
                 + 'covered = has a light lane and must keep it.',
             accepted: uncovered,
@@ -409,7 +432,7 @@ function main() {
     // or not the surface was ever recorded as covered.
     if (regressions.length || lost.length || inert.length) {
         if (regressions.length) {
-            console.error('[light-theme-lane] FAIL — injected surfaces paint near-white text with no html:not([dark]) rule:');
+            console.error('[light-theme-lane] FAIL — injected surfaces paint text below 2.00:1 on YouTube light background with no html:not([dark]) rule:');
             for (const token of regressions) {
                 console.error(`  .${token}  (${[...needsLane.get(token)].join(', ')})`);
             }
@@ -445,8 +468,11 @@ if (require.main === module) main();
 // a poor oracle for them: three of the four reasons this gate now skips a
 // surface produce no output at all when they fire.
 module.exports = {
-    NEAR_WHITE,
-    paintsNearWhiteIn,
+    LIGHT_THEME_CONTRAST_FLOOR,
+    YOUTUBE_LIGHT_BACKGROUND,
+    isNearInvisibleOnLight,
+    lightThemeContrast,
+    paintsNearInvisibleOnLight,
     providesOpaqueGround,
     providesOwnGround,
     readPalette,
