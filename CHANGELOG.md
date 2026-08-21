@@ -8,6 +8,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- Subscription Groups now points new users to + Group when nothing has been
+  made yet. Watch Later Workbench and Video Notes also replace blank space with
+  a labelled prompt that says what to do next.
+
 - The accessibility smoke now loads the real popup and side panel from their
   temporary extension origin. It checks the browser-assigned extension ID,
   page script startup, extension storage, origin fetches, keyboard travel,

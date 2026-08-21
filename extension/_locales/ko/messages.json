@@ -6123,6 +6123,12 @@
   "subscriptionGroupPlayingTpl": {
     "message": "{group}에서 동영상 {count}개 재생 중{truncated}"
   },
+  "subscriptionGroupsEmptyCopy": {
+    "message": "+ 그룹을 선택해 첫 그룹을 만드세요."
+  },
+  "subscriptionGroupsEmptyTitle": {
+    "message": "아직 그룹이 없습니다"
+  },
   "subscriptionGroupsExported": {
     "message": "구독 그룹 내보냄"
   },
@@ -7608,6 +7614,12 @@
   "videoNotesEmpty": {
     "message": "이 동영상에 저장된 메모가 없습니다."
   },
+  "videoNotesEmptyCopy": {
+    "message": "아래에 입력하여 이 동영상의 메모를 저장하세요."
+  },
+  "videoNotesEmptyTitle": {
+    "message": "아직 메모가 없습니다"
+  },
   "videoNotesExport": {
     "message": "메모 내보내기"
   },
@@ -7836,6 +7848,12 @@
   },
   "wlwbDurationMinPlaceholder": {
     "message": "길이 ≥ 분…"
+  },
+  "wlwbEmptyCopy": {
+    "message": "필터를 지우거나 나중에 볼 동영상을 스크롤하여 더 불러오세요."
+  },
+  "wlwbEmptyTitle": {
+    "message": "이 보기에 동영상이 없습니다"
   },
   "wlwbExportCsv": {
     "message": "CSV 내보내기"

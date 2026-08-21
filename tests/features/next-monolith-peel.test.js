@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { sources, config } = require('../helpers/source');
+const { fakeNode, fakeDocument } = require('../helpers/monolith');
 
 function loadFeatureModule(modulePath, namespaceKey) {
     const originalFeatures = globalThis.YTKitFeatures;
@@ -1735,6 +1736,41 @@ test('videoNotes factory returns the per-video notes runtime surface', () => {
         '_attach'
     ]) {
         assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
+    }
+});
+
+test('videoNotes renders a labelled no-note state with the next action', () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = fakeDocument(() => []);
+    try {
+        const { mod } = loadFeatureModule(
+            '../../extension/features/video-notes/index.js',
+            'videoNotes'
+        );
+        const feature = mod.createVideoNotesFeature({
+            appState: { settings: {} },
+            getVideoId: () => 'videoA12345',
+            t: (_key, fallback) => fallback
+        });
+        feature._container = fakeNode({ tag: 'section' });
+
+        feature._renderPanel();
+
+        const empty = feature._container.children.find(
+            (child) => child.classList.contains('ytkit-video-notes-empty'));
+        assert.ok(empty, 'the no-note state must attach to the panel tree');
+        assert.equal(empty.hidden, false);
+        assert.equal(empty.getAttribute('role'), 'status');
+        assert.equal(empty.getAttribute('aria-labelledby'), 'ytkit-video-notes-empty-title');
+        assert.equal(empty.children[0].tagName, 'STRONG');
+        assert.equal(empty.children[0].id, 'ytkit-video-notes-empty-title');
+        assert.match(empty.children[0].textContent, /note/i);
+        assert.match(empty.children[1].textContent, /typing/i,
+            'the state must explain how to create the note');
+        assert.ok(feature._container.children.some((child) => child.tagName === 'TEXTAREA'),
+            'the named next action must be present beside the state');
+    } finally {
+        globalThis.document = previousDocument;
     }
 });
 

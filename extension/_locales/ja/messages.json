@@ -6123,6 +6123,12 @@
   "subscriptionGroupPlayingTpl": {
     "message": "{group} の {count} 本の動画を再生中{truncated}"
   },
+  "subscriptionGroupsEmptyCopy": {
+    "message": "「+ グループ」を選択して最初のグループを作成します。"
+  },
+  "subscriptionGroupsEmptyTitle": {
+    "message": "グループはまだありません"
+  },
   "subscriptionGroupsExported": {
     "message": "登録チャンネルのグループをエクスポートしました"
   },
@@ -7608,6 +7614,12 @@
   "videoNotesEmpty": {
     "message": "この動画に保存されたメモはありません。"
   },
+  "videoNotesEmptyCopy": {
+    "message": "下に入力すると、この動画のメモが保存されます。"
+  },
+  "videoNotesEmptyTitle": {
+    "message": "メモはまだありません"
+  },
   "videoNotesExport": {
     "message": "メモをエクスポート"
   },
@@ -7836,6 +7848,12 @@
   },
   "wlwbDurationMinPlaceholder": {
     "message": "再生時間 ≥ 分…"
+  },
+  "wlwbEmptyCopy": {
+    "message": "フィルターを解除するか、[後で見る] をスクロールして動画をさらに読み込んでください。"
+  },
+  "wlwbEmptyTitle": {
+    "message": "この表示に動画はありません"
   },
   "wlwbExportCsv": {
     "message": "CSVをエクスポート"

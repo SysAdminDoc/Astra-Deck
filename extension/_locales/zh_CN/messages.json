@@ -6123,6 +6123,12 @@
   "subscriptionGroupPlayingTpl": {
     "message": "正在播放 {group} 中的 {count} 个视频{truncated}"
   },
+  "subscriptionGroupsEmptyCopy": {
+    "message": "选择“+ 分组”来创建第一个分组。"
+  },
+  "subscriptionGroupsEmptyTitle": {
+    "message": "还没有分组"
+  },
   "subscriptionGroupsExported": {
     "message": "已导出订阅组"
   },
@@ -7608,6 +7614,12 @@
   "videoNotesEmpty": {
     "message": "此视频没有已保存的笔记。"
   },
+  "videoNotesEmptyCopy": {
+    "message": "在下方输入内容，为此视频保存笔记。"
+  },
+  "videoNotesEmptyTitle": {
+    "message": "还没有笔记"
+  },
   "videoNotesExport": {
     "message": "导出笔记"
   },
@@ -7836,6 +7848,12 @@
   },
   "wlwbDurationMinPlaceholder": {
     "message": "时长 ≥ 分钟…"
+  },
+  "wlwbEmptyCopy": {
+    "message": "清除筛选条件或滚动“稍后观看”以加载更多视频。"
+  },
+  "wlwbEmptyTitle": {
+    "message": "此视图中没有视频"
   },
   "wlwbExportCsv": {
     "message": "导出 CSV"

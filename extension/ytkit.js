@@ -33138,6 +33138,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 else if (sortMode === 'title') entries.sort((a, b) => a.title.localeCompare(b.title));
                 const list = this._panel.querySelector('.ytkit-wlwb-list');
                 list.replaceChildren();
+                if (!entries.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-wlwb-empty';
+                    empty.setAttribute('role', 'status');
+                    empty.setAttribute('aria-labelledby', 'ytkit-wlwb-empty-title');
+                    const title = document.createElement('strong');
+                    title.id = 'ytkit-wlwb-empty-title';
+                    title.textContent = t('wlwbEmptyTitle', 'No videos in this view');
+                    const copy = document.createElement('span');
+                    copy.textContent = t('wlwbEmptyCopy', 'Clear a filter or scroll Watch Later to load more videos.');
+                    empty.append(title, copy);
+                    list.appendChild(empty);
+                }
                 entries.forEach((e) => {
                     const rowEl = document.createElement('div');
                     rowEl.className = 'ytkit-wlwb-row';
@@ -33693,6 +33706,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-wlwb-controls input, .ytkit-wlwb-controls select { padding: 6px 8px; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 6px; background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.06)); color: var(--yt-spec-text-primary, #fff); font-size: 12px; }
                     .ytkit-wlwb-status { padding: 0 12px 6px; font-size: 11.5px; color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.65)); }
                     .ytkit-wlwb-list { flex: 1; overflow-y: auto; padding: 4px 0; min-height: 60px; }
+                    .ytkit-wlwb-empty { display: flex; flex-direction: column; gap: 4px; margin: 6px 12px 10px; padding: 12px; border: 1px dashed var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.16)); border-radius: 8px; background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.04)); }
+                    .ytkit-wlwb-empty strong { color: var(--yt-spec-text-primary, #fff); font-size: 12.5px; }
+                    .ytkit-wlwb-empty span { color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.65)); font-size: 11.5px; line-height: 1.4; }
                     .ytkit-wlwb-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 12px; font-size: 12px; }
                     .ytkit-wlwb-row span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
                     .ytkit-wlwb-meta { color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.55)); }
@@ -36773,6 +36789,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-digest-count{font-variant-numeric:tabular-nums;color:#bae6fd;font-weight:700;}
                     .ytkit-sub-digest-muted{color:rgba(226,232,240,0.58);font-variant-numeric:tabular-nums;}
                     .ytkit-sub-digest-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
+                    .ytkit-sub-groups-empty{display:flex;flex:1 1 260px;flex-direction:column;gap:2px;min-width:220px;padding:8px 10px;border:1px dashed rgba(148,163,184,0.28);}
+                    .ytkit-sub-groups-empty strong{color:#f8fafc;font:700 12px/1.3 Roboto,Arial,sans-serif;}
+                    .ytkit-sub-groups-empty span{color:rgba(226,232,240,0.68);font:11px/1.35 Roboto,Arial,sans-serif;}
                     .ytkit-sub-health-stats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
                     .ytkit-sub-health-stat{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.07);color:rgba(226,232,240,0.78);font:600 11px/1.4 Roboto,Arial,sans-serif;}
                     .ytkit-sub-health-stat b{color:#f8fafc;font-variant-numeric:tabular-nums;}
@@ -36841,6 +36860,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:not([dark]) .ytkit-sub-digest-name,html:not([dark]) .ytkit-sub-members-name{color:var(--yt-spec-text-primary,#0f0f0f);}
                     html:not([dark]) .ytkit-sub-digest-count{color:#075985;}
                     html:not([dark]) .ytkit-sub-digest-empty,html:not([dark]) .ytkit-sub-members-empty{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-sub-groups-empty{border-color:rgba(71,85,105,0.28);}
+                    html:not([dark]) .ytkit-sub-groups-empty strong{color:#0f172a;}
+                    html:not([dark]) .ytkit-sub-groups-empty span{color:#475569;}
                     html:not([dark]) .ytkit-sub-health-stat{color:var(--yt-spec-text-secondary,#606060);}
                     html:not([dark]) .ytkit-sub-health-stat b{color:var(--yt-spec-text-primary,#0f0f0f);}
                     html:not([dark]) .ytkit-sub-health-section{color:var(--yt-spec-text-secondary,#606060);}
@@ -38576,6 +38598,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     for (const childId of this._getChildGroupIds(id, groups)) renderGroupChip(childId);
                 }
 
+                this._renderGroupsEmptyState(bar, groups);
+
                 const newBtn = document.createElement('button');
                 newBtn.type = 'button';
                 newBtn.textContent = t('subscriptionToolbarNewGroup', '+ Group');
@@ -38881,6 +38905,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Kept below the lifecycle methods: the hardening suite pins
             // toolbar/digest/lifecycle behavior inside a fixed-size slice
             // of this feature block.
+            _renderGroupsEmptyState(bar, groups) {
+                if (!bar || Object.keys(groups || {}).length > 0) return;
+                const notice = document.createElement('div');
+                notice.className = 'ytkit-sub-digest-empty ytkit-sub-groups-empty';
+                notice.setAttribute('role', 'status');
+                notice.setAttribute('aria-labelledby', 'ytkit-sub-groups-empty-title');
+                const title = document.createElement('strong');
+                title.id = 'ytkit-sub-groups-empty-title';
+                title.textContent = t('subscriptionGroupsEmptyTitle', 'No groups yet');
+                const copy = document.createElement('span');
+                copy.textContent = t('subscriptionGroupsEmptyCopy', 'Choose + Group to create your first group.');
+                notice.append(title, copy);
+                bar.appendChild(notice);
+            },
+
             _renderGroupEmptyState(allowed) {
                 document.querySelectorAll('.ytkit-sub-group-empty').forEach(el => el.remove());
                 // Only an EMPTY group warrants the notice — it hides the whole

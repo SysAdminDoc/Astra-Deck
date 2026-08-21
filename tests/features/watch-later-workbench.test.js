@@ -270,3 +270,33 @@ test('watchLaterWorkbench renders a restorable entry that has no title', () => {
     assert.equal(list.children[0].children[0].textContent, 'videoC123456',
         'the id stands in for a missing title rather than rendering blank');
 });
+
+test('watchLaterWorkbench renders a labelled zero-match state with recovery guidance', () => {
+    const list = fakeNode({ tag: 'div', attributes: { class: 'ytkit-wlwb-list' } });
+    const status = fakeNode({ tag: 'div', attributes: { class: 'ytkit-wlwb-status' } });
+    const feature = loadFeature('watchLaterWorkbench', {
+        document: fakeDocument(() => [])
+    });
+    feature._panel = fakeNode({ tag: 'div' });
+    feature._panel.querySelector = (selector) => {
+        if (selector === '.ytkit-wlwb-list') return list;
+        if (selector === '.ytkit-wlwb-status') return status;
+        return null;
+    };
+    feature._scanRows = () => [];
+    feature._renderRecovery = () => {};
+
+    feature._refreshPreview();
+
+    assert.equal(list.children.length, 1, 'zero matches must render one state instead of a blank list');
+    const empty = list.children[0];
+    assert.equal(empty.className, 'ytkit-wlwb-empty');
+    assert.equal(empty.getAttribute('role'), 'status');
+    assert.equal(empty.getAttribute('aria-labelledby'), 'ytkit-wlwb-empty-title');
+    assert.equal(empty.children[0].tagName, 'STRONG');
+    assert.equal(empty.children[0].id, 'ytkit-wlwb-empty-title');
+    assert.match(empty.children[0].textContent, /videos/i);
+    assert.match(empty.children[1].textContent, /filter|scroll/i,
+        'the state must explain how to recover matches');
+    assert.match(status.textContent, /0/, 'the live summary must still report the loaded count');
+});
