@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Incidencia n.º {issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "Ajustes distintos de sus valores predeterminados ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "Copiar lista de funciones"
+  },
+  "featureReportCopyDone": {
+    "message": "Lista de funciones copiada. No se envió nada a ninguna parte."
+  },
+  "featureReportCopyFail": {
+    "message": "No se pudo copiar la lista de funciones."
+  },
+  "featureReportCopyTitle": {
+    "message": "Copia solo los nombres de los ajustes, nunca sus valores. No se envía nada a ninguna parte."
+  },
+  "featureReportNoneChanged": {
+    "message": "ninguno"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Solo nombres, sin valores. No se envió nada a ninguna parte. Está en tu portapapeles y tú decides si lo pegas."
   }
 }

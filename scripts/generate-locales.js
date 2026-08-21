@@ -2215,6 +2215,103 @@ const FEATURE_DISABLE_FEED_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(FEATURE_DISABLE_FEED_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// The user-initiated feature report. Its whole point is being safe to paste in
+// public, and the sentence that says so is the one a non-English reader most
+// needs to be able to read.
+const FEATURE_REPORT_TRANSLATIONS = {
+  ar: {
+    'Copy feature list': 'نسخ قائمة الميزات',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': 'ينسخ أسماء الإعدادات فقط، وليس قيمها أبدًا. ولا يُرسل أي شيء إلى أي جهة.',
+    'Settings changed from their defaults ({count}):': 'الإعدادات المختلفة عن الافتراضية ({count}):',
+    'none': 'لا شيء',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': 'الأسماء فقط، بدون قيم. لم يُرسل أي شيء إلى أي جهة. هذا موجود في حافظتك وأنت من يقرر أين تلصقه.',
+    'Feature list copied. Nothing was sent anywhere.': 'تم نسخ قائمة الميزات. لم يُرسل أي شيء إلى أي جهة.',
+    'Could not copy the feature list.': 'تعذّر نسخ قائمة الميزات.'
+  },
+  de: {
+    'Copy feature list': 'Funktionsliste kopieren',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': 'Kopiert nur Einstellungsnamen, niemals deren Werte. Es wird nichts irgendwohin gesendet.',
+    'Settings changed from their defaults ({count}):': 'Von den Standardwerten abweichende Einstellungen ({count}):',
+    'none': 'keine',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': 'Nur Namen, keine Werte. Es wurde nichts irgendwohin gesendet. Das liegt in deiner Zwischenablage und du entscheidest, ob du es einfügst.',
+    'Feature list copied. Nothing was sent anywhere.': 'Funktionsliste kopiert. Es wurde nichts irgendwohin gesendet.',
+    'Could not copy the feature list.': 'Die Funktionsliste konnte nicht kopiert werden.'
+  },
+  es: {
+    'Copy feature list': 'Copiar lista de funciones',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': 'Copia solo los nombres de los ajustes, nunca sus valores. No se envía nada a ninguna parte.',
+    'Settings changed from their defaults ({count}):': 'Ajustes distintos de sus valores predeterminados ({count}):',
+    'none': 'ninguno',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': 'Solo nombres, sin valores. No se envió nada a ninguna parte. Está en tu portapapeles y tú decides si lo pegas.',
+    'Feature list copied. Nothing was sent anywhere.': 'Lista de funciones copiada. No se envió nada a ninguna parte.',
+    'Could not copy the feature list.': 'No se pudo copiar la lista de funciones.'
+  },
+  fr: {
+    'Copy feature list': 'Copier la liste des fonctions',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': 'Copie uniquement les noms des réglages, jamais leurs valeurs. Rien n’est envoyé nulle part.',
+    'Settings changed from their defaults ({count}):': 'Réglages différents de leur valeur par défaut ({count}) :',
+    'none': 'aucun',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': 'Noms seulement, aucune valeur. Rien n’a été envoyé nulle part. C’est dans votre presse-papiers et vous décidez si vous le collez.',
+    'Feature list copied. Nothing was sent anywhere.': 'Liste des fonctions copiée. Rien n’a été envoyé nulle part.',
+    'Could not copy the feature list.': 'Impossible de copier la liste des fonctions.'
+  },
+  it: {
+    'Copy feature list': 'Copia elenco funzioni',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': 'Copia solo i nomi delle impostazioni, mai i loro valori. Non viene inviato nulla da nessuna parte.',
+    'Settings changed from their defaults ({count}):': 'Impostazioni diverse dai valori predefiniti ({count}):',
+    'none': 'nessuna',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': 'Solo nomi, nessun valore. Non è stato inviato nulla da nessuna parte. È nei tuoi appunti e decidi tu se incollarlo.',
+    'Feature list copied. Nothing was sent anywhere.': 'Elenco funzioni copiato. Non è stato inviato nulla da nessuna parte.',
+    'Could not copy the feature list.': 'Impossibile copiare l’elenco delle funzioni.'
+  },
+  ja: {
+    'Copy feature list': '機能リストをコピー',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': '設定の名前だけをコピーします。値は決してコピーせず、どこにも送信しません。',
+    'Settings changed from their defaults ({count}):': '既定値から変更された設定 ({count}):',
+    'none': 'なし',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': '名前のみで、値は含みません。どこにも送信されていません。クリップボードにあるので、貼り付けるかどうかはあなたが決めます。',
+    'Feature list copied. Nothing was sent anywhere.': '機能リストをコピーしました。どこにも送信していません。',
+    'Could not copy the feature list.': '機能リストをコピーできませんでした。'
+  },
+  ko: {
+    'Copy feature list': '기능 목록 복사',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': '설정 이름만 복사하며 값은 절대 복사하지 않습니다. 아무 곳에도 전송되지 않습니다.',
+    'Settings changed from their defaults ({count}):': '기본값과 다른 설정 ({count}):',
+    'none': '없음',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': '이름만 있고 값은 없습니다. 어디에도 전송되지 않았습니다. 클립보드에 있으며 붙여넣을지는 사용자가 결정합니다.',
+    'Feature list copied. Nothing was sent anywhere.': '기능 목록을 복사했습니다. 어디에도 전송되지 않았습니다.',
+    'Could not copy the feature list.': '기능 목록을 복사하지 못했습니다.'
+  },
+  pt_BR: {
+    'Copy feature list': 'Copiar lista de recursos',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': 'Copia apenas os nomes das configurações, nunca seus valores. Nada é enviado para lugar nenhum.',
+    'Settings changed from their defaults ({count}):': 'Configurações diferentes dos padrões ({count}):',
+    'none': 'nenhuma',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': 'Somente nomes, sem valores. Nada foi enviado para lugar nenhum. Está na sua área de transferência e você decide se cola.',
+    'Feature list copied. Nothing was sent anywhere.': 'Lista de recursos copiada. Nada foi enviado para lugar nenhum.',
+    'Could not copy the feature list.': 'Não foi possível copiar a lista de recursos.'
+  },
+  ru: {
+    'Copy feature list': 'Скопировать список функций',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': 'Копирует только названия настроек, но никогда их значения. Ничего никуда не отправляется.',
+    'Settings changed from their defaults ({count}):': 'Настройки, отличающиеся от значений по умолчанию ({count}):',
+    'none': 'нет',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': 'Только названия, без значений. Ничего никуда не отправлено. Это в вашем буфере обмена, и вы сами решаете, вставлять ли это.',
+    'Feature list copied. Nothing was sent anywhere.': 'Список функций скопирован. Ничего никуда не отправлено.',
+    'Could not copy the feature list.': 'Не удалось скопировать список функций.'
+  },
+  zh_CN: {
+    'Copy feature list': '复制功能列表',
+    'Copies setting names only, never their values. Nothing is sent anywhere.': '只复制设置名称，从不复制它们的值。不会向任何地方发送内容。',
+    'Settings changed from their defaults ({count}):': '与默认值不同的设置（{count}）：',
+    'none': '无',
+    'Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it.': '只有名称，没有值。没有向任何地方发送内容。它在你的剪贴板里，是否粘贴由你决定。',
+    'Feature list copied. Nothing was sent anywhere.': '已复制功能列表。没有向任何地方发送内容。',
+    'Could not copy the feature list.': '无法复制功能列表。'
+  }
+};
+for (const [locale, messages] of Object.entries(FEATURE_REPORT_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The chat mode-change notice toggle hides a renderer tag, so the selector
 // needs no translation, but its settings copy does like any sub-feature.
 const CHAT_MODE_NOTICE_TRANSLATIONS = {

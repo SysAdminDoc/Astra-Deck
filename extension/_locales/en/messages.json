@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Issue #{issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "Settings changed from their defaults ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "Copy feature list"
+  },
+  "featureReportCopyDone": {
+    "message": "Feature list copied. Nothing was sent anywhere."
+  },
+  "featureReportCopyFail": {
+    "message": "Could not copy the feature list."
+  },
+  "featureReportCopyTitle": {
+    "message": "Copies setting names only, never their values. Nothing is sent anywhere."
+  },
+  "featureReportNoneChanged": {
+    "message": "none"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it."
   }
 }

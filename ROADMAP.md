@@ -242,13 +242,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
   Acceptance: a sustained fetch failure (not a single transient) produces one passive, dismissible page-level indicator per feature per session that names the upstream service and distinguishes "service unreachable" from "no data for this video"; it never blocks playback, never retries on click more than the existing backoff allows, and is suppressed when the feature is off.
   Complexity: M
 
-- [ ] P2 — Local, user-initiated enabled-feature report for the feedback thread
-  Why: discussion #44 states the blind spot directly — "with 150+ features, I genuinely don't know which ones people treasure and which nobody has toggled on" — and the project's no-telemetry stance means the only ethical answer is a report the user chooses to produce and paste. The diagnostic-bundle serializer already exists; this is a smaller, privacy-safe sibling.
-  Evidence: discussion #44 (2026-07-30, 0 replies); `extension/popup.js:4522-4541` already builds an `astraDeckBugReport` payload with a settings diff, which is the machinery to reuse.
-  Touches: `extension/popup.js`, `extension/core/settings-schema.js` (non-default diff helper), locales
-  Acceptance: one action produces a copyable block listing only feature IDs that differ from their defaults plus the Astra/browser versions — no URLs, channel names, keys, filter lists, notes, or bookmarks; a test asserts the payload contains none of those field names even when they are populated; the copy states plainly that nothing is sent anywhere and that the user chooses where to paste it.
-  Complexity: S
-
 - [ ] P2 — Add a `build-for-amo` script and prove the build reproduces in Mozilla's reviewer environment
   Why: AMO now auto-builds submitted source and compares it against the uploaded package, and a match "can move through review much more quickly" — otherwise review runs 3 days to 5 weeks. `build-extension.js` is exactly the generator that triggers mandatory source submission, and the reviewer environment is published and specific, so reproducibility is testable before submitting rather than discovered during review.
   Evidence: Mozilla's source-code-submission rules require the reviewer's rebuild to produce *no differences*, and the default reviewer environment is Ubuntu 24.04.4 LTS on **ARM64** with Node 24.14.0 / npm 11.9.0. `package.json` has no `build-for-amo` script; `.nvmrc` says 22; `crx3` has never been exercised on ARM64. Blocked companion item "Firefox AMO submission" depends on this and cannot be de-risked without it.

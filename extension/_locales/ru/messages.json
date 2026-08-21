@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "Задача №{issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "Настройки, отличающиеся от значений по умолчанию ({count}):"
+  },
+  "featureReportCopy": {
+    "message": "Скопировать список функций"
+  },
+  "featureReportCopyDone": {
+    "message": "Список функций скопирован. Ничего никуда не отправлено."
+  },
+  "featureReportCopyFail": {
+    "message": "Не удалось скопировать список функций."
+  },
+  "featureReportCopyTitle": {
+    "message": "Копирует только названия настроек, но никогда их значения. Ничего никуда не отправляется."
+  },
+  "featureReportNoneChanged": {
+    "message": "нет"
+  },
+  "featureReportPrivacyNote": {
+    "message": "Только названия, без значений. Ничего никуда не отправлено. Это в вашем буфере обмена, и вы сами решаете, вставлять ли это."
   }
 }

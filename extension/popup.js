@@ -627,6 +627,7 @@ const schemaOverviewList = $('#schema-overview-list');
 const schemaOverviewDiffCount = $('#schema-overview-diff-count');
 const schemaOverviewDiffToggle = $('#schema-overview-diff-toggle');
 const schemaOverviewDiffCopy = $('#schema-overview-diff-copy');
+const featureReportCopy = $('#feature-report-copy');
 const schemaOverviewDiff = $('#schema-overview-diff');
 const schemaOverviewDiffEmpty = $('#schema-overview-diff-empty');
 const schemaOverviewDiffList = $('#schema-overview-diff-list');
@@ -2715,31 +2716,9 @@ async function copySelectorHealthReport() {
         // permission-denied path explicitly so we can fall back to the
         // ancient textarea-execCommand approach without a console warning
         // bubbling out of the .catch.
-        try {
-            await navigator.clipboard.writeText(payload);
-            setStatus(t('selectorHealthCopyDone', 'Copied — paste into a GitHub issue.'));
-        } catch (clipErr) {
-            // Fallback: hidden textarea + document.execCommand('copy').
-            // Same shape as the existing health-banner copy path.
-            const ta = document.createElement('textarea');
-            ta.value = payload;
-            ta.setAttribute('readonly', '');
-            ta.style.position = 'absolute';
-            ta.style.left = '-9999px';
-            document.body.appendChild(ta);
-            ta.select();
-            let ok = false;
-            try { ok = document.execCommand('copy'); } catch (_) {
-                // reason: execCommand may throw in tightly-locked-down contexts
-                ok = false;
-            }
-            ta.remove();
-            if (ok) {
-                setStatus(t('selectorHealthCopyDone', 'Copied — paste into a GitHub issue.'));
-            } else {
-                setStatus(t('selectorHealthCopySaveFallback', 'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.'));
-            }
-        }
+        setStatus(await copyTextToClipboard(payload)
+            ? t('selectorHealthCopyDone', 'Copied — paste into a GitHub issue.')
+            : t('selectorHealthCopySaveFallback', 'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.'));
     } catch (_) {
         // reason: any unexpected failure must not break the popup
         setStatus(t('selectorHealthCopySaveFallback', 'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.'));
@@ -2918,24 +2897,9 @@ async function copyExternalApiHealthReport() {
             extensionVersion: getVersion(),
             activeTab: safeTabUrl
         });
-        try {
-            await navigator.clipboard.writeText(payload);
-            setStatus(t('externalHealthCopyDone', 'Copied.'));
-        } catch (_) {
-            const ta = document.createElement('textarea');
-            ta.value = payload;
-            ta.setAttribute('readonly', '');
-            ta.style.position = 'absolute';
-            ta.style.left = '-9999px';
-            document.body.appendChild(ta);
-            ta.select();
-            let ok = false;
-            try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
-            ta.remove();
-            setStatus(ok
-                ? t('externalHealthCopyDone', 'Copied.')
-                : t('externalHealthCopyFail', 'Could not copy.'));
-        }
+        setStatus(await copyTextToClipboard(payload)
+            ? t('externalHealthCopyDone', 'Copied.')
+            : t('externalHealthCopyFail', 'Could not copy.'));
     } catch (_) {
         setStatus(t('externalHealthCopyFail', 'Could not copy.'));
     } finally {
@@ -3389,6 +3353,123 @@ function sanitizeSchemaDiff(changes) {
     }));
 }
 
+// Copies text, falling back to the hidden-textarea route when the popup's
+// clipboard permission is denied. Four surfaces need this and each had grown
+// its own copy of the same twenty lines, differing only in which status
+// string it showed on the way out. Returns whether the text landed; the
+// caller owns the message.
+async function copyTextToClipboard(text) {
+    try {
+        if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (_) {
+        // reason: popup clipboard permission varies by browser and profile
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch (_) {
+        // reason: execCommand throws in tightly-locked-down contexts
+        copied = false;
+    }
+    textarea.remove();
+    return copied;
+}
+
+// A compact browser label from the user agent.
+//
+// The full UA string is a fingerprinting surface and most of it is noise a
+// reader skips anyway. This keeps the engine and its major version — the two
+// things that decide whether a report is reproducible — and drops the rest.
+function describeBrowserForReport(userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '') {
+    const ua = String(userAgent);
+    // Order matters: Edge and Brave both carry "Chrome/", so the specific
+    // engines have to be tried before the one they impersonate.
+    for (const [label, pattern] of [
+        ['Firefox', /Firefox\/(\d+)/],
+        ['Edge', /Edg\/(\d+)/],
+        ['Opera', /OPR\/(\d+)/],
+        ['Chrome', /Chrome\/(\d+)/],
+        ['Safari', /Version\/(\d+).*Safari/]
+    ]) {
+        const match = pattern.exec(ua);
+        if (match) return `${label} ${match[1]}`;
+    }
+    return 'unknown browser';
+}
+
+// The privacy-safe sibling of the diagnostic bundle.
+//
+// The maintainer's blind spot is which of 291 features anyone actually turns
+// on, and the project takes no telemetry, so the only honest answer is a
+// report the user chooses to produce and chooses where to paste. That only
+// works if it is safe to paste in public, which means IDs and nothing else:
+// not one setting VALUE reaches this string, so a filter-list URL, a channel
+// name, a note, a bookmark, or a provider key cannot ride along even when the
+// user has all of them populated.
+function buildEnabledFeatureReport(options = {}) {
+    const {
+        scope = window.__YTKIT_SETTINGS_SCHEMA__,
+        settings = popupState.settings || {},
+        version = '',
+        profile = '',
+        userAgent = undefined
+    } = options;
+
+    const changes = scope && Array.isArray(scope.SETTINGS_SCHEMA)
+        ? getVisibleSchemaChanges(scope, settings, profile || 'store-safe')
+        : [];
+    // getChangedSettings already drops internal (`_`-prefixed) keys, so what
+    // is left is the user-facing surface and nothing else.
+    const keys = changes.map((change) => change.key).sort();
+
+    const lines = [
+        `Astra Deck ${version}`,
+        describeBrowserForReport(userAgent),
+        `Profile: ${profile || 'store-safe'}`,
+        '',
+        t('featureReportChangedTpl', 'Settings changed from their defaults ({count}):')
+            .replace('{count}', String(keys.length))
+    ];
+    if (keys.length) {
+        for (const key of keys) lines.push(`  ${key}`);
+    } else {
+        lines.push('  ' + t('featureReportNoneChanged', 'none'));
+    }
+    lines.push('');
+    lines.push(t('featureReportPrivacyNote',
+        'Names only, no values. Nothing was sent anywhere. This is on your clipboard '
+        + 'and you decide whether to paste it.'));
+    return lines.join('\n');
+}
+
+async function copyEnabledFeatureReport() {
+    if (!featureReportCopy) return;
+    const settings = popupState.settings || {};
+    const policy = ensurePolicyProfile();
+    featureReportCopy.disabled = true;
+    try {
+        const report = buildEnabledFeatureReport({
+            settings,
+            version: manifestVersion,
+            profile: policy ? policy.resolveEffectiveProfile(settings) : 'store-safe'
+        });
+        const copied = await copyTextToClipboard(report);
+        showStatus(copied
+            ? t('featureReportCopyDone', 'Feature list copied. Nothing was sent anywhere.')
+            : t('featureReportCopyFail', 'Could not copy the feature list.'),
+        copied ? 'ok' : 'error', copied ? 3200 : 3600);
+    } finally {
+        featureReportCopy.disabled = false;
+    }
+}
+
 function formatSchemaDiffReport(changes) {
     return JSON.stringify({
         astraDeckSettingsDiff: true,
@@ -3465,28 +3546,7 @@ async function copySchemaOverviewDiff() {
     schemaOverviewDiffCopy.disabled = true;
     const payload = formatSchemaDiffReport(changes);
     try {
-        if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(payload);
-        } else {
-            throw new Error('clipboard unavailable');
-        }
-        showStatus(t('schemaOverviewCopyDiffDone', 'Changed settings copied to clipboard.'), 'ok', 2600);
-    } catch (_) {
-        // reason: popup clipboard permissions vary by browser; preserve the
-        // same textarea fallback used by the other report-copy surfaces.
-        const textarea = document.createElement('textarea');
-        textarea.value = payload;
-        textarea.setAttribute('readonly', '');
-        textarea.style.position = 'absolute';
-        textarea.style.left = '-9999px';
-        document.body.appendChild(textarea);
-        textarea.select();
-        let copied = false;
-        try { copied = document.execCommand('copy'); } catch (_) {
-            // reason: execCommand is unavailable in hardened popup contexts
-            copied = false;
-        }
-        textarea.remove();
+        const copied = await copyTextToClipboard(payload);
         showStatus(copied
             ? t('schemaOverviewCopyDiffDone', 'Changed settings copied to clipboard.')
             : t('schemaOverviewCopyDiffFail', 'Could not copy changed settings.'),
@@ -3659,6 +3719,9 @@ if (schemaOverviewDiffToggle) {
         renderSchemaOverview();
         schemaOverviewDiffToggle.focus();
     });
+}
+if (featureReportCopy) {
+    featureReportCopy.addEventListener('click', () => { void copyEnabledFeatureReport(); });
 }
 if (schemaOverviewDiffCopy) {
     schemaOverviewDiffCopy.addEventListener('click', () => { void copySchemaOverviewDiff(); });

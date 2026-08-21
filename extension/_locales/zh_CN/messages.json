@@ -8076,5 +8076,26 @@
   },
   "settingsFeatureKnownBrokenIssueTpl": {
     "message": "问题 #{issue}"
+  },
+  "featureReportChangedTpl": {
+    "message": "与默认值不同的设置（{count}）："
+  },
+  "featureReportCopy": {
+    "message": "复制功能列表"
+  },
+  "featureReportCopyDone": {
+    "message": "已复制功能列表。没有向任何地方发送内容。"
+  },
+  "featureReportCopyFail": {
+    "message": "无法复制功能列表。"
+  },
+  "featureReportCopyTitle": {
+    "message": "只复制设置名称，从不复制它们的值。不会向任何地方发送内容。"
+  },
+  "featureReportNoneChanged": {
+    "message": "无"
+  },
+  "featureReportPrivacyNote": {
+    "message": "只有名称，没有值。没有向任何地方发送内容。它在你的剪贴板里，是否粘贴由你决定。"
   }
 }
