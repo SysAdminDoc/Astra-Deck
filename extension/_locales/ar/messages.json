@@ -8151,5 +8151,14 @@
   },
   "serviceOutageTpl": {
     "message": "{service} لا يستجيب. المشكلة في الخدمة نفسها وليست في Astra Deck."
+  },
+  "bisectFailed": {
+    "message": "تعذّر متابعة البحث الثنائي. تحقّق من الإعدادات."
+  },
+  "bisectRestoreFailed": {
+    "message": "تعذّرت استعادة إعداداتك. افتح الإعدادات وتحقّق منها."
+  },
+  "bisectStartFailed": {
+    "message": "تعذّر البدء: لن يحفظ ملف المتصفح هذا جلسة البحث الثنائي."
   }
 }

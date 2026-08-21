@@ -8151,5 +8151,14 @@
   },
   "serviceOutageTpl": {
     "message": "{service} non risponde. È il servizio, non Astra Deck."
+  },
+  "bisectFailed": {
+    "message": "La ricerca non è potuta continuare. Controlla le impostazioni."
+  },
+  "bisectRestoreFailed": {
+    "message": "Impossibile ripristinare le tue impostazioni. Apri le impostazioni e controllale."
+  },
+  "bisectStartFailed": {
+    "message": "Impossibile avviare: questo profilo del browser non salverà la sessione di ricerca."
   }
 }

@@ -2545,6 +2545,63 @@ const SERVICE_OUTAGE_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(SERVICE_OUTAGE_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// Failure copy for the bisect. These appear precisely when something has gone
+// wrong with the user's settings, which is the worst moment to hand someone a
+// sentence in a language they do not read.
+const FEATURE_BISECT_FAILURE_TRANSLATIONS = {
+  ar: {
+    'Could not start: this browser profile will not save the bisect session.': 'تعذّر البدء: لن يحفظ ملف المتصفح هذا جلسة البحث الثنائي.',
+    'Could not put your settings back. Open Settings and check them.': 'تعذّرت استعادة إعداداتك. افتح الإعدادات وتحقّق منها.',
+    'The bisect could not continue. Check Settings.': 'تعذّر متابعة البحث الثنائي. تحقّق من الإعدادات.'
+  },
+  de: {
+    'Could not start: this browser profile will not save the bisect session.': 'Start nicht möglich: Dieses Browserprofil speichert die Bisect-Sitzung nicht.',
+    'Could not put your settings back. Open Settings and check them.': 'Deine Einstellungen konnten nicht wiederhergestellt werden. Öffne die Einstellungen und prüfe sie.',
+    'The bisect could not continue. Check Settings.': 'Der Bisect konnte nicht fortgesetzt werden. Prüfe die Einstellungen.'
+  },
+  es: {
+    'Could not start: this browser profile will not save the bisect session.': 'No se pudo iniciar: este perfil del navegador no guardará la sesión de búsqueda.',
+    'Could not put your settings back. Open Settings and check them.': 'No se pudieron restaurar tus ajustes. Abre Ajustes y revísalos.',
+    'The bisect could not continue. Check Settings.': 'La búsqueda no pudo continuar. Revisa los ajustes.'
+  },
+  fr: {
+    'Could not start: this browser profile will not save the bisect session.': 'Démarrage impossible : ce profil de navigateur n’enregistrera pas la session de recherche.',
+    'Could not put your settings back. Open Settings and check them.': 'Impossible de restaurer vos réglages. Ouvrez les réglages et vérifiez-les.',
+    'The bisect could not continue. Check Settings.': 'La recherche n’a pas pu continuer. Vérifiez les réglages.'
+  },
+  it: {
+    'Could not start: this browser profile will not save the bisect session.': 'Impossibile avviare: questo profilo del browser non salverà la sessione di ricerca.',
+    'Could not put your settings back. Open Settings and check them.': 'Impossibile ripristinare le tue impostazioni. Apri le impostazioni e controllale.',
+    'The bisect could not continue. Check Settings.': 'La ricerca non è potuta continuare. Controlla le impostazioni.'
+  },
+  ja: {
+    'Could not start: this browser profile will not save the bisect session.': '開始できません。このブラウザー プロファイルでは絞り込みセッションを保存できません。',
+    'Could not put your settings back. Open Settings and check them.': '設定を元に戻せませんでした。設定を開いて確認してください。',
+    'The bisect could not continue. Check Settings.': '絞り込みを続行できませんでした。設定を確認してください。'
+  },
+  ko: {
+    'Could not start: this browser profile will not save the bisect session.': '시작할 수 없습니다. 이 브라우저 프로필은 이진 탐색 세션을 저장하지 못합니다.',
+    'Could not put your settings back. Open Settings and check them.': '설정을 되돌리지 못했습니다. 설정을 열어 확인해 주세요.',
+    'The bisect could not continue. Check Settings.': '이진 탐색을 계속할 수 없습니다. 설정을 확인해 주세요.'
+  },
+  pt_BR: {
+    'Could not start: this browser profile will not save the bisect session.': 'Não foi possível iniciar: este perfil do navegador não vai salvar a sessão de busca.',
+    'Could not put your settings back. Open Settings and check them.': 'Não foi possível restaurar suas configurações. Abra as configurações e confira.',
+    'The bisect could not continue. Check Settings.': 'A busca não pôde continuar. Confira as configurações.'
+  },
+  ru: {
+    'Could not start: this browser profile will not save the bisect session.': 'Не удалось начать: этот профиль браузера не сохранит сессию поиска.',
+    'Could not put your settings back. Open Settings and check them.': 'Не удалось вернуть ваши настройки. Откройте настройки и проверьте их.',
+    'The bisect could not continue. Check Settings.': 'Поиск не смог продолжиться. Проверьте настройки.'
+  },
+  zh_CN: {
+    'Could not start: this browser profile will not save the bisect session.': '无法开始：此浏览器配置文件不会保存二分查找会话。',
+    'Could not put your settings back. Open Settings and check them.': '无法恢复你的设置。请打开设置并检查。',
+    'The bisect could not continue. Check Settings.': '二分查找无法继续。请检查设置。'
+  }
+};
+for (const [locale, messages] of Object.entries(FEATURE_BISECT_FAILURE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The chat mode-change notice toggle hides a renderer tag, so the selector
 // needs no translation, but its settings copy does like any sub-feature.
 const CHAT_MODE_NOTICE_TRANSLATIONS = {

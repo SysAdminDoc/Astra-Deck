@@ -8151,5 +8151,14 @@
   },
   "serviceOutageTpl": {
     "message": "{service}이(가) 응답하지 않습니다. Astra Deck이 아니라 해당 서비스의 문제입니다."
+  },
+  "bisectFailed": {
+    "message": "이진 탐색을 계속할 수 없습니다. 설정을 확인해 주세요."
+  },
+  "bisectRestoreFailed": {
+    "message": "설정을 되돌리지 못했습니다. 설정을 열어 확인해 주세요."
+  },
+  "bisectStartFailed": {
+    "message": "시작할 수 없습니다. 이 브라우저 프로필은 이진 탐색 세션을 저장하지 못합니다."
   }
 }

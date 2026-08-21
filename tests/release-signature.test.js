@@ -121,13 +121,30 @@ test('an empty or comment-only allowed-signers file reads as no published key', 
     }
 });
 
-test('signing refuses a key stored inside the worktree', () => {
-    const inRepoKey = path.join(REPO_ROOT, 'release-signing-key');
-    assert.throws(
-        () => signature.signChecksums({ buildDir: path.join(REPO_ROOT, 'build'), keyPath: inRepoKey }),
-        /worktree|no release signing key/,
-        'a key inside the repo must never be used to sign a release'
-    );
+test('signing refuses a key stored inside the worktree', { skip: !canSign }, () => {
+    // Own fixture rather than the repo's real build/. Pointing at build/ made
+    // the test depend on whether some earlier command had left a SHA256SUMS
+    // there: with one it reached the key check, without one it failed on the
+    // missing checksum file and passed for the wrong reason.
+    withFixture(({ dir, buildDir }) => {
+        const inRepoKey = path.join(REPO_ROOT, 'release-signing-key');
+        fs.writeFileSync(inRepoKey, 'not a real key\n');
+        try {
+            assert.throws(
+                () => signature.signChecksums({ buildDir, keyPath: inRepoKey }),
+                /worktree/,
+                'a key inside the repo must never be used to sign a release'
+            );
+        } finally {
+            fs.rmSync(inRepoKey, { force: true });
+        }
+        // And a key that simply is not there reports that, rather than being
+        // mistaken for a custody violation.
+        assert.throws(
+            () => signature.signChecksums({ buildDir, keyPath: path.join(dir, 'absent-key') }),
+            /no release signing key/
+        );
+    });
 });
 
 test('the committed allowed-signers file parses and carries the verify command', () => {

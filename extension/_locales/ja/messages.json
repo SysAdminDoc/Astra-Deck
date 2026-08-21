@@ -8151,5 +8151,14 @@
   },
   "serviceOutageTpl": {
     "message": "{service} が応答していません。原因はそのサービス側で、Astra Deck ではありません。"
+  },
+  "bisectFailed": {
+    "message": "絞り込みを続行できませんでした。設定を確認してください。"
+  },
+  "bisectRestoreFailed": {
+    "message": "設定を元に戻せませんでした。設定を開いて確認してください。"
+  },
+  "bisectStartFailed": {
+    "message": "開始できません。このブラウザー プロファイルでは絞り込みセッションを保存できません。"
   }
 }

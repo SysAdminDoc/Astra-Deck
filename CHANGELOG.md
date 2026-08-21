@@ -73,6 +73,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   blocks playback, there is no retry button, and turning the feature off turns
   the note off with it.
 
+- The bisect wizard could leave a default install switched to the GitHub-Full
+  profile, and an abandoned run could drop settings it never named. Both came
+  from restoring feature by feature instead of restoring the settings the run
+  started with. It now puts the whole thing back exactly, refuses to start at
+  all if it cannot save its session, and tells you plainly if a restore fails
+  instead of leaving a button that does nothing.
+
+### Changed
+
+- Packages are now byte-for-byte reproducible. `npm run build-for-amo` builds
+  the Firefox artifact twice and fails if the two differ, which is what Mozilla
+  reviewers do when they rebuild submitted source and compare it against the
+  upload. `SOURCE-README.md` tells them how.
+
 ## [4.83.0] (2026-08-21)
 
 ### Added

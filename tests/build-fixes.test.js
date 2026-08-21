@@ -219,14 +219,22 @@ test('legacy schema command validates without regenerating the canonical schema'
         'the retired generator must not regain roadmap parsing or file writes');
 });
 
-test('createZip never shells out to PowerShell Compress-Archive', () => {
+test('createZip writes forward-slash entry names without shelling out', () => {
+    // This used to pin the bsdtar invocation, which was the right assertion
+    // while packaging shelled out: PowerShell's Compress-Archive writes
+    // backslash entry separators that AMO rejects and Linux unzip breaks on,
+    // and bsdtar was the fix. Packaging is now written in Node, so the
+    // property is structural rather than delegated. The test asserts the
+    // property the old one was protecting, not the tool that used to provide it.
     const src = fs.readFileSync(path.join(REPO_ROOT, 'build-extension.js'), 'utf8');
     assert.doesNotMatch(src, /Compress-Archive/,
         'Compress-Archive writes invalid backslash zip entry separators for AMO/Linux unzip');
-    assert.match(src, /System32', 'tar\.exe'/,
-        'Windows zip branch must invoke System32 bsdtar by full path');
-    assert.match(src, /\['-a', '-cf', zipPath, '-C', sourceDir, \.\.\.entries\]/,
-        'bsdtar must receive explicit top-level entries');
+    assert.doesNotMatch(src, /execFileSync\(\s*bsdtar/,
+        'packaging must not shell out; two packagers cannot be relied on to agree byte-for-byte');
+    assert.match(src, /prefix \+ '\/' \+ entry\.name/,
+        'entry names must be joined with forward slashes on every platform');
+    assert.match(src, /local\.writeUInt16LE\(0, 28\)/,
+        'no local extra field: that is where a varying timestamp would hide');
 });
 
 test('ephemeral CRX mode generates a single per-run PKCS8 key with 0o600 mode', () => {

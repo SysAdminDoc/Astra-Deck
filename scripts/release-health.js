@@ -189,7 +189,15 @@ function main(argv = process.argv.slice(2)) {
     const report = buildHealthReport();
     const outputPath = writeHealthReport(report, args.outputPath);
     console.log(`[release-health] ${report.status}: ${path.relative(REPO_ROOT, outputPath).replace(/\\/g, '/')}`);
-    if (report.status !== 'pass') process.exitCode = 1;
+    // Blocks on FAILURES, not on warnings — the same distinction release
+    // readiness makes, and for the same reason. This check folds readiness's
+    // own status in, so relaxing --require-pass there and not here would have
+    // moved the block one step down the chain instead of removing it. A
+    // warning is printed loudly and shipped past; a failure stops the release.
+    for (const warning of report.checks.filter((item) => item.status === 'warning')) {
+        console.warn(`WARNING ${warning.id}: ${warning.details}`);
+    }
+    if (report.checks.some((item) => item.status === 'fail')) process.exitCode = 1;
     return report;
 }
 

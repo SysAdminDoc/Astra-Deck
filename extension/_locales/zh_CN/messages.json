@@ -8151,5 +8151,14 @@
   },
   "serviceOutageTpl": {
     "message": "{service} 没有响应。问题出在该服务，不是 Astra Deck。"
+  },
+  "bisectFailed": {
+    "message": "二分查找无法继续。请检查设置。"
+  },
+  "bisectRestoreFailed": {
+    "message": "无法恢复你的设置。请打开设置并检查。"
+  },
+  "bisectStartFailed": {
+    "message": "无法开始：此浏览器配置文件不会保存二分查找会话。"
   }
 }
