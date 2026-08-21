@@ -59,6 +59,35 @@
         };
     }
 
+    function refreshShortsLedgerPresentation(
+        root = globalThis.document,
+        settings = {},
+        translate = (_key, fallback) => fallback,
+        nowValue = new Date()
+    ) {
+        const card = root?.querySelector?.(
+            '.ytkit-feature-card[data-feature-id="shortsWatchTimeToday"]'
+        );
+        if (!card) return false;
+        const presentation = createShortsLedgerPresentation(settings, translate, nowValue);
+        const name = card.querySelector?.('.ytkit-feature-name');
+        const description = card.querySelector?.('.ytkit-feature-desc');
+        if (name) name.textContent = presentation.name;
+        if (description) description.textContent = presentation.description;
+        card.title = presentation.description || presentation.name;
+        card.setAttribute?.('aria-label', presentation.name);
+        if (card.dataset) {
+            card.dataset.searchText = [
+                presentation.name,
+                presentation.description,
+                presentation.id,
+                presentation.group,
+                presentation.type
+            ].join(' ').toLowerCase();
+        }
+        return true;
+    }
+
     const SETTINGS_CATEGORY_SECTIONS = Object.freeze({
         'Video Player': [
             { labelKey: 'settingsSectionPlaybackQuality', fallback: 'Playback & quality', match: /^(persistentSpeed|codecSelector|autoMaxResolution|forceH264|forceStandardFps|musicVideoSpeedLock|qualityProfileMatrix|perChannelSpeed|fineSpeedControl|customSpeedButtons|speedIndicatorOverlay)$/ },
@@ -3331,6 +3360,7 @@
         SHORTS_SETTING_KEYS,
         SHORTS_PANEL_SETTING_KEYS,
         createShortsLedgerPresentation,
+        refreshShortsLedgerPresentation,
         SETTINGS_VISUAL_SYSTEM_CSS,
         SURFACE_VISUAL_SYSTEM_CSS,
         ensureSettingsVisualSystem,
@@ -3345,6 +3375,7 @@
             SHORTS_SETTING_KEYS,
             SHORTS_PANEL_SETTING_KEYS,
             createShortsLedgerPresentation,
+            refreshShortsLedgerPresentation,
             SETTINGS_VISUAL_SYSTEM_CSS,
             SURFACE_VISUAL_SYSTEM_CSS,
             STYLE_ID,

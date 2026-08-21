@@ -108,6 +108,9 @@ function setSettingsPanelOpen(open) {
         if (!document.body || !shouldBuildPrimaryUI()) return false;
         const wasOpen = isSettingsPanelOpen();
         if (open && !document.getElementById('ytkit-settings-panel')) buildSettingsPanel();
+        if (open) {
+            globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
+        }
         const panel = document.getElementById('ytkit-settings-panel');
         if (open && !wasOpen && document.activeElement instanceof HTMLElement && !panel?.contains(document.activeElement)) {
             _settingsPanelLastFocus = document.activeElement;
@@ -3197,6 +3200,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
     }
 
 function updateAllToggleStates() {
+        globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
         document.querySelectorAll('.ytkit-toggle-all-cb').forEach(cb => {
             const catId = cb.dataset.category;
             const pane = document.getElementById(`ytkit-pane-${catId}`);

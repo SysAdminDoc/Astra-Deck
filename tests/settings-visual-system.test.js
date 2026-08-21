@@ -222,6 +222,7 @@ test('the Shorts section owns every Shorts schema key without changing schema ca
     try {
         const {
             createShortsLedgerPresentation,
+            refreshShortsLedgerPresentation,
             SETTINGS_CATEGORY_SECTIONS,
             SHORTS_SETTING_KEYS,
             SHORTS_PANEL_SETTING_KEYS
@@ -265,6 +266,33 @@ test('the Shorts section owns every Shorts schema key without changing schema ca
             shortsWatchTimeToday: { date: '2026-08-20', seconds: 9999, snoozeUntil: now.getTime() + 1000 }
         }, (_key, fallback) => fallback, now);
         assert.equal(staleLedger.description, 'No Shorts watch time recorded today.');
+
+        const nameNode = { textContent: '' };
+        const descriptionNode = { textContent: '' };
+        const attributes = {};
+        const card = {
+            dataset: {},
+            querySelector(selector) {
+                if (selector === '.ytkit-feature-name') return nameNode;
+                if (selector === '.ytkit-feature-desc') return descriptionNode;
+                return null;
+            },
+            setAttribute(name, value) { attributes[name] = value; }
+        };
+        assert.equal(refreshShortsLedgerPresentation({ querySelector: () => card }, {
+            shortsWatchTimeToday: { date: today, seconds: (12 * 60) + 1, snoozeUntil: 0 }
+        }, (_key, fallback) => fallback, now), true);
+        assert.equal(nameNode.textContent, 'Shorts today');
+        assert.equal(descriptionNode.textContent, '13 min watched today.');
+        assert.equal(card.title, '13 min watched today.');
+        assert.equal(attributes['aria-label'], 'Shorts today');
+        assert.match(card.dataset.searchText, /13 min watched today/);
+        assert.equal(refreshShortsLedgerPresentation({ querySelector: () => null }, {}, undefined, now), false);
+
+        for (const source of [settingsPanel, shell]) {
+            assert.match(source, /refreshShortsLedgerPresentation\?\.\(document, appState\.settings, t\)/,
+                'module and fallback must refresh the ledger after its initial build');
+        }
     } finally {
         globalThis.YTKitCore = previousCore;
         delete require.cache[modulePath];

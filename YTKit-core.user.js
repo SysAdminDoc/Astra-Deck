@@ -545,6 +545,35 @@
         };
     }
 
+    function refreshShortsLedgerPresentation(
+        root = globalThis.document,
+        settings = {},
+        translate = (_key, fallback) => fallback,
+        nowValue = new Date()
+    ) {
+        const card = root?.querySelector?.(
+            '.ytkit-feature-card[data-feature-id="shortsWatchTimeToday"]'
+        );
+        if (!card) return false;
+        const presentation = createShortsLedgerPresentation(settings, translate, nowValue);
+        const name = card.querySelector?.('.ytkit-feature-name');
+        const description = card.querySelector?.('.ytkit-feature-desc');
+        if (name) name.textContent = presentation.name;
+        if (description) description.textContent = presentation.description;
+        card.title = presentation.description || presentation.name;
+        card.setAttribute?.('aria-label', presentation.name);
+        if (card.dataset) {
+            card.dataset.searchText = [
+                presentation.name,
+                presentation.description,
+                presentation.id,
+                presentation.group,
+                presentation.type
+            ].join(' ').toLowerCase();
+        }
+        return true;
+    }
+
     const SETTINGS_CATEGORY_SECTIONS = Object.freeze({
         'Video Player': [
             { labelKey: 'settingsSectionPlaybackQuality', fallback: 'Playback & quality', match: /^(persistentSpeed|codecSelector|autoMaxResolution|forceH264|forceStandardFps|musicVideoSpeedLock|qualityProfileMatrix|perChannelSpeed|fineSpeedControl|customSpeedButtons|speedIndicatorOverlay)$/ },
@@ -643,6 +672,7 @@
         SHORTS_SETTING_KEYS,
         SHORTS_PANEL_SETTING_KEYS,
         createShortsLedgerPresentation,
+        refreshShortsLedgerPresentation,
         SETTINGS_VISUAL_SYSTEM_CSS,
         SURFACE_VISUAL_SYSTEM_CSS,
         ensureSettingsVisualSystem,
@@ -657,6 +687,7 @@
             SHORTS_SETTING_KEYS,
             SHORTS_PANEL_SETTING_KEYS,
             createShortsLedgerPresentation,
+            refreshShortsLedgerPresentation,
             SETTINGS_VISUAL_SYSTEM_CSS,
             SURFACE_VISUAL_SYSTEM_CSS,
             STYLE_ID,
@@ -26092,6 +26123,13 @@ if (typeof globalThis !== "undefined") {
 
             _saveToday(state, key = 'dwWatchTimeToday') {
                 appState.settings[key] = state;
+                if (key === 'shortsWatchTimeToday') {
+                    globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(
+                        globalThis.document,
+                        appState.settings,
+                        t
+                    );
+                }
                 if (typeof settingsManager !== 'undefined' && settingsManager.save) {
                     try { settingsManager.save(appState.settings); } catch (e) {
                         DebugManager.log('DigitalWellbeing', `save failed: ${e.message}`);
@@ -26605,6 +26643,9 @@ function setSettingsPanelOpen(open) {
         if (!document.body || !shouldBuildPrimaryUI()) return false;
         const wasOpen = isSettingsPanelOpen();
         if (open && !document.getElementById('ytkit-settings-panel')) buildSettingsPanel();
+        if (open) {
+            globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
+        }
         const panel = document.getElementById('ytkit-settings-panel');
         if (open && !wasOpen && document.activeElement instanceof HTMLElement && !panel?.contains(document.activeElement)) {
             _settingsPanelLastFocus = document.activeElement;
@@ -29694,6 +29735,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
     }
 
 function updateAllToggleStates() {
+        globalThis.YTKitCore?.refreshShortsLedgerPresentation?.(document, appState.settings, t);
         document.querySelectorAll('.ytkit-toggle-all-cb').forEach(cb => {
             const catId = cb.dataset.category;
             const pane = document.getElementById(`ytkit-pane-${catId}`);

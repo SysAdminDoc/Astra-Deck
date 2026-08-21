@@ -1139,14 +1139,19 @@ async function auditShortsSettingsSection(client, surface, stateName) {
         nav?.click();
         const pane = document.getElementById('ytkit-pane-Content');
         const expected = ${JSON.stringify(SHORTS_SETTING_KEYS)};
-        const counts = Object.fromEntries(expected.map((id) => [id,
+        const contentCounts = Object.fromEntries(expected.map((id) => [id,
             pane?.querySelectorAll('.ytkit-feature-card[data-feature-id="' + id + '"]').length || 0
+        ]));
+        const globalCounts = Object.fromEntries(expected.map((id) => [id,
+            document.querySelectorAll('.ytkit-feature-card[data-feature-id="' + id + '"]').length
         ]));
         const ledger = pane?.querySelector('.ytkit-feature-card[data-feature-id="shortsWatchTimeToday"]');
         const dependency = pane?.querySelector('.ytkit-shorts-dependency');
         return {
             active: Boolean(pane?.classList.contains('active')),
-            counts,
+            contentCounts,
+            globalCounts,
+            dependencyCount: document.querySelectorAll('.ytkit-shorts-dependency').length,
             dependencyAction: dependency?.querySelector('button')?.textContent?.trim() || '',
             dependencyCopy: dependency?.textContent?.trim() || '',
             ledgerDescription: ledger?.querySelector('.ytkit-feature-desc')?.textContent?.trim() || '',
@@ -1155,22 +1160,50 @@ async function auditShortsSettingsSection(client, surface, stateName) {
     })()`);
     const failures = [];
     if (!result.active) failures.push('Content pane did not activate');
-    for (const [id, count] of Object.entries(result.counts || {})) {
-        if (count !== 1) failures.push(`${id} rendered ${count} times`);
+    for (const id of SHORTS_SETTING_KEYS) {
+        const contentCount = result.contentCounts?.[id] || 0;
+        const globalCount = result.globalCounts?.[id] || 0;
+        if (contentCount !== 1) failures.push(`${id} rendered ${contentCount} times in Content`);
+        if (globalCount !== 1) failures.push(`${id} rendered ${globalCount} times globally`);
     }
     if (result.ledgerType !== 'info') failures.push(`ledger type is ${JSON.stringify(result.ledgerType)}`);
-    if (!/Shorts.+today|today.+Shorts/i.test(result.ledgerDescription)) {
-        failures.push(`ledger status is ${JSON.stringify(result.ledgerDescription)}`);
-    }
+    if (!result.ledgerDescription) failures.push('ledger status is empty');
+    if (result.dependencyCount !== 1) failures.push(`dependency callout rendered ${result.dependencyCount} times`);
     if (!result.dependencyCopy || !result.dependencyAction) {
         failures.push('Digital Wellbeing dependency callout is incomplete');
     }
     if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+
+    const freshness = await client.evaluate(`(() => {
+        const ledger = document.querySelector('.ytkit-feature-card[data-feature-id="shortsWatchTimeToday"]');
+        const before = ledger?.querySelector('.ytkit-feature-desc')?.textContent?.trim() || '';
+        const now = new Date();
+        const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+        const current = globalThis.__ytkitSmoke?.readSettings?.().shortsWatchTimeToday || {};
+        const priorSeconds = current.date === today && Number.isFinite(Number(current.seconds))
+            ? Math.max(0, Math.floor(Number(current.seconds)))
+            : 0;
+        const seconds = priorSeconds + 721;
+        globalThis.__ytkitSmoke?.writeSettings?.({
+            shortsWatchTimeToday: { date: today, seconds, snoozeUntil: 0 }
+        });
+        return { before, minutes: Math.ceil(seconds / 60) };
+    })()`);
+    await waitFor(
+        () => client.evaluate(`(() => {
+            const text = document.querySelector(
+                '.ytkit-feature-card[data-feature-id="shortsWatchTimeToday"] .ytkit-feature-desc'
+            )?.textContent?.trim() || '';
+            return text !== ${JSON.stringify(freshness.before)} && text.includes(${JSON.stringify(String(freshness.minutes))});
+        })()`),
+        5000,
+        `${surface.name}/${stateName} live Shorts ledger refresh`
+    );
     await client.evaluate(`document.querySelector(
         '.ytkit-feature-card[data-feature-id="shortsWatchTimeToday"]'
     )?.scrollIntoView({ block: 'center' })`);
     await captureSurface(client, surface, 'shorts-dark');
-    return SHORTS_SETTING_KEYS.length + 3;
+    return (SHORTS_SETTING_KEYS.length * 2) + 5;
 }
 
 async function auditSurface(client, stageDir, surface, timeoutMs) {

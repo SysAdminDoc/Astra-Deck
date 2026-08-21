@@ -1183,6 +1183,34 @@ test('digitalWellbeing module exports the runtime factory', () => {
     assert.equal(typeof exported.createDigitalWellbeingFeature, 'function');
 });
 
+test('digitalWellbeing refreshes the rendered Shorts ledger after a batched save', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/digital-wellbeing/index.js',
+        'digitalWellbeing'
+    );
+    const previousCore = globalThis.YTKitCore;
+    const settings = {};
+    const refreshes = [];
+    globalThis.YTKitCore = {
+        refreshShortsLedgerPresentation(root, nextSettings) {
+            refreshes.push({ root, nextSettings });
+        }
+    };
+    try {
+        const feature = mod.createDigitalWellbeingFeature({
+            appState: { settings },
+            settingsManager: { save() {} }
+        });
+        feature._saveToday({ date: '2026-08-21', seconds: 721, snoozeUntil: 0 }, 'shortsWatchTimeToday');
+        assert.equal(refreshes.length, 1);
+        assert.equal(refreshes[0].nextSettings, settings);
+        assert.equal(settings.shortsWatchTimeToday.seconds, 721);
+    } finally {
+        if (previousCore === undefined) delete globalThis.YTKitCore;
+        else globalThis.YTKitCore = previousCore;
+    }
+});
+
 test('digitalWellbeing factory returns the timer and overlay runtime surface', () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/digital-wellbeing/index.js',

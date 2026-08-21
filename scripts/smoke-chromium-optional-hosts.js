@@ -710,20 +710,24 @@ function isGoogleChromeCandidate(candidate) {
 }
 
 function killProcessTree(proc) {
-    if (!proc || proc.exitCode !== null) return;
+    if (!proc || proc.exitCode != null || proc.signalCode != null) return true;
     if (process.platform === 'win32') {
-        spawnSync('taskkill', ['/PID', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
-    } else {
-        proc.kill('SIGTERM');
+        const result = spawnSync('taskkill', ['/PID', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
+        return result.status === 0;
     }
+    return proc.kill('SIGTERM');
+}
+
+function hasProcessExited(proc) {
+    return !proc || proc.exitCode != null || proc.signalCode != null;
 }
 
 function waitForProcessExit(proc) {
-    if (!proc || proc.exitCode !== null) return Promise.resolve();
+    if (hasProcessExited(proc)) return Promise.resolve();
     return new Promise((resolve) => {
         const handleExit = () => resolve();
         proc.once('exit', handleExit);
-        if (proc.exitCode !== null) {
+        if (hasProcessExited(proc)) {
             proc.removeListener('exit', handleExit);
             resolve();
         }
@@ -736,21 +740,24 @@ async function shutdownChromiumProcess(proc, client, timeoutMs = 3000, overrides
     const wait = overrides.sleep || sleep;
     const platform = overrides.platform || process.platform;
     const processExit = waitForProcessExit(proc);
-    if (proc.exitCode === null && client && typeof client.send === 'function') {
+    if (!hasProcessExited(proc) && client && typeof client.send === 'function') {
         const closeRequest = Promise.resolve(client.send('Browser.close')).catch(() => undefined);
         // CDP can acknowledge Browser.close only after the Windows parent PID
         // has vanished. Send the graceful request first, then terminate the
         // still-addressable tree before awaiting that acknowledgement.
-        if (platform === 'win32' && proc.exitCode === null) stopTree(proc);
+        if (platform === 'win32' && !hasProcessExited(proc)) stopTree(proc);
         await Promise.race([
             closeRequest,
             wait(Math.min(timeoutMs, 1000)),
         ]);
     }
     await Promise.race([processExit, wait(timeoutMs)]);
-    if (proc.exitCode === null) {
+    if (!hasProcessExited(proc)) {
         stopTree(proc);
         await Promise.race([processExit, wait(timeoutMs)]);
+    }
+    if (!hasProcessExited(proc)) {
+        throw new Error(`Chromium process ${proc.pid || '(unknown PID)'} did not exit after bounded shutdown`);
     }
 }
 
