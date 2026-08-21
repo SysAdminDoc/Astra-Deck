@@ -116,7 +116,11 @@ function collectFeatureCopy() {
 }
 
 function cleanCopy(value) {
-    return normalizeFeatureCopy(value).replace(/\s+/g, ' ').trim();
+    return normalizeFeatureCopy(value)
+        .replace(/\s*—\s*/g, ', ')
+        .replace(/\s*–\s*/g, ' to ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function collectReferenceEntries() {
@@ -206,7 +210,7 @@ function formatConstraints(entry) {
     if (typeof entry.min === 'number' || typeof entry.max === 'number') {
         const min = typeof entry.min === 'number' ? entry.min : '−∞';
         const max = typeof entry.max === 'number' ? entry.max : '∞';
-        parts.push(`Range: ${code(`${min}–${max}`)}`);
+        parts.push(`Range: ${code(`${min} to ${max}`)}`);
     }
     if (entry.type === 'string' && /^#[0-9a-f]{6}$/i.test(entry.defaultValue)) {
         parts.push('Hex color');
@@ -260,7 +264,7 @@ function renderSettingsReference(entries = collectReferenceEntries()) {
         const label = CATEGORY_LABELS[category] || humanizeSettingKey(category.replace(/-/g, '_'));
         lines.push(
             '<details>',
-            `<summary><strong>${escapeHtml(label)}</strong> — ${categoryEntries.length} settings</summary>`,
+            `<summary><strong>${escapeHtml(label)}</strong>: ${categoryEntries.length} settings</summary>`,
             '',
             '| Setting | Purpose | Default and accepted values | Availability and behavior |',
             '| --- | --- | --- | --- |',

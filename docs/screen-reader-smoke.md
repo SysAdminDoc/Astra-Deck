@@ -1,4 +1,4 @@
-# Astra Deck — Screen-Reader Smoke Checklist
+# Astra Deck, Screen-Reader Smoke Checklist
 
 > One-pass bring-up checklist for verifying the toolbar popup + in-page
 > overlays under NVDA / JAWS / VoiceOver. Run this on every release that
@@ -15,11 +15,11 @@ the minimum required test target. JAWS + VoiceOver are nice-to-have.
 
 | Tool | Version target | Notes |
 |---|---|---|
-| **NVDA** | 2025.3 or later | Free — https://www.nvaccess.org/download/. Enable the "Speak typed characters" pref + the speech viewer (NVDA → Tools → Speech Viewer) so you can see what was announced. |
-| **JAWS** | 2026 | Commercial — https://www.freedomscientific.com/products/software/jaws/. 40-min demo mode is fine for smoke tests. |
+| **NVDA** | 2025.3 or later | Free, https://www.nvaccess.org/download/. Enable the "Speak typed characters" pref + the speech viewer (NVDA → Tools → Speech Viewer) so you can see what was announced. |
+| **JAWS** | 2026 | Commercial, https://www.freedomscientific.com/products/software/jaws/. 40-min demo mode is fine for smoke tests. |
 | **VoiceOver** | macOS 14+ / iOS 17+ | Built into macOS (Cmd+F5) + iOS. The macOS Caption Panel shows the spoken text. |
 
-Browser: Chrome stable + Firefox stable. Test both — accessibility tree
+Browser: Chrome stable + Firefox stable. Test both, accessibility tree
 behaviour differs between Blink and Gecko.
 
 ---
@@ -60,7 +60,7 @@ override + ideally a non-original audio track).
       a fallback only.
 - [ ] **NX5 DeArrow announcement:** Watch-page title replaced → polite
       live region reads "Title replaced by DeArrow: <new title>". Grid
-      thumbnail replacements MUST NOT announce — verify on the home
+      thumbnail replacements MUST NOT announce, verify on the home
       feed that no spam fires.
 - [ ] **NX8 auto-dubbed audio notice:** Watch a video with a non-
       original audio track active → toast + announcement read the
@@ -88,10 +88,8 @@ Open Astra Deck's in-page settings panel (gear icon).
 
 ## 5. Toast announcement quality
 
-- [ ] Toasts with role="status" (informational) announce politely —
-      don't interrupt current speech.
-- [ ] Toasts with role="alert" (errors, color #ef4444) interrupt —
-      should announce immediately.
+- [ ] Toasts with role="status" (informational) announce politely, don't interrupt current speech.
+- [ ] Toasts with role="alert" (errors, color #ef4444) interrupt, should announce immediately.
 - [ ] Toast actions (e.g. Retry buttons) are focusable + announced.
 - [ ] Toast auto-dismiss does NOT trigger a "dialog closed" or similar
       noise.
@@ -136,4 +134,4 @@ Failures from this checklist file as `area: a11y` GitHub issues with:
 - Astra Deck version (popup version chip).
 - Specific checklist line that failed + what was announced (or wasn't).
 - Whether the issue reproduces on YouTube alone (without Astra Deck
-  enabled) — if yes, the bug is upstream.
+  enabled), if yes, the bug is upstream.

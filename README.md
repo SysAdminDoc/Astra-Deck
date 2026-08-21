@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  Premium desktop YouTube enhancement extension for Chrome and Firefox with 200+ features — zero-ad request filtering, SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 11 bundled UI locales (extension only — the userscript ships no locale catalogues).
+  A desktop YouTube toolkit for Chrome and Firefox with 200+ controls. It covers ad request filtering, SponsorBlock, DeArrow, video and channel filters, downloads, transcript search, local or BYO-key AI summaries, subscription groups, Theater Split, themes, and 11 extension locales. The userscript keeps the same core tools without bundling the locale catalogues.
 </p>
 
 <!-- BEGIN GENERATED PROJECT FACTS -->
@@ -20,7 +20,7 @@
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.81.0` |
+| Release | `v4.82.0` |
 | Runtime floors | Node `>=22`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `476` entries across `18` categories |
@@ -45,13 +45,13 @@
 
 ### Chrome / Edge / Brave
 
-**Option A — Load unpacked from ZIP:**
+**Option A, Load unpacked from ZIP:**
 1. Download `astra-deck-chromium-store-chrome-v*.zip` for a download-free Chrome Web Store/Edge-compatible package, or choose `astra-deck-store-safe-chrome-v*.zip` / `astra-deck-github-full-chrome-v*.zip` for companion-capable self-hosted installs, from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
 2. Extract it to a permanent folder
 3. Open `chrome://extensions/`, enable **Developer mode**
 4. Click **Load unpacked** and select the extracted folder
 
-**Option B — Local folder:**
+**Option B, Local folder:**
 1. Download or clone the `extension/` folder
 2. Open `chrome://extensions/`, enable **Developer mode**
 3. Click **Load unpacked** and select the `extension/` folder
@@ -62,7 +62,7 @@ Releases ship the ZIP, not a CRX. Self-hosted CRX installs are Linux-only on mod
 
 **The released `.xpi` is unsigned.** Firefox Release and Beta install only
 add-ons signed by Mozilla, and they reject an unsigned XPI with "This add-on
-could not be installed because it appears to be corrupt" — so `about:addons` →
+could not be installed because it appears to be corrupt", so `about:addons` →
 **Install Add-on From File** does not work on the Firefox most people run. Pick
 one of these instead:
 
@@ -71,17 +71,17 @@ Firefox manifest points at the stable latest-release update feed. That feed is
 effective only after the XPI is signed; the currently released unsigned XPI
 still requires one of the manual installation paths below.
 
-**Easiest — the userscript.** Works on every Firefox edition, installs in one
+**Easiest, the userscript.** Works on every Firefox edition, installs in one
 click, and auto-updates. See [Userscript](#userscript-tampermonkey--violentmonkey)
 below.
 
-**Temporary — any Firefox edition.** The add-on is removed when Firefox restarts.
+**Temporary, any Firefox edition.** The add-on is removed when Firefox restarts.
 
 1. Download `astra-deck-chromium-store-firefox-v*.xpi` for the download-free package, or `astra-deck-store-safe-firefox-v*.xpi` / `astra-deck-github-full-firefox-v*.xpi` for companion-capable installs, from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
 2. Open `about:debugging#/runtime/this-firefox`
 3. Click **Load Temporary Add-on…** and select the `.xpi`
 
-**Permanent — Developer Edition, Nightly, or ESR only.** These builds can be
+**Permanent, Developer Edition, Nightly, or ESR only.** These builds can be
 told to accept unsigned add-ons; Release and Beta cannot.
 
 1. Open `about:config` and set `xpinstall.signatures.required` to `false`
@@ -114,9 +114,9 @@ same place. Then return to YouTube and choose **Check again**. The toolbar
 popup also has recovery actions to re-enable the setup prompt and request an
 on-demand companion update from a running service.
 
-Everything about the companion — installing from source, building the
+Everything about the companion, installing from source, building the
 executable, the per-site sign-in store, subscriptions, the URL policy, and its
-security model — is documented in
+security model, is documented in
 [its README](https://github.com/SysAdminDoc/AstraDownloader#readme). It
 downloads from any site yt-dlp supports, not only YouTube.
 
@@ -142,13 +142,13 @@ are not browser extension install steps.
 
 | Feature | Default |
 |---------|---------|
-| Zero-Ad Desktop Surface — static MV3 request blocking plus document-start ad-shell collapse; userscript provides shell collapse only | Built in |
-| Theater Split — fullscreen video, scroll to reveal comments side-by-side | On |
-| Video Hider — hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
-| Video Context Menu — right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
-| Settings Panel — searchable, categorized, instant-apply, export/import/reset | On |
-| Comment Search — filter watch-page comments inline | Off |
-| DeArrow — replace clickbait titles/thumbnails via crowdsourced database | Off |
+| Zero-Ad Desktop Surface, static MV3 request blocking plus document-start ad-shell collapse; userscript provides shell collapse only | Built in |
+| Theater Split, fullscreen video, scroll to reveal comments side-by-side | On |
+| Video Hider, hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
+| Video Context Menu, right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
+| Settings Panel, searchable, categorized, instant-apply, export/import/reset | On |
+| Comment Search, filter watch-page comments inline | Off |
+| DeArrow, replace clickbait titles/thumbnails via crowdsourced database | Off |
 
 GitHub-full builds can optionally follow one user-selected HTTPS Video Hider
 filter list after an exact-origin browser prompt. Remote lists are anonymous,
@@ -163,7 +163,7 @@ refresh fails or the last verification becomes older than seven days.
 
 | Feature | Default |
 |---------|---------|
-| Logo Quick Links — hover dropdown with History, Watch Later, Playlists, Liked, Subs | On |
+| Logo Quick Links, hover dropdown with History, Watch Later, Playlists, Liked, Subs | On |
 | Hide Sidebar / Hide Shorts / Hide Related / Hide Description | On |
 | Subscriptions Grid / Homepage Grid Align / Videos Per Row | On |
 | Styled Filter Chips / Compact Layout / Thin Scrollbar | On |
@@ -174,19 +174,19 @@ refresh fails or the last verification becomes older than seven days.
 
 | Feature | Default |
 |---------|---------|
-| Watch Page Restyle — glassmorphism accents, refined metadata | On |
-| Native Comments Layout — keep YouTube comments clean without extension restyling | On |
+| Watch Page Restyle, glassmorphism accents, refined metadata | On |
+| Native Comments Layout, keep YouTube comments clean without extension restyling | On |
 | Expand Video Width / Disable Ambient Mode | On |
 | Hide Merch, AI Summary, Hashtags, Pinned Comments, Info Panels | On |
-| Clean Share URLs — strip tracking params | On |
-| Return YouTube Dislike — estimated dislike count with `est.` disclosure + ratio | Off |
+| Clean Share URLs, strip tracking params | On |
+| Return YouTube Dislike, estimated dislike count with `est.` disclosure + ratio | Off |
 | Auto-Expand Description / Sticky Chat / Scroll to Player | Off |
 
 ### Video Player
 
 | Feature | Default |
 |---------|---------|
-| Always Best Quality — picks highest available stream, prefers 1080p Premium when offered | On |
+| Always Best Quality, picks highest available stream, prefers 1080p Premium when offered | On |
 | Auto-Resume Position (configurable threshold) | On |
 | Custom Progress Bar Color (color picker) | Off |
 | Remaining Time Display / Time in Tab Title | Off |
@@ -213,12 +213,12 @@ refresh fails or the last verification becomes older than seven days.
 
 | Feature | Default |
 |---------|---------|
-| Download Options Popup — format, quality, and save directory per download | On |
-| Video Formats — MP4, MKV, WebM | MP4 |
-| Audio Formats — MP3, M4A, Opus, FLAC, WAV | MP3 |
-| Quality Selector — Best, 4K, 1440p, 1080p, 720p, 480p | Best |
-| Custom Save Directory — override per download or set globally | Downloads |
-| Context Menu — quick "Download Video" and "Download Audio" on right-click | On |
+| Download Options Popup, format, quality, and save directory per download | On |
+| Video Formats, MP4, MKV, WebM | MP4 |
+| Audio Formats, MP3, M4A, Opus, FLAC, WAV | MP3 |
+| Quality Selector, Best, 4K, 1440p, 1080p, 720p, 480p | Best |
+| Custom Save Directory, override per download or set globally | Downloads |
+| Context Menu, quick "Download Video" and "Download Audio" on right-click | On |
 | Auto-Download on Visit | Off |
 | Download Thumbnail (maxres) | Off |
 
@@ -248,7 +248,7 @@ Then install the yt-dlp plugin so `yt-dlp.exe` knows to consult the provider:
 pip install bgutil-ytdlp-pot-provider
 ```
 
-Astra Downloader's `/health` endpoint will surface `poTokenProvider: { ok, port, version }` once the server is reachable. If absent, downloads still work on most videos — the provider is opt-in hardening, not a hard requirement.
+Astra Downloader's `/health` endpoint will surface `poTokenProvider: { ok, port, version }` once the server is reachable. If absent, downloads still work on most videos, the provider is opt-in hardening, not a hard requirement.
 
 ### External JavaScript runtime (yt-dlp 2026+)
 
@@ -283,7 +283,7 @@ stable public fixture before accepting extractor dependency bumps.
 |---------|---------|
 | Sort Comments Newest First | Off |
 | Creator Comment Highlight | Off |
-| Comment Handle Revealer — show original channel name next to @handle | Off |
+| Comment Handle Revealer, show original channel name next to @handle | Off |
 | Preload Comments | Off |
 
 ### Live Chat
@@ -294,7 +294,7 @@ stable public fixture before accepting extractor dependency bumps.
 | Configurable element hiding (header, emoji, super chats, polls, etc.) | On |
 | Chat Keyword Filter | Off |
 | Adaptive Live Layout | Off |
-| Reaction Spammer — opt-in floating panel, randomized emoji loop (500 ms floor) | Off |
+| Reaction Spammer, opt-in floating panel, randomized emoji loop (500 ms floor) | Off |
 
 ### Automation & Behavior
 
@@ -332,10 +332,10 @@ stable public fixture before accepting extractor dependency bumps.
 
 Toggle individual elements on/off through the settings panel:
 
-- **Action Buttons** — Like, Dislike, Share, Ask/AI, Clip, Thanks, Save, Sponsor, More Actions
-- **Player Controls** — Next, Autoplay, Subtitles, Captions, Miniplayer, PiP, Theater, Fullscreen
-- **Watch Elements** — Join Button, Ask Button, Save Button, Ask AI Section, Podcast Section, Transcript Section
-- **Chat Elements** — Header, Menu, Popout, Reactions, Timestamps, Polls, Ticker, Leaderboard, Super Chats, Emoji, Bots
+- **Action Buttons**, Like, Dislike, Share, Ask/AI, Clip, Thanks, Save, Sponsor, More Actions
+- **Player Controls**, Next, Autoplay, Subtitles, Captions, Miniplayer, PiP, Theater, Fullscreen
+- **Watch Elements**, Join Button, Ask Button, Save Button, Ask AI Section, Podcast Section, Transcript Section
+- **Chat Elements**, Header, Menu, Popout, Reactions, Timestamps, Polls, Ticker, Leaderboard, Super Chats, Emoji, Bots
 
 ---
 
@@ -368,7 +368,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
 <details>
-<summary><strong>Shell and appearance</strong> — 48 settings</summary>
+<summary><strong>Shell and appearance</strong>: 48 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -376,7 +376,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-squareSearchBar"></a><strong>Square Search Bar</strong><br><code>squareSearchBar</code> | Remove rounded corners from the search bar | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-squareAvatars"></a><strong>Square Avatars</strong><br><code>squareAvatars</code> | Make channel avatars square instead of round | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-subscriptionsGrid"></a><strong>Subscriptions Grid</strong><br><code>subscriptionsGrid</code> | Use a denser grid layout on the subscriptions page | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-homepageGridAlign"></a><strong>Homepage Grid Align</strong><br><code>homepageGridAlign</code> | Force uniform thumbnail grid on the homepage — prevents misaligned rows caused by variable title/metadata heights | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-homepageGridAlign"></a><strong>Homepage Grid Align</strong><br><code>homepageGridAlign</code> | Force uniform thumbnail grid on the homepage, prevents misaligned rows caused by variable title/metadata heights | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-styledFilterChips"></a><strong>Styled Filter Chips</strong><br><code>styledFilterChips</code> | Compact, native-feeling filter chips on home and subscriptions | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideSidebar"></a><strong>Hide Sidebar</strong><br><code>hideSidebar</code> | Remove the left navigation sidebar completely | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-uiStyle"></a><strong>UI style</strong><br><code>uiStyle</code> | Selects the global corner treatment: square applies Astra's squaring rules, while rounded preserves rounded surfaces. | Default: <code>square</code><br>Values: <code>square</code>, <code>rounded</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v0.1.0</code> |
@@ -397,12 +397,12 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-forceDarkEverywhere"></a><strong>Force Dark on All YouTube Pages</strong><br><code>forceDarkEverywhere</code> | Applies dark theme to YouTube pages that may not respect dark mode (settings, about, etc.) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-customCssInjection"></a><strong>Custom CSS</strong><br><code>customCssInjection</code> | Inject your own custom CSS rules into YouTube pages | Default: Off | Extension + userscript<br>GitHub-full only<br>Global<br>Live apply + reversible teardown<br>Store-sensitive<br>Since <code>v0.1.0</code> |
 | <a id="setting-customCssCode"></a><strong>Custom CSS code</strong><br><code>customCssCode</code> | Stores the local stylesheet injected into YouTube pages while Custom CSS is enabled. | Default: Empty | Extension + userscript<br>GitHub-full only<br>Global<br>Live apply<br>Store-sensitive<br>Since <code>v0.1.0</code> |
-| <a id="setting-grayscaleThumbnails"></a><strong>Grayscale Thumbnails</strong><br><code>grayscaleThumbnails</code> | Shows thumbnails in grayscale to reduce visual distraction — color restores on hover | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-grayscaleThumbnails"></a><strong>Grayscale Thumbnails</strong><br><code>grayscaleThumbnails</code> | Shows thumbnails in grayscale to reduce visual distraction, color restores on hover | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-noFrostedGlass"></a><strong>Disable Frosted Glass</strong><br><code>noFrostedGlass</code> | Remove blur effects from UI elements | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-themeAccentColor"></a><strong>Accent Color</strong><br><code>themeAccentColor</code> | Custom accent color for highlights, progress bar, and active UI elements | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-nyanCatProgressBar"></a><strong>Nyan Cat Progress Bar</strong><br><code>nyanCatProgressBar</code> | Replace the video progress bar with a Nyan Cat animation | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-oledTheme"></a><strong>OLED Theme</strong><br><code>oledTheme</code> | True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube's native theme switches because we hook the tokens themselves, not the surface classes. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-denseMode"></a><strong>Dense Mode</strong><br><code>denseMode</code> | Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube's native layout — only our own panels, chips, pills, and toolbars. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-denseMode"></a><strong>Dense Mode</strong><br><code>denseMode</code> | Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube's native layout, only our own panels, chips, pills, and toolbars. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-rectangularizeYouTube"></a><strong>Rectangularize UI</strong><br><code>rectangularizeYouTube</code> | Strips YouTube's pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-classicLayoutProfile"></a><strong>Layout Profile</strong><br><code>classicLayoutProfile</code> | Pick a layout profile. Modern keeps YouTube's 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions. | Default: <code>modern</code><br>Values: <code>modern</code>, <code>classic-2020</code>, <code>classic-2016</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply<br>Experimental<br>Since <code>v0.1.0</code> |
 | <a id="setting-newPlayerUiRestore"></a><strong>Restore Classic Player Chrome</strong><br><code>newPlayerUiRestore</code> | Hides YouTube's new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v0.1.0</code> |
@@ -418,13 +418,13 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-restoreNativeYouTubeUi"></a><strong>Restore Native YouTube UI</strong><br><code>restoreNativeYouTubeUi</code> | Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default. Toggles the early.css opt-out class so YouTube renders its own styling. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.46.0</code> |
 | <a id="setting-cleanUiPreset"></a><strong>Compact Clean UI</strong><br><code>cleanUiPreset</code> | Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.46.3</code> |
 | <a id="setting-hideSearchSidebar"></a><strong>Hide Search Sidebar</strong><br><code>hideSearchSidebar</code> | Remove the right-hand sidebar on search results pages | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
-| <a id="setting-uiFontFamily"></a><strong>UI Font</strong><br><code>uiFontFamily</code> | Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that. | Default: <code>default</code><br>Values: <code>default</code>, <code>system</code>, <code>serif</code>, <code>mono</code>, <code>readable</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.54.0</code> |
-| <a id="setting-uiFontSize"></a><strong>UI Font Size</strong><br><code>uiFontSize</code> | Override the base interface font size (0 = YouTube default, otherwise 8–20px) | Default: <code>0</code><br>Values: <code>0</code>, <code>8</code>, <code>9</code>, <code>10</code>, <code>11</code>, <code>12</code>, <code>13</code>, <code>14</code>, <code>15</code>, <code>16</code>, <code>17</code>, <code>18</code>, <code>19</code>, <code>20</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
+| <a id="setting-uiFontFamily"></a><strong>UI Font</strong><br><code>uiFontFamily</code> | Override the interface typeface. A short curated list rather than a free-text field, an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that. | Default: <code>default</code><br>Values: <code>default</code>, <code>system</code>, <code>serif</code>, <code>mono</code>, <code>readable</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.54.0</code> |
+| <a id="setting-uiFontSize"></a><strong>UI Font Size</strong><br><code>uiFontSize</code> | Override the base interface font size (0 = YouTube default, otherwise 8 to 20px) | Default: <code>0</code><br>Values: <code>0</code>, <code>8</code>, <code>9</code>, <code>10</code>, <code>11</code>, <code>12</code>, <code>13</code>, <code>14</code>, <code>15</code>, <code>16</code>, <code>17</code>, <code>18</code>, <code>19</code>, <code>20</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 
 </details>
 
 <details>
-<summary><strong>Navigation and Guide</strong> — 17 settings</summary>
+<summary><strong>Navigation and Guide</strong>: 17 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -449,7 +449,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Shorts</strong> — 6 settings</summary>
+<summary><strong>Shorts</strong>: 6 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -463,7 +463,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Feeds and layout</strong> — 13 settings</summary>
+<summary><strong>Feeds and layout</strong>: 13 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -471,7 +471,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-hideMembersOnly"></a><strong>Hide Members Only</strong><br><code>hideMembersOnly</code> | Hide members-only feed cards on Home and Subscriptions | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideNewsHome"></a><strong>Hide News Section</strong><br><code>hideNewsHome</code> | Hide news sections from the homepage | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hidePlaylistsHome"></a><strong>Hide Playlist Shelves</strong><br><code>hidePlaylistsHome</code> | Hide playlist sections from the homepage | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-videosPerRow"></a><strong>Videos Per Row</strong><br><code>videosPerRow</code> | Set how many video thumbnails per row (0 = dynamic based on window width) | Default: <code>0</code><br>Range: <code>0–8</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-videosPerRow"></a><strong>Videos Per Row</strong><br><code>videosPerRow</code> | Set how many video thumbnails per row (0 = dynamic based on window width) | Default: <code>0</code><br>Range: <code>0 to 8</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-listFeedLayout"></a><strong>List Feed Layout</strong><br><code>listFeedLayout</code> | Show Home, Subscriptions, and Search video cards as rows with thumbnails on the left and metadata on the right. Off by default and mutually exclusive with Videos Per Row. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
 | <a id="setting-hideMerchShelf"></a><strong>Hide Merch Shelf</strong><br><code>hideMerchShelf</code> | Remove merchandise promotions below videos | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideInfoPanels"></a><strong>Hide Info Panels</strong><br><code>hideInfoPanels</code> | Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.) | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
@@ -484,7 +484,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Watch page and player controls</strong> — 74 settings</summary>
+<summary><strong>Watch page and player controls</strong>: 74 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -549,24 +549,24 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-adaptiveLiveLayout"></a><strong>Adaptive Live Layout</strong><br><code>adaptiveLiveLayout</code> | Automatically adjust layout for live stream chat side-by-side | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-theaterAutoScroll"></a><strong>Theater Auto-Scroll</strong><br><code>theaterAutoScroll</code> | Scroll video into full view when theater mode activates | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-bufferPreload"></a><strong>Buffer / Preload</strong><br><code>bufferPreload</code> | Ask the YouTube player to keep a larger buffer for on-demand videos, so a brief connection drop does not stall playback. Off by default; live streams are never changed. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
-| <a id="setting-bufferPreloadSeconds"></a><strong>Buffer Target</strong><br><code>bufferPreloadSeconds</code> | How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos. | Default: <code>20</code><br>Range: <code>5–600</code> | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.54.0</code> |
+| <a id="setting-bufferPreloadSeconds"></a><strong>Buffer Target</strong><br><code>bufferPreloadSeconds</code> | How many seconds of an on-demand video to keep buffered ahead. Higher values survive longer connection drops; the player may still cap very large targets on long videos. | Default: <code>20</code><br>Range: <code>5 to 600</code> | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.54.0</code> |
 | <a id="setting-audioOnlyPlayback"></a><strong>Audio-Only Mode</strong><br><code>audioOnlyPlayback</code> | Collapse the video and ask the player for the cheapest stream it has, so a watch page costs roughly what a podcast does. YouTube exposes no true audio-only stream to extensions, so the pill reports whether you got one or just the lowest quality. Works on live streams too, where a multi-hour session makes the saving largest. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v4.54.0</code> |
 | <a id="setting-preloadComments"></a><strong>Preload Comments</strong><br><code>preloadComments</code> | Eagerly load the comment section so it is ready when you scroll down | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-playbackSpeedOSD"></a><strong>Speed Change OSD</strong><br><code>playbackSpeedOSD</code> | Show speed overlay on the video player (like VLC) instead of corner toast | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-showStatisticsDashboard"></a><strong>Statistics Dashboard</strong><br><code>showStatisticsDashboard</code> | Track videos watched, time on YouTube, and videos hidden | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-fitPlayerToWindow"></a><strong>Fit Player to Window</strong><br><code>fitPlayerToWindow</code> | Make the video player fill the entire browser window | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-monetizationIndicator"></a><strong>Monetization Indicator</strong><br><code>monetizationIndicator</code> | Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-videoAgeColors"></a><strong>Video Age Color Coding</strong><br><code>videoAgeColors</code> | Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-monetizationIndicator"></a><strong>Monetization Indicator</strong><br><code>monetizationIndicator</code> | Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic, uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-videoAgeColors"></a><strong>Video Age Color Coding</strong><br><code>videoAgeColors</code> | Color-coded thumbnail borders by upload age, fresh (green), week (blue), month (yellow), year (orange), ancient (red) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-watchPageTabs"></a><strong>Watch Page Tabs</strong><br><code>watchPageTabs</code> | Horizontal tab bar above the comments/description area to quickly switch views on the watch page | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-copyChapterMarkdown"></a><strong>Copy Chapters as Markdown</strong><br><code>copyChapterMarkdown</code> | Copy all video chapters as a markdown timestamp list — button in player controls | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-chapterJumpButtons"></a><strong>Chapter Jump Buttons</strong><br><code>chapterJumpButtons</code> | Prev/Next chapter buttons in the player right-controls — skip to the previous or next chapter | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-copyChapterMarkdown"></a><strong>Copy Chapters as Markdown</strong><br><code>copyChapterMarkdown</code> | Copy all video chapters as a markdown timestamp list, button in player controls | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-chapterJumpButtons"></a><strong>Chapter Jump Buttons</strong><br><code>chapterJumpButtons</code> | Prev/Next chapter buttons in the player right-controls, skip to the previous or next chapter | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-removeScrubber"></a><strong>Hide Scrubber Handle</strong><br><code>removeScrubber</code> | Remove the round scrubber handle from the video progress bar | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 | <a id="setting-softBottomGradient"></a><strong>Soften Bottom Gradient</strong><br><code>softBottomGradient</code> | Reduce the dark gradient behind the player control bar | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.49.0</code> |
 
 </details>
 
 <details>
-<summary><strong>Playback, audio, and utilities</strong> — 109 settings</summary>
+<summary><strong>Playback, audio, and utilities</strong>: 109 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -578,15 +578,15 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-playbackErrorRecovery"></a><strong>Playback Error Auto-Recovery</strong><br><code>playbackErrorRecovery</code> | When the player shows an error screen, reload the page and restore position and speed automatically (max 3 attempts per video) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
 | <a id="setting-liveSpeedReset"></a><strong>Live Catch-Up Speed Reset</strong><br><code>liveSpeedReset</code> | When a live stream played above 1x catches up to the live edge, reset to 1x; your speed is restored if you seek back behind the edge | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
 | <a id="setting-liveLatencyCatchup"></a><strong>Live Latency Catch-up</strong><br><code>liveLatencyCatchup</code> | Show live latency and buffer in the player chrome, then use a bounded playback-rate boost to reach the configured live edge target. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.59.1</code> |
-| <a id="setting-liveLatencyTargetSeconds"></a><strong>Live Latency Target</strong><br><code>liveLatencyTargetSeconds</code> | Start catch-up above this live-edge delay. Lower values catch up sooner but may change speed more often. | Default: <code>8</code><br>Range: <code>2–60</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.59.1</code> |
-| <a id="setting-liveLatencyMaxRate"></a><strong>Live Catch-up Max Rate</strong><br><code>liveLatencyMaxRate</code> | Maximum playback rate used while catching up; your saved channel speed is restored afterward. | Default: <code>1.25</code><br>Range: <code>1.05–2</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.59.1</code> |
+| <a id="setting-liveLatencyTargetSeconds"></a><strong>Live Latency Target</strong><br><code>liveLatencyTargetSeconds</code> | Start catch-up above this live-edge delay. Lower values catch up sooner but may change speed more often. | Default: <code>8</code><br>Range: <code>2 to 60</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.59.1</code> |
+| <a id="setting-liveLatencyMaxRate"></a><strong>Live Catch-up Max Rate</strong><br><code>liveLatencyMaxRate</code> | Maximum playback rate used while catching up; your saved channel speed is restored afterward. | Default: <code>1.25</code><br>Range: <code>1.05 to 2</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.59.1</code> |
 | <a id="setting-forceDvr"></a><strong>Force DVR for Live Streams</strong><br><code>forceDvr</code> | Ask YouTube to expose rewind for live streams that advertise DVR as disabled. Experimental and off by default; if the player response changes shape, Astra Deck leaves it untouched and reports the degradation. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v4.59.1</code> |
 | <a id="setting-showPlaylistDuration"></a><strong>Show Playlist Duration</strong><br><code>showPlaylistDuration</code> | Display total playlist runtime and speed-adjusted estimate next to the playlist header | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-showTimeInTabTitle"></a><strong>Show Time in Tab Title</strong><br><code>showTimeInTabTitle</code> | Prepend current playback time [5:23] to the browser tab title | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-reversePlaylist"></a><strong>Reverse Playlist Button</strong><br><code>reversePlaylist</code> | Adds a "Reverse" button to playlist panels to play oldest first | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-rssFeedLink"></a><strong>RSS Feed Link</strong><br><code>rssFeedLink</code> | Show an RSS feed link on channel pages for subscribing via RSS readers | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-preciseViewCounts"></a><strong>Precise View Counts</strong><br><code>preciseViewCounts</code> | Show full view counts (1,234,567) instead of truncated (1.2M) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-videoScreenshot"></a><strong>Video Screenshot</strong><br><code>videoScreenshot</code> | Capture the current video frame as a PNG image — copies to clipboard and downloads | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-videoScreenshot"></a><strong>Video Screenshot</strong><br><code>videoScreenshot</code> | Capture the current video frame as a PNG image, copies to clipboard and downloads | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-perChannelSpeed"></a><strong>Per-Channel Speed Memory</strong><br><code>perChannelSpeed</code> | Remember and auto-apply preferred playback speed for each channel | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-antiTranslate"></a><strong>Anti-Translate (Original Titles + Descriptions)</strong><br><code>antiTranslate</code> | Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-pauseOtherTabs"></a><strong>Pause Other Tabs on Play</strong><br><code>pauseOtherTabs</code> | When a video starts playing, pause YouTube in all other tabs | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
@@ -595,16 +595,16 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-notInterestedButton"></a><strong>&quot;Not Interested&quot; on Thumbnails</strong><br><code>notInterestedButton</code> | Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-timestampBookmarks"></a><strong>Timestamp Bookmarks</strong><br><code>timestampBookmarks</code> | Bookmark moments in videos with custom notes. Click a bookmark to seek. Persists across sessions. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-blueLightFilter"></a><strong>Blue Light Filter</strong><br><code>blueLightFilter</code> | Apply a warm tint to reduce blue light emission. Configurable intensity. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-blueLightIntensity"></a><strong>Blue Light Intensity</strong><br><code>blueLightIntensity</code> | Set the strength of the warm tint when Blue Light Filter is enabled. | Default: <code>30</code><br>Range: <code>10–80</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-blueLightIntensity"></a><strong>Blue Light Intensity</strong><br><code>blueLightIntensity</code> | Set the strength of the warm tint when Blue Light Filter is enabled. | Default: <code>30</code><br>Range: <code>10 to 80</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-watchTimeTracker"></a><strong>Watch Time Tracker</strong><br><code>watchTimeTracker</code> | Track your daily/weekly YouTube watch time with a stats widget in the settings panel | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-autoSkipChapters"></a><strong>Auto-Skip Chapters</strong><br><code>autoSkipChapters</code> | Automatically skip chapters matching patterns (intro, outro, recap, sponsor). Comma-separated. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-autoSkipChapterPatterns"></a><strong>Auto skip chapter patterns</strong><br><code>autoSkipChapterPatterns</code> | Provides comma-separated chapter-name fragments that Auto-Skip Chapters treats as skippable. | Default: <code>intro,outro,recap,sponsor</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-videoLoopButton"></a><strong>Video Loop Button</strong><br><code>videoLoopButton</code> | Add a loop toggle button to the player controls for one-click video looping | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-persistentSpeed"></a><strong>Persistent Playback Speed</strong><br><code>persistentSpeed</code> | Remember your preferred playback speed globally and auto-apply it to every video | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-persistentSpeedValue"></a><strong>Persistent speed value</strong><br><code>persistentSpeedValue</code> | Sets the playback rate reapplied by Persistent Playback Speed. | Default: <code>1</code><br>Range: <code>0.1–16</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-persistentSpeedValue"></a><strong>Persistent speed value</strong><br><code>persistentSpeedValue</code> | Sets the playback rate reapplied by Persistent Playback Speed. | Default: <code>1</code><br>Range: <code>0.1 to 16</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-jumpToMostReplayed"></a><strong>Jump to Most Replayed</strong><br><code>jumpToMostReplayed</code> | Add a player control that seeks straight to the most-replayed moment. It appears only on videos where YouTube actually provides the heatmap. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.68.0</code> |
 | <a id="setting-heatmapSmartSpeed"></a><strong>Heatmap Smart Speed</strong><br><code>heatmapSmartSpeed</code> | Play the parts nobody rewatches faster, and drop back to your own speed through the most-replayed moments. Off by default; needs a video with heatmap data. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.68.0</code> |
-| <a id="setting-heatmapSmartSpeedColdRate"></a><strong>Heatmap smart speed cold rate</strong><br><code>heatmapSmartSpeedColdRate</code> | Sets the playback rate Heatmap Smart Speed uses through the parts of a video nobody rewatches. Never slows playback below your own speed. | Default: <code>1.5</code><br>Range: <code>1–4</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.68.0</code> |
+| <a id="setting-heatmapSmartSpeedColdRate"></a><strong>Heatmap smart speed cold rate</strong><br><code>heatmapSmartSpeedColdRate</code> | Sets the playback rate Heatmap Smart Speed uses through the parts of a video nobody rewatches. Never slows playback below your own speed. | Default: <code>1.5</code><br>Range: <code>1 to 4</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.68.0</code> |
 | <a id="setting-ageRestrictionBypass"></a><strong>Age Restriction Bypass</strong><br><code>ageRestrictionBypass</code> | Bypass age verification by fetching video data from YouTube's embed endpoint. No sign-in required. | Default: Off | Extension + userscript<br>GitHub-full only<br>Player<br>Live apply + reversible teardown<br>Store-sensitive<br>Since <code>v0.1.0</code> |
 | <a id="setting-autoLikeSubscribed"></a><strong>Auto-Like Subscribed Channels</strong><br><code>autoLikeSubscribed</code> | Automatically like videos from channels you're subscribed to after watching for 30 seconds | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Store-sensitive<br>Since <code>v0.1.0</code> |
 | <a id="setting-searchFilterDefaults"></a><strong>Search Filter Defaults</strong><br><code>searchFilterDefaults</code> | Automatically apply a default sort order (upload date, view count, or rating) to YouTube search results | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
@@ -614,7 +614,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-copyVideoTitle"></a><strong>Copy Video Title Button</strong><br><code>copyVideoTitle</code> | Adds a copy button next to the video title for one-click title copying | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-fullscreenOnDoubleClick"></a><strong>Double-Click Fullscreen</strong><br><code>fullscreenOnDoubleClick</code> | Double-click anywhere on the video to toggle fullscreen (replaces default seek behavior) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-rememberVolume"></a><strong>Remember Volume</strong><br><code>rememberVolume</code> | Persist your volume level across videos and sessions | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-rememberVolumeLevel"></a><strong>Remember volume level</strong><br><code>rememberVolumeLevel</code> | Stores the logical volume percentage restored by Remember Volume. | Default: <code>100</code><br>Range: <code>0–100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-rememberVolumeLevel"></a><strong>Remember volume level</strong><br><code>rememberVolumeLevel</code> | Stores the logical volume percentage restored by Remember Volume. | Default: <code>100</code><br>Range: <code>0 to 100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-logarithmicVolume"></a><strong>Logarithmic Volume Curve</strong><br><code>logarithmicVolume</code> | Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.59.1</code> |
 | <a id="setting-pipButton"></a><strong>Picture-in-Picture Button</strong><br><code>pipButton</code> | Adds a one-click PiP button to the player controls for native browser Picture-in-Picture | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-autoSubtitles"></a><strong>Auto-Enable Subtitles</strong><br><code>autoSubtitles</code> | Automatically turns on closed captions when a video starts playing | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
@@ -628,32 +628,32 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-customSpeedButtons"></a><strong>Speed Preset Buttons</strong><br><code>customSpeedButtons</code> | Adds quick speed buttons below the video player with presets from 0.5x to 3x | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-preventAutoplay"></a><strong>Prevent Autoplay</strong><br><code>preventAutoplay</code> | Stop videos from automatically playing on page load | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-scrollWheelSpeed"></a><strong>Scroll Wheel Speed</strong><br><code>scrollWheelSpeed</code> | Adjust playback speed by scrolling the mouse wheel over the video player | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-speedStep"></a><strong>Speed Step Amount</strong><br><code>speedStep</code> | How much to change speed per scroll tick | Default: <code>0.25</code><br>Range: <code>0.05–1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-speedStep"></a><strong>Speed Step Amount</strong><br><code>speedStep</code> | How much to change speed per scroll tick | Default: <code>0.25</code><br>Range: <code>0.05 to 1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-enableCPU_Tamer"></a><strong>CPU Tamer</strong><br><code>enableCPU_Tamer</code> | Reduce CPU usage by throttling background timers; in hidden tabs it also force-releases YouTube web locks and closes idle database connections | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-enableHandleRevealer"></a><strong>Comment Handle Revealer</strong><br><code>enableHandleRevealer</code> | Show the original channel name next to @handle in comments | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-videoRotation"></a><strong>Video Rotation</strong><br><code>videoRotation</code> | Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-videoRotation"></a><strong>Video Rotation</strong><br><code>videoRotation</code> | Rotate the video 90/180/270 degrees via CSS transform, useful for sideways phone recordings | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-videoRotationAngle"></a><strong>Video rotation angle</strong><br><code>videoRotationAngle</code> | Sets the clockwise rotation applied by Video Rotation. | Default: <code>0</code><br>Values: <code>0</code>, <code>90</code>, <code>180</code>, <code>270</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-videoFlip"></a><strong>Video Flip</strong><br><code>videoFlip</code> | Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
+| <a id="setting-videoFlip"></a><strong>Video Flip</strong><br><code>videoFlip</code> | Mirror the video horizontally or vertically, useful for mirrored dance tutorials, text readability, or flipped recordings | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
 | <a id="setting-videoFlipMode"></a><strong>Video flip mode</strong><br><code>videoFlipMode</code> | Chooses the horizontal or vertical transform applied by Video Flip. | Default: <code>none</code><br>Values: <code>none</code>, <code>horizontal</code>, <code>vertical</code>, <code>both</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.47.0</code> |
-| <a id="setting-monoToStereo"></a><strong>Mono to Stereo</strong><br><code>monoToStereo</code> | Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
+| <a id="setting-monoToStereo"></a><strong>Mono to Stereo</strong><br><code>monoToStereo</code> | Center mono audio equally in both ears, fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
 | <a id="setting-volumeBoost"></a><strong>Volume Boost</strong><br><code>volumeBoost</code> | Amplify audio beyond 100% via a Web Audio gain node (up to 10x). Useful for quiet recordings. Adjust intensity with volumeBoostLevel. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
-| <a id="setting-volumeBoostLevel"></a><strong>Volume Boost Level</strong><br><code>volumeBoostLevel</code> | Gain multiplier for Volume Boost (1.0 = unity, max 10.0) | Default: <code>2</code><br>Range: <code>1–10</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.48.0</code> |
+| <a id="setting-volumeBoostLevel"></a><strong>Volume Boost Level</strong><br><code>volumeBoostLevel</code> | Gain multiplier for Volume Boost (1.0 = unity, max 10.0) | Default: <code>2</code><br>Range: <code>1 to 10</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.48.0</code> |
 | <a id="setting-audioNormalization"></a><strong>Audio Normalization</strong><br><code>audioNormalization</code> | Compress dynamic range so quiet and loud passages play at similar volume. Uses a DynamicsCompressorNode in the MAIN world audio graph. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
 | <a id="setting-audioAutoGain"></a><strong>Audio Auto-Gain</strong><br><code>audioAutoGain</code> | Balance quiet videos toward a comfortable listening level with a bounded, adaptive Web Audio gain stage. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
 | <a id="setting-audioHighPass"></a><strong>Audio High-Pass Filter</strong><br><code>audioHighPass</code> | Reduce muddy low-frequency rumble with an 80 Hz high-pass filter in the MAIN-world audio graph. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
 | <a id="setting-audioParametricEq"></a><strong>Parametric EQ</strong><br><code>audioParametricEq</code> | Apply a three-band low, mid, and high EQ in the MAIN-world audio graph. Off by default; each band is bounded to -12 dB to +12 dB. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
-| <a id="setting-audioEqLowGainDb"></a><strong>EQ Low Band</strong><br><code>audioEqLowGainDb</code> | Low-shelf gain centered at 120 Hz, from -12 dB to +12 dB. | Default: <code>0</code><br>Range: <code>-12–12</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
-| <a id="setting-audioEqMidGainDb"></a><strong>EQ Mid Band</strong><br><code>audioEqMidGainDb</code> | Peaking gain centered at 1 kHz, from -12 dB to +12 dB. | Default: <code>0</code><br>Range: <code>-12–12</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
-| <a id="setting-audioEqHighGainDb"></a><strong>EQ High Band</strong><br><code>audioEqHighGainDb</code> | High-shelf gain centered at 8 kHz, from -12 dB to +12 dB. | Default: <code>0</code><br>Range: <code>-12–12</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
-| <a id="setting-audioPan"></a><strong>Audio Pan</strong><br><code>audioPan</code> | Shift audio balance left or right via a StereoPannerNode in the MAIN world audio graph. Range -1 (full left) to 1 (full right), 0 = center. | Default: <code>0</code><br>Range: <code>-1–1</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
-| <a id="setting-audioSyncOffsetMs"></a><strong>Audio Sync Offset</strong><br><code>audioSyncOffsetMs</code> | Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency. | Default: <code>0</code><br>Range: <code>-500–500</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.51.1</code> |
+| <a id="setting-audioEqLowGainDb"></a><strong>EQ Low Band</strong><br><code>audioEqLowGainDb</code> | Low-shelf gain centered at 120 Hz, from -12 dB to +12 dB. | Default: <code>0</code><br>Range: <code>-12 to 12</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
+| <a id="setting-audioEqMidGainDb"></a><strong>EQ Mid Band</strong><br><code>audioEqMidGainDb</code> | Peaking gain centered at 1 kHz, from -12 dB to +12 dB. | Default: <code>0</code><br>Range: <code>-12 to 12</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
+| <a id="setting-audioEqHighGainDb"></a><strong>EQ High Band</strong><br><code>audioEqHighGainDb</code> | High-shelf gain centered at 8 kHz, from -12 dB to +12 dB. | Default: <code>0</code><br>Range: <code>-12 to 12</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
+| <a id="setting-audioPan"></a><strong>Audio Pan</strong><br><code>audioPan</code> | Shift audio balance left or right via a StereoPannerNode in the MAIN world audio graph. Range -1 (full left) to 1 (full right), 0 = center. | Default: <code>0</code><br>Range: <code>-1 to 1</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
+| <a id="setting-audioSyncOffsetMs"></a><strong>Audio Sync Offset</strong><br><code>audioSyncOffsetMs</code> | Adjust audio timing relative to video from -500 ms to +500 ms. Positive values add audio delay; negative values use the minimum available Web Audio latency. | Default: <code>0</code><br>Range: <code>-500 to 500</code> | Extension only<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.51.1</code> |
 | <a id="setting-frameByFrameButtons"></a><strong>Frame-by-Frame Buttons</strong><br><code>frameByFrameButtons</code> | Add visible step-back (,) and step-forward (.) buttons to the player controls for precise frame navigation | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-downloadScreenshotFormat"></a><strong>Screenshot Format</strong><br><code>downloadScreenshotFormat</code> | Output format for the player screenshot button. PNG is lossless and copies to clipboard; JPEG/WebP are smaller files but download-only. | Default: <code>png</code><br>Values: <code>png</code>, <code>jpeg</code>, <code>webp</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-downloadSubtitlesWithScreenshot"></a><strong>Include Subtitles In Screenshot</strong><br><code>downloadSubtitlesWithScreenshot</code> | Bake the currently rendered caption line into the bottom band of the screenshot. Off by default. Requires Video Screenshot. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-volumeWheelMode"></a><strong>Volume Wheel</strong><br><code>volumeWheelMode</code> | Scroll the mouse wheel over the player to change volume in 5% steps. A floating indicator chip surfaces the new level for 1.2 s; no keyboard shortcut is added. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-wheelSeek"></a><strong>Wheel Seek</strong><br><code>wheelSeek</code> | Scroll the mouse wheel over the progress bar to seek. Step defaults to 5 s (configure via wheelSeekStepSec). Scrolling elsewhere over the player still drives Volume Wheel if it is on; the two features do not conflict. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-wheelSeekStepSec"></a><strong>Wheel seek step sec</strong><br><code>wheelSeekStepSec</code> | Sets how many seconds Wheel Seek moves for each wheel step over the progress bar. | Default: <code>5</code><br>Range: <code>0.1–300</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-disableLoudnessNormalization"></a><strong>Keep Volume At Full</strong><br><code>disableLoudnessNormalization</code> | Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube's loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-wheelSeekStepSec"></a><strong>Wheel seek step sec</strong><br><code>wheelSeekStepSec</code> | Sets how many seconds Wheel Seek moves for each wheel step over the progress bar. | Default: <code>5</code><br>Range: <code>0.1 to 300</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-disableLoudnessNormalization"></a><strong>Keep Volume At Full</strong><br><code>disableLoudnessNormalization</code> | Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube's loudness normalization, that runs in a Web Audio node an extension cannot reach, so quiet videos stay quiet; only the volume slider stops drifting. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-perChannelIntroOutro"></a><strong>Per-Channel Intro/Outro Skip</strong><br><code>perChannelIntroOutro</code> | Skip the first N and last M seconds of every video on a given channel. Set offsets per channel from the watch page (Tools → Set Intro/Outro). Stored under perChannelIntroOutroData. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-perChannelIntroOutroData"></a><strong>Per channel intro outro data</strong><br><code>perChannelIntroOutroData</code> | Stores per-channel intro and outro offsets used by Per-Channel Intro/Outro skipping. | Default: Empty object | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-antiTranslateAudioTrack"></a><strong>Anti-Translate Audio Track</strong><br><code>antiTranslateAudioTrack</code> | When YouTube serves an auto-dubbed track, select the original through the reviewed player bridge. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
@@ -662,14 +662,14 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-antiTranslateChapters"></a><strong>Anti-Translate Chapters</strong><br><code>antiTranslateChapters</code> | Restores original-language chapter titles in the chapter list and the player hover label. Reads them from the original description, which is where YouTube builds chapters from in the first place. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v4.70.0</code> |
 | <a id="setting-videoVisualFilters"></a><strong>Video Visual Filters</strong><br><code>videoVisualFilters</code> | Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-photosensitiveFlashProtection"></a><strong>Photosensitive Flash Protection</strong><br><code>photosensitiveFlashProtection</code> | Sample video frames locally and briefly dim the player when a large luminance change is detected. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.57.0</code> |
-| <a id="setting-photosensitiveFlashThreshold"></a><strong>Flash Sensitivity</strong><br><code>photosensitiveFlashThreshold</code> | Minimum frame luminance change that triggers protection. | Default: <code>0.2</code><br>Range: <code>0.05–0.8</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.57.0</code> |
-| <a id="setting-photosensitiveDimPercent"></a><strong>Dim Strength</strong><br><code>photosensitiveDimPercent</code> | How strongly to dim the player while flashing content is detected. | Default: <code>35</code><br>Range: <code>10–80</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.57.0</code> |
-| <a id="setting-vvfBrightness"></a><strong>VVF brightness</strong><br><code>vvfBrightness</code> | Sets Video Visual Filters brightness as a percentage of the original image. | Default: <code>100</code><br>Range: <code>0–200</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-vvfContrast"></a><strong>VVF contrast</strong><br><code>vvfContrast</code> | Sets Video Visual Filters contrast as a percentage of the original image. | Default: <code>100</code><br>Range: <code>0–200</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-vvfSaturation"></a><strong>VVF saturation</strong><br><code>vvfSaturation</code> | Sets Video Visual Filters saturation as a percentage of the original image. | Default: <code>100</code><br>Range: <code>0–200</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-vvfHue"></a><strong>VVF hue</strong><br><code>vvfHue</code> | Sets Video Visual Filters hue rotation in degrees. | Default: <code>0</code><br>Range: <code>-180–180</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-vvfGrayscale"></a><strong>VVF grayscale</strong><br><code>vvfGrayscale</code> | Sets the grayscale percentage applied by Video Visual Filters. | Default: <code>0</code><br>Range: <code>0–100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-vvfSepia"></a><strong>VVF sepia</strong><br><code>vvfSepia</code> | Sets the sepia percentage applied by Video Visual Filters. | Default: <code>0</code><br>Range: <code>0–100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-photosensitiveFlashThreshold"></a><strong>Flash Sensitivity</strong><br><code>photosensitiveFlashThreshold</code> | Minimum frame luminance change that triggers protection. | Default: <code>0.2</code><br>Range: <code>0.05 to 0.8</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.57.0</code> |
+| <a id="setting-photosensitiveDimPercent"></a><strong>Dim Strength</strong><br><code>photosensitiveDimPercent</code> | How strongly to dim the player while flashing content is detected. | Default: <code>35</code><br>Range: <code>10 to 80</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.57.0</code> |
+| <a id="setting-vvfBrightness"></a><strong>VVF brightness</strong><br><code>vvfBrightness</code> | Sets Video Visual Filters brightness as a percentage of the original image. | Default: <code>100</code><br>Range: <code>0 to 200</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-vvfContrast"></a><strong>VVF contrast</strong><br><code>vvfContrast</code> | Sets Video Visual Filters contrast as a percentage of the original image. | Default: <code>100</code><br>Range: <code>0 to 200</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-vvfSaturation"></a><strong>VVF saturation</strong><br><code>vvfSaturation</code> | Sets Video Visual Filters saturation as a percentage of the original image. | Default: <code>100</code><br>Range: <code>0 to 200</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-vvfHue"></a><strong>VVF hue</strong><br><code>vvfHue</code> | Sets Video Visual Filters hue rotation in degrees. | Default: <code>0</code><br>Range: <code>-180 to 180</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-vvfGrayscale"></a><strong>VVF grayscale</strong><br><code>vvfGrayscale</code> | Sets the grayscale percentage applied by Video Visual Filters. | Default: <code>0</code><br>Range: <code>0 to 100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-vvfSepia"></a><strong>VVF sepia</strong><br><code>vvfSepia</code> | Sets the sepia percentage applied by Video Visual Filters. | Default: <code>0</code><br>Range: <code>0 to 100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-musicVideoSpeedLock"></a><strong>Lock 1× Speed on Music Videos</strong><br><code>musicVideoSpeedLock</code> | When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren't sped up | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-playlistQuickRemove"></a><strong>Playlist Quick-Remove Overlay</strong><br><code>playlistQuickRemove</code> | Show a trash icon on each item in playlists you own for one-click removal | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-watchLaterCleanup"></a><strong>Watch Later Cleanup Button</strong><br><code>watchLaterCleanup</code> | Adds a "Remove Watched" button to the Watch Later playlist header for batch cleanup | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
@@ -683,7 +683,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Quality and codecs</strong> — 12 settings</summary>
+<summary><strong>Quality and codecs</strong>: 12 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -703,17 +703,17 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Video Hider and content filtering</strong> — 47 settings</summary>
+<summary><strong>Video Hider and content filtering</strong>: 47 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
 | <a id="setting-hideVideosFromHome"></a><strong>Video Hider</strong><br><code>hideVideosFromHome</code> | Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosKeywordFilter"></a><strong>Hide videos keyword filter</strong><br><code>hideVideosKeywordFilter</code> | Provides comma-separated title or channel terms that Video Hider matches locally. | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosFilterListUrl"></a><strong>Hide videos filter list URL</strong><br><code>hideVideosFilterListUrl</code> | Sets the exact HTTPS URL for the optional remote Video Hider rule subscription; the host requires an explicit browser grant. | Default: Empty | Extension only<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Experimental<br>Since <code>v4.59.1</code> |
-| <a id="setting-hideVideosDurationFilter"></a><strong>Hide videos duration filter</strong><br><code>hideVideosDurationFilter</code> | Hides videos shorter than this many minutes; zero disables the duration rule. | Default: <code>0</code><br>Range: <code>0–60</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-hideVideosDurationFilter"></a><strong>Hide videos duration filter</strong><br><code>hideVideosDurationFilter</code> | Hides videos shorter than this many minutes; zero disables the duration rule. | Default: <code>0</code><br>Range: <code>0 to 60</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosSubsLoadLimit"></a><strong>Hide videos subs load limit</strong><br><code>hideVideosSubsLoadLimit</code> | Stops subscriptions-feed continuation loading after repeated mostly-hidden batches to prevent an endless fetch loop. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-hideVideosSubsLoadThreshold"></a><strong>Hide videos subs load threshold</strong><br><code>hideVideosSubsLoadThreshold</code> | Sets how many consecutive mostly-hidden subscriptions batches trigger the load limiter. | Default: <code>3</code><br>Range: <code>1–20</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-hideVideosSubsLoadHiddenRatio"></a><strong>Hide videos subs load hidden ratio</strong><br><code>hideVideosSubsLoadHiddenRatio</code> | Sets the fraction of a subscriptions batch that must be hidden before it counts toward the load-limiter streak. | Default: <code>0.8</code><br>Range: <code>0.05–1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.47.0</code> |
+| <a id="setting-hideVideosSubsLoadThreshold"></a><strong>Hide videos subs load threshold</strong><br><code>hideVideosSubsLoadThreshold</code> | Sets how many consecutive mostly-hidden subscriptions batches trigger the load limiter. | Default: <code>3</code><br>Range: <code>1 to 20</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-hideVideosSubsLoadHiddenRatio"></a><strong>Hide videos subs load hidden ratio</strong><br><code>hideVideosSubsLoadHiddenRatio</code> | Sets the fraction of a subscriptions batch that must be hidden before it counts toward the load-limiter streak. | Default: <code>0.8</code><br>Range: <code>0.05 to 1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.47.0</code> |
 | <a id="setting-hideVideosRemoveHiddenCards"></a><strong>Hide videos remove hidden cards</strong><br><code>hideVideosRemoveHiddenCards</code> | Removes matched cards from the current feed DOM instead of only collapsing them with CSS. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosShowFilterReason"></a><strong>Hide videos show filter reason</strong><br><code>hideVideosShowFilterReason</code> | Shows a local placeholder explaining which Video Hider rule hid each matched card. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.57.0</code> |
 | <a id="setting-elementZapper"></a><strong>Element Zapper</strong><br><code>elementZapper</code> | Click a shelf, panel, or promo to hide it, and keep hiding it. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.72.0</code> |
@@ -729,13 +729,13 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-hideVideosScopeChannels"></a><strong>Hide videos scope channels</strong><br><code>hideVideosScopeChannels</code> | Runs Video Hider rules on channel pages. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosScopeOther"></a><strong>Hide videos scope other</strong><br><code>hideVideosScopeOther</code> | Runs Video Hider rules on supported feed surfaces outside the named scopes. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosLowViewFilter"></a><strong>Hide videos low view filter</strong><br><code>hideVideosLowViewFilter</code> | Enables hiding cards whose exposed view count is below the configured threshold. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-hideVideosLowViewThreshold"></a><strong>Hide videos low view threshold</strong><br><code>hideVideosLowViewThreshold</code> | Sets the minimum visible view count accepted by the low-view filter. | Default: <code>1000</code><br>Range: <code>0–10000000</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-hideVideosLowViewThreshold"></a><strong>Hide videos low view threshold</strong><br><code>hideVideosLowViewThreshold</code> | Sets the minimum visible view count accepted by the low-view filter. | Default: <code>1000</code><br>Range: <code>0 to 10000000</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosSyntheticNarrationFilter"></a><strong>Synthetic narration markers</strong><br><code>hideVideosSyntheticNarrationFilter</code> | Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.59.1</code> |
 | <a id="setting-hideVideosLowSignalFilter"></a><strong>Hide low-signal videos</strong><br><code>hideVideosLowSignalFilter</code> | Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.59.1</code> |
-| <a id="setting-hideVideosLowSignalMinViews"></a><strong>Low-signal view threshold</strong><br><code>hideVideosLowSignalMinViews</code> | Minimum views used by the low-signal heuristic. Set to 0 to disable its view side. | Default: <code>1000</code><br>Range: <code>0–10000000</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.59.1</code> |
-| <a id="setting-hideVideosLowSignalMinAgeDays"></a><strong>Low-signal age threshold</strong><br><code>hideVideosLowSignalMinAgeDays</code> | Only treat a low-view card as low-signal after this many days. Missing age metadata fails open. | Default: <code>30</code><br>Range: <code>0–3650</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.59.1</code> |
+| <a id="setting-hideVideosLowSignalMinViews"></a><strong>Low-signal view threshold</strong><br><code>hideVideosLowSignalMinViews</code> | Minimum views used by the low-signal heuristic. Set to 0 to disable its view side. | Default: <code>1000</code><br>Range: <code>0 to 10000000</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.59.1</code> |
+| <a id="setting-hideVideosLowSignalMinAgeDays"></a><strong>Low-signal age threshold</strong><br><code>hideVideosLowSignalMinAgeDays</code> | Only treat a low-view card as low-signal after this many days. Missing age metadata fails open. | Default: <code>30</code><br>Range: <code>0 to 3650</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.59.1</code> |
 | <a id="setting-hideVideosUploadCadenceFilter"></a><strong>Upload cadence filter</strong><br><code>hideVideosUploadCadenceFilter</code> | Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.59.1</code> |
-| <a id="setting-hideVideosUploadCadencePerDay"></a><strong>Upload cadence threshold</strong><br><code>hideVideosUploadCadencePerDay</code> | Maximum uploads per day accepted by the upload-cadence heuristic. | Default: <code>5</code><br>Range: <code>1–100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.59.1</code> |
+| <a id="setting-hideVideosUploadCadencePerDay"></a><strong>Upload cadence threshold</strong><br><code>hideVideosUploadCadencePerDay</code> | Maximum uploads per day accepted by the upload-cadence heuristic. | Default: <code>5</code><br>Range: <code>1 to 100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v4.59.1</code> |
 | <a id="setting-hideVideosHideLive"></a><strong>Hide videos hide live</strong><br><code>hideVideosHideLive</code> | Hides cards identified as currently live streams. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosHideUpcoming"></a><strong>Hide videos hide upcoming</strong><br><code>hideVideosHideUpcoming</code> | Hides scheduled, upcoming, and reminder-driven cards. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hidePlannedLivestreams"></a><strong>Hide planned livestreams</strong><br><code>hidePlannedLivestreams</code> | On the Subscriptions page, hide scheduled livestreams and premieres that only show a "Notify me" button. They reappear automatically once they go live. | Default: On | Extension only<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.50.0</code> |
@@ -743,7 +743,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-hideVideosHidePlaylists"></a><strong>Hide videos hide playlists</strong><br><code>hideVideosHidePlaylists</code> | Hides playlist and multi-video cards on supported surfaces. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosHideMovies"></a><strong>Hide videos hide movies</strong><br><code>hideVideosHideMovies</code> | Hides rental, purchase, free-with-ads, and movie-labelled cards. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideVideosHideAutoDubbed"></a><strong>Hide videos hide auto dubbed</strong><br><code>hideVideosHideAutoDubbed</code> | Hides cards labelled as dubbed, auto-dubbed, or alternate-audio videos. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-hideVideosWatchedRatio"></a><strong>Hide videos watched ratio</strong><br><code>hideVideosWatchedRatio</code> | Hides cards whose visible progress reaches this percentage; zero disables the rule. | Default: <code>0</code><br>Range: <code>0–1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-hideVideosWatchedRatio"></a><strong>Hide videos watched ratio</strong><br><code>hideVideosWatchedRatio</code> | Hides cards whose visible progress reaches this percentage; zero disables the rule. | Default: <code>0</code><br>Range: <code>0 to 1</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-persistentQueue"></a><strong>Persistent Queue</strong><br><code>persistentQueue</code> | Local play queue that survives tab close and browser restart: add videos from any thumbnail, reorder, and auto-advance | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
 | <a id="setting-persistentQueueAutoAdvance"></a><strong>Queue Auto-Advance</strong><br><code>persistentQueueAutoAdvance</code> | Play the next queue entry automatically when the current video ends | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.48.0</code> |
 | <a id="setting-feedPrefilter"></a><strong>Filter Feeds Before Render</strong><br><code>feedPrefilter</code> | Remove blocked channels from YouTube's feed data before the page builds a card from it, instead of hiding the card afterwards. Playlists and the video player are never touched. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Feeds<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v4.69.0</code> |
@@ -758,7 +758,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Comments</strong> — 24 settings</summary>
+<summary><strong>Comments</strong>: 24 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -775,7 +775,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-commentSearch"></a><strong>Comment Search</strong><br><code>commentSearch</code> | Adds a search bar above comments to filter and find specific comments | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hideNotificationButton"></a><strong>Hide Notification Bell</strong><br><code>hideNotificationButton</code> | Remove the notification bell icon from the header | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-chronologicalNotifications"></a><strong>Sort Notifications</strong><br><code>chronologicalNotifications</code> | Sort notifications chronologically (newest first) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-notificationMaxCount"></a><strong>Notification Count</strong><br><code>notificationMaxCount</code> | Limit the number of notifications shown. Set to 0 to show all. | Default: <code>0</code><br>Range: <code>0–100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply<br>Since <code>v4.51.1</code> |
+| <a id="setting-notificationMaxCount"></a><strong>Notification Count</strong><br><code>notificationMaxCount</code> | Limit the number of notifications shown. Set to 0 to show all. | Default: <code>0</code><br>Range: <code>0 to 100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply<br>Since <code>v4.51.1</code> |
 | <a id="setting-notificationHideRead"></a><strong>Hide Read Notifications</strong><br><code>notificationHideRead</code> | Hide notifications that YouTube marks as already read. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
 | <a id="setting-commentNavigator"></a><strong>Comment Navigator</strong><br><code>commentNavigator</code> | Floating thread navigator with live counts for visible comments and filtered results | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-commentTranslate"></a><strong>Translate Comments</strong><br><code>commentTranslate</code> | Adds a Translate link under comments that are not already in your language, using Chrome's built-in on-device Translator. Nothing is sent to a server and no API key is needed; when the browser has no Translator the link says so instead of failing quietly. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Comments<br>Live apply + reversible teardown<br>Since <code>v4.54.0</code> |
@@ -790,14 +790,14 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Live chat</strong> — 7 settings</summary>
+<summary><strong>Live chat</strong>: 7 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
 | <a id="setting-hideLiveChatEngagement"></a><strong>Hide Chat Engagement</strong><br><code>hideLiveChatEngagement</code> | Remove engagement prompts in live chat | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Live chat<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-premiumLiveChat"></a><strong>Premium Live Chat</strong><br><code>premiumLiveChat</code> | Refine live chat with a polished header, elevated message rows, and a premium composer. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Live chat<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-reactionSpammer"></a><strong>Reaction Spammer</strong><br><code>reactionSpammer</code> | Select live chat reactions and send them in a randomized loop. | Default: Off | Extension + userscript<br>GitHub-full only<br>Live chat<br>Live apply + reversible teardown<br>Store-sensitive<br>Since <code>v0.1.0</code> |
-| <a id="setting-reactionSpammerMinIntervalMs"></a><strong>Reaction spammer min interval ms</strong><br><code>reactionSpammerMinIntervalMs</code> | Sets the minimum delay between Reaction Spammer actions; runtime enforcement never allows less than 500 ms. | Default: <code>500</code><br>Range: <code>500–60000</code> | Extension + userscript<br>GitHub-full only<br>Live chat<br>Live apply<br>Store-sensitive<br>Since <code>v4.47.0</code> |
+| <a id="setting-reactionSpammerMinIntervalMs"></a><strong>Reaction spammer min interval ms</strong><br><code>reactionSpammerMinIntervalMs</code> | Sets the minimum delay between Reaction Spammer actions; runtime enforcement never allows less than 500 ms. | Default: <code>500</code><br>Range: <code>500 to 60000</code> | Extension + userscript<br>GitHub-full only<br>Live chat<br>Live apply<br>Store-sensitive<br>Since <code>v4.47.0</code> |
 | <a id="setting-hiddenChatElementsManager"></a><strong>Hide Chat Elements</strong><br><code>hiddenChatElementsManager</code> | Choose which live chat elements to hide | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Live chat<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-hiddenChatElements"></a><strong>Hidden chat elements</strong><br><code>hiddenChatElements</code> | Lists live-chat surfaces hidden while the Chat Elements manager is enabled. | Default: 15 selected entries<br>Choices: <code>header</code>, <code>menu</code>, <code>popout</code>, <code>reactions</code>, <code>timestamps</code>, <code>polls</code>, <code>ticker</code>, <code>leaderboard</code>, <code>support</code>, <code>banner</code>, <code>emoji</code>, <code>topFan</code>, <code>superChats</code>, <code>levelUp</code>, <code>bots</code>, <code>modeNotices</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Live chat<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-chatKeywordFilter"></a><strong>Chat Keyword Filter</strong><br><code>chatKeywordFilter</code> | Hide chat messages containing these words (comma-separated) | Default: Empty | Extension + userscript<br>Store-safe + GitHub-full<br>Live chat<br>Live apply<br>Since <code>v0.1.0</code> |
@@ -805,7 +805,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Subscriptions</strong> — 13 settings</summary>
+<summary><strong>Subscriptions</strong>: 13 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -826,7 +826,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>SponsorBlock, DeArrow, and enrichment</strong> — 31 settings</summary>
+<summary><strong>SponsorBlock, DeArrow, and enrichment</strong>: 31 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -834,7 +834,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-daReplaceTitles"></a><strong>Replace Titles</strong><br><code>daReplaceTitles</code> | Replace clickbait titles with crowdsourced alternatives | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-daReplaceThumbs"></a><strong>Replace Thumbnails</strong><br><code>daReplaceThumbs</code> | Replace clickbait thumbnails with video screenshots | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-daTitleFormat"></a><strong>Title Format</strong><br><code>daTitleFormat</code> | How to format replacement titles | Default: <code>sentence</code><br>Values: <code>sentence</code>, <code>title_case</code>, <code>original</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-deArrowCasualMode"></a><strong>Casual Mode</strong><br><code>deArrowCasualMode</code> | Keep descriptive titles unchanged — only replace titles with crowd-submitted DeArrow alternatives | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
+| <a id="setting-deArrowCasualMode"></a><strong>Casual Mode</strong><br><code>deArrowCasualMode</code> | Keep descriptive titles unchanged, only replace titles with crowd-submitted DeArrow alternatives | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.47.0</code> |
 | <a id="setting-daFallbackFormat"></a><strong>Format Original Titles</strong><br><code>daFallbackFormat</code> | Format the original title when no crowdsourced submission exists | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-daShowOriginalHover"></a><strong>Show Original on Hover</strong><br><code>daShowOriginalHover</code> | Hover over a replaced title to see the original | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-daShowOriginalTitle"></a><strong>Show Original Title</strong><br><code>daShowOriginalTitle</code> | Show the original title beneath the DeArrow replacement | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.57.0</code> |
@@ -855,7 +855,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-sbPerChannelProfilesData"></a><strong>SB per channel profiles data</strong><br><code>sbPerChannelProfilesData</code> | Stores extension-only SponsorBlock category overrides keyed by channel. | Default: Empty object | Extension only<br>Store-safe + GitHub-full<br>Player<br>Deferred apply<br>Remote API<br>Since <code>v4.47.0</code> |
 | <a id="setting-returnDislike"></a><strong>Return YouTube Dislike</strong><br><code>returnDislike</code> | Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-returnDislikeOnCards"></a><strong>Thumbnail Like-Ratio Bars</strong><br><code>returnDislikeOnCards</code> | Show an estimated like-ratio bar on visible video thumbnails, using the same bounded Return YouTube Dislike cache. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
-| <a id="setting-returnDislikeCacheHours"></a><strong>Return dislike cache hours</strong><br><code>returnDislikeCacheHours</code> | Sets how many hours Return YouTube Dislike data remains fresh in the local cache. | Default: <code>24</code><br>Range: <code>1–∞</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-returnDislikeCacheHours"></a><strong>Return dislike cache hours</strong><br><code>returnDislikeCacheHours</code> | Sets how many hours Return YouTube Dislike data remains fresh in the local cache. | Default: <code>24</code><br>Range: <code>1 to ∞</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-returnDislikeShowRatio"></a><strong>Return dislike show ratio</strong><br><code>returnDislikeShowRatio</code> | Shows the estimated like-to-dislike ratio alongside Return YouTube Dislike counts. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-deArrowChannelOverrides"></a><strong>De arrow channel overrides</strong><br><code>deArrowChannelOverrides</code> | Stores per-channel DeArrow modes so a channel can use replacements, originals, or disable processing. | Default: Empty object | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-deArrowChannelOverridesPanel"></a><strong>DeArrow Per-Channel Overrides</strong><br><code>deArrowChannelOverridesPanel</code> | Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
@@ -865,7 +865,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Downloads and Astra Downloader</strong> — 15 settings</summary>
+<summary><strong>Downloads and Astra Downloader</strong>: 15 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -876,19 +876,19 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-downloadQuality"></a><strong>Download Quality</strong><br><code>downloadQuality</code> | Preferred video quality for downloads | Default: <code>best</code><br>Values: <code>best</code>, <code>2160</code>, <code>1440</code>, <code>1080</code>, <code>720</code>, <code>480</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply<br>Local companion<br>Since <code>v0.1.0</code> |
 | <a id="setting-downloadVideoFormat"></a><strong>Video Format</strong><br><code>downloadVideoFormat</code> | Default container format for video downloads | Default: <code>mp4</code><br>Values: <code>mp4</code>, <code>mkv</code>, <code>webm</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply<br>Local companion<br>Since <code>v0.1.0</code> |
 | <a id="setting-downloadAudioFormat"></a><strong>Audio Format</strong><br><code>downloadAudioFormat</code> | Default format for audio-only downloads | Default: <code>mp3</code><br>Values: <code>mp3</code>, <code>m4a</code>, <code>opus</code>, <code>flac</code>, <code>wav</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply<br>Local companion<br>Since <code>v0.1.0</code> |
-| <a id="setting-downloadHistoryPanel"></a><strong>Download History Panel</strong><br><code>downloadHistoryPanel</code> | Adds a searchable, pageable, exportable view of download history recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply + reversible teardown<br>Requires <code>mediaDL</code><br>Local companion<br>Since <code>v0.1.0</code> |
+| <a id="setting-downloadHistoryPanel"></a><strong>Download History Panel</strong><br><code>downloadHistoryPanel</code> | Adds a searchable, pageable, exportable view of download history recorded by Astra Downloader. Local-only, fetched from the local /history endpoint per session. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply + reversible teardown<br>Requires <code>mediaDL</code><br>Local companion<br>Since <code>v0.1.0</code> |
 | <a id="setting-downloadHealthPanel"></a><strong>Downloader Health Pills</strong><br><code>downloadHealthPanel</code> | Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply + reversible teardown<br>Requires <code>mediaDL</code><br>Local companion<br>Since <code>v0.1.0</code> |
-| <a id="setting-downloadStreamLinksPanel"></a><strong>Stream Links Panel</strong><br><code>downloadStreamLinksPanel</code> | Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off. | Default: Off | Extension + userscript<br>GitHub-full only<br>Downloads<br>Live apply + reversible teardown<br>Local companion<br>Since <code>v0.1.0</code> |
+| <a id="setting-downloadStreamLinksPanel"></a><strong>Stream Links Panel</strong><br><code>downloadStreamLinksPanel</code> | Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only, no telemetry. Useful for yt-dlp / VLC handoff. Default off. | Default: Off | Extension + userscript<br>GitHub-full only<br>Downloads<br>Live apply + reversible teardown<br>Local companion<br>Since <code>v0.1.0</code> |
 | <a id="setting-downloadCobaltFallback"></a><strong>Self-hosted Cobalt fallback</strong><br><code>downloadCobaltFallback</code> | When Astra Downloader is unreachable, use a self-hosted Cobalt instance after granting access to that one HTTPS origin. | Default: Off | Extension only<br>GitHub-full only<br>Downloads<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-downloadCobaltInstance"></a><strong>Self-hosted Cobalt origin</strong><br><code>downloadCobaltInstance</code> | Required. Enter the root HTTPS origin of a Cobalt instance you operate or are authorized to use; public api.cobalt.tools is not permitted. | Default: Empty | Extension only<br>GitHub-full only<br>Downloads<br>Live apply<br>Remote API<br>Since <code>v0.1.0</code> |
-| <a id="setting-vlcMpvHandoff"></a><strong>VLC / MPV Stream Handoff</strong><br><code>vlcMpvHandoff</code> | GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off. | Default: Off | Extension + userscript<br>GitHub-full only<br>Downloads<br>Live apply + reversible teardown<br>Local companion<br>Since <code>v0.1.0</code> |
-| <a id="setting-astraContextMenu"></a><strong>Astra Context Menu</strong><br><code>astraContextMenu</code> | Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-subtitleDownload"></a><strong>Subtitle Download (SRT)</strong><br><code>subtitleDownload</code> | One-click SRT download of the active caption track — standalone player button, no sidebar required | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-vlcMpvHandoff"></a><strong>VLC / MPV Stream Handoff</strong><br><code>vlcMpvHandoff</code> | GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS, Astra Deck never runs binaries directly. Default off. | Default: Off | Extension + userscript<br>GitHub-full only<br>Downloads<br>Live apply + reversible teardown<br>Local companion<br>Since <code>v0.1.0</code> |
+| <a id="setting-astraContextMenu"></a><strong>Astra Context Menu</strong><br><code>astraContextMenu</code> | Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off, adds a contextmenu listener; never blocks the native YouTube right-click. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-subtitleDownload"></a><strong>Subtitle Download (SRT)</strong><br><code>subtitleDownload</code> | One-click SRT download of the active caption track, standalone player button, no sidebar required | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Downloads<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 
 </details>
 
 <details>
-<summary><strong>Subtitles</strong> — 12 settings</summary>
+<summary><strong>Subtitles</strong>: 12 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -896,27 +896,27 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-subtitlesOnRewind"></a><strong>Subtitles on Rewind</strong><br><code>subtitlesOnRewind</code> | After seeking backwards, show captions for 10 seconds so you can catch the missed line, then restore the previous caption state | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.48.0</code> |
 | <a id="setting-dualLanguageSubtitles"></a><strong>Dual-language Subtitles</strong><br><code>dualLanguageSubtitles</code> | Show an independently selected second caption track below YouTube captions when available | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v4.51.1</code> |
 | <a id="setting-dualSubtitleLanguage"></a><strong>Second Subtitle Language</strong><br><code>dualSubtitleLanguage</code> | Choose the caption language rendered below native YouTube captions | Default: <code>auto</code><br>Values: <code>auto</code>, <code>en</code>, <code>es</code>, <code>fr</code>, <code>de</code>, <code>it</code>, <code>pt</code>, <code>ru</code>, <code>ja</code>, <code>ko</code>, <code>zh</code>, <code>ar</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v4.51.1</code> |
-| <a id="setting-subtitleStyling"></a><strong>Subtitle Styling</strong><br><code>subtitleStyling</code> | Override YouTube caption appearance — font size/family/color, background, position, shadow | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-subStyleFontSize"></a><strong>Sub style font size</strong><br><code>subStyleFontSize</code> | Sets custom subtitle text size as a percentage of YouTube's base caption size. | Default: <code>100</code><br>Range: <code>50–300</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-subtitleStyling"></a><strong>Subtitle Styling</strong><br><code>subtitleStyling</code> | Override YouTube caption appearance, font size/family/color, background, position, shadow | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
+| <a id="setting-subStyleFontSize"></a><strong>Sub style font size</strong><br><code>subStyleFontSize</code> | Sets custom subtitle text size as a percentage of YouTube's base caption size. | Default: <code>100</code><br>Range: <code>50 to 300</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-subStyleFontFamily"></a><strong>Sub style font family</strong><br><code>subStyleFontFamily</code> | Chooses the fixed, injection-safe font stack used by Subtitle Styling. | Default: <code>default</code><br>Values: <code>default</code>, <code>sans</code>, <code>serif</code>, <code>mono</code>, <code>YouTube Sans</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-subStyleColor"></a><strong>Sub style color</strong><br><code>subStyleColor</code> | Sets the custom subtitle foreground color. | Default: <code>#ffffff</code><br>Hex color | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-subStyleBgOpacity"></a><strong>Sub style BG opacity</strong><br><code>subStyleBgOpacity</code> | Sets custom subtitle background opacity as a percentage. | Default: <code>75</code><br>Range: <code>0–100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-subStyleBgOpacity"></a><strong>Sub style BG opacity</strong><br><code>subStyleBgOpacity</code> | Sets custom subtitle background opacity as a percentage. | Default: <code>75</code><br>Range: <code>0 to 100</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-subStyleBgColor"></a><strong>Sub style BG color</strong><br><code>subStyleBgColor</code> | Sets the custom subtitle background color. | Default: <code>#000000</code><br>Hex color | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-subStyleBottomOffset"></a><strong>Sub style bottom offset</strong><br><code>subStyleBottomOffset</code> | Sets custom subtitles' distance from the bottom of the player as a percentage. | Default: <code>10</code><br>Range: <code>0–90</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-subStyleBottomOffset"></a><strong>Sub style bottom offset</strong><br><code>subStyleBottomOffset</code> | Sets custom subtitles' distance from the bottom of the player as a percentage. | Default: <code>10</code><br>Range: <code>0 to 90</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-subStyleTextShadow"></a><strong>Sub style text shadow</strong><br><code>subStyleTextShadow</code> | Adds the configured readability shadow to custom subtitle text. | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 
 </details>
 
 <details>
-<summary><strong>Research, wellbeing, and AI</strong> — 20 settings</summary>
+<summary><strong>Research, wellbeing, and AI</strong>: 20 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
 | <a id="setting-digitalWellbeing"></a><strong>Digital Wellbeing</strong><br><code>digitalWellbeing</code> | Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
-| <a id="setting-dwBreakIntervalMin"></a><strong>DW break interval min</strong><br><code>dwBreakIntervalMin</code> | Sets the continuous-watch interval after which Digital Wellbeing prompts for a break; zero disables break prompts. | Default: <code>30</code><br>Range: <code>0–1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-dwDailyCapMin"></a><strong>DW daily cap min</strong><br><code>dwDailyCapMin</code> | Sets the daily watch-time cap enforced by Digital Wellbeing; zero disables the cap. | Default: <code>0</code><br>Range: <code>0–1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-dwBreakIntervalMin"></a><strong>DW break interval min</strong><br><code>dwBreakIntervalMin</code> | Sets the continuous-watch interval after which Digital Wellbeing prompts for a break; zero disables break prompts. | Default: <code>30</code><br>Range: <code>0 to 1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
+| <a id="setting-dwDailyCapMin"></a><strong>DW daily cap min</strong><br><code>dwDailyCapMin</code> | Sets the daily watch-time cap enforced by Digital Wellbeing; zero disables the cap. | Default: <code>0</code><br>Range: <code>0 to 1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-dwWatchTimeToday"></a><strong>DW watch time today</strong><br><code>dwWatchTimeToday</code> | Stores the dated, merge-safe daily watch-time accumulator used by Digital Wellbeing. | Default: <code>{&quot;date&quot;:&quot;&quot;,&quot;seconds&quot;:0}</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
-| <a id="setting-shortsDailyLimitMin"></a><strong>Shorts Daily Limit</strong><br><code>shortsDailyLimitMin</code> | Maximum minutes of Shorts playback per local day. Set to 0 to disable. | Default: <code>0</code><br>Range: <code>0–1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
+| <a id="setting-shortsDailyLimitMin"></a><strong>Shorts Daily Limit</strong><br><code>shortsDailyLimitMin</code> | Maximum minutes of Shorts playback per local day. Set to 0 to disable. | Default: <code>0</code><br>Range: <code>0 to 1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
 | <a id="setting-shortsDailyLimitMode"></a><strong>Shorts Limit Action</strong><br><code>shortsDailyLimitMode</code> | Choose whether reaching the limit blocks Shorts or offers five-minute snoozes. | Default: <code>hard</code><br>Values: <code>hard</code>, <code>snooze</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
 | <a id="setting-shortsWatchTimeToday"></a><strong>Shorts watch time today</strong><br><code>shortsWatchTimeToday</code> | Stores the dated Shorts budget ledger and any active snooze deadline. | Default: <code>{&quot;date&quot;:&quot;&quot;,&quot;seconds&quot;:0,&quot;snoozeUntil&quot;:0}</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v4.51.1</code> |
 | <a id="setting-localAiSummary"></a><strong>Local AI Summary (browser built-in)</strong><br><code>localAiSummary</code> | Use Chrome's built-in Summarizer API when available; use the configured BYO-key lane when it is unavailable. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v0.1.0</code> |
@@ -927,16 +927,16 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 | <a id="setting-redditComments"></a><strong>Reddit Comments</strong><br><code>redditComments</code> | Find Reddit discussions mentioning the current video (button in secondary sidebar) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-watchHistoryAnalytics"></a><strong>Watch History Analytics</strong><br><code>watchHistoryAnalytics</code> | Modal dashboard visualizing your 30-day YouTube watch time as a CSS bar chart (requires Watch Time Tracker) | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-aiVideoSummary"></a><strong>AI Video Summary</strong><br><code>aiVideoSummary</code> | Bring-your-own-key LLM summary of the current video transcript (OpenAI/Anthropic/Gemini/Ollama) | Default: Off | Extension + userscript<br>GitHub-full only<br>Watch page<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
-| <a id="setting-aiSummaryEndpoint"></a><strong>AI summary endpoint URL</strong><br><code>aiSummaryEndpoint</code> | Chat-completions endpoint — OpenAI, Anthropic, Gemini, or local Ollama. | Default: <code>https://api.openai.com/v1/chat/completions</code> | Extension + userscript<br>GitHub-full only<br>Watch page<br>Live apply<br>Remote API<br>Since <code>v0.1.0</code> |
+| <a id="setting-aiSummaryEndpoint"></a><strong>AI summary endpoint URL</strong><br><code>aiSummaryEndpoint</code> | Chat-completions endpoint, OpenAI, Anthropic, Gemini, or local Ollama. | Default: <code>https://api.openai.com/v1/chat/completions</code> | Extension + userscript<br>GitHub-full only<br>Watch page<br>Live apply<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-aiSummaryModel"></a><strong>AI summary model</strong><br><code>aiSummaryModel</code> | Sets the provider-specific model identifier sent with AI video-summary requests. | Default: <code>gpt-4o-mini</code> | Extension + userscript<br>GitHub-full only<br>Watch page<br>Live apply<br>Remote API<br>Since <code>v0.1.0</code> |
-| <a id="setting-aiSummaryProvider"></a><strong>AI summary provider</strong><br><code>aiSummaryProvider</code> | Provider id — openai, anthropic, gemini, or ollama (local). | Default: <code>openai</code><br>Values: <code>openai</code>, <code>anthropic</code>, <code>gemini</code>, <code>ollama</code> | Extension + userscript<br>GitHub-full only<br>Watch page<br>Live apply<br>Remote API<br>Since <code>v0.1.0</code> |
+| <a id="setting-aiSummaryProvider"></a><strong>AI summary provider</strong><br><code>aiSummaryProvider</code> | Provider id, openai, anthropic, gemini, or ollama (local). | Default: <code>openai</code><br>Values: <code>openai</code>, <code>anthropic</code>, <code>gemini</code>, <code>ollama</code> | Extension + userscript<br>GitHub-full only<br>Watch page<br>Live apply<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-transcriptAiHandoff"></a><strong>Transcript → AI One-Click Handoff</strong><br><code>transcriptAiHandoff</code> | Adds a player-button that copies the transcript and opens your chosen AI tool with a summarization prompt pre-filled | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-transcriptAiTarget"></a><strong>Transcript AI target</strong><br><code>transcriptAiTarget</code> | Chooses the external AI workspace opened by Transcript to AI Handoff after copying the prepared transcript. | Default: <code>notebooklm</code><br>Values: <code>notebooklm</code>, <code>chatgpt</code>, <code>claude</code>, <code>gemini</code>, <code>perplexity</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
 
 </details>
 
 <details>
-<summary><strong>Privacy, profiles, and sync</strong> — 10 settings</summary>
+<summary><strong>Privacy, profiles, and sync</strong>: 10 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -954,7 +954,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Accessibility and performance</strong> — 11 settings</summary>
+<summary><strong>Accessibility and performance</strong>: 11 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -973,7 +973,7 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Diagnostics</strong> — 2 settings</summary>
+<summary><strong>Diagnostics</strong>: 2 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -990,28 +990,28 @@ This generated knowledgebase documents all **471 user-facing settings** in the c
 
 ```
 network boundary
-  rules/zero-ads.json Static MV3 rules — blocks known YouTube ad request surfaces
+  rules/zero-ads.json Static MV3 rules, blocks known YouTube ad request surfaces
 
 document_start
   early.css          Zero-ad shell collapse plus feature-scoped anti-FOUC CSS
-  ytkit-main.js      MAIN world — canPlayType patching for codec/format filtering
+  ytkit-main.js      MAIN world, canPlayType patching for codec/format filtering
 
 document_idle
-  runtime-bootstrap.js  ISOLATED world — reads settings and starts the guarded loader (<150 KB)
-  runtime-core-loader.mjs  dynamic module graph — core + download bootstrap + ytkit
+  runtime-bootstrap.js  ISOLATED world, reads settings and starts the guarded loader (<150 KB)
+  runtime-core-loader.mjs  dynamic module graph, core + download bootstrap + ytkit
   features/*           dynamic, settings- and route-gated feature modules
-  background.js      Service worker — fetch proxy, downloads, gated cookie handoff
+  background.js      Service worker, fetch proxy, downloads, gated cookie handoff
 ```
 
-- **Split-context model** — MAIN world for page API interception, ISOLATED world for extension APIs and DOM
-- **Lazy runtime graph** — normal YouTube pages inject only the small bootstrap; the module catalogue is exposed through a per-session dynamic URL and loaded idempotently after the bootstrap turn
-- **Settings and route gates** — persisted settings and existing selector-pack route boundaries decide which deferred feature modules are fetched; inline fallbacks preserve startup and userscript parity
-- **SPA-aware** — hooks `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, and `video-id` attribute changes
-- **Tiered feature init** — critical features load synchronously, normal features in `requestAnimationFrame`, lazy features in `requestIdleCallback`
-- **Crash recovery** — features that crash 3 times auto-disable with console warning
-- **Conflict map** — 6 conflict pairs enforced at both toggle and init time
-- **Trusted Types compliant** — all innerHTML via `TrustedHTML` policy wrapper
-- **Safe mode** — append `?ytkit=safe` to any YouTube URL, or `ytkit.unsafe()` in console to exit
+- **Split-context model**, MAIN world for page API interception, ISOLATED world for extension APIs and DOM
+- **Lazy runtime graph**, normal YouTube pages inject only the small bootstrap; the module catalogue is exposed through a per-session dynamic URL and loaded idempotently after the bootstrap turn
+- **Settings and route gates**, persisted settings and existing selector-pack route boundaries decide which deferred feature modules are fetched; inline fallbacks preserve startup and userscript parity
+- **SPA-aware**, hooks `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, and `video-id` attribute changes
+- **Tiered feature init**, critical features load synchronously, normal features in `requestAnimationFrame`, lazy features in `requestIdleCallback`
+- **Crash recovery**, features that crash 3 times auto-disable with console warning
+- **Conflict map**, 6 conflict pairs enforced at both toggle and init time
+- **Trusted Types compliant**, all innerHTML via `TrustedHTML` policy wrapper
+- **Safe mode**, append `?ytkit=safe` to any YouTube URL, or `ytkit.unsafe()` in console to exit
 
 ---
 
@@ -1019,7 +1019,7 @@ document_idle
 
 - Report sensitive security issues through [private vulnerability reporting](SECURITY.md), not public issues.
 - **Zero-ad request rules** use the static MV3 `declarativeNetRequest` API, are restricted to YouTube initiators and known advertising endpoints, and do not inspect or transmit request contents
-- **EXT_FETCH proxy** uses domain allowlist — blocks SSRF to private networks
+- **EXT_FETCH proxy** uses domain allowlist, blocks SSRF to private networks
 - Request/response headers filtered (`Cookie`, `Set-Cookie`, etc. stripped globally; `Authorization` only forwarded to explicit BYO-key/local service origins such as OpenAI/Anthropic/Ollama/MediaDL)
 - Response body capped at 10 MB, fetch timeout capped at 60s
 - HTTP methods validated, download URLs protocol-checked (HTTP/S only)
@@ -1033,19 +1033,19 @@ document_idle
 
 ### Trust & Transparency
 
-- **Fully open-source** — every line of extension, companion, and build tooling is auditable
-- **No telemetry, no analytics, no tracking** — zero data leaves the browser except to APIs you explicitly enable
-- **SBOM + attestation** on every release build — verifiable software bill of materials
-- **External CRX signing key** — maintainer-only, never in the repo or CI
-- **Credential scrub** on settings export — API keys, tokens, and secrets are automatically stripped
-- **Profile-split permissions** — store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and user-selected remote origins; GitHub-full keeps those capabilities behind runtime prompts, with Cobalt limited to an authorized self-hosted instance
-- **Inspectable remote rules** — optional Video Hider subscriptions preserve a
+- **Fully open-source**, every line of extension, companion, and build tooling is auditable
+- **No telemetry, no analytics, no tracking**, zero data leaves the browser except to APIs you explicitly enable
+- **SBOM + attestation** on every release build, verifiable software bill of materials
+- **External CRX signing key**, maintainer-only, never in the repo or CI
+- **Credential scrub** on settings export, API keys, tokens, and secrets are automatically stripped
+- **Profile-split permissions**, store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and user-selected remote origins; GitHub-full keeps those capabilities behind runtime prompts, with Cobalt limited to an authorized self-hosted instance
+- **Inspectable remote rules**, optional Video Hider subscriptions preserve a
   hashed last-known-good payload with HTTP validators and visible freshness;
   stale rules are explicit and user-disableable, never silently replaced by a
   malformed response
 - **26+ hardening passes** documented in CHANGELOG with per-fix CVE/audit traceability
 - **Privacy policy** covers data handling for every API origin the extension contacts
-- **SponsorBlock data attribution** — the SponsorBlock and DeArrow features use
+- **SponsorBlock data attribution**, the SponsorBlock and DeArrow features use
   [SponsorBlock API/database data](https://sponsor.ajay.app/) licensed under
   [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
   Astra Deck may reformat titles and visualize segments; those presentation
@@ -1059,8 +1059,7 @@ The optional Reaction Spammer feature lets you pick a set of YouTube
 live-chat reactions and fire them in a randomized loop at a chosen
 interval. It ships in two forms:
 
-- **Bundled** in the MV3 extension as a Live Chat feature toggle —
-  surfaces a floating launcher on `live_chat` pages.
+- **Bundled** in the MV3 extension as a Live Chat feature toggle, surfaces a floating launcher on `live_chat` pages.
 - **Standalone** as `YT_Reaction_Spammer.user.js`, a Tampermonkey /
   Violentmonkey userscript with no extension dependency.
 
@@ -1068,7 +1067,7 @@ interval. It ships in two forms:
 YouTube's automated-behavior heuristics and result in account rate-
 limiting or flagging. The first time you open the launcher per profile,
 an amber toast surfaces this warning. The minimum interval is clamped
-to 500 ms in both the extension and the standalone userscript — faster
+to 500 ms in both the extension and the standalone userscript, faster
 than ~2 Hz is unsafe.
 
 Use at your own risk.
@@ -1077,8 +1076,7 @@ Use at your own risk.
 
 ## Languages
 
-Astra Deck ships with 11 bundled UI locales. These are **extension only** —
-`YTKit.user.js` bundles no locale catalogues, so the userscript tier is English:
+Astra Deck ships with 11 bundled UI locales. These are **extension only**, `YTKit.user.js` bundles no locale catalogues, so the userscript tier is English:
 
 | Code | Language |
 |------|----------|
@@ -1108,7 +1106,7 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 | Browser | Method | Status |
 |---------|--------|--------|
 | Chrome / Edge / Brave | Extension (MV3) | Fully supported |
-| Firefox 142+ | Extension (MV3) | Supported — but the XPI is unsigned, so a permanent install needs Developer Edition / Nightly / ESR; Release and Beta can only load it temporarily (see [Firefox](#firefox)) |
+| Firefox 142+ | Extension (MV3) | Supported, but the XPI is unsigned, so a permanent install needs Developer Edition / Nightly / ESR; Release and Beta can only load it temporarily (see [Firefox](#firefox)) |
 | Chrome / Firefox | Tampermonkey / Violentmonkey | Supported (userscript) |
 | Safari | Userscripts app | Limited |
 
@@ -1184,7 +1182,7 @@ must use the external maintainer key via `ASTRA_CRX_KEY_PATH`, the default
 
 **Or skip the CRX entirely.** `--no-crx` (equivalently `ASTRA_SKIP_CRX=1`)
 produces the ZIP / XPI / userscript / SBOM / manifest / `SHA256SUMS` set with no
-CRX at all, and therefore needs no key — without it a release build with no key
+CRX at all, and therefore needs no key, without it a release build with no key
 aborts before producing anything:
 
 ```bash
@@ -1194,7 +1192,7 @@ node build-extension.js --with-userscript --no-crx   # or just the build
 
 This is the normal path for this project. Self-hosted CRX installs are
 Linux-only on modern Chrome, and the last two published releases (v4.50.2,
-v4.50.7) shipped no CRX at all — so the maintainer key does not gate a release.
+v4.50.7) shipped no CRX at all, so the maintainer key does not gate a release.
 Release readiness records the build as `crxSigningMode: "none"` and verifies
 that `build/` really contains no CRX before accepting it.
 
@@ -1242,7 +1240,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 | `window.__ytkitSearchTranscripts(query)` | Full-text search over the local IndexedDB transcript index (`researchTranscriptIndex` setting). Returns up to 200 hits. |
 | `window.__ytkitClearTranscriptIndex()` | Wipe the local transcript index. |
 | `window.__ytkitDiagnostics.download()` | Download a JSON bug report containing the diagnostic log ring buffer, selector-health snapshot, and active feature list. |
-| `window.__ytkitProfiles` | Settings profile manager — `.save(name)`, `.load(name)`, `.delete(name)`, `.export()`, `.import(json)`. |
+| `window.__ytkitProfiles` | Settings profile manager, `.save(name)`, `.load(name)`, `.delete(name)`, `.export()`, `.import(json)`. |
 | `window.__ytkitAnnounce(message)` | Push a string into the polite screen-reader live region (requires `globalAriaLiveRegion`). |
 
 ---
@@ -1251,7 +1249,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 
 | Doc | Audience |
 |-----|----------|
-| [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work — existing plans plus research-driven additions. |
+| [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work, existing plans plus research-driven additions. |
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
 | [INSTALL.md](INSTALL.md) | How to install on Chrome, Edge, Firefox, or as a userscript |
 | [HARDENING.md](HARDENING.md) | Cumulative hardening / audit log (H1 → H25) |
@@ -1281,4 +1279,4 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 
 ## License
 
-[MIT](LICENSE) — Matthew Parker
+[MIT](LICENSE), Matthew Parker

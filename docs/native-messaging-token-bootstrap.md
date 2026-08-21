@@ -111,7 +111,7 @@ filtering, redacted diagnostics, and UI health-pill assertions.
 4. **Release packaging.** The companion setup path requires both
    `AstraDownloader.exe` and `AstraDownloader.exe.sha256`, and since the split
    (a6bb685f) they ship from the companion's own repository,
-   SysAdminDoc/AstraDownloader — check `gh release view --repo
+   SysAdminDoc/AstraDownloader, check `gh release view --repo
    SysAdminDoc/AstraDownloader --json assets` for the live state. Astra Deck
    releases must NOT carry that pair: `npm run release:readiness` fails on it
    (`companion-not-republished` / `companion-not-manifested`).

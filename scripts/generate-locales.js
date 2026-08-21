@@ -48,6 +48,7 @@ T.zh_CN = {};
 
 // ── German (de) ──
 T.de = {
+  'Resize Theater Split panels': 'Größe der Theater-Split-Bereiche ändern',
   "Transcript batch cancelled after navigation": "Transkript-Stapel nach Navigation abgebrochen",
   "Exported transcript study pack ({done}/{total} succeeded)": "Transkript-Lernpaket exportiert ({done}/{total} erfolgreich)",
   "Exported {done}/{total}; failures are included in JSONL": "{done}/{total} exportiert; Fehler sind in JSONL enthalten",
@@ -279,6 +280,7 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  'Resize Theater Split panels': 'Cambiar el tamaño de los paneles de Theater Split',
   "Transcript batch cancelled after navigation": "Lote de transcripciones cancelado tras la navegación",
   "Exported transcript study pack ({done}/{total} succeeded)": "Paquete de estudio de transcripciones exportado ({done}/{total} correctos)",
   "Exported {done}/{total}; failures are included in JSONL": "Exportados {done}/{total}; los fallos se incluyen en JSONL",
@@ -498,6 +500,7 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  'Resize Theater Split panels': 'Изменить размер панелей Theater Split',
   "Transcript batch cancelled after navigation": "Пакет расшифровок отменён после перехода",
   "Exported transcript study pack ({done}/{total} succeeded)": "Учебный пакет расшифровок экспортирован ({done}/{total} успешно)",
   "Exported {done}/{total}; failures are included in JSONL": "Экспортировано {done}/{total}; ошибки включены в JSONL",
@@ -717,6 +720,7 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  'Resize Theater Split panels': 'Redimensionner les panneaux Theater Split',
   "Transcript batch cancelled after navigation": "Lot de transcriptions annulé après la navigation",
   "Exported transcript study pack ({done}/{total} succeeded)": "Pack d'étude de transcriptions exporté ({done}/{total} réussis)",
   "Exported {done}/{total}; failures are included in JSONL": "Exportés {done}/{total} ; les échecs sont inclus dans le JSONL",
@@ -934,6 +938,7 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  'Resize Theater Split panels': 'Ridimensiona i pannelli Theater Split',
   "Transcript batch cancelled after navigation": "Lotto di trascrizioni annullato dopo la navigazione",
   "Exported transcript study pack ({done}/{total} succeeded)": "Pacchetto di studio delle trascrizioni esportato ({done}/{total} riusciti)",
   "Exported {done}/{total}; failures are included in JSONL": "Esportati {done}/{total}; gli errori sono inclusi nel JSONL",
@@ -1144,6 +1149,7 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  'Resize Theater Split panels': 'Redimensionar painéis do Theater Split',
   "Transcript batch cancelled after navigation": "Lote de transcrições cancelado após a navegação",
   "Exported transcript study pack ({done}/{total} succeeded)": "Pacote de estudo de transcrições exportado ({done}/{total} com sucesso)",
   "Exported {done}/{total}; failures are included in JSONL": "Exportados {done}/{total}; as falhas estão incluídas no JSONL",
@@ -1354,6 +1360,7 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  'Resize Theater Split panels': 'シアター分割パネルのサイズを変更',
   "Transcript batch cancelled after navigation": "ページ移動により文字起こしの一括処理を中止しました",
   "Exported transcript study pack ({done}/{total} succeeded)": "文字起こし学習パックを書き出しました（{done}/{total} 件成功）",
   "Exported {done}/{total}; failures are included in JSONL": "{done}/{total} 件を書き出しました。失敗分は JSONL に含まれます",
@@ -1567,6 +1574,7 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  'Resize Theater Split panels': '시어터 분할 패널 크기 조절',
   "Transcript batch cancelled after navigation": "페이지 이동으로 스크립트 일괄 작업이 취소되었습니다",
   "Exported transcript study pack ({done}/{total} succeeded)": "스크립트 학습 팩을 내보냈습니다({done}/{total}개 성공)",
   "Exported {done}/{total}; failures are included in JSONL": "{done}/{total}개를 내보냈습니다. 실패 항목은 JSONL에 포함됩니다",

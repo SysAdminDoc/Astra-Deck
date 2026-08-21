@@ -60,3 +60,7 @@ PROJECT_CONTEXT.md
 
 # Chrome-generated DNR ruleset metadata (created on unpacked load)
 extension/_metadata/
+
+# Local visual-polish baselines and ImageGen targets. These are working proof,
+# not release assets.
+.mockups/

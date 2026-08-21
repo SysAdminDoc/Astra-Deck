@@ -1,4 +1,4 @@
-# Astra Deck — Chrome Web Store Submission Checklist
+# Astra Deck, Chrome Web Store Submission Checklist
 
 > CWS reviews ran ~weeks-long in April 2026 and Google's privacy-policy
 > review process for extensions using `downloads`, `cookies`, `tabs`, or
@@ -21,14 +21,14 @@ allows the optional local handoff.
 
 Run before the first submission AND before every subsequent update.
 
-- [ ] `manifest_version: 3` — CWS no longer accepts MV2.
+- [ ] `manifest_version: 3`, CWS no longer accepts MV2.
 - [ ] `permissions` array contains ONLY what's actually used. Audit
       with `node -e 'console.log(require("./extension/manifest.json").permissions)'`
       and grep for each in `extension/ytkit.js` + `extension/background.js`.
 - [ ] `host_permissions` and `optional_host_permissions` arrays follow the same
-      audit — every entry must appear in a content-script match, an optional
+      audit, every entry must appear in a content-script match, an optional
       runtime-grant map, or a `fetch` call site.
-- [ ] `content_scripts` `matches` patterns are bounded — no `<all_urls>`.
+- [ ] `content_scripts` `matches` patterns are bounded, no `<all_urls>`.
 - [ ] `default_locale` set (`"en"`); `_locales/<lang>/messages.json`
       present for every locale referenced in
       `__MSG_<key>__` strings.
@@ -37,7 +37,7 @@ Run before the first submission AND before every subsequent update.
       `script-src 'self'; object-src 'self'; connect-src <explicit list>`
       per H20 / NX11.
 - [ ] `web_accessible_resources` lists only `icons/*` and `assets/*` for
-      packaged icons plus bundled theme media — no source code, HTML, CSS, or
+      packaged icons plus bundled theme media, no source code, HTML, CSS, or
       unreviewed asset paths.
 
 ---
@@ -63,18 +63,18 @@ must use Google's standardized vocabulary to declare data categories.
       [store-permission-rationale.md](store-permission-rationale.md).
 - [ ] Declares EACH category Astra Deck uses against the [Chrome
       Web Store Permissions Justification template](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy):
-  - **Authentication info** — four allowlisted secure `.youtube.com` sign-in
+  - **Authentication info**, four allowlisted secure `.youtube.com` sign-in
     cookie names via `chrome.cookies`, passed to local Astra Downloader only
     for a user-started authenticated download after native-host proof.
-  - **Personal communications** — N/A.
-  - **Financial info** — N/A.
-  - **Health info** — N/A.
-  - **Location** — N/A.
-  - **Web history** — YouTube watch history mirror in
+  - **Personal communications**, N/A.
+  - **Financial info**, N/A.
+  - **Health info**, N/A.
+  - **Location**, N/A.
+  - **Web history**, YouTube watch history mirror in
     `chrome.storage.local` for the watch-history-tracking feature.
-  - **User activity** — Watch time tracker, resume playback, hidden
+  - **User activity**, Watch time tracker, resume playback, hidden
     videos / blocked channels lists. All local-only.
-  - **Website content** — Comment text for the comment-search and
+  - **Website content**, Comment text for the comment-search and
     comment-handle-revealer features; video transcripts for the
     transcript viewer + AI summary.
 - [ ] Single-purpose statement matches the listing description.
@@ -89,8 +89,7 @@ must use Google's standardized vocabulary to declare data categories.
 
 ## 3. Submission preflight
 
-- [ ] Build clean via `node build-extension.js --profile chromium-store` —
-      the CWS/Edge ZIP contains no downloader module, Cobalt host, loopback
+- [ ] Build clean via `node build-extension.js --profile chromium-store`, the CWS/Edge ZIP contains no downloader module, Cobalt host, loopback
       origin, or download-related manifest permission.
 - [ ] Build the companion-capable profiles separately when required via
       `node build-extension.js --profile store-safe` or
@@ -112,9 +111,9 @@ must use Google's standardized vocabulary to declare data categories.
       attach or link `build/astra-downloader-pip-audit.json` for release review.
 - [ ] CHANGELOG entry for the new version.
 - [ ] Screenshots captured at the current popup dimensions (system DPI
-      must be 100 % for CWS — they reject scaled captures).
+      must be 100 % for CWS, they reject scaled captures).
 - [ ] Listing description references no other brand names (no
-      "YouTube extension" — "for YouTube" is fine; "YouTube" as a
+      "YouTube extension", "for YouTube" is fine; "YouTube" as a
       noun in the first word is fine; using YouTube's logo is not).
 
 ---
@@ -154,7 +153,7 @@ staged runtime graph does not contain `features/download-ui/index.js`.
 
 - [ ] Track review status weekly. CWS doesn't notify on hold; the only
       signal is the dashboard.
-- [ ] If rejected: read the rejection email carefully — the specific
+- [ ] If rejected: read the rejection email carefully, the specific
       policy clause matters; reply with a remediation plan attached
       to the same item.
 - [ ] If accepted: pin a comment on the GH release noting the CWS
@@ -186,7 +185,7 @@ staged runtime graph does not contain `features/download-ui/index.js`.
 The Mozilla AMO listing path (NX4) is similar but has these
 differences:
 
-- AMO accepts ZIP, not CRX. The XPI is a renamed ZIP — Firefox's
+- AMO accepts ZIP, not CRX. The XPI is a renamed ZIP, Firefox's
   native extension package.
 - AMO has TWO review modes: "listed" (public store) and "unlisted"
   (signed, but private). Astra Deck targets unlisted (NX4) so the

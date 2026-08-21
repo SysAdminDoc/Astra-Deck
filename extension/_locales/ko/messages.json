@@ -5920,6 +5920,9 @@
   "stickyVideoQuickLinksAria": {
     "message": "빠른 링크"
   },
+  "stickyVideoResizePanelsLabel": {
+    "message": "시어터 분할 패널 크기 조절"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "구독으로 이동"
   },

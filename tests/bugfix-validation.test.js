@@ -740,7 +740,7 @@ test('split title header shows upload date and docks quick links beside YouTube 
         'standalone split should move an existing player quick-link launcher if present');
 });
 
-test('split live chat gets a video info header and neutral divider hover', () => {
+test('split live chat gets a video info header and premium divider treatment', () => {
     const fs = require('fs');
     const path = require('path');
     const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
@@ -806,10 +806,10 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         'extension live header should place native controls with fixed positioning so native menus keep working');
     assert.ok(source.includes('calc(100vh - ${liveHeaderTop}px)'),
         'extension live chat should be offset below the live header');
-    assert.ok(source.includes('background:#0a0d13'),
+    assert.ok(source.includes('background:#07101b'),
         'extension divider base should be opaque enough to prevent accent bleed-through');
-    assert.ok(source.includes("divider.style.background='#111827'"),
-        'extension divider hover should use opaque neutral gray instead of blue-purple');
+    assert.ok(source.includes("divider.style.background='rgba(255,93,74,0.08)'"),
+        'extension divider hover should use the restrained Astra accent');
     assert.ok(source.includes("pip.style.color='rgba(148,163,184,0.64)'"),
         'extension divider grip should pin currentColor to neutral gray');
     assert.ok(!source.includes("divider.style.background='rgba(59,130,246,0.22)'"),
@@ -867,10 +867,10 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         'standalone live header should place native controls with fixed positioning so native menus keep working');
     assert.ok(theaterSplit.includes('calc(100vh - ${liveHeaderTop}px)'),
         'standalone live chat should be offset below the live header');
-    assert.ok(theaterSplit.includes('background:#0a0d13'),
+    assert.ok(theaterSplit.includes('background:#07101b'),
         'standalone divider base should be opaque enough to prevent accent bleed-through');
-    assert.ok(theaterSplit.includes("divider.style.background = '#111827'"),
-        'standalone divider hover should use opaque neutral gray instead of blue-purple');
+    assert.ok(theaterSplit.includes("divider.style.background = 'rgba(255,93,74,0.08)'"),
+        'standalone divider hover should use the restrained Astra accent');
     assert.ok(theaterSplit.includes("pip.style.color = 'rgba(148,163,184,0.64)'"),
         'standalone divider grip should pin currentColor to neutral gray');
     assert.ok(!theaterSplit.includes("divider.style.background = 'rgba(59,130,246,0.22)'"),
@@ -1224,6 +1224,10 @@ test('watchPageRestyle gives native service popups the premium comment-card trea
     assert.ok(start > -1 && end > start, 'watchPageRestyle block should exist');
 
     const block = source.slice(start, end);
+    assert.ok(block.includes("document.documentElement.classList.add('ytkit-watch-restyle')"),
+        'watchPageRestyle should arm the shared normal YouTube surface theme');
+    assert.ok(block.includes("document.documentElement.classList.remove('ytkit-watch-restyle')"),
+        'watchPageRestyle should remove the shared theme marker on teardown');
     assert.ok(block.includes('const popupCss = `'), 'watchPageRestyle should define a dedicated native popup restyle');
     assert.ok(block.includes('_popupStyleElement'), 'watchPageRestyle should manage native popup styles separately from the core watch-page CSS');
     assert.ok(block.includes(':is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)'),

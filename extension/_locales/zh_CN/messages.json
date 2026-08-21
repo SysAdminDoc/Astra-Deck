@@ -5920,6 +5920,9 @@
   "stickyVideoQuickLinksAria": {
     "message": "快速链接"
   },
+  "stickyVideoResizePanelsLabel": {
+    "message": "调整 Theater Split 面板大小"
+  },
   "stickyVideoSubscriptionsLink": {
     "message": "前往订阅"
   },
