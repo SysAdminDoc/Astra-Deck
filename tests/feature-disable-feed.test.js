@@ -225,3 +225,71 @@ test('the feed is fetched through its own message, not the general fetch proxy',
     assert.ok(handler.includes("redirect: 'error'"));
     assert.ok(handler.includes('readTextBounded'));
 });
+
+// ── Regressions found by adversarial review of the shipping commit ──
+
+test('a feature broken twice gets disabled by its second row', () => {
+    // The expected shape for a DOM-coupled feature YouTube breaks more than
+    // once: one closed range for the first outage, one open range for the
+    // current one. Claiming the ID on the closed row made the open row read as
+    // a duplicate, so the kill switch silently failed to fire.
+    const result = parse([
+        'returnDislike,412,4.70.0,4.75.0',
+        'returnDislike,415,4.83.0,'
+    ].join('\n'));
+
+    assert.deepEqual([...result.disabled], ['returnDislike']);
+    assert.equal(result.entries[0].issue, 415);
+    assert.deepEqual(result.rejected, []);
+});
+
+test('a duplicate is still rejected when both rows apply', () => {
+    const result = parse([
+        'returnDislike,412,4.80.0,',
+        'returnDislike,415,4.82.0,'
+    ].join('\n'));
+    assert.equal(result.entries.length, 1);
+    assert.equal(result.entries[0].issue, 412, 'the first applicable row wins');
+    assert.equal(result.rejected[0].reason, 'duplicate-feature-id');
+});
+
+test('a four-part or prerelease build version does not switch the feed off', () => {
+    // The running version is the one input whose rejection disables the whole
+    // mechanism, and Chrome accepts four-part versions.
+    for (const version of ['4.84.0', '4.84.0.1', '4.84.0-rc1', '4.84.0+build7']) {
+        const result = parse('returnDislike,1,4.80.0,', { version });
+        assert.deepEqual([...result.disabled], ['returnDislike'], `version ${version}`);
+    }
+    // Something genuinely unorderable is still a refusal rather than a guess.
+    assert.equal(parse('returnDislike,1,4.80.0,', { version: '4.84' }).rejected[0].reason,
+        'unknown-running-version');
+});
+
+test('the page keeps no second cache under the worker\'s storage key', () => {
+    const source = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'ytkit.js'), 'utf8');
+    const background = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'background.js'), 'utf8');
+    const cacheKey = /FEATURE_DISABLE_FEED_CACHE_KEY = '([^']+)'/.exec(background);
+    assert.ok(cacheKey, 'the worker must name its cache key');
+    // The page wrote a bare string over the worker's {text, cachedAt} record
+    // under this key, which the worker then read as a miss — turning one fetch
+    // per six hours into one fetch per pageview.
+    assert.equal(source.includes(cacheKey[1]), false,
+        'extension/ytkit.js must not touch the worker-owned feed cache key');
+});
+
+test('a fetch that returns without awaiting cannot strand the in-flight flag', () => {
+    const background = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'background.js'), 'utf8');
+    const fn = background.slice(background.indexOf('function fetchFeatureDisableFeed'));
+    // Comments describe the bug this guards against, so strip them before
+    // matching or the description reads as the defect.
+    const body = fn.slice(0, fn.indexOf('\n}')).replace(/\/\/[^\n]*/g, '');
+    // Written as `flag = (async () => { ... finally { flag = null } })()` the
+    // body runs before the assignment, so a synchronous return clears a flag
+    // that is then set to an already-resolved promise and never cleared again.
+    assert.equal(/_featureDisableFeedInflight\s*=\s*\(async/.test(body), false,
+        'the in-flight promise must be assigned before anything can clear it');
+    const assignAt = body.indexOf('_featureDisableFeedInflight = run;');
+    const clearAt = body.indexOf('run.then(clear, clear)');
+    assert.ok(assignAt > -1 && clearAt > assignAt,
+        'the clear must be attached after the assignment');
+});

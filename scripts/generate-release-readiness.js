@@ -441,7 +441,11 @@ function buildReadinessReport(options = {}) {
     const SIGNATURE_STATUS_LEVEL = {
         verified: 'pass',
         'no-published-key': 'warning',
-        unavailable: 'warning',
+        // Only reachable once a key IS published: the no-key case returns
+        // before ssh-keygen is ever invoked. So this means "a signature is
+        // required and this machine could not check it", which is not
+        // something a release should pass on.
+        unavailable: 'fail',
         missing: 'fail',
         invalid: 'fail'
     };
@@ -645,7 +649,19 @@ function main() {
     console.log(`Release readiness: ${report.status}`);
     console.log(`JSON: ${path.relative(REPO_ROOT, written.jsonPath).replace(/\\/g, '/')}`);
     console.log(`Markdown: ${path.relative(REPO_ROOT, written.markdownPath).replace(/\\/g, '/')}`);
-    if (args.requirePass && report.status !== 'pass') {
+    // --require-pass blocks on FAILURES, not on warnings.
+    //
+    // Until the release-signature check arrived, every check in this file was
+    // pass-or-fail, so `status !== 'pass'` and "something failed" were the same
+    // sentence. They are not any more: a warning exists precisely to be read
+    // and shipped past, and treating one as a blocker would have stopped
+    // `npm run release:prepare` on every build where nothing is actually
+    // wrong. Warnings are printed loudly instead, so they cannot be missed.
+    const warnings = report.checks.filter((item) => item.status === 'warning');
+    for (const warning of warnings) {
+        console.warn(`WARNING ${warning.id}: ${warning.details}`);
+    }
+    if (args.requirePass && report.checks.some((item) => item.status === 'fail')) {
         process.exitCode = 1;
     }
 }

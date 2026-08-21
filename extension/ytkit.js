@@ -5592,7 +5592,6 @@ return response;
     // so a user's toggle keeps its value, the popup keeps showing what they
     // chose, and switching the feed off restores the feature with no migration
     // and no stored state to unwind.
-    const FEATURE_DISABLE_FEED_STORAGE_KEY = 'ytkit-feature-disable-feed';
     let _featureDisableNotices = new Map();
 
     function getFeatureDisableNotice(featureId) {
@@ -5643,6 +5642,14 @@ return response;
             return null;
         }
 
+        // The background worker owns the cache, including the last-known-good
+        // copy that keeps a GitHub outage from un-disabling a feature that is
+        // still broken. There is deliberately no second cache here: a page-side
+        // copy under the same storage key overwrote the worker's `{text,
+        // cachedAt}` record with a bare string, which the worker then read as a
+        // miss and refetched — turning "one fetch per six hours" into one fetch
+        // per pageview, and contradicting the number the data-flow panel and
+        // the store rationale both quote to the user.
         let text = null;
         try {
             const response = await sendRuntimeMessage({ type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
@@ -5650,17 +5657,7 @@ return response;
         } catch (_) {
             // reason: an unreachable feed is a no-op by design, never an error
         }
-        if (text === null) {
-            // Last known-good list, so a GitHub outage does not un-disable a
-            // feature that is still broken. Written by this same function, so
-            // it can only ever contain rows this parser already accepted.
-            text = storageReadJSON(FEATURE_DISABLE_FEED_STORAGE_KEY, null);
-            if (typeof text !== 'string') return null;
-        } else {
-            try { await storageWriteJSON(FEATURE_DISABLE_FEED_STORAGE_KEY, text); } catch (_) {
-                // reason: caching is best-effort; the live fetch already applied
-            }
-        }
+        if (text === null) return null;
 
         const knownIds = new Set(features.map((feature) => feature?.id).filter(Boolean));
         const schema = globalThis.__YTKIT_SETTINGS_SCHEMA__ || {};
@@ -5673,8 +5670,15 @@ return response;
         const next = new Map();
         for (const entry of entries) next.set(entry.featureId, entry);
 
-        const changed = next.size !== _featureDisableNotices.size
-            || [...next.keys()].some((id) => !_featureDisableNotices.has(id));
+        // Compare the issue number too, not just the key set: a feed row that
+        // repoints a still-disabled feature at a different issue would
+        // otherwise leave the card linking the old one until some unrelated
+        // reconcile happened to run.
+        const signature = (map) => [...map.values()]
+            .map((entry) => `${entry.featureId}#${entry.issue}`)
+            .sort()
+            .join(',');
+        const changed = signature(next) !== signature(_featureDisableNotices);
         _featureDisableNotices = next;
 
         if (rejected.length) {
