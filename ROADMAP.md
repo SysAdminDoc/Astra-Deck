@@ -265,11 +265,3 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
   Touches: `extension/core/settings-visual-system.js`, `extension/features/settings-panel/index.js`, `extension/_locales/**`, `docs/settings-reference.md` via `scripts/generate-settings-reference.js`
   Acceptance: one named section collects every Shorts key with a localized heading, reachable from both the in-page panel and the popup search; no schema key is moved between categories (section grouping is presentation only, so `check:settings` stays byte-identical); the generated settings reference shows the section.
   Complexity: S
-
-- [ ] P3 — Bring the Node floor and the two lagging pins current
-  Why: `.nvmrc` pins 22, which entered maintenance on 2025-10-21 and receives critical fixes only, while the machine already runs 24.19.0 and Mozilla's AMO reviewer environment is Node 24.14.0 — so the declared floor is behind both the local reality and the environment the build must reproduce in.
-  Evidence: `.nvmrc` = `22`, `package.json` `engines.node >= 22`, local `node --version` = v24.19.0. `ws` is pinned at 8.21.2 while 8.21.3 (2026-08-07) is current — a permessage-deflate negotiation fix, not security; 8.21.2 already clears CVE-2026-48779 and CVE-2026-45736. `brace-expansion` has had five advisories in 2026, most recently CVE-2026-69152 (2026-08-03) which bypassed the previous mitigation, so the `^5.0.9` override needs a recurring check rather than a one-time fix.
-  Touches: `.nvmrc`, `package.json`, `package-lock.json`, `docs/` dependency notes
-  Acceptance: `.nvmrc` and `engines.node` name the Active LTS line, `npm run check` and the full suite pass on it, and `ws` is at 8.21.3; the `brace-expansion` override carries a comment naming the advisory it answers and the date it was last checked, so the next reader knows whether it is stale.
-  Complexity: S
-

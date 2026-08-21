@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- The build now requires Node 24. Node 22 went into maintenance in October 2025
+  and receives critical fixes only, and Node 24 is what Mozilla's add-on
+  reviewers build in. `ws` moves to 8.21.3.
+
+- Every dependency pin now records which advisory it answers and when someone
+  last looked at it, and a check fails if that record stops matching the pins.
+  `package.json` cannot carry comments, and a pin that looks current is not
+  evidence that it is.
+
 ## [4.84.0] (2026-08-21)
 
 ### Added

@@ -38,5 +38,28 @@
         "breaking": true
       }
     }
+  ],
+  "resolutionOverrides": [
+    {
+      "package": "brace-expansion",
+      "range": "^5.0.9",
+      "reason": "Five advisories in 2026, the most recent bypassing the previous mitigation, all reachable only through development tooling.",
+      "answersAdvisory": "CVE-2026-69152",
+      "advisoryUrl": "https://nvd.nist.gov/vuln/detail/CVE-2026-69152",
+      "lastCheckedOn": "2026-08-21",
+      "recheckBecause": "This package's history is a mitigation being bypassed rather than one fix holding, so a pin that looks current is not evidence that it is."
+    },
+    {
+      "package": "adm-zip",
+      "range": "^0.6.0",
+      "reason": "Transitive development dependency; the pin holds the floor above the archive-traversal advisories.",
+      "lastCheckedOn": "2026-08-21"
+    },
+    {
+      "package": "shell-quote",
+      "range": "^1.10.0",
+      "reason": "Transitive development dependency; the pin holds the floor above the command-injection advisory.",
+      "lastCheckedOn": "2026-08-21"
+    }
   ]
 }
