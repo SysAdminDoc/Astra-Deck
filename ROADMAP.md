@@ -228,13 +228,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
 
 ### P1
 
-- [ ] P1 — Make reset and import undo survive a browser restart, and write a backup file before import overwrites settings
-  Why: the undo for the two most destructive actions in the product is stored in `chrome.storage.session`, which the browser clears on exit, and import writes no file at all — so a user who resets, closes the browser, and reopens it has no path back. This is the only data-loss defect found this pass.
-  Evidence: `extension/popup.js:6262-6308` (reset snapshot), `:5515-5577` (import snapshot; aborts with "export a backup first" only when the snapshot itself fails). Backup payload shape already carries `exportVersion` / `backupSchemaVersion: 2` / `settingsSchemaVersion` at `:4960-4966`, so the serializer exists.
-  Touches: `extension/popup.js`, `extension/core/settings-import-transaction.js`, `extension/core/persisted-domains.js`, locales
-  Acceptance: an undo point written before a reset or import is still offered after a full browser restart (backed by `chrome.storage.local`, not `session`, with an explicit retention bound so it cannot grow unbounded); import writes a timestamped backup export before the first write, and names the file in the success message; a test restarts the storage layer between snapshot and undo and the undo still restores.
-  Complexity: M
-
 - [ ] P1 — Sign the release checksum file locally and publish the verification command
   Why: releases are built locally with no CI, so `SHA256SUMS` and the artifacts share one origin — anyone who can forge an artifact forges its hash, and the checksum proves nothing about provenance. Post-2025 users are explicitly told to check whether the shipped artifact matches the source before installing an unknown extension.
   Evidence: 12 release assets carry `SHA256SUMS` with no signature; no CI exists to produce attestations. GitHub Artifact Attestations are the stronger primitive but require an Actions build, which contradicts the deliberate local-builds-only decision (`a61b5d5e`) — that conflict is recorded in `RESEARCH.md` §Rejected rather than resolved here.

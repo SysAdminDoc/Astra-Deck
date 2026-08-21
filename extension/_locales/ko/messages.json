@@ -5717,7 +5717,15 @@
     "message": "확장 프로그램 데이터를 가져왔으며 실행 취소할 수 있습니다. 응답하는 YouTube 탭이 없어 대본 색인은 변경하지 않았습니다."
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "백업을 가져왔습니다. ‘가져오기 실행 취소’를 클릭하면 이전 상태로 복원됩니다. 실행 취소 지점은 7일 동안 유지되며 브라우저를 닫아도 사라지지 않습니다."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "이전 데이터는 먼저 {file}에 저장되었습니다.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck이 이전 데이터의 백업 파일을 먼저 저장하지 못했으므로 ‘가져오기 실행 취소’가 유일한 복구 방법입니다.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "클립보드 사용 불가 — 브라우저 콘솔을 확인하세요."
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "가져오기를 중단했습니다. Astra Deck이 브라우저 세션 저장소에 실행 취소 지점을 저장하지 못했습니다. 먼저 백업을 내보내세요."
+    "message": "가져오기를 중단했습니다. Astra Deck이 확장 프로그램 저장소에 실행 취소 지점을 저장하지 못했습니다. 먼저 백업을 내보내세요."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "‘가져오기 실행 취소’를 더 이상 사용할 수 없습니다. 실행 취소 지점이 7일 후 만료되었습니다."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "확장 프로그램 데이터를 지웠으며 실행 취소할 수 있습니다. 응답하는 YouTube 탭이 없어 대본 데이터는 변경하지 않았습니다. 저장된 AI 자격 증명은 유지했습니다."
   },
   "statusResetDoneUndo": {
-    "message": "이동식 설정, 기록, 대기열, 자막 데이터가 삭제되었습니다. 저장된 AI 자격 증명은 유지됩니다. 제거하려면 자격 증명 삭제를 사용하세요. 브라우저를 닫기 전까지 재설정 실행 취소를 클릭해 복원할 수 있습니다."
+    "message": "이동 가능한 설정, 기록, 대기열, 자막 데이터를 지웠습니다. 저장된 AI 자격 증명은 유지됩니다. 제거하려면 ‘자격 증명 삭제’를 사용하세요. ‘초기화 실행 취소’를 클릭하면 복원됩니다. 실행 취소 지점은 7일 동안 유지되며 브라우저를 닫아도 사라지지 않습니다."
   },
   "statusResetFail": {
     "message": "재설정 실패"
   },
   "statusResetSnapshotFail": {
-    "message": "초기화를 중단했습니다. Astra Deck이 브라우저 세션 저장소에 실행 취소 지점을 저장하지 못했습니다. 먼저 백업을 내보내세요."
+    "message": "초기화를 중단했습니다. Astra Deck이 확장 프로그램 저장소에 실행 취소 지점을 저장하지 못했습니다. 먼저 백업을 내보내세요."
   },
   "statusResetUndoExpired": {
-    "message": "실행 취소를 더 이상 사용할 수 없습니다 — 브라우저 세션이 종료되어 스냅샷이 만료되었습니다."
+    "message": "실행 취소를 더 이상 사용할 수 없습니다 — 실행 취소 지점이 7일 후 만료되었습니다."
   },
   "statusResetUndoFail": {
     "message": "실행 취소 실패"

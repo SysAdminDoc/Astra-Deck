@@ -8483,6 +8483,115 @@ const MICROCOPY_BATCH_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(MICROCOPY_BATCH_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// Reset/Import undo now outlives the browser session: the pointer moved from
+// ext.storage.session to ext.storage.local with a 7-day retention bound, and
+// Import writes a backup file before its first overwrite. The copy that
+// promised the undo died with the session had to change with it.
+const UNDO_RETENTION_TRANSLATIONS = {
+  de: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Zurücksetzen gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Erweiterungsspeicher sichern. Exportieren Sie zuerst eine Sicherung.",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Import gestoppt. Astra Deck konnte keinen Wiederherstellungspunkt im Erweiterungsspeicher sichern. Exportieren Sie zuerst eine Sicherung.",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "Portable Einstellungen, Verläufe, Warteschlangen und Transkriptdaten gelöscht. Gespeicherte KI-Zugangsdaten bleiben erhalten; verwenden Sie „Zugangsdaten löschen“, um sie zu entfernen. Klicken Sie auf „Zurücksetzen rückgängig“, um sie wiederherzustellen. Der Wiederherstellungspunkt bleibt 7 Tage lang erhalten, auch nach dem Schließen des Browsers.",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "Sicherung importiert. Klicken Sie auf „Import rückgängig“, um den vorherigen Zustand wiederherzustellen. Der Wiederherstellungspunkt bleibt 7 Tage lang erhalten, auch nach dem Schließen des Browsers.",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "„Import rückgängig“ ist nicht mehr verfügbar – der Wiederherstellungspunkt ist nach 7 Tagen abgelaufen.",
+    "Undo no longer available — the undo point expired after 7 days.": "Rückgängig nicht mehr verfügbar — der Wiederherstellungspunkt ist nach 7 Tagen abgelaufen.",
+    "Your previous data was saved to {file} first.": "Ihre vorherigen Daten wurden zuvor in {file} gesichert.",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "Astra Deck konnte zuvor keine Sicherungsdatei Ihrer vorherigen Daten speichern; „Import rückgängig“ ist daher der einzige Weg zurück.",
+  },
+  es: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Restablecimiento detenido. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de la extensión. Exporta una copia de seguridad primero.",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Importación detenida. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de la extensión. Exporta una copia de seguridad primero.",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "Se borraron los ajustes portátiles, los historiales, las colas y los datos de transcripción. Las credenciales de IA guardadas se conservan; usa «Eliminar credencial» para quitarlas. Haz clic en «Deshacer restablecimiento» para recuperarlos. El punto de deshacer dura 7 días y sigue disponible aunque cierres el navegador.",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "Copia de seguridad importada. Haz clic en «Deshacer importación» para restaurar el estado anterior. El punto de deshacer dura 7 días y sigue disponible aunque cierres el navegador.",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "«Deshacer importación» ya no está disponible: el punto de deshacer caducó a los 7 días.",
+    "Undo no longer available — the undo point expired after 7 days.": "Deshacer ya no está disponible — el punto de deshacer caducó a los 7 días.",
+    "Your previous data was saved to {file} first.": "Tus datos anteriores se guardaron primero en {file}.",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "Astra Deck no pudo guardar antes un archivo de copia de seguridad de tus datos anteriores, así que «Deshacer importación» es la única vuelta atrás.",
+  },
+  fr: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Réinitialisation interrompue. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de l'extension. Exportez d'abord une sauvegarde.",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Import interrompu. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de l'extension. Exportez d'abord une sauvegarde.",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "Paramètres portables, historiques, files d'attente et données de transcription effacés. Les identifiants d'IA enregistrés sont conservés ; utilisez « Supprimer l'identifiant » pour les retirer. Cliquez sur « Annuler la réinitialisation » pour les restaurer. Le point d'annulation reste valable 7 jours et survit à la fermeture du navigateur.",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "Sauvegarde importée. Cliquez sur « Annuler l'import » pour restaurer l'état précédent. Le point d'annulation reste valable 7 jours et survit à la fermeture du navigateur.",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "« Annuler l'import » n'est plus disponible : le point d'annulation a expiré au bout de 7 jours.",
+    "Undo no longer available — the undo point expired after 7 days.": "Annulation plus disponible — le point d'annulation a expiré au bout de 7 jours.",
+    "Your previous data was saved to {file} first.": "Vos données précédentes ont d'abord été enregistrées dans {file}.",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "Astra Deck n'a pas pu enregistrer au préalable un fichier de sauvegarde de vos données précédentes ; « Annuler l'import » est donc le seul retour possible.",
+  },
+  it: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Ripristino interrotto. Astra Deck non è riuscito a salvare un punto di annullamento nell'archivio dell'estensione. Esporta prima un backup.",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Importazione interrotta. Astra Deck non è riuscito a salvare un punto di annullamento nell'archivio dell'estensione. Esporta prima un backup.",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "Impostazioni portabili, cronologie, code e dati delle trascrizioni cancellati. Le credenziali IA salvate vengono mantenute; usa «Elimina credenziale» per rimuoverle. Fai clic su «Annulla ripristino» per recuperarli. Il punto di annullamento dura 7 giorni e resta disponibile anche dopo la chiusura del browser.",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "Backup importato. Fai clic su «Annulla importazione» per ripristinare lo stato precedente. Il punto di annullamento dura 7 giorni e resta disponibile anche dopo la chiusura del browser.",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "«Annulla importazione» non è più disponibile: il punto di annullamento è scaduto dopo 7 giorni.",
+    "Undo no longer available — the undo point expired after 7 days.": "Annulla non è più disponibile — il punto di annullamento è scaduto dopo 7 giorni.",
+    "Your previous data was saved to {file} first.": "I tuoi dati precedenti sono stati salvati prima in {file}.",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "Astra Deck non è riuscito a salvare prima un file di backup dei tuoi dati precedenti, quindi «Annulla importazione» è l'unica via di ritorno.",
+  },
+  ja: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "リセットを中止しました。Astra Deck は拡張機能のストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "インポートを中止しました。Astra Deck は拡張機能のストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "ポータブル設定、履歴、キュー、文字起こしデータを消去しました。保存済みの AI 認証情報は保持されます。削除するには「認証情報を削除」を使用してください。「リセットを取り消す」をクリックすると復元できます。取り消しポイントは 7 日間有効で、ブラウザーを閉じても失われません。",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "バックアップをインポートしました。「インポートを取り消す」をクリックすると以前の状態に戻せます。取り消しポイントは 7 日間有効で、ブラウザーを閉じても失われません。",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "「インポートを取り消す」は利用できません。取り消しポイントは 7 日後に期限切れになりました。",
+    "Undo no longer available — the undo point expired after 7 days.": "取り消しは利用できません — 取り消しポイントは 7 日後に期限切れになりました。",
+    "Your previous data was saved to {file} first.": "以前のデータは先に {file} に保存されました。",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "Astra Deck は以前のデータのバックアップファイルを先に保存できませんでした。「インポートを取り消す」が唯一の復元手段です。",
+  },
+  ko: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "초기화를 중단했습니다. Astra Deck이 확장 프로그램 저장소에 실행 취소 지점을 저장하지 못했습니다. 먼저 백업을 내보내세요.",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "가져오기를 중단했습니다. Astra Deck이 확장 프로그램 저장소에 실행 취소 지점을 저장하지 못했습니다. 먼저 백업을 내보내세요.",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "이동 가능한 설정, 기록, 대기열, 자막 데이터를 지웠습니다. 저장된 AI 자격 증명은 유지됩니다. 제거하려면 ‘자격 증명 삭제’를 사용하세요. ‘초기화 실행 취소’를 클릭하면 복원됩니다. 실행 취소 지점은 7일 동안 유지되며 브라우저를 닫아도 사라지지 않습니다.",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "백업을 가져왔습니다. ‘가져오기 실행 취소’를 클릭하면 이전 상태로 복원됩니다. 실행 취소 지점은 7일 동안 유지되며 브라우저를 닫아도 사라지지 않습니다.",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "‘가져오기 실행 취소’를 더 이상 사용할 수 없습니다. 실행 취소 지점이 7일 후 만료되었습니다.",
+    "Undo no longer available — the undo point expired after 7 days.": "실행 취소를 더 이상 사용할 수 없습니다 — 실행 취소 지점이 7일 후 만료되었습니다.",
+    "Your previous data was saved to {file} first.": "이전 데이터는 먼저 {file}에 저장되었습니다.",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "Astra Deck이 이전 데이터의 백업 파일을 먼저 저장하지 못했으므로 ‘가져오기 실행 취소’가 유일한 복구 방법입니다.",
+  },
+  pt_BR: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Redefinição interrompida. O Astra Deck não conseguiu salvar um ponto de desfazer no armazenamento da extensão. Exporte um backup primeiro.",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Importação interrompida. O Astra Deck não conseguiu salvar um ponto de desfazer no armazenamento da extensão. Exporte um backup primeiro.",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "Configurações portáteis, históricos, filas e dados de transcrição apagados. As credenciais de IA salvas são mantidas; use «Excluir credencial» para removê-las. Clique em «Desfazer redefinição» para restaurá-los. O ponto de desfazer dura 7 dias e continua disponível mesmo se você fechar o navegador.",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "Backup importado. Clique em «Desfazer importação» para restaurar o estado anterior. O ponto de desfazer dura 7 dias e continua disponível mesmo se você fechar o navegador.",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "«Desfazer importação» não está mais disponível: o ponto de desfazer expirou após 7 dias.",
+    "Undo no longer available — the undo point expired after 7 days.": "Desfazer não está mais disponível — o ponto de desfazer expirou após 7 dias.",
+    "Your previous data was saved to {file} first.": "Seus dados anteriores foram salvos primeiro em {file}.",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "O Astra Deck não conseguiu salvar antes um arquivo de backup dos seus dados anteriores, então «Desfazer importação» é o único caminho de volta.",
+  },
+  ru: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Сброс остановлен. Astra Deck не смог сохранить точку отмены в хранилище расширения. Сначала экспортируйте резервную копию.",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "Импорт остановлен. Astra Deck не смог сохранить точку отмены в хранилище расширения. Сначала экспортируйте резервную копию.",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "Переносимые настройки, истории, очереди и данные расшифровок очищены. Сохранённые учётные данные ИИ сохраняются; используйте «Удалить учётные данные», чтобы убрать их. Нажмите «Отменить сброс», чтобы восстановить их. Точка отмены действует 7 дней и сохраняется после закрытия браузера.",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "Резервная копия импортирована. Нажмите «Отменить импорт», чтобы восстановить прежнее состояние. Точка отмены действует 7 дней и сохраняется после закрытия браузера.",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "«Отменить импорт» больше недоступно: точка отмены истекла через 7 дней.",
+    "Undo no longer available — the undo point expired after 7 days.": "Отмена больше недоступна — точка отмены истекла через 7 дней.",
+    "Your previous data was saved to {file} first.": "Ваши прежние данные сначала сохранены в {file}.",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "Astra Deck не смог заранее сохранить файл резервной копии прежних данных, поэтому «Отменить импорт» — единственный путь назад.",
+  },
+  ar: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "تم إيقاف إعادة الضبط. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين الإضافة. صدّر نسخة احتياطية أولاً.",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "تم إيقاف الاستيراد. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين الإضافة. صدّر نسخة احتياطية أولاً.",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "تم مسح الإعدادات المحمولة والسجلات وقوائم الانتظار وبيانات النصوص. تُحفظ بيانات اعتماد الذكاء الاصطناعي المخزّنة؛ استخدم «حذف بيانات الاعتماد» لإزالتها. انقر على «تراجع عن إعادة الضبط» لاستعادتها. تبقى نقطة التراجع صالحة 7 أيام وتظل متاحة بعد إغلاق المتصفح.",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "تم استيراد النسخة الاحتياطية. انقر على «تراجع عن الاستيراد» لاستعادة الحالة السابقة. تبقى نقطة التراجع صالحة 7 أيام وتظل متاحة بعد إغلاق المتصفح.",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "لم يعد «تراجع عن الاستيراد» متاحًا: انتهت صلاحية نقطة التراجع بعد 7 أيام.",
+    "Undo no longer available — the undo point expired after 7 days.": "لم يعد التراجع متاحًا — انتهت صلاحية نقطة التراجع بعد 7 أيام.",
+    "Your previous data was saved to {file} first.": "تم حفظ بياناتك السابقة في {file} أولاً.",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "تعذّر على Astra Deck حفظ ملف نسخة احتياطية من بياناتك السابقة أولاً، لذا «تراجع عن الاستيراد» هو السبيل الوحيد للعودة.",
+  },
+  zh_CN: {
+    "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "已停止重置。Astra Deck 无法在扩展程序存储中保存撤销点。请先导出备份。",
+    "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.": "已停止导入。Astra Deck 无法在扩展程序存储中保存撤销点。请先导出备份。",
+    "Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.": "已清除可迁移设置、历史记录、队列和字幕数据。已保存的 AI 凭据会保留；如需删除，请使用“删除凭据”。点击“撤销重置”即可恢复。撤销点可保留 7 天，关闭浏览器后依然有效。",
+    "Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.": "已导入备份。点击“撤销导入”可恢复到先前状态。撤销点可保留 7 天，关闭浏览器后依然有效。",
+    "Undo Import is no longer available - the undo point expired after 7 days.": "“撤销导入”已不可用：撤销点已在 7 天后过期。",
+    "Undo no longer available — the undo point expired after 7 days.": "撤销已不可用 — 撤销点已在 7 天后过期。",
+    "Your previous data was saved to {file} first.": "你之前的数据已先保存到 {file}。",
+    "Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.": "Astra Deck 未能先保存你之前数据的备份文件，因此“撤销导入”是唯一的回退方式。",
+  },
+};
+for (const [locale, messages] of Object.entries(UNDO_RETENTION_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+
 
 
 

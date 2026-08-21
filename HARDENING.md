@@ -45,9 +45,11 @@ four-artifact build pass.
   (which `unlimitedStorage` does *not* lift) the snapshot write fails
   silently and the heaviest users — exactly the ones the storage banner
   nudges toward Reset — lose all data with the Undo button never
-  appearing. Now aborts with an actionable error when `!snapped &&
-  sessionStorageAvailable()`, while preserving the intentional no-undo
-  path on browsers that lack `storage.session`.
+  appearing. Now aborts with an actionable error when the undo point
+  cannot be staged. Superseded in v4.83.0: the undo pointer moved from
+  `storage.session` to `storage.local` under a 7-day retention bound, so
+  the quota ceiling it originally hit no longer applies and the undo
+  survives a browser restart.
 - **ReDoS guard missed overlapping-alternation.** The
   `hasUnsafeQuantifiers` / `hasNestedQuantifiers` guards (in
   `core/predicate-sandbox.js` plus the `videoHider` and

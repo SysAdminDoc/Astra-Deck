@@ -5717,7 +5717,15 @@
     "message": "Dati dell’estensione importati con Annulla disponibile. L’indice delle trascrizioni è rimasto invariato perché non era disponibile alcuna scheda YouTube reattiva."
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "Backup importato. Fai clic su «Annulla importazione» per ripristinare lo stato precedente. Il punto di annullamento dura 7 giorni e resta disponibile anche dopo la chiusura del browser."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "I tuoi dati precedenti sono stati salvati prima in {file}.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck non è riuscito a salvare prima un file di backup dei tuoi dati precedenti, quindi «Annulla importazione» è l'unica via di ritorno.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "Appunti non disponibili — vedi la console del browser."
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Importazione interrotta. Astra Deck non è riuscito a salvare un punto di annullamento nell'archivio di sessione del browser. Esporta prima un backup."
+    "message": "Importazione interrotta. Astra Deck non è riuscito a salvare un punto di annullamento nell'archivio dell'estensione. Esporta prima un backup."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "«Annulla importazione» non è più disponibile: il punto di annullamento è scaduto dopo 7 giorni."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "Dati dell’estensione cancellati con Annulla disponibile. Le trascrizioni sono rimaste invariate perché non era disponibile alcuna scheda YouTube reattiva. Le credenziali IA memorizzate sono state conservate."
   },
   "statusResetDoneUndo": {
-    "message": "Impostazioni portabili, cronologie, code e dati di trascrizione cancellati. Le credenziali IA memorizzate sono conservate; usa Elimina credenziale per rimuoverle. Fai clic su Annulla ripristino per ripristinare finché non chiudi il browser."
+    "message": "Impostazioni portabili, cronologie, code e dati delle trascrizioni cancellati. Le credenziali IA salvate vengono mantenute; usa «Elimina credenziale» per rimuoverle. Fai clic su «Annulla ripristino» per recuperarli. Il punto di annullamento dura 7 giorni e resta disponibile anche dopo la chiusura del browser."
   },
   "statusResetFail": {
     "message": "Reset fallito"
   },
   "statusResetSnapshotFail": {
-    "message": "Ripristino interrotto. Astra Deck non è riuscito a salvare un punto di annullamento nell'archivio di sessione del browser. Esporta prima un backup."
+    "message": "Ripristino interrotto. Astra Deck non è riuscito a salvare un punto di annullamento nell'archivio dell'estensione. Esporta prima un backup."
   },
   "statusResetUndoExpired": {
-    "message": "Annullamento non piu disponibile -- lo snapshot e scaduto con la sessione del browser."
+    "message": "Annulla non è più disponibile — il punto di annullamento è scaduto dopo 7 giorni."
   },
   "statusResetUndoFail": {
     "message": "Annullamento fallito"

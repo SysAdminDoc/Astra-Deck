@@ -5052,22 +5052,16 @@ async function replaceTranscriptDomain(records, origin) {
     return written;
 }
 
-async function exportSettings() {
-    exportButton.setAttribute('aria-busy', 'true');
-    exportButton.disabled = true;
+// Shared by the Export button and by the safety copy Import writes before it
+// overwrites anything. Returns the filename so the caller can name it in a
+// status message.
+async function downloadBackupFile(payload, filename) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
     try {
-        const [allStorage, transcript] = await Promise.all([
-            callExtensionApi(ext?.storage?.local, 'get', null),
-            readAllTranscriptRecords({ allowUnavailable: true })
-        ]);
-        const exportData = buildExportData(allStorage, transcript.records);
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-
         // Prefer the downloads API when available so the file lands in the
         // user's downloads folder even though the popup will close. Falls back
         // to an anchor click if the permission is unavailable.
-        const filename = 'astra_deck_settings_' + new Date().toISOString().slice(0, 10) + '.json';
         if (ext.downloads?.download) {
             await callExtensionApi(ext.downloads, 'download', { url, filename, saveAs: false });
         } else {
@@ -5084,7 +5078,25 @@ async function exportSettings() {
                 a.remove();
             }
         }
+    } finally {
         setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+    return filename;
+}
+
+async function exportSettings() {
+    exportButton.setAttribute('aria-busy', 'true');
+    exportButton.disabled = true;
+    try {
+        const [allStorage, transcript] = await Promise.all([
+            callExtensionApi(ext?.storage?.local, 'get', null),
+            readAllTranscriptRecords({ allowUnavailable: true })
+        ]);
+        const exportData = buildExportData(allStorage, transcript.records);
+        await downloadBackupFile(
+            exportData,
+            'astra_deck_settings_' + new Date().toISOString().slice(0, 10) + '.json'
+        );
         showStatus(transcript.available
             ? t('statusBackupExported', 'Backup exported.')
             : t('statusBackupExportedNoTranscript',
@@ -5345,7 +5357,7 @@ async function importFilterList(file) {
         if (!snapped) {
             await discardCoordinatedSnapshot(snapshot);
             throw new Error(t('statusImportSnapshotFail',
-                'Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.'));
+                'Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.'));
         }
         try {
             await storageSet(nonSettingWrites);
@@ -5574,9 +5586,26 @@ async function importSettings(file) {
         if (!snapped) {
             await discardCoordinatedSnapshot(snapshot);
             showStatus(t('statusImportSnapshotFail',
-                'Import stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.'),
+                'Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.'),
                 'error', 6000);
             return;
+        }
+        // The undo point above covers a mistake the user notices while Astra
+        // Deck is still installed. A file on disk covers everything else, and
+        // it has to be written before the first overwrite or it is worthless.
+        let preImportBackupName = '';
+        try {
+            const backupTranscript = await readAllTranscriptRecords({ allowUnavailable: true });
+            preImportBackupName = await downloadBackupFile(
+                buildExportData(currentLocal, backupTranscript.records),
+                'astra_deck_pre_import_backup_'
+                    + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+                    + '.json'
+            );
+        } catch (backupError) {
+            // A failed safety copy must not abort an import the user asked for
+            // — the undo point is already staged. Say so instead of going quiet.
+            console.warn('[Astra Deck popup] Pre-import backup file failed:', backupError);
         }
         try {
             const importedSettingsToApply = writes[STORAGE_KEYS.settings];
@@ -5616,15 +5645,22 @@ async function importSettings(file) {
             ? t('statusBackupImportedNoTranscript',
                 'Extension data imported with Undo available. The transcript index was left unchanged because no responsive YouTube tab was available.')
             : t('statusBackupImportedUndo',
-                'Backup imported. Click Undo Import to restore the previous state until you close the browser.');
+                'Backup imported. Click Undo Import to restore the previous state. The undo point lasts 7 days and survives closing the browser.');
         const previewSummary = t('statusImportPreviewSummaryTpl', 'Preview: {preview}.')
             .replace('{preview}', previewText);
         const importSummary = t('statusImportSummaryTpl', '{status} {preview}')
             .replace('{status}', importedStatus)
             .replace('{preview}', previewSummary);
+        const backupNote = preImportBackupName
+            ? t('statusImportBackupWrittenTpl',
+                'Your previous data was saved to {file} first.')
+                .replace('{file}', preImportBackupName)
+            : t('statusImportBackupFileFailed',
+                'Astra Deck could not save a backup file of your previous data first, so Undo Import is the only way back.');
         const cleanupFailure = formatPermissionCleanupFailure(permissionCleanup);
-        showStatus(cleanupFailure ? importSummary + ' ' + cleanupFailure : importSummary,
-            cleanupFailure ? 'error' : 'success', cleanupFailure ? 7200 : 6000);
+        const importMessage = importSummary + ' ' + backupNote;
+        showStatus(cleanupFailure ? importMessage + ' ' + cleanupFailure : importMessage,
+            cleanupFailure ? 'error' : 'success', cleanupFailure ? 7600 : 6400);
     } catch (error) {
         showStatus(t('statusImportFail', 'Import failed') + ': ' + error.message, 'error', 4200);
     } finally {
@@ -5633,7 +5669,7 @@ async function importSettings(file) {
         importButton.disabled = false;
         // Reconcile the recovery affordance after every exit path. Rollback
         // itself may throw when the owning YouTube tab disappears, but a
-        // staged session snapshot must still surface Undo Import.
+        // staged snapshot must still surface Undo Import.
         try { await refreshUndoImportVisibility(); } catch (_) {
             // reason: popup teardown or storage failure must not mask import status
         }
@@ -5649,7 +5685,7 @@ async function undoImportSettings() {
         if (!snap || Object.keys(snap).length === 0) {
             setUndoImportVisible(false);
             showStatus(t('statusImportUndoExpired',
-                'Undo Import is no longer available - the browser session snapshot expired.'),
+                'Undo Import is no longer available - the undo point expired after 7 days.'),
                 'error', 4200);
             return;
         }
@@ -5925,16 +5961,24 @@ async function updateCompanionNow() {
     }
 }
 
-// v4.47.0 EI2: undo grace period for Reset. The snapshot lives in
-// ext.storage.session — survives popup close/reopen but is wiped
-// when the browser quits. That's the right shape for "you misclicked
-// 30 seconds ago" while keeping the recovery window bounded; the
-// previous behaviour wiped everything with no path back. The undo
-// button is auto-shown when a snapshot exists and auto-hidden when
-// it's consumed or absent.
+// Undo grace period for Reset and Import. The bulk payload has always
+// lived in extension IndexedDB (persistedDomains.writeExtensionSnapshot),
+// which survives a browser restart; only the small pointer to it used to
+// live in ext.storage.session, which the browser wipes on exit. That made
+// the undo for the two most destructive actions in the product evaporate
+// the moment the user closed the browser — reset, quit, reopen, and there
+// was no path back. The pointer is durable now, in ext.storage.local,
+// bounded by UNDO_SNAPSHOT_RETENTION_MS so a forgotten snapshot cannot sit
+// in IndexedDB forever and cannot overwrite weeks of later real edits. The
+// undo button is auto-shown when a live snapshot exists and auto-hidden
+// when it's consumed, expired, or absent.
+//
+// The YouTube page-state snapshot below stays session-scoped on purpose:
+// it is keyed to a tab id, and tab ids do not survive a restart.
 const IMPORT_SNAPSHOT_KEY = '_importSnapshot';
 const RESET_SNAPSHOT_KEY = '_resetSnapshot';
 const YOUTUBE_STATE_RESET_SNAPSHOT_KEY = '_youtubeStateResetSnapshot';
+const UNDO_SNAPSHOT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const undoResetButton = $('#undo-reset-btn');
 
 async function readYoutubeStateResetSnapshot() {
@@ -6086,6 +6130,10 @@ function sessionStorageAvailable() {
     return !!(ext && ext.storage && ext.storage.session);
 }
 
+function undoPointerStorageAvailable() {
+    return !!(ext && ext.storage && ext.storage.local);
+}
+
 function createSnapshotId(kind) {
     const randomPart = globalThis.crypto?.randomUUID?.()
         || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -6094,7 +6142,7 @@ function createSnapshotId(kind) {
 
 async function createCoordinatedSnapshot(kind, options = {}) {
     if (!persistedDomains) throw new Error('Persisted-domain service unavailable');
-    if (!sessionStorageAvailable()) throw new Error('Session storage is unavailable; recoverable changes are disabled');
+    if (!undoPointerStorageAvailable()) throw new Error('Extension storage is unavailable; recoverable changes are disabled');
     const snapshotId = createSnapshotId(kind);
     const local = options.localSnapshot || await readLocalStorageSnapshot();
     await persistedDomains.writeExtensionSnapshot(snapshotId, local);
@@ -6163,7 +6211,13 @@ async function discardCoordinatedSnapshot(snapshot) {
 
 async function readLocalStorageSnapshot() {
     const items = await callExtensionApi(ext?.storage?.local, 'get', null);
-    return items || {};
+    const snapshot = { ...(items || {}) };
+    // The undo pointers now live in the same area this snapshot copies.
+    // Restoring one would resurrect a pointer whose IndexedDB payload is
+    // already gone, so the snapshot never carries them.
+    delete snapshot[IMPORT_SNAPSHOT_KEY];
+    delete snapshot[RESET_SNAPSHOT_KEY];
+    return snapshot;
 }
 
 async function restoreLocalStorageSnapshot(snapshot) {
@@ -6173,40 +6227,57 @@ async function restoreLocalStorageSnapshot(snapshot) {
     }
 }
 
-async function readSessionSnapshot(key) {
-    if (!sessionStorageAvailable()) return null;
-    try {
-        const items = await callExtensionApi(ext.storage.session, 'get', key);
-        const snap = items && items[key];
-        return snap && typeof snap === 'object' ? snap : null;
-    } catch (_) {
-        // reason: session API may be unavailable in some Firefox versions
-        return null;
-    }
+function undoSnapshotExpired(snapshot) {
+    const createdAt = Number(snapshot?.createdAt);
+    if (!Number.isFinite(createdAt) || createdAt <= 0) return true;
+    // A clock that moved backwards must not delete a good snapshot, so only
+    // forward age expires one.
+    return Date.now() - createdAt > UNDO_SNAPSHOT_RETENTION_MS;
 }
 
-async function writeSessionSnapshot(key, snapshot) {
-    if (!sessionStorageAvailable()) return false;
+async function readDurableSnapshot(key) {
+    if (!undoPointerStorageAvailable()) return null;
+    let snap = null;
     try {
-        await callExtensionApi(ext.storage.session, 'set', { [key]: snapshot });
+        const items = await callExtensionApi(ext.storage.local, 'get', key);
+        snap = items && items[key];
+    } catch (_) {
+        // reason: a failed pointer read presents as "no undo available"
+        return null;
+    }
+    if (!snap || typeof snap !== 'object') return null;
+    if (undoSnapshotExpired(snap)) {
+        // Retention bound. The IndexedDB payload is the large half, so it goes
+        // with the pointer rather than being left behind as an orphan.
+        await discardCoordinatedSnapshot(snap);
+        await clearDurableSnapshot(key);
+        return null;
+    }
+    return snap;
+}
+
+async function writeDurableSnapshot(key, snapshot) {
+    if (!undoPointerStorageAvailable()) return false;
+    try {
+        await callExtensionApi(ext.storage.local, 'set', { [key]: snapshot });
         return true;
     } catch (_) {
-        // reason: session API write failed; treat as no-snapshot, undo unavailable
+        // reason: pointer write failed; treat as no-snapshot, undo unavailable
         return false;
     }
 }
 
-async function clearSessionSnapshot(key) {
-    if (!sessionStorageAvailable()) return;
+async function clearDurableSnapshot(key) {
+    if (!undoPointerStorageAvailable()) return;
     try {
-        await callExtensionApi(ext.storage.session, 'remove', key);
+        await callExtensionApi(ext.storage.local, 'remove', key);
     } catch (_) {
-        // reason: session.remove failure is benign; snapshot evicts on browser close
+        // reason: remove failure is benign; the retention bound collects it later
     }
 }
 
 async function readImportSnapshot() {
-    return readSessionSnapshot(IMPORT_SNAPSHOT_KEY);
+    return readDurableSnapshot(IMPORT_SNAPSHOT_KEY);
 }
 
 async function writeImportSnapshot(snapshot) {
@@ -6214,15 +6285,15 @@ async function writeImportSnapshot(snapshot) {
     if (previous?.snapshotId && previous.snapshotId !== snapshot?.snapshotId) {
         await discardCoordinatedSnapshot(previous);
     }
-    return writeSessionSnapshot(IMPORT_SNAPSHOT_KEY, snapshot);
+    return writeDurableSnapshot(IMPORT_SNAPSHOT_KEY, snapshot);
 }
 
 async function clearImportSnapshot() {
-    return clearSessionSnapshot(IMPORT_SNAPSHOT_KEY);
+    return clearDurableSnapshot(IMPORT_SNAPSHOT_KEY);
 }
 
 async function readResetSnapshot() {
-    return readSessionSnapshot(RESET_SNAPSHOT_KEY);
+    return readDurableSnapshot(RESET_SNAPSHOT_KEY);
 }
 
 async function writeResetSnapshot(snapshot) {
@@ -6230,11 +6301,11 @@ async function writeResetSnapshot(snapshot) {
     if (previous?.snapshotId && previous.snapshotId !== snapshot?.snapshotId) {
         await discardCoordinatedSnapshot(previous);
     }
-    return writeSessionSnapshot(RESET_SNAPSHOT_KEY, snapshot);
+    return writeDurableSnapshot(RESET_SNAPSHOT_KEY, snapshot);
 }
 
 async function clearResetSnapshot() {
-    return clearSessionSnapshot(RESET_SNAPSHOT_KEY);
+    return clearDurableSnapshot(RESET_SNAPSHOT_KEY);
 }
 
 function setUndoImportVisible(visible) {
@@ -6260,11 +6331,11 @@ async function refreshUndoResetVisibility() {
 }
 
 async function resetAllData() {
-    // v4.47.0 NF14: applies immediately. EI2's Undo Reset button
-    // already provides the recovery surface — clicking Reset stages a
-    // session-scoped snapshot in ext.storage.session, surfaces the
-    // Undo button, and dies with the browser session. Project policy
-    // bans confirmation dialogs in favor of this pattern.
+    // v4.47.0 NF14: applies immediately. The Undo Reset button already
+    // provides the recovery surface — clicking Reset stages a snapshot,
+    // surfaces the Undo button, and keeps it available for the retention
+    // window even across a browser restart. Project policy bans
+    // confirmation dialogs in favor of this pattern.
     resetButton.setAttribute('aria-busy', 'true');
     resetButton.disabled = true;
     if (storageBannerResetBtn) storageBannerResetBtn.disabled = true;
@@ -6287,7 +6358,7 @@ async function resetAllData() {
             // writeSessionSnapshot returns false are an unavailable session API
             // or a rejected session write. Name that instead.
             showStatus(t('statusResetSnapshotFail',
-                'Reset stopped. Astra Deck could not save an undo point to browser session storage, so export a backup first.'),
+                'Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first.'),
                 'error', 6000);
             return;
         }
@@ -6298,6 +6369,9 @@ async function resetAllData() {
             await storageSet({
                 [FIRST_RUN_SEEN_KEY]: true,
                 [LAST_SEEN_VERSION_KEY]: (manifestVersion && manifestVersion !== '—') ? manifestVersion : '',
+                // storageClear() wiped the undo pointer along with everything
+                // else. Put it back, or Reset destroys its own recovery path.
+                [RESET_SNAPSHOT_KEY]: snapshot,
             });
             if (snapshot.pageSnapshotId) {
                 await sendPersistedDataMessage({ action: 'clear' }, snapshot.pageOrigin);
@@ -6323,7 +6397,7 @@ async function resetAllData() {
             ? t('statusResetDoneNoTranscript',
                 'Extension data cleared with Undo available. Transcript data was left unchanged because no responsive YouTube tab was available. Stored AI credentials were retained.')
             : t('statusResetDoneUndo',
-                'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore until you close the browser.');
+                'Portable settings, histories, queues, and transcript data cleared. Stored AI credentials are retained; use Delete credential to remove them. Click Undo Reset to restore them. The undo point lasts 7 days and survives closing the browser.');
         if (permissionCleanup.ok === false) {
             const permissionMessage = formatPermissionCleanupFailure(permissionCleanup);
             showStatus(resetMessage + ' ' + permissionMessage, 'error', 7200);
@@ -6346,11 +6420,11 @@ async function undoResetAllData() {
     try {
         const snap = await readResetSnapshot();
         if (!snap || Object.keys(snap).length === 0) {
-            // Snapshot vanished (browser restart, session.remove from another
-            // surface). Hide the button and report.
+            // Snapshot vanished (retention window elapsed, or another surface
+            // consumed it). Hide the button and report.
             setUndoResetVisible(false);
             showStatus(t('statusResetUndoExpired',
-                'Undo no longer available — snapshot expired with the browser session.'),
+                'Undo no longer available — the undo point expired after 7 days.'),
                 'error', 4200);
             return;
         }

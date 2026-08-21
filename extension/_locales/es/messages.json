@@ -5717,7 +5717,15 @@
     "message": "Los datos de la extensión se importaron con la opción Deshacer disponible. El índice de transcripciones no cambió porque no había ninguna pestaña de YouTube disponible."
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "Copia de seguridad importada. Haz clic en «Deshacer importación» para restaurar el estado anterior. El punto de deshacer dura 7 días y sigue disponible aunque cierres el navegador."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "Tus datos anteriores se guardaron primero en {file}.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "Astra Deck no pudo guardar antes un archivo de copia de seguridad de tus datos anteriores, así que «Deshacer importación» es la única vuelta atrás.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "Portapapeles no disponible — consulta la consola del navegador."
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "Importación detenida. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de sesión del navegador. Exporta una copia de seguridad primero."
+    "message": "Importación detenida. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de la extensión. Exporta una copia de seguridad primero."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "«Deshacer importación» ya no está disponible: el punto de deshacer caducó a los 7 días."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "Los datos de la extensión se borraron con la opción Deshacer disponible. Los datos de transcripciones no cambiaron porque no había ninguna pestaña de YouTube disponible. Se conservaron las credenciales de IA almacenadas."
   },
   "statusResetDoneUndo": {
-    "message": "Se borraron los ajustes portátiles, historiales, colas y datos de transcripción. Las credenciales de IA almacenadas se conservan; usa Eliminar credencial para quitarlas. Haz clic en Deshacer restablecimiento para restaurar hasta que cierres el navegador."
+    "message": "Se borraron los ajustes portátiles, los historiales, las colas y los datos de transcripción. Las credenciales de IA guardadas se conservan; usa «Eliminar credencial» para quitarlas. Haz clic en «Deshacer restablecimiento» para recuperarlos. El punto de deshacer dura 7 días y sigue disponible aunque cierres el navegador."
   },
   "statusResetFail": {
     "message": "Error al restablecer"
   },
   "statusResetSnapshotFail": {
-    "message": "Restablecimiento detenido. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de sesión del navegador. Exporta una copia de seguridad primero."
+    "message": "Restablecimiento detenido. Astra Deck no pudo guardar un punto de deshacer en el almacenamiento de la extensión. Exporta una copia de seguridad primero."
   },
   "statusResetUndoExpired": {
-    "message": "Deshacer ya no disponible — la instantánea expiró con la sesión del navegador."
+    "message": "Deshacer ya no está disponible — el punto de deshacer caducó a los 7 días."
   },
   "statusResetUndoFail": {
     "message": "Error al deshacer"

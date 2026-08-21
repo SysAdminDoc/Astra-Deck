@@ -10179,15 +10179,23 @@ test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup acti
     // pinned in SysAdminDoc/AstraDownloader, which owns that source.
 });
 
-test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores it', () => {
-    // EI2: the destructive Reset action was irreversible; one
-    // misclick wiped all 354 settings + hidden lists + bookmarks
-    // with no recovery. v4.47.0 captures everything in
-    // chrome.storage.session under `_resetSnapshot` before the
-    // wipe; an "Undo Reset" button restores the snapshot until
-    // the browser session ends. The snapshot deliberately does
-    // NOT survive a browser restart — stale snapshots overwriting
-    // later real edits would be worse than the original problem.
+test('Reset writes a durable undo snapshot and Undo restores it', () => {
+    // The destructive Reset action was irreversible; one misclick wiped all
+    // settings + hidden lists + bookmarks with no recovery. v4.47.0 captured
+    // everything under `_resetSnapshot` before the wipe and added an "Undo
+    // Reset" button.
+    //
+    // This test used to assert the snapshot pointer lived in
+    // chrome.storage.session, on the reasoning that a stale snapshot
+    // overwriting later real edits would be worse than the original problem.
+    // That reasoning was wrong on both halves. The bulk payload was already
+    // durable — it lives in extension IndexedDB — so "dies with the session"
+    // only ever killed the *pointer*, orphaning the payload rather than
+    // collecting it. And the risk it traded away was the larger one: reset,
+    // quit the browser, reopen, and the user had no path back at all. A
+    // retention bound answers the stale-snapshot worry directly, which is why
+    // the pointer is durable now and UNDO_SNAPSHOT_RETENTION_MS is pinned
+    // below.
     //
     // Source-level pin: the wiring must be present in popup.html,
     // popup.js, popup.css, and the EN locale must expose every
@@ -10203,8 +10211,35 @@ test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores i
 
     assert.match(popupSource, /const RESET_SNAPSHOT_KEY = '_resetSnapshot'/,
         'popup.js must declare the canonical snapshot key constant');
-    assert.match(popupSource, /callExtensionApi\(ext\.storage\.session, '(?:get|set|remove)'/,
-        'snapshot helpers must use session storage through the wrapper so the snapshot dies with the browser session');
+    assert.match(popupSource, /const UNDO_SNAPSHOT_RETENTION_MS = 7 \* 24 \* 60 \* 60 \* 1000;/,
+        'the durable undo point must carry an explicit retention bound');
+    assert.match(popupSource, /async function readDurableSnapshot\(key\) \{[\s\S]*?callExtensionApi\(ext\.storage\.local, 'get', key\)/,
+        'the undo pointer must be read from ext.storage.local so it survives a browser restart');
+    assert.match(popupSource, /async function writeDurableSnapshot\(key, snapshot\) \{[\s\S]*?callExtensionApi\(ext\.storage\.local, 'set'/,
+        'the undo pointer must be written to ext.storage.local');
+    assert.doesNotMatch(popupSource, /return (?:read|write|clear)SessionSnapshot\((?:IMPORT|RESET)_SNAPSHOT_KEY/,
+        'the reset and import undo pointers must not fall back to session storage');
+    // Expiry must drop the IndexedDB payload with the pointer, or the
+    // retention bound leaks a snapshot per expired undo.
+    const durableReadStart = popupSource.indexOf('async function readDurableSnapshot(');
+    const durableReadEnd = popupSource.indexOf('\n}\n', durableReadStart);
+    const durableRead = popupSource.slice(durableReadStart, durableReadEnd);
+    assert.match(durableRead, /undoSnapshotExpired\(snap\)/,
+        'the pointer read must apply the retention bound');
+    assert.match(durableRead, /discardCoordinatedSnapshot\(snap\)[\s\S]*?clearDurableSnapshot\(key\)/,
+        'an expired pointer must take its IndexedDB payload with it');
+    // storageClear() wipes the pointer along with everything else, so reset
+    // has to write it back or it destroys its own recovery path.
+    assert.match(popupSource, /\[RESET_SNAPSHOT_KEY\]: snapshot,/,
+        'resetAllData must re-stamp the undo pointer after storageClear');
+    // The snapshot copies ext.storage.local wholesale; carrying its own
+    // pointer keys would resurrect a pointer whose payload is already gone.
+    const localSnapStart = popupSource.indexOf('async function readLocalStorageSnapshot(');
+    const localSnap = popupSource.slice(localSnapStart, popupSource.indexOf('\n}\n', localSnapStart));
+    assert.match(localSnap, /delete snapshot\[IMPORT_SNAPSHOT_KEY\]/,
+        'the local snapshot must not carry the import undo pointer');
+    assert.match(localSnap, /delete snapshot\[RESET_SNAPSHOT_KEY\]/,
+        'the local snapshot must not carry the reset undo pointer');
     assert.match(popupSource, /async function resetAllData\(\)/,
         'resetAllData must remain async');
     assert.match(popupSource, /writeResetSnapshot\(snapshot\)/,

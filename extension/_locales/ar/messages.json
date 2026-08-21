@@ -5717,7 +5717,15 @@
     "message": "تم استيراد بيانات الإضافة مع إتاحة التراجع. تُرك فهرس النصوص دون تغيير لعدم توفر علامة تبويب YouTube مستجيبة."
   },
   "statusBackupImportedUndo": {
-    "message": "Backup imported. Click Undo Import to restore the previous state until you close the browser."
+    "message": "تم استيراد النسخة الاحتياطية. انقر على «تراجع عن الاستيراد» لاستعادة الحالة السابقة. تبقى نقطة التراجع صالحة 7 أيام وتظل متاحة بعد إغلاق المتصفح."
+  },
+  "statusImportBackupWrittenTpl": {
+    "message": "تم حفظ بياناتك السابقة في {file} أولاً.",
+    "description": "Import status fragment naming the safety backup file written before the import overwrote anything."
+  },
+  "statusImportBackupFileFailed": {
+    "message": "تعذّر على Astra Deck حفظ ملف نسخة احتياطية من بياناتك السابقة أولاً، لذا «تراجع عن الاستيراد» هو السبيل الوحيد للعودة.",
+    "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
     "message": "الحافظة غير متاحة — انظر وحدة تحكم المتصفح."
@@ -5765,13 +5773,13 @@
     "message": "{count} setting(s) from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
-    "message": "تم إيقاف الاستيراد. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين جلسة المتصفح. صدّر نسخة احتياطية أولاً."
+    "message": "تم إيقاف الاستيراد. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين الإضافة. صدّر نسخة احتياطية أولاً."
   },
   "statusImportSummaryTpl": {
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the browser session snapshot expired."
+    "message": "لم يعد «تراجع عن الاستيراد» متاحًا: انتهت صلاحية نقطة التراجع بعد 7 أيام."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5801,16 +5809,16 @@
     "message": "تم مسح بيانات الإضافة مع إتاحة التراجع. تُركت بيانات النصوص دون تغيير لعدم توفر علامة تبويب YouTube مستجيبة. تم الاحتفاظ ببيانات اعتماد الذكاء الاصطناعي المخزنة."
   },
   "statusResetDoneUndo": {
-    "message": "تم مسح الإعدادات المحمولة والسجلات وقوائم الانتظار وبيانات النصوص المفرّغة. يُحتفظ ببيانات اعتماد الذكاء الاصطناعي المخزّنة؛ استخدم حذف بيانات الاعتماد لإزالتها. انقر على التراجع عن إعادة التعيين للاستعادة حتى إغلاق المتصفح."
+    "message": "تم مسح الإعدادات المحمولة والسجلات وقوائم الانتظار وبيانات النصوص. تُحفظ بيانات اعتماد الذكاء الاصطناعي المخزّنة؛ استخدم «حذف بيانات الاعتماد» لإزالتها. انقر على «تراجع عن إعادة الضبط» لاستعادتها. تبقى نقطة التراجع صالحة 7 أيام وتظل متاحة بعد إغلاق المتصفح."
   },
   "statusResetFail": {
     "message": "فشلت إعادة التعيين"
   },
   "statusResetSnapshotFail": {
-    "message": "تم إيقاف إعادة الضبط. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين جلسة المتصفح. صدّر نسخة احتياطية أولاً."
+    "message": "تم إيقاف إعادة الضبط. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين الإضافة. صدّر نسخة احتياطية أولاً."
   },
   "statusResetUndoExpired": {
-    "message": "التراجع لم يعد متاحاً — انتهت صلاحية اللقطة مع جلسة المتصفح."
+    "message": "لم يعد التراجع متاحًا — انتهت صلاحية نقطة التراجع بعد 7 أيام."
   },
   "statusResetUndoFail": {
     "message": "فشل التراجع"
