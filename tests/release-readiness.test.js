@@ -7,7 +7,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+const { execFileSync } = require('child_process');
+
 const { expectedReleaseNames } = require('../scripts/generate-release-manifest');
+const { signChecksums } = require('../scripts/release-signature');
 const {
     buildReadinessReport,
     buildBundleParityCheck,
@@ -86,9 +89,22 @@ test('release readiness verifies the repository userscript bundle without throwi
 
 
 
+// A release that is genuinely complete carries a signature over its checksum
+// file, so the fixture publishes a throwaway key and signs. Without this the
+// "everything passes" test would be asserting that a release with no
+// provenance at all is ready to ship.
+function signFixture(root, buildDir) {
+    const keyPath = path.join(root, 'fixture-signing-key');
+    execFileSync('ssh-keygen', ['-t', 'ed25519', '-N', '', '-f', keyPath, '-q'], { stdio: 'pipe' });
+    const pub = fs.readFileSync(keyPath + '.pub', 'utf8').trim().split(/\s+/);
+    fs.writeFileSync(path.join(root, 'allowed-signers'), `releases@astra-deck ${pub[0]} ${pub[1]}\n`);
+    signChecksums({ buildDir, keyPath });
+}
+
 test('release readiness passes for a complete manifest, checksum, SBOM, and version fixture', () => {
     const { root, buildDir, version } = writeFixtureRepo();
     fs.writeFileSync(path.join(buildDir, 'release-health.json'), JSON.stringify({ status: 'pass' }) + '\n');
+    signFixture(root, buildDir);
     const report = buildReadinessReport({
         repoRoot: root,
         buildDir,

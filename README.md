@@ -1043,6 +1043,35 @@ document_idle
   only YouTube-owned destinations
 - Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists documented provider origins. GitHub-full alone carries a scheme-scoped `https://*` connection lane because CSP cannot know a user-selected host in advance; browser permissions still require one exact host and never grant all sites.
 
+### Verifying a download
+
+Every release carries `SHA256SUMS`, a detached `SHA256SUMS.sig`, and the
+`allowed-signers` file from this repository. Two commands, and both have to
+pass. The first says who produced the list of hashes:
+
+```bash
+ssh-keygen -Y verify -f allowed-signers -I releases@astra-deck   -n astra-deck-release -s SHA256SUMS.sig < SHA256SUMS
+```
+
+The second says your downloads match it:
+
+```bash
+sha256sum -c SHA256SUMS
+```
+
+`ssh-keygen` ships with Git for Windows, macOS, and every Linux, so there is
+nothing to install. On Windows use Git Bash; PowerShell users can substitute
+`Get-FileHash` for the second command.
+
+Why both. Releases are built on one machine with no CI, so the artifacts and
+their checksum file come from the same place. Anyone who can forge one can
+forge the other, which makes an unsigned checksum file a corruption check and
+not a provenance claim. The signature is what makes it a claim about origin.
+
+No signing key is published yet, so `allowed-signers` currently lists none and
+the first command has nothing to check against. Until it does, treat releases
+as unsigned and prefer the source tree.
+
 ### Trust & Transparency
 
 - **Fully open-source**, every line of extension, companion, and build tooling is auditable

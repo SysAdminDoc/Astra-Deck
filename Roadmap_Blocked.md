@@ -8,6 +8,18 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 > name those paths are implemented THERE, against that repo's tree; the paths
 > are kept verbatim because they still resolve inside the companion repo.
 
+## P1 — Release signing, awaiting the maintainer's key (2026-08-21)
+
+- [ ] P1 — Publish the release signing key so `SHA256SUMS` carries a verifiable signature
+  Why: releases are built locally with no CI, so `SHA256SUMS` and the artifacts share one origin — anyone who can forge an artifact forges its hash, and the checksum file on its own proves only that a download was not corrupted.
+  Status (2026-08-21): the machinery is built, tested, and wired in. `scripts/release-signature.js` signs `build/SHA256SUMS` with `ssh-keygen -Y sign` under the `astra-deck-release` namespace and verifies it against the committed `allowed-signers` file; `npm run release:sign` runs inside `build:userscript` after `release:manifest`; `npm run release:readiness` carries a `release-signature` check that FAILS on a missing or invalid signature; `README.md` §Verifying a download shows the exact two-command verify; `docs/signing-keys.md` §9 covers generation, publication, rotation, and the readiness matrix. `tests/release-signature.test.js` proves the whole path end to end against a throwaway key: a valid signature verifies, a one-byte edit to the checksum file breaks it, a signature from a different key is rejected, and a signature made under another namespace cannot be replayed as a release attestation.
+  What is left, and why it is blocked: one line in `allowed-signers` naming the public half of a key whose private half only the maintainer should ever hold. Generating that key unattended would produce an unpassphrased secret with no offline backup and no revocation story, published as the project's release identity — a provenance claim the project could not actually back, which is worse than the current honest "no signing key is published yet". The custody decision (passphrase, offline backup, which machine holds it) is §7's, and it is the maintainer's.
+  Do this: follow `docs/signing-keys.md` §9 — `ssh-keygen -t ed25519 -C 'Astra Deck release signing' -f "$KEY"` with a passphrase, back the private half up per §7, append `releases@astra-deck ssh-ed25519 AAAA...` to `allowed-signers`, and commit. Nothing else needs changing: the readiness check flips from warning to fail on its own the moment that line exists, and `npm run release:sign` stops skipping.
+  Also update: the README paragraph that currently says "No signing key is published yet" and the closing note in `allowed-signers` that says the same.
+  Acceptance: `allowed-signers` names a real key; `npm run release:sign` produces `build/SHA256SUMS.sig`; `npm run release:verify-signature` reports `verified`; `npm run release:readiness` reports `release-signature` as pass; the README paragraph no longer says no key is published.
+  Complexity: S
+  Blocker: requires a private key the maintainer must generate and own. No code change can substitute for it.
+
 ## P2 — Research-driven, externally gated (2026-08-19)
 
 - [ ] P3 — Verify the Document PiP pop-out on Firefox 151+ and advertise it honestly

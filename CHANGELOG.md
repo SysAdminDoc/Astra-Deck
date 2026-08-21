@@ -22,6 +22,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   default and lives in Settings under Advanced; turn it off and no request is
   made at all.
 
+- Every release will carry a signature over its checksum file, and the README
+  shows the two commands to check it. Astra Deck is built on one machine with
+  no CI, so the files and the list of hashes come from the same place; anyone
+  who could tamper with one could tamper with the other. A signature is what
+  makes that list say who produced it. The signing key itself is not published
+  yet, so today's releases are still unsigned and the release check says so out
+  loud rather than passing quietly.
+
 ## [4.83.0] (2026-08-21)
 
 ### Added
