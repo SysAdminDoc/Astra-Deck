@@ -13257,10 +13257,10 @@ test('the a11y smoke proves 320px reflow on every primary surface in every track
         smoke.indexOf('const SURFACES = Object.freeze(['),
         smoke.indexOf('const REAL_EXTENSION_SURFACES = Object.freeze([')
     );
-    const surfaces = [...fixtureBlock.matchAll(/name: '(popup|sidepanel|sidebar|settings|transcript|download)'/g)]
+    const surfaces = [...fixtureBlock.matchAll(/name: '(popup|sidepanel|sidebar|settings|transcript|download|comment-search)'/g)]
         .map((match) => match[1]);
-    assert.equal(surfaces.length, 6, 'all six primary surfaces must be declared');
-    assert.equal((smoke.match(/localeStates: LOCALE_STATES/g) || []).length, 6,
+    assert.equal(surfaces.length, 7, 'all seven primary surfaces must be declared');
+    assert.equal((smoke.match(/localeStates: LOCALE_STATES/g) || []).length, 7,
         'every primary surface must render the tracked locales');
 
     // lang/dir belongs to whoever owns the document; the in-page surfaces

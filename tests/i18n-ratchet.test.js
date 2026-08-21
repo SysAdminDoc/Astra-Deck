@@ -194,6 +194,60 @@ test('core, sidepanel, download, video-notes, settings-panel, video-hider, and p
     }
 });
 
+test('Comment Search keeps its rendered copy localized in every shipped locale', () => {
+    const repoRoot = path.join(__dirname, '..');
+    for (const [label, file] of [
+        ['extension', path.join(repoRoot, 'extension', 'ytkit.js')],
+        ['userscript', path.join(repoRoot, 'YTKit.user.js')]
+    ]) {
+        const source = fs.readFileSync(file, 'utf8');
+        const start = source.indexOf("id: 'commentSearch'");
+        const end = source.indexOf("id: 'videoZoom'", start);
+        assert.ok(start > -1 && end > start, `${label} Comment Search boundaries must remain discoverable`);
+        const commentSearchSource = source.slice(start, end);
+        assert.deepEqual(collectJsLiterals(commentSearchSource), [],
+            `${label} Comment Search must not add rendered English outside t()`);
+        assert.deepEqual(collectStrictJsLiterals(commentSearchSource), [],
+            `${label} Comment Search strict UI sinks must remain behind locale keys`);
+    }
+
+    const baseline = JSON.parse(fs.readFileSync(
+        path.join(repoRoot, 'scripts', 'i18n-ui-copy-baseline.json'),
+        'utf8'
+    ));
+    assert.ok(baseline.entries['extension/ytkit.js'].count <= 911,
+        'the Comment Search pass must retain its 23-literal reduction');
+    assert.ok(baseline.entries['extension/ytkit.js'].strictCount <= 315,
+        'the Comment Search pass must retain its 20 strict-sink reduction');
+
+    const localesRoot = path.join(repoRoot, 'extension', '_locales');
+    const en = JSON.parse(fs.readFileSync(path.join(localesRoot, 'en', 'messages.json'), 'utf8'));
+    const keys = Object.keys(en).filter((key) => key.startsWith('commentSearch'));
+    assert.equal(keys.length, 22, 'the complete Comment Search state model needs 22 locale keys');
+    const locales = fs.readdirSync(localesRoot, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() && entry.name !== 'en')
+        .map((entry) => entry.name);
+    assert.equal(locales.length, 10);
+    for (const locale of locales) {
+        const messages = JSON.parse(fs.readFileSync(path.join(localesRoot, locale, 'messages.json'), 'utf8'));
+        for (const key of keys) {
+            assert.equal(typeof messages[key]?.message, 'string', `${locale} is missing ${key}`);
+            assert.notEqual(messages[key].message, en[key].message,
+                `${locale}.${key} must not fall through to English`);
+        }
+    }
+
+    const generator = fs.readFileSync(path.join(repoRoot, 'scripts', 'generate-locales.js'), 'utf8');
+    assert.match(generator, /COMMENT_SEARCH_TRANSLATIONS/,
+        'translations must remain in the locale generator before catalog regeneration');
+
+    const extensionSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const preloadIndex = extensionSource.indexOf('await preloadExtensionState();');
+    const localeLoadIndex = extensionSource.indexOf('await _loadLocaleOverride();', preloadIndex);
+    assert.ok(preloadIndex > -1 && localeLoadIndex > preloadIndex,
+        'manual locale loading must wait for the extension storage preload');
+});
+
 test('generated pseudolocale expands copy and isolates interpolation tokens for RTL proofing', () => {
     const source = 'Downloaded {count} files for $USER$';
     const pseudo = pseudolocalizeMessage(source);

@@ -797,8 +797,9 @@
 
                     #comments .ytkit-comment-search-copy {
                         display: grid !important;
-                        gap: 4px !important;
+                        gap: 8px !important;
                         min-width: 0 !important;
+                        overflow-wrap: anywhere !important;
                     }
 
                     #comments .ytkit-comment-search-eyebrow {
@@ -806,6 +807,7 @@
                         font-size: 10px !important;
                         font-weight: 800 !important;
                         letter-spacing: 0.12em !important;
+                        line-height: 1.7 !important;
                         text-transform: uppercase !important;
                     }
 
@@ -813,7 +815,7 @@
                         margin: 0 !important;
                         color: rgba(255, 255, 255, 0.92) !important;
                         font-size: 12.5px !important;
-                        line-height: 1.45 !important;
+                        line-height: 1.7 !important;
                         font-weight: 600 !important;
                         text-wrap: pretty !important;
                     }
@@ -823,6 +825,7 @@
                         grid-template-columns: auto minmax(0, 1fr) auto !important;
                         align-items: center !important;
                         gap: 10px !important;
+                        min-width: 0 !important;
                         min-height: 48px !important;
                         padding: 0 14px !important;
                         border-radius: 12px !important;
@@ -846,6 +849,7 @@
                         font-size: 13px !important;
                         font-weight: 600 !important;
                         outline: none !important;
+                        text-overflow: ellipsis !important;
                     }
 
                     #comments .ytkit-comment-search-input:focus-visible,
@@ -904,9 +908,9 @@
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
-                        min-height: 34px !important;
+                        min-height: 38px !important;
                         min-width: 96px !important;
-                        padding: 0 12px !important;
+                        padding: 4px 12px !important;
                         border-radius: 10px !important;
                         background: rgba(255, 255, 255, 0.05) !important;
                         border: 1px solid rgba(255, 255, 255, 0.06) !important;
@@ -914,8 +918,10 @@
                         font-size: 10px !important;
                         font-weight: 800 !important;
                         letter-spacing: 0.08em !important;
+                        line-height: 1.5 !important;
+                        text-align: center !important;
                         text-transform: uppercase !important;
-                        white-space: nowrap !important;
+                        white-space: normal !important;
                         font-variant-numeric: tabular-nums !important;
                     }
 
@@ -923,7 +929,8 @@
                         color: rgba(255, 255, 255, 0.56) !important;
                         font-size: 11px !important;
                         font-weight: 600 !important;
-                        line-height: 1.45 !important;
+                        line-height: 1.7 !important;
+                        overflow-wrap: anywhere !important;
                         text-wrap: pretty !important;
                     }
 
@@ -944,12 +951,13 @@
                         color: rgba(255, 255, 255, 0.96) !important;
                         font-size: 13px !important;
                         font-weight: 700 !important;
+                        line-height: 1.55 !important;
                     }
 
                     #comments .ytkit-comment-search-empty-copy {
                         color: rgba(255, 255, 255, 0.68) !important;
                         font-size: 11.5px !important;
-                        line-height: 1.5 !important;
+                        line-height: 1.65 !important;
                         text-wrap: pretty !important;
                     }
 

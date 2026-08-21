@@ -12111,8 +12111,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'commentSearch',
-            name: 'Comment Search',
-            description: 'Adds a search bar above comments to filter and find specific comments',
+            name: t('feature_commentSearch_name', 'Comment Search'),
+            description: t('feature_commentSearch_desc', 'Adds a search bar above comments to filter and find specific comments'),
             group: 'Comments',
             icon: 'search',
             _bar: null,
@@ -12129,7 +12129,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const input = document.createElement('input');
                 input.type = 'text';
-                input.placeholder = 'Search comments...';
+                input.placeholder = t('commentSearchPlaceholder', 'Search creators, phrases, or topics…');
+                input.setAttribute('aria-label', t('commentSearchAria', 'Search comments'));
                 input.style.cssText = 'width:100%;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;outline:none;box-sizing:border-box;';
                 input.addEventListener('focus', () => input.style.borderColor = '#3ea6ff');
                 input.addEventListener('blur', () => input.style.borderColor = 'rgba(255,255,255,0.15)');
@@ -12159,7 +12160,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                         if (query) {
                             const visible = document.querySelectorAll('ytd-comment-thread-renderer:not([style*="display: none"])').length;
-                            countEl.textContent = `${visible} match${visible !== 1 ? 'es' : ''}`;
+                            countEl.textContent = t(
+                                visible === 1 ? 'commentSearchCountMatch' : 'commentSearchCountMatches',
+                                visible === 1 ? '{count} match' : '{count} matches'
+                            ).replace('{count}', new Intl.NumberFormat().format(visible));
                         } else {
                             countEl.textContent = '';
                         }

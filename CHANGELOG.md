@@ -29,6 +29,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Comment Search now resolves all 22 labels and state messages through the 11
+  bundled locale catalogues. This pass reduced grandfathered interface copy
+  from 936 literals to 913, including a 20-literal reduction at strict sinks.
+
 - The build now requires Node 24. Node 22 went into maintenance in October 2025
   and receives critical fixes only, and Node 24 is what Mozilla's add-on
   reviewers build in. `ws` moves to 8.21.3.
@@ -46,6 +50,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Manual language selection now reaches the injected YouTube interface after
+  extension storage finishes loading. Comment Search also owns its component
+  styles, so it remains usable without Chat Style Comments and has dedicated
+  dark, light, Theater Split, narrow-window, and forced-color states. Expanded
+  translated copy gets enough line spacing at 320 pixels to stay readable.
+
 - The inline settings fallback now keeps the same Shorts grouping and Digital
   Wellbeing dependency link as the primary feature module. The read-only
   watch-time card also updates while Settings remains open.
@@ -54,7 +64,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   the Windows child tree before its parent PID disappears. Cleanup retries are
   bounded, guarded against broad paths, and fatal if a disposable directory is
   still present. A process that survives the bounded shutdown now fails the
-  run too. The live-chat lane uses the same shutdown path.
+  run too. Windows shutdown also checks the real PID, which avoids a false
+  failure when Node reports a terminated child late. The live-chat lane uses
+  the same shutdown path.
 
 - Release browser checks now include the real popup and side-panel origin lane.
   Any uncaught page exception fails that lane even if a loading flag reaches its

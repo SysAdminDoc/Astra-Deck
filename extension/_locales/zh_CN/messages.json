@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "评论搜索"
   },
+  "commentSearchCountThread": {
+    "message": "{count} 个讨论串"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} 个讨论串"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} 个匹配项"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} 个匹配项"
+  },
+  "commentSearchNoMatches": {
+    "message": "没有匹配项"
+  },
+  "commentSearchWaiting": {
+    "message": "正在等待评论加载…"
+  },
+  "commentSearchSyncHint": {
+    "message": "更多评论出现时，搜索栏会自动保持同步。"
+  },
+  "commentSearchReadyThread": {
+    "message": "已有 {count} 个评论讨论串可供搜索。可搜索创作者、短语或主题。"
+  },
+  "commentSearchReadyThreads": {
+    "message": "已有 {count} 个评论讨论串可供搜索。可搜索创作者、短语或主题。"
+  },
+  "commentSearchEscapeHint": {
+    "message": "随时按 Esc 清除搜索。新评论会自动计入。"
+  },
+  "commentSearchShowingMatches": {
+    "message": "正在显示“{query}”的 {total} 个评论讨论串中的 {visible} 个。"
+  },
+  "commentSearchNavigatorHint": {
+    "message": "使用评论导航器中的“下一个”或“上一个”在匹配项之间跳转。"
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "正在等待加载“{query}”的评论…"
+  },
+  "commentSearchActiveHint": {
+    "message": "YouTube 加载评论列表时，搜索会保持启用。"
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "没有评论讨论串与“{query}”匹配。"
+  },
+  "commentSearchShorterHint": {
+    "message": "请尝试更短的短语、创作者名称，或清除筛选条件。"
+  },
+  "commentSearchEyebrow": {
+    "message": "在评论中查找"
+  },
+  "commentSearchPlaceholder": {
+    "message": "搜索创作者、短语或主题…"
+  },
+  "commentSearchAria": {
+    "message": "搜索评论"
+  },
+  "commentSearchClearAria": {
+    "message": "清除评论搜索"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "没有匹配的评论"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "请尝试更短的短语、创作者名称，或清除筛选条件以恢复所有讨论串。"
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "将评论翻译成的语言。自动跟随浏览器语言。"
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} 个匹配项"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "没有匹配项"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

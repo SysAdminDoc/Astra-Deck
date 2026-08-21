@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "Búsqueda de comentarios"
   },
+  "commentSearchCountThread": {
+    "message": "{count} hilo"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} hilos"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} coincidencia"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} coincidencias"
+  },
+  "commentSearchNoMatches": {
+    "message": "Sin coincidencias"
+  },
+  "commentSearchWaiting": {
+    "message": "Esperando a que se carguen los comentarios…"
+  },
+  "commentSearchSyncHint": {
+    "message": "La barra de búsqueda se mantendrá al día a medida que lleguen más comentarios."
+  },
+  "commentSearchReadyThread": {
+    "message": "{count} hilo de comentarios está listo para buscar. Busca creadores, frases o temas."
+  },
+  "commentSearchReadyThreads": {
+    "message": "{count} hilos de comentarios están listos para buscar. Busca creadores, frases o temas."
+  },
+  "commentSearchEscapeHint": {
+    "message": "Pulsa Esc para borrar cuando quieras. Los comentarios nuevos se siguen contando automáticamente."
+  },
+  "commentSearchShowingMatches": {
+    "message": "Mostrando {visible} de {total} hilos de comentarios para «{query}»."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Usa Siguiente o Anterior en el navegador de comentarios para saltar entre coincidencias."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "Esperando a que se carguen comentarios para «{query}»…"
+  },
+  "commentSearchActiveHint": {
+    "message": "La búsqueda sigue activa mientras YouTube carga la lista de comentarios."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "Ningún hilo de comentarios coincide con «{query}»."
+  },
+  "commentSearchShorterHint": {
+    "message": "Prueba una frase más corta, el nombre de un creador o borra el filtro."
+  },
+  "commentSearchEyebrow": {
+    "message": "Buscar en comentarios"
+  },
+  "commentSearchPlaceholder": {
+    "message": "Buscar creadores, frases o temas…"
+  },
+  "commentSearchAria": {
+    "message": "Buscar comentarios"
+  },
+  "commentSearchClearAria": {
+    "message": "Borrar búsqueda de comentarios"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "No hay comentarios coincidentes"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Prueba una frase más corta, el nombre de un creador o borra el filtro para recuperar todos los hilos."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "Idioma al que traducir los comentarios. Automático sigue el idioma del navegador."
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} coincidencias"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "Sin coincidencias"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

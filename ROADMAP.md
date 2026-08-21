@@ -4,15 +4,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Actionable Items
 
-- [ ] P3 — Start burning down the 1,604 grandfathered English literals
-  Why: the copy gate passes because the debt is fingerprinted as accepted, not because it is fixed, so 11 locales ship large English surfaces.
-  Evidence: `scripts/i18n-ui-copy-baseline.json` grandfathers 1,604 literals across 20 files — 1,273 in `extension/ytkit.js`, 134 in `settings-panel`, 40 in `subscription-groups`, 30 in `download-ui`, 28 in `video-hider`, 26 in `popup.js`. The Video Notes panel (`extension/ytkit.js:22902-22942`) is entirely unwrapped while siblings in the same file use `t()`.
-  Touches: `extension/ytkit.js`, `extension/features/**`, `extension/_locales/**`, `scripts/i18n-ui-copy-baseline.json`, `scripts/generate-locales.js`
-  Acceptance: the baseline count only ever decreases; a per-pass target is recorded and the highest-traffic surfaces (Video Notes, settings-panel, download-ui) go first. Translations go into the `generate-locales.js` tables before regenerating so the placeholder ratchet does not move.
-  Complexity: L
-  Note (2026-08-13 verification): evidence is stale in the item's favour — the baseline now records **928 literals across 2 files** (926 `extension/ytkit.js`, 2 `core/persisted-domains.js`; `strictCount` 343), down from 1,604/20. The item stands; only the numbers moved.
-  Note (2026-08-20 verification): current baseline is **934 across 2 files** (932 ytkit.js, strictCount 335) — the v4.71–4.76 feature work added a few grandfathered literals. The item stands.
-
 - [ ] P3 — Replace the light-theme gate's near-white regex with a contrast measurement
   Why: `NEAR_WHITE` matches `#[ef][0-9a-f]{5}`, so it calls **any** colour whose first hex digit is `e` or `f` near-white — `#ff0000` red, `#ff8f70` salmon, `#e0af68` amber all match. The gate is named for invisibility on light theme but is really matching a hex prefix, which both over-reports (`ytkit-title-kit` is flagged for a salmon that is not remotely white) and under-reports (`#d8d8d8` is invisible on light theme and matches nothing).
   Evidence: `scripts/check-light-theme-lane.js` `NEAR_WHITE`; `.ytkit-title-kit { color: #ff8f70; }` (`extension/ytkit.js`) sits in the accepted list on that basis alone.

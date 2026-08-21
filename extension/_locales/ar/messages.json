@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "البحث في التعليقات"
   },
+  "commentSearchCountThread": {
+    "message": "{count} سلسلة تعليقات"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} من سلاسل التعليقات"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} تطابق"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} تطابقات"
+  },
+  "commentSearchNoMatches": {
+    "message": "لا توجد تطابقات"
+  },
+  "commentSearchWaiting": {
+    "message": "في انتظار تحميل التعليقات…"
+  },
+  "commentSearchSyncHint": {
+    "message": "سيظل شريط البحث متزامنًا مع وصول المزيد من التعليقات."
+  },
+  "commentSearchReadyThread": {
+    "message": "هناك سلسلة تعليقات واحدة جاهزة للبحث. ابحث عن منشئي المحتوى أو العبارات أو الموضوعات."
+  },
+  "commentSearchReadyThreads": {
+    "message": "هناك {count} من سلاسل التعليقات جاهزة للبحث. ابحث عن منشئي المحتوى أو العبارات أو الموضوعات."
+  },
+  "commentSearchEscapeHint": {
+    "message": "اضغط على Esc للمسح في أي وقت. تُحتسب التعليقات الجديدة تلقائيًا."
+  },
+  "commentSearchShowingMatches": {
+    "message": "يتم عرض {visible} من أصل {total} من سلاسل التعليقات للبحث «{query}»."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "استخدم التالي أو السابق في متصفح التعليقات للتنقل بين التطابقات."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "في انتظار تحميل التعليقات للبحث «{query}»…"
+  },
+  "commentSearchActiveHint": {
+    "message": "يبقى البحث نشطًا أثناء تحميل YouTube لقائمة التعليقات."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "لا توجد سلاسل تعليقات تطابق «{query}»."
+  },
+  "commentSearchShorterHint": {
+    "message": "جرّب عبارة أقصر أو اسم منشئ محتوى أو امسح عامل التصفية."
+  },
+  "commentSearchEyebrow": {
+    "message": "البحث في التعليقات"
+  },
+  "commentSearchPlaceholder": {
+    "message": "ابحث عن منشئي المحتوى أو العبارات أو الموضوعات…"
+  },
+  "commentSearchAria": {
+    "message": "البحث في التعليقات"
+  },
+  "commentSearchClearAria": {
+    "message": "مسح البحث في التعليقات"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "لا توجد تعليقات مطابقة"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "جرّب عبارة أقصر أو اسم منشئ محتوى أو امسح عامل التصفية لإظهار كل السلاسل مجددًا."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "اللغة التي تُترجم إليها التعليقات. يتبع الوضع التلقائي لغة المتصفح."
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} تطابقات"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "لا توجد تطابقات"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

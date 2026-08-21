@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "Поиск в комментариях"
   },
+  "commentSearchCountThread": {
+    "message": "{count} ветка"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} веток"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} совпадение"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} совпадений"
+  },
+  "commentSearchNoMatches": {
+    "message": "Нет совпадений"
+  },
+  "commentSearchWaiting": {
+    "message": "Ожидание загрузки комментариев…"
+  },
+  "commentSearchSyncHint": {
+    "message": "Поисковая строка будет обновляться по мере появления новых комментариев."
+  },
+  "commentSearchReadyThread": {
+    "message": "Готова к поиску {count} ветка комментариев. Ищите авторов, фразы или темы."
+  },
+  "commentSearchReadyThreads": {
+    "message": "Готово к поиску веток комментариев: {count}. Ищите авторов, фразы или темы."
+  },
+  "commentSearchEscapeHint": {
+    "message": "Нажмите Esc, чтобы очистить поиск. Новые комментарии учитываются автоматически."
+  },
+  "commentSearchShowingMatches": {
+    "message": "Показано веток комментариев: {visible} из {total} по запросу «{query}»."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Используйте «Далее» или «Назад» в навигаторе комментариев для перехода между совпадениями."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "Ожидание загрузки комментариев по запросу «{query}»…"
+  },
+  "commentSearchActiveHint": {
+    "message": "Поиск остаётся активным, пока YouTube загружает список комментариев."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "Нет веток комментариев по запросу «{query}»."
+  },
+  "commentSearchShorterHint": {
+    "message": "Попробуйте более короткую фразу, имя автора или очистите фильтр."
+  },
+  "commentSearchEyebrow": {
+    "message": "Поиск в комментариях"
+  },
+  "commentSearchPlaceholder": {
+    "message": "Искать авторов, фразы или темы…"
+  },
+  "commentSearchAria": {
+    "message": "Искать комментарии"
+  },
+  "commentSearchClearAria": {
+    "message": "Очистить поиск в комментариях"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "Нет подходящих комментариев"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Попробуйте более короткую фразу, имя автора или очистите фильтр, чтобы вернуть все ветки."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "Язык, на который переводить комментарии. «Автоматически» следует языку браузера."
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} совпадений"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "Нет совпадений"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

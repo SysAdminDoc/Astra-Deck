@@ -718,16 +718,27 @@ function killProcessTree(proc) {
     return proc.kill('SIGTERM');
 }
 
-function hasProcessExited(proc) {
-    return !proc || proc.exitCode != null || proc.signalCode != null;
+function isProcessAlive(proc) {
+    if (!proc || proc.exitCode != null || proc.signalCode != null) return false;
+    if (!Number.isInteger(proc.pid) || proc.pid <= 0) return true;
+    try {
+        process.kill(proc.pid, 0);
+        return true;
+    } catch (error) {
+        return error?.code !== 'ESRCH';
+    }
 }
 
-function waitForProcessExit(proc) {
-    if (hasProcessExited(proc)) return Promise.resolve();
+function hasProcessExited(proc, processAlive = isProcessAlive) {
+    return !proc || proc.exitCode != null || proc.signalCode != null || !processAlive(proc);
+}
+
+function waitForProcessExit(proc, processAlive) {
+    if (hasProcessExited(proc, processAlive)) return Promise.resolve();
     return new Promise((resolve) => {
         const handleExit = () => resolve();
         proc.once('exit', handleExit);
-        if (hasProcessExited(proc)) {
+        if (hasProcessExited(proc, processAlive)) {
             proc.removeListener('exit', handleExit);
             resolve();
         }
@@ -739,24 +750,25 @@ async function shutdownChromiumProcess(proc, client, timeoutMs = 3000, overrides
     const stopTree = overrides.killProcessTree || killProcessTree;
     const wait = overrides.sleep || sleep;
     const platform = overrides.platform || process.platform;
-    const processExit = waitForProcessExit(proc);
-    if (!hasProcessExited(proc) && client && typeof client.send === 'function') {
+    const processAlive = overrides.isProcessAlive || isProcessAlive;
+    const processExit = waitForProcessExit(proc, processAlive);
+    if (!hasProcessExited(proc, processAlive) && client && typeof client.send === 'function') {
         const closeRequest = Promise.resolve(client.send('Browser.close')).catch(() => undefined);
         // CDP can acknowledge Browser.close only after the Windows parent PID
         // has vanished. Send the graceful request first, then terminate the
         // still-addressable tree before awaiting that acknowledgement.
-        if (platform === 'win32' && !hasProcessExited(proc)) stopTree(proc);
+        if (platform === 'win32' && !hasProcessExited(proc, processAlive)) stopTree(proc);
         await Promise.race([
             closeRequest,
             wait(Math.min(timeoutMs, 1000)),
         ]);
     }
     await Promise.race([processExit, wait(timeoutMs)]);
-    if (!hasProcessExited(proc)) {
+    if (!hasProcessExited(proc, processAlive)) {
         stopTree(proc);
         await Promise.race([processExit, wait(timeoutMs)]);
     }
-    if (!hasProcessExited(proc)) {
+    if (!hasProcessExited(proc, processAlive)) {
         throw new Error(`Chromium process ${proc.pid || '(unknown PID)'} did not exit after bounded shutdown`);
     }
 }

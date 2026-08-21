@@ -1751,6 +1751,72 @@
   "feature_commentSearch_name": {
     "message": "Ricerca commenti"
   },
+  "commentSearchCountThread": {
+    "message": "{count} discussione"
+  },
+  "commentSearchCountThreads": {
+    "message": "{count} discussioni"
+  },
+  "commentSearchCountMatch": {
+    "message": "{count} corrispondenza"
+  },
+  "commentSearchCountMatches": {
+    "message": "{count} corrispondenze"
+  },
+  "commentSearchNoMatches": {
+    "message": "Nessuna corrispondenza"
+  },
+  "commentSearchWaiting": {
+    "message": "In attesa del caricamento dei commenti…"
+  },
+  "commentSearchSyncHint": {
+    "message": "La barra di ricerca si aggiornerà mentre arrivano nuovi commenti."
+  },
+  "commentSearchReadyThread": {
+    "message": "{count} discussione nei commenti è pronta da cercare. Cerca creator, frasi o argomenti."
+  },
+  "commentSearchReadyThreads": {
+    "message": "{count} discussioni nei commenti sono pronte da cercare. Cerca creator, frasi o argomenti."
+  },
+  "commentSearchEscapeHint": {
+    "message": "Premi Esc per cancellare in qualsiasi momento. I nuovi commenti continuano a essere contati automaticamente."
+  },
+  "commentSearchShowingMatches": {
+    "message": "Visualizzazione di {visible} discussioni su {total} per «{query}»."
+  },
+  "commentSearchNavigatorHint": {
+    "message": "Usa Avanti o Indietro nel navigatore dei commenti per passare tra le corrispondenze."
+  },
+  "commentSearchWaitingForQuery": {
+    "message": "In attesa dei commenti per «{query}»…"
+  },
+  "commentSearchActiveHint": {
+    "message": "La ricerca resta attiva mentre YouTube carica l’elenco dei commenti."
+  },
+  "commentSearchNoThreadsForQuery": {
+    "message": "Nessuna discussione nei commenti corrisponde a «{query}»."
+  },
+  "commentSearchShorterHint": {
+    "message": "Prova una frase più breve, il nome di un creator o cancella il filtro."
+  },
+  "commentSearchEyebrow": {
+    "message": "Cerca nei commenti"
+  },
+  "commentSearchPlaceholder": {
+    "message": "Cerca creator, frasi o argomenti…"
+  },
+  "commentSearchAria": {
+    "message": "Cerca commenti"
+  },
+  "commentSearchClearAria": {
+    "message": "Cancella la ricerca nei commenti"
+  },
+  "commentSearchEmptyTitle": {
+    "message": "Nessun commento corrispondente"
+  },
+  "commentSearchEmptyCopy": {
+    "message": "Prova una frase più breve, il nome di un creator o cancella il filtro per ripristinare tutte le discussioni."
+  },
   "feature_commentTranslateTarget_desc": {
     "message": "Lingua in cui tradurre i commenti. Automatico segue la lingua del browser."
   },
@@ -5010,13 +5076,13 @@
     "message": "Try a feature name, page, or words like comments, transcript, download, or theme."
   },
   "settingsSearchMatchesTpl": {
-    "message": "{count} matches"
+    "message": "{count} corrispondenze"
   },
   "settingsSearchMatchingTpl": {
     "message": "{count} matching settings"
   },
   "settingsSearchNoMatches": {
-    "message": "No matches"
+    "message": "Nessuna corrispondenza"
   },
   "settingsSearchNoneTpl": {
     "message": "No settings found for “{query}”"

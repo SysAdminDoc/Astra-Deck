@@ -24,7 +24,7 @@ test('headless accessibility smoke covers every roadmap surface through real UI 
     assert.equal(pkg.scripts['smoke:a11y'], 'node scripts/smoke-headless-a11y.js');
     assert.deepEqual(
         smoke.SURFACES.map((surface) => surface.name),
-        ['popup', 'sidepanel', 'sidebar', 'settings', 'transcript', 'download']
+        ['popup', 'sidepanel', 'sidebar', 'settings', 'transcript', 'download', 'comment-search']
     );
     assert.match(source, /injectChromeStub\(stageDir, 'popup\.html', 'popup-a11y\.html'\)/);
     assert.match(source, /injectChromeStub\(stageDir, 'sidepanel\.html', 'sidepanel-a11y\.html'\)/);
@@ -34,6 +34,8 @@ test('headless accessibility smoke covers every roadmap surface through real UI 
     assert.match(source, /shortsWatchTimeToday/);
     assert.match(source, /#ytkit-transcript-panel/);
     assert.match(source, /globalThis\.__ytkitA11y\.openDownload\(\)/);
+    assert.match(source, /auditCommentSearchStates/);
+    assert.match(source, /localizedInjectedCopy: true/);
     assert.match(overlaySmoke.CHROME_STUB, /transcriptViewer: true/);
 });
 

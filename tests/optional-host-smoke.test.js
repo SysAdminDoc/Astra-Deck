@@ -289,11 +289,35 @@ test('Chromium shutdown fails when bounded tree termination leaves the process a
         () => smoke.shutdownChromiumProcess(proc, { send: async () => undefined }, 1, {
             platform: 'win32',
             sleep: async () => undefined,
+            isProcessAlive: () => true,
             killProcessTree() { kills += 1; }
         }),
         /Chromium process 424242 did not exit after bounded shutdown/
     );
     assert.equal(kills, 2, 'shutdown must attempt the tree before and after the graceful wait');
+});
+
+test('Chromium shutdown accepts an OS-confirmed exit when ChildProcess metadata lags', async () => {
+    const proc = new EventEmitter();
+    proc.pid = 424243;
+    proc.exitCode = null;
+    proc.signalCode = null;
+    let alive = true;
+    let kills = 0;
+
+    await smoke.shutdownChromiumProcess(proc, { send: async () => undefined }, 1, {
+        platform: 'win32',
+        sleep: async () => undefined,
+        isProcessAlive: () => alive,
+        killProcessTree() {
+            kills += 1;
+            alive = false;
+            return true;
+        }
+    });
+
+    assert.equal(kills, 1);
+    assert.equal(proc.exitCode, null, 'the OS probe must cover delayed ChildProcess bookkeeping');
 });
 
 test('Chromium cleanup removes a disposable profile tree', async () => {
