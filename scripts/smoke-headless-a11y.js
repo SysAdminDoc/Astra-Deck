@@ -21,6 +21,21 @@ const {
     sleep,
     waitFor,
 } = require('./smoke-settings-overlay.js');
+const {
+    browserCandidates,
+    chromiumArgs,
+    connectCdp,
+    createChromiumStage,
+    evaluate: evaluateCdp,
+    extensionIdFromTarget,
+    fetchJsonFromDevTools,
+    hasLoadExtensionPolicyBlock,
+    killProcessTree,
+    removeDirWithRetries,
+    reserveLoopbackPort,
+    waitForBackgroundTarget,
+    waitForDevTools,
+} = require('./smoke-chromium-optional-hosts.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'headless-a11y');
@@ -133,8 +148,55 @@ const SURFACES = Object.freeze([
     }),
 ]);
 
+const REAL_EXTENSION_SURFACES = Object.freeze([
+    Object.freeze({
+        name: 'popup',
+        page: 'popup.html',
+        selector: 'body',
+        ready: `document.getElementById('version')?.textContent?.startsWith('v')
+            && document.querySelectorAll('#schema-overview-list > li').length > 10`,
+        width: 420,
+        height: 800,
+        script: 'popup.js',
+    }),
+    Object.freeze({
+        name: 'sidepanel',
+        page: 'sidepanel.html',
+        selector: 'body',
+        ready: `document.getElementById('sp-version')?.textContent?.startsWith('v')
+            && document.body.dataset.loading === 'false'`,
+        width: 420,
+        height: 800,
+        script: 'sidepanel.js',
+    }),
+]);
+
+function validateRealExtensionPageSnapshot(snapshot, surfaceName, extensionId) {
+    const failures = [];
+    if (!snapshot || snapshot.ready !== true) failures.push('main page script did not finish booting');
+    if (snapshot?.protocol !== 'chrome-extension:') failures.push(`protocol is ${JSON.stringify(snapshot?.protocol || '')}`);
+    if (snapshot?.extensionId !== extensionId) failures.push(`runtime id is ${JSON.stringify(snapshot?.extensionId || '')}`);
+    if (snapshot?.origin !== `chrome-extension://${extensionId}`) failures.push(`origin is ${JSON.stringify(snapshot?.origin || '')}`);
+    if (!snapshot?.manifestVersion) failures.push('manifest version is unavailable');
+    if (snapshot?.storageRoundTrip !== 'stored') failures.push('chrome.storage.local round trip failed');
+    if (snapshot?.resourceStatus !== 200 || snapshot?.resourceName !== '__MSG_extName__') {
+        failures.push('extension-origin manifest did not load');
+    }
+    if (snapshot?.controlCount < 4) failures.push(`only ${snapshot?.controlCount || 0} controls rendered`);
+    if (snapshot?.overflowBy > 1) failures.push(`document overflows horizontally by ${snapshot.overflowBy}px`);
+    if (failures.length) throw new Error(`${surfaceName}: ${failures.join('; ')}`);
+    return true;
+}
+
 function parseArgs(argv) {
-    const options = { browser: '', keepStage: false, surfaces: [], timeoutMs: 45000 };
+    const options = {
+        browser: '',
+        keepStage: false,
+        mode: 'all',
+        mutateRealPage: '',
+        surfaces: [],
+        timeoutMs: 45000,
+    };
     for (let index = 0; index < argv.length; index += 1) {
         const arg = argv[index];
         if (arg === '--browser') {
@@ -147,11 +209,25 @@ function parseArgs(argv) {
                 throw new Error(`--surface requires one of: ${SURFACES.map((candidate) => candidate.name).join(', ')}`);
             }
             if (!options.surfaces.includes(surface)) options.surfaces.push(surface);
+        } else if (arg === '--real-extension-pages') {
+            if (options.mode === 'fixture') throw new Error('--real-extension-pages cannot be combined with --fixture-states');
+            options.mode = 'real';
+        } else if (arg === '--fixture-states') {
+            if (options.mode === 'real') throw new Error('--fixture-states cannot be combined with --real-extension-pages');
+            options.mode = 'fixture';
+        } else if (arg === '--mutate-real-page') {
+            options.mutateRealPage = argv[++index] || '';
+            if (!['popup', 'sidepanel'].includes(options.mutateRealPage)) {
+                throw new Error('--mutate-real-page requires popup or sidepanel');
+            }
         } else if (arg === '--timeout') {
             options.timeoutMs = Number(argv[++index]) || options.timeoutMs;
         } else {
             throw new Error(`unknown argument: ${arg}`);
         }
+    }
+    if (options.mutateRealPage && options.mode !== 'real') {
+        throw new Error('--mutate-real-page requires --real-extension-pages');
     }
     return options;
 }
@@ -1197,15 +1273,185 @@ async function auditSurface(client, stageDir, surface, timeoutMs) {
     return reports;
 }
 
-async function main(argv = process.argv.slice(2)) {
-    const options = parseArgs(argv);
+async function waitForRealExtensionTarget(port, targetId, timeoutMs) {
+    return waitFor(async () => {
+        const targets = await fetchJsonFromDevTools(port, '/json/list').catch(() => []);
+        return targets.find((target) => target.id === targetId && target.type === 'page') || null;
+    }, timeoutMs, `real extension page target ${targetId}`);
+}
+
+function mutateRealPageStage(stageDir, surfaceName) {
+    const surface = REAL_EXTENSION_SURFACES.find((candidate) => candidate.name === surfaceName);
+    if (!surface) throw new Error(`Unknown real-page mutation surface: ${surfaceName}`);
+    fs.writeFileSync(
+        path.join(stageDir, surface.script),
+        `'use strict';\n// Deliberate smoke mutation: the page boot is disabled.\n`,
+        'utf8'
+    );
+}
+
+async function configureRealExtensionState(client, surface, mode) {
+    const zoomed = mode === 'zoom-200';
+    const width = zoomed ? Math.max(200, Math.floor(surface.width / 2)) : surface.width;
+    const height = zoomed ? Math.max(320, Math.floor(surface.height / 2)) : surface.height;
+    await client.send('Emulation.setDeviceMetricsOverride', {
+        width,
+        height,
+        deviceScaleFactor: zoomed ? 2 : 1,
+        mobile: false,
+    });
+    await client.send('Emulation.setEmulatedMedia', {
+        media: 'screen',
+        features: [
+            { name: 'forced-colors', value: mode === 'forced-colors' ? 'active' : 'none' },
+            { name: 'prefers-color-scheme', value: 'dark' },
+            { name: 'prefers-reduced-motion', value: 'reduce' },
+        ],
+    });
+    return { height, width };
+}
+
+async function auditRealExtensionPage(client, surface, extensionId, mode) {
+    const storageKey = `__astra_a11y_${surface.name}_${process.pid}`;
+    const snapshot = await client.evaluate(`(async () => {
+        const storageKey = ${JSON.stringify(storageKey)};
+        let storageRoundTrip = '';
+        try {
+            await chrome.storage.local.set({ [storageKey]: 'stored' });
+            const stored = await chrome.storage.local.get(storageKey);
+            storageRoundTrip = stored[storageKey] || '';
+        } finally {
+            await chrome.storage.local.remove(storageKey);
+        }
+        const resource = await fetch(chrome.runtime.getURL('manifest.json'));
+        const resourceJson = resource.ok ? await resource.json() : null;
+        return {
+            controlCount: document.querySelectorAll('button, input, select, textarea, [tabindex]').length,
+            extensionId: chrome.runtime.id,
+            manifestVersion: chrome.runtime.getManifest().version,
+            origin: location.origin,
+            overflowBy: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+            protocol: location.protocol,
+            ready: Boolean(${surface.ready}),
+            resourceName: resourceJson?.name || '',
+            resourceStatus: resource.status,
+            storageRoundTrip,
+        };
+    })()`);
+    validateRealExtensionPageSnapshot(snapshot, surface.name, extensionId);
+    const controls = await auditKeyboardPath(client, surface, `extension-origin/${mode}`);
+    await captureSurface(client, surface, `real-${mode}`);
+    return { controls, mode, snapshot };
+}
+
+async function runRealExtensionCandidate(candidate, stageDir, options) {
+    const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-a11y-extension-profile-'));
+    const port = await reserveLoopbackPort();
+    const args = chromiumArgs(profileDir, stageDir, { headed: false }, port);
+    const browser = spawn(candidate.path, args, {
+        cwd: REPO_ROOT,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true,
+    });
+    let stderr = '';
+    browser.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+    let browserClient = null;
+    try {
+        await waitForDevTools(port, options.timeoutMs);
+        const backgroundTarget = await waitForBackgroundTarget(port, options.timeoutMs);
+        const extensionId = extensionIdFromTarget(backgroundTarget);
+        const version = await fetchJsonFromDevTools(port, '/json/version');
+        browserClient = await connectCdp(version.webSocketDebuggerUrl);
+        const selected = options.surfaces.length
+            ? REAL_EXTENSION_SURFACES.filter((surface) => options.surfaces.includes(surface.name))
+            : REAL_EXTENSION_SURFACES;
+        if (!selected.length) {
+            return { browser: candidate.label, extensionId, reports: [] };
+        }
+        const reports = [];
+        for (const surface of selected) {
+            const created = await browserClient.send('Target.createTarget', {
+                url: `chrome-extension://${extensionId}/${surface.page}`,
+            });
+            const target = await waitForRealExtensionTarget(port, created.targetId, options.timeoutMs);
+            const pageClient = await connectCdp(target.webSocketDebuggerUrl);
+            pageClient.evaluate = (expression) => evaluateCdp(pageClient, expression);
+            try {
+                await pageClient.send('Page.enable');
+                await pageClient.send('Runtime.enable');
+                for (const mode of ['normal', 'zoom-200', 'forced-colors']) {
+                    await pageClient.send('Page.navigate', {
+                        url: `chrome-extension://${extensionId}/${surface.page}?astra_a11y=${mode}`,
+                    });
+                    await waitFor(
+                        () => pageClient.evaluate("document.readyState === 'complete'"),
+                        options.timeoutMs,
+                        `${surface.name} extension document load`
+                    );
+                    await waitFor(
+                        () => pageClient.evaluate(`Boolean(${surface.ready})`),
+                        options.timeoutMs,
+                        `${surface.name} extension script boot`
+                    );
+                    await configureRealExtensionState(pageClient, surface, mode);
+                    await sleep(250);
+                    reports.push({ surface: surface.name, ...(await auditRealExtensionPage(
+                        pageClient, surface, extensionId, mode
+                    )) });
+                }
+            } finally {
+                pageClient.close();
+                await browserClient.send('Target.closeTarget', { targetId: created.targetId }).catch(() => undefined);
+            }
+        }
+        return { browser: candidate.label, extensionId, reports };
+    } catch (error) {
+        if (hasLoadExtensionPolicyBlock(stderr)) error.code = 'LOAD_EXTENSION_BLOCKED';
+        error.stderr = stderr;
+        throw error;
+    } finally {
+        browserClient?.close();
+        killProcessTree(browser);
+        await sleep(750);
+        await removeDirWithRetries(profileDir);
+    }
+}
+
+async function runRealExtensionPages(options) {
+    const candidates = browserCandidates(options.browser);
+    if (!candidates.length) throw new Error('No Chromium-family browser found. Pass --browser <path>.');
+    const stageRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-a11y-extension-stage-'));
+    const { stageDir } = createChromiumStage(stageRoot);
+    if (options.mutateRealPage) mutateRealPageStage(stageDir, options.mutateRealPage);
+    try {
+        let lastError = null;
+        for (const candidate of candidates) {
+            try {
+                const result = await runRealExtensionCandidate(candidate, stageDir, options);
+                console.log(
+                    `[headless-a11y] real extension pages: ${result.reports.length} state(s), `
+                    + `${result.reports.reduce((sum, report) => sum + report.controls, 0)} keyboard focus visits, `
+                    + `${result.browser} loaded ${result.extensionId}`
+                );
+                return result;
+            } catch (error) {
+                lastError = error;
+                if (error.code === 'LOAD_EXTENSION_BLOCKED') continue;
+                throw error;
+            }
+        }
+        throw lastError || new Error('Every Chromium candidate rejected --load-extension');
+    } finally {
+        if (!options.keepStage) await removeDirWithRetries(stageRoot);
+    }
+}
+
+async function runFixtureStates(options) {
     const browserPath = findBrowser(options.browser);
     if (!browserPath) throw new Error('No Chromium-family browser found. Pass --browser <path>.');
 
     const stageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-headless-a11y-stage-'));
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-headless-a11y-profile-'));
-    fs.rmSync(OUT_DIR, { recursive: true, force: true });
-    fs.mkdirSync(OUT_DIR, { recursive: true });
     const fixturePath = createStage(stageDir);
     const browser = spawn(browserPath, [
         '--headless=new',
@@ -1296,6 +1542,17 @@ async function main(argv = process.argv.slice(2)) {
     }
 }
 
+async function main(argv = process.argv.slice(2)) {
+    const options = parseArgs(argv);
+    fs.rmSync(OUT_DIR, { recursive: true, force: true });
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    if (options.mode !== 'fixture') await runRealExtensionPages(options);
+    if (options.mode !== 'real') await runFixtureStates(options);
+    if (options.mode === 'real') {
+        console.log('[headless-a11y] PASS: selected real extension pages proved origin, storage, CSP boot, zoom, and forced colors');
+    }
+}
+
 if (require.main === module) {
     main().catch((error) => {
         console.error(`[headless-a11y] ${error.message || error}`);
@@ -1314,5 +1571,8 @@ module.exports = {
     FOCUSABLE_SELECTOR,
     focusStateExpression,
     parseArgs,
+    REAL_EXTENSION_SURFACES,
+    runRealExtensionPages,
     SURFACES,
+    validateRealExtensionPageSnapshot,
 };

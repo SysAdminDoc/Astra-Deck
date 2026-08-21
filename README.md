@@ -1189,9 +1189,11 @@ npm run build                             # Build store-safe + Chromium-store + 
 npm run build:userscript                  # Include userscript, SBOM, manifest, and SHA256SUMS
 npm run check:zero-ads                    # Validate the static rule contract and packaged manifest
 npm run smoke:zero-ads:live               # Cold-load desktop YouTube and verify blocked requests + collapsed shells
+npm run smoke:a11y                        # Check real extension pages plus controlled locale and accessibility states
+npm run smoke:live-chat                   # Open a current YouTube live-chat frame and verify Astra attached
 npm run smoke:firefox                     # Prove Firefox DNR, shell collapse, search, and SPA player behavior
 npm run smoke:userscript-managers         # Install and exercise YTKit in real Tampermonkey + Violentmonkey builds
-npm run release:browser-smokes            # Run Chromium, Firefox, and real-manager desktop release gates
+npm run release:browser-smokes            # Run Chromium, live-chat, Firefox, and userscript-manager release gates
 npm run smoke:settings-overlay -- --desktop-only # Verify every extension settings destination at desktop sizes
 npm run smoke:settings-userscript         # Verify every userscript settings destination at desktop sizes
 npm run release:prepare                   # Check + desktop browser gates + build + readiness

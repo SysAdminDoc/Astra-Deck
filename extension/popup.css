@@ -3407,6 +3407,16 @@ textarea:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .welcome-profile-row,
+  .welcome-preset-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .welcome-profile-btn,
+  .welcome-preset-btn {
+    min-width: 0;
+  }
+
   .main-action,
   .main-action .cta-button {
     width: 100%;

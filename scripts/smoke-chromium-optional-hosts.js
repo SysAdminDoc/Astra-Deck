@@ -719,16 +719,17 @@ function killProcessTree(proc) {
 }
 
 async function removeDirWithRetries(dir) {
-    for (let attempt = 0; attempt < 6; attempt += 1) {
+    const maxAttempts = 12;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
             fs.rmSync(dir, { recursive: true, force: true, maxRetries: 2, retryDelay: 100 });
             return true;
         } catch (error) {
-            if (attempt === 5) {
+            if (attempt === maxAttempts - 1) {
                 console.warn(`[smoke-chromium-optional-hosts] cleanup warning: ${error.message}`);
                 return false;
             }
-            await sleep(250);
+            await sleep(500);
         }
     }
     return false;
