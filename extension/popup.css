@@ -1728,6 +1728,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* Wraps rather than overflowing. The row carries a name, up to four chips,
+     and a control, and at 200% zoom that exceeds the popup's width — which
+     used to push the reset button outside the scroll container instead of
+     moving it to a second line. */
+  flex-wrap: wrap;
   gap: 8px;
   padding: 3px 6px;
   border-radius: 6px;
@@ -3526,6 +3531,7 @@ textarea:focus-visible {
   .schema-overview-list .so-row-head:focus-visible,
   .schema-overview-list .so-key-switch:focus-visible,
   .schema-overview-tool:focus-visible,
+  button.so-key-surface:focus-visible,
   .filter-list-tools__url-label input:focus-visible,
   .search-row input:focus-visible,
   summary:focus-visible,
@@ -3813,4 +3819,43 @@ textarea:focus-visible {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+}
+
+/* Which settings surface owns a row. `here` is a label; `in-page panel` is a
+   button that opens it, so it needs the affordance the plain badge lacks.
+   It is also the most droppable thing in the row: at 200% zoom the row ran
+   out of width and pushed the reset button off the edge, so this shrinks and
+   ellipsises rather than forcing its neighbours out. */
+.so-key-surface {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button.so-key-surface {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.so-key-surface:hover,
+button.so-key-surface:focus-visible {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+
+button.so-key-surface:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* A search that matches nothing must read as "no results", not as broken. */
+.so-empty {
+  padding: 10px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+  list-style: none;
 }

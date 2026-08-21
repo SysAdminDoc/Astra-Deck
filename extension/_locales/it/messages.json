@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "Impossibile avviare: questo profilo del browser non salverà la sessione di ricerca."
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "Nessuna impostazione corrisponde a «{term}». Prova un nome di funzione, una categoria, una pagina come watch o feed, o un tipo di controllo come boolean."
+  },
+  "schemaSurfaceHere": {
+    "message": "qui"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "Questa impostazione si può cambiare nel popup."
+  },
+  "schemaSurfacePanel": {
+    "message": "pannello nella pagina"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "Questa impostazione si modifica nel pannello Astra Deck su YouTube. Lo apre."
   }
 }

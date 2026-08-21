@@ -87,6 +87,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   reviewers do when they rebuild submitted source and compare it against the
   upload. `SOURCE-README.md` tells them how.
 
+- Searching settings from the popup now finds the same things searching from
+  the in-page panel does. Typing a page like "watch" or a control type like
+  "boolean" used to return nothing. A search that matches nothing says so
+  instead of showing an empty list, and every result now says whether you can
+  change it right there or whether it lives in the panel on YouTube, with a
+  button that opens it.
+
 ## [4.83.0] (2026-08-21)
 
 ### Added

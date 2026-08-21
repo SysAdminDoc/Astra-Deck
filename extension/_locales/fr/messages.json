@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "Démarrage impossible : ce profil de navigateur n’enregistrera pas la session de recherche."
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "Aucun réglage ne correspond à « {term} ». Essayez un nom de fonction, une catégorie, une page comme watch ou feed, ou un type de contrôle comme boolean."
+  },
+  "schemaSurfaceHere": {
+    "message": "ici"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "Ce réglage se modifie dans la fenêtre contextuelle."
+  },
+  "schemaSurfacePanel": {
+    "message": "panneau intégré"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "Ce réglage se modifie dans le panneau Astra Deck sur YouTube. Ouvre celui-ci."
   }
 }

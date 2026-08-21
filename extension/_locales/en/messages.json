@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "Could not start: this browser profile will not save the bisect session."
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "No setting matches \"{term}\". Try a feature name, a category, a page like watch or feed, or a control type like boolean."
+  },
+  "schemaSurfaceHere": {
+    "message": "here"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "This setting can be changed in the popup."
+  },
+  "schemaSurfacePanel": {
+    "message": "in-page panel"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "This setting is edited in the Astra Deck panel on YouTube. Opens it."
   }
 }

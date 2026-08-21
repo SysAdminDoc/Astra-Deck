@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "تعذّر البدء: لن يحفظ ملف المتصفح هذا جلسة البحث الثنائي."
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "لا يوجد إعداد يطابق «{term}». جرّب اسم ميزة أو فئة أو صفحة مثل watch أو feed أو نوع عنصر تحكم مثل boolean."
+  },
+  "schemaSurfaceHere": {
+    "message": "هنا"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "يمكن تغيير هذا الإعداد من النافذة المنبثقة."
+  },
+  "schemaSurfacePanel": {
+    "message": "اللوحة داخل الصفحة"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "يُحرَّر هذا الإعداد في لوحة Astra Deck على YouTube. اضغط للفتح."
   }
 }

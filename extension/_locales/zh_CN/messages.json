@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "无法开始：此浏览器配置文件不会保存二分查找会话。"
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "没有设置匹配“{term}”。试试功能名称、分类、像 watch 或 feed 这样的页面，或者像 boolean 这样的控件类型。"
+  },
+  "schemaSurfaceHere": {
+    "message": "这里"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "此设置可以在弹出窗口中更改。"
+  },
+  "schemaSurfacePanel": {
+    "message": "页面内面板"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "此设置在 YouTube 上的 Astra Deck 面板中编辑。点击可打开。"
   }
 }

@@ -3910,6 +3910,13 @@ function renderSchemaOverview() {
         if (entry.description && String(entry.description).toLowerCase().includes(freeTerm)) {
             return true;
         }
+        // The in-page panel matches the page a setting applies to and the
+        // control type, so a popup that did not was a narrower search wearing
+        // the same box. `scope` is the schema's name for the page; the DSL
+        // above already filters on both, but only if the user knows to type
+        // `scope:watch` rather than `watch`.
+        if (entry.scope && String(entry.scope).toLowerCase().includes(freeTerm)) return true;
+        if (entry.type && String(entry.type).toLowerCase().includes(freeTerm)) return true;
         return false;
     };
 
@@ -3945,6 +3952,17 @@ function renderSchemaOverview() {
     // Render per-category rows in CATEGORIES order so the layout stays
     // stable between renders.
     schemaOverviewList.textContent = '';
+    // A search that matches nothing used to render an empty list, which reads
+    // as broken rather than as "no results". Say so, and say what would help.
+    if (term && [...buckets.values()].every((bucket) => bucket.matches === 0)) {
+        const empty = document.createElement('li');
+        empty.className = 'so-empty';
+        empty.textContent = t('schemaOverviewNoMatchesTpl',
+            'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.')
+            .replace('{term}', rawTerm);
+        schemaOverviewList.appendChild(empty);
+        return;
+    }
     const ordered = Array.isArray(scope.CATEGORIES) ? scope.CATEGORIES : [...buckets.keys()];
     for (const cat of ordered) {
         const bucket = buckets.get(cat);
@@ -4075,6 +4093,46 @@ function refocusSchemaOverviewKey(entry) {
 // real switch button (read + write through ext.storage.local).
 // Non-booleans show their current value as a read-only badge — the
 // editing surface for non-boolean types lives in the in-page workspace.
+// The popup edits booleans, numbers, strings, and finite selects inline. An
+// array or object value (a channel list, a notes store, a group tree) has no
+// inline editor here and belongs to the in-page panel.
+function schemaSurfaceForEntry(entry) {
+    return entry.type === 'array' || entry.type === 'object' ? 'panel' : 'popup';
+}
+
+function createSchemaSurfaceChip(entry) {
+    const chip = document.createElement(schemaSurfaceForEntry(entry) === 'popup' ? 'span' : 'button');
+    chip.className = 'so-key-profile-badge so-key-surface';
+    if (schemaSurfaceForEntry(entry) === 'popup') {
+        chip.textContent = t('schemaSurfaceHere', 'here');
+        chip.title = t('schemaSurfaceHereTitle', 'This setting can be changed in the popup.');
+        return chip;
+    }
+    chip.type = 'button';
+    chip.dataset.surfaceOpen = 'panel';
+    chip.textContent = t('schemaSurfacePanel', 'in-page panel');
+    chip.title = t('schemaSurfacePanelTitle',
+        'This setting is edited in the Astra Deck panel on YouTube. Opens it.');
+    chip.addEventListener('click', (event) => {
+        event.stopPropagation();
+        void openSettingsSurfaceForKey();
+    });
+    return chip;
+}
+
+async function openSettingsSurfaceForKey() {
+    try {
+        const [tab] = await callExtensionApi(ext?.tabs, 'query', { active: true, lastFocusedWindow: true });
+        if (tab?.id && getTabContext(tab || null).mode === 'inline-panel') {
+            if (await sendPanelOpenMessage(tab.id)) { window.close(); return; }
+        }
+        await callExtensionApi(ext?.tabs, 'create', { url: 'https://www.youtube.com/' });
+        window.close();
+    } catch (_) {
+        showStatus(t('statusOpenWorkspaceFail', 'Could not open the full workspace. Try again.'), 'error', 4200);
+    }
+}
+
 function buildSchemaOverviewKeyRow(entry, settings) {
     const row = document.createElement('li');
     row.className = 'so-key-row';
@@ -4187,6 +4245,14 @@ function buildSchemaOverviewKeyRow(entry, settings) {
 
     const optionalHostChip = createSchemaOptionalHostBadge(entry.key);
     if (optionalHostChip) row.appendChild(optionalHostChip);
+
+    // Which surface owns this setting, and a way to get there.
+    //
+    // Five settings surfaces exist with nothing telling the user how they
+    // relate. A row that is editable right here says so; one that is not says
+    // where it lives and opens it. Without this, searching the popup and
+    // finding a setting you cannot change here is a dead end.
+    row.appendChild(createSchemaSurfaceChip(entry));
 
     if (entry.type === 'boolean') {
         // Resolve through the schema default: an untouched default-on feature

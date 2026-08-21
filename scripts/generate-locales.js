@@ -2602,6 +2602,84 @@ const FEATURE_BISECT_FAILURE_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(FEATURE_BISECT_FAILURE_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// Settings search and the surface each result belongs to. A search box a
+// reader cannot read is a search box they will not use, and the surface chip
+// is the one thing telling them where a setting they just found actually
+// lives.
+const SETTINGS_SEARCH_SURFACE_TRANSLATIONS = {
+  ar: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': 'لا يوجد إعداد يطابق «{term}». جرّب اسم ميزة أو فئة أو صفحة مثل watch أو feed أو نوع عنصر تحكم مثل boolean.',
+    'here': 'هنا',
+    'This setting can be changed in the popup.': 'يمكن تغيير هذا الإعداد من النافذة المنبثقة.',
+    'in-page panel': 'اللوحة داخل الصفحة',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': 'يُحرَّر هذا الإعداد في لوحة Astra Deck على YouTube. اضغط للفتح.'
+  },
+  de: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': 'Keine Einstellung passt zu „{term}“. Versuche einen Funktionsnamen, eine Kategorie, eine Seite wie watch oder feed oder einen Steuerelementtyp wie boolean.',
+    'here': 'hier',
+    'This setting can be changed in the popup.': 'Diese Einstellung lässt sich im Popup ändern.',
+    'in-page panel': 'Panel auf der Seite',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': 'Diese Einstellung wird im Astra-Deck-Panel auf YouTube bearbeitet. Öffnet es.'
+  },
+  es: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': 'Ningún ajuste coincide con «{term}». Prueba con un nombre de función, una categoría, una página como watch o feed, o un tipo de control como boolean.',
+    'here': 'aquí',
+    'This setting can be changed in the popup.': 'Este ajuste se puede cambiar en la ventana emergente.',
+    'in-page panel': 'panel en la página',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': 'Este ajuste se edita en el panel de Astra Deck en YouTube. Lo abre.'
+  },
+  fr: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': 'Aucun réglage ne correspond à « {term} ». Essayez un nom de fonction, une catégorie, une page comme watch ou feed, ou un type de contrôle comme boolean.',
+    'here': 'ici',
+    'This setting can be changed in the popup.': 'Ce réglage se modifie dans la fenêtre contextuelle.',
+    'in-page panel': 'panneau intégré',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': 'Ce réglage se modifie dans le panneau Astra Deck sur YouTube. Ouvre celui-ci.'
+  },
+  it: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': 'Nessuna impostazione corrisponde a «{term}». Prova un nome di funzione, una categoria, una pagina come watch o feed, o un tipo di controllo come boolean.',
+    'here': 'qui',
+    'This setting can be changed in the popup.': 'Questa impostazione si può cambiare nel popup.',
+    'in-page panel': 'pannello nella pagina',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': 'Questa impostazione si modifica nel pannello Astra Deck su YouTube. Lo apre.'
+  },
+  ja: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': '「{term}」に一致する設定はありません。機能名、カテゴリ、watch や feed のようなページ、boolean のようなコントロールの種類を試してください。',
+    'here': 'ここ',
+    'This setting can be changed in the popup.': 'この設定はポップアップで変更できます。',
+    'in-page panel': 'ページ内パネル',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': 'この設定は YouTube 上の Astra Deck パネルで編集します。押すと開きます。'
+  },
+  ko: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': '“{term}”과(와) 일치하는 설정이 없습니다. 기능 이름, 카테고리, watch나 feed 같은 페이지, boolean 같은 컨트롤 종류를 시도해 보세요.',
+    'here': '여기',
+    'This setting can be changed in the popup.': '이 설정은 팝업에서 바꿀 수 있습니다.',
+    'in-page panel': '페이지 내 패널',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': '이 설정은 YouTube의 Astra Deck 패널에서 편집합니다. 눌러서 엽니다.'
+  },
+  pt_BR: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': 'Nenhuma configuração corresponde a “{term}”. Tente um nome de recurso, uma categoria, uma página como watch ou feed, ou um tipo de controle como boolean.',
+    'here': 'aqui',
+    'This setting can be changed in the popup.': 'Esta configuração pode ser alterada no popup.',
+    'in-page panel': 'painel na página',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': 'Esta configuração é editada no painel do Astra Deck no YouTube. Abre ele.'
+  },
+  ru: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': 'Ни одна настройка не совпадает с «{term}». Попробуйте имя функции, категорию, страницу вроде watch или feed либо тип элемента вроде boolean.',
+    'here': 'здесь',
+    'This setting can be changed in the popup.': 'Эту настройку можно изменить во всплывающем окне.',
+    'in-page panel': 'панель на странице',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': 'Эта настройка редактируется на панели Astra Deck в YouTube. Открывает её.'
+  },
+  zh_CN: {
+    'No setting matches "{term}". Try a feature name, a category, a page like watch or feed, or a control type like boolean.': '没有设置匹配“{term}”。试试功能名称、分类、像 watch 或 feed 这样的页面，或者像 boolean 这样的控件类型。',
+    'here': '这里',
+    'This setting can be changed in the popup.': '此设置可以在弹出窗口中更改。',
+    'in-page panel': '页面内面板',
+    'This setting is edited in the Astra Deck panel on YouTube. Opens it.': '此设置在 YouTube 上的 Astra Deck 面板中编辑。点击可打开。'
+  }
+};
+for (const [locale, messages] of Object.entries(SETTINGS_SEARCH_SURFACE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The chat mode-change notice toggle hides a renderer tag, so the selector
 // needs no translation, but its settings copy does like any sub-feature.
 const CHAT_MODE_NOTICE_TRANSLATIONS = {

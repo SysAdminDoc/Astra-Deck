@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "Не удалось начать: этот профиль браузера не сохранит сессию поиска."
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "Ни одна настройка не совпадает с «{term}». Попробуйте имя функции, категорию, страницу вроде watch или feed либо тип элемента вроде boolean."
+  },
+  "schemaSurfaceHere": {
+    "message": "здесь"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "Эту настройку можно изменить во всплывающем окне."
+  },
+  "schemaSurfacePanel": {
+    "message": "панель на странице"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "Эта настройка редактируется на панели Astra Deck в YouTube. Открывает её."
   }
 }

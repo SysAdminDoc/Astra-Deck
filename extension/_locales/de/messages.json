@@ -8160,5 +8160,20 @@
   },
   "bisectStartFailed": {
     "message": "Start nicht möglich: Dieses Browserprofil speichert die Bisect-Sitzung nicht."
+  },
+  "schemaOverviewNoMatchesTpl": {
+    "message": "Keine Einstellung passt zu „{term}“. Versuche einen Funktionsnamen, eine Kategorie, eine Seite wie watch oder feed oder einen Steuerelementtyp wie boolean."
+  },
+  "schemaSurfaceHere": {
+    "message": "hier"
+  },
+  "schemaSurfaceHereTitle": {
+    "message": "Diese Einstellung lässt sich im Popup ändern."
+  },
+  "schemaSurfacePanel": {
+    "message": "Panel auf der Seite"
+  },
+  "schemaSurfacePanelTitle": {
+    "message": "Diese Einstellung wird im Astra-Deck-Panel auf YouTube bearbeitet. Öffnet es."
   }
 }
