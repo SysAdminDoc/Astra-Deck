@@ -433,6 +433,66 @@ test('downloadUI MediaDLManager reports native-channel-required when legacy heal
     assert.equal(status.tokenSource, 'native-required');
     assert.equal(status.version, '1.6.0');
     assert.equal(calls[0].headers['X-MDL-Token-Source'], undefined);
+    assert.equal(calls[0].headers['X-MDL-Api'], '2');
+});
+
+test('downloadUI MediaDLManager pairs its Chrome ID then retries native messaging', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const chromeId = 'abcdefghijklmnopabcdefghijklmnop';
+    const calls = [];
+    let nativeAttempts = 0;
+    const result = mod.createDownloadUIFeature({
+        getExtensionRuntimeId: () => chromeId,
+        requestNativeDownloaderToken: async () => {
+            nativeAttempts += 1;
+            if (nativeAttempts === 1) {
+                return { token: null, error: 'Specified native messaging host not found.' };
+            }
+            return { token: 'native-after-pair', error: null };
+        },
+        extensionFetchJson: async (details) => {
+            calls.push({
+                method: details.method || 'GET',
+                url: details.url,
+                headers: details.headers,
+                data: details.data
+            });
+            if (String(details.url || '').includes('/pair-extension')) {
+                assert.equal(JSON.parse(details.data).id, chromeId);
+                return {
+                    data: {
+                        ok: true,
+                        paired: true,
+                        id: chromeId,
+                        nativeHostRegistered: true
+                    }
+                };
+            }
+            return {
+                data: {
+                    service: 'astra-downloader',
+                    token_required: true,
+                    legacyTokenEcho: false,
+                    nativeChannelRequired: true,
+                    port: 9751,
+                    version: '2.8.0',
+                    downloads: 0,
+                },
+            };
+        },
+        DebugManager: { log() {} },
+    });
+
+    const status = await result.MediaDLManager.check(true);
+
+    assert.equal(status.ok, true);
+    assert.equal(status.token, 'native-after-pair');
+    assert.equal(status.tokenSource, 'native');
+    assert.equal(nativeAttempts, 2);
+    assert.ok(calls.some((call) => call.method === 'POST' && String(call.url).includes('/pair-extension')));
 });
 
 test('downloadUI native-channel-required failures show recovery copy without install prompt', async () => {
