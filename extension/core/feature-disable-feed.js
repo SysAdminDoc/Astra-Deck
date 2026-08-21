@@ -80,6 +80,20 @@
         return [Number(match[1]), Number(match[2]), Number(match[3])];
     }
 
+    // The running version comes from the build, not the feed, and it is the
+    // one input whose rejection turns the whole mechanism off. Chrome accepts
+    // four-part manifest versions and release tooling grows prerelease
+    // suffixes, so a strict three-part match would silently disable the kill
+    // switch on a build that is otherwise fine. Read the leading three
+    // components and ignore the rest; anything without three is still a
+    // refusal, because comparing against a version we cannot order would be
+    // guessing.
+    function parseRunningVersion(value) {
+        const match = /^(\d{1,6})\.(\d{1,6})\.(\d{1,6})(?:[.\-+].*)?$/.exec(String(value || '').trim());
+        if (!match) return null;
+        return [Number(match[1]), Number(match[2]), Number(match[3])];
+    }
+
     function compareVersions(a, b) {
         for (let i = 0; i < 3; i += 1) {
             if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
@@ -114,7 +128,7 @@
         const disabled = new Set();
         const seen = new Set();
 
-        const running = parseVersion(options.version);
+        const running = parseRunningVersion(options.version);
         const resolveId = typeof options.resolveId === 'function'
             ? options.resolveId
             : (id) => id;
@@ -200,15 +214,20 @@
                 continue;
             }
 
+            // Range first, identity second. A feature YouTube breaks twice
+            // gets two rows — one closed range and one open — and claiming the
+            // ID on the closed row would reject the open one as a duplicate
+            // and silently leave the feature running. A row that does not
+            // apply to this build is not a claim on the identity at all.
+            const applies = compareVersions(running, brokenFrom) >= 0
+                && (!fixedIn || compareVersions(running, fixedIn) < 0);
+            if (!applies) continue;
+
             if (seen.has(featureId)) {
                 rejected.push({ line: index + 1, raw: line, reason: 'duplicate-feature-id' });
                 continue;
             }
             seen.add(featureId);
-
-            const applies = compareVersions(running, brokenFrom) >= 0
-                && (!fixedIn || compareVersions(running, fixedIn) < 0);
-            if (!applies) continue;
 
             entries.push(Object.freeze({
                 featureId,

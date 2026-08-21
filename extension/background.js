@@ -923,7 +923,14 @@ function fetchFeatureDisableFeed() {
         }
     }, FEATURE_DISABLE_FEED_TIMEOUT_MS);
 
-    _featureDisableFeedInflight = (async () => {
+    // The promise is assigned BEFORE anything clears it. Written as
+    // `_featureDisableFeedInflight = (async () => { ... finally { flag = null } })()`
+    // the body runs first, so the one path that returns without ever awaiting
+    // — the allowlist refusal below — cleared the flag and only then had the
+    // resolved promise stored into it. The guard above would hand that
+    // already-settled promise to every later caller and the feed would never
+    // be fetched again for the worker's lifetime.
+    const run = (async () => {
         try {
             if (!isUrlAllowed(FEATURE_DISABLE_FEED_URL)) return null;
             const response = await fetch(FEATURE_DISABLE_FEED_URL, {
@@ -944,10 +951,14 @@ function fetchFeatureDisableFeed() {
             return null;
         } finally {
             clearTimeout(timer);
-            _featureDisableFeedInflight = null;
         }
     })();
-    return _featureDisableFeedInflight;
+    _featureDisableFeedInflight = run;
+    // A .then callback cannot run before the assignment above, whatever the
+    // body did.
+    const clear = () => { _featureDisableFeedInflight = null; };
+    run.then(clear, clear);
+    return run;
 }
 
 // Reads a response body with the cap enforced AS IT ARRIVES.

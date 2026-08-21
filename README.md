@@ -1045,9 +1045,10 @@ document_idle
 
 ### Verifying a download
 
-Every release carries `SHA256SUMS`, a detached `SHA256SUMS.sig`, and the
-`allowed-signers` file from this repository. Two commands, and both have to
-pass. The first says who produced the list of hashes:
+Releases carry `SHA256SUMS` and the `allowed-signers` file from this
+repository, and once a signing key is published (see below) a detached
+`SHA256SUMS.sig` alongside them. Two commands, and both have to pass. The
+first says who produced the list of hashes:
 
 ```bash
 ssh-keygen -Y verify -f allowed-signers -I releases@astra-deck   -n astra-deck-release -s SHA256SUMS.sig < SHA256SUMS

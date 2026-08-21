@@ -571,7 +571,16 @@
                 for (const port of order) {
                     const data = await tryPort(port);
                     if (data) {
-                        if (!nativeToken.token && !data.token) {
+                        // Pair only against the STRONG identity, not the
+                        // legacy `token_required + port` heuristic that
+                        // _isAstraDownloaderHealth also accepts. Anything
+                        // local can squat a companion port and answer an
+                        // unauthenticated /health — the foreignServer branch
+                        // below exists because that is a real condition here —
+                        // and the runtime ID of an unpacked install is derived
+                        // from its path, so it identifies the machine. Only a
+                        // server that names itself gets it.
+                        if (!nativeToken.token && !data.token && data.service === this._SERVICE_ID) {
                             const paired = await this._pairWithCompanion(port);
                             if (paired) nativeToken = await this._requestNativeToken();
                         }
