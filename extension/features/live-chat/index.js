@@ -7,6 +7,7 @@
     const SETTINGS_KEY = 'ytSuiteSettings';
     const REACTION_STATE_KEY = 'ytkitReactionSpammerState';
     const PREMIUM_ATTRIBUTE = 'data-ytkit-livechat-premium';
+    const RUNTIME_ATTRIBUTE = 'data-ytkit-live-chat-runtime';
     const CHAT_FEATURE_IDS = Object.freeze([
         'hideLiveChatEngagement',
         'premiumLiveChat',
@@ -627,6 +628,7 @@
             browser?.storage?.onChanged?.addListener?.(storageListener);
             pageHideListener = () => destroy();
             win.addEventListener?.('pagehide', pageHideListener, { once: true });
+            doc.documentElement?.setAttribute?.(RUNTIME_ATTRIBUTE, 'active');
             return true;
         }
 
@@ -647,6 +649,7 @@
             ['hideLiveChatEngagement', 'hiddenChatElementsManager', 'reactionSpammer']
                 .forEach((id) => setStyle(id, '', false));
             doc.documentElement?.removeAttribute?.(PREMIUM_ATTRIBUTE);
+            doc.documentElement?.removeAttribute?.(RUNTIME_ATTRIBUTE);
         }
 
         return Object.freeze({
@@ -661,6 +664,7 @@
     features.liveChat = Object.freeze({
         CHAT_ELEMENT_SELECTORS,
         CHAT_FEATURE_IDS,
+        RUNTIME_ATTRIBUTE,
         createLiveChatRuntime
     });
 

@@ -6,6 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- The accessibility smoke now loads the real popup and side panel from their
+  temporary extension origin. It checks the browser-assigned extension ID,
+  page script startup, extension storage, origin fetches, keyboard travel,
+  200% zoom, and forced colors. Fixture pages remain for deterministic locale,
+  permission, and recovery states.
+
+- A live Chromium check now opens a current YouTube live-chat frame and proves
+  Astra's dedicated frame runtime attached. Release browser checks run it with
+  the existing zero-ad, Firefox, and userscript-manager lanes.
+
 ### Changed
 
 - The build now requires Node 24. Node 22 went into maintenance in October 2025
@@ -22,6 +34,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   group with every channel and any subgroups that were nested under it. It was
   the last place in Astra Deck still asking a native confirm, and the only
   destructive action you could not take back once you had answered it.
+
+### Fixed
+
+- The first-run profile and preset choices now collapse to one column at 200%
+  zoom. The real popup check found the old two-column layout spilling outside
+  its card by 8 pixels, a state the pre-seeded fixture never displayed.
 
 ## [4.84.0] (2026-08-21)
 

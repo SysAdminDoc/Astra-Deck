@@ -226,16 +226,6 @@ dropped after local verification and are recorded as rejected in `RESEARCH.md` r
 listed here (store-profile permission stripping, Greasy Fork size/minification, DNR
 `topDomains`, comment search, anti-translation parity, `use_dynamic_url` coverage).
 
-### P2
-
-- [ ] P2 — Extend the existing live-Chromium harness to the two surfaces it skips: the real extension pages and the live-chat frame
-  Why: real-browser coverage is stronger than an outside reading of this repo suggests, and the gap is narrow and specific rather than structural. `smoke-zero-ads-live.js` genuinely loads the extension, reports its ID, and asserts the DNR ruleset is enabled; `smoke-mv3-worker-lifecycle.js` terminates the worker twice and asserts state survives. What no real-browser check touches is (a) the actual `popup.html`/`sidepanel.html` as loaded from the extension origin — `smoke-headless-a11y.js` drives standalone `-a11y.html` fixtures against a temp profile with no extension loaded, so real extension-page CSP, `chrome.storage` behaviour, and the dynamic-URL origin are all unexercised — and (b) the `all_frames: true` live-chat iframe, which is the most drift-prone surface in the product and has no live check at all.
-  Evidence: `scripts/smoke-zero-ads-live.js:269` (ruleset assertion), `:387` (reports the loaded extension ID), `:399` (candidate-binary fallback when a branded build rejects `--load-extension`); `scripts/smoke-mv3-worker-lifecycle.js:118-119,241,252` (double termination + state assertions); `scripts/smoke-headless-a11y.js:1205-1211` (temp profile, `--headless=new`, fixture pages, no extension load). Fake-DOM coverage cannot substitute: `tests/helpers/monolith.js` has twice silently falsified render tests (`textContent = ''` not clearing children, missing `insertAdjacentElement`), which is the same failure class one level up.
-  Relationship to the existing P3 "Audit the still-unverified secondary surfaces and packaging internals": that item wants a one-time bounded audit of sidepanel/sidebar/companion/Firefox; this one wants repeatable automated coverage of two of them. Do the audit first if both are picked up in the same pass, so the harness work targets what the audit found rather than guessing.
-  Touches: `scripts/smoke-headless-a11y.js`, `scripts/smoke-zero-ads-live.js`, a new live-chat smoke, `package.json`
-  Acceptance: the a11y smoke gains a mode that drives the real `popup.html` and `sidepanel.html` from the loaded extension origin (reusing the candidate-binary and extension-ID discovery already in the zero-ads smoke) and the fixture mode is kept only for states the real page cannot reach; one live check opens a live-chat frame and asserts the live-chat feature module attached; each new assertion is bait-verified by breaking the behaviour it claims to cover; a failure to load the extension fails the smoke loudly rather than passing against an unmodified page.
-  Complexity: L
-
 ### P3
 
 - [ ] P3 — Add the three missing empty states

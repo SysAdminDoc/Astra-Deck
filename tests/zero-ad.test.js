@@ -135,11 +135,11 @@ test('userscript-manager smoke closes its fixture when Firefox startup fails', a
     assert.equal(fixtureClosed, true);
 });
 
-test('release preparation gates the Chromium, Firefox, and real-manager desktop contracts', () => {
+test('release preparation gates the Chromium, live-chat, Firefox, and real-manager desktop contracts', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
     assert.equal(
         pkg.scripts['release:browser-smokes'],
-        'npm run smoke:zero-ads:live && npm run smoke:firefox && npm run smoke:userscript-managers'
+        'npm run smoke:zero-ads:live && npm run smoke:live-chat && npm run smoke:firefox && npm run smoke:userscript-managers'
     );
     assert.match(pkg.scripts['release:prepare'], /npm run release:browser-smokes/);
     assert.match(pkg.scripts['release:prepare:no-crx'], /npm run release:browser-smokes/);

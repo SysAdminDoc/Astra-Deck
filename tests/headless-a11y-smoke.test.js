@@ -61,12 +61,16 @@ test('headless accessibility smoke CLI parsing stays deterministic', () => {
     assert.deepEqual(smoke.parseArgs([]), {
         browser: '',
         keepStage: false,
+        mode: 'all',
+        mutateRealPage: '',
         surfaces: [],
         timeoutMs: 45000,
     });
     assert.equal(smoke.parseArgs(['--timeout', '9000']).timeoutMs, 9000);
     assert.deepEqual(smoke.parseArgs(['--surface', 'sidepanel', '--surface', 'sidebar']).surfaces,
         ['sidepanel', 'sidebar']);
+    assert.equal(smoke.parseArgs(['--real-extension-pages']).mode, 'real');
+    assert.equal(smoke.parseArgs(['--fixture-states']).mode, 'fixture');
     assert.throws(() => smoke.parseArgs(['--surface', 'unknown']), /requires one of/);
     assert.throws(() => smoke.parseArgs(['--headed']), /unknown argument/);
 });
