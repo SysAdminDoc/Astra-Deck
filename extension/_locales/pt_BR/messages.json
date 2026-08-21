@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "Somente nomes, sem valores. Nada foi enviado para lugar nenhum. Está na sua área de transferência e você decide se cola."
+  },
+  "bisectAbort": {
+    "message": "Parar e restaurar"
+  },
+  "bisectAborted": {
+    "message": "Busca interrompida. Seus recursos voltaram a funcionar."
+  },
+  "bisectCopy": {
+    "message": "Copiar resultado"
+  },
+  "bisectCopyDone": {
+    "message": "Resultado copiado. Nada foi enviado para lugar nenhum."
+  },
+  "bisectCopyFail": {
+    "message": "Não foi possível copiar o resultado."
+  },
+  "bisectCulpritTpl": {
+    "message": "É o {feature}."
+  },
+  "bisectExpired": {
+    "message": "Uma busca inacabada expirou. Seus recursos voltaram a funcionar."
+  },
+  "bisectIntro": {
+    "message": "Desliga e religa seus recursos pela metade para que você reduza 291 deles a um só em cerca de dez recarregamentos. Suas configurações são restauradas ao terminar, ao parar e automaticamente se você se afastar."
+  },
+  "bisectNo": {
+    "message": "Sumiu"
+  },
+  "bisectNoCulprit": {
+    "message": "Nenhum recurso sozinho é responsável. A causa está fora do Astra Deck, ou é uma combinação de recursos."
+  },
+  "bisectNothingEnabled": {
+    "message": "Nenhum recurso está ligado, então não há nada a pesquisar."
+  },
+  "bisectStart": {
+    "message": "Iniciar busca"
+  },
+  "bisectStarted": {
+    "message": "Recarregue o YouTube e responda abaixo."
+  },
+  "bisectStepTpl": {
+    "message": "Etapa {step} de cerca de {total}. Recarregue o YouTube e responda: o problema ainda acontece?"
+  },
+  "bisectTitle": {
+    "message": "Encontre o recurso que quebrou tudo"
+  },
+  "bisectYes": {
+    "message": "Ainda acontece"
   }
 }

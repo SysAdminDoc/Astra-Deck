@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "Names only, no values. Nothing was sent anywhere. This is on your clipboard and you decide whether to paste it."
+  },
+  "bisectAbort": {
+    "message": "Stop and restore"
+  },
+  "bisectAborted": {
+    "message": "Bisect stopped. Your features are back on."
+  },
+  "bisectCopy": {
+    "message": "Copy result"
+  },
+  "bisectCopyDone": {
+    "message": "Result copied. Nothing was sent anywhere."
+  },
+  "bisectCopyFail": {
+    "message": "Could not copy the result."
+  },
+  "bisectCulpritTpl": {
+    "message": "It is {feature}."
+  },
+  "bisectExpired": {
+    "message": "An unfinished bisect expired. Your features are back on."
+  },
+  "bisectIntro": {
+    "message": "Switches your features off and back on in halves so you can narrow 291 of them down to one in about ten reloads. Your settings are restored when it finishes, when you stop it, and automatically if you walk away."
+  },
+  "bisectNo": {
+    "message": "Gone"
+  },
+  "bisectNoCulprit": {
+    "message": "No single feature is responsible. Something outside Astra Deck, or a combination of features, is causing it."
+  },
+  "bisectNothingEnabled": {
+    "message": "No features are switched on, so there is nothing to search."
+  },
+  "bisectStart": {
+    "message": "Start bisect"
+  },
+  "bisectStarted": {
+    "message": "Reload YouTube, then answer below."
+  },
+  "bisectStepTpl": {
+    "message": "Step {step} of about {total}. Reload YouTube, then answer: does the problem still happen?"
+  },
+  "bisectTitle": {
+    "message": "Find the feature that broke it"
+  },
+  "bisectYes": {
+    "message": "Still happens"
   }
 }

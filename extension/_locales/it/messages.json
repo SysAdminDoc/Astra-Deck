@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "Solo nomi, nessun valore. Non è stato inviato nulla da nessuna parte. È nei tuoi appunti e decidi tu se incollarlo."
+  },
+  "bisectAbort": {
+    "message": "Interrompi e ripristina"
+  },
+  "bisectAborted": {
+    "message": "Ricerca interrotta. Le tue funzioni sono di nuovo attive."
+  },
+  "bisectCopy": {
+    "message": "Copia il risultato"
+  },
+  "bisectCopyDone": {
+    "message": "Risultato copiato. Non è stato inviato nulla da nessuna parte."
+  },
+  "bisectCopyFail": {
+    "message": "Impossibile copiare il risultato."
+  },
+  "bisectCulpritTpl": {
+    "message": "È {feature}."
+  },
+  "bisectExpired": {
+    "message": "Una ricerca non terminata è scaduta. Le tue funzioni sono di nuovo attive."
+  },
+  "bisectIntro": {
+    "message": "Spegne e riaccende le tue funzioni a metà per volta, così puoi restringere 291 funzioni a una sola in una decina di ricaricamenti. Le tue impostazioni vengono ripristinate alla fine, se interrompi e automaticamente se ti allontani."
+  },
+  "bisectNo": {
+    "message": "Sparito"
+  },
+  "bisectNoCulprit": {
+    "message": "Nessuna singola funzione è responsabile. La causa è fuori da Astra Deck, oppure è una combinazione di funzioni."
+  },
+  "bisectNothingEnabled": {
+    "message": "Non c’è nessuna funzione attiva, quindi non c’è nulla da cercare."
+  },
+  "bisectStart": {
+    "message": "Avvia la ricerca"
+  },
+  "bisectStarted": {
+    "message": "Ricarica YouTube, poi rispondi qui sotto."
+  },
+  "bisectStepTpl": {
+    "message": "Passo {step} di circa {total}. Ricarica YouTube, poi rispondi: il problema si verifica ancora?"
+  },
+  "bisectTitle": {
+    "message": "Trova la funzione che ha rotto tutto"
+  },
+  "bisectYes": {
+    "message": "Succede ancora"
   }
 }

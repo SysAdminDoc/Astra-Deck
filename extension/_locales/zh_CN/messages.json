@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "只有名称，没有值。没有向任何地方发送内容。它在你的剪贴板里，是否粘贴由你决定。"
+  },
+  "bisectAbort": {
+    "message": "停止并恢复"
+  },
+  "bisectAborted": {
+    "message": "已停止二分查找。你的功能已恢复。"
+  },
+  "bisectCopy": {
+    "message": "复制结果"
+  },
+  "bisectCopyDone": {
+    "message": "已复制结果。没有向任何地方发送内容。"
+  },
+  "bisectCopyFail": {
+    "message": "无法复制结果。"
+  },
+  "bisectCulpritTpl": {
+    "message": "是 {feature}。"
+  },
+  "bisectExpired": {
+    "message": "一次未完成的二分查找已过期。你的功能已恢复。"
+  },
+  "bisectIntro": {
+    "message": "按一半一半地关闭并重新开启你的功能，让你在大约十次刷新内把 291 个功能缩小到一个。设置会在结束时、你停止时以及你离开后自动恢复。"
+  },
+  "bisectNo": {
+    "message": "不再发生"
+  },
+  "bisectNoCulprit": {
+    "message": "没有单个功能应对此负责。原因在 Astra Deck 之外，或者是多个功能的组合。"
+  },
+  "bisectNothingEnabled": {
+    "message": "没有开启任何功能，因此没有可查找的内容。"
+  },
+  "bisectStart": {
+    "message": "开始二分查找"
+  },
+  "bisectStarted": {
+    "message": "刷新 YouTube，然后在下面作答。"
+  },
+  "bisectStepTpl": {
+    "message": "第 {step} 步，共约 {total} 步。刷新 YouTube，然后回答：问题还会发生吗？"
+  },
+  "bisectTitle": {
+    "message": "找出把页面弄坏的功能"
+  },
+  "bisectYes": {
+    "message": "仍然会发生"
   }
 }

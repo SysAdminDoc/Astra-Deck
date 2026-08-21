@@ -8097,5 +8097,53 @@
   },
   "featureReportPrivacyNote": {
     "message": "名前のみで、値は含みません。どこにも送信されていません。クリップボードにあるので、貼り付けるかどうかはあなたが決めます。"
+  },
+  "bisectAbort": {
+    "message": "中止して元に戻す"
+  },
+  "bisectAborted": {
+    "message": "絞り込みを中止しました。機能は元に戻っています。"
+  },
+  "bisectCopy": {
+    "message": "結果をコピー"
+  },
+  "bisectCopyDone": {
+    "message": "結果をコピーしました。どこにも送信していません。"
+  },
+  "bisectCopyFail": {
+    "message": "結果をコピーできませんでした。"
+  },
+  "bisectCulpritTpl": {
+    "message": "原因は {feature} です。"
+  },
+  "bisectExpired": {
+    "message": "未完了の絞り込みが期限切れになりました。機能は元に戻っています。"
+  },
+  "bisectIntro": {
+    "message": "機能を半分ずつオフにして戻すことで、291 個の機能を約 10 回の再読み込みで 1 つに絞り込めます。設定は終了時、中止時、そして放置した場合も自動的に元へ戻ります。"
+  },
+  "bisectNo": {
+    "message": "直った"
+  },
+  "bisectNoCulprit": {
+    "message": "単一の機能が原因ではありません。Astra Deck の外側か、複数の機能の組み合わせが原因です。"
+  },
+  "bisectNothingEnabled": {
+    "message": "オンになっている機能がないため、調べる対象がありません。"
+  },
+  "bisectStart": {
+    "message": "絞り込みを開始"
+  },
+  "bisectStarted": {
+    "message": "YouTube を再読み込みしてから、下で答えてください。"
+  },
+  "bisectStepTpl": {
+    "message": "ステップ {step} / 約 {total}。YouTube を再読み込みしてから答えてください。問題はまだ起きますか？"
+  },
+  "bisectTitle": {
+    "message": "問題を起こしている機能を見つける"
+  },
+  "bisectYes": {
+    "message": "まだ起きる"
   }
 }

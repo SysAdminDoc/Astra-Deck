@@ -112,6 +112,10 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     // and routing it through GM_xmlhttpRequest would hand the page's own
     // manager a new remote-fetch grant for a file only the extension consumes.
     'core/feature-disable-feed.js': 'chrome-api',
+    // The bisect state machine is pure and would port, but its only consumer
+    // is the popup — a surface a userscript does not have. Bundling it into
+    // the monolith would ship an unreachable module.
+    'core/feature-bisect.js': 'intentional-extension-only',
     'core/diagnostic-log.js': 'intentional-extension-only',
     'core/env.js': 'intentional-extension-only',
     'core/icons.js': 'intentional-extension-only',

@@ -3767,3 +3767,50 @@ textarea:focus-visible {
     inset-inline-end: 0;
   }
 }
+
+/* ── Feature bisect ──
+   Reuses .schema-overview-tool for every button so the panel inherits the
+   focus ring, hover, and sizing the rest of that toolbar already has. Only
+   the container and its two prose lines need rules of their own. */
+.bisect-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.bisect-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bisect-intro,
+.bisect-prompt,
+.bisect-result {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* The step question and the answer are what the user is here to read, so
+   they carry the primary text colour rather than the muted one the
+   explanatory intro uses. */
+.bisect-prompt,
+.bisect-result {
+  color: var(--text-primary);
+}
+
+.bisect-step {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
