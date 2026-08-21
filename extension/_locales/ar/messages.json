@@ -7790,10 +7790,10 @@
     "message": "تم التحديث إلى الإصدار v{version}. اعرض التغييرات."
   },
   "whatsNewDismiss": {
-    "message": "Dismiss"
+    "message": "إغلاق"
   },
   "whatsNewDismissAria": {
-    "message": "Dismiss"
+    "message": "إغلاق"
   },
   "whatsNewOpen": {
     "message": "Read changelog"
@@ -8145,5 +8145,11 @@
   },
   "bisectYes": {
     "message": "ما زالت تحدث"
+  },
+  "serviceOutageDismiss": {
+    "message": "إغلاق"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} لا يستجيب. المشكلة في الخدمة نفسها وليست في Astra Deck."
   }
 }

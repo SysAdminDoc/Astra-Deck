@@ -228,13 +228,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
 
 ### P2
 
-- [ ] P2 — Surface enrichment-API failure on the watch page instead of only in the diagnostic log
-  Why: SponsorBlock and DeArrow failures are invisible where the user is looking, so an upstream outage or a rate limit reads as "Astra broke YouTube." The pattern that users blame the extension rather than the site is the documented reason enrichment tools lose trust.
-  Evidence: `extension/features/sponsorblock/index.js:361-366` and `extension/features/dearrow/index.js:290-291` route failure to `DiagnosticLog`/`ExternalApiHealth` with no page-level signal; RYD already does this correctly with an "RYD off"/"RYD paused" pill (`extension/features/return-dislike/index.js:285-303`), so the pattern to copy is in-tree.
-  Touches: `extension/features/sponsorblock/index.js`, `extension/features/dearrow/index.js`, the shared `ExternalApiHealth` surface, `extension/core/feature-health.js`, locales
-  Acceptance: a sustained fetch failure (not a single transient) produces one passive, dismissible page-level indicator per feature per session that names the upstream service and distinguishes "service unreachable" from "no data for this video"; it never blocks playback, never retries on click more than the existing backoff allows, and is suppressed when the feature is off.
-  Complexity: M
-
 - [ ] P2 — Add a `build-for-amo` script and prove the build reproduces in Mozilla's reviewer environment
   Why: AMO now auto-builds submitted source and compares it against the uploaded package, and a match "can move through review much more quickly" — otherwise review runs 3 days to 5 weeks. `build-extension.js` is exactly the generator that triggers mandatory source submission, and the reviewer environment is published and specific, so reproducibility is testable before submitting rather than discovered during review.
   Evidence: Mozilla's source-code-submission rules require the reviewer's rebuild to produce *no differences*, and the default reviewer environment is Ubuntu 24.04.4 LTS on **ARM64** with Node 24.14.0 / npm 11.9.0. `package.json` has no `build-for-amo` script; `.nvmrc` says 22; `crx3` has never been exercised on ARM64. Blocked companion item "Firefox AMO submission" depends on this and cannot be de-risked without it.

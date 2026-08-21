@@ -7790,10 +7790,10 @@
     "message": "v{version} に更新しました。変更内容を確認してください。"
   },
   "whatsNewDismiss": {
-    "message": "Dismiss"
+    "message": "閉じる"
   },
   "whatsNewDismissAria": {
-    "message": "Dismiss"
+    "message": "閉じる"
   },
   "whatsNewOpen": {
     "message": "Read changelog"
@@ -8145,5 +8145,11 @@
   },
   "bisectYes": {
     "message": "まだ起きる"
+  },
+  "serviceOutageDismiss": {
+    "message": "閉じる"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} が応答していません。原因はそのサービス側で、Astra Deck ではありません。"
   }
 }

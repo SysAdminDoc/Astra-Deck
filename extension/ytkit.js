@@ -751,7 +751,11 @@
     // success (or after a 90s quiet window so a one-off blip can't linger).
     const ServiceStateStrip = (function () {
         const AUTO_EXPIRE_MS = 90000;
-        const pills = new Map(); // service id -> { el, timer }
+        const pills = new Map(); // service id -> { el, text, timer }
+        // Services the user has waved off. Per page session, deliberately: a
+        // dismissal that outlived the tab would silence the one signal that
+        // tells them an outage is still going on tomorrow.
+        const dismissed = new Set();
         let container = null;
         let styleEl = null;
 
@@ -762,6 +766,9 @@
                 .ytkit-service-state-pill{display:inline-flex;align-items:center;gap:7px;max-width:340px;padding:5px 10px;border-radius:8px;background:rgba(15,15,15,0.92);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88);font:500 11.5px/1.35 "Roboto","Segoe UI",sans-serif;pointer-events:auto;transition:opacity .18s ease;}
                 .ytkit-service-state-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:#f59e0b;flex:none;}
                 .ytkit-service-state-pill[data-tone="error"]::before{background:#f87171;}
+                .ytkit-service-state-text{flex:1 1 auto;}
+                .ytkit-service-state-dismiss{flex:none;appearance:none;border:0;background:transparent;color:inherit;font:inherit;line-height:1;padding:0 2px;cursor:pointer;opacity:.7;}
+                .ytkit-service-state-dismiss:hover,.ytkit-service-state-dismiss:focus-visible{opacity:1;}
                 html:not([dark]) .ytkit-service-state-pill{background:rgba(255,255,255,0.97);border-color:rgba(0,0,0,0.22);color:#1f1f1f;}
                 @media (prefers-reduced-motion: reduce){.ytkit-service-state-pill{transition:none;}}
             `, 'service-state-strip');
@@ -808,7 +815,20 @@
                 // had nothing submitted. Everything still lands in the
                 // diagnostic log and the popup's External API Health card, and
                 // debugMode puts the full strip back for triage.
-                if (!desc.actionable && appState?.settings?.debugMode !== true) {
+                //
+                // v4.84.0: one exception, and it is the reason this surface
+                // exists. A SUSTAINED outage — the service failing repeatedly
+                // rather than blinking once — is invisible where the user is
+                // looking, so an upstream going down reads as "Astra Deck
+                // broke YouTube". That is the documented way enrichment tools
+                // lose trust, and the fix is one sentence saying which service
+                // is down and that it is not this extension. Dismissed once,
+                // it stays dismissed for the session.
+                const outage = typeof ExternalApiHealth.describeServiceOutage === 'function'
+                    ? ExternalApiHealth.describeServiceOutage(record)
+                    : null;
+                const showOutage = !!outage && !dismissed.has(record.id);
+                if (!desc.actionable && !showOutage && appState?.settings?.debugMode !== true) {
                     remove(record.id);
                     return;
                 }
@@ -817,13 +837,33 @@
                 if (!pill) {
                     const el = document.createElement('div');
                     el.className = 'ytkit-service-state-pill';
+                    const text = document.createElement('span');
+                    text.className = 'ytkit-service-state-text';
+                    el.appendChild(text);
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'ytkit-service-state-dismiss';
+                    close.textContent = '×';
+                    close.setAttribute('aria-label', t('serviceOutageDismiss', 'Dismiss'));
+                    close.addEventListener('click', () => {
+                        dismissed.add(desc.id);
+                        remove(desc.id);
+                    });
+                    el.appendChild(close);
                     host.appendChild(el);
-                    pill = { el, timer: 0 };
+                    pill = { el, text, timer: 0 };
                     pills.set(desc.id, pill);
                 }
                 pill.el.dataset.tone = desc.state === 'error' ? 'error' : 'warn';
-                pill.el.textContent = desc.text;
-                pill.el.title = record.lastErrorMessage || desc.text;
+                // The outage sentence takes precedence over the diagnostic
+                // one: a reader interrupted mid-video needs to know whose
+                // fault it is, not which error class it was.
+                const label = showOutage && outage.kind === 'unreachable'
+                    ? t('serviceOutageTpl', '{service} is not answering. That is the service, not Astra Deck.')
+                        .replace('{service}', outage.label)
+                    : desc.text;
+                pill.text.textContent = label;
+                pill.el.title = record.lastErrorMessage || label;
                 clearTimeout(pill.timer);
                 pill.timer = setTimeout(() => remove(desc.id), AUTO_EXPIRE_MS);
             } catch (_) {

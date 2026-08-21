@@ -2499,6 +2499,52 @@ const FEATURE_BISECT_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(FEATURE_BISECT_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// The sustained-outage notice. Its entire job is to tell the reader whose
+// fault it is; a sentence they cannot read does the opposite of that.
+const SERVICE_OUTAGE_TRANSLATIONS = {
+  ar: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service} لا يستجيب. المشكلة في الخدمة نفسها وليست في Astra Deck.',
+    'Dismiss': 'إغلاق'
+  },
+  de: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service} antwortet nicht. Das liegt am Dienst, nicht an Astra Deck.',
+    'Dismiss': 'Schließen'
+  },
+  es: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service} no responde. Es el servicio, no Astra Deck.',
+    'Dismiss': 'Descartar'
+  },
+  fr: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service} ne répond pas. Cela vient du service, pas d’Astra Deck.',
+    'Dismiss': 'Fermer'
+  },
+  it: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service} non risponde. È il servizio, non Astra Deck.',
+    'Dismiss': 'Chiudi'
+  },
+  ja: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service} が応答していません。原因はそのサービス側で、Astra Deck ではありません。',
+    'Dismiss': '閉じる'
+  },
+  ko: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service}이(가) 응답하지 않습니다. Astra Deck이 아니라 해당 서비스의 문제입니다.',
+    'Dismiss': '닫기'
+  },
+  pt_BR: {
+    '{service} is not answering. That is the service, not Astra Deck.': 'O {service} não está respondendo. É o serviço, não o Astra Deck.',
+    'Dismiss': 'Dispensar'
+  },
+  ru: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service} не отвечает. Дело в самом сервисе, а не в Astra Deck.',
+    'Dismiss': 'Закрыть'
+  },
+  zh_CN: {
+    '{service} is not answering. That is the service, not Astra Deck.': '{service} 没有响应。问题出在该服务，不是 Astra Deck。',
+    'Dismiss': '关闭'
+  }
+};
+for (const [locale, messages] of Object.entries(SERVICE_OUTAGE_TRANSLATIONS)) Object.assign(T[locale], messages);
+
 // The chat mode-change notice toggle hides a renderer tag, so the selector
 // needs no translation, but its settings copy does like any sub-feature.
 const CHAT_MODE_NOTICE_TRANSLATIONS = {

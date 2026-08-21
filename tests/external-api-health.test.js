@@ -532,13 +532,109 @@ test('describeDegradation marks only user-fixable states actionable', () => {
     }
 });
 
-test('the in-page strip renders only actionable degradation unless debugMode is on', () => {
+test('the in-page strip suppresses non-actionable states except a sustained outage', () => {
+    // This pinned the exact suppression expression, which was right when the
+    // only two ways past it were "actionable" and debugMode. There is now a
+    // third and it is the point of the surface: a service failing repeatedly
+    // is invisible where the user is looking, so an upstream going down reads
+    // as Astra Deck breaking YouTube. The rule the test is for — a single
+    // transient must never earn a pill — is unchanged and asserted below.
     const src = sources.ytkit;
     const start = src.indexOf('const ServiceStateStrip');
     assert.ok(start > -1, 'the strip must exist');
     const block = src.slice(start, src.indexOf('return { update, remove };', start));
-    assert.match(block, /!desc\.actionable && appState\?\.settings\?\.debugMode !== true/,
-        'non-actionable states must be suppressed unless debugMode is enabled');
+    assert.match(block, /!desc\.actionable && !showOutage && appState\?\.settings\?\.debugMode !== true/,
+        'non-actionable states must be suppressed unless debugMode is on or the service is sustainedly down');
     assert.match(block, /remove\(record\.id\);/,
         'a suppressed state must also clear any pill it had already shown');
+});
+
+// ── Sustained outages on the watch page ──
+//
+// SponsorBlock and DeArrow failures used to reach only the diagnostic log, so
+// an upstream outage or a rate limit read to the user as "Astra Deck broke
+// YouTube" — the documented way enrichment tools lose trust. The page now says
+// which service is down, but only when it is really down: a single transient
+// interrupting someone's video is the false alarm that teaches people to
+// ignore the indicator.
+
+const outageHealth = require('../extension/core/external-api-health.js');
+
+function healthWithFailures(count, detail = {}) {
+    const health = outageHealth.createExternalApiHealth({ now: () => 1_000_000 });
+    let record = null;
+    for (let i = 0; i < count; i += 1) {
+        record = health.recordFailure('sponsorBlock', new Error('fetch failed'), detail);
+    }
+    return { health, record };
+}
+
+test('one failure is a transient and earns no page notice', () => {
+    const { health, record } = healthWithFailures(1);
+    assert.equal(record.consecutiveFailures, 1);
+    assert.equal(health.describeServiceOutage(record), null);
+});
+
+test('repeated failures name the service as unreachable', () => {
+    const { health, record } = healthWithFailures(3);
+    const outage = health.describeServiceOutage(record);
+    assert.ok(outage, 'a sustained failure must reach the page');
+    assert.equal(outage.kind, 'unreachable');
+    assert.equal(outage.id, 'sponsorBlock');
+    assert.ok(outage.label.length > 0, 'the notice must name the upstream service');
+    assert.equal(outage.failures, 3);
+});
+
+test('"nothing for this video" is not an outage, however often it happens', () => {
+    // A 404 from an enrichment API is the normal case for most videos. Telling
+    // a user their extension is broken because SponsorBlock has no segments
+    // for a two-view upload is the exact false alarm to avoid.
+    const health = outageHealth.createExternalApiHealth({ now: () => 1_000_000 });
+    let record = null;
+    for (let i = 0; i < 5; i += 1) {
+        record = health.recordFailure('sponsorBlock', Object.assign(new Error('not found'), { status: 404 }));
+    }
+    assert.equal(record.lastErrorClass, 'no-data');
+    assert.equal(record.consecutiveFailures, 0);
+    assert.equal(health.describeServiceOutage(record), null);
+});
+
+test('one success clears the streak, so a recovered service stops warning', () => {
+    const { health } = healthWithFailures(4);
+    const recovered = health.recordSuccess('sponsorBlock', { source: 'network' });
+    assert.equal(recovered.consecutiveFailures, 0);
+    assert.equal(health.describeServiceOutage(recovered), null);
+});
+
+test('a revoked host permission is reported as the user\'s to fix, not an outage', () => {
+    const health = outageHealth.createExternalApiHealth({ now: () => 1_000_000 });
+    const error = Object.assign(new Error('optional host permission denied'), {
+        code: 'OPTIONAL_HOST_PERMISSION_DENIED'
+    });
+    health.recordFailure('deArrow', error);
+    const record = health.recordFailure('deArrow', error);
+    const outage = health.describeServiceOutage(record);
+    assert.equal(outage.kind, 'permission');
+});
+
+test('the in-page pill shows a sustained outage, names the service, and can be dismissed', () => {
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const strip = source.slice(
+        source.indexOf('const ServiceStateStrip'),
+        source.indexOf('if (typeof ExternalApiHealth.subscribe')
+    );
+    assert.ok(strip.includes('describeServiceOutage'),
+        'the strip must consult the outage rule, not only the diagnostic one');
+    assert.ok(strip.includes('dismissed.has(record.id)'),
+        'a dismissed service must stay dismissed');
+    assert.ok(strip.includes('serviceOutageTpl'),
+        'the copy must be localized');
+    // Suppressed while the feature is off: the existing settings gate above
+    // the outage branch is what does that, so it must still be there.
+    assert.ok(strip.includes("!appState?.settings?.[desc.feature]"),
+        'a feature that is off must never produce a notice');
+    // Passive: no retry affordance, and the auto-expire timer still applies.
+    assert.equal(/addEventListener\('click'[^)]*retry/i.test(strip), false);
+    assert.ok(strip.includes('AUTO_EXPIRE_MS'));
 });

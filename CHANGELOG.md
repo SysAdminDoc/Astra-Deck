@@ -60,6 +60,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   the feature, both versions, and the kind of page it happened on, and nothing
   else. Nothing is sent anywhere.
 
+### Fixed
+
+- When SponsorBlock or DeArrow goes down, the page now says so. Their failures
+  only ever reached the diagnostic log, so an outage or a rate limit looked
+  like Astra Deck breaking YouTube. A small dismissible note now names the
+  service and says plainly that it is the service and not this extension.
+
+  It waits for a pattern rather than reacting to one bad request, and a service
+  answering "nothing for this video" no longer counts as a failure at all,
+  which is the normal case for most videos on most of these APIs. Nothing
+  blocks playback, there is no retry button, and turning the feature off turns
+  the note off with it.
+
 ## [4.83.0] (2026-08-21)
 
 ### Added

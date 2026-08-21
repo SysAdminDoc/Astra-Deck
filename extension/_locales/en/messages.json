@@ -8145,5 +8145,11 @@
   },
   "bisectYes": {
     "message": "Still happens"
+  },
+  "serviceOutageDismiss": {
+    "message": "Dismiss"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} is not answering. That is the service, not Astra Deck."
   }
 }

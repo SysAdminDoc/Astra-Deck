@@ -6391,6 +6391,12 @@ if (typeof globalThis !== "undefined") {
         const status = getStatus(error, detail);
         if (status === 429) return 'rate-limited';
         if (status >= 500) return 'server-error';
+        // A 404 from an enrichment API means "we have nothing for this video",
+        // which is the normal case for most videos on most of these services.
+        // It is not an outage, and telling a user their extension is broken
+        // because SponsorBlock has no segments for a two-view upload would be
+        // the exact false alarm this classification exists to avoid.
+        if (status === 404) return 'no-data';
         if (status >= 400) return 'client-error';
         if (/invalid|json|payload|schema/.test(message)) return 'invalid-payload';
         if (/timeout|network|offline|fetch|failed/.test(message)) return 'network-error';
@@ -6437,7 +6443,10 @@ if (typeof globalThis !== "undefined") {
             fallbackState: '',
             requestBudget: null,
             cooldownUntilTs: 0,
-            cooldownReason: ''
+            cooldownReason: '',
+            // Consecutive failures since the last success. A single failure is
+            // a transient; this is what lets a caller wait for a pattern.
+            consecutiveFailures: 0
         };
     }
 
@@ -6456,8 +6465,54 @@ if (typeof globalThis !== "undefined") {
         'permission-denied': 'host access needed — re-enable in Settings',
         'invalid-payload': 'unexpected response',
         'network-error': 'network error',
+        'no-data': 'nothing for this video',
         'unknown-error': 'unavailable'
     });
+
+    // How many consecutive failures make an outage worth putting on the page.
+    // One is a transient — a dropped packet, a cold cache, a single 500 — and
+    // interrupting someone's video for it is how an enrichment tool teaches
+    // people to distrust it.
+    const OUTAGE_MIN_CONSECUTIVE_FAILURES = 2;
+
+    // Error classes that mean the SERVICE is not answering, as opposed to
+    // answering and having nothing to say about this video.
+    const OUTAGE_ERROR_CLASSES = new Set([
+        'network-error', 'server-error', 'rate-limited', 'unknown-error',
+        'invalid-payload', 'permission-denied', 'client-error'
+    ]);
+
+    /**
+     * Should a page-level outage notice be shown for this service?
+     *
+     * Separate from describeDegradation above, which answers a different
+     * question: that one describes any non-ok state for the diagnostics
+     * surfaces, where completeness is the goal. This one decides whether to
+     * interrupt someone watching a video, where restraint is.
+     *
+     * Returns null when nothing should be shown.
+     */
+    function describeServiceOutage(record, options = {}) {
+        if (!record) return null;
+        const minFailures = Number.isFinite(options.minFailures)
+            ? options.minFailures
+            : OUTAGE_MIN_CONSECUTIVE_FAILURES;
+        const failures = Number(record.consecutiveFailures) || 0;
+        if (failures < minFailures) return null;
+        // "Nothing for this video" is a successful answer with an empty body.
+        if (!OUTAGE_ERROR_CLASSES.has(record.lastErrorClass)) return null;
+        return {
+            id: record.id,
+            label: record.label,
+            feature: record.feature,
+            errorClass: record.lastErrorClass,
+            failures,
+            // Two different sentences for the user. A revoked host permission
+            // is theirs to fix; an upstream that is down is not, and the only
+            // useful thing to say is that it is the service and not Astra Deck.
+            kind: record.lastErrorClass === 'permission-denied' ? 'permission' : 'unreachable'
+        };
+    }
 
     // Pure helper for compact in-page degraded-state copy. Returns null when
     // the record is NOT actionably degraded (ok/unknown states stay silent).
@@ -6578,6 +6633,7 @@ if (typeof globalThis !== "undefined") {
             rec.requestBudget = normalizeBudget(detail.requestBudget);
             rec.cooldownUntilTs = 0;
             rec.cooldownReason = '';
+            rec.consecutiveFailures = 0;
             const snapshot = decorate(rec);
             notify(snapshot);
             return snapshot;
@@ -6607,6 +6663,11 @@ if (typeof globalThis !== "undefined") {
             const cooldownMs = normalizeDuration(detail.cooldownMs) || budgetResetMs;
             rec.cooldownUntilTs = cooldownMs > 0 ? observedTs + cooldownMs : 0;
             rec.cooldownReason = cleanText(detail.cooldownReason || (errorClass === 'rate-limited' ? 'rate-limited' : ''));
+            // A service that answers "nothing for this video" is working, so
+            // it must not accumulate toward an outage.
+            rec.consecutiveFailures = errorClass === 'no-data'
+                ? 0
+                : (Number(rec.consecutiveFailures) || 0) + 1;
             try {
                 diagnosticLog?.record?.('external-api-health', `${rec.id} ${errorClass}: ${message}`);
             } catch (_) {
@@ -6654,15 +6715,28 @@ if (typeof globalThis !== "undefined") {
             snapshot,
             subscribe,
             classifyFailure,
-            describeDegradation
+            describeDegradation,
+            describeServiceOutage
         };
     }
 
     Object.assign(core, {
         EXTERNAL_API_HEALTH_SERVICES: SERVICE_META,
+        OUTAGE_MIN_CONSECUTIVE_FAILURES,
         createExternalApiHealth,
-        describeExternalApiDegradation: describeDegradation
+        describeExternalApiDegradation: describeDegradation,
+        describeExternalApiOutage: describeServiceOutage
     });
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            EXTERNAL_API_HEALTH_SERVICES: SERVICE_META,
+            OUTAGE_MIN_CONSECUTIVE_FAILURES,
+            createExternalApiHealth,
+            describeExternalApiDegradation: describeDegradation,
+            describeExternalApiOutage: describeServiceOutage
+        };
+    }
 })();
 
 // ── bundled module: extension/core/selector-health.js ──
