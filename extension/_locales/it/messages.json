@@ -7790,10 +7790,10 @@
     "message": "Aggiornato alla v{version}. Vedi le modifiche."
   },
   "whatsNewDismiss": {
-    "message": "Dismiss"
+    "message": "Chiudi"
   },
   "whatsNewDismissAria": {
-    "message": "Dismiss"
+    "message": "Chiudi"
   },
   "whatsNewOpen": {
     "message": "Read changelog"
@@ -8145,5 +8145,11 @@
   },
   "bisectYes": {
     "message": "Succede ancora"
+  },
+  "serviceOutageDismiss": {
+    "message": "Chiudi"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} non risponde. È il servizio, non Astra Deck."
   }
 }

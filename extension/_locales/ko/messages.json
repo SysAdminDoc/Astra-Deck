@@ -7790,10 +7790,10 @@
     "message": "v{version}(으)로 업데이트됨. 변경 사항 보기."
   },
   "whatsNewDismiss": {
-    "message": "Dismiss"
+    "message": "닫기"
   },
   "whatsNewDismissAria": {
-    "message": "Dismiss"
+    "message": "닫기"
   },
   "whatsNewOpen": {
     "message": "Read changelog"
@@ -8145,5 +8145,11 @@
   },
   "bisectYes": {
     "message": "아직 발생함"
+  },
+  "serviceOutageDismiss": {
+    "message": "닫기"
+  },
+  "serviceOutageTpl": {
+    "message": "{service}이(가) 응답하지 않습니다. Astra Deck이 아니라 해당 서비스의 문제입니다."
   }
 }

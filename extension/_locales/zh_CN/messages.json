@@ -7790,10 +7790,10 @@
     "message": "已更新到 v{version}。查看变更。"
   },
   "whatsNewDismiss": {
-    "message": "Dismiss"
+    "message": "关闭"
   },
   "whatsNewDismissAria": {
-    "message": "Dismiss"
+    "message": "关闭"
   },
   "whatsNewOpen": {
     "message": "Read changelog"
@@ -8145,5 +8145,11 @@
   },
   "bisectYes": {
     "message": "仍然会发生"
+  },
+  "serviceOutageDismiss": {
+    "message": "关闭"
+  },
+  "serviceOutageTpl": {
+    "message": "{service} 没有响应。问题出在该服务，不是 Astra Deck。"
   }
 }
