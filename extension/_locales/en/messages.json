@@ -6123,6 +6123,12 @@
   "subscriptionGroupPlayingTpl": {
     "message": "Playing {count} videos from {group}{truncated}"
   },
+  "subscriptionGroupsEmptyCopy": {
+    "message": "Choose + Group to create your first group."
+  },
+  "subscriptionGroupsEmptyTitle": {
+    "message": "No groups yet"
+  },
   "subscriptionGroupsExported": {
     "message": "Exported subscription groups"
   },
@@ -7608,6 +7614,12 @@
   "videoNotesEmpty": {
     "message": "No note saved for this video."
   },
+  "videoNotesEmptyCopy": {
+    "message": "Start typing below to save a note for this video."
+  },
+  "videoNotesEmptyTitle": {
+    "message": "No note yet"
+  },
   "videoNotesExport": {
     "message": "Export Notes"
   },
@@ -7836,6 +7848,12 @@
   },
   "wlwbDurationMinPlaceholder": {
     "message": "Duration ≥ minutes…"
+  },
+  "wlwbEmptyCopy": {
+    "message": "Clear a filter or scroll Watch Later to load more videos."
+  },
+  "wlwbEmptyTitle": {
+    "message": "No videos in this view"
   },
   "wlwbExportCsv": {
     "message": "Export CSV"

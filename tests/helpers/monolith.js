@@ -248,6 +248,9 @@ function fakeNode(options = {}) {
             }
             return child;
         },
+        append(...next) {
+            next.flat().forEach((child) => this.appendChild(child));
+        },
         replaceChildren(...next) {
             this.children.splice(0, this.children.length, ...next);
             next.forEach((child) => {

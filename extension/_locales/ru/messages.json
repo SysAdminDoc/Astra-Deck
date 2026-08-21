@@ -6123,6 +6123,12 @@
   "subscriptionGroupPlayingTpl": {
     "message": "Воспроизведение видео из {group}: {count}{truncated}"
   },
+  "subscriptionGroupsEmptyCopy": {
+    "message": "Нажмите «+ Группа», чтобы создать первую группу."
+  },
+  "subscriptionGroupsEmptyTitle": {
+    "message": "Групп пока нет"
+  },
   "subscriptionGroupsExported": {
     "message": "Группы подписок экспортированы"
   },
@@ -7608,6 +7614,12 @@
   "videoNotesEmpty": {
     "message": "Для этого видео нет сохранённой заметки."
   },
+  "videoNotesEmptyCopy": {
+    "message": "Начните печатать ниже, чтобы сохранить заметку к этому видео."
+  },
+  "videoNotesEmptyTitle": {
+    "message": "Заметки пока нет"
+  },
   "videoNotesExport": {
     "message": "Экспортировать заметки"
   },
@@ -7836,6 +7848,12 @@
   },
   "wlwbDurationMinPlaceholder": {
     "message": "Длительность ≥ минут…"
+  },
+  "wlwbEmptyCopy": {
+    "message": "Сбросьте фильтр или прокрутите список «Смотреть позже», чтобы загрузить больше видео."
+  },
+  "wlwbEmptyTitle": {
+    "message": "В этом представлении нет видео"
   },
   "wlwbExportCsv": {
     "message": "Экспорт CSV"

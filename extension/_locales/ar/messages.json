@@ -6123,6 +6123,12 @@
   "subscriptionGroupPlayingTpl": {
     "message": "تشغيل {count} من الفيديوهات من {group}{truncated}"
   },
+  "subscriptionGroupsEmptyCopy": {
+    "message": "اختر + مجموعة لإنشاء مجموعتك الأولى."
+  },
+  "subscriptionGroupsEmptyTitle": {
+    "message": "لا توجد مجموعات بعد"
+  },
   "subscriptionGroupsExported": {
     "message": "تم تصدير مجموعات الاشتراكات"
   },
@@ -7608,6 +7614,12 @@
   "videoNotesEmpty": {
     "message": "لا توجد ملاحظة محفوظة لهذا الفيديو."
   },
+  "videoNotesEmptyCopy": {
+    "message": "ابدأ الكتابة أدناه لحفظ ملاحظة لهذا الفيديو."
+  },
+  "videoNotesEmptyTitle": {
+    "message": "لا توجد ملاحظة بعد"
+  },
   "videoNotesExport": {
     "message": "تصدير الملاحظات"
   },
@@ -7836,6 +7848,12 @@
   },
   "wlwbDurationMinPlaceholder": {
     "message": "المدة ≥ دقائق…"
+  },
+  "wlwbEmptyCopy": {
+    "message": "امسح عامل تصفية أو مرّر في «المشاهدة لاحقًا» لتحميل المزيد من الفيديوهات."
+  },
+  "wlwbEmptyTitle": {
+    "message": "لا توجد فيديوهات في هذا العرض"
   },
   "wlwbExportCsv": {
     "message": "تصدير CSV"

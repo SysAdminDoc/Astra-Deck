@@ -710,6 +710,41 @@ test('a populated group renders no empty-state notice', () => {
     }
 });
 
+test('zero total groups renders a labelled next-action state in module and monolith trees', () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = new FakeDocument();
+    try {
+        const { feature } = makeFeature({ subscriptionGroupData: {} });
+        const moduleBar = new FakeNode('div');
+        feature._renderGroupsEmptyState(moduleBar, {});
+
+        const { loadFallbackFeature } = require('../helpers/monolith');
+        const fallbackDocument = new FakeDocument();
+        const fallback = loadFallbackFeature('subscriptionGroups', { document: fallbackDocument });
+        const fallbackBar = new FakeNode('div');
+        fallback._renderGroupsEmptyState(fallbackBar, {});
+
+        for (const [label, bar] of [['module', moduleBar], ['monolith', fallbackBar]]) {
+            const notice = bar.querySelector('.ytkit-sub-groups-empty');
+            assert.ok(notice, `${label} must attach the zero-groups state`);
+            assert.equal(notice.getAttribute('role'), 'status');
+            assert.equal(notice.getAttribute('aria-labelledby'), 'ytkit-sub-groups-empty-title');
+            assert.equal(notice.children[0].tagName, 'STRONG');
+            assert.equal(notice.children[0].id, 'ytkit-sub-groups-empty-title');
+            assert.match(notice.children[0].textContent, /groups/i);
+            assert.match(notice.children[1].textContent, /\+ Group/,
+                'the state must name the control that creates the first group');
+        }
+
+        const populatedBar = new FakeNode('div');
+        feature._renderGroupsEmptyState(populatedBar, { saved: { name: 'Saved' } });
+        assert.equal(populatedBar.querySelector('.ytkit-sub-groups-empty'), null,
+            'the zero-groups state must disappear once a group exists');
+    } finally {
+        globalThis.document = previousDocument;
+    }
+});
+
 test('re-rendering the empty state does not stack duplicate notices', () => {
     const previousDocument = globalThis.document;
     globalThis.document = new FakeDocument();

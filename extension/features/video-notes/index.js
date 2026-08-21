@@ -38,6 +38,7 @@
             _container: null,
             _textarea: null,
             _statusEl: null,
+            _emptyEl: null,
             _saveTimer: null,
             _pendingSave: null,
             _attachTimer: null,
@@ -52,6 +53,9 @@
                     .ytkit-video-notes-eyebrow{font:700 10px/1 Roboto,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--yt-spec-text-secondary,rgba(255,255,255,0.5));}
                     .ytkit-video-notes-name{font:700 14px/1.2 Roboto,Arial,sans-serif;color:var(--yt-spec-text-primary,#fff);}
                     .ytkit-video-notes-status{margin:0;color:var(--yt-spec-text-secondary,rgba(255,255,255,0.58));font:12px/1.35 Roboto,Arial,sans-serif;}
+                    .ytkit-video-notes-empty{display:flex;flex-direction:column;gap:3px;margin:0 0 10px;padding:10px;border-radius:8px;background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.04));border:1px dashed var(--yt-spec-10-percent-layer,rgba(255,255,255,0.14));}
+                    .ytkit-video-notes-empty strong{color:var(--yt-spec-text-primary,#f8fafc);font:700 12px/1.3 Roboto,Arial,sans-serif;}
+                    .ytkit-video-notes-empty span{color:var(--yt-spec-text-secondary,rgba(255,255,255,0.62));font:12px/1.4 Roboto,Arial,sans-serif;}
                     .ytkit-video-notes-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
                     .ytkit-video-notes-actions button{min-height:30px;padding:6px 9px;border-radius:6px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.06));color:var(--yt-spec-text-primary,#e5e7eb);font:700 12px/1 Roboto,Arial,sans-serif;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-video-notes-actions button:hover{background:var(--yt-spec-10-percent-layer,rgba(255,255,255,0.1));}
@@ -62,6 +66,7 @@
                     html:not([dark]) .ytkit-video-notes-actions button[data-action="delete"]{background:rgba(239,68,68,0.08);border-color:rgba(153,27,27,0.35);color:#991b1b;}
                     html:not([dark]) .ytkit-video-notes-container{background:rgba(0,0,0,0.03);color:var(--yt-spec-text-primary,#0f0f0f);}
                     html:not([dark]) .ytkit-video-notes-name{color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-video-notes-empty{background:rgba(15,23,42,0.035);border-color:rgba(71,85,105,0.24);}
                     .ytkit-video-notes-input{display:block;width:100%;min-height:140px;resize:vertical;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid var(--yt-spec-10-percent-layer,rgba(255,255,255,0.12));background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.22));color:var(--yt-spec-text-primary,#f8fafc);font:13px/1.5 Roboto,Arial,sans-serif;outline:none;}
                     .ytkit-video-notes-input:focus,.ytkit-video-notes-input:focus-visible{border-color:var(--yt-spec-call-to-action,rgba(59,130,246,0.55));box-shadow:0 0 0 2px rgba(59,130,246,0.16);}
                     .ytkit-video-notes-footer{display:flex;justify-content:space-between;gap:10px;margin-top:8px;color:var(--yt-spec-text-secondary,rgba(255,255,255,0.48));font:11px/1.3 Roboto,Arial,sans-serif;}
@@ -118,7 +123,14 @@
             },
 
             _updateStatus(message) {
-                if (this._statusEl) this._statusEl.textContent = message;
+                if (!this._statusEl) return;
+                this._statusEl.textContent = message;
+                this._statusEl.hidden = !message;
+            },
+
+            _setEmptyState(isEmpty) {
+                if (this._emptyEl) this._emptyEl.hidden = !isEmpty;
+                if (isEmpty && this._statusEl) this._statusEl.hidden = true;
             },
 
             _updateCount(value) {
@@ -142,7 +154,8 @@
                         delete notes[videoId];
                         this._writeNotes(notes);
                     }
-                    this._updateStatus(t('videoNotesEmpty', 'No note saved for this video.'));
+                    this._setEmptyState(true);
+                    this._updateStatus('');
                     this._updateCount('');
                     return;
                 }
@@ -156,6 +169,7 @@
                     updatedAt: now
                 };
                 this._writeNotes(notes);
+                this._setEmptyState(false);
                 // Notes are user-authored data — never claim success when the
                 // storage write failed.
                 this._updateStatus(this._lastWriteOk !== false
@@ -166,6 +180,7 @@
 
             _scheduleSave(value) {
                 if (this._saveTimer) clearTimeout(this._saveTimer);
+                this._setEmptyState(false);
                 this._updateStatus(t('videoNotesSaving', 'Saving…'));
                 this._updateCount(value);
                 this._pendingSave = {
@@ -261,7 +276,8 @@
                 status.className = 'ytkit-video-notes-status';
                 status.textContent = current
                     ? t('videoNotesSaved', 'Saved locally.')
-                    : t('videoNotesEmpty', 'No note saved for this video.');
+                    : '';
+                status.hidden = !current;
                 status.setAttribute('role', 'status');
                 status.setAttribute('aria-live', 'polite');
                 this._statusEl = status;
@@ -283,6 +299,19 @@
                 deleteBtn.addEventListener('click', () => this._deleteCurrentNote());
                 actions.append(exportBtn, deleteBtn);
                 header.append(titleWrap, actions);
+
+                const emptyState = document.createElement('div');
+                emptyState.className = 'ytkit-video-notes-empty';
+                emptyState.hidden = Boolean(current);
+                emptyState.setAttribute('role', 'status');
+                emptyState.setAttribute('aria-labelledby', 'ytkit-video-notes-empty-title');
+                const emptyTitle = document.createElement('strong');
+                emptyTitle.id = 'ytkit-video-notes-empty-title';
+                emptyTitle.textContent = t('videoNotesEmptyTitle', 'No note yet');
+                const emptyCopy = document.createElement('span');
+                emptyCopy.textContent = t('videoNotesEmptyCopy', 'Start typing below to save a note for this video.');
+                emptyState.append(emptyTitle, emptyCopy);
+                this._emptyEl = emptyState;
 
                 const textarea = document.createElement('textarea');
                 textarea.className = 'ytkit-video-notes-input';
@@ -306,7 +335,7 @@
                 count.textContent = `${textarea.value.length}/${this._MAX_NOTE_CHARS}`;
                 footer.append(scope, count);
 
-                this._container.append(header, textarea, footer);
+                this._container.append(header, emptyState, textarea, footer);
             },
 
             _scheduleAttach(delay = 1600) {
@@ -342,6 +371,7 @@
                     this._container = null;
                     this._textarea = null;
                     this._statusEl = null;
+                    this._emptyEl = null;
                     this._scheduleAttach();
                 };
                 addNavigateRule(this.id, this._navRule);
@@ -357,6 +387,7 @@
                 this._container = null;
                 this._textarea = null;
                 this._statusEl = null;
+                this._emptyEl = null;
                 document.querySelectorAll('.ytkit-video-notes-container').forEach(el => el.remove());
                 this._styleEl?.remove();
                 this._styleEl = null;

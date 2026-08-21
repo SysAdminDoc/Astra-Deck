@@ -228,13 +228,6 @@ listed here (store-profile permission stripping, Greasy Fork size/minification, 
 
 ### P3
 
-- [ ] P3 — Add the three missing empty states
-  Why: three list surfaces render a bare container instead of guidance, which reads as broken rather than empty — and one of them is the first thing a new user sees after enabling subscription groups.
-  Evidence: subscription groups has a per-group empty state (`_renderGroupEmptyState`, `extension/features/subscription-groups/index.js:2454-2465`) but nothing for zero groups total; Watch Later Workbench replaces children and leaves an empty `.ytkit-wlwb-list` with only a count line (`extension/ytkit.js:32966-33005`); video notes shows an inline status string rather than an empty block (`extension/features/video-notes/index.js:262-264`).
-  Touches: `extension/features/subscription-groups/index.js`, `extension/ytkit.js`, `extension/features/video-notes/index.js`, locales
-  Acceptance: each of the three renders a labelled empty state naming the next action, using the existing empty-state class conventions and localized strings; each is asserted by a render test on the built tree, not on source text; the copy gate baseline does not increase.
-  Complexity: S
-
 - [ ] P3 — Stop concatenating raw error text and HTTP status into user-facing copy
   Why: about fifteen surfaces append `error.message` or a status code to user copy, so provider error bodies and internal exception text reach the UI verbatim. It is unactionable for the user, it is untranslatable (the appended half is always English), and on the AI paths it can surface response bodies.
   Evidence: `extension/popup.js:4777`, `:5629`, `:5152-5155`; `extension/ytkit.js:32126`, `:33642`, `:39355`; `extension/features/download-ui/index.js:2819`. The existing correct pattern is the mapped filter-list error classifier (`monolithClassifyFilterListRefreshError`).
