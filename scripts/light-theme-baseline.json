@@ -1,10 +1,51 @@
 {
-  "note": "Surfaces that paint near-white text with no html:not([dark]) lane. accepted = predates the gate, shrink freely. covered = has a light lane and must keep it.",
+  "note": "Surfaces whose text measures below 2.00:1 against YouTube light background #ffffff with no html:not([dark]) lane. accepted = predates the gate, shrink freely. covered = has a light lane and must keep it.",
+  "measurement": {
+    "background": "#ffffff",
+    "nearInvisibleBelow": "2.00:1",
+    "comparisonPrecision": "two decimal places",
+    "purpose": "This is a catastrophic light-theme invisibility ratchet. The separate WCAG audit keeps its 4.50:1 target.",
+    "rederivedOn": "2026-08-21",
+    "deltaFromHexPrefix": {
+      "addedPaleNeutralOrAlphaText": [
+        "ytkit-aisum-close",
+        "ytkit-po-cc",
+        "ytkit-sb-profile-label",
+        "ytkit-wellbeing-hint",
+        "ytkit-wellbeing-msg"
+      ],
+      "removedChromaticLiterals": [
+        "ytkit-blocked-watch-eyebrow",
+        "ytkit-page-trigger",
+        "ytkit-title-kit",
+        "ytkit-transcript-batch-status"
+      ],
+      "removedThemeAwareHostTokenFallbacks": [
+        "ytkit-queue-actions",
+        "ytkit-queue-title",
+        "ytkit-rs-warning",
+        "ytkit-video-notes-eyebrow",
+        "ytkit-video-notes-footer",
+        "ytkit-video-notes-status",
+        "ytkit-wlwb-actions",
+        "ytkit-wlwb-header",
+        "ytkit-wlwb-meta",
+        "ytkit-wlwb-status"
+      ],
+      "removedRelitPanelOverrides": [
+        "ytkit-feature-desc",
+        "ytkit-toggle-all"
+      ],
+      "newlyCovered": [
+        "ytkit-sub-groups-empty"
+      ]
+    }
+  },
   "accepted": [
+    "ytkit-aisum-close",
     "ytkit-aisum-head",
     "ytkit-aisum-status--error",
     "ytkit-blocked-watch-channel",
-    "ytkit-blocked-watch-eyebrow",
     "ytkit-bookmark-note",
     "ytkit-bookmark-note-label",
     "ytkit-bookmarks-status",
@@ -13,7 +54,6 @@
     "ytkit-comment-nav-count",
     "ytkit-comment-nav-label",
     "ytkit-comment-nav-status",
-    "ytkit-feature-desc",
     "ytkit-install-prompt__desc",
     "ytkit-install-prompt__steps",
     "ytkit-install-prompt__title",
@@ -21,13 +61,11 @@
     "ytkit-meta-chip__value",
     "ytkit-mini-player-title",
     "ytkit-nav-meta",
-    "ytkit-page-trigger",
     "ytkit-pane-eyebrow",
+    "ytkit-po-cc",
     "ytkit-ql-form-note",
-    "ytkit-queue-actions",
-    "ytkit-queue-title",
     "ytkit-rc-head",
-    "ytkit-rs-warning",
+    "ytkit-sb-profile-label",
     "ytkit-search-hint",
     "ytkit-speed-presets__title",
     "ytkit-subs-load-banner__eyebrow",
@@ -35,28 +73,20 @@
     "ytkit-subs-load-banner__title",
     "ytkit-subs-load-chip__meta",
     "ytkit-subs-load-chip__title",
-    "ytkit-title-kit",
     "ytkit-title-yt",
     "ytkit-toast-message",
-    "ytkit-toggle-all",
     "ytkit-transcript-batch-meta",
     "ytkit-transcript-batch-name",
-    "ytkit-transcript-batch-status",
     "ytkit-vh-field-copy",
     "ytkit-vh-field-label",
     "ytkit-vh-form-status",
-    "ytkit-video-notes-eyebrow",
-    "ytkit-video-notes-footer",
-    "ytkit-video-notes-status",
     "ytkit-vvf-val",
+    "ytkit-wellbeing-hint",
+    "ytkit-wellbeing-msg",
     "ytkit-wellbeing-title",
     "ytkit-wha-close",
     "ytkit-wha-head",
-    "ytkit-wha-lbl",
-    "ytkit-wlwb-actions",
-    "ytkit-wlwb-header",
-    "ytkit-wlwb-meta",
-    "ytkit-wlwb-status"
+    "ytkit-wha-lbl"
   ],
   "covered": [
     "ytkit-ai-qa-btn",
@@ -122,6 +152,7 @@
     "ytkit-sub-group-dialog__card",
     "ytkit-sub-group-dialog__input",
     "ytkit-sub-group-empty",
+    "ytkit-sub-groups-empty",
     "ytkit-sub-health-actions",
     "ytkit-sub-health-error",
     "ytkit-sub-health-row",

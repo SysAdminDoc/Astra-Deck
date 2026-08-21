@@ -47,7 +47,26 @@ test('the baseline records the surfaces fixed in the theming pass as covered', (
         'a surface cannot be both covered and accepted');
 });
 
-test('the scanner flags a new near-white surface and clears once a lane is added', (t) => {
+test('the measured baseline records the one-time regex delta by surface class', () => {
+    const baseline = JSON.parse(fs.readFileSync(BASELINE, 'utf8'));
+    const measurement = baseline.measurement;
+    const delta = measurement.deltaFromHexPrefix;
+
+    assert.equal(measurement.background, '#ffffff');
+    assert.equal(measurement.nearInvisibleBelow, '2.00:1');
+    assert.equal(measurement.comparisonPrecision, 'two decimal places');
+    assert.deepEqual(Object.fromEntries(Object.entries(delta).map(([key, values]) => [key, values.length])), {
+        addedPaleNeutralOrAlphaText: 5,
+        removedChromaticLiterals: 4,
+        removedThemeAwareHostTokenFallbacks: 10,
+        removedRelitPanelOverrides: 2,
+        newlyCovered: 1
+    });
+    const explained = Object.values(delta).flat();
+    assert.equal(explained.length, new Set(explained).size, 'every changed surface needs one explanation');
+});
+
+test('the scanner flags a new near-invisible surface and clears once a lane is added', (t) => {
     // Exercise the real scanner against a throwaway tree, so the assertion is
     // about behaviour rather than the shape of the current source.
     const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'ytkit-light-lane-'));
@@ -63,6 +82,10 @@ test('the scanner flags a new near-white surface and clears once a lane is added
         .replace('const MIN_SOURCES = 30;', 'const MIN_SOURCES = 0;');
     const scannerPath = path.join(stage, 'gate.js');
     fs.writeFileSync(scannerPath, scanner);
+    fs.copyFileSync(
+        path.join(repoRoot, 'scripts', 'check-contrast.js'),
+        path.join(stage, 'check-contrast.js')
+    );
     fs.mkdirSync(path.join(stage, 'extension'), { recursive: true });
     fs.writeFileSync(path.join(stage, 'baseline.json'),
         JSON.stringify({ accepted: [], covered: [] }));
@@ -79,7 +102,7 @@ test('the scanner flags a new near-white surface and clears once a lane is added
     // Dark-only surface: must fail.
     fs.writeFileSync(cssPath, '.ytkit-brand-new-pill { color: rgba(255,255,255,0.9); }\n');
     let result = run();
-    assert.equal(result.code, 1, 'a new near-white surface must fail the gate');
+    assert.equal(result.code, 1, 'a new near-invisible surface must fail the gate');
     assert.match(result.out, /ytkit-brand-new-pill/);
 
     // Add the lane: must pass.

@@ -1038,7 +1038,7 @@ document_idle
 - **Authenticated downloads** expose only four required secure YouTube cookie
   names behind a 20-second, one-use capability bound to the requesting tab and
   document after Astra Downloader proves native API v2 identity; legacy health
-  tokens cannot unlock cookies
+  tokens cannot release cookies
 - Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs and accepts
   only YouTube-owned destinations
 - Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists documented provider origins. GitHub-full alone carries a scheme-scoped `https://*` connection lane because CSP cannot know a user-selected host in advance; browser permissions still require one exact host and never grant all sites.

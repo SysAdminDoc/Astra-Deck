@@ -1,7 +1,7 @@
 'use strict';
 
-// The light-theme gate decides, per surface, whether near-white text is a
-// defect. Until 2026-08-20 it answered that question by matching literal hex
+// The light-theme gate decides, per surface, whether text is nearly invisible
+// on white. Until 2026-08-21 it answered that question by matching literal hex
 // values in the rule body, which was wrong in three directions at once:
 //
 //   - a rule saying `color: var(--ytkit-card-text)` was invisible to it, so
@@ -17,8 +17,16 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const gate = require('../scripts/check-light-theme-lane.js');
+
+test('the gate reuses the shared contrast implementation without a hex-prefix matcher', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'check-light-theme-lane.js'), 'utf8');
+    assert.match(source, /require\('\.\/check-contrast\.js'\)/);
+    assert.doesNotMatch(source, /NEAR_WHITE|#\[ef\]\[0-9a-f\]/i);
+});
 
 test('the palette is read in both lanes', () => {
     const palette = gate.readPalette();
@@ -36,15 +44,15 @@ test('the palette is read in both lanes', () => {
 
 test('the panel palette is read too, or every panel label looks broken', () => {
     // settings-visual-system.js relights --ytkit-v3-* under a panel-scoped
-    // lane. Miss it and .ytkit-feature-name and friends read as near-white
+    // lane. Miss it and .ytkit-feature-name and friends read as near-invisible
     // text with no light lane, which they are not.
     const palette = gate.readPalette();
     assert.ok(palette.dark.has('--ytkit-v3-text'), 'panel dark text token must be read');
     assert.ok(palette.light.has('--ytkit-v3-text'), 'panel light text token must be read');
-    assert.ok(gate.NEAR_WHITE.test(palette.dark.get('--ytkit-v3-text')),
-        'the panel dark text token should be near-white — that is the premise');
-    assert.ok(!gate.NEAR_WHITE.test(palette.light.get('--ytkit-v3-text')),
-        'the panel light text token must not be near-white');
+    assert.ok(gate.isNearInvisibleOnLight(palette.dark.get('--ytkit-v3-text')),
+        'the panel dark text token should be near-invisible on white');
+    assert.ok(!gate.isNearInvisibleOnLight(palette.light.get('--ytkit-v3-text')),
+        'the panel light text token must remain visible on white');
 });
 
 test('a token with no light value resolves back to its dark one', () => {
@@ -53,11 +61,11 @@ test('a token with no light value resolves back to its dark one', () => {
     const dark = gate.resolveColor('var(--ytkit-overlay-text)', 'dark');
     const light = gate.resolveColor('var(--ytkit-overlay-text)', 'light');
     assert.equal(dark, light, '--ytkit-overlay-text is deliberately dark-only');
-    assert.ok(gate.NEAR_WHITE.test(light), 'so it stays near-white in the light lane');
+    assert.ok(gate.isNearInvisibleOnLight(light), 'so it stays near-invisible in the light lane');
 
     // And one that does relight must not.
-    assert.ok(gate.NEAR_WHITE.test(gate.resolveColor('var(--ytkit-card-text)', 'dark')) === false,
-        '--ytkit-card-text is not near-white in either lane');
+    assert.equal(gate.isNearInvisibleOnLight(gate.resolveColor('var(--ytkit-card-text)', 'dark')), false,
+        '--ytkit-card-text is visible in either lane');
     assert.notEqual(gate.resolveColor('var(--ytkit-card-text)', 'dark'),
         gate.resolveColor('var(--ytkit-card-text)', 'light'));
 });
@@ -69,12 +77,24 @@ test('an unknown token falls back to the literal beside it', () => {
     assert.match(gate.resolveColor('var(--ytkit-not-a-token)', 'dark'), /var\(/);
 });
 
-test('tokenised near-white text is still near-white', () => {
+test('the detector measures light-background contrast instead of a hex prefix', () => {
+    assert.equal(gate.YOUTUBE_LIGHT_BACKGROUND, '#ffffff');
+    assert.equal(gate.LIGHT_THEME_CONTRAST_FLOOR, 2);
+    assert.equal(gate.isNearInvisibleOnLight('#ff0000'), false, 'red remains legible');
+    assert.equal(gate.isNearInvisibleOnLight('#ff8f70'), false, 'salmon remains legible');
+    assert.equal(gate.isNearInvisibleOnLight('#e0af68'), false, '2.00:1 amber is visible');
+    assert.equal(gate.isNearInvisibleOnLight('#d8d8d8'), true, 'light gray is near-invisible on white');
+    assert.equal(gate.lightThemeContrast('#d8d8d8').toFixed(2), '1.43');
+    assert.equal(gate.isNearInvisibleOnLight('rgba(255, 0, 0, 0.1)'), true,
+        'alpha must be composited onto the light background before measurement');
+});
+
+test('tokenised near-invisible text is still measured', () => {
     // The escape hatch this closes: swapping a literal for a dark-only token
     // must not make a surface disappear from the scan.
-    assert.ok(gate.paintsNearWhiteIn('color: var(--ytkit-overlay-text);', 'dark'));
-    assert.ok(gate.paintsNearWhiteIn('color: var(--ytkit-overlay-text);', 'light'));
-    assert.ok(!gate.paintsNearWhiteIn('color: var(--ytkit-card-text);', 'light'));
+    assert.ok(gate.paintsNearInvisibleOnLight('color: var(--ytkit-overlay-text);', 'dark'));
+    assert.ok(gate.paintsNearInvisibleOnLight('color: var(--ytkit-overlay-text);', 'light'));
+    assert.ok(!gate.paintsNearInvisibleOnLight('color: var(--ytkit-card-text);', 'light'));
 });
 
 test('a surface that paints its own ground is not flagged', () => {

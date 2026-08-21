@@ -29,6 +29,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The injected light-theme gate now measures text against YouTube's white
+  background instead of matching a hex prefix. Its near-invisible floor is
+  below 2.00:1, separate from the 4.50:1 WCAG audit. Re-deriving the ratchet
+  removed 16 false positives, added five pale neutral or translucent surfaces
+  the regex missed, and recorded one newly covered surface. The corrected
+  baseline has 45 accepted surfaces and 139 covered surfaces.
+
 - Comment Search now resolves all 22 labels and state messages through the 11
   bundled locale catalogues. This pass reduced grandfathered interface copy
   from 936 literals to 913, including a 20-literal reduction at strict sinks.

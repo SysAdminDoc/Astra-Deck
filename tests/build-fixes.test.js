@@ -308,6 +308,13 @@ test('check-contrast computes every audit from resolved popup and sidepanel toke
     }
 });
 
+test('check-contrast composites translucent foregrounds before measuring them', () => {
+    const { compositeColor, contrast } = require('../scripts/check-contrast');
+    const composited = compositeColor('rgba(255, 0, 0, 0.1)', '#ffffff');
+    assert.deepEqual(composited, [255, 230, 230]);
+    assert.ok(contrast(composited, '#ffffff') < 2);
+});
+
 // ── 10. profile ceilings keep the authenticated companion available ──
 
 test('profile manifests retain the companion handoff and carry an immutable ceiling', () => {

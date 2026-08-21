@@ -93,11 +93,18 @@ function parseHex(hex) {
     return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
 }
 
-function parseColor(value) {
-    const normalized = String(value || '').trim();
-    if (/^#[0-9a-fA-F]{6}$/.test(normalized)) return parseHex(normalized);
+function parseColor(value, { allowAlpha = false } = {}) {
+    let normalized = String(value || '').trim();
+    if (/^white$/i.test(normalized)) normalized = '#ffffff';
+    if (/^black$/i.test(normalized)) normalized = '#000000';
+    if (/^transparent$/i.test(normalized)) normalized = 'rgba(0, 0, 0, 0)';
+    if (/^#[0-9a-fA-F]{6}$/.test(normalized)) {
+        const parsed = parseHex(normalized);
+        return allowAlpha ? [...parsed, 1] : parsed;
+    }
     if (/^#[0-9a-fA-F]{3}$/.test(normalized)) {
-        return parseHex('#' + normalized.slice(1).split('').map((part) => part + part).join(''));
+        const parsed = parseHex('#' + normalized.slice(1).split('').map((part) => part + part).join(''));
+        return allowAlpha ? [...parsed, 1] : parsed;
     }
     const rgb = normalized.match(/^rgba?\(\s*([^)]*)\s*\)$/i);
     if (!rgb) throw new Error(`Contrast colors must resolve to an opaque RGB value, got ${value}`);
@@ -110,10 +117,26 @@ function parseColor(value) {
         return Math.round(Math.max(0, Math.min(255, parseFloat(part))));
     });
     const alpha = channels.length === 4 ? parseFloat(channels[3]) : 1;
-    if (parsed.some((channel) => !Number.isFinite(channel)) || !Number.isFinite(alpha) || alpha !== 1) {
+    const invalidAlpha = !Number.isFinite(alpha) || alpha < 0 || alpha > 1;
+    if (parsed.some((channel) => !Number.isFinite(channel)) || invalidAlpha || (!allowAlpha && alpha !== 1)) {
         throw new Error(`Contrast colors must resolve to an opaque RGB value, got ${value}`);
     }
-    return parsed;
+    return allowAlpha ? [...parsed, alpha] : parsed;
+}
+
+function compositeColor(foreground, background) {
+    const backgroundRgb = Array.isArray(background) ? background.slice(0, 3) : parseColor(background);
+    const foregroundRgba = Array.isArray(foreground)
+        ? [...foreground.slice(0, 3), foreground.length > 3 ? foreground[3] : 1]
+        : parseColor(foreground, { allowAlpha: true });
+    if (backgroundRgb.length !== 3 || foregroundRgba.length !== 4
+        || [...backgroundRgb, ...foregroundRgba].some((channel) => !Number.isFinite(channel))
+        || foregroundRgba[3] < 0 || foregroundRgba[3] > 1) {
+        throw new Error('compositeColor expects RGB/RGBA foreground and opaque RGB background values');
+    }
+    const alpha = foregroundRgba[3];
+    return foregroundRgba.slice(0, 3).map((channel, index) =>
+        Math.round(channel * alpha + backgroundRgb[index] * (1 - alpha)));
 }
 
 function luminance(r, g, b) {
@@ -220,6 +243,7 @@ if (require.main === module) process.exitCode = run();
 
 module.exports = {
     buildChecks,
+    compositeColor,
     contrast,
     extractRootCustomProperties,
     loadSurfaceTokens,
