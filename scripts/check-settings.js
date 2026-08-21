@@ -422,7 +422,9 @@ for (const entry of SETTINGS_SCHEMA.filter((candidate) => Array.isArray(candidat
 // in the schema (or in the live feature-ID set) must resolve through the alias
 // table or be named in RETIRED_SHIPPED_IDS. Without this, a rename ships as a
 // silent reset of that setting for every existing user.
-const IDENTITY_BASELINE_PATH = path.join(__dirname, 'shipped-identity-baseline.json');
+const IDENTITY_BASELINE_PATH = process.env.ASTRA_SETTINGS_IDENTITY_BASELINE
+    ? path.resolve(process.env.ASTRA_SETTINGS_IDENTITY_BASELINE)
+    : path.join(__dirname, 'shipped-identity-baseline.json');
 if (!fs.existsSync(IDENTITY_BASELINE_PATH)) {
     issues.push('scripts/shipped-identity-baseline.json is missing; run node scripts/generate-shipped-identity-baseline.js');
 } else if (!Array.isArray(RETIRED_SHIPPED_IDS) || !SETTING_ALIASES || typeof resolveSettingKey !== 'function') {
