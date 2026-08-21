@@ -74,7 +74,9 @@ Policy:
 
 Current source-tree policy:
 
-- Hosted CodeQL workflow files are absent.
+- Hosted CodeQL workflow files are absent, and so is the `.github/codeql.yml`
+  config they would have read. A config with no workflow behind it advertises a
+  scan that never runs, so it was removed rather than left in place.
 - Static security coverage runs locally through `npm run check`.
 - `scripts/check-no-eval.js`, ESLint, dependency audit, policy-profile tests,
   background-proxy tests, and downloader pytest coverage are the active gates.
