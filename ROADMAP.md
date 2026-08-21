@@ -78,12 +78,6 @@ Items already tracked in `Roadmap_Blocked.md` (Greasy Fork / CWS / AMO
 publication, SponsorBlock submission, the DeArrow vote payload defect) are not
 duplicated here.
 
-### P0
-
-### P1
-
-### P2
-
 - [ ] P3 — Reduce monolith compile time, the last large startup cost
   Why: with the foundation graph now loaded concurrently (16-21 ms), the single biggest remaining startup stage is `monolithMs` — 65-87 ms spent compiling and executing the ~3.1 MB `extension/ytkit.js`. Every bench run prints the stage line, so the number is always visible.
   Context (2026-08-18): the ~2x regression bisected on 2026-08-08..v4.63.0 is CLOSED. Its remaining "debt" turned out to be an artifact of comparing against a reference recorded on hardware that was wiped in the 2026-08-15 rebuild. Verified before retiring that reference: `b5c933aa` (the concurrent-loading fix) and HEAD measured 131.70/93.60 and 134.90/89.00 back to back on the same box — identical within noise. The reference is now re-recorded on the current machine with the retired one and its bisect preserved in `startup-performance-baseline.json`'s `history`, and no accepted-regression allowances are carried.
@@ -104,11 +98,10 @@ duplicated here.
     Recon on `video-hider` (2026-08-19, not started): the factory is `createHideVideosFromHomeFeature`, not `createVideoHiderFeature`. 101 lines differ between copy and module, so unlike the seven done so far this one cannot be a straight delete. Roughly 17 are monolith-only bindings the module reimplements under other names (`MONOLITH_FILTER_LIST_CODEC`, `MONOLITH_FILTER_LIST_SUBSCRIPTION_KEY`, `monolithReadResponseHeader`, `monolithFilterListError`, `monolithSha256Text`, `monolithClassifyFilterListRefreshError`); about 15 are hardcoded English the copy never localised and the module does (`'Video Hider'`, `'Resume Loading'`, `'Review Filters'`, the Subscriptions Guard banner strings) - those overlap the grandfathered-English-literals item below. Spot-checked and present in the module: the 1 MiB filter-list limit, SHA-256 integrity, `not-modified-without-cache`, `integrity-error`, the refresh timer. One real divergence: the detached-node cap is 500 in the copy and 200 in the module, and the module is the one that runs, so the conservative value is what ships. Nothing found that only the copy implements, but confirm the remaining ~69 lines individually before deleting.
     Plan: replace each full fallback with the minimal descriptor stub the other five already use (id, name, description, group, icon, pages, and `isParent` where the settings tree nests children under the row - `dearrow` and `sponsorblock` both need it - plus no-op init/destroy). One feature per commit, interleaved A/B before and after, `next-monolith-peel.test.js` pins rewritten per feature.
     Deliberate trade: a module that genuinely fails to load leaves its feature inert rather than falling back to a pre-peel copy. That is the better failure - drain #9 already made a failed module non-fatal and diagnosable, and silently running divergent old code is worse than not running it.
+    Note (2026-08-20 research, the parse cost may be worse than the ~1 ms/100 KB rule implies, and it is measurable): V8 code caching was enabled for `chrome-extension://` **pages** in Chrome 123, and the change did not cover content scripts — `extensions/renderer/script_context.cc` compiles with `kNoCompileOptions` and carries an explicit `NoCacheReason`. If that still holds, `extension/ytkit.js` (2,806,231 B) is re-parsed and re-compiled on **every YouTube pageview** with no on-disk amortization, which makes the maintenance argument and the size argument point the same way instead of competing. This is Needs-live-validation, not verified: measure it with Chrome tracing on the `v8` category and look for `v8.compile` slices carrying `cacheConsumeOptions`/`consumedCacheSize` — their absence on a warm second load means no caching. Do that measurement before the remaining three peels, because a confirmed no-cache path changes the honest framing of this item from "startup polish" to "per-pageview cost". Also relevant and cheaper than peeling: V8's own guidance is against single large bundles, and conditional loading via `scripting.registerContentScripts()` avoids the parse entirely on pages where a feature is unused — but note there is no evidence programmatic injection takes a different compile path, so the win there is skipping work, not caching it.
   Touches: `extension/ytkit.js`, `scripts/generate-runtime-bootstrap.js`, `sync-userscript.js`
   Acceptance: `monolithMs` drops measurably without splitting the monolith's public behaviour — e.g. by moving rarely-used feature bodies out of the always-parsed path — and `npm run smoke:zero-ads:live` still boots the real extension. Measure before and after at the same commit on the same machine; note that the FIRST bench run after an idle period floors ~15-20 ms high (cold page cache), so compare warm runs.
   Complexity: L
-
-### P3
 
 - [ ] P3 — Adopt the platform APIs that delete existing code
   Why: several 2026 platform additions replace hand-rolled machinery already carried in this repo, at low risk behind feature detection.
@@ -117,6 +110,7 @@ duplicated here.
   Acceptance: each adoption is behind a capability probe recorded in the capability matrix, the Chrome 120 / Firefox 142 floors still work, and `npm run check:startup` does not regress.
   Complexity: M
   Note (2026-08-19 research): Chrome moves to a TWO-WEEK release cadence starting with 153 (stable 2026-09-08) — https://developer.chrome.com/blog/chrome-two-week-release — so capability probes over version checks becomes mandatory, not preferred. New since the item was written: Chrome 149 `chrome.userScripts.execute()` returns synchronous syntax diagnostics; Chrome 150 `chrome.contextMenus` supports the `'tab'` context and `alarms.create()` enforces a 1024-byte name limit; Chrome 153 experiments with pinning action icons to the toolbar BY DEFAULT (revisit any "pin the extension" onboarding copy); Firefox 154 (2026-08-18) adds the `sandbox` manifest key.
+  Note (2026-08-20 research, four corrections and one removal): (a) the media-state pseudo-classes are NOT Chrome-first — Firefox shipped `:playing`/`:paused`/`:seeking`/`:buffering`/`:stalled`/`:muted`/`:volume-locked` in **150 (2026-04-21)**, four months before Chrome 152, and they are an Interop 2026 focus area, so they become genuinely cross-browser on 2026-08-25; the set is seven, not four. Still Chrome 152 ≫ the Chrome 120 floor, so gate on `CSS.supports('selector(:playing)')`. (b) **Firefox also moved to a two-week cadence starting with 155** (155 ships 2026-09-01, 156 on 2026-09-15), so the capability-probe-over-version-check rule now applies to both engines, not just Chrome. (c) Firefox 153 added `documentId` across `webNavigation`/`webRequest`/`scripting`/messaging plus `runtime.getDocumentId()` — a more stable frame identity than frame IDs, and the natural fit for the `all_frames: true` live-chat script. (d) Firefox 153's content-script `adoptedStyleSheets` access still needs the `wrappedJSObject` fallback at a 142 floor, so the live-chat CSS clean-up is floor-gated, not available now. **Removed from scope:** Firefox 152 deleted `executeScript`/`insertCSS` targeting the extension's own `moz-extension:` documents — verified no such call exists in `extension/background.js` or `extension/core/`, so this is a non-issue here. Also note `<dialog>`/`showModal()` adoption is now tracked as its own P2 item rather than under this one, because it clears both floors by a decade and is a deletion rather than an adoption.
 
 - [ ] P3 — Design against the 2026 YouTube drift shape, not the 2024 one
   Why: the current breakage class is camelCase view-model host classes and heterogeneous container children, not new `ytd-*` tags — and DeArrow shipped three emergency releases in April 2026 alone for exactly this.
@@ -126,6 +120,7 @@ duplicated here.
   Complexity: M
   Note (2026-08-19 research): uBlock Origin 1.73.1 betas (2026-08-07..13) added a `content(...)` procedural operator specifically to match elements inside `<template>` tags because YouTube increasingly renders from templates — the fixture set should also include one template-stamped capture, and any card walk should not assume children are live DOM at observation time.
   Note (2026-08-13 live recon): `ytd-page-manager` retains hidden prior-route trees after SPA navigation, so shared surface resolvers must prefer connected, visible nodes under the active route instead of accepting the first selector match.
+  Note (2026-08-20 research, the 2026-08-13 YouTube design change): YouTube published the change set itself — product overlays moved off the player onto a shelf below it, the watch-page ad unit no longer displaces the video title (so vertical DOM order on watch changed), Shorts titles condensed and right-hand icons reduced, and text labels removed from the action buttons under long-form videos. The label removal is the one that would normally break an enhancer, and it does not apply here: verified 2026-08-20 that no selector pack under `extension/core/selector-packs/` matches on button label text, so there is nothing to repair — but any NEW selector must not reintroduce that dependency. Separately, the player redesign's namespace is a stable hook worth gating on explicitly: `.ytp-delhi-modern` / `.ytp-delhi-modern-compact-controls` (the fixture refresh for it is tracked in `Roadmap_Blocked.md`). Finally: the complementary answer to this whole item is the P1 remote broken-feature disable feed — selector resilience reduces how often drift breaks a feature, the feed reduces how long a break lasts. uBlock Origin's volunteers abandoned Facebook filters on 2026-08-05 rather than keep defending a growing match list, which is the argument for not solving drift by selector coverage alone.
   Note (2026-08-20 research): two cheap additions to this item's acceptance. (a) Key selector-health records to YouTube's build (`INNERTUBE_CLIENT_VERSION` — already read by `core/transcript-service.js`, nowhere else) so drift correlates with a specific YouTube deploy; (b) a startup canary that resolves N critical surfaces and, on aggregate failure, raises one user-visible "YouTube changed — features X/Y degraded" notice instead of silent per-feature no-ops. `core/selector-health.js` currently has telemetry but no canary and no version keying (verified). Technique precedent: apiserpent.com/blog/resilient-scraper-selector-drift.
 
 ### Research-driven gaps — 2026-08-11
@@ -156,8 +151,6 @@ duplicated here.
 ## Audit Findings — 2026-08-18
 
 Baseline at audit time (local tree = origin/main + 4 unpushed commits `d1b332ae..2b839c33`, v4.62.0; `npm ci` was required first — node_modules was absent on this machine after the OS rebuild): `npm test` **1713/1714 pass** (1 skipped, 0 fail). `npm run check` fails at HEAD on four gates: `check:project-facts` (the machine-local CLAUDE.md generated block was stale at v4.61.0 — regenerated during this audit, passes now; while red it masked the 24 gates after it via the tracked fail-fast `&&` chain), `check:startup` (firstFeaturePaintMs median 116.80 ms > 88.80 ms budget, fixture mode captured-mhtml — pre-existing machine-sensitive baseline, already tracked), `i18n:coverage:gate` and `generate-capability-matrix --check` (both logged below). Rendered smokes pass: settings-overlay 7 states × 445 controls (dark/light/RTL/wide/tablet/mobile), headless-a11y 6 surfaces incl. 200% reflow and forced colors. Delivery state: latest git tag and GitHub release are **v4.59.1**; `release-channels.json` still points every channel at 4.59.0 — see the release-gate item below and the refreshed P0 in `Roadmap_Blocked.md`. Method: five parallel trace-and-verify sweeps (post-08-14 delta, popup/sidepanel UX, background trust boundaries, monolith feature slices incl. peeled-copy drift, tests/gates/release); ~40 candidate findings, 14 re-verified by hand at file:line with zero mismatches; agent-cleared suspicions are omitted. The background trust-boundary sweep found **no high/critical issue** — cookie-handoff capability, remote filter-list sanitization, DNR rules, and optional-host validation all hold as documented.
-
-### P2
 
 - [ ] P3 — Backfill real render assertions onto the features whose DOM half was never covered
   Category: testing
@@ -221,3 +214,149 @@ Evidence detail and sources live in `RESEARCH.md` (2026-08-20). Items already tr
   Touches: AI summary feature module and its provider layer, `extension/core/transcript-service.js` consumers, `extension/core/settings-schema.js`, settings panel, locales
   Acceptance: with a transcript loaded, the user can ask free-form questions answered from transcript content via their configured provider (works fully offline with Ollama or Chrome built-in); responses cite timestamps that seek on click; respects the existing per-tab spend cap and provider-origin grants; off by default; store-safe profile exclusion honored like the rest of the AI catalogue.
   Complexity: L
+
+## Research-Driven Additions — 2026-08-20 (post-v4.81.0 pass)
+
+Evidence detail and sources live in `RESEARCH.md` (2026-08-20). Items already tracked
+above or in `Roadmap_Blocked.md` are not duplicated — that includes every distribution
+item (Greasy Fork, CWS/Edge, AMO, Firefox signing), DeArrow licensing, AI-surface hiding,
+the like-rate view-count re-derivation, the `image-size` exception, the LNA validation,
+and the Delhi-Modern fixture refresh. Several externally-sourced recommendations were
+dropped after local verification and are recorded as rejected in `RESEARCH.md` rather than
+listed here (store-profile permission stripping, Greasy Fork size/minification, DNR
+`topDomains`, comment search, anti-translation parity, `use_dynamic_url` coverage).
+
+### P1
+
+- [ ] P1 — Make reset and import undo survive a browser restart, and write a backup file before import overwrites settings
+  Why: the undo for the two most destructive actions in the product is stored in `chrome.storage.session`, which the browser clears on exit, and import writes no file at all — so a user who resets, closes the browser, and reopens it has no path back. This is the only data-loss defect found this pass.
+  Evidence: `extension/popup.js:6262-6308` (reset snapshot), `:5515-5577` (import snapshot; aborts with "export a backup first" only when the snapshot itself fails). Backup payload shape already carries `exportVersion` / `backupSchemaVersion: 2` / `settingsSchemaVersion` at `:4960-4966`, so the serializer exists.
+  Touches: `extension/popup.js`, `extension/core/settings-import-transaction.js`, `extension/core/persisted-domains.js`, locales
+  Acceptance: an undo point written before a reset or import is still offered after a full browser restart (backed by `chrome.storage.local`, not `session`, with an explicit retention bound so it cannot grow unbounded); import writes a timestamped backup export before the first write, and names the file in the success message; a test restarts the storage layer between snapshot and undo and the undo still restores.
+  Complexity: M
+
+- [ ] P1 — Delete `.github/codeql.yml` or restore the workflow that reads it
+  Why: it is a CodeQL *config* file that only takes effect through a workflow's `config-file:` input, and no workflow exists — so the repo advertises a security control that has never run once.
+  Evidence: `.github/workflows` returns 404 via the API and does not exist locally; `gh api repos/SysAdminDoc/Astra-Deck/code-scanning/default-setup` reports `state: "not-configured"`; the four workflows including `codeql.yml` were deleted in `a61b5d5e` (2026-06-26, "Remove GitHub Actions workflows — local builds only") and the config file was left behind.
+  Touches: `.github/codeql.yml`
+  Acceptance: either the file is deleted, or a workflow references it and one scan completes — no third state where the config exists unreferenced. If deleted, `SECURITY.md` and `HARDENING.md` are checked for any claim of static analysis that no longer holds.
+  Complexity: S
+
+- [ ] P1 — Sign the release checksum file locally and publish the verification command
+  Why: releases are built locally with no CI, so `SHA256SUMS` and the artifacts share one origin — anyone who can forge an artifact forges its hash, and the checksum proves nothing about provenance. Post-2025 users are explicitly told to check whether the shipped artifact matches the source before installing an unknown extension.
+  Evidence: 12 release assets carry `SHA256SUMS` with no signature; no CI exists to produce attestations. GitHub Artifact Attestations are the stronger primitive but require an Actions build, which contradicts the deliberate local-builds-only decision (`a61b5d5e`) — that conflict is recorded in `RESEARCH.md` §Rejected rather than resolved here.
+  Touches: `scripts/generate-release-manifest.js`, `scripts/release-health.js`, `docs/signing-keys.md`, `README.md`, `SECURITY.md`
+  Acceptance: every release carries a detached signature over the checksum file, the public key is published in-repo and in `docs/signing-keys.md`, `README.md` shows the exact verify command, and `npm run release:readiness` fails when the signature is missing or does not verify.
+  Complexity: M
+
+- [ ] P1 — Add a feature-ID rename resolver that both stored settings and any future remote feed consult
+  Why: 291 feature IDs and 476 settings keys have been renamed repeatedly (the v4.74 subscription-groups rename wave is one example), and nothing maps an old ID to its current name. Every rename silently orphans stored user state, and it would silently break the disable feed below. Refined GitHub carries exactly this resolver at 189 features and both its options layer and its hotfix layer read it.
+  Evidence: no `getNewFeatureName`/`RENAMED_FEATURES`/`legacyFeatureId` equivalent exists anywhere under `extension/` or `scripts/` (verified by search 2026-08-20); settings migrations exist (`extension/ytkit.js:4158+`, `SETTINGS_VERSION` 10) but migrate *values*, not feature identity. Source: refined-github `source/feature-data.ts` consumed by `source/helpers/hotfix.tsx`.
+  Touches: `extension/core/settings-schema.js` or a new `extension/core/feature-aliases.js`, `extension/ytkit.js` settings-manager migration path, `scripts/check-settings.js`, `tests/settings-migration-roundtrip.test.js`
+  Acceptance: a single alias table maps every historical feature ID to its current one; the settings loader resolves aliases before reading stored state; a gate fails if a feature ID present in a shipped release disappears from both the schema and the alias table; the table is populated from git history for at least the renames since v4.59.1.
+  Complexity: M
+
+- [ ] P1 — Ship a remote broken-feature disable feed so a YouTube change can be neutralised without a release
+  Why: 291 DOM-coupled features, one maintainer, no CI, and a site that changed the watch page and Shorts player on 2026-08-13. Today the only remedy for "feature X broke on YouTube's new layout" is cut a release and wait for store review — and there is no store channel yet at all. Refined GitHub disables a named feature across every install inside six hours with a CSV on GitHub Pages, and ships that mechanism on both CWS and AMO, which is the practical evidence it passes review.
+  Evidence: no `brokenFeature`/`killSwitch`/`hotfix`/`remoteDisable` path exists (verified by search 2026-08-20). Source: refined-github `source/helpers/hotfix.tsx` (GitHub Pages host chosen over the API for rate limits, `cache: 'no-store'`, 6h `maxAge`, 30d `staleWhileRevalidate`, skipped on dev builds) and the live `refined-github/yolo` feed, columns `feature, issue, min-working-version`. Counter-evidence to respect: uBlock Origin's volunteers abandoned Facebook filters on 2026-08-05 rather than defend an ever-growing match list — a disable feed is cheaper to staff than a selector list.
+  Touches: a new `extension/core/feature-disable-feed.js`, `extension/background.js` (fetch + alarm), `extension/core/settings-schema.js`, `extension/core/data-flow.js` (host allowlist), `extension/manifest.json` + build profiles, `gh-pages` or a sibling feed repo, locales
+  Acceptance: the feed can only ever *disable* a feature, never enable one or change any other behaviour, and that constraint is enforced by a test that feeds it hostile rows; entries are scoped to a version range and resolved through the alias table above; failure to fetch is a silent no-op; the affected feature's settings row explains in plain language that it is disabled by a known-breakage notice and links the issue; the feature is default-on but user-disableable; a decision is recorded on whether the feed ships in the store profiles at all, against Mozilla's remote-logic rule (see `RESEARCH.md` §Open Questions).
+  Complexity: L
+
+### P2
+
+- [ ] P2 — User-run feature bisect wizard
+  Why: the maintainer's own words in discussion #43 are "when something breaks for you but not for me, your report is the only signal I get" — and with 291 features there is no way for a reporter to say *which* one. A binary search over the enabled set reaches one culprit in about ten reloads and moves the triage work to the person who can reproduce it.
+  Evidence: discussions #43 and #44 (2026-07-30) both ask for exactly this information and both have zero replies; the tracker has never carried a bug report. Source: refined-github `source/helpers/bisect.tsx` — snapshots the enabled list, halves it per reload, `ceil(log2(n)) + 1` steps, with an explicit "could not identify" terminal state rather than a guess.
+  Touches: a new `extension/features/bisect/` module or `extension/core/` helper, `extension/popup.js` (entry point), `extension/ytkit.js` (in-page prompt), locales
+  Acceptance: starting a bisect snapshots the current enabled set and restores it exactly on finish or abort, including on abandonment (bounded by a stored expiry, not by the user remembering); each step shows remaining count and a "does the problem still happen?" choice; the result is a copyable block naming the feature ID, Astra version, browser version, and page type; the miss case reports that no single feature is responsible rather than blaming the last one standing.
+  Complexity: M
+
+- [ ] P2 — Surface enrichment-API failure on the watch page instead of only in the diagnostic log
+  Why: SponsorBlock and DeArrow failures are invisible where the user is looking, so an upstream outage or a rate limit reads as "Astra broke YouTube." The pattern that users blame the extension rather than the site is the documented reason enrichment tools lose trust.
+  Evidence: `extension/features/sponsorblock/index.js:361-366` and `extension/features/dearrow/index.js:290-291` route failure to `DiagnosticLog`/`ExternalApiHealth` with no page-level signal; RYD already does this correctly with an "RYD off"/"RYD paused" pill (`extension/features/return-dislike/index.js:285-303`), so the pattern to copy is in-tree.
+  Touches: `extension/features/sponsorblock/index.js`, `extension/features/dearrow/index.js`, the shared `ExternalApiHealth` surface, `extension/core/feature-health.js`, locales
+  Acceptance: a sustained fetch failure (not a single transient) produces one passive, dismissible page-level indicator per feature per session that names the upstream service and distinguishes "service unreachable" from "no data for this video"; it never blocks playback, never retries on click more than the existing backoff allows, and is suppressed when the feature is off.
+  Complexity: M
+
+- [ ] P2 — Local, user-initiated enabled-feature report for the feedback thread
+  Why: discussion #44 states the blind spot directly — "with 150+ features, I genuinely don't know which ones people treasure and which nobody has toggled on" — and the project's no-telemetry stance means the only ethical answer is a report the user chooses to produce and paste. The diagnostic-bundle serializer already exists; this is a smaller, privacy-safe sibling.
+  Evidence: discussion #44 (2026-07-30, 0 replies); `extension/popup.js:4522-4541` already builds an `astraDeckBugReport` payload with a settings diff, which is the machinery to reuse.
+  Touches: `extension/popup.js`, `extension/core/settings-schema.js` (non-default diff helper), locales
+  Acceptance: one action produces a copyable block listing only feature IDs that differ from their defaults plus the Astra/browser versions — no URLs, channel names, keys, filter lists, notes, or bookmarks; a test asserts the payload contains none of those field names even when they are populated; the copy states plainly that nothing is sent anywhere and that the user chooses where to paste it.
+  Complexity: S
+
+- [ ] P2 — Declare `minimum_chrome_version` in the manifest to match the documented floor
+  Why: the project documents a Chrome 120 floor in `CLAUDE.md`, `README.md`, and the capability matrix, but the manifest declares nothing — so a Chrome 119 user installs successfully and then hits undefined behaviour instead of being told the version is unsupported.
+  Evidence: `extension/manifest.json` has no `minimum_chrome_version` key (verified 2026-08-20); the Firefox side does enforce its floor via `scripts/manifest-patch.js:7` (`strict_min_version 142.0`), so the asymmetry is unintentional.
+  Touches: `extension/manifest.json`, `build-extension.js` (per-profile patch), `scripts/generate-capability-matrix.js`, `tests/project-facts.test.js`
+  Acceptance: the manifest declares the same Chrome floor the capability matrix claims; a gate fails if the two disagree; the floor is justified by the highest actually-required API rather than copied forward, and any API in use above it is behind a capability probe.
+  Complexity: S
+
+- [ ] P2 — Add a `build-for-amo` script and prove the build reproduces in Mozilla's reviewer environment
+  Why: AMO now auto-builds submitted source and compares it against the uploaded package, and a match "can move through review much more quickly" — otherwise review runs 3 days to 5 weeks. `build-extension.js` is exactly the generator that triggers mandatory source submission, and the reviewer environment is published and specific, so reproducibility is testable before submitting rather than discovered during review.
+  Evidence: Mozilla's source-code-submission rules require the reviewer's rebuild to produce *no differences*, and the default reviewer environment is Ubuntu 24.04.4 LTS on **ARM64** with Node 24.14.0 / npm 11.9.0. `package.json` has no `build-for-amo` script; `.nvmrc` says 22; `crx3` has never been exercised on ARM64. Blocked companion item "Firefox AMO submission" depends on this and cannot be de-risked without it.
+  Touches: `package.json` (scripts), a source-upload `SOURCE-README.md`, `build-extension.js`, `.nvmrc`
+  Acceptance: `npm run build-for-amo` produces the Firefox artifact from a clean checkout plus `package-lock.json` alone, with no network fetches beyond `npm ci`; the produced zip is byte-identical across two runs on the same machine and the diff against a run on Ubuntu ARM64 / Node 24.14.0 is empty or its causes are documented; `SOURCE-README.md` states the environment and any deviation.
+  Complexity: M
+
+- [ ] P2 — Replace the hand-rolled focus traps with `<dialog>` + `showModal()`
+  Why: focus-trap, inert-background, and Escape machinery is reimplemented in five places, which is five places for the trap to drift out of agreement with the a11y gates. `<dialog>` provides all three natively and has been Baseline widely available since 2022-03-14 (Chrome 37 / Firefox 98), far below both declared floors — this is the largest safe deletion currently available.
+  Evidence: `showModal(`/`<dialog` appears nowhere in `extension/` (verified 2026-08-20), while `focusTrap`/`trapFocus`/`FOCUSABLE_SELECTOR` machinery appears in `extension/popup.js`, `extension/ytkit.js`, `extension/features/settings-panel/index.js`, `extension/features/subscription-groups/index.js`, and `extension/features/digital-wellbeing/index.js`. `popover` is already used in four places, so native dismissal primitives are not new to the codebase.
+  Risk to check first: `showModal()` promotes the element to the **top layer**, which YouTube also uses for its own fullscreen and native dialogs — so convert an extension-page surface (`popup.js`) before an in-page one, and verify the in-page panel still stacks correctly over the player in fullscreen and theater mode before converting the rest. If a top-layer conflict appears on YouTube, keep the in-page surfaces hand-rolled and take the win on the extension pages only; that is a partial completion, not a failure.
+  Touches: `extension/popup.js`, `extension/ytkit.js`, `extension/features/settings-panel/index.js`, `extension/features/subscription-groups/index.js`, `extension/features/digital-wellbeing/index.js`, `extension/popup.css`, `extension/surface-system.css`, `scripts/audit-overlays-a11y.js`
+  Acceptance: one surface converts per commit; for each, `npm run audit:overlays` and `npm run smoke:a11y` pass and the source pins that asserted the hand-rolled trap are replaced by assertions on real modal behaviour (focus enters, background is inert, Escape closes, focus returns to the invoker); `::backdrop` styling preserves the current appearance, verified by `npm run audit:contrast` reporting unchanged ratios.
+  Complexity: M
+
+- [ ] P2 — Give the popup a search across all 476 settings
+  Why: 476 settings are searchable only from the in-page panel; the popup — the surface every user reaches first, and the only one reachable without a YouTube tab — offers 19 quick toggles and a diff-filtered schema list with no text search. That is the discoverability half of the maintainer's "I don't know which features people use" problem.
+  Evidence: `extension/features/settings-panel/index.js:417-457` implements search over names, pages, categories, and descriptions; `extension/sidepanel.js:140` has a narrower one; `extension/popup.js` has none. Five distinct settings surfaces exist with no user-facing explanation of the split.
+  Touches: `extension/popup.html`, `extension/popup.js`, `extension/popup.css`, locales
+  Acceptance: typing in the popup filters the full schema by name, category, page, and description with the same matching rules as the in-page panel; results state which surface owns each setting and can open it there; an empty result renders guidance rather than a blank list; `npm run audit:a11y` and `npm run smoke:a11y` still pass with the new control in the tab order.
+  Complexity: M
+
+- [ ] P2 — Extend the existing live-Chromium harness to the two surfaces it skips: the real extension pages and the live-chat frame
+  Why: real-browser coverage is stronger than an outside reading of this repo suggests, and the gap is narrow and specific rather than structural. `smoke-zero-ads-live.js` genuinely loads the extension, reports its ID, and asserts the DNR ruleset is enabled; `smoke-mv3-worker-lifecycle.js` terminates the worker twice and asserts state survives. What no real-browser check touches is (a) the actual `popup.html`/`sidepanel.html` as loaded from the extension origin — `smoke-headless-a11y.js` drives standalone `-a11y.html` fixtures against a temp profile with no extension loaded, so real extension-page CSP, `chrome.storage` behaviour, and the dynamic-URL origin are all unexercised — and (b) the `all_frames: true` live-chat iframe, which is the most drift-prone surface in the product and has no live check at all.
+  Evidence: `scripts/smoke-zero-ads-live.js:269` (ruleset assertion), `:387` (reports the loaded extension ID), `:399` (candidate-binary fallback when a branded build rejects `--load-extension`); `scripts/smoke-mv3-worker-lifecycle.js:118-119,241,252` (double termination + state assertions); `scripts/smoke-headless-a11y.js:1205-1211` (temp profile, `--headless=new`, fixture pages, no extension load). Fake-DOM coverage cannot substitute: `tests/helpers/monolith.js` has twice silently falsified render tests (`textContent = ''` not clearing children, missing `insertAdjacentElement`), which is the same failure class one level up.
+  Relationship to the existing P3 "Audit the still-unverified secondary surfaces and packaging internals": that item wants a one-time bounded audit of sidepanel/sidebar/companion/Firefox; this one wants repeatable automated coverage of two of them. Do the audit first if both are picked up in the same pass, so the harness work targets what the audit found rather than guessing.
+  Touches: `scripts/smoke-headless-a11y.js`, `scripts/smoke-zero-ads-live.js`, a new live-chat smoke, `package.json`
+  Acceptance: the a11y smoke gains a mode that drives the real `popup.html` and `sidepanel.html` from the loaded extension origin (reusing the candidate-binary and extension-ID discovery already in the zero-ads smoke) and the fixture mode is kept only for states the real page cannot reach; one live check opens a live-chat frame and asserts the live-chat feature module attached; each new assertion is bait-verified by breaking the behaviour it claims to cover; a failure to load the extension fails the smoke loudly rather than passing against an unmodified page.
+  Complexity: L
+
+### P3
+
+- [ ] P3 — Give subscription-group delete an undo instead of a `window.confirm`
+  Why: the project deliberately removed confirmation modals in favour of immediate-apply-plus-undo, and group delete is the one destructive action still using a native browser confirm — and it is also one of the few with no undo at all, so it is inconsistent in both directions.
+  Evidence: policy at `extension/popup.js:4972-4984`; `window.confirm` at `extension/features/subscription-groups/index.js:2641`; the undo-toast pattern already exists for video-note delete (`extension/features/video-notes/index.js:193-220`) and category reset (`extension/features/settings-panel/index.js:2355-2368`).
+  Touches: `extension/features/subscription-groups/index.js`, locales, `tests/features/`
+  Acceptance: deleting a group removes it immediately and offers an undo toast that restores the group with its full membership and nesting; `window.confirm` is gone from the module; a test deletes a nested group and asserts the restored tree matches the pre-delete tree exactly.
+  Complexity: S
+
+- [ ] P3 — Add the three missing empty states
+  Why: three list surfaces render a bare container instead of guidance, which reads as broken rather than empty — and one of them is the first thing a new user sees after enabling subscription groups.
+  Evidence: subscription groups has a per-group empty state (`_renderGroupEmptyState`, `extension/features/subscription-groups/index.js:2454-2465`) but nothing for zero groups total; Watch Later Workbench replaces children and leaves an empty `.ytkit-wlwb-list` with only a count line (`extension/ytkit.js:32966-33005`); video notes shows an inline status string rather than an empty block (`extension/features/video-notes/index.js:262-264`).
+  Touches: `extension/features/subscription-groups/index.js`, `extension/ytkit.js`, `extension/features/video-notes/index.js`, locales
+  Acceptance: each of the three renders a labelled empty state naming the next action, using the existing empty-state class conventions and localized strings; each is asserted by a render test on the built tree, not on source text; the copy gate baseline does not increase.
+  Complexity: S
+
+- [ ] P3 — Stop concatenating raw error text and HTTP status into user-facing copy
+  Why: about fifteen surfaces append `error.message` or a status code to user copy, so provider error bodies and internal exception text reach the UI verbatim. It is unactionable for the user, it is untranslatable (the appended half is always English), and on the AI paths it can surface response bodies.
+  Evidence: `extension/popup.js:4777`, `:5629`, `:5152-5155`; `extension/ytkit.js:32126`, `:33642`, `:39355`; `extension/features/download-ui/index.js:2819`. The existing correct pattern is the mapped filter-list error classifier (`monolithClassifyFilterListRefreshError`).
+  Touches: `extension/popup.js`, `extension/ytkit.js`, `extension/features/download-ui/index.js`, locales, `scripts/check-localizable-ui-copy.js`
+  Acceptance: each converted surface maps the failure to a small closed set of localized causes with a stated next action, and the raw text goes to the diagnostic log only; a gate or test forbids `${...message}` and bare status interpolation in the converted files so the pattern cannot return; the copy-gate baseline only decreases.
+  Complexity: M
+
+- [ ] P3 — Group the Shorts settings into one discoverable surface
+  Why: hiding Shorts is the single largest YouTube-extension demand signal of 2026 and Astra already implements it comprehensively — but the thirteen Shorts-related schema keys are spread across categories, so the capability is invisible next to 3–28★ single-purpose extensions that own the search term.
+  Evidence: 13 case-insensitive `shorts` matches in `extension/core/settings-schema.js` including `removeAllShorts` and `redirectShorts`; HN "uBlock filter list to hide all YouTube Shorts" (2026-02-14) at 1,172 points / 343 comments with no quality leader in the field. The settings section taxonomy already exists in `extension/core/settings-visual-system.js` (`SETTINGS_CATEGORY_SECTIONS`).
+  Touches: `extension/core/settings-visual-system.js`, `extension/features/settings-panel/index.js`, `extension/_locales/**`, `docs/settings-reference.md` via `scripts/generate-settings-reference.js`
+  Acceptance: one named section collects every Shorts key with a localized heading, reachable from both the in-page panel and the popup search; no schema key is moved between categories (section grouping is presentation only, so `check:settings` stays byte-identical); the generated settings reference shows the section.
+  Complexity: S
+
+- [ ] P3 — Bring the Node floor and the two lagging pins current
+  Why: `.nvmrc` pins 22, which entered maintenance on 2025-10-21 and receives critical fixes only, while the machine already runs 24.19.0 and Mozilla's AMO reviewer environment is Node 24.14.0 — so the declared floor is behind both the local reality and the environment the build must reproduce in.
+  Evidence: `.nvmrc` = `22`, `package.json` `engines.node >= 22`, local `node --version` = v24.19.0. `ws` is pinned at 8.21.2 while 8.21.3 (2026-08-07) is current — a permessage-deflate negotiation fix, not security; 8.21.2 already clears CVE-2026-48779 and CVE-2026-45736. `brace-expansion` has had five advisories in 2026, most recently CVE-2026-69152 (2026-08-03) which bypassed the previous mitigation, so the `^5.0.9` override needs a recurring check rather than a one-time fix.
+  Touches: `.nvmrc`, `package.json`, `package-lock.json`, `docs/` dependency notes
+  Acceptance: `.nvmrc` and `engines.node` name the Active LTS line, `npm run check` and the full suite pass on it, and `ws` is at 8.21.3; the `brace-expansion` override carries a comment naming the advisory it answers and the date it was last checked, so the next reader knows whether it is stale.
+  Complexity: S
+
