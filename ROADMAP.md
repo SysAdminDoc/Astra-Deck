@@ -34,10 +34,16 @@ fixtures. Firefox live zero-ad coverage is recorded separately from the remainin
 secondary-surface audit. The live Firefox run now proves home, search, SPA
 player, blocked probe, and collapsed ad-shell states. Its profile cleanup closes
 the WebDriver session first; Chromium optional-host cleanup matches only the
-exact disposable profile path. Remaining evidence is still needed for the
 exact disposable profile path. Both pinned userscript managers now pass the
-specialist shell-only smoke. Remaining evidence is still needed for the
-companion handoff and archive or MHTML internals.
+specialist shell-only smoke. The live Chromium zero-ad route now passes through
+Edge after skipping a Chrome candidate without the MV3 DNR API. `build-fixes`
+also proves that repository-only `archive/` and `mhtml/` trees never enter the
+extension staging root, while selector and startup gates consume them only as
+fixture evidence. The companion protocol, permissions, port catalogue, and
+cookie handoff are covered by static and contract tests, but no healthy
+Astra Downloader `/health` service was available for a cookie-bearing live
+handoff on this machine. Keep that limitation explicit until a running
+companion is available.
 
 ## Research-Driven Additions
 

@@ -261,6 +261,15 @@ async function runCandidate(candidate, stageDir, options) {
         const extensionId = extensionIdFromTarget(backgroundTarget);
         backgroundClient = await connectCdp(backgroundTarget.webSocketDebuggerUrl);
         await backgroundClient.send('Runtime.enable');
+        const hasDnrApi = await evaluate(
+            backgroundClient,
+            'typeof chrome?.declarativeNetRequest?.getEnabledRulesets === "function"'
+        );
+        if (!hasDnrApi) {
+            const error = new Error(`${candidate.label} does not expose the MV3 DNR API`);
+            error.code = 'DNR_UNAVAILABLE';
+            throw error;
+        }
         const enabledRulesets = await evaluate(
             backgroundClient,
             'chrome.declarativeNetRequest.getEnabledRulesets()'
@@ -392,7 +401,7 @@ async function main(argv = process.argv.slice(2)) {
                 return result;
             } catch (error) {
                 lastError = error;
-                if (error.code === 'LOAD_EXTENSION_BLOCKED') continue;
+                if (error.code === 'LOAD_EXTENSION_BLOCKED' || error.code === 'DNR_UNAVAILABLE') continue;
                 throw error;
             }
         }

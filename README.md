@@ -1228,6 +1228,10 @@ The pinned manager smoke passes with Violentmonkey 2.47.0 and Tampermonkey
 5.5.0. It verifies the install flow and the shell-only userscript contract in
 fresh Firefox profiles.
 
+The Chromium zero-ad smoke tries the installed browser candidates in order. A
+candidate without MV3 `declarativeNetRequest` support is reported and skipped,
+so a local Chrome policy block does not prevent the Edge proof from running.
+
 `npm run build` is safe for validation builds: if no maintainer key is
 configured, CRX files are signed with ephemeral key material that is not
 retained. Public release builds that include the userscript or bump a version
