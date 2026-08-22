@@ -256,6 +256,35 @@ function t(key, fallback) {
     return (fallback != null) ? fallback : key;
 }
 
+// Failure copy. These surfaces used to append `error.message` to their own
+// label, which is unactionable for the reader, untranslatable (the appended
+// half is always English) and, on the AI credential paths, able to put a
+// provider response body on screen. core/failure-copy.js maps the throw into a
+// closed set of localized causes that each name a next action; the raw text
+// goes to the console diagnostic channel only.
+function logFailure(context, error) {
+    try {
+        const detail = globalThis.YTKitCore?.failureDiagnosticText?.(error)
+            || String(error?.message || error);
+        console.warn(`[Astra Deck popup] ${context}:`, detail);
+    } catch (_) { /* reason: diagnostics must never break the surface reporting them */ }
+}
+
+function describeFailureCause(error) {
+    const describe = globalThis.YTKitCore?.describeFailure;
+    if (typeof describe === 'function') return describe(error, t);
+    return t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
+}
+
+function failureText(context, error, labelKey, labelFallback) {
+    logFailure(context, error);
+    const label = labelKey ? t(labelKey, labelFallback) : '';
+    const withLabel = globalThis.YTKitCore?.describeFailureWithLabel;
+    if (typeof withLabel === 'function') return withLabel(label, error, t);
+    const cause = describeFailureCause(error);
+    return label ? `${label.replace(/[.:]\s*$/, '')}: ${cause}` : cause;
+}
+
 function initLanguageDropdown() {
     const sel = document.getElementById('languageSelect');
     if (!sel) return;
@@ -1929,7 +1958,7 @@ async function refreshAiCredentialManager() {
     } catch (error) {
         aiCredentialStatus.textContent = t('aiCredentialStatusUnavailable', 'Status unavailable');
         aiCredentialDelete.disabled = true;
-        showStatus(error.message || t('aiCredentialStatusError', 'Credential status unavailable.'), 'error', 3600);
+        showStatus(failureText('ai-credential-status', error, 'aiCredentialStatusError', 'Credential status unavailable.'), 'error', 3600);
     }
 }
 
@@ -1955,7 +1984,7 @@ async function saveAiCredential() {
         showStatus(t('aiCredentialSaved', 'AI credential saved without exposing its value.'), 'success', 3200);
         await refreshAiCredentialManager();
     } catch (error) {
-        showStatus(error.message || t('aiCredentialSaveFailed', 'Credential could not be saved.'), 'error', 4200);
+        showStatus(failureText('ai-credential-save', error, 'aiCredentialSaveFailed', 'Credential could not be saved.'), 'error', 4200);
     } finally {
         setAiCredentialBusy(false);
     }
@@ -1981,7 +2010,7 @@ async function deleteAiCredential() {
         );
         await refreshAiCredentialManager();
     } catch (error) {
-        showStatus(error.message || t('aiCredentialDeleteFailed', 'Credential could not be deleted.'), 'error', 4200);
+        showStatus(failureText('ai-credential-delete', error, 'aiCredentialDeleteFailed', 'Credential could not be deleted.'), 'error', 4200);
     } finally {
         setAiCredentialBusy(false);
     }
@@ -2356,9 +2385,9 @@ async function renderStorageInfo() {
         // surface regardless of the failure mode.
         renderStorageWarningBanner(0, 0, 0, 0, [{
             key: '(read)', kind: 'read-failed',
-            detail: String(error && error.message || error).slice(0, 200)
+            detail: describeFailureCause(error)
         }]);
-        showStatus(t('statusStorageReadFail', 'Storage read failed') + ': ' + error.message, 'error', 4200);
+        showStatus(failureText('storage-read', error, 'statusStorageReadFail', 'Storage read failed'), 'error', 4200);
     }
 }
 
@@ -2410,7 +2439,7 @@ async function undoSettingsSync() {
         await renderStorageInfo();
         showStatus(t('settingsSyncUndoDone', 'Last browser sync undone locally.'), 'success', 3600);
     } catch (error) {
-        showStatus(t('settingsSyncUndoFailed', 'Could not undo the last browser sync.') + ' ' + error.message, 'error', 4600);
+        showStatus(failureText('settings-sync-undo', error, 'settingsSyncUndoFailed', 'Could not undo the last browser sync.'), 'error', 4600);
         await renderSettingsSyncStatus();
     } finally {
         settingsSyncUndoButton.removeAttribute('aria-busy');
@@ -2600,12 +2629,13 @@ async function refreshSelectorAssetFromPopup() {
             { timeoutMs: 15000 }
         );
         if (!response?.ok) {
-            if (selectorHealthAsset) selectorHealthAsset.textContent = [refreshFailedLabel, String(response?.error || '').slice(0, 120)].filter(Boolean).join(' ');
+            if (selectorHealthAsset) selectorHealthAsset.textContent = [refreshFailedLabel, describeFailureCause(response?.error)].filter(Boolean).join(' ');
             return;
         }
         await renderSelectorHealthDashboard();
     } catch (error) {
-        if (selectorHealthAsset) selectorHealthAsset.textContent = [refreshFailedLabel, String(error?.message || error).slice(0, 120)].filter(Boolean).join(' ');
+        logFailure('selector-health-refresh', error);
+        if (selectorHealthAsset) selectorHealthAsset.textContent = [refreshFailedLabel, describeFailureCause(error)].filter(Boolean).join(' ');
     } finally {
         _selectorHealthRefreshInFlight = false;
         selectorHealthRefreshBtn.disabled = false;
@@ -4558,8 +4588,15 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             try {
                 parsed = JSON.parse(raw);
             } catch (err) {
-                errorPill.textContent = t('schemaJsonInvalidTpl', 'Invalid JSON: {error}')
-                    .replace('{error}', String(err && err.message || err));
+                // A hand-edited JSON textarea is the one surface where the
+                // parser's offset is the next action, so keep the position and
+                // drop the English prose the engine wraps around it.
+                logFailure('schema-json-edit', err);
+                const position = /position\s+(\d+)/i.exec(String(err?.message || ''));
+                errorPill.textContent = position
+                    ? t('schemaJsonInvalidAtTpl', 'Invalid JSON at position {position}. Fix it, then apply.')
+                        .replace('{position}', position[1])
+                    : t('schemaJsonInvalid', 'Invalid JSON. Check the syntax, then apply.');
                 errorPill.hidden = false;
                 return;
             }
@@ -4660,8 +4697,8 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                     // keyboard focus doesn't fall to <body>.
                     refocusSchemaOverviewKey(entry);
                 } catch (err) {
-                    showStatus(t('statusPerKeyResetFail',
-                        'Could not reset') + ': ' + err.message, 'error', 3600);
+                    showStatus(failureText('schema-key-reset', err,
+                        'statusPerKeyResetFail', 'Could not reset'), 'error', 3600);
                 } finally {
                     resetBtn.disabled = false;
                 }
@@ -5011,8 +5048,7 @@ if (healthSaveBtn) {
                 showStatus(t('statusDiagSaved', 'Diagnostic log saved.'), 'ok', 2400);
             }
         } catch (e) {
-            showStatus(t('statusDiagSaveFail', 'Could not save log') + ': ' + e.message, 'error', 3600);
-            console.error('[Astra Deck popup] diag save failed:', e);
+            showStatus(failureText('diagnostic-log-save', e, 'statusDiagSaveFail', 'Could not save log'), 'error', 3600);
         }
     });
 }
@@ -5182,8 +5218,8 @@ async function pickWelcomeProfile(profile) {
         renderSchemaOverview();
         transitionToPresetStep();
     } catch (err) {
-        showStatus(t('statusWelcomeProfileFail',
-            'Could not apply profile') + ': ' + err.message, 'error', 4200);
+        showStatus(failureText('welcome-profile', err,
+            'statusWelcomeProfileFail', 'Could not apply profile'), 'error', 4200);
         if (welcomeProfileSafeBtn) welcomeProfileSafeBtn.disabled = false;
         if (welcomeProfileFullBtn) welcomeProfileFullBtn.disabled = false;
         if (welcomeDismissBtn) welcomeDismissBtn.disabled = false;
@@ -5227,7 +5263,7 @@ async function pickWelcomePreset(presetKey) {
                 'Store-safe profile active. Open Full Settings to explore features.'),
         'ok', 4200);
     } catch (err) {
-        showStatus(t('statusWelcomePresetFail', 'Could not apply preset') + ': ' + err.message, 'error', 4200);
+        showStatus(failureText('welcome-preset', err, 'statusWelcomePresetFail', 'Could not apply preset'), 'error', 4200);
         document.querySelectorAll('.welcome-preset-btn, .welcome-preset-skip').forEach(b => { b.disabled = false; });
     } finally {
         _welcomePickInFlight = false;
@@ -5327,7 +5363,7 @@ async function clearDiagnosticLog() {
         renderHealthBanner(null);
         showStatus(t('statusDiagCleared', 'Diagnostic log cleared.'), 'success', 2400);
     } catch (error) {
-        showStatus(t('statusDiagClearFail', 'Could not clear log') + ': ' + error.message, 'error', 4200);
+        showStatus(failureText('diagnostic-log-clear', error, 'statusDiagClearFail', 'Could not clear log'), 'error', 4200);
     }
 }
 
@@ -5556,7 +5592,7 @@ async function exportSettings() {
                 'Backup exported without the transcript index because no responsive YouTube tab was available.'),
         'success', transcript.available ? 3200 : 6000);
     } catch (error) {
-        showStatus(t('statusExportFail', 'Export failed') + ': ' + error.message, 'error', 4200);
+        showStatus(failureText('backup-export', error, 'statusExportFail', 'Export failed'), 'error', 4200);
     } finally {
         exportButton.removeAttribute('aria-busy');
         exportButton.disabled = false;
@@ -5757,7 +5793,7 @@ async function exportFilterList() {
         showStatus(t('filterListExported', 'Video Hider rules exported.'), 'success', 3200);
     } catch (error) {
         setFilterListStatus('filterListStatusFail', 'Something went wrong. Your saved rules were not changed.', 'error');
-        showStatus(t('filterListExportFail', 'Filter-list export failed') + ': ' + error.message, 'error', 4200);
+        showStatus(failureText('filter-list-export', error, 'filterListExportFail', 'Filter-list export failed'), 'error', 4200);
     } finally {
         exportFilterListButton.removeAttribute('aria-busy');
         exportFilterListButton.disabled = false;
@@ -5831,7 +5867,7 @@ async function importFilterList(file) {
         }
     } catch (error) {
         setFilterListStatus('filterListStatusFail', 'Something went wrong. Your saved rules were not changed.', 'error');
-        showStatus(t('filterListImportFail', 'Filter-list import failed') + ': ' + error.message, 'error', 5200);
+        showStatus(failureText('filter-list-import', error, 'filterListImportFail', 'Filter-list import failed'), 'error', 5200);
     } finally {
         importFilterListFileInput.value = '';
         importFilterListButton.removeAttribute('aria-busy');
@@ -5931,7 +5967,7 @@ async function refreshFilterList() {
         }
     } catch (error) {
         setFilterListStatus('filterListStatusRefreshFail', 'Could not refresh the list. Check the address, then try again.', 'error');
-        showStatus(t('filterListRefreshFail', 'Filter-list refresh failed') + ': ' + error.message, 'error', 5200);
+        showStatus(failureText('filter-list-refresh', error, 'filterListRefreshFail', 'Filter-list refresh failed'), 'error', 5200);
     } finally {
         refreshFilterListButton.removeAttribute('aria-busy');
         refreshFilterListButton.disabled = false;
@@ -6115,7 +6151,7 @@ async function importSettings(file) {
         showStatus(cleanupFailure ? importMessage + ' ' + cleanupFailure : importMessage,
             cleanupFailure ? 'error' : 'success', cleanupFailure ? 7600 : 6400);
     } catch (error) {
-        showStatus(t('statusImportFail', 'Import failed') + ': ' + error.message, 'error', 4200);
+        showStatus(failureText('settings-import', error, 'statusImportFail', 'Import failed'), 'error', 4200);
     } finally {
         importFileInput.value = '';
         importButton.removeAttribute('aria-busy');
@@ -6157,7 +6193,7 @@ async function undoImportSettings() {
             'Import undone. Previous settings and local data restored.'),
             'success', 4200);
     } catch (error) {
-        showStatus(t('statusImportUndoFail', 'Undo Import failed') + ': ' + error.message, 'error', 4200);
+        showStatus(failureText('settings-import-undo', error, 'statusImportUndoFail', 'Undo Import failed'), 'error', 4200);
     } finally {
         undoImportButton.removeAttribute('aria-busy');
         undoImportButton.disabled = false;
@@ -6540,7 +6576,7 @@ async function resetYoutubeState() {
             'success', 7200);
         }
     } catch (error) {
-        showStatus(t('statusYoutubeStateResetFail', 'YouTube state reset failed') + ': ' + error.message, 'error', 6200);
+        showStatus(failureText('youtube-state-reset', error, 'statusYoutubeStateResetFail', 'YouTube state reset failed'), 'error', 6200);
     } finally {
         resetYoutubeStateButton.removeAttribute('aria-busy');
         resetYoutubeStateButton.disabled = false;
@@ -6572,7 +6608,7 @@ async function undoYoutubeStateReset() {
             .replace('{count}', String(restored.restored?.length || 0)),
         'success', 5200);
     } catch (error) {
-        showStatus(t('statusYoutubeStateUndoFail', 'YouTube state Undo failed') + ': ' + error.message, 'error', 6200);
+        showStatus(failureText('youtube-state-undo', error, 'statusYoutubeStateUndoFail', 'YouTube state Undo failed'), 'error', 6200);
     } finally {
         undoYoutubeStateButton.removeAttribute('aria-busy');
         undoYoutubeStateButton.disabled = false;
@@ -6858,7 +6894,7 @@ async function resetAllData() {
             showStatus(resetMessage, 'success', 6000);
         }
     } catch (error) {
-        showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);
+        showStatus(failureText('data-reset', error, 'statusResetFail', 'Reset failed'), 'error', 4200);
     } finally {
         resetButton.removeAttribute('aria-busy');
         resetButton.disabled = false;
@@ -6898,7 +6934,7 @@ async function undoResetAllData() {
         setUndoResetVisible(false);
         showStatus(t('statusResetUndone', 'Reset undone — all data restored.'), 'success', 3200);
     } catch (error) {
-        showStatus(t('statusResetUndoFail', 'Undo failed') + ': ' + error.message, 'error', 4200);
+        showStatus(failureText('data-reset-undo', error, 'statusResetUndoFail', 'Undo failed'), 'error', 4200);
     } finally {
         undoResetButton.removeAttribute('aria-busy');
         undoResetButton.disabled = false;
@@ -7169,7 +7205,7 @@ function installWheelScrolling() {
                     await openSidePanel({ tabId: tab?.id });
                     window.close();
                 } catch (err) {
-                    showStatus(t('statusOpenDashboardFail', 'Could not open dashboard') + ': ' + err.message, 'error', 3000);
+                    showStatus(failureText('open-dashboard', err, 'statusOpenDashboardFail', 'Could not open dashboard'), 'error', 3000);
                 } finally {
                     openSidePanelBtn.removeAttribute('aria-busy');
                     openSidePanelBtn.disabled = false;

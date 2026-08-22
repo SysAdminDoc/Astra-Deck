@@ -7852,6 +7852,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/resource-unlock.js',
         'extension/core/text-metrics.js',
         'extension/core/date-time.js',
+        'extension/core/failure-copy.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',
         'extension/features/subtitles/index.js',
@@ -8040,6 +8041,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/resource-unlock.js',
         'extension/core/text-metrics.js',
         'extension/core/date-time.js',
+        'extension/core/failure-copy.js',
         'extension/core/runtime-flags.js',
         'extension/core/capability-probe.js',
         'extension/features/subtitles/index.js',
@@ -9737,14 +9739,20 @@ test('v4.41.0 popup JSON editor enforces type shape (array stays array, object s
 
 test('v4.41.0 popup JSON editor skips persistence + shows pill on parse error', () => {
     // The persist arrow catches JSON.parse failure, sets the pill text
-    // (`Invalid JSON: <msg>`) + un-hides the pill, then returns BEFORE
-    // touching writeSetting. The order matters: a future refactor must
-    // not call writeSetting on the bad value.
+    // (localized, carrying only the parser's offset) + un-hides the pill,
+    // then returns BEFORE touching writeSetting. The order matters: a
+    // future refactor must not call writeSetting on the bad value.
     const persistIdx = popupSource.indexOf("const persist = async () => {", popupSource.indexOf('so-key-json'));
     assert.ok(persistIdx > -1, 'JSON editor persist arrow must be inside the array/object branch');
-    const persistBody = popupSource.slice(persistIdx, persistIdx + 1500);
-    assert.match(persistBody, /errorPill\.textContent = t\('schemaJsonInvalidTpl', 'Invalid JSON: \{error\}'\)/,
-        'parse-error pill must render through the localized schemaJsonInvalidTpl template');
+    // Widened from 1500 when the parse-error pill grew a localized position
+    // template; the window must still reach writeSetting below.
+    const persistBody = popupSource.slice(persistIdx, persistIdx + 2000);
+    assert.match(persistBody, /t\('schemaJsonInvalidAtTpl', 'Invalid JSON at position \{position\}[^']*'\)/,
+        'parse-error pill must render through the localized position template');
+    assert.match(persistBody, /t\('schemaJsonInvalid', 'Invalid JSON\./,
+        'a parser message without an offset must fall back to the localized syntax notice');
+    assert.ok(!/errorPill\.textContent[\s\S]{0,200}err\s*&&\s*err\.message/.test(persistBody),
+        'the pill must not concatenate the raw parser message');
     assert.ok(persistBody.indexOf('errorPill.hidden = false') > -1,
         'the parse-error pill must still be revealed');
     assert.ok(persistBody.indexOf('writeSetting') > -1,
@@ -12843,7 +12851,8 @@ test('v4.49.7 popup residual i18n — AI credential section is data-i18n localiz
         'schemaBadgeGithubFullTitle',
         'schemaBadgeLocalOnly',
         'schemaBadgeUnavailableTitleTpl',
-        'schemaJsonInvalidTpl',
+        'schemaJsonInvalid',
+        'schemaJsonInvalidAtTpl',
         'statusImportPreviewApplyTpl',
         'statusImportPreviewSummaryTpl',
         'statusResetDoneUndo',

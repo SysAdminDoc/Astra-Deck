@@ -6,6 +6,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- Popup failures now say what went wrong in your language and what to try next.
+  Twenty-four surfaces used to paste the raw exception text or an HTTP status
+  onto the end of their own label. That half was always English whatever locale
+  you ran, it told you nothing you could act on, and on the AI credential paths
+  a provider's response body could land on screen. Each one now maps the
+  failure onto one of fourteen causes, each translated into all eleven locales
+  and each naming a next action. The raw text still goes to the console
+  diagnostic channel, where it belongs. The JSON entry editor keeps the
+  parser's offset, since that is the one place where the position is the next
+  action, but it renders through a localized template instead of the engine's
+  English prose.
+
 ### Added
 
 - Settings now keeps every Shorts control in one localized section. The ninth

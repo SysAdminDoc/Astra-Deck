@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "認証情報が拒否されました。設定でキーを確認してからもう一度お試しください。"
+  },
+  "failureCauseBadData": {
+    "message": "データを読み取れませんでした。ファイルを確認してからもう一度お試しください。"
+  },
+  "failureCauseCancelled": {
+    "message": "リクエストはキャンセルされました。"
+  },
+  "failureCauseNetwork": {
+    "message": "サービスに接続できませんでした。接続を確認してからもう一度お試しください。"
+  },
+  "failureCauseNotFound": {
+    "message": "その項目は見つかりませんでした。移動または削除された可能性があります。"
+  },
+  "failureCauseOffline": {
+    "message": "デバイスがオフラインのようです。接続し直してからもう一度お試しください。"
+  },
+  "failureCausePermission": {
+    "message": "アクセスが許可されていません。許可してからもう一度お試しください。"
+  },
+  "failureCauseRateLimit": {
+    "message": "リクエストが多すぎます。1 分ほど待ってからもう一度お試しください。"
+  },
+  "failureCauseServer": {
+    "message": "サービス側でエラーが発生しました。しばらくしてからもう一度お試しください。"
+  },
+  "failureCauseStorage": {
+    "message": "ストレージの空き容量が足りません。空き容量を確保してからもう一度お試しください。"
+  },
+  "failureCauseTimeout": {
+    "message": "リクエストに時間がかかりすぎました。しばらくしてからもう一度お試しください。"
+  },
+  "failureCauseTooLarge": {
+    "message": "データが大きすぎます。より小さいファイルをお使いください。"
+  },
+  "failureCauseUnknown": {
+    "message": "予期しない問題が発生しました。詳細は診断ログをご確認ください。"
+  },
+  "failureCauseUnsupported": {
+    "message": "このブラウザーではその機能を実行できません。更新してからもう一度お試しください。"
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "オブジェクトが必要です"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "無効な JSON: {error}"
+  "schemaJsonInvalid": {
+    "message": "JSON が無効です。構文を確認してから適用してください。"
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "位置 {position} の JSON が無効です。修正してから適用してください。"
   },
   "schemaOverviewAllView": {
     "message": "すべての設定を表示"

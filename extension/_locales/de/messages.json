@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "Die Zugangsdaten wurden abgelehnt. Prüfe den Schlüssel in den Einstellungen und versuche es erneut."
+  },
+  "failureCauseBadData": {
+    "message": "Die Daten konnten nicht gelesen werden. Prüfe die Datei und versuche es erneut."
+  },
+  "failureCauseCancelled": {
+    "message": "Die Anfrage wurde abgebrochen."
+  },
+  "failureCauseNetwork": {
+    "message": "Der Dienst war nicht erreichbar. Prüfe deine Verbindung und versuche es erneut."
+  },
+  "failureCauseNotFound": {
+    "message": "Dieser Eintrag wurde nicht gefunden. Möglicherweise wurde er verschoben oder entfernt."
+  },
+  "failureCauseOffline": {
+    "message": "Dein Gerät scheint offline zu sein. Stelle die Verbindung wieder her und versuche es erneut."
+  },
+  "failureCausePermission": {
+    "message": "Der Zugriff wurde nicht erteilt. Erlaube ihn und versuche es erneut."
+  },
+  "failureCauseRateLimit": {
+    "message": "Es wurden zu viele Anfragen gesendet. Warte eine Minute und versuche es erneut."
+  },
+  "failureCauseServer": {
+    "message": "Der Dienst meldet einen Fehler auf seiner Seite. Versuche es später noch einmal."
+  },
+  "failureCauseStorage": {
+    "message": "Es ist nicht genug Speicherplatz vorhanden. Gib Speicher frei und versuche es erneut."
+  },
+  "failureCauseTimeout": {
+    "message": "Die Anfrage hat zu lange gedauert. Versuche es gleich noch einmal."
+  },
+  "failureCauseTooLarge": {
+    "message": "Die Daten sind zu groß. Verwende eine kleinere Datei."
+  },
+  "failureCauseUnknown": {
+    "message": "Etwas Unerwartetes ist schiefgelaufen. Details stehen im Diagnoseprotokoll."
+  },
+  "failureCauseUnsupported": {
+    "message": "Dieser Browser kann die Funktion nicht ausführen. Aktualisiere ihn und versuche es erneut."
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "Objekt erwartet"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "Ungültiges JSON: {error}"
+  "schemaJsonInvalid": {
+    "message": "Ungültiges JSON. Prüfe die Syntax und übernimm es dann."
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "Ungültiges JSON an Position {position}. Korrigiere es und übernimm es dann."
   },
   "schemaOverviewAllView": {
     "message": "Alle Einstellungen anzeigen"

@@ -67,6 +67,7 @@ export const FOUNDATION_MODULES = Object.freeze(
         "core/url.js",
         "core/text-metrics.js",
         "core/date-time.js",
+        "core/failure-copy.js",
         "core/page.js",
         "core/navigation.js",
         "core/player.js",

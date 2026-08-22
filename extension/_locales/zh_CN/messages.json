@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "凭据被拒绝。请在设置中检查密钥后再试。"
+  },
+  "failureCauseBadData": {
+    "message": "无法读取数据。请检查文件后再试。"
+  },
+  "failureCauseCancelled": {
+    "message": "请求已取消。"
+  },
+  "failureCauseNetwork": {
+    "message": "无法连接到该服务。请检查网络连接后再试。"
+  },
+  "failureCauseNotFound": {
+    "message": "未找到该项目。它可能已被移动或删除。"
+  },
+  "failureCauseOffline": {
+    "message": "设备似乎已离线。请重新连接后再试。"
+  },
+  "failureCausePermission": {
+    "message": "未获得访问权限。请授予权限后再试。"
+  },
+  "failureCauseRateLimit": {
+    "message": "发送的请求过多。请等待一分钟后再试。"
+  },
+  "failureCauseServer": {
+    "message": "该服务报告了自身的错误。请稍后再试。"
+  },
+  "failureCauseStorage": {
+    "message": "存储空间不足。请释放空间后再试。"
+  },
+  "failureCauseTimeout": {
+    "message": "请求耗时过长。请稍后再试。"
+  },
+  "failureCauseTooLarge": {
+    "message": "数据过大。请使用更小的文件。"
+  },
+  "failureCauseUnknown": {
+    "message": "发生了意外问题。诊断日志中有详细信息。"
+  },
+  "failureCauseUnsupported": {
+    "message": "此浏览器无法运行该功能。请更新后再试。"
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "应为对象"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "无效的 JSON:{error}"
+  "schemaJsonInvalid": {
+    "message": "JSON 无效。请检查语法后再应用。"
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "位置 {position} 处的 JSON 无效。请修正后再应用。"
   },
   "schemaOverviewAllView": {
     "message": "显示所有设置"

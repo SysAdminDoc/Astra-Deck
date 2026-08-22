@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "Le credenziali sono state rifiutate. Controlla la chiave nelle Impostazioni e riprova."
+  },
+  "failureCauseBadData": {
+    "message": "Non è stato possibile leggere i dati. Controlla il file e riprova."
+  },
+  "failureCauseCancelled": {
+    "message": "La richiesta è stata annullata."
+  },
+  "failureCauseNetwork": {
+    "message": "Non è stato possibile raggiungere il servizio. Controlla la connessione e riprova."
+  },
+  "failureCauseNotFound": {
+    "message": "Elemento non trovato. Potrebbe essere stato spostato o rimosso."
+  },
+  "failureCauseOffline": {
+    "message": "Il dispositivo sembra offline. Riconnettiti e riprova."
+  },
+  "failureCausePermission": {
+    "message": "L’accesso non è stato concesso. Consentilo e riprova."
+  },
+  "failureCauseRateLimit": {
+    "message": "Sono state inviate troppe richieste. Attendi un minuto e riprova."
+  },
+  "failureCauseServer": {
+    "message": "Il servizio ha segnalato un errore dalla sua parte. Riprova più tardi."
+  },
+  "failureCauseStorage": {
+    "message": "Lo spazio di archiviazione non è sufficiente. Libera spazio e riprova."
+  },
+  "failureCauseTimeout": {
+    "message": "La richiesta ha impiegato troppo tempo. Riprova tra un momento."
+  },
+  "failureCauseTooLarge": {
+    "message": "I dati sono troppo grandi. Usa un file più piccolo."
+  },
+  "failureCauseUnknown": {
+    "message": "Si è verificato un problema imprevisto. I dettagli sono nel registro diagnostico."
+  },
+  "failureCauseUnsupported": {
+    "message": "Questo browser non può eseguire quella funzione. Aggiornalo e riprova."
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "Era atteso un oggetto"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "JSON non valido: {error}"
+  "schemaJsonInvalid": {
+    "message": "JSON non valido. Controlla la sintassi e applica di nuovo."
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "JSON non valido alla posizione {position}. Correggilo e applica di nuovo."
   },
   "schemaOverviewAllView": {
     "message": "Mostra tutte le impostazioni"

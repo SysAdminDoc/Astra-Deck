@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "Les identifiants ont été refusés. Vérifiez la clé dans les Paramètres, puis réessayez."
+  },
+  "failureCauseBadData": {
+    "message": "Les données n’ont pas pu être lues. Vérifiez le fichier, puis réessayez."
+  },
+  "failureCauseCancelled": {
+    "message": "La requête a été annulée."
+  },
+  "failureCauseNetwork": {
+    "message": "Le service n’a pas pu être joint. Vérifiez votre connexion, puis réessayez."
+  },
+  "failureCauseNotFound": {
+    "message": "Cet élément est introuvable. Il a peut-être été déplacé ou supprimé."
+  },
+  "failureCauseOffline": {
+    "message": "Votre appareil semble hors ligne. Reconnectez-vous, puis réessayez."
+  },
+  "failureCausePermission": {
+    "message": "L’accès n’a pas été accordé. Autorisez-le, puis réessayez."
+  },
+  "failureCauseRateLimit": {
+    "message": "Trop de requêtes ont été envoyées. Attendez une minute, puis réessayez."
+  },
+  "failureCauseServer": {
+    "message": "Le service signale une erreur de son côté. Réessayez plus tard."
+  },
+  "failureCauseStorage": {
+    "message": "L’espace de stockage est insuffisant. Libérez de l’espace, puis réessayez."
+  },
+  "failureCauseTimeout": {
+    "message": "La requête a pris trop de temps. Réessayez dans un instant."
+  },
+  "failureCauseTooLarge": {
+    "message": "Les données sont trop volumineuses. Utilisez un fichier plus petit."
+  },
+  "failureCauseUnknown": {
+    "message": "Un problème inattendu est survenu. Le journal de diagnostic contient les détails."
+  },
+  "failureCauseUnsupported": {
+    "message": "Ce navigateur ne peut pas exécuter cette fonction. Mettez-le à jour, puis réessayez."
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "Objet attendu"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "JSON invalide : {error}"
+  "schemaJsonInvalid": {
+    "message": "JSON non valide. Vérifiez la syntaxe, puis appliquez."
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "JSON non valide à la position {position}. Corrigez-le, puis appliquez."
   },
   "schemaOverviewAllView": {
     "message": "Afficher tous les paramètres"
