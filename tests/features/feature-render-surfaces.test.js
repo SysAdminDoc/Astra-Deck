@@ -36,6 +36,14 @@ function renderDocument(resolve = () => []) {
     const doc = fakeDocument(resolve);
     const create = doc.createElement.bind(doc);
     doc.activeElement = null;
+    // Renderers that own a dismiss-on-outside-click listener bind it on the
+    // document; record the handlers so a test can drive them.
+    doc.listeners = new Map();
+    doc.addEventListener = (type, handler) => {
+        if (!doc.listeners.has(type)) doc.listeners.set(type, new Set());
+        doc.listeners.get(type).add(handler);
+    };
+    doc.removeEventListener = (type, handler) => { doc.listeners.get(type)?.delete(handler); };
     doc.createElement = (tag) => {
         const node = create(tag);
         node.focus = () => { doc.activeElement = node; };
@@ -44,6 +52,9 @@ function renderDocument(resolve = () => []) {
         node.querySelector = (selector) => collectMatching(node, selector)[0] || null;
         return node;
     };
+    // SVG icons are built through createElementNS, which the shared fake does
+    // not carry; the nodes behave the same for every assertion made here.
+    doc.createElementNS = (_namespace, tag) => doc.createElement(tag);
     doc.body.appendChild = doc.body.appendChild.bind(doc.body);
     return doc;
 }
@@ -369,4 +380,115 @@ test('watchHistoryAnalytics closes the dialog it opened instead of stacking a se
     feature._open();
     assert.equal(doc.body.children.length, 0, 'a second call closes rather than duplicating');
     assert.equal(feature._modal, null);
+});
+
+// ── quickLinkMenu ──────────────────────────────────────────────────────
+function quickLinksFixture(quickLinkItems) {
+    const doc = renderDocument(() => []);
+    const settings = { quickLinkItems, logoToSubscriptions: false };
+    const saved = [];
+    const toasts = [];
+    const feature = loadFeature('quickLinkMenu', {
+        document: doc,
+        window: { location: { origin: 'https://www.youtube.com' } },
+        URL,
+        isYouTubeHostname: (host) => /(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(String(host || '')),
+        VIDEO_ID_PATTERN: /^[A-Za-z0-9_-]{11}$/,
+        appState: { settings },
+        settingsManager: { save: (next) => saved.push(next.quickLinkItems) },
+        showToast: (message) => toasts.push(message),
+        ICONS: new Proxy({}, { get: () => () => doc.createElement('svg') }),
+        // The bottom-row buttons stamp their glyphs through the trusted-types
+        // wrapper. It is not what these tests are about, so record the target
+        // rather than parse the markup.
+        TrustedHTML: { setHTML: (node, html) => { node._trustedHtml = html; } },
+        BRAND: { name: 'Astra Deck' }
+    });
+    const parent = doc.createElement('div');
+    return { feature, parent, settings, saved, toasts, doc };
+}
+
+function quickLinkLabels(menu) {
+    return collect(menu, 'ytkit-ql-item')
+        .filter((node) => !node.classList.contains('ytkit-ql-bottom-btn'))
+        .map((node) => node.textContent);
+}
+
+test('quickLinkMenu renders its own empty state when nothing is configured', () => {
+    const { feature, parent } = quickLinksFixture('');
+
+    feature._buildMenu(parent, 'ytkit-ql-drop-1');
+
+    const menu = parent.querySelector('#ytkit-ql-drop-1') || collect(parent, 'ytkit-ql-drop')[0];
+    assert.ok(menu, 'the dropdown must be built');
+    assert.equal(menu.getAttribute('role'), 'group');
+    assert.equal(collect(menu, 'ytkit-ql-row').length, 0);
+    const empty = collect(menu, 'ytkit-ql-empty');
+    assert.equal(empty.length, 1);
+    assert.equal(textOf(menu, 'ytkit-ql-empty-title')[0], 'No quick links yet');
+});
+
+test('quickLinkMenu renders one row per valid line and drops the ones it cannot resolve', () => {
+    const { feature, parent } = quickLinksFixture([
+        'History|/feed/history',
+        'no separator here',
+        '|/feed/trending',
+        'Blocked|javascript:alert(1)',
+        'Offsite|https://example.test/x',
+        'Short|https://youtu.be/abcdefghijk'
+    ].join('\n'));
+
+    feature._buildMenu(parent, 'drop');
+
+    const menu = collect(parent, 'ytkit-ql-drop')[0];
+    assert.deepEqual(quickLinkLabels(menu), ['History', 'Short']);
+    assert.equal(collect(menu, 'ytkit-ql-empty').length, 0);
+
+    // A youtu.be short link is rewritten to the watch path rather than kept
+    // as an off-site host.
+    const rows = collect(menu, 'ytkit-ql-item').filter((n) => !n.classList.contains('ytkit-ql-bottom-btn'));
+    assert.equal(rows[1].pathname, '/watch');
+    assert.equal(rows[1].search, '?v=abcdefghijk');
+
+    // Every row carries an icon path, and an unknown destination falls back to
+    // the default glyph rather than rendering an empty <path>.
+    const paths = collect(menu, 'ytkit-ql-icon').map((svg) => svg.children[0].getAttribute('d'));
+    assert.equal(paths.length, 2);
+    assert.ok(paths.every((d) => /^[MmZzLlHhVvCcSsQqTtAa0-9,.\-\s]+$/.test(d)));
+    assert.notEqual(paths[0], paths[1], 'a known destination gets its own glyph');
+});
+
+test('quickLinkMenu stops rendering at its ten-slot cap', () => {
+    const lines = Array.from({ length: 14 }, (_value, index) => `Link ${index}|/feed/history`);
+    const { feature, parent } = quickLinksFixture(lines.join('\n'));
+
+    feature._buildMenu(parent, 'drop');
+
+    const menu = collect(parent, 'ytkit-ql-drop')[0];
+    assert.equal(quickLinkLabels(menu).length, 10);
+    assert.deepEqual(quickLinkLabels(menu).at(-1), 'Link 9');
+});
+
+test('quickLinkMenu deleting a row splices the stored line, keeping entries past the cap intact', () => {
+    const lines = Array.from({ length: 12 }, (_value, index) => `Link ${index}|https://www.youtube.com/feed/history?n=${index}`);
+    const { feature, parent, settings, saved, toasts } = quickLinksFixture(lines.join('\n'));
+
+    feature.rebuildMenus = () => {};
+    feature._buildMenu(parent, 'drop');
+
+    const menu = collect(parent, 'ytkit-ql-drop')[0];
+    collect(menu, 'ytkit-ql-del')[1].onclick({ preventDefault() {}, stopPropagation() {} });
+
+    const remaining = settings.quickLinkItems.split('\n');
+    assert.equal(remaining.length, 11, 'exactly one stored line is removed');
+    assert.ok(!remaining.some((line) => line.startsWith('Link 1|')));
+    // The rendered list is capped at ten, so rebuilding the setting from it
+    // used to destroy entries 10 and 11 outright.
+    assert.ok(remaining.some((line) => line.startsWith('Link 11|')),
+        'entries past the render cap must survive a delete');
+    // Rebuilding from the parsed view also normalised full URLs into paths.
+    assert.ok(remaining.every((line) => line.includes('https://www.youtube.com/feed/history')),
+        'stored lines keep the form the user typed');
+    assert.deepEqual(saved, [settings.quickLinkItems]);
+    assert.deepEqual(toasts, ['Removed "Link 1"']);
 });
