@@ -20,7 +20,7 @@
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.84.0` |
+| Release | `v4.84.1` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `477` entries across `18` categories |
@@ -1227,6 +1227,11 @@ bounded to the profile path used by that run.
 The pinned manager smoke passes with Violentmonkey 2.47.0 and Tampermonkey
 5.5.0. It verifies the install flow and the shell-only userscript contract in
 fresh Firefox profiles.
+
+The extension loads Player Dock from its preloaded feature module and keeps
+only a descriptor in the large content-script bundle. The generated userscript
+core uses the same module source, so runtime checks exercise the code that
+ships rather than a discarded fallback copy.
 
 The Chromium zero-ad smoke tries the installed browser candidates in order. A
 candidate without MV3 `declarativeNetRequest` support is reported and skipped,

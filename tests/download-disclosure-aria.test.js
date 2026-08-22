@@ -19,13 +19,14 @@ const repoRoot = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(repoRoot, p), 'utf8');
 
 const playerDock = read('extension/features/player-dock/index.js');
+const userscriptCore = read('YTKit-core.user.js');
 const downloadUi = read('extension/features/download-ui/index.js');
 const monolith = read('extension/ytkit.js');
 
 // ── both triggers declare the state from creation ─────────────────────────
 
 test('the in-player download trigger declares its disclosure state at creation', () => {
-    for (const [label, source] of [['player-dock', playerDock], ['ytkit.js', monolith]]) {
+    for (const [label, source] of [['player-dock', playerDock], ['userscript core', userscriptCore]]) {
         const at = source.indexOf("'ytp-button ytkit-player-btn ytkit-po-dl'");
         assert.ok(at > 0, `${label} must still build the .ytkit-po-dl trigger`);
         const block = source.slice(at, source.indexOf('wrap.appendChild(dlBtn)', at));

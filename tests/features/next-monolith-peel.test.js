@@ -66,15 +66,15 @@ test('youtubeMusicCompat factory returns the YouTube Music runtime surface', () 
     assert.equal(typeof feature.destroy, 'function');
 });
 
-test('floatingLogoOnWatch monolith prefers the module runtime factory before inline fallback', () => {
+test('floatingLogoOnWatch monolith delegates to the module and keeps only a descriptor stub', () => {
     const factoryNeedle = 'globalThis.YTKitFeatures?.floatingLogoOnWatch?.createFloatingLogoOnWatchFeature?.({';
     const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
     assert.ok(factoryIndex > -1, 'ytkit.js must construct floatingLogoOnWatch through the module factory');
     const fallbackIndex = sources.ytkit.indexOf("id: 'floatingLogoOnWatch'", factoryIndex);
-    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must retain the inline floatingLogoOnWatch fallback after the factory call');
+    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must keep a descriptor stub after the factory call');
     const dependencyBag = sources.ytkit.slice(factoryIndex, fallbackIndex);
     assert.ok(dependencyBag.includes('}) || {'),
-        'module factory path must fall back to the inline feature object');
+        'module factory path must fall back to the descriptor stub');
 
     for (const dep of [
         'appState',
@@ -92,6 +92,19 @@ test('floatingLogoOnWatch monolith prefers the module runtime factory before inl
     }
     assert.ok(dependencyBag.includes('ICONS: globalThis.YTKitCore?.ICONS'),
         'factory dependency bag must avoid the later-declared local ICONS binding');
+
+    const stubEnd = sources.ytkit.indexOf('\n        }),', fallbackIndex);
+    assert.ok(stubEnd > fallbackIndex, 'floatingLogoOnWatch stub must terminate');
+    const stub = sources.ytkit.slice(fallbackIndex, stubEnd);
+    assert.ok(stub.length < 1200,
+        `floatingLogoOnWatch fallback must stay a descriptor stub, got ${stub.length} bytes`);
+    for (const key of ['id', 'name', 'description', 'group', 'icon', '_ruleId']) {
+        assert.match(stub, new RegExp(`\\b${key}:`), `stub must still declare ${key}`);
+    }
+    assert.match(stub, /init\(\)\s*\{[\s\S]*?Feature module unavailable/,
+        'stub must report a missing player-dock module');
+    assert.doesNotMatch(stub, /_inject\(|appendStyleSheet\(`/,
+        'stub must not re-inline the player-dock runtime or stylesheet');
 });
 
 test('youtubeMusicCompat monolith delegates to the module and keeps only a descriptor stub', () => {
