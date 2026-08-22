@@ -209,12 +209,3 @@ and the Delhi-Modern fixture refresh. Several externally-sourced recommendations
 dropped after local verification and are recorded as rejected in `RESEARCH.md` rather than
 listed here (store-profile permission stripping, Greasy Fork size/minification, DNR
 `topDomains`, comment search, anti-translation parity, `use_dynamic_url` coverage).
-
-### P3
-
-- [ ] P3 — Stop concatenating raw error text and HTTP status into user-facing copy
-  Why: about fifteen surfaces append `error.message` or a status code to user copy, so provider error bodies and internal exception text reach the UI verbatim. It is unactionable for the user, it is untranslatable (the appended half is always English), and on the AI paths it can surface response bodies.
-  Evidence: `extension/popup.js:4777`, `:5629`, `:5152-5155`; `extension/ytkit.js:32126`, `:33642`, `:39355`; `extension/features/download-ui/index.js:2819`. The existing correct pattern is the mapped filter-list error classifier (`monolithClassifyFilterListRefreshError`).
-  Touches: `extension/popup.js`, `extension/ytkit.js`, `extension/features/download-ui/index.js`, locales, `scripts/check-localizable-ui-copy.js`
-  Acceptance: each converted surface maps the failure to a small closed set of localized causes with a stated next action, and the raw text goes to the diagnostic log only; a gate or test forbids `${...message}` and bare status interpolation in the converted files so the pattern cannot return; the copy-gate baseline only decreases.
-  Complexity: M

@@ -503,6 +503,7 @@ test('downloadUI native-channel-required failures show recovery copy without ins
     );
     const toasts = [];
     const diagnostics = [];
+    const debugLogs = [];
     const protocolLaunches = [];
     let healthCalls = 0;
     const result = mod.createDownloadUIFeature({
@@ -524,7 +525,7 @@ test('downloadUI native-channel-required failures show recovery copy without ins
         showToast: (...args) => { toasts.push(args); },
         openProtocol: (url) => { protocolLaunches.push(url); },
         DiagnosticLog: { record: (...args) => diagnostics.push(args) },
-        DebugManager: { log() {} },
+        DebugManager: { log: (...args) => debugLogs.push(args) },
     });
 
     await result.ytKitDownload('https://www.youtube.com/watch?v=abcdefghijk', false);
@@ -532,7 +533,13 @@ test('downloadUI native-channel-required failures show recovery copy without ins
     assert.equal(protocolLaunches.length, 0);
     assert.ok(toasts.some(([message]) => /browser native messaging/i.test(message)));
     assert.ok(toasts.some(([message]) => /native host registration/i.test(message)));
-    assert.ok(toasts.some(([message]) => /host missing/i.test(message)));
+    // The native token error is a host-registration diagnostic. It used to be
+    // appended to the toast, which told the reader nothing they could act on;
+    // the recovery copy already says what to do. It belongs in the log.
+    assert.ok(!toasts.some(([message]) => /host missing/i.test(message)),
+        'the raw native token error must not reach the toast');
+    assert.ok(debugLogs.some((args) => args.some((part) => /host missing/i.test(String(part)))),
+        'the raw native token error must still reach the diagnostic log');
     assert.ok(diagnostics.some(([kind, detail]) => kind === 'download-failure' && /native-channel-required/.test(detail)));
 });
 
@@ -592,10 +599,16 @@ test('downloadUI classified failures render recovery toast and diagnostic code',
     await result._mediaDLSendDownload('https://www.youtube.com/watch?v=abcdefghijk', false, 'token');
 
     assert.equal(toasts.length, 1);
-    assert.match(toasts[0][0], /PO token required/i);
+    // The companion's own `error` and `advice` strings are raw server text:
+    // English whatever locale the reader runs. The toast renders the mapped
+    // recovery copy for the code; the raw text goes to the diagnostic record.
+    assert.match(toasts[0][0], /YouTube requires a PO token for this video/i);
     assert.match(toasts[0][0], /127\.0\.0\.1:4416/);
+    assert.ok(!/PO token required by YouTube/i.test(toasts[0][0]),
+        'the companion error string must not reach the toast');
     assert.deepEqual(diagnostics[0][0], 'download-failure');
     assert.match(diagnostics[0][1], /po-token-required/);
+    assert.match(diagnostics[0][1], /PO token required by YouTube/);
 });
 
 test('downloadUI sends reviewed clip and playlist selections without exposing yt-dlp flags', async () => {

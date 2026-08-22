@@ -128,11 +128,37 @@ test('describeFailure works without a translator and falls back to the EN copy',
     assert.equal(core.describeFailure({ status: 404 }), core.FAILURE_CAUSES.notFound.fallback);
 });
 
-test('popup.js routes every failure surface through the shared copy helper', () => {
+test('every converted file routes its failure surfaces through the shared copy', () => {
     const popup = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
     assert.match(popup, /function failureText\(context, error, labelKey, labelFallback\)/,
         'popup.js must keep the single conversion helper');
+    const { scanFile, CONVERTED_FILES } = require('../scripts/check-raw-error-copy.js');
+    assert.ok(CONVERTED_FILES.length >= 6, 'the converted list only grows');
+    for (const file of CONVERTED_FILES) {
+        assert.deepEqual(scanFile(file), [], `no ${file} surface may concatenate raw failure text`);
+    }
+});
+
+test('the gate sees raw text bound to a local before it reaches the sink', () => {
     const { scanFile } = require('../scripts/check-raw-error-copy.js');
-    assert.deepEqual(scanFile('extension/popup.js'), [],
-        'no popup surface may concatenate raw failure text');
+    const fixture = path.join(repoRoot, 'extension', '__raw-error-copy-fixture.js');
+    fs.writeFileSync(fixture, [
+        'function render(error) {',
+        "    const message = 'Import failed: ' + error.message;",
+        '    showToast(message);',
+        '}',
+        'function allowed(error) {',
+        '    // raw-error-copy: reviewed, this is our own localized copy',
+        "    const message = error.message || 'fallback';",
+        '    showToast(message);',
+        '}',
+        ''
+    ].join('\n'), 'utf8');
+    try {
+        const violations = scanFile('extension/__raw-error-copy-fixture.js');
+        assert.equal(violations.length, 1, 'the tainted local must be reported once');
+        assert.equal(violations[0].line, 3);
+    } finally {
+        fs.unlinkSync(fixture);
+    }
 });

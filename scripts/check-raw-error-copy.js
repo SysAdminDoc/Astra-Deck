@@ -21,6 +21,8 @@ const REPO_ROOT = path.join(__dirname, '..');
 const CONVERTED_FILES = Object.freeze([
     'extension/popup.js',
     'extension/ytkit.js',
+    'extension/core/userscript-ai-summary.js',
+    'extension/features/download-ui/index.js',
     'extension/features/settings-panel/index.js',
     'extension/features/subscription-groups/index.js'
 ]);
