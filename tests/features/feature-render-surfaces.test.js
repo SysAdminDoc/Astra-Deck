@@ -1383,3 +1383,233 @@ test('bulkCardActions hiding the selection empties it and reports the count', ()
     feature._bulkHide();
     assert.equal(toasts.length, before);
 });
+
+// ── redditComments ─────────────────────────────────────────────────────
+function redditFixture(response) {
+    const doc = renderDocument(() => []);
+    const feature = loadFeature('redditComments', {
+        document: doc,
+        URL,
+        getVideoId: () => 'abcdefghijk',
+        extensionFetchJson: async () => response,
+        YTKitCore: {
+            describeFailure: () => 'The service could not be reached. Check your connection, then try again.',
+            describeFailureWithLabel: (label, _error) => `${label}: reached the fallback`,
+            failureDiagnosticText: (error) => String(error?.message || error)
+        },
+        DiagnosticLog: { record() {} }
+    });
+    return { feature, doc };
+}
+
+function redditPost(overrides = {}) {
+    return {
+        data: {
+            permalink: '/r/videos/comments/abc/a_thread/',
+            title: 'A thread about the video',
+            subreddit: 'videos',
+            score: 42,
+            num_comments: 7,
+            ...overrides
+        }
+    };
+}
+
+test('redditComments renders a row per thread with its subreddit line', async () => {
+    const { feature, doc } = redditFixture({
+        data: { data: { children: [redditPost(), redditPost({ title: '', subreddit: 'youtube', score: 1, num_comments: 0 })] } }
+    });
+    const container = doc.createElement('div');
+
+    await feature._load(container);
+
+    const rows = collect(container, 'ytkit-rc-row');
+    assert.equal(rows.length, 2);
+    assert.equal(rows[0].href, 'https://www.reddit.com/r/videos/comments/abc/a_thread/');
+    assert.equal(rows[0].target, '_blank');
+    assert.equal(rows[0].rel, 'noopener noreferrer', 'an off-site row must not hand over the opener');
+    assert.deepEqual(textOf(container, 'ytkit-rc-title'), ['A thread about the video', '(untitled)']);
+    assert.deepEqual(textOf(container, 'ytkit-rc-meta'), [
+        'r/videos • 42 pts • 7 comments',
+        'r/youtube • 1 pts • 0 comments'
+    ]);
+});
+
+test('redditComments skips a permalink that would leave reddit.com', async () => {
+    const { feature, doc } = redditFixture({
+        data: {
+            data: {
+                children: [
+                    redditPost({ permalink: '//evil.test/phish', title: 'Protocol relative' }),
+                    redditPost({ permalink: 'https://evil.test/phish', title: 'Absolute off-site' }),
+                    redditPost({ permalink: '/r/videos/comments/ok/', title: 'Genuine thread' })
+                ]
+            }
+        }
+    });
+    const container = doc.createElement('div');
+
+    await feature._load(container);
+
+    assert.deepEqual(textOf(container, 'ytkit-rc-title'), ['Genuine thread'],
+        'only a permalink that resolves back to reddit.com may be rendered');
+    assert.equal(collect(container, 'ytkit-rc-row')[0].href, 'https://www.reddit.com/r/videos/comments/ok/');
+});
+
+test('redditComments says so when there is nothing to show', async () => {
+    const { feature, doc } = redditFixture({ data: { data: { children: [] } } });
+    const container = doc.createElement('div');
+
+    await feature._load(container);
+
+    assert.equal(container.textContent, 'No Reddit threads found for this video.');
+    assert.equal(collect(container, 'ytkit-rc-row').length, 0);
+});
+
+test('redditComments builds its panel once, collapsed until asked to load', () => {
+    const secondary = fakeNode({ tag: 'div', attributes: { id: 'secondary', class: 'ytd-watch-flexy' } });
+    secondary.querySelector = (selector) => collectMatching(secondary, selector)[0] || null;
+    const doc = renderDocument((selector) => (selector.includes('#secondary') ? secondary : []));
+    const feature = loadFeature('redditComments', {
+        document: doc,
+        URL,
+        getVideoId: () => 'abcdefghijk',
+        extensionFetchJson: async () => ({ data: { data: { children: [] } } }),
+        DiagnosticLog: { record() {} }
+    });
+
+    feature._inject();
+    feature._inject();
+
+    assert.equal(secondary.children.length, 1, 'the panel is injected once per sidebar');
+    const panel = secondary.children[0];
+    assert.equal(panel.className, 'ytkit-rc-panel');
+    assert.equal(textOf(panel, 'ytkit-rc-head')[0], 'Reddit Discussions');
+    assert.equal(collect(panel, 'ytkit-rc-body')[0].children.length, 0,
+        'nothing is fetched until the reader asks for it');
+    assert.equal(textOf(panel, 'ytkit-rc-load')[0], 'Load threads');
+});
+
+// ── miniPlayerBar ──────────────────────────────────────────────────────
+function miniPlayerFixture({ title = 'The video title', video } = {}) {
+    const titleNode = fakeNode({ tag: 'yt-formatted-string', text: title });
+    const player = fakeNode({ tag: 'div', attributes: { id: 'movie_player' } });
+    const observers = [];
+    const doc = renderDocument((selector) => {
+        if (selector.includes('h1')) return titleNode;
+        if (selector === 'video') return video ? [video] : [];
+        if (selector.includes('#movie_player')) return player;
+        return [];
+    });
+    const feature = loadFeature('miniPlayerBar', {
+        document: doc,
+        URL,
+        location: { href: 'https://www.youtube.com/watch?v=abcdefghijk' },
+        window: { scrollTo: () => {} },
+        isWatchPagePath: () => true,
+        IntersectionObserver: class IntersectionObserver {
+            constructor(callback) { this.callback = callback; observers.push(this); }
+            observe() {}
+            disconnect() {}
+        }
+    });
+    return { feature, doc, observers };
+}
+
+function playerVideo({ paused = false, currentTime = 0, duration = 100 } = {}) {
+    return {
+        paused,
+        currentTime,
+        duration,
+        play() { this.paused = false; return Promise.resolve(); },
+        pause() { this.paused = true; }
+    };
+}
+
+test('miniPlayerBar builds one bar carrying the current video thumbnail and title', () => {
+    const { feature, doc } = miniPlayerFixture({ video: playerVideo() });
+
+    feature._create();
+    feature._create();
+
+    assert.equal(doc.body.children.length, 1, 'the bar is built once');
+    const bar = doc.body.children[0];
+    assert.equal(bar.id, 'ytkit-mini-player-bar');
+    assert.equal(bar.getAttribute('role'), 'complementary');
+    assert.equal(collect(bar, 'ytkit-mini-player-thumb-image')[0].src,
+        'https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg');
+    assert.equal(textOf(bar, 'ytkit-mini-player-title')[0], 'The video title');
+    assert.equal(collect(bar, 'ytkit-mini-player-progress-fill').length, 1);
+});
+
+test('miniPlayerBar falls back to a generic label when the title has not rendered', () => {
+    const { feature, doc } = miniPlayerFixture({ title: '', video: playerVideo() });
+
+    feature._create();
+
+    assert.equal(textOf(doc.body.children[0], 'ytkit-mini-player-title')[0], 'Now Playing',
+        'an empty title must not render as a blank strip');
+});
+
+test('miniPlayerBar toggles the player and keeps its own control in sync', () => {
+    const video = playerVideo({ paused: false });
+    const { feature, doc } = miniPlayerFixture({ video });
+
+    feature._create();
+    const bar = doc.body.children[0];
+    const playBtn = collect(bar, 'ytkit-mini-player-btn--primary')[0];
+    assert.equal(playBtn.textContent, '⏸');
+    assert.equal(playBtn.getAttribute('aria-label'), 'Pause video');
+
+    playBtn.handlers.get('click')();
+    assert.equal(video.paused, true);
+    assert.equal(playBtn.textContent, '▶');
+    assert.equal(playBtn.getAttribute('aria-label'), 'Play video');
+
+    playBtn.handlers.get('click')();
+    assert.equal(video.paused, false);
+    assert.equal(playBtn.getAttribute('aria-label'), 'Pause video');
+});
+
+test('miniPlayerBar draws progress only while it is on screen', () => {
+    const video = playerVideo({ currentTime: 25, duration: 100 });
+    const { feature, doc, observers } = miniPlayerFixture({ video });
+
+    feature._create();
+    const bar = doc.body.children[0];
+    const fill = collect(bar, 'ytkit-mini-player-progress-fill')[0];
+
+    // The bar starts hidden, so a timeupdate must not cost anything.
+    bar.style.display = 'none';
+    feature._updateProgress();
+    assert.equal(fill.style.width, undefined, 'a hidden bar does not repaint');
+
+    // Scrolling the player out of view reveals the bar and refreshes it at
+    // once, because timeupdate will not fire again while the video is paused.
+    observers[0].callback([{ isIntersecting: false }]);
+    assert.equal(bar.style.display, 'flex');
+    assert.equal(fill.style.width, '25%');
+
+    video.currentTime = 60;
+    feature._updateProgress();
+    assert.equal(fill.style.width, '60%');
+
+    observers[0].callback([{ isIntersecting: true }]);
+    assert.equal(bar.style.display, 'none');
+});
+
+test('miniPlayerBar stays dismissed once the reader closes it', () => {
+    const { feature, doc, observers } = miniPlayerFixture({ video: playerVideo() });
+
+    feature._create();
+    const bar = doc.body.children[0];
+    const close = collect(bar, 'ytkit-mini-player-btn').at(-1);
+    assert.equal(close.getAttribute('aria-label'), 'Dismiss mini player bar');
+
+    close.handlers.get('click')();
+    assert.equal(bar.style.display, 'none');
+
+    observers[0].callback([{ isIntersecting: false }]);
+    assert.equal(bar.style.display, 'none',
+        'scrolling again must not bring back a bar the reader dismissed');
+});

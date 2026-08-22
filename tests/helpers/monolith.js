@@ -287,6 +287,16 @@ function fakeNode(options = {}) {
         append(...next) {
             next.flat().forEach((child) => this.appendChild(child));
         },
+        // A panel injected at the top of a sidebar reaches for prepend, and
+        // without it the whole injection threw rather than no-oping.
+        prepend(...next) {
+            next.flat().reverse().forEach((child) => {
+                if (!child) return;
+                this.children.unshift(child);
+                child.parentElement = this;
+                child.isConnected = true;
+            });
+        },
         replaceChildren(...next) {
             this.children.splice(0, this.children.length, ...next);
             next.forEach((child) => {
