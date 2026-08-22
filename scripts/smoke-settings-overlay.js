@@ -478,6 +478,76 @@ const IN_PAGE_CHECKS = `(() => {
     return JSON.stringify({ failures, controls: controls.length, rect: { w: Math.round(rect.width), h: Math.round(rect.height) } });
 })()`;
 
+// A source scanner cannot tell page-embedded text from an opaque Astra shell,
+// and it cannot prove that a YouTube-owned host stays dark while the page
+// switches themes. Keep those decisions tied to a rendered light fixture.
+const LIGHT_THEME_CONTEXT_CHECKS = `(() => {
+    const failures = [];
+    const ratios = {};
+    const parseRgb = (value) => {
+        const match = String(value || '').match(/rgba?\\(([^)]+)\\)/i);
+        if (!match) return null;
+        const parts = match[1].split(/\\s*,\\s*/).map(Number);
+        if (parts.length < 3 || parts.slice(0, 3).some((part) => !Number.isFinite(part))) return null;
+        return [parts[0], parts[1], parts[2], parts.length >= 4 && Number.isFinite(parts[3]) ? parts[3] : 1];
+    };
+    const blend = (foreground, background) => {
+        const alpha = Math.max(0, Math.min(1, foreground[3] ?? 1));
+        return [0, 1, 2].map((index) => foreground[index] * alpha + background[index] * (1 - alpha));
+    };
+    const luminance = (rgb) => {
+        const channels = rgb.map((channel) => {
+            const value = channel / 255;
+            return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const contrastRatio = (foreground, background) => {
+        const foregroundRgb = blend(foreground, background);
+        const foregroundLum = luminance(foregroundRgb);
+        const backgroundLum = luminance(background);
+        return (Math.max(foregroundLum, backgroundLum) + 0.05) / (Math.min(foregroundLum, backgroundLum) + 0.05);
+    };
+    const effectiveBackground = (element) => {
+        const ancestors = [];
+        for (let node = element; node && node !== document.documentElement; node = node.parentElement) {
+            ancestors.unshift(node);
+        }
+        let background = [255, 255, 255];
+        for (const node of ancestors) {
+            const parsed = parseRgb(getComputedStyle(node).backgroundColor);
+            if (parsed && parsed[3] > 0) background = blend(parsed, background);
+        }
+        return background;
+    };
+    const check = (label, selector, groundSelector) => {
+        const element = document.querySelector(selector);
+        if (!element) {
+            failures.push(label + ' fixture surface is missing (' + selector + ')');
+            return;
+        }
+        const foreground = parseRgb(getComputedStyle(element).color);
+        const ground = groundSelector ? document.querySelector(groundSelector) : null;
+        if (!foreground) {
+            failures.push(label + ' has no measurable computed text colour');
+            return;
+        }
+        const background = ground ? effectiveBackground(ground) : effectiveBackground(element.parentElement || element);
+        const ratio = contrastRatio(foreground, background);
+        ratios[label] = Number(ratio.toFixed(2));
+        if (ratio < 4.5) {
+            failures.push(label + ' contrast ' + ratio.toFixed(2) + ':1 < 4.5:1 ('
+                + getComputedStyle(element).color + ' on rgb(' + background.map((value) => Math.round(value)).join(',') + '))');
+        }
+    };
+    check('light like-rate value', '#fixture-light-rate .ytkit-meta-chip__value', '#fixture-light-rate');
+    check('light like-rate label', '#fixture-light-rate .ytkit-meta-chip__label', '#fixture-light-rate');
+    check('settings feature name', '#ytkit-settings-panel .ytkit-feature-name', '#ytkit-settings-panel');
+    check('dark player CC host', '#ytkit-player-controls .ytkit-po-cc', '#movie_player');
+    check('dark quick-link note', '#ytkit-po-drop .ytkit-ql-form-note', '#ytkit-po-drop');
+    return JSON.stringify({ failures, ratios });
+})()`;
+
 const SCROLLED_HEADER_CHECKS = `(() => {
     const failures = [];
     const content = document.querySelector('#ytkit-settings-panel .ytkit-content');
@@ -658,6 +728,35 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
         });
         return downloadUi;
     };
+    const ensureThemeFixtures = () => {
+        const host = document.getElementById('movie_player');
+        if (!host) return false;
+        const rightControls = host.querySelector('.ytp-right-controls') || host;
+        let controls = document.getElementById('ytkit-player-controls');
+        if (!controls) {
+            controls = document.createElement('div');
+            controls.id = 'ytkit-player-controls';
+            rightControls.appendChild(controls);
+        }
+        let cc = controls.querySelector('.ytkit-po-cc');
+        if (!cc) {
+            cc = document.createElement('button');
+            cc.type = 'button';
+            cc.className = 'ytp-button ytkit-player-btn ytkit-po-cc';
+            cc.setAttribute('aria-pressed', 'false');
+            cc.textContent = 'CC';
+            controls.appendChild(cc);
+        }
+        let drop = document.getElementById('ytkit-po-drop');
+        if (!drop) {
+            drop = document.createElement('div');
+            drop.id = 'ytkit-po-drop';
+            drop.className = 'ytkit-ql-drop';
+            drop.innerHTML = '<span class="ytkit-ql-form-note">Use a site path</span>';
+            host.appendChild(drop);
+        }
+        return Boolean(cc && drop.querySelector('.ytkit-ql-form-note'));
+    };
     globalThis.__ytkitA11y = {
         openDownload() {
             const ui = ensureDownloadUi();
@@ -669,6 +768,8 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
             downloadUi?._closeDlPopup?.();
         }
     };
+    globalThis.__ytkitSmoke = globalThis.__ytkitSmoke || {};
+    globalThis.__ytkitSmoke.ensureThemeFixtures = ensureThemeFixtures;
 })();
 `, 'utf8');
     const html = `<!DOCTYPE html>
@@ -684,6 +785,11 @@ if (new URLSearchParams(location.search).get('theme') === 'light') {
 <style>
 body{margin:0;background:#0f0f0f;color:#e5e7eb;font-family:Roboto,system-ui,sans-serif;}
 html:not([dark]) body{background:#f7f8fa;color:#17202b;}
+#fixture-light-rate{position:fixed;left:-9999px;top:0;}
+#movie_player{position:fixed;left:-9999px;bottom:0;width:360px;height:80px;background:#0f0f0f;color:#f1f1f1;}
+#movie_player .ytp-right-controls{display:flex;align-items:center;height:40px;background:#0f0f0f;}
+#ytkit-player-controls{display:flex;align-items:center;background:#06090e;}
+#ytkit-po-drop{display:block;position:fixed;left:-9999px;bottom:0;background:#080b10;color:#f1f1f1;}
 ytd-comments,ytd-comments-header-renderer,ytd-comment-thread-renderer{display:block;}
 ytd-comments{max-width:860px;margin:24px auto;padding:0 20px;}
 ytd-comments-header-renderer{font-size:22px;font-weight:700;margin-bottom:16px;}
@@ -703,6 +809,20 @@ html:not([dark]) ytd-comment-thread-renderer{background:#fff;border-color:#d9dee
         <ytd-comment-thread-renderer><div id="content-text">A thoughtful chapter about keyboard navigation.</div></ytd-comment-thread-renderer>
         <ytd-comment-thread-renderer><div id="content-text">The color palette looks excellent on my display.</div></ytd-comment-thread-renderer>
     </ytd-comments>
+    <div id="fixture-light-rate" class="ytkit-lv-ratio">
+        <span class="ytkit-meta-chip__value">4.2%</span>
+        <span class="ytkit-meta-chip__label">Like Rate</span>
+    </div>
+    <div id="movie_player">
+        <div class="ytp-right-controls">
+            <div id="ytkit-player-controls">
+                <button class="ytp-button ytkit-player-btn ytkit-po-cc" type="button" aria-pressed="false">CC</button>
+            </div>
+        </div>
+        <div id="ytkit-po-drop" class="ytkit-ql-drop">
+            <span class="ytkit-ql-form-note">Use a site path</span>
+        </div>
+    </div>
     <button id="fixture-download-anchor" type="button">Download fixture</button>
 ${scriptTags}
 </body>
@@ -917,6 +1037,7 @@ async function main() {
                 document.documentElement.setAttribute('dir', '${state.dir}');
                 return true;
             })()`);
+            await client.evaluate('globalThis.__ytkitSmoke.ensureThemeFixtures?.()');
             await client.evaluate('globalThis.__ytkitSmoke.openPanel()');
             try {
                 await waitFor(
@@ -942,7 +1063,14 @@ async function main() {
                 : [`panel direction ${renderedDir || 'missing'} != ${state.dir}`];
             await sleep(600); // let fonts/layout settle before measuring
             const report = JSON.parse(await client.evaluate(IN_PAGE_CHECKS));
-            failuresByState[state.name] = [...directionFailures, ...(report.failures || [])];
+            const contextReport = state.name === 'desktop-light'
+                ? JSON.parse(await client.evaluate(LIGHT_THEME_CONTEXT_CHECKS))
+                : { failures: [] };
+            failuresByState[state.name] = [
+                ...directionFailures,
+                ...(report.failures || []),
+                ...(contextReport.failures || [])
+            ];
 
             if (state.name === 'desktop-dark') {
                 // The mutable appState object used to be stored as the save
@@ -1361,6 +1489,7 @@ module.exports = {
     buildFixture,
     CHROME_STUB,
     CATEGORY_PARITY_CHECKS,
+    LIGHT_THEME_CONTEXT_CHECKS,
     SCROLLED_HEADER_CHECKS,
     DevtoolsClient,
     findBrowser,

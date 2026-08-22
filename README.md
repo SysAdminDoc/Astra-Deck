@@ -366,7 +366,7 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 - Textarea editors for keyword filters, quick links, custom CSS
 - Schema-validated Export / Import / Reset with credential scrub
 - Conflict detection (auto-disables conflicting features with toast notification)
-- Verified dark/light and RTL layouts at supported desktop viewports; mobile browsers are not supported
+- Verified dark/light and RTL layouts at supported desktop viewports, including a rendered light-theme contrast lane for page surfaces and dark YouTube player chrome; mobile browsers are not supported
 
 The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, schema-validated backups, diagnostics, and language selection.
 

@@ -105,6 +105,27 @@ test('a surface that paints its own ground is not flagged', () => {
     assert.ok(!gate.providesOwnGround('color: #fff;'));
 });
 
+test('surface grounding includes ytkit ids as well as classes', () => {
+    const { needsLane, hasLane } = gate.scan(['extension/ytkit.js']);
+    for (const token of ['ytkit-comment-nav-label', 'ytkit-install-prompt__title', 'ytkit-subs-load-banner__title']) {
+        assert.ok(hasLane.has(token) || !needsLane.has(token), `${token} must inherit its id shell ground`);
+    }
+});
+
+test('grounded shell aliases and rendered host contexts clear false positives', () => {
+    const { needsLane } = gate.scan(['extension/ytkit.js', 'extension/features/video-hider/index.js']);
+    for (const token of [
+        'ytkit-aisum-close', 'ytkit-blocked-watch-channel', 'ytkit-bookmark-note',
+        'ytkit-toast-message', 'ytkit-transcript-batch-name', 'ytkit-vvf-val',
+        'ytkit-wellbeing-msg', 'ytkit-wha-head', 'ytkit-po-cc'
+    ]) {
+        assert.equal(needsLane.has(token), false, `${token} must be judged against its rendered shell`);
+    }
+    for (const token of gate.PANEL_GROUNDED_TOKENS) {
+        assert.equal(needsLane.has(token), false, `${token} must inherit the command-deck palette`);
+    }
+});
+
 
 test('a wash is not a ground, but an opaque colour is', () => {
     // Two thresholds on purpose. The loose one keeps the report quiet about

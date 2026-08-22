@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The YouTube light-theme check now follows rendered shell context instead of
+  treating every near-white selector as page text. Opaque overlays, the
+  command-deck palette, and always-dark player chrome are covered by explicit
+  context evidence. The like-rate badge now has a readable light lane, and a
+  Chromium fixture checks its resolved contrast alongside settings, player,
+  and quick-link surfaces. The ratchet is clear at 144 covered and zero legacy
+  accepted surfaces.
+
 - The popup and side panel no longer paint colours the palette does not own.
   Eighty-five hex literals in popup.css and twenty-two in sidepanel.css sat
   outside the token block, so a theme change quietly missed them. They are now
