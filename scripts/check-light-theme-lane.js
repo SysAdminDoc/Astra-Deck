@@ -231,25 +231,6 @@ const GROUND_FAMILY_ALIASES = Object.freeze([
     Object.freeze({ root: 'ytkit-wha-card', family: 'ytkit-wha' })
 ]);
 
-// These classes are emitted only inside the command-deck shell. The shell's
-// dark and light palettes are rendered by settings-visual-system.js, while
-// the legacy declarations remain shared with the fallback panel builder.
-const PANEL_GROUNDED_TOKENS = Object.freeze([
-    'ytkit-brand-intro',
-    'ytkit-nav-meta',
-    'ytkit-pane-eyebrow',
-    'ytkit-search-hint',
-    'ytkit-speed-presets__title',
-    'ytkit-vh-field-copy',
-    'ytkit-vh-field-label',
-    'ytkit-vh-form-status'
-]);
-
-// YouTube's player chrome stays dark while the page theme changes. The
-// controls are mounted in that host and the light fixture renders the host as
-// the proof surface for this exception.
-const HOST_GROUNDED_TOKENS = Object.freeze(['ytkit-po-cc']);
-
 function isOpaqueGround(value) {
     if (/^(transparent|none|inherit|initial|unset|revert)\b/i.test(value)) return false;
     // Strip the translucent stops, then see whether any solid colour is left.
@@ -424,10 +405,12 @@ function scan(files) {
             // should aim for: retokenise, do not hand-write a second rule.
             if (!paintsNearInvisibleOnLight(body, 'light')) continue;
             if ([...tokens].some(token => themeAware.has(token))) continue;
-            if ([...tokens].some(token => HOST_GROUNDED_TOKENS.includes(token))) continue;
-            if (opaquelyGrounded.has('ytkit-settings-panel')
-                && [...tokens].some(token => PANEL_GROUNDED_TOKENS.includes(token))) continue;
-            if ([...tokens].some(token => grounded.has(token) || inheritsGround(token))) continue;
+            // A surface is exempt only when the rule itself, or a named
+            // ancestor family, proves an opaque ground. Class names that are
+            // merely expected to render inside a dark host are not evidence:
+            // a detached `.ytkit-po-cc` or `.ytkit-brand-intro` must still be
+            // caught by the source scan and covered by a real theme lane.
+            if ([...tokens].some(token => opaquelyGrounded.has(token) || inheritsGround(token))) continue;
             for (const token of tokens) {
                 if (!needsLane.has(token)) needsLane.set(token, new Set());
                 needsLane.get(token).add(rel);
@@ -522,8 +505,6 @@ if (require.main === module) main();
 module.exports = {
     GROUND_FAMILY_ALIASES,
     LIGHT_THEME_CONTRAST_FLOOR,
-    HOST_GROUNDED_TOKENS,
-    PANEL_GROUNDED_TOKENS,
     YOUTUBE_LIGHT_BACKGROUND,
     isNearInvisibleOnLight,
     lightThemeContrast,

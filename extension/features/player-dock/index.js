@@ -477,6 +477,14 @@
                         color: var(--yt-spec-text-primary, #0f0f0f) !important;
                     }
 
+                    /* The player chrome remains dark while the YouTube page
+                       changes theme. Declare that host-grounded state in the
+                       light lane so the source gate can see the same context. */
+                    html:not([dark]) #ytkit-player-controls .ytkit-po-cc {
+                        color: rgba(191, 219, 254, 0.94) !important;
+                        background: #06090e !important;
+                    }
+
                     #ytkit-player-controls .ytkit-po-dl {
                         color: rgba(202, 255, 222, 0.96) !important;
                         border-color: rgba(34, 197, 94, 0.18) !important;

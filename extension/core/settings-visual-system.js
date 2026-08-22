@@ -1380,6 +1380,25 @@
             background: #fff !important;
         }
 
+        /* Legacy panel classes still ship in the fallback renderer. Keep
+           their text legible when YouTube removes its dark attribute. */
+        html:not([dark]) #ytkit-settings-panel .ytkit-brand-intro,
+        html:not([dark]) #ytkit-settings-panel .ytkit-nav-meta,
+        html:not([dark]) #ytkit-settings-panel .ytkit-search-hint,
+        html:not([dark]) #ytkit-settings-panel .ytkit-vh-field-copy,
+        html:not([dark]) #ytkit-settings-panel .ytkit-vh-form-status {
+            color: #5f6b79 !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-pane-eyebrow {
+            color: #9b2c2a !important;
+        }
+
+        html:not([dark]) #ytkit-settings-panel .ytkit-speed-presets__title,
+        html:not([dark]) #ytkit-settings-panel .ytkit-vh-field-label {
+            color: #17202b !important;
+        }
+
         @media (max-width: 1180px) and (min-width: 901px) {
             #ytkit-settings-panel .ytkit-header {
                 grid-template-columns: 220px minmax(280px, 1fr) auto !important;
