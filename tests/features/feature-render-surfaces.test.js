@@ -62,7 +62,16 @@ function renderDocument(resolve = () => []) {
         node.handlers = new Map();
         node.addEventListener = (type, handler) => node.handlers.set(type, handler);
         node.removeEventListener = (type) => node.handlers.delete(type);
-        node.contains = (other) => other === node || collectMatching(node, '*').includes(other);
+        node.contains = (other) => {
+            if (other === node) return true;
+            const stack = [...(node.children || [])];
+            while (stack.length) {
+                const child = stack.pop();
+                if (child === other) return true;
+                stack.push(...(child.children || []));
+            }
+            return false;
+        };
         return node;
     };
     // SVG icons are built through createElementNS, which the shared fake does
@@ -129,7 +138,7 @@ test('timestampBookmarks renders the empty state with its own copy, not a bare l
     assert.equal(collect(panel, 'ytkit-bookmarks-list').length, 0);
 });
 
-test('timestampBookmarks renders one row per bookmark, in time order, with its note', () => {
+test('timestampBookmarks renders one row per stored bookmark, with its stamp and note', () => {
     const { feature, panel, countEl, statusEl } = bookmarksFixture({
         bookmarks: {
             abc12345678: [
@@ -460,6 +469,10 @@ test('quickLinkMenu renders one row per valid line and drops the ones it cannot 
     // A youtu.be short link is rewritten to the watch path rather than kept
     // as an off-site host.
     const rows = collect(menu, 'ytkit-ql-item').filter((n) => !n.classList.contains('ytkit-ql-bottom-btn'));
+    // href is what the reader clicks. Asserting pathname alone passed even with
+    // the anchor's origin never assigned, which in a browser is a dead link.
+    assert.equal(rows[0].href, 'https://www.youtube.com/feed/history');
+    assert.equal(rows[1].href, 'https://www.youtube.com/watch?v=abcdefghijk');
     assert.equal(rows[1].pathname, '/watch');
     assert.equal(rows[1].search, '?v=abcdefghijk');
 
@@ -1798,6 +1811,10 @@ function watchTabsFixture() {
     const comments = fakeNode({ tag: 'ytd-comments', attributes: { id: 'comments' } });
     const chapters = fakeNode({ tag: 'ytd-macro-markers-list-renderer' });
     const transcript = fakeNode({ tag: 'ytd-transcript-renderer' });
+    // Start every panel hidden. An unset inline display already reads '', so a
+    // test that expects '' on the shown panel cannot fail unless the reveal has
+    // something to undo.
+    for (const panel of [description, comments, chapters, transcript]) panel.style.display = 'none';
     below.querySelector = (selector) => (
         selector.includes('ytd-watch-metadata') ? description : collectMatching(below, selector)[0] || null
     );
@@ -1857,6 +1874,14 @@ test('watchPageTabs shows exactly one panel per tab and moves the active mark wi
     );
     assert.deepEqual(Array.from(tabs, (tab) => tab.classList.contains('ytkit-wtab--active')),
         [false, false, false, true]);
+
+    // Back to the first tab, so the description's own reveal is exercised too
+    // and not left resting on the state the fixture started in.
+    tabs[0].onclick();
+    assert.deepEqual(
+        [description.style.display, comments.style.display, chapters.style.display, transcript.style.display],
+        ['', 'none', 'none', 'none']
+    );
 });
 
 // ── playbackStatsOverlay ───────────────────────────────────────────────
