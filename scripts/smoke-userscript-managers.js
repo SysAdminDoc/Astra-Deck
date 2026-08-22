@@ -297,7 +297,11 @@ async function installUserscript(client, baseContext, manager, baseUrl, timeoutM
     await client.command('browsingContext.navigate', {
         context: baseContext,
         url: `${baseUrl}/YTKit-smoke.user.js`,
-        wait: 'interactive'
+        // Managers intercept the userscript response and open their own
+        // confirmation context. Waiting for the source document to reach
+        // interactive can therefore hang on Tampermonkey even though the
+        // install page is already being created.
+        wait: 'none'
     }).catch((error) => {
         // Violentmonkey aborts the source navigation while it opens a separate
         // confirmation tab. That expected NS_ERROR_ABORT must not hide other

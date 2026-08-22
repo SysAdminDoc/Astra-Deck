@@ -8,6 +8,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The pinned Firefox userscript-manager smoke now passes with both
+  Violentmonkey 2.47.0 and Tampermonkey 5.5.0. Installation navigation no
+  longer waits on an intercepted userscript document, while the follow-up
+  fixture still proves shell collapse and parser-request evidence.
+
 - Firefox live zero-ad smoke now records home, search, SPA-player, blocked
   probe, and collapsed ad-shell evidence. WebDriver sessions close before
   profile cleanup, and Chromium optional-host cleanup targets only the exact
