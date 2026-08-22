@@ -358,10 +358,12 @@ test('Chromium cleanup failure is fatal after its bounded fallback', async () =>
 test('Chromium cleanup passes the validated target to PowerShell through a dedicated environment value', async () => {
     const target = path.join(os.tmpdir(), 'astra-cleanup-contract-fallback');
     let receivedTarget = '';
+    let receivedScript = '';
     const result = await smoke.removeDirWithRetries(target, {
         rmSync() { throw new Error('baited lock'); },
-        spawnSync(_command, _args, options) {
+        spawnSync(_command, args, options) {
             receivedTarget = options.env.ASTRA_DECK_DISPOSABLE_CLEANUP_TARGET;
+            receivedScript = args.join(' ');
             return { status: 0, stderr: '' };
         },
         existsSync: () => false,
@@ -371,6 +373,9 @@ test('Chromium cleanup passes the validated target to PowerShell through a dedic
     });
     assert.equal(result, true);
     assert.equal(receivedTarget, path.resolve(target));
+    assert.match(receivedScript, /Get-CimInstance Win32_Process/);
+    assert.match(receivedScript, /CommandLine\.Contains\(\$target\)/);
+    assert.match(receivedScript, /Stop-Process -Id/);
 });
 
 test('optional-host smoke helper validates missing values and prompt readiness', () => {

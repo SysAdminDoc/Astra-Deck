@@ -8,6 +8,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Firefox live zero-ad smoke now records home, search, SPA-player, blocked
+  probe, and collapsed ad-shell evidence. WebDriver sessions close before
+  profile cleanup, and Chromium optional-host cleanup targets only the exact
+  disposable profile path instead of broad browser termination.
+
 - The light-theme ratchet now requires opaque grounds for direct exemptions,
   and detached host or panel class names no longer pass without a real lane.
   All compact page chips and command-deck controls have explicit light values.
@@ -20,7 +25,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   command-deck palette, and always-dark player chrome are covered by explicit
   context evidence. The like-rate badge now has a readable light lane, and a
   Chromium fixture checks its resolved contrast alongside settings, player,
-  and quick-link surfaces. The ratchet is clear at 144 covered and zero legacy
+  and quick-link surfaces. The ratchet is clear at 179 covered and zero legacy
   accepted surfaces.
 
 - The popup and side panel no longer paint colours the palette does not own.
