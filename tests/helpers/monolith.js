@@ -218,11 +218,28 @@ function styleProxy() {
         get(target, key) {
             if (key in target) return target[key];
             if (typeof key !== 'string') return undefined;
+            // cssText is the whole declaration block, not a property named
+            // "css-text". A feature that stamps its styling through cssText and
+            // then reads or flips one property off it has to see the same
+            // store, or the flip is invisible.
+            if (key === 'cssText') {
+                return [...declarations].map(([name, value]) => `${name}: ${value};`).join(' ');
+            }
             // A real CSSStyleDeclaration reports '' for a property that is not
             // set, which is what a feature comparing against '' expects.
             return declarations.get(styleKeyToProperty(key)) ?? '';
         },
         set(target, key, value) {
+            if (key === 'cssText') {
+                declarations.clear();
+                for (const declaration of String(value ?? '').split(';')) {
+                    const at = declaration.indexOf(':');
+                    if (at === -1) continue;
+                    const name = declaration.slice(0, at).trim();
+                    if (name) declarations.set(name, declaration.slice(at + 1).trim());
+                }
+                return true;
+            }
             if (typeof key === 'string' && !(key in target)) {
                 declarations.set(styleKeyToProperty(key), String(value));
             }
