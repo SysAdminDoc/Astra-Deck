@@ -4508,6 +4508,9 @@
     "message": "リサーチプリセットを適用しました。オフにすると元に戻ります。",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "プロファイルのインポートに失敗しました"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "フィードクリーンアップ"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "リアクション送信"
   },
+  "redditCommentsFailed": {
+    "message": "Reddit の議論を読み込めませんでした"
+  },
   "reenableMediadlAria": {
     "message": "Astra Downloader のインストールプロンプトを再有効化"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "{key} を既定値にリセット（{value}）"
+  },
+  "screenshotCaptureFailed": {
+    "message": "スクリーンショットの取得に失敗しました"
   },
   "searchWatchClose": {
     "message": "検索結果を閉じる"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "設定を保存できませんでした"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "インポートに失敗しました: {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "OPML のインポートに失敗しました: {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "以前の登録チャンネルのグループを復元しました"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "診断に失敗しました: {error} フィードがまだ読み込み中の可能性があるため、再スキャンで解決することがあります。"
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "登録チャンネルの表示コントロール"
   },
+  "subtitleDownloadFailed": {
+    "message": "字幕のダウンロードに失敗しました"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "{time} にブックマークしました"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "その質問には回答できませんでした"
   },
   "transcriptRefreshedTrack": {
     "message": "トラックを更新"

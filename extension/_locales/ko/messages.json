@@ -4508,6 +4508,9 @@
     "message": "리서치 프리셋을 적용했습니다. 끄면 되돌아갑니다.",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "프로필 가져오기에 실패했습니다"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "피드 정리"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "반응 전송"
   },
+  "redditCommentsFailed": {
+    "message": "Reddit 토론을 불러오지 못했습니다"
+  },
   "reenableMediadlAria": {
     "message": "Astra Downloader 설치 프롬프트 다시 활성화"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "{key}을(를) 기본값으로 재설정({value})"
+  },
+  "screenshotCaptureFailed": {
+    "message": "스크린샷 캡처에 실패했습니다"
   },
   "searchWatchClose": {
     "message": "검색 결과 닫기"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "설정을 저장하지 못했습니다"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "가져오기 실패: {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "OPML 가져오기에 실패했습니다: {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "이전 구독 그룹 복원됨"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "상태 검사에 실패했습니다: {error} 피드가 아직 로딩 중일 수 있으므로 다시 검사하면 해결될 수 있습니다."
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "구독 보기 컨트롤"
   },
+  "subtitleDownloadFailed": {
+    "message": "자막 다운로드에 실패했습니다"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "{time}에 북마크함"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "해당 질문에 답변하지 못했습니다"
   },
   "transcriptRefreshedTrack": {
     "message": "트랙 새로 고침"

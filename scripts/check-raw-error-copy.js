@@ -19,7 +19,10 @@ const REPO_ROOT = path.join(__dirname, '..');
 
 // Files whose user-facing surfaces have been converted. The list only grows.
 const CONVERTED_FILES = Object.freeze([
-    'extension/popup.js'
+    'extension/popup.js',
+    'extension/ytkit.js',
+    'extension/features/settings-panel/index.js',
+    'extension/features/subscription-groups/index.js'
 ]);
 
 // Sinks that put text in front of a person.
@@ -42,12 +45,32 @@ const DIAGNOSTIC_SINKS = /\b(?:DebugManager\s*(?:\?\.)?\s*\.?\s*log|DiagnosticLo
 // on the offending line or the line above it.
 const ALLOW_COMMENT = /raw-error-copy:\s*\S/;
 
+// `const message = 'Import failed: ' + e.message;` on one line and
+// `showToast(message)` on the next reaches the reader exactly like a direct
+// concatenation does, so a local bound to raw text is tracked for a few lines.
+const LOCAL_BINDING = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/;
+const BINDING_REACH = 4;
+
 function scanFile(relativePath) {
     const absolute = path.join(REPO_ROOT, relativePath);
     const lines = fs.readFileSync(absolute, 'utf8').split(/\r?\n/);
     const violations = [];
+    const taintedLocals = new Map();
     for (let index = 0; index < lines.length; index += 1) {
         const line = lines[index];
+
+        for (const [name, definedAt] of taintedLocals) {
+            if (index - definedAt > BINDING_REACH) taintedLocals.delete(name);
+        }
+        const binding = LOCAL_BINDING.exec(line);
+        const bindingAllowed = ALLOW_COMMENT.test(line)
+            || ALLOW_COMMENT.test(lines[index - 1] || '')
+            || ALLOW_COMMENT.test(lines[index - 2] || '');
+        if (binding && !bindingAllowed && !DIAGNOSTIC_SINKS.test(line)
+            && (RAW_FAILURE.test(line) || RAW_STATUS.test(line))) {
+            taintedLocals.set(binding[1], index);
+        }
+
         if (!UI_SINKS.some((sink) => sink.test(line))) continue;
         if (DIAGNOSTIC_SINKS.test(line)) continue;
         if (ALLOW_COMMENT.test(line) || ALLOW_COMMENT.test(lines[index - 1] || '')) continue;
@@ -56,7 +79,9 @@ function scanFile(relativePath) {
         const window = lines.slice(index, index + 4).join('\n');
         const expression = window.slice(0, window.indexOf(';') + 1 || window.length);
         if (DIAGNOSTIC_SINKS.test(expression)) continue;
-        if (!RAW_FAILURE.test(expression) && !RAW_STATUS.test(expression)) continue;
+        const tainted = [...taintedLocals.keys()]
+            .some((name) => new RegExp(`\\b${name}\\b`).test(expression));
+        if (!tainted && !RAW_FAILURE.test(expression) && !RAW_STATUS.test(expression)) continue;
         violations.push({ file: relativePath, line: index + 1, text: line.trim().slice(0, 160) });
     }
     return violations;

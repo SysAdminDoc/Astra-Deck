@@ -4508,6 +4508,9 @@
     "message": "Researcher preset applied. Toggle off to restore.",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "Profile import failed"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "Feed Cleanup"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "Reaction sender"
   },
+  "redditCommentsFailed": {
+    "message": "Could not load Reddit discussions"
+  },
   "reenableMediadlAria": {
     "message": "Re-enable Astra Downloader install prompts"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "Reset {key} to default ({value})"
+  },
+  "screenshotCaptureFailed": {
+    "message": "Screenshot capture failed"
   },
   "searchWatchClose": {
     "message": "Close search results"
@@ -5305,6 +5314,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "Settings could not be saved"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6258,6 +6270,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "Import failed: {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "OPML import failed: {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "Restored previous subscription groups"
   },
@@ -6265,7 +6280,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "Health scan failed: {error} The feed may still be loading, so Rescan may help."
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6594,6 +6609,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "Subscription view controls"
   },
+  "subtitleDownloadFailed": {
+    "message": "Subtitle download failed"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Bookmarked at {time}"
   },
@@ -6878,6 +6896,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "Could not answer that question"
   },
   "transcriptRefreshedTrack": {
     "message": "Refreshed Track"

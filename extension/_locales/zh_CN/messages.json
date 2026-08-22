@@ -4508,6 +4508,9 @@
     "message": "已应用研究预设。关闭即可还原。",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "配置文件导入失败"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "信息流清理"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "表情反应发送器"
   },
+  "redditCommentsFailed": {
+    "message": "无法加载 Reddit 讨论"
+  },
   "reenableMediadlAria": {
     "message": "重新启用 Astra Downloader 安装提示"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "将 {key} 重置为默认值（{value}）"
+  },
+  "screenshotCaptureFailed": {
+    "message": "截图失败"
   },
   "searchWatchClose": {
     "message": "关闭搜索结果"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "无法保存设置"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "导入失败：{error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "OPML 导入失败：{error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "已恢复之前的订阅组"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "健康扫描失败：{error} 订阅内容可能仍在加载，重新扫描或许有帮助。"
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "订阅视图控制"
   },
+  "subtitleDownloadFailed": {
+    "message": "字幕下载失败"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "已在 {time} 添加书签"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "无法回答该问题"
   },
   "transcriptRefreshedTrack": {
     "message": "字幕轨道已刷新"

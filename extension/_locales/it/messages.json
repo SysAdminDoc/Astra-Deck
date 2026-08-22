@@ -4508,6 +4508,9 @@
     "message": "Preset Ricerca applicato. Disattivalo per ripristinare.",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "Importazione del profilo non riuscita"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "Pulizia feed"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "Invio reazioni"
   },
+  "redditCommentsFailed": {
+    "message": "Impossibile caricare le discussioni di Reddit"
+  },
   "reenableMediadlAria": {
     "message": "Riattiva le richieste di installazione di Astra Downloader"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "Ripristina {key} al valore predefinito ({value})"
+  },
+  "screenshotCaptureFailed": {
+    "message": "Acquisizione dello screenshot non riuscita"
   },
   "searchWatchClose": {
     "message": "Chiudi i risultati di ricerca"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "Impossibile salvare le impostazioni"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "Importazione non riuscita: {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "Importazione OPML non riuscita: {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "Gruppi di iscrizioni precedenti ripristinati"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "Analisi non riuscita: {error} Il feed potrebbe essere ancora in caricamento, quindi una nuova scansione può aiutare."
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "Controlli visualizzazione iscrizioni"
   },
+  "subtitleDownloadFailed": {
+    "message": "Download dei sottotitoli non riuscito"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Segnalibro aggiunto a {time}"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "Impossibile rispondere a questa domanda"
   },
   "transcriptRefreshedTrack": {
     "message": "Traccia aggiornata"

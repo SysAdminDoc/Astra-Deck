@@ -9746,7 +9746,7 @@ test('v4.41.0 popup JSON editor skips persistence + shows pill on parse error', 
     assert.ok(persistIdx > -1, 'JSON editor persist arrow must be inside the array/object branch');
     // Widened from 1500 when the parse-error pill grew a localized position
     // template; the window must still reach writeSetting below.
-    const persistBody = popupSource.slice(persistIdx, persistIdx + 2000);
+    const persistBody = popupSource.slice(persistIdx, persistIdx + 2200);
     assert.match(persistBody, /t\('schemaJsonInvalidAtTpl', 'Invalid JSON at position \{position\}[^']*'\)/,
         'parse-error pill must render through the localized position template');
     assert.match(persistBody, /t\('schemaJsonInvalid', 'Invalid JSON\./,

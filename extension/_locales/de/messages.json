@@ -4508,6 +4508,9 @@
     "message": "Recherche-Voreinstellung aktiv. Zum Zurücksetzen ausschalten.",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "Profilimport fehlgeschlagen"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "Feed-Bereinigung"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "Reaktionssender"
   },
+  "redditCommentsFailed": {
+    "message": "Reddit-Diskussionen konnten nicht geladen werden"
+  },
   "reenableMediadlAria": {
     "message": "Astra Downloader Installationsaufforderungen erneut aktivieren"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "{key} auf Standard zurücksetzen ({value})"
+  },
+  "screenshotCaptureFailed": {
+    "message": "Screenshot fehlgeschlagen"
   },
   "searchWatchClose": {
     "message": "Suchergebnisse schließen"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "Einstellungen konnten nicht gespeichert werden"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "Import fehlgeschlagen: {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "OPML-Import fehlgeschlagen: {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "Vorherige Abogruppen wiederhergestellt"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "Zustandsprüfung fehlgeschlagen: {error} Der Feed lädt möglicherweise noch, ein erneuter Scan kann helfen."
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "Ansichtssteuerung für Abonnements"
   },
+  "subtitleDownloadFailed": {
+    "message": "Untertitel-Download fehlgeschlagen"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Lesezeichen bei {time} gesetzt"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "Diese Frage konnte nicht beantwortet werden"
   },
   "transcriptRefreshedTrack": {
     "message": "Spur aktualisiert"

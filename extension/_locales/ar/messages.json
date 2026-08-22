@@ -4508,6 +4508,9 @@
     "message": "تم تطبيق إعداد البحث. أوقفه للاستعادة.",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "تعذّر استيراد الملف الشخصي"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "تنظيف الخلاصة"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "مرسل التفاعلات"
   },
+  "redditCommentsFailed": {
+    "message": "تعذّر تحميل نقاشات Reddit"
+  },
   "reenableMediadlAria": {
     "message": "إعادة تفعيل مطالبات تثبيت Astra Downloader"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "إعادة ضبط {key} إلى الإعداد الافتراضي ({value})"
+  },
+  "screenshotCaptureFailed": {
+    "message": "تعذّر التقاط الصورة"
   },
   "searchWatchClose": {
     "message": "إغلاق نتائج البحث"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "تعذّر حفظ الإعدادات"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "فشل الاستيراد: {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "تعذّر استيراد OPML: {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "تمت استعادة مجموعات الاشتراكات السابقة"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "تعذّر فحص الحالة: {error} قد يكون الموجز لا يزال قيد التحميل، لذا قد تساعد إعادة الفحص."
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "عناصر تحكم عرض الاشتراكات"
   },
+  "subtitleDownloadFailed": {
+    "message": "تعذّر تنزيل الترجمة"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "تم وضع إشارة عند {time}"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "تعذّرت الإجابة عن هذا السؤال"
   },
   "transcriptRefreshedTrack": {
     "message": "تم تحديث المسار"
