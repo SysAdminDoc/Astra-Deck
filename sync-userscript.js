@@ -113,6 +113,11 @@ const COMPACT_CSS_TEMPLATES = new Map([
 ]);
 
 const COMPACT_RETURN_CSS_FUNCTIONS = new Map([
+    ['extension/features/chat-style-comments/index.js', [
+        'buildPremiumCommentsCss',
+        'buildPremiumInteractionCss',
+        'buildSelectorSupportFallbackCss',
+    ]],
     ['extension/features/sticky-video/index.js', [
         'buildSplitShellCss',
         'buildSplitMetaCss',
@@ -166,9 +171,6 @@ function compactBundledCssTemplates(source, relativePath) {
             throw new Error(`Cannot compact ${relativePath}: ${functionName} CSS is unterminated`);
         }
         const body = compacted.slice(bodyStart, end);
-        if (body.includes('${')) {
-            throw new Error(`Cannot compact ${relativePath}: ${functionName} CSS must stay static`);
-        }
         compacted = compacted.slice(0, bodyStart)
             + compactCssWhitespace(body)
             + compacted.slice(end);

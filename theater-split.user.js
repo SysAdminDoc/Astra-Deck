@@ -94,8 +94,8 @@
         body.ts-active {
             --ts-accent-rgb: var(--ytkit-accent-rgb, 245, 158, 11);
         }
-        body.ts-split #below.ytkit-split-scroll-surface {
-            color-scheme: dark !important;
+body.ts-split #below.ytkit-split-scroll-surface {
+color-scheme: inherit !important;
             min-width: 0 !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
@@ -1374,21 +1374,38 @@
             --ts-border-strong: rgba(151, 178, 208, 0.36);
             --ts-text: #f5f7fb;
             --ts-muted: #aab7c8;
-        }
-        body.ts-active #ts-wrapper {
+            --ts-scrollbar: rgba(151, 178, 208, 0.34);
+            --ts-player: #02060b;
             background: var(--ts-canvas) !important;
             color: var(--ts-text) !important;
             color-scheme: dark !important;
         }
+        html:not([dark]) body.ts-active {
+            --ts-canvas: #eef2f6;
+            --ts-panel: #ffffff;
+            --ts-raised: #f3f6f9;
+            --ts-hover: #e8edf3;
+            --ts-border: rgba(30, 53, 78, 0.18);
+            --ts-border-strong: rgba(30, 53, 78, 0.30);
+            --ts-text: #172335;
+            --ts-muted: #536278;
+            --ts-scrollbar: rgba(30, 53, 78, 0.30);
+            color-scheme: light !important;
+        }
+        body.ts-active #ts-wrapper {
+            background: var(--ts-canvas) !important;
+            color: var(--ts-text) !important;
+            color-scheme: inherit !important;
+        }
         body.ts-active #ts-left {
-            background: #02060b !important;
+            background: var(--ts-player) !important;
         }
         body.ts-split #ts-right,
         body.ts-split #below.ytkit-split-scroll-surface {
             border-inline-start: 1px solid var(--ts-border) !important;
             background: var(--ts-panel) !important;
             color: var(--ts-text) !important;
-            scrollbar-color: rgba(151, 178, 208, 0.34) transparent !important;
+            scrollbar-color: var(--ts-scrollbar) transparent !important;
         }
         body.ts-split #ts-divider {
             width: 8px !important;
@@ -1432,6 +1449,89 @@
             border-radius: 8px !important;
             background: var(--ts-panel) !important;
             box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title :is(
+            h1,
+            yt-formatted-string,
+            yt-attributed-string,
+            .yt-core-attributed-string,
+            .yt-core-attributed-string--white-space-pre-wrap
+        ) {
+            color: var(--ts-text) !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+            opacity: 1 !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-meta {
+            border: 1px solid rgba(var(--ts-accent-rgb), 0.24) !important;
+            border-radius: 8px !important;
+            background: var(--ts-raised) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-date {
+            color: var(--ts-text) !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-view-count {
+            color: var(--ts-muted) !important;
+            -webkit-text-fill-color: var(--ts-muted) !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata :is(
+            #info,
+            #info-container,
+            #info-text
+        ) {
+            display: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #owner {
+            padding: 12px !important;
+            border: 1px solid var(--ts-border) !important;
+            border-radius: 8px !important;
+            background: var(--ts-raised) !important;
+            color: var(--ts-text) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(
+            #channel-name,
+            #channel-name *,
+            yt-formatted-string,
+            yt-attributed-string
+        ) {
+            color: var(--ts-text) !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+            opacity: 1 !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(
+            #owner-sub-count,
+            #owner-sub-count *
+        ) {
+            color: var(--ts-muted) !important;
+            -webkit-text-fill-color: var(--ts-muted) !important;
+            opacity: 1 !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface ytd-watch-metadata #owner#owner {
+            border-color: var(--ts-border) !important;
+            background: var(--ts-raised) !important;
+            background-image: none !important;
+            color: var(--ts-text) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface ytd-watch-metadata #owner#owner :is(
+            #channel-name#channel-name,
+            #channel-name#channel-name *,
+            yt-formatted-string,
+            yt-attributed-string
+        ) {
+            color: var(--ts-text) !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+            opacity: 1 !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface ytd-watch-metadata #owner#owner :is(
+            #owner-sub-count#owner-sub-count,
+            #owner-sub-count#owner-sub-count *
+        ) {
+            color: var(--ts-muted) !important;
+            -webkit-text-fill-color: var(--ts-muted) !important;
+            opacity: 1 !important;
         }
         body.ts-split #below.ytkit-split-scroll-surface #description-inline-expander,
         body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata ytd-text-inline-expander {
@@ -1482,6 +1582,180 @@
             background: var(--ts-raised) !important;
             box-shadow: none !important;
         }
+        body.ts-split #below.ytkit-split-scroll-surface :is(
+            ytd-watch-metadata,
+            ytd-comments#comments,
+            ytd-comments-header-renderer,
+            ytd-comment-view-model,
+            ytd-comment-renderer,
+            ytd-commentbox,
+            ytd-comment-simplebox-renderer
+        ) {
+            color: var(--ts-text) !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface :is(
+            #content-text,
+            #content-text *,
+            #author-text,
+            #author-text *,
+            #count,
+            #count *
+        ) {
+            color: var(--ts-text) !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments :is(
+            #content-text#content-text,
+            #content-text#content-text *,
+            #author-text#author-text,
+            #author-text#author-text *,
+            #count#count,
+            #count#count *
+        ) {
+            color: var(--ts-text) !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+            opacity: 1 !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments :is(
+            #content#content,
+            #content-text#content-text,
+            #content-text#content-text *
+        ) {
+            background: transparent !important;
+            background-image: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface :is(
+            #published-time-text,
+            #published-time-text *,
+            .published-time-text,
+            .published-time-text *,
+            #placeholder-area,
+            #vote-count-middle
+        ) {
+            color: var(--ts-muted) !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #comments :is(
+            ytd-comments-header-renderer #sort-menu,
+            ytd-comments-header-renderer #sort-menu *,
+            ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer,
+            ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer *,
+            ytd-comment-engagement-bar,
+            ytd-comment-engagement-bar *
+        ) {
+            color: var(--ts-text) !important;
+            opacity: 1 !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        ) {
+            min-height: 30px !important;
+            border: 1px solid var(--ts-border) !important;
+            border-radius: 4px !important;
+            background: transparent !important;
+            background-image: none !important;
+            color: var(--ts-text) !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        ) *,
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        )::before,
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        )::after {
+            background: transparent !important;
+            background-image: none !important;
+            color: inherit !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(svg, path) {
+            fill: currentColor !important;
+            stroke: currentColor !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        ):hover {
+            border-color: var(--ts-border-strong) !important;
+            background: var(--ts-hover) !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #comments :is(
+            #content-text,
+            #content-text *
+        ) {
+            background: transparent !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #owner#owner :is(
+            #actions,
+            #top-level-buttons-computed,
+            ytd-menu-renderer
+        ) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button),
+        body.ts-split #below#below.ytkit-split-scroll-surface .ytkit-split-actions-docked :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        ) {
+            border: 1px solid var(--ts-border) !important;
+            border-radius: 6px !important;
+            background: var(--ts-raised) !important;
+            background-image: none !important;
+            color: var(--ts-text) !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #owner#owner #subscribe-button :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button
+        ) {
+            border-color: rgb(var(--ts-accent-rgb)) !important;
+            background: rgb(var(--ts-accent-rgb)) !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #owner#owner :is(
+            #actions,
+            #top-level-buttons-computed,
+            ytd-menu-renderer
+        ) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) *,
+        body.ts-split #below#below.ytkit-split-scroll-surface .ytkit-split-actions-docked :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        ) * {
+            background: transparent !important;
+            background-image: none !important;
+            color: inherit !important;
+            -webkit-text-fill-color: inherit !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface :is(
+            #owner#owner,
+            .ytkit-split-actions-docked
+        ) :is(svg, path) {
+            fill: currentColor !important;
+            stroke: currentColor !important;
+        }
         body.ts-split #below.ytkit-split-scroll-surface #comments :is(
             button,
             .yt-spec-button-shape-next,
@@ -1492,6 +1766,15 @@
             background-image: none !important;
             box-shadow: none !important;
             transform: none !important;
+        }
+        body.ts-split #below.ytkit-split-scroll-surface #comments :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        )[disabled] {
+            opacity: 0.46 !important;
+            cursor: not-allowed !important;
         }
         body.ts-split .ytkit-split-live-header {
             border-bottom: 1px solid var(--ts-border) !important;
@@ -1714,10 +1997,10 @@
             'min-height': '0', margin: '0',
             'overflow-y': 'auto', 'overflow-x': 'hidden',
             'overscroll-behavior-y': 'contain',
-            'z-index': '10001', background: '#0b1624', padding: '0',
+            'z-index': '10001', background: 'var(--ts-panel)', padding: '0',
             'box-sizing': 'border-box', visibility: 'visible',
             'pointer-events': 'auto',
-            'scrollbar-width': 'thin', 'scrollbar-color': 'rgba(255,255,255,0.15) transparent'
+            'scrollbar-width': 'thin', 'scrollbar-color': 'var(--ts-scrollbar) transparent'
         });
         positionedEls.push(el);
     }
@@ -2892,24 +3175,25 @@
         divider.setAttribute('aria-valuemin', '25');
         divider.setAttribute('aria-valuemax', '85');
         divider.setAttribute('aria-valuenow', '68');
-        divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:#07101b;transition:flex-basis ${TRANSITION};overflow:hidden;z-index:10;color:rgba(148,163,184,0.64);`;
+        divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:var(--ts-canvas);transition:flex-basis ${TRANSITION};overflow:hidden;z-index:10;color:var(--ts-muted);`;
         const pip = document.createElement('div');
         pip.className = 'ts-divider-pip';
-        pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:46px;border-radius:0;background:rgba(148,163,184,0.44);pointer-events:none;color:rgba(148,163,184,0.64);`;
+        pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:46px;border-radius:0;background:var(--ts-muted);pointer-events:none;color:var(--ts-muted);`;
         divider.appendChild(pip);
-        divider.addEventListener('mouseenter', () => { divider.style.background = 'rgba(255,93,74,0.08)'; pip.style.background = 'rgba(255,93,74,0.82)'; pip.style.color = 'rgba(255,255,255,0.92)'; });
-        divider.addEventListener('mouseleave', () => { divider.style.background = '#07101b'; pip.style.background = 'rgba(148,163,184,0.44)'; pip.style.color = 'rgba(148,163,184,0.64)'; });
+        divider.addEventListener('mouseenter', () => { divider.style.background = 'rgba(var(--ts-accent-rgb),0.08)'; pip.style.background = 'rgba(var(--ts-accent-rgb),0.82)'; pip.style.color = 'var(--ts-text)'; });
+        divider.addEventListener('mouseleave', () => { divider.style.background = 'var(--ts-canvas)'; pip.style.background = 'var(--ts-muted)'; pip.style.color = 'var(--ts-muted)'; });
 
         const right = document.createElement('div');
         right.id = 'ts-right';
-        right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:#0b1624;border-left:1px solid rgba(151,178,208,0.22);scrollbar-width:thin;scrollbar-color:rgba(151,178,208,0.34) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis ${TRANSITION},opacity 0.3s;`;
+        right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--ts-panel);border-left:1px solid var(--ts-border);scrollbar-width:thin;scrollbar-color:var(--ts-scrollbar) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis ${TRANSITION},opacity 0.3s;`;
 
         initDividerDrag(divider, left, right);
 
         const closeBtn = document.createElement('button');
         closeBtn.id = 'ts-close';
         closeBtn.title = 'Close side panel';
-        closeBtn.style.cssText = `position:absolute;top:10px;right:10px;z-index:10010;background:#122238;border:1px solid rgba(151,178,208,0.28);border-radius:6px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;color:rgba(245,247,251,0.82);padding:0;`;
+        closeBtn.setAttribute('aria-label', 'Close side panel');
+        closeBtn.style.cssText = `position:absolute;top:10px;right:10px;z-index:10010;background:var(--ts-raised);border:1px solid var(--ts-border-strong);border-radius:6px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;color:var(--ts-text);padding:0;`;
         // Build the "X" via DOM APIs — innerHTML can throw under strict
         // TrustedTypes CSP and is unnecessary for a fixed icon glyph.
         const _TS_SVG_NS = 'http://www.w3.org/2000/svg';
