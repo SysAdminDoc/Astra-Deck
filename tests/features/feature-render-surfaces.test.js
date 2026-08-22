@@ -2465,3 +2465,197 @@ test('wheelSeek stops the gesture reaching the volume wheel behind it', () => {
         'without stopImmediatePropagation the same scroll also changes the volume');
     assert.ok(stopped.includes('default'));
 });
+
+// ── astraContextMenu ───────────────────────────────────────────────────
+function contextMenuActionsFixture() {
+    const copied = [];
+    const blocked = [];
+    const video = { currentTime: 125 };
+    const doc = renderDocument((selector) => {
+        if (selector.includes('video.html5-main-video')) return [video];
+        return [];
+    });
+    doc.elementRect = { width: 200, height: 160 };
+    const feature = loadFeature('astraContextMenu', {
+        document: doc,
+        window: { innerWidth: 1000, innerHeight: 800 },
+        navigator: { clipboard: { writeText: (value) => copied.push(value) } },
+        injectStyle: () => fakeNode(),
+        getVideoId: () => 'abcdefghijk',
+        getFeatureById: (id) => (id === 'hideVideosFromHome' ? {
+            _extractChannelInfo: () => ({ id: 'UCchannel' }),
+            _blockChannel: (info) => blocked.push(info.id)
+        } : null)
+    });
+    return { feature, doc, copied, blocked, video };
+}
+
+function contextEvent(target, x = 100, y = 120) {
+    return { target, clientX: x, clientY: y, preventDefault() {} };
+}
+
+function playerTarget() {
+    const node = fakeNode({ tag: 'div', attributes: { id: 'movie_player' } });
+    node.closest = (selector) => (selector.includes('movie_player') ? node : null);
+    return node;
+}
+
+function cardTarget() {
+    const node = fakeNode({ tag: 'ytd-rich-item-renderer' });
+    const link = fakeNode({ tag: 'a', attributes: { href: 'https://www.youtube.com/watch?v=zzzzzzzzzzz' } });
+    node.appendChild(link);
+    node.querySelector = () => link;
+    node.closest = (selector) => (selector.includes('ytd-rich-item-renderer') ? node : null);
+    return node;
+}
+
+test('astraContextMenu offers the player actions on the player and nothing elsewhere', () => {
+    const { feature, doc } = contextMenuActionsFixture();
+
+    const stranger = fakeNode({ tag: 'div' });
+    stranger.closest = () => null;
+    feature._onContext(contextEvent(stranger));
+    assert.equal(doc.body.children.length, 0, 'a right-click away from a card or the player is left alone');
+
+    feature._onContext(contextEvent(playerTarget()));
+
+    assert.equal(doc.body.children.length, 1);
+    const menu = doc.body.children[0];
+    assert.equal(menu.getAttribute('role'), 'menu');
+    assert.deepEqual(Array.from(menu.children, (item) => item.textContent),
+        ['Copy video URL', 'Copy timestamp link', 'Open transcript']);
+    assert.ok(menu.children.every((item) => item.getAttribute('role') === 'menuitem'));
+});
+
+test('astraContextMenu copies a timestamp link at the position the video is at', () => {
+    const { feature, doc, copied, video } = contextMenuActionsFixture();
+
+    feature._onContext(contextEvent(playerTarget()));
+    const menu = doc.body.children[0];
+
+    menu.children[0].handlers.get('click')();
+    assert.deepEqual(copied, ['https://youtu.be/abcdefghijk']);
+    assert.equal(doc.body.children.length, 0, 'acting on an item closes the menu');
+
+    feature._onContext(contextEvent(playerTarget()));
+    video.currentTime = 125.9;
+    doc.body.children[0].children[1].handlers.get('click')();
+    assert.equal(copied.at(-1), 'https://youtu.be/abcdefghijk?t=125',
+        'the timestamp is whole seconds, not a fraction YouTube will not parse');
+});
+
+test('astraContextMenu offers the card actions on a feed card', () => {
+    const { feature, doc, copied, blocked } = contextMenuActionsFixture();
+
+    feature._onContext(contextEvent(cardTarget()));
+    const menu = doc.body.children[0];
+    assert.deepEqual(Array.from(menu.children, (item) => item.textContent),
+        ['Hide this channel', 'Copy card URL']);
+
+    menu.children[0].handlers.get('click')();
+    assert.deepEqual(blocked, ['UCchannel']);
+
+    feature._onContext(contextEvent(cardTarget()));
+    doc.body.children[0].children[1].handlers.get('click')();
+    assert.deepEqual(copied, ['https://www.youtube.com/watch?v=zzzzzzzzzzz']);
+});
+
+test('astraContextMenu pulls a menu opened near the edge back on screen', () => {
+    const { feature, doc } = contextMenuActionsFixture();
+
+    feature._onContext(contextEvent(playerTarget(), 100, 120));
+    assert.equal(doc.body.children[0].style.left, '100px');
+    assert.equal(doc.body.children[0].style.top, '120px');
+
+    // The fixture reports a 200x160 menu, so a click at the far corner would
+    // otherwise put most of it past the viewport.
+    doc.elementRect = { width: 200, height: 160, right: 1180, bottom: 940 };
+    feature._onContext(contextEvent(playerTarget(), 980, 780));
+    assert.equal(doc.body.children.length, 1, 'the previous menu is replaced, not stacked');
+    assert.equal(doc.body.children[0].style.left, '792px');
+    assert.equal(doc.body.children[0].style.top, '632px');
+});
+
+// ── transcriptAiHandoff ────────────────────────────────────────────────
+function aiHandoffFixture({ target = 'notebooklm', segments = [{ text: 'a cue' }] } = {}) {
+    const controls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
+    const channel = fakeNode({ tag: 'a', text: 'A Channel' });
+    const doc = renderDocument((selector) => {
+        if (selector.includes('.ytp-right-controls')) return controls;
+        if (selector.includes('ytd-channel-name')) return channel;
+        return [];
+    });
+    doc.title = 'The video title - YouTube';
+    doc.getElementById = (id) => collectMatching(controls, `#${id}`)[0] || null;
+    const copied = [];
+    const opened = [];
+    const toasts = [];
+    const feature = loadFeature('transcriptAiHandoff', {
+        document: doc,
+        isWatchPagePath: () => true,
+        getVideoId: () => 'abcdefghijk',
+        appState: { settings: { transcriptAiTarget: target } },
+        navigator: { clipboard: { writeText: async (value) => { copied.push(value); } } },
+        openExternalUrl: async (url) => { opened.push(url); },
+        showToast: (message) => toasts.push(message),
+        DebugManager: { log() {} },
+        TranscriptService: {
+            fetchTranscript: async () => (segments.length
+                ? { status: 'ready', segments, title: 'The video title' }
+                : { status: 'empty', segments: [] }),
+            formatTranscript: (cues) => cues.map((cue) => cue.text).join('\n')
+        }
+    });
+    return { feature, controls, copied, opened, toasts };
+}
+
+test('transcriptAiHandoff builds one labelled player button carrying its glyph', () => {
+    const { feature, controls } = aiHandoffFixture();
+
+    feature._injectButton();
+    feature._injectButton();
+
+    assert.equal(controls.children.length, 1, 'one button per player');
+    const button = controls.children[0];
+    assert.equal(button.id, 'ytkit-ai-handoff');
+    assert.equal(button.getAttribute('aria-label'), 'Send transcript to AI tool');
+    assert.equal(button.children[0].tagName, 'SVG');
+    assert.equal(button.children[0].getAttribute('aria-hidden'), 'true',
+        'a decorative glyph must not be announced');
+});
+
+test('transcriptAiHandoff copies a prompt that names the video and opens the chosen tool', async () => {
+    const { feature, copied, opened, toasts } = aiHandoffFixture({ target: 'claude' });
+
+    await feature._handoff();
+
+    assert.equal(copied.length, 1);
+    assert.match(copied[0], /Title: The video title/);
+    assert.match(copied[0], /Channel: A Channel/);
+    assert.match(copied[0], /a cue$/, 'the transcript itself has to be in the prompt');
+    assert.deepEqual(opened, ['https://claude.ai/new']);
+    assert.ok(toasts.some((message) => /Prompt copied/.test(message)));
+});
+
+test('transcriptAiHandoff pre-fills the query for the one tool that accepts it', async () => {
+    const long = Array.from({ length: 4000 }, (_value, index) => ({ text: `cue number ${index}` }));
+    const { feature, opened, copied } = aiHandoffFixture({ target: 'chatgpt', segments: long });
+
+    await feature._handoff();
+
+    assert.equal(opened.length, 1);
+    assert.ok(opened[0].startsWith('https://chatgpt.com/?q='));
+    assert.ok(opened[0].length < 24_000, 'the URL is truncated so the browser will accept it');
+    assert.ok(copied[0].length > 40_000, 'the untruncated prompt is far past any URL limit');
+    assert.ok(copied[0].length > 6000, 'the full prompt still reaches the clipboard');
+});
+
+test('transcriptAiHandoff says so rather than opening a tool with nothing to paste', async () => {
+    const { feature, opened, copied, toasts } = aiHandoffFixture({ segments: [] });
+
+    await feature._handoff();
+
+    assert.deepEqual(opened, [], 'a video with no transcript must not open the AI tool');
+    assert.deepEqual(copied, []);
+    assert.ok(toasts.some((message) => /No transcript available/.test(message)));
+});
