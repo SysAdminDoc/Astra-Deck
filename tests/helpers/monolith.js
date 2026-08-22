@@ -170,6 +170,37 @@ function matchesCompound(node, selector, classes, attrs) {
     });
 }
 
+function datasetKeyToAttribute(key) {
+    return `data-${String(key).replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
+}
+
+function datasetProxy(attrs) {
+    return new Proxy({}, {
+        get(_target, key) {
+            if (typeof key !== 'string') return undefined;
+            const name = datasetKeyToAttribute(key);
+            return attrs.has(name) ? attrs.get(name) : undefined;
+        },
+        set(_target, key, value) {
+            if (typeof key === 'string') attrs.set(datasetKeyToAttribute(key), String(value));
+            return true;
+        },
+        has(_target, key) {
+            return typeof key === 'string' && attrs.has(datasetKeyToAttribute(key));
+        },
+        deleteProperty(_target, key) {
+            if (typeof key === 'string') attrs.delete(datasetKeyToAttribute(key));
+            return true;
+        },
+        ownKeys() {
+            return [];
+        },
+        getOwnPropertyDescriptor() {
+            return undefined;
+        }
+    });
+}
+
 /** A DOM-ish node: enough surface for feature code, nothing more. */
 function fakeNode(options = {}) {
     const {
@@ -190,7 +221,12 @@ function fakeNode(options = {}) {
         data,
         clicked: 0,
         removed: 0,
-        dataset: {},
+        // A real DOM reflects dataset writes to `data-*` attributes, and this
+        // codebase both writes `el.dataset.x = '1'` and matches on
+        // `[data-x="1"]`. A plain object made those two halves invisible to
+        // each other, so a toolbar could set its count and then fail to find
+        // the element it had just marked.
+        dataset: datasetProxy(attrs),
         // A bare object made every setProperty() call throw, which is not a
         // no-op the way the other gaps in this helper were — it aborted the
         // whole render and read as a test-authoring mistake rather than a
