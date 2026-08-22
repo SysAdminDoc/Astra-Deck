@@ -802,29 +802,45 @@ async function removeDirWithRetries(dir, overrides = {}) {
     const platform = overrides.platform || process.platform;
     const maxAttempts = overrides.maxAttempts || 60;
     let lastError = null;
+    const runWindowsCleanup = () => runProcess('powershell.exe', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        '$target = $env:ASTRA_DECK_DISPOSABLE_CLEANUP_TARGET; '
+            + 'if ([string]::IsNullOrWhiteSpace($target)) { throw "Missing cleanup target" }; '
+            // Chromium can leave renderer and utility children alive after the
+            // parent exits. Match only the validated disposable profile path,
+            // never every browser process on the machine.
+            + '$procs = @(Get-CimInstance Win32_Process | Where-Object { '
+            + '$_.ProcessId -ne $PID -and $_.CommandLine -and $_.CommandLine.Contains($target) }); '
+            + 'foreach ($proc in $procs) { Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue }; '
+            + 'if ($procs.Count -gt 0) { Start-Sleep -Milliseconds 250 }; '
+            + 'Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction Stop',
+    ], {
+        encoding: 'utf8',
+        env: { ...process.env, ASTRA_DECK_DISPOSABLE_CLEANUP_TARGET: resolved },
+        windowsHide: true
+    });
+    let targetedCleanupAttempted = false;
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
             removeSync(resolved, { recursive: true, force: true });
             return true;
         } catch (error) {
             lastError = error;
+            if (platform === 'win32' && !targetedCleanupAttempted) {
+                targetedCleanupAttempted = true;
+                const cleanup = runWindowsCleanup();
+                if (cleanup.status === 0 && !existsSync(resolved)) return true;
+                const detail = String(cleanup.stderr || cleanup.stdout || '').trim();
+                if (detail) lastError = new Error(detail);
+            }
             if (attempt === maxAttempts - 1) break;
             await wait(500);
         }
     }
     if (platform === 'win32') {
-        const cleanup = runProcess('powershell.exe', [
-            '-NoProfile',
-            '-NonInteractive',
-            '-Command',
-            '$target = $env:ASTRA_DECK_DISPOSABLE_CLEANUP_TARGET; '
-                + 'if ([string]::IsNullOrWhiteSpace($target)) { throw "Missing cleanup target" }; '
-                + 'Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction Stop',
-        ], {
-            encoding: 'utf8',
-            env: { ...process.env, ASTRA_DECK_DISPOSABLE_CLEANUP_TARGET: resolved },
-            windowsHide: true
-        });
+        const cleanup = runWindowsCleanup();
         if (cleanup.status === 0 && !existsSync(resolved)) return true;
         const detail = String(cleanup.stderr || cleanup.stdout || '').trim();
         if (detail) lastError = new Error(detail);

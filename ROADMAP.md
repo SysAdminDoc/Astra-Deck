@@ -31,7 +31,11 @@ and detached player or panel class exemptions. The userscript like-rate body and
 generated core are checked for the same lane. Settings smoke covers desktop and
 mobile light states with on-screen runtime-created rate, player, and quick-link
 fixtures. Firefox live zero-ad coverage is recorded separately from the remaining
-secondary-surface audit.
+secondary-surface audit. The live Firefox run now proves home, search, SPA
+player, blocked probe, and collapsed ad-shell states. Its profile cleanup closes
+the WebDriver session first; Chromium optional-host cleanup matches only the
+exact disposable profile path. Remaining evidence is still needed for the
+companion handoff, specialist userscripts, and archive or MHTML internals.
 
 ## Research-Driven Additions
 

@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 
 const {
@@ -24,6 +25,7 @@ const {
     networkEventsForToken,
     parseArgs: parseFirefoxSmokeArgs
 } = require('../scripts/smoke-firefox-webext');
+const { removeTempTree } = require('../scripts/firefox-webdriver');
 
 test('zero-ad static rules cover every request captured during live desktop reconnaissance', () => {
     const { failures, rules } = auditZeroAdRules();
@@ -112,6 +114,29 @@ test('Firefox smoke CLI separates live automation from the headed manual permiss
     const manager = parseManagerSmokeArgs(['--manager', 'violentmonkey', '--headed']);
     assert.deepEqual(manager.managers, ['violentmonkey']);
     assert.equal(manager.headed, true);
+});
+
+test('Firefox WebDriver cleanup retries a locked profile before failing', async () => {
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-firefox-cleanup-'));
+    const originalRmSync = fs.rmSync;
+    let attempts = 0;
+    fs.rmSync = (target, options) => {
+        attempts += 1;
+        if (attempts < 3) {
+            const error = new Error('simulated profile lock');
+            error.code = 'EPERM';
+            throw error;
+        }
+        return originalRmSync(target, options);
+    };
+    try {
+        await removeTempTree(profile, 'test profile', { attempts: 4, retryDelayMs: 1 });
+        assert.equal(attempts, 3);
+        assert.equal(fs.existsSync(profile), false);
+    } finally {
+        fs.rmSync = originalRmSync;
+        if (fs.existsSync(profile)) originalRmSync(profile, { recursive: true, force: true });
+    }
 });
 
 test('userscript-manager smoke closes its fixture when Firefox startup fails', async () => {

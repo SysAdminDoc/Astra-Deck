@@ -1220,6 +1220,10 @@ real-manager lane downloads only the versioned AMO XPI URLs pinned in
 `scripts/userscript-manager-fixtures.json` and verifies each size and SHA-256
 before temporary installation.
 
+The live Firefox zero-ad smoke also records the home page, search, SPA player,
+blocked probe, and collapsed ad-shell states. Disposable profile cleanup is
+bounded to the profile path used by that run.
+
 `npm run build` is safe for validation builds: if no maintainer key is
 configured, CRX files are signed with ephemeral key material that is not
 retained. Public release builds that include the userscript or bump a version

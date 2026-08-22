@@ -15,6 +15,30 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function removeTempTree(target, label = 'temporary tree', options = {}) {
+    const attempts = Math.max(1, Number(options.attempts) || 12);
+    const retryDelayMs = Math.max(0, Number(options.retryDelayMs) || 250);
+    let lastError = null;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+        if (!fs.existsSync(target)) return;
+        try {
+            fs.rmSync(target, {
+                recursive: true,
+                force: true,
+                maxRetries: 2,
+                retryDelay: retryDelayMs
+            });
+            if (!fs.existsSync(target)) return;
+        } catch (error) {
+            lastError = error;
+        }
+        if (attempt + 1 < attempts) await sleep(retryDelayMs);
+    }
+    throw new Error(
+        `${label} cleanup failed: ${lastError?.message || 'target still exists'} (${target})`
+    );
+}
+
 function reserveLoopbackPort() {
     return new Promise((resolve, reject) => {
         const server = net.createServer();
@@ -286,16 +310,16 @@ async function startFirefoxSession(options) {
             profile: capabilities['moz:profile'] || '',
             sessionId,
             async close() {
-                client?.close();
                 if (sessionId) {
                     await requestJson(`http://127.0.0.1:${port}/session/${sessionId}`, {
                         method: 'DELETE',
                         timeoutMs: 5000
                     }).catch(() => undefined);
                 }
+                client?.close();
                 killProcessTree(proc);
-                await sleep(150);
-                if (fs.existsSync(profileRoot)) fs.rmSync(profileRoot, { recursive: true, force: true });
+                await sleep(300);
+                await removeTempTree(profileRoot, 'Firefox WebDriver profile');
             }
         };
     } catch (error) {
@@ -307,7 +331,11 @@ async function startFirefoxSession(options) {
             }).catch(() => undefined);
         }
         killProcessTree(proc);
-        if (fs.existsSync(profileRoot)) fs.rmSync(profileRoot, { recursive: true, force: true });
+        try {
+            await removeTempTree(profileRoot, 'Firefox WebDriver profile');
+        } catch (cleanupError) {
+            error.message += `; ${cleanupError.message}`;
+        }
         const suffix = logs.trim() ? `\n${logs.trim().slice(-4000)}` : '';
         throw new Error(`${error.message}${suffix}`);
     }
@@ -356,25 +384,41 @@ async function clickElementExpression(client, context, elementExpression) {
     const point = await evaluateJson(client, context, `(() => {
         const node = ${elementExpression};
         if (!node) return null;
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
         const rect = node.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0) return null;
         return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     })()`);
     if (!point) throw new Error('Could not find a visible element to click');
     await client.command('browsingContext.activate', { context });
-    await client.command('input.performActions', {
-        context,
-        actions: [{
-            type: 'pointer',
-            id: 'astra-smoke-mouse',
-            parameters: { pointerType: 'mouse' },
-            actions: [
-                { type: 'pointerMove', x: Math.round(point.x), y: Math.round(point.y), duration: 0, origin: 'viewport' },
-                { type: 'pointerDown', button: 0 },
-                { type: 'pointerUp', button: 0 }
-            ]
-        }]
-    });
+    try {
+        await client.command('input.performActions', {
+            context,
+            actions: [{
+                type: 'pointer',
+                id: 'astra-smoke-mouse',
+                parameters: { pointerType: 'mouse' },
+                actions: [
+                    { type: 'pointerMove', x: Math.round(point.x), y: Math.round(point.y), duration: 0, origin: 'viewport' },
+                    { type: 'pointerDown', button: 0 },
+                    { type: 'pointerUp', button: 0 }
+                ]
+            }]
+        });
+    } catch (error) {
+        // Firefox can lose the target during a YouTube SPA repaint between
+        // pointerMove and pointerDown. Keep the navigation proof alive with a
+        // DOM click only for that browser-owned synthetic-input failure.
+        if (!/(?:NS_ERROR_FAILURE|synthesizeMouseAtPoint|WeakMap key null)/i.test(error.message)) throw error;
+        await client.command('input.releaseActions', { context }).catch(() => undefined);
+        const clicked = await evaluateJson(client, context, `(() => {
+            const node = ${elementExpression};
+            if (!node) return false;
+            node.click();
+            return true;
+        })()`);
+        if (!clicked) throw error;
+    }
     await client.command('input.releaseActions', { context }).catch((error) => {
         // Install/confirmation pages may close themselves on pointer-up. The
         // click already completed; releasing against the retired context is
@@ -423,6 +467,7 @@ module.exports = {
     requestJson,
     reserveLoopbackPort,
     resolveGeckodriverExecutable,
+    removeTempTree,
     sleep,
     startFirefoxSession,
     waitForContext,

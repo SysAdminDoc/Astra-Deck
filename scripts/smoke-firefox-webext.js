@@ -202,7 +202,7 @@ function runManualFirefoxSmoke(opts, firefox, stageRoot, stageDir, manifest) {
             clearTimeout(timer);
             killProcessTree(proc);
             if (!opts.keepStage && fs.existsSync(stageRoot)) {
-                fs.rmSync(stageRoot, { recursive: true, force: true });
+                fs.rmSync(stageRoot, { recursive: true, force: true, maxRetries: 12, retryDelay: 250 });
             }
             if (error) reject(error);
             else resolve({
@@ -499,7 +499,7 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
     } finally {
         await session.close();
         if (!opts.keepStage && fs.existsSync(stageRoot)) {
-            fs.rmSync(stageRoot, { recursive: true, force: true });
+            fs.rmSync(stageRoot, { recursive: true, force: true, maxRetries: 12, retryDelay: 250 });
         }
     }
 }
