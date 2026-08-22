@@ -47680,10 +47680,6 @@ body.ytkit-panel-open #ytkit-settings-panel {
     letter-spacing: 0;
 }
 
-.ytkit-title-yt {
-    color: var(--ytkit-text-primary);
-}
-
 .ytkit-title-kit {
     color: #ff8f70;
 }
@@ -55070,12 +55066,26 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
             font-weight: 800;
         }
 
-        .ytkit-meta-chip__label {
-            color: rgba(255,255,255,0.58);
-            font-size: 10px;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-        }
+.ytkit-meta-chip__label {
+    color: rgba(255,255,255,0.58);
+    font-size: 10px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+html:not([dark]) .ytkit-lv-ratio {
+    color: #334155;
+    border-color: rgba(100,116,139,0.28);
+    background: #f1f5f9;
+}
+
+html:not([dark]) .ytkit-lv-ratio .ytkit-meta-chip__value {
+    color: #0f172a;
+}
+
+html:not([dark]) .ytkit-lv-ratio .ytkit-meta-chip__label {
+    color: #475569;
+}
 
         .ytkit-speed-badge,
         .ytkit-speed-indicator {

@@ -156,7 +156,10 @@ function resolveColor(value, lane) {
 }
 
 // Astra's own surfaces are the ones we control and can fix.
-const YTKIT_TOKEN = /\.(ytkit-[a-z0-9_-]+)/gi;
+// Capture ids as well as classes. Several injected surfaces use an id for the
+// opaque shell and classes for its text, so ignoring `#ytkit-*` made the
+// scanner forget the ground that the browser actually paints.
+const YTKIT_TOKEN = /[.#](ytkit-[a-z0-9_-]+)/gi;
 
 function ruleBlocks(source) {
     // Deliberately simple: match `<prelude>{<body>}` pairs with no nested
@@ -204,6 +207,48 @@ function tokensIn(selector) {
 // could be inert. Only a substantially opaque colour counts.
 const BACKGROUND_DECL = /(?:^|[;{\s])background(?:-color|-image)?\s*:\s*([^;}"'`]+)/gi;
 const OPAQUE_ALPHA = 0.7;
+
+// Some injected surfaces use a shell name whose final segment does not match
+// the child class family. Keep those relationships explicit and only activate
+// them when the shell still proves an opaque ground above. The rendered light
+// fixture covers these shells, so this is context evidence rather than an
+// accepted-list escape hatch.
+const GROUND_FAMILY_ALIASES = Object.freeze([
+    Object.freeze({ root: 'ytkit-aisum-panel', family: 'ytkit-aisum' }),
+    Object.freeze({ root: 'ytkit-blocked-watch-dialog', family: 'ytkit-blocked-watch' }),
+    Object.freeze({ root: 'ytkit-bookmarks-container', family: 'ytkit-bookmark' }),
+    Object.freeze({ root: 'ytkit-bookmarks-container', family: 'ytkit-bookmarks' }),
+    Object.freeze({ root: 'ytkit-global-toast', family: 'ytkit-toast' }),
+    Object.freeze({ root: 'ytkit-mediadl-install-prompt', family: 'ytkit-install-prompt' }),
+    Object.freeze({ root: 'ytkit-mini-player-bar', family: 'ytkit-mini-player' }),
+    Object.freeze({ root: 'ytkit-po-drop', family: 'ytkit-ql' }),
+    Object.freeze({ root: 'ytkit-ql-drop', family: 'ytkit-ql' }),
+    Object.freeze({ root: 'ytkit-rc-panel', family: 'ytkit-rc' }),
+    Object.freeze({ root: 'ytkit-sb-profile-panel', family: 'ytkit-sb-profile' }),
+    Object.freeze({ root: 'ytkit-transcript-batch-panel', family: 'ytkit-transcript-batch' }),
+    Object.freeze({ root: 'ytkit-vvf-panel', family: 'ytkit-vvf' }),
+    Object.freeze({ root: 'ytkit-wellbeing-card', family: 'ytkit-wellbeing' }),
+    Object.freeze({ root: 'ytkit-wha-card', family: 'ytkit-wha' })
+]);
+
+// These classes are emitted only inside the command-deck shell. The shell's
+// dark and light palettes are rendered by settings-visual-system.js, while
+// the legacy declarations remain shared with the fallback panel builder.
+const PANEL_GROUNDED_TOKENS = Object.freeze([
+    'ytkit-brand-intro',
+    'ytkit-nav-meta',
+    'ytkit-pane-eyebrow',
+    'ytkit-search-hint',
+    'ytkit-speed-presets__title',
+    'ytkit-vh-field-copy',
+    'ytkit-vh-field-label',
+    'ytkit-vh-form-status'
+]);
+
+// YouTube's player chrome stays dark while the page theme changes. The
+// controls are mounted in that host and the light fixture renders the host as
+// the proof surface for this exception.
+const HOST_GROUNDED_TOKENS = Object.freeze(['ytkit-po-cc']);
 
 function isOpaqueGround(value) {
     if (/^(transparent|none|inherit|initial|unset|revert)\b/i.test(value)) return false;
@@ -341,6 +386,9 @@ function scan(files) {
         ...opaquelyGrounded,
         ...[...grounded].filter((token) => token.split('-').length >= 3)
     ])];
+    for (const { root, family } of GROUND_FAMILY_ALIASES) {
+        if (opaquelyGrounded.has(root)) groundPrefixes.push(family);
+    }
     const inheritsGround = (token) => groundPrefixes.some((prefix) =>
         token !== prefix && (token.startsWith(`${prefix}-`) || token.startsWith(`${prefix}__`)));
 
@@ -376,6 +424,9 @@ function scan(files) {
             // should aim for: retokenise, do not hand-write a second rule.
             if (!paintsNearInvisibleOnLight(body, 'light')) continue;
             if ([...tokens].some(token => themeAware.has(token))) continue;
+            if ([...tokens].some(token => HOST_GROUNDED_TOKENS.includes(token))) continue;
+            if (opaquelyGrounded.has('ytkit-settings-panel')
+                && [...tokens].some(token => PANEL_GROUNDED_TOKENS.includes(token))) continue;
             if ([...tokens].some(token => grounded.has(token) || inheritsGround(token))) continue;
             for (const token of tokens) {
                 if (!needsLane.has(token)) needsLane.set(token, new Set());
@@ -414,6 +465,7 @@ function main() {
             note: 'Surfaces whose text measures below 2.00:1 against YouTube light background #ffffff with no html:not([dark]) lane. '
                 + 'accepted = predates the gate, shrink freely. '
                 + 'covered = has a light lane and must keep it.',
+            ...(baseline.measurement ? { measurement: baseline.measurement } : {}),
             accepted: uncovered,
             covered: [...hasLane].sort()
         };
@@ -468,7 +520,10 @@ if (require.main === module) main();
 // a poor oracle for them: three of the four reasons this gate now skips a
 // surface produce no output at all when they fire.
 module.exports = {
+    GROUND_FAMILY_ALIASES,
     LIGHT_THEME_CONTRAST_FLOOR,
+    HOST_GROUNDED_TOKENS,
+    PANEL_GROUNDED_TOKENS,
     YOUTUBE_LIGHT_BACKGROUND,
     isNearInvisibleOnLight,
     lightThemeContrast,

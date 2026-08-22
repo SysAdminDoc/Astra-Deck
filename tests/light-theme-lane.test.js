@@ -45,6 +45,7 @@ test('the baseline records the surfaces fixed in the theming pass as covered', (
     }
     assert.ok(!baseline.accepted.some((token) => covered.has(token)),
         'a surface cannot be both covered and accepted');
+    assert.equal(baseline.accepted.length, 0, 'the corrected light-theme gate has no legacy blind surfaces');
 });
 
 test('the measured baseline records the one-time regex delta by surface class', () => {
@@ -127,4 +128,13 @@ test('the light-theme lane runs inside npm run check', () => {
     assert.match(checkChainText(), /check-light-theme-lane\.js/,
         'the gate is only worth having if it runs with the others');
     assert.equal(pkg.scripts['audit:light-theme'], 'node scripts/check-light-theme-lane.js');
+});
+
+test('the rendered light smoke checks page and host theme contexts', () => {
+    const smoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
+    assert.match(smoke, /const LIGHT_THEME_CONTEXT_CHECKS/);
+    assert.match(smoke, /state\.name === 'desktop-light'[\s\S]{0,160}LIGHT_THEME_CONTEXT_CHECKS/);
+    for (const marker of ['fixture-light-rate', 'movie_player', 'ytkit-po-drop']) {
+        assert.match(smoke, new RegExp(marker), `${marker} must be represented in the rendered light fixture`);
+    }
 });
