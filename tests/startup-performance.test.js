@@ -259,6 +259,24 @@ test('startup benchmark argument parser rejects unsafe or ambiguous runs', () =>
     assert.throws(() => benchmark.parseArgs(['--check', '--update-baseline']), /cannot be combined/);
 });
 
+test('recording a startup reference preserves long-running budget context', () => {
+    const next = {
+        schemaVersion: 2,
+        recordedAt: '2026-08-22T00:00:00.000Z',
+        metrics: { parseInitMs: { minMs: 166.2 } }
+    };
+    const previous = {
+        steadyStateBudget: { idleTaskMsPerMin: 200 },
+        history: [{ recordedAt: '2026-08-18' }],
+        machineNote: 'Verified not a code regression before recording.'
+    };
+    const merged = benchmark.preserveBaselineContext(next, previous);
+    assert.equal(merged.metrics.parseInitMs.minMs, 166.2);
+    assert.deepEqual(merged.steadyStateBudget, previous.steadyStateBudget);
+    assert.deepEqual(merged.history, previous.history);
+    assert.equal(merged.machineNote, previous.machineNote);
+});
+
 // ── Idle steady state ──
 // Startup numbers say nothing about what the runtime costs once it is just
 // sitting on an open page, which is the largest uninstall complaint in the

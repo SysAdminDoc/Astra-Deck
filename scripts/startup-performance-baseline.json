@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "recordedAt": "2026-08-18T00:00:00.000Z",
+  "recordedAt": "2026-08-22T22:11:03.558Z",
   "fixture": "mhtml/WatchPage.mhtml + mhtml/YouTube.mhtml",
   "fallbackFixture": "scripts/smoke-settings-overlay.js::buildFixture",
   "surfaces": [
@@ -24,48 +24,48 @@
   },
   "metrics": {
     "parseInitMs": {
-      "medianMs": 126,
-      "p95Ms": 142.4,
-      "minMs": 110.4,
-      "maxMs": 142.4
+      "medianMs": 180.1,
+      "p95Ms": 209.9,
+      "minMs": 166.2,
+      "maxMs": 209.9
     },
     "firstFeaturePaintMs": {
-      "medianMs": 93.3,
-      "p95Ms": 102.1,
-      "minMs": 78.4,
-      "maxMs": 102.1
+      "medianMs": 131.35,
+      "p95Ms": 155.9,
+      "minMs": 118.7,
+      "maxMs": 155.9
     },
     "heapDeltaBytes": {
-      "medianBytes": 13766,
-      "p95Bytes": 27556,
+      "medianBytes": 0,
+      "p95Bytes": 226932,
       "minBytes": 0,
-      "maxBytes": 27556
+      "maxBytes": 226932
     },
     "observerCallbackMs": {
       "medianMs": 0,
-      "p95Ms": 0,
+      "p95Ms": 0.1,
       "minMs": 0,
-      "maxMs": 0
+      "maxMs": 0.1
     }
   },
   "fallbackMetrics": {
     "parseInitMs": {
-      "medianMs": 108.75,
-      "p95Ms": 115,
-      "minMs": 102.2,
-      "maxMs": 115
+      "medianMs": 164.3,
+      "p95Ms": 218.1,
+      "minMs": 122.1,
+      "maxMs": 218.1
     },
     "firstFeaturePaintMs": {
-      "medianMs": 94.75,
-      "p95Ms": 100,
-      "minMs": 86.7,
-      "maxMs": 100
+      "medianMs": 161.05,
+      "p95Ms": 204.8,
+      "minMs": 119.2,
+      "maxMs": 204.8
     },
     "heapDeltaBytes": {
-      "medianBytes": 30264,
-      "p95Bytes": 30560,
-      "minBytes": 30040,
-      "maxBytes": 30560
+      "medianBytes": 42210,
+      "p95Bytes": 45944,
+      "minBytes": 30908,
+      "maxBytes": 45944
     },
     "observerCallbackMs": {
       "medianMs": 0,
@@ -97,7 +97,21 @@
         "firstFeaturePaintMs": 61.8
       },
       "note": "Retained because the 2026-08-18 bisect against it found a REAL ~2x regression, all measured same-machine same-sitting: 3c9a5ef2 49.30 paint / 57.70 parse+init -> 86cac849 59.00/90.40 -> ab1c45a3 86.40/119.20 -> dbd9a75e 109.80/137.00 -> 103.90/134.40 at v4.63.0. Loading the 75-module foundation graph concurrently (b5c933aa) recovered a large part of it. The absolute numbers below are NOT comparable to those, which is why this reference was retired rather than kept and papered over with ever-widening allowances."
+    },
+    {
+      "recordedAt": "2026-08-18T00:00:00.000Z",
+      "retiredAt": "2026-08-22",
+      "machine": "post-rebuild hardware before the Chrome 151 reference refresh",
+      "metrics": {
+        "parseInitMs": 110.4,
+        "firstFeaturePaintMs": 78.4
+      },
+      "fallbackMetrics": {
+        "parseInitMs": 102.2,
+        "firstFeaturePaintMs": 86.7
+      },
+      "note": "The browser version was not recorded with this reference. On Chrome 151.0.7922.138, detached commit 836e9611 measured 196.70 ms parse/init and 134.40 ms paint, while the polished tree measured 187.70 ms and 129.20 ms in the immediately following run. The changed tree was faster, so the old reference was retired as an environment mismatch rather than widened to cover a code regression."
     }
   ],
-  "machineNote": "Re-recorded on the post-2026-08-15 rebuild machine. Verified NOT a code regression first: b5c933aa (the concurrent-loading commit) and HEAD measured 131.70/93.60 and 134.90/89.00 back to back on this box — identical within noise — so the gap to the retired 2026-08-08 reference is hardware, not debt. Note the FIRST bench run after an idle period floors ~15-20 ms higher than subsequent runs (cold page cache); the tolerance below absorbs that deliberately."
+  "machineNote": "Recorded on the post-2026-08-15 rebuild machine with Chrome 151.0.7922.138. Verified not a code regression first: detached commit 836e9611 measured 196.70 ms parse/init and 134.40 ms first paint; the polished tree measured 187.70 ms and 129.20 ms back-to-back. The shipped MHTML captures were unchanged."
 }

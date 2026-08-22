@@ -439,6 +439,15 @@ function buildBaseline(summary, options, browserPath, fallbackSummary = summary)
     };
 }
 
+function preserveBaselineContext(nextBaseline, previousBaseline) {
+    if (!previousBaseline || typeof previousBaseline !== 'object') return nextBaseline;
+    const merged = { ...nextBaseline };
+    for (const key of ['steadyStateBudget', 'history', 'machineNote']) {
+        if (previousBaseline[key] !== undefined) merged[key] = previousBaseline[key];
+    }
+    return merged;
+}
+
 function readBaseline(filePath = BASELINE_PATH) {
     if (!fs.existsSync(filePath)) {
         throw new Error(`startup baseline is missing: ${path.relative(REPO_ROOT, filePath)}`);
@@ -987,7 +996,11 @@ async function main(argv = process.argv.slice(2)) {
         const fallbackResult = result.fixtureMode === 'captured-mhtml'
             ? await runBenchmark(options, browserPath, { forceSynthetic: true })
             : result;
-        const baseline = buildBaseline(result.metrics, options, browserPath, fallbackResult.metrics);
+        const previousBaseline = fs.existsSync(BASELINE_PATH) ? readBaseline() : null;
+        const baseline = preserveBaselineContext(
+            buildBaseline(result.metrics, options, browserPath, fallbackResult.metrics),
+            previousBaseline
+        );
         fs.writeFileSync(BASELINE_PATH, `${JSON.stringify(baseline, null, 2)}\n`, 'utf8');
         console.log(`[bench-startup] wrote ${path.relative(REPO_ROOT, BASELINE_PATH).replace(/\\/g, '/')}`);
         return { result, baseline, failures: [] };
@@ -1104,6 +1117,7 @@ module.exports = {
     PHOTOSENSITIVE_FRAME_BUDGET_MS,
     METRIC_KEYS,
     buildBaseline,
+    preserveBaselineContext,
     checkAgainstBaseline,
     extractCapturedHtml,
     checkSteadyState,
