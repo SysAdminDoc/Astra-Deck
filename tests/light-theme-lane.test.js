@@ -101,10 +101,17 @@ test('the scanner flags a new near-invisible surface and clears once a lane is a
     };
 
     // Dark-only surface: must fail.
-    fs.writeFileSync(cssPath, '.ytkit-brand-new-pill { color: rgba(255,255,255,0.9); }\n');
+    fs.writeFileSync(cssPath,
+        '.ytkit-brand-new-pill { color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.04); }\n');
     let result = run();
     assert.equal(result.code, 1, 'a new near-invisible surface must fail the gate');
     assert.match(result.out, /ytkit-brand-new-pill/);
+
+    // An opaque shell is a valid source-level ground and remains exempt.
+    fs.writeFileSync(cssPath,
+        '.ytkit-opaque-pill { color: rgba(255,255,255,0.9); background: #0b1220; }\n');
+    result = run();
+    assert.equal(result.code, 0, result.out);
 
     // Add the lane: must pass.
     fs.appendFileSync(cssPath,
@@ -133,8 +140,24 @@ test('the light-theme lane runs inside npm run check', () => {
 test('the rendered light smoke checks page and host theme contexts', () => {
     const smoke = fs.readFileSync(path.join(repoRoot, 'scripts', 'smoke-settings-overlay.js'), 'utf8');
     assert.match(smoke, /const LIGHT_THEME_CONTEXT_CHECKS/);
-    assert.match(smoke, /state\.name === 'desktop-light'[\s\S]{0,160}LIGHT_THEME_CONTEXT_CHECKS/);
+    assert.match(smoke, /state\.name\.endsWith\('-light'\)[\s\S]{0,160}LIGHT_THEME_CONTEXT_CHECKS/);
+    assert.match(smoke, /getBoundingClientRect\(\)/, 'rendered context checks must prove the fixture is on-screen');
+    assert.match(smoke, /runtimeGenerated/, 'rendered context checks must prove runtime-generated fixture nodes');
     for (const marker of ['fixture-light-rate', 'movie_player', 'ytkit-po-drop']) {
         assert.match(smoke, new RegExp(marker), `${marker} must be represented in the rendered light fixture`);
     }
+});
+
+test('the main userscript like-rate body uses the shared light-theme lane', () => {
+    const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
+    const featureStart = userscript.indexOf("id: 'likeViewRatio'");
+    const featureEnd = userscript.indexOf("id: 'downloadThumbnail'", featureStart);
+    assert.ok(featureStart >= 0 && featureEnd > featureStart, 'like-rate feature body must be present');
+    const feature = userscript.slice(featureStart, featureEnd);
+    assert.match(feature, /ytkit-meta-chip__value/);
+    assert.match(feature, /ytkit-meta-chip__label/);
+    assert.doesNotMatch(feature, /style\.cssText\s*=\s*['"]color:#aaa/,
+        'the userscript must not ship the legacy near-invisible inline color');
+    assert.match(userscript, /html:not\(\[dark\]\) \.ytkit-lv-ratio/);
+    assert.match(userscript, /html:not\(\[dark\]\) \.ytkit-lv-ratio \.ytkit-meta-chip__value/);
 });

@@ -12520,9 +12520,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const badge = document.createElement('span');
                 badge.className = 'ytkit-lv-ratio';
-                badge.style.cssText = 'color:#aaa;font-size:12px;margin-left:8px;background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:12px;';
                 badge.title = `${likes.toLocaleString()} likes / ${views.toLocaleString()} views`;
-                badge.textContent = `${ratio}% liked`;
+
+                const value = document.createElement('span');
+                value.className = 'ytkit-meta-chip__value';
+                value.textContent = `${ratio}%`;
+                const label = document.createElement('span');
+                label.className = 'ytkit-meta-chip__label';
+                label.textContent = 'Like Rate';
+                badge.append(value, label);
 
                 const container = viewEl.parentElement;
                 if (container) container.appendChild(badge);
@@ -18184,6 +18190,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 .ytkit-content{min-width:0;padding:18px 20px 16px!important;background:linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,0)),rgba(8,11,16,.76)!important}.ytkit-features-grid{grid-template-columns:1fr!important;gap:10px!important}.ytkit-feature-card{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:14px 18px!important;min-height:74px!important;padding:14px 16px!important;border-radius:8px!important;border:1px solid rgba(255,255,255,.075)!important;background:linear-gradient(180deg,rgba(255,255,255,.032),rgba(255,255,255,.012)),rgba(10,14,20,.82)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important}.ytkit-feature-card:hover{border-color:rgba(255,255,255,.12)!important;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.018)),rgba(12,17,24,.92)!important;transform:translateY(-1px)!important}.ytkit-feature-name{font-size:14px!important;font-weight:780!important;line-height:1.22!important}.ytkit-feature-desc{font-size:12px!important;line-height:1.42!important;color:rgba(226,232,240,.64)!important}
 .ytkit-footer{display:grid!important;grid-template-columns:auto minmax(180px,1fr) auto!important;min-height:58px;gap:12px!important;padding:10px 18px!important;border-top-color:rgba(255,255,255,.08)!important;background:rgba(8,11,16,.92)!important}.ytkit-panel-status{justify-self:stretch;min-height:36px!important;padding:0 12px!important;border-radius:8px!important;background:rgba(255,255,255,.035)!important;color:rgba(226,232,240,.68)!important;font-size:11px!important}.ytkit-btn{min-height:38px!important;border-radius:8px!important;padding:0 14px!important;font-size:12px!important;font-weight:780!important}
 @media (max-width:900px){#ytkit-settings-panel{width:calc(100vw - 16px)!important;height:calc(100vh - 16px)!important;max-height:calc(100vh - 16px)!important}.ytkit-body{grid-template-columns:1fr!important;grid-template-rows:auto minmax(0,1fr)!important}.ytkit-sidebar{border-right:none!important;border-bottom:1px solid rgba(255,255,255,.08)!important;overflow:visible!important;padding:10px 12px!important}.ytkit-search-hint{display:none!important}.ytkit-footer{grid-template-columns:1fr!important}.ytkit-footer-left,.ytkit-footer-right{width:100%!important;justify-content:stretch!important}.ytkit-btn{flex:1 1 0!important;justify-content:center!important}}
+`);
+        GM_addStyle(`
+.ytkit-lv-ratio{display:inline-flex;align-items:center;gap:6px;min-height:22px;margin-left:8px;padding:0 8px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(12,17,26,.56);color:rgba(255,255,255,.88);font-size:11px;font-weight:700;line-height:1.2;vertical-align:middle;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.ytkit-lv-ratio .ytkit-meta-chip__value{color:rgba(255,255,255,.96);font-weight:800;}
+.ytkit-lv-ratio .ytkit-meta-chip__label{color:rgba(255,255,255,.58);font-size:10px;letter-spacing:.02em;text-transform:uppercase;}
+html:not([dark]) .ytkit-lv-ratio{color:#334155;border-color:rgba(100,116,139,.28);background:#f1f5f9;}
+html:not([dark]) .ytkit-lv-ratio .ytkit-meta-chip__value{color:#0f172a;}
+html:not([dark]) .ytkit-lv-ratio .ytkit-meta-chip__label{color:#475569;}
 `);
     }
 

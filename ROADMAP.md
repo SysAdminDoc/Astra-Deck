@@ -26,6 +26,13 @@ that were fixed are in CHANGELOG.md, not repeated here.
   Acceptance: each named surface has a bounded source/runtime audit; active artifacts get reproducible checks or targeted fixes; archival-only content is explicitly excluded from shipping gates; Firefox and companion limits are recorded without inferring from Chromium.
   Complexity: L
 
+Progress 2026-08-22: the light-theme lane now rejects translucent self-grounding
+and detached player or panel class exemptions. The userscript like-rate body and
+generated core are checked for the same lane. Settings smoke covers desktop and
+mobile light states with on-screen runtime-created rate, player, and quick-link
+fixtures. Firefox live zero-ad coverage is recorded separately from the remaining
+secondary-surface audit.
+
 ## Research-Driven Additions
 
 Added 2026-08-11. All evidence is first-hand unless a source URL is given.

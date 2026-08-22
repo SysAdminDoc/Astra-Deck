@@ -17,8 +17,11 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const repoRoot = path.join(__dirname, '..');
+const GATE = path.join(__dirname, '..', 'scripts', 'check-light-theme-lane.js');
 
 const gate = require('../scripts/check-light-theme-lane.js');
 
@@ -113,17 +116,66 @@ test('surface grounding includes ytkit ids as well as classes', () => {
 });
 
 test('grounded shell aliases and rendered host contexts clear false positives', () => {
-    const { needsLane } = gate.scan(['extension/ytkit.js', 'extension/features/video-hider/index.js']);
+    const { needsLane, hasLane } = gate.scan([
+        'extension/ytkit.js',
+        'extension/features/video-hider/index.js',
+        'extension/core/settings-visual-system.js'
+    ]);
     for (const token of [
         'ytkit-aisum-close', 'ytkit-blocked-watch-channel', 'ytkit-bookmark-note',
         'ytkit-toast-message', 'ytkit-transcript-batch-name', 'ytkit-vvf-val',
         'ytkit-wellbeing-msg', 'ytkit-wha-head', 'ytkit-po-cc'
     ]) {
-        assert.equal(needsLane.has(token), false, `${token} must be judged against its rendered shell`);
+        assert.equal(needsLane.has(token) && !hasLane.has(token), false,
+            `${token} must be judged against its rendered shell`);
     }
-    for (const token of gate.PANEL_GROUNDED_TOKENS) {
-        assert.equal(needsLane.has(token), false, `${token} must inherit the command-deck palette`);
+    for (const token of [
+        'ytkit-brand-intro', 'ytkit-nav-meta', 'ytkit-pane-eyebrow',
+        'ytkit-search-hint', 'ytkit-speed-presets__title',
+        'ytkit-vh-field-copy', 'ytkit-vh-field-label', 'ytkit-vh-form-status'
+    ]) {
+        assert.equal(needsLane.has(token) && !hasLane.has(token), false,
+            `${token} must inherit the command-deck palette`);
     }
+});
+
+test('detached host and panel classes cannot use a rendered-context exemption', (t) => {
+    const stage = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'ytkit-light-context-'));
+    t.after(() => fs.rmSync(stage, { recursive: true, force: true }));
+    const scanner = fs.readFileSync(GATE, 'utf8')
+        .replace("path.join(__dirname, '..')", JSON.stringify(stage))
+        .replace("path.join(__dirname, 'light-theme-baseline.json')", JSON.stringify(path.join(stage, 'baseline.json')))
+        .replace('const MIN_SOURCES = 30;', 'const MIN_SOURCES = 0;');
+    const scannerPath = path.join(stage, 'gate.js');
+    fs.writeFileSync(scannerPath, scanner);
+    fs.copyFileSync(path.join(repoRoot, 'scripts', 'check-contrast.js'), path.join(stage, 'check-contrast.js'));
+    fs.mkdirSync(path.join(stage, 'extension'), { recursive: true });
+    fs.writeFileSync(path.join(stage, 'baseline.json'), JSON.stringify({ accepted: [], covered: [] }));
+    const cssPath = path.join(stage, 'extension', 'early.css');
+    const run = () => {
+        try {
+            return { code: 0, out: execFileSync(process.execPath, [scannerPath], { encoding: 'utf8' }) };
+        } catch (error) {
+            return {
+                code: error.status ?? 1,
+                out: `${error.stdout || ''}${error.stderr || ''}${error.message || ''}`
+            };
+        }
+    };
+
+    fs.writeFileSync(cssPath,
+        '.ytkit-po-cc { color: #fff; }\n'
+        + '.ytkit-brand-intro { color: #fff; }\n');
+    let result = run();
+    assert.equal(result.code, 1, result.out);
+    assert.match(result.out, /ytkit-po-cc/);
+    assert.match(result.out, /ytkit-brand-intro/);
+
+    fs.writeFileSync(cssPath,
+        '#ytkit-player-controls .ytkit-po-cc { color: #0f172a; }\n'
+        + '#ytkit-settings-panel .ytkit-brand-intro { color: #0f172a; }\n');
+    result = run();
+    assert.equal(result.code, 0, result.out);
 });
 
 

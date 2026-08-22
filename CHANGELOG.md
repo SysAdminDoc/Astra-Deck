@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The light-theme ratchet now requires opaque grounds for direct exemptions,
+  and detached host or panel class names no longer pass without a real lane.
+  All compact page chips and command-deck controls have explicit light values.
+  The userscript like-rate feature now renders the same value and label pair,
+  and its generated lane is checked for parity. Rendered settings coverage now
+  runs the page and host context checks in both desktop and mobile light states.
+
 - The YouTube light-theme check now follows rendered shell context instead of
   treating every near-white selector as page text. Opaque overlays, the
   command-deck palette, and always-dark player chrome are covered by explicit

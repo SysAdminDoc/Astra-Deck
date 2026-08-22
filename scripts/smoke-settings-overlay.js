@@ -520,13 +520,29 @@ const LIGHT_THEME_CONTEXT_CHECKS = `(() => {
         }
         return background;
     };
-    const check = (label, selector, groundSelector) => {
+    const check = (label, selector, groundSelector, options = {}) => {
         const element = document.querySelector(selector);
         if (!element) {
             failures.push(label + ' fixture surface is missing (' + selector + ')');
             return;
         }
-        const foreground = parseRgb(getComputedStyle(element).color);
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) <= 0) {
+            failures.push(label + ' fixture surface is not visible');
+        }
+        if (rect.width < 1 || rect.height < 1
+            || rect.left < -1 || rect.top < -1
+            || rect.right > window.innerWidth + 1 || rect.bottom > window.innerHeight + 1) {
+            failures.push(label + ' fixture surface is offscreen or has no area ('
+                + Math.round(rect.left) + ',' + Math.round(rect.top) + ' '
+                + Math.round(rect.width) + 'x' + Math.round(rect.height) + ')');
+        }
+        if (options.runtimeGenerated
+            && !element.closest('[data-ytkit-runtime-fixture="true"]')) {
+            failures.push(label + ' fixture surface was not generated after runtime boot');
+        }
+        const foreground = parseRgb(style.color);
         const ground = groundSelector ? document.querySelector(groundSelector) : null;
         if (!foreground) {
             failures.push(label + ' has no measurable computed text colour');
@@ -540,11 +556,11 @@ const LIGHT_THEME_CONTEXT_CHECKS = `(() => {
                 + getComputedStyle(element).color + ' on rgb(' + background.map((value) => Math.round(value)).join(',') + '))');
         }
     };
-    check('light like-rate value', '#fixture-light-rate .ytkit-meta-chip__value', '#fixture-light-rate');
-    check('light like-rate label', '#fixture-light-rate .ytkit-meta-chip__label', '#fixture-light-rate');
+    check('light like-rate value', '#fixture-light-rate .ytkit-meta-chip__value', '#fixture-light-rate', { runtimeGenerated: true });
+    check('light like-rate label', '#fixture-light-rate .ytkit-meta-chip__label', '#fixture-light-rate', { runtimeGenerated: true });
     check('settings feature name', '#ytkit-settings-panel .ytkit-feature-name', '#ytkit-settings-panel');
-    check('dark player CC host', '#ytkit-player-controls .ytkit-po-cc', '#movie_player');
-    check('dark quick-link note', '#ytkit-po-drop .ytkit-ql-form-note', '#ytkit-po-drop');
+    check('dark player CC host', '#ytkit-player-controls .ytkit-po-cc', '#movie_player', { runtimeGenerated: true });
+    check('dark quick-link note', '#ytkit-po-drop .ytkit-ql-form-note', '#ytkit-po-drop', { runtimeGenerated: true });
     return JSON.stringify({ failures, ratios });
 })()`;
 
@@ -729,6 +745,23 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
         return downloadUi;
     };
     const ensureThemeFixtures = () => {
+        const rate = document.getElementById('fixture-light-rate');
+        if (rate) {
+            rate.className = 'ytkit-lv-ratio';
+            rate.dataset.ytkitRuntimeFixture = 'true';
+            if (!rate.querySelector('.ytkit-meta-chip__value')) {
+                const value = document.createElement('span');
+                value.className = 'ytkit-meta-chip__value';
+                value.textContent = '4.2%';
+                rate.appendChild(value);
+            }
+            if (!rate.querySelector('.ytkit-meta-chip__label')) {
+                const label = document.createElement('span');
+                label.className = 'ytkit-meta-chip__label';
+                label.textContent = 'Like Rate';
+                rate.appendChild(label);
+            }
+        }
         const host = document.getElementById('movie_player');
         if (!host) return false;
         const rightControls = host.querySelector('.ytp-right-controls') || host;
@@ -738,6 +771,7 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
             controls.id = 'ytkit-player-controls';
             rightControls.appendChild(controls);
         }
+        controls.dataset.ytkitRuntimeFixture = 'true';
         let cc = controls.querySelector('.ytkit-po-cc');
         if (!cc) {
             cc = document.createElement('button');
@@ -747,6 +781,7 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
             cc.textContent = 'CC';
             controls.appendChild(cc);
         }
+        cc.dataset.ytkitRuntimeFixture = 'true';
         let drop = document.getElementById('ytkit-po-drop');
         if (!drop) {
             drop = document.createElement('div');
@@ -755,7 +790,9 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
             drop.innerHTML = '<span class="ytkit-ql-form-note">Use a site path</span>';
             host.appendChild(drop);
         }
-        return Boolean(cc && drop.querySelector('.ytkit-ql-form-note'));
+        drop.dataset.ytkitRuntimeFixture = 'true';
+        return Boolean(rate?.querySelector('.ytkit-meta-chip__value')
+            && cc && drop.querySelector('.ytkit-ql-form-note'));
     };
     globalThis.__ytkitA11y = {
         openDownload() {
@@ -785,11 +822,13 @@ if (new URLSearchParams(location.search).get('theme') === 'light') {
 <style>
 body{margin:0;background:#0f0f0f;color:#e5e7eb;font-family:Roboto,system-ui,sans-serif;}
 html:not([dark]) body{background:#f7f8fa;color:#17202b;}
-#fixture-light-rate{position:fixed;left:-9999px;top:0;}
-#movie_player{position:fixed;left:-9999px;bottom:0;width:360px;height:80px;background:#0f0f0f;color:#f1f1f1;}
+#fixture-context-strip{position:fixed;right:12px;bottom:12px;width:360px;min-height:112px;padding:8px;border:1px solid rgba(148,163,184,.28);border-radius:10px;background:rgba(15,23,42,.92);color:#e2e8f0;z-index:2;pointer-events:none;box-sizing:border-box;}
+#fixture-light-rate{display:inline-flex;align-items:center;gap:6px;min-height:22px;padding:0 8px;border-radius:10px;}
+#movie_player{position:relative;width:100%;height:72px;margin-top:6px;background:#0f0f0f;color:#f1f1f1;}
 #movie_player .ytp-right-controls{display:flex;align-items:center;height:40px;background:#0f0f0f;}
 #ytkit-player-controls{display:flex;align-items:center;background:#06090e;}
-#ytkit-po-drop{display:block;position:fixed;left:-9999px;bottom:0;background:#080b10;color:#f1f1f1;}
+#ytkit-po-drop{display:block;position:absolute;right:8px;bottom:8px;background:#080b10;color:#f1f1f1;}
+#fixture-context-strip #ytkit-po-drop{display:block!important;visibility:visible!important;opacity:1!important;}
 ytd-comments,ytd-comments-header-renderer,ytd-comment-thread-renderer{display:block;}
 ytd-comments{max-width:860px;margin:24px auto;padding:0 20px;}
 ytd-comments-header-renderer{font-size:22px;font-weight:700;margin-bottom:16px;}
@@ -809,18 +848,12 @@ html:not([dark]) ytd-comment-thread-renderer{background:#fff;border-color:#d9dee
         <ytd-comment-thread-renderer><div id="content-text">A thoughtful chapter about keyboard navigation.</div></ytd-comment-thread-renderer>
         <ytd-comment-thread-renderer><div id="content-text">The color palette looks excellent on my display.</div></ytd-comment-thread-renderer>
     </ytd-comments>
-    <div id="fixture-light-rate" class="ytkit-lv-ratio">
-        <span class="ytkit-meta-chip__value">4.2%</span>
-        <span class="ytkit-meta-chip__label">Like Rate</span>
-    </div>
-    <div id="movie_player">
+    <div id="fixture-context-strip" aria-label="Theme context fixtures">
+        <div id="fixture-light-rate"></div>
+        <div id="movie_player">
         <div class="ytp-right-controls">
-            <div id="ytkit-player-controls">
-                <button class="ytp-button ytkit-player-btn ytkit-po-cc" type="button" aria-pressed="false">CC</button>
-            </div>
+            <div id="ytkit-player-controls"></div>
         </div>
-        <div id="ytkit-po-drop" class="ytkit-ql-drop">
-            <span class="ytkit-ql-form-note">Use a site path</span>
         </div>
     </div>
     <button id="fixture-download-anchor" type="button">Download fixture</button>
@@ -1063,7 +1096,7 @@ async function main() {
                 : [`panel direction ${renderedDir || 'missing'} != ${state.dir}`];
             await sleep(600); // let fonts/layout settle before measuring
             const report = JSON.parse(await client.evaluate(IN_PAGE_CHECKS));
-            const contextReport = state.name === 'desktop-light'
+            const contextReport = state.name.endsWith('-light')
                 ? JSON.parse(await client.evaluate(LIGHT_THEME_CONTEXT_CHECKS))
                 : { failures: [] };
             failuresByState[state.name] = [

@@ -10533,11 +10533,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             rgba(255, 255, 255, 0.045) !important;
                     }
 
-                    html:not([dark]) #ytkit-player-controls .ytkit-po-cc--active {
-                        color: var(--yt-spec-text-primary, #0f0f0f) !important;
-                    }
+            html:not([dark]) #ytkit-player-controls .ytkit-po-cc--active {
+                color: var(--yt-spec-text-primary, #0f0f0f) !important;
+            }
 
-                    #ytkit-player-controls .ytkit-po-dl {
+            html:not([dark]) #ytkit-player-controls .ytkit-po-cc {
+                color: rgba(191, 219, 254, 0.94) !important;
+                background: #06090e !important;
+            }
+
+            #ytkit-player-controls .ytkit-po-dl {
                         color: rgba(202, 255, 222, 0.96) !important;
                         border-color: rgba(34, 197, 94, 0.18) !important;
                         background:
@@ -55087,6 +55092,91 @@ html:not([dark]) .ytkit-lv-ratio .ytkit-meta-chip__label {
     color: #475569;
 }
 
+/* Light-page lanes for compact controls that used to rely on YouTube's dark
+   surface. Keep player overlays dark where they sit over video, and move
+   page and panel chips onto the same pale surfaces as the host UI. */
+html:not([dark]) .ytkit-pc-ghost,
+html:not([dark]) #comments .ytkit-search-count,
+html:not([dark]) .ytkit-remaining-time,
+html:not([dark]) .ytkit-channel-vid-count,
+html:not([dark]) .ytkit-age-badge {
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    background: #f1f5f9 !important;
+}
+
+html:not([dark]) .ytkit-comment-role-badge {
+    color: #7c2d12 !important;
+    border-color: #fed7aa !important;
+    background: #fff7ed !important;
+}
+
+html:not([dark]) .ytkit-heat-fire {
+    color: #be123c !important;
+    border-color: #fecdd3 !important;
+    background: #fff1f2 !important;
+}
+
+html:not([dark]) .ytkit-rs-empty {
+    color: #991b1b !important;
+    background: #fff1f2 !important;
+}
+
+html:not([dark]) .ytkit-rss-btn {
+    color: #9a3412 !important;
+    border-color: #fed7aa !important;
+    background: #fff7ed !important;
+}
+
+html:not([dark]) .ytkit-screenshot-btn,
+html:not([dark]) .ytkit-volume-hint {
+    color: #e2e8f0 !important;
+    border-color: rgba(148,163,184,0.34) !important;
+    background: #0b1220 !important;
+}
+
+html:not([dark]) .ytkit-ai-qa-close {
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    background: #f8fafc !important;
+}
+
+html:not([dark]) #ytkit-settings-panel .ytkit-brand-mark,
+html:not([dark]) #ytkit-settings-panel .ytkit-badge,
+html:not([dark]) #ytkit-settings-panel .ytkit-github,
+html:not([dark]) #ytkit-settings-panel .ytkit-color-clear,
+html:not([dark]) #ytkit-settings-panel .ytkit-trigger-btn {
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    background: #f1f5f9 !important;
+}
+
+html:not([dark]) #ytkit-settings-panel .ytkit-speed-presets__status,
+html:not([dark]) #ytkit-settings-panel .ytkit-speed-btn,
+html:not([dark]) #ytkit-settings-panel .ytkit-vh-status-chip,
+html:not([dark]) #ytkit-settings-panel .ytkit-hide-all-btn,
+html:not([dark]) #ytkit-settings-panel .ytkit-hide-all-remove-btn {
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    background: #f1f5f9 !important;
+}
+
+html:not([dark]) #ytkit-settings-panel .ytkit-selector-health__btn,
+html:not([dark]) #ytkit-settings-panel .ytkit-selector-health__metric strong,
+html:not([dark]) #ytkit-settings-panel .ytkit-selector-health__metric span,
+html:not([dark]) #ytkit-settings-panel .ytkit-selector-health__row strong,
+html:not([dark]) #ytkit-settings-panel .ytkit-selector-health__row span {
+    color: #334155 !important;
+}
+
+html:not([dark]) .ytkit-sb-channel-chip {
+    color: #166534 !important;
+    border-color: #bbf7d0 !important;
+    background: #f0fdf4 !important;
+}
+
+/* Keep the panel selector groups short enough for the source scanner's
+   bounded prelude parser. */
         .ytkit-speed-badge,
         .ytkit-speed-indicator {
             position: absolute;
