@@ -1188,3 +1188,198 @@ test('copyVideoTitle refuses to copy a title that has not loaded yet', async () 
     assert.equal(button.dataset.state, 'error');
     assert.ok(toasts.some((message) => /still loading/.test(message)));
 });
+
+// ── researchSpacedReview (transcript study pack) ────────────────────────
+function studyPackFixture() {
+    const host = fakeNode({ tag: 'ytd-watch-metadata' });
+    const doc = renderDocument((selector) => (selector.includes('ytd-watch-metadata') ? host : []));
+    doc.head = fakeNode({ tag: 'head' });
+    const feature = loadFeature('researchSpacedReview', {
+        document: doc,
+        window: { location: { pathname: '/watch' } },
+        isWatchPagePath: () => true
+    });
+    return { feature, host, doc };
+}
+
+test('researchSpacedReview builds one queue panel, hidden until it has rows', () => {
+    const { feature, host } = studyPackFixture();
+
+    const panel = feature._ensureBatchPanel(null);
+    assert.equal(feature._ensureBatchPanel(null), panel, 'the panel is reused, not rebuilt');
+    assert.equal(host.children.length, 1);
+    assert.equal(panel.hidden, true, 'an empty study pack stays out of the way');
+    assert.equal(panel.getAttribute('aria-live'), 'polite');
+    assert.equal(textOf(panel, 'ytkit-transcript-batch-title')[0], 'Transcript study pack');
+    assert.equal(textOf(panel, 'ytkit-transcript-batch-summary')[0],
+        'Queue cap 20, one recovery pass per video');
+});
+
+test('researchSpacedReview renders one queue row per video and replaces the previous queue', () => {
+    const { feature } = studyPackFixture();
+
+    feature._renderBatchQueue([
+        { videoId: 'aaaaaaaaaaa', title: 'First video', source: 'playlist' },
+        { videoId: 'bbbbbbbbbbb', title: '', source: 'feed' }
+    ], null);
+
+    const panel = feature._batchPanel;
+    assert.equal(panel.hidden, false, 'a queued pack shows itself');
+    const rows = collect(panel, 'ytkit-transcript-batch-row');
+    assert.equal(rows.length, 2);
+    assert.deepEqual(Array.from(rows, (row) => row.dataset.videoId), ['aaaaaaaaaaa', 'bbbbbbbbbbb']);
+    assert.deepEqual(textOf(panel, 'ytkit-transcript-batch-name'), ['First video', 'bbbbbbbbbbb']);
+    assert.deepEqual(textOf(panel, 'ytkit-transcript-batch-meta'),
+        ['playlist - aaaaaaaaaaa', 'feed - bbbbbbbbbbb']);
+    assert.deepEqual(Array.from(collect(panel, 'ytkit-transcript-batch-status'), (s) => s.dataset.state),
+        ['pending', 'pending']);
+    assert.equal(textOf(panel, 'ytkit-transcript-batch-summary')[0],
+        '2/20 queued; one recovery pass per video');
+
+    feature._renderBatchQueue([{ videoId: 'ccccccccccc', title: 'Only one now', source: 'watch' }], null);
+    assert.equal(collect(feature._batchPanel, 'ytkit-transcript-batch-row').length, 1,
+        'a second run replaces the queue rather than appending to it');
+});
+
+test('researchSpacedReview updates the row for the video it names, and ignores one it does not have', () => {
+    const { feature } = studyPackFixture();
+
+    feature._renderBatchQueue([
+        { videoId: 'aaaaaaaaaaa', title: 'First', source: 'feed' },
+        { videoId: 'bbbbbbbbbbb', title: 'Second', source: 'feed' }
+    ], null);
+
+    feature._setBatchRow('bbbbbbbbbbb', 'failed', 'No captions available');
+    feature._setBatchRow('zzzzzzzzzzz', 'failed', 'not queued');
+
+    const statuses = collect(feature._batchPanel, 'ytkit-transcript-batch-status');
+    assert.equal(statuses[0].dataset.state, 'pending', 'the other row is untouched');
+    assert.equal(statuses[0].textContent, 'pending');
+    assert.equal(statuses[1].dataset.state, 'failed');
+    assert.equal(statuses[1].textContent, 'failed: No captions available');
+    assert.equal(statuses[1].title, 'No captions available',
+        'the full reason stays reachable when the cell is narrow');
+
+    feature._setBatchRow('aaaaaaaaaaa', 'done');
+    assert.equal(collect(feature._batchPanel, 'ytkit-transcript-batch-status')[0].textContent, 'done',
+        'a state with no detail renders the state alone, not a dangling separator');
+});
+
+// ── bulkCardActions ────────────────────────────────────────────────────
+function bulkFixture() {
+    const doc = renderDocument(() => []);
+    const toasts = [];
+    const hidden = [];
+    const allowed = [];
+    const feature = loadFeature('bulkCardActions', {
+        document: doc,
+        location: { href: 'https://www.youtube.com/' },
+        URL,
+        showToast: (message) => toasts.push(message),
+        _refreshCornerStack: () => {},
+        registerCornerStackElement: () => () => {},
+        getFeatureById: (id) => (id === 'hideVideosFromHome' ? {
+            _addHiddenVideos: (ids) => hidden.push(...ids),
+            _addAllowedVideos: (ids) => allowed.push(...ids),
+            _removeHiddenVideos: () => {},
+            _processAllVideos: () => {}
+        } : null)
+    });
+    return { feature, doc, toasts, hidden, allowed };
+}
+
+function card(videoId) {
+    const node = fakeNode({ tag: 'ytd-rich-item-renderer' });
+    const link = fakeNode({ tag: 'a', attributes: { href: `https://www.youtube.com/watch?v=${videoId}` } });
+    node.appendChild(link);
+    node.querySelector = () => link;
+    return node;
+}
+
+test('bulkCardActions builds one toolbar and keeps it out of the way until select mode', () => {
+    const { feature, doc } = bulkFixture();
+
+    const bar = feature._findActionBar();
+    assert.equal(feature._findActionBar(), bar, 'the toolbar is reused');
+    assert.equal(bar.className, 'ytkit-bulk-bar');
+    assert.equal(bar.getAttribute('role'), 'toolbar');
+    assert.equal(bar.getAttribute('aria-label'), 'Bulk card actions');
+
+    const count = collect(bar, 'ytkit-bulk-count')[0];
+    assert.equal(count.dataset.role, 'count');
+    assert.equal(count.getAttribute('aria-live'), 'polite');
+    assert.equal(count.textContent, '0 selected');
+
+    feature._renderActionBar();
+    assert.equal(bar.hidden, true, 'the toolbar hides while select mode is off');
+
+    feature._enterSelectMode();
+    assert.equal(bar.hidden, false);
+    assert.equal(doc.body.dataset.ytkitBulkSelect, '1',
+        'the page is marked so the select-mode styling applies');
+
+    feature._exitSelectMode();
+    assert.equal(bar.hidden, true);
+    assert.equal(doc.body.dataset.ytkitBulkSelect, undefined);
+});
+
+test('bulkCardActions counts the cards it selected and marks each one', () => {
+    const { feature } = bulkFixture();
+    const first = card('aaaaaaaaaaa');
+    const second = card('bbbbbbbbbbb');
+
+    feature._enterSelectMode();
+    const bar = feature._actionBar;
+
+    feature._toggleCardSelection(first);
+    assert.equal(first.dataset.ytkitBulkSelected, '1');
+    assert.equal(textOf(bar, 'ytkit-bulk-count')[0], '1 selected');
+
+    feature._toggleCardSelection(second);
+    assert.equal(textOf(bar, 'ytkit-bulk-count')[0], '2 selected');
+
+    // Clicking a selected card takes it back out rather than counting it twice.
+    feature._toggleCardSelection(first);
+    assert.equal(first.dataset.ytkitBulkSelected, undefined);
+    assert.equal(textOf(bar, 'ytkit-bulk-count')[0], '1 selected');
+
+    feature._clearSelection();
+    assert.equal(second.dataset.ytkitBulkSelected, undefined);
+    assert.equal(textOf(bar, 'ytkit-bulk-count')[0], '0 selected');
+});
+
+test('bulkCardActions ignores a card it cannot resolve to a video', () => {
+    const { feature } = bulkFixture();
+    const stranger = fakeNode({ tag: 'ytd-rich-item-renderer' });
+    stranger.querySelector = () => null;
+
+    feature._enterSelectMode();
+    feature._toggleCardSelection(stranger);
+
+    assert.equal(stranger.dataset.ytkitBulkSelected, undefined,
+        'a card with no watch link must not look selected when nothing was selected');
+    assert.equal(textOf(feature._actionBar, 'ytkit-bulk-count')[0], '0 selected');
+});
+
+test('bulkCardActions hiding the selection empties it and reports the count', () => {
+    const { feature, toasts, hidden } = bulkFixture();
+    const first = card('aaaaaaaaaaa');
+    const second = card('bbbbbbbbbbb');
+
+    feature._enterSelectMode();
+    feature._toggleCardSelection(first);
+    feature._toggleCardSelection(second);
+    feature._bulkHide();
+
+    assert.deepEqual(Array.from(hidden), ['aaaaaaaaaaa', 'bbbbbbbbbbb']);
+    assert.ok(first.classList.contains('ytkit-video-hidden'));
+    assert.equal(first.dataset.ytkitBulkSelected, undefined,
+        'a card that was just hidden must not stay marked as selected');
+    assert.equal(textOf(feature._actionBar, 'ytkit-bulk-count')[0], '0 selected');
+    assert.ok(toasts.some((message) => /Hidden 2 videos/.test(message)));
+
+    // Nothing selected means nothing to do, and no toast claiming otherwise.
+    const before = toasts.length;
+    feature._bulkHide();
+    assert.equal(toasts.length, before);
+});
