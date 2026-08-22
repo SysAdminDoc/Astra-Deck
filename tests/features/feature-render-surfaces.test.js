@@ -826,3 +826,173 @@ test('commentSearch leaves a thread another feature hid alone', () => {
     assert.equal(textOf(bar, 'ytkit-search-count')[0], '1 match',
         'a thread another feature hid is not counted as a visible match');
 });
+
+// ── aiVideoSummary ─────────────────────────────────────────────────────
+// The panel renders a real artifact through the shipped sanitiser, so a
+// citation that the sanitiser drops must not reach the DOM either.
+const aiSummaryArtifacts = require('../../extension/core/ai-summary-artifacts.js');
+
+function aiSummaryFixture(store = {}) {
+    const doc = renderDocument(() => []);
+    const toasts = [];
+    const saved = [];
+    const feature = loadFeature('aiVideoSummary', {
+        document: doc,
+        // The feature reaches the artifact service off the shared core
+        // namespace, and a sandbox has its own globalThis.
+        YTKitCore: { aiSummaryArtifacts },
+        Intl,
+        navigator: { clipboard: { writeText: async () => {} } },
+        showToast: (message, _colour, options) => toasts.push({ message, options }),
+        DiagnosticLog: { record() {} },
+        getVideoId: () => 'abcdefghijk',
+        StorageManager: {
+            get: (_key, fallback) => store || fallback,
+            set: (_key, value) => saved.push(value)
+        },
+        storageReadJSON: (_key, fallback) => store || fallback,
+        storageWriteJSON: (_key, value) => saved.push(value)
+    });
+    // The feature reads the artifact service off the shared core namespace.
+    feature._readArtifacts = () => store;
+    feature._writeArtifacts = (next) => { saved.push(next); Object.assign(store, next); };
+    return { feature, doc, toasts, saved };
+}
+
+function artifactInput(overrides = {}) {
+    return {
+        videoId: 'abcdefghijk',
+        title: 'A talk about caching',
+        transcriptLanguage: 'en',
+        provider: 'ollama',
+        model: 'llama3',
+        generatedAt: '2026-08-01T12:00:00.000Z',
+        summary: 'The speaker explains why caching is hard.',
+        bullets: [
+            { text: 'Invalidation is the hard part', citations: ['C0001'] },
+            { text: 'Naming is the other hard part', citations: ['C0002', 'C9999'] },
+            { text: 'A bullet with no valid citation', citations: ['C9999'] }
+        ],
+        tldr: { text: 'Caching is hard.', citations: ['C0001'] },
+        citations: {
+            C0001: { startSeconds: 62, text: 'first cue' },
+            C0002: { startSeconds: 3725, text: 'second cue' }
+        },
+        ...overrides
+    };
+}
+
+test('aiVideoSummary builds one dialog and replaces its content rather than appending', () => {
+    const { feature, doc } = aiSummaryFixture();
+
+    feature._showStatus('Working…');
+    feature._showStatus('Still working…');
+
+    assert.equal(doc.body.children.length, 1, 'the panel is built once');
+    const panel = doc.body.children[0];
+    assert.equal(panel.getAttribute('role'), 'dialog');
+    assert.equal(textOf(panel, 'ytkit-aisum-status').length, 1, 'the status replaces, it does not stack');
+    assert.equal(textOf(panel, 'ytkit-aisum-status')[0], 'Still working…');
+    assert.equal(collect(panel, 'ytkit-aisum-status')[0].getAttribute('role'), 'status');
+
+    feature._showStatus('It broke', 'error');
+    const status = collect(panel, 'ytkit-aisum-status')[0];
+    assert.equal(status.getAttribute('role'), 'alert', 'an error is announced assertively');
+    assert.ok(status.classList.contains('ytkit-aisum-status--error'));
+});
+
+test('aiVideoSummary closing the panel abandons the run behind it', () => {
+    const { feature, doc } = aiSummaryFixture();
+    let aborted = false;
+    feature._showStatus('Working…');
+    feature._runController = { abort: () => { aborted = true; } };
+    const before = feature._runToken;
+
+    const close = collect(doc.body.children[0], 'ytkit-aisum-close')[0];
+    close.handlers.get('click')();
+
+    assert.equal(aborted, true, 'closing must not leave a request running against a dead panel');
+    assert.equal(feature._runToken, before + 1, 'the token moves so a late response is discarded');
+    assert.equal(doc.body.children.length, 0);
+    assert.equal(feature._panel, null);
+});
+
+test('aiVideoSummary renders a bullet per citation-bearing point, with seekable timestamps', () => {
+    const { feature, doc } = aiSummaryFixture();
+
+    feature._renderArtifact(artifactInput());
+
+    const panel = doc.body.children[0];
+    // The third bullet cites only an id the sanitiser drops, so it carries no
+    // citations and must not be rendered as a bare claim.
+    const bullets = collect(panel, 'ytkit-aisum-bullets')[0].children;
+    assert.equal(bullets.length, 2);
+    assert.equal(bullets[0].children[0].textContent, 'Invalidation is the hard part');
+
+    const links = collect(panel, 'ytkit-aisum-citation');
+    assert.deepEqual(Array.from(links, (link) => link.textContent), ['1:02', '1:02:05', '1:02']);
+    assert.equal(links[0].href, 'https://www.youtube.com/watch?v=abcdefghijk&t=62s');
+    assert.equal(links[1].href, 'https://www.youtube.com/watch?v=abcdefghijk&t=3725s');
+    assert.match(links[0].getAttribute('aria-label'), /Transcript citation 1:02/);
+
+    assert.equal(textOf(panel, 'ytkit-aisum-overview')[0], 'The speaker explains why caching is hard.');
+    assert.match(textOf(panel, 'ytkit-aisum-meta')[0], /en · ollama\/llama3$/);
+    const tldr = collect(panel, 'ytkit-aisum-tldr')[0];
+    assert.equal(tldr.hidden, false);
+    assert.match(tldr.textContent, /^TL;DR: Caching is hard\./);
+});
+
+test('aiVideoSummary hides the TL;DR line when the model gave none it could cite', () => {
+    const { feature, doc } = aiSummaryFixture();
+
+    feature._renderArtifact(artifactInput({ tldr: { text: 'Uncited claim', citations: ['C9999'] } }));
+
+    const tldr = collect(doc.body.children[0], 'ytkit-aisum-tldr')[0];
+    assert.equal(tldr.hidden, true, 'an uncited TL;DR is dropped rather than shown unsourced');
+});
+
+test('aiVideoSummary refuses to display an artifact the sanitiser rejects', () => {
+    const { feature, doc } = aiSummaryFixture();
+
+    feature._renderArtifact({ videoId: 'not-an-id', summary: 'x' });
+
+    const panel = doc.body.children[0];
+    assert.equal(collect(panel, 'ytkit-aisum-bullets').length, 0);
+    const status = collect(panel, 'ytkit-aisum-status')[0];
+    assert.equal(status.getAttribute('role'), 'alert');
+    assert.match(status.textContent, /invalid and cannot be displayed/);
+});
+
+test('aiVideoSummary library lists saved summaries and answers its own search', () => {
+    const clean = aiSummaryArtifacts.sanitizeArtifact(artifactInput());
+    const other = aiSummaryArtifacts.sanitizeArtifact(artifactInput({
+        artifactId: 'second_one_x',
+        title: 'A talk about naming',
+        generatedAt: '2026-07-01T12:00:00.000Z'
+    }));
+    const store = { [clean.artifactId]: clean, [other.artifactId]: other };
+    const { feature, doc } = aiSummaryFixture(store);
+
+    const container = doc.createElement('div');
+    feature._appendLibrary(container);
+
+    const rows = collect(container, 'ytkit-aisum-library-row');
+    assert.equal(rows.length, 2);
+    assert.match(textOf(container, 'ytkit-aisum-library-open')[0], /A talk about/);
+    assert.match(collect(container, 'ytkit-aisum-library')[0].children[0].textContent, /Saved summaries \(2\)/);
+
+    const search = collect(container, 'ytkit-aisum-search')[0];
+    // Both artifacts share a bullet mentioning naming, so the query has to be
+    // one only the second one's title carries.
+    search.value = 'about naming';
+    search.handlers.get('input')();
+    assert.deepEqual(
+        Array.from(collect(container, 'ytkit-aisum-library-open'), (button) => button.textContent.split(' · ')[0]),
+        ['A talk about naming']
+    );
+
+    search.value = 'nothing at all';
+    search.handlers.get('input')();
+    assert.equal(collect(container, 'ytkit-aisum-library-row').length, 0);
+    assert.match(textOf(container, 'ytkit-aisum-empty')[0], /No saved summaries match/);
+});
