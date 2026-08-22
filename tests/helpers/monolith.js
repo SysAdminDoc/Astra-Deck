@@ -174,6 +174,10 @@ function datasetKeyToAttribute(key) {
     return `data-${String(key).replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
 }
 
+function attributeToDatasetKey(name) {
+    return name.slice('data-'.length).replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase());
+}
+
 function datasetProxy(attrs) {
     return new Proxy({}, {
         get(_target, key) {
@@ -192,11 +196,19 @@ function datasetProxy(attrs) {
             if (typeof key === 'string') attrs.delete(datasetKeyToAttribute(key));
             return true;
         },
+        // `Object.keys(el.dataset)`, a spread and a for-in all have to see the
+        // keys, or the next feature that iterates dataset gets an empty object
+        // and its test passes on nothing.
         ownKeys() {
-            return [];
+            return [...attrs.keys()]
+                .filter((name) => name.startsWith('data-'))
+                .map(attributeToDatasetKey);
         },
-        getOwnPropertyDescriptor() {
-            return undefined;
+        getOwnPropertyDescriptor(_target, key) {
+            if (typeof key !== 'string') return undefined;
+            const name = datasetKeyToAttribute(key);
+            if (!attrs.has(name)) return undefined;
+            return { value: attrs.get(name), enumerable: true, configurable: true, writable: true };
         }
     });
 }
@@ -449,6 +461,33 @@ function fakeNode(options = {}) {
         Object.defineProperty(node, name, {
             get() { return attrs.has(name) ? attrs.get(name) : ''; },
             set(value) { attrs.set(name, String(value ?? '')); },
+            configurable: true,
+            enumerable: true
+        });
+    }
+    // A real anchor recomposes its href when you assign one of its URL parts,
+    // and this codebase builds link destinations that way
+    // (`a.href = origin; a.pathname = …; a.search = …`). Without composition
+    // those assignments land on dead expandos, and a test can assert on
+    // `pathname` while the anchor a reader clicks is the bare origin.
+    for (const part of ['protocol', 'host', 'hostname', 'pathname', 'search', 'hash']) {
+        Object.defineProperty(node, part, {
+            get() {
+                const href = attrs.get('href');
+                if (!href) return '';
+                try { return new URL(href)[part]; } catch { return ''; }
+            },
+            set(value) {
+                const href = attrs.get('href');
+                if (!href) { attrs.set(part, String(value ?? '')); return; }
+                try {
+                    const url = new URL(href);
+                    url[part] = String(value ?? '');
+                    attrs.set('href', url.toString());
+                } catch {
+                    attrs.set(part, String(value ?? ''));
+                }
+            },
             configurable: true,
             enumerable: true
         });

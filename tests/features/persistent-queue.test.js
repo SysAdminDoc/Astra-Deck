@@ -38,7 +38,10 @@ function queueFixture({ items = [], claim, now } = {}) {
     const navigations = [];
     const listeners = new Map();
 
-    const doc = fakeDocument(() => []);
+    // destroy() sweeps the buttons it injected into feed cards; the fixture has
+    // to own one so the sweep can be observed.
+    const cardButton = fakeNode({ tag: 'button', attributes: { class: 'ytkit-queue-btn' } });
+    const doc = fakeDocument((selector) => (selector.includes('ytkit-queue-btn') ? [cardButton] : []));
     const created = [];
     const create = doc.createElement.bind(doc);
     doc.createElement = (tag) => {
@@ -61,8 +64,15 @@ function queueFixture({ items = [], claim, now } = {}) {
         readAsText(file) { this.result = file.text; this.onload(); }
     }
 
+    const rules = { navigate: new Set(), scopedMutation: new Set() };
+    const appState = { settings: {} };
     const feature = loadFeature('persistentQueue', {
         document: doc,
+        appState,
+        addNavigateRule: (id) => rules.navigate.add(id),
+        removeNavigateRule: (id) => rules.navigate.delete(id),
+        addScopedMutationRule: (id) => rules.scopedMutation.add(id),
+        removeScopedMutationRule: (id) => rules.scopedMutation.delete(id),
         location: { get href() { return ''; }, set href(value) { navigations.push(value); } },
         window: {
             addEventListener: (type, handler) => listeners.set(type, handler),
@@ -76,12 +86,10 @@ function queueFixture({ items = [], claim, now } = {}) {
         injectStyle: () => fakeNode(),
         getVideoId: () => 'abcdefghijk',
         getMainVideoElement: () => ({ addEventListener() {}, removeEventListener() {} }),
-        addScopedMutationRule: () => {},
-        removeScopedMutationRule: () => {},
         FileReader: StubFileReader
     });
     void now;
-    return { feature, doc, store, toasts, navigations, listeners, created };
+    return { feature, doc, store, toasts, navigations, listeners, created, rules, appState, cardButton };
 }
 
 // A feature loaded in a vm sandbox returns arrays carrying the sandbox's
@@ -159,6 +167,16 @@ test('persistentQueue renders a row per entry with its move and remove controls'
     assert.equal(buttons(rows[1])[2].getAttribute('aria-label'), 'Remove from queue: Beta');
 });
 
+// A row's buttons close over the index they were rendered at, so the wiring has
+// to carry the video id too. Proving that means clicking the button the
+// renderer produced, not calling the mutator behind it: an earlier version of
+// this test called the mutators directly and stayed green with the id argument
+// removed from both call sites.
+function rowButtons(panel, at) {
+    const row = byClass(panel, 'ytkit-queue-row')[at];
+    return byClass(row, 'ytkit-queue-row-actions')[0].children;
+}
+
 test('persistentQueue row actions follow the video they were rendered for, not the index', () => {
     const { feature, store } = queueFixture({
         items: [entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta'), entry('ccccccccccc', 'Gamma')]
@@ -169,20 +187,56 @@ test('persistentQueue row actions follow the video they were rendered for, not t
 
     // Another tab reorders the queue between render and click. The rendered
     // row for Gamma is still index 2, and a bare index would remove Alpha.
+    const removeGamma = rowButtons(feature._panel, 2)[2];
     store.set('ytkit-queue', { v: 1, items: [entry('ccccccccccc', 'Gamma'), entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')] });
-
-    feature._removeAt(2, 'ccccccccccc');
+    removeGamma.handlers.get('click')();
     assert.deepEqual(pluck(store.get('ytkit-queue').items, 'title'), ['Alpha', 'Beta']);
+
+    // Same for a move: the button rendered for Beta must move Beta, whatever
+    // slid into its old position.
+    const moveBetaUp = rowButtons(feature._panel, 1)[0];
+    store.set('ytkit-queue', { v: 1, items: [entry('zzzzzzzzzzz', 'Zeta'), entry('aaaaaaaaaaa', 'Alpha'), entry('bbbbbbbbbbb', 'Beta')] });
+    moveBetaUp.handlers.get('click')();
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'title'), ['Zeta', 'Beta', 'Alpha']);
 
     // An entry another tab already removed is a no-op, not a blind splice.
-    feature._removeAt(1, 'zzzzzzzzzzz');
-    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'title'), ['Alpha', 'Beta']);
-
-    feature._move(1, -1, 'bbbbbbbbbbb');
-    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'title'), ['Beta', 'Alpha']);
+    feature._removeAt(1, 'not-in-queue');
+    assert.deepEqual(pluck(store.get('ytkit-queue').items, 'title'), ['Zeta', 'Beta', 'Alpha']);
 
     // The panel follows every one of those writes.
-    assert.deepEqual(pluck(byClass(feature._panel, 'ytkit-queue-title'), 'textContent'), ['Beta', 'Alpha']);
+    assert.deepEqual(pluck(byClass(feature._panel, 'ytkit-queue-title'), 'textContent'),
+        ['Zeta', 'Beta', 'Alpha']);
+});
+
+test('persistentQueue auto-advance is gated on its own sub-toggle', () => {
+    const played = [];
+    const { feature, appState } = queueFixture({ items: [entry('aaaaaaaaaaa', 'Alpha')] });
+    feature._playNext = () => played.push('advanced');
+    feature.init();
+
+    assert.equal(typeof feature._endedHandler, 'function', 'the queue rides the video ended event');
+
+    feature._endedHandler();
+    assert.deepEqual(played, ['advanced'], 'the sub-toggle is on unless it is explicitly off');
+
+    appState.settings.persistentQueueAutoAdvance = false;
+    feature._endedHandler();
+    assert.deepEqual(played, ['advanced'],
+        'a video ending with auto-advance off must not jump to the next entry');
+
+    appState.settings.persistentQueueAutoAdvance = true;
+    feature._endedHandler();
+    assert.deepEqual(played, ['advanced', 'advanced']);
+});
+
+test('persistentQueue auto-advance stops at the end of the queue', () => {
+    const played = [];
+    const { feature } = queueFixture();
+    feature._playNext = () => played.push('advanced');
+    feature.init();
+
+    feature._endedHandler();
+    assert.deepEqual(played, [], 'an empty queue has nothing to advance to');
 });
 
 test('persistentQueue skips an entry another tab claimed within the claim window', () => {
@@ -246,7 +300,7 @@ test('persistentQueue import keeps valid ids, reports duplicates, and survives a
 });
 
 test('persistentQueue re-renders when another tab edits the queue, and detaches on destroy', () => {
-    const { feature, doc, store, listeners } = queueFixture({ items: [entry('aaaaaaaaaaa', 'Alpha')] });
+    const { feature, doc, store, listeners, rules, cardButton } = queueFixture({ items: [entry('aaaaaaaaaaa', 'Alpha')] });
 
     feature.init();
     const handler = listeners.get('ytkit-storage-changed');
@@ -264,6 +318,12 @@ test('persistentQueue re-renders when another tab edits the queue, and detaches 
 
     feature.destroy();
     assert.equal(listeners.has('ytkit-storage-changed'), false, 'destroy detaches the storage listener');
+    // A leaked navigate or mutation rule keeps re-rendering the pill after the
+    // feature is switched off, and a leaked card button keeps offering to queue.
+    assert.equal(rules.navigate.has('persistentQueue'), false, 'destroy releases the navigate rule');
+    assert.equal(rules.scopedMutation.has('persistentQueue'), false, 'destroy releases the mutation rule');
+    assert.equal(doc.body.children.length, 0, 'destroy takes the pill off the page');
+    assert.equal(cardButton.removed, 1, 'destroy removes the buttons it injected into cards');
 });
 
 test('autoExitFullscreen treats a pending queue entry as up-next', () => {
