@@ -1718,8 +1718,8 @@ test('abLoop draws the loop region across the progress bar once both points are 
     const markers = progressBar.children[0];
     assert.equal(markers.className, 'ytkit-ab-markers');
     const region = markers.children[0];
-    assert.match(region.style.cssText, /left:25%/);
-    assert.match(region.style.cssText, /width:50%/);
+    assert.equal(region.style.left, '25%');
+    assert.equal(region.style.width, '50%');
 });
 
 test('abLoop orders the points it was given backwards before drawing them', () => {
@@ -1733,8 +1733,9 @@ test('abLoop orders the points it was given backwards before drawing them', () =
 
     assert.equal(feature._pointA, 50);
     assert.equal(feature._pointB, 150);
-    assert.match(progressBar.children[0].children[0].style.cssText, /left:25%/,
+    assert.equal(progressBar.children[0].children[0].style.left, '25%',
         'a backwards region would render a negative width');
+    assert.equal(progressBar.children[0].children[0].style.width, '50%');
 });
 
 test('abLoop clearing takes the region off the bar and resets the button state', () => {
@@ -1787,4 +1788,181 @@ test('abLoop rewinds to A once playback passes B', () => {
     video.currentTime = 81;
     assert.equal(video._handlers.has('timeupdate'), false,
         'a stopped loop must not keep seeking the player');
+});
+
+// ── watchPageTabs ──────────────────────────────────────────────────────
+function watchTabsFixture() {
+    const below = fakeNode({ tag: 'div', attributes: { id: 'below', class: 'ytd-watch-flexy' } });
+    const description = fakeNode({ tag: 'ytd-watch-metadata' });
+    below.appendChild(description);
+    const comments = fakeNode({ tag: 'ytd-comments', attributes: { id: 'comments' } });
+    const chapters = fakeNode({ tag: 'ytd-macro-markers-list-renderer' });
+    const transcript = fakeNode({ tag: 'ytd-transcript-renderer' });
+    below.querySelector = (selector) => (
+        selector.includes('ytd-watch-metadata') ? description : collectMatching(below, selector)[0] || null
+    );
+
+    const doc = renderDocument((selector) => {
+        if (selector.includes('#below')) return below;
+        if (selector.includes('ytd-comments#comments')) return comments;
+        if (selector.includes('macro-markers')) return chapters;
+        return [];
+    });
+    const feature = loadFeature('watchPageTabs', {
+        document: doc,
+        YTKitCore: { getTranscriptPanelElement: () => transcript }
+    });
+    return { feature, below, description, comments, chapters, transcript };
+}
+
+test('watchPageTabs builds one tab bar and opens on the description', () => {
+    const { feature, below, description, comments } = watchTabsFixture();
+
+    feature._inject();
+    feature._inject();
+
+    const bars = collect(below, 'ytkit-wtabs');
+    assert.equal(bars.length, 1, 'the bar is injected once per watch page');
+    assert.equal(below.children[0], bars[0], 'the bar goes above the panels it switches');
+
+    const tabs = collect(bars[0], 'ytkit-wtab');
+    assert.deepEqual(Array.from(tabs, (tab) => tab.textContent),
+        ['Description', 'Comments', 'Chapters', 'Transcript']);
+    assert.deepEqual(Array.from(tabs, (tab) => tab.dataset.wtab),
+        ['desc', 'comments', 'chapters', 'transcript']);
+
+    assert.ok(tabs[0].classList.contains('ytkit-wtab--active'));
+    assert.equal(description.style.display, '');
+    assert.equal(comments.style.display, 'none');
+});
+
+test('watchPageTabs shows exactly one panel per tab and moves the active mark with it', () => {
+    const { feature, below, description, comments, chapters, transcript } = watchTabsFixture();
+
+    feature._inject();
+    const tabs = collect(collect(below, 'ytkit-wtabs')[0], 'ytkit-wtab');
+
+    tabs[1].onclick();
+    assert.deepEqual(
+        [description.style.display, comments.style.display, chapters.style.display, transcript.style.display],
+        ['none', '', 'none', 'none']
+    );
+    assert.deepEqual(Array.from(tabs, (tab) => tab.classList.contains('ytkit-wtab--active')),
+        [false, true, false, false]);
+
+    tabs[3].onclick();
+    assert.deepEqual(
+        [description.style.display, comments.style.display, chapters.style.display, transcript.style.display],
+        ['none', 'none', 'none', '']
+    );
+    assert.deepEqual(Array.from(tabs, (tab) => tab.classList.contains('ytkit-wtab--active')),
+        [false, false, false, true]);
+});
+
+// ── playbackStatsOverlay ───────────────────────────────────────────────
+function statsOverlayFixture(video) {
+    const controls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
+    const player = fakeNode({ tag: 'div', attributes: { id: 'movie_player' } });
+    player.appendChild(controls);
+    player.querySelector = (selector) => collectMatching(player, selector)[0] || null;
+    player.getStatsForNerds = () => ({ codecs: 'av01', resolution: '1920x1080' });
+
+    const doc = renderDocument((selector) => {
+        if (selector === 'video') return video ? [video] : [];
+        if (selector.includes('#movie_player')) return player;
+        return [];
+    });
+    const feature = loadFeature('playbackStatsOverlay', {
+        document: doc,
+        window: { location: { href: 'https://www.youtube.com/watch?v=abcdefghijk' } },
+        navigator: { connection: { downlink: 25 } },
+        setInterval: () => 1,
+        clearInterval: () => {},
+        getVideoId: () => 'abcdefghijk',
+        downloadFormatEstimates: null,
+        QUALITY_OPTIONS: []
+    });
+    return { feature, player, controls, doc };
+}
+
+function statsVideo() {
+    return {
+        videoWidth: 1280,
+        videoHeight: 720,
+        playbackRate: 1.25,
+        currentTime: 10,
+        buffered: { length: 1, end: () => 40 },
+        getVideoPlaybackQuality: () => ({ droppedVideoFrames: 3, totalVideoFrames: 900 })
+    };
+}
+
+test('playbackStatsOverlay builds a hidden overlay and a toggle that reports its state', () => {
+    const { feature, player, controls } = statsOverlayFixture(statsVideo());
+
+    feature._create();
+    feature._create();
+
+    const overlays = collect(player, 'ytkit-stats-btn');
+    assert.equal(overlays.length, 1, 'the toggle is built once');
+    assert.equal(feature._overlay.id, 'ytkit-stats-overlay');
+    assert.equal(feature._overlay.style.display, 'none', 'stats stay off until asked for');
+    assert.equal(controls.children[0], overlays[0], 'the toggle leads the right-hand controls');
+
+    const button = overlays[0];
+    assert.equal(button.getAttribute('aria-pressed'), 'false');
+    assert.equal(button.getAttribute('aria-label'), 'Toggle playback stats overlay');
+
+    button.handlers.get('click')();
+    assert.equal(feature._overlay.style.display, 'block');
+    assert.equal(button.getAttribute('aria-pressed'), 'true');
+
+    button.handlers.get('click')();
+    assert.equal(feature._overlay.style.display, 'none');
+    assert.equal(button.getAttribute('aria-pressed'), 'false');
+});
+
+test('playbackStatsOverlay writes the player numbers only while it is visible', () => {
+    const video = statsVideo();
+    const { feature, player } = statsOverlayFixture(video);
+
+    feature._create();
+    feature._update();
+    assert.equal(feature._overlay.textContent, '', 'a hidden overlay costs nothing to keep');
+
+    collect(player, 'ytkit-stats-btn')[0].handlers.get('click')();
+    feature._update();
+
+    const lines = feature._overlay.textContent.split('\n');
+    // Resolution comes from the player's own stats when it exposes them, and
+    // falls back to the element's intrinsic size otherwise.
+    assert.equal(lines[0], 'Resolution: 1920x1080');
+    assert.equal(lines[1], 'Dropped: 3/900 frames');
+    assert.equal(lines[2], 'Bandwidth: 25 Mbps');
+    assert.equal(lines[3], 'Playback: 1.25x');
+    assert.equal(lines[4], 'Buffered: 30s ahead');
+});
+
+test('playbackStatsOverlay falls back to the element size when the player exposes no stats', () => {
+    const video = statsVideo();
+    const { feature, player } = statsOverlayFixture(video);
+    player.getStatsForNerds = () => null;
+
+    feature._create();
+    collect(player, 'ytkit-stats-btn')[0].handlers.get('click')();
+    feature._update();
+
+    assert.equal(feature._overlay.textContent.split('\n')[0], 'Resolution: 1280x720');
+});
+
+test('playbackStatsOverlay cleanup takes both its nodes off the player', () => {
+    const { feature, player } = statsOverlayFixture(statsVideo());
+
+    feature._create();
+    assert.equal(collect(player, 'ytkit-stats-btn').length, 1);
+
+    feature._cleanup();
+
+    assert.equal(collect(player, 'ytkit-stats-btn').length, 0);
+    assert.equal(feature._overlay, null);
+    assert.equal(feature._btn, null);
 });
