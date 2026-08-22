@@ -205,7 +205,7 @@ function recoverable(videoId, title, channel) {
     return {
         videoId, title, channel,
         sessionId: 'session-1',
-        removedAt: Date.now(),
+        removedAt: 1,
         restoredAt: null
     };
 }

@@ -16,7 +16,7 @@ const MANIFEST_PATH = path.join(REPO_ROOT, 'extension', 'manifest.json');
 // then met undefined behaviour instead of being told it was unsupported. Now
 // both state it, which means both can drift. This is the only place that reads
 // them together, so it is where they are held equal.
-function assertChromeFloorAgrees() {
+function assertChromeFloorAgrees(manifestOverride = null) {
     const declared = CAPABILITY_MATRIX.browsers?.chromium?.minimumChromeVersion;
     if (typeof declared !== 'string' || !/^\d+$/.test(declared)) {
         throw new Error(
@@ -24,7 +24,8 @@ function assertChromeFloorAgrees() {
         );
     }
 
-    const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    const manifest = manifestOverride
+        || JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
     if (manifest.minimum_chrome_version !== declared) {
         throw new Error(
             `Chrome floor disagreement: extension/manifest.json declares `
@@ -46,8 +47,8 @@ function assertChromeFloorAgrees() {
     }
 }
 
-function buildCapabilityMatrix() {
-    assertChromeFloorAgrees();
+function buildCapabilityMatrix(options = {}) {
+    assertChromeFloorAgrees(options.manifest || null);
     // The probe exports a deeply frozen runtime object. A JSON round-trip
     // gives the build artifact a stable, serialization-safe snapshot without
     // exposing functions or mutable references to the runtime module.
