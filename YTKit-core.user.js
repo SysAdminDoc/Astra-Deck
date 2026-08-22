@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.84.1
+// @version      4.84.2
 // @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -19626,10 +19626,8 @@ if (typeof globalThis !== "undefined") {
 
     // extension/features/video-hider/index.js
     //
-    // Top-3 monolith peel for Video Hider. The module owns the primary
-    // hideVideosFromHome runtime/state object; ytkit.js keeps the inline
-    // object as a compatibility fallback and injects monolith-scoped helpers
-    // through createHideVideosFromHomeFeature(deps).
+    // Video Hider runtime. ytkit.js keeps only a descriptor stub after the
+    // module factory, so this is the one extension implementation that runs.
 
     function createFallbackSvg(viewBox, shapes = [], options = {}) {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -19765,6 +19763,9 @@ if (typeof globalThis !== "undefined") {
                     return null;
                 }
             },
+            markCardHidden = () => {},
+            unmarkCardHidden = () => {},
+            getFeatureName = feature => feature?.name || '',
             getCurrentPath = () => globalThis.location?.pathname || '',
             getPlayerResponseGlobal = () => globalThis.ytInitialPlayerResponse || null,
             extensionFetchJson = null,
@@ -21038,10 +21039,16 @@ if (typeof globalThis !== "undefined") {
                     delete element.dataset.ytkitFilterReason;
                     element.classList.remove('ytkit-video-hidden');
                     delete element.dataset.ytkitRemoved;
+                    unmarkCardHidden?.(element, this.id);
                     return false;
                 }
                 const resolvedReason = reason || element.dataset.ytkitFilterReason || 'manual';
                 element.dataset.ytkitFilterReason = resolvedReason;
+                markCardHidden?.(element, {
+                    featureId: this.id,
+                    featureName: getFeatureName(this) || this.name,
+                    rule: resolvedReason
+                });
                 this._syncHiddenReasonPlaceholder(element, resolvedReason);
                 if (appState.settings.hideVideosRemoveHiddenCards) {
                     element.classList.add('ytkit-video-hidden');

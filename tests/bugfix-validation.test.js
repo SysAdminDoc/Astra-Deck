@@ -400,13 +400,13 @@ test('video hider exposes split hide-all and restore-page controls', () => {
     const fs = require('fs');
     const path = require('path');
     const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'));
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'video-hider', 'index.js'), 'utf8');
+    const ytkitSource = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
 
     const start = source.indexOf("id: 'hideVideosFromHome'");
-    const end = source.indexOf("id: 'showLocalDownloadButton'", start);
-    assert.ok(start > -1 && end > start, 'video hider block should exist');
+    assert.ok(start > -1, 'video hider module should exist');
 
-    const block = source.slice(start, end);
+    const block = source.slice(start);
     assert.equal(defaults.hideVideosRemoveHiddenCards, false,
         'video hider should preserve CSS hiding by default');
     assert.equal(defaults.hideVideosShowFilterReason, false,
@@ -462,7 +462,7 @@ test('video hider exposes split hide-all and restore-page controls', () => {
     assert.ok(block.includes('_normalizeBlockedChannels(channels)')
         && block.includes('_isChannelBlocked(channelInfo)')
         && block.includes('_addBlockedChannel(channelInfo)')
-        && source.includes('getBlockedChannelIdentityKeys(record)'),
+        && block.includes('getBlockedChannelIdentityKeys(channelInfo)'),
         'video hider should normalize channel block records and match ID-first with fallbacks');
     assert.ok(block.includes('_extractVideoMetadata(element)')
         && block.includes('_matchesMetadataFilters(element')
@@ -485,24 +485,24 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should build a remove-hidden quick action');
     assert.ok(block.includes('Restore hidden videos on this page'),
         'video hider should label the restore action clearly');
-    assert.ok(block.includes('Remove hidden videos on this page'),
+    assert.ok(block.includes('Remove Hidden Videos On This Page'),
         'video hider should label the remove action clearly');
     assert.ok(block.includes("document.querySelectorAll('.ytkit-hide-all-restore-btn')"),
         'video hider should keep restore controls in sync with page state');
     assert.ok(block.includes("document.querySelectorAll('.ytkit-hide-all-remove-btn')"),
         'video hider should keep remove controls in sync with page state');
-    assert.ok(source.includes('Allowed Videos')
-        && source.includes('Add Hidden Video')
-        && source.includes('Add Allowed Video')
-        && source.includes('Remove From List')
-        && source.includes('Clear Hidden List Only')
-        && source.includes('Restore & Allow')
-        && source.includes('Hidden Card Behavior')
-        && source.includes('Thumbnail Controls')
-        && source.includes('Run On')
-        && source.includes('Content Type Filters')
-        && source.includes('Low-View Threshold')
-        && source.includes('Hide Watched Ratio'),
+    assert.ok(ytkitSource.includes('Allowed Videos')
+        && ytkitSource.includes('Add Hidden Video')
+        && ytkitSource.includes('Add Allowed Video')
+        && ytkitSource.includes('Remove From List')
+        && ytkitSource.includes('Clear Hidden List Only')
+        && ytkitSource.includes('Restore & Allow')
+        && ytkitSource.includes('Hidden Card Behavior')
+        && ytkitSource.includes('Thumbnail Controls')
+        && ytkitSource.includes('Run On')
+        && ytkitSource.includes('Content Type Filters')
+        && ytkitSource.includes('Low-View Threshold')
+        && ytkitSource.includes('Hide Watched Ratio'),
         'video hider settings should expose manual list editing, allowlist, behavior, controls, scope, and content-type sections');
 });
 

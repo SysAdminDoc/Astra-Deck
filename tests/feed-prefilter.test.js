@@ -308,7 +308,9 @@ test('the feature is opt-in and the post-render path is untouched', () => {
 
     // Video Hider still owns the DOM path. If this assertion ever fails,
     // the fallback was removed and unrecognised shapes stop being filtered.
-    const ytkit = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
-    assert.match(ytkit, /_applyVideoHiddenState\(element, shouldHide/,
-        'the post-render path must remain as the fallback');
+    const videoHider = fs.readFileSync(
+        path.join(repoRoot, 'extension/features/video-hider/index.js'), 'utf8'
+    );
+    assert.match(videoHider, /_applyVideoHiddenState\(element, shouldHide/,
+        'the post-render path must remain in the Video Hider module');
 });

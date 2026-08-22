@@ -62,6 +62,11 @@ const subscriptionGroupsSource = fs.readFileSync(
     'utf8'
 );
 
+const videoHiderSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'features', 'video-hider', 'index.js'),
+    'utf8'
+);
+
 function subscriptionGroupsBlock() {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
     assert.ok(start > -1, 'subscriptionGroups must exist');
@@ -288,9 +293,9 @@ test('videoHider ReDoS guard catches alternation-wrapped quantifier stacks', () 
     // quantified atom in a group and then quantify the group (e.g. `(a|b+)+`).
     // The narrower `(a+)+`-only guard shipped before v3.14.0 allowed
     // alternation-hidden ReDoS patterns through.
-    const guardStart = ytkitSource.indexOf('Reject patterns with nested quantifiers');
+    const guardStart = videoHiderSource.indexOf('Reject patterns with nested quantifiers');
     assert.ok(guardStart > -1, 'Nested-quantifier guard comment should exist');
-    const guardBlock = ytkitSource.slice(guardStart, guardStart + 1500);
+    const guardBlock = videoHiderSource.slice(guardStart, guardStart + 1500);
 
     assert.match(
         guardBlock,
@@ -3559,18 +3564,18 @@ test('ytkit.js consumes the PredicateSandbox factory and wires DebugManager tele
 });
 
 test('videoHider integrates predicate evaluator between metadata and duration checks', () => {
-    const idx = ytkitSource.indexOf('_getPredicateEvaluator()');
+    const idx = videoHiderSource.indexOf('_getPredicateEvaluator()');
     assert.ok(idx > -1, 'videoHider must call _getPredicateEvaluator');
-    const ctxIdx = ytkitSource.indexOf('_buildPredicateCtx(');
+    const ctxIdx = videoHiderSource.indexOf('_buildPredicateCtx(');
     assert.ok(ctxIdx > -1, 'videoHider must build a ctx surface for the predicate');
     // The ctx must be frozen at the call site per the investigation doc.
     // v4.47.0 NF16: predicate-ctx gained _extractSubsCount + _readRydLikes
     // helpers between the call site and the declaration, so the slice
     // window needs to be larger to span both helpers AND the declaration
     // body that contains Object.freeze(ctx).
-    const buildSig = ytkitSource.indexOf('_buildPredicateCtx(element, videoId, channelInfo)');
+    const buildSig = videoHiderSource.indexOf('_buildPredicateCtx(element, videoId, channelInfo)');
     assert.ok(buildSig > -1, '_buildPredicateCtx must accept (element, videoId, channelInfo)');
-    const buildBlock = ytkitSource.slice(buildSig, buildSig + 8000);
+    const buildBlock = videoHiderSource.slice(buildSig, buildSig + 8000);
     assert.match(buildBlock, /Object\.freeze\(ctx\)/,
         '_buildPredicateCtx must return a frozen ctx object');
 });
@@ -5583,9 +5588,9 @@ test('commentFilterManager rules hash is a short digest, not the raw rule text',
 });
 
 test('videoHider resets the predicate-sandbox circuit on SPA navigate', () => {
-    const idx = ytkitSource.indexOf("addNavigateRule('hideVideosFromHomeNav'");
+    const idx = videoHiderSource.indexOf("addNavigateRule('hideVideosFromHomeNav'");
     assert.ok(idx > -1, 'videoHider navigate rule must exist');
-    const block = ytkitSource.slice(idx, idx + 600);
+    const block = videoHiderSource.slice(idx, idx + 600);
     assert.match(block, /_predicateCache\?\.evaluator\?\.reset\?\.\(\)/,
         'navigate rule must reset the predicate evaluator circuit each route');
 });
@@ -11295,9 +11300,7 @@ test('v4.47.0 NF16 — predicate ctx exposes likes (from RYD cache) + subsCount 
     // ctx with both fields. Both are null-tolerant: predicates can
     // write `likes != null && likes > 100000` (explicit) or just rely
     // on null-as-falsy in standard comparisons.
-    const ytkitSrc = fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
-    );
+    const ytkitSrc = videoHiderSource;
 
     // Helpers exist:
     assert.match(ytkitSrc, /_extractSubsCount\(metadataText\)/,
@@ -11313,9 +11316,9 @@ test('v4.47.0 NF16 — predicate ctx exposes likes (from RYD cache) + subsCount 
     const subsBlock = ytkitSrc.slice(subsStart, subsStart + 1400);
     assert.match(subsBlock, /this\._parseCompactCount\(metadataText, \{/,
         '_extractSubsCount must delegate to _parseCompactCount');
-    assert.match(subsBlock, /labels: \/\(\?:subscribers\?\|abonnenten\?/,
-        '_extractSubsCount must include localized subscriber labels');
-    assert.match(subsBlock, /zeroPattern:/,
+    assert.match(subsBlock, /labels: SUBSCRIBER_COUNT_LABELS/,
+        '_extractSubsCount must use the localized subscriber-label set');
+    assert.match(subsBlock, /zeroPattern: NO_SUBSCRIBERS_PATTERN/,
         '_extractSubsCount must preserve an explicit zero-subscriber sentinel');
 
     // _readRydLikes consults the cached `ytkit-ryd-cache` key with a
@@ -11429,9 +11432,7 @@ test('v4.47.0 NF33 — hideVideosFromHome subs-load gate uses configurable hidde
     // ratioCutoff comes from the hideVideosSubsLoadHiddenRatio setting
     // (default 0.8). A 70%-hidden batch resets the streak instead of
     // tripping the pause.
-    const ytkitSrc = fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
-    );
+    const ytkitSrc = videoHiderSource;
     const fnIdx = ytkitSrc.indexOf('_trackSubsLoadBatch(processedVideos)');
     assert.ok(fnIdx > -1, '_trackSubsLoadBatch must exist');
     const slice = ytkitSrc.slice(fnIdx, fnIdx + 2500);
@@ -11458,7 +11459,7 @@ test('v4.47.0 NF33 — hideVideosFromHome subs-load gate uses configurable hidde
         'settings-schema must declare hideVideosSubsLoadHiddenRatio with default 0.8');
 
     // ytkit.js defaults block carries the same key + default.
-    assert.match(ytkitSrc, /hideVideosSubsLoadHiddenRatio:\s*0\.8/,
+    assert.match(ytkitSource, /hideVideosSubsLoadHiddenRatio:\s*0\.8/,
         'ytkit.js defaults must carry hideVideosSubsLoadHiddenRatio: 0.8');
 
     // default-settings.json catalogues it.
@@ -11505,10 +11506,8 @@ test('v4.47.0 NF33 — hideVideosFromHome subs-load gate uses configurable hidde
 });
 
 test('v4.47.0 EI-NEW5 — hideVideosFromHome precomputes blocked channel identity keys', () => {
-    const start = ytkitSource.indexOf("id: 'hideVideosFromHome'");
-    const end = ytkitSource.indexOf("id: 'showLocalDownloadButton'", start);
-    assert.ok(start > -1 && end > start, 'video hider block must exist');
-    const block = ytkitSource.slice(start, end);
+    const block = videoHiderSource;
+    assert.ok(block.includes("id: 'hideVideosFromHome'"), 'video hider module must exist');
 
     assert.match(block, /_channelKeyCache:\s*null/,
         'video hider must cache blocked-channel identity keys separately from records');

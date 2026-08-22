@@ -20,7 +20,7 @@
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.84.1` |
+| Release | `v4.84.2` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `477` entries across `18` categories |
@@ -1232,6 +1232,10 @@ The extension loads Player Dock from its preloaded feature module and keeps
 only a descriptor in the large content-script bundle. The generated userscript
 core uses the same module source, so runtime checks exercise the code that
 ships rather than a discarded fallback copy.
+
+Video Hider follows the same layout. Its feed, filter-list, and direct-watch
+runtime lives in the preloaded feature module, while `ytkit.js` keeps only the
+settings descriptor needed if that module cannot load.
 
 The Chromium zero-ad smoke tries the installed browser candidates in order. A
 candidate without MV3 `declarativeNetRequest` support is reported and skipped,
