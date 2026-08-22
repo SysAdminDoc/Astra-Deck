@@ -22,7 +22,7 @@ test('project facts are collected from the shipped source surfaces', () => {
     assert.equal(facts.schemaCategories, 18);
     // 106 ISOLATED-world modules. core/feed-prefilter.js is NOT counted
     // here: it loads into the MAIN world, where the JSON.parse hook is.
-    assert.equal(facts.runtimeModules, 112);
+    assert.equal(facts.runtimeModules, 113);
     assert.equal(facts.featureModules.length, 27);
     assert.equal(facts.featureIds.length, 292);
     assert.equal(facts.selectorPackFiles.length, 33);

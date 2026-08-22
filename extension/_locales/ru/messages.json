@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "Учётные данные отклонены. Проверьте ключ в настройках и повторите попытку."
+  },
+  "failureCauseBadData": {
+    "message": "Не удалось прочитать данные. Проверьте файл и повторите попытку."
+  },
+  "failureCauseCancelled": {
+    "message": "Запрос отменён."
+  },
+  "failureCauseNetwork": {
+    "message": "Не удалось связаться со службой. Проверьте подключение и повторите попытку."
+  },
+  "failureCauseNotFound": {
+    "message": "Этот элемент не найден. Возможно, он перемещён или удалён."
+  },
+  "failureCauseOffline": {
+    "message": "Устройство, похоже, не в сети. Восстановите подключение и повторите попытку."
+  },
+  "failureCausePermission": {
+    "message": "Доступ не предоставлен. Разрешите его и повторите попытку."
+  },
+  "failureCauseRateLimit": {
+    "message": "Отправлено слишком много запросов. Подождите минуту и повторите попытку."
+  },
+  "failureCauseServer": {
+    "message": "Служба сообщила об ошибке на своей стороне. Повторите попытку позже."
+  },
+  "failureCauseStorage": {
+    "message": "Недостаточно места в хранилище. Освободите место и повторите попытку."
+  },
+  "failureCauseTimeout": {
+    "message": "Запрос выполнялся слишком долго. Повторите попытку чуть позже."
+  },
+  "failureCauseTooLarge": {
+    "message": "Данные слишком велики. Используйте файл меньшего размера."
+  },
+  "failureCauseUnknown": {
+    "message": "Произошла непредвиденная ошибка. Подробности есть в журнале диагностики."
+  },
+  "failureCauseUnsupported": {
+    "message": "Этот браузер не поддерживает эту функцию. Обновите его и повторите попытку."
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "Ожидался объект"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "Некорректный JSON: {error}"
+  "schemaJsonInvalid": {
+    "message": "Некорректный JSON. Проверьте синтаксис и примените снова."
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "Некорректный JSON в позиции {position}. Исправьте и примените снова."
   },
   "schemaOverviewAllView": {
     "message": "Показать все настройки"

@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "تم رفض بيانات الاعتماد. تحقّق من المفتاح في الإعدادات ثم حاول مرة أخرى."
+  },
+  "failureCauseBadData": {
+    "message": "تعذّرت قراءة البيانات. تحقّق من الملف ثم حاول مرة أخرى."
+  },
+  "failureCauseCancelled": {
+    "message": "تم إلغاء الطلب."
+  },
+  "failureCauseNetwork": {
+    "message": "تعذّر الوصول إلى الخدمة. تحقّق من اتصالك ثم حاول مرة أخرى."
+  },
+  "failureCauseNotFound": {
+    "message": "لم يتم العثور على هذا العنصر. ربما تم نقله أو حذفه."
+  },
+  "failureCauseOffline": {
+    "message": "يبدو أن جهازك غير متصل. أعد الاتصال ثم حاول مرة أخرى."
+  },
+  "failureCausePermission": {
+    "message": "لم يُمنح الإذن بالوصول. اسمح به ثم حاول مرة أخرى."
+  },
+  "failureCauseRateLimit": {
+    "message": "تم إرسال طلبات كثيرة جدًا. انتظر دقيقة ثم حاول مرة أخرى."
+  },
+  "failureCauseServer": {
+    "message": "أبلغت الخدمة عن خطأ لديها. حاول مرة أخرى لاحقًا."
+  },
+  "failureCauseStorage": {
+    "message": "لا توجد مساحة تخزين كافية. أفرغ بعض المساحة ثم حاول مرة أخرى."
+  },
+  "failureCauseTimeout": {
+    "message": "استغرق الطلب وقتًا طويلًا. حاول مرة أخرى بعد قليل."
+  },
+  "failureCauseTooLarge": {
+    "message": "البيانات كبيرة جدًا. استخدم ملفًا أصغر."
+  },
+  "failureCauseUnknown": {
+    "message": "حدث خطأ غير متوقع. تفاصيل الخطأ في سجل التشخيص."
+  },
+  "failureCauseUnsupported": {
+    "message": "لا يمكن لهذا المتصفح تشغيل تلك الميزة. حدّثه ثم حاول مرة أخرى."
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "المتوقع كائن"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "JSON غير صالح: {error}"
+  "schemaJsonInvalid": {
+    "message": "صيغة JSON غير صالحة. تحقّق من البنية ثم طبّق التغيير."
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "صيغة JSON غير صالحة عند الموضع {position}. صحّحها ثم طبّق التغيير."
   },
   "schemaOverviewAllView": {
     "message": "عرض كل الإعدادات"

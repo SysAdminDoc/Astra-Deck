@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "The credentials were rejected. Check the key in Settings, then retry."
+  },
+  "failureCauseBadData": {
+    "message": "The data could not be read. Check the file, then try again."
+  },
+  "failureCauseCancelled": {
+    "message": "The request was cancelled."
+  },
+  "failureCauseNetwork": {
+    "message": "The service could not be reached. Check your connection, then try again."
+  },
+  "failureCauseNotFound": {
+    "message": "That item was not found. It may have moved or been removed."
+  },
+  "failureCauseOffline": {
+    "message": "Your device looks offline. Reconnect, then try again."
+  },
+  "failureCausePermission": {
+    "message": "Access was not granted. Allow it, then retry."
+  },
+  "failureCauseRateLimit": {
+    "message": "Too many requests were sent. Wait a minute, then try again."
+  },
+  "failureCauseServer": {
+    "message": "The service reported an error on its side. Try again later."
+  },
+  "failureCauseStorage": {
+    "message": "There is not enough storage space. Free some space, then try again."
+  },
+  "failureCauseTimeout": {
+    "message": "The request took too long. Try again in a moment."
+  },
+  "failureCauseTooLarge": {
+    "message": "The data is too large to handle. Use a smaller file."
+  },
+  "failureCauseUnknown": {
+    "message": "Something unexpected went wrong. The diagnostic log has the details."
+  },
+  "failureCauseUnsupported": {
+    "message": "This browser cannot run that feature. Update it, then retry."
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "Expected an object"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "Invalid JSON: {error}"
+  "schemaJsonInvalid": {
+    "message": "Invalid JSON. Check the syntax, then apply."
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "Invalid JSON at position {position}. Fix it, then apply."
   },
   "schemaOverviewAllView": {
     "message": "Show all settings"

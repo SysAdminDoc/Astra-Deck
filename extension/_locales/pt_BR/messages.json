@@ -1151,6 +1151,48 @@
   "externalHealthTotalTpl": {
     "message": "{count} services"
   },
+  "failureCauseAuth": {
+    "message": "As credenciais foram recusadas. Verifique a chave nas Configurações e tente novamente."
+  },
+  "failureCauseBadData": {
+    "message": "Não foi possível ler os dados. Verifique o arquivo e tente novamente."
+  },
+  "failureCauseCancelled": {
+    "message": "A solicitação foi cancelada."
+  },
+  "failureCauseNetwork": {
+    "message": "Não foi possível acessar o serviço. Verifique sua conexão e tente novamente."
+  },
+  "failureCauseNotFound": {
+    "message": "Esse item não foi encontrado. Ele pode ter sido movido ou removido."
+  },
+  "failureCauseOffline": {
+    "message": "Seu dispositivo parece estar off-line. Reconecte e tente novamente."
+  },
+  "failureCausePermission": {
+    "message": "O acesso não foi concedido. Permita e tente novamente."
+  },
+  "failureCauseRateLimit": {
+    "message": "Foram enviadas solicitações demais. Aguarde um minuto e tente novamente."
+  },
+  "failureCauseServer": {
+    "message": "O serviço relatou um erro do lado dele. Tente novamente mais tarde."
+  },
+  "failureCauseStorage": {
+    "message": "Não há espaço de armazenamento suficiente. Libere espaço e tente novamente."
+  },
+  "failureCauseTimeout": {
+    "message": "A solicitação demorou demais. Tente novamente em instantes."
+  },
+  "failureCauseTooLarge": {
+    "message": "Os dados são grandes demais. Use um arquivo menor."
+  },
+  "failureCauseUnknown": {
+    "message": "Algo inesperado aconteceu. O registro de diagnóstico tem os detalhes."
+  },
+  "failureCauseUnsupported": {
+    "message": "Este navegador não consegue executar esse recurso. Atualize-o e tente novamente."
+  },
   "featureHealthAgeDaysTpl": {
     "message": "{count}d ago"
   },
@@ -4745,8 +4787,11 @@
   "schemaJsonExpectedObject": {
     "message": "Era esperado um objeto"
   },
-  "schemaJsonInvalidTpl": {
-    "message": "JSON inválido: {error}"
+  "schemaJsonInvalid": {
+    "message": "JSON inválido. Verifique a sintaxe e aplique novamente."
+  },
+  "schemaJsonInvalidAtTpl": {
+    "message": "JSON inválido na posição {position}. Corrija e aplique novamente."
   },
   "schemaOverviewAllView": {
     "message": "Mostrar todas as configurações"

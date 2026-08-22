@@ -43,6 +43,7 @@
     "i18n:coverage:warn": "node scripts/i18n-coverage.js --warn-feature-identical-above 582",
     "i18n:coverage:gate": "node scripts/i18n-coverage.js --no-write --check-report --check-placeholder-baseline",
     "i18n:copy:gate": "node scripts/check-localizable-ui-copy.js",
+    "i18n:raw-error:gate": "node scripts/check-raw-error-copy.js",
     "i18n:pseudolocale": "node scripts/generate-pseudolocale.js",
     "i18n:proofing-export": "node scripts/export-i18n-proofing.js",
     "audit:storage": "node scripts/audit-storage-size.js",

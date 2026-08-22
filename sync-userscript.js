@@ -73,6 +73,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/resource-unlock.js',
     'extension/core/text-metrics.js',
     'extension/core/date-time.js',
+    'extension/core/failure-copy.js',
     'extension/core/runtime-flags.js',
     'extension/core/capability-probe.js',
     'extension/features/subtitles/index.js',

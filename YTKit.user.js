@@ -160,6 +160,7 @@
     // ── bundled module: extension/core/resource-unlock.js ──
     // ── bundled module: extension/core/text-metrics.js ──
     // ── bundled module: extension/core/date-time.js ──
+    // ── bundled module: extension/core/failure-copy.js ──
     // ── bundled module: extension/core/runtime-flags.js ──
     // ── bundled module: extension/core/capability-probe.js ──
     // ── bundled module: extension/features/subtitles/index.js ──
