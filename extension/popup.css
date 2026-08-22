@@ -101,7 +101,7 @@ body {
   overflow: hidden;
   z-index: 100;
   padding: 8px 12px;
-  background: linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%);
+  background: var(--astra-brand-gradient);
   color: var(--accent-on);
   text-decoration: none;
   border-radius: var(--radius-xs);
@@ -284,7 +284,7 @@ body {
   align-items: center;
   gap: 6px;
   margin-bottom: 4px;
-  color: #ffb59f;
+  color: var(--astra-accent-300);
   font-size: var(--fs-micro);
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -472,7 +472,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 169, 58, 0.06), rgba(255, 169, 58, 0.02)),
     rgba(24, 18, 10, 0.82);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -487,7 +487,7 @@ body {
   height: 22px;
   border-radius: 8px;
   background: rgba(255, 169, 58, 0.16);
-  color: #ffb84d;
+  color: var(--astra-amber-300);
   font-weight: 900;
   font-size: 13px;
   line-height: 1;
@@ -506,12 +506,12 @@ body {
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #ffb84d;
+  color: var(--astra-amber-300);
 }
 
 .health-detail {
   font-size: 12px;
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -526,7 +526,7 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 169, 58, 0.45);
   background: rgba(255, 169, 58, 0.08);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   cursor: pointer;
   transition: background-color var(--dur-quick) var(--ease-out),
               border-color var(--dur-quick) var(--ease-out);
@@ -551,7 +551,7 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid rgba(160, 160, 160, 0.35);
   background: rgba(160, 160, 160, 0.06);
-  color: #b0b0b0;
+  color: var(--astra-neutral-300);
   cursor: pointer;
   transition: background-color var(--dur-quick) var(--ease-out),
               border-color var(--dur-quick) var(--ease-out);
@@ -584,7 +584,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 99, 99, 0.06), rgba(255, 99, 99, 0.02)),
     rgba(24, 12, 12, 0.82);
-  color: #ffd0d0;
+  color: var(--astra-error-200);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -603,7 +603,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 184, 77, 0.08), rgba(255, 184, 77, 0.02)),
     rgba(18, 14, 8, 0.86);
-  color: var(--text-primary, #f4f6fb);
+  color: var(--text-primary, #f4f6fa);
 }
 .welcome-card[hidden] { display: none; }
 
@@ -618,14 +618,14 @@ body {
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
 }
 
 .welcome-dismiss {
   appearance: none;
   background: transparent;
   border: 1px solid rgba(255, 217, 168, 0.28);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
   font-weight: 700;
@@ -647,7 +647,7 @@ body {
   margin: 0;
   font-size: 12px;
   line-height: 1.4;
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
 }
 
 .welcome-profile-row {
@@ -668,7 +668,7 @@ body {
   border-radius: var(--radius-sm, 6px);
   border: 1px solid rgba(255, 217, 168, 0.18);
   background: rgba(255, 217, 168, 0.04);
-  color: var(--text-primary, #f4f6fb);
+  color: var(--text-primary, #f4f6fa);
   font-family: inherit;
   cursor: pointer;
   transition: background-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
@@ -710,7 +710,7 @@ body {
   padding: 1px 6px;
   border-radius: 4px;
   background: rgba(78, 200, 165, 0.18);
-  color: #6fe0bc;
+  color: var(--astra-success-200);
   border: 1px solid rgba(78, 200, 165, 0.42);
   pointer-events: none;
 }
@@ -718,13 +718,13 @@ body {
 .welcome-profile-title {
   font-size: 12px;
   font-weight: 800;
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
 }
 
 .welcome-profile-desc {
   font-size: 11px;
   line-height: 1.35;
-  color: var(--text-muted, #c7cad1);
+  color: var(--text-muted, #909baa);
 }
 
 .welcome-step[hidden] { display: none; }
@@ -746,7 +746,7 @@ body {
   border-radius: var(--radius-sm, 6px);
   border: 1px solid rgba(255, 217, 168, 0.18);
   background: rgba(255, 217, 168, 0.04);
-  color: var(--text-primary, #f4f6fb);
+  color: var(--text-primary, #f4f6fa);
   font-family: inherit;
   cursor: pointer;
   transition: background-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
@@ -765,12 +765,12 @@ body {
 .welcome-preset-title {
   font-size: 11px;
   font-weight: 800;
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
 }
 .welcome-preset-desc {
   font-size: 10px;
   line-height: 1.3;
-  color: var(--text-muted, #c7cad1);
+  color: var(--text-muted, #909baa);
 }
 .welcome-preset-skip {
   display: block;
@@ -779,14 +779,14 @@ body {
   padding: 6px;
   border: none;
   background: transparent;
-  color: var(--text-muted, #c7cad1);
+  color: var(--text-muted, #909baa);
   font-family: inherit;
   font-size: 11px;
   cursor: pointer;
   border-radius: var(--radius-xs, 4px);
   text-align: center;
 }
-.welcome-preset-skip:hover { color: var(--text-primary, #f4f6fb); background: rgba(255,255,255,0.04); }
+.welcome-preset-skip:hover { color: var(--text-primary, #f4f6fa); background: rgba(255,255,255,0.04); }
 .welcome-preset-skip:focus-visible { outline: 2px solid rgba(255,184,77,0.75); outline-offset: 1px; }
 
 /* v4.47.0 NF21: What's New banner. Same geometry as storage-banner /
@@ -804,7 +804,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 184, 77, 0.06), rgba(255, 184, 77, 0.02)),
     rgba(18, 14, 8, 0.82);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -828,12 +828,12 @@ body {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #ffb84d;
+  color: var(--astra-amber-300);
 }
 
 .whats-new-detail {
   font-size: 12px;
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -855,7 +855,7 @@ body {
 .whats-new-btn {
   border: 1px solid rgba(255, 184, 77, 0.45);
   background: rgba(255, 184, 77, 0.1);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
 }
 .whats-new-btn:hover {
   background: rgba(255, 184, 77, 0.18);
@@ -864,7 +864,7 @@ body {
 .whats-new-dismiss {
   border: 1px solid rgba(255, 217, 168, 0.22);
   background: transparent;
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
 }
 .whats-new-dismiss:hover { background: rgba(255, 217, 168, 0.08); }
 .whats-new-btn:focus-visible,
@@ -888,7 +888,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 184, 77, 0.06), rgba(255, 184, 77, 0.02)),
     rgba(18, 14, 8, 0.82);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -902,7 +902,7 @@ body {
   height: 22px;
   border-radius: 8px;
   background: rgba(255, 184, 77, 0.16);
-  color: #ffb84d;
+  color: var(--astra-amber-300);
   font-weight: 900;
   font-size: 13px;
   line-height: 1;
@@ -921,12 +921,12 @@ body {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #ffb84d;
+  color: var(--astra-amber-300);
 }
 
 .optional-host-detail {
   font-size: 12px;
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -942,7 +942,7 @@ body {
   border-radius: var(--radius-sm, 6px);
   border: 1px solid rgba(255, 184, 77, 0.45);
   background: rgba(255, 184, 77, 0.1);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   cursor: pointer;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -988,7 +988,7 @@ body {
   height: 22px;
   border-radius: 8px;
   background: rgba(255, 99, 99, 0.16);
-  color: #ff8585;
+  color: var(--astra-error-400);
   font-weight: 900;
   font-size: 13px;
   line-height: 1;
@@ -1007,12 +1007,12 @@ body {
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #ff8585;
+  color: var(--astra-error-400);
 }
 
 .storage-banner-detail {
   font-size: 12px;
-  color: #ffd0d0;
+  color: var(--astra-error-200);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1027,7 +1027,7 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 99, 99, 0.45);
   background: rgba(255, 99, 99, 0.08);
-  color: #ffd0d0;
+  color: var(--astra-error-200);
   cursor: pointer;
   transition: background-color var(--dur-quick) var(--ease-out),
               border-color var(--dur-quick) var(--ease-out);
@@ -1177,8 +1177,8 @@ body {
   letter-spacing: 0.02em;
 }
 
-.selector-health-list .sh-stats .sh-errors { color: #ff8585; }
-.selector-health-list .sh-stats .sh-drifts { color: #ffb84d; }
+.selector-health-list .sh-stats .sh-errors { color: var(--astra-error-400); }
+.selector-health-list .sh-stats .sh-drifts { color: var(--astra-amber-300); }
 
 .selector-health-ctx {
   margin-top: 8px;
@@ -1292,10 +1292,10 @@ body {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
-.external-health-state[data-tone="ok"] { color: #6fe0bc; }
+.external-health-state[data-tone="ok"] { color: var(--astra-success-200); }
 .external-health-state[data-tone="degraded"],
-.external-health-state[data-tone="rate-limited"] { color: #ffb84d; }
-.external-health-state[data-tone="error"] { color: #ff8585; }
+.external-health-state[data-tone="rate-limited"] { color: var(--astra-amber-300); }
+.external-health-state[data-tone="error"] { color: var(--astra-error-400); }
 .external-health-state[data-tone="unknown"] { color: var(--text-muted); }
 
 /* ── Feature performance dashboard ──────────────────────────────── */
@@ -1443,7 +1443,7 @@ body {
 .feature-perf-row .fp-bar {
   height: 6px;
   border-radius: 3px;
-  background: var(--accent, #ff4e45);
+  background: var(--accent, #ff5d4a);
   min-width: 2px;
 }
 .feature-perf-row .fp-ms {
@@ -1453,8 +1453,8 @@ body {
   min-width: 36px;
   text-align: right;
 }
-.feature-perf-slow .fp-name { color: #ff8585; }
-.feature-perf-slow .fp-bar { background: #ff8585; }
+.feature-perf-slow .fp-name { color: var(--astra-error-400); }
+.feature-perf-slow .fp-bar { background: var(--astra-error-400); }
 /* ── Schema-driven category overview (v4.23.0) ───────────────────────
    Read-only roll-up of every settings-schema category with live
    enabled/total counts. Schema source of truth: extension/core/
@@ -1782,7 +1782,7 @@ body {
 .schema-overview-list .so-key-json-error {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
-  color: #ff8585;
+  color: var(--astra-error-400);
   background: rgba(255, 133, 133, 0.08);
   border: 1px solid rgba(255, 133, 133, 0.28);
   border-radius: 4px;
@@ -1835,7 +1835,7 @@ body {
   padding: 1px 6px;
   border-radius: 4px;
   background: rgba(255, 184, 77, 0.12);
-  color: #ffb84d;
+  color: var(--astra-amber-300);
   border: 1px solid rgba(255, 184, 77, 0.32);
   flex-shrink: 0;
 }
@@ -1846,7 +1846,7 @@ body {
    capability names. House-style 4 px radius, same as the gated chip. */
 .schema-overview-list .so-key-profile-badge.so-key-unavailable {
   background: rgba(245, 87, 87, 0.14);
-  color: #ff8585;
+  color: var(--astra-error-400);
   border-color: rgba(245, 87, 87, 0.36);
 }
 
@@ -1857,7 +1857,7 @@ body {
    guarantees. WCAG AA contrast against the row background. */
 .schema-overview-list .so-key-profile-badge.so-key-trust-local {
   background: rgba(78, 200, 165, 0.14);
-  color: #6fe0bc;
+  color: var(--astra-success-200);
   border-color: rgba(78, 200, 165, 0.36);
 }
 
@@ -1866,7 +1866,7 @@ body {
    4 px geometry as other schema chips, with a warning tone. */
 .schema-overview-list .so-key-profile-badge.so-key-permission-missing {
   background: rgba(255, 184, 77, 0.14);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   border-color: rgba(255, 184, 77, 0.38);
 }
 
@@ -1886,7 +1886,7 @@ body {
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted, #c7cad1);
+  color: var(--text-muted, #909baa);
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
@@ -1907,7 +1907,7 @@ body {
 .schema-overview-list .so-key-reset-btn:hover {
   background: rgba(255, 184, 77, 0.12);
   border-color: rgba(255, 184, 77, 0.42);
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
 }
 .schema-overview-list .so-key-reset-btn:focus-visible {
   outline: 2px solid rgba(255, 184, 77, 0.75);
@@ -1953,7 +1953,7 @@ body {
 .schema-overview-list .so-key-switch.on {
   background: rgba(78, 200, 165, 0.12);
   border-color: rgba(78, 200, 165, 0.32);
-  color: #4ec8a5;
+  color: var(--astra-success-300);
 }
 
 .schema-overview-list .so-key-switch:focus-visible {
@@ -2137,11 +2137,11 @@ body {
   margin-top: 5px;
 }
 
-.data-flow-dot.df-risk-safe        { background: #4ec8a5; }
-.data-flow-dot.df-risk-api         { background: #5aa9ff; }
-.data-flow-dot.df-risk-local-companion { background: #ffb84d; }
-.data-flow-dot.df-risk-experimental{ background: #b889ff; }
-.data-flow-dot.df-risk-store-risk  { background: #ff8585; }
+.data-flow-dot.df-risk-safe        { background: var(--astra-success-300); }
+.data-flow-dot.df-risk-api         { background: var(--astra-info); }
+.data-flow-dot.df-risk-local-companion { background: var(--astra-amber-300); }
+.data-flow-dot.df-risk-experimental{ background: var(--astra-violet-300); }
+.data-flow-dot.df-risk-store-risk  { background: var(--astra-error-400); }
 
 .data-flow-origin {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -2157,7 +2157,7 @@ body {
   font-size: 9.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #4ec8a5;
+  color: var(--astra-success-300);
   font-weight: 700;
 }
 
@@ -2262,7 +2262,7 @@ body {
   border: 1px solid rgba(255, 133, 133, 0.32);
   border-radius: 6px;
   background: rgba(255, 133, 133, 0.07);
-  color: #ffb4b4;
+  color: var(--astra-error-300);
   font: inherit;
   font-size: 9.5px;
   font-weight: 700;
@@ -2272,7 +2272,7 @@ body {
 .data-flow-grant-remove:hover {
   border-color: rgba(255, 133, 133, 0.58);
   background: rgba(255, 133, 133, 0.13);
-  color: #ffd1d1;
+  color: var(--astra-error-200);
 }
 
 .data-flow-grant-remove:disabled {
@@ -2386,7 +2386,7 @@ body {
   padding: 0 14px;
   border: 1px solid rgba(255, 130, 100, 0.48);
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%);
+  background: var(--astra-brand-gradient);
   color: var(--accent-on);
   font: inherit;
   font-size: var(--fs-sm);
@@ -2440,10 +2440,10 @@ body {
 .cta-button.cta-secondary {
   background: transparent;
   border: 1px solid var(--border, rgba(255,255,255,0.08));
-  color: var(--text-secondary, #c7cad1);
+  color: var(--text-secondary, #c7d0dc);
   font-size: 11px;
 }
-.cta-button.cta-secondary:hover { border-color: var(--border-strong, rgba(255,255,255,0.15)); color: var(--text-primary, #f4f6fb); }
+.cta-button.cta-secondary:hover { border-color: var(--border-strong, rgba(255,255,255,0.15)); color: var(--text-primary, #f4f6fa); }
 .cta-button.cta-secondary::before { display: none; }
 .cta-button.cta-secondary[hidden] { display: none; }
 
@@ -2661,7 +2661,7 @@ button[aria-busy="true"]::before {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 button.primary {
-  background: linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%);
+  background: var(--astra-brand-gradient);
   border-color: rgba(255, 143, 112, 0.5);
   color: var(--accent-on);
   font-weight: 800;
@@ -2677,7 +2677,7 @@ button.primary:hover {
 }
 
 button.danger {
-  color: #ffdde0;
+  color: var(--astra-error-100);
   background: var(--error-soft);
   border-color: rgba(255, 116, 128, 0.26);
 }
@@ -2685,7 +2685,7 @@ button.danger {
 button.danger:hover {
   background: rgba(255, 116, 128, 0.16);
   border-color: rgba(255, 116, 128, 0.4);
-  color: #ffe6e9;
+  color: var(--astra-error-100);
 }
 
 /* v4.47.0 EI2: Undo Reset action. Sits next to the Reset button and
@@ -2724,9 +2724,9 @@ button:focus-visible {
 .status.error,
 .status.info { animation: fade-down 200ms var(--ease-out) both; }
 
-.status.success { display: block; color: #d7ffe8; background: var(--success-soft); border: 1px solid var(--success-border); }
-.status.error   { display: block; color: #ffe0e4; background: var(--error-soft);   border: 1px solid var(--error-border);   }
-.status.info    { display: block; color: #ddecff; background: var(--info-soft);    border: 1px solid var(--info-border);    }
+.status.success { display: block; color: var(--astra-success-100); background: var(--success-soft); border: 1px solid var(--success-border); }
+.status.error   { display: block; color: var(--astra-error-100); background: var(--error-soft);   border: 1px solid var(--error-border);   }
+.status.info    { display: block; color: var(--astra-info-100); background: var(--info-soft);    border: 1px solid var(--info-border);    }
 
 @keyframes fade-down {
   from { opacity: 0; transform: translateY(-4px); }
@@ -2786,7 +2786,7 @@ button:focus-visible {
 }
 
 #languageSelect option {
-  background-color: #0d1117;
+  background-color: var(--astra-surface);
   color: var(--text-primary);
 }
 
@@ -2819,7 +2819,7 @@ button:focus-visible {
 }
 
 .section-eyebrow {
-  color: #ffb59f;
+  color: var(--astra-accent-300);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -3035,7 +3035,7 @@ button:focus-visible {
 }
 
 .toggle-group[data-active="true"] .toggle-group-count {
-  color: #ffd8cc;
+  color: var(--astra-accent-100);
   background: var(--accent-softer);
   border-color: rgba(255, 107, 74, 0.24);
 }
@@ -3089,7 +3089,7 @@ button:focus-visible {
   border-color: rgba(255, 107, 74, 0.28);
 }
 
-.toggle.on .name { color: #ffd8cc; }
+.toggle.on .name { color: var(--astra-accent-100); }
 
 .toggle:disabled {
   opacity: 0.55;
@@ -3146,31 +3146,31 @@ button:focus-visible {
 }
 
 .toggle-risk-badge.toggle-risk-api {
-  color: #6aa9ff;
+  color: var(--astra-info);
   border-color: rgba(106, 169, 255, 0.32);
   background: rgba(106, 169, 255, 0.08);
 }
 
 .toggle-risk-badge.toggle-risk-local-companion {
-  color: #ffbe7a;
+  color: var(--astra-amber-200);
   border-color: rgba(255, 190, 122, 0.32);
   background: rgba(255, 190, 122, 0.08);
 }
 
 .toggle-risk-badge.toggle-risk-experimental {
-  color: #b889ff;
+  color: var(--astra-violet-300);
   border-color: rgba(184, 137, 255, 0.32);
   background: rgba(184, 137, 255, 0.08);
 }
 
 .toggle-risk-badge.toggle-risk-store-risk {
-  color: #ff8585;
+  color: var(--astra-error-400);
   border-color: rgba(255, 133, 133, 0.32);
   background: rgba(255, 133, 133, 0.08);
 }
 
 .toggle-risk-badge.toggle-risk-permission {
-  color: #ffd9a8;
+  color: var(--astra-amber-100);
   border-color: rgba(255, 184, 77, 0.38);
   background: rgba(255, 184, 77, 0.12);
 }
@@ -3228,7 +3228,7 @@ button:focus-visible {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #f4f6fb, #c6ccd8);
+  background: var(--astra-knob-off);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -3247,7 +3247,7 @@ button:focus-visible {
 
 .toggle.on .switch::after {
   transform: translateX(14px);
-  background: linear-gradient(180deg, #ffffff, #f2f3f5);
+  background: var(--astra-knob-on);
 }
 
 /* ── Skeletons ── */

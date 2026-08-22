@@ -26,6 +26,42 @@
   --astra-radius-3: 8px;
   --astra-radius-4: 10px;
 
+  /* Status tint scale. Every value here was a raw hex literal repeated across
+     popup.css and sidepanel.css: text drawn on that hue's own 6-16% wash,
+     where the base semantic colour is too dark to read against its own tint.
+     Rungs run pale (100) to bold, and one rung is shared by every surface that
+     used a colour within about a percent of it, which is what collapsed 29
+     distinct literals into these. */
+  --astra-accent-050: #fff0ea;
+  --astra-accent-100: #ffd8cc;
+  --astra-accent-200: #ffc4b5;
+  --astra-accent-300: #ffb59f;
+  --astra-amber-100: #ffd9a8;
+  --astra-amber-200: #ffbe7a;
+  --astra-amber-300: #ffb84d;
+  --astra-error-100: #ffe0e4;
+  --astra-error-200: #ffd0d0;
+  --astra-error-300: #ffb4b4;
+  --astra-error-400: #ff8585;
+  --astra-success-100: #d7ffe8;
+  --astra-success-200: #6fe0bc;
+  --astra-success-300: #4ec8a5;
+  --astra-info-100: #ddecff;
+  --astra-violet-200: #c8a6ff;
+  --astra-violet-300: #b889ff;
+  --astra-neutral-300: #b0b0b0;
+
+  /* The two-stop brand mark. Five surfaces repeated both stops inline, so a
+     brand change had to be made in five places and was never made in all of
+     them at once. */
+  --astra-brand-from: #ff8a64;
+  --astra-brand-to: #ff5f4a;
+  --astra-brand-gradient: linear-gradient(135deg, var(--astra-brand-from) 0%, var(--astra-brand-to) 100%);
+
+  /* The toggle knob's two sheens: a cool one while off, a bright one while on. */
+  --astra-knob-off: linear-gradient(180deg, #f4f6fb, #c6ccd8);
+  --astra-knob-on: linear-gradient(180deg, #ffffff, #f2f3f5);
+
   /* Compatibility aliases used by both extension-owned surfaces. */
   --bg: var(--astra-canvas);
   --page-bg: var(--astra-canvas);

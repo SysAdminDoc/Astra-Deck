@@ -79,3 +79,73 @@ test('every page-only token is genuinely absent from the shared system', () => {
         }
     }
 });
+
+// ── Colour literals outside :root ──────────────────────────────────────
+// A hex written into a rule bypasses the palette entirely, so a theme change
+// silently misses it. 85 such uses in popup.css and 22 in sidepanel.css were
+// collapsed onto the tint scale in surface-system.css on 2026-08-21. What is
+// left is only the fallback arm of a `var(--token, #hex)`, which never paints
+// while the token exists and is kept so the arm still names the right colour.
+const PAINTING_LITERAL_BUDGET = { 'popup.css': 0, 'sidepanel.css': 0 };
+
+/** Hex literals in a stylesheet that are outside :root and would actually paint. */
+function paintingLiterals(file) {
+    const css = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    const rootRanges = [];
+    const roots = /:root[^{]*\{/g;
+    for (let match = roots.exec(css); match; match = roots.exec(css)) {
+        let depth = 1;
+        let index = roots.lastIndex;
+        while (index < css.length && depth > 0) {
+            if (css[index] === '{') depth += 1;
+            else if (css[index] === '}') depth -= 1;
+            index += 1;
+        }
+        rootRanges.push([match.index, index]);
+    }
+    const found = [];
+    const hex = /#[0-9a-fA-F]{3,8}\b/g;
+    for (let match = hex.exec(css); match; match = hex.exec(css)) {
+        if (rootRanges.some(([start, end]) => match.index >= start && match.index < end)) continue;
+        if (/var\([^)]*,\s*$/.test(css.slice(Math.max(0, match.index - 120), match.index))) continue;
+        found.push({ value: match[0], line: css.slice(0, match.index).split('\n').length });
+    }
+    return found;
+}
+
+test('no page stylesheet paints a colour the palette does not own', () => {
+    for (const [file, budget] of Object.entries(PAINTING_LITERAL_BUDGET)) {
+        const literals = paintingLiterals(file);
+        assert.ok(literals.length <= budget,
+            `${file} paints ${literals.length} raw hex literal(s) (budget ${budget}): `
+            + literals.slice(0, 8).map(({ value, line }) => `${value}@${line}`).join(', ')
+            + '. Add a rung to the tint scale in surface-system.css and use it.');
+    }
+});
+
+test('every var() fallback arm names the value its token actually carries', () => {
+    // A stale fallback is a lie that only shows up if the token ever goes
+    // missing, which is exactly when nobody is looking. Five of these said
+    // #f4f6fb while --astra-text has been #f4f6fa, and one said #c7cad1 for
+    // --text-muted, which is #909baa.
+    const shared = rootTokens('surface-system.css');
+    const resolve = (name, seen = new Set()) => {
+        if (seen.has(name)) return null;
+        seen.add(name);
+        const value = shared.get(name);
+        if (!value) return null;
+        const nested = /^var\(\s*(--[A-Za-z0-9-]+)\s*\)$/.exec(value);
+        return nested ? resolve(nested[1], seen) : value;
+    };
+
+    for (const { css } of PAGES) {
+        const source = fs.readFileSync(path.join(ROOT, css), 'utf8');
+        const arms = source.matchAll(/var\(\s*(--[A-Za-z0-9-]+)\s*,\s*(#[0-9a-fA-F]{3,8})\s*\)/g);
+        for (const [, token, literal] of arms) {
+            const declared = resolve(token);
+            if (!declared || !declared.startsWith('#')) continue;
+            assert.equal(literal.toLowerCase(), declared.toLowerCase(),
+                `${css}: var(${token}, ${literal}) but ${token} resolves to ${declared}`);
+        }
+    }
+});
