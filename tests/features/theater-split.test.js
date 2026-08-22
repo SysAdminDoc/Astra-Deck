@@ -425,8 +425,10 @@ test('the comments pane collapses only after being pushed past its top', () => {
 test('the Quick Links footer renders compact icon buttons, not half-width slabs', () => {
     const playerDock = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
+    const userscriptCore = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8');
 
-    for (const [label, source] of [['monolith', sources.ytkit], ['player-dock', playerDock]]) {
+    for (const [label, source] of [['userscript core', userscriptCore], ['player-dock', playerDock]]) {
         // No footer row may still be a stretched two-column grid.
         const rows = source.split('.ytkit-ql-bottom {').slice(1);
         for (const row of rows) {
@@ -439,21 +441,23 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
     }
 
     // And the buttons must opt out of the .ytkit-ql-item flex grow they inherit.
-    const btnBlocks = sources.ytkit.split('.ytkit-ql-bottom-btn {').slice(1);
-    assert.ok(btnBlocks.length >= 2, 'both stylesheet copies must define the button');
-    for (const block of btnBlocks) {
-        const decl = block.slice(0, block.indexOf('}'));
-        assert.match(decl, /flex:\s*0 0 auto/,
-            'without this the .ytkit-ql-item flex grow stretches the button again');
-        // 28px in the base sheets, 26px in the denser po-drop override.
-        assert.match(decl, /width:\s*2[0-9]px/, 'the control should be a square, sized to its glyph');
-        assert.match(decl, /height:\s*2[0-9]px/);
-    }
+    for (const [label, source] of [['userscript core', userscriptCore], ['player-dock', playerDock]]) {
+        const btnBlocks = source.split('.ytkit-ql-bottom-btn {').slice(1);
+        assert.ok(btnBlocks.length >= 1, `${label}: stylesheet must define the button`);
+        for (const block of btnBlocks) {
+            const decl = block.slice(0, block.indexOf('}'));
+            assert.match(decl, /flex:\s*0 0 auto/,
+                `${label}: without this the .ytkit-ql-item flex grow stretches the button again`);
+            // 28px in the base sheets, 26px in the denser po-drop override.
+            assert.match(decl, /width:\s*2[0-9]px/, `${label}: the control should be a square, sized to its glyph`);
+            assert.match(decl, /height:\s*2[0-9]px/);
+        }
 
-    // The override layer must not reintroduce the stretch.
-    const poStart = sources.ytkit.indexOf('#ytkit-po-drop .ytkit-ql-bottom-btn {');
-    const poBlock = sources.ytkit.slice(poStart, poStart + 400);
-    assert.match(poBlock, /flex:\s*0 0 auto !important/);
+        const poStart = source.indexOf('#ytkit-po-drop .ytkit-ql-bottom-btn {');
+        const poBlock = source.slice(poStart, poStart + 400);
+        assert.match(poBlock, /flex:\s*0 0 auto !important/,
+            `${label}: the compact override must not reintroduce the stretch`);
+    }
 });
 
 test('the monolith carries only a descriptor stub for stickyVideo', () => {

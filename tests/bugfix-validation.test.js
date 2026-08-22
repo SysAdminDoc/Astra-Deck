@@ -133,15 +133,19 @@ test('customSpeedButtons rebinds to swapped videos and exposes pressed states', 
 test('player quick links edit mode keeps delete buttons on the same row', () => {
     const fs = require('fs');
     const path = require('path');
-    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const playerDock = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
+    const core = fs.readFileSync(path.join(__dirname, '..', 'YTKit-core.user.js'), 'utf8');
 
-    const start = source.indexOf('#ytkit-po-drop .ytkit-ql-row');
-    assert.ok(start > -1, 'player quick links row styles should exist');
-    const block = source.slice(start, start + 2500);
-    assert.match(block, /display:\s*flex\s*!important/, 'player quick links rows should use flex layout');
-    assert.ok(!block.includes('display: block !important'), 'player quick links rows must not stack delete buttons as separate rows');
-    assert.match(block, /#ytkit-po-drop\.ytkit-ql-editing \.ytkit-ql-del[\s\S]*?display:\s*inline-flex\s*!important/,
-        'player quick links edit mode should show compact inline delete buttons');
+    for (const [label, source] of [['player-dock', playerDock], ['userscript core', core]]) {
+        const start = source.indexOf('#ytkit-po-drop .ytkit-ql-row');
+        assert.ok(start > -1, `${label}: player quick links row styles should exist`);
+        const block = source.slice(start, start + 2500);
+        assert.match(block, /display:\s*flex\s*!important/, `${label}: player quick links rows should use flex layout`);
+        assert.ok(!block.includes('display: block !important'), `${label}: player quick links rows must not stack delete buttons as separate rows`);
+        assert.match(block, /#ytkit-po-drop\.ytkit-ql-editing \.ytkit-ql-del[\s\S]*?display:\s*inline-flex\s*!important/,
+            `${label}: player quick links edit mode should show compact inline delete buttons`);
+    }
 });
 
 test('hidePinnedComments defaults on and targets modern pinned comment markup', () => {
@@ -706,12 +710,11 @@ test('split title header shows upload date and docks quick links beside YouTube 
         'extension split upload date should prefer YouTube microformat publishDate');
     assert.ok(source.includes("actions.appendChild(logoWrap);"),
         'extension split should move the player quick-link launcher into the title header');
-    // The call site is in ytkit.js, not the feature module: the player
-    // quick-link launcher is monolith code that asks the feature to re-dock.
-    const monolith = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
-    assert.ok(monolith.includes("getFeatureById('stickyVideo')?._dockSplitHeader?.();"),
+    const playerDock = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
+    assert.ok(playerDock.includes("getFeatureById('stickyVideo')?._dockSplitHeader?.();"),
         'player quick-link injection should hand off to the split title when split is open');
-    assert.ok(monolith.includes("logoWrap?.remove();"),
+    assert.ok(playerDock.includes("logoWrap?.remove();"),
         'floating launcher cleanup should remove a title-docked launcher when disabled');
 
     assert.ok(theaterSplit.includes('function dockSplitHeader()'),

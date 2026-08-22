@@ -2,14 +2,25 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { sources, extractFeatureBlock } = require('../helpers/source');
+const { sources } = require('../helpers/source');
 const fs = require('fs');
 const path = require('path');
 
-test('Player Dock feature block is reachable', () => {
-    const [block] = extractFeatureBlock(sources.ytkit, 'floatingLogoOnWatch');
-    assert.ok(block.length > 100,
-        'floatingLogoOnWatch feature block must contain non-trivial source');
+test('Player Dock monolith fallback stays as a descriptor stub', () => {
+    const factoryIndex = sources.ytkit.indexOf(
+        'globalThis.YTKitFeatures?.floatingLogoOnWatch?.createFloatingLogoOnWatchFeature?.({'
+    );
+    const fallbackIndex = sources.ytkit.indexOf("id: 'floatingLogoOnWatch'", factoryIndex);
+    const stubEnd = sources.ytkit.indexOf('\n        }),', fallbackIndex);
+    assert.ok(factoryIndex > -1 && fallbackIndex > factoryIndex && stubEnd > fallbackIndex,
+        'ytkit.js must keep a bounded Player Dock fallback after the module factory');
+    const block = sources.ytkit.slice(fallbackIndex, stubEnd);
+    assert.ok(block.length < 1200,
+        `floatingLogoOnWatch fallback must stay a descriptor stub, got ${block.length} bytes`);
+    assert.match(block, /Feature module unavailable/,
+        'floatingLogoOnWatch fallback must report a missing module');
+    assert.doesNotMatch(block, /_inject\(|appendStyleSheet\(`/,
+        'floatingLogoOnWatch fallback must not carry the runtime body');
 });
 
 test('Player Dock peeled module exports a factory function', () => {
@@ -31,10 +42,11 @@ test('Player Dock creates player controls container', () => {
 test('Player Dock exposes a CC mirror for the hidden native subtitles control', () => {
     const modSrc = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
+    const coreSrc = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8');
     for (const [label, source] of [
         ['module', modSrc],
-        ['monolith', sources.ytkit],
-        ['userscript', sources.userscript]
+        ['userscript core', coreSrc]
     ]) {
         assert.match(source, /ytkit-po-cc/, `${label} must render the CC button`);
         assert.match(source, /\.ytp-subtitles-button/, `${label} must target YouTube's native subtitles button`);
@@ -80,10 +92,12 @@ test('CC mirror prefers the watch player over an earlier inline preview player',
 });
 
 test('CC observer does not attach before the mirror button exists', () => {
+    const coreSrc = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8');
     for (const [label, source] of [
         ['module', fs.readFileSync(
             path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8')],
-        ['monolith', sources.ytkit]
+        ['userscript core', coreSrc]
     ]) {
         const watchStart = source.indexOf('_watchCcState()');
         const watchBody = source.slice(watchStart, watchStart + 1400);

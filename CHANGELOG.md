@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Peeled the Astra Player Dock runtime out of the always-parsed `ytkit.js`
+  fallback. The extension now keeps a small descriptor stub while the
+  preloaded `features/player-dock/index.js` module owns the behavior. The
+  change removes 31,242 bytes from the monolith and moves the extension and
+  userscript-core assertions to the source that actually runs. Version 4.84.1
+  carries the rebuilt Chrome and Firefox packages plus the userscript artifact.
+
 - Completed the secondary-surface and packaging audit. Real browser evidence now
   covers extension side surfaces, Firefox zero-ad routes, both pinned userscript
   managers, live Chromium zero-ad fallback, optional-host discovery, live chat,
