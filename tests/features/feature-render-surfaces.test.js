@@ -36,6 +36,9 @@ function renderDocument(resolve = () => []) {
     const doc = fakeDocument(resolve);
     const create = doc.createElement.bind(doc);
     doc.activeElement = null;
+    // Every element this document makes reports this box until a test says
+    // otherwise, so a renderer that rebuilds its node still measures something.
+    doc.elementRect = { width: 0, height: 0 };
     // Renderers that own a dismiss-on-outside-click listener bind it on the
     // document; record the handlers so a test can drive them.
     doc.listeners = new Map();
@@ -50,6 +53,13 @@ function renderDocument(resolve = () => []) {
         node.blur = () => { if (doc.activeElement === node) doc.activeElement = null; };
         node.querySelectorAll = (selector) => collectMatching(node, selector);
         node.querySelector = (selector) => collectMatching(node, selector)[0] || null;
+        // Positioned surfaces clamp themselves against their own measured box.
+        node.rect = { ...doc.elementRect };
+        node.getBoundingClientRect = () => node.rect;
+        node.handlers = new Map();
+        node.addEventListener = (type, handler) => node.handlers.set(type, handler);
+        node.removeEventListener = (type) => node.handlers.delete(type);
+        node.contains = (other) => other === node || collectMatching(node, '*').includes(other);
         return node;
     };
     // SVG icons are built through createElementNS, which the shared fake does
@@ -491,4 +501,201 @@ test('quickLinkMenu deleting a row splices the stored line, keeping entries past
         'stored lines keep the form the user typed');
     assert.deepEqual(saved, [settings.quickLinkItems]);
     assert.deepEqual(toasts, ['Removed "Link 1"']);
+});
+
+// ── videoContextMenu ───────────────────────────────────────────────────
+function contextMenuFixture({ downloaderRunning = true } = {}) {
+    const doc = renderDocument(() => []);
+    const downloads = [];
+    const prompts = [];
+    const feature = loadFeature('videoContextMenu', {
+        document: doc,
+        window: { location: { href: 'https://www.youtube.com/watch?v=abcdefghijk' }, innerWidth: 1000, innerHeight: 800 },
+        ytKitDownload: (url, audioOnly, options) => downloads.push({ url, audioOnly, options }),
+        showDownloadPopup: () => {},
+        MediaDLManager: {
+            isRunning: downloaderRunning,
+            showInstallPrompt: (mode) => prompts.push(mode)
+        }
+    });
+    return { feature, doc, downloads, prompts };
+}
+
+test('videoContextMenu offers the download actions and hides the installer while the companion runs', () => {
+    const { feature, doc, downloads } = contextMenuFixture({ downloaderRunning: true });
+
+    const menu = feature._createMenu();
+
+    assert.equal(doc.body.children.length, 1, 'the menu is attached');
+    assert.equal(menu.className, 'ytkit-context-menu');
+    assert.equal(menu.style.display, 'none', 'it is built hidden');
+    assert.equal(textOf(menu, 'ytkit-context-menu-header')[0], 'Local Downloads');
+
+    const items = collect(menu, 'ytkit-context-menu-item');
+    assert.deepEqual(Array.from(items, (item) => item.dataset.action),
+        ['download-video', 'download-audio', 'download-options']);
+    assert.deepEqual(Array.from(items, (item) => item.textContent), [
+        'Download Video (MP4)',
+        'Download Audio (MP3)',
+        'Download Options…'
+    ]);
+    assert.equal(collect(menu, 'ytkit-context-menu-divider').length, 1);
+
+    // Every row carries its glyph, so a missing icon is a visible defect.
+    assert.ok(items.every((item) => item.children[0].tagName === 'SVG'));
+
+    items[1].handlers.get('click')({ stopPropagation() {} });
+    assert.equal(downloads.length, 1);
+    assert.equal(downloads[0].url, 'https://www.youtube.com/watch?v=abcdefghijk');
+    assert.equal(downloads[0].audioOnly, true);
+    assert.equal(downloads[0].options.format, 'mp3');
+    assert.equal(menu.style.display, 'none', 'acting on a row closes the menu');
+});
+
+test('videoContextMenu adds the installer row only while the companion is missing', () => {
+    const { feature, prompts } = contextMenuFixture({ downloaderRunning: false });
+
+    const menu = feature._createMenu();
+    const items = collect(menu, 'ytkit-context-menu-item');
+    assert.deepEqual(Array.from(items, (item) => item.dataset.action),
+        ['download-video', 'download-audio', 'download-options', 'setup-mediadl']);
+    assert.equal(collect(menu, 'ytkit-context-menu-divider').length, 2);
+
+    items[3].handlers.get('click')({ stopPropagation() {} });
+    assert.deepEqual(prompts, ['install']);
+});
+
+test('videoContextMenu rebuilds on each open and clamps itself inside the viewport', () => {
+    const { feature, doc } = contextMenuFixture();
+
+    feature._showMenu(100, 120);
+    assert.equal(doc.body.children.length, 1);
+    const first = feature._menu;
+    assert.equal(first.style.display, 'block');
+    assert.equal(first.style.left, '100px');
+    assert.equal(first.style.top, '120px');
+
+    // A menu opened near the edge is pulled back rather than clipped.
+    doc.elementRect = { width: 240, height: 200 };
+    feature._showMenu(990, 790);
+    assert.notEqual(feature._menu, first, 'the menu is rebuilt so it reflects the current companion state');
+    assert.equal(doc.body.children.length, 1, 'the previous menu is removed, not left behind');
+    assert.equal(feature._menu.style.left, '750px');
+    assert.equal(feature._menu.style.top, '590px');
+
+    feature._hideMenu();
+    assert.equal(feature._menu.style.display, 'none');
+});
+
+// ── commentNavigator ───────────────────────────────────────────────────
+// _getThreads() rejects anything that is not an HTMLElement, so the fixture
+// nodes have to satisfy the instanceof. Re-parenting keeps every own property
+// the shared fake defines.
+class FakeHTMLElement {}
+
+function navigatorFixture(threads = []) {
+    const doc = renderDocument((selector) => {
+        if (selector.includes('ytd-comments#comments')) return fakeNode({ tag: 'ytd-comments' });
+        if (selector.includes('data-ytkit-comment-current')) {
+            return threads.filter((thread) => thread.dataset.ytkitCommentCurrent === '1');
+        }
+        if (selector.includes('ytd-comment-thread-renderer')) return threads;
+        return [];
+    });
+    const feature = loadFeature('commentNavigator', {
+        document: doc,
+        window: { location: { pathname: '/watch' } },
+        Intl,
+        HTMLElement: FakeHTMLElement,
+        getComputedStyle: () => ({ display: 'block' })
+    });
+    return { feature, doc };
+}
+
+function thread(visible = true) {
+    const node = fakeNode({ tag: 'ytd-comment-thread-renderer' });
+    Object.setPrototypeOf(node, FakeHTMLElement.prototype);
+    node.offsetParent = visible ? fakeNode({ tag: 'div' }) : null;
+    node.scrollIntoView = () => {};
+    return node;
+}
+
+test('commentNavigator builds one navigator with its live-region counters', () => {
+    const { feature, doc } = navigatorFixture();
+
+    feature._ensureNav();
+    feature._ensureNav();
+
+    assert.equal(doc.body.children.length, 1, 'the navigator is built once');
+    const nav = doc.body.children[0];
+    assert.equal(nav.id, 'ytkit-comment-nav');
+    assert.equal(nav.getAttribute('role'), 'navigation');
+    assert.equal(nav.getAttribute('aria-label'), 'Comment thread navigator');
+    assert.equal(nav.dataset.filtered, '0');
+
+    assert.equal(textOf(nav, 'ytkit-comment-nav-label')[0], 'Thread Navigator');
+    assert.equal(textOf(nav, 'ytkit-comment-nav-count')[0], '0');
+    assert.equal(collect(nav, 'ytkit-comment-nav-count')[0].getAttribute('aria-live'), 'polite');
+    assert.equal(textOf(nav, 'ytkit-comment-nav-status')[0], 'Waiting for comments to load…');
+    assert.equal(collect(nav, 'ytkit-comment-nav-filter')[0].hidden, true);
+
+    const buttons = collect(nav, 'ytkit-comment-nav-btn');
+    assert.equal(buttons.length, 2);
+    assert.deepEqual(Array.from(buttons, (button) => button.getAttribute('aria-label')), [
+        'Jump to previous visible comment thread',
+        'Jump to next visible comment thread'
+    ]);
+    assert.deepEqual(Array.from(buttons, (button) => button.textContent), ['↑Previous', '↓Next']);
+});
+
+test('commentNavigator counts only the threads that are actually visible', () => {
+    const visible = [thread(), thread(), thread()];
+    const hidden = thread(false);
+    const { feature, doc } = navigatorFixture([visible[0], hidden, visible[1], visible[2]]);
+
+    feature._ensureNav();
+    feature._updateState();
+
+    const nav = doc.body.children[0];
+    assert.equal(textOf(nav, 'ytkit-comment-nav-count')[0], '3',
+        'a collapsed thread must not be counted as navigable');
+    assert.equal(textOf(nav, 'ytkit-comment-nav-status')[0], 'Visible threads ready');
+});
+
+test('commentNavigator shows the search filter it is navigating within', () => {
+    const threads = [thread(), thread()];
+    const { feature, doc } = navigatorFixture(threads);
+
+    feature._ensureNav();
+    feature._filterState = { query: 'a very long search phrase indeed', total: 40 };
+    feature._updateState();
+
+    const nav = doc.body.children[0];
+    assert.equal(nav.dataset.filtered, '1');
+    assert.equal(textOf(nav, 'ytkit-comment-nav-count')[0], '2/40',
+        'a filtered view reports matches against the whole thread count');
+    const badge = collect(nav, 'ytkit-comment-nav-filter')[0];
+    assert.equal(badge.hidden, false);
+    assert.equal(badge.textContent, '“a very long search ph…”', 'a long query is elided, not wrapped');
+    assert.equal(badge.title, 'Search filter: a very long search phrase indeed');
+
+    feature._filterState = { query: '', total: 0 };
+    feature._updateState();
+    assert.equal(nav.dataset.filtered, '0');
+    assert.equal(collect(nav, 'ytkit-comment-nav-filter')[0].hidden, true);
+    assert.equal(collect(nav, 'ytkit-comment-nav-filter')[0].getAttribute('title'), null);
+});
+
+test('commentNavigator says no matches only once the filter has settled', () => {
+    const { feature, doc } = navigatorFixture([]);
+
+    feature._ensureNav();
+    feature._filterState = { query: 'nothing', total: 12, isPending: true };
+    feature._updateState();
+    assert.equal(textOf(doc.body.children[0], 'ytkit-comment-nav-status')[0], 'Waiting for comments to load…',
+        'a filter still running must not claim there are no matches');
+
+    feature._filterState = { query: 'nothing', total: 12, isPending: false };
+    feature._updateState();
+    assert.equal(textOf(doc.body.children[0], 'ytkit-comment-nav-status')[0], 'No matching threads');
 });
