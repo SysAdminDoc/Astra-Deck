@@ -10,6 +10,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const vm = require('node:vm');
 
 const repoRoot = path.join(__dirname, '..');
@@ -141,7 +142,9 @@ test('every converted file routes its failure surfaces through the shared copy',
 
 test('the gate sees raw text bound to a local before it reaches the sink', () => {
     const { scanFile } = require('../scripts/check-raw-error-copy.js');
-    const fixture = path.join(repoRoot, 'extension', '__raw-error-copy-fixture.js');
+    // Outside the repo on purpose: a transient file under extension/ is visible
+    // to the directory-walking tests, which run in parallel under `node --test`.
+    const fixture = path.join(os.tmpdir(), `astra-raw-error-copy-${process.pid}.js`);
     fs.writeFileSync(fixture, [
         'function render(error) {',
         "    const message = 'Import failed: ' + error.message;",
@@ -155,7 +158,7 @@ test('the gate sees raw text bound to a local before it reaches the sink', () =>
         ''
     ].join('\n'), 'utf8');
     try {
-        const violations = scanFile('extension/__raw-error-copy-fixture.js');
+        const violations = scanFile(fixture);
         assert.equal(violations.length, 1, 'the tainted local must be reported once');
         assert.equal(violations[0].line, 3);
     } finally {
