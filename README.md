@@ -1224,6 +1224,10 @@ The live Firefox zero-ad smoke also records the home page, search, SPA player,
 blocked probe, and collapsed ad-shell states. Disposable profile cleanup is
 bounded to the profile path used by that run.
 
+The pinned manager smoke passes with Violentmonkey 2.47.0 and Tampermonkey
+5.5.0. It verifies the install flow and the shell-only userscript contract in
+fresh Firefox profiles.
+
 `npm run build` is safe for validation builds: if no maintainer key is
 configured, CRX files are signed with ephemeral key material that is not
 retained. Public release builds that include the userscript or bump a version

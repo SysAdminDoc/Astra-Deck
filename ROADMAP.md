@@ -35,7 +35,9 @@ secondary-surface audit. The live Firefox run now proves home, search, SPA
 player, blocked probe, and collapsed ad-shell states. Its profile cleanup closes
 the WebDriver session first; Chromium optional-host cleanup matches only the
 exact disposable profile path. Remaining evidence is still needed for the
-companion handoff, specialist userscripts, and archive or MHTML internals.
+exact disposable profile path. Both pinned userscript managers now pass the
+specialist shell-only smoke. Remaining evidence is still needed for the
+companion handoff and archive or MHTML internals.
 
 ## Research-Driven Additions
 
