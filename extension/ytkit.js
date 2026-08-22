@@ -314,6 +314,34 @@
         return (fallback != null) ? fallback : key;
     }
 
+    // Failure copy. A surface names one of the closed set of localized causes
+    // in core/failure-copy.js and the next action it implies; it never pastes
+    // the thrown text or an HTTP status, which is unactionable for the reader,
+    // always English whatever locale they run, and on the AI paths able to put
+    // a provider response body on screen. Raw text goes to DiagnosticLog.
+    function logFailure(context, error) {
+        try {
+            const detail = globalThis.YTKitCore?.failureDiagnosticText?.(error)
+                || String(error?.message || error);
+            DiagnosticLog?.record?.(context, detail);
+        } catch (_) { /* reason: diagnostics must never break the surface reporting them */ }
+    }
+
+    function describeFailureCause(error) {
+        const describe = globalThis.YTKitCore?.describeFailure;
+        if (typeof describe === 'function') return describe(error, t);
+        return t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
+    }
+
+    function failureText(context, error, labelKey, labelFallback) {
+        logFailure(context, error);
+        const label = labelKey ? t(labelKey, labelFallback) : '';
+        const withLabel = globalThis.YTKitCore?.describeFailureWithLabel;
+        if (typeof withLabel === 'function') return withLabel(label, error, t);
+        const cause = describeFailureCause(error);
+        return label ? `${label.replace(/[.:]\s*$/, '')}: ${cause}` : cause;
+    }
+
     function getFeatureI18nKey(featureOrId, field) {
         const featureId = typeof featureOrId === 'string'
             ? featureOrId
@@ -4688,7 +4716,7 @@ return response;
                             source: 'settings-write-rollback',
                             nextSettings: result.settings
                         });
-                        const message = result.error?.message || 'Settings could not be saved.';
+                        const message = failureText('settings-write', result.error, 'settingsWriteFailed', 'Settings could not be saved');
                         setPanelStatus(message, 'error');
                         // 'error' is a TONE, not a colour: passed as the colour
                         // argument it matched no hex, so inferToastTone fell back
@@ -18393,7 +18421,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                     } catch (error) {
                         this._setState('error');
-                        showToast(error?.message || 'Screenshot capture failed. Try again on a loaded video frame.', '#ef4444', {
+                        showToast(failureText('screenshot-capture', error, 'screenshotCaptureFailed', 'Screenshot capture failed'), '#ef4444', {
                             duration: 4,
                             tone: 'error'
                         });
@@ -21238,7 +21266,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     showToast('Age restriction bypassed', '#22c55e');
                 } catch(e) {
                     DebugManager.log('AgeBypass', 'Failed: ' + e.message);
-                    this._reportDegraded(`Embed fallback failed: ${e.message}`, videoId);
+                    this._reportDegraded(describeFailureCause(e), videoId);
                 }
             },
 
@@ -21757,7 +21785,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (isStale()) return;
                     if (typeof showToast === 'function') {
                         showToast(t('transcriptTranslationFailedTpl', 'Translation failed: {error}')
-                            .replace('{error}', e.message), '#ef4444');
+                            .replace('{error}', describeFailureCause(e)), '#ef4444');
                     }
                     if (btn) { btn.textContent = t('transcriptTranslate', 'Translate'); btn.disabled = false; }
                 }
@@ -29550,7 +29578,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (typeof showToast === 'function') showToast(`Imported ${Object.keys(data.profiles).length} profile(s)`, '#22c55e');
                     return true;
                 } catch (e) {
-                    if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
+                    if (typeof showToast === 'function') showToast(failureText('profile-import', e, 'profileImportFailed', 'Profile import failed'), '#ef4444');
                     return false;
                 }
             },
@@ -30788,8 +30816,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     showToast('SRT downloaded', '#22c55e');
                 } catch (e) {
                     if (e?.name === 'AbortError') return;
-                    DiagnosticLog?.record('subtitleDownload', e.message);
-                    showToast('Subtitle download failed: ' + e.message, '#ef4444');
+                    showToast(failureText('subtitleDownload', e, 'subtitleDownloadFailed', 'Subtitle download failed'), '#ef4444');
                 } finally {
                     if (this._downloadController === controller) this._downloadController = null;
                     this._downloading = false;
@@ -31579,8 +31606,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         container.appendChild(row);
                     }
                 } catch (e) {
-                    DiagnosticLog?.record('redditComments', e.message);
-                    container.textContent = 'Reddit fetch failed: ' + e.message;
+                    container.textContent = failureText('redditComments', e, 'redditCommentsFailed', 'Could not load Reddit discussions');
                 }
             },
             _inject() {
@@ -32604,8 +32630,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch (e) {
                     if (e?.name === 'AbortError') return;
                     if (runToken !== this._runToken) return;
-                    DiagnosticLog?.record('aiVideoSummary', e.message);
-                    this._showStatus(`${t('aiSummaryFailed', 'Summary failed')}: ${e.message}`, 'error');
+                    this._showStatus(failureText('aiVideoSummary', e, 'aiSummaryFailed', 'Summary failed'), 'error');
                 } finally {
                     if (this._runController === controller) this._runController = null;
                 }
@@ -33723,7 +33748,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!silent) {
                         showToast(t('wlwbRestoreFailedTpl', 'Could not restore {title}: {error}')
                             .replace('{title}', entry.title || entry.videoId)
-                            .replace('{error}', String(error?.message || 'Restore failed')), '#f59e0b', {
+                            .replace('{error}', describeFailureCause(error)), '#f59e0b', {
                                 duration: 6,
                                 tone: 'warning'
                             });
@@ -37416,7 +37441,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _importGroups(json, options = {}) {
                 try {
                     const data = JSON.parse(json);
-                    if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
+                    if (!data || typeof data !== 'object' || !data.groups) throw Object.assign(new Error('Missing groups field'), { code: 'bad-format' });
                     const sanitized = {};
                     const rawParentById = {};
                     let skippedGroups = 0;
@@ -37478,8 +37503,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         importedChannels
                     }, options);
                 } catch (e) {
+                    logFailure('subscription-groups-import', e);
                     if (typeof showToast === 'function') showToast(t('subscriptionGroupsImportFailedTpl', 'Import failed: {error}')
-                        .replace('{error}', e.message), '#ef4444');
+                        .replace('{error}', describeFailureCause(e)), '#ef4444');
                     return { ok: false, error: e.message };
                 }
             },
@@ -37492,8 +37518,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         importedChannels: parsed.importedChannels
                     }, options);
                 } catch (e) {
-                    const message = t('subscriptionGroupsImportFailedTpl', 'Import failed: {error}')
-                        .replace('{error}', `OPML: ${e.message}`);
+                    logFailure('subscription-groups-import-opml', e);
+                    const message = t('subscriptionGroupsImportOpmlFailedTpl', 'OPML import failed: {error}')
+                        .replace('{error}', describeFailureCause(e));
                     if (typeof showToast === 'function') showToast(message, '#ef4444', { duration: 6, tone: 'error' });
                     return { ok: false, error: e.message };
                 }
@@ -38026,8 +38053,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch (err) {
                     const errorBox = document.createElement('div');
                     errorBox.className = 'ytkit-sub-health-error';
-                    errorBox.textContent = t('subscriptionHealthFailedTpl', 'Health scan failed: {error}. The feed may still be loading — try Rescan.')
-                        .replace('{error}', err?.message || t('commonUnexpectedError', 'unexpected error'));
+                    logFailure('subscription-health-scan', err);
+                    errorBox.textContent = t('subscriptionHealthFailedTpl', 'Health scan failed: {error} The feed may still be loading, so Rescan may help.')
+                        .replace('{error}', describeFailureCause(err));
                     panel.appendChild(errorBox);
                 }
 
@@ -38716,7 +38744,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch (e) {
                     DebugManager.log('SubGroups', `AI tag generation failed: ${e.message}`);
                     if (typeof showToast === 'function') showToast(t('subscriptionAiTagsGenerationFailedTpl', 'Tag generation failed: {error}')
-                        .replace('{error}', e.message), '#ef4444');
+                        .replace('{error}', describeFailureCause(e)), '#ef4444');
                     return;
                 }
                 if (!tags.length) {
@@ -39544,7 +39572,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _parseOpmlOutlineTree(opmlText) {
                 const source = String(opmlText || '');
-                if (!/<\s*opml\b/i.test(source)) throw new Error('Not an OPML document');
+                if (!/<\s*opml\b/i.test(source)) throw Object.assign(new Error('Not an OPML document'), { code: 'bad-format' });
                 const root = { attrs: {}, children: [] };
                 const stack = [root];
                 const tokenRe = /<\s*(\/?)\s*outline\b([^>]*?)(\/?)\s*>/gi;
@@ -39553,7 +39581,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const closing = !!match[1];
                     const selfClosing = !!match[3] || /\/\s*$/.test(match[2] || '');
                     if (closing) {
-                        if (stack.length === 1) throw new Error('Malformed OPML outline nesting');
+                        if (stack.length === 1) throw Object.assign(new Error('Malformed OPML outline nesting'), { code: 'bad-format' });
                         stack.pop();
                         continue;
                     }
@@ -39561,8 +39589,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     stack[stack.length - 1].children.push(node);
                     if (!selfClosing) stack.push(node);
                 }
-                if (stack.length !== 1) throw new Error('Malformed OPML outline nesting');
-                if (!root.children.length) throw new Error('No OPML outline entries found');
+                if (stack.length !== 1) throw Object.assign(new Error('Malformed OPML outline nesting'), { code: 'bad-format' });
+                if (!root.children.length) throw Object.assign(new Error('No OPML outline entries found'), { code: 'bad-format' });
                 return root.children;
             },
 
@@ -39677,7 +39705,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _parseGroupsOpml(opmlText) {
                 const outlines = this._parseOpmlOutlineTree(opmlText);
                 const result = this._groupsFromOpmlTree(outlines);
-                if (!Object.keys(result.groups).length) throw new Error('No subscription groups or channels found');
+                if (!Object.keys(result.groups).length) throw Object.assign(new Error('No subscription groups or channels found'), { code: 'bad-format' });
                 return result;
             },
 
@@ -40102,8 +40130,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         answer.textContent = String(result || '(no response)');
                     } catch (e) {
                         if (e?.name === 'AbortError') return;
-                        DebugManager.log('TranscriptQA', `Prompt failed: ${e.message}`);
-                        answer.textContent = `Error: ${e.message}`;
+                        answer.textContent = failureText('transcript-qa', e, 'transcriptQaFailed', 'Could not answer that question');
                     } finally {
                         if (self._fetchController === controller) self._fetchController = null;
                         if (askBtn.isConnected !== false) askBtn.disabled = false;

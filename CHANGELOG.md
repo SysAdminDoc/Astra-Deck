@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- In-page failures now name a cause instead of pasting the exception. Thirteen
+  surfaces in the settings panel, the AI summary, transcript translation and
+  Q&A, subscription groups, the Reddit panel, subtitle download and the
+  screenshot button used to append the thrown text. They now use the same
+  fourteen localized causes the popup got, and the import parsers stamp a
+  structural code so classification reads that instead of guessing from English
+  prose. The OPML importer keeps its own label so you still know which import
+  path failed.
+
 - Popup failures now say what went wrong in your language and what to try next.
   Twenty-four surfaces used to paste the raw exception text or an HTTP status
   onto the end of their own label. That half was always English whatever locale

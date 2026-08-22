@@ -3686,6 +3686,8 @@ function attachUIEventListeners() {
                             deniedCard.classList.remove('ytkit-card-enabled');
                         }
                         const featureName = getFeatureName(feature) || featureId;
+                        // raw-error-copy: the COBALT_INSTANCE_INVALID message is Astra's own
+                        // localized copy carried on an Error, not text from a service.
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
                             : `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
@@ -3872,6 +3874,8 @@ function attachUIEventListeners() {
                         e.target.checked = false;
                         const deniedSwitch = e.target.closest('.ytkit-switch');
                         if (deniedSwitch) deniedSwitch.classList.remove('active');
+                        // raw-error-copy: the COBALT_INSTANCE_INVALID message is Astra's own
+                        // localized copy carried on an Error, not text from a service.
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
                             : 'Some settings need host access. Try again and approve the browser prompt.';

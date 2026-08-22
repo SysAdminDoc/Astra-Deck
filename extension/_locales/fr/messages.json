@@ -4508,6 +4508,9 @@
     "message": "Préréglage Recherche appliqué. Désactivez-le pour restaurer.",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "Échec de l’import du profil"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "Nettoyage du flux"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "Envoi de réactions"
   },
+  "redditCommentsFailed": {
+    "message": "Impossible de charger les discussions Reddit"
+  },
   "reenableMediadlAria": {
     "message": "Réactiver les invites d'installation d'Astra Downloader"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "Réinitialiser {key} à la valeur par défaut ({value})"
+  },
+  "screenshotCaptureFailed": {
+    "message": "Échec de la capture d’écran"
   },
   "searchWatchClose": {
     "message": "Fermer les résultats de recherche"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "Impossible d’enregistrer les paramètres"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "Échec de l’importation : {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "Échec de l’import OPML : {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "Groupes d’abonnements précédents restaurés"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "Échec de l’analyse : {error} Le fil est peut-être encore en cours de chargement, une nouvelle analyse peut aider."
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "Commandes d’affichage des abonnements"
   },
+  "subtitleDownloadFailed": {
+    "message": "Échec du téléchargement des sous-titres"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Marqué à {time}"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "Impossible de répondre à cette question"
   },
   "transcriptRefreshedTrack": {
     "message": "Piste actualisée"

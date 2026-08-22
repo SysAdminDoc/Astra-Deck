@@ -4593,6 +4593,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                 // drop the English prose the engine wraps around it.
                 logFailure('schema-json-edit', err);
                 const position = /position\s+(\d+)/i.exec(String(err?.message || ''));
+                // raw-error-copy: only the parser's numeric offset is kept, never its prose
                 errorPill.textContent = position
                     ? t('schemaJsonInvalidAtTpl', 'Invalid JSON at position {position}. Fix it, then apply.')
                         .replace('{position}', position[1])

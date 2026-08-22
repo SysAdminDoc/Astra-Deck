@@ -23091,6 +23091,20 @@ if (typeof globalThis !== "undefined") {
             t = (_key, fallback) => fallback
         } = deps;
 
+        // Failure copy: name one of the localized causes in
+        // extension/core/failure-copy.js and the next action it implies. The
+        // thrown text never reaches the reader; it goes to DebugManager.
+        const describeFailureCause = (error) => {
+            const describe = globalThis.YTKitCore?.describeFailure;
+            if (typeof describe === 'function') return describe(error, t);
+            return t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
+        };
+        const logFailure = (context, error) => {
+            try {
+                DebugManager?.log?.('SubGroups', `${context}: ${globalThis.YTKitCore?.failureDiagnosticText?.(error) || String(error?.message || error)}`);
+            } catch (_) { /* reason: diagnostics must never break the surface reporting them */ }
+        };
+
         return {
             id: 'subscriptionGroups',
             name: t('feature_subscriptionGroups_name', 'Subscription Groups'),
@@ -23557,7 +23571,7 @@ if (typeof globalThis !== "undefined") {
             _importGroups(json, options = {}) {
                 try {
                     const data = JSON.parse(json);
-                    if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
+                    if (!data || typeof data !== 'object' || !data.groups) throw Object.assign(new Error('Missing groups field'), { code: 'bad-format' });
                     const sanitized = {};
                     const rawParentById = {};
                     let skippedGroups = 0;
@@ -23619,10 +23633,11 @@ if (typeof globalThis !== "undefined") {
                         importedChannels
                     }, options);
                 } catch (e) {
+                    logFailure('import-json', e);
                     if (typeof showToast === 'function') showToast(t(
                         'subscriptionGroupsImportFailedTpl',
                         'Import failed: {error}'
-                    ).replace('{error}', e.message), '#ef4444');
+                    ).replace('{error}', describeFailureCause(e)), '#ef4444');
                     return { ok: false, error: e.message };
                 }
             },
@@ -23635,7 +23650,11 @@ if (typeof globalThis !== "undefined") {
                         importedChannels: parsed.importedChannels
                     }, options);
                 } catch (e) {
-                    const message = `OPML import failed: ${e.message}`;
+                    logFailure('import-opml', e);
+                    const message = t(
+                        'subscriptionGroupsImportOpmlFailedTpl',
+                        'OPML import failed: {error}'
+                    ).replace('{error}', describeFailureCause(e));
                     if (typeof showToast === 'function') showToast(message, '#ef4444', { duration: 6, tone: 'error' });
                     return { ok: false, error: e.message };
                 }
@@ -24175,8 +24194,9 @@ if (typeof globalThis !== "undefined") {
                 } catch (err) {
                     const errorBox = document.createElement('div');
                     errorBox.className = 'ytkit-sub-health-error';
-                    errorBox.textContent = t('subscriptionHealthFailedTpl', 'Health scan failed: {error}. The feed may still be loading — try Rescan.')
-                        .replace('{error}', err?.message || t('commonUnexpectedError', 'unexpected error'));
+                    logFailure('health-scan', err);
+                    errorBox.textContent = t('subscriptionHealthFailedTpl', 'Health scan failed: {error} The feed may still be loading, so Rescan may help.')
+                        .replace('{error}', describeFailureCause(err));
                     panel.appendChild(errorBox);
                 }
 
@@ -24970,11 +24990,11 @@ if (typeof globalThis !== "undefined") {
                         .filter(s => s && s.length <= 24)
                         .slice(0, 8);
                 } catch (e) {
-                    DebugManager.log('SubGroups', `AI tag generation failed: ${e.message}`);
+                    logFailure('ai-tag-generation', e);
                     if (typeof showToast === 'function') showToast(t(
                         'subscriptionAiTagsGenerationFailedTpl',
                         'Tag generation failed: {error}'
-                    ).replace('{error}', e.message), '#ef4444');
+                    ).replace('{error}', describeFailureCause(e)), '#ef4444');
                     return;
                 }
                 if (!tags.length) {
@@ -25872,7 +25892,7 @@ if (typeof globalThis !== "undefined") {
 
             _parseOpmlOutlineTree(opmlText) {
                 const source = String(opmlText || '');
-                if (!/<\s*opml\b/i.test(source)) throw new Error('Not an OPML document');
+                if (!/<\s*opml\b/i.test(source)) throw Object.assign(new Error('Not an OPML document'), { code: 'bad-format' });
                 const root = { attrs: {}, children: [] };
                 const stack = [root];
                 const tokenRe = /<\s*(\/?)\s*outline\b([^>]*?)(\/?)\s*>/gi;
@@ -25881,7 +25901,7 @@ if (typeof globalThis !== "undefined") {
                     const closing = !!match[1];
                     const selfClosing = !!match[3] || /\/\s*$/.test(match[2] || '');
                     if (closing) {
-                        if (stack.length === 1) throw new Error('Malformed OPML outline nesting');
+                        if (stack.length === 1) throw Object.assign(new Error('Malformed OPML outline nesting'), { code: 'bad-format' });
                         stack.pop();
                         continue;
                     }
@@ -25889,8 +25909,8 @@ if (typeof globalThis !== "undefined") {
                     stack[stack.length - 1].children.push(node);
                     if (!selfClosing) stack.push(node);
                 }
-                if (stack.length !== 1) throw new Error('Malformed OPML outline nesting');
-                if (!root.children.length) throw new Error('No OPML outline entries found');
+                if (stack.length !== 1) throw Object.assign(new Error('Malformed OPML outline nesting'), { code: 'bad-format' });
+                if (!root.children.length) throw Object.assign(new Error('No OPML outline entries found'), { code: 'bad-format' });
                 return root.children;
             },
 
@@ -26012,7 +26032,7 @@ if (typeof globalThis !== "undefined") {
             _parseGroupsOpml(opmlText) {
                 const outlines = this._parseOpmlOutlineTree(opmlText);
                 const result = this._groupsFromOpmlTree(outlines);
-                if (!Object.keys(result.groups).length) throw new Error('No subscription groups or channels found');
+                if (!Object.keys(result.groups).length) throw Object.assign(new Error('No subscription groups or channels found'), { code: 'bad-format' });
                 return result;
             },
 
@@ -30407,6 +30427,8 @@ function attachUIEventListeners() {
                             deniedCard.classList.remove('ytkit-card-enabled');
                         }
                         const featureName = getFeatureName(feature) || featureId;
+                        // raw-error-copy: the COBALT_INSTANCE_INVALID message is Astra's own
+                        // localized copy carried on an Error, not text from a service.
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
                             : `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
@@ -30593,6 +30615,8 @@ function attachUIEventListeners() {
                         e.target.checked = false;
                         const deniedSwitch = e.target.closest('.ytkit-switch');
                         if (deniedSwitch) deniedSwitch.classList.remove('active');
+                        // raw-error-copy: the COBALT_INSTANCE_INVALID message is Astra's own
+                        // localized copy carried on an Error, not text from a service.
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
                             : 'Some settings need host access. Try again and approve the browser prompt.';

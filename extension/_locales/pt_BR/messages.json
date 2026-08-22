@@ -4508,6 +4508,9 @@
     "message": "Predefinição Pesquisa aplicada. Desative para restaurar.",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "Falha ao importar o perfil"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "Limpeza de feed"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "Enviador de reações"
   },
+  "redditCommentsFailed": {
+    "message": "Não foi possível carregar as discussões do Reddit"
+  },
   "reenableMediadlAria": {
     "message": "Reativar prompts de instalação do Astra Downloader"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "Redefinir {key} para o padrão ({value})"
+  },
+  "screenshotCaptureFailed": {
+    "message": "Falha ao capturar a imagem"
   },
   "searchWatchClose": {
     "message": "Fechar resultados da pesquisa"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "Não foi possível salvar as configurações"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "Falha na importação: {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "Falha ao importar o OPML: {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "Grupos de inscrições anteriores restaurados"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "Falha na verificação: {error} O feed ainda pode estar carregando, então uma nova verificação pode ajudar."
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "Controles de visualização de inscrições"
   },
+  "subtitleDownloadFailed": {
+    "message": "Falha ao baixar as legendas"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Marcado em {time}"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "Não foi possível responder a essa pergunta"
   },
   "transcriptRefreshedTrack": {
     "message": "Faixa atualizada"

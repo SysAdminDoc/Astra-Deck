@@ -4508,6 +4508,9 @@
     "message": "Пресет «Исследование» применён. Выключите, чтобы восстановить.",
     "description": "Toast when the Researcher preset is enabled"
   },
+  "profileImportFailed": {
+    "message": "Не удалось импортировать профиль"
+  },
   "qtGroup_Feed_Cleanup": {
     "message": "Очистка ленты"
   },
@@ -4730,6 +4733,9 @@
   "reactionSenderTitle": {
     "message": "Отправка реакций"
   },
+  "redditCommentsFailed": {
+    "message": "Не удалось загрузить обсуждения с Reddit"
+  },
   "reenableMediadlAria": {
     "message": "Повторно включить подсказки установки Astra Downloader"
   },
@@ -4837,6 +4843,9 @@
   },
   "schemaResetTitleTpl": {
     "message": "Сбросить {key} к значению по умолчанию ({value})"
+  },
+  "screenshotCaptureFailed": {
+    "message": "Не удалось сделать снимок кадра"
   },
   "searchWatchClose": {
     "message": "Закрыть результаты поиска"
@@ -5317,6 +5326,9 @@
   },
   "settingsVersionPrefix": {
     "message": "v"
+  },
+  "settingsWriteFailed": {
+    "message": "Не удалось сохранить настройки"
   },
   "shortsDailyLimitMode_hard": {
     "message": "Hard block"
@@ -6270,6 +6282,9 @@
   "subscriptionGroupsImportFailedTpl": {
     "message": "Ошибка импорта: {error}"
   },
+  "subscriptionGroupsImportOpmlFailedTpl": {
+    "message": "Не удалось импортировать OPML: {error}"
+  },
   "subscriptionGroupsRestored": {
     "message": "Предыдущие группы подписок восстановлены"
   },
@@ -6277,7 +6292,7 @@
     "message": "Close subscription health center"
   },
   "subscriptionHealthFailedTpl": {
-    "message": "Health scan failed: {error}. The feed may still be loading — try Rescan."
+    "message": "Проверка не удалась: {error} Лента, возможно, ещё загружается, поэтому повторная проверка может помочь."
   },
   "subscriptionHealthMetaTpl": {
     "message": "{channels} rendered channels · {groups} groups"
@@ -6606,6 +6621,9 @@
   "subscriptionViewToolbarLabel": {
     "message": "Настройки вида подписок"
   },
+  "subtitleDownloadFailed": {
+    "message": "Не удалось скачать субтитры"
+  },
   "timestampBookmarkAddedTpl": {
     "message": "Закладка на {time} добавлена"
   },
@@ -6890,6 +6908,9 @@
   },
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
+  },
+  "transcriptQaFailed": {
+    "message": "Не удалось ответить на этот вопрос"
   },
   "transcriptRefreshedTrack": {
     "message": "Дорожка обновлена"
