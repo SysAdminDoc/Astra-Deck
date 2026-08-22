@@ -8,6 +8,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The live zero-ad Chromium smoke now skips a candidate that lacks the MV3
+  declarativeNetRequest API and continues to the next installed browser. The
+  default run therefore reaches Edge when local Chrome policy or API support
+  prevents the first candidate from loading the contract.
+
 - The pinned Firefox userscript-manager smoke now passes with both
   Violentmonkey 2.47.0 and Tampermonkey 5.5.0. Installation navigation no
   longer waits on an intercepted userscript document, while the follow-up

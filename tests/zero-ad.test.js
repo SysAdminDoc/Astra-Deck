@@ -116,6 +116,13 @@ test('Firefox smoke CLI separates live automation from the headed manual permiss
     assert.equal(manager.headed, true);
 });
 
+test('Chromium zero-ad smoke skips candidates without the MV3 DNR API', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-zero-ads-live.js'), 'utf8');
+    assert.match(source, /declarativeNetRequest\?\.getEnabledRulesets/);
+    assert.match(source, /DNR_UNAVAILABLE/);
+    assert.match(source, /LOAD_EXTENSION_BLOCKED.*DNR_UNAVAILABLE/s);
+});
+
 test('Firefox WebDriver cleanup retries a locked profile before failing', async () => {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-firefox-cleanup-'));
     const originalRmSync = fs.rmSync;

@@ -124,6 +124,32 @@ test('staging scripts reuse the shared build copier and filter', () => {
     }
 });
 
+test('packaging boundary excludes repository-only archive and MHTML trees', () => {
+    const { copyDir } = require('../build-extension.js');
+    const buildSource = fs.readFileSync(path.join(REPO_ROOT, 'build-extension.js'), 'utf8');
+    assert.match(buildSource, /const EXT_DIR = path\.join\(__dirname, 'extension'\)/);
+    assert.match(buildSource, /copyDir\(EXT_DIR,/,
+        'release packaging must start at extension/, not the repository root');
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-package-boundary-'));
+    try {
+        const extension = path.join(root, 'extension');
+        fs.mkdirSync(extension, { recursive: true });
+        fs.mkdirSync(path.join(root, 'archive'));
+        fs.mkdirSync(path.join(root, 'mhtml'));
+        fs.writeFileSync(path.join(extension, 'manifest.json'), '{}\n', 'utf8');
+        fs.writeFileSync(path.join(root, 'archive', 'old.js'), 'archive-only', 'utf8');
+        fs.writeFileSync(path.join(root, 'mhtml', 'capture.mhtml'), 'capture-only', 'utf8');
+        const stage = path.join(root, 'stage');
+        copyDir(extension, stage);
+        assert.deepEqual(fs.readdirSync(stage), ['manifest.json']);
+        assert.equal(fs.existsSync(path.join(stage, 'archive')), false);
+        assert.equal(fs.existsSync(path.join(stage, 'mhtml')), false);
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
+
 test('extension staging refuses symlinked entries before copying target bytes', (t) => {
     const { copyDir } = require('../build-extension.js');
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-stage-symlink-'));
