@@ -51,6 +51,9 @@ function renderDocument(resolve = () => []) {
         const node = create(tag);
         node.focus = () => { doc.activeElement = node; };
         node.blur = () => { if (doc.activeElement === node) doc.activeElement = null; };
+        // Legacy clipboard fallbacks stage a textarea and select it.
+        node.select = () => {};
+        node.setSelectionRange = () => {};
         node.querySelectorAll = (selector) => collectMatching(node, selector);
         node.querySelector = (selector) => collectMatching(node, selector)[0] || null;
         // Positioned surfaces clamp themselves against their own measured box.
@@ -995,4 +998,193 @@ test('aiVideoSummary library lists saved summaries and answers its own search', 
     search.handlers.get('input')();
     assert.equal(collect(container, 'ytkit-aisum-library-row').length, 0);
     assert.match(textOf(container, 'ytkit-aisum-empty')[0], /No saved summaries match/);
+});
+
+// ── customSpeedButtons ─────────────────────────────────────────────────
+function speedPresetsFixture(video) {
+    const below = fakeNode({ tag: 'div', attributes: { id: 'below' } });
+    const doc = renderDocument((selector) => {
+        if (selector.includes('.ytkit-speed-presets')) return collectMatching(below, '.ytkit-speed-presets');
+        if (selector.includes('#below')) return below;
+        if (selector === 'video') return video ? [video] : [];
+        return [];
+    });
+    const feature = loadFeature('customSpeedButtons', {
+        document: doc,
+        Intl,
+        isWatchPagePath: () => true,
+        getMainVideoElement: () => video
+    });
+    return { feature, below, doc };
+}
+
+function fakeVideo(playbackRate = 1) {
+    return {
+        playbackRate,
+        addEventListener() {},
+        removeEventListener() {}
+    };
+}
+
+test('customSpeedButtons renders every preset once and marks the active one', () => {
+    const video = fakeVideo(1);
+    const { feature, below } = speedPresetsFixture(video);
+
+    feature._create();
+    feature._create();
+
+    assert.equal(below.children.length, 1, 'the preset row is built once');
+    const container = below.children[0];
+    assert.equal(container.getAttribute('role'), 'group');
+    assert.equal(container.getAttribute('aria-label'), 'Playback speed presets');
+    assert.equal(textOf(container, 'ytkit-speed-presets__title')[0], 'Speed Presets');
+
+    const buttons = collect(container, 'ytkit-speed-btn');
+    assert.deepEqual(Array.from(buttons, (button) => button.textContent),
+        ['0.5x', '0.75x', '1x', '1.25x', '1.5x', '1.75x', '2x', '2.5x', '3x']);
+    assert.deepEqual(Array.from(buttons, (button) => button.getAttribute('aria-pressed')),
+        ['false', 'false', 'true', 'false', 'false', 'false', 'false', 'false', 'false']);
+    assert.ok(buttons[2].classList.contains('ytkit-speed-btn-active'));
+
+    const status = collect(container, 'ytkit-speed-presets__status')[0];
+    assert.equal(status.textContent, '1x');
+    assert.equal(status.dataset.state, 'default');
+    assert.equal(status.getAttribute('aria-live'), 'polite');
+});
+
+test('customSpeedButtons applies the speed it was clicked for and follows the player', () => {
+    const video = fakeVideo(1);
+    const { feature, below } = speedPresetsFixture(video);
+
+    feature._create();
+    const container = below.children[0];
+    const buttons = collect(container, 'ytkit-speed-btn');
+
+    buttons[4].handlers.get('click')();
+
+    assert.equal(video.playbackRate, 1.5);
+    assert.equal(buttons[4].getAttribute('aria-pressed'), 'true');
+    assert.equal(buttons[2].getAttribute('aria-pressed'), 'false');
+    const status = collect(container, 'ytkit-speed-presets__status')[0];
+    assert.equal(status.textContent, '1.50x');
+    assert.equal(status.dataset.state, 'active');
+    assert.equal(status.getAttribute('aria-label'), 'Current playback speed 1.50x');
+
+    // A rate the player picked up elsewhere still lands on the row.
+    video.playbackRate = 2;
+    feature._syncState();
+    assert.equal(collect(container, 'ytkit-speed-btn')[6].getAttribute('aria-pressed'), 'true');
+    assert.equal(collect(container, 'ytkit-speed-presets__status')[0].textContent, '2x');
+
+    // An off-preset rate leaves every button unpressed rather than guessing.
+    video.playbackRate = 1.1;
+    feature._syncState();
+    assert.deepEqual(
+        Array.from(collect(container, 'ytkit-speed-btn'), (button) => button.getAttribute('aria-pressed')),
+        Array(9).fill('false')
+    );
+    assert.equal(collect(container, 'ytkit-speed-presets__status')[0].textContent, '1.10x');
+});
+
+// ── copyVideoTitle ─────────────────────────────────────────────────────
+function copyTitleFixture({ title = 'A video title', clipboardWorks = true } = {}) {
+    const titleContainer = fakeNode({ tag: 'h1', attributes: { class: 'ytd-watch-metadata' } });
+    titleContainer.querySelector = (selector) => collectMatching(titleContainer, selector)[0] || null;
+    const titleNode = fakeNode({ tag: 'yt-formatted-string', text: title });
+    titleContainer.appendChild(titleNode);
+
+    const toasts = [];
+    const doc = renderDocument((selector) => (
+        selector.includes('h1') ? titleContainer : []
+    ));
+    const feature = loadFeature('copyVideoTitle', {
+        document: doc,
+        isWatchPagePath: () => true,
+        showToast: (message) => toasts.push(message),
+        navigator: {
+            clipboard: {
+                writeText: async (value) => {
+                    if (!clipboardWorks) throw new Error('denied');
+                    copied.push(value);
+                }
+            }
+        },
+        ICONS: new Proxy({}, { get: () => () => doc.createElement('svg') }),
+        createSVG: () => doc.createElement('svg'),
+        HTMLElement: FakeHTMLElement
+    });
+    const copied = [];
+    feature._getTitleText = () => title;
+    return { feature, titleContainer, toasts, copied, doc };
+}
+
+test('copyVideoTitle builds one button that starts in its idle state', () => {
+    const { feature, titleContainer } = copyTitleFixture();
+
+    feature._create();
+    feature._create();
+
+    assert.equal(titleContainer.children.length, 2, 'the button joins the title, once');
+    const button = titleContainer.children[1];
+    assert.equal(button.className, 'ytkit-copy-title-btn');
+    assert.equal(button.getAttribute('aria-live'), 'polite');
+    assert.equal(button.dataset.state, 'idle');
+    assert.equal(button.getAttribute('aria-label'), 'Copy video title');
+    assert.equal(button.disabled, false);
+    assert.equal(collect(button, 'ytkit-copy-title-btn__label')[0].textContent, 'Copy');
+    assert.equal(collect(button, 'ytkit-copy-title-btn__icon')[0].children.length, 1,
+        'the idle glyph is mounted');
+});
+
+test('copyVideoTitle swaps state and glyph without stacking icons', () => {
+    const { feature } = copyTitleFixture();
+    feature._create();
+    const button = feature._btn;
+    const iconWrap = collect(button, 'ytkit-copy-title-btn__icon')[0];
+
+    feature._setState('copying');
+    assert.equal(button.dataset.state, 'copying');
+    assert.equal(button.disabled, true, 'a copy in flight cannot be started again');
+    assert.equal(collect(button, 'ytkit-copy-title-btn__label')[0].textContent, 'Copying…');
+    assert.equal(iconWrap.children.length, 1, 'the glyph is replaced, not appended');
+
+    feature._setState('error');
+    assert.equal(button.dataset.state, 'error');
+    assert.equal(button.disabled, false);
+    assert.equal(collect(button, 'ytkit-copy-title-btn__label')[0].textContent, 'Retry');
+    assert.match(button.getAttribute('aria-label'), /Copy failed/);
+    assert.equal(iconWrap.children.length, 1);
+
+    feature._setState('idle');
+    assert.equal(collect(button, 'ytkit-copy-title-btn__label')[0].textContent, 'Copy');
+    assert.equal(iconWrap.children.length, 1);
+});
+
+test('copyVideoTitle reports a blocked clipboard on the button instead of failing silently', async () => {
+    const { feature, toasts, doc } = copyTitleFixture({ clipboardWorks: false });
+    // The legacy fallback stages a textarea and asks execCommand to copy it.
+    // Refusing there is the case under test: both routes failed.
+    doc.execCommand = () => false;
+    doc.getSelection = () => ({ removeAllRanges() {}, addRange() {} });
+    doc.createRange = () => ({ selectNodeContents() {} });
+
+    feature._create();
+    const button = feature._btn;
+    await button.handlers.get('click')({ stopPropagation() {} });
+
+    assert.equal(button.dataset.state, 'error');
+    assert.equal(collect(button, 'ytkit-copy-title-btn__label')[0].textContent, 'Retry');
+    assert.ok(toasts.some((message) => /Clipboard access was blocked/.test(message)));
+});
+
+test('copyVideoTitle refuses to copy a title that has not loaded yet', async () => {
+    const { feature, toasts, copied } = copyTitleFixture({ title: '' });
+
+    feature._create();
+    const button = feature._btn;
+    await button.handlers.get('click')({ stopPropagation() {} });
+
+    assert.deepEqual(copied, []);
+    assert.equal(button.dataset.state, 'error');
+    assert.ok(toasts.some((message) => /still loading/.test(message)));
 });
