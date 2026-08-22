@@ -2108,3 +2108,181 @@ test('sbPerChannelProfiles opening the panel twice replaces it rather than stack
     assert.equal(feature._panel, null);
     assert.equal(collect(feature._btn, 'ytkit-sb-profile-panel').length, 0);
 });
+
+// ── videoVisualFilters ─────────────────────────────────────────────────
+function visualFiltersFixture(settings = {}) {
+    const doc = renderDocument(() => []);
+    const styles = [];
+    const saved = [];
+    const appState = {
+        settings: {
+            vvfBrightness: 100, vvfContrast: 100, vvfSaturation: 100,
+            vvfHue: 0, vvfGrayscale: 0, vvfSepia: 0, ...settings
+        }
+    };
+    const feature = loadFeature('videoVisualFilters', {
+        document: doc,
+        appState,
+        settingsManager: { save: () => saved.push(true) },
+        injectStyle: (css) => { styles.push(css); return fakeNode(); }
+    });
+    return { feature, doc, appState, styles, saved };
+}
+
+test('videoVisualFilters renders one row per adjustable channel, showing its current value', () => {
+    const { feature } = visualFiltersFixture({ vvfBrightness: 130, vvfHue: -40 });
+
+    feature._togglePanel();
+
+    const panel = feature._panel;
+    assert.equal(panel.className, 'ytkit-vvf-panel');
+    assert.equal(textOf(panel, 'ytkit-vvf-title')[0], 'Visual Filters');
+    const rows = collect(panel, 'ytkit-vvf-row');
+    assert.equal(rows.length, 6);
+    assert.deepEqual(textOf(panel, 'ytkit-vvf-val'), ['130%', '100%', '100%', '-40°', '0%', '0%'],
+        'each readout carries its own unit, and hue is degrees rather than percent');
+
+    const sliders = rows.map((row) => row.children[1]);
+    assert.deepEqual(Array.from(sliders, (slider) => `${slider.min}..${slider.max}`),
+        ['0..200', '0..200', '0..200', '-180..180', '0..100', '0..100']);
+    assert.equal(sliders[0].value, 130, 'a slider opens on the stored value');
+});
+
+test('videoVisualFilters dragging a slider updates its readout and reapplies the filter', () => {
+    const { feature, appState, styles, saved } = visualFiltersFixture();
+
+    feature._togglePanel();
+    const brightness = collect(feature._panel, 'ytkit-vvf-row')[0].children[1];
+    const before = styles.length;
+
+    brightness.value = '150';
+    brightness.oninput();
+
+    assert.equal(appState.settings.vvfBrightness, 150);
+    assert.equal(textOf(feature._panel, 'ytkit-vvf-val')[0], '150%');
+    assert.ok(styles.length > before, 'the filter is reapplied while the slider moves');
+    assert.match(styles.at(-1), /brightness\(150%\)/);
+    assert.deepEqual(saved, [], 'a drag does not write to storage on every frame');
+
+    brightness.onchange();
+    assert.deepEqual(saved, [true], 'letting go of the slider is what persists it');
+});
+
+test('videoVisualFilters reset returns every channel to neutral and rebuilds the panel', () => {
+    const { feature, appState, styles } = visualFiltersFixture({
+        vvfBrightness: 140, vvfContrast: 60, vvfSaturation: 10, vvfHue: 90, vvfGrayscale: 50, vvfSepia: 30
+    });
+
+    feature._togglePanel();
+    const first = feature._panel;
+    collect(first, 'ytkit-vvf-reset')[0].onclick();
+
+    assert.deepEqual(
+        [appState.settings.vvfBrightness, appState.settings.vvfContrast, appState.settings.vvfSaturation,
+            appState.settings.vvfHue, appState.settings.vvfGrayscale, appState.settings.vvfSepia],
+        [100, 100, 100, 0, 0, 0]
+    );
+    assert.notEqual(feature._panel, first, 'the panel is rebuilt so its readouts follow the reset');
+    assert.deepEqual(textOf(feature._panel, 'ytkit-vvf-val'), ['100%', '100%', '100%', '0°', '0%', '0%']);
+    assert.match(styles.at(-1), /brightness\(100%\)/);
+});
+
+test('videoVisualFilters closes the panel it opened rather than stacking a second one', () => {
+    const { feature } = visualFiltersFixture();
+
+    feature._togglePanel();
+    assert.ok(feature._panel);
+    feature._togglePanel();
+    assert.equal(feature._panel, null);
+});
+
+// ── downloadThumbnail ──────────────────────────────────────────────────
+function thumbnailFixture({ title = 'A: video / title', maxresOk = true, downloadWorks = true } = {}) {
+    const actions = fakeNode({ tag: 'div', attributes: { id: 'actions' } });
+    const titleNode = fakeNode({ tag: 'yt-formatted-string', text: title });
+    const doc = renderDocument((selector) => {
+        if (selector.includes('.ytkit-dl-thumb-btn')) return collectMatching(actions, '.ytkit-dl-thumb-btn');
+        if (selector.includes('h1')) return titleNode;
+        if (selector.includes('#actions')) return actions;
+        return [];
+    });
+    const downloads = [];
+    const toasts = [];
+    const feature = loadFeature('downloadThumbnail', {
+        document: doc,
+        isWatchPagePath: () => true,
+        getVideoId: () => 'abcdefghijk',
+        showToast: (message) => toasts.push(message),
+        extensionRequestAsync: async ({ url }) => (
+            url.includes('maxresdefault') && !maxresOk ? { status: 404 } : { status: 200 }
+        ),
+        triggerDownload: async (url, filename) => {
+            if (!downloadWorks) throw new Error('blocked');
+            downloads.push({ url, filename });
+        }
+    });
+    return { feature, actions, downloads, toasts };
+}
+
+test('downloadThumbnail builds one labelled button next to the watch actions', () => {
+    const { feature, actions } = thumbnailFixture();
+
+    feature._create();
+    feature._create();
+
+    assert.equal(actions.children.length, 1, 'one button per watch page');
+    const button = actions.children[0];
+    assert.ok(button.classList.contains('ytkit-dl-thumb-btn'));
+    assert.equal(button.dataset.state, 'idle');
+    assert.equal(button.getAttribute('aria-label'), 'Download thumbnail');
+    assert.equal(collect(button, 'ytkit-watch-action-btn__label')[0].textContent, 'Thumbnail');
+    assert.equal(collect(button, 'ytkit-watch-action-btn__icon')[0].getAttribute('aria-hidden'), 'true');
+});
+
+test('downloadThumbnail names the file after the video, with the path characters stripped', async () => {
+    const { feature, actions, downloads } = thumbnailFixture();
+
+    feature._create();
+    await actions.children[0].handlers.get('click')();
+
+    assert.equal(downloads.length, 1);
+    assert.equal(downloads[0].url, 'https://i.ytimg.com/vi/abcdefghijk/maxresdefault.jpg');
+    assert.equal(downloads[0].filename, 'A_video_title_thumbnail.jpg',
+        'a title with a slash or colon must not reach the filesystem intact');
+});
+
+test('downloadThumbnail falls back to the resolution YouTube actually has', async () => {
+    const { feature, actions, downloads } = thumbnailFixture({ maxresOk: false });
+
+    feature._create();
+    await actions.children[0].handlers.get('click')();
+
+    assert.equal(downloads[0].url, 'https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg',
+        'a missing maxres must not download a 404 page');
+});
+
+test('downloadThumbnail walks the button through its states and reports a failure on it', async () => {
+    const { feature, actions, toasts } = thumbnailFixture({ downloadWorks: false });
+
+    feature._create();
+    const button = actions.children[0];
+    await button.handlers.get('click')();
+
+    assert.equal(button.dataset.state, 'error');
+    assert.equal(collect(button, 'ytkit-watch-action-btn__label')[0].textContent, 'Retry');
+    assert.match(button.getAttribute('aria-label'), /failed/i);
+    assert.equal(button.disabled, false, 'a failed attempt must leave the button usable');
+    assert.ok(toasts.some((message) => /Thumbnail download failed/.test(message)));
+});
+
+test('downloadThumbnail reports success on the button itself', async () => {
+    const { feature, actions } = thumbnailFixture();
+
+    feature._create();
+    const button = actions.children[0];
+    await button.handlers.get('click')();
+
+    assert.equal(button.dataset.state, 'success');
+    assert.equal(collect(button, 'ytkit-watch-action-btn__label')[0].textContent, 'Downloaded');
+    assert.equal(button.getAttribute('aria-label'), 'Thumbnail downloaded');
+});
