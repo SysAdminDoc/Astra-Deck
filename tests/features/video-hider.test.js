@@ -450,7 +450,6 @@ test('Video Hider rolls back hostile payloads and drops old rules when the sourc
 test('Video Hider processes current card hosts and keeps the thumbnail control mounted', () => {
     for (const [label, source] of [
         ['module', MODULE_SOURCE],
-        ['monolith', sources.ytkit],
         ['userscript', sources.userscript]
     ]) {
         const cardSelector = source.match(/(?:_VIDEO_SELECTORS:\s*'|const selectors = ')([^']*)'/)?.[1] || '';
@@ -595,7 +594,7 @@ test('Video Hider records explainable reasons for automatic hide rules in both r
     assert.equal(feature._shouldHide(keywordCard), false);
     assert.equal(keywordCard.dataset.ytkitFilterReason, undefined);
 
-    for (const [label, source] of [['module', MODULE_SOURCE], ['monolith', sources.ytkit], ['userscript', sources.userscript]]) {
+    for (const [label, source] of [['module', MODULE_SOURCE], ['userscript', sources.userscript]]) {
         assert.match(source, /hideVideosShowFilterReason/, `${label} should include the explain-hidden-cards setting`);
         assert.match(source, /ytkit-video-hidden-placeholder/, `${label} should include the hidden-card placeholder`);
         assert.match(source, /videoHiderHiddenReason/, `${label} should localize the hidden-card reason copy`);
@@ -767,8 +766,8 @@ test('Video Hider ignores live/upcoming words in titles but detects metadata row
     assert.equal(liveRow.isLive, true);
 });
 
-test('Video Hider live/upcoming regex pins read rows in module and monolith', () => {
-    for (const [label, source] of [['module', MODULE_SOURCE], ['monolith', sources.ytkit]]) {
+test('Video Hider live/upcoming regex pins read rows in module and userscript', () => {
+    for (const [label, source] of [['module', MODULE_SOURCE], ['userscript', sources.userscript]]) {
         const start = source.indexOf('_extractVideoMetadata(element) {');
         assert.ok(start > -1, `${label} must expose video metadata extraction`);
         const end = source.indexOf('\n            },', start);
@@ -1029,8 +1028,6 @@ test('Video Hider channel allowlist is fail-open when empty and isolated from th
 test('Video Hider strips stateful regex flags before boolean matching', () => {
     assert.match(MODULE_SOURCE, /regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
         'Video Hider module must strip global/sticky flags');
-    assert.match(sources.ytkit, /regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/,
-        'Video Hider monolith fallback must strip global/sticky flags');
     assert.ok(
         (sources.userscript.match(/regexMatch\[2\]\.replace\(\/\[gy\]\/g, ''\)/g) || []).length >= 2,
         'userscript module and fallback must strip global/sticky flags'
@@ -1086,7 +1083,7 @@ test('masthead quick actions synchronize without a post-paint delay', () => {
     assert.equal(feature._mutationTouchesMastheadControls([{ target: mastheadTarget }]), true);
     assert.equal(feature._mutationTouchesMastheadControls([{ target: unrelatedTarget }]), false);
 
-    for (const source of [MODULE_SOURCE, sources.ytkit, sources.userscript]) {
+    for (const source of [MODULE_SOURCE, sources.userscript]) {
         assert.doesNotMatch(source, /setTimeout\(\(\) => this\._create(?:Subs|Home)HideAllButton\(\), 1000\)/,
             'masthead actions must not wait one second after native controls paint');
         assert.match(source, /if \(this\._mutationTouchesMastheadControls\(mutations\)\) \{\s*this\._syncMastheadPageActions\(\);\s*\}/,
@@ -1094,7 +1091,7 @@ test('masthead quick actions synchronize without a post-paint delay', () => {
     }
 });
 
-test('hideVideosFromHome monolith prefers the module runtime factory before inline fallback', () => {
+test('hideVideosFromHome monolith delegates to the module and keeps only a descriptor stub', () => {
     const factoryNeedle = 'globalThis.YTKitFeatures?.hideVideosFromHome?.createHideVideosFromHomeFeature?.({';
     const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
     assert.ok(factoryIndex > -1, 'ytkit.js must construct hideVideosFromHome through the module factory');
@@ -1102,7 +1099,7 @@ test('hideVideosFromHome monolith prefers the module runtime factory before inli
     assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must retain the inline hideVideosFromHome fallback after the factory call');
     const dependencyBag = sources.ytkit.slice(factoryIndex, fallbackIndex);
     assert.ok(dependencyBag.includes('}) || {'),
-        'module factory path must fall back to the inline feature object');
+        'module factory path must fall back to the descriptor stub');
 
     for (const dep of [
         'Z',
@@ -1138,9 +1135,22 @@ test('hideVideosFromHome monolith prefers the module runtime factory before inli
     }
     assert.ok(dependencyBag.includes('createSVG: globalThis.YTKitCore?.createSVG'),
         'factory dependency bag must avoid the later-declared local createSVG binding');
+
+    const stubEnd = sources.ytkit.indexOf('\n        }),', fallbackIndex);
+    assert.ok(stubEnd > fallbackIndex, 'hideVideosFromHome stub must terminate');
+    const stub = sources.ytkit.slice(fallbackIndex, stubEnd);
+    assert.ok(stub.length < 1200,
+        `hideVideosFromHome fallback must stay a descriptor stub, got ${stub.length} bytes`);
+    for (const key of ['id', 'name', 'description', 'group', 'icon', 'isParent']) {
+        assert.match(stub, new RegExp(`\\b${key}:`), `stub must still declare ${key}`);
+    }
+    assert.match(stub, /init\(\)\s*\{[\s\S]*?Feature module unavailable/,
+        'stub must report a missing video-hider module');
+    assert.doesNotMatch(stub, /_processAllVideos|_readFilterListSubscription|injectStyle\(`/,
+        'stub must not re-inline the video-hider runtime or stylesheet');
 });
 
-test('hideVideosFromHome inline fallback keeps filter-list refresh parity', () => {
+test('hideVideosFromHome module keeps filter-list refresh parity', () => {
     for (const method of [
         '_readFilterListSubscription',
         '_refreshFilterList',
@@ -1149,15 +1159,15 @@ test('hideVideosFromHome inline fallback keeps filter-list refresh parity', () =
         '_initializeFilterListSubscription',
         '_getEffectiveKeywordFilters'
     ]) {
-        assert.ok(sources.ytkit.includes(`${method}(`),
-            `ytkit.js inline fallback must expose ${method}`);
+        assert.ok(MODULE_SOURCE.includes(`${method}(`),
+            `video-hider module must expose ${method}`);
     }
-    assert.match(sources.ytkit, /MONOLITH_FILTER_LIST_CODEC = globalThis\.YTKitCore\?\.persistedDomains/,
-        'inline fallback must use the shared filter-list codec when available');
-    assert.match(sources.ytkit, /credentials: 'omit'/,
-        'inline fallback refreshes must omit ambient credentials');
-    assert.match(sources.ytkit, /predicateEnabled: false,\s*predicateCode: ''/,
-        'inline fallback must never execute predicate code received from a remote list');
+    assert.match(MODULE_SOURCE, /const codec = filterListCodec \|\| globalThis\.YTKitCore\?\.persistedDomains/,
+        'video-hider module must use the shared filter-list codec when available');
+    assert.match(MODULE_SOURCE, /credentials: 'omit'/,
+        'module refreshes must omit ambient credentials');
+    assert.match(MODULE_SOURCE, /predicateEnabled: false,\s*predicateCode: ''/,
+        'module must never execute predicate code received from a remote list');
 });
 
 test('hideVideosFromHome budgets large feed scans and cancels stale batches', () => {
@@ -1537,12 +1547,10 @@ test('the fail-open guard also covers infinite-scroll batches, not just navigati
     assert.match(setFn, /_removedVideoNodes/, 'detached cards must be counted');
     assert.match(setFn, /!el\.isConnected/, 'only still-detached cards may be added back');
 
-    // Both copies ship the fix: which one runs no longer depends on the route,
-    // but the monolith copy is still live code for userscript users.
-    const monolith = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
-    assert.match(monolith, /_enforceRuleHideRatioGuard\(this\._guardCardSet\(\)\)/,
-        'the monolith observer must run the guard on mutation batches too');
-    assert.match(monolith, /if \(removedIds\.length\) this\._restoreRemovedVideoNodes\(new Set\(removedIds\)\);/,
-        'the monolith guard must restore detached cards too');
+    // The extension now runs the module directly. The generated userscript
+    // core carries the same runtime for userscript users.
+    assert.match(MODULE_SOURCE, /_enforceRuleHideRatioGuard\(this\._guardCardSet\(\)\)/,
+        'the video-hider module observer must run the guard on mutation batches too');
+    assert.match(sources.userscript, /if \(removedIds\.length\) this\._restoreRemovedVideoNodes\(new Set\(removedIds\)\);/,
+        'the userscript runtime must restore detached cards too');
 });

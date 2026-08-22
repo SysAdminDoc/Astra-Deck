@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Peeled the Video Hider runtime out of the always-parsed `ytkit.js` fallback.
+  The extension now keeps a 469-byte descriptor stub while the preloaded
+  `features/video-hider/index.js` module owns filter lists, feed guards, and
+  direct-watch behavior. The removal cuts 128,204 bytes from the monolith,
+  including the obsolete inline filter-list helpers. Version 4.84.2 carries
+  rebuilt Chrome and Firefox packages plus the userscript artifact.
+
 - Peeled the Astra Player Dock runtime out of the always-parsed `ytkit.js`
   fallback. The extension now keeps a small descriptor stub while the
   preloaded `features/player-dock/index.js` module owns the behavior. The

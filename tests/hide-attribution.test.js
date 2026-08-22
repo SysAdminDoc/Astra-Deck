@@ -222,6 +222,9 @@ test('counts are reported worst-first and reset per navigation', () => {
 
 test('every feed-hiding feature routes through the shared marker', () => {
     const ytkit = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
+    const videoHider = fs.readFileSync(
+        path.join(repoRoot, 'extension/features/video-hider/index.js'), 'utf8'
+    );
     // Each of these hid cards with a private mechanism and left no trace of
     // which feature did it. If any of them stops stamping the marker, the
     // popup's per-feature hide counts silently under-report and the note
@@ -246,9 +249,9 @@ test('every feed-hiding feature routes through the shared marker', () => {
 
     // Video Hider keeps its own richer placeholder but must still stamp the
     // shared marker, or the counts cover three hiders out of four.
-    const vhStart = ytkit.indexOf('_applyVideoHiddenState(element, shouldHide');
-    assert.ok(vhStart > -1, 'Video Hider must still own _applyVideoHiddenState');
-    const vhBody = ytkit.slice(vhStart, vhStart + 2000);
+    const vhStart = videoHider.indexOf('_applyVideoHiddenState(element, shouldHide');
+    assert.ok(vhStart > -1, 'Video Hider module must still own _applyVideoHiddenState');
+    const vhBody = videoHider.slice(vhStart, vhStart + 2000);
     assert.match(vhBody, /markCardHidden\?\.\(/, 'Video Hider must stamp the shared marker');
     assert.match(vhBody, /unmarkCardHidden\?\.\(/, 'Video Hider must clear the shared marker when it restores a card');
 });

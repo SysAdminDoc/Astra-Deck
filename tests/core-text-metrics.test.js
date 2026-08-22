@@ -179,8 +179,13 @@ test('extension fetch payloads use data: not body: (extensionRequest drops body)
 test('ytkit.js delegates compact-count parsing to the shared core helper', () => {
     const src = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
     const matches = src.match(/globalThis\.YTKitCore && globalThis\.YTKitCore\.parseCompactCount/g) || [];
-    assert.ok(matches.length >= 2,
-        'both ytkit.js compact-count methods must delegate to core/text-metrics.js');
+    const videoHider = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'features', 'video-hider', 'index.js'), 'utf8'
+    );
+    assert.ok(matches.length >= 1,
+        'the remaining ytkit.js compact-count method must delegate to core/text-metrics.js');
+    assert.match(videoHider, /globalThis\.YTKitCore && globalThis\.YTKitCore\.parseCompactCount/,
+        'the peeled Video Hider compact-count method must delegate to core/text-metrics.js');
 });
 
 test('settings search escapes literal filter text in both runtimes', () => {

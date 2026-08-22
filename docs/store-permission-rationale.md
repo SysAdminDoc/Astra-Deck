@@ -160,7 +160,7 @@ before proxying requests to these optional origins.
 | `https://returnyoutubedislikeapi.com/*` | Fetches estimated Return YouTube Dislike counts for the optional dislike-count restoration feature. |
 | `https://www.reddit.com/*` | Fetches Reddit search results for the optional Reddit discussion panel under a YouTube video. |
 | `https://old.reddit.com/*` | Allows Reddit permalink handling for the optional Reddit discussion panel without broad Reddit host access. |
-| `https://raw.githubusercontent.com/*` | Repair paths only, both anonymous and data-only. (1) When a YouTube layout change breaks a feature, the user can run a selector refresh that downloads this extension's own published `selector-packs.json`, under a 256 KB cap. (2) Known-Breakage Notices reads this extension's own published `feature-disable-feed.csv` at most once every six hours, under a 64 KB cap, and stops running the features it names. Both are fetched from fixed URLs held in the background script, not caller-supplied ones, without cookies and with `redirect: 'error'`. Nothing is uploaded. The disable feed is the only automatic request to this host, it is off when the user turns the feature off, and it can only ever stop a feature running — see the section below. |
+| `https://raw.githubusercontent.com/*` | Repair paths only, both anonymous and data-only. (1) When a YouTube layout change breaks a feature, the user can run a selector refresh that downloads this extension's own published `selector-packs.json`, under a 256 KB cap. (2) Known-Breakage Notices reads this extension's own published `feature-disable-feed.csv` at most once every six hours, under a 64 KB cap, and stops running the features it names. Both are fetched from fixed URLs held in the background script, not caller-supplied ones, without cookies and with `redirect: 'error'`. Nothing is uploaded. The disable feed is the only automatic request to this host, it is off when the user turns the feature off, and it can only ever stop a feature running, see the section below. |
 
 ## GitHub-Full Additional Host Permissions
 
@@ -205,7 +205,7 @@ and asserted by a hostile-row battery in `tests/feature-disable-feed.test.js`:
   dropped, resolved through the same alias table stored settings use.
 
 Why it ships everywhere. The alternative to a disable feed is not "no remote
-influence" — it is leaving a feature the maintainer *knows* is broken running
+influence", it is leaving a feature the maintainer *knows* is broken running
 against a changed YouTube until a new version clears review, which is the
 behaviour users experience as the extension breaking the site. Refined GitHub
 ships this same mechanism on both AMO and the Chrome Web Store, which is the

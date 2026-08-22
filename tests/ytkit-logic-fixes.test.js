@@ -704,8 +704,11 @@ test('hideVideosSubsLoadHiddenRatio schema min is 0.05 so a schema-legal value c
     assert.equal(defaultSettings.hideVideosSubsLoadHiddenRatio, 0.8,
         'default value stays 0.8');
     // Consumers still guard the (0, 1] contract at the call site.
-    assert.match(ytkitSource, /raw <= 0 \|\| raw > 1\) return 0\.8/,
-        'ytkit.js consumer must keep the (0,1] fallback guard');
+    const videoHiderSource = fs.readFileSync(
+        path.join(repoRoot, 'extension/features/video-hider/index.js'), 'utf8'
+    );
+    assert.match(videoHiderSource, /raw <= 0 \|\| raw > 1\) return 0\.8/,
+        'Video Hider must keep the (0,1] fallback guard');
 });
 
 test('transcriptViewer aborts an in-flight translation when the video changes', () => {

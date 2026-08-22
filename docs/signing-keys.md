@@ -372,7 +372,7 @@ tamper detection and wrong-key rejection, against a throwaway key.
 
 Cheap, unlike §5. Generate a new key, append its line to `allowed-signers`,
 and sign the next release with it. Leave the old line in place for as long as
-old releases are still downloadable — removing it makes every past signature
+old releases are still downloadable, removing it makes every past signature
 unverifiable. Delete a line only when the key is known compromised, and say so
 in `HARDENING.md` alongside the affected release tags.
 
