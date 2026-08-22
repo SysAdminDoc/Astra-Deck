@@ -5399,7 +5399,7 @@
     "message": "cache {state}"
   },
   "spExternalCopy": {
-    "message": "Tracks SponsorBlock, DeArrow, and RYD request health."
+    "message": "Shows whether SponsorBlock, DeArrow, and RYD are responding."
   },
   "spExternalEmptyNoData": {
     "message": "No external services have been used in this session. Play or navigate once to collect request health."
@@ -5438,7 +5438,7 @@
     "message": "ok {age} ago"
   },
   "spExternalTitle": {
-    "message": "External API health"
+    "message": "Service connections"
   },
   "spLocalOnly": {
     "message": "Local only"
@@ -5483,7 +5483,7 @@
     "message": "Workspace health at a glance"
   },
   "spPerfCopy": {
-    "message": "Highlights slow-starting features on the active YouTube tab."
+    "message": "Shows which features take longest to start on this YouTube tab."
   },
   "spPerfEmptyNoData": {
     "message": "Start playback or navigate once, then refresh to capture feature timing."
@@ -5513,7 +5513,7 @@
     "message": "{feature}: {ms}ms"
   },
   "spPerfTitle": {
-    "message": "Feature init timing"
+    "message": "Startup timing"
   },
   "spPerfTotalTpl": {
     "message": "{count} measured"
@@ -5546,7 +5546,7 @@
     "message": "{scope} scope"
   },
   "spSelectorCopy": {
-    "message": "Surfaces DOM drift before it becomes a broken control."
+    "message": "Flags page changes before a control stops working."
   },
   "spSelectorDriftTpl": {
     "message": "{count} drift"
@@ -5591,7 +5591,7 @@
     "message": "needs capture"
   },
   "spSelectorTitle": {
-    "message": "Selector health"
+    "message": "Page compatibility"
   },
   "spSelectorTotalTpl": {
     "message": "{count} surfaces"
