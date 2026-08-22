@@ -699,3 +699,130 @@ test('commentNavigator says no matches only once the filter has settled', () => 
     feature._updateState();
     assert.equal(textOf(doc.body.children[0], 'ytkit-comment-nav-status')[0], 'No matching threads');
 });
+
+// ── commentSearch ──────────────────────────────────────────────────────
+function commentSearchFixture(threadTexts = []) {
+    const comments = fakeNode({ tag: 'ytd-comments', attributes: { id: 'comments' } });
+    const threads = threadTexts.map((text) => {
+        const node = fakeNode({ tag: 'ytd-comment-thread-renderer', text });
+        Object.setPrototypeOf(node, FakeHTMLElement.prototype);
+        // A real element reports '' for an unset inline display, and the
+        // restore path writes that value back.
+        node.style.display = '';
+        return node;
+    });
+    comments.querySelectorAll = (selector) => (
+        selector.includes('ytd-comment-thread-renderer') ? threads : collectMatching(comments, selector)
+    );
+    comments.querySelector = (selector) => (comments.querySelectorAll(selector)[0] || null);
+
+    const events = [];
+    const doc = renderDocument((selector) => (selector.includes('ytd-comments#comments') ? comments : []));
+    doc.dispatchEvent = (event) => events.push(event);
+    const feature = loadFeature('commentSearch', {
+        document: doc,
+        isWatchPagePath: () => true,
+        Intl,
+        HTMLElement: FakeHTMLElement,
+        CustomEvent: class CustomEvent { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
+        ICONS: new Proxy({}, { get: () => () => doc.createElement('svg') })
+    });
+    return { feature, comments, threads, events, doc };
+}
+
+test('commentSearch builds one search bar and waits before claiming a count', () => {
+    const { feature, comments } = commentSearchFixture();
+
+    feature._create();
+    feature._create();
+
+    assert.equal(comments.children.length, 1, 'the bar is built once per comments section');
+    const bar = comments.children[0];
+    assert.equal(bar.className, 'ytkit-comment-search');
+    assert.equal(bar.getAttribute('role'), 'search');
+    assert.equal(textOf(bar, 'ytkit-comment-search-eyebrow')[0], 'Find in Comments');
+    assert.equal(textOf(bar, 'ytkit-comment-search-summary')[0], 'Waiting for comments to load…');
+    assert.equal(collect(bar, 'ytkit-comment-search-summary')[0].getAttribute('aria-live'), 'polite');
+    assert.equal(textOf(bar, 'ytkit-search-count')[0], '0 threads');
+
+    const clear = collect(bar, 'ytkit-comment-search-clear')[0];
+    assert.equal(clear.hidden, true, 'nothing to clear before a query is typed');
+    assert.equal(clear.disabled, true);
+    assert.equal(collect(bar, 'ytkit-comment-search-empty')[0].hidden, true);
+});
+
+test('commentSearch hides the threads that do not match and restores them on clear', () => {
+    const { feature, comments, threads, events } = commentSearchFixture([
+        'a comment about cooking',
+        'a comment about cycling',
+        'another cooking thread'
+    ]);
+
+    feature._create();
+    const bar = comments.children[0];
+    const input = collect(bar, 'ytkit-comment-search-input')[0];
+
+    input.value = 'cooking';
+    feature._applyFilter();
+
+    assert.deepEqual(Array.from(threads, (thread) => thread.style.display), ['', 'none', '']);
+    assert.equal(bar.dataset.searchActive, '1');
+    assert.equal(bar.dataset.searchEmpty, '0');
+    assert.equal(textOf(bar, 'ytkit-search-count')[0], '2 matches');
+    assert.match(textOf(bar, 'ytkit-comment-search-summary')[0], /Showing 2 of 3/);
+
+    const clear = collect(bar, 'ytkit-comment-search-clear')[0];
+    assert.equal(clear.hidden, false, 'a live query offers a way out of it');
+    assert.equal(clear.disabled, false);
+
+    // The navigator listens on this event, so its payload is a contract.
+    assert.equal(events.at(-1).type, 'ytkit-comment-filter');
+    assert.equal(events.at(-1).detail.visible, 2);
+    assert.equal(events.at(-1).detail.total, 3);
+    assert.equal(events.at(-1).detail.hasMatches, true);
+
+    feature._clearSearch();
+    assert.deepEqual(Array.from(threads, (thread) => thread.style.display), ['', '', '']);
+    assert.equal(bar.dataset.searchActive, '0');
+    assert.equal(textOf(bar, 'ytkit-search-count')[0], '3 threads');
+    assert.equal(collect(bar, 'ytkit-comment-search-clear')[0].hidden, true);
+});
+
+test('commentSearch shows its empty state only when a query matched nothing', () => {
+    const { feature, comments, events } = commentSearchFixture(['a comment about cooking']);
+
+    feature._create();
+    const bar = comments.children[0];
+    const input = collect(bar, 'ytkit-comment-search-input')[0];
+
+    input.value = 'nothing here';
+    feature._applyFilter();
+
+    assert.equal(bar.dataset.searchEmpty, '1');
+    assert.equal(textOf(bar, 'ytkit-search-count')[0], 'No matches');
+    const empty = collect(bar, 'ytkit-comment-search-empty')[0];
+    assert.equal(empty.hidden, false);
+    assert.equal(textOf(bar, 'ytkit-comment-search-empty-title')[0], 'No matching comments');
+    assert.equal(events.at(-1).detail.hasMatches, false);
+    assert.equal(events.at(-1).detail.isPending, false);
+});
+
+test('commentSearch leaves a thread another feature hid alone', () => {
+    const { feature, comments, threads } = commentSearchFixture(['pinned thread', 'ordinary thread']);
+    threads[0].dataset.ytkitPinnedCommentHidden = '1';
+    threads[0].style.display = 'none';
+
+    feature._create();
+    const bar = comments.children[0];
+    const input = collect(bar, 'ytkit-comment-search-input')[0];
+
+    input.value = 'thread';
+    feature._applyFilter();
+
+    // Both threads match, but the pinned-comment feature already hid one, and
+    // restoring it here would undo that feature behind its back.
+    assert.equal(threads[0].style.display, 'none');
+    assert.equal(threads[1].style.display, '');
+    assert.equal(textOf(bar, 'ytkit-search-count')[0], '1 match',
+        'a thread another feature hid is not counted as a visible match');
+});
