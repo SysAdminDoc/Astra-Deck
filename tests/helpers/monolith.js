@@ -201,6 +201,47 @@ function datasetProxy(attrs) {
     });
 }
 
+// An inline style whose method half and property half share one store. A bare
+// object made every setProperty() call throw, which aborted the whole render.
+// Splitting the two halves was subtler and just as wrong: a feature that hides
+// a row with `style.display = 'none'` and reveals it again with
+// `style.removeProperty('display')` left the row hidden forever under test, so
+// the reveal path could never be asserted.
+function styleProxy() {
+    const declarations = new Map();
+    const methods = {
+        setProperty(name, value) { declarations.set(String(name), String(value)); },
+        getPropertyValue(name) { return declarations.get(String(name)) || ''; },
+        removeProperty(name) { declarations.delete(String(name)); }
+    };
+    return new Proxy(methods, {
+        get(target, key) {
+            if (key in target) return target[key];
+            if (typeof key !== 'string') return undefined;
+            // A real CSSStyleDeclaration reports '' for a property that is not
+            // set, which is what a feature comparing against '' expects.
+            return declarations.get(styleKeyToProperty(key)) ?? '';
+        },
+        set(target, key, value) {
+            if (typeof key === 'string' && !(key in target)) {
+                declarations.set(styleKeyToProperty(key), String(value));
+            }
+            return true;
+        },
+        has(target, key) {
+            return key in target || (typeof key === 'string' && declarations.has(styleKeyToProperty(key)));
+        },
+        deleteProperty(_target, key) {
+            if (typeof key === 'string') declarations.delete(styleKeyToProperty(key));
+            return true;
+        }
+    });
+}
+
+function styleKeyToProperty(key) {
+    return key.startsWith('--') ? key : key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
 /** A DOM-ish node: enough surface for feature code, nothing more. */
 function fakeNode(options = {}) {
     const {
@@ -227,19 +268,10 @@ function fakeNode(options = {}) {
         // each other, so a toolbar could set its count and then fail to find
         // the element it had just marked.
         dataset: datasetProxy(attrs),
-        // A bare object made every setProperty() call throw, which is not a
-        // no-op the way the other gaps in this helper were — it aborted the
-        // whole render and read as a test-authoring mistake rather than a
-        // missing affordance. Custom properties are how every feature colour
-        // reaches a card, so they have to round-trip.
-        style: (() => {
-            const custom = new Map();
-            return {
-                setProperty(name, value) { custom.set(String(name), String(value)); },
-                getPropertyValue(name) { return custom.get(String(name)) || ''; },
-                removeProperty(name) { custom.delete(String(name)); }
-            };
-        })(),
+        // See styleProxy: the method half and the property half of an inline
+        // style have to share one store, because features write one and read
+        // or clear the other.
+        style: styleProxy(),
         children,
         // Real nodes are attached until something detaches them. A falsy
         // default made every `if (!el.isConnected) return` guard skip its whole

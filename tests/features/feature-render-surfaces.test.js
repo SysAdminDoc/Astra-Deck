@@ -1582,7 +1582,7 @@ test('miniPlayerBar draws progress only while it is on screen', () => {
     // The bar starts hidden, so a timeupdate must not cost anything.
     bar.style.display = 'none';
     feature._updateProgress();
-    assert.equal(fill.style.width, undefined, 'a hidden bar does not repaint');
+    assert.equal(fill.style.width, '', 'a hidden bar does not repaint');
 
     // Scrolling the player out of view reveals the bar and refreshes it at
     // once, because timeupdate will not fire again while the video is paused.
@@ -1612,4 +1612,179 @@ test('miniPlayerBar stays dismissed once the reader closes it', () => {
     observers[0].callback([{ isIntersecting: false }]);
     assert.equal(bar.style.display, 'none',
         'scrolling again must not bring back a bar the reader dismissed');
+});
+
+// ── playlistSearch ─────────────────────────────────────────────────────
+function playlistSearchFixture(titles = []) {
+    const header = fakeNode({ tag: 'div', attributes: { id: 'header-contents' } });
+    const panel = fakeNode({ tag: 'ytd-playlist-panel-renderer' });
+    panel.appendChild(header);
+    const items = titles.map((text) => {
+        const item = fakeNode({ tag: 'ytd-playlist-panel-video-renderer' });
+        const titleNode = fakeNode({ tag: 'span', text, attributes: { id: 'video-title' } });
+        item.appendChild(titleNode);
+        item.querySelector = () => titleNode;
+        item.style.display = '';
+        return item;
+    });
+    const container = fakeNode({ tag: 'div', attributes: { id: 'items' } });
+    container.querySelectorAll = () => items;
+    const doc = renderDocument((selector) => {
+        if (selector.includes('#header-contents')) return header;
+        if (selector.includes('#items')) return container;
+        return [];
+    });
+    const feature = loadFeature('playlistSearch', { document: doc });
+    return { feature, panel, header, items };
+}
+
+test('playlistSearch builds one bar and reports the unfiltered item count', () => {
+    const { feature, panel } = playlistSearchFixture(['Alpha', 'Beta', 'Gamma']);
+
+    feature._create();
+    feature._create();
+
+    assert.equal(panel.children.length, 2, 'the bar joins the header, once');
+    const bar = panel.children[1];
+    assert.equal(bar.className, 'ytkit-playlist-search-bar');
+    assert.equal(collect(bar, 'ytkit-playlist-search-count')[0].textContent, '3 items');
+    const input = bar.children[0];
+    assert.equal(input.type, 'search');
+    assert.equal(input.getAttribute('aria-label'), 'Search playlist items');
+});
+
+test('playlistSearch pluralises a single item rather than saying "1 items"', () => {
+    const { feature, panel } = playlistSearchFixture(['Only one']);
+    feature._create();
+    assert.equal(collect(panel.children[1], 'ytkit-playlist-search-count')[0].textContent, '1 item');
+});
+
+test('playlistSearch hides the rows that do not match and restores them on clear', () => {
+    const { feature, panel, items } = playlistSearchFixture(['Cooking basics', 'Cycling basics', 'More cooking']);
+
+    feature._create();
+    const bar = panel.children[1];
+    const input = bar.children[0];
+    const count = collect(bar, 'ytkit-playlist-search-count')[0];
+
+    input.value = 'cooking';
+    feature._applyFilter();
+    assert.deepEqual(Array.from(items, (item) => item.style.display), ['', 'none', '']);
+    assert.equal(count.textContent, '2 of 3');
+
+    input.value = '';
+    feature._applyFilter();
+    assert.deepEqual(Array.from(items, (item) => item.style.display), ['', '', '']);
+    assert.equal(count.textContent, '3 items');
+});
+
+// ── abLoop ─────────────────────────────────────────────────────────────
+function abLoopFixture(video) {
+    const progressBar = fakeNode({ tag: 'div', attributes: { class: 'ytp-progress-bar' } });
+    const toasts = [];
+    const doc = renderDocument(() => []);
+    const feature = loadFeature('abLoop', {
+        document: doc,
+        getMainVideoElement: () => video,
+        getPlayerProgressBar: () => progressBar,
+        showToast: (message) => toasts.push(message)
+    });
+    feature._btn = doc.createElement('button');
+    return { feature, progressBar, toasts, doc };
+}
+
+function loopVideo(duration = 200) {
+    return {
+        duration,
+        currentTime: 0,
+        _handlers: new Map(),
+        addEventListener(type, handler) { this._handlers.set(type, handler); },
+        removeEventListener(type) { this._handlers.delete(type); }
+    };
+}
+
+test('abLoop draws the loop region across the progress bar once both points are set', () => {
+    const video = loopVideo(200);
+    const { feature, progressBar } = abLoopFixture(video);
+
+    video.currentTime = 50;
+    feature._setPoint('A');
+    assert.equal(progressBar.children.length, 0, 'one point alone draws nothing');
+
+    video.currentTime = 150;
+    feature._setPoint('B');
+
+    assert.equal(progressBar.children.length, 1);
+    const markers = progressBar.children[0];
+    assert.equal(markers.className, 'ytkit-ab-markers');
+    const region = markers.children[0];
+    assert.match(region.style.cssText, /left:25%/);
+    assert.match(region.style.cssText, /width:50%/);
+});
+
+test('abLoop orders the points it was given backwards before drawing them', () => {
+    const video = loopVideo(200);
+    const { feature, progressBar } = abLoopFixture(video);
+
+    video.currentTime = 150;
+    feature._setPoint('A');
+    video.currentTime = 50;
+    feature._setPoint('B');
+
+    assert.equal(feature._pointA, 50);
+    assert.equal(feature._pointB, 150);
+    assert.match(progressBar.children[0].children[0].style.cssText, /left:25%/,
+        'a backwards region would render a negative width');
+});
+
+test('abLoop clearing takes the region off the bar and resets the button state', () => {
+    const video = loopVideo(200);
+    const { feature, progressBar, toasts } = abLoopFixture(video);
+
+    video.currentTime = 20;
+    feature._setPoint('A');
+    video.currentTime = 60;
+    feature._setPoint('B');
+    assert.ok(feature._btn.classList.contains('ytkit-player-btn--active'));
+
+    feature._clearLoop();
+
+    assert.equal(progressBar.children.length, 0);
+    assert.equal(feature._pointA, null);
+    assert.equal(feature._pointB, null);
+    assert.equal(feature._btn.classList.contains('ytkit-player-btn--active'), false);
+    assert.equal(feature._btn.classList.contains('ytkit-player-btn--warn'), false);
+    assert.ok(toasts.some((message) => /A-B Loop cleared/.test(message)));
+});
+
+test('abLoop marks a half-set loop differently from a running one', () => {
+    const video = loopVideo(200);
+    const { feature } = abLoopFixture(video);
+
+    video.currentTime = 20;
+    feature._setPoint('A');
+    feature._updateBtn();
+
+    assert.equal(feature._btn.classList.contains('ytkit-player-btn--warn'), true,
+        'a loop waiting for its second point must not look like a running one');
+    assert.equal(feature._btn.classList.contains('ytkit-player-btn--active'), false);
+});
+
+test('abLoop rewinds to A once playback passes B', () => {
+    const video = loopVideo(200);
+    const { feature } = abLoopFixture(video);
+
+    video.currentTime = 40;
+    feature._setPoint('A');
+    video.currentTime = 80;
+    feature._setPoint('B');
+
+    video.currentTime = 81;
+    video._handlers.get('timeupdate')();
+    assert.equal(video.currentTime, 40);
+
+    feature._stopLoop();
+    video.currentTime = 81;
+    assert.equal(video._handlers.has('timeupdate'), false,
+        'a stopped loop must not keep seeking the player');
 });
