@@ -6,7 +6,34 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.84.3] (2026-08-22)
+
 ### Changed
+
+- The normal watch page now uses one semantic dark and light theme across the
+  masthead, search, metadata, actions, description, and comments. Hover,
+  focus, active, disabled, and responsive states use the same tokens.
+
+- Theater Split now follows the watch-page theme in dark and light mode. Its
+  title bar, owner card, action strip, comments, divider, close control, and
+  collapsed state no longer expose native black or white blocks.
+
+- The toolbar popup and diagnostics dashboard now make the primary action and
+  overview unmistakable while secondary cards stay quiet. Disabled controls
+  remain readable, and dashboard labels use plain language.
+
+- Browser proof now captures normal and split watch layouts in both themes and
+  checks their resolved colors. Startup timing uses a Chrome 151 reference
+  after a paired detached-commit comparison showed that this pass improved
+  startup rather than regressing it.
+
+- Capability and Watch Later fixtures are deterministic under the parallel
+  test runner. Startup baseline refreshes now preserve history, machine notes,
+  and the steady-state budget.
+
+- Firefox browser proof now activates a visible search-result title instead of
+  pointer hit-testing through a player overlay. The regression fixture proves
+  that the selected link owns the watch route before the SPA assertion runs.
 
 - Peeled the Video Hider runtime out of the always-parsed `ytkit.js` fallback.
   The extension now keeps a 469-byte descriptor stub while the preloaded

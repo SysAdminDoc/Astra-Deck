@@ -20,7 +20,7 @@
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.84.2` |
+| Release | `v4.84.3` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `477` entries across `18` categories |
@@ -143,7 +143,7 @@ are not browser extension install steps.
 | Feature | Default |
 |---------|---------|
 | Zero-Ad Desktop Surface, static MV3 request blocking plus document-start ad-shell collapse; userscript provides shell collapse only | Built in |
-| Theater Split, fullscreen video, scroll to reveal comments side-by-side | On |
+| Theater Split, responsive video and comments panes with matching dark and light themes | On |
 | Video Hider, hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
 | Video Context Menu, right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
 | Settings Panel, searchable, categorized, instant-apply, export/import/reset | On |
@@ -185,7 +185,7 @@ refresh fails or the last verification becomes older than seven days.
 
 | Feature | Default |
 |---------|---------|
-| Watch Page Restyle, glassmorphism accents, refined metadata | On |
+| Watch Page Restyle, matched dark and light canvas, search, metadata, actions, and comments | On |
 | Native Comments Layout, keep YouTube comments clean without extension restyling | On |
 | Expand Video Width / Disable Ambient Mode | On |
 | Hide Merch, AI Summary, Hashtags, Pinned Comments, Info Panels | On |
@@ -357,6 +357,15 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 <p align="center">
   <img src="outputs/astra-deck-settings-command-deck-video-hider-v6.png" alt="Astra Deck Command Deck Video Hider settings workspace" width="900">
 </p>
+
+### YouTube Watch Themes
+
+<p align="center">
+  <img src="outputs/astra-deck-youtube-normal-dark.png" alt="Astra Deck normal YouTube watch page in dark mode" width="440">
+  <img src="outputs/astra-deck-youtube-theater-split-light.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
+</p>
+
+<p align="center"><sub>Normal watch page in dark mode and Theater Split in light mode. Both layouts are also verified in the opposite theme.</sub></p>
 
 - Command Deck workspace with a mission card and three live preference summaries on every category
 - Searchable sidebar spanning eleven destinations, including the dedicated Video Hider workflow
