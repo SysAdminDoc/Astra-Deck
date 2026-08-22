@@ -17,34 +17,6 @@ audited branch. This pass was scoped to the v4.59.1 filter-list subscription, th
 permission plumbing it depends on, and the popup surfaces it touches. Findings
 that were fixed are in CHANGELOG.md, not repeated here.
 
-### Remaining audit scope
-
-- [ ] P3 — Audit the still-unverified secondary surfaces and packaging internals
-  Why: the 2026-08-13 pass verified authenticated Chromium routes, the in-page settings system, extension ad blocking, and a manager-neutral userscript artifact; sidepanel/sidebar, companion handoff, Firefox live rendering, specialist scripts, and archive internals still lack equivalent runtime evidence.
-  Evidence: `RESEARCH.md` Open Questions; `scripts/smoke-zero-ads-live.js`; `scripts/smoke-userscript-settings.js`; no live Firefox or cookie-bearing companion result exists.
-  Touches: `extension/sidepanel.*`, `extension/sidebar.*`, `extension/features/download-ui/`, `theater-split.user.js`, `YT_Reaction_Spammer.user.js`, `build-extension.js`, `archive/`, `mhtml/`
-  Acceptance: each named surface has a bounded source/runtime audit; active artifacts get reproducible checks or targeted fixes; archival-only content is explicitly excluded from shipping gates; Firefox and companion limits are recorded without inferring from Chromium.
-  Complexity: L
-
-Progress 2026-08-22: the light-theme lane now rejects translucent self-grounding
-and detached player or panel class exemptions. The userscript like-rate body and
-generated core are checked for the same lane. Settings smoke covers desktop and
-mobile light states with on-screen runtime-created rate, player, and quick-link
-fixtures. Firefox live zero-ad coverage is recorded separately from the remaining
-secondary-surface audit. The live Firefox run now proves home, search, SPA
-player, blocked probe, and collapsed ad-shell states. Its profile cleanup closes
-the WebDriver session first; Chromium optional-host cleanup matches only the
-exact disposable profile path. Both pinned userscript managers now pass the
-specialist shell-only smoke. The live Chromium zero-ad route now passes through
-Edge after skipping a Chrome candidate without the MV3 DNR API. `build-fixes`
-also proves that repository-only `archive/` and `mhtml/` trees never enter the
-extension staging root, while selector and startup gates consume them only as
-fixture evidence. The companion protocol, permissions, port catalogue, and
-cookie handoff are covered by static and contract tests, but no healthy
-Astra Downloader `/health` service was available for a cookie-bearing live
-handoff on this machine. Keep that limitation explicit until a running
-companion is available.
-
 ## Research-Driven Additions
 
 Added 2026-08-11. All evidence is first-hand unless a source URL is given.

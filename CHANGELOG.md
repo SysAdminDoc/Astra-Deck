@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Completed the secondary-surface and packaging audit. Real browser evidence now
+  covers extension side surfaces, Firefox zero-ad routes, both pinned userscript
+  managers, live Chromium zero-ad fallback, optional-host discovery, live chat,
+  and settings rendering. Static and contract checks cover specialist scripts,
+  companion permissions and cookie handoff, while the staging test keeps
+  repository-only `archive/` and `mhtml/` trees out of shipped packages. The
+  companion limitation remains explicit because no healthy local `/health`
+  service was available for a cookie-bearing live handoff.
+
 - The live zero-ad Chromium smoke now skips a candidate that lacks the MV3
   declarativeNetRequest API and continues to the next installed browser. The
   default run therefore reaches Edge when local Chrome policy or API support
