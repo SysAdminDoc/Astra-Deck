@@ -2629,6 +2629,7 @@
             --ytkit-premium-success: #45d978;
             --ytkit-premium-warning: #f6b863;
             --ytkit-premium-danger: #ff7a86;
+            --ytkit-premium-scrollbar: rgba(151,178,208,0.34);
             --ytkit-premium-focus: 0 0 0 2px #07101b, 0 0 0 4px rgba(255,93,74,0.72);
             --ytkit-premium-shadow: 0 20px 56px rgba(0,0,0,0.42);
         }
@@ -2643,6 +2644,7 @@
             --ytkit-premium-text: #172335;
             --ytkit-premium-muted: #536278;
             --ytkit-premium-subtle: #6d7c91;
+            --ytkit-premium-scrollbar: rgba(30,53,78,0.30);
             --ytkit-premium-focus: 0 0 0 2px #ffffff, 0 0 0 4px rgba(207,53,47,0.55);
             --ytkit-premium-shadow: 0 18px 48px rgba(20,35,54,0.18);
         }
@@ -3168,12 +3170,108 @@
             border-radius: 6px !important;
         }
 
+        html.ytkit-watch-restyle {
+            --ytkit-watch-canvas: var(--ytkit-premium-canvas);
+            --ytkit-watch-panel: var(--ytkit-premium-panel);
+            --ytkit-watch-raised: var(--ytkit-premium-raised);
+            --ytkit-watch-hover: var(--ytkit-premium-hover);
+            --ytkit-watch-border: var(--ytkit-premium-border);
+            --ytkit-watch-border-strong: var(--ytkit-premium-border-strong);
+            --ytkit-watch-text: var(--ytkit-premium-text);
+            --ytkit-watch-muted: var(--ytkit-premium-muted);
+            --yt-spec-base-background: var(--ytkit-watch-canvas) !important;
+            --yt-spec-general-background-a: var(--ytkit-watch-panel) !important;
+            --yt-spec-general-background-b: var(--ytkit-watch-raised) !important;
+            --yt-spec-general-background-c: var(--ytkit-watch-hover) !important;
+            --yt-spec-brand-background-solid: var(--ytkit-watch-panel) !important;
+            --yt-spec-text-primary: var(--ytkit-watch-text) !important;
+            --yt-spec-text-secondary: var(--ytkit-watch-muted) !important;
+            background: var(--ytkit-watch-canvas) !important;
+            color: var(--ytkit-watch-text) !important;
+            color-scheme: dark !important;
+            scrollbar-color: var(--ytkit-premium-scrollbar) transparent !important;
+        }
+
+        html.ytkit-watch-restyle:not([dark]) {
+            color-scheme: light !important;
+        }
+
+        html.ytkit-watch-restyle body,
+        html.ytkit-watch-restyle ytd-app,
+        html.ytkit-watch-restyle #content,
+        html.ytkit-watch-restyle #page-manager,
+        html.ytkit-watch-restyle ytd-watch-flexy {
+            background: var(--ytkit-watch-canvas) !important;
+            color: var(--ytkit-watch-text) !important;
+        }
+
+        html.ytkit-watch-restyle ytd-masthead,
+        html.ytkit-watch-restyle ytd-masthead #container.ytd-masthead {
+            border-bottom: 1px solid var(--ytkit-watch-border) !important;
+            background: var(--ytkit-watch-panel) !important;
+            box-shadow: none !important;
+        }
+
+        html.ytkit-watch-restyle ytd-searchbox #container.ytd-searchbox,
+        html.ytkit-watch-restyle ytd-searchbox #search-input,
+        html.ytkit-watch-restyle #search-form {
+            border-color: var(--ytkit-watch-border-strong) !important;
+            border-radius: 8px !important;
+            background: var(--ytkit-watch-raised) !important;
+            color: var(--ytkit-watch-text) !important;
+            box-shadow: none !important;
+        }
+
+        html.ytkit-watch-restyle.ytkit-watch-restyle ytd-masthead :is(
+            ytd-searchbox#search#search,
+            ytd-searchbox #container#container,
+            ytd-searchbox #search-input#search-input,
+            ytd-searchbox input#search#search,
+            #search-form#search-form,
+            .ytSearchboxComponentInputBox,
+            .ytSearchboxComponentInput
+        ) {
+            --ytd-searchbox-background: var(--ytkit-watch-raised) !important;
+            --ytd-searchbox-border-color: var(--ytkit-watch-border-strong) !important;
+            --ytd-searchbox-legacy-border-color: var(--ytkit-watch-border-strong) !important;
+            --ytd-searchbox-text-color: var(--ytkit-watch-text) !important;
+            border-color: var(--ytkit-watch-border-strong) !important;
+            border-radius: 8px !important;
+            background: var(--ytkit-watch-raised) !important;
+            background-image: none !important;
+            color: var(--ytkit-watch-text) !important;
+            -webkit-text-fill-color: var(--ytkit-watch-text) !important;
+            box-shadow: none !important;
+        }
+
+        html.ytkit-watch-restyle.ytkit-watch-restyle ytd-masthead :is(
+            #search-icon-legacy#search-icon-legacy,
+            .ytSearchboxComponentSearchButton,
+            .ytSearchboxComponentSearchButtonDark
+        ) {
+            border-color: var(--ytkit-watch-border-strong) !important;
+            border-radius: 6px !important;
+            background: var(--ytkit-watch-panel) !important;
+            color: var(--ytkit-watch-text) !important;
+            box-shadow: none !important;
+        }
+
+        html.ytkit-watch-restyle.ytkit-watch-restyle ytd-masthead :is(
+            #search-icon-legacy#search-icon-legacy,
+            .ytSearchboxComponentSearchButton,
+            .ytSearchboxComponentSearchButtonDark
+        ) :is(yt-icon, svg, path) {
+            color: var(--ytkit-watch-text) !important;
+            fill: currentColor !important;
+            stroke: currentColor !important;
+        }
+
         html.ytkit-watch-restyle ytd-watch-metadata {
-            margin-top: 10px !important;
-            padding: 10px 0 0 !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            background: transparent !important;
+            margin-top: 12px !important;
+            padding: 16px !important;
+            border: 1px solid var(--ytkit-watch-border) !important;
+            border-radius: 10px !important;
+            background: var(--ytkit-watch-panel) !important;
             box-shadow: none !important;
         }
 
@@ -3209,9 +3307,29 @@
         }
 
         html.ytkit-watch-restyle ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover,
-        html.ytkit-watch-restyle .ytkit-local-dl-btn:hover {
+        html.ytkit-watch-restyle .ytkit-local-dl-btn:hover,
+        html.ytkit-watch-restyle ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next:hover,
+        html.ytkit-watch-restyle #notification-preference-button .yt-spec-button-shape-next:hover {
             border-color: var(--ytkit-premium-border-strong) !important;
             background: var(--ytkit-premium-hover) !important;
+        }
+
+        html.ytkit-watch-restyle ytd-watch-metadata :is(button, .yt-spec-button-shape-next):active,
+        html.ytkit-watch-restyle .ytkit-local-dl-btn:active {
+            transform: translateY(1px) !important;
+        }
+
+        html.ytkit-watch-restyle ytd-watch-metadata :is(button, .yt-spec-button-shape-next)[disabled],
+        html.ytkit-watch-restyle .ytkit-local-dl-btn[disabled] {
+            opacity: 0.46 !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+        }
+
+        html.ytkit-watch-restyle :is(button, input, textarea, select, a):focus-visible {
+            outline: 2px solid var(--ytkit-premium-accent) !important;
+            outline-offset: 2px !important;
+            box-shadow: none !important;
         }
 
         html.ytkit-watch-restyle ytd-watch-metadata #description.ytd-watch-metadata,
@@ -3225,11 +3343,10 @@
 
         html.ytkit-watch-restyle ytd-comments#comments {
             margin-top: 18px !important;
-            padding: 14px 0 20px !important;
-            border: 0 !important;
-            border-top: 1px solid var(--ytkit-premium-border) !important;
-            border-radius: 0 !important;
-            background: transparent !important;
+            padding: 18px !important;
+            border: 1px solid var(--ytkit-watch-border) !important;
+            border-radius: 10px !important;
+            background: var(--ytkit-watch-panel) !important;
         }
 
         html.ytkit-watch-restyle :is(ytd-comment-view-model, ytd-comment-renderer) {
@@ -3244,6 +3361,20 @@
             border: 1px solid var(--ytkit-premium-border) !important;
             border-radius: 8px !important;
             background: var(--ytkit-premium-raised) !important;
+        }
+
+        @media (max-width: 900px) {
+            html.ytkit-watch-restyle ytd-watch-metadata,
+            html.ytkit-watch-restyle ytd-comments#comments {
+                padding: 12px !important;
+                border-radius: 8px !important;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html.ytkit-watch-restyle :is(button, input, textarea, select, a) {
+                transition-duration: 0.01ms !important;
+            }
         }
 
         html.ytkit-split-active,

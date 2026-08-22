@@ -211,18 +211,72 @@ async function disableTheaterSplit(client, backgroundClient, timeoutMs) {
 }
 
 async function captureNormalWatchDetails(client, name) {
+    await evaluate(client, `(() => {
+        const target = document.querySelector('#below, ytd-watch-metadata');
+        if (!target) return false;
+        target.scrollIntoView({ block: 'start', behavior: 'instant' });
+        return true;
+    })()`);
+    await sleep(500);
     const details = await evaluate(client, `(() => {
         const target = document.querySelector('#below, ytd-watch-metadata');
-        if (!target) return { available: false, visible: false, background: '' };
-        target.scrollIntoView({ block: 'start', behavior: 'instant' });
+        if (!target) return { available: false, visible: false, background: '', color: '', colorScheme: '' };
+        const inspect = (selector) => {
+            const node = document.querySelector(selector);
+            if (!node) return null;
+            const style = getComputedStyle(node);
+            const whiteDescendants = [...node.querySelectorAll('*')].filter((child) => getComputedStyle(child).backgroundColor === 'rgb(255, 255, 255)').length;
+            return {
+                selector,
+                text: String(node.textContent || '').trim().slice(0, 90),
+                color: style.color,
+                textFill: style.webkitTextFillColor,
+                background: style.backgroundColor,
+                backgroundImage: style.backgroundImage,
+                beforeBackground: getComputedStyle(node, '::before').backgroundColor,
+                afterBackground: getComputedStyle(node, '::after').backgroundColor,
+                whiteDescendants,
+                opacity: style.opacity,
+                display: style.display,
+                visibility: style.visibility
+            };
+        };
         const rect = target.getBoundingClientRect();
+        const bodyStyle = getComputedStyle(document.body);
+        const rootStyle = getComputedStyle(document.documentElement);
+        const authorProbeSelector = 'html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #author-text#author-text#author-text';
+        const featureStyles = [...document.querySelectorAll('style[id^="yt-suite-style-chatStyleComments"], style[id^="yt-suite-style-watchPageRestyle"]')].map((style) => ({
+            id: style.id,
+            bytes: style.textContent?.length || 0,
+            hasThemeGuard: style.textContent?.includes('YouTube ships late ID-heavy comment rules') || false,
+            parsedRules: style.sheet?.cssRules?.length || 0,
+            authorGuardRules: style.sheet
+                ? [...style.sheet.cssRules].filter((rule) => String(rule.selectorText || '').includes('#author-text#author-text#author-text')).map((rule) => rule.selectorText)
+                : []
+        }));
         return {
             available: true,
             visible: rect.bottom > 56 && rect.top < window.innerHeight,
-            background: getComputedStyle(document.body).backgroundColor
+            background: bodyStyle.backgroundColor,
+            color: bodyStyle.color,
+            colorScheme: rootStyle.colorScheme,
+            rootClasses: document.documentElement.className,
+            premiumText: rootStyle.getPropertyValue('--ytkit-premium-text').trim(),
+            authorProbeMatches: document.querySelectorAll(authorProbeSelector).length,
+            featureStyles,
+            surfaces: [
+                'ytd-watch-metadata',
+                'ytd-watch-metadata #owner',
+                'ytd-comments#comments',
+                'ytd-comments-header-renderer #count',
+                'ytd-comments-header-renderer #sort-menu',
+                'ytd-comment-view-model #author-text, ytd-comment-renderer #author-text',
+                'ytd-comment-view-model #content-text, ytd-comment-renderer #content-text',
+                'ytd-comment-view-model ytd-comment-engagement-bar button, ytd-comment-renderer ytd-comment-engagement-bar button',
+                'ytd-watch-metadata #actions button, ytd-watch-metadata #owner button'
+            ].map(inspect)
         };
     })()`);
-    await sleep(500);
     await capture(client, name);
     return details;
 }
@@ -270,6 +324,10 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         const leftRect = left?.getBoundingClientRect();
         const rightRect = right?.getBoundingClientRect();
         const dividerRect = divider?.getBoundingClientRect();
+        const firstContent = document.querySelector('#below ytd-comment-view-model #content-text, #below ytd-comment-renderer #content-text');
+        const firstAuthor = document.querySelector('#below ytd-comment-view-model #author-text, #below ytd-comment-renderer #author-text');
+        const firstAction = document.querySelector('#below ytd-comment-view-model ytd-comment-engagement-bar button, #below ytd-comment-renderer ytd-comment-engagement-bar button');
+        const ownerControl = document.querySelector('#below ytd-watch-metadata #owner button, #below ytd-watch-metadata #actions button');
         return {
             leftWidth: leftRect?.width || 0,
             rightWidth: rightRect?.width || 0,
@@ -279,6 +337,18 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
             dividerValue: Number(divider?.getAttribute('aria-valuenow') || 0),
             dividerTabIndex: divider?.tabIndex ?? -1,
             panelBackground: right ? getComputedStyle(right).backgroundColor : '',
+            panelColor: right ? getComputedStyle(right).color : '',
+            colorScheme: getComputedStyle(document.documentElement).colorScheme,
+            contentColor: firstContent ? getComputedStyle(firstContent).color : '',
+            contentBackground: firstContent ? getComputedStyle(firstContent).backgroundColor : '',
+            authorColor: firstAuthor ? getComputedStyle(firstAuthor).color : '',
+            actionBackground: firstAction ? getComputedStyle(firstAction).backgroundColor : '',
+            actionColor: firstAction ? getComputedStyle(firstAction).color : '',
+            actionWhiteDescendants: firstAction ? [...firstAction.querySelectorAll('*')].filter((child) => getComputedStyle(child).backgroundColor === 'rgb(255, 255, 255)').length : 0,
+            actionBeforeBackground: firstAction ? getComputedStyle(firstAction, '::before').backgroundColor : '',
+            actionAfterBackground: firstAction ? getComputedStyle(firstAction, '::after').backgroundColor : '',
+            ownerControlBackground: ownerControl ? getComputedStyle(ownerControl).backgroundColor : '',
+            ownerControlColor: ownerControl ? getComputedStyle(ownerControl).color : '',
             commentsVisible: Boolean(document.querySelector('#below.ytkit-split-scroll-surface'))
         };
     })()`);
@@ -297,13 +367,74 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     const splitLight = await evaluate(client, `(() => {
         const right = document.querySelector('#ytkit-split-right');
         const comments = document.querySelector('#below.ytkit-split-scroll-surface');
+        const firstContent = document.querySelector('#below ytd-comment-view-model #content-text, #below ytd-comment-renderer #content-text');
+        const firstAuthor = document.querySelector('#below ytd-comment-view-model #author-text, #below ytd-comment-renderer #author-text');
+        const title = document.querySelector('#below ytd-watch-metadata #title');
+        const owner = document.querySelector('#below ytd-watch-metadata #owner');
+        const firstAction = document.querySelector('#below ytd-comment-view-model ytd-comment-engagement-bar button, #below ytd-comment-renderer ytd-comment-engagement-bar button');
+        const ownerControl = document.querySelector('#below ytd-watch-metadata #owner button, #below ytd-watch-metadata #actions button');
+        const contentStyle = firstContent ? getComputedStyle(firstContent) : null;
+        const authorStyle = firstAuthor ? getComputedStyle(firstAuthor) : null;
+        const ownerStyle = owner ? getComputedStyle(owner) : null;
         return {
             darkAttribute: document.documentElement.hasAttribute('dark'),
+            rootClasses: document.documentElement.className,
             panelBackground: right ? getComputedStyle(right).backgroundColor : '',
-            commentsBackground: comments ? getComputedStyle(comments).backgroundColor : ''
+            panelColor: right ? getComputedStyle(right).color : '',
+            commentsBackground: comments ? getComputedStyle(comments).backgroundColor : '',
+            colorScheme: getComputedStyle(document.documentElement).colorScheme,
+            contentColor: contentStyle?.color || '',
+            contentFill: contentStyle?.webkitTextFillColor || '',
+            contentBackground: contentStyle?.backgroundColor || '',
+            authorColor: authorStyle?.color || '',
+            authorFill: authorStyle?.webkitTextFillColor || '',
+            titleColor: title ? getComputedStyle(title).color : '',
+            ownerBackground: ownerStyle?.backgroundColor || '',
+            ownerBackgroundImage: ownerStyle?.backgroundImage || '',
+            actionBackground: firstAction ? getComputedStyle(firstAction).backgroundColor : '',
+            actionColor: firstAction ? getComputedStyle(firstAction).color : '',
+            actionWhiteDescendants: firstAction ? [...firstAction.querySelectorAll('*')].filter((child) => getComputedStyle(child).backgroundColor === 'rgb(255, 255, 255)').length : 0,
+            actionBeforeBackground: firstAction ? getComputedStyle(firstAction, '::before').backgroundColor : '',
+            actionAfterBackground: firstAction ? getComputedStyle(firstAction, '::after').backgroundColor : '',
+            ownerControlBackground: ownerControl ? getComputedStyle(ownerControl).backgroundColor : '',
+            ownerControlColor: ownerControl ? getComputedStyle(ownerControl).color : '',
+            premiumText: getComputedStyle(document.documentElement).getPropertyValue('--ytkit-premium-text').trim()
         };
     })()`);
     if (splitLight.darkAttribute) failures.push('watch themes: light Theater Split retained YouTube dark mode');
+    if (split.colorScheme !== 'dark' || splitLight.colorScheme !== 'light') {
+        failures.push('watch themes: Theater Split color-scheme does not follow YouTube');
+    }
+    if (!split.panelBackground || split.panelBackground === splitLight.panelBackground) {
+        failures.push('watch themes: Theater Split panel does not visibly change between dark and light');
+    }
+    const lightTextChannel = '23, 35, 53';
+    if (!splitLight.authorColor.includes(lightTextChannel) || !splitLight.authorFill.includes(lightTextChannel)) {
+        failures.push('watch themes: light Theater Split author text is not using the light ink token');
+    }
+    if (!splitLight.contentColor.includes(lightTextChannel) || !splitLight.contentFill.includes(lightTextChannel)) {
+        failures.push('watch themes: light Theater Split comment text is not using the light ink token');
+    }
+    if (!splitLight.ownerBackground.includes('243, 246, 249') || splitLight.ownerBackgroundImage !== 'none') {
+        failures.push('watch themes: light Theater Split owner card retained the dark decorative surface');
+    }
+    for (const [label, value] of [
+        ['dark Theater Split comment', split.contentBackground],
+        ['light Theater Split comment', splitLight.contentBackground]
+    ]) {
+        if (value !== 'rgba(0, 0, 0, 0)') failures.push(`watch themes: ${label} text retained a decorative background`);
+    }
+    for (const [label, snapshot] of [
+        ['dark Theater Split action', split],
+        ['light Theater Split action', splitLight]
+    ]) {
+        if (snapshot.actionBackground === 'rgb(255, 255, 255)'
+            || snapshot.actionBeforeBackground === 'rgb(255, 255, 255)'
+            || snapshot.actionAfterBackground === 'rgb(255, 255, 255)'
+            || snapshot.actionWhiteDescendants > 0) {
+            failures.push(`watch themes: ${label} resolved to a white block`);
+        }
+    }
     await capture(client, 'watch-theater-split-light-1440x900');
 
     await disableTheaterSplit(client, backgroundClient, timeoutMs);
@@ -340,8 +471,29 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     if (!normalLightDetails.available || !normalLightDetails.visible) {
         failures.push('watch themes: normal light metadata surface is unavailable');
     }
-    if (failures.length) throw new Error(failures.join('\n'));
-    return {
+    if (normalDarkDetails.colorScheme !== 'dark' || normalLightDetails.colorScheme !== 'light') {
+        failures.push('watch themes: normal watch color-scheme does not follow YouTube');
+    }
+    if (!normalDarkDetails.background || normalDarkDetails.background === normalLightDetails.background) {
+        failures.push('watch themes: normal watch canvas does not visibly change between dark and light');
+    }
+    for (const surface of normalLightDetails.surfaces.filter((entry) => entry && /#(?:count|sort-menu|author-text|content-text)/.test(entry.selector))) {
+        if (!surface.color.includes(lightTextChannel) || !surface.textFill.includes(lightTextChannel)) {
+            failures.push(`watch themes: ${surface.selector} is not using readable light-theme ink`);
+        }
+    }
+    for (const details of [normalDarkDetails, normalLightDetails]) {
+        const content = details.surfaces.find((surface) => surface?.selector.includes('#content-text'));
+        const action = details.surfaces.find((surface) => surface?.selector.includes('ytd-comment-engagement-bar button'));
+        if (content?.background !== 'rgba(0, 0, 0, 0)') failures.push('watch themes: normal comment text retained a decorative background');
+        if (action?.background === 'rgb(255, 255, 255)'
+            || action?.beforeBackground === 'rgb(255, 255, 255)'
+            || action?.afterBackground === 'rgb(255, 255, 255)'
+            || action?.whiteDescendants > 0) {
+            failures.push('watch themes: normal comment action resolved to a white block');
+        }
+    }
+    const report = {
         split,
         splitLight,
         normalDark: normalDark.snapshot,
@@ -349,6 +501,13 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         normalDarkDetails,
         normalLightDetails
     };
+    fs.writeFileSync(
+        path.join(OUT_DIR, 'watch-theme-snapshot.json'),
+        `${JSON.stringify(report, null, 2)}\n`,
+        'utf8'
+    );
+    if (failures.length) throw new Error(failures.join('\n'));
+    return report;
 }
 
 async function verifyLiveSettings(client, timeoutMs) {

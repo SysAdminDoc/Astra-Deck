@@ -1437,8 +1437,7 @@
     function buildSplitCommentsCss() {
         return `
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface {
-                        --ytkit-split-accent-rgb: var(--ytkit-accent-rgb, 167, 139, 250);
-                        color-scheme: dark !important;
+                        color-scheme: inherit !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) ytd-popup-container,
@@ -2718,17 +2717,26 @@
 
                     /* Final premium surface layer. Preserve native YouTube layout. */
                     html:is(.ytkit-split-active, .ytkit-split-open) {
-                        --ytkit-split-canvas: #07101b;
-                        --ytkit-split-panel: #0d1928;
-                        --ytkit-split-raised: #122238;
-                        --ytkit-split-hover: #172a42;
-                        --ytkit-split-border: rgba(151, 178, 208, 0.22);
-                        --ytkit-split-border-strong: rgba(151, 178, 208, 0.36);
-                        --ytkit-split-text: #f5f7fb;
-                        --ytkit-split-muted: #aab7c8;
-                        --ytkit-split-accent: #ff5d4a;
+                        --ytkit-split-canvas: var(--ytkit-premium-canvas);
+                        --ytkit-split-panel: var(--ytkit-premium-panel);
+                        --ytkit-split-raised: var(--ytkit-premium-raised);
+                        --ytkit-split-hover: var(--ytkit-premium-hover);
+                        --ytkit-split-border: var(--ytkit-premium-border);
+                        --ytkit-split-border-strong: var(--ytkit-premium-border-strong);
+                        --ytkit-split-text: var(--ytkit-premium-text);
+                        --ytkit-split-muted: var(--ytkit-premium-muted);
+                        --ytkit-split-accent: var(--ytkit-premium-accent);
+                        --ytkit-split-accent-rgb: var(--ytkit-premium-accent-rgb);
+                        --ytkit-split-scrollbar: var(--ytkit-premium-scrollbar);
                         background: var(--ytkit-split-canvas) !important;
                         color-scheme: dark !important;
+                    }
+                    html:not([dark]):is(.ytkit-split-active, .ytkit-split-open) {
+                        color-scheme: light !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) body {
+                        background: var(--ytkit-split-canvas) !important;
+                        color: var(--ytkit-split-text) !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-wrapper,
                     html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-left {
@@ -2739,7 +2747,7 @@
                         border-inline-start: 1px solid var(--ytkit-split-border) !important;
                         background: var(--ytkit-split-panel) !important;
                         color: var(--ytkit-split-text) !important;
-                        scrollbar-color: rgba(151, 178, 208, 0.34) transparent !important;
+                        scrollbar-color: var(--ytkit-split-scrollbar) transparent !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider {
                         width: 8px !important;
@@ -2749,8 +2757,8 @@
                         overflow: visible !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider:hover {
-                        border-color: rgba(255, 93, 74, 0.62) !important;
-                        background: rgba(255, 93, 74, 0.08) !important;
+                        border-color: rgba(var(--ytkit-split-accent-rgb), 0.62) !important;
+                        background: rgba(var(--ytkit-split-accent-rgb), 0.08) !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider:focus-visible {
                         outline: 2px solid var(--ytkit-split-accent) !important;
@@ -2772,7 +2780,7 @@
                         box-shadow: none !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-close:hover {
-                        border-color: rgba(255, 93, 74, 0.62) !important;
+                        border-color: rgba(var(--ytkit-split-accent-rgb), 0.62) !important;
                         background: var(--ytkit-split-hover) !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-collapse-strip {
@@ -2782,10 +2790,93 @@
                     html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-card,
                     html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-actions-docked {
                         border: 1px solid var(--ytkit-split-border) !important;
-                        border-left: 2px solid rgba(255, 93, 74, 0.64) !important;
+                        border-left: 2px solid rgba(var(--ytkit-split-accent-rgb), 0.64) !important;
                         border-radius: 8px !important;
                         background: var(--ytkit-split-panel) !important;
                         box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #title :is(
+                        h1,
+                        yt-formatted-string,
+                        yt-attributed-string,
+                        .yt-core-attributed-string,
+                        .yt-core-attributed-string--white-space-pre-wrap
+                    ) {
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                        opacity: 1 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-meta {
+                        border: 1px solid rgba(var(--ytkit-split-accent-rgb), 0.24) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-split-raised) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-upload-date {
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-view-count {
+                        color: var(--ytkit-split-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-muted) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata :is(
+                        #info,
+                        #info-container,
+                        #info-text
+                    ) {
+                        display: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #owner {
+                        padding: 12px !important;
+                        border: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-split-raised) !important;
+                        color: var(--ytkit-split-text) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(
+                        #channel-name,
+                        #channel-name *,
+                        yt-formatted-string,
+                        yt-attributed-string
+                    ) {
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                        opacity: 1 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #owner :is(
+                        #owner-sub-count,
+                        #owner-sub-count *
+                    ) {
+                        color: var(--ytkit-split-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-muted) !important;
+                        opacity: 1 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface ytd-watch-metadata #owner#owner {
+                        border-color: var(--ytkit-split-border) !important;
+                        background: var(--ytkit-split-raised) !important;
+                        background-image: none !important;
+                        color: var(--ytkit-split-text) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface ytd-watch-metadata #owner#owner :is(
+                        #channel-name#channel-name,
+                        #channel-name#channel-name *,
+                        yt-formatted-string,
+                        yt-attributed-string
+                    ) {
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                        opacity: 1 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface ytd-watch-metadata #owner#owner :is(
+                        #owner-sub-count#owner-sub-count,
+                        #owner-sub-count#owner-sub-count *
+                    ) {
+                        color: var(--ytkit-split-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-muted) !important;
+                        opacity: 1 !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #description-inline-expander,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata ytd-text-inline-expander {
@@ -2838,6 +2929,180 @@
                         background: var(--ytkit-split-raised) !important;
                         box-shadow: none !important;
                     }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface :is(
+                        ytd-watch-metadata,
+                        ytd-comments#comments,
+                        ytd-comments-header-renderer,
+                        ytd-comment-view-model,
+                        ytd-comment-renderer,
+                        ytd-commentbox,
+                        ytd-comment-simplebox-renderer
+                    ) {
+                        color: var(--ytkit-split-text) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface :is(
+                        #content-text,
+                        #content-text *,
+                        #author-text,
+                        #author-text *,
+                        #count,
+                        #count *
+                    ) {
+                        color: var(--ytkit-split-text) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments :is(
+                        #content-text#content-text,
+                        #content-text#content-text *,
+                        #author-text#author-text,
+                        #author-text#author-text *,
+                        #count#count,
+                        #count#count *
+                    ) {
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                        opacity: 1 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments :is(
+                        #content#content,
+                        #content-text#content-text,
+                        #content-text#content-text *
+                    ) {
+                        background: transparent !important;
+                        background-image: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface :is(
+                        #published-time-text,
+                        #published-time-text *,
+                        .published-time-text,
+                        .published-time-text *,
+                        #placeholder-area,
+                        #vote-count-middle
+                    ) {
+                        color: var(--ytkit-split-muted) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments :is(
+                        ytd-comments-header-renderer #sort-menu,
+                        ytd-comments-header-renderer #sort-menu *,
+                        ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer,
+                        ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer *,
+                        ytd-comment-engagement-bar,
+                        ytd-comment-engagement-bar *
+                    ) {
+                        color: var(--ytkit-split-text) !important;
+                        opacity: 1 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) {
+                        min-height: 30px !important;
+                        border: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 4px !important;
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: var(--ytkit-split-text) !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) *,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    )::before,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    )::after {
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: inherit !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(svg, path) {
+                        fill: currentColor !important;
+                        stroke: currentColor !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ):hover {
+                        border-color: var(--ytkit-split-border-strong) !important;
+                        background: var(--ytkit-split-hover) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments :is(
+                        #content-text,
+                        #content-text *
+                    ) {
+                        background: transparent !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #owner#owner :is(
+                        #actions,
+                        #top-level-buttons-computed,
+                        ytd-menu-renderer
+                    ) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button),
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface .ytkit-split-actions-docked :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) {
+                        border: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 6px !important;
+                        background: var(--ytkit-split-raised) !important;
+                        background-image: none !important;
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                        opacity: 1 !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #owner#owner #subscribe-button :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button
+                    ) {
+                        border-color: var(--ytkit-split-accent) !important;
+                        background: var(--ytkit-split-accent) !important;
+                        color: #ffffff !important;
+                        -webkit-text-fill-color: #ffffff !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #owner#owner :is(
+                        #actions,
+                        #top-level-buttons-computed,
+                        ytd-menu-renderer
+                    ) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) *,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface .ytkit-split-actions-docked :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) * {
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: inherit !important;
+                        -webkit-text-fill-color: inherit !important;
+                        opacity: 1 !important;
+                        box-shadow: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface :is(
+                        #owner#owner,
+                        .ytkit-split-actions-docked
+                    ) :is(svg, path) {
+                        fill: currentColor !important;
+                        stroke: currentColor !important;
+                    }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments :is(
                         button,
                         .yt-spec-button-shape-next,
@@ -2848,6 +3113,23 @@
                         background-image: none !important;
                         box-shadow: none !important;
                         transform: none !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    )[disabled] {
+                        opacity: 0.46 !important;
+                        cursor: not-allowed !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #comments :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ):active {
+                        transform: translateY(1px) !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-header {
                         border-bottom: 1px solid var(--ytkit-split-border) !important;
@@ -3036,10 +3318,10 @@
                     height:heightStr||'100vh', margin:'0',
                     'overflow-y':'auto', 'overflow-x':'hidden',
                     'overscroll-behavior-y':'contain',
-                    'z-index':'10001', background:'#0b1624', padding:'0',
+                    'z-index':'10001', background:'var(--ytkit-split-panel)', padding:'0',
                     'box-sizing':'border-box', visibility:'visible',
                     'pointer-events':'auto', display:'block',
-                    'scrollbar-width':'thin', 'scrollbar-color':'rgba(255,255,255,0.15) transparent'
+                    'scrollbar-width':'thin', 'scrollbar-color':'var(--ytkit-split-scrollbar) transparent'
                 });
                 this._positionedEls.push(el);
             },
@@ -4171,7 +4453,7 @@
                 this._positionChat(chatEl, options.rightPct, chatTop, chatHeight);
                 if (!this._scrollTarget) this._scrollTarget = chatEl;
                 if (this._videoType === 'vod') {
-                    chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                    chatEl.style.setProperty('border-bottom', '2px solid var(--ytkit-split-border)', 'important');
                     const below = this._getBelow();
                     if (below && parseFloat(below.style.getPropertyValue('top')) === 0) {
                         below.style.setProperty('top', '45vh', 'important');
@@ -4229,26 +4511,26 @@
                 divider.setAttribute('aria-valuemin', '25');
                 divider.setAttribute('aria-valuemax', '85');
                 divider.setAttribute('aria-valuenow', '68');
-                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:#07101b;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;pointer-events:auto;scrollbar-width:none;color:rgba(148,163,184,0.64);`;
+                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:var(--ytkit-split-canvas);transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;pointer-events:auto;scrollbar-width:none;color:var(--ytkit-split-muted);`;
                 const pip = document.createElement('div');
                 pip.className = 'ytkit-divider-pip';
-                pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:46px;border-radius:0;background:rgba(148,163,184,0.44);pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:rgba(148,163,184,0.64);`;
+                pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:46px;border-radius:0;background:var(--ytkit-split-muted);pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ytkit-split-muted);`;
                 // Three-dot grip pattern — universal drag indicator
                 for (let i = 0; i < 3; i++) {
                     const dot = document.createElement('div');
-                    dot.style.cssText = 'width:3px;height:3px;border-radius:50%;background:currentColor;flex-shrink:0;';
+                    dot.style.cssText = 'width:3px;height:3px;border-radius:0;background:currentColor;flex-shrink:0;';
                     pip.appendChild(dot);
                 }
                 divider.appendChild(pip);
-                divider.addEventListener('mouseenter', () => { divider.style.background='rgba(255,93,74,0.08)'; pip.style.background='rgba(255,93,74,0.82)'; pip.style.color='rgba(255,255,255,0.92)'; });
-                divider.addEventListener('mouseleave', () => { divider.style.background='#07101b'; pip.style.background='rgba(148,163,184,0.44)'; pip.style.color='rgba(148,163,184,0.64)'; });
+                divider.addEventListener('mouseenter', () => { divider.style.background='rgba(var(--ytkit-split-accent-rgb),0.08)'; pip.style.background='rgba(var(--ytkit-split-accent-rgb),0.82)'; pip.style.color='var(--ytkit-split-text)'; });
+                divider.addEventListener('mouseleave', () => { divider.style.background='var(--ytkit-split-canvas)'; pip.style.background='var(--ytkit-split-muted)'; pip.style.color='var(--ytkit-split-muted)'; });
 
                 // RIGHT — collapsed initially
                 const right = document.createElement('div');
                 right.id = 'ytkit-split-right';
                 // flex:0 0 0 — right starts at zero width, grows to a fixed size.
                 // Left (flex:1) automatically shrinks as right expands.
-                right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:#0b1624;border-left:1px solid rgba(151,178,208,0.22);scrollbar-width:thin;scrollbar-color:rgba(151,178,208,0.34) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;pointer-events:auto;`;
+                right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--ytkit-split-panel);border-left:1px solid var(--ytkit-split-border);scrollbar-width:thin;scrollbar-color:var(--ytkit-split-scrollbar) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;pointer-events:auto;`;
                 // wire divider to right panel now that it exists
                 this._initDividerDrag(divider, left, right);
 
@@ -4256,6 +4538,7 @@
                 const closeBtn = document.createElement('button');
                 closeBtn.id = 'ytkit-split-close';
                 closeBtn.title = t('stickyVideoCloseSidePanelTitle', 'Close side panel');
+                closeBtn.setAttribute('aria-label', closeBtn.title);
                 const svgNS = 'http://www.w3.org/2000/svg';
                 const cs = document.createElementNS(svgNS,'svg');
                 cs.setAttribute('viewBox','0 0 24 24'); cs.setAttribute('width','13'); cs.setAttribute('height','13');

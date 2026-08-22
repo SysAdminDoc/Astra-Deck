@@ -809,12 +809,12 @@ test('split live chat gets a video info header and premium divider treatment', (
         'extension live header should place native controls with fixed positioning so native menus keep working');
     assert.ok(source.includes('calc(100vh - ${liveHeaderTop}px)'),
         'extension live chat should be offset below the live header');
-    assert.ok(source.includes('background:#07101b'),
-        'extension divider base should be opaque enough to prevent accent bleed-through');
-    assert.ok(source.includes("divider.style.background='rgba(255,93,74,0.08)'"),
-        'extension divider hover should use the restrained Astra accent');
-    assert.ok(source.includes("pip.style.color='rgba(148,163,184,0.64)'"),
-        'extension divider grip should pin currentColor to neutral gray');
+    assert.ok(source.includes('background: var(--ytkit-split-canvas) !important;'),
+        'extension divider base should use the opaque active-theme canvas');
+    assert.ok(source.includes("divider.style.background='rgba(var(--ytkit-split-accent-rgb),0.08)'"),
+        'extension divider hover should use the restrained active-theme accent');
+    assert.ok(source.includes("pip.style.color='var(--ytkit-split-muted)'"),
+        'extension divider grip should use the active-theme neutral');
     assert.ok(!source.includes("divider.style.background='rgba(59,130,246,0.22)'"),
         'extension divider hover should not use the old blue-purple color');
 
@@ -870,12 +870,12 @@ test('split live chat gets a video info header and premium divider treatment', (
         'standalone live header should place native controls with fixed positioning so native menus keep working');
     assert.ok(theaterSplit.includes('calc(100vh - ${liveHeaderTop}px)'),
         'standalone live chat should be offset below the live header');
-    assert.ok(theaterSplit.includes('background:#07101b'),
-        'standalone divider base should be opaque enough to prevent accent bleed-through');
-    assert.ok(theaterSplit.includes("divider.style.background = 'rgba(255,93,74,0.08)'"),
-        'standalone divider hover should use the restrained Astra accent');
-    assert.ok(theaterSplit.includes("pip.style.color = 'rgba(148,163,184,0.64)'"),
-        'standalone divider grip should pin currentColor to neutral gray');
+    assert.ok(theaterSplit.includes('background: var(--ts-canvas) !important;'),
+        'standalone divider base should use the opaque active-theme canvas');
+    assert.ok(theaterSplit.includes("divider.style.background = 'rgba(var(--ts-accent-rgb),0.08)'"),
+        'standalone divider hover should use the restrained active-theme accent');
+    assert.ok(theaterSplit.includes("pip.style.color = 'var(--ts-muted)'"),
+        'standalone divider grip should use the active-theme neutral');
     assert.ok(!theaterSplit.includes("divider.style.background = 'rgba(59,130,246,0.22)'"),
         'standalone divider hover should not use the old blue-purple color');
 
@@ -1255,6 +1255,17 @@ test('watchPageRestyle gives native service popups the premium comment-card trea
         'watchPageRestyle should also cover YouTube two-line dropdown menus');
     assert.ok(block.includes('#subtitle.style-scope.yt-dropdown-menu'),
         'watchPageRestyle should style two-line dropdown subtitles to match the premium popup treatment');
+    assert.ok(block.includes('Normal watch comments stay themed even when Studio Comments is disabled.'),
+        'watchPageRestyle should own a readable normal-comment fallback independently of Studio Comments');
+    assert.ok(block.includes('body ytd-comment-view-model #author-text#author-text')
+        && block.includes('body ytd-comment-renderer #content-text#content-text'),
+        'watchPageRestyle should override YouTube late comment text rules in both renderer generations');
+    assert.ok(block.includes('body ytd-comment-engagement-bar :is(svg, path)')
+        && block.includes('background: transparent !important;'),
+        'watchPageRestyle should keep nested comment action chrome flat instead of rendering white blocks');
+    assert.ok(block.includes('ytd-watch-metadata #subscribe-button :is(')
+        && block.includes('background: var(--ytkit-premium-accent) !important;'),
+        'watchPageRestyle should preserve one flat primary subscribe action across both themes');
 });
 
 test('chatStyleComments gives creator hearts a dedicated compact badge treatment', () => {

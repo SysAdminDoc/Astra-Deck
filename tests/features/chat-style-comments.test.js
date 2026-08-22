@@ -176,6 +176,20 @@ test('premium interaction CSS targets the kebab-case attributes the dataset flag
         'no camelCase data-attribute selectors may remain');
 });
 
+test('premium comments finish with one flat tokenized theme in normal watch mode', () => {
+    const { mod } = loadModule();
+    const css = mod.buildPremiumInteractionCss();
+    const normalLane = css.slice(css.indexOf('/* Final normal-watch theme layer.'));
+
+    assert.match(normalLane, /html\.ytkit-watch-restyle:not\(\.ytkit-split-active\):not\(\.ytkit-split-open\)/);
+    assert.match(normalLane, /background: var\(--ytkit-premium-panel\) !important/);
+    assert.match(normalLane, /color: var\(--ytkit-premium-text\) !important/);
+    assert.match(normalLane, /\[disabled\][\s\S]*opacity: 0\.46 !important/);
+    assert.match(normalLane, /:focus-visible[\s\S]*outline: 2px solid var\(--ytkit-premium-accent\)/);
+    assert.match(normalLane, /ytd-comment-engagement-bar :is\(svg, path\)[\s\S]*fill: currentColor !important/);
+    assert.match(normalLane, /ytd-comment-engagement-bar[\s\S]*background: transparent !important/);
+});
+
 test('hearted flag requires is-hearted, not merely a visible heart button', () => {
     const moduleSource = require('fs').readFileSync(
         require.resolve(MODULE_PATH), 'utf8');

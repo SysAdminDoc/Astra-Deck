@@ -109,11 +109,37 @@ test('Theater Split keeps the premium theme and accessible divider in both build
             `${label} must retain the balanced 68\/32 default`);
     }
 
-    assert.match(commentsCss, /--ytkit-split-panel: #0d1928/);
+    assert.match(commentsCss, /--ytkit-split-panel: var\(--ytkit-premium-panel\)/);
+    assert.match(commentsCss, /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)/,
+        'the extension split must follow YouTube light mode');
+    assert.match(commentsCss, /color-scheme: inherit !important/,
+        'the positioned comments surface must inherit the active theme');
     assert.match(commentsCss, /#ytkit-split-divider:focus-visible/);
     assert.match(commentsCss, /border-radius: 6px !important/);
     assert.match(standalone, /--ts-panel: #0d1928/);
+    assert.match(standalone, /html:not\(\[dark\]\) body\.ts-active/,
+        'the standalone split must define a light token lane');
+    assert.match(standalone, /background: 'var\(--ts-panel\)'/,
+        'standalone positioned surfaces must consume the shared panel token');
     assert.match(standalone, /#ts-divider:focus-visible/);
+});
+
+test('Theater Split theme chrome is tokenized and exposes its close action', () => {
+    const { mod } = loadModule();
+    const commentsCss = mod.buildSplitCommentsCss();
+    const standalone = fs.readFileSync(
+        path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
+
+    for (const [source, label] of [[MODULE_SOURCE, 'extension module'], [standalone, 'standalone userscript']]) {
+        assert.match(source, /setAttribute\('aria-label', (?:closeBtn\.title|'Close side panel')\)/,
+            `${label} close button must have an accessible name`);
+    }
+    assert.match(commentsCss, /--ytkit-split-scrollbar: var\(--ytkit-premium-scrollbar\)/);
+    assert.match(MODULE_SOURCE, /background:'var\(--ytkit-split-panel\)'/);
+    assert.doesNotMatch(MODULE_SOURCE, /background:'#0b1624'/,
+        'positioned split surfaces must not bypass theme tokens');
+    assert.doesNotMatch(standalone, /background: '#0b1624'/,
+        'standalone positioned surfaces must not bypass theme tokens');
 });
 
 test('stickyVideo factory returns the full Theater Split runtime surface', () => {

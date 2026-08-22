@@ -8123,6 +8123,206 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         font-weight: 500 !important;
                         white-space: normal !important;
                     }
+
+                    /* Normal watch shell follows the shared surface tokens in both themes. */
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) :is(
+                        ytd-watch-metadata h1,
+                        ytd-watch-metadata h1 *,
+                        ytd-watch-metadata #channel-name,
+                        ytd-watch-metadata #channel-name *,
+                        ytd-watch-metadata #actions,
+                        ytd-watch-metadata #actions *
+                    ) {
+                        color: var(--ytkit-watch-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-text) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata :is(
+                        #owner-sub-count,
+                        #owner-sub-count *,
+                        #info-container,
+                        #info-container *,
+                        #info-text,
+                        #info-text *
+                    ) {
+                        color: var(--ytkit-watch-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-muted) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata :is(
+                        #owner,
+                        #description,
+                        ytd-text-inline-expander
+                    ) {
+                        border-color: var(--ytkit-watch-border) !important;
+                        background: var(--ytkit-watch-raised) !important;
+                        color: var(--ytkit-watch-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-masthead :is(
+                        ytd-searchbox #container,
+                        ytd-searchbox #search-input,
+                        ytd-searchbox input#search,
+                        #search-form
+                    ) {
+                        border-color: var(--ytkit-watch-border-strong) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-watch-raised) !important;
+                        color: var(--ytkit-watch-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-topbar-logo-renderer #logo-icon {
+                        color: var(--ytkit-watch-text) !important;
+                    }
+
+                    /* Normal watch comments stay themed even when Studio Comments is disabled. */
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments ytd-comments-header-renderer {
+                        color: var(--ytkit-watch-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-text) !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comments-header-renderer #count#count,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comments-header-renderer #sort-menu#sort-menu,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comments-header-renderer #sort-menu#sort-menu *,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #author-text#author-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #author-text#author-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #content-text#content-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #content-text#content-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #content-text#content-text *,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #content-text#content-text *,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar * {
+                        color: var(--ytkit-watch-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-text) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #published-time-text#published-time-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #published-time-text#published-time-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #vote-count-middle#vote-count-middle,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #vote-count-middle#vote-count-middle {
+                        color: var(--ytkit-watch-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-muted) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #content#content,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #content#content,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #content-text#content-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #content-text#content-text {
+                        background: transparent !important;
+                        background-image: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) {
+                        min-height: 30px !important;
+                        border: 1px solid var(--ytkit-watch-border) !important;
+                        border-radius: 4px !important;
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: var(--ytkit-watch-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) *,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    )::before,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    )::after {
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: inherit !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(svg, path) {
+                        fill: currentColor !important;
+                        stroke: currentColor !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ):hover {
+                        border-color: var(--ytkit-watch-border-strong) !important;
+                        background: var(--ytkit-watch-hover) !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata :is(
+                        #actions,
+                        #owner,
+                        #top-level-buttons-computed,
+                        ytd-menu-renderer
+                    ) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) {
+                        border: 1px solid var(--ytkit-watch-border) !important;
+                        border-radius: 6px !important;
+                        background: var(--ytkit-watch-raised) !important;
+                        background-image: none !important;
+                        color: var(--ytkit-watch-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata #subscribe-button :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button
+                    ) {
+                        border-color: var(--ytkit-premium-accent) !important;
+                        background: var(--ytkit-premium-accent) !important;
+                        color: #ffffff !important;
+                        -webkit-text-fill-color: #ffffff !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata :is(
+                        #actions,
+                        #owner,
+                        #top-level-buttons-computed,
+                        ytd-menu-renderer
+                    ) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) * {
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: inherit !important;
+                        -webkit-text-fill-color: inherit !important;
+                        opacity: 1 !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata :is(
+                        #actions,
+                        #owner,
+                        #top-level-buttons-computed,
+                        ytd-menu-renderer
+                    ) :is(svg, path) {
+                        fill: currentColor !important;
+                        stroke: currentColor !important;
+                    }
                 `;
                 document.documentElement.classList.add('ytkit-watch-restyle');
                 this._styleElement = injectStyle(stripCommentRestyleCss(saferCss), this.id, true);
@@ -9179,6 +9379,285 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.008)),
                             rgba(9, 13, 19, 0.56) !important;
                         color: rgba(255, 255, 255, 0.58) !important;
+                    }
+
+                    /* Final normal-watch theme layer. Shared tokens keep dark and light in lockstep. */
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments ytd-comments#comments {
+                        border: 1px solid var(--ytkit-premium-border) !important;
+                        border-radius: 10px !important;
+                        background: var(--ytkit-premium-panel) !important;
+                        color: var(--ytkit-premium-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments ytd-comments-header-renderer {
+                        padding-bottom: 14px !important;
+                        border-bottom: 1px solid var(--ytkit-premium-border) !important;
+                        color: var(--ytkit-premium-text) !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        ytd-comment-view-model,
+                        ytd-comment-renderer
+                    ) {
+                        border: 0 !important;
+                        border-bottom: 1px solid var(--ytkit-premium-border) !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                        color: var(--ytkit-premium-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        ytd-comment-view-model,
+                        ytd-comment-renderer
+                    ):hover {
+                        background: var(--ytkit-premium-hover) !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        #content-text,
+                        #content-text *,
+                        #author-text,
+                        #author-text *
+                    ) {
+                        color: var(--ytkit-premium-text) !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        #published-time-text,
+                        #published-time-text *,
+                        .published-time-text,
+                        .published-time-text *,
+                        .ytkit-comment-search-hint,
+                        .ytkit-comment-search-empty-copy
+                    ) {
+                        color: var(--ytkit-premium-muted) !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        ytd-comment-simplebox-renderer,
+                        ytd-commentbox,
+                        .ytkit-comment-search,
+                        .ytkit-comment-search-empty
+                    ) {
+                        border: 1px solid var(--ytkit-premium-border) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-premium-raised) !important;
+                        color: var(--ytkit-premium-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        ytd-comment-simplebox-renderer #placeholder-area,
+                        ytd-commentbox #contenteditable-textarea,
+                        .ytkit-comment-search-field,
+                        .ytkit-comment-search-field input
+                    ) {
+                        border-color: var(--ytkit-premium-border-strong) !important;
+                        border-radius: 8px !important;
+                        background: var(--ytkit-premium-panel) !important;
+                        color: var(--ytkit-premium-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) {
+                        border-radius: 6px !important;
+                        background-image: none !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    )[disabled] {
+                        opacity: 0.46 !important;
+                        cursor: not-allowed !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #comments :is(
+                        button,
+                        input,
+                        textarea,
+                        [contenteditable="true"]
+                    ):focus-visible {
+                        outline: 2px solid var(--ytkit-premium-accent) !important;
+                        outline-offset: 2px !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments {
+                        border: 1px solid var(--ytkit-premium-border) !important;
+                        border-radius: 10px !important;
+                        background: var(--ytkit-premium-panel) !important;
+                        color: var(--ytkit-premium-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments :is(
+                        ytd-comments-header-renderer #count,
+                        yt-formatted-string.count-text,
+                        ytd-comment-view-model #author-text,
+                        ytd-comment-renderer #author-text,
+                        ytd-comment-view-model #content-text,
+                        ytd-comment-renderer #content-text,
+                        ytd-comment-view-model #content-text *,
+                        ytd-comment-renderer #content-text *,
+                        .ytkit-comment-search-empty-title
+                    ) {
+                        color: var(--ytkit-premium-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-premium-text) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments :is(
+                        ytd-comment-view-model #content-text,
+                        ytd-comment-renderer #content-text,
+                        ytd-comment-view-model #content-text *,
+                        ytd-comment-renderer #content-text *
+                    ) {
+                        background: transparent !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments :is(
+                        ytd-comment-view-model #published-time-text,
+                        ytd-comment-renderer #published-time-text,
+                        ytd-comment-view-model .published-time-text,
+                        ytd-comment-renderer .published-time-text,
+                        ytd-comment-view-model #vote-count-middle,
+                        ytd-comment-renderer #vote-count-middle
+                    ) {
+                        color: var(--ytkit-premium-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-premium-muted) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments :is(
+                        ytd-comments-header-renderer #sort-menu,
+                        ytd-comments-header-renderer #sort-menu *,
+                        ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer,
+                        ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer *,
+                        ytd-comment-engagement-bar,
+                        ytd-comment-engagement-bar *
+                    ) {
+                        color: var(--ytkit-premium-text) !important;
+                        opacity: 1 !important;
+                    }
+
+                    /* YouTube ships late ID-heavy comment rules. Keep the normal watch palette authoritative. */
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments :is(
+                        ytd-comments-header-renderer #count#count,
+                        ytd-comments-header-renderer #sort-menu#sort-menu,
+                        ytd-comments-header-renderer #sort-menu#sort-menu *,
+                        ytd-comment-view-model #author-text#author-text,
+                        ytd-comment-renderer #author-text#author-text,
+                        ytd-comment-view-model #content-text#content-text,
+                        ytd-comment-renderer #content-text#content-text,
+                        ytd-comment-view-model #content-text#content-text *,
+                        ytd-comment-renderer #content-text#content-text *,
+                        ytd-comment-engagement-bar,
+                        ytd-comment-engagement-bar *
+                    ) {
+                        color: var(--ytkit-premium-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-premium-text) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments :is(
+                        ytd-comment-view-model #published-time-text#published-time-text,
+                        ytd-comment-renderer #published-time-text#published-time-text,
+                        ytd-comment-view-model #vote-count-middle#vote-count-middle,
+                        ytd-comment-renderer #vote-count-middle#vote-count-middle
+                    ) {
+                        color: var(--ytkit-premium-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-premium-muted) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments :is(
+                        ytd-comment-view-model #content#content,
+                        ytd-comment-renderer #content#content,
+                        ytd-comment-view-model #content-text#content-text,
+                        ytd-comment-renderer #content-text#content-text,
+                        ytd-comment-view-model #content-text#content-text *,
+                        ytd-comment-renderer #content-text#content-text *
+                    ) {
+                        background: transparent !important;
+                        background-image: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #author-text#author-text#author-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #author-text#author-text#author-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #content-text#content-text#content-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #content-text#content-text#content-text,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-view-model #content-text#content-text#content-text *,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-renderer #content-text#content-text#content-text * {
+                        color: var(--ytkit-premium-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-premium-text) !important;
+                        background: transparent !important;
+                        background-image: none !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) {
+                        min-height: 30px !important;
+                        border: 1px solid var(--ytkit-premium-border) !important;
+                        border-radius: 4px !important;
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: var(--ytkit-premium-text) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) *,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    )::before,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    )::after {
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: inherit !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(svg, path) {
+                        fill: currentColor !important;
+                        stroke: currentColor !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ):hover {
+                        border-color: var(--ytkit-premium-border-strong) !important;
+                        background: var(--ytkit-premium-hover) !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments#comments,

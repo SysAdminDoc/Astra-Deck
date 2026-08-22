@@ -458,6 +458,14 @@ test('shared surface system covers the polished YouTube and injected UI families
     }
     assert.match(css, /html:not\(\[dark\]\)/,
         'surface tokens must include a light theme lane');
+    assert.match(css, /html\.ytkit-watch-restyle:not\(\[dark\]\)[\s\S]*color-scheme: light !important/,
+        'normal watch mode must expose a real light color-scheme lane');
+    assert.match(css, /--yt-spec-base-background: var\(--ytkit-watch-canvas\) !important/,
+        'normal watch mode must map YouTube canvas chrome to Astra tokens');
+    assert.match(css, /html\.ytkit-watch-restyle ytd-masthead[\s\S]*background: var\(--ytkit-watch-panel\) !important/,
+        'normal watch masthead must use the shared surface hierarchy');
+    assert.match(css, /html\.ytkit-watch-restyle ytd-comments#comments[\s\S]*background: var\(--ytkit-watch-panel\) !important/,
+        'normal watch comments must use a bounded theme-aware panel');
     assert.match(css, /@media \(forced-colors: active\)/);
     assert.doesNotMatch(css, /(?:linear|radial)-gradient\(/,
         'premium surfaces must use flat fills');
