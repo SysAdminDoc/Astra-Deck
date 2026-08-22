@@ -6379,7 +6379,12 @@ if (typeof globalThis !== "undefined") {
                     const provider = getSettings()?.aiSummaryProvider || 'openai';
                     void manageCredential(provider).then(
                         () => showToast(t('aiCredentialSaved', 'AI credential saved without exposing its value.'), '#22c55e'),
-                        (error) => showToast(error.message || t('aiCredentialSaveFailed', 'Credential could not be saved.'), '#ef4444')
+                        (error) => showToast(
+                            globalThis.YTKitCore?.describeFailureWithLabel?.(
+                                t('aiCredentialSaveFailed', 'Credential could not be saved.'), error, t
+                            ) || t('aiCredentialSaveFailed', 'Credential could not be saved.'),
+                            '#ef4444'
+                        )
                     );
                 });
                 controls.insertBefore(button, controls.firstChild);

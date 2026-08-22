@@ -442,6 +442,26 @@
             clearIntervalFn = clearInterval,
         } = deps;
 
+        // Failure copy: name one of the localized causes in
+        // extension/core/failure-copy.js and the next action it implies. The
+        // companion's own error text never reaches the reader; it goes to
+        // DebugManager and DiagnosticLog.
+        const describeFailureCause = (error) => {
+            const describe = globalThis.YTKitCore?.describeFailure;
+            if (typeof describe === 'function') return describe(error, t);
+            return t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
+        };
+        const describeFailureWithLabel = (label, error) => {
+            const withLabel = globalThis.YTKitCore?.describeFailureWithLabel;
+            if (typeof withLabel === 'function') return withLabel(label, error, t);
+            return label ? `${String(label).replace(/[.:]\s*$/, '')}: ${describeFailureCause(error)}` : describeFailureCause(error);
+        };
+        const logFailure = (context, error) => {
+            try {
+                DebugManager?.log?.('Download', `${context}: ${globalThis.YTKitCore?.failureDiagnosticText?.(error) || String(error?.message || error)}`);
+            } catch (_) { /* reason: diagnostics must never break the surface reporting them */ }
+        };
+
         // Newer extension-only releases have no companion asset, so GitHub's
         // /releases/latest/download route returns a 404 HTML page. Pin the
         // newest release that actually carries AstraDownloader.exe.
@@ -1508,10 +1528,15 @@
             const rawCode = resp?.error_code || resp?.errorCode || resp?.code || 'download-failed';
             const code = String(rawCode || 'download-failed');
             const preset = DOWNLOADER_FAILURE_COPY[code] || {};
-            const message = String(resp?.error || preset.message || 'Download failed.').slice(0, 220);
-            const advice = String(resp?.advice || preset.advice || 'Open Astra Downloader diagnostics, then retry.').slice(0, 220);
+            // The companion's own `error`/`advice` strings are raw server text:
+            // English whatever locale the reader runs, and shaped for a log.
+            // Keep them for the diagnostic record and show the mapped copy.
+            const detail = String(resp?.error || '').slice(0, 300);
+            const message = String(preset.message || describeFailureCause({ code, message: detail })).slice(0, 220);
+            const advice = String(preset.advice || 'Open Astra Downloader diagnostics, then retry.').slice(0, 220);
             return {
                 code,
+                detail,
                 message,
                 advice,
                 nextAction: String(resp?.next_action || resp?.nextAction || preset.nextAction || 'retry'),
@@ -1521,22 +1546,27 @@
         }
 
         function showDownloaderFailure(resp = {}) {
-            const failure = classifyDownloaderFailureResponse(resp);
-            DiagnosticLog?.record?.('download-failure', `${failure.code}: ${failure.message} | ${failure.advice}`);
+            // `mapped`, not `failure`: everything on it is the copy chosen for
+            // the reader. The companion's own text is on `mapped.detail` and
+            // only reaches the diagnostic record.
+            const mapped = classifyDownloaderFailureResponse(resp);
+            DiagnosticLog?.record?.('download-failure', `${mapped.code}: ${mapped.detail || mapped.message} | ${mapped.advice}`);
             showToast(t('dlFailureTpl', 'Astra Downloader: {error} {advice}')
-                .replace('{error}', failure.message)
-                .replace('{advice}', failure.advice), failure.tone, {
-                duration: failure.duration,
+                .replace('{error}', mapped.message)
+                .replace('{advice}', mapped.advice), mapped.tone, {
+                duration: mapped.duration,
             });
-            return failure;
+            return mapped;
         }
 
         function showNativeChannelRequired(status = {}) {
-            const reason = status.nativeTokenError ? ` Native error: ${status.nativeTokenError}` : '';
+            // The native token error is a host-registration diagnostic, not
+            // something the reader can act on; the preset advice already says
+            // what to do.
+            if (status.nativeTokenError) logFailure('native-token', status.nativeTokenError);
             return showDownloaderFailure({
                 error_code: 'native-channel-required',
-                error: 'Astra Downloader needs browser native messaging to share its private token.',
-                advice: `Reload the extension, verify the native host registration, then retry.${reason}`,
+                error: status.nativeTokenError || '',
                 next_action: 'repair-native-host',
             });
         }
@@ -2095,7 +2125,8 @@
                     await runFormatProbe(true);
                 } catch (error) {
                     renderQualitySizeLabels(null);
-                    qualityStatus.textContent = error.message || t('dlPopupFormatsUnavailable', 'Format list unavailable.');
+                    logFailure('format-probe', error);
+                    qualityStatus.textContent = describeFailureWithLabel(t('dlPopupFormatsUnavailable', 'Format list unavailable.'), error);
                 } finally {
                     probeBtn.disabled = false;
                     probeBtn.textContent = t('dlPopupFormatsRecheck', 'Check again');
@@ -2349,7 +2380,8 @@
                         playlistSelection = null;
                         playlistList.hidden = true;
                         selectAllBtn.hidden = true;
-                        playlistMeta.textContent = error.message || t('dlPopupPlaylistUnavailable', 'Playlist preview unavailable.');
+                        logFailure('playlist-preview', error);
+                        playlistMeta.textContent = describeFailureWithLabel(t('dlPopupPlaylistUnavailable', 'Playlist preview unavailable.'), error);
                     } finally {
                         previewBtn.disabled = false;
                         previewBtn.textContent = t('dlPopupPlaylistRefresh', 'Refresh preview');
@@ -2573,11 +2605,12 @@
                     await runFormatProbe(false);
                 } catch (error) {
                     renderQualitySizeLabels(null);
+                    logFailure('format-probe', error);
                     if (qualityStatus.isConnected) {
-                        qualityStatus.textContent = error.message || t(
+                        qualityStatus.textContent = describeFailureWithLabel(t(
                             'dlPopupFormatsUnavailable',
                             'Format list unavailable.'
-                        );
+                        ), error);
                     }
                 }
             })();
@@ -2759,7 +2792,8 @@
                                         pill.textContent = t('dlHealthDenoFailedLabel', 'Deno: failed');
                                     }
                                 } catch (e) {
-                                    showToast(t('dlHealthDenoFailedTpl', 'Deno provision failed: {error}').replace('{error}', e.message), '#ef4444');
+                                    logFailure('deno-provision', e);
+                                    showToast(t('dlHealthDenoFailedTpl', 'Deno provision failed: {error}').replace('{error}', describeFailureCause(e)), '#ef4444');
                                     pill.textContent = t('dlHealthDenoFailedLabel', 'Deno: failed');
                                 }
                             }, { once: true });
@@ -3082,7 +3116,7 @@
                     DebugManager.log('CobaltFallback', `Failed: ${e.message}`);
                     this._recordFailureDiagnostic(instance, e);
                     if (typeof showToast === 'function') showToast(t('dlCobaltFailedTpl', 'Cobalt fallback failed: {error}')
-                        .replace('{error}', e.message), '#ef4444', { duration: 6 });
+                        .replace('{error}', describeFailureCause(e)), '#ef4444', { duration: 6 });
                 }
             },
 

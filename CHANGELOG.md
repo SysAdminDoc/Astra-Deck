@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Astra Downloader failures show the recovery copy for the code instead of the
+  companion's own error line. That line was raw server text, English whatever
+  locale you run, and it replaced the mapped copy rather than adding to it. The
+  format probe, playlist preview, Deno provisioning and the Cobalt fallback now
+  name a cause and a next action too, and the native-messaging token error goes
+  to the log rather than onto the end of a toast.
+
 - In-page failures now name a cause instead of pasting the exception. Thirteen
   surfaces in the settings panel, the AI summary, transcript translation and
   Q&A, subscription groups, the Reddit panel, subtitle download and the
