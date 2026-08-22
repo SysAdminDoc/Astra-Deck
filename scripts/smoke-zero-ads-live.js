@@ -170,6 +170,187 @@ async function capture(client, name) {
     fs.writeFileSync(path.join(OUT_DIR, `${name}.png`), Buffer.from(shot.data, 'base64'));
 }
 
+async function setWatchTheme(client, dark) {
+    await evaluate(client, `(() => {
+        const root = document.documentElement;
+        root.toggleAttribute('dark', ${dark ? 'true' : 'false'});
+        root.style.colorScheme = ${JSON.stringify(dark ? 'dark' : 'light')};
+        window.dispatchEvent(new Event('resize'));
+        return root.hasAttribute('dark');
+    })()`);
+    await sleep(250);
+}
+
+async function openSettingsPanelFromBackground(backgroundClient) {
+    return evaluate(backgroundClient, `(async () => {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        const tab = tabs.find((entry) => entry.url?.startsWith('https://www.youtube.com/')) || tabs[0];
+        if (!tab?.id) return false;
+        const result = await chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_OPEN_PANEL' });
+        return Boolean(result?.ok);
+    })()`);
+}
+
+async function disableTheaterSplit(client, backgroundClient, timeoutMs) {
+    const opened = await openSettingsPanelFromBackground(backgroundClient);
+    if (!opened) throw new Error('watch themes: settings panel did not open from the extension worker');
+    await waitForExpression(
+        client,
+        "Boolean(document.querySelector('#ytkit-settings-panel'))",
+        timeoutMs,
+        'settings panel before disabling Theater Split'
+    );
+    const toggled = await evaluate(client, `(() => {
+        const toggle = document.querySelector('#ytkit-toggle-stickyVideo');
+        if (!toggle || !toggle.checked) return false;
+        toggle.click();
+        document.querySelector('#ytkit-settings-panel .ytkit-close, #ytkit-close-footer')?.click();
+        return true;
+    })()`);
+    if (!toggled) throw new Error('watch themes: Theater Split toggle was unavailable or already off');
+}
+
+async function captureNormalWatchDetails(client, name) {
+    const details = await evaluate(client, `(() => {
+        const target = document.querySelector('#below, ytd-watch-metadata');
+        if (!target) return { available: false, visible: false, background: '' };
+        target.scrollIntoView({ block: 'start', behavior: 'instant' });
+        const rect = target.getBoundingClientRect();
+        return {
+            available: true,
+            visible: rect.bottom > 56 && rect.top < window.innerHeight,
+            background: getComputedStyle(document.body).backgroundColor
+        };
+    })()`);
+    await sleep(500);
+    await capture(client, name);
+    return details;
+}
+
+async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
+    const failures = [];
+
+    await setWatchTheme(client, true);
+    await capture(client, 'watch-theater-collapsed-dark-1440x900');
+
+    const playerBox = await evaluate(client, `(() => {
+        const player = document.querySelector('#movie_player, ytd-player');
+        const rect = player?.getBoundingClientRect();
+        return rect ? {
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height
+        } : null;
+    })()`);
+    if (!playerBox || playerBox.width < 400 || playerBox.height < 240) {
+        failures.push('watch themes: collapsed Theater player is not measurable');
+    } else {
+        await client.send('Input.dispatchMouseEvent', {
+            type: 'mouseWheel',
+            x: Math.round(playerBox.x + playerBox.width / 2),
+            y: Math.round(playerBox.y + playerBox.height / 2),
+            deltaX: 0,
+            deltaY: 720
+        });
+    }
+
+    await waitForExpression(
+        client,
+        "document.documentElement.classList.contains('ytkit-split-open') && Boolean(document.querySelector('#ytkit-split-divider'))",
+        timeoutMs,
+        'open Theater Split surface'
+    );
+    await sleep(750);
+
+    const split = await evaluate(client, `(() => {
+        const left = document.querySelector('#ytkit-split-left');
+        const right = document.querySelector('#ytkit-split-right');
+        const divider = document.querySelector('#ytkit-split-divider');
+        const leftRect = left?.getBoundingClientRect();
+        const rightRect = right?.getBoundingClientRect();
+        const dividerRect = divider?.getBoundingClientRect();
+        return {
+            leftWidth: leftRect?.width || 0,
+            rightWidth: rightRect?.width || 0,
+            dividerWidth: dividerRect?.width || 0,
+            dividerRole: divider?.getAttribute('role') || '',
+            dividerOrientation: divider?.getAttribute('aria-orientation') || '',
+            dividerValue: Number(divider?.getAttribute('aria-valuenow') || 0),
+            dividerTabIndex: divider?.tabIndex ?? -1,
+            panelBackground: right ? getComputedStyle(right).backgroundColor : '',
+            commentsVisible: Boolean(document.querySelector('#below.ytkit-split-scroll-surface'))
+        };
+    })()`);
+    if (split.leftWidth < 400 || split.rightWidth < 240) failures.push('watch themes: Theater Split columns are not both usable');
+    if (split.dividerWidth < 6 || split.dividerWidth > 14) failures.push(`watch themes: divider width is ${split.dividerWidth}px`);
+    if (split.dividerRole !== 'separator' || split.dividerOrientation !== 'vertical') {
+        failures.push('watch themes: Theater Split divider lacks separator semantics');
+    }
+    if (split.dividerValue < 25 || split.dividerValue > 85 || split.dividerTabIndex < 0) {
+        failures.push('watch themes: Theater Split divider is not operable');
+    }
+    if (!split.commentsVisible) failures.push('watch themes: Theater Split comments surface is missing');
+    await capture(client, 'watch-theater-split-dark-1440x900');
+
+    await setWatchTheme(client, false);
+    const splitLight = await evaluate(client, `(() => {
+        const right = document.querySelector('#ytkit-split-right');
+        const comments = document.querySelector('#below.ytkit-split-scroll-surface');
+        return {
+            darkAttribute: document.documentElement.hasAttribute('dark'),
+            panelBackground: right ? getComputedStyle(right).backgroundColor : '',
+            commentsBackground: comments ? getComputedStyle(comments).backgroundColor : ''
+        };
+    })()`);
+    if (splitLight.darkAttribute) failures.push('watch themes: light Theater Split retained YouTube dark mode');
+    await capture(client, 'watch-theater-split-light-1440x900');
+
+    await disableTheaterSplit(client, backgroundClient, timeoutMs);
+    await waitForExpression(
+        client,
+        "!document.documentElement.classList.contains('ytkit-split-active') && !document.querySelector('#ytkit-split-wrapper')",
+        timeoutMs,
+        'native watch layout after disabling Theater Split'
+    );
+    await evaluate(client, 'window.scrollTo(0, 0)');
+    await sleep(750);
+
+    await setWatchTheme(client, true);
+    const normalDark = await pageSnapshot(client, 'watch-normal-dark');
+    await capture(client, 'watch-normal-dark-1440x900');
+    const normalDarkDetails = await captureNormalWatchDetails(
+        client,
+        'watch-normal-dark-details-1440x900'
+    );
+
+    await evaluate(client, 'window.scrollTo(0, 0)');
+    await setWatchTheme(client, false);
+    const normalLight = await pageSnapshot(client, 'watch-normal-light');
+    await capture(client, 'watch-normal-light-1440x900');
+    const normalLightDetails = await captureNormalWatchDetails(
+        client,
+        'watch-normal-light-details-1440x900'
+    );
+
+    failures.push(...normalDark.failures, ...normalLight.failures);
+    if (!normalDarkDetails.available || !normalDarkDetails.visible) {
+        failures.push('watch themes: normal dark metadata surface is unavailable');
+    }
+    if (!normalLightDetails.available || !normalLightDetails.visible) {
+        failures.push('watch themes: normal light metadata surface is unavailable');
+    }
+    if (failures.length) throw new Error(failures.join('\n'));
+    return {
+        split,
+        splitLight,
+        normalDark: normalDark.snapshot,
+        normalLight: normalLight.snapshot,
+        normalDarkDetails,
+        normalLightDetails
+    };
+}
+
 async function verifyLiveSettings(client, timeoutMs) {
     const opened = await evaluate(client, `(() => {
         const trigger = document.querySelector('#ytkit-masthead-btn, #ytkit-watch-btn');
@@ -344,6 +525,7 @@ async function runCandidate(candidate, stageDir, options) {
         await sleep(5000);
         const watch = await pageSnapshot(client, 'watch');
         await capture(client, 'watch-1440x900');
+        const watchThemes = await verifyWatchThemeSurfaces(client, backgroundClient, options.timeoutMs);
         const spaNetwork = adEvents(client.events, spaStart);
 
         const allResponses = [...coldNetwork.responses, ...spaNetwork.responses];
@@ -364,6 +546,7 @@ async function runCandidate(candidate, stageDir, options) {
             enabledRulesets,
             home: home.snapshot,
             watch: watch.snapshot,
+            watchThemes,
             liveSettings,
             blockedRequests: allBlocked,
             coldAdRequests: coldNetwork.requests.length,

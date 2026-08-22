@@ -92,20 +92,12 @@ test('the generator refuses to emit a matrix that disagrees with the manifest', 
     const probe = loadFreshProbe();
     const generator = require('../scripts/generate-capability-matrix');
     const chromium = probe.CAPABILITY_MATRIX.browsers.chromium;
-    const declared = chromium.minimumChromeVersion;
-    const manifestPath = path.join(__dirname, '..', 'extension', 'manifest.json');
-    const original = fs.readFileSync(manifestPath, 'utf8');
-    try {
-        fs.writeFileSync(manifestPath, original.replace(
-            `"minimum_chrome_version": "${declared}"`,
-            '"minimum_chrome_version": "1"'
-        ));
-        assert.throws(() => generator.buildCapabilityMatrix(), /floor disagreement/);
-    } finally {
-        fs.writeFileSync(manifestPath, original);
-    }
-    // And the restore must leave the gate happy again, so a failed run of this
-    // test cannot quietly leave the manifest edited.
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
+    assert.throws(() => generator.buildCapabilityMatrix({
+        manifest: { ...manifest, minimum_chrome_version: '1' }
+    }), /floor disagreement/);
+    assert.equal(manifest.minimum_chrome_version, chromium.minimumChromeVersion);
     assert.doesNotThrow(() => generator.buildCapabilityMatrix());
 });
 
