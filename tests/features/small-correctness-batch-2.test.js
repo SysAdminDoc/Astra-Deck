@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { sources } = require('../helpers/source');
-const { loadFeature, fakeDocument } = require('../helpers/monolith');
+const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
 
 const repoRoot = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(repoRoot, ...parts), 'utf8');
@@ -138,18 +138,64 @@ test('listFeedLayout anchors its search rules on the element search actually ren
 });
 
 // ── playlist enhancer ──────────────────────────────────────────────────
-test('playlist watched-percent rejects a pixel width and survives an unknown order', () => {
-    const start = sources.ytkit.indexOf('_getWatchedPercent(item) {');
-    const block = sources.ytkit.slice(start, start + 1600);
-    assert.match(block, /match\(\/\(\\d\+\(\?:\\\.\\d\+\)\?\)\\s\*%\//,
-        'the % sign must be required — "120px" used to read as 100% watched');
-    assert.match(block, /aria-valuenow/,
-        'the numeric aria attribute is still read directly');
+// A regex over a regex proves nothing about what the helper returns, so both
+// halves run for real against nodes shaped like YouTube's progress markup.
+function playlistItem({ width, ariaValueNow, ariaLabel } = {}) {
+    const progress = fakeNode({ tag: 'div', attributes: { id: 'progress' } });
+    if (width !== undefined) progress.style.width = width;
+    if (ariaValueNow !== undefined) progress.setAttribute('aria-valuenow', ariaValueNow);
+    const labelled = ariaLabel === undefined
+        ? null
+        : fakeNode({ tag: 'div', attributes: { 'aria-label': ariaLabel } });
+    const item = fakeNode({ tag: 'ytd-playlist-panel-video-renderer' });
+    item.querySelector = (selector) => (/#progress|aria-valuenow/.test(selector) ? progress : null);
+    item.querySelectorAll = (selector) => (selector === '[aria-label]' && labelled ? [labelled] : []);
+    return item;
+}
 
-    const orderStart = sources.ytkit.indexOf('_orderedEntries(entries, mode');
-    const orderBlock = sources.ytkit.slice(orderStart, orderStart + 1400);
-    assert.match(orderBlock, /Number\.isFinite\(known\) \? known : Number\.MAX_SAFE_INTEGER/,
-        'an unseen entry must not produce a NaN comparator');
+test('playlist watched-percent requires a % sign and reads aria-valuenow directly', () => {
+    const feature = loadFeature('playlistEnhancer', { document: fakeDocument(() => []) });
+
+    // The defect: an inline CSS width of "120px" read as 120%, clamped to 100,
+    // and reported an untouched video as fully watched, which gated auto-skip.
+    assert.equal(feature._getWatchedPercent(playlistItem({ width: '120px' })), 0);
+    assert.equal(feature._getWatchedPercent(playlistItem({ width: '42%' })), 42);
+    assert.equal(feature._getWatchedPercent(playlistItem({ width: '150%' })), 100, 'clamped at 100');
+
+    // aria-valuenow is a bare number by contract and wins over the width.
+    assert.equal(feature._getWatchedPercent(playlistItem({ ariaValueNow: '37', width: '99%' })), 37);
+    assert.equal(feature._getWatchedPercent(playlistItem({ ariaValueNow: 'x', width: '12%' })), 12,
+        'a non-numeric aria-valuenow falls through rather than reading as zero');
+
+    // An aria-label elsewhere in the row is the last source, and it needs the
+    // sign too.
+    assert.equal(feature._getWatchedPercent(playlistItem({ ariaLabel: '80% watched' })), 80);
+    assert.equal(feature._getWatchedPercent(playlistItem({ ariaLabel: '80 watched' })), 0);
+});
+
+test('playlist ordering sorts an entry it never saw to the end instead of shuffling the list', () => {
+    const feature = loadFeature('playlistEnhancer', { document: fakeDocument(() => []) });
+    const known = { item: fakeNode({ tag: 'a' }), durationSec: 300, label: 'known' };
+    const alsoKnown = { item: fakeNode({ tag: 'b' }), durationSec: 100, label: 'alsoKnown' };
+    const unseen = { item: fakeNode({ tag: 'c' }), durationSec: 200, label: 'unseen' };
+    // The feature runs in a vm sandbox, so the array it returns carries the
+    // sandbox's Array prototype and deepStrictEqual rejects it on identity
+    // alone. Compare the order, which is what the test is about.
+    const order = (entries, mode) => Array.from(feature._orderedEntries(entries, mode), (entry) => entry.label);
+
+    feature._rememberNativeOrder([known, alsoKnown]);
+
+    // 'none' keeps the native order; the entry with no recorded index used to
+    // subtract undefined, produce a NaN comparator, and let sort return an
+    // arbitrary order for the whole list.
+    assert.deepEqual(order([unseen, alsoKnown, known], 'none'), ['known', 'alsoKnown', 'unseen']);
+
+    assert.deepEqual(order([known, unseen, alsoKnown], 'duration-asc'), ['alsoKnown', 'unseen', 'known']);
+    assert.deepEqual(order([alsoKnown, known, unseen], 'duration-desc'), ['known', 'unseen', 'alsoKnown']);
+
+    // An entry with no duration sorts after every entry that has one.
+    const noDuration = { item: fakeNode({ tag: 'd' }), durationSec: null, label: 'noDuration' };
+    assert.deepEqual(order([noDuration, alsoKnown], 'duration-asc'), ['alsoKnown', 'noDuration']);
 });
 
 // ── return-dislike + video-hider + handle revealer ─────────────────────

@@ -88,11 +88,72 @@ test('remainingTimeDisplay merges overlapping SponsorBlock segments and never go
     assert.equal(Math.max(0, video.duration - video.currentTime - skip), 0);
 });
 
-test('remainingTimeDisplay clamps the rendered value at zero', () => {
-    const start = sources.ytkit.indexOf("id: 'remainingTimeDisplay'");
-    assert.match(sources.ytkit.slice(start, start + 6000),
-        /Math\.max\(0, video\.duration - video\.currentTime - skipDuration\)/,
-        'the remaining value must be clamped before formatting');
+// The clamp used to be pinned by a regex over the feature source, which
+// cannot tell a working renderer from a broken one. Render it instead: build
+// the player's time display, run _update(), and read the span it produces.
+function remainingTimeFixture({ settings = {}, segments = [], video } = {}) {
+    const timeDisplay = fakeNode({ tag: 'div', attributes: { class: 'ytp-time-display' } });
+    timeDisplay.querySelector = (selector) => timeDisplay.children
+        .find((child) => child.matches(selector)) || null;
+    const doc = fakeDocument((selector) => (selector === '.ytp-time-display' ? timeDisplay : []));
+    const feature = loadFeature('remainingTimeDisplay', {
+        document: doc,
+        appState: { settings },
+        getFeatureById: (id) => (id === 'sponsorBlock' ? { _segments: segments } : null),
+        getMainVideoElement: () => video
+    });
+    return { feature, timeDisplay };
+}
+
+test('remainingTimeDisplay renders a clamped readout instead of a negative one', () => {
+    const video = { currentTime: 90, duration: 100, playbackRate: 1 };
+    const { feature, timeDisplay } = remainingTimeFixture({
+        settings: { sponsorBlock: true },
+        // A segment whose end runs past the duration, which SponsorBlock does
+        // return: 110 seconds of "skippable" over a 10-second tail. The raw
+        // arithmetic goes negative and used to render "(--1:40)".
+        segments: [{ segment: [0, 200] }],
+        video
+    });
+
+    feature._update();
+
+    assert.equal(timeDisplay.children.length, 1, 'one readout span is appended');
+    const readout = timeDisplay.children[0];
+    assert.equal(readout.className, 'ytkit-remaining-time');
+    assert.equal(readout.textContent, '(-0:00)');
+    assert.ok(!readout.textContent.includes('--'), 'a negative remaining time must never render');
+});
+
+test('remainingTimeDisplay adopts the span already in the player instead of stacking one per navigation', () => {
+    const video = { currentTime: 30, duration: 130, playbackRate: 1 };
+    const { feature, timeDisplay } = remainingTimeFixture({ video });
+
+    feature._update();
+    assert.equal(timeDisplay.children.length, 1);
+    assert.equal(timeDisplay.children[0].textContent, '(-1:40)');
+
+    // What a navigate rule does: drop our reference while the span the player
+    // owns stays in the DOM, frozen at the previous video's number.
+    feature._el = null;
+    video.currentTime = 0;
+    video.duration = 60;
+    feature._update();
+
+    assert.equal(timeDisplay.children.length, 1, 'the existing span is adopted, not duplicated');
+    assert.equal(timeDisplay.children[0].textContent, '(-1:00)');
+});
+
+test('remainingTimeDisplay clears the readout when the player has no duration', () => {
+    const video = { currentTime: 10, duration: 100, playbackRate: 1 };
+    const { feature, timeDisplay } = remainingTimeFixture({ video });
+    feature._update();
+    assert.equal(timeDisplay.children[0].textContent, '(-1:30)');
+
+    video.duration = 0;
+    feature._update();
+    assert.equal(timeDisplay.children[0].textContent, '',
+        'a player without a duration must not leave the previous number on screen');
 });
 
 // ── pauseOtherTabs ─────────────────────────────────────────────────────
@@ -164,11 +225,43 @@ test('the watch-time statistic only accrues while the tab is visible and playing
         'a paused video must not accrue watch time');
 });
 
-test('the Load More button clears the attribute that hides the continuation', () => {
-    const start = sources.ytkit.indexOf("id: 'disableInfiniteScroll'");
-    const block = sources.ytkit.slice(start, start + 4000);
-    assert.match(block, /cont\.removeAttribute\('ytkit-load-more'\)/,
-        'the !important hiding rule keys on the attribute, so clearing inline styles is not enough');
+test('the Load More button is built next to the continuation and clears the attribute on click', () => {
+    const feed = fakeNode({ tag: 'div' });
+    const continuation = fakeNode({ tag: 'ytd-continuation-item-renderer' });
+    continuation.scrollIntoView = () => { continuation.scrolled = true; };
+    feed.appendChild(continuation);
+
+    const feature = loadFeature('disableInfiniteScroll', {
+        document: fakeDocument((selector) => (
+            selector.startsWith('ytd-continuation-item-renderer') && !continuation.hasAttribute('ytkit-load-more')
+                ? [continuation]
+                : []
+        ))
+    });
+
+    feature._process();
+
+    assert.equal(feed.children.length, 2, 'the wrapper is inserted alongside the continuation');
+    const wrapper = feed.children[0];
+    assert.equal(wrapper.className, 'ytkit-load-more-wrapper');
+    assert.equal(feed.children[1], continuation, 'the wrapper goes BEFORE the continuation');
+    assert.equal(wrapper.children.length, 1);
+    const button = wrapper.children[0];
+    assert.equal(button.textContent, 'Load More');
+    assert.equal(button.className, 'ytkit-load-more-btn');
+    assert.equal(continuation.getAttribute('ytkit-load-more'), '1');
+
+    button.onclick();
+
+    // The injected hiding rule is !important and keys on the attribute, so
+    // clearing the inline styles alone left the element zero-area.
+    assert.equal(continuation.getAttribute('ytkit-load-more'), null,
+        'the attribute the !important rule keys on must be cleared');
+    assert.equal(feed.children.length, 1, 'the wrapper is removed once it has been used');
+    assert.equal(continuation.scrolled, true);
+
+    feature._process();
+    assert.equal(feed.children.length, 2, 'a re-rendered continuation gets a fresh button');
 });
 
 test('bufferPreload captures the player default and hands it back on disable', () => {
