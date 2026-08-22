@@ -53,8 +53,12 @@ const ALLOW_COMMENT = /raw-error-copy:\s*\S/;
 const LOCAL_BINDING = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/;
 const BINDING_REACH = 4;
 
-function scanFile(relativePath) {
-    const absolute = path.join(REPO_ROOT, relativePath);
+// An absolute path is honoured so a caller can scan a file outside the repo.
+// The gate's own test needs that: writing its fixture into extension/ made a
+// transient file that the directory-walking tests, which run in parallel under
+// `node --test`, could pick up and fail on.
+function scanFile(filePath) {
+    const absolute = path.resolve(REPO_ROOT, filePath);
     const lines = fs.readFileSync(absolute, 'utf8').split(/\r?\n/);
     const violations = [];
     const taintedLocals = new Map();
@@ -84,7 +88,7 @@ function scanFile(relativePath) {
         const tainted = [...taintedLocals.keys()]
             .some((name) => new RegExp(`\\b${name}\\b`).test(expression));
         if (!tainted && !RAW_FAILURE.test(expression) && !RAW_STATUS.test(expression)) continue;
-        violations.push({ file: relativePath, line: index + 1, text: line.trim().slice(0, 160) });
+        violations.push({ file: filePath, line: index + 1, text: line.trim().slice(0, 160) });
     }
     return violations;
 }
