@@ -2659,3 +2659,192 @@ test('transcriptAiHandoff says so rather than opening a tool with nothing to pas
     assert.deepEqual(copied, []);
     assert.ok(toasts.some((message) => /No transcript available/.test(message)));
 });
+
+// ── deArrowVoting ──────────────────────────────────────────────────────
+// Each fixture generates a DIFFERENT id, so a test that expects the stored one
+// to be reused cannot pass on a regeneration that happens to match.
+let deArrowFixtureCount = 0;
+
+function deArrowVoteFixture({ uuid = 'branding-uuid-1', voteWorks = true } = {}) {
+    const fillByte = (deArrowFixtureCount += 1) % 251;
+    const title = fakeNode({ tag: 'h1', attributes: { 'data-ytkit-dearrow-uuid': uuid } });
+    title.querySelector = (selector) => collectMatching(title, selector)[0] || null;
+    const doc = renderDocument((selector) => (selector.includes('dearrow-uuid') ? title : []));
+    const requests = [];
+    const toasts = [];
+    const store = new Map();
+    const feature = loadFeature('deArrowVoting', {
+        document: doc,
+        isWatchPagePath: () => true,
+        injectStyle: () => fakeNode(),
+        showToast: (message) => toasts.push(message),
+        DebugManager: { log() {} },
+        crypto: { getRandomValues: (array) => { array.fill(fillByte); return array; } },
+        storageReadJSON: (key, fallback) => (store.has(key) ? store.get(key) : fallback),
+        storageWriteJSON: (key, value) => store.set(key, value),
+        extensionFetchJson: async (request) => {
+            requests.push(request);
+            if (!voteWorks) throw new Error('rejected');
+            return { data: {} };
+        }
+    });
+    return { feature, title, requests, toasts, store };
+}
+
+test('deArrowVoting attaches one vote pair to a replaced title', () => {
+    const { feature, title } = deArrowVoteFixture();
+
+    feature._attachVoteButtons();
+    feature._attachVoteButtons();
+
+    const containers = collect(title, 'ytkit-da-vote');
+    assert.equal(containers.length, 1, 'one vote pair per replaced title');
+    const buttons = collect(title, 'ytkit-da-vote-btn');
+    assert.equal(buttons.length, 2);
+    assert.equal(buttons[0].getAttribute('aria-label'), 'Vote up on this DeArrow title replacement');
+    assert.equal(buttons[1].getAttribute('aria-label'), 'Vote down on this DeArrow title replacement');
+    assert.equal(buttons[0].dataset.voted, undefined, 'nothing is marked as voted before a vote');
+});
+
+test('deArrowVoting sends the branding uuid and a stable local id, and marks the button it used', async () => {
+    const { feature, title, requests, toasts, store } = deArrowVoteFixture();
+
+    feature._attachVoteButtons();
+    const [up, down] = collect(title, 'ytkit-da-vote-btn');
+
+    await up.handlers.get('click')();
+
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, 'https://sponsor.ajay.app/api/branding/vote/1');
+    const body = JSON.parse(requests[0].data);
+    assert.equal(body.UUID, 'branding-uuid-1');
+    assert.equal(body.userID.length, 64, 'the local id is a 32-byte hex string');
+    assert.equal(store.get('ytkit-da-user-id'), body.userID, 'it is kept so votes stay attributable');
+    assert.equal(up.dataset.voted, '1');
+    assert.ok(toasts.some((message) => /voted up/.test(message)));
+
+    // Changing your mind clears the other side rather than leaving both lit,
+    // in whichever direction the reader changes it.
+    await down.handlers.get('click')();
+    assert.equal(down.dataset.voted, '0');
+    assert.equal(up.dataset.voted, undefined);
+    await up.handlers.get('click')();
+    assert.equal(up.dataset.voted, '1');
+    assert.equal(down.dataset.voted, undefined);
+    assert.equal(JSON.parse(requests[1].data).userID, body.userID,
+        'the same local id is reused rather than regenerated per vote');
+});
+
+test('deArrowVoting reuses the local id a previous session stored', async () => {
+    const first = deArrowVoteFixture();
+    first.feature._attachVoteButtons();
+    await collect(first.title, 'ytkit-da-vote-btn')[0].handlers.get('click')();
+    const original = JSON.parse(first.requests[0].data).userID;
+
+    // A fresh instance reading the same storage must vote as the same person,
+    // or every session looks like a new voter to DeArrow.
+    const second = deArrowVoteFixture();
+    second.store.set('ytkit-da-user-id', original);
+    second.feature._attachVoteButtons();
+    await collect(second.title, 'ytkit-da-vote-btn')[0].handlers.get('click')();
+
+    assert.equal(JSON.parse(second.requests[0].data).userID, original);
+});
+
+test('deArrowVoting leaves the buttons unmarked when the vote does not land', async () => {
+    const { feature, title, toasts } = deArrowVoteFixture({ voteWorks: false });
+
+    feature._attachVoteButtons();
+    const [up] = collect(title, 'ytkit-da-vote-btn');
+    await up.handlers.get('click')();
+
+    assert.equal(up.dataset.voted, undefined,
+        'a failed vote must not look like it was counted');
+    assert.ok(toasts.some((message) => /vote failed/i.test(message)));
+});
+
+test('deArrowVoting attaches nothing when the title carries no branding uuid', () => {
+    const { feature, title } = deArrowVoteFixture({ uuid: '' });
+
+    feature._attachVoteButtons();
+
+    assert.equal(collect(title, 'ytkit-da-vote').length, 0,
+        'a title with no replacement has nothing to vote on');
+});
+
+// ── videoScreenshot ────────────────────────────────────────────────────
+function screenshotFixture(video) {
+    const controls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
+    controls.querySelector = (selector) => collectMatching(controls, selector)[0] || null;
+    const doc = renderDocument((selector) => (selector.includes('.ytp-right-controls') ? controls : []));
+    const toasts = [];
+    const feature = loadFeature('videoScreenshot', {
+        document: doc,
+        isWatchPagePath: () => true,
+        getMainVideoElement: () => video,
+        showToast: (message) => toasts.push(message),
+        DebugManager: { log() {} },
+        ICONS: new Proxy({}, { get: () => () => doc.createElement('svg') }),
+        createSVG: () => doc.createElement('svg')
+    });
+    return { feature, controls, toasts, doc };
+}
+
+test('videoScreenshot builds one announced player button in its idle state', () => {
+    const { feature, controls } = screenshotFixture({ videoWidth: 1280, videoHeight: 720 });
+
+    feature._inject();
+    feature._inject();
+
+    assert.equal(controls.children.length, 1, 'one button per player');
+    const button = controls.children[0];
+    assert.ok(button.classList.contains('ytkit-screenshot-btn'));
+    assert.equal(button.getAttribute('aria-live'), 'polite');
+    assert.equal(button.getAttribute('aria-label'), 'Capture screenshot');
+    assert.equal(collect(button, 'ytkit-screenshot-btn__label')[0].textContent, 'Shot');
+    assert.equal(collect(button, 'ytkit-screenshot-btn__icon')[0].children.length, 1);
+    assert.equal(collect(button, 'ytkit-screenshot-btn__icon')[0].getAttribute('aria-hidden'), 'true');
+});
+
+test('videoScreenshot adopts a button the player already carries instead of stacking one', () => {
+    const { feature, controls } = screenshotFixture({ videoWidth: 1280, videoHeight: 720 });
+
+    feature._inject();
+    const first = feature._btn;
+    feature._btn = null;
+    feature._inject();
+
+    assert.equal(controls.children.length, 1);
+    assert.equal(feature._btn, first, 'the reference rebinds to the button already there');
+});
+
+test('videoScreenshot swaps its state and glyph in place', () => {
+    const { feature } = screenshotFixture({ videoWidth: 1280, videoHeight: 720 });
+
+    feature._inject();
+    const button = feature._btn;
+    const iconWrap = collect(button, 'ytkit-screenshot-btn__icon')[0];
+
+    feature._setState('capturing');
+    assert.equal(collect(button, 'ytkit-screenshot-btn__label')[0].textContent, 'Saving…');
+    assert.equal(iconWrap.children.length, 1, 'the glyph is replaced, not appended');
+
+    feature._setState('saved');
+    assert.equal(collect(button, 'ytkit-screenshot-btn__label')[0].textContent, 'Saved');
+    assert.equal(button.getAttribute('aria-label'), 'Screenshot saved');
+    assert.ok(button.classList.contains('ytkit-player-btn--active'));
+
+    feature._setState('idle');
+    assert.equal(collect(button, 'ytkit-screenshot-btn__label')[0].textContent, 'Shot');
+    assert.equal(button.classList.contains('ytkit-player-btn--active'), false,
+        'the state class has to clear, or the button stays lit after the flash');
+    assert.equal(iconWrap.children.length, 1);
+});
+
+test('videoScreenshot refuses a frame that has not decoded yet', async () => {
+    const { feature } = screenshotFixture({ videoWidth: 0, videoHeight: 0 });
+
+    feature._inject();
+    await assert.rejects(() => feature._capture(), /still loading/,
+        'capturing a zero-sized frame would write a blank PNG');
+});
