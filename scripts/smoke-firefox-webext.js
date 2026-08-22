@@ -16,7 +16,6 @@ const { spawn, spawnSync } = require('node:child_process');
 const { createFirefoxStage } = require('./check-firefox-webext');
 const {
     captureScreenshot,
-    clickElementExpression,
     evaluateJson,
     resolveGeckodriverExecutable,
     sleep,
@@ -33,6 +32,28 @@ const FIREFOX_GECKO_ID = 'ytkit@sysadmindoc.github.io';
 const FIREFOX_OPTIONAL_HOST_UUID = '2f88b30c-68f9-4f4d-8c0e-e71f33a58a01';
 const ZERO_AD_RULESET_ID = 'astra_zero_ads';
 const MANUAL_OPTIONAL_HOST_TIMEOUT_MS = 180000;
+
+function firefoxWatchLinkExpression({ activate = false } = {}) {
+    return `(() => {
+        const candidates = Array.from(document.querySelectorAll('a[href*="/watch?v="]'))
+            .filter((node) => {
+                const rect = node.getBoundingClientRect();
+                return rect.width > 0
+                    && rect.height > 0
+                    && !node.closest('ytd-miniplayer, ytd-player, #movie_player');
+            });
+        const link = candidates.find((node) => node.matches(
+            '#video-title, .yt-lockup-metadata-view-model-wiz__title'
+        )) || candidates.find((node) => node.textContent.trim()) || candidates[0];
+        if (!link) return { clicked: false, href: '' };
+        ${activate ? 'link.click();' : ''}
+        return {
+            clicked: ${activate ? 'true' : 'false'},
+            href: link.href || '',
+            text: link.textContent.trim().slice(0, 120)
+        };
+    })()`;
+}
 
 function isFirefoxExtensionUuid(value) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -432,24 +453,24 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
         await waitForJson(
             client,
             context,
-            `(() => {
-                const link = Array.from(document.querySelectorAll('a[href*="/watch?v="]'))
-                    .find((node) => node.getBoundingClientRect().width > 0 && node.getBoundingClientRect().height > 0);
-                return { href: link?.href || '', search: Boolean(document.querySelector('yt-searchbox input, input#search')) };
-            })()`,
-            (value) => value?.search && /\/watch\?v=/.test(value.href || ''),
+            `(() => ({
+                link: ${firefoxWatchLinkExpression()},
+                search: Boolean(document.querySelector('yt-searchbox input, input#search'))
+            }))()`,
+            (value) => value?.search && /\/watch\?v=/.test(value.link?.href || ''),
             { timeoutMs: opts.timeoutMs, label: 'a visible Firefox YouTube search-result watch link' }
         );
-        await clickElementExpression(
-            client,
-            context,
-            `Array.from(document.querySelectorAll('a[href*="/watch?v="]'))
-                .find((node) => node.getBoundingClientRect().width > 0 && node.getBoundingClientRect().height > 0)`
-        );
+        const activatedWatchLink = await evaluateJson(client, context, firefoxWatchLinkExpression({ activate: true }));
+        if (!activatedWatchLink?.clicked || !/\/watch\?v=/.test(activatedWatchLink.href || '')) {
+            throw new Error(`Could not activate a visible Firefox watch link: ${JSON.stringify(activatedWatchLink)}`);
+        }
         await waitForJson(
             client,
             context,
             `(() => ({
+                href: location.href,
+                pathname: location.pathname,
+                route: document.querySelector('ytd-page-manager > *.style-scope:not([hidden])')?.tagName || '',
                 watch: location.pathname === '/watch',
                 video: Boolean(document.querySelector('video.html5-main-video')),
                 trigger: Boolean(document.querySelector('#ytkit-masthead-btn, #ytkit-watch-btn'))
@@ -551,6 +572,7 @@ module.exports = {
     MANUAL_OPTIONAL_HOST_TIMEOUT_MS,
     ZERO_AD_RULESET_ID,
     assertPageSnapshot,
+    firefoxWatchLinkExpression,
     buildWebExtRunArgs,
     firefoxCandidates,
     firefoxExtensionUrl,

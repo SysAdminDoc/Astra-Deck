@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const {
     OBSERVED_REQUESTS,
@@ -22,6 +23,7 @@ const {
 const {
     ZERO_AD_RULESET_ID,
     assertPageSnapshot,
+    firefoxWatchLinkExpression,
     networkEventsForToken,
     parseArgs: parseFirefoxSmokeArgs
 } = require('../scripts/smoke-firefox-webext');
@@ -77,6 +79,39 @@ test('Firefox live smoke requires enabled ruleset, collapsed shells, and intact 
         video: true,
         shells: [{ selector: '#player-ads', visible: 1, nonCollapsed: 1 }]
     }, 'watch'), /retained visible or non-collapsed ad space/);
+});
+
+test('Firefox watch navigation activates the visible title link instead of a player overlay', () => {
+    const clicks = [];
+    const makeLink = ({ href, text, title = false, owner = '' }) => ({
+        href,
+        textContent: text,
+        click: () => clicks.push(text || owner),
+        closest: () => owner || null,
+        getBoundingClientRect: () => ({ width: 320, height: 180 }),
+        matches: () => title
+    });
+    const playerOverlay = makeLink({
+        href: 'https://www.youtube.com/watch?v=overlay',
+        text: '',
+        owner: 'ytd-player'
+    });
+    const thumbnail = makeLink({
+        href: 'https://www.youtube.com/watch?v=thumbnail',
+        text: ''
+    });
+    const title = makeLink({
+        href: 'https://www.youtube.com/watch?v=title',
+        text: 'Real search result',
+        title: true
+    });
+    const result = vm.runInNewContext(firefoxWatchLinkExpression({ activate: true }), {
+        document: { querySelectorAll: () => [playerOverlay, thumbnail, title] }
+    });
+
+    assert.equal(result.clicked, true);
+    assert.equal(result.href, title.href);
+    assert.deepEqual(clicks, ['Real search result']);
 });
 
 test('Firefox network evidence filters by the unique deterministic probe token', () => {
