@@ -2286,3 +2286,182 @@ test('downloadThumbnail reports success on the button itself', async () => {
     assert.equal(collect(button, 'ytkit-watch-action-btn__label')[0].textContent, 'Downloaded');
     assert.equal(button.getAttribute('aria-label'), 'Thumbnail downloaded');
 });
+
+// ── volumeWheelMode ────────────────────────────────────────────────────
+function volumeWheelFixture(video) {
+    const player = fakeNode({ tag: 'div', attributes: { id: 'movie_player' } });
+    player.querySelector = (selector) => collectMatching(player, selector)[0] || null;
+    const doc = renderDocument((selector) => {
+        if (selector.includes('video.html5-main-video')) return video ? [video] : [];
+        if (selector.includes('#movie_player')) return player;
+        return [];
+    });
+    const feature = loadFeature('volumeWheelMode', {
+        document: doc,
+        window: {},
+        location: { pathname: '/watch' },
+        isWatchPagePath: () => true,
+        injectStyle: () => fakeNode(),
+        VolumeCurveController: null
+    });
+    feature._player = player;
+    return { feature, player, doc };
+}
+
+function wheelEvent(deltaY, player) {
+    return { deltaY, currentTarget: player, preventDefault() {}, stopPropagation() {} };
+}
+
+test('volumeWheelMode renders one announced level chip and updates it in place', () => {
+    const { feature, player } = volumeWheelFixture({ volume: 0.4, muted: false });
+
+    feature._showHud(40);
+    feature._showHud(45);
+
+    const huds = collect(player, 'ytkit-volume-hud');
+    assert.equal(huds.length, 1, 'the chip is built once and reused');
+    assert.equal(huds[0].getAttribute('role'), 'status');
+    assert.equal(huds[0].getAttribute('aria-live'), 'polite');
+    assert.equal(huds[0].dataset.visible, '1');
+    assert.equal(textOf(player, 'ytkit-volume-hud__num')[0], '45%');
+    assert.equal(collect(player, 'ytkit-volume-hud__fill')[0].style.width, '45%',
+        'the bar has to follow the number, or the chip reads as stuck');
+});
+
+test('volumeWheelMode steps the real player volume rather than snapping to a default', () => {
+    const video = { volume: 0.4, muted: false };
+    const { feature, player } = volumeWheelFixture(video);
+
+    feature._onWheel(wheelEvent(-1, player));
+    assert.equal(Math.round(video.volume * 100), 45, 'scrolling up steps 5% from where it was');
+    assert.equal(textOf(player, 'ytkit-volume-hud__num')[0], '45%');
+
+    feature._onWheel(wheelEvent(1, player));
+    feature._onWheel(wheelEvent(1, player));
+    assert.equal(Math.round(video.volume * 100), 35);
+    assert.equal(textOf(player, 'ytkit-volume-hud__num')[0], '35%');
+});
+
+test('volumeWheelMode clamps at both ends and unmutes on the way up', () => {
+    const video = { volume: 0.02, muted: true };
+    const { feature, player } = volumeWheelFixture(video);
+
+    feature._onWheel(wheelEvent(1, player));
+    assert.equal(Math.round(video.volume * 100), 0, 'volume cannot go below zero');
+    assert.equal(textOf(player, 'ytkit-volume-hud__num')[0], '0%');
+    assert.equal(video.muted, true, 'scrolling down to silence leaves the mute alone');
+
+    feature._onWheel(wheelEvent(-1, player));
+    assert.equal(Math.round(video.volume * 100), 5);
+    assert.equal(video.muted, false, 'scrolling up past silence has to be audible');
+
+    video.volume = 0.98;
+    feature._onWheel(wheelEvent(-1, player));
+    assert.equal(Math.round(video.volume * 100), 100, 'volume cannot go above full');
+});
+
+test('volumeWheelMode leaves one discoverability hint on the player, not one per attach', () => {
+    const { feature, player } = volumeWheelFixture({ volume: 0.5, muted: false });
+
+    feature._ensureHint();
+    feature._ensureHint();
+
+    const hints = collect(player, 'ytkit-volume-hint');
+    assert.equal(hints.length, 1);
+    assert.equal(hints[0].textContent, 'Scroll to change volume');
+});
+
+// ── wheelSeek ──────────────────────────────────────────────────────────
+function wheelSeekFixture(video, settings = {}) {
+    const player = fakeNode({ tag: 'div', attributes: { id: 'movie_player', class: 'html5-video-player' } });
+    const doc = renderDocument((selector) => {
+        if (selector.includes('video.html5-main-video')) return video ? [video] : [];
+        if (selector.includes('#movie_player')) return player;
+        return [];
+    });
+    const feature = loadFeature('wheelSeek', {
+        document: doc,
+        location: { pathname: '/watch' },
+        isWatchPagePath: () => true,
+        injectStyle: () => fakeNode(),
+        appState: { settings }
+    });
+    return { feature, player };
+}
+
+function seekEvent(deltaY) {
+    return { deltaY, preventDefault() {}, stopPropagation() {}, stopImmediatePropagation() {} };
+}
+
+test('wheelSeek renders one announced position chip that names the direction', () => {
+    const video = { currentTime: 100, duration: 600 };
+    const { feature, player } = wheelSeekFixture(video);
+
+    feature._onWheel(seekEvent(-1));
+    assert.equal(video.currentTime, 105, 'the default step is five seconds');
+
+    const huds = collect(player, 'ytkit-seek-hud');
+    assert.equal(huds.length, 1);
+    assert.equal(huds[0].getAttribute('role'), 'status');
+    assert.equal(huds[0].dataset.visible, '1');
+    assert.equal(textOf(player, 'ytkit-seek-hud__arrow')[0], '▶▶');
+    assert.equal(textOf(player, 'ytkit-seek-hud__time')[0], '1:45',
+        'the chip shows where the seek landed, formatted, not raw seconds');
+
+    feature._onWheel(seekEvent(1));
+    assert.equal(collect(player, 'ytkit-seek-hud').length, 1, 'the chip is reused');
+    assert.equal(textOf(player, 'ytkit-seek-hud__arrow')[0], '◀◀');
+    assert.equal(textOf(player, 'ytkit-seek-hud__time')[0], '1:40');
+});
+
+test('wheelSeek honours a configured step and refuses an absurd one', () => {
+    const video = { currentTime: 100, duration: 600 };
+    const { feature } = wheelSeekFixture(video, { wheelSeekStepSec: 30 });
+
+    feature._onWheel(seekEvent(-1));
+    assert.equal(video.currentTime, 130);
+
+    // A corrupted import must not seek by a billion seconds per tick.
+    const wild = { currentTime: 100, duration: 600 };
+    const wildFixture = wheelSeekFixture(wild, { wheelSeekStepSec: 1e9 });
+    wildFixture.feature._onWheel(seekEvent(-1));
+    assert.equal(wild.currentTime, 105, 'an out-of-range step falls back to the default');
+});
+
+test('wheelSeek clamps inside the video and survives a live stream', () => {
+    const video = { currentTime: 2, duration: 600 };
+    const { feature, player } = wheelSeekFixture(video);
+
+    feature._onWheel(seekEvent(1));
+    assert.equal(video.currentTime, 0, 'seeking back past the start clamps at zero');
+
+    video.currentTime = 598;
+    feature._onWheel(seekEvent(-1));
+    assert.equal(video.currentTime, 600, 'seeking past the end clamps at the duration');
+
+    // A live stream reports Infinity for duration. The clamp has to leave a
+    // finite time behind; note that Math.min(Infinity, x) already does, so this
+    // asserts the outcome rather than the guard that spells it out.
+    const live = { currentTime: 100, duration: Infinity };
+    const liveFixture = wheelSeekFixture(live);
+    liveFixture.feature._onWheel(seekEvent(-1));
+    assert.equal(Number.isFinite(live.currentTime), true);
+    assert.equal(live.currentTime, 105);
+    void player;
+});
+
+test('wheelSeek stops the gesture reaching the volume wheel behind it', () => {
+    const video = { currentTime: 10, duration: 600 };
+    const { feature } = wheelSeekFixture(video);
+    const stopped = [];
+    feature._onWheel({
+        deltaY: -1,
+        preventDefault() { stopped.push('default'); },
+        stopPropagation() { stopped.push('propagation'); },
+        stopImmediatePropagation() { stopped.push('immediate'); }
+    });
+
+    assert.ok(stopped.includes('immediate'),
+        'without stopImmediatePropagation the same scroll also changes the volume');
+    assert.ok(stopped.includes('default'));
+});
