@@ -1966,3 +1966,120 @@ test('playbackStatsOverlay cleanup takes both its nodes off the player', () => {
     assert.equal(feature._overlay, null);
     assert.equal(feature._btn, null);
 });
+
+// ── sbPerChannelProfiles ───────────────────────────────────────────────
+function sbProfilesFixture(settings = {}) {
+    const host = fakeNode({ tag: 'ytd-channel-name' });
+    host.querySelector = (selector) => collectMatching(host, selector)[0] || null;
+    const doc = renderDocument((selector) => {
+        if (selector.includes('#upload-info') || selector.includes('ytd-channel-name')) return host;
+        return [];
+    });
+    const toasts = [];
+    const appState = { settings: { sbCat_sponsor: true, ...settings } };
+    const feature = loadFeature('sbPerChannelProfiles', {
+        document: doc,
+        appState,
+        isWatchPagePath: () => true,
+        settingsManager: { save() {} },
+        showToast: (message) => toasts.push(message),
+        getFeatureById: () => null,
+        YTKitCore: { channelSettingsKey: () => 'UCchannel' }
+    });
+    return { feature, host, appState, toasts, doc };
+}
+
+test('sbPerChannelProfiles renders a chip that says whether this channel overrides the global set', () => {
+    const { feature, host, appState } = sbProfilesFixture();
+
+    feature._renderChip();
+    feature._renderChip();
+
+    assert.equal(host.children.length, 1, 'one chip per owner row');
+    const chip = host.children[0];
+    assert.equal(chip.className, 'ytkit-sb-channel-chip');
+    assert.equal(chip.textContent, 'SB: global');
+    assert.equal(chip.dataset.hasOverride, 'false');
+
+    appState.settings.sbPerChannelProfilesData = { UCchannel: { categories: { sponsor: false }, updatedAt: 1 } };
+    feature._updateChipState('UCchannel');
+    assert.equal(chip.textContent, 'SB: channel');
+    assert.equal(chip.dataset.hasOverride, 'true');
+});
+
+test('sbPerChannelProfiles panel shows each category with the source its state came from', () => {
+    const { feature } = sbProfilesFixture({
+        sbPerChannelProfilesData: { UCchannel: { categories: { sponsor: false }, updatedAt: 1 } }
+    });
+
+    feature._renderChip();
+    feature._openPanel('UCchannel');
+
+    const panel = feature._panel;
+    assert.equal(panel.className, 'ytkit-sb-profile-panel');
+    assert.equal(textOf(panel, 'ytkit-sb-profile-panel-title')[0], 'SponsorBlock Categories');
+    const rows = collect(panel, 'ytkit-sb-profile-row');
+    assert.ok(rows.length > 1, 'every SponsorBlock category gets a row');
+
+    // The row title is where the reader learns whether a category is following
+    // the global setting or this channel's own answer.
+    const sponsorRow = rows.find((row) => /^Sponsors:/.test(row.title));
+    assert.equal(sponsorRow.title, 'Sponsors: allow (channel)');
+    const otherRow = rows.find((row) => row !== sponsorRow);
+    assert.match(otherRow.title, /\((global|channel)\)$/);
+
+    // A disabled category is greyed rather than shown in its category colour.
+    assert.equal(collect(sponsorRow, 'ytkit-sb-profile-dot')[0].style.background, 'rgba(115,115,115,0.5)');
+});
+
+test('sbPerChannelProfiles offers a reset only once the channel actually overrides something', () => {
+    const clean = sbProfilesFixture();
+    clean.feature._renderChip();
+    clean.feature._openPanel('UCchannel');
+    assert.equal(collect(clean.feature._panel, 'ytkit-sb-profile-reset').length, 0,
+        'a channel with no override has nothing to reset');
+
+    const overridden = sbProfilesFixture({
+        sbPerChannelProfilesData: { UCchannel: { categories: { sponsor: false }, updatedAt: 1 } }
+    });
+    overridden.feature._renderChip();
+    overridden.feature._openPanel('UCchannel');
+    const reset = collect(overridden.feature._panel, 'ytkit-sb-profile-reset');
+    assert.equal(reset.length, 1);
+    assert.equal(reset[0].textContent, 'Reset to global defaults');
+
+    reset[0].handlers.get('click')({ stopPropagation() {} });
+    assert.equal(overridden.appState.settings.sbPerChannelProfilesData.UCchannel, undefined);
+    assert.equal(overridden.feature._panel, null, 'resetting closes the panel it was in');
+    assert.equal(overridden.feature._btn.textContent, 'SB: global');
+    assert.ok(overridden.toasts.some((message) => /reset to global defaults/i.test(message)));
+});
+
+test('sbPerChannelProfiles toggling a category writes the channel override', () => {
+    const { feature, appState } = sbProfilesFixture();
+
+    feature._renderChip();
+    feature._toggleCategory('UCchannel', 'sponsor');
+
+    assert.equal(appState.settings.sbPerChannelProfilesData.UCchannel.categories.sponsor, false,
+        'the global setting was on, so the channel override turns it off');
+
+    feature._toggleCategory('UCchannel', 'sponsor');
+    assert.equal(appState.settings.sbPerChannelProfilesData.UCchannel.categories.sponsor, true);
+});
+
+test('sbPerChannelProfiles opening the panel twice replaces it rather than stacking', () => {
+    const { feature } = sbProfilesFixture();
+
+    feature._renderChip();
+    feature._openPanel('UCchannel');
+    const first = feature._panel;
+    feature._openPanel('UCchannel');
+
+    assert.notEqual(feature._panel, first);
+    assert.equal(collect(feature._btn, 'ytkit-sb-profile-panel').length, 1);
+
+    feature._closePanel();
+    assert.equal(feature._panel, null);
+    assert.equal(collect(feature._btn, 'ytkit-sb-profile-panel').length, 0);
+});
