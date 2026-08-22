@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The popup and side panel no longer paint colours the palette does not own.
+  Eighty-five hex literals in popup.css and twenty-two in sidepanel.css sat
+  outside the token block, so a theme change quietly missed them. They are now
+  a tint scale in surface-system.css, and every value a reader sees is the one
+  it was before: the rungs took the colour the majority of sites already used,
+  and the handful that moved shifted by less than a percent. Four stale
+  fallback colours were also corrected to match the tokens they stand in for.
+
 - Astra Downloader failures show the recovery copy for the code instead of the
   companion's own error line. That line was raw server text, English whatever
   locale you run, and it replaced the mapped copy rather than adding to it. The

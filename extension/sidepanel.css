@@ -68,7 +68,7 @@ button {
   overflow: hidden;
   z-index: 100;
   padding: 8px 12px;
-  background: linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%);
+  background: var(--astra-brand-gradient);
   color: var(--accent-on);
   text-decoration: none;
   border-radius: var(--radius-xs);
@@ -276,7 +276,7 @@ button {
 
 .sp-section-kicker {
   margin: 0 0 4px;
-  color: #ffb59f;
+  color: var(--astra-accent-300);
   font-size: 9px;
   font-weight: 850;
   letter-spacing: 0.13em;
@@ -396,7 +396,7 @@ button {
   border-radius: 9px;
   border: 1px solid rgba(255, 107, 74, 0.18);
   background: rgba(255, 107, 74, 0.08);
-  color: #ffc4b5;
+  color: var(--astra-accent-200);
   font-size: 11px;
   font-weight: 900;
   line-height: 1;
@@ -427,7 +427,7 @@ button {
   border-radius: var(--radius-chip);
   border: 1px solid rgba(255, 107, 74, 0.25);
   background: rgba(255, 107, 74, 0.08);
-  color: #ffd8cc;
+  color: var(--astra-accent-100);
   font-size: 9px;
   font-weight: 850;
   letter-spacing: 0.06em;
@@ -445,7 +445,7 @@ button {
 .sp-empty-action:hover {
   background: rgba(255, 107, 74, 0.14);
   border-color: rgba(255, 107, 74, 0.38);
-  color: #fff0ea;
+  color: var(--astra-accent-050);
 }
 
 .sp-empty-action:active {
@@ -459,7 +459,7 @@ button {
 }
 
 .sp-empty[data-state="error"] {
-  color: #ffd8dc;
+  color: var(--astra-error-200);
   border-color: rgba(255, 116, 128, 0.24);
   background:
     linear-gradient(180deg, rgba(255, 116, 128, 0.07), rgba(255, 255, 255, 0.012)),
@@ -469,7 +469,7 @@ button {
 .sp-empty[data-state="error"] .sp-empty-icon {
   border-color: rgba(255, 116, 128, 0.28);
   background: rgba(255, 116, 128, 0.12);
-  color: #ffd8dc;
+  color: var(--astra-error-200);
 }
 
 .sp-perf-list,
@@ -536,11 +536,11 @@ button {
 .sp-perf-slow .fp-name,
 .sp-selector-list .sh-errors,
 .sp-external-list .eh-state[data-tone="error"] {
-  color: #ff8585;
+  color: var(--astra-error-400);
 }
 
 .sp-perf-slow .fp-bar {
-  background: linear-gradient(90deg, #ff8585, #ffbe7a);
+  background: linear-gradient(90deg, var(--astra-error-400), var(--astra-amber-200));
 }
 
 .sp-selector-list li,
@@ -551,7 +551,7 @@ button {
 .sp-selector-list .sh-drifts,
 .sp-external-list .eh-state[data-tone="degraded"],
 .sp-external-list .eh-state[data-tone="rate-limited"] {
-  color: #ffbe7a;
+  color: var(--astra-amber-200);
 }
 
 .sp-external-list .eh-detail {
@@ -561,7 +561,7 @@ button {
 }
 
 .sp-external-list .eh-state[data-tone="ok"] {
-  color: #6fe0bc;
+  color: var(--astra-success-200);
 }
 
 .sp-external-list .eh-state[data-tone="unknown"] {
@@ -787,7 +787,7 @@ button {
 }
 
 .sp-setting-row[aria-checked="true"] .sp-setting-name {
-  color: #ffd8cc;
+  color: var(--astra-accent-100);
 }
 
 .sp-setting-meta {
@@ -813,8 +813,8 @@ button {
 
 .sp-setting-chip[data-tone="api"] { color: var(--info); border-color: rgba(106, 169, 255, 0.24); background: var(--info-soft); }
 .sp-setting-chip[data-tone="local-companion"] { color: var(--warning); border-color: rgba(255, 190, 122, 0.24); background: var(--warning-soft); }
-.sp-setting-chip[data-tone="experimental"] { color: #c8a6ff; border-color: rgba(200, 166, 255, 0.26); background: rgba(200, 166, 255, 0.08); }
-.sp-setting-chip[data-tone="store-risk"] { color: #ff8585; border-color: rgba(255, 133, 133, 0.26); background: rgba(255, 133, 133, 0.08); }
+.sp-setting-chip[data-tone="experimental"] { color: var(--astra-violet-200); border-color: rgba(200, 166, 255, 0.26); background: rgba(200, 166, 255, 0.08); }
+.sp-setting-chip[data-tone="store-risk"] { color: var(--astra-error-400); border-color: rgba(255, 133, 133, 0.26); background: rgba(255, 133, 133, 0.08); }
 
 .sp-setting-switch {
   width: 34px;
@@ -841,7 +841,7 @@ button {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #f4f6fb, #c6ccd8);
+  background: var(--astra-knob-off);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -860,7 +860,7 @@ button {
 
 .sp-setting-row[aria-checked="true"] .sp-setting-switch::after {
   transform: translateX(var(--sp-switch-travel, 14px));
-  background: linear-gradient(180deg, #ffffff, #f2f3f5);
+  background: var(--astra-knob-on);
 }
 
 [dir="rtl"] {
@@ -897,7 +897,7 @@ button {
   padding: 0 13px;
   border: 1px solid rgba(255, 130, 100, 0.48);
   border-radius: var(--radius-xs);
-  background: linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%);
+  background: var(--astra-brand-gradient);
   color: var(--accent-on);
   font-size: 11px;
   font-weight: 850;

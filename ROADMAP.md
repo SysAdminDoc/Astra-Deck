@@ -22,21 +22,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 Baseline at audit time (working tree = HEAD a61ce0d7 + uncommitted v4.58.3–v4.58.6 work): `npm test` 1514/1514 pass. `npm run check` FAILS at `i18n:copy:gate` (new, from the uncommitted work — item below). Pre-existing baseline failures, already tracked, not re-logged: `audit:deps` (web-ext → addons-linter → image-size advisories; tracked P1 above) and `i18n:coverage:gate` (every locale 16 placeholder-identical keys over baseline, from fa3ebfdd). One `lint` failure during a loaded parallel run did not reproduce on a clean re-run — machine load, not a defect. All other gates pass at the working tree.
 
-- [ ] P3 — Burn down the raw hex literals in popup.css and sidepanel.css
-  Category: maintainability / visual
-  Why: the token-source half of the old three-token-systems item is done (2026-08-20), but colour literals outside `:root` still bypass the palette entirely, so a theme change silently misses them. They are also where the next drift will start now that duplicate token declarations are gated.
-  Evidence: 85 raw hex uses (29 distinct) in `extension/popup.css` and 22 uses (15 distinct) in `extension/sidepanel.css`, all outside the `:root` block.
-  Touches: `extension/popup.css`, `extension/sidepanel.css`, `extension/surface-system.css`
-  Acceptance: each literal either resolves to an existing `--astra-*` token or gains one in surface-system.css; `npm run audit:contrast` reports the same ratios and `npm run smoke:a11y` still passes; the count only decreases.
-  Confidence: Verified
-  Effort: M
-  Analysis (2026-08-20, before starting): **not one of the 44 distinct literals exactly equals a palette value**, so there is no mechanical swap to make and this cannot be done as a find-and-replace. It splits into three real groups.
-    (a) Near-misses of a palette value. Read the call site before assuming these are substitutable, because most are not: five of the seven `#f4f6fb` uses are the FALLBACK arm of `var(--text-primary, #f4f6fb)`, which is a defensive default rather than a colour use, and replacing it with another `var()` is pointless — the useful fix there is correcting the stale fallback literal to `#f4f6fa` so it matches the token it stands in for. All five `#ff5f4a` uses are the second stop of `linear-gradient(135deg, #ff8a64 0%, #ff5f4a 100%)`, and its partner `#ff8a64` has no palette equivalent, so the gradient needs a paired brand token (`--astra-accent-gradient-*`) rather than a one-sided swap. That leaves exactly ONE clean direct substitution in the whole set: `popup.css:3144 color: #6aa9ff` to the info token. Not worth its own commit; fold it into whichever group actually gets done.
-    (b) A tint/shade family the palette has no answer for: `#ffd9a8` (18 uses), `#ff8585` (13), `#ffb84d` (9), `#ffd0d0`/`#ffb4b4`/`#ffd1d1`/`#ffdde0`/`#ffe6e9`/`#ffe0e4` and friends. These are per-state washes over the semantic colours. The fix is to decide the tint scale first (for example `--astra-error-100/200/300`) and add it to surface-system.css; swapping them one at a time just moves literals into a bigger palette.
-    (c) One-offs that may be genuinely page-local (`#0d1117`, `#b889ff`, `#c8a6ff`, `#ffffff`).
-    Do (a) as its own commit with the contrast ratios quoted before and after. Do NOT start (b) without deciding the tint scale, or the palette doubles in size for no gain.
-  Note (2026-08-20): the parallel-token-systems half is closed. popup.html and sidepanel.html load their page sheet first and `surface-system.css` second, so the 32 popup and 28 sidepanel `:root` declarations were overridden before paint — and all 60 held a different value from the one that shipped (`--radius-md` said 12px while 10px rendered; a documented AA fix on `--text-subtle` was inert from the day it was written). They are deleted and `tests/css-token-source.test.js` fails if a duplicate returns. A `hardening.test.js` pin had encoded the duplicate as the contract by asserting sidepanel.css *declares* `--focus-ring`; it now asserts the page *uses* `var(--focus-ring)`.
-
 ### Follow-up findings — 2026-08-10 (user-reported: hide "X" button missing from thumbnails)
 
 ### Follow-up findings — 2026-08-11 (filter-list / permission audit)
