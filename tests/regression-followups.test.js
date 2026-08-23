@@ -13,6 +13,8 @@ const repoRoot = path.join(__dirname, '..');
 const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const popup = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
 const ytkit = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+const subscriptionGroups = fs.readFileSync(
+    path.join(repoRoot, 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8');
 
 test('userscript MediaDLManager probes fallback ports and gates on the Astra identity', () => {
     assert.ok(/_PORT_CANDIDATES:\s*Object\.freeze\(USERSCRIPT_COMPANION_PORT_CATALOGUE\?\.ports/.test(userscript),
@@ -39,9 +41,9 @@ test('popup formatBytes scales beyond MB and counts are locale-aware', () => {
 });
 
 test('subscriptionGroups duration-asc sort normalizes HH:MM:SS to seconds', () => {
-    const i = ytkit.indexOf("mode === 'duration-asc'");
+    const i = subscriptionGroups.indexOf("mode === 'duration-asc'");
     assert.ok(i > -1, 'duration-asc branch must exist');
-    const block = ytkit.slice(i, i + 1400);
+    const block = subscriptionGroups.slice(i, i + 1400);
     assert.ok(/\*\s*3600/.test(block),
         'HH:MM:SS must be scored in seconds (hours*3600), not minutes');
     assert.ok(!/\(Number\(m\[3\]\) \|\| 0\) \/ 60/.test(block),

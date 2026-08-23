@@ -176,16 +176,20 @@ test('extension fetch payloads use data: not body: (extensionRequest drops body)
     );
 });
 
-test('ytkit.js delegates compact-count parsing to the shared core helper', () => {
+test('peeled feature runtimes delegate compact-count parsing to the shared core helper', () => {
     const src = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
-    const matches = src.match(/globalThis\.YTKitCore && globalThis\.YTKitCore\.parseCompactCount/g) || [];
+    const subscriptionGroups = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8'
+    );
     const videoHider = fs.readFileSync(
         path.join(repoRoot, 'extension', 'features', 'video-hider', 'index.js'), 'utf8'
     );
-    assert.ok(matches.length >= 1,
-        'the remaining ytkit.js compact-count method must delegate to core/text-metrics.js');
+    assert.match(subscriptionGroups, /globalThis\.YTKitCore && globalThis\.YTKitCore\.parseCompactCount/,
+        'Subscription Groups compact-count parsing must delegate to core/text-metrics.js');
     assert.match(videoHider, /globalThis\.YTKitCore && globalThis\.YTKitCore\.parseCompactCount/,
         'the peeled Video Hider compact-count method must delegate to core/text-metrics.js');
+    assert.doesNotMatch(src, /_parseCompactViewCount/,
+        'the monolith must not retain the peeled Subscription Groups parser');
 });
 
 test('settings search escapes literal filter text in both runtimes', () => {

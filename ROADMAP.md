@@ -6,13 +6,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### P2
 
-- [ ] P2: Remove the final subscription-groups implementation fallback from the monolith
-  Why: the running factory and a 164 KB inline fallback still duplicate behavior and tests, so a fix can land in one copy while the other silently drifts.
-  Evidence: `extension/ytkit.js`, `extension/features/subscription-groups/index.js`, `tests/features/next-monolith-peel.test.js`, startup stage output
-  Touches: `extension/ytkit.js`, subscription-groups feature module, runtime bootstrap, userscript sync, source-audit and feature tests
-  Acceptance: reconcile both implementations line by line, replace the fallback with a descriptor-only stub, repoint or replace every test with assertions on the running module, bait-verify the a11y and light-theme gates, sync userscripts, and record an interleaved before/after startup measurement with no behavior loss.
-  Complexity: L
-
 - [ ] P2: Replace source-shape UI tests with rendered assertions across remaining feature modules
   Why: source pins can pass while a feature appends to the wrong node, keeps duplicate children, or never renders; the shared DOM harness now supports real tree assertions.
   Evidence: `tests/features/watch-later-workbench.test.js`, `tests/helpers/`, `tests/features/feature-render-surfaces.test.js`, and the existing render-assertion conversions

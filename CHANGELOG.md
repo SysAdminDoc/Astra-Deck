@@ -8,6 +8,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Subscription Groups now has one runtime owner in
+  `features/subscription-groups/index.js`. The monolith keeps a descriptor-only
+  stub, the userscript bundle mirrors the canonical module, and UI, theme, and
+  accessibility checks inspect the code that runs. Translated sort labels from
+  the retired fallback were preserved during the reconciliation.
+
+- Three alternating captured-page measurements against the pre-peel commit
+  found no startup regression. Median parse and initialization improved from
+  188.9 ms to 164.3 ms on watch pages and from 172.0 ms to 152.3 ms on feeds.
+  Median first feature paint improved from 130.7 ms to 107.7 ms on watch pages
+  and from 127.2 ms to 118.8 ms on feeds.
+
 - Transcript Q&A now selects bounded cue chunks from the full transcript and
   displays only claims backed by validated, seekable timestamps. Exact
   video, language, provider, model, and prompt provenance controls saved
@@ -26,6 +38,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   or reviewer-copy drift.
 
 ### Fixed
+
+- Subscription Groups CSV export now routes formula-leading cells through the
+  shared spreadsheet-safe writer. The canonical module had retained the older
+  quote-only fallback even though the retired monolith copy already neutralized
+  formulas.
 
 - Shipped-identity history now reads both legacy root userscripts and later
   schema-based releases. Settings retired before the schema existed remain

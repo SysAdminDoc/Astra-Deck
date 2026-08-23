@@ -110,21 +110,19 @@ test('a card recycled out of Shorts is made visible again', () => {
 
 // ── (d) subscription groups ─────────────────────────────────────────────────
 
-test('the original-order stamp names the video it describes, in both copies', () => {
-    for (const [label, source] of [['ytkit.js', ytkit], ['subscription-groups module', subsModule]]) {
-        const helper = slice(source, '_cardVideoId(card) {', 500);
-        assert.match(helper, /\[\?&\]v=\(\[A-Za-z0-9_-\]\{11\}\)/, `${label}: the id must be parsed, not guessed`);
+test('the original-order stamp names the video it describes in the canonical module', () => {
+    const helper = slice(subsModule, '_cardVideoId(card) {', 500);
+    assert.match(helper, /\[\?&\]v=\(\[A-Za-z0-9_-\]\{11\}\)/,
+        'the id must be parsed, not guessed');
 
-        // Anchored on the unique line: `cards.forEach(card => {` appears in
-        // several unrelated blocks in the monolith.
-        const stamp = slice(source, 'const videoId = this._cardVideoId(card);', 900);
-        assert.match(stamp, /card\.dataset\.ytkitOrigId === videoId/,
-            `${label}: a card recycled into a different video must be re-stamped`);
-        assert.match(stamp, /card\.dataset\.ytkitOrigId = videoId;/, `${label}: the pairing must be persisted`);
+    const stamp = slice(subsModule, 'const videoId = this._cardVideoId(card);', 900);
+    assert.match(stamp, /card\.dataset\.ytkitOrigId === videoId/,
+        'a card recycled into a different video must be re-stamped');
+    assert.match(stamp, /card\.dataset\.ytkitOrigId = videoId;/,
+        'the pairing must be persisted');
 
-        assert.match(source, /delete el\.dataset\.ytkitOrigIdx; delete el\.dataset\.ytkitOrigId;/,
-            `${label}: teardown must clear both halves of the stamp`);
-    }
+    assert.match(subsModule, /delete el\.dataset\.ytkitOrigIdx; delete el\.dataset\.ytkitOrigId;/,
+        'teardown must clear both halves of the stamp');
 });
 
 // ── Userscript parity ───────────────────────────────────────────────────────

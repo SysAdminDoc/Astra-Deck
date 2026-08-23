@@ -947,15 +947,15 @@ test('subscriptionGroups module loads before ytkit.js in content scripts', () =>
     }
 });
 
-test('subscriptionGroups monolith prefers the module runtime factory before inline fallback', () => {
+test('subscriptionGroups monolith delegates to the module and keeps only a descriptor stub', () => {
     const factoryNeedle = 'globalThis.YTKitFeatures?.subscriptionGroups?.createSubscriptionGroupsFeature?.({';
     const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
     assert.ok(factoryIndex > -1, 'ytkit.js must construct subscriptionGroups through the module factory');
-    const fallbackIndex = sources.ytkit.indexOf("id: 'subscriptionGroups'", factoryIndex);
-    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must retain the inline subscriptionGroups fallback after the factory call');
-    const dependencyBag = sources.ytkit.slice(factoryIndex, fallbackIndex);
+    const descriptorIndex = sources.ytkit.indexOf("id: 'subscriptionGroups'", factoryIndex);
+    assert.ok(descriptorIndex > factoryIndex, 'ytkit.js must retain a descriptor after the factory call');
+    const dependencyBag = sources.ytkit.slice(factoryIndex, descriptorIndex);
     assert.ok(dependencyBag.includes('}) || {'),
-        'module factory path must fall back to the inline feature object');
+        'module factory path must fall back to the inert descriptor');
 
     for (const dep of [
         'PageTypes',
@@ -978,14 +978,38 @@ test('subscriptionGroups monolith prefers the module runtime factory before inli
     ]) {
         assert.ok(dependencyBag.includes(dep), 'ytkit.js factory dependency bag must include ' + dep);
     }
+
+    const descriptorEnd = sources.ytkit.indexOf('\n        }),', descriptorIndex);
+    assert.ok(descriptorEnd > descriptorIndex, 'subscriptionGroups descriptor must terminate');
+    const descriptor = sources.ytkit.slice(descriptorIndex, descriptorEnd);
+    assert.ok(descriptor.length < 1400,
+        `subscriptionGroups descriptor grew to ${descriptor.length} bytes`);
+    for (const key of ['id', 'name', 'description', 'group', 'icon', 'pages']) {
+        assert.match(descriptor, new RegExp(`\\b${key}:`), `descriptor must still declare ${key}`);
+    }
+    assert.match(descriptor, /Feature module unavailable/,
+        'descriptor must report a missing Subscription Groups module');
+    assert.doesNotMatch(descriptor, /_renderToolbar|_importGroups|injectStyle\(`/,
+        'descriptor must not re-inline the runtime or its stylesheet');
+
+    const bootstrapGenerator = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'scripts', 'generate-runtime-bootstrap.js'),
+        'utf8'
+    );
+    const settingsGate = bootstrapGenerator.slice(
+        bootstrapGenerator.indexOf('const FEATURE_SETTINGS'),
+        bootstrapGenerator.indexOf('function readManifest')
+    );
+    assert.doesNotMatch(settingsGate, /features\/subscription-groups\/index\.js/,
+        'the descriptor-only module must load while off so immediate enable works without a tab reload');
 });
 
 test('subscriptionGroups budgets high-card feed passes and cancels stale work', () => {
     const source = sources.ytkit;
     const factoryNeedle = 'globalThis.YTKitFeatures?.subscriptionGroups?.createSubscriptionGroupsFeature?.({';
     const factoryIndex = source.indexOf(factoryNeedle);
-    const fallbackIndex = source.indexOf("id: 'subscriptionGroups'", factoryIndex);
-    const dependencyBag = source.slice(factoryIndex, fallbackIndex);
+    const descriptorIndex = source.indexOf("id: 'subscriptionGroups'", factoryIndex);
+    const dependencyBag = source.slice(factoryIndex, descriptorIndex);
     assert.ok(dependencyBag.includes('runBudgetedElementBatch'),
         'ytkit.js must pass the navigation batch budget helper into subscriptionGroups');
 
@@ -1914,58 +1938,6 @@ test('subscriptionGroups import merges by default and only replaces on request',
     const replacedGroups = replace.appState.settings.subscriptionGroupData;
     assert.equal(replaceResult.ok, true);
     assert.deepEqual(Object.keys(replacedGroups), ['news'], 'explicit replace still wipes the rest');
-    assert.equal(replaceResult.removedGroups, 1);
-});
-
-test('the MONOLITH subscriptionGroups copy also merges on import', () => {
-    // The peeled module is only imported when the session LANDS on the
-    // subscriptions feed; land anywhere else and this copy is what runs. It
-    // kept the destructive full-replace long after the peeled copy was fixed,
-    // so a partial file deleted every group missing from it — and the test
-    // above passed the whole time because it only drove the module.
-    const { loadFallbackFeature } = require('../helpers/monolith');
-    const makeFeature = () => {
-        const appState = {
-            settings: {
-                subscriptionGroupData: {
-                    keep: { name: 'Keep', color: '#7c3aed', channelIds: ['UCkeep1111111111111111'], parentId: '', sortMode: 'default', updatedAt: 1 },
-                    news: { name: 'Old News', color: '#7c3aed', channelIds: ['UCexisting111111111111'], parentId: '', sortMode: 'default', updatedAt: 1 },
-                },
-            },
-        };
-        const feature = loadFallbackFeature('subscriptionGroups', {
-            appState,
-            settingsManager: { save() {} },
-            showToast() {},
-        });
-        feature._renderToolbar = () => {};
-        feature._applyGroupFilter = () => {};
-        feature._renderDeadChannelMarkers = () => {};
-        return { feature, appState };
-    };
-    const payload = JSON.stringify({
-        groups: {
-            news: { name: 'News', color: '#123456', channelIds: ['UCimported11111111111'], sortMode: 'default' },
-        },
-    });
-
-    const merge = makeFeature();
-    const mergeResult = merge.feature._importGroups(payload);
-    const mergedGroups = merge.appState.settings.subscriptionGroupData;
-    assert.equal(mergeResult.ok, true);
-    assert.ok(mergedGroups.keep, 'a group missing from the file must survive an import');
-    assert.equal(mergedGroups.news.name, 'News', 'the imported record wins on presentation');
-    // The fallback runs in a vm realm, so its arrays carry that realm's
-    // prototype; spread them back into this realm before a strict compare.
-    assert.deepEqual([...mergedGroups.news.channelIds], ['UCexisting111111111111', 'UCimported11111111111'],
-        'existing channels are kept and imported ones appended');
-    assert.equal(mergeResult.removedGroups, 0, 'merging never reports removals');
-
-    const replace = makeFeature();
-    const replaceResult = replace.feature._importGroups(payload, { mode: 'replace' });
-    assert.equal(replaceResult.ok, true);
-    assert.deepEqual(Object.keys(replace.appState.settings.subscriptionGroupData), ['news'],
-        'explicit replace still wipes the rest');
     assert.equal(replaceResult.removedGroups, 1);
 });
 

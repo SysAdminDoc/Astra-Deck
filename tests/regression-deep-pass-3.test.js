@@ -11,6 +11,8 @@ const path = require('path');
 
 const repoRoot = path.join(__dirname, '..');
 const ytkit = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+const subscriptionGroups = fs.readFileSync(
+    path.join(repoRoot, 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8');
 const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const popup = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
 
@@ -28,11 +30,11 @@ test('SponsorBlock _loadForVideo re-validates the video id after the segment fet
 });
 
 test('subscriptionGroups tracks + clears its deferred nav timers (no wrong-page lastVisit stamp)', () => {
-    assert.ok(/this\._stampTimer\s*=\s*setTimeout/.test(ytkit),
+    assert.ok(/this\._stampTimer\s*=\s*setTimeout/.test(subscriptionGroups),
         'the 8s lastVisit stamp must be tracked on a handle');
-    assert.ok(/clearTimeout\(this\._stampTimer\)/.test(ytkit),
+    assert.ok(/clearTimeout\(this\._stampTimer\)/.test(subscriptionGroups),
         'the lastVisit stamp timer must be cleared (re-schedule + destroy) so it cannot stamp the wrong page');
-    assert.ok(/clearTimeout\(this\._renderTimer\)/.test(ytkit),
+    assert.ok(/clearTimeout\(this\._renderTimer\)/.test(subscriptionGroups),
         'the 1200ms render timer must also be tracked/cleared');
 });
 

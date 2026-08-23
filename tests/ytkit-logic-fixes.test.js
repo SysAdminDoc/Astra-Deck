@@ -22,6 +22,10 @@ const stickySource = fs.readFileSync(
     path.join(repoRoot, 'extension', 'features', 'sticky-video', 'index.js'),
     'utf8'
 );
+const subscriptionGroupsSource = fs.readFileSync(
+    path.join(repoRoot, 'extension', 'features', 'subscription-groups', 'index.js'),
+    'utf8'
+);
 const schemaSource = fs.readFileSync(
     path.join(repoRoot, 'extension', 'core', 'settings-schema.js'),
     'utf8'
@@ -31,9 +35,11 @@ const defaultSettings = JSON.parse(
 );
 
 function featureBlock(id, length = 170000) {
-    const source = ['downloadCobaltFallback', 'downloadStreamLinksPanel'].includes(id)
-        ? downloadUiSource
-        : ytkitSource;
+    const source = id === 'subscriptionGroups'
+        ? subscriptionGroupsSource
+        : (['downloadCobaltFallback', 'downloadStreamLinksPanel'].includes(id)
+            ? downloadUiSource
+            : ytkitSource);
     const start = source.indexOf(`id: '${id}'`);
     assert.ok(start > -1, `feature '${id}' must exist in its canonical source`);
     return source.slice(start, start + length);
@@ -524,11 +530,9 @@ test('subscriptionGroups init has no pathname hard-return; the nav rule gates by
         'init() must not hard-return off-path — initFeatureLifecycle marks _initialized unconditionally, which left the feature permanently inert'
     );
     assert.match(initBlock, /this\._ensureStyles\(\)/, 'init must always register styles/rules');
-    assert.match(
-        block,
-        /this\._navRule\s*=\s*\(\)\s*=>\s*\{\s*if\s*\(window\.location\.pathname\s*!==\s*'\/feed\/subscriptions'\)\s*return;/,
-        'the navigate rule must re-check the subscriptions path itself'
-    );
+    const navRule = methodSlice(block, 'this._navRule = () => {', 900);
+    assert.match(navRule, /if \(window\.location\.pathname !== '\/feed\/subscriptions'\) \{[\s\S]*?this\._cancelAllBudgetedScans\(\);[\s\S]*?return;[\s\S]*?\}/,
+        'the navigate rule must re-check the subscriptions path, cancel in-flight scans, and return off-path');
 });
 
 // ── item 6: switching back to the default sort restores the original order ──
@@ -589,40 +593,35 @@ test('subscriptionGroups duration sort reads lockup badges and prefers the LAST 
 
 // ── item 10: group membership editor + empty-state + honest description ──
 
-test('subscriptionGroups ships a unified health/action center in both copies', () => {
-    // The health center must exist in the peeled module (primary path) AND
-    // the ytkit.js inline fallback, mirroring the Edit Channels convention.
-    const moduleSource = fs.readFileSync(
-        path.join(repoRoot, 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8');
-    for (const [label, src] of [['module', moduleSource], ['ytkit fallback', featureBlock('subscriptionGroups')]]) {
-        assert.match(src, /dataset\.action = 'health'/,
-            `${label}: toolbar must expose a Health action`);
-        const panelBlock = (() => {
-            const idx = src.indexOf('_renderHealthPanel() {');
-            assert.ok(idx > -1, `${label}: _renderHealthPanel must exist`);
-            return src.slice(idx, idx + 24000);
-        })();
-        assert.match(panelBlock, /Subscription Health/,
-            `${label}: panel must carry the health title`);
-        assert.match(panelBlock, /_collectRenderedCardSummaries\(lastVisit\)/,
-            `${label}: health center must reuse the digest's rendered-card summaries`);
-        assert.match(panelBlock, /_renderDeadChannelMarkers\(\)/,
-            `${label}: health center must reuse the stale-channel collector`);
-        assert.match(panelBlock, /No stale channels detected among the rendered cards/,
-            `${label}: stale section must have an explanatory empty state`);
-        assert.match(panelBlock, /Nothing staged\. Stage stale channels to review them before a bounded unsubscribe session/,
-            `${label}: staged section empty state must explain review-before-apply semantics`);
-        assert.match(panelBlock, /Undo all staged/,
-            `${label}: staged section must expose bulk undo recovery`);
-        assert.match(panelBlock, /Health scan failed/,
-            `${label}: panel must render an error state instead of blanking`);
-        assert.match(panelBlock, /_exportGroupsOpml\(\)/,
-            `${label}: export actions must include OPML`);
-        assert.match(src, /if \(hadHealthPanel\) this\._renderHealthPanel\(\)/,
-            `${label}: toolbar re-render must restore an open health panel`);
-        assert.match(src, /this\._closeHealthPanel\(\);\s*\n\s*this\._closeMembersPanel\(\)/,
-            `${label}: destroy/rerender paths must close the health panel`);
-    }
+test('subscriptionGroups ships a unified health/action center in its canonical module', () => {
+    const src = featureBlock('subscriptionGroups');
+    assert.match(src, /dataset\.action = 'health'/,
+        'toolbar must expose a Health action');
+    const panelBlock = (() => {
+        const idx = src.indexOf('_renderHealthPanel() {');
+        assert.ok(idx > -1, '_renderHealthPanel must exist');
+        return src.slice(idx, idx + 24000);
+    })();
+    assert.match(panelBlock, /Subscription Health/,
+        'panel must carry the health title');
+    assert.match(panelBlock, /_collectRenderedCardSummaries\(lastVisit\)/,
+        'health center must reuse the digest rendered-card summaries');
+    assert.match(panelBlock, /_renderDeadChannelMarkers\(\)/,
+        'health center must reuse the stale-channel collector');
+    assert.match(panelBlock, /No stale channels detected among the rendered cards/,
+        'stale section must have an explanatory empty state');
+    assert.match(panelBlock, /Nothing staged\. Stage stale channels to review them before a bounded unsubscribe session/,
+        'staged section empty state must explain review-before-apply semantics');
+    assert.match(panelBlock, /Undo all staged/,
+        'staged section must expose bulk undo recovery');
+    assert.match(panelBlock, /Health scan failed/,
+        'panel must render an error state instead of blanking');
+    assert.match(panelBlock, /_exportGroupsOpml\(\)/,
+        'export actions must include OPML');
+    assert.match(src, /if \(hadHealthPanel\) this\._renderHealthPanel\(\)/,
+        'toolbar re-render must restore an open health panel');
+    assert.match(src, /this\._closeHealthPanel\(\);\s*\n\s*this\._closeMembersPanel\(\)/,
+        'destroy and rerender paths must close the health panel');
 });
 
 test('subscriptionGroups ships an Edit Channels membership editor with empty-state notice', () => {
