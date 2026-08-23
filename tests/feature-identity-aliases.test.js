@@ -28,6 +28,7 @@ const schema = require(path.join(repoRoot, 'extension', 'core', 'settings-schema
 const baseline = JSON.parse(fs.readFileSync(
     path.join(repoRoot, 'scripts', 'shipped-identity-baseline.json'), 'utf8'
 ));
+const identityGenerator = require('../scripts/generate-shipped-identity-baseline.js');
 
 const schemaKeys = new Set(schema.SETTINGS_SCHEMA.map((entry) => entry.key));
 
@@ -151,9 +152,47 @@ test('the shipped-identity baseline only grows', () => {
         'the generator must merge with the existing baseline instead of replacing it');
     assert.ok(baseline.settingKeys.length >= schemaKeys.size,
         'the baseline cannot hold fewer keys than the current schema');
-    assert.ok(baseline.releases.length > 0, 'the baseline must name the releases it covers');
+    assert.equal('releases' in baseline, false,
+        'volatile tag names must not make an unchanged identity baseline stale');
     const sortedKeys = [...baseline.settingKeys].sort();
     assert.deepEqual(baseline.settingKeys, sortedKeys, 'baseline keys must stay sorted for readable diffs');
+    const sortedFeatureIds = [...baseline.featureIds].sort();
+    assert.deepEqual(baseline.featureIds, sortedFeatureIds,
+        'baseline feature IDs must stay sorted for readable diffs');
+});
+
+test('adding a tag for an already-checked identity set leaves the baseline byte-identical', () => {
+    const identities = {
+        v1: { settings: ['alpha'], features: ['featureA'] },
+        HEAD: { settings: ['alpha', 'candidateSetting'], features: ['featureA', 'candidateFeature'] },
+        v2: { settings: ['alpha', 'candidateSetting'], features: ['featureA', 'candidateFeature'] },
+    };
+    const options = (releaseTags) => ({
+        releaseTags,
+        currentRef: 'HEAD',
+        settingKeysAt: (ref) => identities[ref]?.settings || null,
+        featureIdsAt: (ref) => identities[ref]?.features || null,
+    });
+    const beforeTag = identityGenerator.serialize(identityGenerator.buildBaseline(options(['v1'])));
+    const afterTag = identityGenerator.serialize(identityGenerator.buildBaseline(options(['v1', 'v2'])));
+    assert.equal(afterTag, beforeTag,
+        'creating a release tag after the candidate was checked must not rewrite the baseline');
+});
+
+test('a tagged release still contributes identities absent from the current candidate', () => {
+    const identities = {
+        v1: { settings: ['currentSetting'], features: ['currentFeature'] },
+        historical: { settings: ['removedSetting'], features: ['removedFeature'] },
+        HEAD: { settings: ['currentSetting'], features: ['currentFeature'] },
+    };
+    const result = identityGenerator.buildBaseline({
+        releaseTags: ['v1', 'historical'],
+        currentRef: 'HEAD',
+        settingKeysAt: (ref) => identities[ref]?.settings || null,
+        featureIdsAt: (ref) => identities[ref]?.features || null,
+    });
+    assert.ok(result.settingKeys.includes('removedSetting'));
+    assert.ok(result.featureIds.includes('removedFeature'));
 });
 
 test('check-settings fails when a shipped identity stops resolving', () => {

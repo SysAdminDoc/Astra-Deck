@@ -8,6 +8,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Release tags no longer make the shipped-identity baseline stale when no
+  setting key or feature ID changed. Tagged history and the current release
+  candidate are still scanned, while the persisted contract contains only the
+  identities that must keep resolving.
+
 - Chrome and Firefox reviewer documents now list the exact web-accessible
   resources from all six staged profile targets. The generated inventory
   explains the packaged runtime module graph, Chromium dynamic resource URLs,
