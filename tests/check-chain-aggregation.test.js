@@ -45,6 +45,7 @@ test('the runner still covers every gate the chain had', () => {
     assert.equal(new Set(ids).size, ids.length, 'gate ids must be unique');
     for (const required of [
         'syntax', 'versions', 'i18n', 'i18n-copy', 'settings', 'no-eval',
+        'reviewer-resources',
         'userscript-drift', 'firefox-webext', 'startup', 'lint', 'a11y-popup',
         'a11y-overlays', 'contrast', 'light-theme', 'deps', 'i18n-coverage',
         'capability-matrix'

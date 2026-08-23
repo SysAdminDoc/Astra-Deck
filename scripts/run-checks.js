@@ -31,6 +31,7 @@ const GATES = Object.freeze([
     { id: 'zero-ads', script: 'check-zero-ad-rules.js' },
     { id: 'companion-ports', script: 'check-companion-port-catalogue.js' },
     { id: 'chromium-store', script: 'check-chromium-store-profile.js' },
+    { id: 'reviewer-resources', script: 'generate-reviewer-resource-docs.js', args: ['--check'] },
     { id: 'i18n', script: 'check-i18n.js' },
     { id: 'i18n-keys', script: 'extract-i18n-keys.js', args: ['--check-en'] },
     { id: 'i18n-copy', script: 'check-localizable-ui-copy.js' },

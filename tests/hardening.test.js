@@ -3196,16 +3196,16 @@ test('store permission rationale covers live manifest permissions and profile ho
 
     assert.ok(checklist.includes('store-permission-rationale.md'),
         'CWS checklist must point reviewers to the copy-paste rationale doc');
-    assert.match(checklist, /`icons\/\*`\s+and\s+`assets\/\*`/,
-        'CWS checklist must document the exact web_accessible_resources allowlist');
+    assert.ok(checklist.includes('<!-- BEGIN GENERATED REVIEWER RESOURCE INVENTORY -->'),
+        'CWS checklist must carry the staged-manifest resource inventory');
     assert.ok(rationale.includes('## Single-Purpose Statement'),
         'rationale doc must include a single-purpose statement');
     assert.ok(rationale.includes('## Data-Handling Statement'),
         'rationale doc must include a data-handling statement');
     assert.ok(rationale.includes('## Firefox Data Consent'),
         'rationale doc must include Firefox data-consent reviewer copy');
-    assert.match(rationale, /`web_accessible_resources`[\s\S]*`icons\/\*`[\s\S]*`assets\/\*`/,
-        'store rationale must explain the exact web_accessible_resources allowlist');
+    assert.ok(rationale.includes('<!-- BEGIN GENERATED REVIEWER RESOURCE INVENTORY -->'),
+        'store rationale must carry the staged-manifest resource inventory');
 
     for (const permission of manifest.permissions || []) {
         assert.ok(rationale.includes('`' + permission + '`'),

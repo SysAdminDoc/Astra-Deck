@@ -6,13 +6,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### P1
 
-- [ ] P1: Generate truthful store-review resource documentation from staged manifests
-  Why: reviewer documents currently say no JavaScript is web-accessible, while the runtime loader and full module graph are intentionally listed in `web_accessible_resources`; the test suite pins both contradictory claims.
-  Evidence: `extension/manifest.json`; `docs/cws-submission-checklist.md`; `docs/store-permission-rationale.md`; `tests/hardening.test.js`; [Chrome web-accessible resources security guidance](https://developer.chrome.com/docs/extensions/develop/security-privacy/stay-secure)
-  Touches: `build-extension.js`, `scripts/project-facts.js` or a focused reviewer-copy generator, both store documents, `tests/hardening.test.js`
-  Acceptance: each build profile's staged manifest drives an exact reviewer-facing resource inventory; the documents explain why runtime modules are exposed and how `use_dynamic_url` limits stable fingerprinting; a bait test fails if either a staged resource or the prose changes alone; no document claims that JavaScript is absent.
-  Complexity: M
-
 - [ ] P1: Make the shipped-identity gate invariant across release tagging
   Why: creating tag `v4.84.3` made `npm run check` fail even though no setting key or feature ID changed, so a successful release leaves the main verification command red.
   Evidence: `scripts/generate-shipped-identity-baseline.js`, `scripts/shipped-identity-baseline.json`, `tests/feature-identity-aliases.test.js`, and the 2026-08-23 `npm run check` result

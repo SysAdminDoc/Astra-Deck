@@ -36,9 +36,301 @@ Run before the first submission AND before every subsequent update.
       unsafe-eval, or wildcard sources. Astra Deck ships
       `script-src 'self'; object-src 'self'; connect-src <explicit list>`
       per H20 / NX11.
-- [ ] `web_accessible_resources` lists only `icons/*` and `assets/*` for
-      packaged icons plus bundled theme media, no source code, HTML, CSS, or
-      unreviewed asset paths.
+- [ ] The generated `web_accessible_resources` inventory below matches the
+      staged `chromium-store` manifest submitted for review.
+
+<!-- BEGIN GENERATED REVIEWER RESOURCE INVENTORY -->
+### Generated web-accessible resource inventory
+
+This block is generated from temporary package stages for every build profile and browser target. Run `node scripts/generate-reviewer-resource-docs.js --write` after changing the manifest or runtime graph.
+
+The runtime loader and its packaged JavaScript modules are web-accessible because the isolated content runtime imports them through `runtime.getURL()`. They remain local extension code under `script-src 'self'`; no remote code is loaded. Chromium assigns per-session resource aliases through `use_dynamic_url: true`. Firefox omits that Chromium-only key and serves the same reviewed paths from its randomized extension origin.
+
+| Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
+| --- | --- | --- | ---: | --- |
+| `store-safe` | chromium | A | 116 | `true` on every entry |
+| `store-safe` | firefox | A | 116 | omitted |
+| `chromium-store` | chromium | B | 115 | `true` on every entry |
+| `chromium-store` | firefox | B | 115 | omitted |
+| `github-full` | chromium | A | 116 | `true` on every entry |
+| `github-full` | firefox | A | 116 | omitted |
+
+#### Resource set A
+
+Used by: `store-safe` chromium, `store-safe` firefox, `github-full` chromium, `github-full` firefox.
+
+Entry 1 match patterns:
+
+- `https://*.youtube.com/*`
+- `https://*.youtube-nocookie.com/*`
+- `https://youtu.be/*`
+
+Entry 1 resource paths:
+
+- `icons/32.png`
+- `assets/cat.gif`
+
+Entry 2 match patterns:
+
+- `https://*.youtube.com/*`
+- `https://*.youtube-nocookie.com/*`
+- `https://youtu.be/*`
+
+Entry 2 resource paths:
+
+- `runtime-core-loader.mjs`
+- `core/browser-api.js`
+- `core/injection-guard.js`
+- `core/env.js`
+- `core/storage.js`
+- `core/styles.js`
+- `core/settings-visual-system.js`
+- `core/registry.js`
+- `core/runtime-flags.js`
+- `core/local-ai.js`
+- `core/capability-probe.js`
+- `core/selector-packs/appShell.js`
+- `core/selector-packs/nav.js`
+- `core/selector-packs/search.js`
+- `core/selector-packs/searchResults.js`
+- `core/selector-packs/subscriptions.js`
+- `core/selector-packs/leftNav.js`
+- `core/selector-packs/feed.js`
+- `core/selector-packs/feedCard.js`
+- `core/selector-packs/feedExperimentChips.js`
+- `core/selector-packs/feedPlayables.js`
+- `core/selector-packs/feedPrompt.js`
+- `core/selector-packs/feedSponsored.js`
+- `core/selector-packs/thumbnail.js`
+- `core/selector-packs/shortsShelf.js`
+- `core/selector-packs/watch.js`
+- `core/selector-packs/relatedSidebar.js`
+- `core/selector-packs/player.js`
+- `core/selector-packs/mainVideo.js`
+- `core/selector-packs/playerChrome.js`
+- `core/selector-packs/playerSettings.js`
+- `core/selector-packs/sidebar.js`
+- `core/selector-packs/modals.js`
+- `core/selector-packs/comments.js`
+- `core/selector-packs/commentComposer.js`
+- `core/selector-packs/engagementPanels.js`
+- `core/selector-packs/transcriptPanel.js`
+- `core/selector-packs/settingsOverlay.js`
+- `core/selector-packs/profile.js`
+- `core/selector-packs/notifications.js`
+- `core/selector-packs/media.js`
+- `core/selector-packs/liveChatFrame.js`
+- `core/selector-packs/liveChat.js`
+- `core/selector-packs/liveChatPlaceholder.js`
+- `core/selectors.js`
+- `core/trusted-html.js`
+- `core/diagnostic-log.js`
+- `core/external-api-health.js`
+- `core/predicate-sandbox.js`
+- `core/video-type.js`
+- `core/playability.js`
+- `core/transcript-service.js`
+- `core/transcript-index.js`
+- `core/ai-summary-artifacts.js`
+- `core/remote-list-scope.js`
+- `core/persisted-domains.js`
+- `core/settings-import-transaction.js`
+- `core/storage-manager.js`
+- `core/icons.js`
+- `core/url.js`
+- `core/text-metrics.js`
+- `core/date-time.js`
+- `core/failure-copy.js`
+- `core/page.js`
+- `core/navigation.js`
+- `core/player.js`
+- `core/settings-schema.js`
+- `core/feature-lifecycle.js`
+- `core/policy-profile.js`
+- `core/settings-controller.js`
+- `core/selector-health.js`
+- `core/feature-health.js`
+- `core/feature-disable-feed.js`
+- `core/feature-bisect.js`
+- `core/chapters.js`
+- `core/csv.js`
+- `core/dialog-guard.js`
+- `core/element-zapper.js`
+- `core/hide-attribution.js`
+- `core/heatmap.js`
+- `core/youtube-thumbnails.js`
+- `core/feature-schedule.js`
+- `core/companion-ports.js`
+- `core/data-flow.js`
+- `core/toast.js`
+- `core/toast-dom.js`
+- `core/lifecycle-route-bridge.js`
+- `features/element-zapper/index.js`
+- `features/subtitles/index.js`
+- `features/video-filters/index.js`
+- `features/blue-light-filter/index.js`
+- `features/theme-css/index.js`
+- `features/wave-8-css/index.js`
+- `features/home-subs-css/index.js`
+- `features/chat-style-comments/index.js`
+- `features/sticky-video/index.js`
+- `features/sticky-chat/index.js`
+- `features/video-hider/index.js`
+- `features/video-notes/index.js`
+- `features/replay-chat-density/index.js`
+- `features/subscription-view/index.js`
+- `features/subscription-groups/index.js`
+- `features/digital-wellbeing/index.js`
+- `features/settings-panel/index.js`
+- `features/player-dock/index.js`
+- `features/youtube-music-compat/index.js`
+- `features/search-hygiene/index.js`
+- `features/search-while-watching/index.js`
+- `features/video-insights/index.js`
+- `features/return-dislike/index.js`
+- `features/sponsorblock/index.js`
+- `features/dearrow/index.js`
+- `features/download-ui/index.js`
+- `ytkit.js`
+
+#### Resource set B
+
+Used by: `chromium-store` chromium, `chromium-store` firefox.
+
+Entry 1 match patterns:
+
+- `https://*.youtube.com/*`
+- `https://*.youtube-nocookie.com/*`
+- `https://youtu.be/*`
+
+Entry 1 resource paths:
+
+- `icons/32.png`
+- `assets/cat.gif`
+
+Entry 2 match patterns:
+
+- `https://*.youtube.com/*`
+- `https://*.youtube-nocookie.com/*`
+- `https://youtu.be/*`
+
+Entry 2 resource paths:
+
+- `runtime-core-loader.mjs`
+- `core/browser-api.js`
+- `core/injection-guard.js`
+- `core/env.js`
+- `core/storage.js`
+- `core/styles.js`
+- `core/settings-visual-system.js`
+- `core/registry.js`
+- `core/runtime-flags.js`
+- `core/local-ai.js`
+- `core/capability-probe.js`
+- `core/selector-packs/appShell.js`
+- `core/selector-packs/nav.js`
+- `core/selector-packs/search.js`
+- `core/selector-packs/searchResults.js`
+- `core/selector-packs/subscriptions.js`
+- `core/selector-packs/leftNav.js`
+- `core/selector-packs/feed.js`
+- `core/selector-packs/feedCard.js`
+- `core/selector-packs/feedExperimentChips.js`
+- `core/selector-packs/feedPlayables.js`
+- `core/selector-packs/feedPrompt.js`
+- `core/selector-packs/feedSponsored.js`
+- `core/selector-packs/thumbnail.js`
+- `core/selector-packs/shortsShelf.js`
+- `core/selector-packs/watch.js`
+- `core/selector-packs/relatedSidebar.js`
+- `core/selector-packs/player.js`
+- `core/selector-packs/mainVideo.js`
+- `core/selector-packs/playerChrome.js`
+- `core/selector-packs/playerSettings.js`
+- `core/selector-packs/sidebar.js`
+- `core/selector-packs/modals.js`
+- `core/selector-packs/comments.js`
+- `core/selector-packs/commentComposer.js`
+- `core/selector-packs/engagementPanels.js`
+- `core/selector-packs/transcriptPanel.js`
+- `core/selector-packs/settingsOverlay.js`
+- `core/selector-packs/profile.js`
+- `core/selector-packs/notifications.js`
+- `core/selector-packs/media.js`
+- `core/selector-packs/liveChatFrame.js`
+- `core/selector-packs/liveChat.js`
+- `core/selector-packs/liveChatPlaceholder.js`
+- `core/selectors.js`
+- `core/trusted-html.js`
+- `core/diagnostic-log.js`
+- `core/external-api-health.js`
+- `core/predicate-sandbox.js`
+- `core/video-type.js`
+- `core/playability.js`
+- `core/transcript-service.js`
+- `core/transcript-index.js`
+- `core/ai-summary-artifacts.js`
+- `core/remote-list-scope.js`
+- `core/persisted-domains.js`
+- `core/settings-import-transaction.js`
+- `core/storage-manager.js`
+- `core/icons.js`
+- `core/url.js`
+- `core/text-metrics.js`
+- `core/date-time.js`
+- `core/failure-copy.js`
+- `core/page.js`
+- `core/navigation.js`
+- `core/player.js`
+- `core/settings-schema.js`
+- `core/feature-lifecycle.js`
+- `core/policy-profile.js`
+- `core/settings-controller.js`
+- `core/selector-health.js`
+- `core/feature-health.js`
+- `core/feature-disable-feed.js`
+- `core/feature-bisect.js`
+- `core/chapters.js`
+- `core/csv.js`
+- `core/dialog-guard.js`
+- `core/element-zapper.js`
+- `core/hide-attribution.js`
+- `core/heatmap.js`
+- `core/youtube-thumbnails.js`
+- `core/feature-schedule.js`
+- `core/companion-ports.js`
+- `core/data-flow.js`
+- `core/toast.js`
+- `core/toast-dom.js`
+- `core/lifecycle-route-bridge.js`
+- `features/element-zapper/index.js`
+- `features/subtitles/index.js`
+- `features/video-filters/index.js`
+- `features/blue-light-filter/index.js`
+- `features/theme-css/index.js`
+- `features/wave-8-css/index.js`
+- `features/home-subs-css/index.js`
+- `features/chat-style-comments/index.js`
+- `features/sticky-video/index.js`
+- `features/sticky-chat/index.js`
+- `features/video-hider/index.js`
+- `features/video-notes/index.js`
+- `features/replay-chat-density/index.js`
+- `features/subscription-view/index.js`
+- `features/subscription-groups/index.js`
+- `features/digital-wellbeing/index.js`
+- `features/settings-panel/index.js`
+- `features/player-dock/index.js`
+- `features/youtube-music-compat/index.js`
+- `features/search-hygiene/index.js`
+- `features/search-while-watching/index.js`
+- `features/video-insights/index.js`
+- `features/return-dislike/index.js`
+- `features/sponsorblock/index.js`
+- `features/dearrow/index.js`
+- `ytkit.js`
+
+<!-- END GENERATED REVIEWER RESOURCE INVENTORY -->
 
 ---
 
