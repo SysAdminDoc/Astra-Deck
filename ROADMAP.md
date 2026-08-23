@@ -4,15 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Research-Driven Additions
 
-### P1
-
-- [ ] P1: Rebuild Transcript Q&A on citation-backed artifacts and accessible dialog behavior
-  Why: the shipped Q&A path uses only the first 6,000 transcript characters, returns unvalidated plain text, has no citations or saved history, and uses hard-coded English in a hand-rolled modal without a complete focus cycle.
-  Evidence: `extension/ytkit.js` `localAiTranscriptQa`; `extension/core/ai-summary-artifacts.js`; [Glasp YouTube Summary](https://glasp.co/youtube-summary); [YouTube Ask help](https://support.google.com/youtube/answer/14110396)
-  Touches: the Q&A feature in `extension/ytkit.js` or a peeled feature module, `extension/core/ai-summary-artifacts.js`, `extension/core/persisted-domains.js`, settings schema, data-flow declarations, locales, rendered feature tests
-  Acceptance: questions run against bounded cue chunks rather than `slice(0, 6000)`; every rendered claim cites one or more validated transcript cue IDs with seekable timestamps; conversations reopen by video, transcript language, provider, model, and prompt version; Chrome on-device, Ollama, and permitted BYO-key lanes honor existing spend, permission, and privacy policies; the dialog is localized, traps focus, closes on Escape, restores focus, reports busy/error state, and passes rendered dark, light, keyboard, and screen-reader checks.
-  Complexity: L
-
 ### P2
 
 - [ ] P2: Remove the final subscription-groups implementation fallback from the monolith

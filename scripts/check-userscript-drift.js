@@ -263,6 +263,7 @@ const EXTENSION_ONLY_FEATURE_CLASSIFICATIONS = Object.freeze({
     initialPlayerStateForeground: 'intentional-extension-only',
     localAiSummary: 'unsafe-in-userscript',
     localAiTranscriptQa: 'unsafe-in-userscript',
+    transcriptQaLane: 'unsafe-in-userscript',
     lowPowerProfile: 'intentional-extension-only',
     monetizationIndicator: 'not-yet-ported',
     monoToStereo: 'intentional-extension-only',
@@ -417,7 +418,7 @@ try {
                 const sliceFrom = (text) => {
                     const at = text.indexOf(header);
                     if (at === -1) return null;
-                    const nextAt = text.indexOf('// ── bundled module: ', at + header.length);
+                    const nextAt = text.indexOf('//m:', at + header.length);
                     const endAt = nextAt === -1
                         ? text.indexOf('// ── END v5.0.0 bundled core modules ──', at)
                         : nextAt;

@@ -109,6 +109,7 @@
         { id: 'focusPresetRecovery', location: 'extension-local', key: 'ytkit-preset-focus-backup', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'recovery-v1' },
         { id: 'transcriptIndex', location: 'youtube-indexeddb', db: 'ytkit-transcript-index', store: 'transcripts', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'transcript-index-v1' },
         { id: 'aiSummaries', location: 'extension-local', key: 'ytkit-ai-summaries', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'ai-summary-store-v1' },
+        { id: 'aiTranscriptQa', location: 'extension-local', key: 'ytkit-ai-transcript-qa', backup: 'include', strategy: 'replace', credentialScrub: 'sensitive-keys', migration: 'transcript-qa-store-v1' },
         { id: 'elementZapperRules', location: 'extension-local', key: 'ytkit-element-zapper-rules', backup: 'include', strategy: 'replace', credentialScrub: 'not-applicable', migration: 'element-zapper-rules-v1' },
 
         { id: 'credentialVault', location: 'extension-session-and-indexeddb', key: 'ytkit-credential-vault', backup: 'exclude', reason: 'Credentials are intentionally non-portable and write-only.', credentialScrub: 'entire-domain', migration: 'none' },
@@ -681,6 +682,11 @@
             // sanitizer when it is loaded; falls back to a plain-object clone.
             const summarySanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeArtifactStore;
             if (typeof summarySanitizer === 'function') return summarySanitizer(value);
+            return isPlainObject(value) ? safeClone(value) : {};
+        }
+        case 'aiTranscriptQa': {
+            const qaSanitizer = globalThis.YTKitCore?.aiSummaryArtifacts?.sanitizeQaStore;
+            if (typeof qaSanitizer === 'function') return qaSanitizer(value);
             return isPlainObject(value) ? safeClone(value) : {};
         }
         default: return safeClone(value);

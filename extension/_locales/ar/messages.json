@@ -78,7 +78,7 @@
     "message": "جارٍ الاتصال بموفر الذكاء الاصطناعي باستخدام أول 120,000 حرف من النص…"
   },
   "aiSummaryCitationLabel": {
-    "message": "استشهاد من النص"
+    "message": "اقتباس من النص"
   },
   "aiSummaryClose": {
     "message": "إغلاق ملخص الذكاء الاصطناعي"
@@ -2814,10 +2814,10 @@
     "message": "ملخص ذكاء اصطناعي محلي (مدمج في المتصفح)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "اطرح أسئلة حول نص الفيديو الحالي باستخدام Chrome Prompt API (Gemini Nano). يعمل على الجهاز، بدون مفاتيح API."
+    "message": "اطرح أسئلة مدعومة باقتباسات باستخدام ذكاء Chrome على الجهاز أو مزود مهيأ تختاره صراحةً."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "أسئلة وأجوبة النص (مدمج في المتصفح)"
+    "message": "أسئلة وأجوبة النص"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "جسر سمة الرموز الأصلية"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "احتفظ بالأسئلة على الجهاز أو استخدم المزود المهيأ مع ضوابط الأذونات والخصوصية وحدود الطلبات الحالية."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "مزود أسئلة وأجوبة النص"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "يضيف زراً في المشغّل ينسخ النص ويفتح أداة الذكاء الاصطناعي المختارة مع مطالبة تلخيص معبأة مسبقاً"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "اسأل"
+  },
+  "transcriptQaButton": {
+    "message": "سؤال وجواب"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "اطرح أسئلة عن هذا الفيديو مدعومة باقتباسات."
+  },
+  "transcriptQaCitationLabel": {
+    "message": "اقتباس من النص"
+  },
+  "transcriptQaClose": {
+    "message": "إغلاق أسئلة وأجوبة النص"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "المزود المهيأ غير متاح في هذا الإصدار أو الملف الشخصي."
+  },
+  "transcriptQaDialogDescription": {
+    "message": "تستخدم الإجابات مقاطع مختارة من النص. يرتبط كل ادعاء معروض بالطابع الزمني الذي يدعمه."
+  },
+  "transcriptQaDialogTitle": {
+    "message": "أسئلة وأجوبة النص"
+  },
   "transcriptQaFailed": {
-    "message": "تعذّرت الإجابة عن هذا السؤال"
+    "message": "تعذر الرد على السؤال المتعلق بالنص."
+  },
+  "transcriptQaHistory": {
+    "message": "سجل أسئلة وأجوبة النص"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "تمت استعادة الأسئلة المحفوظة لهذا النص والمزود."
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "المزود المهيأ"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "على الجهاز فقط"
+  },
+  "transcriptQaLoading": {
+    "message": "جارٍ تحميل أدلة النص…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "واجهة Prompt API على الجهاز غير متاحة. اختر مزودًا مهيأ لاستخدام خدمة بعيدة مسموح بها أو Ollama."
+  },
+  "transcriptQaNoAnswer": {
+    "message": "مقاطع النص المختارة لا تدعم إجابة."
+  },
+  "transcriptQaNoHistory": {
+    "message": "لا توجد أسئلة محفوظة لهذا النص بعد."
+  },
+  "transcriptQaNoTranscript": {
+    "message": "لا يتوفر نص لهذا الفيديو."
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "السؤال"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "اطرح سؤالًا عن هذا الفيديو…"
+  },
+  "transcriptQaReady": {
+    "message": "جاهز لسؤال عن النص."
+  },
+  "transcriptQaSaveFailed": {
+    "message": "تعذر حفظ سجل الأسئلة والأجوبة. قد يختفي بعد إعادة التحميل."
+  },
+  "transcriptQaThinking": {
+    "message": "جارٍ التحقق من أدلة النص…"
   },
   "transcriptRefreshedTrack": {
     "message": "تم تحديث المسار"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "تراجع"
+  },
+  "unknown": {
+    "message": "غير معروف"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

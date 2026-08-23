@@ -8,6 +8,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Transcript Q&A now selects bounded cue chunks from the full transcript and
+  displays only claims backed by validated, seekable timestamps. Exact
+  video, language, provider, model, and prompt provenance controls saved
+  history. Users can keep questions on-device or explicitly select their
+  configured provider, with localized keyboard and status behavior throughout.
+
 - Release tags no longer make the shipped-identity baseline stale when no
   setting key or feature ID changed. Tagged history and the current release
   candidate are still scanned, while the persisted contract contains only the

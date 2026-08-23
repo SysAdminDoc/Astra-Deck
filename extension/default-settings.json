@@ -518,6 +518,7 @@
   "subscriptionFilterStreamed": false,
   "localAiSummary": false,
   "localAiTranscriptQa": false,
+  "transcriptQaLane": "on-device",
   "researchSpacedReview": false,
   "researchTranscriptIndex": false,
   "researchTranscriptSearchPanel": false,

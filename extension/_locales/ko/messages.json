@@ -78,7 +78,7 @@
     "message": "Calling AI provider with the first 120,000 transcript characters…"
   },
   "aiSummaryCitationLabel": {
-    "message": "스크립트 인용"
+    "message": "대본 인용"
   },
   "aiSummaryClose": {
     "message": "AI 요약 닫기"
@@ -2814,10 +2814,10 @@
     "message": "로컬 AI 요약 (브라우저 내장)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Chrome Prompt API(Gemini Nano)를 사용하여 현재 동영상 대본에 대해 질문합니다. 기기에서 실행되며 API 키가 필요하지 않습니다."
+    "message": "Chrome 온디바이스 AI 또는 명시적으로 선택한 구성된 제공자를 사용해 인용이 포함된 질문을 할 수 있습니다."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "대본 Q&A (브라우저 내장)"
+    "message": "대본 Q&A"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "네이티브 토큰 테마 브릿지"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "질문을 기기에서 처리하거나 기존 권한, 개인정보 보호, 요청 한도 제어를 적용해 구성된 제공자를 사용합니다."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "대본 Q&A 제공자"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "대본을 복사하고 요약 프롬프트가 미리 채워진 상태로 선택한 AI 도구를 여는 플레이어 버튼을 추가합니다"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "질문하기"
+  },
+  "transcriptQaButton": {
+    "message": "Q&A"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "이 동영상에 대해 인용이 포함된 질문을 합니다."
+  },
+  "transcriptQaCitationLabel": {
+    "message": "대본 인용"
+  },
+  "transcriptQaClose": {
+    "message": "대본 Q&A 닫기"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "이 빌드 또는 프로필에서는 구성된 제공자를 사용할 수 없습니다."
+  },
+  "transcriptQaDialogDescription": {
+    "message": "답변은 선택된 대본 구간을 사용합니다. 표시되는 각 주장은 근거가 되는 타임스탬프로 연결됩니다."
+  },
+  "transcriptQaDialogTitle": {
+    "message": "대본 Q&A"
+  },
   "transcriptQaFailed": {
-    "message": "해당 질문에 답변하지 못했습니다"
+    "message": "대본 질문에 답할 수 없습니다."
+  },
+  "transcriptQaHistory": {
+    "message": "대본 Q&A 기록"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "이 대본과 제공자에 저장된 질문을 복원했습니다."
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "구성된 제공자"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "기기에서만"
+  },
+  "transcriptQaLoading": {
+    "message": "대본 근거를 불러오는 중…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "온디바이스 Prompt API를 사용할 수 없습니다. 구성된 제공자를 선택하면 허용된 원격 서비스 또는 Ollama를 사용할 수 있습니다."
+  },
+  "transcriptQaNoAnswer": {
+    "message": "선택된 대본 구간에는 답변을 뒷받침할 근거가 없습니다."
+  },
+  "transcriptQaNoHistory": {
+    "message": "이 대본에 저장된 질문이 아직 없습니다."
+  },
+  "transcriptQaNoTranscript": {
+    "message": "이 동영상에는 사용할 수 있는 대본이 없습니다."
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "질문"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "이 동영상에 대해 질문하기…"
+  },
+  "transcriptQaReady": {
+    "message": "대본에 대해 질문할 수 있습니다."
+  },
+  "transcriptQaSaveFailed": {
+    "message": "Q&A 기록을 저장하지 못했습니다. 새로고침하면 사라질 수 있습니다."
+  },
+  "transcriptQaThinking": {
+    "message": "대본 근거를 확인하는 중…"
   },
   "transcriptRefreshedTrack": {
     "message": "트랙 새로 고침"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "실행 취소"
+  },
+  "unknown": {
+    "message": "알 수 없음"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

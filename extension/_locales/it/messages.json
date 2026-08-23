@@ -2814,10 +2814,10 @@
     "message": "Riepilogo AI locale (integrato nel browser)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Fai domande sulla trascrizione del video corrente usando Chrome Prompt API (Gemini Nano). Eseguito sul dispositivo, nessuna chiave API necessaria."
+    "message": "Fai domande supportate da citazioni con l’IA locale di Chrome o con un provider configurato scelto esplicitamente."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Domande e risposte trascrizione (integrato nel browser)"
+    "message": "Domande sulla trascrizione"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "Bridge tema token nativi"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "Mantieni le domande sul dispositivo oppure usa il provider configurato con i controlli esistenti per autorizzazioni, privacy e limite delle richieste."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "Provider per le domande sulla trascrizione"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "Aggiunge un pulsante nel player che copia la trascrizione e apre lo strumento AI scelto con un prompt di riepilogo precompilato"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "Chiedi"
+  },
+  "transcriptQaButton": {
+    "message": "Domande"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "Fai domande su questo video supportate da citazioni."
+  },
+  "transcriptQaCitationLabel": {
+    "message": "Citazione della trascrizione"
+  },
+  "transcriptQaClose": {
+    "message": "Chiudi le domande sulla trascrizione"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "Il provider configurato non è disponibile in questa build o in questo profilo."
+  },
+  "transcriptQaDialogDescription": {
+    "message": "Le risposte usano passaggi selezionati della trascrizione. Ogni affermazione mostrata rimanda al timestamp che la supporta."
+  },
+  "transcriptQaDialogTitle": {
+    "message": "Domande sulla trascrizione"
+  },
   "transcriptQaFailed": {
-    "message": "Impossibile rispondere a questa domanda"
+    "message": "Non è stato possibile rispondere alla domanda sulla trascrizione."
+  },
+  "transcriptQaHistory": {
+    "message": "Cronologia delle domande sulla trascrizione"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "Le domande salvate per questa trascrizione e questo provider sono state ripristinate."
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "Provider configurato"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "Solo sul dispositivo"
+  },
+  "transcriptQaLoading": {
+    "message": "Caricamento delle prove dalla trascrizione…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "La Prompt API sul dispositivo non è disponibile. Seleziona un provider configurato per usare un servizio remoto consentito oppure Ollama."
+  },
+  "transcriptQaNoAnswer": {
+    "message": "I passaggi selezionati della trascrizione non supportano una risposta."
+  },
+  "transcriptQaNoHistory": {
+    "message": "Non ci sono ancora domande salvate per questa trascrizione."
+  },
+  "transcriptQaNoTranscript": {
+    "message": "Non è disponibile una trascrizione per questo video."
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "Domanda"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "Fai una domanda su questo video…"
+  },
+  "transcriptQaReady": {
+    "message": "Pronto per una domanda sulla trascrizione."
+  },
+  "transcriptQaSaveFailed": {
+    "message": "Non è stato possibile salvare la cronologia delle domande. Potrebbe scomparire dopo il ricaricamento."
+  },
+  "transcriptQaThinking": {
+    "message": "Verifica delle prove nella trascrizione…"
   },
   "transcriptRefreshedTrack": {
     "message": "Traccia aggiornata"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "Annulla"
+  },
+  "unknown": {
+    "message": "Sconosciuto"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"
