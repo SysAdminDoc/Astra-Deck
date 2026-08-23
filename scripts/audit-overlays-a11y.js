@@ -425,6 +425,36 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         hasMinTarget(ytkit, '.ytkit-transcript-search-panel input') &&
         hasMinTarget(ytkit, '.ytkit-transcript-search-panel__footer button'),
         'Transcript search controls must declare focus-visible and at least 24px target size');
+    add('Transcript Q&A is modal, labelled, and citation-backed',
+        ytkit.includes("inner.setAttribute('role', 'dialog')") &&
+        ytkit.includes("inner.setAttribute('aria-modal', 'true')") &&
+        ytkit.includes("inner.setAttribute('aria-labelledby', 'ytkit-ai-qa-title')") &&
+        ytkit.includes("inner.setAttribute('aria-describedby', 'ytkit-ai-qa-description')") &&
+        ytkit.includes("history.setAttribute('role', 'log')") &&
+        ytkit.includes("link.setAttribute('aria-label', `${t('transcriptQaCitationLabel', 'Transcript citation')} ${cue.timestamp}`)"),
+        'Transcript Q&A must be a labelled modal whose history and timestamp citations are exposed to assistive technology');
+    add('Transcript Q&A traps focus, closes on Escape, and restores focus',
+        ytkit.includes('this._dialogKeydown = (event) =>') &&
+        ytkit.includes("if (event.key === 'Escape')") &&
+        ytkit.includes("if (event.key !== 'Tab') return") &&
+        ytkit.includes('controls[nextIndex].focus()') &&
+        ytkit.includes("this._overlay.removeEventListener('keydown', this._dialogKeydown)") &&
+        ytkit.includes('returnFocus?.focus?.({ preventScroll: true })'),
+        'Transcript Q&A must contain Tab in the modal, close on Escape, remove its handler, and restore the launcher');
+    add('Transcript Q&A reports busy and error state',
+        ytkit.includes("status.setAttribute('role', 'status')") &&
+        ytkit.includes("status.setAttribute('aria-live', 'polite')") &&
+        ytkit.includes("this._dialog?.setAttribute('aria-busy', String(Boolean(busy)))") &&
+        ytkit.includes("this._status.setAttribute('role', tone === 'error' ? 'alert' : 'status')"),
+        'Transcript Q&A must expose polite progress, aria-busy, and assertive errors');
+    add('Transcript Q&A controls have focus-visible styles and target size',
+        ytkit.includes('.ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible') &&
+        hasMinTarget(ytkit, '.ytkit-ai-qa-btn') &&
+        hasSquareTarget(ytkit, '.ytkit-ai-qa-close') &&
+        hasMinTarget(ytkit, '.ytkit-ai-qa-input') &&
+        hasMinTarget(ytkit, '.ytkit-ai-qa-citation') &&
+        hasMinTarget(ytkit, '.ytkit-ai-qa-ask'),
+        'Transcript Q&A controls must declare focus-visible and at least 24px target size');
 
     // Video notes. Peeled out of ytkit.js in v4.72.0; the monolith keeps only
     // a descriptor stub, so these read the feature module.
@@ -575,6 +605,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         smoke.includes('npm run audit:overlays') &&
         smoke.includes('Download options') &&
         smoke.includes('Transcript search') &&
+        smoke.includes('Transcript Q&A') &&
         smoke.includes('Subscription group digest'),
         'docs/screen-reader-smoke.md must document audit:overlays coverage and manual boundaries');
 
@@ -650,6 +681,11 @@ function runSelfTest(baseSources) {
             target: 'subscriptionGroups',
             expected: 'Subscription group modal must cover Enter submit and Escape close keyboard paths',
             mutate: (source) => source.replace("if (e.key === 'Enter') { e.preventDefault(); submit(); }", '')
+        },
+        {
+            name: 'missing Transcript Q&A focus restore',
+            expected: 'Transcript Q&A must contain Tab in the modal, close on Escape, remove its handler, and restore the launcher',
+            mutate: (source) => source.replace('returnFocus?.focus?.({ preventScroll: true });', '')
         }
     ];
 

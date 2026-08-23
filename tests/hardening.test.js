@@ -5723,10 +5723,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // after the audit confirmed the real backup lives in its own storage key
     // (468 → 467).
     // The remote known-breakage feed adds its own default-on toggle (476 -> 477).
+    // The Transcript Q&A provider lane adds one explicit local/remote choice (478).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 477,
-        'SETTINGS_SCHEMA must cover all 477 non-credential settings');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 478,
+        'SETTINGS_SCHEMA must cover all 478 non-credential settings');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -7915,6 +7916,29 @@ test('userscript core compacts static visual CSS without changing other modules'
     assert.equal(
         sync.compactBundledCssTemplates('const KEEP = `a\n b`;', 'extension/core/styles.js'),
         'const KEEP = `a\n b`;'
+    );
+});
+
+test('userscript core strips schema comments while preserving executable source', () => {
+    const sync = require(path.join(__dirname, '..', 'sync-userscript.js'));
+    const schemaSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'),
+        'utf8'
+    );
+    const compacted = sync.compactStandaloneLineComments(
+        schemaSource,
+        'extension/core/settings-schema.js'
+    );
+
+    assert.ok(Buffer.byteLength(schemaSource, 'utf8') - Buffer.byteLength(compacted, 'utf8') > 10_000,
+        'schema comment compaction must keep useful Greasy Fork headroom');
+    assert.doesNotMatch(compacted, /^[ \t]*\/\//m);
+    assert.match(compacted, /const SETTINGS_SCHEMA = Object\.freeze\(\[/,
+        'schema execution must remain in the generated module');
+    assert.equal(
+        sync.compactStandaloneLineComments('const KEEP = "// value"; // inline\n', 'extension/core/styles.js'),
+        'const KEEP = "// value"; // inline\n',
+        'unlisted modules and inline source must remain unchanged'
     );
 });
 
@@ -13265,10 +13289,10 @@ test('the a11y smoke proves 320px reflow on every primary surface in every track
         smoke.indexOf('const SURFACES = Object.freeze(['),
         smoke.indexOf('const REAL_EXTENSION_SURFACES = Object.freeze([')
     );
-    const surfaces = [...fixtureBlock.matchAll(/name: '(popup|sidepanel|sidebar|settings|transcript|download|comment-search)'/g)]
+    const surfaces = [...fixtureBlock.matchAll(/name: '(popup|sidepanel|sidebar|settings|transcript|transcript-qa|download|comment-search)'/g)]
         .map((match) => match[1]);
-    assert.equal(surfaces.length, 7, 'all seven primary surfaces must be declared');
-    assert.equal((smoke.match(/localeStates: LOCALE_STATES/g) || []).length, 7,
+    assert.equal(surfaces.length, 8, 'all eight primary surfaces must be declared');
+    assert.equal((smoke.match(/localeStates: LOCALE_STATES/g) || []).length, 8,
         'every primary surface must render the tracked locales');
 
     // lang/dir belongs to whoever owns the document; the in-page surfaces

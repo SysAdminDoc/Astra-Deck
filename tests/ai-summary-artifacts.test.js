@@ -125,3 +125,135 @@ test('Markdown export neutralizes untrusted model and title formatting', () => {
     assert.equal(artifacts.escapeMarkdown('![probe](https://evil.example/x)'), '\\!\\[probe\\]\\(https://evil\\.example/x\\)');
     assert.equal(artifacts.escapeMarkdown('<script>'), '\\<script\\>');
 });
+
+test('Transcript Q&A selects bounded cue chunks from the full transcript', () => {
+    const longSegments = Array.from({ length: 45 }, (_unused, index) => ({
+        startMs: index * 10000,
+        endMs: index * 10000 + 9000,
+        text: `${index === 44 ? 'Zygomatic final evidence. ' : ''}${`segment-${index} `.repeat(65)}`
+    }));
+    const prepared = artifacts.prepareQaTranscript(longSegments, { maxChunkChars: 2000 });
+    assert.ok(prepared.chunks.length > 5);
+    assert.ok(prepared.chunks.every((chunk) => chunk.transcript.length <= 2000));
+
+    const selected = artifacts.selectQaContext(prepared, 'What does the zygomatic evidence show?', {
+        maxChunks: 2,
+        maxChars: 4000
+    });
+    assert.ok(selected.cues.some((cue) => cue.id === 'C0045'),
+        'a matching late cue must not be lost behind an opening-text slice');
+    assert.ok(selected.chunks.length <= 2);
+    assert.ok(selected.transcript.length <= 4100);
+});
+
+test('Transcript Q&A accepts only citation-backed claims', () => {
+    const prepared = artifacts.prepareQaTranscript(segments);
+    const context = artifacts.selectQaContext(prepared, 'What is the central finding?');
+    const prompt = artifacts.buildQaPrompt({
+        title: 'Fixture',
+        videoId: 'abc123DEF45',
+        language: 'en',
+        question: 'What is the central finding?',
+        context
+    });
+    assert.match(prompt, /transcript-qa-citation-v1/);
+    assert.match(prompt, /Every claim must cite/);
+
+    const result = artifacts.parseQaResponse(JSON.stringify({
+        notFound: false,
+        claims: [
+            { text: 'The central finding is supported.', citations: ['C0002', 'C9999'] },
+            { text: 'This claim has no evidence.', citations: [] }
+        ]
+    }), context.cues);
+    assert.deepEqual(result.claims, [{
+        text: 'The central finding is supported.',
+        citations: ['C0002']
+    }]);
+    assert.equal(result.invalidCitationCount, 1);
+    assert.equal(result.uncitedClaimCount, 1);
+    assert.throws(() => artifacts.parseQaResponse(JSON.stringify({
+        notFound: false,
+        claims: [{ text: 'Invented', citations: ['C9999'] }]
+    }), context.cues), /no claim cited a real transcript cue/);
+    assert.equal(artifacts.parseQaResponse('{"notFound":true,"claims":[]}', context.cues).notFound, true);
+});
+
+test('Transcript Q&A conversations reopen only on an exact provenance identity', () => {
+    const identity = {
+        videoId: 'abc123DEF45',
+        title: 'Fixture',
+        language: 'en',
+        provider: 'chrome-on-device',
+        model: 'prompt-api',
+        promptVersion: artifacts.QA_PROMPT_VERSION
+    };
+    const prepared = artifacts.prepareQaTranscript(segments);
+    const context = artifacts.selectQaContext(prepared, 'What is the central finding?');
+    const result = artifacts.parseQaResponse(JSON.stringify({
+        notFound: false,
+        claims: [{ text: 'It is central.', citations: ['C0002'] }]
+    }), context.cues);
+    const empty = artifacts.createQaConversation(identity, {
+        createdAt: '2026-07-14T12:00:00.000Z'
+    });
+    const conversation = artifacts.appendQaTurn(empty, {
+        askedAt: '2026-07-14T12:01:00.000Z',
+        question: 'What is the central finding?',
+        result,
+        cues: context.cues
+    });
+    const store = artifacts.mergeQaConversation({}, conversation);
+
+    assert.equal(artifacts.findQaConversation(store, identity)?.turns.length, 1);
+    assert.equal(artifacts.findQaConversation(store, { ...identity, language: 'fr' }), null);
+    assert.equal(artifacts.findQaConversation(store, { ...identity, provider: 'ollama' }), null);
+    assert.equal(artifacts.findQaConversation(store, { ...identity, model: 'different' }), null);
+    assert.equal(artifacts.findQaConversation(store, { ...identity, promptVersion: 'future-v2' }), null);
+    assert.equal(conversation.citations.C0002.timestamp, '1:05');
+});
+
+test('Transcript Q&A store sanitation drops malformed and uncited history', () => {
+    const identity = {
+        videoId: 'abc123DEF45',
+        language: 'en',
+        provider: 'ollama',
+        model: 'local-model',
+        promptVersion: artifacts.QA_PROMPT_VERSION
+    };
+    const valid = artifacts.createQaConversation(identity, {
+        createdAt: '2026-07-14T12:00:00.000Z'
+    });
+    const raw = {
+        malformed: { videoId: '../escape' },
+        [valid.conversationId]: {
+            ...valid,
+            citations: {
+                C0001: { startSeconds: 0, text: 'Opening context.' },
+                C0002: { startSeconds: -1, text: 'Invalid negative timestamp.' },
+                C0003: { startSeconds: 12, text: '' }
+            },
+            turns: [
+                {
+                    askedAt: '2026-07-14T12:01:00.000Z',
+                    question: 'Supported?',
+                    claims: [{ text: 'Yes.', citations: ['C0001'] }]
+                },
+                {
+                    askedAt: '2026-07-14T12:02:00.000Z',
+                    question: 'Unsupported?',
+                    claims: [{ text: 'No evidence.', citations: ['C9999'] }]
+                },
+                {
+                    askedAt: '2026-07-14T12:03:00.000Z',
+                    question: 'Malformed citation?',
+                    claims: [{ text: 'Still no evidence.', citations: ['C0002', 'C0003'] }]
+                }
+            ]
+        }
+    };
+    const clean = artifacts.sanitizeQaStore(raw);
+    assert.deepEqual(Object.keys(clean), [valid.conversationId]);
+    assert.equal(clean[valid.conversationId].turns.length, 1);
+    assert.equal(clean[valid.conversationId].turns[0].claims[0].citations[0], 'C0001');
+});

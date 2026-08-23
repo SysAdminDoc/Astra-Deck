@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "referenceLocale": "en",
-  "referenceKeys": 2777,
+  "referenceKeys": 2802,
   "locales": {
     "ar": 808,
     "de": 813,
     "es": 819,
-    "fr": 817,
+    "fr": 818,
     "it": 823,
-    "ja": 801,
-    "ko": 805,
+    "ja": 802,
+    "ko": 806,
     "pt_BR": 817,
     "ru": 804,
     "zh_CN": 795

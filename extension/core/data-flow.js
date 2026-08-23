@@ -212,8 +212,8 @@
         }),
         Object.freeze({
             origin: 'https://api.openai.com',
-            purpose: 'BYO-key OpenAI summaries and transcript-translation fallback.',
-            requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
+            purpose: 'BYO-key OpenAI summaries, transcript Q&A, and transcript-translation fallback.',
+            requiredByFeatures: ['aiVideoSummary', 'localAiTranscriptQa', 'transcriptViewer'],
             credentialsPolicy: 'byo-key',
             profile: 'github-full',
             hostGrant: 'runtime-optional',
@@ -222,8 +222,8 @@
         }),
         Object.freeze({
             origin: 'https://api.anthropic.com',
-            purpose: 'BYO-key Anthropic summaries and transcript-translation fallback.',
-            requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
+            purpose: 'BYO-key Anthropic summaries, transcript Q&A, and transcript-translation fallback.',
+            requiredByFeatures: ['aiVideoSummary', 'localAiTranscriptQa', 'transcriptViewer'],
             credentialsPolicy: 'byo-key',
             profile: 'github-full',
             hostGrant: 'runtime-optional',
@@ -232,8 +232,8 @@
         }),
         Object.freeze({
             origin: 'https://generativelanguage.googleapis.com',
-            purpose: 'BYO-key Gemini summaries and transcript-translation fallback.',
-            requiredByFeatures: ['aiVideoSummary', 'transcriptViewer'],
+            purpose: 'BYO-key Gemini summaries, transcript Q&A, and transcript-translation fallback.',
+            requiredByFeatures: ['aiVideoSummary', 'localAiTranscriptQa', 'transcriptViewer'],
             credentialsPolicy: 'byo-key',
             profile: 'github-full',
             hostGrant: 'runtime-optional',
@@ -242,8 +242,8 @@
         }),
         Object.freeze({
             origin: 'http://127.0.0.1:11434',
-            purpose: 'Local Ollama runtime for offline AI summaries.',
-            requiredByFeatures: ['aiVideoSummary'],
+            purpose: 'Local Ollama runtime for offline AI summaries and transcript Q&A.',
+            requiredByFeatures: ['aiVideoSummary', 'localAiTranscriptQa'],
             credentialsPolicy: 'local-loopback',
             profile: 'github-full',
             hostGrant: 'required',
@@ -373,6 +373,7 @@
         aiSummaryEndpoint: 'aiVideoSummary',
         aiSummaryModel: 'aiVideoSummary',
         aiSummaryProvider: 'aiVideoSummary',
+        transcriptQaLane: 'localAiTranscriptQa',
         // subscriptionAiTags is intentionally NOT mapped: per the schema
         // description it uses Chrome's built-in Summarizer (no remote
         // origin), so it correctly stays absent from the catalogue.

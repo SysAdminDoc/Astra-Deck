@@ -23,8 +23,8 @@
 | Release | `v4.84.3` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `477` entries across `18` categories |
-| Runtime graph | `113` modules, including `27` peeled feature modules and `292` declared feature IDs |
+| Settings schema | `478` entries across `18` categories |
+| Runtime graph | `113` modules, including `27` peeled feature modules and `293` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |
@@ -383,7 +383,7 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **472 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **473 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -931,7 +931,7 @@ This generated knowledgebase documents all **472 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>Research, wellbeing, and AI</strong>: 17 settings</summary>
+<summary><strong>Research, wellbeing, and AI</strong>: 18 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
@@ -940,7 +940,8 @@ This generated knowledgebase documents all **472 user-facing settings** in the c
 | <a id="setting-dwDailyCapMin"></a><strong>DW daily cap min</strong><br><code>dwDailyCapMin</code> | Sets the daily watch-time cap enforced by Digital Wellbeing; zero disables the cap. | Default: <code>0</code><br>Range: <code>0 to 1440</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-dwWatchTimeToday"></a><strong>DW watch time today</strong><br><code>dwWatchTimeToday</code> | Stores the dated, merge-safe daily watch-time accumulator used by Digital Wellbeing. | Default: <code>{&quot;date&quot;:&quot;&quot;,&quot;seconds&quot;:0}</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Since <code>v0.1.0</code> |
 | <a id="setting-localAiSummary"></a><strong>Local AI Summary (browser built-in)</strong><br><code>localAiSummary</code> | Use Chrome's built-in Summarizer API when available; use the configured BYO-key lane when it is unavailable. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Experimental<br>Since <code>v0.1.0</code> |
-| <a id="setting-localAiTranscriptQa"></a><strong>Transcript Q&amp;A (browser built-in)</strong><br><code>localAiTranscriptQa</code> | Ask questions about the current video transcript using the Chrome on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Requires <code>promptApi</code><br>Since <code>v0.1.0</code> |
+| <a id="setting-localAiTranscriptQa"></a><strong>Transcript Q&amp;A</strong><br><code>localAiTranscriptQa</code> | Ask citation-backed questions with Chrome on-device AI or an explicitly selected configured provider. | Default: Off | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
+| <a id="setting-transcriptQaLane"></a><strong>Transcript Q&amp;A provider</strong><br><code>transcriptQaLane</code> | Choose on-device processing or the configured OpenAI, Anthropic, Gemini, or Ollama provider. | Default: <code>on-device</code><br>Values: <code>on-device</code>, <code>configured-provider</code> | Extension only<br>Store-safe + GitHub-full<br>Watch page<br>Live apply<br>Remote API<br>Since <code>v4.84.3</code> |
 | <a id="setting-researchSpacedReview"></a><strong>Study / Work Export</strong><br><code>researchSpacedReview</code> | Export study/work-mode data to Markdown or CSV, or build a bounded local transcript study pack from visible videos. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-researchTranscriptIndex"></a><strong>Transcript Search Index</strong><br><code>researchTranscriptIndex</code> | Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube's transcript panel. Search stays local in IndexedDB; no telemetry. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |
 | <a id="setting-researchTranscriptSearchPanel"></a><strong>Transcript Search Panel</strong><br><code>researchTranscriptSearchPanel</code> | Adds a "Search transcripts" button on the watch page that opens a search UI over the local IndexedDB transcript index. Requires Transcript Search Index to be on. Default off. | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Watch page<br>Live apply + reversible teardown<br>Since <code>v0.1.0</code> |

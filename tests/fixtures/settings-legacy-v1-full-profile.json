@@ -506,6 +506,7 @@
     "liveLatencyTargetSeconds",
     "liveSpeedReset",
     "localAiTranscriptQa",
+    "transcriptQaLane",
     "logarithmicVolume",
     "markWatchedVideos",
     "notificationHideRead",

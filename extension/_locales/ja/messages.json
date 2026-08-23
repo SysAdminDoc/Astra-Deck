@@ -2814,10 +2814,10 @@
     "message": "ローカル AI 要約（ブラウザ内蔵）"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Chrome Prompt API (Gemini Nano) を使って現在の動画の文字起こしに質問。デバイス上で動作し、API キー不要。"
+    "message": "Chrome のオンデバイス AI または明示的に選択した設定済みプロバイダーを使い、引用付きで質問できます。"
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "文字起こし Q&A（ブラウザ内蔵）"
+    "message": "文字起こし Q&A"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "ネイティブトークンテーマブリッジ"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "質問をデバイス内で処理するか、既存の権限、プライバシー、リクエスト上限を適用して設定済みプロバイダーを使用します。"
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "文字起こし Q&A プロバイダー"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "文字起こしをコピーして、選択した AI ツールを要約プロンプト付きで開くプレーヤーボタンを追加"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "質問する"
+  },
+  "transcriptQaButton": {
+    "message": "Q&A"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "この動画について引用付きで質問します。"
+  },
+  "transcriptQaCitationLabel": {
+    "message": "文字起こしの引用"
+  },
+  "transcriptQaClose": {
+    "message": "文字起こし Q&A を閉じる"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "このビルドまたはプロファイルでは、設定済みプロバイダーを利用できません。"
+  },
+  "transcriptQaDialogDescription": {
+    "message": "回答には選択された文字起こし箇所が使われます。表示される各主張には根拠となるタイムスタンプへのリンクがあります。"
+  },
+  "transcriptQaDialogTitle": {
+    "message": "文字起こし Q&A"
+  },
   "transcriptQaFailed": {
-    "message": "その質問には回答できませんでした"
+    "message": "文字起こしに関する質問に回答できませんでした。"
+  },
+  "transcriptQaHistory": {
+    "message": "文字起こし Q&A の履歴"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "この文字起こしとプロバイダー用に保存された質問を復元しました。"
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "設定済みプロバイダー"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "オンデバイスのみ"
+  },
+  "transcriptQaLoading": {
+    "message": "文字起こしの根拠を読み込んでいます…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "オンデバイスの Prompt API を利用できません。設定済みプロバイダーを選択すると、許可されたリモートサービスまたは Ollama を使用できます。"
+  },
+  "transcriptQaNoAnswer": {
+    "message": "選択された文字起こし箇所には、回答を裏付ける根拠がありません。"
+  },
+  "transcriptQaNoHistory": {
+    "message": "この文字起こしには、保存済みの質問がまだありません。"
+  },
+  "transcriptQaNoTranscript": {
+    "message": "この動画では文字起こしを利用できません。"
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "質問"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "この動画について質問する…"
+  },
+  "transcriptQaReady": {
+    "message": "文字起こしについて質問できます。"
+  },
+  "transcriptQaSaveFailed": {
+    "message": "Q&A の履歴を保存できませんでした。再読み込みすると消える可能性があります。"
+  },
+  "transcriptQaThinking": {
+    "message": "文字起こしの根拠を確認しています…"
   },
   "transcriptRefreshedTrack": {
     "message": "トラックを更新"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "取り消す"
+  },
+  "unknown": {
+    "message": "不明"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

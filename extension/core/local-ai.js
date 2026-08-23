@@ -72,7 +72,7 @@
     function getLaneStatus(options = {}, scope = root) {
         const summaryFallback = options.summaryFallback || 'byo-key';
         const translationFallback = options.translationFallback || 'byo-key';
-        const promptFallback = options.promptFallback || 'transcript-export';
+        const promptFallback = options.promptFallback || 'configured-provider';
         return Object.freeze({
             summary: Object.freeze({
                 capability: 'summarizerApi',

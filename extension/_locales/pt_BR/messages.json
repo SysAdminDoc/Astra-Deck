@@ -2814,10 +2814,10 @@
     "message": "Resumo IA Local (integrado ao navegador)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Faça perguntas sobre a transcrição do vídeo atual usando a Chrome Prompt API (Gemini Nano). Roda no dispositivo, sem necessidade de chaves de API."
+    "message": "Faça perguntas com citações usando a IA local do Chrome ou um provedor configurado escolhido explicitamente."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Perguntas e Respostas sobre Transcrição (integrado ao navegador)"
+    "message": "Perguntas sobre a transcrição"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "Ponte Nativa de Tokens de Tema"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "Mantenha as perguntas no dispositivo ou use o provedor configurado com os controles atuais de permissão, privacidade e limite de solicitações."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "Provedor para perguntas sobre a transcrição"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "Adiciona um botão no player que copia a transcrição e abre sua ferramenta de IA escolhida com um prompt de resumo pré-preenchido"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "Perguntar"
+  },
+  "transcriptQaButton": {
+    "message": "Perguntas"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "Faça perguntas sobre este vídeo com citações."
+  },
+  "transcriptQaCitationLabel": {
+    "message": "Citação da transcrição"
+  },
+  "transcriptQaClose": {
+    "message": "Fechar perguntas sobre a transcrição"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "O provedor configurado não está disponível nesta compilação ou neste perfil."
+  },
+  "transcriptQaDialogDescription": {
+    "message": "As respostas usam trechos selecionados da transcrição. Cada afirmação exibida aponta para o timestamp que a sustenta."
+  },
+  "transcriptQaDialogTitle": {
+    "message": "Perguntas sobre a transcrição"
+  },
   "transcriptQaFailed": {
-    "message": "Não foi possível responder a essa pergunta"
+    "message": "Não foi possível responder à pergunta sobre a transcrição."
+  },
+  "transcriptQaHistory": {
+    "message": "Histórico de perguntas sobre a transcrição"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "As perguntas salvas para esta transcrição e este provedor foram restauradas."
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "Provedor configurado"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "Somente no dispositivo"
+  },
+  "transcriptQaLoading": {
+    "message": "Carregando evidências da transcrição…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "A Prompt API no dispositivo não está disponível. Selecione um provedor configurado para usar um serviço remoto permitido ou o Ollama."
+  },
+  "transcriptQaNoAnswer": {
+    "message": "Os trechos selecionados da transcrição não sustentam uma resposta."
+  },
+  "transcriptQaNoHistory": {
+    "message": "Ainda não há perguntas salvas para esta transcrição."
+  },
+  "transcriptQaNoTranscript": {
+    "message": "Não há transcrição disponível para este vídeo."
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "Pergunta"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "Faça uma pergunta sobre este vídeo…"
+  },
+  "transcriptQaReady": {
+    "message": "Pronto para uma pergunta sobre a transcrição."
+  },
+  "transcriptQaSaveFailed": {
+    "message": "Não foi possível salvar o histórico de perguntas. Ele pode desaparecer após recarregar."
+  },
+  "transcriptQaThinking": {
+    "message": "Verificando evidências da transcrição…"
   },
   "transcriptRefreshedTrack": {
     "message": "Faixa atualizada"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "Desfazer"
+  },
+  "unknown": {
+    "message": "Desconhecido"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

@@ -2814,10 +2814,10 @@
     "message": "Local AI Summary (browser built-in)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Ask questions about the current video transcript using the Chrome on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button."
+    "message": "Ask citation-backed questions with Chrome on-device AI or an explicitly selected configured provider."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Transcript Q&A (browser built-in)"
+    "message": "Transcript Q&A"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "Native Token Theme Bridge"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "Keep questions on-device or use the configured provider with its existing permission, privacy, and request-budget controls."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "Transcript Q&A provider"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "Adds a player-button that copies the transcript and opens your chosen AI tool with a summarization prompt pre-filled"
@@ -6897,8 +6903,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "Ask"
+  },
+  "transcriptQaButton": {
+    "message": "Q&A"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "Ask citation-backed questions about this video."
+  },
+  "transcriptQaCitationLabel": {
+    "message": "Transcript citation"
+  },
+  "transcriptQaClose": {
+    "message": "Close Transcript Q&A"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "The configured provider lane is unavailable in this build or profile."
+  },
+  "transcriptQaDialogDescription": {
+    "message": "Answers use selected transcript passages. Every displayed claim links to its supporting timestamp."
+  },
+  "transcriptQaDialogTitle": {
+    "message": "Transcript Q&A"
+  },
   "transcriptQaFailed": {
-    "message": "Could not answer that question"
+    "message": "The transcript question could not be answered."
+  },
+  "transcriptQaHistory": {
+    "message": "Transcript Q&A history"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "Saved questions restored for this transcript and provider."
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "Configured provider"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "On-device only"
+  },
+  "transcriptQaLoading": {
+    "message": "Loading transcript evidence…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "The on-device Prompt API is unavailable. Select a configured provider to use a permitted remote or Ollama lane."
+  },
+  "transcriptQaNoAnswer": {
+    "message": "The selected transcript passages do not support an answer."
+  },
+  "transcriptQaNoHistory": {
+    "message": "No saved questions for this transcript yet."
+  },
+  "transcriptQaNoTranscript": {
+    "message": "No transcript is available for this video."
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "Question"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "Ask a question about this video…"
+  },
+  "transcriptQaReady": {
+    "message": "Ready for a transcript question."
+  },
+  "transcriptQaSaveFailed": {
+    "message": "Saving the Q&A history failed. It may disappear after a reload."
+  },
+  "transcriptQaThinking": {
+    "message": "Checking transcript evidence…"
   },
   "transcriptRefreshedTrack": {
     "message": "Refreshed Track"
@@ -7016,6 +7088,9 @@
   },
   "undo": {
     "message": "Undo"
+  },
+  "unknown": {
+    "message": "Unknown"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

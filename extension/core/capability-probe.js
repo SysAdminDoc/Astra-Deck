@@ -201,15 +201,15 @@
                 api: 'Built-in Prompt API (global LanguageModel or ai.languageModel)',
                 availability: {
                     chromium: 'Chrome 138+ when Gemini Nano and the Prompt API are enabled and ready',
-                    firefox: 'Unavailable; no remote fallback is implied for transcript Q&A',
+                    firefox: 'Unavailable; an explicitly selected configured-provider lane can answer transcript questions in GitHub-full builds',
                     userscript: 'Not part of the userscript vehicle; extension-only feature remains unavailable'
                 },
                 requiredPermission: [],
                 executionWorld: 'YouTube page MAIN world',
                 minimumBrowser: { chrome: '138+', edge: 'Chromium-equivalent; rollout-dependent', firefox: 'Not exposed' },
                 probe: 'hasPromptApi',
-                fallback: 'Keep transcript export and local search available; do not send transcript text to a remote model implicitly.',
-                userVisibleDegradation: 'On-device transcript Q&A is unavailable while transcript viewing and export continue to work.'
+                fallback: 'Keep transcript export and local search available. Use a configured provider only when the user explicitly selects that lane.',
+                userVisibleDegradation: 'On-device transcript Q&A is unavailable. A permitted configured provider remains available when selected.'
             },
             regexpEscape: {
                 api: 'ECMAScript RegExp.escape() static method',
@@ -447,8 +447,8 @@
             transcriptQa: Object.freeze({
                 capability: 'promptApi',
                 localAvailable: promptLocal,
-                activeLane: promptLocal ? 'local' : (options.promptFallback || 'transcript-export'),
-                fallbackLane: options.promptFallback || 'transcript-export'
+                activeLane: promptLocal ? 'local' : (options.promptFallback || 'configured-provider'),
+                fallbackLane: options.promptFallback || 'configured-provider'
             })
         });
     }

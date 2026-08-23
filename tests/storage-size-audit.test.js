@@ -136,7 +136,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // antiTranslateChapters adds a further 30.
     // The modeNotices chat-hide entry adds a further 14.
     // The known-breakage feed toggle adds a further 26.
-    assert.equal(assessment.totalBytes, 186181);
+    // transcriptQaLane adds 31 bytes for the explicit local/remote choice.
+    assert.equal(assessment.totalBytes, 186212);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

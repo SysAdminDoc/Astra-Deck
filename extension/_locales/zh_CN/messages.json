@@ -2814,10 +2814,10 @@
     "message": "本地 AI 摘要（浏览器内置）"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "使用 Chrome Prompt API（Gemini Nano）对当前视频字幕提问。在设备上运行，无需 API 密钥。"
+    "message": "使用 Chrome 设备端 AI 或明确选择的已配置提供商提出带引用的问题。"
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "字幕问答（浏览器内置）"
+    "message": "转录问答"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "原生令牌主题桥接"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "在设备上处理问题，或使用已配置提供商，并沿用现有的权限、隐私和请求限额控制。"
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "转录问答提供商"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "添加一个播放器按钮，复制字幕并打开你选择的 AI 工具，预填摘要提示"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "提问"
+  },
+  "transcriptQaButton": {
+    "message": "问答"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "针对该视频提出带引用的问题。"
+  },
+  "transcriptQaCitationLabel": {
+    "message": "转录引用"
+  },
+  "transcriptQaClose": {
+    "message": "关闭转录问答"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "此版本或配置文件无法使用已配置的提供商。"
+  },
+  "transcriptQaDialogDescription": {
+    "message": "回答使用选定的转录片段。每条显示的陈述都链接到支持它的时间戳。"
+  },
+  "transcriptQaDialogTitle": {
+    "message": "转录问答"
+  },
   "transcriptQaFailed": {
-    "message": "无法回答该问题"
+    "message": "无法回答该转录问题。"
+  },
+  "transcriptQaHistory": {
+    "message": "转录问答历史记录"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "已恢复此转录和提供商对应的已保存问题。"
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "已配置提供商"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "仅限设备端"
+  },
+  "transcriptQaLoading": {
+    "message": "正在加载转录依据…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "设备端 Prompt API 不可用。请选择已配置的提供商，以使用获准的远程服务或 Ollama。"
+  },
+  "transcriptQaNoAnswer": {
+    "message": "选定的转录片段无法支持答案。"
+  },
+  "transcriptQaNoHistory": {
+    "message": "尚未保存此转录的问题。"
+  },
+  "transcriptQaNoTranscript": {
+    "message": "此视频没有可用的转录。"
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "问题"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "针对该视频提问…"
+  },
+  "transcriptQaReady": {
+    "message": "可以提出转录问题。"
+  },
+  "transcriptQaSaveFailed": {
+    "message": "无法保存问答历史记录。重新加载后，记录可能会消失。"
+  },
+  "transcriptQaThinking": {
+    "message": "正在核对转录依据…"
   },
   "transcriptRefreshedTrack": {
     "message": "字幕轨道已刷新"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "撤销"
+  },
+  "unknown": {
+    "message": "未知"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

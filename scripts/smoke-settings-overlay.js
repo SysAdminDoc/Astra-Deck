@@ -794,6 +794,53 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
         return Boolean(rate?.querySelector('.ytkit-meta-chip__value')
             && cc && drop.querySelector('.ytkit-ql-form-note'));
     };
+    const ensureTranscriptQa = () => {
+        const feature = globalThis.ytkit?.allFeatures?.find((candidate) => candidate?.id === 'localAiTranscriptQa');
+        const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+        if (!feature || !service) return false;
+        const transcript = {
+            videoId: 'abc12345678',
+            title: 'Transcript Q&A accessibility fixture',
+            language: 'en',
+            prepared: service.prepareQaTranscript([
+                { startMs: 0, endMs: 4000, text: 'Opening context.' },
+                { startMs: 65000, endMs: 70000, text: 'The accessibility finding is supported here.' }
+            ])
+        };
+        const identity = {
+            videoId: transcript.videoId,
+            title: transcript.title,
+            language: transcript.language,
+            provider: 'chrome-on-device',
+            model: 'prompt-api',
+            promptVersion: service.QA_PROMPT_VERSION
+        };
+        const context = service.selectQaContext(transcript.prepared, 'What finding is supported?');
+        const result = service.parseQaResponse(JSON.stringify({
+            notFound: false,
+            claims: [{ text: 'The accessibility finding is supported.', citations: ['C0002'] }]
+        }), context.cues);
+        const conversation = service.appendQaTurn(service.createQaConversation(identity), {
+            question: 'What finding is supported?',
+            result,
+            cues: context.cues
+        });
+        feature._writeConversations(service.mergeQaConversation({}, conversation));
+        feature._fetchTranscript = async () => transcript;
+        globalThis.LanguageModel = {
+            availability: async () => 'available',
+            create: async () => ({
+                prompt: async () => JSON.stringify({
+                    notFound: false,
+                    claims: [{ text: 'The accessibility finding is supported.', citations: ['C0002'] }]
+                }),
+                destroy() {}
+            })
+        };
+        feature._ensureStyles();
+        feature._openQaPanel();
+        return true;
+    };
     globalThis.__ytkitA11y = {
         openDownload() {
             const ui = ensureDownloadUi();
@@ -803,6 +850,13 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
         },
         closeDownload() {
             downloadUi?._closeDlPopup?.();
+        },
+        openTranscriptQa() {
+            return ensureTranscriptQa();
+        },
+        closeTranscriptQa() {
+            globalThis.ytkit?.allFeatures?.find((candidate) => candidate?.id === 'localAiTranscriptQa')
+                ?._closePanel?.({ restoreFocus: false });
         }
     };
     globalThis.__ytkitSmoke = globalThis.__ytkitSmoke || {};

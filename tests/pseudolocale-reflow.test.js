@@ -96,7 +96,7 @@ test('failures name the lane as pseudo, not as the locale it borrows', () => {
 test('every surface runs the pseudo state', () => {
     assert.match(smoke, /const LOCALE_STATES = Object\.freeze\(\['ar', 'de', 'pt_BR', PSEUDO_LOCALE\]\);/);
     const surfaces = [...smoke.matchAll(/localeStates: LOCALE_STATES/g)];
-    assert.equal(surfaces.length, 7, 'all seven primary surfaces must share the locale set');
+    assert.equal(surfaces.length, 8, 'all eight primary surfaces must share the locale set');
 });
 
 test('Comment Search pseudo copy has browser-checked line spacing and separation', () => {

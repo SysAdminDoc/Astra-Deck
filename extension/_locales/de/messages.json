@@ -2814,10 +2814,10 @@
     "message": "Lokale AI-Zusammenfassung (Browser-integriert)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Fragen zum aktuellen Videotranskript mit der Chrome Prompt API (Gemini Nano) stellen. Läuft auf dem Gerät, keine API-Schlüssel erforderlich."
+    "message": "Stellen Sie belegte Fragen mit der geräteinternen KI von Chrome oder einem ausdrücklich ausgewählten konfigurierten Anbieter."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Transkript-Fragen (Browser-integriert)"
+    "message": "Transkript-Fragen"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "Native Token-Theme-Bridge"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "Fragen bleiben auf dem Gerät, oder Sie verwenden den konfigurierten Anbieter mit seinen bestehenden Berechtigungs-, Datenschutz- und Anfragelimits."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "Anbieter für Transkript-Fragen"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "Fügt eine Player-Schaltfläche hinzu, die das Transkript kopiert und das gewählte AI-Werkzeug mit einer vorausgefüllten Zusammenfassungsanfrage öffnet"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "Fragen"
+  },
+  "transcriptQaButton": {
+    "message": "F&A"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "Belegte Fragen zu diesem Video stellen."
+  },
+  "transcriptQaCitationLabel": {
+    "message": "Transkriptbeleg"
+  },
+  "transcriptQaClose": {
+    "message": "Transkript-Fragen schließen"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "Der konfigurierte Anbieter ist in diesem Build oder Profil nicht verfügbar."
+  },
+  "transcriptQaDialogDescription": {
+    "message": "Antworten verwenden ausgewählte Transkriptstellen. Jede angezeigte Aussage verweist auf den zugehörigen Zeitstempel."
+  },
+  "transcriptQaDialogTitle": {
+    "message": "Transkript-Fragen"
+  },
   "transcriptQaFailed": {
-    "message": "Diese Frage konnte nicht beantwortet werden"
+    "message": "Die Frage zum Transkript konnte nicht beantwortet werden."
+  },
+  "transcriptQaHistory": {
+    "message": "Verlauf der Transkript-Fragen"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "Gespeicherte Fragen für dieses Transkript und diesen Anbieter wurden wiederhergestellt."
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "Konfigurierter Anbieter"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "Nur auf dem Gerät"
+  },
+  "transcriptQaLoading": {
+    "message": "Transkriptbelege werden geladen…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "Die geräteinterne Prompt API ist nicht verfügbar. Wählen Sie einen konfigurierten Anbieter, um einen zulässigen Remote-Dienst oder Ollama zu verwenden."
+  },
+  "transcriptQaNoAnswer": {
+    "message": "Die ausgewählten Transkriptstellen stützen keine Antwort."
+  },
+  "transcriptQaNoHistory": {
+    "message": "Für dieses Transkript sind noch keine Fragen gespeichert."
+  },
+  "transcriptQaNoTranscript": {
+    "message": "Für dieses Video ist kein Transkript verfügbar."
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "Frage"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "Eine Frage zu diesem Video stellen…"
+  },
+  "transcriptQaReady": {
+    "message": "Bereit für eine Frage zum Transkript."
+  },
+  "transcriptQaSaveFailed": {
+    "message": "Der F&A-Verlauf konnte nicht gespeichert werden. Nach dem Neuladen ist er möglicherweise nicht mehr vorhanden."
+  },
+  "transcriptQaThinking": {
+    "message": "Transkriptbelege werden geprüft…"
   },
   "transcriptRefreshedTrack": {
     "message": "Spur aktualisiert"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "Rückgängig"
+  },
+  "unknown": {
+    "message": "Unbekannt"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

@@ -104,7 +104,7 @@ surfaces. The static gate verifies generated-overlay contracts for:
 - Toast DOM and inline fallback live-region semantics.
 - Download options dialog, Astra Downloader install prompt, downloader
   health pills, and recent-downloads history panel.
-- Transcript viewer, Transcript search dialog, and per-video notes panel.
+- Transcript viewer, Transcript search dialog, Transcript Q&A dialog, and per-video notes panel.
 - Subscription group toolbar, Subscription group digest, and new-group
   modal controls.
 

@@ -2814,10 +2814,10 @@
     "message": "Локальное AI-резюме (встроенное в браузер)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Задавайте вопросы по транскрипту текущего видео с помощью Chrome Prompt API (Gemini Nano). Работает на устройстве, API-ключи не нужны."
+    "message": "Задавайте вопросы со ссылками на расшифровку с помощью локального ИИ Chrome или явно выбранного настроенного провайдера."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Вопросы по транскрипту (встроенное в браузер)"
+    "message": "Вопросы по расшифровке"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "Мост нативных токенов темы"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "Обрабатывайте вопросы на устройстве или используйте настроенного провайдера с действующими ограничениями разрешений, конфиденциальности и количества запросов."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "Провайдер вопросов по расшифровке"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "Добавляет кнопку плеера, которая копирует транскрипт и открывает выбранный AI-инструмент с предзаполненным промптом для резюмирования"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "Спросить"
+  },
+  "transcriptQaButton": {
+    "message": "Вопросы"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "Задавайте вопросы об этом видео со ссылками на расшифровку."
+  },
+  "transcriptQaCitationLabel": {
+    "message": "Ссылка на расшифровку"
+  },
+  "transcriptQaClose": {
+    "message": "Закрыть вопросы по расшифровке"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "Настроенный провайдер недоступен в этой сборке или профиле."
+  },
+  "transcriptQaDialogDescription": {
+    "message": "Ответы основаны на выбранных фрагментах расшифровки. Каждое утверждение содержит ссылку на подтверждающую временную метку."
+  },
+  "transcriptQaDialogTitle": {
+    "message": "Вопросы по расшифровке"
+  },
   "transcriptQaFailed": {
-    "message": "Не удалось ответить на этот вопрос"
+    "message": "Не удалось ответить на вопрос по расшифровке."
+  },
+  "transcriptQaHistory": {
+    "message": "История вопросов по расшифровке"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "Сохраненные вопросы для этой расшифровки и провайдера восстановлены."
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "Настроенный провайдер"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "Только на устройстве"
+  },
+  "transcriptQaLoading": {
+    "message": "Загружаются фрагменты расшифровки…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "Локальная Prompt API недоступна. Выберите настроенного провайдера, чтобы использовать разрешенный удаленный сервис или Ollama."
+  },
+  "transcriptQaNoAnswer": {
+    "message": "Выбранные фрагменты расшифровки не подтверждают ответ."
+  },
+  "transcriptQaNoHistory": {
+    "message": "Для этой расшифровки пока нет сохраненных вопросов."
+  },
+  "transcriptQaNoTranscript": {
+    "message": "Для этого видео нет доступной расшифровки."
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "Вопрос"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "Задайте вопрос об этом видео…"
+  },
+  "transcriptQaReady": {
+    "message": "Можно задать вопрос по расшифровке."
+  },
+  "transcriptQaSaveFailed": {
+    "message": "Не удалось сохранить историю вопросов. После перезагрузки она может исчезнуть."
+  },
+  "transcriptQaThinking": {
+    "message": "Проверяются фрагменты расшифровки…"
   },
   "transcriptRefreshedTrack": {
     "message": "Дорожка обновлена"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "Отменить"
+  },
+  "unknown": {
+    "message": "Неизвестно"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

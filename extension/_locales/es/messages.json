@@ -2814,10 +2814,10 @@
     "message": "Resumen AI local (integrado en el navegador)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Haz preguntas sobre la transcripción del video actual usando Chrome Prompt API (Gemini Nano). Se ejecuta en el dispositivo, sin necesidad de claves API."
+    "message": "Haz preguntas respaldadas por citas con la IA local de Chrome o con un proveedor configurado que hayas seleccionado expresamente."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Preguntas y respuestas de transcripción (integrado en el navegador)"
+    "message": "Preguntas sobre la transcripción"
   },
   "feature_logarithmicVolume_desc": {
     "message": "Remap the native volume slider to a logarithmic gain curve for finer control at quiet listening levels."
@@ -3673,6 +3673,12 @@
   },
   "feature_tokenThemeBridge_name": {
     "message": "Puente de tema con tokens nativos"
+  },
+  "feature_transcriptQaLane_desc": {
+    "message": "Mantén las preguntas en el dispositivo o usa el proveedor configurado con sus controles actuales de permisos, privacidad y límite de solicitudes."
+  },
+  "feature_transcriptQaLane_name": {
+    "message": "Proveedor para preguntas sobre la transcripción"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "Agrega un botón en el reproductor que copia la transcripción y abre tu herramienta AI elegida con un prompt de resumen prellenado"
@@ -6909,8 +6915,74 @@
   "transcriptPreparingControls": {
     "message": "Preparing transcript controls for this video."
   },
+  "transcriptQaAsk": {
+    "message": "Preguntar"
+  },
+  "transcriptQaButton": {
+    "message": "Preguntas"
+  },
+  "transcriptQaButtonTitle": {
+    "message": "Haz preguntas sobre este video respaldadas por citas."
+  },
+  "transcriptQaCitationLabel": {
+    "message": "Cita de la transcripción"
+  },
+  "transcriptQaClose": {
+    "message": "Cerrar las preguntas sobre la transcripción"
+  },
+  "transcriptQaConfiguredUnavailable": {
+    "message": "El proveedor configurado no está disponible en esta compilación o perfil."
+  },
+  "transcriptQaDialogDescription": {
+    "message": "Las respuestas usan fragmentos seleccionados de la transcripción. Cada afirmación mostrada enlaza con la marca de tiempo que la respalda."
+  },
+  "transcriptQaDialogTitle": {
+    "message": "Preguntas sobre la transcripción"
+  },
   "transcriptQaFailed": {
-    "message": "No se pudo responder a esa pregunta"
+    "message": "No se pudo responder la pregunta sobre la transcripción."
+  },
+  "transcriptQaHistory": {
+    "message": "Historial de preguntas sobre la transcripción"
+  },
+  "transcriptQaHistoryRestored": {
+    "message": "Se restauraron las preguntas guardadas para esta transcripción y proveedor."
+  },
+  "transcriptQaLaneConfigured": {
+    "message": "Proveedor configurado"
+  },
+  "transcriptQaLaneOnDevice": {
+    "message": "Solo en el dispositivo"
+  },
+  "transcriptQaLoading": {
+    "message": "Cargando pruebas de la transcripción…"
+  },
+  "transcriptQaLocalUnavailable": {
+    "message": "La Prompt API del dispositivo no está disponible. Selecciona un proveedor configurado para usar un servicio remoto permitido u Ollama."
+  },
+  "transcriptQaNoAnswer": {
+    "message": "Los fragmentos seleccionados de la transcripción no respaldan una respuesta."
+  },
+  "transcriptQaNoHistory": {
+    "message": "Todavía no hay preguntas guardadas para esta transcripción."
+  },
+  "transcriptQaNoTranscript": {
+    "message": "No hay ninguna transcripción disponible para este video."
+  },
+  "transcriptQaQuestionLabel": {
+    "message": "Pregunta"
+  },
+  "transcriptQaQuestionPlaceholder": {
+    "message": "Haz una pregunta sobre este video…"
+  },
+  "transcriptQaReady": {
+    "message": "Listo para una pregunta sobre la transcripción."
+  },
+  "transcriptQaSaveFailed": {
+    "message": "No se pudo guardar el historial de preguntas. Puede desaparecer al recargar."
+  },
+  "transcriptQaThinking": {
+    "message": "Comprobando las pruebas de la transcripción…"
   },
   "transcriptRefreshedTrack": {
     "message": "Pista actualizada"
@@ -7028,6 +7100,9 @@
   },
   "undo": {
     "message": "Deshacer"
+  },
+  "unknown": {
+    "message": "Desconocido"
   },
   "undoImportAria": {
     "message": "Restore data from the most recent Import"

@@ -1238,9 +1238,10 @@ return response;
         suite: 'Deck',
         badge: 'Settings'
     });
-    const STORAGE_KEYS = Object.freeze({
-        settings: 'ytSuiteSettings',
-        aiSummaries: 'ytkit-ai-summaries',
+const STORAGE_KEYS = Object.freeze({
+    settings: 'ytSuiteSettings',
+    aiSummaries: 'ytkit-ai-summaries',
+    aiTranscriptQa: 'ytkit-ai-transcript-qa',
         hiddenVideos: 'ytkit-hidden-videos',
         allowedVideos: 'ytkit-video-hider-allowed-videos',
         markedWatchedVideos: 'ytkit-marked-watched-videos',
@@ -4108,6 +4109,7 @@ return response;
             // v3.30.0 — Research workspace
             localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
             localAiTranscriptQa: false,                // Uses Chrome's Prompt API (Gemini Nano) for transcript Q&A
+            transcriptQaLane: 'on-device',             // on-device | configured-provider
             researchSpacedReview: false,               // Export study/work data to Markdown + CSV
             researchTranscriptIndex: false,            // IndexedDB-backed transcript search across visited videos
             researchTranscriptSearchPanel: false,      // Adds a watch-page button that opens a search UI on the index
@@ -30156,7 +30158,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     : s.aiSummaryEndpoint;
                 return { provider, endpoint: validator(provider, configuredEndpoint).url };
             },
-            async _requestByoHostAccess() {
+            async _requestByoHostAccess(featureId = 'aiVideoSummary') {
                 if (typeof hasExtensionContext !== 'function' || !hasExtensionContext()) return true;
                 const { endpoint } = this._getProviderEndpoint();
                 const declared = globalThis.YTKitBrowser?.runtime?.getManifest?.()?.optional_host_permissions;
@@ -30166,7 +30168,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const profile = policy?.resolveEffectiveProfile?.(appState.settings || {}) || 'store-safe';
                 const expectedOrigin = new URL(endpoint).origin;
                 const declaredSet = new Set(declared);
-                const candidates = getHosts('aiVideoSummary', { profile })
+                const candidates = getHosts(featureId, { profile })
                     .filter((permission) => {
                         if (!declaredSet.has(permission)) return false;
                         try {
@@ -37624,8 +37626,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         {
             id: 'localAiTranscriptQa',
-            name: 'Transcript Q&A (browser built-in)',
-            description: 'Ask questions about the current video transcript using the Chrome on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button.',
+            name: t('feature_localAiTranscriptQa_name', 'Transcript Q&A'),
+            description: t('feature_localAiTranscriptQa_desc', 'Ask citation-backed questions with Chrome on-device AI or an explicitly selected configured provider.'),
             group: 'Research',
             icon: 'message-circle',
             pages: [PageTypes.WATCH],
@@ -37633,100 +37635,414 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btn: null,
             _navRule: null,
             _session: null,
+            _sessionIdentity: null,
             _transcript: null,
-            _transcriptVideoId: null,
-            _sessionVideoId: null,
+            _identity: null,
+            _conversation: null,
+            _conversationsClean: null,
+            _conversationsCleanSource: null,
             _fetchController: null,
             _panelVideoId: null,
+            _overlay: null,
+            _dialog: null,
+            _input: null,
+            _askBtn: null,
+            _status: null,
+            _history: null,
+            _meta: null,
+            _returnFocus: null,
+            _dialogKeydown: null,
 
             _ensureStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
-                    .ytkit-ai-qa-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(59,130,246,0.32);background:rgba(59,130,246,0.12);color:#bfdbfe;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}html:not([dark]) .ytkit-ai-qa-btn{background:rgba(0,0,0,0.05);color:var(--yt-spec-text-primary,#0f0f0f);border-color:rgba(0,0,0,0.12);}
-                    .ytkit-ai-qa-btn:hover{background:rgba(59,130,246,0.22);}
-                    .ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9100;background:rgba(0,0,0,0.5);}
-                    .ytkit-ai-qa-modal__body{max-width:640px;width:90%;max-height:80vh;overflow:auto;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;display:flex;flex-direction:column;gap:12px;}
-                    .ytkit-ai-qa-modal__body h4{margin:0;}
-                    .ytkit-ai-qa-input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #3f3f46;background:#1a1a2e;color:#e5e7eb;font:13px/1.4 system-ui;resize:none;}
-                    .ytkit-ai-qa-input:focus{outline:none;border-color:rgba(59,130,246,0.5);}
-                    .ytkit-ai-qa-answer{white-space:pre-wrap;font:13px/1.5 system-ui;padding:10px;border-radius:8px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);min-height:40px;}
-                    .ytkit-ai-qa-actions{display:flex;gap:8px;align-items:center;}
-                    .ytkit-ai-qa-ask{padding:6px 14px;border-radius:6px;border:none;background:rgba(59,130,246,0.8);color:#fff;cursor:pointer;font:600 12px/1 system-ui;}
-                    .ytkit-ai-qa-ask:hover{background:rgba(59,130,246,1);}
-                    .ytkit-ai-qa-ask:disabled{opacity:0.5;cursor:not-allowed;}
-                    .ytkit-ai-qa-close{padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;cursor:pointer;font:12px/1 system-ui;}
+                    .ytkit-ai-qa-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:6px 10px;margin-inline-start:6px;border-radius:8px;border:1px solid rgba(96,165,250,.48);background:rgba(37,99,235,.2);color:#dbeafe;font:700 12px/1 'YouTube Sans',system-ui;cursor:pointer}.ytkit-ai-qa-btn:hover{background:rgba(37,99,235,.34)}
+                    .ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;z-index:9100;background:rgba(0,0,0,.72)}
+                    .ytkit-ai-qa-modal__body{box-sizing:border-box;width:min(720px,100%);max-height:min(84vh,820px);overflow:auto;padding:18px;border-radius:14px;background:#0b1020;color:#e5edf9;border:1px solid #334155;box-shadow:0 24px 70px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:12px;font:14px/1.55 system-ui}
+                    .ytkit-ai-qa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.ytkit-ai-qa-head h3{margin:0;color:#f8fafc;font-size:18px;line-height:1.35}.ytkit-ai-qa-description,.ytkit-ai-qa-meta,.ytkit-ai-qa-status,.ytkit-ai-qa-empty{margin:0;color:#b8c4d6}.ytkit-ai-qa-meta{font-size:12px;overflow-wrap:anywhere}
+                    .ytkit-ai-qa-close{display:inline-grid;place-items:center;flex:0 0 auto;min-width:36px;min-height:36px;padding:0;border-radius:8px;border:1px solid #475569;background:#172033;color:#f8fafc;cursor:pointer;font:700 20px/1 system-ui}
+                    .ytkit-ai-qa-question-label{font-weight:700;color:#f8fafc}.ytkit-ai-qa-input{box-sizing:border-box;width:100%;min-height:76px;padding:10px 12px;border-radius:9px;border:1px solid #52617a;background:#111827;color:#f8fafc;font:14px/1.5 system-ui;resize:vertical}.ytkit-ai-qa-input::placeholder{color:#94a3b8}.ytkit-ai-qa-input:disabled{opacity:.72}
+                    .ytkit-ai-qa-status{min-height:24px;padding:8px 10px;border-radius:8px;background:#121c30;border:1px solid #263650}.ytkit-ai-qa-status--error{color:#fecaca;border-color:#7f1d1d;background:#2a1015}.ytkit-ai-qa-status--busy{color:#bfdbfe;border-color:#1d4ed8}
+                    .ytkit-ai-qa-history{display:grid;gap:10px}.ytkit-ai-qa-turn{padding:12px;border-radius:10px;background:#111827;border:1px solid #334155}.ytkit-ai-qa-turn h4{margin:0 0 8px;color:#f8fafc;font-size:14px}.ytkit-ai-qa-claims{display:grid;gap:8px;margin:0;padding-inline-start:20px}.ytkit-ai-qa-claim{padding-inline-start:2px}.ytkit-ai-qa-citations{display:inline-flex;flex-wrap:wrap;gap:5px;margin-inline-start:7px}.ytkit-ai-qa-citation{display:inline-flex;align-items:center;min-height:24px;padding:2px 7px;border:1px solid #52617a;border-radius:6px;color:#93c5fd;text-decoration:none;font:700 12px/1.2 system-ui}.ytkit-ai-qa-no-answer{margin:0;color:#cbd5e1}
+                    .ytkit-ai-qa-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}.ytkit-ai-qa-ask{min-height:36px;padding:7px 16px;border-radius:8px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font:700 13px/1 system-ui}.ytkit-ai-qa-ask:hover{background:#1d4ed8}.ytkit-ai-qa-ask:disabled{opacity:.55;cursor:not-allowed}
+                    .ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+                    html:not([dark]) .ytkit-ai-qa-btn{background:#eff6ff;color:#1e3a8a;border-color:#93c5fd}html:not([dark]) .ytkit-ai-qa-modal{background:rgba(15,23,42,.46)}html:not([dark]) .ytkit-ai-qa-modal__body{background:#fff;color:#172033;border-color:#cbd5e1;box-shadow:0 24px 70px rgba(15,23,42,.24)}html:not([dark]) .ytkit-ai-qa-head h3,html:not([dark]) .ytkit-ai-qa-question-label,html:not([dark]) .ytkit-ai-qa-turn h4{color:#0f172a}html:not([dark]) .ytkit-ai-qa-description,html:not([dark]) .ytkit-ai-qa-meta,html:not([dark]) .ytkit-ai-qa-status,html:not([dark]) .ytkit-ai-qa-empty{color:#475569}html:not([dark]) .ytkit-ai-qa-close,html:not([dark]) .ytkit-ai-qa-input,html:not([dark]) .ytkit-ai-qa-turn{background:#f8fafc;color:#0f172a;border-color:#94a3b8}html:not([dark]) .ytkit-ai-qa-status{background:#f1f5f9;border-color:#cbd5e1}html:not([dark]) .ytkit-ai-qa-status--error{background:#fff1f2;color:#991b1b;border-color:#fda4af}html:not([dark]) .ytkit-ai-qa-citation{color:#1d4ed8;border-color:#93c5fd}html:not([dark]) .ytkit-ai-qa-no-answer{color:#334155}
+                    @media(max-width:600px){.ytkit-ai-qa-modal{align-items:flex-end;padding:8px}.ytkit-ai-qa-modal__body{max-height:calc(100vh - 16px);padding:14px;border-radius:12px}.ytkit-ai-qa-actions{justify-content:stretch}.ytkit-ai-qa-ask{width:100%}}
+                    @media(forced-colors:active){.ytkit-ai-qa-modal__body,.ytkit-ai-qa-close,.ytkit-ai-qa-input,.ytkit-ai-qa-status,.ytkit-ai-qa-turn,.ytkit-ai-qa-citation,.ytkit-ai-qa-ask{background:Canvas;color:CanvasText;border:1px solid CanvasText}.ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible{outline:3px solid Highlight}}
+                    @media(prefers-reduced-motion:reduce){.ytkit-ai-qa-modal *{transition:none!important;scroll-behavior:auto!important}}
                 `, 'ai-qa');
             },
 
             _hasPromptApi() {
-                return typeof window.LanguageModel !== 'undefined'
+                const localAi = globalThis.YTKitCore?.localAi;
+                return Boolean(localAi?.has?.('prompt', window))
+                    || typeof window.LanguageModel !== 'undefined'
                     || (typeof window.ai !== 'undefined' && typeof window.ai.languageModel !== 'undefined');
             },
 
-            async _fetchTranscript(options = {}) {
-                return fetchCurrentTranscriptText(options);
+            async _fetchTranscript(videoId, options = {}) {
+                const result = await TranscriptService.fetchTranscript(videoId, { signal: options.signal });
+                if (result?.status !== 'ready' || !result.segments?.length) {
+                    throw new Error(t('transcriptQaNoTranscript', 'No transcript is available for this video.'));
+                }
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                if (!service) throw new Error('Transcript Q&A artifact service is unavailable.');
+                return {
+                    videoId,
+                    title: result.title || videoId,
+                    language: result.language || '',
+                    prepared: service.prepareQaTranscript(result.segments)
+                };
             },
 
-            async _getSession(transcript, videoId) {
-                if (this._session && this._transcript === transcript && this._sessionVideoId === videoId) {
-                    return this._session;
-                }
-                this._destroySession();
-                const factory = window.LanguageModel || window.ai?.languageModel;
-                if (!factory) return null;
+            _providerIdentity(transcript) {
+                const configured = appState.settings?.transcriptQaLane === 'configured-provider';
+                return {
+                    videoId: transcript.videoId,
+                    title: transcript.title,
+                    language: transcript.language,
+                    provider: configured ? (appState.settings?.aiSummaryProvider || 'openai') : 'chrome-on-device',
+                    model: configured ? (appState.settings?.aiSummaryModel || '') : 'prompt-api',
+                    promptVersion: globalThis.YTKitCore?.aiSummaryArtifacts?.QA_PROMPT_VERSION || 'transcript-qa-citation-v1'
+                };
+            },
+
+            _readConversations() {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                if (!service) return {};
+                const raw = StorageManager.get(STORAGE_KEYS.aiTranscriptQa, {});
+                if (raw === this._conversationsCleanSource && this._conversationsClean) return this._conversationsClean;
+                this._conversationsClean = service.sanitizeQaStore(raw);
+                this._conversationsCleanSource = raw;
+                return this._conversationsClean;
+            },
+
+            _writeConversations(next) {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                if (!service) return {};
+                const clean = service.sanitizeQaStore(next);
+                this._conversationsClean = clean;
+                this._conversationsCleanSource = null;
                 try {
-                    this._session = await factory.create({
-                        systemPrompt: `You are an assistant that answers questions about YouTube video content. Answer ONLY based on the transcript provided. If the transcript does not contain the answer, say so. Be concise.\n\nTranscript:\n${transcript.slice(0, 6000)}`
+                    const write = StorageManager.setSync(STORAGE_KEYS.aiTranscriptQa, clean);
+                    if (write?.then) write.then((result) => {
+                        if (!result || result.ok !== false) return;
+                        DiagnosticLog?.record('transcriptQa.store', result.error?.message || 'save failed');
+                        showToast(t('transcriptQaSaveFailed', 'Saving the Q&A history failed. It may disappear after a reload.'), '#ef4444', { tone: 'error' });
                     });
-                    this._transcript = transcript;
-                    this._transcriptVideoId = videoId;
-                    this._sessionVideoId = videoId;
+                } catch (error) { DiagnosticLog?.record('transcriptQa.store', error.message); }
+                return clean;
+            },
+
+            async _getSession(identity) {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                const sessionIdentity = service?.qaConversationId?.(identity) || '';
+                if (this._session && this._sessionIdentity === sessionIdentity) return this._session;
+                this._destroySession();
+                const localAi = globalThis.YTKitCore?.localAi;
+                const availability = localAi?.availability
+                    ? await localAi.availability('prompt', {}, window)
+                    : (this._hasPromptApi() ? 'unknown' : 'unavailable');
+                if (availability === 'unavailable') {
+                    const error = new Error('The on-device Prompt API is unavailable.');
+                    error.code = 'LOCAL_AI_UNAVAILABLE';
+                    throw error;
+                }
+                try {
+                    const options = {
+                        systemPrompt: 'Answer transcript questions only from the supplied cue chunks. Return the requested JSON and cite exact cue IDs.'
+                    };
+                    this._session = localAi?.create
+                        ? await localAi.create('prompt', options, window)
+                        : await (window.LanguageModel || window.ai?.languageModel)?.create?.(options);
+                    if (!this._session?.prompt) throw new Error('Prompt API returned no usable session.');
+                    this._sessionIdentity = sessionIdentity;
                     return this._session;
                 } catch (e) {
                     DebugManager.log('TranscriptQA', `Session creation failed: ${e.message}`);
-                    return null;
+                    if (!e.code) e.code = 'LOCAL_AI_UNAVAILABLE';
+                    throw e;
                 }
             },
 
             _destroySession() {
                 try { this._session?.destroy?.(); } catch (_) { /* reason: session cleanup is best-effort */ }
                 this._session = null;
+                this._sessionIdentity = null;
+            },
+
+            _citationLink(conversation, citationId) {
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                const cue = conversation?.citations?.[citationId];
+                if (!service || !cue) return null;
+                const link = document.createElement('a');
+                link.className = 'ytkit-ai-qa-citation';
+                link.href = service.timestampUrl(conversation, cue);
+                link.textContent = cue.timestamp;
+                link.setAttribute('aria-label', `${t('transcriptQaCitationLabel', 'Transcript citation')} ${cue.timestamp}`);
+                link.addEventListener('click', (event) => {
+                    if (getVideoId() !== conversation.videoId) return;
+                    const video = document.querySelector('video');
+                    if (!video) return;
+                    event.preventDefault();
+                    video.currentTime = cue.startSeconds;
+                    video.focus?.({ preventScroll: true });
+                });
+                return link;
+            },
+
+            _renderConversation() {
+                if (!this._history || !this._meta) return;
+                const conversation = this._conversation;
+                this._history.textContent = '';
+                if (!conversation) {
+                    this._meta.textContent = '';
+                    return;
+                }
+                this._meta.textContent = [
+                    conversation.transcriptLanguage || t('unknown', 'Unknown'),
+                    `${conversation.provider}/${conversation.model}`,
+                    conversation.promptVersion
+                ].join(' · ');
+                if (!conversation.turns.length) {
+                    const empty = document.createElement('p');
+                    empty.className = 'ytkit-ai-qa-empty';
+                    empty.textContent = t('transcriptQaNoHistory', 'No saved questions for this transcript yet.');
+                    this._history.appendChild(empty);
+                    return;
+                }
+                for (const turn of conversation.turns) {
+                    const article = document.createElement('article');
+                    article.className = 'ytkit-ai-qa-turn';
+                    const question = document.createElement('h4');
+                    question.textContent = turn.question;
+                    article.appendChild(question);
+                    if (turn.notFound) {
+                        const noAnswer = document.createElement('p');
+                        noAnswer.className = 'ytkit-ai-qa-no-answer';
+                        noAnswer.textContent = t('transcriptQaNoAnswer', 'The selected transcript passages do not support an answer.');
+                        article.appendChild(noAnswer);
+                    } else {
+                        const claims = document.createElement('ul');
+                        claims.className = 'ytkit-ai-qa-claims';
+                        for (const claim of turn.claims) {
+                            const item = document.createElement('li');
+                            item.className = 'ytkit-ai-qa-claim';
+                            const text = document.createElement('span');
+                            text.textContent = claim.text;
+                            const citations = document.createElement('span');
+                            citations.className = 'ytkit-ai-qa-citations';
+                            for (const citationId of claim.citations) {
+                                const link = this._citationLink(conversation, citationId);
+                                if (link) citations.appendChild(link);
+                            }
+                            item.append(text, citations);
+                            claims.appendChild(item);
+                        }
+                        article.appendChild(claims);
+                    }
+                    this._history.appendChild(article);
+                }
+            },
+
+            _setStatus(message, tone = 'normal') {
+                if (!this._status) return;
+                this._status.className = `ytkit-ai-qa-status ytkit-ai-qa-status--${tone}`;
+                this._status.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+                this._status.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');
+                this._status.textContent = message;
+            },
+
+            _setBusy(busy, message = '', lockInput = false) {
+                this._dialog?.setAttribute('aria-busy', String(Boolean(busy)));
+                if (this._askBtn) this._askBtn.disabled = Boolean(busy);
+                if (this._input) this._input.disabled = Boolean(busy && lockInput);
+                if (message) this._setStatus(message, busy ? 'busy' : 'normal');
+            },
+
+            async _loadConversation(videoId, controller) {
+                const transcript = await this._fetchTranscript(videoId, { signal: controller.signal });
+                assertCurrentTranscriptRequest(videoId, controller.signal);
+                const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                const identity = this._providerIdentity(transcript);
+                const existing = service.findQaConversation(this._readConversations(), identity);
+                this._transcript = transcript;
+                this._identity = identity;
+                this._conversation = existing || service.createQaConversation(identity);
+                this._renderConversation();
+                this._setStatus(existing?.turns?.length
+                    ? t('transcriptQaHistoryRestored', 'Saved questions restored for this transcript and provider.')
+                    : t('transcriptQaReady', 'Ready for a transcript question.'));
+                return this._conversation;
+            },
+
+            async _callProvider(prompt, identity) {
+                if (identity.provider === 'chrome-on-device') {
+                    const session = await this._getSession(identity);
+                    return session.prompt(prompt);
+                }
+                const remote = getFeatureById('aiVideoSummary');
+                if (!remote?._requestByoHostAccess || !remote?._callLLM) {
+                    const error = new Error('The configured provider lane is unavailable in this build.');
+                    error.code = 'CONFIGURED_PROVIDER_UNAVAILABLE';
+                    throw error;
+                }
+                await remote._requestByoHostAccess(this.id);
+                return remote._callLLM(prompt);
+            },
+
+            async _askQuestion() {
+                const question = this._input?.value?.trim();
+                if (!question || !this._panelVideoId) return;
+                this._fetchController?.abort();
+                const controller = new AbortController();
+                this._fetchController = controller;
+                this._setBusy(true, t('transcriptQaThinking', 'Checking transcript evidence…'), true);
+                try {
+                    const videoId = this._panelVideoId;
+                    assertCurrentTranscriptRequest(videoId, controller.signal);
+                    if (!this._transcript || this._transcript.videoId !== videoId) {
+                        await this._loadConversation(videoId, controller);
+                    }
+                    const service = globalThis.YTKitCore?.aiSummaryArtifacts;
+                    const identity = this._providerIdentity(this._transcript);
+                    if (!this._identity || service.qaConversationId(identity) !== service.qaConversationId(this._identity)) {
+                        this._identity = identity;
+                        this._conversation = service.findQaConversation(this._readConversations(), identity)
+                            || service.createQaConversation(identity);
+                        this._renderConversation();
+                    }
+                    const context = service.selectQaContext(this._transcript.prepared, question);
+                    const prompt = service.buildQaPrompt({
+                        title: this._transcript.title,
+                        videoId,
+                        language: this._transcript.language,
+                        question,
+                        context
+                    });
+                    const response = await this._callProvider(prompt, identity);
+                    assertCurrentTranscriptRequest(videoId, controller.signal);
+                    const result = service.parseQaResponse(response, context.cues);
+                    this._conversation = service.appendQaTurn(this._conversation, {
+                        question,
+                        result,
+                        cues: context.cues
+                    });
+                    this._writeConversations(service.mergeQaConversation(this._readConversations(), this._conversation));
+                    this._renderConversation();
+                    this._input.value = '';
+                    this._setStatus(t('transcriptQaReady', 'Ready for a transcript question.'));
+                    if (result.invalidCitationCount || result.uncitedClaimCount) {
+                        DiagnosticLog?.record('transcriptQa.citations',
+                            `${result.invalidCitationCount} invented citation(s), ${result.uncitedClaimCount} uncited claim(s) removed`);
+                    }
+                } catch (e) {
+                    if (e?.name === 'AbortError') return;
+                    DebugManager.log('TranscriptQA', `Question failed: ${e.message}`);
+                    const message = e?.code === 'LOCAL_AI_UNAVAILABLE'
+                        ? t('transcriptQaLocalUnavailable', 'The on-device Prompt API is unavailable. Select a configured provider to use a permitted remote or Ollama lane.')
+                        : (e?.code === 'CONFIGURED_PROVIDER_UNAVAILABLE'
+                            ? t('transcriptQaConfiguredUnavailable', 'The configured provider lane is unavailable in this build or profile.')
+                            : failureText('transcript-qa', e, 'transcriptQaFailed', 'The transcript question could not be answered.'));
+                    this._setStatus(message, 'error');
+                } finally {
+                    if (this._fetchController === controller) this._fetchController = null;
+                    this._setBusy(false, '', false);
+                }
+            },
+
+            _closePanel({ restoreFocus = true } = {}) {
+                this._fetchController?.abort();
+                this._fetchController = null;
+                this._destroySession();
+                if (this._dialogKeydown && this._overlay) {
+                    this._overlay.removeEventListener('keydown', this._dialogKeydown);
+                }
+                const returnFocus = this._returnFocus;
+                this._overlay?.remove();
+                this._overlay = null;
+                this._dialog = null;
+                this._input = null;
+                this._askBtn = null;
+                this._status = null;
+                this._history = null;
+                this._meta = null;
+                this._dialogKeydown = null;
+                this._returnFocus = null;
+                this._panelVideoId = null;
                 this._transcript = null;
-                this._transcriptVideoId = null;
-                this._sessionVideoId = null;
+                this._identity = null;
+                this._conversation = null;
+                if (restoreFocus && returnFocus?.isConnected !== false) {
+                    returnFocus?.focus?.({ preventScroll: true });
+                }
             },
 
             _openQaPanel() {
-                if (!this._hasPromptApi()) {
-                    if (typeof showToast === 'function') showToast('Chrome Prompt API not available. Requires Chrome 138+ with Gemini Nano.', '#f59e0b');
-                    return;
-                }
                 const panelVideoId = getVideoId();
                 if (!panelVideoId) return;
-                this._fetchController?.abort();
-                this._fetchController = null;
+                this._closePanel({ restoreFocus: false });
                 this._panelVideoId = panelVideoId;
-                document.querySelector('.ytkit-ai-qa-modal')?.remove();
+                this._returnFocus = document.activeElement || this._btn;
                 const overlay = document.createElement('div');
                 overlay.className = 'ytkit-ai-qa-modal';
 
                 const inner = document.createElement('div');
                 inner.className = 'ytkit-ai-qa-modal__body';
+                inner.setAttribute('role', 'dialog');
+                inner.setAttribute('aria-modal', 'true');
+                inner.setAttribute('aria-labelledby', 'ytkit-ai-qa-title');
+                inner.setAttribute('aria-describedby', 'ytkit-ai-qa-description');
 
-                const h = document.createElement('h4');
-                h.textContent = 'Transcript Q&A';
-                inner.appendChild(h);
+                const head = document.createElement('div');
+                head.className = 'ytkit-ai-qa-head';
+                const h = document.createElement('h3');
+                h.id = 'ytkit-ai-qa-title';
+                h.textContent = t('transcriptQaDialogTitle', 'Transcript Q&A');
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.className = 'ytkit-ai-qa-close';
+                closeBtn.textContent = '×';
+                closeBtn.setAttribute('aria-label', t('transcriptQaClose', 'Close Transcript Q&A'));
+                head.append(h, closeBtn);
+                inner.appendChild(head);
+
+                const description = document.createElement('p');
+                description.id = 'ytkit-ai-qa-description';
+                description.className = 'ytkit-ai-qa-description';
+                description.textContent = t('transcriptQaDialogDescription', 'Answers use selected transcript passages. Every displayed claim links to its supporting timestamp.');
+                inner.appendChild(description);
+
+                const meta = document.createElement('p');
+                meta.className = 'ytkit-ai-qa-meta';
+                inner.appendChild(meta);
+
+                const label = document.createElement('label');
+                label.className = 'ytkit-ai-qa-question-label';
+                label.setAttribute('for', 'ytkit-ai-qa-question');
+                label.textContent = t('transcriptQaQuestionLabel', 'Question');
+                inner.appendChild(label);
 
                 const input = document.createElement('textarea');
+                input.id = 'ytkit-ai-qa-question';
                 input.className = 'ytkit-ai-qa-input';
-                input.placeholder = 'Ask a question about this video…';
-                input.rows = 2;
+                input.placeholder = t('transcriptQaQuestionPlaceholder', 'Ask a question about this video…');
+                input.rows = 3;
                 inner.appendChild(input);
 
-                const answer = document.createElement('div');
-                answer.className = 'ytkit-ai-qa-answer';
-                answer.textContent = 'Ask a question and the on-device model will answer based on the transcript.';
-                inner.appendChild(answer);
+                const status = document.createElement('p');
+                status.className = 'ytkit-ai-qa-status';
+                status.setAttribute('role', 'status');
+                status.setAttribute('aria-live', 'polite');
+                status.setAttribute('aria-atomic', 'true');
+                inner.appendChild(status);
+
+                const history = document.createElement('div');
+                history.className = 'ytkit-ai-qa-history';
+                history.setAttribute('role', 'log');
+                history.setAttribute('aria-live', 'polite');
+                history.setAttribute('aria-label', t('transcriptQaHistory', 'Transcript Q&A history'));
+                inner.appendChild(history);
 
                 const actions = document.createElement('div');
                 actions.className = 'ytkit-ai-qa-actions';
@@ -37734,56 +38050,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const askBtn = document.createElement('button');
                 askBtn.type = 'button';
                 askBtn.className = 'ytkit-ai-qa-ask';
-                askBtn.textContent = 'Ask';
-
-                const closeBtn = document.createElement('button');
-                closeBtn.type = 'button';
-                closeBtn.className = 'ytkit-ai-qa-close';
-                closeBtn.textContent = 'Close';
+                askBtn.textContent = t('transcriptQaAsk', 'Ask');
 
                 const self = this;
-                askBtn.addEventListener('click', async () => {
-                    const question = input.value.trim();
-                    if (!question) return;
-                    self._fetchController?.abort();
-                    const controller = new AbortController();
-                    self._fetchController = controller;
-                    askBtn.disabled = true;
-                    answer.textContent = 'Thinking…';
-                    try {
-                        assertCurrentTranscriptRequest(panelVideoId, controller.signal);
-                        if (!self._transcript || self._transcriptVideoId !== panelVideoId) {
-                            self._destroySession();
-                            answer.textContent = 'Loading transcript…';
-                            const text = await self._fetchTranscript({
-                                videoId: panelVideoId,
-                                signal: controller.signal
-                            });
-                            assertCurrentTranscriptRequest(panelVideoId, controller.signal);
-                            if (!text || text.length < 50) {
-                                answer.textContent = 'No transcript available for this video.';
-                                return;
-                            }
-                            self._transcript = text;
-                            self._transcriptVideoId = panelVideoId;
-                        }
-                        const session = await self._getSession(self._transcript, panelVideoId);
-                        assertCurrentTranscriptRequest(panelVideoId, controller.signal);
-                        if (!session) {
-                            answer.textContent = 'Failed to create Prompt API session. The model may not be downloaded yet.';
-                            return;
-                        }
-                        const result = await session.prompt(question);
-                        assertCurrentTranscriptRequest(panelVideoId, controller.signal);
-                        answer.textContent = String(result || '(no response)');
-                    } catch (e) {
-                        if (e?.name === 'AbortError') return;
-                        answer.textContent = failureText('transcript-qa', e, 'transcriptQaFailed', 'Could not answer that question');
-                    } finally {
-                        if (self._fetchController === controller) self._fetchController = null;
-                        if (askBtn.isConnected !== false) askBtn.disabled = false;
-                    }
-                });
+                askBtn.addEventListener('click', () => self._askQuestion());
 
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -37792,20 +38062,54 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 });
 
-                const closePanel = () => {
-                    self._fetchController?.abort();
-                    self._fetchController = null;
-                    overlay.remove();
+                const closePanel = () => self._closePanel();
+                this._dialogKeydown = (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closePanel();
+                        return;
+                    }
+                    if (event.key !== 'Tab') return;
+                    const controls = Array.from(inner.querySelectorAll(
+                        'a[href],button:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+                    )).filter((control) => control.getAttribute('aria-hidden') !== 'true');
+                    if (!controls.length) return;
+                    const current = controls.indexOf(document.activeElement);
+                    const nextIndex = event.shiftKey
+                        ? (current <= 0 ? controls.length - 1 : current - 1)
+                        : (current === controls.length - 1 ? 0 : current + 1);
+                    if (current === -1 || (event.shiftKey && current === 0) || (!event.shiftKey && current === controls.length - 1)) {
+                        event.preventDefault();
+                        controls[nextIndex].focus();
+                    }
                 };
                 closeBtn.addEventListener('click', closePanel);
                 overlay.addEventListener('click', (e) => { if (e.target === overlay) closePanel(); });
+                overlay.addEventListener('keydown', this._dialogKeydown);
 
                 actions.appendChild(askBtn);
-                actions.appendChild(closeBtn);
                 inner.appendChild(actions);
                 overlay.appendChild(inner);
                 document.body.appendChild(overlay);
+                this._overlay = overlay;
+                this._dialog = inner;
+                this._input = input;
+                this._askBtn = askBtn;
+                this._status = status;
+                this._history = history;
+                this._meta = meta;
                 input.focus();
+                const controller = new AbortController();
+                this._fetchController = controller;
+                this._setBusy(true, t('transcriptQaLoading', 'Loading transcript evidence…'));
+                this._loadConversation(panelVideoId, controller).catch((error) => {
+                    if (error?.name === 'AbortError') return;
+                    DebugManager.log('TranscriptQA', `Transcript load failed: ${error.message}`);
+                    this._setStatus(failureText('transcript-qa', error, 'transcriptQaFailed', 'The transcript could not be loaded.'), 'error');
+                }).finally(() => {
+                    if (this._fetchController === controller) this._fetchController = null;
+                    this._setBusy(false);
+                });
             },
 
             _attach() {
@@ -37815,10 +38119,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn = document.createElement('button');
                 this._btn.type = 'button';
                 this._btn.className = 'ytkit-ai-qa-btn';
-                this._btn.textContent = 'Q&A';
-                this._btn.title = this._hasPromptApi()
-                    ? 'Ask questions about this video using on-device AI.'
-                    : 'Chrome Prompt API not detected — requires Chrome 138+ with Gemini Nano.';
+                this._btn.textContent = t('transcriptQaButton', 'Q&A');
+                this._btn.title = t('transcriptQaButtonTitle', 'Ask citation-backed questions about this video.');
+                this._btn.setAttribute('aria-label', t('transcriptQaButtonTitle', 'Ask citation-backed questions about this video.'));
                 this._btn.addEventListener('click', () => this._openQaPanel());
                 anchor.insertAdjacentElement('afterend', this._btn);
             },
@@ -37826,11 +38129,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._ensureStyles();
                 this._navRule = () => {
-                    this._fetchController?.abort();
-                    this._fetchController = null;
-                    this._panelVideoId = null;
-                    this._destroySession();
-                    document.querySelector('.ytkit-ai-qa-modal')?.remove();
+                    this._closePanel({ restoreFocus: false });
                     setTimeout(() => this._attach(), 1500);
                 };
                 addNavigateRule(this.id, this._navRule);
@@ -37840,16 +38139,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
-                this._fetchController?.abort();
-                this._fetchController = null;
-                this._panelVideoId = null;
+                this._closePanel({ restoreFocus: false });
                 this._btn?.remove();
                 this._btn = null;
-                this._destroySession();
                 document.querySelectorAll('.ytkit-ai-qa-modal, .ytkit-ai-qa-btn').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
             }
+        },
+        {
+            id: 'transcriptQaLane',
+            name: t('feature_transcriptQaLane_name', 'Transcript Q&A provider'),
+            description: t('feature_transcriptQaLane_desc', 'Keep questions on-device or use the configured provider with its existing permission, privacy, and request-budget controls.'),
+            group: 'Research',
+            icon: 'route',
+            type: 'select',
+            options: {
+                'on-device': t('transcriptQaLaneOnDevice', 'On-device only'),
+                'configured-provider': t('transcriptQaLaneConfigured', 'Configured provider')
+            },
+            settingKey: 'transcriptQaLane',
+            pages: [PageTypes.WATCH],
+            init() {},
+            destroy() {}
         },
         // ═══════════════════════════════════════════════════════════════════
         //  SPACED REVIEW EXPORT — bookmarks → SuperMemo-style CSV
