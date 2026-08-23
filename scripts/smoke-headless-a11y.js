@@ -145,6 +145,7 @@ const SURFACES = Object.freeze([
         settleMs: 300,
         themes: Object.freeze(['dark', 'light']),
         focusTrap: Object.freeze({ root: '.ytkit-ai-qa-modal__body' }),
+        busyFocus: true,
         localeStates: LOCALE_STATES,
         localizedInjectedCopy: true,
     }),
@@ -389,6 +390,18 @@ async function dispatchTab(client, shift = false) {
     // CDP key dispatch can move focus without running the same scroll step
     // that a physical Tab performs in a nested overflow container.
     await client.evaluate('document.activeElement?.scrollIntoView({ block: "center", inline: "nearest" })');
+}
+
+async function dispatchEscape(client) {
+    for (const type of ['keyDown', 'keyUp']) {
+        await client.send('Input.dispatchKeyEvent', {
+            type,
+            key: 'Escape',
+            code: 'Escape',
+            windowsVirtualKeyCode: 27,
+            nativeVirtualKeyCode: 27,
+        });
+    }
 }
 
 function collectFocusableExpression(selector) {
@@ -708,6 +721,74 @@ async function auditFocusTrap(client, surface, stateName) {
 
     if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
     return 3;
+}
+
+async function auditTranscriptQaBusyFocus(client, surface, stateName) {
+    if (!surface.busyFocus) return 0;
+    client.context = `${surface.name}/${stateName} busy focus containment`;
+    const before = await client.evaluate(`(() => {
+        const feature = globalThis.ytkit?.allFeatures?.find(
+            (candidate) => candidate?.id === 'localAiTranscriptQa'
+        );
+        const dialog = document.querySelector('.ytkit-ai-qa-modal__body');
+        const ask = dialog?.querySelector('.ytkit-ai-qa-ask');
+        const input = dialog?.querySelector('.ytkit-ai-qa-input');
+        if (!feature || !dialog || !ask || !input) return { error: 'Transcript Q&A fixture is incomplete' };
+        ask.focus();
+        feature._setBusy(true, 'Checking transcript evidence...', true);
+        return {
+            activeInside: dialog.contains(document.activeElement),
+            activeIsAsk: document.activeElement === ask,
+            ariaBusy: dialog.getAttribute('aria-busy'),
+            ariaDisabled: ask.getAttribute('aria-disabled'),
+            askDisabled: ask.disabled,
+            inputDisabled: input.disabled,
+            inputReadOnly: input.readOnly,
+        };
+    })()`);
+    const failures = [];
+    if (before.error) failures.push(before.error);
+    if (!before.activeInside || !before.activeIsAsk) failures.push('busy transition moved focus away from Ask');
+    if (before.ariaBusy !== 'true') failures.push(`dialog aria-busy is ${JSON.stringify(before.ariaBusy)}`);
+    if (before.ariaDisabled !== 'true') failures.push(`Ask aria-disabled is ${JSON.stringify(before.ariaDisabled)}`);
+    if (before.askDisabled) failures.push('Ask became natively disabled');
+    if (before.inputDisabled) failures.push('question input became natively disabled');
+    if (!before.inputReadOnly) failures.push('question input did not become read-only');
+
+    await dispatchTab(client);
+    const afterTab = await client.evaluate(`(() => {
+        const dialog = document.querySelector('.ytkit-ai-qa-modal__body');
+        return {
+            active: document.activeElement?.tagName || '',
+            inside: Boolean(dialog?.contains(document.activeElement)),
+        };
+    })()`);
+    if (!afterTab.inside || afterTab.active === 'BODY') {
+        failures.push(`Tab escaped the busy dialog to ${afterTab.active || 'no active element'}`);
+    }
+
+    await dispatchEscape(client);
+    const afterEscape = await client.evaluate(`(() => {
+        const feature = globalThis.ytkit?.allFeatures?.find(
+            (candidate) => candidate?.id === 'localAiTranscriptQa'
+        );
+        return {
+            launcherFocused: Boolean(feature?._btn && document.activeElement === feature._btn),
+            modalPresent: Boolean(document.querySelector('.ytkit-ai-qa-modal')),
+        };
+    })()`);
+    if (afterEscape.modalPresent) failures.push('Escape did not close the busy dialog');
+    if (!afterEscape.launcherFocused) failures.push('Escape did not restore focus to the Q&A launcher');
+    if (failures.length) throw new Error(`${surface.name}/${stateName}: ${failures.join('; ')}`);
+
+    await client.evaluate('globalThis.__ytkitA11y.openTranscriptQa()');
+    await waitFor(
+        () => client.evaluate(surface.ready),
+        5000,
+        `${surface.name}/${stateName} busy-focus reopen`
+    );
+    await sleep(surface.settleMs || 300);
+    return 10;
 }
 
 // WCAG 2.2 SC 1.4.10 Reflow: content must not require two-dimensional scrolling
@@ -1420,6 +1501,9 @@ async function auditSurface(client, stageDir, surface, timeoutMs, fixtureOrigin 
             const focusTrapChecks = mode === 'normal'
                 ? await auditFocusTrap(client, surface, `${theme}/${mode}`)
                 : 0;
+            const busyFocusChecks = mode === 'normal' && theme === 'dark'
+                ? await auditTranscriptQaBusyFocus(client, surface, `${theme}/${mode}`)
+                : 0;
             const settingsDiffChecks = mode === 'normal' && theme === 'dark'
                 ? await auditPopupSettingsDiff(client, surface, `${theme}/${mode}`)
                 : 0;
@@ -1436,7 +1520,7 @@ async function auditSurface(client, stageDir, surface, timeoutMs, fixtureOrigin 
                 ? await auditCommentSearchStates(client, surface, `${theme}/${mode}`)
                 : 0;
             const featureHealthChecks = await auditFeatureHealthPanel(client, surface, `${theme}/${mode}`);
-            reports.push({ commentSearchChecks, controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, shortsSettingsChecks, theme, viewport });
+            reports.push({ busyFocusChecks, commentSearchChecks, controls, featureHealthChecks, filterGrantChecks, finiteSelectChecks, focusTrapChecks, mode, settingsDiffChecks, shortsSettingsChecks, theme, viewport });
         }
     }
     let forcedViewport = await configureRenderedState(
@@ -1797,6 +1881,7 @@ async function runFixtureStates(options) {
                 `[headless-a11y] ${surface.name}: ${reports.length} state(s), `
                 + `${total} keyboard focus visits, `
                 + `${reports.reduce((sum, report) => sum + (report.focusTrapChecks || 0), 0)} focus-trap assertions, `
+                + `${reports.reduce((sum, report) => sum + (report.busyFocusChecks || 0), 0)} busy-focus assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.settingsDiffChecks || 0), 0)} settings-diff assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.finiteSelectChecks || 0), 0)} finite-select assertions, `
                 + `${reports.reduce((sum, report) => sum + (report.filterGrantChecks || 0), 0)} filter-grant assertions, `
@@ -1839,6 +1924,7 @@ module.exports = {
     assertNoRuntimeExceptions,
     auditKeyboardPath,
     auditFocusTrap,
+    auditTranscriptQaBusyFocus,
     auditPopupSettingsDiff,
     auditRtlLayout,
     auditShortsSettingsSection,

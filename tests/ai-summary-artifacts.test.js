@@ -146,6 +146,24 @@ test('Transcript Q&A selects bounded cue chunks from the full transcript', () =>
     assert.ok(selected.transcript.length <= 4100);
 });
 
+test('Transcript Q&A retrieval includes evidence beyond the former source ceiling', () => {
+    const longSegments = Array.from({ length: 5001 }, (_unused, index) => ({
+        startMs: index * 1000,
+        endMs: index * 1000 + 900,
+        text: index === 5000 ? 'Quasarproof final evidence.' : `ordinary cue ${index}`
+    }));
+    const prepared = artifacts.prepareQaTranscript(longSegments, { maxChunkChars: 2000 });
+    const selected = artifacts.selectQaContext(prepared, 'Where is the quasarproof evidence?', {
+        maxChunks: 1,
+        maxChars: 4000
+    });
+
+    assert.equal(prepared.cueCount, 5001);
+    assert.equal(prepared.truncated, false);
+    assert.ok(selected.cues.some((cue) => cue.id === 'C5001'),
+        'the last cue must remain searchable even after 5,000 earlier cues');
+});
+
 test('Transcript Q&A accepts only citation-backed claims', () => {
     const prepared = artifacts.prepareQaTranscript(segments);
     const context = artifacts.selectQaContext(prepared, 'What is the central finding?');
@@ -210,7 +228,39 @@ test('Transcript Q&A conversations reopen only on an exact provenance identity',
     assert.equal(artifacts.findQaConversation(store, { ...identity, provider: 'ollama' }), null);
     assert.equal(artifacts.findQaConversation(store, { ...identity, model: 'different' }), null);
     assert.equal(artifacts.findQaConversation(store, { ...identity, promptVersion: 'future-v2' }), null);
+    assert.equal(artifacts.findQaConversation(store, { ...identity, language: 'EN' }), null);
+    assert.equal(artifacts.findQaConversation(store, { ...identity, provider: 'Chrome-On-Device' }), null);
     assert.equal(conversation.citations.C0002.timestamp, '1:05');
+});
+
+test('Transcript Q&A identity keys preserve colliding models and require every provenance field', () => {
+    const identity = {
+        videoId: 'abc123DEF45',
+        title: 'Collision fixture',
+        language: 'en',
+        provider: 'ollama',
+        promptVersion: artifacts.QA_PROMPT_VERSION
+    };
+    const first = artifacts.createQaConversation({ ...identity, model: 'm-eeoj52-84e' }, {
+        createdAt: '2026-07-14T12:00:00.000Z'
+    });
+    const second = artifacts.createQaConversation({ ...identity, model: 'm-sw1dll-leo' }, {
+        createdAt: '2026-07-14T12:01:00.000Z'
+    });
+    const store = artifacts.mergeQaConversation(
+        artifacts.mergeQaConversation({}, first),
+        second
+    );
+
+    assert.notEqual(first.conversationId, second.conversationId,
+        'different exact model identities must never collapse to a short hash collision');
+    assert.equal(Object.keys(store).length, 2);
+    assert.equal(artifacts.findQaConversation(store, { ...identity, model: 'm-eeoj52-84e' })?.model,
+        'm-eeoj52-84e');
+    assert.equal(artifacts.findQaConversation(store, { ...identity, model: 'm-sw1dll-leo' })?.model,
+        'm-sw1dll-leo');
+    assert.throws(() => artifacts.qaConversationId({ ...identity, model: 'fixture', promptVersion: '' }),
+        /prompt version/i);
 });
 
 test('Transcript Q&A store sanitation drops malformed and uncited history', () => {

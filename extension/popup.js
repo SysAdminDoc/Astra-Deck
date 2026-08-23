@@ -369,6 +369,23 @@ const RETIRED_SETTING_KEYS = new Set([
     'hideQualityPopup',
     'aiSummaryApiKey',
     'lowPowerProfileBackup',
+    'adblockFilterAutoUpdate',
+    'adblockFilterUrl',
+    'audioEqPreset',
+    'autoResumePosition',
+    'autoResumeThreshold',
+    'autoSkipStillWatching',
+    'cinemaMode',
+    'defaultPlaybackSpeed',
+    'disableSeekPreview',
+    'gpuContextRecovery',
+    'hideSponsorBlockLabels',
+    'mousewheelSpeed',
+    'mousewheelVolume',
+    'playbackSpeedPresets',
+    'skipSilenceSpeed',
+    'skipSilenceThreshold',
+    'sponsorBlockCategories',
 ]);
 // v4.47.0 NF25: must match ytkit.js#SETTINGS_VERSION and
 // settings-meta.json#settingsVersion. The check-versions.js gate

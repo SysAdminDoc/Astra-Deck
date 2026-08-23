@@ -34,6 +34,9 @@ test('headless accessibility smoke covers every roadmap surface through real UI 
     assert.match(source, /shortsWatchTimeToday/);
     assert.match(source, /#ytkit-transcript-panel/);
     assert.match(source, /globalThis\.__ytkitA11y\.openTranscriptQa\(\)/);
+    assert.match(source, /busyFocus: true/);
+    assert.match(source, /auditTranscriptQaBusyFocus/);
+    assert.match(source, /feature\._setBusy\(true, 'Checking transcript evidence\.\.\.', true\)/);
     assert.match(source, /globalThis\.__ytkitA11y\.openDownload\(\)/);
     assert.match(source, /auditCommentSearchStates/);
     assert.match(source, /localizedInjectedCopy: true/);

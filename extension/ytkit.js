@@ -3617,6 +3617,26 @@ const STORAGE_KEYS = Object.freeze({
         // v4.49.0: credentials moved behind the extension background
         // worker (or the userscript manager's isolated value store).
         'aiSummaryApiKey',
+        // Root-userscript settings removed before the current schema. These
+        // names have no value-compatible replacement and must not survive an
+        // import or a save from a long-lived tab.
+        'adblockFilterAutoUpdate',
+        'adblockFilterUrl',
+        'audioEqPreset',
+        'autoResumePosition',
+        'autoResumeThreshold',
+        'autoSkipStillWatching',
+        'cinemaMode',
+        'defaultPlaybackSpeed',
+        'disableSeekPreview',
+        'gpuContextRecovery',
+        'hideSponsorBlockLabels',
+        'mousewheelSpeed',
+        'mousewheelVolume',
+        'playbackSpeedPresets',
+        'skipSilenceSpeed',
+        'skipSilenceThreshold',
+        'sponsorBlockCategories',
         // NOTE: aiSummaryArtifactsData (moved to the top-level
         // ytkit-ai-summaries key in v4.49.7) is deliberately NOT retired:
         // sanitize-stripping it would drop an unmoved legacy store on the
@@ -30161,12 +30181,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _requestByoHostAccess(featureId = 'aiVideoSummary') {
                 if (typeof hasExtensionContext !== 'function' || !hasExtensionContext()) return true;
                 const { endpoint } = this._getProviderEndpoint();
-                const declared = globalThis.YTKitBrowser?.runtime?.getManifest?.()?.optional_host_permissions;
+                const manifest = globalThis.YTKitBrowser?.runtime?.getManifest?.();
+                const declared = manifest?.optional_host_permissions;
                 const getHosts = globalThis.YTKitCore?.getOptionalHostPermissionsForFeature;
-                if (!Array.isArray(declared) || typeof getHosts !== 'function') return true;
+                const catalogue = globalThis.YTKitCore?.ORIGIN_CATALOGUE;
+                const isOriginAvailable = globalThis.YTKitCore?.isOriginAvailableForProfile;
+                if (!Array.isArray(declared) || typeof getHosts !== 'function'
+                    || !Array.isArray(catalogue) || typeof isOriginAvailable !== 'function') {
+                    const error = new Error('AI provider policy is unavailable. Reload Astra Deck.');
+                    error.code = 'PROVIDER_PROFILE_BLOCKED';
+                    throw error;
+                }
                 const policy = settingsManager?._getPolicyProfile?.();
                 const profile = policy?.resolveEffectiveProfile?.(appState.settings || {}) || 'store-safe';
                 const expectedOrigin = new URL(endpoint).origin;
+                const parentFeature = globalThis.YTKitCore?.PARENT_FEATURE?.[featureId];
+                const flow = catalogue.find((entry) => entry?.origin === expectedOrigin
+                    && (entry.requiredByFeatures?.includes(featureId)
+                        || (parentFeature && entry.requiredByFeatures?.includes(parentFeature))));
+                if (!flow || !isOriginAvailable(flow, profile)) {
+                    const error = new Error('The configured provider is unavailable in the effective privacy profile.');
+                    error.code = 'PROVIDER_PROFILE_BLOCKED';
+                    throw error;
+                }
+                if (flow.hostGrant === 'required') {
+                    const requiredPermissions = globalThis.YTKitCore?.hostPermissionsForDataFlowOrigin?.(flow.origin)
+                        || [`${expectedOrigin}/*`];
+                    const requiredSet = new Set(manifest?.host_permissions || []);
+                    if (requiredPermissions.some((permission) => requiredSet.has(permission))) return true;
+                    const error = new Error('The configured provider is not declared by this build profile.');
+                    error.code = 'PROVIDER_PROFILE_BLOCKED';
+                    throw error;
+                }
                 const declaredSet = new Set(declared);
                 const candidates = getHosts(featureId, { profile })
                     .filter((permission) => {
@@ -30175,7 +30221,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             return new URL(String(permission).replace(/\*.*$/, '')).origin === expectedOrigin;
                         } catch (_) { return false; }
                     });
-                if (!candidates.length) return true;
+                if (!candidates.length) {
+                    const error = new Error('The configured provider is not available to this feature and profile.');
+                    error.code = 'PROVIDER_PROFILE_BLOCKED';
+                    throw error;
+                }
                 const response = await sendRuntimeMessage({
                     type: 'YTKIT_REQUEST_OPTIONAL_HOSTS',
                     origins: candidates
@@ -37661,10 +37711,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-ai-qa-modal__body{box-sizing:border-box;width:min(720px,100%);max-height:min(84vh,820px);overflow:auto;padding:18px;border-radius:14px;background:#0b1020;color:#e5edf9;border:1px solid #334155;box-shadow:0 24px 70px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:12px;font:14px/1.55 system-ui}
                     .ytkit-ai-qa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.ytkit-ai-qa-head h3{margin:0;color:#f8fafc;font-size:18px;line-height:1.35}.ytkit-ai-qa-description,.ytkit-ai-qa-meta,.ytkit-ai-qa-status,.ytkit-ai-qa-empty{margin:0;color:#b8c4d6}.ytkit-ai-qa-meta{font-size:12px;overflow-wrap:anywhere}
                     .ytkit-ai-qa-close{display:inline-grid;place-items:center;flex:0 0 auto;min-width:36px;min-height:36px;padding:0;border-radius:8px;border:1px solid #475569;background:#172033;color:#f8fafc;cursor:pointer;font:700 20px/1 system-ui}
-                    .ytkit-ai-qa-question-label{font-weight:700;color:#f8fafc}.ytkit-ai-qa-input{box-sizing:border-box;width:100%;min-height:76px;padding:10px 12px;border-radius:9px;border:1px solid #52617a;background:#111827;color:#f8fafc;font:14px/1.5 system-ui;resize:vertical}.ytkit-ai-qa-input::placeholder{color:#94a3b8}.ytkit-ai-qa-input:disabled{opacity:.72}
+                    .ytkit-ai-qa-question-label{font-weight:700;color:#f8fafc}.ytkit-ai-qa-input{box-sizing:border-box;width:100%;min-height:76px;padding:10px 12px;border-radius:9px;border:1px solid #52617a;background:#111827;color:#f8fafc;font:14px/1.5 system-ui;resize:vertical}.ytkit-ai-qa-input::placeholder{color:#94a3b8}.ytkit-ai-qa-input[readonly]{opacity:.72}
                     .ytkit-ai-qa-status{min-height:24px;padding:8px 10px;border-radius:8px;background:#121c30;border:1px solid #263650}.ytkit-ai-qa-status--error{color:#fecaca;border-color:#7f1d1d;background:#2a1015}.ytkit-ai-qa-status--busy{color:#bfdbfe;border-color:#1d4ed8}
                     .ytkit-ai-qa-history{display:grid;gap:10px}.ytkit-ai-qa-turn{padding:12px;border-radius:10px;background:#111827;border:1px solid #334155}.ytkit-ai-qa-turn h4{margin:0 0 8px;color:#f8fafc;font-size:14px}.ytkit-ai-qa-claims{display:grid;gap:8px;margin:0;padding-inline-start:20px}.ytkit-ai-qa-claim{padding-inline-start:2px}.ytkit-ai-qa-citations{display:inline-flex;flex-wrap:wrap;gap:5px;margin-inline-start:7px}.ytkit-ai-qa-citation{display:inline-flex;align-items:center;min-height:24px;padding:2px 7px;border:1px solid #52617a;border-radius:6px;color:#93c5fd;text-decoration:none;font:700 12px/1.2 system-ui}.ytkit-ai-qa-no-answer{margin:0;color:#cbd5e1}
-                    .ytkit-ai-qa-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}.ytkit-ai-qa-ask{min-height:36px;padding:7px 16px;border-radius:8px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font:700 13px/1 system-ui}.ytkit-ai-qa-ask:hover{background:#1d4ed8}.ytkit-ai-qa-ask:disabled{opacity:.55;cursor:not-allowed}
+                    .ytkit-ai-qa-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}.ytkit-ai-qa-ask{min-height:36px;padding:7px 16px;border-radius:8px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font:700 13px/1 system-ui}.ytkit-ai-qa-ask:hover{background:#1d4ed8}.ytkit-ai-qa-ask[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
                     .ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
                     html:not([dark]) .ytkit-ai-qa-btn{background:#eff6ff;color:#1e3a8a;border-color:#93c5fd}html:not([dark]) .ytkit-ai-qa-modal{background:rgba(15,23,42,.46)}html:not([dark]) .ytkit-ai-qa-modal__body{background:#fff;color:#172033;border-color:#cbd5e1;box-shadow:0 24px 70px rgba(15,23,42,.24)}html:not([dark]) .ytkit-ai-qa-head h3,html:not([dark]) .ytkit-ai-qa-question-label,html:not([dark]) .ytkit-ai-qa-turn h4{color:#0f172a}html:not([dark]) .ytkit-ai-qa-description,html:not([dark]) .ytkit-ai-qa-meta,html:not([dark]) .ytkit-ai-qa-status,html:not([dark]) .ytkit-ai-qa-empty{color:#475569}html:not([dark]) .ytkit-ai-qa-close,html:not([dark]) .ytkit-ai-qa-input,html:not([dark]) .ytkit-ai-qa-turn{background:#f8fafc;color:#0f172a;border-color:#94a3b8}html:not([dark]) .ytkit-ai-qa-status{background:#f1f5f9;border-color:#cbd5e1}html:not([dark]) .ytkit-ai-qa-status--error{background:#fff1f2;color:#991b1b;border-color:#fda4af}html:not([dark]) .ytkit-ai-qa-citation{color:#1d4ed8;border-color:#93c5fd}html:not([dark]) .ytkit-ai-qa-no-answer{color:#334155}
                     @media(max-width:600px){.ytkit-ai-qa-modal{align-items:flex-end;padding:8px}.ytkit-ai-qa-modal__body{max-height:calc(100vh - 16px);padding:14px;border-radius:12px}.ytkit-ai-qa-actions{justify-content:stretch}.ytkit-ai-qa-ask{width:100%}}
@@ -37690,7 +37740,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return {
                     videoId,
                     title: result.title || videoId,
-                    language: result.language || '',
+                    language: result.language || 'und',
                     prepared: service.prepareQaTranscript(result.segments)
                 };
             },
@@ -37854,9 +37904,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _setBusy(busy, message = '', lockInput = false) {
-                this._dialog?.setAttribute('aria-busy', String(Boolean(busy)));
-                if (this._askBtn) this._askBtn.disabled = Boolean(busy);
-                if (this._input) this._input.disabled = Boolean(busy && lockInput);
+                this._busy = Boolean(busy);
+                this._dialog?.setAttribute('aria-busy', String(this._busy));
+                if (this._askBtn) {
+                    this._askBtn.disabled = false;
+                    this._askBtn.setAttribute('aria-disabled', String(this._busy));
+                }
+                if (this._input) {
+                    this._input.disabled = false;
+                    this._input.readOnly = Boolean(this._busy && lockInput);
+                    this._input.setAttribute('aria-readonly', String(this._input.readOnly));
+                }
                 if (message) this._setStatus(message, busy ? 'busy' : 'normal');
             },
 
@@ -37892,6 +37950,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             async _askQuestion() {
+                if (this._busy) return;
                 const question = this._input?.value?.trim();
                 if (!question || !this._panelVideoId) return;
                 this._fetchController?.abort();
@@ -37941,7 +38000,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     DebugManager.log('TranscriptQA', `Question failed: ${e.message}`);
                     const message = e?.code === 'LOCAL_AI_UNAVAILABLE'
                         ? t('transcriptQaLocalUnavailable', 'The on-device Prompt API is unavailable. Select a configured provider to use a permitted remote or Ollama lane.')
-                        : (e?.code === 'CONFIGURED_PROVIDER_UNAVAILABLE'
+                        : (e?.code === 'CONFIGURED_PROVIDER_UNAVAILABLE' || e?.code === 'PROVIDER_PROFILE_BLOCKED'
                             ? t('transcriptQaConfiguredUnavailable', 'The configured provider lane is unavailable in this build or profile.')
                             : failureText('transcript-qa', e, 'transcriptQaFailed', 'The transcript question could not be answered.'));
                     this._setStatus(message, 'error');

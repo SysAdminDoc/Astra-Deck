@@ -798,6 +798,20 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
         const feature = globalThis.ytkit?.allFeatures?.find((candidate) => candidate?.id === 'localAiTranscriptQa');
         const service = globalThis.YTKitCore?.aiSummaryArtifacts;
         if (!feature || !service) return false;
+        let launcher = feature._btn;
+        if (!launcher?.isConnected) {
+            launcher = document.getElementById('fixture-transcript-qa-launcher');
+            if (!launcher) {
+                launcher = document.createElement('button');
+                launcher.id = 'fixture-transcript-qa-launcher';
+                launcher.type = 'button';
+                launcher.className = 'ytkit-ai-qa-btn';
+                launcher.textContent = 'Q&A';
+                launcher.setAttribute('aria-label', 'Ask citation-backed questions about this video.');
+                anchor?.insertAdjacentElement('afterend', launcher);
+            }
+            feature._btn = launcher;
+        }
         const transcript = {
             videoId: 'abc12345678',
             title: 'Transcript Q&A accessibility fixture',
@@ -838,6 +852,7 @@ function buildFixture(stageDir, { fallbackOnly = false, runtimeSettings = null }
             })
         };
         feature._ensureStyles();
+        launcher.focus();
         feature._openQaPanel();
         return true;
     };

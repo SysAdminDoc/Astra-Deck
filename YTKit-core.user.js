@@ -1468,6 +1468,16 @@ const RETIRED_SHIPPED_IDS = Object.freeze([
     "adblockSsapAutoSkip",
     "adblockAntiDetect",
     "muteAdAudio",
+    "adblockFilterAutoUpdate",
+    "adblockFilterUrl",
+    "autoResumePosition",
+    "autoResumeThreshold",
+    "autoSkipStillWatching",
+    "cinemaMode",
+    "defaultPlaybackSpeed",
+    "disableSeekPreview",
+    "gpuContextRecovery",
+    "playbackSpeedPresets",
     "replaceWithCobaltDownloader",
     "cobaltUrl",
     "downloadProvider",
@@ -1480,9 +1490,16 @@ const RETIRED_SHIPPED_IDS = Object.freeze([
     "subsVlcPlaylist",
     "skipSilence",
     "audioEqualizer",
+    "audioEqPreset",
+    "skipSilenceSpeed",
+    "skipSilenceThreshold",
     "volumeScrollWheel",
+    "mousewheelSpeed",
+    "mousewheelVolume",
     "enableEmbedPlayer",
     "skipSponsors",
+    "hideSponsorBlockLabels",
+    "sponsorBlockCategories",
     "returnYoutubeDislike"
 ]);
 
@@ -4463,8 +4480,6 @@ if (typeof globalThis !== "undefined") {
     const QA_PROMPT_VERSION = 'transcript-qa-citation-v1';
     const QA_CHUNK_MAX_CHARS = 8000;
     const QA_CONTEXT_MAX_CHARS = 32000;
-    const MAX_QA_CUES = 5000;
-    const MAX_QA_SOURCE_CHARS = 500000;
     const MAX_QA_CLAIMS = 8;
     const MAX_QA_TURNS = 40;
     const MAX_QA_CONVERSATIONS = 100;
@@ -4764,21 +4779,12 @@ if (typeof globalThis !== "undefined") {
     function prepareQaTranscript(segments, options = {}) {
         const maxChunkChars = Math.max(2000, Math.min(16000,
             Number(options.maxChunkChars) || QA_CHUNK_MAX_CHARS));
-        const maxCues = Math.max(1, Math.min(MAX_QA_CUES,
-            Number(options.maxCues) || MAX_QA_CUES));
-        const maxSourceChars = Math.max(maxChunkChars, Math.min(MAX_QA_SOURCE_CHARS,
-            Number(options.maxSourceChars) || MAX_QA_SOURCE_CHARS));
         const normalized = [];
         let sourceChars = 0;
-        let truncated = false;
         const source = Array.isArray(segments) ? segments : [];
         for (let index = 0; index < source.length; index += 1) {
             const cue = normalizeCue(source[index], index);
             if (!cue) continue;
-            if (normalized.length >= maxCues || sourceChars + cue.text.length > maxSourceChars) {
-                truncated = true;
-                break;
-            }
             normalized.push(cue);
             sourceChars += cue.text.length;
         }
@@ -4811,7 +4817,7 @@ if (typeof globalThis !== "undefined") {
             chunks: Object.freeze(chunks),
             cueCount: normalized.length,
             sourceChars,
-            truncated
+            truncated: false
         });
     }
 
@@ -4955,36 +4961,44 @@ if (typeof globalThis !== "undefined") {
         });
     }
 
-    function qaConversationId(identity) {
+    function normalizeQaIdentity(identity) {
         const videoId = String(identity?.videoId || '');
         if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) throw new Error('Invalid video ID.');
-        const canonical = [
-            cleanText(identity?.language, 40).toLocaleLowerCase(),
-            cleanText(identity?.provider, 40).toLocaleLowerCase(),
-            cleanText(identity?.model, 160),
-            cleanText(identity?.promptVersion, 80) || QA_PROMPT_VERSION
-        ].join('\u001f');
-        let hash = 2166136261;
-        for (let index = 0; index < canonical.length; index += 1) {
-            hash ^= canonical.charCodeAt(index);
-            hash = Math.imul(hash, 16777619);
-        }
-        return `${videoId}_${(hash >>> 0).toString(16).padStart(8, '0')}`;
+        const language = cleanText(identity?.language, 40);
+        const provider = cleanText(identity?.provider, 40);
+        const model = cleanText(identity?.model, 160);
+        const promptVersion = cleanText(identity?.promptVersion, 80);
+        if (!language) throw new Error('Transcript Q&A identity requires a transcript language.');
+        if (!provider) throw new Error('Transcript Q&A identity requires a provider.');
+        if (!model) throw new Error('Transcript Q&A identity requires a model.');
+        if (!promptVersion) throw new Error('Transcript Q&A identity requires a prompt version.');
+        return Object.freeze({ videoId, language, provider, model, promptVersion });
+    }
+
+    function qaConversationId(identity) {
+        const exact = normalizeQaIdentity(identity);
+        const provenance = encodeURIComponent(JSON.stringify([
+            exact.language,
+            exact.provider,
+            exact.model,
+            exact.promptVersion
+        ]));
+        return `qa1:${exact.videoId}:${provenance}`;
     }
 
     function createQaConversation(identity, options = {}) {
         const createdMs = Date.parse(String(options.createdAt || new Date().toISOString()));
         if (!Number.isFinite(createdMs)) throw new Error('Invalid conversation date.');
-        const promptVersion = cleanText(identity?.promptVersion, 80) || QA_PROMPT_VERSION;
+        const exact = normalizeQaIdentity(identity);
         const raw = {
             schemaVersion: QA_SCHEMA_VERSION,
-            conversationId: qaConversationId({ ...identity, promptVersion }),
-            videoId: String(identity?.videoId || ''),
-            title: cleanText(identity?.title, 300) || String(identity?.videoId || ''),
-            transcriptLanguage: cleanText(identity?.language, 40),
-            provider: cleanText(identity?.provider, 40),
-            model: cleanText(identity?.model, 160),
-            promptVersion,
+            conversationId: qaConversationId(exact),
+            videoId: exact.videoId,
+            title: cleanText(identity?.title, 300) || exact.videoId,
+            transcriptLanguage: exact.language,
+            provider: exact.provider,
+            model: exact.model,
+            promptVersion: exact.promptVersion,
             createdAt: new Date(createdMs).toISOString(),
             updatedAt: new Date(createdMs).toISOString(),
             citations: {},
@@ -5000,14 +5014,16 @@ if (typeof globalThis !== "undefined") {
         const createdMs = Date.parse(String(raw.createdAt || raw.updatedAt || ''));
         const updatedMs = Date.parse(String(raw.updatedAt || raw.createdAt || ''));
         if (!Number.isFinite(createdMs) || !Number.isFinite(updatedMs)) return null;
-        const identity = {
-            videoId,
-            language: cleanText(raw.transcriptLanguage, 40),
-            provider: cleanText(raw.provider, 40),
-            model: cleanText(raw.model, 160),
-            promptVersion: cleanText(raw.promptVersion, 80) || QA_PROMPT_VERSION
-        };
-        if (!identity.provider || !identity.model) return null;
+        let identity;
+        try {
+            identity = normalizeQaIdentity({
+                videoId,
+                language: raw.transcriptLanguage,
+                provider: raw.provider,
+                model: raw.model,
+                promptVersion: raw.promptVersion
+            });
+        } catch (_) { return null; }
         const citations = {};
         for (const [id, cue] of Object.entries(raw.citations || {})) {
             if (!/^C\d{4,6}$/.test(id) || !cue || typeof cue !== 'object') continue;
@@ -5114,7 +5130,16 @@ if (typeof globalThis !== "undefined") {
 
     function findQaConversation(rawStore, identity) {
         const store = sanitizeQaStore(rawStore);
-        return store[qaConversationId({ ...identity, promptVersion: identity?.promptVersion || QA_PROMPT_VERSION })] || null;
+        const exact = normalizeQaIdentity(identity);
+        const conversation = store[qaConversationId(exact)] || null;
+        if (!conversation) return null;
+        return conversation.videoId === exact.videoId
+            && conversation.transcriptLanguage === exact.language
+            && conversation.provider === exact.provider
+            && conversation.model === exact.model
+            && conversation.promptVersion === exact.promptVersion
+            ? conversation
+            : null;
     }
 
     function exportArtifactStore(rawStore, generatedAt = new Date().toISOString()) {

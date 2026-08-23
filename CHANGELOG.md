@@ -25,6 +25,28 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and Firefox's randomized extension origin. A release gate rejects manifest
   or reviewer-copy drift.
 
+### Fixed
+
+- Shipped-identity history now reads both legacy root userscripts and later
+  schema-based releases. Settings retired before the schema existed remain
+  recognized, while tags with no identity changes keep the baseline stable.
+
+- Transcript Q&A no longer stops indexing after 5,000 cues or 500,000 source
+  characters. Conversation keys preserve every provenance field without a
+  short hash, case folding, or silent defaults.
+
+- A previously granted provider host no longer bypasses the active privacy
+  profile. Configured-provider questions fail closed when the current build or
+  profile does not permit that endpoint.
+
+- Busy Transcript Q&A controls stay in the modal focus order while duplicate
+  requests remain blocked. The browser smoke now proves Tab containment,
+  Escape close, and launcher focus restoration during a live busy transition.
+
+- Reviewer-copy drift checks now reject false Chromium dynamic-resource and
+  Firefox stable-origin claims, including nearby prose that contradicts the
+  generated inventory.
+
 ## [4.84.3] (2026-08-22)
 
 ### Changed

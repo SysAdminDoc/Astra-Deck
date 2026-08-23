@@ -444,9 +444,16 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     add('Transcript Q&A reports busy and error state',
         ytkit.includes("status.setAttribute('role', 'status')") &&
         ytkit.includes("status.setAttribute('aria-live', 'polite')") &&
-        ytkit.includes("this._dialog?.setAttribute('aria-busy', String(Boolean(busy)))") &&
+        ytkit.includes("this._dialog?.setAttribute('aria-busy', String(this._busy))") &&
         ytkit.includes("this._status.setAttribute('role', tone === 'error' ? 'alert' : 'status')"),
         'Transcript Q&A must expose polite progress, aria-busy, and assertive errors');
+    add('Transcript Q&A busy state preserves modal focus containment',
+        ytkit.includes('this._askBtn.disabled = false') &&
+        ytkit.includes("this._askBtn.setAttribute('aria-disabled', String(this._busy))") &&
+        ytkit.includes('this._input.disabled = false') &&
+        ytkit.includes('this._input.readOnly = Boolean(this._busy && lockInput)') &&
+        ytkit.includes('if (this._busy) return'),
+        'Transcript Q&A busy state must preserve modal focus containment while blocking duplicate requests');
     add('Transcript Q&A controls have focus-visible styles and target size',
         ytkit.includes('.ytkit-ai-qa-btn:focus-visible,.ytkit-ai-qa-modal button:focus-visible,.ytkit-ai-qa-modal textarea:focus-visible,.ytkit-ai-qa-citation:focus-visible') &&
         hasMinTarget(ytkit, '.ytkit-ai-qa-btn') &&
@@ -686,6 +693,14 @@ function runSelfTest(baseSources) {
             name: 'missing Transcript Q&A focus restore',
             expected: 'Transcript Q&A must contain Tab in the modal, close on Escape, remove its handler, and restore the launcher',
             mutate: (source) => source.replace('returnFocus?.focus?.({ preventScroll: true });', '')
+        },
+        {
+            name: 'disabled Transcript Q&A busy control',
+            expected: 'Transcript Q&A busy state must preserve modal focus containment while blocking duplicate requests',
+            mutate: (source) => source.replace(
+                'this._askBtn.disabled = false;',
+                'this._askBtn.disabled = Boolean(busy);'
+            )
         }
     ];
 

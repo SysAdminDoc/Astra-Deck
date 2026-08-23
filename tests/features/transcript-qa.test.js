@@ -108,7 +108,7 @@ function makeFeature(options = {}) {
             aiSummaryModel: options.model || 'fixture-model'
         }
     };
-    const remote = {
+    const remote = options.remote || {
         async _requestByoHostAccess(featureId) { grants.push(featureId); },
         async _callLLM(prompt) {
             prompts.push(prompt);
@@ -206,6 +206,26 @@ test('Transcript Q&A traps focus, closes on Escape, and restores the launcher', 
     assert.equal(doc.activeElement, trigger);
 });
 
+test('Transcript Q&A busy state keeps controls and Escape inside the modal', async () => {
+    const { doc, feature, trigger } = makeFeature();
+    feature._openQaPanel();
+    await settle();
+    feature._askBtn.focus();
+
+    feature._setBusy(true, 'Checking transcript evidence', true);
+
+    assert.equal(doc.activeElement, feature._askBtn,
+        'entering busy state must not blur the focused modal control to the page');
+    assert.equal(feature._askBtn.disabled, false);
+    assert.equal(feature._askBtn.getAttribute('aria-disabled'), 'true');
+    assert.equal(feature._input.disabled, false);
+    assert.equal(feature._input.readOnly, true);
+    const escaped = feature._overlay.dispatch('keydown', { key: 'Escape' });
+    assert.equal(escaped.defaultPrevented, true);
+    assert.equal(feature._overlay, null);
+    assert.equal(doc.activeElement, trigger);
+});
+
 test('Transcript Q&A uses the configured provider only after its existing grant gate', async () => {
     let localCreateCalls = 0;
     const fixture = makeFeature({
@@ -231,6 +251,61 @@ test('Transcript Q&A uses the configured provider only after its existing grant 
     assert.equal(saved.provider, 'ollama');
     assert.equal(saved.model, 'qwen-fixture');
     assert.equal(saved.turns[0].claims[0].text, 'The configured provider found evidence.');
+});
+
+test('Transcript Q&A cannot reuse remote provider access after the effective profile becomes store-safe', async () => {
+    const dataFlow = require('../../extension/core/data-flow');
+    let providerCalls = 0;
+    const blockedRemote = loadFeature('aiVideoSummary', {
+        appState: {
+            settings: {
+                aiSummaryProvider: 'ollama',
+                aiSummaryEndpoint: 'http://127.0.0.1:11434/api/chat',
+                aiSummaryModel: 'fixture-model',
+                safeStoreProfile: true,
+                githubFullProfile: false
+            }
+        },
+        URL,
+        hasExtensionContext: () => true,
+        settingsManager: {
+            _getPolicyProfile: () => ({ resolveEffectiveProfile: () => 'store-safe' })
+        },
+        YTKitBrowser: {
+            runtime: {
+                getManifest: () => ({
+                    host_permissions: ['http://127.0.0.1:11434/*'],
+                    optional_host_permissions: [
+                        'https://api.openai.com/*',
+                        'https://api.anthropic.com/*',
+                        'https://generativelanguage.googleapis.com/*'
+                    ]
+                })
+            }
+        },
+        YTKitCore: {
+            AI_PROVIDER_POLICIES: {
+                ollama: { defaultEndpoint: 'http://127.0.0.1:11434/api/chat' }
+            },
+            ORIGIN_CATALOGUE: dataFlow.ORIGIN_CATALOGUE,
+            getOptionalHostPermissionsForFeature: dataFlow.getOptionalHostPermissionsForFeature,
+            isOriginAvailableForProfile: dataFlow.isOriginAvailableForProfile,
+            validateAiProviderEndpoint: () => ({ url: 'http://127.0.0.1:11434/api/chat' })
+        }
+    });
+    blockedRemote._callLLM = async () => {
+        providerCalls += 1;
+        return '{"notFound":true,"claims":[]}';
+    };
+    const fixture = makeFeature({ lane: 'configured-provider', remote: blockedRemote });
+    fixture.feature._openQaPanel();
+    await settle();
+    fixture.feature._input.value = 'Can this leave the browser?';
+
+    await fixture.feature._askQuestion();
+
+    assert.equal(providerCalls, 0, 'profile rejection must happen before any provider request');
+    assert.match(fixture.feature._status.textContent, /build or profile/i);
 });
 
 test('Transcript Q&A reopens only the conversation matching language, provider, model, and prompt version', async () => {

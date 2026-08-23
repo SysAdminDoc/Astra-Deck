@@ -24,6 +24,68 @@ const REPO_ROOT = path.join(__dirname, '..');
 const BASELINE_PATH = path.join(__dirname, 'shipped-identity-baseline.json');
 const FEATURE_ID_PATTERN = /^\s+id:\s*'([a-zA-Z][a-zA-Z0-9]*)'/gm;
 
+function userscriptDefaultKeys(source) {
+    const marker = /\bdefaults\s*:\s*\{/.exec(String(source || ''));
+    if (!marker) return null;
+    const openIndex = marker.index + marker[0].lastIndexOf('{');
+    const keys = [];
+    let depth = 0;
+    let bracketDepth = 0;
+    let parenDepth = 0;
+    let state = 'code';
+    let segmentStart = openIndex + 1;
+
+    const readSegmentKey = (endIndex) => {
+        const segment = source.slice(segmentStart, endIndex)
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\/\/[^\r\n]*/g, '')
+            .trim();
+        const match = /^(?:['"]([^'"]+)['"]|([A-Za-z_$][\w$]*))\s*:/.exec(segment);
+        const key = match?.[1] || match?.[2];
+        if (key) keys.push(key);
+    };
+
+    for (let index = openIndex; index < source.length; index += 1) {
+        const char = source[index];
+        const next = source[index + 1];
+        if (state === 'line-comment') {
+            if (char === '\n') state = 'code';
+            continue;
+        }
+        if (state === 'block-comment') {
+            if (char === '*' && next === '/') { state = 'code'; index += 1; }
+            continue;
+        }
+        if (state !== 'code') {
+            if (char === '\\') { index += 1; continue; }
+            if (char === state) state = 'code';
+            continue;
+        }
+        if (char === '/' && next === '/') { state = 'line-comment'; index += 1; continue; }
+        if (char === '/' && next === '*') { state = 'block-comment'; index += 1; continue; }
+        if (char === "'" || char === '"' || char === '`') { state = char; continue; }
+        if (char === '{') { depth += 1; continue; }
+        if (char === '}') {
+            if (depth === 1) {
+                readSegmentKey(index);
+                return keys;
+            }
+            depth -= 1;
+            continue;
+        }
+        if (depth !== 1) continue;
+        if (char === '[') bracketDepth += 1;
+        else if (char === ']') bracketDepth = Math.max(0, bracketDepth - 1);
+        else if (char === '(') parenDepth += 1;
+        else if (char === ')') parenDepth = Math.max(0, parenDepth - 1);
+        else if (char === ',' && bracketDepth === 0 && parenDepth === 0) {
+            readSegmentKey(index);
+            segmentStart = index + 1;
+        }
+    }
+    return null;
+}
+
 function git(args) {
     return execFileSync('git', args, {
         cwd: REPO_ROOT,
@@ -56,21 +118,23 @@ function fileAt(ref, relPath) {
 // so the honest way to read its key set is to run it rather than regex it.
 function settingKeysAt(ref) {
     const source = fileAt(ref, 'extension/core/settings-schema.js');
-    if (source === null) return null;
-    const tmp = path.join(os.tmpdir(), `astra-schema-${ref.replace(/[^\w.-]/g, '_')}.js`);
-    fs.writeFileSync(tmp, source);
-    try {
-        delete require.cache[require.resolve(tmp)];
-        const mod = require(tmp);
-        if (!Array.isArray(mod.SETTINGS_SCHEMA)) return null;
-        return mod.SETTINGS_SCHEMA.map((entry) => entry.key).filter(Boolean);
-    } catch (_) {
-        // reason: an older revision may not load standalone; skip it rather
-        // than let one unreadable tag drop keys out of the baseline
-        return null;
-    } finally {
-        fs.rmSync(tmp, { force: true });
+    if (source !== null) {
+        const tmp = path.join(os.tmpdir(), `astra-schema-${ref.replace(/[^\w.-]/g, '_')}.js`);
+        fs.writeFileSync(tmp, source);
+        try {
+            delete require.cache[require.resolve(tmp)];
+            const mod = require(tmp);
+            if (Array.isArray(mod.SETTINGS_SCHEMA)) {
+                return mod.SETTINGS_SCHEMA.map((entry) => entry.key).filter(Boolean);
+            }
+        } catch (_) {
+            // reason: fall through to the root userscript used by early tags
+        } finally {
+            fs.rmSync(tmp, { force: true });
+        }
     }
+    const userscript = fileAt(ref, 'YTKit.user.js');
+    return userscript === null ? null : userscriptDefaultKeys(userscript);
 }
 
 function featureIdsAt(ref) {
@@ -81,7 +145,8 @@ function featureIdsAt(ref) {
         return null;
     }
     const targets = files.filter((file) => (
-        file === 'extension/ytkit.js'
+        file === 'YTKit.user.js'
+        || file === 'extension/ytkit.js'
         || /^extension\/features\/[^/]+\/index\.js$/.test(file)
     ));
     if (!targets.length) return null;
@@ -162,4 +227,12 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { buildBaseline, mergeWithExisting, serialize, BASELINE_PATH };
+module.exports = {
+    buildBaseline,
+    featureIdsAt,
+    mergeWithExisting,
+    serialize,
+    settingKeysAt,
+    userscriptDefaultKeys,
+    BASELINE_PATH
+};
