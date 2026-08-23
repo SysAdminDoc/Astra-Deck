@@ -195,6 +195,20 @@ test('a tagged release still contributes identities absent from the current cand
     assert.ok(result.featureIds.includes('removedFeature'));
 });
 
+test('pre-extension userscript releases contribute settings and feature identities', () => {
+    assert.equal(typeof identityGenerator.settingKeysAt, 'function');
+    assert.equal(typeof identityGenerator.featureIdsAt, 'function');
+    const keys = identityGenerator.settingKeysAt('v1.0.4');
+    const ids = identityGenerator.featureIdsAt('v1.0.4');
+
+    for (const identity of ['autoResumePosition', 'gpuContextRecovery', 'autoResumeThreshold']) {
+        assert.ok(keys.includes(identity), `v1.0.4 defaults must retain ${identity}`);
+        assert.ok(ids.includes(identity), `v1.0.4 features must retain ${identity}`);
+        assert.ok(baseline.settingKeys.includes(identity), `the committed baseline must retain setting ${identity}`);
+        assert.ok(baseline.featureIds.includes(identity), `the committed baseline must retain feature ${identity}`);
+    }
+});
+
 test('check-settings fails when a shipped identity stops resolving', () => {
     // The gate is the only thing that makes the alias table non-optional, so
     // prove it fails rather than trusting that it would. Use a private

@@ -1071,6 +1071,18 @@ const RETIRED_SHIPPED_IDS = Object.freeze([
     "adblockSsapAutoSkip",
     "adblockAntiDetect",
     "muteAdAudio",
+    "adblockFilterAutoUpdate",
+    "adblockFilterUrl",
+    // Root-userscript settings removed before the current schema was
+    // introduced. They have no value-compatible replacement.
+    "autoResumePosition",
+    "autoResumeThreshold",
+    "autoSkipStillWatching",
+    "cinemaMode",
+    "defaultPlaybackSpeed",
+    "disableSeekPreview",
+    "gpuContextRecovery",
+    "playbackSpeedPresets",
     // v4.0.0 (b73fa623): the download stack was rebuilt around the Astra
     // Downloader companion and the Cobalt fallback. None of these map onto a
     // current key — the new settings model different things.
@@ -1087,10 +1099,17 @@ const RETIRED_SHIPPED_IDS = Object.freeze([
     // v4.0.0 (b73fa623): audio processing removed with the Web Audio graph.
     "skipSilence",
     "audioEqualizer",
+    "audioEqPreset",
+    "skipSilenceSpeed",
+    "skipSilenceThreshold",
     "volumeScrollWheel",
+    "mousewheelSpeed",
+    "mousewheelVolume",
     "enableEmbedPlayer",
     // v4.0.0 (b73fa623): SponsorBlock was rewritten against the public API.
     "skipSponsors",
+    "hideSponsorBlockLabels",
+    "sponsorBlockCategories",
     // v3.22.0 (8649fc8f): Return YouTube Dislike was rewritten as its own
     // feature module with a different settings model.
     "returnYoutubeDislike"

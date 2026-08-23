@@ -177,6 +177,12 @@ function validateDocument(content, expectedBlock) {
     if (/JavaScript[\s\S]{0,100}(?:is\s+not|isn['’]t|are\s+not|not)\s+web-accessible/i.test(content)) {
         errors.push('document still claims packaged JavaScript is not web-accessible');
     }
+    if (/Chromium[\s\S]{0,120}use_dynamic_url[\s\S]{0,40}(?:false|disabled|off)/i.test(content)) {
+        errors.push('document contradicts Chromium dynamic resource URLs');
+    }
+    if (/Firefox[\s\S]{0,120}(?:stable|fixed|persistent)[\s\S]{0,80}moz-extension(?:\s+origin|:\/\/)/i.test(content)) {
+        errors.push('document contradicts Firefox runtime-assigned extension origins');
+    }
     return errors;
 }
 

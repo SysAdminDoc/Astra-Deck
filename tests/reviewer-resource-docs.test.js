@@ -57,4 +57,12 @@ test('reviewer resource docs reject staged-resource and prose drift independentl
     const falseClaim = content + '\nJavaScript is not web-accessible in any build profile.\n';
     assert.ok(validateDocument(falseClaim, expectedBlock)
         .includes('document still claims packaged JavaScript is not web-accessible'));
+
+    const falseChromiumClaim = content + '\nChromium sets use_dynamic_url to false.\n';
+    assert.ok(validateDocument(falseChromiumClaim, expectedBlock)
+        .includes('document contradicts Chromium dynamic resource URLs'));
+
+    const falseFirefoxClaim = content + '\nFirefox uses a stable moz-extension origin.\n';
+    assert.ok(validateDocument(falseFirefoxClaim, expectedBlock)
+        .includes('document contradicts Firefox runtime-assigned extension origins'));
 });
