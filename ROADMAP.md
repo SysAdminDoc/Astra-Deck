@@ -6,13 +6,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### P1
 
-- [ ] P1: Make the shipped-identity gate invariant across release tagging
-  Why: creating tag `v4.84.3` made `npm run check` fail even though no setting key or feature ID changed, so a successful release leaves the main verification command red.
-  Evidence: `scripts/generate-shipped-identity-baseline.js`, `scripts/shipped-identity-baseline.json`, `tests/feature-identity-aliases.test.js`, and the 2026-08-23 `npm run check` result
-  Touches: `scripts/generate-shipped-identity-baseline.js`, `scripts/check-settings.js`, `tests/feature-identity-aliases.test.js`, release preparation scripts
-  Acceptance: adding a tag that points at an already-checked commit does not change the committed identity baseline or fail `npm run check`; a tagged release that introduces a setting or feature ID still adds that identity; removing or renaming a shipped identity without an alias or retirement still fails; tests cover pre-tag and post-tag states.
-  Complexity: M
-
 - [ ] P1: Rebuild Transcript Q&A on citation-backed artifacts and accessible dialog behavior
   Why: the shipped Q&A path uses only the first 6,000 transcript characters, returns unvalidated plain text, has no citations or saved history, and uses hard-coded English in a hand-rolled modal without a complete focus cycle.
   Evidence: `extension/ytkit.js` `localAiTranscriptQa`; `extension/core/ai-summary-artifacts.js`; [Glasp YouTube Summary](https://glasp.co/youtube-summary); [YouTube Ask help](https://support.google.com/youtube/answer/14110396)
