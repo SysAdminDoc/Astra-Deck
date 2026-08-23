@@ -68,11 +68,7 @@ const videoHiderSource = fs.readFileSync(
 );
 
 function subscriptionGroupsBlock() {
-    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    assert.ok(start > -1, 'subscriptionGroups must exist');
-    const end = ytkitSource.indexOf('\n        }),', start);
-    assert.ok(end > start, 'subscriptionGroups factory block must close cleanly');
-    return ytkitSource.slice(start, end);
+    return subscriptionGroupsSource;
 }
 
 // PredicateSandbox moved out of ytkit.js into
@@ -4210,22 +4206,20 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
 
 test('subscriptionGroups import summaries report counts and keep undo affordance', () => {
     const block = subscriptionGroupsBlock();
-    for (const source of [block, subscriptionGroupsSource]) {
-        assert.match(source, /createdGroups/,
-            'subscription group imports must report created group counts');
-        assert.match(source, /updatedGroups/,
-            'subscription group imports must report updated group counts');
-        assert.match(source, /removedGroups/,
-            'subscription group imports must report replaced previous groups');
-        assert.match(source, /skippedGroups/,
-            'subscription group imports must report skipped invalid groups');
-        assert.match(source, /skippedChannels/,
-            'subscription group imports must report skipped invalid channels');
-        assert.match(source, /duplicateChannels/,
-            'subscription group imports must report duplicate channel skips');
-        assert.match(source, /text:\s*'Undo'/,
-            'subscription group imports must keep the immediate undo toast action');
-    }
+    assert.match(block, /createdGroups/,
+        'subscription group imports must report created group counts');
+    assert.match(block, /updatedGroups/,
+        'subscription group imports must report updated group counts');
+    assert.match(block, /removedGroups/,
+        'subscription group imports must report replaced previous groups');
+    assert.match(block, /skippedGroups/,
+        'subscription group imports must report skipped invalid groups');
+    assert.match(block, /skippedChannels/,
+        'subscription group imports must report skipped invalid channels');
+    assert.match(block, /duplicateChannels/,
+        'subscription group imports must report duplicate channel skips');
+    assert.match(block, /text:\s*'Undo'/,
+        'subscription group imports must keep the immediate undo toast action');
 });
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
@@ -4249,8 +4243,12 @@ test('subscriptionGroups sort modes cover unwatched / duration / new-since', () 
 
 test('subscriptionGroups persists sort mode per active group (NF31)', () => {
     const block = subscriptionGroupsBlock();
-    assert.match(block, /_SORT_MODES:\s*Object\.freeze\(\['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular'\]\)/,
-        'subscriptionGroups must centralize the allowed sort modes');
+    const sortModes = block.slice(block.indexOf('_SORT_MODES:'), block.indexOf('_budgetHandles:'));
+    for (const mode of ['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular']) {
+        assert.match(sortModes, new RegExp(`'${mode}'`), `subscriptionGroups must allow ${mode}`);
+    }
+    assert.match(sortModes, /Object\.freeze\(\[/,
+        'subscriptionGroups must centralize the allowed sort modes in an immutable list');
     assert.match(block, /_getActiveSortMode\(groups = this\._readGroups\(\)\)[\s\S]*groups\[this\._activeGroupId\]\?\.sortMode/,
         'active group sort must be read from subscriptionGroupData when a group is selected');
     assert.match(block, /_setActiveSortMode\(mode\)[\s\S]*\[this\._activeGroupId\]: \{[\s\S]*sortMode: normalized[\s\S]*this\._writeGroups\(next\)/,
@@ -5453,22 +5451,20 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
 });
 
 test('subscriptionGroups light theme covers every injected card surface and keeps RTL-safe spacing', () => {
-    for (const source of [subscriptionGroupsSource, ytkitSource]) {
-        for (const selector of [
-            'html:not([dark]) .ytkit-sub-digest-panel',
-            'html:not([dark]) .ytkit-sub-members-panel',
-            'html:not([dark]) .ytkit-sub-group-dialog__card',
-            'ytkit-sub-group-dialog__input'
-        ]) {
-            assert.ok(source.includes(selector), `${selector} must have a themed subscription override`);
-        }
-        assert.match(source, /margin-inline-start:10px/,
-            'nested subscription chips must use logical inline spacing');
-        assert.match(source, /margin-inline-start:6px/,
-            'subscription badges must use logical inline spacing');
-        assert.match(source, /font:12px\/1\.45 Roboto,Arial,sans-serif/,
-            'subscription cards must use the inline YouTube Roboto surface font');
+    for (const selector of [
+        'html:not([dark]) .ytkit-sub-digest-panel',
+        'html:not([dark]) .ytkit-sub-members-panel',
+        'html:not([dark]) .ytkit-sub-group-dialog__card',
+        'ytkit-sub-group-dialog__input'
+    ]) {
+        assert.ok(subscriptionGroupsSource.includes(selector), `${selector} must have a themed subscription override`);
     }
+    assert.match(subscriptionGroupsSource, /margin-inline-start:10px/,
+        'nested subscription chips must use logical inline spacing');
+    assert.match(subscriptionGroupsSource, /margin-inline-start:6px/,
+        'subscription badges must use logical inline spacing');
+    assert.match(subscriptionGroupsSource, /font:12px\/1\.45 Roboto,Arial,sans-serif/,
+        'subscription cards must use the inline YouTube Roboto surface font');
     assert.match(subscriptionGroupsSource, /card.className = 'ytkit-sub-group-dialog__card'/,
         'the create-group dialog must be class-styled so light-theme CSS can override it');
     assert.doesNotMatch(subscriptionGroupsSource, /card\.style\.cssText/,
@@ -5611,9 +5607,9 @@ test('core/registry.js register({replace:true}) drops orphaned cleanups for the 
 // ── v4.3.0 P1: AI tags for subscription groups ──
 
 test('subscriptionAiTags uses Chrome built-in Summarizer and never falls through to remote', () => {
-    const start = ytkitSource.indexOf('_generateAiTagsForGroup');
+    const start = subscriptionGroupsSource.indexOf('_generateAiTagsForGroup');
     assert.ok(start > -1, 'subscriptionGroups must declare _generateAiTagsForGroup()');
-    const block = ytkitSource.slice(start, start + 5000);
+    const block = subscriptionGroupsSource.slice(start, start + 5000);
     assert.match(block, /window\.Summarizer/,
         'must check for the top-level Summarizer factory');
     assert.match(block, /window\.ai\?\.summarizer/,
@@ -5628,8 +5624,8 @@ test('subscriptionAiTags uses Chrome built-in Summarizer and never falls through
 });
 
 test('subscriptionAiTags persists generated tags into subscriptionAiTagData per group', () => {
-    const start = ytkitSource.indexOf('_generateAiTagsForGroup');
-    const block = ytkitSource.slice(start, start + 5000);
+    const start = subscriptionGroupsSource.indexOf('_generateAiTagsForGroup');
+    const block = subscriptionGroupsSource.slice(start, start + 5000);
     assert.match(block, /_writeAiTagData/,
         'must persist tags through the writer helper');
     assert.match(block, /generatedAt:\s*Date\.now\(\)/,
@@ -13203,15 +13199,13 @@ test('hideCollaborations is page-scoped and hides reversibly', () => {
         'destroy() must reveal every card the feature hid');
 });
 
-// ── subscriptionGroups fallback parity with the module ──
+// ── subscriptionGroups module runtime invariants ──
 // 09b2d2d6 froze a per-pageview lastVisit map so NEW badges survive the 8s
-// stamp. The module and the userscript got it; the ytkit.js fallback did not,
-// so 8s after arriving on the subscriptions feed the next mutation collapsed
-// every badge and digest count to zero. No test pinned that pair.
-test('subscriptionGroups fallback freezes the per-pageview lastVisit map', () => {
+// stamp. Keep the assertion on the one runtime implementation.
+test('subscriptionGroups module freezes the per-pageview lastVisit map', () => {
     const block = subscriptionGroupsBlock();
     assert.match(block, /this\._sessionLastVisit = this\._readLastVisit\(\);/,
-        'the fallback must freeze the pre-stamp map on navigation');
+        'the module must freeze the pre-stamp map on navigation');
     assert.match(block, /this\._sessionLastVisit = null;/,
         'the frozen map must be released on destroy');
     assert.match(block, /if \(this\._sessionLastVisit\) \{[\s\S]{0,180}?this\._sessionLastVisit\[channelId\] = now;/,
@@ -13223,19 +13217,14 @@ test('subscriptionGroups filters content type for lazily-loaded cards', () => {
     // the live/streamed filter, so infinite-scroll cards stayed unfiltered
     // until the next navigation while the group filter on the same cards
     // worked — inconsistent by construction.
-    const moduleSource = fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'features', 'subscription-groups', 'index.js'),
-        'utf8'
-    );
-    for (const [label, source] of [['module', moduleSource], ['fallback', subscriptionGroupsBlock()]]) {
-        const idx = source.indexOf("addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer'");
-        assert.ok(idx > -1, `${label} must register the feed scoped mutation rule`);
-        const region = source.slice(idx, idx + 700);
-        assert.match(region, /this\._applyGroupFilter\(\)/,
-            `${label} scoped rule must re-apply the group filter`);
-        assert.match(region, /this\._applyContentTypeFilter\(\)/,
-            `${label} scoped mutation rule must also re-apply the content-type filter`);
-    }
+    const source = subscriptionGroupsBlock();
+    const idx = source.indexOf("addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer'");
+    assert.ok(idx > -1, 'the module must register the feed scoped mutation rule');
+    const region = source.slice(idx, idx + 700);
+    assert.match(region, /this\._applyGroupFilter\(\)/,
+        'the scoped rule must re-apply the group filter');
+    assert.match(region, /this\._applyContentTypeFilter\(\)/,
+        'the scoped mutation rule must also re-apply the content-type filter');
 });
 
 // ── Quick Links must not lose entries stored beyond the display cap ──

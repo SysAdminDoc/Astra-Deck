@@ -553,14 +553,12 @@ test('at the cap, removing a channel and re-adding an existing member still work
     // The `included &&` clause is belt-and-braces: `!ids.has(channelId)`
     // already spares every removal of an actual member, so no reachable state
     // distinguishes the two. Pin the intent rather than contrive a scenario.
-    for (const [label, file] of [
-        ['module', path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-groups', 'index.js')],
-        ['ytkit.js', path.join(__dirname, '..', '..', 'extension', 'ytkit.js')]
-    ]) {
-        const src = fs.readFileSync(file, 'utf8');
-        assert.match(src, /if \(included && !ids\.has\(channelId\) && ids\.size >= this\._MAX_GROUP_CHANNELS\)/,
-            `${label} must gate the cap refusal on an add, so a removal can never be blocked`);
-    }
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-groups', 'index.js'),
+        'utf8'
+    );
+    assert.match(src, /if \(included && !ids\.has\(channelId\) && ids\.size >= this\._MAX_GROUP_CHANNELS\)/,
+        'the module must gate the cap refusal on an add, so a removal can never be blocked');
 });
 
 test('a group can be renamed from the editor', () => withStubbedDialogs(
@@ -627,30 +625,27 @@ test('the unsubscribe confirm anchors on the confirm id, never a bare role=butto
     // without #confirm-button that is typically Cancel, so the helper clicked
     // Cancel, returned true, and the caller deleted the 30-day staging record
     // for a channel that was still subscribed.
-    const sources = [
-        ['module', path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-groups', 'index.js')],
-        ['ytkit.js', path.join(__dirname, '..', '..', 'extension', 'ytkit.js')]
-    ];
-    for (const [label, file] of sources) {
-        const src = fs.readFileSync(file, 'utf8');
-        const start = src.indexOf('async _confirmUnsubscribeDialog()');
-        assert.ok(start > -1, `${label} must define _confirmUnsubscribeDialog`);
-        // Comments stripped first: the explanatory note above the fix names the
-        // very selector this asserts is absent, and an absence check that
-        // matches its own documentation is no check at all.
-        const block = src.slice(start, src.indexOf('\n            },', start))
-            .split('\n').filter((line) => !line.trim().startsWith('//')).join('\n');
-        assert.doesNotMatch(block, /\[role="button"\]/,
-            `${label} must not accept a bare [role="button"] as the confirm control`);
-        assert.doesNotMatch(block, /'button\[aria-label\]'/,
-            `${label} must not accept any labelled button as the confirm control`);
-        assert.match(block, /dialog\.querySelector\('#confirm-button'\)/,
-            `${label} must anchor on YouTube's own confirm id`);
-        assert.match(block, /closest\?\.\('#cancel-button'\)/,
-            `${label} must refuse a control that resolves inside the dismiss button`);
-        assert.doesNotMatch(block, /textContent|innerText/,
-            `${label} must not read the translated button label to decide`);
-    }
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-groups', 'index.js'),
+        'utf8'
+    );
+    const start = src.indexOf('async _confirmUnsubscribeDialog()');
+    assert.ok(start > -1, 'the module must define _confirmUnsubscribeDialog');
+    // Comments stripped first: the explanatory note above the fix names the
+    // very selector this asserts is absent, and an absence check that matches
+    // its own documentation is no check at all.
+    const block = src.slice(start, src.indexOf('\n            },', start))
+        .split('\n').filter((line) => !line.trim().startsWith('//')).join('\n');
+    assert.doesNotMatch(block, /\[role="button"\]/,
+        'the module must not accept a bare [role="button"] as the confirm control');
+    assert.doesNotMatch(block, /'button\[aria-label\]'/,
+        'the module must not accept any labelled button as the confirm control');
+    assert.match(block, /dialog\.querySelector\('#confirm-button'\)/,
+        'the module must anchor on YouTube own confirm id');
+    assert.match(block, /closest\?\.\('#cancel-button'\)/,
+        'the module must refuse a control that resolves inside the dismiss button');
+    assert.doesNotMatch(block, /textContent|innerText/,
+        'the module must not read the translated button label to decide');
 });
 
 // ── Render assertions ───────────────────────────────────────────────────────
@@ -710,7 +705,7 @@ test('a populated group renders no empty-state notice', () => {
     }
 });
 
-test('zero total groups renders a labelled next-action state in module and monolith trees', () => {
+test('zero total groups renders a labelled next-action state in the canonical module tree', () => {
     const previousDocument = globalThis.document;
     globalThis.document = new FakeDocument();
     try {
@@ -718,23 +713,15 @@ test('zero total groups renders a labelled next-action state in module and monol
         const moduleBar = new FakeNode('div');
         feature._renderGroupsEmptyState(moduleBar, {});
 
-        const { loadFallbackFeature } = require('../helpers/monolith');
-        const fallbackDocument = new FakeDocument();
-        const fallback = loadFallbackFeature('subscriptionGroups', { document: fallbackDocument });
-        const fallbackBar = new FakeNode('div');
-        fallback._renderGroupsEmptyState(fallbackBar, {});
-
-        for (const [label, bar] of [['module', moduleBar], ['monolith', fallbackBar]]) {
-            const notice = bar.querySelector('.ytkit-sub-groups-empty');
-            assert.ok(notice, `${label} must attach the zero-groups state`);
-            assert.equal(notice.getAttribute('role'), 'status');
-            assert.equal(notice.getAttribute('aria-labelledby'), 'ytkit-sub-groups-empty-title');
-            assert.equal(notice.children[0].tagName, 'STRONG');
-            assert.equal(notice.children[0].id, 'ytkit-sub-groups-empty-title');
-            assert.match(notice.children[0].textContent, /groups/i);
-            assert.match(notice.children[1].textContent, /\+ Group/,
-                'the state must name the control that creates the first group');
-        }
+        const notice = moduleBar.querySelector('.ytkit-sub-groups-empty');
+        assert.ok(notice, 'the module must attach the zero-groups state');
+        assert.equal(notice.getAttribute('role'), 'status');
+        assert.equal(notice.getAttribute('aria-labelledby'), 'ytkit-sub-groups-empty-title');
+        assert.equal(notice.children[0].tagName, 'STRONG');
+        assert.equal(notice.children[0].id, 'ytkit-sub-groups-empty-title');
+        assert.match(notice.children[0].textContent, /groups/i);
+        assert.match(notice.children[1].textContent, /\+ Group/,
+            'the state must name the control that creates the first group');
 
         const populatedBar = new FakeNode('div');
         feature._renderGroupsEmptyState(populatedBar, { saved: { name: 'Saved' } });

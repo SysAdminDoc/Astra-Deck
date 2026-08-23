@@ -51,9 +51,11 @@ document_idle (ISOLATED world)
                              video-filters, blue-light-filter, theme-css,
                              wave-8-css, home-subs-css. Each calls
                              getLifecycle().defineFeature(spec).
-    ytkit.js                 43k-line monolith, feature registry,
-                             init/destroy lifecycle, conflict map,
-                             observer coordinator, downloader integration.
+    ytkit.js                 Runtime composition, feature registry,
+                             descriptor stubs, init/destroy lifecycle,
+                             conflict map, and downloader integration.
+    features/subscription-  Canonical Subscription Groups runtime. The
+      groups/index.js       monolith keeps only its settings descriptor.
 
 background.js (MV3 service worker)
     Fetch proxy              EXT_FETCH messages with origin allowlist.

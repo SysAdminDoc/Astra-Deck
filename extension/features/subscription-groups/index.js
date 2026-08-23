@@ -3,10 +3,9 @@
 
     // extension/features/subscription-groups/index.js
     //
-    // Monolith peel for Subscription Groups. The module owns the primary
-    // subscriptionGroups runtime/state object; ytkit.js keeps the inline
-    // object as a compatibility fallback and injects monolith-scoped helpers
-    // through createSubscriptionGroupsFeature(deps).
+    // Subscription Groups has one runtime owner. ytkit.js keeps only the
+    // settings descriptor and injects monolith-scoped helpers through
+    // createSubscriptionGroupsFeature(deps).
 
     function createSubscriptionGroupsFeature(deps = {}) {
         const {
@@ -41,6 +40,7 @@
                     })
                 };
             },
+            csvCell = globalThis.YTKitCore?.csvCell,
             handleFileExport = () => {},
             isSafeObjectKey = (key) => /^[A-Za-z0-9_-]{1,128}$/.test(String(key || '')),
             MediaDLManager = null,
@@ -464,11 +464,10 @@
             },
 
             _csvEscape(value) {
+                if (typeof csvCell === 'function') return csvCell(value);
                 const s = String(value ?? '');
-                if (/[",\r\n]/.test(s) || s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@') || s.startsWith('\t')) {
-                    return '"' + s.replace(/"/g, '""') + '"';
-                }
-                return s;
+                const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+                return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
             },
 
             _exportGroupsCsv() {
@@ -2210,12 +2209,12 @@
                 sortSelect.setAttribute('aria-label', t('subscriptionToolbarSortAria', 'Sort subscriptions'));
                 const activeSortMode = this._getActiveSortMode(groups);
                 const sortOptions = [
-                    ['default', 'YouTube default'],
-                    ['date-desc', 'Latest first'],
-                    ['duration-asc', 'Shortest first'],
-                    ['unwatched', 'Unwatched first'],
-                    ['new-since-last-visit', 'New since last visit'],
-                    ['popular', 'Most popular (views)']
+                    ['default', t('subscriptionSortYouTubeDefault', 'YouTube default')],
+                    ['date-desc', t('subscriptionSortLatest', 'Latest first')],
+                    ['duration-asc', t('subscriptionSortShortest', 'Shortest first')],
+                    ['unwatched', t('subscriptionSortUnwatched', 'Unwatched first')],
+                    ['new-since-last-visit', t('subscriptionSortNewSinceLastVisit', 'New since last visit')],
+                    ['popular', t('subscriptionSortPopular', 'Most popular (views)')]
                 ];
                 if (globalThis.YTKitFeatures?.subscriptionView?.extractLoadedAgeMs) {
                     sortOptions.splice(1, 0, ['newest-loaded', t('subscriptionOrderNewestLoaded', 'Newest first (loaded only)')]);

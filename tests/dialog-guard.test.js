@@ -133,8 +133,7 @@ test('the still-watching dismisser refuses its paused-video fallback during veri
     assert.match(body, /btn && isSafeToAutoClick\(btn\)/);
 });
 
-test('both unsubscribe-confirm copies consult the guard before clicking', () => {
-    const monolith = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+test('the canonical unsubscribe-confirm runtime consults the guard before clicking', () => {
     const peel = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8');
 
     // Bounded by the method's own closing brace, not a character count: a
@@ -147,9 +146,6 @@ test('both unsubscribe-confirm copies consult the guard before clicking', () => 
         assert.ok(end > start, `${marker} must terminate`);
         return source.slice(start, end);
     };
-
-    const monolithBody = methodBody(monolith, 'async _confirmUnsubscribeDialog()');
-    assert.match(monolithBody, /button && isSafeToAutoClick\(button\)/);
 
     const peelBody = methodBody(peel, 'async _confirmUnsubscribeDialog()');
     assert.match(peelBody, /YTKitCore\.isSafeToAutoClick/);

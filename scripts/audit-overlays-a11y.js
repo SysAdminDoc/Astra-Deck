@@ -508,30 +508,30 @@ function audit(sources = readSources(), { quiet = false } = {}) {
 
     // Subscription groups toolbar, digest, and modal.
     add('Subscription toolbar is labelled and uses pressed-state chips',
-        ytkit.includes("bar.setAttribute('role', 'toolbar')") &&
-        ytkit.includes("bar.setAttribute('aria-label', t('subscriptionToolbarAria', 'Subscription group controls'))") &&
-        ytkit.includes("allChip.setAttribute('aria-pressed', String(!this._activeGroupId))") &&
-        ytkit.includes("chip.setAttribute('aria-pressed', String(this._activeGroupId === id))"),
+        subscriptionGroups.includes("bar.setAttribute('role', 'toolbar')") &&
+        subscriptionGroups.includes("bar.setAttribute('aria-label', t('subscriptionToolbarAria', 'Subscription group controls'))") &&
+        subscriptionGroups.includes("allChip.setAttribute('aria-pressed', String(!this._activeGroupId))") &&
+        subscriptionGroups.includes("chip.setAttribute('aria-pressed', String(this._activeGroupId === id))"),
         'Subscription toolbar must be labelled and chips must expose aria-pressed');
     add('Subscription toolbar controls have accessible names',
         ['Create subscription group', 'Create subscription subgroup', 'Sort subscriptions',
             'Open group notifications digest', 'Export subscription groups',
             'Import subscription groups', 'Scan rendered subscriptions for stale channels',
-            'Stage rendered stale channels for unsubscribe review'].every((text) => ytkit.includes(text)),
+            'Stage rendered stale channels for unsubscribe review'].every((text) => subscriptionGroups.includes(text)),
         'Subscription toolbar buttons/select must have accessible names');
     add('Subscription digest has named actions',
-        ytkit.includes("panel.setAttribute('aria-label', t('subscriptionDigestRegionAria', 'Group notifications digest'))") &&
-        ytkit.includes("close.setAttribute('aria-label', t('subscriptionDigestCloseAria', 'Close group notifications digest'))") &&
-        ytkit.includes("mark.setAttribute('aria-label', t('subscriptionDigestMarkReadAriaTpl', 'Mark {group} digest as read')") &&
-        ytkit.includes("view.setAttribute('aria-label', t('subscriptionDigestViewAriaTpl', 'View {group} subscriptions')"),
+        subscriptionGroups.includes("panel.setAttribute('aria-label', t('subscriptionDigestRegionAria', 'Group notifications digest'))") &&
+        subscriptionGroups.includes("close.setAttribute('aria-label', t('subscriptionDigestCloseAria', 'Close group notifications digest'))") &&
+        subscriptionGroups.includes("mark.setAttribute('aria-label', t('subscriptionDigestMarkReadAriaTpl', 'Mark {group} digest as read')") &&
+        subscriptionGroups.includes("view.setAttribute('aria-label', t('subscriptionDigestViewAriaTpl', 'View {group} subscriptions')"),
         'Subscription digest must expose named close, mark-read, and view actions');
     add('Subscription group modal is modal, labelled, and Escape-closeable',
-        ytkit.includes("overlay.setAttribute('role', 'dialog')") &&
-        ytkit.includes("overlay.setAttribute('aria-modal', 'true')") &&
-        ytkit.includes("t('subscriptionCreateSubgroupDialogAria', 'Create subscription subgroup')") &&
-        ytkit.includes("t('subscriptionCreateGroupDialogAria', 'Create subscription group')") &&
-        ytkit.includes("input.setAttribute('aria-label', t('subscriptionGroupNameAria', 'Group name'))") &&
-        ytkit.includes("if (e.key === 'Escape') { e.preventDefault(); dismiss(); }"),
+        subscriptionGroups.includes("overlay.setAttribute('role', 'dialog')") &&
+        subscriptionGroups.includes("overlay.setAttribute('aria-modal', 'true')") &&
+        subscriptionGroups.includes("t('subscriptionCreateSubgroupDialogAria', 'Create subscription subgroup')") &&
+        subscriptionGroups.includes("t('subscriptionCreateGroupDialogAria', 'Create subscription group')") &&
+        subscriptionGroups.includes("input.setAttribute('aria-label', t('subscriptionGroupNameAria', 'Group name'))") &&
+        subscriptionGroups.includes("if (e.key === 'Escape') { e.preventDefault(); dismiss(); }"),
         'Subscription group modal must be labelled, modal, and close on Escape');
     // The watch-time dashboard shipped with no dialog semantics, an unlabeled
     // close button and no Escape handling — it was simply absent from this
@@ -598,13 +598,13 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         subscriptionGroups.includes("button[data-action=\"edit-channels\"]"),
         'Subscription membership editor must expose dialog semantics, Escape close, first focus, and focus restore');
     add('Subscription controls have focus-visible and target size',
-        ytkit.includes('.ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible') &&
-        ytkit.includes('.ytkit-sub-group-dialog button:focus-visible') &&
-        hasMinTarget(ytkit, '.ytkit-sub-toolbar select,.ytkit-sub-toolbar button') &&
-        hasMinTarget(ytkit, '.ytkit-sub-group-chip') &&
-        hasMinTarget(ytkit, '.ytkit-sub-digest-close,.ytkit-sub-digest-row button') &&
-        hasMinTarget(ytkit, '.ytkit-sub-group-dialog input') &&
-        hasMinTarget(ytkit, '.ytkit-sub-group-dialog button'),
+        subscriptionGroups.includes('.ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible') &&
+        subscriptionGroups.includes('.ytkit-sub-group-dialog button:focus-visible') &&
+        hasMinTarget(subscriptionGroups, '.ytkit-sub-toolbar select,.ytkit-sub-toolbar button') &&
+        hasMinTarget(subscriptionGroups, '.ytkit-sub-group-chip') &&
+        hasMinTarget(subscriptionGroups, '.ytkit-sub-digest-close,.ytkit-sub-digest-row button') &&
+        hasMinTarget(subscriptionGroups, '.ytkit-sub-group-dialog input') &&
+        hasMinTarget(subscriptionGroups, '.ytkit-sub-group-dialog button'),
         'Subscription overlay controls must declare focus-visible and at least 24px target size');
 
     // Manual checklist must document the boundary left after static audit.

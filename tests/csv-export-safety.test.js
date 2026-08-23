@@ -72,24 +72,28 @@ test('csvRow neutralizes every cell, not just the first', () => {
 test('all four shipped exporters route through the shared writer', () => {
     const monolith = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
     const downloadUi = fs.readFileSync(path.join(repoRoot, 'extension/features/download-ui/index.js'), 'utf8');
+    const subscriptionGroups = fs.readFileSync(
+        path.join(repoRoot, 'extension/features/subscription-groups/index.js'), 'utf8');
 
     // Download history.
     const cellStart = downloadUi.indexOf('_csvCell(value) {');
     assert.ok(cellStart > 0);
     assert.match(downloadUi.slice(cellStart, cellStart + 700), /YTKitCore\.csvCell/);
 
-    // Both monolith escapers. Each must consult the shared writer AND carry a
-    // local fallback that neutralizes rather than merely quotes.
-    let searchFrom = 0;
+    // Two monolith escapers plus the peeled Subscription Groups escaper. Each
+    // must consult the shared writer and carry a safe local fallback.
     let found = 0;
-    for (;;) {
-        const at = monolith.indexOf('_csvEscape(value) {', searchFrom);
-        if (at < 0) break;
-        const body = monolith.slice(at, at + 900);
-        assert.match(body, /typeof csvCell === 'function'/, `escaper at ${at} must use the shared writer`);
-        assert.match(body, /\^\[=\+\\-@\\t\\r\]/, `escaper at ${at} fallback must neutralize the formula lead`);
-        found += 1;
-        searchFrom = at + 1;
+    for (const [label, source] of [['monolith', monolith], ['subscriptionGroups', subscriptionGroups]]) {
+        let searchFrom = 0;
+        for (;;) {
+            const at = source.indexOf('_csvEscape(value) {', searchFrom);
+            if (at < 0) break;
+            const body = source.slice(at, at + 900);
+            assert.match(body, /typeof csvCell === 'function'/, `${label} escaper at ${at} must use the shared writer`);
+            assert.match(body, /\^\[=\+\\-@\\t\\r\]/, `${label} escaper at ${at} fallback must neutralize the formula lead`);
+            found += 1;
+            searchFrom = at + 1;
+        }
     }
-    assert.equal(found, 3, 'all three monolith CSV escapers are covered');
+    assert.equal(found, 3, 'all three feature CSV escapers are covered');
 });

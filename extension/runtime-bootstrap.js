@@ -216,9 +216,6 @@
         "features/subscription-view/index.js": [
             "subscriptionViewControls"
         ],
-        "features/subscription-groups/index.js": [
-            "subscriptionGroups"
-        ],
         "features/digital-wellbeing/index.js": [
             "digitalWellbeing"
         ],
@@ -397,9 +394,8 @@
         stageTimings.featureModuleFailureCount = failedFeatureModules.length;
         // The monolith reads YTKitFeatures while constructing its top-level
         // feature array. It must execute only after every selected peeled
-        // module has registered its factory; otherwise the inline fallback
-        // silently wins and extension users run a different implementation
-        // from userscript tests.
+        // module has registered its factory; otherwise a descriptor stub wins
+        // and the feature remains inert for the lifetime of the tab.
         await timeStage('monolithMs', () => import(getURL('ytkit.js')));
         globalThis.dispatchEvent?.(new CustomEvent('ytkit-runtime-ready'));
     };

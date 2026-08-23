@@ -22,7 +22,10 @@ const FEATURE_SETTINGS = Object.freeze({
     'features/element-zapper/index.js': ['elementZapper'],
     'features/video-notes/index.js': ['videoNotes'],
     'features/subscription-view/index.js': ['subscriptionViewControls'],
-    'features/subscription-groups/index.js': ['subscriptionGroups'],
+    // Descriptor-only features must register their factory even while off so
+    // an immediate settings change can initialize the real runtime. Keeping
+    // Subscription Groups behind its false default would leave only the inert
+    // descriptor for the lifetime of that tab.
     'features/digital-wellbeing/index.js': ['digitalWellbeing'],
     'features/youtube-music-compat/index.js': ['musicVideoSpeedLock'],
     'features/search-hygiene/index.js': ['searchHideRelatedSearches', 'searchHideUnrelatedShelves', 'searchHideWatchedRecommended'],
@@ -36,12 +39,11 @@ const FEATURE_SETTINGS = Object.freeze({
 // There is deliberately no route gate here. YouTube is a single-page app: the
 // bootstrap runs once, on the landing URL, but the session then navigates
 // everywhere. The monolith builds its feature array at load time, so a module
-// imported after that point can no longer displace the inline fallback that
-// already won — which meant a route-gated module was missing for the WHOLE
-// session whenever the landing URL did not match. That is how the in-page
-// Subscription Groups copy (with its destructive import) and the fallback
-// Video Hider (with no Mark-Watched runtime at all) reached users, selected by
-// nothing more than which page they happened to open first.
+// imported after that point can no longer displace the feature object already
+// constructed in the monolith. Route-gated modules therefore stayed missing
+// for the whole session whenever the landing URL did not match. Descriptor-only
+// features also stay out of FEATURE_SETTINGS so an off-to-on change can use the
+// registered factory without reloading the tab.
 //
 // Modules are still skipped when every feature they provide is switched off
 // (FEATURE_SETTINGS above) — that gate keys on user settings, which do not
@@ -302,9 +304,8 @@ ${settingsLiteral}
         stageTimings.featureModuleFailureCount = failedFeatureModules.length;
         // The monolith reads YTKitFeatures while constructing its top-level
         // feature array. It must execute only after every selected peeled
-        // module has registered its factory; otherwise the inline fallback
-        // silently wins and extension users run a different implementation
-        // from userscript tests.
+        // module has registered its factory; otherwise a descriptor stub wins
+        // and the feature remains inert for the lifetime of the tab.
         await timeStage('monolithMs', () => import(getURL('ytkit.js')));
         globalThis.dispatchEvent?.(new CustomEvent('ytkit-runtime-ready'));
     };
