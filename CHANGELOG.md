@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- Chrome and Firefox reviewer documents now list the exact web-accessible
+  resources from all six staged profile targets. The generated inventory
+  explains the packaged runtime module graph, Chromium dynamic resource URLs,
+  and Firefox's randomized extension origin. A release gate rejects manifest
+  or reviewer-copy drift.
+
 ## [4.84.3] (2026-08-22)
 
 ### Changed
