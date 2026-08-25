@@ -122,6 +122,7 @@
     // This manifest keeps the dependency order visible in the main artifact;
     // the generated YTKit-core.user.js contains the executable module bodies.
 
+    // ── bundled module: extension/core/regex-safety.js ──
     // ── bundled module: extension/core/styles.js ──
     // ── bundled module: extension/core/trusted-html.js ──
     // ── bundled module: extension/core/settings-visual-system.js ──

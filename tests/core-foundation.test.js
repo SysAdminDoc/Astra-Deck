@@ -49,6 +49,10 @@ const coreSources = [
     'trusted-html.js',
     'diagnostic-log.js',
     'external-api-health.js',
+    // regex-safety.js first: predicate-sandbox.js reads the shared guard from
+    // it and treats an absent guard as unsafe, so without it every regex
+    // predicate refuses to compile.
+    'regex-safety.js',
     'predicate-sandbox.js',
     'video-type.js',
     'playability.js'

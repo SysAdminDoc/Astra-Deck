@@ -26,6 +26,7 @@ const EXTERNAL_BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core
 // If a manifest feature cannot ship in the userscript, classify the feature ID
 // in scripts/check-userscript-drift.js instead of leaving silent parity drift.
 const V5_BUNDLE_MODULES = [
+    'extension/core/regex-safety.js',
     'extension/core/styles.js',
     'extension/core/trusted-html.js',
     'extension/core/settings-visual-system.js',
