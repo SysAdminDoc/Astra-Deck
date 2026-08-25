@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Three surfaces that were named in the shared design system but never actually
+  received it now do: the Astra Downloader install prompt, the reaction sender
+  panel, and the quick-link dropdown. All three were listed by a class name they
+  do not carry (two exist only as ids, and the dropdown's styling lives on a
+  different class), so they silently got none of the shared theming, radius,
+  font or focus treatment. The playback-stats HUD stays out on purpose: it is
+  drawn over the video on its own dark ground, and a premium panel there would
+  put a white box over the picture.
+
 - Injected panels are readable on light YouTube again. The shared surface system
   repaints ~35 surfaces with a token that is white in light theme, but each of
   those surfaces writes its own children against the dark ground it paints

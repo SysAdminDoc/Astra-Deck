@@ -54,7 +54,15 @@ const CASES = [
     ['ytkit-speed-popup', 'ytkit-speed-popup__sub', 'Speed popup sub', false],
     ['ytkit-blocked-watch-dialog', 'ytkit-blocked-watch-channel', 'Blocked watch channel', false],
     ['ytkit-transcript-batch-panel', 'ytkit-transcript-batch-meta', 'Transcript batch meta', false],
-    ['ytkit-sub-group-dialog__card', 'ytkit-subs-load-banner__eyebrow', 'Subs banner eyebrow', false]
+    ['ytkit-sub-group-dialog__card', 'ytkit-subs-load-banner__eyebrow', 'Subs banner eyebrow', false],
+    // Activated this pass: they were named as classes in the surface system
+    // but only ever exist as ids, so they received none of its treatment.
+    ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__title', 'Install prompt title', false],
+    ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__desc', 'Install prompt desc', false],
+    ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__steps', 'Install prompt steps', false],
+    ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__note', 'Install prompt note', false],
+    ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__eyebrow', 'Install prompt eyebrow', false],
+    ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__close', 'Install prompt close', false]
 ];
 
 // Every stylesheet that contributes to these surfaces, in the order the
@@ -81,34 +89,54 @@ function httpGetJson(url) {
     });
 }
 
-// Pull every CSS-looking template literal out of a runtime module. The rules
-// live inside injectStyle(`…`) calls, so the alternative is executing the
-// feature, which needs a whole YouTube page.
+// Collect CSS rules out of a runtime module by matching the rules themselves.
+//
+// Parsing template-literal boundaries was the wrong tool: ytkit.js nests
+// templates and interpolations, so a backtick scan dropped 85 of 129 candidate
+// chunks including every install-prompt rule. Missing rules do not fail loudly
+// here; the child simply inherits the panel colour and the row reads as a pass.
+// A rule is self-delimiting, so nesting elsewhere cannot corrupt it. Same
+// approach scripts/check-light-theme-lane.js uses.
 function extractCss(relative, exportName) {
     const abs = path.join(REPO_ROOT, relative);
     if (!fs.existsSync(abs)) return [];
-    if (exportName) {
-        delete require.cache[require.resolve(abs)];
-        return [String(require(abs)[exportName] || '')];
+    const source = exportName
+        ? (delete require.cache[require.resolve(abs)], String(require(abs)[exportName] || ''))
+        : fs.readFileSync(abs, 'utf8');
+
+    // Comments first. A comment body is not brace-delimited, so the rule
+    // matcher below happily reads its tail as a selector prelude and emits an
+    // invalid rule. CSS error recovery then skips to the next `}` and eats the
+    // real rule that followed, which is how the primary-text lane went missing
+    // while the muted and subtle lanes survived.
+    const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    const rules = [];
+    // <prelude>{<body>} with no nested braces and no backtick or semicolon in
+    // the prelude, which excludes JS statements by shape.
+    const RULE = /([^{}`;]{3,2000})\{([^{}`]{0,4000})\}/g;
+    let match;
+    while ((match = RULE.exec(withoutComments)) !== null) {
+        const selector = match[1].trim().replace(/\s+/g, ' ');
+        const body = match[2];
+        // Keep the token-definition blocks too. They are `:root {` and
+        // `html:not([dark]) {`, which name no ytkit class, so a selector-only
+        // filter dropped them and every `var(--ytkit-premium-*)` in the page
+        // resolved to nothing. The declaration then falls back to the inherited
+        // page colour, which is exactly what a missing lane looks like.
+        const definesTokens = /--ytkit-[a-z0-9-]+\s*:/i.test(body);
+        if (!/[.#]ytkit-/.test(selector) && !definesTokens) continue;
+        if (/=>|function|return |if \(|for \(|catch|typeof |await /.test(selector)) continue;
+        // A declaration block has at least one property.
+        if (!/[a-z-]+\s*:/i.test(body)) continue;
+        rules.push(selector.replace(/\$\{[^}]*\}/g, '0')
+            + '{' + body.replace(/\$\{[^}]*\}/g, '0') + '}');
     }
-    const source = fs.readFileSync(abs, 'utf8');
-    const chunks = [];
-    for (const match of source.matchAll(/`([^`]{40,})`/g)) {
-        const text = match[1];
-        // A CSS block declares selectors and properties; a prose template does
-        // not. Requiring both a brace pair and a property colon keeps message
-        // templates and SQL-ish strings out.
-        if (/\.[a-z-]+[^{}]*\{[^{}]*:[^{}]*\}/i.test(text) && text.includes('ytkit-')) {
-            const cleaned = text.replace(/\$\{[^}]*\}/g, '0');
-            // Balanced braces only. An unbalanced chunk poisons every rule the
-            // browser parses after it, and these are extracted fragments, not
-            // whole stylesheets.
-            const opens = (cleaned.match(/\{/g) || []).length;
-            const closes = (cleaned.match(/\}/g) || []).length;
-            if (opens === closes) chunks.push(cleaned);
-        }
-    }
-    return chunks;
+    // One <style> per rule would be thousands of elements; batch them, and a
+    // batch is safe because each rule is already balanced.
+    const batches = [];
+    for (let i = 0; i < rules.length; i += 200) batches.push(rules.slice(i, i + 200).join('\n'));
+    return batches;
 }
 
 function buildPage(stageDir) {
@@ -118,7 +146,8 @@ function buildPage(stageDir) {
         .map((chunk) => `<style>${chunk}</style>`)
         .join('\n');
     const markup = CASES.map(([panel, child], index) =>
-        `<div class="${panel}" data-probe-panel="${index}">`
+        `<div ${panel.startsWith('ytkit-mediadl-install-prompt') || panel.startsWith('ytkit-reaction-spammer-panel')
+            ? `id="${panel}"` : `class="${panel}"`} data-probe-panel="${index}">`
         + `<div class="${child}" data-probe="${index}">Sample text 123</div>`
         + `</div>`
     ).join('\n');
@@ -173,11 +202,27 @@ const READ_ROWS = `(() => {
         const fg = parse(getComputedStyle(el).color);
         const ground = groundOf(el);
         if (!fg || !ground) { rows.push({ index: Number(el.dataset.probe), error: 'unreadable' }); continue; }
+        // Did any stylesheet actually reach this element? A probe that loads
+        // no rules still computes a perfectly comfortable ratio against the
+        // page defaults, which is how three separate extraction bugs in this
+        // script read as passes. Compare against a bare sibling with the same
+        // theme: identical colour AND identical ground means nothing matched.
+        const bare = document.createElement('div');
+        bare.textContent = 'x';
+        document.body.appendChild(bare);
+        const bareColor = getComputedStyle(bare).color;
+        const bareGround = groundOf(bare);
+        bare.remove();
+        const sameColor = getComputedStyle(el).color === bareColor;
+        const sameGround = Math.round(ground.r) === Math.round(bareGround.r)
+            && Math.round(ground.g) === Math.round(bareGround.g)
+            && Math.round(ground.b) === Math.round(bareGround.b);
         rows.push({
             index: Number(el.dataset.probe),
             color: getComputedStyle(el).color,
             ground: 'rgb(' + Math.round(ground.r) + ', ' + Math.round(ground.g) + ', ' + Math.round(ground.b) + ')',
-            ratio: Number(ratio(over(fg, ground), ground).toFixed(2))
+            ratio: Number(ratio(over(fg, ground), ground).toFixed(2)),
+            unstyled: sameColor && sameGround
         });
     }
     return rows;
@@ -250,6 +295,11 @@ async function main() {
         for (const theme of ['dark', 'light']) {
             const row = report[theme].find((entry) => entry.index === index);
             if (!row || row.error) { failures.push(`${label} [${theme}] unreadable`); continue; }
+            if (row.unstyled) {
+                failures.push(`${label} [${theme}] matched no rule; the probe is measuring the page, not the surface`);
+                lines.push(`  DEAD ${label.padEnd(28)} ${theme.padEnd(6)}` + '   no rule matched');
+                continue;
+            }
             const ok = row.ratio >= floor;
             if (!ok) failures.push(`${label} [${theme}] ${row.ratio}:1 on ${row.ground} (floor ${floor}:1)`);
             lines.push(`  ${ok ? 'OK  ' : 'FAIL'} ${label.padEnd(28)} ${theme.padEnd(6)}`
