@@ -2650,8 +2650,8 @@
         }
 
         :is(
-            .ytkit-ai-qa-modal,
-            .ytkit-local-ai-modal,
+            .ytkit-ai-qa-modal__body,
+            .ytkit-local-ai-modal__body,
             .ytkit-aisum-panel,
             .ytkit-transcript-panel,
             .ytkit-transcript-search-panel,
@@ -2659,10 +2659,9 @@
             .ytkit-dl-popup,
             .ytkit-dl-history-panel,
             .ytkit-stream-links-panel,
-            .ytkit-stats-overlay,
             .ytkit-vvf-panel,
-            .ytkit-wha-overlay,
-            .ytkit-sub-group-dialog,
+            .ytkit-wha-card,
+            .ytkit-sub-group-dialog__card,
             .ytkit-sub-members-panel,
             .ytkit-sub-digest-panel,
             .ytkit-search-watch-panel,
@@ -2671,10 +2670,8 @@
             .ytkit-queue-panel,
             .ytkit-wlwb-panel,
             .ytkit-rc-panel,
-            .ytkit-reaction-spammer-panel,
             .ytkit-speed-popup,
             .ytkit-sleep-popover,
-            .ytkit-ql-menu,
             .ytkit-context-menu,
             .ytkit-wellbeing-card,
             .ytkit-blocked-watch-dialog
@@ -2689,8 +2686,8 @@
         }
 
         html:not([dark]) :is(
-            .ytkit-ai-qa-modal,
-            .ytkit-local-ai-modal,
+            .ytkit-ai-qa-modal__body,
+            .ytkit-local-ai-modal__body,
             .ytkit-aisum-panel,
             .ytkit-transcript-panel,
             .ytkit-transcript-search-panel,
@@ -2698,15 +2695,22 @@
             .ytkit-dl-popup,
             .ytkit-dl-history-panel,
             .ytkit-stream-links-panel,
-            .ytkit-wha-overlay,
-            .ytkit-sub-group-dialog,
+            .ytkit-wha-card,
+            .ytkit-sub-group-dialog__card,
             .ytkit-sub-members-panel,
             .ytkit-sub-digest-panel,
             .ytkit-search-watch-panel,
             .ytkit-video-notes-container,
             .ytkit-bookmarks-container,
             .ytkit-queue-panel,
-            .ytkit-wlwb-panel
+            .ytkit-wlwb-panel,
+            .ytkit-vvf-panel,
+            .ytkit-rc-panel,
+            .ytkit-speed-popup,
+            .ytkit-sleep-popover,
+            .ytkit-context-menu,
+            .ytkit-wellbeing-card,
+            .ytkit-blocked-watch-dialog
         ) {
             color-scheme: light !important;
         }
@@ -2715,16 +2719,12 @@
             .ytkit-dl-progress,
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
-            .ytkit-wl-workbench,
             .ytkit-search-container,
-            .ytkit-pm-overlay,
             .ytkit-mediadl-banner,
-            .ytkit-mediadl-install-prompt,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
             .ytkit-mini-player-bar,
-            .ytkit-photosensitive-alert,
-            .ytkit-playback-recovery
+            .ytkit-photosensitive-alert
         ) {
             border: 1px solid var(--ytkit-premium-border-strong) !important;
             border-radius: 10px !important;
@@ -2739,16 +2739,12 @@
             .ytkit-dl-progress,
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
-            .ytkit-wl-workbench,
             .ytkit-search-container,
-            .ytkit-pm-overlay,
             .ytkit-mediadl-banner,
-            .ytkit-mediadl-install-prompt,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
             .ytkit-mini-player-bar,
-            .ytkit-photosensitive-alert,
-            .ytkit-playback-recovery
+            .ytkit-photosensitive-alert
         ) {
             color-scheme: light !important;
         }
@@ -2757,16 +2753,12 @@
             .ytkit-dl-progress,
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
-            .ytkit-wl-workbench,
             .ytkit-search-container,
-            .ytkit-pm-overlay,
             .ytkit-mediadl-banner,
-            .ytkit-mediadl-install-prompt,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
             .ytkit-mini-player-bar,
-            .ytkit-photosensitive-alert,
-            .ytkit-playback-recovery
+            .ytkit-photosensitive-alert
         ) :is(button, input, select, textarea) {
             border-radius: 6px !important;
             box-shadow: none !important;
@@ -2777,16 +2769,12 @@
             .ytkit-dl-progress,
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
-            .ytkit-wl-workbench,
             .ytkit-search-container,
-            .ytkit-pm-overlay,
             .ytkit-mediadl-banner,
-            .ytkit-mediadl-install-prompt,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
             .ytkit-mini-player-bar,
-            .ytkit-photosensitive-alert,
-            .ytkit-playback-recovery
+            .ytkit-photosensitive-alert
         ) :is(button, input, select, textarea, a):focus-visible {
             outline: 0 !important;
             border-color: var(--ytkit-premium-accent) !important;
@@ -2794,8 +2782,8 @@
         }
 
         :is(
-            .ytkit-ai-qa-modal,
-            .ytkit-local-ai-modal,
+            .ytkit-ai-qa-modal__body,
+            .ytkit-local-ai-modal__body,
             .ytkit-aisum-panel,
             .ytkit-transcript-search-panel,
             .ytkit-transcript-batch-panel,
@@ -2803,8 +2791,8 @@
             .ytkit-dl-history-panel,
             .ytkit-stream-links-panel,
             .ytkit-vvf-panel,
-            .ytkit-wha-overlay,
-            .ytkit-sub-group-dialog,
+            .ytkit-wha-card,
+            .ytkit-sub-group-dialog__card,
             .ytkit-sub-members-panel,
             .ytkit-sub-digest-panel,
             .ytkit-search-watch-panel,
@@ -2813,10 +2801,8 @@
             .ytkit-queue-panel,
             .ytkit-wlwb-panel,
             .ytkit-rc-panel,
-            .ytkit-reaction-spammer-panel,
             .ytkit-speed-popup,
             .ytkit-sleep-popover,
-            .ytkit-ql-menu,
             .ytkit-context-menu,
             .ytkit-wellbeing-card,
             .ytkit-blocked-watch-dialog
@@ -2828,8 +2814,8 @@
         }
 
         :is(
-            .ytkit-ai-qa-modal,
-            .ytkit-local-ai-modal,
+            .ytkit-ai-qa-modal__body,
+            .ytkit-local-ai-modal__body,
             .ytkit-aisum-panel,
             .ytkit-transcript-search-panel,
             .ytkit-transcript-batch-panel,
@@ -2837,8 +2823,8 @@
             .ytkit-dl-history-panel,
             .ytkit-stream-links-panel,
             .ytkit-vvf-panel,
-            .ytkit-wha-overlay,
-            .ytkit-sub-group-dialog,
+            .ytkit-wha-card,
+            .ytkit-sub-group-dialog__card,
             .ytkit-sub-members-panel,
             .ytkit-sub-digest-panel,
             .ytkit-search-watch-panel,
@@ -2847,10 +2833,8 @@
             .ytkit-queue-panel,
             .ytkit-wlwb-panel,
             .ytkit-rc-panel,
-            .ytkit-reaction-spammer-panel,
             .ytkit-speed-popup,
             .ytkit-sleep-popover,
-            .ytkit-ql-menu,
             .ytkit-context-menu,
             .ytkit-wellbeing-card,
             .ytkit-blocked-watch-dialog
@@ -3452,8 +3436,8 @@
 
         @media (forced-colors: active) {
             :is(
-                .ytkit-ai-qa-modal,
-                .ytkit-local-ai-modal,
+                .ytkit-ai-qa-modal__body,
+                .ytkit-local-ai-modal__body,
                 .ytkit-aisum-panel,
                 .ytkit-transcript-panel,
                 .ytkit-transcript-search-panel,
@@ -3461,10 +3445,9 @@
                 .ytkit-dl-popup,
                 .ytkit-dl-history-panel,
                 .ytkit-stream-links-panel,
-                .ytkit-stats-overlay,
                 .ytkit-vvf-panel,
-                .ytkit-wha-overlay,
-                .ytkit-sub-group-dialog,
+                .ytkit-wha-card,
+                .ytkit-sub-group-dialog__card,
                 .ytkit-sub-members-panel,
                 .ytkit-sub-digest-panel,
                 .ytkit-search-watch-panel,

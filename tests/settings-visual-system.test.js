@@ -446,10 +446,14 @@ test('shared surface system covers the polished YouTube and injected UI families
         '.ytkit-dl-progress',
         '.ytkit-sub-toolbar',
         '.ytkit-queue-panel',
-        '.ytkit-wl-workbench',
         '.ytkit-bookmarks-container',
         '.ytkit-search-container',
-        '.ytkit-wha-overlay',
+        // Was '.ytkit-wha-overlay' and '.ytkit-wl-workbench'. The first is the
+        // watch-history scrim, not its panel, and forcing an opaque ground on
+        // it painted over the whole viewport; the box rules now name the card.
+        // The second is a playlist toolbar BUTTON whose own rule deliberately
+        // follows YouTube's theme, so it never belonged in a panel list.
+        '.ytkit-wha-card',
         '.ytkit-global-toast',
         'html.ytkit-watch-restyle',
         'html.ytkit-split-active',
@@ -509,4 +513,123 @@ test('settings visual-system injection is safe and idempotent', () => {
         globalThis.document = previousDocument;
         delete require.cache[modulePath];
     }
+});
+
+test('the surface system never forces an opaque box onto a full-viewport scrim', () => {
+    // `.ytkit-ai-qa-modal`, `.ytkit-local-ai-modal`, `.ytkit-wha-overlay`,
+    // `.ytkit-sub-group-dialog` and `.ytkit-pm-overlay` are backdrops:
+    // `position: fixed; inset: 0` with a translucent wash, centring a card.
+    // Listing them beside real panels made the forced
+    // `background: var(--ytkit-premium-panel) !important` repaint the entire
+    // viewport opaque, in BOTH themes, and killed the authored light-theme
+    // backdrop rule (which has no !important and therefore cannot win).
+    const css = require(visualSystemPath).SURFACE_VISUAL_SYSTEM_CSS;
+    const extensionDir = path.join(repoRoot, 'extension');
+
+    const files = [];
+    (function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) { if (entry.name !== '_locales') walk(full); }
+            else if (/\.(js|html)$/.test(full)) files.push(full);
+        }
+    }(extensionDir));
+    const authored = files
+        .filter((file) => !file.endsWith('settings-visual-system.js'))
+        .map((file) => fs.readFileSync(file, 'utf8'))
+        .join('\n');
+
+    // Every class the surface system forces a box onto.
+    const forcedBlocks = [...css.matchAll(/:is\(([^)]*)\)\s*\{[^}]*background:\s*var\(--ytkit-premium-panel\)\s*!important/g)];
+    assert.ok(forcedBlocks.length >= 2, 'the forced-surface blocks must still be recognisable');
+
+    const forced = new Set();
+    for (const block of forcedBlocks) {
+        for (const raw of block[1].split(',')) {
+            const selector = raw.trim();
+            if (selector.startsWith('.')) forced.add(selector.slice(1));
+        }
+    }
+    assert.ok(forced.size > 20, 'the surface families must still be populated');
+
+    for (const name of forced) {
+        const rule = new RegExp('\.' + name.replace(/[-_]/g, '[-_]') + '\s*\{([^}]*)\}');
+        const match = rule.exec(authored);
+        if (!match) continue;
+        const body = match[1].replace(/\s+/g, ' ');
+        const isScrim = /position\s*:\s*fixed/.test(body) && /inset\s*:\s*0\s*[;}]/.test(body);
+        assert.equal(isScrim, false,
+            `.${name} is a full-viewport backdrop; force the box onto the card it centres, not the scrim`);
+    }
+});
+
+test('every surface the system paints white in light theme also resets color-scheme', () => {
+    // A forced `background: var(--ytkit-premium-panel)` is #ffffff under
+    // `html:not([dark])`. Leaving `color-scheme: dark` on it renders dark UA
+    // scrollbars, date pickers and select popups on a white panel.
+    const css = require(visualSystemPath).SURFACE_VISUAL_SYSTEM_CSS;
+    const selectorsOf = (block) => new Set(block.split(',')
+        .map((raw) => raw.trim())
+        .filter((selector) => selector.startsWith('.')));
+
+    const forced = [...css.matchAll(/:is\(([^)]*)\)\s*\{[^}]*background:\s*var\(--ytkit-premium-panel\)\s*!important[^}]*color-scheme:\s*dark\s*!important/g)]
+        .map((match) => selectorsOf(match[1]));
+    const reset = [...css.matchAll(/html:not\(\[dark\]\)\s*:is\(([^)]*)\)\s*\{\s*color-scheme:\s*light\s*!important/g)]
+        .map((match) => selectorsOf(match[1]));
+    assert.equal(forced.length, reset.length,
+        'each forced-surface family needs its own light color-scheme reset');
+
+    for (let index = 0; index < forced.length; index += 1) {
+        const missing = [...forced[index]].filter((selector) => !reset[index].has(selector));
+        assert.deepEqual(missing, [],
+            'these surfaces go white in light theme but keep color-scheme: dark');
+    }
+});
+
+test('the surface system names no selector the extension never renders', () => {
+    // `.ytkit-stats-overlay`, `.ytkit-ql-menu`, `.ytkit-mediadl-install-prompt`
+    // and `.ytkit-reaction-spammer-panel` were listed as classes but only ever
+    // exist as ids, and `.ytkit-playback-recovery` is a sessionStorage key with
+    // no element at all. Five of the surfaces the design system claimed to
+    // cover silently received nothing.
+    const css = require(visualSystemPath).SURFACE_VISUAL_SYSTEM_CSS;
+    const extensionDir = path.join(repoRoot, 'extension');
+    const files = [];
+    (function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) { if (entry.name !== '_locales') walk(full); }
+            else if (/\.(js|html)$/.test(full)) files.push(full);
+        }
+    }(extensionDir));
+    const authored = files
+        .filter((file) => !file.endsWith('settings-visual-system.js'))
+        .map((file) => fs.readFileSync(file, 'utf8'))
+        .join('\n');
+
+    const forced = new Set();
+    const forcedBlocks = css.matchAll(/:is\(([^)]*)\)\s*\{[^}]*background:\s*var\(--ytkit-premium-panel\)\s*!important/g);
+    for (const block of forcedBlocks) {
+        for (const raw of block[1].split(',')) {
+            const selector = raw.trim();
+            if (selector.startsWith('.ytkit-')) forced.add(selector.slice(1));
+        }
+    }
+    assert.ok(forced.size > 20, 'the surface families must still be populated');
+
+    // A class the extension actually renders shows up in a className
+    // assignment, a classList.add, or a literal class attribute.
+    const orphans = [...forced].filter((name) => {
+        if (authored.includes("classList.add('" + name + "'")) return false;
+        if (authored.includes('classList.add("' + name + '"')) return false;
+        const wordy = new RegExp(
+            "(className\\s*=\\s*[`'\"][^`'\"]*\\b" + name + "\\b)"
+            + "|(className:\\s*[`'\"][^`'\"]*\\b" + name + "\\b)"
+            + "|(class\\s*=\\s*\"[^\"]*\\b" + name + "\\b)"
+            + "|(classList\\.add\\([^)]*\\b" + name + "\\b)"
+        );
+        return !wordy.test(authored);
+    });
+    assert.deepEqual(orphans, [],
+        'these surface selectors match nothing the extension builds');
 });
