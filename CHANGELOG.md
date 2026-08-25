@@ -8,6 +8,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The popup's five storage cards start at zero instead of five dashes, and when
+  extension storage genuinely isn't there they say "Unavailable" next to the
+  message explaining what to do about it. Before, the empty state and the broken
+  state looked identical.
+
 - Light theme is readable again in the speed popup, the transcript batch panel
   and the quick-link menu. The recent relight repainted their text for a white
   panel that those three never actually got, so the text went dark on a dark

@@ -2379,15 +2379,47 @@ function summarizeDiagnostics(settings) {
     };
 }
 
+// The five cards ship a bare em dash in the markup and used to get one back
+// whenever storage was unavailable, so the first thing the popup showed was
+// five dashes and the failure state was indistinguishable from "not loaded
+// yet". A dash is not a number and it is not an explanation.
+const STAT_ELEMENTS = () => [statKeys, statSize, statHidden, statBlocked, statBookmarks];
+
+function setStatCards(values) {
+    const elements = STAT_ELEMENTS();
+    for (let index = 0; index < elements.length; index += 1) {
+        const element = elements[index];
+        if (!element) continue;
+        element.textContent = values[index];
+        delete element.dataset.state;
+        element.removeAttribute('title');
+    }
+}
+
+function setStatCardsUnavailable() {
+    // spStatUnavailable already exists in the catalog for exactly this and was
+    // unused on this surface. The cards are narrow, so the word is also the
+    // title: an ellipsis on its own would be another glyph with no meaning.
+    const copy = t('spStatUnavailable', 'Unavailable');
+    for (const element of STAT_ELEMENTS()) {
+        if (!element) continue;
+        element.textContent = copy;
+        element.dataset.state = 'unavailable';
+        element.title = copy;
+    }
+}
+
 async function renderStorageInfo() {
     try {
         const allStorage = await callExtensionApi(ext?.storage?.local, 'get', null);
         const summary = summarizeStorage(allStorage);
-        statKeys.textContent = formatCount(summary.keys);
-        statSize.textContent = summary.sizeText;
-        statHidden.textContent = formatCount(summary.hiddenVideos);
-        statBlocked.textContent = formatCount(summary.blockedChannels);
-        statBookmarks.textContent = formatCount(summary.bookmarks);
+        setStatCards([
+            formatCount(summary.keys),
+            summary.sizeText,
+            formatCount(summary.hiddenVideos),
+            formatCount(summary.blockedChannels),
+            formatCount(summary.bookmarks)
+        ]);
         renderHealthBanner(summary.diagnostics);
         // corruption wins over quota — if we detect a malformed
         // payload, that's a more urgent signal than "storage is large."
@@ -2398,11 +2430,12 @@ async function renderStorageInfo() {
         }
     } catch (error) {
         const storageUnavailable = isExtensionStorageUnavailable(error);
-        statKeys.textContent = storageUnavailable ? '—' : '0';
-        statSize.textContent = storageUnavailable ? '—' : '0 B';
-        statHidden.textContent = storageUnavailable ? '—' : '0';
-        statBlocked.textContent = storageUnavailable ? '—' : '0';
-        statBookmarks.textContent = storageUnavailable ? '—' : '0';
+        // A read that failed for some other reason genuinely found nothing, so
+        // zero is the truthful answer there. Storage being absent entirely is
+        // a different statement and gets said out loud, alongside the recovery
+        // copy showStatus already carries below.
+        if (storageUnavailable) setStatCardsUnavailable();
+        else setStatCards(['0', '0 B', '0', '0', '0']);
         renderHealthBanner(null);
         if (storageUnavailable) {
             if (storageBanner) {
