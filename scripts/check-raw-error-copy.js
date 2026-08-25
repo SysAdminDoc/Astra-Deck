@@ -39,6 +39,12 @@ const UI_SINKS = Object.freeze([
 // are Astra's own already-localized outcome objects, not thrown text.
 const RAW_FAILURE = /\b(?:e|ex|[\w$]*(?:[Ee]rr|[Ee]rror|[Ee]xception|[Ff]ailure)[\w$]*)\s*(?:\?\.|\.)\s*(?:message|stack|statusText|responseText)\b/;
 const RAW_STATUS = /(?:\bHTTP\b[^\n]{0,8}\$\{|\$\{[^}\n]*\b(?:status|statusCode|httpStatus)\b[^}\n]*\})/i;
+// A health record carries the same thrown text under an error-shaped FIELD on
+// an ordinary receiver, so the receiver-shaped rule above never sees it.
+// `registry.setHealth` stores `String(error.message)` in `lastError`, and a
+// feature card that put that in a tooltip shipped the raw exception to a
+// reader. Match the field wherever it is read.
+const RAW_FAILURE_FIELD = /\.\s*(?:lastError|lastErrorMessage|lastErrorText|errorMessage|errorText|failureMessage)\b/;
 
 // Channels the raw text is allowed to reach.
 const DIAGNOSTIC_SINKS = /\b(?:DebugManager\s*(?:\?\.)?\s*\.?\s*log|DiagnosticLog\s*\??\.?\s*(?:record|log)|console\s*\.\s*\w+|logFailure|failureDiagnosticText|recordCorruptionDiagnostic|recordSettingsMigrationDiagnostic)\s*\(/;
@@ -46,6 +52,38 @@ const DIAGNOSTIC_SINKS = /\b(?:DebugManager\s*(?:\?\.)?\s*\.?\s*log|DiagnosticLo
 // An explicit, reviewed exception. Put `raw-error-copy: <reason>` in a comment
 // on the offending line or the line above it.
 const ALLOW_COMMENT = /raw-error-copy:\s*\S/;
+
+// The approved exits. Raw text handed to one of these comes back as a closed,
+// localized cause sentence, so the raw fragment INSIDE the call is not a
+// violation — only text that reaches the sink around it is. Without this the
+// gate flags the very fix it tells you to apply.
+const SANITIZER_CALL = /\b(?:describeFailureCause|describeFailureWithLabel|describeFailureBadge|describeHealthBadgeCopy|describeFailure|failureText|classifyFailureCause)\s*\(/g;
+
+// Remove each sanitizer call together with its balanced argument list, so the
+// raw-fragment patterns only ever see what is left outside them.
+function stripSanitizedCalls(text) {
+    let out = text;
+    for (let guard = 0; guard < 20; guard += 1) {
+        SANITIZER_CALL.lastIndex = 0;
+        const match = SANITIZER_CALL.exec(out);
+        if (!match) break;
+        let depth = 0;
+        let end = -1;
+        for (let i = match.index + match[0].length - 1; i < out.length; i += 1) {
+            if (out[i] === '(') depth += 1;
+            else if (out[i] === ')') {
+                depth -= 1;
+                if (depth === 0) { end = i; break; }
+            }
+        }
+        // An unterminated call means the expression window cut it off; drop the
+        // rest rather than leaving its arguments visible to the raw patterns.
+        out = end === -1
+            ? out.slice(0, match.index)
+            : out.slice(0, match.index) + out.slice(end + 1);
+    }
+    return out;
+}
 
 // `const message = 'Import failed: ' + e.message;` on one line and
 // `showToast(message)` on the next reaches the reader exactly like a direct
@@ -68,12 +106,13 @@ function scanFile(filePath) {
         for (const [name, definedAt] of taintedLocals) {
             if (index - definedAt > BINDING_REACH) taintedLocals.delete(name);
         }
+        const bareLine = stripSanitizedCalls(line);
         const binding = LOCAL_BINDING.exec(line);
         const bindingAllowed = ALLOW_COMMENT.test(line)
             || ALLOW_COMMENT.test(lines[index - 1] || '')
             || ALLOW_COMMENT.test(lines[index - 2] || '');
         if (binding && !bindingAllowed && !DIAGNOSTIC_SINKS.test(line)
-            && (RAW_FAILURE.test(line) || RAW_STATUS.test(line))) {
+            && (RAW_FAILURE.test(bareLine) || RAW_STATUS.test(bareLine) || RAW_FAILURE_FIELD.test(bareLine))) {
             taintedLocals.set(binding[1], index);
         }
 
@@ -83,11 +122,13 @@ function scanFile(filePath) {
         // A sink call can wrap; read the expression up to its terminating
         // line so `showStatus(\n  label + err.message)` is not missed.
         const window = lines.slice(index, index + 4).join('\n');
-        const expression = window.slice(0, window.indexOf(';') + 1 || window.length);
-        if (DIAGNOSTIC_SINKS.test(expression)) continue;
+        const rawExpression = window.slice(0, window.indexOf(';') + 1 || window.length);
+        if (DIAGNOSTIC_SINKS.test(rawExpression)) continue;
+        const expression = stripSanitizedCalls(rawExpression);
         const tainted = [...taintedLocals.keys()]
             .some((name) => new RegExp(`\\b${name}\\b`).test(expression));
-        if (!tainted && !RAW_FAILURE.test(expression) && !RAW_STATUS.test(expression)) continue;
+        if (!tainted && !RAW_FAILURE.test(expression) && !RAW_STATUS.test(expression)
+            && !RAW_FAILURE_FIELD.test(expression)) continue;
         violations.push({ file: filePath, line: index + 1, text: line.trim().slice(0, 160) });
     }
     return violations;
@@ -111,4 +152,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { CONVERTED_FILES, scanFile };
+module.exports = { CONVERTED_FILES, scanFile, stripSanitizedCalls };

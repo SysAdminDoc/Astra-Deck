@@ -165,3 +165,58 @@ test('the gate sees raw text bound to a local before it reaches the sink', () =>
         fs.unlinkSync(fixture);
     }
 });
+
+test('an error-shaped field on an ordinary receiver is raw text too', () => {
+    const { scanFile } = require('../scripts/check-raw-error-copy.js');
+    // `registry.setHealth` stores `String(error.message)` under `lastError`, so
+    // the receiver-shaped rule never sees it. A feature card that put that in a
+    // tooltip shipped the raw exception to a reader, and to a screen reader.
+    const fixture = path.join(os.tmpdir(), `astra-raw-error-field-${process.pid}.js`);
+    fs.writeFileSync(fixture, [
+        'function render(health) {',
+        '    badge.title = health.lastError;',
+        '}',
+        'function alsoRaw(service) {',
+        "    pill.setAttribute('aria-label', service.lastErrorMessage);",
+        '}',
+        'function sanitized(health) {',
+        '    badge.title = describeFailureCause(health.lastError);',
+        '}',
+        'function sanitizedThroughLocal(health) {',
+        '    const cause = describeFailureCause(health.lastError);',
+        '    badge.title = cause;',
+        '}',
+        ''
+    ].join('\n'), 'utf8');
+    try {
+        const violations = scanFile(fixture);
+        assert.deepEqual(violations.map((entry) => entry.line), [2, 5],
+            'only the two unsanitized field reads may be reported');
+    } finally {
+        fs.unlinkSync(fixture);
+    }
+});
+
+test('stripping a sanitizer call does not swallow text outside it', () => {
+    const { stripSanitizedCalls } = require('../scripts/check-raw-error-copy.js');
+    assert.equal(stripSanitizedCalls('a = describeFailureCause(e.message) + e.stack;'),
+        'a =  + e.stack;', 'text after the call must survive so the gate still sees it');
+    assert.equal(stripSanitizedCalls('a = describeFailureCause(wrap(e.message));'),
+        'a = ;', 'a nested call inside the arguments must be consumed with them');
+    assert.equal(stripSanitizedCalls('a = describeFailureCause(e.message'),
+        'a = ', 'an argument list cut off by the expression window must not leak');
+});
+
+test('the external API error classes map onto a localized cause', () => {
+    const core = loadCore();
+    // The health pill holds a class, not a throw. Prose matching on the raw
+    // message left `server-error` and `invalid-payload` as "unknown".
+    assert.equal(core.classifyFailureCause({ code: 'server-error' }), 'server');
+    assert.equal(core.classifyFailureCause({ code: 'rate-limited' }), 'rateLimit');
+    assert.equal(core.classifyFailureCause({ code: 'network-error' }), 'network');
+    assert.equal(core.classifyFailureCause({ code: 'invalid-payload' }), 'badData');
+    assert.equal(core.classifyFailureCause({ code: 'client-error' }), 'badData');
+    assert.equal(core.classifyFailureCause({ code: 'no-data' }), 'notFound');
+    assert.equal(core.classifyFailureCause({ code: 'permission-denied' }), 'permission');
+    assert.equal(core.classifyFailureCause({ code: 'unknown-error' }), 'unknown');
+});

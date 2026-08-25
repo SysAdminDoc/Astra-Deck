@@ -333,6 +333,22 @@
         return t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
     }
 
+    // A status badge needs a tooltip and an accessible name that still leads
+    // with its own visible label. Both come from core/failure-copy.js so the
+    // raw throw never reaches either one.
+    function describeHealthBadgeCopy(badgeLabel, subject, error) {
+        const compose = globalThis.YTKitCore?.describeFailureBadge;
+        if (typeof compose === 'function') return compose(badgeLabel, subject, error, t);
+        // Degraded path only: core/failure-copy.js ships with every surface.
+        // It still has to compose both strings the same way, or the badge
+        // silently loses its subject and its visible label.
+        const cause = describeFailureCause(error);
+        const subjectText = String(subject || '').trim();
+        const detail = subjectText ? `${subjectText.replace(/[.:]\s*$/, '')}: ${cause}` : cause;
+        const labelText = String(badgeLabel || '').trim();
+        return { detail, announcement: labelText ? `${labelText.replace(/[.:]\s*$/, '')}. ${detail}` : detail };
+    }
+
     function failureText(context, error, labelKey, labelFallback) {
         logFailure(context, error);
         const label = labelKey ? t(labelKey, labelFallback) : '';
@@ -893,7 +909,12 @@
                         .replace('{service}', outage.label)
                     : desc.text;
                 pill.text.textContent = label;
-                pill.el.title = record.lastErrorMessage || label;
+                // The tooltip used to carry `record.lastErrorMessage`, which is
+                // the raw throw — the exact "which error class it was" detail
+                // the comment above rules out, and untranslated besides. The
+                // localized cause sentence goes here; the raw text is already
+                // in the diagnostic log from recordFailure.
+                pill.el.title = describeFailureCause({ code: record.lastErrorClass }) || label;
                 clearTimeout(pill.timer);
                 pill.timer = setTimeout(() => remove(desc.id), AUTO_EXPIRE_MS);
             } catch (_) {
@@ -6228,6 +6249,7 @@ const STORAGE_KEYS = Object.freeze({
                 formatPageLabel,
                 getFeatureById,
                 getFeatureDescription,
+                getFeatureHealthSnapshot,
                 getFeatureName,
                 getFocusableUiElements,
                 handleExternalStorageChanges,
@@ -41547,9 +41569,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const healthBadge = document.createElement('span');
             healthBadge.className = 'ytkit-feature-badge';
             healthBadge.dataset.tone = 'warning';
-            healthBadge.textContent = t('settingsHealthNeedsAttention', 'Needs attention');
-            healthBadge.title = featureHealth.lastError || `${featureName} is degraded`;
-            healthBadge.setAttribute('aria-label', healthBadge.title);
+            const healthLabel = t('settingsHealthNeedsAttention', 'Needs attention');
+            // `featureHealth.lastError` is `String(error.message)` from the
+            // registry, so it used to put an untranslated exception in the
+            // tooltip and, because aria-label overrode the visible text, that
+            // exception was the ONLY thing a screen reader announced. The
+            // localized cause sentence goes in the tooltip, and the accessible
+            // name keeps the visible label in front of it.
+            const healthCopy = describeHealthBadgeCopy(healthLabel, featureName, featureHealth.lastError);
+            healthBadge.textContent = healthLabel;
+            healthBadge.title = healthCopy.detail;
+            healthBadge.setAttribute('aria-label', healthCopy.announcement);
             meta.appendChild(healthBadge);
             hasMeta = true;
         }

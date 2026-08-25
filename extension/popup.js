@@ -2584,9 +2584,15 @@ async function renderSelectorHealthDashboard() {
                 .replace('{status}', String(asset.status || 'unknown'))
                 .replace('{version}', String(asset.assetVersion || 'unknown'))
                 .replace('{source}', String(asset.source || 'unknown'));
-            selectorHealthAsset.textContent = asset.lastError
-                ? `${assetLabel} — ${String(asset.lastError).slice(0, 120)}`
-                : assetLabel;
+            // The raw asset error is a fetch/parse throw. Showing it here put
+            // untranslated exception text in the popup; the localized cause
+            // sentence names a next action instead, and the raw text goes to
+            // the diagnostic channel.
+            if (asset.lastError) logFailure('selector-asset', asset.lastError);
+            // raw-error-copy: the raw text only decides whether a cause line is
+            // shown at all; describeFailureCause supplies every rendered character.
+            const assetCause = asset.lastError ? describeFailureCause(asset.lastError) : '';
+            selectorHealthAsset.textContent = assetCause ? `${assetLabel} · ${assetCause}` : assetLabel;
             selectorHealthAsset.dataset.state = asset.status || 'unknown';
         }
         // Per-ctx diagnostic chip strip.

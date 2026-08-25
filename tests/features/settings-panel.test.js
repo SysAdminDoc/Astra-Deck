@@ -359,7 +359,7 @@ test('Video Hider toggle rolls back the optimistic state after a rejected save',
 
 const { fakeNode, fakeDocument } = require('../helpers/monolith');
 
-function buildCardWith(notice) {
+function buildCardWith(notice, health = []) {
     const originalDocument = globalThis.document;
     globalThis.document = fakeDocument(() => []);
     globalThis.document.body = fakeNode({ tag: 'body' });
@@ -376,6 +376,7 @@ function buildCardWith(notice) {
             getFeatureName: (feature) => feature.name,
             getFeatureDescription: (feature) => feature.description,
             getFeatureDisableNotice: () => notice,
+            getFeatureHealthSnapshot: () => health,
             formatPageLabel: (page) => page,
             normalizeSelectOptions: (options) => options,
             t: (_key, fallback) => fallback,
@@ -424,4 +425,52 @@ test('a feature with no notice renders no notice and no marker class', () => {
     const card = buildCardWith(null);
     assert.equal(card.classList.contains('ytkit-feature-known-broken'), false);
     assert.equal(findByClass(card, 'ytkit-feature-broken-note').length, 0);
+});
+
+test('a degraded feature renders one accessible health badge in the canonical settings card', () => {
+    // `lastError` is `String(error.message)` from the registry. It used to be
+    // the tooltip AND the whole aria-label, so the badge announced an
+    // untranslated exception and never announced its own visible label.
+    const raw = 'TypeError: Cannot read properties of undefined (reading \'payload\')';
+    const card = buildCardWith(null, [{ id: 'returnDislike', status: 'degraded', lastError: raw }]);
+
+    assert.equal(card.classList.contains('ytkit-feature-card--degraded'), true);
+    const badges = findByClass(card, 'ytkit-feature-badge');
+    assert.equal(badges.length, 1, 'one warning is attached to the card metadata');
+    assert.equal(badges[0].textContent, 'Needs attention');
+    assert.equal(badges[0].dataset.tone, 'warning');
+    assert.equal(badges[0].isConnected, true);
+
+    const label = badges[0].getAttribute('aria-label');
+    assert.ok(label.startsWith('Needs attention'),
+        'the accessible name must lead with the visible label (WCAG 2.5.3)');
+    assert.ok(label.includes('Return Dislike'), 'the name must say which feature is degraded');
+    assert.ok(!label.includes(raw), 'the raw throw must not reach a reader');
+    assert.ok(!badges[0].title.includes(raw), 'the raw throw must not reach the tooltip');
+    assert.ok(badges[0].title.startsWith('Return Dislike: '),
+        'the tooltip names the feature, then the cause');
+});
+
+test('the health badge states the classified cause, not the thrown text', () => {
+    // With the real failure-copy core present the badge must name an
+    // actionable cause. Without it the module still falls back to the closed
+    // unknown-cause sentence rather than to the throw.
+    const failureCopy = path.join(__dirname, '..', '..', 'extension', 'core', 'failure-copy.js');
+    const previousCore = globalThis.YTKitCore;
+    delete globalThis.YTKitCore;
+    try {
+        // eslint-disable-next-line no-new-func
+        new Function(fs.readFileSync(failureCopy, 'utf8')).call(globalThis);
+        const card = buildCardWith(null, [{
+            id: 'returnDislike',
+            status: 'degraded',
+            lastError: 'Failed to fetch'
+        }]);
+        const badge = findByClass(card, 'ytkit-feature-badge')[0];
+        assert.equal(badge.title,
+            'Return Dislike: The service could not be reached. Check your connection, then try again.');
+    } finally {
+        if (previousCore === undefined) delete globalThis.YTKitCore;
+        else globalThis.YTKitCore = previousCore;
+    }
 });

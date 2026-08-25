@@ -43,7 +43,17 @@
         timeout: 'timeout',
         aborted: 'cancelled',
         'permission-denied': 'permission',
-        'quota-exceeded': 'storage'
+        'quota-exceeded': 'storage',
+        // The external API health classes (core/external-api-health.js). A
+        // caller holding one of these already knows the cause structurally, so
+        // it must never fall through to prose matching on the raw throw.
+        'rate-limited': 'rateLimit',
+        'server-error': 'server',
+        'client-error': 'badData',
+        'invalid-payload': 'badData',
+        'network-error': 'network',
+        'no-data': 'notFound',
+        'unknown-error': 'unknown'
     });
 
     const NAME_MAP = Object.freeze({
@@ -155,6 +165,22 @@
         return `${prefix.replace(/[.:]\s*$/, '')}: ${sentence}`;
     }
 
+    // A status badge needs two strings for the same failure: the tooltip, and
+    // an accessible name that still leads with the badge's own visible label.
+    // Composing them at the call site put the joiners in front of the
+    // hardcoded-copy gate, so the composition lives here beside the one in
+    // describeFailureWithLabel that it reuses.
+    function describeFailureBadge(badgeLabel, subject, error, translate) {
+        const detail = describeFailureWithLabel(subject, error, translate);
+        const label = String(badgeLabel || '').trim();
+        return {
+            detail,
+            // WCAG 2.5.3: the visible label has to survive into the accessible
+            // name, so it leads and the cause follows as its own sentence.
+            announcement: label ? `${label.replace(/[.:]\s*$/, '')}. ${detail}` : detail
+        };
+    }
+
     // Everything the surface must not show. Callers hand this to their own
     // diagnostic channel so the raw text stays out of the UI.
     function failureDiagnosticText(error) {
@@ -171,6 +197,7 @@
         classifyFailureCause,
         describeFailure,
         describeFailureWithLabel,
+        describeFailureBadge,
         failureDiagnosticText
     });
 })();
