@@ -38,11 +38,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - The settings search count announces when filtering happens. It had no live
   region at all, so typing filtered the list in silence.
 
-- Blocklists no longer lose their newest entries. Video Hider appends and trims
-  from the front, but the sanitizers and the sync payload builder kept the front
-  and discarded the tail. On an account with more than 2500 hidden videos, sync
-  uploaded the oldest 2500 and every device replaced its list with them, so
-  recently hidden videos came back and stayed back.
+- Blocklists no longer lose their newest entries. Every one of these lists is
+  appended to and trimmed from the front by its writer, but six truncations
+  elsewhere kept the front and discarded the tail: both runtime sanitizers, so
+  blocking a channel on a full list dropped the channel just blocked; the
+  export sanitizers; the sync upload payload; and the sync Undo snapshot, which
+  meant undoing a sync restored the oldest entries and permanently lost
+  everything hidden since. On an account over 2500 hidden videos the loss also
+  propagated: every device replaced its list with the oldest 2500.
 
 - A failed settings import no longer destroys the previous import's undo point.
 
@@ -55,22 +58,29 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - Six teardown leaks closed: hidden-card placeholders are held weakly instead of
   pinning every discarded feed card, Video Hider's filter-list refresh stops
-  re-arming itself after the feature is switched off, the language detector is
-  built once on real use and released on destroy, a thumbnail lookup landing
+  re-arming itself after the feature is switched off, a thumbnail lookup landing
   after teardown no longer throws an uncaught rejection, each feature's settings
-  reinit is debounced separately, and sync suppression tokens expire.
+  reinit is debounced separately, and sync suppression marks expire.
+
+- Anti-Translate no longer downloads an on-device language model. It created one
+  from a broad mutation rule, leaking a session per concurrent call and never
+  releasing it, to serve a comparison function that had no callers anywhere.
+  The feature does its actual work by comparing strings; the whole apparatus is
+  gone.
 
 - Dismissing a Digital Wellbeing break reminder returns focus to whatever opened
   it, instead of dropping it on the page body.
 
 ### Security
 
-- Every filter regex goes through one ReDoS guard. Video Hider and the comment
-  filter each carried a private copy with three flat heuristics, which let the
-  polynomial shapes through. `.*.*.*.*.*.*z` measured 851 ms per test on an
-  ordinary title, run once per feed card against the title and again against the
-  channel name. The pattern reaches those keys through a settings backup or
-  browser sync, neither of which needs a host permission.
+- Every filter regex goes through one ReDoS guard. Three separate copies existed,
+  each a subset of the real one: Video Hider, the comment filter, and a third
+  inlined in the installed userscript. All three let the polynomial shapes
+  through. `.*.*.*.*.*.*z` measured 851 ms per test on an ordinary title, run
+  once per feed card against the title and again against the channel name. The
+  pattern reaches those keys through a settings backup or browser sync, neither
+  of which needs a host permission. The guard now lives in one module shipped to
+  every surface, and a check fails the build if a fourth copy appears anywhere.
 
 - The alternative frontend instance is parsed and required to be https before it
   reaches a link. It was the only user-configurable URL setting with no
