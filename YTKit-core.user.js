@@ -20617,22 +20617,23 @@ if (typeof globalThis !== "undefined") {
                             try {
                                 const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
                                 if (regexMatch) {
-                                    // Reject patterns with nested quantifiers (ReDoS risk).
-                                    // Catches: a*+, a{2}*, (a+)+, (a|b*)+, (foo|bar*)+, ((a+)b)+, etc.
-                                    // Any group whose body contains *any* quantifier and is itself
-                                    // followed by another quantifier is rejected. This covers
-                                    // alternation-wrapped quantifier stacks that the narrower
-                                    // `(a+)+`-only guard used to miss.
+                                    // One shared ReDoS guard, from core/predicate-sandbox.js. The local copy
+                                    // that used to live here carried only the three flat heuristics and missed
+                                    // the polynomial shapes: `.*.*.*.*.*.*z` and `(a+)(a+)(a+)(a+)(a+)(a+)b`
+                                    // both passed it and each burned hundreds of milliseconds of main thread
+                                    // per test, on a pattern that can arrive from a remote filter list or a
+                                    // crafted settings import. The shared guard adds the length cap, the
+                                    // open-ended-quantifier count and the nesting-aware scan.
                                     const pat = regexMatch[1];
-                                    const adjacentQuantifiers = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat);
-                                    const groupWithInnerQuantifier = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pat);
-                                    // Overlapping-alternation backtracking: a group containing `|`, then
-                                    // quantified by +/*/{n,} (e.g. (a|a|a)+, (a|aa)+). Overlapping branches
-                                    // alone are exponential — no inner quantifier needed.
-                                    const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pat);
-                                    const hasNestedQuantifiers = adjacentQuantifiers || groupWithInnerQuantifier || altGroupQuantified;
-                                    if (hasNestedQuantifiers) {
-                                        DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
+                                    // Fail closed. A second, weaker copy of the guard is the defect being
+                                    // fixed here: without the full nesting scan it cannot see `((ab)*)*`,
+                                    // and any copy drifts again. predicate-sandbox.js loads before this
+                                    // file in both the manifest and the userscript bundle, so its absence
+                                    // means the runtime is broken, not that a pattern is safe. Plain
+                                    // keyword filters keep working either way.
+                                    const unsafeRegex = globalThis.YTKitCore?.hasUnsafeRegexQuantifiers;
+                                    if (typeof unsafeRegex !== 'function' || unsafeRegex(pat)) {
+                                        DebugManager.log('VideoHider', 'Regex rejected: unsafe quantifiers (ReDoS risk)');
                                     } else {
                                         // Filtering is boolean and must not carry lastIndex
                                         // across title/channel tests or repeated scans.

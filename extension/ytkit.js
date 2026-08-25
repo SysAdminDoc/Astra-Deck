@@ -32287,15 +32287,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (rule.startsWith('/')) {
                         const m = rule.match(/^\/(.+)\/([gimsuy]*)$/);
                         if (!m) continue;
+                        // One shared ReDoS guard, from core/predicate-sandbox.js. The local copy
+                        // that used to live here carried only the three flat heuristics and missed
+                        // the polynomial shapes: `.*.*.*.*.*.*z` and `(a+)(a+)(a+)(a+)(a+)(a+)b`
+                        // both passed it and each burned hundreds of milliseconds of main thread
+                        // per test, on a pattern that can arrive from a remote filter list or a
+                        // crafted settings import. The shared guard adds the length cap, the
+                        // open-ended-quantifier count and the nesting-aware scan.
                         const pat = m[1];
-                        const adjacent = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat);
-                        const groupInner = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pat);
-                        // Overlapping-alternation backtracking: a group containing `|`, then
-                        // quantified by +/*/{n,} (e.g. (a|a|a)+, (a|aa)+). Overlapping branches
-                        // alone are exponential — no inner quantifier needed.
-                        const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pat);
-                        if ((adjacent || groupInner) || altGroupQuantified) {
-                            DebugManager.log('CommentFilter', 'Regex rejected: nested quantifiers (ReDoS risk)');
+                        // Fail closed. A second, weaker copy of the guard is the defect being
+                        // fixed here: without the full nesting scan it cannot see `((ab)*)*`,
+                        // and any copy drifts again. predicate-sandbox.js loads before this
+                        // file in both the manifest and the userscript bundle, so its absence
+                        // means the runtime is broken, not that a pattern is safe. Plain
+                        // keyword filters keep working either way.
+                        const unsafeRegex = globalThis.YTKitCore?.hasUnsafeRegexQuantifiers;
+                        if (typeof unsafeRegex !== 'function' || unsafeRegex(pat)) {
+                            DebugManager.log('CommentFilter', 'Regex rejected: unsafe quantifiers (ReDoS risk)');
                             continue;
                         }
                         // These regexes are cached and tested across every thread;
