@@ -4751,8 +4751,11 @@
   "reactionSenderRiskToast": {
     "message": "Envoi de réactions : YouTube peut limiter ou signaler les réactions rapides. À utiliser à vos risques."
   },
-  "reactionSenderRunningTpl": {
-    "message": "En cours avec {count} réaction(s)."
+  "reactionSenderRunningTplOne": {
+    "message": "Running with {count} reaction."
+  },
+  "reactionSenderRunningTplOther": {
+    "message": "Running with {count} reactions."
   },
   "reactionSenderRunningWaiting": {
     "message": "En cours, en attente des réactions sélectionnées."
@@ -4760,8 +4763,11 @@
   "reactionSenderSelectOne": {
     "message": "Sélectionnez au moins une réaction."
   },
-  "reactionSenderSelectedTpl": {
-    "message": "{count} réaction(s) sélectionnée(s)."
+  "reactionSenderSelectedTplOne": {
+    "message": "{count} reaction selected."
+  },
+  "reactionSenderSelectedTplOther": {
+    "message": "{count} reactions selected."
   },
   "reactionSenderSentTpl": {
     "message": "{emoji} envoyé"
@@ -5732,7 +5738,7 @@
     "message": "Aller aux réglages"
   },
   "spStatSize": {
-    "message": "Taille"
+    "message": "Stockage"
   },
   "spStatStoredSettings": {
     "message": "Personnalisés"
@@ -5973,8 +5979,11 @@
   "statusImportPreviewSummaryTpl": {
     "message": "Aperçu : {preview}."
   },
-  "statusImportSkippedKeysTpl": {
-    "message": "{count} setting(s) from a newer version were skipped: {keys}"
+  "statusImportSkippedKeysTplOne": {
+    "message": "{count} setting from a newer version was skipped: {keys}"
+  },
+  "statusImportSkippedKeysTplOther": {
+    "message": "{count} settings from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
     "message": "Import interrompu. Astra Deck n'a pas pu enregistrer un point d'annulation dans le stockage de l'extension. Exportez d'abord une sauvegarde."
@@ -7950,8 +7959,11 @@
   "watchLaterNothingToRemove": {
     "message": "Rien à supprimer"
   },
-  "watchLaterRemoveFailed": {
-    "message": "Impossible de supprimer {count} vidéo(s) — l’élément de menu YouTube est introuvable."
+  "watchLaterRemoveFailedOne": {
+    "message": "Couldn’t remove {count} video. YouTube’s menu item wasn’t found."
+  },
+  "watchLaterRemoveFailedOther": {
+    "message": "Couldn’t remove {count} videos. YouTube’s menu item wasn’t found."
   },
   "watchLaterRemoveWatched": {
     "message": "Supprimer les vidéos regardées"
@@ -8101,8 +8113,11 @@
   "wlwbAgePlaceholder": {
     "message": "Plus ancienne que (jours)…"
   },
-  "wlwbAgeUnavailableTpl": {
-    "message": "{count} ligne(s) chargée(s) n’ont pas d’ancienneté lisible et sont exclues du filtre d’ancienneté."
+  "wlwbAgeUnavailableTplOne": {
+    "message": "{count} loaded row has no readable upload age and is excluded from age filtering."
+  },
+  "wlwbAgeUnavailableTplOther": {
+    "message": "{count} loaded rows have no readable upload age and are excluded from age filtering."
   },
   "wlwbChannelAria": {
     "message": "Filtre par nom de chaîne"
@@ -8161,8 +8176,11 @@
   "wlwbRecoveryEmpty": {
     "message": "Aucune vidéo supprimée n’attend de récupération."
   },
-  "wlwbRecoveryStatusTpl": {
-    "message": "{count} vidéo(s) supprimée(s) peuvent être restaurées."
+  "wlwbRecoveryStatusTplOne": {
+    "message": "{count} removed video is available to restore."
+  },
+  "wlwbRecoveryStatusTplOther": {
+    "message": "{count} removed videos are available to restore."
   },
   "wlwbRecoveryTitle": {
     "message": "Récupération"
@@ -8176,8 +8194,11 @@
   "wlwbRemovedRemainingTpl": {
     "message": "— {count} correspondent encore, relancez"
   },
-  "wlwbRemovedToastTpl": {
-    "message": "{count} vidéo(s) supprimée(s){remaining}. La liste de récupération se trouve dans le journal des suppressions."
+  "wlwbRemovedToastTplOne": {
+    "message": "Removed {count} video{remaining}. Recovery list is in the removal log."
+  },
+  "wlwbRemovedToastTplOther": {
+    "message": "Removed {count} videos{remaining}. Recovery list is in the removal log."
   },
   "wlwbRemovingTpl": {
     "message": "Suppression de {current} / {total}…"
@@ -8185,8 +8206,11 @@
   "wlwbRestoreFailedTpl": {
     "message": "Impossible de restaurer {title} : {error}"
   },
-  "wlwbRestoredBatchTpl": {
-    "message": "{restored} vidéo(s) supprimée(s) sur {total} restaurée(s) dans À regarder plus tard."
+  "wlwbRestoredBatchTplOne": {
+    "message": "Restored {restored} of {total} removed video to Watch Later."
+  },
+  "wlwbRestoredBatchTplOther": {
+    "message": "Restored {restored} of {total} removed videos to Watch Later."
   },
   "wlwbRestoredItemTpl": {
     "message": "{title} restaurée dans À regarder plus tard"
@@ -8424,6 +8448,9 @@
   },
   "bisectIntro": {
     "message": "Désactive et réactive vos fonctions par moitiés pour réduire 291 d’entre elles à une seule en une dizaine de rechargements. Vos réglages sont restaurés à la fin, si vous arrêtez, et automatiquement si vous partez."
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
   },
   "bisectNo": {
     "message": "Disparu"

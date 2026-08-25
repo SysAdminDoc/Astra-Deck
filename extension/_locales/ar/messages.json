@@ -4751,8 +4751,11 @@
   "reactionSenderRiskToast": {
     "message": "مرسل التفاعلات: قد يقيّد YouTube التفاعلات السريعة أو يبلّغ عنها. استخدمه على مسؤوليتك."
   },
-  "reactionSenderRunningTpl": {
-    "message": "قيد التشغيل مع {count} من التفاعلات."
+  "reactionSenderRunningTplOne": {
+    "message": "Running with {count} reaction."
+  },
+  "reactionSenderRunningTplOther": {
+    "message": "Running with {count} reactions."
   },
   "reactionSenderRunningWaiting": {
     "message": "قيد التشغيل، في انتظار التفاعلات المحددة."
@@ -4760,8 +4763,11 @@
   "reactionSenderSelectOne": {
     "message": "حدد تفاعلًا واحدًا على الأقل."
   },
-  "reactionSenderSelectedTpl": {
-    "message": "تم تحديد {count} من التفاعلات."
+  "reactionSenderSelectedTplOne": {
+    "message": "{count} reaction selected."
+  },
+  "reactionSenderSelectedTplOther": {
+    "message": "{count} reactions selected."
   },
   "reactionSenderSentTpl": {
     "message": "تم إرسال {emoji}"
@@ -5973,8 +5979,11 @@
   "statusImportPreviewSummaryTpl": {
     "message": "المعاينة: {preview}."
   },
-  "statusImportSkippedKeysTpl": {
-    "message": "{count} setting(s) from a newer version were skipped: {keys}"
+  "statusImportSkippedKeysTplOne": {
+    "message": "{count} setting from a newer version was skipped: {keys}"
+  },
+  "statusImportSkippedKeysTplOther": {
+    "message": "{count} settings from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
     "message": "تم إيقاف الاستيراد. تعذّر على Astra Deck حفظ نقطة تراجع في تخزين الإضافة. صدّر نسخة احتياطية أولاً."
@@ -7950,8 +7959,11 @@
   "watchLaterNothingToRemove": {
     "message": "لا شيء لإزالته"
   },
-  "watchLaterRemoveFailed": {
-    "message": "تعذّر إزالة {count} من الفيديوهات — تعذّر العثور على عنصر قائمة YouTube."
+  "watchLaterRemoveFailedOne": {
+    "message": "Couldn’t remove {count} video. YouTube’s menu item wasn’t found."
+  },
+  "watchLaterRemoveFailedOther": {
+    "message": "Couldn’t remove {count} videos. YouTube’s menu item wasn’t found."
   },
   "watchLaterRemoveWatched": {
     "message": "إزالة المشاهَد"
@@ -8101,8 +8113,11 @@
   "wlwbAgePlaceholder": {
     "message": "أقدم من (بالأيام)…"
   },
-  "wlwbAgeUnavailableTpl": {
-    "message": "لا يمكن قراءة عمر الرفع في {count} صفًا محمّلًا، لذلك استُبعدت من تصفية العمر."
+  "wlwbAgeUnavailableTplOne": {
+    "message": "{count} loaded row has no readable upload age and is excluded from age filtering."
+  },
+  "wlwbAgeUnavailableTplOther": {
+    "message": "{count} loaded rows have no readable upload age and are excluded from age filtering."
   },
   "wlwbChannelAria": {
     "message": "عامل تصفية اسم القناة"
@@ -8161,8 +8176,11 @@
   "wlwbRecoveryEmpty": {
     "message": "لا توجد فيديوهات محذوفة بانتظار الاستعادة."
   },
-  "wlwbRecoveryStatusTpl": {
-    "message": "يمكن استعادة {count} فيديو محذوف."
+  "wlwbRecoveryStatusTplOne": {
+    "message": "{count} removed video is available to restore."
+  },
+  "wlwbRecoveryStatusTplOther": {
+    "message": "{count} removed videos are available to restore."
   },
   "wlwbRecoveryTitle": {
     "message": "استعادة الحذف"
@@ -8176,8 +8194,11 @@
   "wlwbRemovedRemainingTpl": {
     "message": "— لا يزال {count} مطابقًا، أعد التشغيل"
   },
-  "wlwbRemovedToastTpl": {
-    "message": "تمت إزالة {count} من الفيديوهات{remaining}. قائمة الاسترداد موجودة في سجل الإزالة."
+  "wlwbRemovedToastTplOne": {
+    "message": "Removed {count} video{remaining}. Recovery list is in the removal log."
+  },
+  "wlwbRemovedToastTplOther": {
+    "message": "Removed {count} videos{remaining}. Recovery list is in the removal log."
   },
   "wlwbRemovingTpl": {
     "message": "جارٍ إزالة {current} / {total}…"
@@ -8185,8 +8206,11 @@
   "wlwbRestoreFailedTpl": {
     "message": "تعذرت استعادة {title}: {error}"
   },
-  "wlwbRestoredBatchTpl": {
-    "message": "تمت استعادة {restored} من أصل {total} فيديو محذوف إلى المشاهدة لاحقًا."
+  "wlwbRestoredBatchTplOne": {
+    "message": "Restored {restored} of {total} removed video to Watch Later."
+  },
+  "wlwbRestoredBatchTplOther": {
+    "message": "Restored {restored} of {total} removed videos to Watch Later."
   },
   "wlwbRestoredItemTpl": {
     "message": "تمت استعادة {title} إلى المشاهدة لاحقًا"
@@ -8424,6 +8448,9 @@
   },
   "bisectIntro": {
     "message": "يُطفئ ميزاتك ويعيد تشغيلها على شكل أنصاف حتى تتمكن من تضييق 291 ميزة إلى ميزة واحدة خلال نحو عشر عمليات إعادة تحميل. تُستعاد إعداداتك عند الانتهاء، وعند إيقاف العملية، وتلقائيًا إذا ابتعدت."
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
   },
   "bisectNo": {
     "message": "اختفت"

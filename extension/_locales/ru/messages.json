@@ -4751,8 +4751,11 @@
   "reactionSenderRiskToast": {
     "message": "Отправка реакций: YouTube может ограничивать или помечать частые реакции. Используйте на свой риск."
   },
-  "reactionSenderRunningTpl": {
-    "message": "Работает с реакциями: {count}."
+  "reactionSenderRunningTplOne": {
+    "message": "Running with {count} reaction."
+  },
+  "reactionSenderRunningTplOther": {
+    "message": "Running with {count} reactions."
   },
   "reactionSenderRunningWaiting": {
     "message": "Работает, ожидание выбранных реакций."
@@ -4760,8 +4763,11 @@
   "reactionSenderSelectOne": {
     "message": "Выберите хотя бы одну реакцию."
   },
-  "reactionSenderSelectedTpl": {
-    "message": "Выбрано реакций: {count}."
+  "reactionSenderSelectedTplOne": {
+    "message": "{count} reaction selected."
+  },
+  "reactionSenderSelectedTplOther": {
+    "message": "{count} reactions selected."
   },
   "reactionSenderSentTpl": {
     "message": "Отправлено {emoji}"
@@ -5732,7 +5738,7 @@
     "message": "Перейти к настройкам"
   },
   "spStatSize": {
-    "message": "Размер"
+    "message": "Хранилище"
   },
   "spStatStoredSettings": {
     "message": "Изменено"
@@ -5973,8 +5979,11 @@
   "statusImportPreviewSummaryTpl": {
     "message": "Предпросмотр: {preview}."
   },
-  "statusImportSkippedKeysTpl": {
-    "message": "{count} setting(s) from a newer version were skipped: {keys}"
+  "statusImportSkippedKeysTplOne": {
+    "message": "{count} setting from a newer version was skipped: {keys}"
+  },
+  "statusImportSkippedKeysTplOther": {
+    "message": "{count} settings from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
     "message": "Импорт остановлен. Astra Deck не смог сохранить точку отмены в хранилище расширения. Сначала экспортируйте резервную копию."
@@ -7950,8 +7959,11 @@
   "watchLaterNothingToRemove": {
     "message": "Нечего удалять"
   },
-  "watchLaterRemoveFailed": {
-    "message": "Не удалось удалить {count} видео — пункт меню YouTube не найден."
+  "watchLaterRemoveFailedOne": {
+    "message": "Couldn’t remove {count} video. YouTube’s menu item wasn’t found."
+  },
+  "watchLaterRemoveFailedOther": {
+    "message": "Couldn’t remove {count} videos. YouTube’s menu item wasn’t found."
   },
   "watchLaterRemoveWatched": {
     "message": "Удалить просмотренные"
@@ -8101,8 +8113,11 @@
   "wlwbAgePlaceholder": {
     "message": "Старше (дней)…"
   },
-  "wlwbAgeUnavailableTpl": {
-    "message": "У {count} загруженных строк нет читаемого возраста публикации, поэтому они исключены из фильтра по возрасту."
+  "wlwbAgeUnavailableTplOne": {
+    "message": "{count} loaded row has no readable upload age and is excluded from age filtering."
+  },
+  "wlwbAgeUnavailableTplOther": {
+    "message": "{count} loaded rows have no readable upload age and are excluded from age filtering."
   },
   "wlwbChannelAria": {
     "message": "Фильтр по названию канала"
@@ -8161,8 +8176,11 @@
   "wlwbRecoveryEmpty": {
     "message": "Нет удалённых видео, ожидающих восстановления."
   },
-  "wlwbRecoveryStatusTpl": {
-    "message": "Доступно для восстановления удалённых видео: {count}."
+  "wlwbRecoveryStatusTplOne": {
+    "message": "{count} removed video is available to restore."
+  },
+  "wlwbRecoveryStatusTplOther": {
+    "message": "{count} removed videos are available to restore."
   },
   "wlwbRecoveryTitle": {
     "message": "Восстановление"
@@ -8176,8 +8194,11 @@
   "wlwbRemovedRemainingTpl": {
     "message": "— ещё {count} совпадают, запустите снова"
   },
-  "wlwbRemovedToastTpl": {
-    "message": "Удалено видео: {count}{remaining}. Список для восстановления — в журнале удалений."
+  "wlwbRemovedToastTplOne": {
+    "message": "Removed {count} video{remaining}. Recovery list is in the removal log."
+  },
+  "wlwbRemovedToastTplOther": {
+    "message": "Removed {count} videos{remaining}. Recovery list is in the removal log."
   },
   "wlwbRemovingTpl": {
     "message": "Удаление: {current} / {total}…"
@@ -8185,8 +8206,11 @@
   "wlwbRestoreFailedTpl": {
     "message": "Не удалось восстановить «{title}»: {error}"
   },
-  "wlwbRestoredBatchTpl": {
-    "message": "В «Смотреть позже» восстановлено видео: {restored} из {total}."
+  "wlwbRestoredBatchTplOne": {
+    "message": "Restored {restored} of {total} removed video to Watch Later."
+  },
+  "wlwbRestoredBatchTplOther": {
+    "message": "Restored {restored} of {total} removed videos to Watch Later."
   },
   "wlwbRestoredItemTpl": {
     "message": "«{title}» восстановлено в «Смотреть позже»"
@@ -8424,6 +8448,9 @@
   },
   "bisectIntro": {
     "message": "Выключает и снова включает ваши функции половинами, чтобы вы сузили 291 функцию до одной примерно за десять перезагрузок. Настройки восстанавливаются по завершении, при остановке и автоматически, если вы отвлеклись."
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
   },
   "bisectNo": {
     "message": "Пропало"

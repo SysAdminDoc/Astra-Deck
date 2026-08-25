@@ -100,6 +100,13 @@ function findManifestMsgKeys(manifestText) {
 // window between this key and the next t( call (bounded) is scanned for the
 // chained .replace('{token}', …) calls that belong to it.
 const T_CALL_RE = /\bt\(\s*(['"])([A-Za-z0-9_]+)\1/g;
+// tCount(count, 'key', singular, plural) resolves to 'keyOne' or 'keyOther' at
+// runtime, so the key in the source is a STEM and neither half is spelled out
+// anywhere. Without this the scanner does not see the call at all, and the
+// .replace() that follows it gets charged to whichever t() came before —
+// which is how "reactionSenderSelectOne carries no substitution token" was
+// reported about a string that never had one.
+const T_COUNT_CALL_RE = /\btCount\(\s*[^,]{1,120},\s*(['"])([A-Za-z0-9_]+)\1/g;
 const REPLACE_TOKEN_RE = /\.replace\(\s*(['"])\{([A-Za-z0-9_]+)\}\1/g;
 const REPLACE_WINDOW = 600;
 const FEATURE_COPY_KEY_RE = /^feature_[A-Za-z0-9_]+_(?:name|desc)$/;
@@ -110,6 +117,12 @@ function findReplaceTokenUsages(src) {
     let m;
     T_CALL_RE.lastIndex = 0;
     while ((m = T_CALL_RE.exec(src)) !== null) starts.push({ key: m[2], index: m.index });
+    T_COUNT_CALL_RE.lastIndex = 0;
+    while ((m = T_COUNT_CALL_RE.exec(src)) !== null) {
+        // Both halves consume the same tokens, and both have to carry them.
+        starts.push({ key: m[2] + 'One', index: m.index, alsoKey: m[2] + 'Other' });
+    }
+    starts.sort((left, right) => left.index - right.index);
 
     for (let i = 0; i < starts.length; i += 1) {
         const { key, index } = starts[i];
@@ -127,7 +140,10 @@ function findReplaceTokenUsages(src) {
         let r;
         REPLACE_TOKEN_RE.lastIndex = 0;
         while ((r = REPLACE_TOKEN_RE.exec(window)) !== null) tokens.push(r[2]);
-        if (tokens.length) usages.push({ key, tokens });
+        if (tokens.length) {
+            usages.push({ key, tokens });
+            if (starts[i].alsoKey) usages.push({ key: starts[i].alsoKey, tokens });
+        }
     }
     return usages;
 }

@@ -3357,6 +3357,17 @@ const STORAGE_KEYS = Object.freeze({
         };
     }
 
+    // Chrome's i18n has no plural support, so a string that has to say either
+    // "1 video" or "3 videos" is a key pair chosen between here. Eight strings
+    // were written with the "(s)" hack instead, which is not a plural in any
+    // language and reads as a typo in English.
+    function tCount(count, key, singular, plural) {
+        const n = Number(count);
+        return Math.abs(n) === 1
+            ? t(key + 'One', singular)
+            : t(key + 'Other', plural);
+    }
+
     function showSpeedPopup(anchorEl, onChange) {
         _closeSpeedPopup();
         const current = parseFloat(appState?.settings?.persistentSpeedValue) || 1;
@@ -12692,14 +12703,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._startBtn.textContent = t('reactionSenderStop', 'Stop');
                     this._startBtn.classList.add('ytkit-rs-running');
                     this._statusEl.textContent = readyCount > 0
-                        ? t('reactionSenderRunningTpl', `Running with ${readyCount} reaction(s).`).replace('{count}', String(readyCount))
+                        ? tCount(readyCount, 'reactionSenderRunningTpl',
+                            'Running with {count} reaction.', 'Running with {count} reactions.')
+                            .replace('{count}', String(readyCount))
                         : t('reactionSenderRunningWaiting', 'Running, waiting for selected reactions.');
                 } else {
                     this._startBtn.textContent = t('reactionSenderStartSpamming', 'Start spamming');
                     this._startBtn.classList.remove('ytkit-rs-running');
                     this._statusEl.textContent = selectedCount === 0
                         ? t('reactionSenderSelectOne', 'Select at least one reaction.')
-                        : t('reactionSenderSelectedTpl', `${selectedCount} reaction(s) selected.`).replace('{count}', String(selectedCount));
+                        : tCount(selectedCount, 'reactionSenderSelectedTpl',
+                            '{count} reaction selected.', '{count} reactions selected.')
+                            .replace('{count}', String(selectedCount));
                 }
             },
 
@@ -13664,7 +13679,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }),
         {
             id: 'hideVideosSyntheticNarrationFilter',
-            name: t('feature_hideVideosSyntheticNarrationFilter_name', 'Synthetic narration markers'),
+            name: t('feature_hideVideosSyntheticNarrationFilter_name', 'Synthetic Narration Markers'),
             description: t('feature_hideVideosSyntheticNarrationFilter_desc', 'Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database.'),
             nameKey: 'feature_hideVideosSyntheticNarrationFilter_name',
             descriptionKey: 'feature_hideVideosSyntheticNarrationFilter_desc',
@@ -13677,7 +13692,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'hideVideosLowSignalFilter',
-            name: t('feature_hideVideosLowSignalFilter_name', 'Hide low-signal videos'),
+            name: t('feature_hideVideosLowSignalFilter_name', 'Hide Low-Signal Videos'),
             description: t('feature_hideVideosLowSignalFilter_desc', 'Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open.'),
             nameKey: 'feature_hideVideosLowSignalFilter_name',
             descriptionKey: 'feature_hideVideosLowSignalFilter_desc',
@@ -13690,7 +13705,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'hideVideosLowSignalMinViews',
-            name: t('feature_hideVideosLowSignalMinViews_name', 'Low-signal view threshold'),
+            name: t('feature_hideVideosLowSignalMinViews_name', 'Low-Signal View Threshold'),
             description: t('feature_hideVideosLowSignalMinViews_desc', 'Minimum views used by the low-signal heuristic. Set to 0 to disable its view side.'),
             nameKey: 'feature_hideVideosLowSignalMinViews_name',
             descriptionKey: 'feature_hideVideosLowSignalMinViews_desc',
@@ -13707,7 +13722,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'hideVideosLowSignalMinAgeDays',
-            name: t('feature_hideVideosLowSignalMinAgeDays_name', 'Low-signal age threshold'),
+            name: t('feature_hideVideosLowSignalMinAgeDays_name', 'Low-Signal Age Threshold'),
             description: t('feature_hideVideosLowSignalMinAgeDays_desc', 'Only treat a low-view card as low-signal after this many days. Missing age metadata fails open.'),
             nameKey: 'feature_hideVideosLowSignalMinAgeDays_name',
             descriptionKey: 'feature_hideVideosLowSignalMinAgeDays_desc',
@@ -13724,7 +13739,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'hideVideosUploadCadenceFilter',
-            name: t('feature_hideVideosUploadCadenceFilter_name', 'Upload cadence filter'),
+            name: t('feature_hideVideosUploadCadenceFilter_name', 'Upload Cadence Filter'),
             description: t('feature_hideVideosUploadCadenceFilter_desc', 'Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible.'),
             nameKey: 'feature_hideVideosUploadCadenceFilter_name',
             descriptionKey: 'feature_hideVideosUploadCadenceFilter_desc',
@@ -13737,7 +13752,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'hideVideosUploadCadencePerDay',
-            name: t('feature_hideVideosUploadCadencePerDay_name', 'Upload cadence threshold'),
+            name: t('feature_hideVideosUploadCadencePerDay_name', 'Upload Cadence Threshold'),
             description: t('feature_hideVideosUploadCadencePerDay_desc', 'Maximum uploads per day accepted by the upload-cadence heuristic.'),
             nameKey: 'feature_hideVideosUploadCadencePerDay_name',
             descriptionKey: 'feature_hideVideosUploadCadencePerDay_desc',
@@ -14922,7 +14937,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'quickLinkEditor',
             name: 'Edit Launcher Links',
-            description: 'Customize the Astra launcher menu. One link per line: Label | URL',
+            description: 'Customize the Astra launcher menu. One link per line: Label | URL.',
             group: 'Home / Subscriptions',
             icon: 'menu',
             isSubFeature: true,
@@ -15375,7 +15390,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
         // Remaining Time sub-features
-        { id: 'remainingTimeCompact', name: 'Compact Remaining Time', description: 'Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss', group: 'Playback', icon: 'clock', isSubFeature: true, parentId: 'remainingTimeDisplay', init(){}, destroy(){} },
+        { id: 'remainingTimeCompact', name: 'Compact Remaining Time', description: 'Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss.', group: 'Playback', icon: 'clock', isSubFeature: true, parentId: 'remainingTimeDisplay', init(){}, destroy(){} },
         { id: 'remainingTimeHideFullscreen', name: 'Hide in Fullscreen', description: 'Hide the remaining time readout while the player is fullscreen', group: 'Playback', icon: 'eye-off', isSubFeature: true, parentId: 'remainingTimeDisplay', init(){}, destroy(){} },
         {
             id: 'autoExitFullscreen',
@@ -21076,7 +21091,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'channelAgeDisplay',
             name: 'Video Age Display',
-            description: 'Shows how old a video is (e.g. "2 years, 3 months ago") next to the upload date',
+            description: 'Shows how old a video is (e.g. "2 years, 3 months ago") next to the upload date.',
             group: 'Watch Page',
             icon: 'calendar',
             _el: null,
@@ -23283,7 +23298,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'playlistAutoSkipWatched',
-            name: t('feature_playlistAutoSkipWatched_name', 'Auto-skip watched playlist items'),
+            name: t('feature_playlistAutoSkipWatched_name', 'Auto-Skip Watched Playlist Items'),
             description: t('feature_playlistAutoSkipWatched_desc', 'When a playlist entry reaches at least 90% watched, continue to the next entry below that threshold. This stays off until enabled.'),
             group: 'Watch Page',
             icon: 'skip-forward',
@@ -30925,8 +30940,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'musicVideoSpeedLock',
-            name: 'Lock 1× Speed on Music Videos',
-            description: 'When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren\'t sped up',
+            name: 'Lock 1x Speed on Music Videos',
+            description: 'When Persistent Playback Speed is enabled, keep music-category videos at 1x so songs aren’t sped up',
             group: 'Video Player',
             icon: 'music',
             pages: [PageTypes.WATCH],
@@ -31132,7 +31147,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         .replace('{removed}', String(removed))
                         .replace('{total}', String(targets.length));
                 if (removed < targets.length && typeof showToast === 'function') {
-                    showToast(t('watchLaterRemoveFailed', `Couldn't remove {count} video(s). YouTube's menu item wasn't found.`)
+                    showToast(tCount(targets.length - removed, 'watchLaterRemoveFailed',
+                        `Couldn't remove {count} video. YouTube's menu item wasn't found.`,
+                        `Couldn't remove {count} videos. YouTube's menu item wasn't found.`)
                         .replace('{count}', String(targets.length - removed)), '#f59e0b', { duration: 5 });
                 }
                 setTimeout(() => { btn.textContent = t('watchLaterRemoveWatched', 'Remove Watched'); btn.disabled = false; }, 3000);
@@ -31439,7 +31456,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     : 0;
                 if (filters.ageDays != null) this._hydrateAges(loadedEntries);
                 const unknownAgeNote = unknownAge > 0
-                    ? ` ${t('wlwbAgeUnavailableTpl', '{count} loaded row(s) have no readable upload age and are excluded from age filtering.')
+                    ? ` ${tCount(unknownAge, 'wlwbAgeUnavailableTpl',
+                        '{count} loaded row has no readable upload age and is excluded from age filtering.',
+                        '{count} loaded rows have no readable upload age and are excluded from age filtering.')
                         .replace('{count}', String(unknownAge))}`
                     : '';
                 const ageLoadingNote = filters.ageDays != null && this._ageHydrating
@@ -31549,7 +31568,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!status || !list) return;
                 const entries = this._recoverableLog().slice(0, this._UNDO_BATCH_LIMIT);
                 status.textContent = entries.length
-                    ? t('wlwbRecoveryStatusTpl', '{count} removed video(s) are available to restore.')
+                    ? tCount(entries.length, 'wlwbRecoveryStatusTpl',
+                        '{count} removed video is available to restore.',
+                        '{count} removed videos are available to restore.')
                         .replace('{count}', String(entries.length))
                     : t('wlwbRecoveryEmpty', 'No removed videos are waiting for recovery.');
                 if (this._undoAllBtn) {
@@ -31705,7 +31726,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._undoRunning = false;
                 }
                 this._renderRecovery();
-                showToast(t('wlwbRestoredBatchTpl', 'Restored {restored} of {total} removed video(s) to Watch Later.')
+                showToast(tCount(entries.length, 'wlwbRestoredBatchTpl',
+                    'Restored {restored} of {total} removed video to Watch Later.',
+                    'Restored {restored} of {total} removed videos to Watch Later.')
                     .replace('{restored}', String(restored))
                     .replace('{total}', String(entries.length)), restored === entries.length ? '#22c55e' : '#f59e0b', {
                         duration: 6,
@@ -31792,7 +31815,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         onClick: () => this._undoSession(sessionId)
                     };
                 }
-                showToast(t('wlwbRemovedToastTpl', `Removed ${removed.length} video(s)${remainingNote}. Recovery list is in the removal log.`)
+                showToast(tCount(removed.length, 'wlwbRemovedToastTpl',
+                    'Removed {count} video{remaining}. Recovery list is in the removal log.',
+                    'Removed {count} videos{remaining}. Recovery list is in the removal log.')
                     .replace('{count}', String(removed.length))
                     .replace('{remaining}', remainingNote), '#22c55e', toastOptions);
                 this._refreshPreview();
@@ -32155,7 +32180,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // stream goes live YouTube re-renders the card without the notify
             // button, so a fresh scan reveals it automatically. On by default.
             id: 'hidePlannedLivestreams',
-            name: 'Hide planned livestreams',
+            name: 'Hide Planned Livestreams',
             description: 'On the Subscriptions page, hide scheduled livestreams and premieres that only show a "Notify me" button. They reappear automatically once they go live.',
             group: 'Content',
             icon: 'clock',
@@ -32253,7 +32278,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // detected, persisted per video so it doesn't re-fire on
             // SPA nav back to the same video.
             id: 'notifyAutoDubbedAudio',
-            name: 'Notify on AI-dubbed audio',
+            name: 'Notify on AI-Dubbed Audio',
             description: 'Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings.',
             group: 'Video Player',
             icon: 'volume-2',
@@ -35049,7 +35074,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         {
             id: 'localAiSummary',
-            name: 'Local AI Summary (browser built-in)',
+            name: 'Local AI Summary (Browser Built-In)',
             description: t('feature_localAiSummary_desc', 'Use Chrome\u2019s built-in Summarizer API when available; use the configured BYO-key lane when it is unavailable.'),
             group: 'Research',
             icon: 'sparkles',
@@ -35744,7 +35769,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'transcriptQaLane',
-            name: t('feature_transcriptQaLane_name', 'Transcript Q&A provider'),
+            name: t('feature_transcriptQaLane_name', 'Transcript Q&A Provider'),
             description: t('feature_transcriptQaLane_desc', 'Keep questions on-device or use the configured provider with its existing permission, privacy, and request-budget controls.'),
             group: 'Research',
             icon: 'route',
@@ -40760,20 +40785,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     );
                     localHeuristicsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosSyntheticNarrationFilter',
-                        title: t('feature_hideVideosSyntheticNarrationFilter_name', 'Synthetic narration markers'),
+                        title: t('feature_hideVideosSyntheticNarrationFilter_name', 'Synthetic Narration Markers'),
                         description: t('feature_hideVideosSyntheticNarrationFilter_desc', 'Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database.'),
                         defaultChecked: false
                     }));
                     localHeuristicsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosLowSignalFilter',
-                        title: t('feature_hideVideosLowSignalFilter_name', 'Hide low-signal videos'),
+                        title: t('feature_hideVideosLowSignalFilter_name', 'Hide Low-Signal Videos'),
                         description: t('feature_hideVideosLowSignalFilter_desc', 'Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open.'),
                         defaultChecked: false
                     }));
                     localHeuristicsSection.appendChild(createVideoHiderNumberField({
                         id: 'ytkit-vh-low-signal-min-views',
                         key: 'hideVideosLowSignalMinViews',
-                        title: t('feature_hideVideosLowSignalMinViews_name', 'Low-signal view threshold'),
+                        title: t('feature_hideVideosLowSignalMinViews_name', 'Low-Signal View Threshold'),
                         description: t('feature_hideVideosLowSignalMinViews_desc', 'Minimum views used by the low-signal heuristic. Set to 0 to disable its view side.'),
                         min: 0,
                         max: 10000000,
@@ -40784,7 +40809,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     localHeuristicsSection.appendChild(createVideoHiderNumberField({
                         id: 'ytkit-vh-low-signal-min-age',
                         key: 'hideVideosLowSignalMinAgeDays',
-                        title: t('feature_hideVideosLowSignalMinAgeDays_name', 'Low-signal age threshold'),
+                        title: t('feature_hideVideosLowSignalMinAgeDays_name', 'Low-Signal Age Threshold'),
                         description: t('feature_hideVideosLowSignalMinAgeDays_desc', 'Only treat a low-view card as low-signal after this many days. Missing age metadata fails open.'),
                         min: 0,
                         max: 3650,
@@ -40794,14 +40819,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }));
                     localHeuristicsSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosUploadCadenceFilter',
-                        title: t('feature_hideVideosUploadCadenceFilter_name', 'Upload cadence filter'),
+                        title: t('feature_hideVideosUploadCadenceFilter_name', 'Upload Cadence Filter'),
                         description: t('feature_hideVideosUploadCadenceFilter_desc', 'Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible.'),
                         defaultChecked: false
                     }));
                     localHeuristicsSection.appendChild(createVideoHiderNumberField({
                         id: 'ytkit-vh-upload-cadence-per-day',
                         key: 'hideVideosUploadCadencePerDay',
-                        title: t('feature_hideVideosUploadCadencePerDay_name', 'Upload cadence threshold'),
+                        title: t('feature_hideVideosUploadCadencePerDay_name', 'Upload Cadence Threshold'),
                         description: t('feature_hideVideosUploadCadencePerDay_desc', 'Maximum uploads per day accepted by the upload-cadence heuristic.'),
                         min: 1,
                         max: 100,

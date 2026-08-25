@@ -4751,8 +4751,11 @@
   "reactionSenderRiskToast": {
     "message": "リアクション送信: 高速なリアクションは YouTube に制限または検知される場合があります。自己責任でご利用ください。"
   },
-  "reactionSenderRunningTpl": {
-    "message": "{count} 件のリアクションで実行中。"
+  "reactionSenderRunningTplOne": {
+    "message": "Running with {count} reaction."
+  },
+  "reactionSenderRunningTplOther": {
+    "message": "Running with {count} reactions."
   },
   "reactionSenderRunningWaiting": {
     "message": "実行中。選択したリアクションを待機しています。"
@@ -4760,8 +4763,11 @@
   "reactionSenderSelectOne": {
     "message": "リアクションを1つ以上選択してください。"
   },
-  "reactionSenderSelectedTpl": {
-    "message": "{count} 件のリアクションを選択済み。"
+  "reactionSenderSelectedTplOne": {
+    "message": "{count} reaction selected."
+  },
+  "reactionSenderSelectedTplOther": {
+    "message": "{count} reactions selected."
   },
   "reactionSenderSentTpl": {
     "message": "{emoji} を送信しました"
@@ -5732,7 +5738,7 @@
     "message": "設定へスキップ"
   },
   "spStatSize": {
-    "message": "サイズ"
+    "message": "ストレージ"
   },
   "spStatStoredSettings": {
     "message": "カスタム済み"
@@ -5973,8 +5979,11 @@
   "statusImportPreviewSummaryTpl": {
     "message": "プレビュー: {preview}。"
   },
-  "statusImportSkippedKeysTpl": {
-    "message": "{count} setting(s) from a newer version were skipped: {keys}"
+  "statusImportSkippedKeysTplOne": {
+    "message": "{count} setting from a newer version was skipped: {keys}"
+  },
+  "statusImportSkippedKeysTplOther": {
+    "message": "{count} settings from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
     "message": "インポートを中止しました。Astra Deck は拡張機能のストレージに取り消しポイントを保存できませんでした。先にバックアップをエクスポートしてください。"
@@ -7950,8 +7959,11 @@
   "watchLaterNothingToRemove": {
     "message": "削除するものはありません"
   },
-  "watchLaterRemoveFailed": {
-    "message": "{count} 本の動画を削除できませんでした — YouTube のメニュー項目が見つかりません。"
+  "watchLaterRemoveFailedOne": {
+    "message": "Couldn’t remove {count} video. YouTube’s menu item wasn’t found."
+  },
+  "watchLaterRemoveFailedOther": {
+    "message": "Couldn’t remove {count} videos. YouTube’s menu item wasn’t found."
   },
   "watchLaterRemoveWatched": {
     "message": "視聴済みを削除"
@@ -8101,8 +8113,11 @@
   "wlwbAgePlaceholder": {
     "message": "日数がこれより古い…"
   },
-  "wlwbAgeUnavailableTpl": {
-    "message": "読み取れる公開時期がない読み込み済みの行が{count}件あり、年齢フィルターから除外されています。"
+  "wlwbAgeUnavailableTplOne": {
+    "message": "{count} loaded row has no readable upload age and is excluded from age filtering."
+  },
+  "wlwbAgeUnavailableTplOther": {
+    "message": "{count} loaded rows have no readable upload age and are excluded from age filtering."
   },
   "wlwbChannelAria": {
     "message": "チャンネル名フィルター"
@@ -8161,8 +8176,11 @@
   "wlwbRecoveryEmpty": {
     "message": "復元待ちの削除済み動画はありません。"
   },
-  "wlwbRecoveryStatusTpl": {
-    "message": "復元できる削除済み動画が{count}本あります。"
+  "wlwbRecoveryStatusTplOne": {
+    "message": "{count} removed video is available to restore."
+  },
+  "wlwbRecoveryStatusTplOther": {
+    "message": "{count} removed videos are available to restore."
   },
   "wlwbRecoveryTitle": {
     "message": "復元"
@@ -8176,8 +8194,11 @@
   "wlwbRemovedRemainingTpl": {
     "message": "— まだ {count} 件が一致しています。もう一度実行してください"
   },
-  "wlwbRemovedToastTpl": {
-    "message": "{count} 件の動画を削除しました{remaining}。復元リストは削除ログにあります。"
+  "wlwbRemovedToastTplOne": {
+    "message": "Removed {count} video{remaining}. Recovery list is in the removal log."
+  },
+  "wlwbRemovedToastTplOther": {
+    "message": "Removed {count} videos{remaining}. Recovery list is in the removal log."
   },
   "wlwbRemovingTpl": {
     "message": "{current} / {total} 件を削除中…"
@@ -8185,8 +8206,11 @@
   "wlwbRestoreFailedTpl": {
     "message": "{title}を復元できませんでした: {error}"
   },
-  "wlwbRestoredBatchTpl": {
-    "message": "削除した{total}本中{restored}本を後で見るに復元しました。"
+  "wlwbRestoredBatchTplOne": {
+    "message": "Restored {restored} of {total} removed video to Watch Later."
+  },
+  "wlwbRestoredBatchTplOther": {
+    "message": "Restored {restored} of {total} removed videos to Watch Later."
   },
   "wlwbRestoredItemTpl": {
     "message": "{title}を後で見るに復元しました"
@@ -8424,6 +8448,9 @@
   },
   "bisectIntro": {
     "message": "機能を半分ずつオフにして戻すことで、291 個の機能を約 10 回の再読み込みで 1 つに絞り込めます。設定は終了時、中止時、そして放置した場合も自動的に元へ戻ります。"
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
   },
   "bisectNo": {
     "message": "直った"
