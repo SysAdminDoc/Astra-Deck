@@ -3946,7 +3946,6 @@ function attachUIEventListeners() {
         });
 
         // Textarea input — debounce reinit to avoid destroy/init churn per keystroke
-        let _textareaReinitTimer = null;
         // Per-feature reinit debounce. A single shared timer let a color
         // input within 300ms of a range drag (or a second control) cancel the
         // FIRST feature's pending destroy/init — its value was saved but
@@ -3964,16 +3963,21 @@ function attachUIEventListeners() {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Text setting'} saved.`, 'success');
                 if (feature) {
-                    if (_textareaReinitTimer) clearTimeout(_textareaReinitTimer);
-                    _textareaReinitTimer = setTimeout(() => {
-                        _textareaReinitTimer = null;
+                    // Per-feature, like the range and colour handlers below.
+                    // The shared `_textareaReinitTimer` meant editing feature
+                    // A's text setting and then feature B's within the debounce
+                    // cancelled A's pending destroy/init: A's value was saved
+                    // and the panel said so, but it was never applied.
+                    if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
+                    _reinitTimers.set(featureId, setTimeout(() => {
+                        _reinitTimers.delete(featureId);
                         try { destroyFeatureLifecycle(feature, 'SettingsPanel'); } catch (e) {
                             DebugManager.log('SettingsPanel', `destroy failed for ${feature.id}: ${e.message}`);
                         }
                         try { initFeatureLifecycle(feature, 'SettingsPanel'); } catch (e) {
                             DebugManager.log('SettingsPanel', `re-init failed for ${feature.id}: ${e.message}`);
                         }
-                    }, 600);
+                    }, 600));
                 }
             }
             // Select dropdown

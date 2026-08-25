@@ -466,6 +466,25 @@
             try { return JSON.stringify(value); } catch (_) { return String(value); }
         }
 
+        // A suppression token is consumed by the matching storage.onChanged.
+        // But `storage.local.set` omits keys whose value did not actually
+        // change, so a token written for an already-equal key never fires and
+        // never gets consumed. With no reaper it lived for the life of the
+        // worker, holding a full serialized blocklist, and the next genuine
+        // change that happened to produce that same serialized value was
+        // filtered out and silently never uploaded. storage-manager.js solves
+        // the identical problem with `setTimeout(..., echoTtlMs)`.
+        const SUPPRESSION_TTL_MS = 15000;
+
+        function releaseSuppressed(key, token) {
+            const values = suppressedLocalChanges.get(key);
+            const count = values?.get(token) || 0;
+            if (!count) return;
+            if (count <= 1) values.delete(token);
+            else values.set(token, count - 1);
+            if (values.size === 0) suppressedLocalChanges.delete(key);
+        }
+
         function markSuppressed(entries) {
             for (const [key, value] of Object.entries(entries)) {
                 let values = suppressedLocalChanges.get(key);
@@ -475,6 +494,7 @@
                 }
                 const token = serialized(value);
                 values.set(token, (values.get(token) || 0) + 1);
+                setTimeout(() => releaseSuppressed(key, token), SUPPRESSION_TTL_MS);
             }
         }
 

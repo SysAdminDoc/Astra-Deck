@@ -16370,19 +16370,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _languageDetector: null,
+            _languageDetectorPromise: null,
             async _initLanguageDetector() {
-                if (this._languageDetector) return;
-                try {
-                    const factory = globalThis.LanguageDetector || globalThis.ai?.languageDetector;
-                    if (factory && typeof factory.create === 'function') {
-                        this._languageDetector = await factory.create();
-                    }
-                } catch { /* reason: LanguageDetector is a progressive enhancement */ }
+                if (this._languageDetector) return this._languageDetector;
+                // The in-flight promise is stored BEFORE the first await.
+                // `_process()` used to call this unguarded, and it runs as a
+                // broad mutation rule (up to 120 invocations per 5s window), so
+                // every call during the model download sailed past the null
+                // check and built its own session. All but the last were
+                // orphaned with no reference and no way to release them.
+                if (!this._languageDetectorPromise) {
+                    this._languageDetectorPromise = (async () => {
+                        const factory = globalThis.LanguageDetector || globalThis.ai?.languageDetector;
+                        if (!factory || typeof factory.create !== 'function') return null;
+                        return factory.create();
+                    })().then(
+                        (detector) => { this._languageDetector = detector; return detector; },
+                        () => null   // reason: LanguageDetector is a progressive enhancement
+                    );
+                }
+                return this._languageDetectorPromise;
             },
 
             async _isTranslated(text, originalText) {
                 if (!text || !originalText) return text !== originalText;
                 if (text === originalText) return false;
+                // Created here, on first real use, rather than on every
+                // mutation tick. Nothing downloads a language model for a
+                // comparison that never happens.
+                await this._initLanguageDetector();
                 if (!this._languageDetector) return text !== originalText;
                 try {
                     const [detectedDisplay, detectedOriginal] = await Promise.all([
@@ -16397,7 +16413,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _process() {
-                this._initLanguageDetector();
                 document.querySelectorAll('#video-title[title]:not([ytkit-antitranslate])').forEach(el => {
                     const original = el.getAttribute('title');
                     const displayed = el.textContent.trim();
@@ -16470,6 +16485,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._processTimer = null;
                 removeMutationRule(this.id);
                 removeNavigateRule('antiTranslate');
+                // The detector holds an on-device model session. Teardown never
+                // released it, so every disable/enable cycle leaked one.
+                const detector = this._languageDetector;
+                this._languageDetector = null;
+                this._languageDetectorPromise = null;
+                try { detector?.destroy?.(); } catch (_) { /* reason: releasing the detector must not block teardown */ }
                 document.querySelectorAll('[ytkit-antitranslate]').forEach(el => el.removeAttribute('ytkit-antitranslate'));
             }
         },
@@ -34073,20 +34094,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         return null;
                     }
                     const meta = parseOEmbedMetadata?.(await response.text()) || null;
-                    if (this._oEmbedCache.size >= this._MAX_CACHE) {
+                    // destroy() nulls `_oEmbedCache` and `_inFlight` while
+                    // lookups are still outstanding, so every touch after an
+                    // await has to tolerate teardown. Without the optional
+                    // chaining the `finally` below threw a TypeError into a
+                    // promise the caller never caught. `enableHandleRevealer`
+                    // already writes `this._requestControllers?.delete(...)`
+                    // for the same reason.
+                    if (this._oEmbedCache && this._oEmbedCache.size >= this._MAX_CACHE) {
                         const oldest = this._oEmbedCache.keys().next().value;
                         if (oldest != null) this._oEmbedCache.delete(oldest);
                     }
-                    this._oEmbedCache.set(videoId, meta);
+                    this._oEmbedCache?.set(videoId, meta);
                     return meta;
                 } catch (error) {
                     // A failed lookup is cached as a miss so a video whose
                     // oEmbed is unavailable is not retried on every feed tick.
-                    this._oEmbedCache.set(videoId, null);
+                    this._oEmbedCache?.set(videoId, null);
                     DebugManager.log('AntiTranslate', `oEmbed lookup failed for ${videoId}: ${error?.message || error}`);
                     return null;
                 } finally {
-                    this._inFlight.delete(videoId);
+                    this._inFlight?.delete(videoId);
                 }
             },
 
@@ -34133,9 +34161,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         continue;
                     }
                     this._lookupOEmbed(videoId).then((meta) => {
+                        // `_restore` is nulled by destroy(); a lookup that
+                        // lands after teardown must not restyle the page.
+                        if (!this._restore) return;
                         if (!meta?.thumbnailUrl || !img.isConnected) return;
                         if (img.dataset.ytkitOriginalThumbnail) return;
                         this._applyOriginal(img, img.getAttribute('src') || rendered, playerResponse, meta.thumbnailUrl);
+                    }, (error) => {
+                        // A thumbnail lookup is best effort. Without this the
+                        // rejection was unhandled.
+                        DebugManager.log('AntiTranslate', `oEmbed lookup rejected: ${error?.message || error}`);
                     });
                 }
             },
@@ -42548,7 +42583,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         });
 
         // Textarea input — debounce reinit to avoid destroy/init churn per keystroke
-        let _textareaReinitTimer = null;
         // Per-feature reinit debounce. A single shared timer let a color
         // input within 300ms of a range drag (or a second control) cancel the
         // FIRST feature's pending destroy/init — its value was saved but
@@ -42566,16 +42600,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Text setting'} saved.`, 'success');
                 if (feature) {
-                    if (_textareaReinitTimer) clearTimeout(_textareaReinitTimer);
-                    _textareaReinitTimer = setTimeout(() => {
-                        _textareaReinitTimer = null;
+                    // Per-feature, like the range and colour handlers below.
+                    // The shared `_textareaReinitTimer` meant editing feature
+                    // A's text setting and then feature B's within the debounce
+                    // cancelled A's pending destroy/init: A's value was saved
+                    // and the panel said so, but it was never applied.
+                    if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
+                    _reinitTimers.set(featureId, setTimeout(() => {
+                        _reinitTimers.delete(featureId);
                         try { destroyFeatureLifecycle(feature, 'SettingsPanel'); } catch (e) {
                             DebugManager.log('SettingsPanel', `destroy failed for ${feature.id}: ${e.message}`);
                         }
                         try { initFeatureLifecycle(feature, 'SettingsPanel'); } catch (e) {
                             DebugManager.log('SettingsPanel', `re-init failed for ${feature.id}: ${e.message}`);
                         }
-                    }, 600);
+                    }, 600));
                 }
             }
             // Select dropdown
