@@ -250,6 +250,13 @@ function stripSafeLineComments(source) {
         // state stays correct for the lines that follow.
         let lastSignificant = '';
         let lastWord = '';
+        // A word reached through a dot is a PROPERTY NAME, not a keyword.
+        // `box.of / g` is a division; `for (x of y) / g` is not. Without this
+        // the scanner read the division as a regex, and the regex scan swallowed
+        // the backtick that opened the next template — deleting a comment-shaped
+        // line out of template DATA. Legal since ES5, and `.of`, `.in` and
+        // `.new` are all ordinary property names.
+        let lastWordIsProperty = false;
         for (let i = 0; i < line.length; i += 1) {
             const ch = line[i];
             const next2 = line.slice(i, i + 2);
@@ -274,9 +281,9 @@ function stripSafeLineComments(source) {
             // code context
             if (next2 === '//') break;            // rest of the line is a comment
             if (next2 === '/*') { inBlockComment = true; i += 1; continue; }
-            if (ch === '\'' || ch === '"') { quote = ch; lastSignificant = ch; lastWord = ''; continue; }
-            if (ch === '`') { stack.push({ kind: 'template' }); lastSignificant = ch; lastWord = ''; continue; }
-            if (ch === '{') { context.braces += 1; lastSignificant = ch; lastWord = ''; continue; }
+            if (ch === '\'' || ch === '"') { quote = ch; lastSignificant = ch; lastWord = ''; lastWordIsProperty = false; continue; }
+            if (ch === '`') { stack.push({ kind: 'template' }); lastSignificant = ch; lastWord = ''; lastWordIsProperty = false; continue; }
+            if (ch === '{') { context.braces += 1; lastSignificant = ch; lastWord = ''; lastWordIsProperty = false; continue; }
             if (ch === '}') {
                 // The } that closes a ${ } expression pops back into the
                 // template it interrupted.
@@ -284,24 +291,32 @@ function stripSafeLineComments(source) {
                 context.braces -= 1;
                 lastSignificant = ch;
                 lastWord = '';
+                lastWordIsProperty = false;
                 continue;
             }
             if (ch === '/') {
                 const startsRegex = lastSignificant === ''
                     || REGEX_CAN_FOLLOW.has(lastSignificant)
-                    || REGEX_CAN_FOLLOW_KEYWORD.has(lastWord);
+                    || (!lastWordIsProperty && REGEX_CAN_FOLLOW_KEYWORD.has(lastWord));
                 if (startsRegex) {
                     const consumed = skipRegexLiteral(line, i);
-                    if (consumed > i) { i = consumed; lastSignificant = '/'; lastWord = ''; continue; }
+                    if (consumed > i) { i = consumed; lastSignificant = '/'; lastWord = ''; lastWordIsProperty = false; continue; }
                 }
                 lastSignificant = '/';
                 lastWord = '';
+                lastWordIsProperty = false;
                 continue;
             }
             if (/\s/.test(ch)) continue;
-            if (/[A-Za-z0-9_$]/.test(ch)) { lastWord += ch; lastSignificant = ch; continue; }
+            if (/[A-Za-z0-9_$]/.test(ch)) {
+                if (!lastWord) lastWordIsProperty = lastSignificant === '.';
+                lastWord += ch;
+                lastSignificant = ch;
+                continue;
+            }
             lastSignificant = ch;
             lastWord = '';
+            lastWordIsProperty = false;
         }
 
         // An unterminated plain string means the line ended mid-quote, which
@@ -318,14 +333,36 @@ function stripSafeLineComments(source) {
 // this line — a regex cannot span lines, so an unterminated one was division.
 function skipRegexLiteral(line, from) {
     let inClass = false;
+    // A BACKTICK outside a character class, which is the signature of a misread
+    // division: the "regex" has swallowed the opening of a template literal.
+    // ``/[`]/`` is an ordinary pattern and must not trip this.
+    //
+    // Backticks only, not quotes. `/"/g` and `/'/` are everyday regexes —
+    // extension/features/subscription-groups/index.js has both on its CSV
+    // escaping lines — and treating those as division desyncs the scan in the
+    // other direction.
+    let looseStringChar = false;
     for (let i = from + 1; i < line.length; i += 1) {
         const ch = line[i];
         if (ch === '\\') { i += 1; continue; }
         if (inClass) { if (ch === ']') inClass = false; continue; }
         if (ch === '[') { inClass = true; continue; }
+        if (ch === '`') { looseStringChar = true; continue; }
         if (ch === '/') {
             let end = i;
             while (end + 1 < line.length && /[a-z]/.test(line[end + 1])) end += 1;
+            // A candidate regex that swallows a backtick or a quote is almost
+            // certainly a misread division.
+            //
+            // `of` and `in` are contextual keywords, so a variable named either
+            // is legal and ordinary: `const of = 4; const q = of / g` divides,
+            // and reading that `/` as a regex walks the scan into the rest of
+            // the line — which is how a template opener got eaten and a
+            // comment-shaped line disappeared out of template data. A real
+            // regex containing a raw backtick outside a character class is
+            // vanishingly rare; preferring the division reading costs at most a
+            // surviving comment.
+            if (looseStringChar) return from;
             return end;
         }
     }
