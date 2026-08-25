@@ -4917,7 +4917,7 @@
     "message": "Kopiert — in ein GitHub-Issue einfügen."
   },
   "selectorHealthCopyFail": {
-    "message": "Zwischenablage-Schreibzugriff blockiert. DevTools öffnen und window.__ytkitDiagnostics.download() aufrufen."
+    "message": "Kopieren in die Zwischenablage fehlgeschlagen. Versuchen Sie es erneut oder laden Sie den Bericht über die Schaltfläche „Speichern“ in der Diagnose herunter."
   },
   "selectorHealthCopyNeedYt": {
     "message": "Einen YouTube-Tab öffnen, um den Bericht zu erstellen."
@@ -4929,7 +4929,7 @@
     "message": "Bericht wird erstellt…"
   },
   "selectorHealthCopySaveFallback": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+    "message": "Kopieren in die Zwischenablage fehlgeschlagen. Versuchen Sie es erneut oder laden Sie den Bericht über die Schaltfläche „Speichern“ in der Diagnose herunter."
   },
   "selectorHealthCtxCountTpl": {
     "message": "{ctx}: {count}"
@@ -5950,7 +5950,7 @@
     "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
-    "message": "Astra Downloader Aufforderungen konnten nicht erneut aktiviert werden. chrome://extensions öffnen und neu laden."
+    "message": "Astra Downloader Aufforderungen konnten nicht erneut aktiviert werden. Öffnen Sie die Erweiterungsseite Ihres Browsers und laden Sie neu."
   },
   "statusMediadlReenabled": {
     "message": "Astra Downloader Installationsaufforderungen erneut aktiviert — einen YouTube-Tab neu laden, um sie zu sehen."

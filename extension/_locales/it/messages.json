@@ -4917,7 +4917,7 @@
     "message": "Copiato -- incolla in un issue GitHub."
   },
   "selectorHealthCopyFail": {
-    "message": "Scrittura appunti bloccata. Apri DevTools e chiama window.__ytkitDiagnostics.download()."
+    "message": "Impossibile copiare negli appunti. Riprova oppure usa il pulsante Salva della diagnostica per scaricare il rapporto."
   },
   "selectorHealthCopyNeedYt": {
     "message": "Apri una scheda YouTube per generare il rapporto."
@@ -4929,7 +4929,7 @@
     "message": "Generazione rapporto..."
   },
   "selectorHealthCopySaveFallback": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+    "message": "Impossibile copiare negli appunti. Riprova oppure usa il pulsante Salva della diagnostica per scaricare il rapporto."
   },
   "selectorHealthCtxCountTpl": {
     "message": "{ctx}: {count}"
@@ -5950,7 +5950,7 @@
     "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
-    "message": "Impossibile riattivare le richieste Astra Downloader. Apri chrome://extensions e ricarica."
+    "message": "Impossibile riattivare gli avvisi di Astra Downloader. Apri la pagina delle estensioni del browser e ricarica."
   },
   "statusMediadlReenabled": {
     "message": "Richieste di installazione Astra Downloader riattivate -- ricarica una scheda YouTube per vederle."

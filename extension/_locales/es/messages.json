@@ -4917,7 +4917,7 @@
     "message": "Copiado — pégalo en un issue de GitHub."
   },
   "selectorHealthCopyFail": {
-    "message": "Escritura en portapapeles bloqueada. Abre DevTools y llama a window.__ytkitDiagnostics.download() en su lugar."
+    "message": "No se pudo copiar al portapapeles. Inténtalo de nuevo o usa el botón Guardar del diagnóstico para descargar el informe."
   },
   "selectorHealthCopyNeedYt": {
     "message": "Abre una pestaña de YouTube para generar el reporte."
@@ -4929,7 +4929,7 @@
     "message": "Generando reporte…"
   },
   "selectorHealthCopySaveFallback": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+    "message": "No se pudo copiar al portapapeles. Inténtalo de nuevo o usa el botón Guardar del diagnóstico para descargar el informe."
   },
   "selectorHealthCtxCountTpl": {
     "message": "{ctx}: {count}"
@@ -5950,7 +5950,7 @@
     "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
-    "message": "No se pudieron reactivar los avisos de Astra Downloader. Abre chrome://extensions y recarga."
+    "message": "No se pudieron reactivar los avisos de Astra Downloader. Abre la página de extensiones de tu navegador y vuelve a cargarla."
   },
   "statusMediadlReenabled": {
     "message": "Avisos de instalación de Astra Downloader reactivados — recarga una pestaña de YouTube para verlos."
