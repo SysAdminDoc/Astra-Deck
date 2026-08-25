@@ -98,7 +98,7 @@
     "crx3": "^2.0.0"
   },
   "devDependencies": {
-    "eslint": "^10.6.0",
+    "eslint": "^10.9.1",
     "web-ext": "10.6.0",
     "ws": "8.21.3"
   },

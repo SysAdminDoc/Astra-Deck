@@ -51,3 +51,62 @@ test('every gate script the check chain runs is inside the lint glob', () => {
         assert.ok(fs.existsSync(path.join(repoRoot, script)), `${script} must exist`);
     }
 });
+
+// WHEN ESLint is upgraded, every rule the config enables SHALL still report.
+//
+// A lint run that passes proves nothing on its own: it looks identical whether
+// the rules are working or silently not loading. That is the specific way an
+// ESLint upgrade breaks a repo — a changed plugin API leaves the two local
+// rules registered but inert, and every future violation ships green. So the
+// rules are exercised against text that violates them, through the real config.
+test('every rule the config enables still reports under the installed ESLint', async () => {
+    const { ESLint } = require('eslint');
+    const linter = new ESLint({ cwd: repoRoot });
+
+    async function rulesFor(code, filePath) {
+        const results = await linter.lintText(code, { filePath, warnIgnored: false });
+        return new Set(results.flatMap((result) => result.messages.map((message) => message.ruleId)));
+    }
+
+    // require-catch-reason: an empty catch with no `// reason:` comment.
+    const caught = await rulesFor(
+        "'use strict';\ntry { void 0; } catch (_) {}\n",
+        path.join(repoRoot, 'extension', 'core', 'csv.js')
+    );
+    assert.ok(caught.has('local/require-catch-reason'),
+        `require-catch-reason did not report; saw ${JSON.stringify([...caught])}`);
+
+    // no-constant-binary-expression, configured with checkRelationalComparisons.
+    const constant = await rulesFor(
+        "'use strict';\nconst x = (1 === 1) || undefined;\nvoid x;\n",
+        path.join(repoRoot, 'extension', 'core', 'csv.js')
+    );
+    assert.ok(constant.has('no-constant-binary-expression'),
+        `no-constant-binary-expression did not report; saw ${JSON.stringify([...constant])}`);
+
+    // no-post-await-addlistener, which only applies to the service worker.
+    const listener = await rulesFor(
+        "'use strict';\nasync function boot() { await Promise.resolve(); chrome.runtime.onMessage.addListener(() => {}); }\nvoid boot;\n",
+        path.join(repoRoot, 'extension', 'background.js')
+    );
+    assert.ok(listener.has('local/no-post-await-addlistener'),
+        `no-post-await-addlistener did not report; saw ${JSON.stringify([...listener])}`);
+
+    // And clean text stays clean, so the assertions above are about the code
+    // rather than about the config refusing everything.
+    const clean = await rulesFor(
+        "'use strict';\nconst x = 1;\nvoid x;\n",
+        path.join(repoRoot, 'extension', 'core', 'csv.js')
+    );
+    assert.deepEqual([...clean], []);
+});
+
+test('the installed ESLint is the one package.json asks for', () => {
+    const declared = require(path.join(repoRoot, 'package.json')).devDependencies.eslint;
+    const installed = require(path.join(repoRoot, 'node_modules', 'eslint', 'package.json')).version;
+    const floor = declared.replace(/^[^\d]*/, '');
+    const [major, minor] = installed.split('.').map(Number);
+    const [floorMajor, floorMinor] = floor.split('.').map(Number);
+    assert.equal(major, floorMajor, `installed eslint ${installed} is a different major to ${declared}`);
+    assert.ok(minor >= floorMinor, `installed eslint ${installed} is below the declared ${declared}`);
+});
