@@ -361,6 +361,17 @@ body {
   white-space: nowrap;
 }
 
+/* "Unavailable" is a word, not a count: it drops the tabular figures and the
+   heavy weight so it does not read as a number, and it is small enough to fit
+   the card without the ellipsis doing the explaining. */
+.stat-card-value[data-state="unavailable"] {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: normal;
+  letter-spacing: 0.01em;
+}
+
 .stat-card-label {
   display: block;
   margin-top: 6px;

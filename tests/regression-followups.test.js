@@ -36,7 +36,11 @@ test('popup formatBytes scales beyond MB and counts are locale-aware', () => {
         'formatBytes must scale through GB/TB, not cap at MB');
     assert.ok(/function formatCount\(n\)/.test(popup),
         'a locale-aware count formatter must exist');
-    assert.ok(/statKeys\.textContent = formatCount\(summary\.keys\)/.test(popup),
+    // Pinned the assignment shape, but what it is asserting is that the counts
+    // go through formatCount. The five cards are written through one setter now
+    // so the unavailable state can clear itself, and the formatter call moved
+    // into that setter's argument list.
+    assert.ok(/setStatCards\(\[\s*formatCount\(summary\.keys\)/.test(popup),
         'storage stat counts must use the locale-aware formatter');
 });
 
@@ -87,4 +91,54 @@ test('userscript UI surfaces avoid backdrop blur filters', () => {
         'YTKit.user.js must not ship backdrop blur on injected UI surfaces');
     assert.doesNotMatch(userscript, /-webkit-backdrop-filter\s*:\s*blur/i,
         'YTKit.user.js must not ship prefixed backdrop blur either');
+});
+
+// WHEN the popup first paints, the five storage cards SHALL read a real zero
+// rather than a placeholder glyph; and WHEN extension storage is unavailable,
+// they SHALL say so in localized copy alongside the existing recovery message,
+// never a bare dash.
+test('the popup storage cards seed at zero and name the failure', () => {
+    const popupHtml = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.html'), 'utf8');
+    const popupJs = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
+    const messages = JSON.parse(fs.readFileSync(
+        path.join(repoRoot, 'extension', '_locales', 'en', 'messages.json'), 'utf8'));
+
+    const IDS = ['stat-keys', 'stat-size', 'stat-hidden-videos', 'stat-blocked-channels', 'stat-bookmarks'];
+    for (const id of IDS) {
+        const match = popupHtml.match(new RegExp('id="' + id + '">([^<]*)<'));
+        assert.ok(match, `${id} must still be in the markup`);
+        assert.notEqual(match[1].trim(), '—',
+            `${id} seeds a placeholder glyph, which is the first thing a user sees`);
+        assert.match(match[1].trim(), /^0( B)?$/, `${id} must seed a real zero`);
+    }
+
+    // The dash is gone from the failure path entirely.
+    const start = popupJs.indexOf('async function renderStorageInfo()');
+    assert.ok(start > 0, 'renderStorageInfo must still exist');
+    const body = popupJs.slice(start, popupJs.indexOf('\nasync function renderSettingsSyncStatus', start));
+    // Only what it writes, not what it says: there is a prose em dash in a
+    // comment in here and matching that would make this assertion about
+    // punctuation rather than about behaviour.
+    assert.ok(!/textContent\s*=\s*[^;]*'—'/.test(body),
+        'the storage render path must not write an em dash into a stat card');
+    assert.ok(!/setStatCards\(\[[^\]]*'—'/.test(body),
+        'the storage render path must not seed a stat card with an em dash');
+
+    assert.ok(popupJs.includes("t('spStatUnavailable', 'Unavailable')"),
+        'the unavailable state must use the catalog entry that already exists for it');
+    assert.ok(messages.spStatUnavailable && messages.spStatUnavailable.message,
+        'spStatUnavailable must be present in the EN catalog');
+
+    // The recovery copy is still shown with it, not instead of it.
+    assert.match(body, /if \(storageUnavailable\) setStatCardsUnavailable\(\);/);
+    assert.match(body, /showStatus\(getStorageUnavailableMessage\(\), 'info', 0\)/);
+
+    // A read that failed for another reason reports zero, not "unavailable".
+    assert.match(body, /else setStatCards\(\['0', '0 B', '0', '0', '0'\]\)/);
+
+    // Recovering from the unavailable state has to clear it, or the cards keep
+    // the muted styling and the title after the numbers come back.
+    const setter = popupJs.slice(popupJs.indexOf('function setStatCards(values)'));
+    assert.match(setter.slice(0, 500), /delete element\.dataset\.state/);
+    assert.match(setter.slice(0, 500), /element\.removeAttribute\('title'\)/);
 });
