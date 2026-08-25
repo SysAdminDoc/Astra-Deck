@@ -108,12 +108,6 @@ Found during a full audit pass, verified, and deliberately not fixed in it.
   Acceptance: the zapper can target the focused element and walk the DOM with arrow keys; the sidebar exposes move-up/move-down (a menu or Alt+Arrow) that writes the same `sidebarOrder`; the drag handle moves the panel on arrow keys. `scripts/audit-overlays-a11y.js` covers none of these three modules, so extend it alongside.
   Complexity: M
 
-- [ ] P2: Stop the download progress panel talking over everything else
-  Why: the panel is `role="status"` with `aria-live="polite"` and `aria-atomic="true"` on the whole panel, and the poll rewrites percent, speed, ETA and status copy every 750 ms. Each poll re-announces the badge, title, state pill, all three numbers and the buttons inside the region, so a five-minute download queues roughly 400 full-panel announcements and the speech queue never drains. Errors such as "needs-auth" also stay polite, so a stalled download never interrupts.
-  Where: `extension/features/download-ui/index.js` (~1119-1125, 1259-1283, 1378-1381)
-  Acceptance: the live region is a single status line, not the panel; it updates on meaningful transitions rather than every poll; error states are assertive.
-  Complexity: S
-
 - [ ] P2: Give the speed popup, context menu, AI Summary panel and persistent queue a real dialog contract
   Why: four overlays declare a role they do not implement. The playback-speed popup is `role="menu"` with 18 `menuitemradio` children, appended to `<body>`, with no `.focus()`, no arrow-key roving tabindex and no focus restore. The Astra context menu is `role="menu"` with no accessible name, no focus entry, no keydown handler at all and no restore, and its `preventDefault()` suppresses the native right-click that its own description says it never blocks. The AI Summary panel and the persistent queue are both `role="dialog"` appended to `<body>` with no Escape, no focus entry and no restore; the queue's `aria-label` is a hardcoded English string.
   Where: `extension/ytkit.js` `showSpeedPopup` (~3200-3323), context menu (~37797-37850), AI Summary panel (~29956-29998), persistent queue (~22366-22409)

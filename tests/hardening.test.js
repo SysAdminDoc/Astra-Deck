@@ -1120,10 +1120,24 @@ test('core/storage.js applies exponential backoff on persistent write failures',
 test('showDownloadProgress uses self-scheduling poll with consecutive-error budget', () => {
     const progressStart = downloadUiSource.indexOf('function showDownloadProgress(');
     assert.ok(progressStart > -1, 'showDownloadProgress must exist');
-    // Grab from the function start up to the matching `}` — the function is
-    // ~14 KB with all the DOM scaffolding so this generous capture covers
-    // the whole poll loop without overshooting into neighbours.
-    const progressBody = downloadUiSource.slice(progressStart, progressStart + 16000);
+    // Slice to the function's own closing brace rather than a fixed window.
+    // The window was 16,000 chars, chosen when the function was ~14 KB; adding
+    // an off-screen status line pushed the poll loop past it and the
+    // assertions below started failing on a legitimate change rather than on a
+    // regression.
+    const progressBody = (() => {
+        const open = downloadUiSource.indexOf('{', progressStart);
+        let depth = 0;
+        for (let i = open; i < downloadUiSource.length; i += 1) {
+            const ch = downloadUiSource[i];
+            if (ch === '{') depth += 1;
+            else if (ch === '}') {
+                depth -= 1;
+                if (depth === 0) return downloadUiSource.slice(progressStart, i + 1);
+            }
+        }
+        throw new Error('showDownloadProgress is unbalanced');
+    })();
 
     // setInterval would allow a slow poll to overlap itself, doubling load
     // on the downloader when yt-dlp is busy merging or extracting audio.
