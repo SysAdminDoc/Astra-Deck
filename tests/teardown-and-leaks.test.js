@@ -46,19 +46,57 @@ test('video-hider refuses to re-arm its refresh after teardown', () => {
         'and init must clear it, or a re-enable stays dead');
 });
 
-test('the language detector is built once, on use, and released on destroy', () => {
+test('antiTranslate builds no on-device model session at all', () => {
+    // Two rounds on this one. It first created a LanguageDetector from
+    // `_process()`, a broad mutation rule allowing 120 invocations per 5s
+    // window, so concurrent creates orphaned sessions destroy() never released.
+    // Moving the create into its consumer fixed the leak and revealed the real
+    // problem: that consumer, `_isTranslated`, has no callers anywhere in
+    // extension/, tests/, or either userscript artifact. The whole apparatus
+    // downloaded a model for a comparison nothing performs, so it is gone.
     const block = monolith.slice(monolith.indexOf("id: 'antiTranslate'"));
     const feature = block.slice(0, block.indexOf("id: 'pauseOtherTabs'"));
-    assert.ok(feature.includes('_languageDetectorPromise'),
-        'concurrent callers must share one in-flight create()');
-    assert.ok(!/_process\(\) \{\s*this\._initLanguageDetector\(\);/.test(feature),
-        '_process is a broad mutation rule; it must not create a model session per tick');
-    assert.ok(feature.includes('await this._initLanguageDetector();'),
-        'the detector is created by its only consumer, on first real use');
-    assert.ok(feature.includes('detector?.destroy?.()'),
-        'destroy must release the on-device session');
-    assert.ok(feature.includes('this._languageDetectorPromise = null;'),
-        'and clear the in-flight handle so a re-enable rebuilds');
+    assert.ok(!feature.includes('_languageDetector'),
+        'no detector state may come back without a caller to justify it');
+    assert.ok(!feature.includes('LanguageDetector'),
+        'and nothing may reach for the platform factory');
+    assert.ok(!feature.includes('_isTranslated'),
+        'the dead consumer goes with it');
+    // The feature still does its actual job by string comparison.
+    assert.ok(feature.includes("el.setAttribute('ytkit-antitranslate', '1')"),
+        'the title restore itself must be untouched');
+});
+
+test('no feature keeps a consumer that nothing calls', () => {
+    // The check that would have caught the above directly. A private method on
+    // a feature object is dead if its name appears exactly once in the whole
+    // tree, at its own definition.
+    const roots = [
+        path.join(repoRoot, 'extension'),
+        path.join(repoRoot, 'tests')
+    ];
+    const sources = [];
+    for (const root of roots) {
+        (function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, entry.name);
+                if (entry.isDirectory()) { if (entry.name !== '_locales') walk(full); }
+                // Skip this file: it names the dead symbols in order to
+                // forbid them, and would otherwise count itself as a caller.
+                else if (full.endsWith('.js') && full !== __filename) {
+                    sources.push(fs.readFileSync(full, 'utf8'));
+                }
+            }
+        }(root));
+    }
+    const haystack = sources.join('\n');
+
+    // Only the methods this audit touched. Widening it to every `_name()` in
+    // the tree is a separate, noisier job; see ROADMAP.
+    for (const name of ['_isTranslated', '_initLanguageDetector']) {
+        const uses = haystack.split(name).length - 1;
+        assert.equal(uses, 0, name + ' is dead and must not return');
+    }
 });
 
 test('an oEmbed lookup landing after teardown neither throws nor restyles', () => {

@@ -174,7 +174,7 @@
                 // storage write failed.
                 this._updateStatus(this._lastWriteOk !== false
                     ? t('videoNotesSaved', 'Saved locally.')
-                    : t('videoNotesSaveFailed', 'Couldn\u2019t save \u2014 storage full or unavailable.'));
+                    : t('videoNotesSaveFailed', 'Couldn\u2019t save. Storage is full or unavailable.'));
                 this._updateCount(text);
             },
 

@@ -65,7 +65,12 @@
                             rolledBack: false,
                             error,
                             rollbackError,
-                            canUndo: true
+                            // Report what is actually true. This straggler did
+                            // not write a checkpoint, so an undo is available
+                            // only if the newer operation left one. Claiming
+                            // canUndo unconditionally made the field disagree
+                            // with hasUndo() and with what undo() would do.
+                            canUndo: checkpoint !== null
                         };
                     }
                     checkpoint = {

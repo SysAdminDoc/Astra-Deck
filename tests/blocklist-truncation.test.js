@@ -49,14 +49,79 @@ test('a duplicate id collapses to one entry without shrinking the kept window', 
     assert.deepEqual(kept.map((row) => row.id), ['UCa', 'UCb']);
 });
 
-test('the sync payload uploads the newest blocklist entries', () => {
-    // The builder is not separately exported, so pin the direction at the
-    // source. `slice(0, cap)` here is the whole defect.
+test('every blocklist cap in settings-sync keeps the tail', () => {
+    // The first version of this pin forbade the single literal
+    // `sanitized.slice(0, domain.cap)` and missed three more head-truncations
+    // spelled `.slice(0, domain.cap)` on a continuation line: the payload
+    // validator, the undo-state normalizer, and localStateFromItems, which
+    // builds the Undo snapshot. So undoing a sync restored the OLDEST entries
+    // and permanently lost everything hidden since. Count every cap instead of
+    // naming one.
     const source = fs.readFileSync(path.join(repoRoot, 'extension', 'core', 'settings-sync.js'), 'utf8');
-    assert.ok(source.includes('sanitized.slice(-domain.cap)'),
-        'buildBlocklists must keep the tail of each list');
-    assert.ok(!source.includes('sanitized.slice(0, domain.cap)'),
-        'cutting from the front drops what the user just hid');
+    const head = source.match(/\.slice\(0,\s*domain\.cap\)/g) || [];
+    const tail = source.match(/\.slice\(-domain\.cap\)/g) || [];
+    assert.deepEqual(head, [], 'no blocklist cap may cut from the front');
+    assert.ok(tail.length >= 4,
+        'the payload builder, the validator, the undo normalizer and the local-state reader must all keep the tail');
+});
+
+test('the runtime writers keep the channel the user just blocked', () => {
+    // ytkit.js has its own sanitizers, injected into video-hider. They broke at
+    // the limit while walking from the front, and `_normalizeBlockedChannels`
+    // hands them the list with no pre-slice, so `[...channels, record]` on a
+    // full list dropped the new record and kept the oldest one. The earlier fix
+    // only touched persisted-domains.js and settings-sync.js, which are the
+    // export and upload paths, not the writer the feature actually runs.
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+
+    const extract = (name) => {
+        const at = source.indexOf('function ' + name + '(');
+        assert.ok(at > -1, name + ' must exist');
+        let depth = 0;
+        for (let i = source.indexOf('{', at); i < source.length; i += 1) {
+            if (source[i] === '{') depth += 1;
+            else if (source[i] === '}') {
+                depth -= 1;
+                if (depth === 0) return source.slice(at, i + 1);
+            }
+        }
+        throw new Error('unbalanced ' + name);
+    };
+
+    for (const name of ['sanitizeImportedVideoIdList', 'sanitizeImportedBlockedChannels']) {
+        const body = extract(name);
+        assert.match(body, /return sanitized\.slice\(-/, name + ' must keep the newest entries');
+        assert.ok(!/if \(sanitized\.length >= /.test(body),
+            name + ' must not stop walking at the cap, which keeps the oldest');
+    }
+
+    // Run the real thing rather than trusting the shape.
+    const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+    // eslint-disable-next-line no-new-func
+    const build = new Function('IMPORT_LIMITS', 'VIDEO_ID_PATTERN',
+        'normalizeBlockedChannelRecord', 'getBlockedChannelDedupeKey',
+        '"use strict";'
+        + extract('sanitizeImportedVideoIdList') + '\n'
+        + extract('sanitizeImportedBlockedChannels') + '\n'
+        + 'return { sanitizeImportedVideoIdList, sanitizeImportedBlockedChannels };');
+    const api = build(
+        { hiddenVideos: 5000, blockedChannels: 2000 },
+        VIDEO_ID_PATTERN,
+        (entry) => (entry && typeof entry.id === 'string' ? entry : null),
+        (record) => (record ? String(record.id) : '')
+    );
+
+    const ids = Array.from({ length: 5001 }, (_, index) => 'v' + String(index).padStart(10, '0'));
+    const keptIds = api.sanitizeImportedVideoIdList(ids);
+    assert.equal(keptIds.length, 5000);
+    assert.equal(keptIds[keptIds.length - 1], ids[5000],
+        'the video the user just hid must survive');
+
+    const channels = Array.from({ length: 2001 }, (_, index) => ({ id: 'UC' + index }));
+    const keptChannels = api.sanitizeImportedBlockedChannels(channels);
+    assert.equal(keptChannels.length, 2000);
+    assert.equal(keptChannels[keptChannels.length - 1].id, 'UC2000',
+        'the channel the user just blocked must survive');
 });
 
 test('the write path and the sync path agree on which end is newest', () => {
