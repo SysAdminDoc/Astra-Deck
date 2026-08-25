@@ -293,13 +293,13 @@
                 if (rateLimited) {
                     const remainingSec = Math.max(1, Math.ceil((60000 - windowAge) / 1000));
                     offline.textContent = t('ui_rydPaused', 'RYD paused');
-                    offline.title = t('ui_rydPausedTitleTpl', 'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.')
+                    offline.title = t('ui_rydPausedTitleTpl', 'Return YouTube Dislike is paused. Rate limited at {used}/{limit} per minute. Resumes in {seconds}s.')
                         .replace('{used}', String(_budgetWindow.count))
                         .replace('{limit}', String(_BUDGET_PER_MIN))
                         .replace('{seconds}', String(remainingSec));
                 } else {
                     offline.textContent = t('ui_rydOff', 'RYD off');
-                    offline.title = t('ui_rydUnavailableTitle', 'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.');
+                    offline.title = t('ui_rydUnavailableTitle', 'Return YouTube Dislike is unavailable. The API didn’t return a usable response, so check your network or try again later.');
                 }
                 dislikeButton.appendChild(offline);
                 _pillEl = offline;

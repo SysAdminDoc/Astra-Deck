@@ -94,7 +94,7 @@ test('describeDegradation stays silent for healthy services and describes degrad
     });
     const limitedDesc = health.describeDegradation(limited);
     assert.equal(limitedDesc.feature, 'returnDislike');
-    assert.match(limitedDesc.text, /rate limited — retrying in 40s/);
+    assert.match(limitedDesc.text, /rate limited, retrying in 40s/);
 
     // Stale-cache fallback → cache age in the copy.
     health.recordSuccess('deArrow', { ts: 1000000 - 12 * 60000 });
@@ -112,7 +112,7 @@ test('describeDegradation stays silent for healthy services and describes degrad
     const permissionDenied = health.recordFailure('deArrow', permissionError);
     assert.equal(permissionDenied.lastErrorClass, 'permission-denied');
     assert.match(health.describeDegradation(permissionDenied).text,
-        /DeArrow: host access needed — re-enable in Settings/);
+        /DeArrow: host access needed, re-enable in Settings/);
 });
 
 test('health subscribers are notified on every record mutation and recovery', () => {

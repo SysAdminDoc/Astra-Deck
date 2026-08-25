@@ -353,7 +353,7 @@
             _createAttribution() {
                 const link = document.createElement('a');
                 const label = t('sponsorBlockDataAttribution', 'SponsorBlock data');
-                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API/database data — CC BY-NC-SA 4.0');
+                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API and database data, licensed CC BY-NC-SA 4.0');
                 link.className = 'ytkit-dearrow-attribution';
                 link.href = 'https://sponsor.ajay.app/';
                 link.target = '_blank';

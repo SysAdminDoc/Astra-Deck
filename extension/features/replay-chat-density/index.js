@@ -591,7 +591,7 @@
                     'replayChatDensityAria',
                     'Chat activity across this video. Click the chart to seek.'
                 ));
-                chartCanvas.title = t('replayChatDensityTitle', 'Chat activity — click to seek');
+                chartCanvas.title = t('replayChatDensityTitle', 'Chat activity. Click to seek.');
                 chartCanvas.addEventListener?.('click', seekFromEvent);
                 chartAnchor.appendChild(chartCanvas);
                 chartHost.appendChild(chartAnchor);

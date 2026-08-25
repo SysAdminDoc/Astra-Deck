@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const { sources } = require('../helpers/source');
 const fs = require('fs');
 const path = require('path');
+const { fakeNode, fakeTreeDocument } = require('../helpers/monolith');
 
 test('Player Dock monolith fallback stays as a descriptor stub', () => {
     const factoryIndex = sources.ytkit.indexOf(
@@ -32,27 +33,69 @@ test('Player Dock peeled module exports a factory function', () => {
         'Module must register on the YTKitFeatures namespace');
 });
 
-test('Player Dock creates player controls container', () => {
-    const modSrc = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
-    assert.match(modSrc, /ytkit-player-controls|ytkit-po-logo-wrap/,
-        'Player Dock must create a player controls container');
+test('Player Dock renders one accessible control group and tears it down', () => {
+    const originalDocument = globalThis.document;
+    const originalWindow = globalThis.window;
+    const rightControls = fakeNode({ tag: 'div', attributes: { class: 'ytp-right-controls' } });
+    const nativeCc = fakeNode({ tag: 'button', attributes: { 'aria-pressed': 'true' } });
+    const documentRef = fakeTreeDocument((selector) => {
+        if (selector === '.ytp-right-controls') return rightControls;
+        if (selector === '#movie_player .ytp-subtitles-button' || selector === '.ytp-subtitles-button') return nativeCc;
+        return null;
+    });
+    documentRef.body.appendChild(rightControls);
+    globalThis.document = documentRef;
+    globalThis.window = { location: { pathname: '/watch' } };
+    try {
+        const module = require('../../extension/features/player-dock/index.js');
+        const feature = module.createFloatingLogoOnWatchFeature({
+            appState: { settings: { showLocalDownloadButton: true, persistentSpeedValue: 1.5 } },
+            getFeatureById: () => null,
+            ICONS: new Proxy({}, { get: () => () => fakeNode({ tag: 'svg' }) }),
+            t: (_key, fallback) => fallback,
+            BRAND: { name: 'Astra Deck' }
+        });
+
+        feature._inject();
+        feature._inject();
+
+        assert.equal(rightControls.children.length, 1, 'repeat injection reuses the control group');
+        const controls = rightControls.children[0];
+        assert.equal(controls.id, 'ytkit-player-controls');
+        assert.equal(controls.children.length, 5);
+        const download = controls.querySelector('.ytkit-po-dl');
+        assert.equal(download.getAttribute('aria-haspopup'), 'dialog');
+        assert.equal(download.getAttribute('aria-expanded'), 'false');
+        const cc = controls.querySelector('.ytkit-po-cc');
+        assert.equal(cc.textContent, 'CC');
+        assert.equal(cc.getAttribute('aria-label'), 'Toggle closed captions');
+        assert.equal(cc.getAttribute('aria-pressed'), 'true');
+        const speed = controls.querySelector('.ytkit-po-speed');
+        assert.match(speed.textContent, /1\.5/);
+        assert.equal(speed.getAttribute('aria-haspopup'), 'menu');
+        const gear = controls.querySelector('.ytkit-po-gear');
+        assert.equal(gear.getAttribute('aria-label'), 'Open Astra Deck settings');
+
+        const click = [...cc.listeners.get('click')][0];
+        click({ stopPropagation() {} });
+        assert.equal(nativeCc.clicked, 1, 'the rendered mirror delegates to YouTube\'s control');
+
+        feature.destroy();
+        assert.equal(rightControls.children.length, 0);
+        assert.equal(feature._ccButton, null);
+    } finally {
+        globalThis.document = originalDocument;
+        globalThis.window = originalWindow;
+    }
 });
 
-test('Player Dock exposes a CC mirror for the hidden native subtitles control', () => {
-    const modSrc = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
+test('the userscript Player Dock keeps its CC mirror contract', () => {
     const coreSrc = fs.readFileSync(
         path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8');
-    for (const [label, source] of [
-        ['module', modSrc],
-        ['userscript core', coreSrc]
-    ]) {
-        assert.match(source, /ytkit-po-cc/, `${label} must render the CC button`);
-        assert.match(source, /\.ytp-subtitles-button/, `${label} must target YouTube's native subtitles button`);
-        assert.match(source, /nativeButton\.click\(\)/, `${label} must delegate CC clicks to YouTube`);
-        assert.match(source, /aria-pressed/, `${label} must expose the captions state accessibly`);
-    }
+    assert.match(coreSrc, /ytkit-po-cc/);
+    assert.match(coreSrc, /\.ytp-subtitles-button/);
+    assert.match(coreSrc, /nativeButton\.click\(\)/);
+    assert.match(coreSrc, /aria-pressed/);
 });
 
 test('Player Dock speed picker wakes persistent speed reapply task', () => {

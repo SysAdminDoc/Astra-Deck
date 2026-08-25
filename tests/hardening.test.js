@@ -5305,7 +5305,7 @@ test('researchTranscriptSearchPanel reuses __ytkitSearchTranscripts + __ytkitCle
         'must call the searcher helper exposed by researchTranscriptIndex');
     assert.match(block, /window\.__ytkitClearTranscriptIndex/,
         'must call the clear helper exposed by researchTranscriptIndex');
-    assert.match(block, /Transcript Search Index is off — enable it first\./,
+    assert.match(block, /Transcript Search Index is off\. Enable it first\./,
         'must surface a clear off-state message when the helpers are missing');
     // Result links must use noopener+noreferrer.
     assert.match(block, /link\.rel\s*=\s*'noopener noreferrer'/,
@@ -11649,7 +11649,7 @@ test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age t
     // Network-error branch keeps the old "RYD off" pill but with copy.
     assert.match(slice, /offline\.textContent = t\(['"]ui_rydOff['"],\s*['"]RYD off['"]\)/,
         'network-error path must still surface "RYD off" pill');
-    assert.match(slice, /API did not return a usable response/,
+    assert.match(slice, /API didn’t return a usable response/,
         'network-error title must explain the cause');
     // Cached-data path surfaces age in hours.
     assert.match(slice, /ui_rydCachedTitleHoursTpl/,

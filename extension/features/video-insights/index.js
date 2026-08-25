@@ -346,9 +346,9 @@
                 : (result.source === 'cache'
                     ? t('videoInsightsSourceCache', 'Cached YouTube details')
                     : (degraded === 'rate-limited' || degraded === 'retry-wait'
-                        ? t('videoInsightsSourceThrottled', 'From this page — YouTube lookup paused')
+                        ? t('videoInsightsSourceThrottled', 'From this page. YouTube lookup paused.')
                         : (degraded
-                            ? t('videoInsightsSourceDegraded', 'From this page — YouTube lookup unavailable')
+                            ? t('videoInsightsSourceDegraded', 'From this page. YouTube lookup unavailable.')
                             : t('videoInsightsSourcePage', 'From this page'))));
             header.append(title, source);
 

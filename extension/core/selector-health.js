@@ -221,7 +221,7 @@
         }
 
         if (top.length === 0) {
-            lines.push('No problem surfaces — every tracked selector is hitting.');
+            lines.push('No problem surfaces. Every tracked selector is hitting.');
             return lines.join('\n');
         }
 

@@ -997,7 +997,7 @@ async function refresh() {
     } catch (_) {
         // reason: an unexpected render failure must not strand the only
         // recovery control disabled with a "Refreshing..." status forever.
-        setRefreshStatus(t('spStatusRefreshFailed', 'Refresh failed — try again'), 'error');
+        setRefreshStatus(t('spStatusRefreshFailed', 'Refresh failed. Try again.'), 'error');
     } finally {
         setBusy(false);
     }

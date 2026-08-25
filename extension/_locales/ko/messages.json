@@ -126,7 +126,7 @@
     "message": "Saved summary restored"
   },
   "aiSummarySaveFailed": {
-    "message": "Saving the summary failed — it may disappear after a reload."
+    "message": "Saving the summary failed. It may disappear after a reload."
   },
   "aiSummarySearchLabel": {
     "message": "저장된 요약 검색"
@@ -136,6 +136,9 @@
   },
   "aiSummaryTitle": {
     "message": "AI 요약"
+  },
+  "aiSummaryByoFallbackNotice": {
+    "message": "대신 설정한 BYO 키 공급자를 사용합니다."
   },
   "aiSummaryTldr": {
     "message": "요약"
@@ -242,7 +245,7 @@
     "message": "Scrubbed {count}: {native} native, {count} hidden locally{capNote}"
   },
   "bulkScrubPartialTpl": {
-    "message": "YouTube’s menu item wasn’t found — 0 native, {count} hidden locally only{capNote}"
+    "message": "YouTube’s menu item wasn’t found. 0 native, {count} hidden locally only{capNote}"
   },
   "bulkScrubRunning": {
     "message": "A scrub session is already running."
@@ -572,7 +575,7 @@
     "message": "완료"
   },
   "dlHistoryCount": {
-    "message": "{start}–{end} of {filtered} filtered · {total} retained"
+    "message": "{start}-{end} of {filtered} filtered · {total} retained"
   },
   "dlHistoryDateFromAria": {
     "message": "Filter history saved from date"
@@ -819,7 +822,7 @@
     "message": "Check again"
   },
   "dlPopupFormatsRungUnavailableTpl": {
-    "message": "Not available — this video tops out at {max}p"
+    "message": "Not available. This video tops out at {max}p"
   },
   "dlPopupFormatsSummaryTpl": {
     "message": "{count} formats · {min}p to {max}p available"
@@ -1035,7 +1038,7 @@
     "message": "Copy URL"
   },
   "dlStreamEmpty": {
-    "message": "No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate."
+    "message": "No stream URLs parsed. YouTube may have served SABR-only formats. Astra Downloader handles those through youtube:formats=duplicate."
   },
   "dlStreamLinksTitle": {
     "message": "Stream Links"
@@ -4178,7 +4181,7 @@
     "message": "자동 (브라우저 기본값)"
   },
   "languageAutoDetectedTpl": {
-    "message": "{label} — {detected}"
+    "message": "{label} ({detected})"
   },
   "languageDe": {
     "message": "Deutsch (독일어)"
@@ -4267,6 +4270,9 @@
   },
   "optionalHostPermissionRevoked": {
     "message": "Optional host access was revoked. Re-enable the affected setting to grant access again."
+  },
+  "optionalHostPrevious": {
+    "message": "이전 호스트"
   },
   "optionalHostUnknown": {
     "message": "optional host access"
@@ -4761,7 +4767,7 @@
     "message": "Chat activity across this video. Click the chart to seek."
   },
   "replayChatDensityTitle": {
-    "message": "Chat activity — click to seek"
+    "message": "Chat activity. Click to seek."
   },
   "resetBtn": {
     "message": "재설정"
@@ -5010,7 +5016,7 @@
     "message": "Running"
   },
   "settingsDlRunningTpl": {
-    "message": "Running{version} — yt-dlp server ready"
+    "message": "Running{version}. yt-dlp server ready."
   },
   "settingsDlSetupDownloaded": {
     "message": "Setup downloaded. Open the file, finish installation, then refresh."
@@ -5310,10 +5316,10 @@
     "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
   },
   "settingsSyncOff": {
-    "message": "Off — this device only."
+    "message": "Off. This device only."
   },
   "settingsSyncOn": {
-    "message": "On — preferences and blocklists sync through your browser account."
+    "message": "On. Preferences and blocklists sync through your browser account."
   },
   "settingsSyncTitle": {
     "message": "Browser sync"
@@ -5896,7 +5902,7 @@
     "message": "Astra Downloader update ready: v{current} → v{latest}. Restarting with v{rollback} retained for automatic rollback."
   },
   "statusCompanionUpdateFailedTpl": {
-    "message": "Astra Downloader update failed — {error}"
+    "message": "Astra Downloader update failed. {error}"
   },
   "statusDiagClearFail": {
     "message": "로그를 지울 수 없습니다"
@@ -6064,7 +6070,7 @@
     "message": " Last-known-good: v{version}."
   },
   "statusYtdlpUpdateFailedTpl": {
-    "message": "yt-dlp update failed — {error}{recovery}"
+    "message": "yt-dlp update failed. {error}{recovery}"
   },
   "statusYtdlpUpdatedTpl": {
     "message": "yt-dlp updated to v{version}{from}"
@@ -6262,7 +6268,7 @@
     "message": "이 그룹 이름 지정"
   },
   "subscriptionGroupEmpty": {
-    "message": "No channels in this group yet — click Edit Channels to add some."
+    "message": "No channels in this group yet. Choose Edit Channels to add some."
   },
   "subscriptionGroupNameAria": {
     "message": "그룹 이름"
@@ -6310,7 +6316,7 @@
     "message": "{channels} rendered channels · {groups} groups"
   },
   "subscriptionHealthMoreTpl": {
-    "message": "+{count} more — use Stage Stale in the toolbar to stage every candidate at once."
+    "message": "+{count} more. Use Stage Stale in the toolbar to stage every candidate at once."
   },
   "subscriptionHealthNewEmpty": {
     "message": "Nothing new since your last visit stamp."
@@ -6412,7 +6418,7 @@
     "message": "Close the channel membership editor"
   },
   "subscriptionMembersEmpty": {
-    "message": "No channels rendered yet — scroll the subscriptions feed, then reopen this panel."
+    "message": "No channels rendered yet. Scroll the subscriptions feed, then reopen this panel."
   },
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "{channel}을(를) {group}에 포함"
@@ -6430,7 +6436,7 @@
     "message": "Channel removed from group"
   },
   "subscriptionMembersTitleTpl": {
-    "message": "Edit channels — {group}"
+    "message": "Edit channels in {group}"
   },
   "subscriptionMenuUnsubscribe": {
     "message": "Unsubscribe"
@@ -6772,7 +6778,7 @@
     "message": "Talks to the local Astra Downloader (127.0.0.1)"
   },
   "toggleRiskTooltip_store_risk": {
-    "message": "Higher review-policy sensitivity — github-full only"
+    "message": "Higher review-policy sensitivity. GitHub-full only."
   },
   "switchLabelOff": {
     "message": "꺼짐"
@@ -7810,7 +7816,7 @@
     "message": "캐시된 YouTube 세부정보"
   },
   "videoInsightsSourceDegraded": {
-    "message": "From this page — YouTube lookup unavailable"
+    "message": "From this page. YouTube lookup unavailable."
   },
   "videoInsightsSourceNetwork": {
     "message": "YouTube에서 새로고침됨"
@@ -7819,7 +7825,7 @@
     "message": "이 페이지에서 가져옴"
   },
   "videoInsightsSourceThrottled": {
-    "message": "From this page — YouTube lookup paused"
+    "message": "From this page. YouTube lookup paused."
   },
   "videoInsightsTags": {
     "message": "태그"

@@ -1317,9 +1317,9 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "subStyleTextShadow", category: "subtitles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     Object.freeze({ key: "aiVideoSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "aiSummaryEndpoint", category: "research-ai", type: "string", defaultValue: "https://api.openai.com/v1/chat/completions", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary endpoint URL", descriptionKey: "Chat-completions endpoint — OpenAI, Anthropic, Gemini, or local Ollama." }),
+    Object.freeze({ key: "aiSummaryEndpoint", category: "research-ai", type: "string", defaultValue: "https://api.openai.com/v1/chat/completions", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary endpoint URL", descriptionKey: "Chat-completions endpoint for OpenAI, Anthropic, Gemini, or a local Ollama." }),
     Object.freeze({ key: "aiSummaryModel", category: "research-ai", type: "string", defaultValue: "gpt-4o-mini", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "aiSummaryProvider", category: "research-ai", type: "string", defaultValue: "openai", enum: Object.freeze(["openai","anthropic","gemini","ollama"]), risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary provider", descriptionKey: "Provider id — openai, anthropic, gemini, or ollama (local)." }),
+    Object.freeze({ key: "aiSummaryProvider", category: "research-ai", type: "string", defaultValue: "openai", enum: Object.freeze(["openai","anthropic","gemini","ollama"]), risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary provider", descriptionKey: "Provider id: openai, anthropic, gemini, or ollama (local)." }),
 
     Object.freeze({ key: "copyChapterMarkdown", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "chapterJumpButtons", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -5346,10 +5346,10 @@ if (typeof globalThis !== "undefined") {
         } else {
             for (const highlight of bundle.highlights) {
                 const kind = highlight.kind === 'bookmark' ? 'Bookmark' : 'Summary';
-                const source = highlight.sourceText ? ` — _Transcript:_ ${escapeMarkdown(highlight.sourceText)}` : '';
+                const source = highlight.sourceText ? ` _Transcript:_ ${escapeMarkdown(highlight.sourceText)}` : '';
                 const note = highlight.note && highlight.note !== highlight.text
-                    ? ` — _Note:_ ${escapeMarkdown(highlight.note)}` : '';
-                lines.push(`- **${kind}** [${highlight.timestamp}](${highlight.url}) — ${escapeMarkdown(highlight.text)}${source}${note}`);
+                    ? ` _Note:_ ${escapeMarkdown(highlight.note)}` : '';
+                lines.push(`- **${kind}** [${highlight.timestamp}](${highlight.url}) ${escapeMarkdown(highlight.text)}${source}${note}`);
             }
             lines.push('');
         }
@@ -6007,7 +6007,7 @@ if (typeof globalThis !== "undefined") {
             artifactsClean = clean;
             artifactsCleanSource = null;
             const onWriteFailure = () => {
-                showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444');
+                showToast(t('aiSummarySaveFailed', 'Saving the summary failed. It may disappear after a reload.'), '#ef4444');
             };
             try {
                 if (typeof options.writeArtifactStore === 'function') {
@@ -6399,7 +6399,7 @@ if (typeof globalThis !== "undefined") {
                         this._showPanel(`On-device summary (no provider credential)\n\n${localSummary}`);
                         return;
                     }
-                    const fallbackNotice = t('feature_aiVideoSummary_desc', 'On-device Summarizer unavailable; using the configured BYO-key provider.');
+                    const fallbackNotice = t('aiSummaryByoFallbackNotice', 'Using your configured BYO-key provider instead.');
                     showToast(fallbackNotice, '#f59e0b', { tone: 'warning' });
                     this._showPanel(`${fallbackNotice}\n\n${transcript.prepared.truncated
                         ? t('aiSummaryCallingTruncated', 'Calling AI provider with the first 120,000 transcript characters…')
@@ -6625,7 +6625,7 @@ if (typeof globalThis !== "undefined") {
         'rate-limited': 'rate limited',
         'server-error': 'server error',
         'client-error': 'request rejected',
-        'permission-denied': 'host access needed — re-enable in Settings',
+        'permission-denied': 'host access needed, re-enable in Settings',
         'invalid-payload': 'unexpected response',
         'network-error': 'network error',
         'no-data': 'nothing for this video',
@@ -6697,7 +6697,7 @@ if (typeof globalThis !== "undefined") {
         if (record.state === 'rate-limited' || Number(record.cooldownUntilTs) > effectiveNow) {
             const resetMs = record.requestBudget?.resetMs;
             parts.push(Number.isFinite(resetMs) && resetMs > 0
-                ? `rate limited — retrying in ${formatAge(resetMs)}`
+                ? `rate limited, retrying in ${formatAge(resetMs)}`
                 : 'rate limited');
         } else if (record.state !== 'ok') {
             parts.push(reason);
@@ -7125,7 +7125,7 @@ if (typeof globalThis !== "undefined") {
         }
 
         if (top.length === 0) {
-            lines.push('No problem surfaces — every tracked selector is hitting.');
+            lines.push('No problem surfaces. Every tracked selector is hitting.');
             return lines.join('\n');
         }
 
@@ -9712,7 +9712,7 @@ if (typeof globalThis !== "undefined") {
         const entry = normalizeScheduleEntry(schedule);
         if (!entry) return null;
         const everyDay = entry.days.length === 7;
-        const window = `${entry.start}–${entry.end}`;
+        const window = `${entry.start}-${entry.end}`;
         if (everyDay) {
             return t('featureScheduleEveryDayTpl', 'Active {window} every day').replace('{window}', window);
         }
@@ -23045,7 +23045,7 @@ if (typeof globalThis !== "undefined") {
                         if (candidates.length > 12) {
                             const more = document.createElement('div');
                             more.className = 'ytkit-sub-digest-empty';
-                            more.textContent = t('subscriptionHealthMoreTpl', '+{count} more — use Stage Stale in the toolbar to stage every candidate at once.')
+                            more.textContent = t('subscriptionHealthMoreTpl', '+{count} more. Use Stage Stale in the toolbar to stage every candidate at once.')
                                 .replace('{count}', String(candidates.length - 12));
                             staleList.appendChild(more);
                         }
@@ -23963,7 +23963,7 @@ if (typeof globalThis !== "undefined") {
                 if (!titles.length) {
                     if (typeof showToast === 'function') showToast(t(
                         'subscriptionAiTagsNoCards',
-                        'No matching cards rendered yet — scroll the feed and try again.'
+                        'No matching cards rendered yet. Scroll the feed, then try again.'
                     ), '#f59e0b');
                     return;
                 }
@@ -24537,7 +24537,7 @@ if (typeof globalThis !== "undefined") {
                 const notice = document.createElement('div');
                 notice.className = 'ytkit-sub-group-empty';
                 notice.setAttribute('role', 'status');
-                notice.textContent = t('subscriptionGroupEmpty', 'No channels in this group yet — click Edit Channels to add some.');
+                notice.textContent = t('subscriptionGroupEmpty', 'No channels in this group yet. Choose Edit Channels to add some.');
                 this._toolbar.insertAdjacentElement('afterend', notice);
             },
 
@@ -24596,7 +24596,7 @@ if (typeof globalThis !== "undefined") {
                 const titleWrap = document.createElement('div');
                 const title = document.createElement('h3');
                 title.className = 'ytkit-sub-members-title';
-                title.textContent = t('subscriptionMembersTitleTpl', 'Edit channels — {group}')
+                title.textContent = t('subscriptionMembersTitleTpl', 'Edit channels in {group}')
                     .replace('{group}', group.name || groupId);
                 const meta = document.createElement('div');
                 meta.className = 'ytkit-sub-members-meta';
@@ -24645,7 +24645,7 @@ if (typeof globalThis !== "undefined") {
                 if (!channels.size) {
                     const empty = document.createElement('div');
                     empty.className = 'ytkit-sub-members-empty';
-                    empty.textContent = t('subscriptionMembersEmpty', 'No channels rendered yet — scroll the subscriptions feed, then reopen this panel.');
+                    empty.textContent = t('subscriptionMembersEmpty', 'No channels rendered yet. Scroll the subscriptions feed, then reopen this panel.');
                     list.appendChild(empty);
                 }
 
@@ -28232,7 +28232,7 @@ function buildSettingsPanel() {
 
                     if (result.ok) {
                         banner.dataset.state = 'ready';
-                        text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                        text.textContent = t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                             .replace('{version}', result.version ? ` (v${result.version})` : '');
                         // Add a "Check" refresh button
                         const refreshBtn = makeBannerButton(t('commonRefresh', 'Refresh'));
@@ -28243,7 +28243,7 @@ function buildSettingsPanel() {
                             const r = await MediaDLManager.check(true);
                             banner.dataset.state = r.ok ? 'ready' : 'missing';
                             text.textContent = r.ok
-                                ? t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                                ? t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                                     .replace('{version}', r.version ? ` (v${r.version})` : '')
                                 : t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');
                             refreshBtn.textContent = t('commonRefresh', 'Refresh');
@@ -28270,7 +28270,7 @@ function buildSettingsPanel() {
                             const r = await MediaDLManager.tryAutoStart();
                             if (r.ok) {
                                 banner.dataset.state = 'ready';
-                                text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                                text.textContent = t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                                     .replace('{version}', r.version ? ` (v${r.version})` : '');
                                 startBtn.textContent = t('settingsDlRunning', 'Running');
                                 startBtn.classList.add('is-success');
@@ -29581,7 +29581,7 @@ function attachUIEventListeners() {
                             ).replace('{featureName}', getFeatureName(feature) || featureId);
                             showToast(t(
                                 'settingsAutoDisabledConflictTpl',
-                                'Auto-disabled {features} — {reason}'
+                                'Auto-disabled {features}. {reason}'
                             ).replace('{features}', conflictNames).replace('{reason}', conflictReason), '#f59e0b', { duration: 5 });
                         }
                     }
@@ -30050,7 +30050,7 @@ function attachUIEventListeners() {
                     const v = parseFloat(appState?.settings?.persistentSpeedValue) || 1;
                     const lbl = _formatSpeedLabel(v);
                     speedBtn.textContent = lbl;
-                    speedBtn.title = t('speedBtnTitleTpl', `Default playback speed: ${lbl} — applies to every video`).replace('{speed}', lbl);
+                    speedBtn.title = t('speedBtnTitleTpl', `Default playback speed: ${lbl}. Applies to every video.`).replace('{speed}', lbl);
                     speedBtn.setAttribute('aria-label', t('speedBtnAriaTpl', `Default playback speed ${lbl}. Click to change.`).replace('{speed}', lbl));
                 };
                 _syncSpeedBtnLabel();
@@ -30903,13 +30903,13 @@ function attachUIEventListeners() {
                 if (rateLimited) {
                     const remainingSec = Math.max(1, Math.ceil((60000 - windowAge) / 1000));
                     offline.textContent = t('ui_rydPaused', 'RYD paused');
-                    offline.title = t('ui_rydPausedTitleTpl', 'Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s.')
+                    offline.title = t('ui_rydPausedTitleTpl', 'Return YouTube Dislike is paused. Rate limited at {used}/{limit} per minute. Resumes in {seconds}s.')
                         .replace('{used}', String(_budgetWindow.count))
                         .replace('{limit}', String(_BUDGET_PER_MIN))
                         .replace('{seconds}', String(remainingSec));
                 } else {
                     offline.textContent = t('ui_rydOff', 'RYD off');
-                    offline.title = t('ui_rydUnavailableTitle', 'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.');
+                    offline.title = t('ui_rydUnavailableTitle', 'Return YouTube Dislike is unavailable. The API didn’t return a usable response, so check your network or try again later.');
                 }
                 dislikeButton.appendChild(offline);
                 _pillEl = offline;
@@ -32035,7 +32035,7 @@ function attachUIEventListeners() {
             _createAttribution() {
                 const link = document.createElement('a');
                 const label = t('sponsorBlockDataAttribution', 'SponsorBlock data');
-                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API/database data — CC BY-NC-SA 4.0');
+                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API and database data, licensed CC BY-NC-SA 4.0');
                 link.className = 'ytkit-sb-attribution';
                 link.href = 'https://sponsor.ajay.app/';
                 link.target = '_blank';
@@ -32619,7 +32619,7 @@ function attachUIEventListeners() {
             _createAttribution() {
                 const link = document.createElement('a');
                 const label = t('sponsorBlockDataAttribution', 'SponsorBlock data');
-                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API/database data — CC BY-NC-SA 4.0');
+                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API and database data, licensed CC BY-NC-SA 4.0');
                 link.className = 'ytkit-dearrow-attribution';
                 link.href = 'https://sponsor.ajay.app/';
                 link.target = '_blank';

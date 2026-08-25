@@ -69,7 +69,9 @@ test('the one destructive action that cannot be undone says so', () => {
     // popup holds no copy to restore. The contract is honesty, not a fake undo.
     assert.ok(block.includes("t('aiCredentialDeleted'"),
         'the delete confirmation must go through the locale key');
-    assert.match(block, /cannot be undone/,
+    // The guard is that an irreversible action says so, not one exact spelling.
+    // The source string is single-quoted, so the contraction arrives escaped.
+    assert.match(block, /can(?:no|\\?')t be undone/,
         'an irreversible action must not read like the reversible ones');
     assert.doesNotMatch(block, /toastActionUndo|action:\s*\{/,
         'deleteAiCredential must not offer an undo it cannot honour');
@@ -111,7 +113,7 @@ test('the popup keeps the focus cycle its aria-modal body promises', () => {
 
 test('the irreversibility warning is localized, not English-only', () => {
     const en = JSON.parse(read('extension', '_locales', 'en', 'messages.json'));
-    assert.match(en.aiCredentialDeleted.message, /cannot be undone/);
+    assert.match(en.aiCredentialDeleted.message, /can(?:no|')t be undone/);
     for (const locale of ['de', 'es', 'fr', 'it', 'pt_BR', 'ru', 'ja', 'ko', 'ar', 'zh_CN']) {
         const messages = JSON.parse(read('extension', '_locales', locale, 'messages.json'));
         assert.notEqual(messages.aiCredentialDeleted.message, en.aiCredentialDeleted.message,

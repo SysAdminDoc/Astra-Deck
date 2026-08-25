@@ -9,7 +9,7 @@
     "message": "Credential could not be deleted."
   },
   "aiCredentialDeleted": {
-    "message": "AI credential deleted. This cannot be undone — re-enter the key to use AI features again."
+    "message": "AI credential deleted. This can't be undone, so re-enter the key to use AI features again."
   },
   "aiCredentialInputPlaceholder": {
     "message": "Paste your API key"
@@ -126,7 +126,7 @@
     "message": "Saved summary restored"
   },
   "aiSummarySaveFailed": {
-    "message": "Saving the summary failed — it may disappear after a reload."
+    "message": "Saving the summary failed. It may disappear after a reload."
   },
   "aiSummarySearchLabel": {
     "message": "Search saved summaries"
@@ -136,6 +136,9 @@
   },
   "aiSummaryTitle": {
     "message": "AI Summary"
+  },
+  "aiSummaryByoFallbackNotice": {
+    "message": "Using your configured BYO-key provider instead."
   },
   "aiSummaryTldr": {
     "message": "TL;DR"
@@ -242,7 +245,7 @@
     "message": "Scrubbed {count}: {native} native, {count} hidden locally{capNote}"
   },
   "bulkScrubPartialTpl": {
-    "message": "YouTube’s menu item wasn’t found — 0 native, {count} hidden locally only{capNote}"
+    "message": "YouTube’s menu item wasn’t found. 0 native, {count} hidden locally only{capNote}"
   },
   "bulkScrubRunning": {
     "message": "A scrub session is already running."
@@ -572,7 +575,7 @@
     "message": "Complete"
   },
   "dlHistoryCount": {
-    "message": "{start}–{end} of {filtered} filtered · {total} retained"
+    "message": "{start}-{end} of {filtered} filtered · {total} retained"
   },
   "dlHistoryDateFromAria": {
     "message": "Filter history saved from date"
@@ -819,7 +822,7 @@
     "message": "Check again"
   },
   "dlPopupFormatsRungUnavailableTpl": {
-    "message": "Not available — this video tops out at {max}p"
+    "message": "Not available. This video tops out at {max}p"
   },
   "dlPopupFormatsSummaryTpl": {
     "message": "{count} formats · {min}p to {max}p available"
@@ -972,7 +975,7 @@
     "message": "Ready"
   },
   "dlProgressReconnectingCopy": {
-    "message": "Momentary hiccup with Astra Downloader — retrying automatically."
+    "message": "Momentary hiccup with Astra Downloader. Retrying automatically."
   },
   "dlProgressSkippedDefault": {
     "message": "Nothing was downloaded."
@@ -1035,7 +1038,7 @@
     "message": "Copy URL"
   },
   "dlStreamEmpty": {
-    "message": "No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate."
+    "message": "No stream URLs parsed. YouTube may have served SABR-only formats. Astra Downloader handles those through youtube:formats=duplicate."
   },
   "dlStreamLinksTitle": {
     "message": "Stream Links"
@@ -1128,7 +1131,7 @@
     "message": "Copy report"
   },
   "externalHealthCopyDone": {
-    "message": "Copied — paste into a GitHub issue."
+    "message": "Copied. Paste it into a GitHub issue."
   },
   "externalHealthCopyFail": {
     "message": "Could not copy."
@@ -1380,7 +1383,7 @@
     "message": "Anti-Translate (Original Titles + Descriptions)"
   },
   "feature_astraContextMenu_desc": {
-    "message": "Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click."
+    "message": "Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off. It adds a contextmenu listener and never blocks the native YouTube right-click."
   },
   "feature_astraContextMenu_name": {
     "message": "Astra Context Menu"
@@ -1596,7 +1599,7 @@
     "message": "Enhanced Channel Info"
   },
   "feature_chapterJumpButtons_desc": {
-    "message": "Prev/Next chapter buttons in the player right-controls — skip to the previous or next chapter"
+    "message": "Prev/Next chapter buttons in the player right-controls, so you can skip to the previous or next chapter"
   },
   "feature_chapterJumpButtons_name": {
     "message": "Chapter Jump Buttons"
@@ -1896,7 +1899,7 @@
     "message": "Condense Comments"
   },
   "feature_copyChapterMarkdown_desc": {
-    "message": "Copy all video chapters as a markdown timestamp list — button in player controls"
+    "message": "Copy all video chapters as a markdown timestamp list, from a button in the player controls"
   },
   "feature_copyChapterMarkdown_name": {
     "message": "Copy Chapters as Markdown"
@@ -1980,7 +1983,7 @@
     "message": "Title Format"
   },
   "feature_deArrowCasualMode_desc": {
-    "message": "Keep descriptive titles unchanged — only replace titles with crowd-submitted DeArrow alternatives"
+    "message": "Keep descriptive titles unchanged and only replace titles that have crowd-submitted DeArrow alternatives"
   },
   "feature_deArrowCasualMode_name": {
     "message": "Casual Mode"
@@ -2016,7 +2019,7 @@
     "message": "Debug Mode"
   },
   "feature_denseMode_desc": {
-    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube’s native layout — only our own panels, chips, pills, and toolbars."
+    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. It doesn’t change YouTube’s native layout, only our own panels, chips, pills, and toolbars."
   },
   "feature_denseMode_name": {
     "message": "Dense Mode"
@@ -2046,7 +2049,7 @@
     "message": "Disable Infinite Scroll"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting."
+    "message": "Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization, which runs in a Web Audio node an extension can’t reach, so quiet videos stay quiet. Only the volume slider stops drifting."
   },
   "feature_disableLoudnessNormalization_name": {
     "message": "Keep Volume At Full"
@@ -2088,7 +2091,7 @@
     "message": "Downloader Health Pills"
   },
   "feature_downloadHistoryPanel_desc": {
-    "message": "Adds a \"History\" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session."
+    "message": "Adds a \"History\" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local only, fetched from the local /history endpoint once per session."
   },
   "feature_downloadHistoryPanel_name": {
     "message": "Download History Panel"
@@ -2106,7 +2109,7 @@
     "message": "Screenshot Format"
   },
   "feature_downloadStreamLinksPanel_desc": {
-    "message": "Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off."
+    "message": "Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local only, no telemetry. Useful for yt-dlp or VLC handoff. Default off."
   },
   "feature_downloadStreamLinksPanel_name": {
     "message": "Stream Links Panel"
@@ -2274,7 +2277,7 @@
     "message": "Live Region For Toasts"
   },
   "feature_grayscaleThumbnails_desc": {
-    "message": "Shows thumbnails in grayscale to reduce visual distraction — color restores on hover"
+    "message": "Shows thumbnails in grayscale to reduce visual distraction. Color comes back on hover."
   },
   "feature_grayscaleThumbnails_name": {
     "message": "Grayscale Thumbnails"
@@ -2748,7 +2751,7 @@
     "message": "Hide Watched Videos"
   },
   "feature_homepageGridAlign_desc": {
-    "message": "Force uniform thumbnail grid on the homepage — prevents misaligned rows caused by variable title/metadata heights"
+    "message": "Force a uniform thumbnail grid on the homepage. Prevents misaligned rows caused by variable title and metadata heights."
   },
   "feature_homepageGridAlign_name": {
     "message": "Homepage Grid Align"
@@ -2850,13 +2853,13 @@
     "message": "Mini Player Bar"
   },
   "feature_monetizationIndicator_desc": {
-    "message": "Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available."
+    "message": "Adds a pill under the title showing whether the video is monetized (has ads or a sponsorship overlay) or not. It’s a heuristic built from the paid promotion overlay, the sponsorship card, and SponsorBlock category data when available."
   },
   "feature_monetizationIndicator_name": {
     "message": "Monetization Indicator"
   },
   "feature_monoToStereo_desc": {
-    "message": "Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones"
+    "message": "Center mono audio equally in both ears. Fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones."
   },
   "feature_monoToStereo_name": {
     "message": "Mono to Stereo"
@@ -3120,7 +3123,7 @@
     "message": "Preload Comments"
   },
   "feature_premiumLiveChat_desc": {
-    "message": "Refine live chat with a polished header, elevated message rows, and a premium composer."
+    "message": "Refine live chat with a polished header, raised message rows, and a better composer."
   },
   "feature_premiumLiveChat_name": {
     "message": "Premium Live Chat"
@@ -3528,13 +3531,13 @@
     "message": "SponsorBlock API Host"
   },
   "feature_sponsorBlockCanonicalHost_label": {
-    "message": "Canonical — sponsor.ajay.app"
+    "message": "Canonical (sponsor.ajay.app)"
   },
   "feature_sponsorBlockDisabled_label": {
     "message": "Disabled"
   },
   "feature_sponsorBlockMirrorHost_label": {
-    "message": "Mirror — sponsorblock.kavin.rocks"
+    "message": "Mirror (sponsorblock.kavin.rocks)"
   },
   "feature_sponsorBlockMirrorUrl_desc": {
     "message": "Try this approved mirror once when the primary API host fails."
@@ -3609,13 +3612,13 @@
     "message": "Subscriptions Grid"
   },
   "feature_subtitleDownload_desc": {
-    "message": "One-click SRT download of the active caption track — standalone player button, no sidebar required"
+    "message": "One-click SRT download of the active caption track. It’s a standalone player button, so no sidebar is required."
   },
   "feature_subtitleDownload_name": {
     "message": "Subtitle Download (SRT)"
   },
   "feature_subtitleStyling_desc": {
-    "message": "Override YouTube caption appearance — font size/family/color, background, position, shadow"
+    "message": "Override YouTube caption appearance: font size, family, and color, plus background, position, and shadow"
   },
   "feature_subtitleStyling_name": {
     "message": "Subtitle Styling"
@@ -3699,13 +3702,13 @@
     "message": "Transcript Sidebar"
   },
   "feature_uiFontFamily_desc": {
-    "message": "Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that."
+    "message": "Override the interface typeface. A short curated list rather than a free-text field, because an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that."
   },
   "feature_uiFontFamily_name": {
     "message": "UI Font"
   },
   "feature_uiFontSize_desc": {
-    "message": "Override the base interface font size (0 = YouTube default, otherwise 8–20px)"
+    "message": "Override the base interface font size (0 = YouTube default, otherwise 8 to 20px)"
   },
   "feature_uiFontSize_name": {
     "message": "UI Font Size"
@@ -3717,7 +3720,7 @@
     "message": "UI Style"
   },
   "feature_videoAgeColors_desc": {
-    "message": "Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red)"
+    "message": "Color-coded thumbnail borders by upload age: fresh (green), week (blue), month (yellow), year (orange), ancient (red)"
   },
   "feature_videoAgeColors_name": {
     "message": "Video Age Color Coding"
@@ -3729,7 +3732,7 @@
     "message": "Player Download Menu"
   },
   "feature_videoFlip_desc": {
-    "message": "Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings"
+    "message": "Mirror the video horizontally or vertically. Useful for mirrored dance tutorials, text readability, or flipped recordings."
   },
   "feature_videoFlip_name": {
     "message": "Video Flip"
@@ -3759,13 +3762,13 @@
     "message": "Resolution Badge on Thumbnails"
   },
   "feature_videoRotation_desc": {
-    "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
+    "message": "Rotate the video 90, 180, or 270 degrees via CSS transform. Useful for sideways phone recordings."
   },
   "feature_videoRotation_name": {
     "message": "Video Rotation"
   },
   "feature_videoScreenshot_desc": {
-    "message": "Capture the current video frame as a PNG image — copies to clipboard and downloads"
+    "message": "Capture the current video frame as a PNG image. It copies to the clipboard and downloads."
   },
   "feature_videoScreenshot_name": {
     "message": "Video Screenshot"
@@ -3789,7 +3792,7 @@
     "message": "Videos Per Row"
   },
   "feature_vlcMpvHandoff_desc": {
-    "message": "GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off."
+    "message": "GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS. Astra Deck never runs binaries directly. Default off."
   },
   "feature_vlcMpvHandoff_name": {
     "message": "VLC / MPV Stream Handoff"
@@ -4178,7 +4181,7 @@
     "message": "Auto (browser default)"
   },
   "languageAutoDetectedTpl": {
-    "message": "{label} — {detected}"
+    "message": "{label} ({detected})"
   },
   "languageDe": {
     "message": "Deutsch (German)"
@@ -4268,6 +4271,9 @@
   "optionalHostPermissionRevoked": {
     "message": "Optional host access was revoked. Re-enable the affected setting to grant access again."
   },
+  "optionalHostPrevious": {
+    "message": "the previous host"
+  },
   "optionalHostUnknown": {
     "message": "optional host access"
   },
@@ -4339,7 +4345,7 @@
     "message": "Settings"
   },
   "photosensitiveFlashDetected": {
-    "message": "Flashing content detected — dimmed"
+    "message": "Flashing content detected. Player dimmed."
   },
   "playbackStatsDataChecking": {
     "message": "Checking with Astra Downloader…"
@@ -4596,7 +4602,7 @@
     "message": "Cap Infinite Scroll"
   },
   "qt_githubFullProfile_desc": {
-    "message": "Unlock github-full toggles (e.g. Cobalt, AI keys)"
+    "message": "Turn on github-full toggles such as Cobalt and AI keys"
   },
   "qt_githubFullProfile_name": {
     "message": "GitHub-Full Profile"
@@ -4761,7 +4767,7 @@
     "message": "Chat activity across this video. Click the chart to seek."
   },
   "replayChatDensityTitle": {
-    "message": "Chat activity — click to seek"
+    "message": "Chat activity. Click to seek."
   },
   "resetBtn": {
     "message": "Reset"
@@ -4908,7 +4914,7 @@
     "message": "Copy report"
   },
   "selectorHealthCopyDone": {
-    "message": "Copied — paste into a GitHub issue."
+    "message": "Copied. Paste it into a GitHub issue."
   },
   "selectorHealthCopyFail": {
     "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
@@ -4917,7 +4923,7 @@
     "message": "Open a YouTube tab to build the report."
   },
   "selectorHealthCopyNoSnap": {
-    "message": "No snapshot available — the page may still be loading."
+    "message": "No snapshot available. The page may still be loading."
   },
   "selectorHealthCopyPending": {
     "message": "Building report…"
@@ -4959,7 +4965,7 @@
     "message": "Video Player"
   },
   "settingsAutoDisabledConflictTpl": {
-    "message": "Auto-disabled {features} — {reason}"
+    "message": "Auto-disabled {features}. {reason}"
   },
   "settingsCategoryAriaTpl": {
     "message": "{category}. {summary}"
@@ -5010,7 +5016,7 @@
     "message": "Running"
   },
   "settingsDlRunningTpl": {
-    "message": "Running{version} — yt-dlp server ready"
+    "message": "Running{version}. yt-dlp server ready."
   },
   "settingsDlSetupDownloaded": {
     "message": "Setup downloaded. Open the file, finish installation, then refresh."
@@ -5298,10 +5304,10 @@
     "message": "Optional: sync validated preferences and Video Hider blocklists through your browser account. Secrets and consent stay local."
   },
   "settingsSyncOff": {
-    "message": "Off — this device only."
+    "message": "Off. This device only."
   },
   "settingsSyncOn": {
-    "message": "On — preferences and blocklists sync through your browser account."
+    "message": "On. Preferences and blocklists sync through your browser account."
   },
   "settingsSyncTitle": {
     "message": "Browser sync"
@@ -5337,10 +5343,10 @@
     "message": "Snooze 5 minutes"
   },
   "sidebarDocTitle": {
-    "message": "Astra Deck — Firefox Sidebar"
+    "message": "Astra Deck: Firefox Sidebar"
   },
   "sidepanelDocTitle": {
-    "message": "Astra Deck — Dashboard"
+    "message": "Astra Deck: Dashboard"
   },
   "sleepTimerHint": {
     "message": "Pause playback after the selected number of minutes.",
@@ -5699,7 +5705,7 @@
     "message": "Open YouTube for live diagnostics"
   },
   "spStatusRefreshFailed": {
-    "message": "Refresh failed — try again"
+    "message": "Refresh failed. Try again."
   },
   "spStatusRefreshing": {
     "message": "Refreshing…"
@@ -5732,7 +5738,7 @@
     "message": "Default playback speed {speed}. Click to change."
   },
   "speedBtnTitleTpl": {
-    "message": "Default playback speed: {speed} — applies to every video"
+    "message": "Default playback speed: {speed}. Applies to every video."
   },
   "speedPopupAria": {
     "message": "Default playback speed"
@@ -5747,7 +5753,7 @@
     "message": "SponsorBlock data"
   },
   "sponsorBlockDataAttributionTitle": {
-    "message": "SponsorBlock API/database data — CC BY-NC-SA 4.0"
+    "message": "SponsorBlock API and database data, licensed CC BY-NC-SA 4.0"
   },
   "sponsorCachedSegmentTitleTpl": {
     "message": "{label} (cached at {time})"
@@ -5762,10 +5768,10 @@
     "message": "Sponsored description"
   },
   "sponsoredFilterHideTpl": {
-    "message": "Hide {label} — {reason}"
+    "message": "Hide {label} ({reason})"
   },
   "sponsoredFilterShowTpl": {
-    "message": "Show {label} — {reason}"
+    "message": "Show {label} ({reason})"
   },
   "sponsoredFilterSponsorReason": {
     "message": "sponsor disclosure"
@@ -5875,7 +5881,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "Clipboard unavailable — see browser console."
+    "message": "Clipboard unavailable. Check the browser console for details."
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."
@@ -5884,7 +5890,7 @@
     "message": "Astra Downloader update ready: v{current} → v{latest}. Restarting with v{rollback} retained for automatic rollback."
   },
   "statusCompanionUpdateFailedTpl": {
-    "message": "Astra Downloader update failed — {error}"
+    "message": "Astra Downloader update failed. {error}"
   },
   "statusDiagClearFail": {
     "message": "Could not clear log"
@@ -5908,7 +5914,7 @@
     "message": "Import failed"
   },
   "statusImportNotBackup": {
-    "message": "That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an \"exportVersion\" field."
+    "message": "That file is not an Astra Deck backup. Choose the .json file produced by Export. A valid backup contains an \"exportVersion\" field."
   },
   "statusImportPreviewApplyTpl": {
     "message": "Import preview: {preview}. Applying with rollback…"
@@ -5926,7 +5932,7 @@
     "message": "{status} {preview}"
   },
   "statusImportUndoExpired": {
-    "message": "Undo Import is no longer available - the undo point expired after 7 days."
+    "message": "Undo Import is no longer available. The undo point expired after 7 days."
   },
   "statusImportUndoFail": {
     "message": "Undo Import failed"
@@ -5935,7 +5941,7 @@
     "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
   },
   "statusMediadlReenabled": {
-    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
+    "message": "Astra Downloader install prompts re-enabled. Reload a YouTube tab to see them."
   },
   "statusOpenDashboardFail": {
     "message": "Could not open dashboard"
@@ -5965,13 +5971,13 @@
     "message": "Reset stopped. Astra Deck could not save an undo point to extension storage, so export a backup first."
   },
   "statusResetUndoExpired": {
-    "message": "Undo no longer available — the undo point expired after 7 days."
+    "message": "Undo is no longer available. The undo point expired after 7 days."
   },
   "statusResetUndoFail": {
     "message": "Undo failed"
   },
   "statusResetUndone": {
-    "message": "Reset undone — all data restored."
+    "message": "Reset undone. All data restored."
   },
   "statusSettingsImportFailed": {
     "message": "Import failed while applying data; previous state was restored."
@@ -5998,7 +6004,7 @@
     "message": "Update failed."
   },
   "statusUpdateYtdlpNoTab": {
-    "message": "Open a YouTube tab first — the popup needs it to reach the Astra Downloader."
+    "message": "Open a YouTube tab first. The popup needs one to reach Astra Downloader."
   },
   "statusWelcomePresetFail": {
     "message": "Could not apply preset"
@@ -6052,7 +6058,7 @@
     "message": " Last-known-good: v{version}."
   },
   "statusYtdlpUpdateFailedTpl": {
-    "message": "yt-dlp update failed — {error}{recovery}"
+    "message": "yt-dlp update failed. {error}{recovery}"
   },
   "statusYtdlpUpdatedTpl": {
     "message": "yt-dlp updated to v{version}{from}"
@@ -6085,7 +6091,7 @@
     "message": "Video actions"
   },
   "storageBannerCorruptionTpl": {
-    "message": "Storage data malformed — Reset to recover."
+    "message": "Storage data is malformed. Choose Reset to recover."
   },
   "storageBannerHardTpl": {
     "message": "Astra Deck is storing {size}. Trimming the largest lists below keeps it fast."
@@ -6103,7 +6109,7 @@
     "message": "Storage usage high"
   },
   "storagePreloadFailed": {
-    "message": "Astra Deck could not read your saved settings. This page is running on defaults — reload to try again."
+    "message": "Astra Deck could not read your saved settings. This page is running on defaults, so reload to try again."
   },
   "storageStatsAriaLabel": {
     "message": "Storage statistics"
@@ -6121,7 +6127,7 @@
     "message": "Tag generation failed: {error}"
   },
   "subscriptionAiTagsNoCards": {
-    "message": "No matching cards rendered yet — scroll the feed and try again."
+    "message": "No matching cards rendered yet. Scroll the feed, then try again."
   },
   "subscriptionAiTagsNoUsable": {
     "message": "Summarizer returned no usable tags."
@@ -6250,7 +6256,7 @@
     "message": "Name this group"
   },
   "subscriptionGroupEmpty": {
-    "message": "No channels in this group yet — click Edit Channels to add some."
+    "message": "No channels in this group yet. Choose Edit Channels to add some."
   },
   "subscriptionGroupNameAria": {
     "message": "Group name"
@@ -6298,7 +6304,7 @@
     "message": "{channels} rendered channels · {groups} groups"
   },
   "subscriptionHealthMoreTpl": {
-    "message": "+{count} more — use Stage Stale in the toolbar to stage every candidate at once."
+    "message": "+{count} more. Use Stage Stale in the toolbar to stage every candidate at once."
   },
   "subscriptionHealthNewEmpty": {
     "message": "Nothing new since your last visit stamp."
@@ -6400,7 +6406,7 @@
     "message": "Close the channel membership editor"
   },
   "subscriptionMembersEmpty": {
-    "message": "No channels rendered yet — scroll the subscriptions feed, then reopen this panel."
+    "message": "No channels rendered yet. Scroll the subscriptions feed, then reopen this panel."
   },
   "subscriptionMembersIncludeChannelAriaTpl": {
     "message": "Include {channel} in {group}"
@@ -6418,7 +6424,7 @@
     "message": "Channel removed from group"
   },
   "subscriptionMembersTitleTpl": {
-    "message": "Edit channels — {group}"
+    "message": "Edit channels in {group}"
   },
   "subscriptionMenuUnsubscribe": {
     "message": "Unsubscribe"
@@ -6760,7 +6766,7 @@
     "message": "Talks to the local Astra Downloader (127.0.0.1)"
   },
   "toggleRiskTooltip_store_risk": {
-    "message": "Higher review-policy sensitivity — github-full only"
+    "message": "Higher review-policy sensitivity. GitHub-full only."
   },
   "switchLabelOff": {
     "message": "off"
@@ -7078,7 +7084,7 @@
     "message": "RYD paused"
   },
   "ui_rydPausedTitleTpl": {
-    "message": "Return YouTube Dislike paused — rate-limited ({used}/{limit}/min). Resumes in {seconds}s."
+    "message": "Return YouTube Dislike is paused. Rate limited at {used}/{limit} per minute. Resumes in {seconds}s."
   },
   "ui_rydRatioTitleTpl": {
     "message": "Like ratio uses estimated Return YouTube Dislike counts. {estimate}"
@@ -7090,7 +7096,7 @@
     "message": "Estimated from {sample} recorded votes."
   },
   "ui_rydUnavailableTitle": {
-    "message": "Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later."
+    "message": "Return YouTube Dislike is unavailable. The API didn’t return a usable response, so check your network or try again later."
   },
   "undo": {
     "message": "Undo"
@@ -7687,7 +7693,7 @@
     "message": "Watch pages"
   },
   "videoHiderShowFilterReasonDesc": {
-    "message": "Show a small note beside every card Astra Deck hides — from Video Hider, Hide Collaborations, Hide planned livestreams, or Remove Shorts — naming the feature and the rule that matched."
+    "message": "Show a small note beside every card Astra Deck hides, whether it came from Video Hider, Hide Collaborations, Hide planned livestreams, or Remove Shorts. The note names the feature and the rule that matched."
   },
   "videoHiderShowFilterReasonTitle": {
     "message": "Explain hidden cards"
@@ -7798,7 +7804,7 @@
     "message": "Cached YouTube details"
   },
   "videoInsightsSourceDegraded": {
-    "message": "From this page — YouTube lookup unavailable"
+    "message": "From this page. YouTube lookup unavailable."
   },
   "videoInsightsSourceNetwork": {
     "message": "Refreshed from YouTube"
@@ -7807,7 +7813,7 @@
     "message": "From this page"
   },
   "videoInsightsSourceThrottled": {
-    "message": "From this page — YouTube lookup paused"
+    "message": "From this page. YouTube lookup paused."
   },
   "videoInsightsTags": {
     "message": "Tags"
@@ -7873,7 +7879,7 @@
     "message": "Video note restored"
   },
   "videoNotesSaveFailed": {
-    "message": "Couldn’t save — storage full or unavailable."
+    "message": "Couldn’t save. Storage is full or unavailable."
   },
   "videoNotesSaved": {
     "message": "Saved locally."
@@ -7894,7 +7900,7 @@
     "message": "Nothing to remove"
   },
   "watchLaterRemoveFailed": {
-    "message": "Couldn’t remove {count} video(s) — YouTube’s menu item wasn’t found."
+    "message": "Couldn’t remove {count} video(s). YouTube’s menu item wasn’t found."
   },
   "watchLaterRemoveWatched": {
     "message": "Remove Watched"
@@ -8011,7 +8017,7 @@
     "description": "Stat tile label: total watch time over 30 days"
   },
   "whaTitle": {
-    "message": "Watch Time — Last 30 Days",
+    "message": "Watch Time, Last 30 Days",
     "description": "Heading of the watch-time dashboard overlay"
   },
   "whatsNewDetailFromTpl": {
@@ -8117,7 +8123,7 @@
     "message": "Remove matched (max {limit}/run)"
   },
   "wlwbRemovedRemainingTpl": {
-    "message": "— {count} still match, run again"
+    "message": "{count} still match, so run it again"
   },
   "wlwbRemovedToastTpl": {
     "message": "Removed {count} video(s){remaining}. Recovery list is in the removal log."
@@ -8138,7 +8144,7 @@
     "message": "{percent}% · {duration} · {age}"
   },
   "wlwbRowTitleTpl": {
-    "message": "{title} — {channel} ({percent}% watched)"
+    "message": "{title} by {channel} ({percent}% watched)"
   },
   "wlwbSortAria": {
     "message": "Preview sort order"
@@ -8153,7 +8159,7 @@
     "message": "Shortest first"
   },
   "wlwbSortTitle": {
-    "message": "Title A–Z"
+    "message": "Title A to Z"
   },
   "wlwbStateAny": {
     "message": "Any watched state"

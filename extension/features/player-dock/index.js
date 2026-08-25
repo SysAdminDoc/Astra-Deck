@@ -227,7 +227,7 @@
                     const v = parseFloat(appState?.settings?.persistentSpeedValue) || 1;
                     const lbl = _formatSpeedLabel(v);
                     speedBtn.textContent = lbl;
-                    speedBtn.title = t('speedBtnTitleTpl', `Default playback speed: ${lbl} — applies to every video`).replace('{speed}', lbl);
+                    speedBtn.title = t('speedBtnTitleTpl', `Default playback speed: ${lbl}. Applies to every video.`).replace('{speed}', lbl);
                     speedBtn.setAttribute('aria-label', t('speedBtnAriaTpl', `Default playback speed ${lbl}. Click to change.`).replace('{speed}', lbl));
                 };
                 _syncSpeedBtnLabel();

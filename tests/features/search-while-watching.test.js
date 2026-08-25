@@ -12,6 +12,7 @@ const {
     extractInitialData,
     safeYouTubePath
 } = require('../../extension/features/search-while-watching/index.js');
+const { collectFakeTree, fakeTreeDocument } = require('../helpers/monolith');
 
 const SEARCH_DATA = {
     contents: [
@@ -182,18 +183,51 @@ test('a cache hit invalidates an in-flight network search for the previous query
     feature.destroy();
 });
 
-test('search panel source preserves playback and covers keyboard, loading, and accessibility states', () => {
-    const source = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'search-while-watching', 'index.js'), 'utf8');
-    assert.match(source, /isWatchPagePath\(\)/);
-    assert.match(source, /addEventListener\?\.\('submit', _onSubmit, true\)/);
-    assert.match(source, /event\.key === 'Escape'/);
-    assert.match(source, /aria-modal', 'false'/);
-    assert.match(source, /aria-live', 'polite'/);
-    assert.match(source, /openInNewTab/);
-    assert.match(source, /location\?\.assign\?\./);
-    assert.match(source, /timeout: 12_000/);
-    assert.match(source, /prefers-reduced-motion:reduce/);
-    assert.match(source, /forced-colors:active/);
-    assert.doesNotMatch(source, /\.pause\(|backdrop-filter/);
+test('search panel renders loading, results, keyboard close, and teardown in the page tree', async () => {
+    let finishSearch;
+    const request = new Promise((resolve) => { finishSearch = resolve; });
+    const documentRef = fakeTreeDocument();
+    const feature = createSearchWhileWatchingFeature({
+        documentRef,
+        windowRef: { location: { assign() {} } },
+        appState: { settings: { openInNewTab: false } },
+        isWatchPagePath: () => true,
+        extensionFetchText: () => request,
+        injectStyle: () => ({ remove() {} })
+    });
+    feature.init();
+
+    feature._open('engineering');
+
+    const panel = documentRef.body.querySelector('.ytkit-search-watch-panel');
+    assert.ok(panel, 'the panel must attach to the document body');
+    assert.equal(panel.getAttribute('role'), 'dialog');
+    assert.equal(panel.getAttribute('aria-modal'), 'false');
+    assert.equal(panel.getAttribute('aria-labelledby'), 'ytkit-search-watch-title');
+    assert.equal(panel.hidden, false);
+    assert.equal(panel.querySelector('.ytkit-search-watch-status').dataset.state, 'loading');
+    assert.match(panel.querySelector('.ytkit-search-watch-status').textContent, /Searching/);
+    assert.equal(panel.querySelector('.ytkit-search-watch-status').getAttribute('aria-live'), 'polite');
+    assert.match(panel.querySelector('.ytkit-search-watch-hint').textContent, /current video/);
+
+    finishSearch({ text: searchHtml(SEARCH_DATA) });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const list = panel.querySelector('.ytkit-search-watch-results');
+    const rows = collectFakeTree(list, '.ytkit-search-watch-item');
+    assert.equal(rows.length, 3);
+    assert.equal(panel.querySelector('.ytkit-search-watch-status').dataset.state, 'ready');
+    assert.match(panel.querySelector('.ytkit-search-watch-status').textContent, /3 results/);
+    assert.equal(rows[0].querySelector('.ytkit-search-watch-result-title').textContent, 'A title with } braces');
+    assert.equal(rows[0].querySelector('.ytkit-search-watch-duration').textContent, '3:32');
+    assert.equal(rows[0].querySelector('.ytkit-search-watch-link').getAttribute('rel'), 'noopener noreferrer');
+
+    const escape = [...documentRef.listeners.get('keydown')][0];
+    let prevented = false;
+    escape({ key: 'Escape', preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.equal(panel.hidden, true);
+
+    feature.destroy();
+    assert.equal(documentRef.body.querySelector('.ytkit-search-watch-panel'), null);
 });

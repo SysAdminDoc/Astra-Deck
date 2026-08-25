@@ -65,7 +65,7 @@ test('the raw key is still available where power users expect it', () => {
     // Removing it would trade one usability problem for another: support
     // tickets need the storage key.
     const body = rowBuilder();
-    assert.match(body, /label\.title = overrideDesc\s*\?\s*`\$\{entry\.key\} — \$\{overrideDesc\}`\s*:\s*entry\.key;/,
+    assert.match(body, /label\.title = overrideDesc\s*\?\s*`\$\{entry\.key\}: \$\{overrideDesc\}`\s*:\s*entry\.key;/,
         'the row tooltip must still expose the storage key');
     assert.match(body, /row\.dataset\.key = entry\.key;/,
         'and the row must still be addressable by key');
