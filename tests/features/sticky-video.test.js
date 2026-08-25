@@ -56,6 +56,27 @@ function feature(deps = {}) {
     return loadModule().createStickyVideoFeature(deps);
 }
 
+function styleDeclaration(initial = {}) {
+    const values = new Map();
+    for (const [property, record] of Object.entries(initial)) {
+        values.set(property, typeof record === 'string'
+            ? { value: record, priority: '' }
+            : { value: record.value, priority: record.priority || '' });
+    }
+    return {
+        getPropertyValue: property => values.get(property)?.value || '',
+        getPropertyPriority: property => values.get(property)?.priority || '',
+        setProperty(property, value, priority = '') {
+            values.set(property, { value: String(value), priority: String(priority) });
+        },
+        removeProperty(property) {
+            const value = values.get(property)?.value || '';
+            values.delete(property);
+            return value;
+        }
+    };
+}
+
 // ── Panel-type resolution ──
 //
 // This is the decision that broke on premiered videos: a hidden/collapsed chat
@@ -181,4 +202,40 @@ test('stickyVideo destroy is safe to call before init and unregisters its nav ru
     } finally {
         globalThis.document = originalDocument;
     }
+});
+
+test('stickyVideo restores YouTube player geometry exactly after Theater Split', () => {
+    const f = feature();
+    const player = { style: styleDeclaration({ width: '1068px', height: '601px' }) };
+    const video = {
+        style: styleDeclaration({
+            width: '802px',
+            height: '602px',
+            left: '-11px',
+            'object-fit': { value: 'cover', priority: '' }
+        })
+    };
+
+    f._stashPlayerGeometry(player, ['position', 'width', 'height']);
+    f._stashPlayerGeometry(video, ['width', 'height', 'object-fit']);
+    player.style.setProperty('position', 'fixed', 'important');
+    player.style.setProperty('width', '100%', 'important');
+    player.style.setProperty('height', '100vh', 'important');
+    video.style.setProperty('width', '100%', 'important');
+    video.style.setProperty('height', '100%', 'important');
+    video.style.setProperty('object-fit', 'contain', 'important');
+
+    // A resize pass must not overwrite the first snapshot.
+    f._stashPlayerGeometry(video, ['width', 'height', 'object-fit']);
+    f._restorePlayerGeometry();
+
+    assert.equal(player.style.getPropertyValue('position'), '');
+    assert.equal(player.style.getPropertyValue('width'), '1068px');
+    assert.equal(player.style.getPropertyValue('height'), '601px');
+    assert.equal(player.style.getPropertyPriority('width'), '');
+    assert.equal(video.style.getPropertyValue('width'), '802px');
+    assert.equal(video.style.getPropertyValue('height'), '602px');
+    assert.equal(video.style.getPropertyValue('object-fit'), 'cover');
+    assert.equal(video.style.getPropertyValue('left'), '-11px', 'unowned geometry stays untouched');
+    assert.equal(f._playerGeometryStash.length, 0);
 });

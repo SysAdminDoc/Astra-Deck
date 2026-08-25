@@ -8416,6 +8416,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: var(--ytkit-watch-text) !important;
                     }
 
+                    /* Related content stays legible beside normal and native Theater players. */
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) :is(
+                        #related,
+                        ytd-watch-next-secondary-results-renderer,
+                        ytd-live-chat-frame#chat
+                    ) {
+                        border-color: var(--ytkit-watch-border) !important;
+                        background: transparent !important;
+                        color: var(--ytkit-watch-text) !important;
+                        color-scheme: inherit !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) :is(
+                        #related #video-title,
+                        #related #video-title-link,
+                        #related .ytLockupMetadataViewModelTitle,
+                        ytd-watch-next-secondary-results-renderer #video-title,
+                        ytd-watch-next-secondary-results-renderer .ytLockupMetadataViewModelTitle
+                    ) {
+                        color: var(--ytkit-watch-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-text) !important;
+                        opacity: 1 !important;
+                    }
+
+                    html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) :is(
+                        #related #metadata-line,
+                        #related #channel-name,
+                        #related .ytContentMetadataViewModelMetadataText,
+                        ytd-watch-next-secondary-results-renderer #metadata-line,
+                        ytd-watch-next-secondary-results-renderer .ytContentMetadataViewModelMetadataText
+                    ) {
+                        color: var(--ytkit-watch-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-muted) !important;
+                        opacity: 1 !important;
+                    }
+
                     /* Normal watch comments stay themed even when Studio Comments is disabled. */
                     html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments,
                     html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-comments#comments#comments ytd-comments-header-renderer {

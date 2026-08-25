@@ -191,26 +191,225 @@ async function openSettingsPanelFromBackground(backgroundClient) {
     })()`);
 }
 
-async function disableTheaterSplit(client, backgroundClient, timeoutMs) {
+async function setWatchSettingEnabled(client, backgroundClient, key, enabled, timeoutMs) {
     const opened = await openSettingsPanelFromBackground(backgroundClient);
     if (!opened) throw new Error('watch themes: settings panel did not open from the extension worker');
     await waitForExpression(
         client,
         "Boolean(document.querySelector('#ytkit-settings-panel'))",
         timeoutMs,
-        'settings panel before disabling Theater Split'
+        `settings panel before changing ${key}`
     );
-    const toggled = await evaluate(client, `(() => {
-        const toggle = document.querySelector('#ytkit-toggle-stickyVideo');
-        if (!toggle || !toggle.checked) return false;
-        toggle.click();
+    const result = await evaluate(client, `(() => {
+        const toggle = document.querySelector(${JSON.stringify(`#ytkit-toggle-${key}`)});
+        if (!toggle) return { found: false, checked: false };
+        if (toggle.checked !== ${enabled ? 'true' : 'false'}) toggle.click();
+        const checked = toggle.checked;
         document.querySelector('#ytkit-settings-panel .ytkit-close, #ytkit-close-footer')?.click();
-        return true;
+        return { found: true, checked };
     })()`);
-    if (!toggled) throw new Error('watch themes: Theater Split toggle was unavailable or already off');
+    if (!result?.found || result.checked !== enabled) {
+        throw new Error(`watch themes: ${key} could not be ${enabled ? 'enabled' : 'disabled'}`);
+    }
 }
 
-async function captureNormalWatchDetails(client, name) {
+async function setTheaterSplitEnabled(client, backgroundClient, enabled, timeoutMs) {
+    await setWatchSettingEnabled(client, backgroundClient, 'stickyVideo', enabled, timeoutMs);
+    await waitForExpression(
+        client,
+        enabled
+            ? "document.documentElement.classList.contains('ytkit-split-active') && Boolean(document.querySelector('#ytkit-split-wrapper'))"
+            : "!document.documentElement.classList.contains('ytkit-split-active') && !document.querySelector('#ytkit-split-wrapper')",
+        timeoutMs,
+        `${enabled ? 'mounted' : 'removed'} Theater Split layout`
+    );
+    await sleep(400);
+}
+
+async function revealRelatedWatchSurface(client, backgroundClient, timeoutMs) {
+    await setWatchSettingEnabled(client, backgroundClient, 'hideRelatedVideos', false, timeoutMs);
+    await waitForExpression(
+        client,
+        `(() => {
+            const candidates = document.querySelectorAll([
+                '#related .ytLockupMetadataViewModelTitle',
+                '#related #video-title',
+                'ytd-watch-next-secondary-results-renderer .ytLockupMetadataViewModelTitle',
+                'ytd-watch-next-secondary-results-renderer #video-title'
+            ].join(', '));
+            return [...candidates].some(node => {
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== 'none' && style.visibility !== 'hidden'
+                    && rect.width > 0 && rect.height > 0;
+            }) || [...document.querySelectorAll('ytd-live-chat-frame#chat:not([hidden])')]
+                .some(node => node.getBoundingClientRect().width > 0);
+        })()`,
+        timeoutMs,
+        'related videos or live chat after revealing the secondary watch surface'
+    );
+    await sleep(400);
+}
+
+async function captureWatchModeState(client) {
+    return evaluate(client, `(() => {
+        const root = document.documentElement;
+        const flexy = document.querySelector('ytd-watch-flexy');
+        const player = document.querySelector('#movie_player, ytd-player');
+        const metadata = document.querySelector('ytd-watch-metadata');
+        const rectOf = (node) => {
+            const rect = node?.getBoundingClientRect();
+            return rect ? {
+                x: rect.x,
+                y: rect.y,
+                top: rect.top,
+                right: rect.right,
+                bottom: rect.bottom,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height
+            } : null;
+        };
+        const overlapArea = (a, b) => {
+            if (!a || !b) return 0;
+            const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+            const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+            return width * height;
+        };
+        const staleGeometry = [];
+        const geometry = [
+            ['#player-container', ['position', 'top', 'left', 'width', 'height', 'z-index']],
+            ['#movie_player', ['width', 'height']],
+            ['#movie_player .html5-video-container', ['width', 'height']],
+            ['#movie_player video.html5-main-video', ['width', 'height', 'object-fit']],
+            ['ytd-player > #container', ['width', 'height', 'padding-bottom']]
+        ];
+        for (const [selector, properties] of geometry) {
+            const node = document.querySelector(selector);
+            if (!node) continue;
+            for (const property of properties) {
+                const value = node.style.getPropertyValue(property);
+                const priority = node.style.getPropertyPriority(property);
+                const astraValue = (property === 'position' && value === 'fixed')
+                    || (property === 'z-index' && value === '9998')
+                    || (property === 'height' && (value === '100%' || value === '100vh'))
+                    || (property === 'width' && value === '100%')
+                    || (property === 'object-fit' && value === 'contain')
+                    || (property === 'padding-bottom' && value === '0px');
+                if (priority === 'important' && astraValue) {
+                    staleGeometry.push(selector + ':' + property + '=' + value + '!important');
+                }
+            }
+        }
+        const fullBleedContainers = [
+            '#full-bleed-container',
+            '#player-full-bleed-container',
+            '#player-theater-container'
+        ].map(selector => {
+            const node = document.querySelector(selector);
+            const style = node ? getComputedStyle(node) : null;
+            const rect = rectOf(node);
+            return {
+                selector,
+                exists: Boolean(node),
+                visible: Boolean(node && style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0),
+                background: style?.backgroundColor || '',
+                pageToken: style?.getPropertyValue('--ytkit-native-theater-page').trim() || '',
+                textToken: style?.getPropertyValue('--ytkit-native-theater-text').trim() || '',
+                watchCanvas: style?.getPropertyValue('--ytkit-watch-canvas').trim() || '',
+                watchText: style?.getPropertyValue('--ytkit-watch-text').trim() || '',
+                rect
+            };
+        });
+        const playerRect = rectOf(player);
+        const metadataRect = rectOf(metadata);
+        const splitActive = root.classList.contains('ytkit-split-active');
+        const splitOpen = root.classList.contains('ytkit-split-open');
+        const theater = Boolean(flexy?.hasAttribute('theater'));
+        return {
+            mode: splitActive ? 'theater-split' : (theater ? 'native-theater' : 'normal'),
+            theater,
+            fullBleedPlayer: Boolean(
+                flexy?.hasAttribute('full-bleed-player')
+                || document.querySelector('#movie_player.ytp-full-bleed-player')
+            ),
+            splitActive,
+            splitOpen,
+            splitWrapper: Boolean(document.querySelector('#ytkit-split-wrapper')),
+            rootClasses: root.className,
+            colorScheme: getComputedStyle(root).colorScheme,
+            sizeButton: Boolean(document.querySelector('button.ytp-size-button, .ytp-size-button')),
+            fullscreen: Boolean(document.fullscreenElement),
+            staleGeometry,
+            fullBleedContainers,
+            playerRect,
+            metadataRect,
+            playerMetadataOverlap: overlapArea(playerRect, metadataRect),
+            viewport: { width: innerWidth, height: innerHeight },
+            scroll: {
+                top: document.scrollingElement?.scrollTop || 0,
+                height: document.scrollingElement?.scrollHeight || 0,
+                clientHeight: document.scrollingElement?.clientHeight || innerHeight
+            }
+        };
+    })()`);
+}
+
+function watchModeFailures(snapshot, expectedMode) {
+    const failures = [];
+    if (!snapshot || snapshot.mode !== expectedMode) {
+        failures.push(`expected ${expectedMode}, observed ${snapshot?.mode || 'no watch mode'}`);
+        return failures;
+    }
+    if (!snapshot.sizeButton || snapshot.fullscreen) {
+        failures.push('native size control is unavailable or fullscreen is active');
+    }
+    if (!snapshot.playerRect || snapshot.playerRect.width < 400 || snapshot.playerRect.height < 240) {
+        failures.push('player geometry is not usable');
+    }
+    if (expectedMode === 'theater-split') {
+        if (!snapshot.splitActive || !snapshot.splitWrapper) failures.push('Theater Split shell is incomplete');
+        if (snapshot.theater) failures.push('Theater Split unexpectedly toggled native Theater');
+    } else {
+        if (snapshot.splitActive || snapshot.splitOpen || snapshot.splitWrapper) {
+            failures.push('stale Theater Split classes or wrapper remain');
+        }
+        if (snapshot.staleGeometry?.length) {
+            failures.push(`stale Theater Split geometry remains: ${snapshot.staleGeometry.join(', ')}`);
+        }
+        if ((expectedMode === 'native-theater') !== snapshot.theater) {
+            failures.push('native Theater attribute does not match the requested mode');
+        }
+    }
+    return failures;
+}
+
+async function setNativeTheater(client, enabled, timeoutMs) {
+    const action = await evaluate(client, `(() => {
+        if (document.documentElement.classList.contains('ytkit-split-active')) {
+            return { ok: false, reason: 'Theater Split is active' };
+        }
+        if (document.fullscreenElement) return { ok: false, reason: 'fullscreen is active' };
+        const flexy = document.querySelector('ytd-watch-flexy');
+        const button = document.querySelector('button.ytp-size-button, .ytp-size-button');
+        if (!flexy || !button) return { ok: false, reason: 'native size control is missing' };
+        const current = flexy.hasAttribute('theater');
+        if (current !== ${enabled ? 'true' : 'false'}) button.click();
+        return { ok: true, clicked: current !== ${enabled ? 'true' : 'false'} };
+    })()`);
+    if (!action?.ok) throw new Error(`watch themes: ${action?.reason || 'native Theater toggle failed'}`);
+    await waitForExpression(
+        client,
+        `Boolean(document.querySelector('ytd-watch-flexy')) && document.querySelector('ytd-watch-flexy').hasAttribute('theater') === ${enabled ? 'true' : 'false'}`,
+        timeoutMs,
+        `${enabled ? 'native Theater' : 'normal watch'} layout`
+    );
+    await sleep(600);
+    return captureWatchModeState(client);
+}
+
+async function captureWatchDetails(client, name) {
+    const modeState = await captureWatchModeState(client);
     await evaluate(client, `(() => {
         const target = document.querySelector('#below, ytd-watch-metadata');
         if (!target) return false;
@@ -218,13 +417,56 @@ async function captureNormalWatchDetails(client, name) {
         return true;
     })()`);
     await sleep(500);
-    const details = await evaluate(client, `(() => {
+    const details = await evaluate(client, `(async () => {
         const target = document.querySelector('#below, ytd-watch-metadata');
         if (!target) return { available: false, visible: false, background: '', color: '', colorScheme: '' };
+        const rgba = (value) => {
+            const parts = String(value || '').match(/[0-9.]+/g)?.map(Number) || [];
+            return parts.length >= 3 ? [parts[0], parts[1], parts[2], parts[3] ?? 1] : null;
+        };
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const activeFlexy = document.querySelector('ytd-watch-flexy:not([hidden])');
+        const pickNode = (selector) => {
+            const candidates = [...document.querySelectorAll(selector)].filter(node => {
+                if (node.closest('[hidden], [aria-hidden="true"]')) return false;
+                const owner = node.closest('ytd-watch-flexy');
+                return !owner || !activeFlexy || owner === activeFlexy;
+            });
+            return candidates.find(node => {
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== 'none' && style.visibility !== 'hidden'
+                    && rect.width > 0 && rect.height > 0;
+            }) || candidates[0] || null;
+        };
+        const effectiveBackground = (node) => {
+            let current = node;
+            while (current) {
+                const value = getComputedStyle(current).backgroundColor;
+                const parsed = rgba(value);
+                if (parsed && parsed[3] > 0.98) return value;
+                current = current.parentElement;
+            }
+            return getComputedStyle(document.body).backgroundColor;
+        };
+        const luminance = (channel) => {
+            const value = channel / 255;
+            return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+        };
+        const contrast = (foreground, background) => {
+            const fg = rgba(foreground);
+            const bg = rgba(background);
+            if (!fg || !bg) return 0;
+            const fgLum = 0.2126 * luminance(fg[0]) + 0.7152 * luminance(fg[1]) + 0.0722 * luminance(fg[2]);
+            const bgLum = 0.2126 * luminance(bg[0]) + 0.7152 * luminance(bg[1]) + 0.0722 * luminance(bg[2]);
+            return (Math.max(fgLum, bgLum) + 0.05) / (Math.min(fgLum, bgLum) + 0.05);
+        };
         const inspect = (selector) => {
-            const node = document.querySelector(selector);
+            const node = pickNode(selector);
             if (!node) return null;
             const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            const effectiveGround = effectiveBackground(node);
             const whiteDescendants = [...node.querySelectorAll('*')].filter((child) => getComputedStyle(child).backgroundColor === 'rgb(255, 255, 255)').length;
             return {
                 selector,
@@ -232,13 +474,17 @@ async function captureNormalWatchDetails(client, name) {
                 color: style.color,
                 textFill: style.webkitTextFillColor,
                 background: style.backgroundColor,
+                effectiveBackground: effectiveGround,
+                contrast: contrast(style.color, effectiveGround),
                 backgroundImage: style.backgroundImage,
                 beforeBackground: getComputedStyle(node, '::before').backgroundColor,
                 afterBackground: getComputedStyle(node, '::after').backgroundColor,
                 whiteDescendants,
                 opacity: style.opacity,
                 display: style.display,
-                visibility: style.visibility
+                visibility: style.visibility,
+                width: rect.width,
+                height: rect.height
             };
         };
         const rect = target.getBoundingClientRect();
@@ -254,6 +500,38 @@ async function captureNormalWatchDetails(client, name) {
                 ? [...style.sheet.cssRules].filter((rule) => String(rule.selectorText || '').includes('#author-text#author-text#author-text')).map((rule) => rule.selectorText)
                 : []
         }));
+        const metadataSurfaces = [
+            'ytd-watch-metadata h1 yt-formatted-string, ytd-watch-metadata #title .yt-core-attributed-string, ytd-watch-metadata #title .ytAttributedStringHost, ytd-watch-metadata h1',
+            'ytd-watch-metadata #owner',
+            'ytd-watch-metadata #actions button, ytd-watch-metadata #owner button'
+        ].map(inspect);
+        const commentSelectors = [
+            'ytd-comments#comments',
+            'ytd-comments-header-renderer #count',
+            'ytd-comments-header-renderer #sort-menu',
+            'ytd-comment-view-model #author-text, ytd-comment-renderer #author-text',
+            'ytd-comment-view-model #content-text, ytd-comment-renderer #content-text',
+            'ytd-comment-view-model ytd-comment-engagement-bar button, ytd-comment-renderer ytd-comment-engagement-bar button'
+        ];
+        const commentTarget = pickNode(
+            'ytd-comment-view-model #content-text, ytd-comment-renderer #content-text, ytd-comments#comments'
+        );
+        commentTarget?.scrollIntoView({ block: 'center', behavior: 'instant' });
+        await delay(600);
+        const commentSurfaces = commentSelectors.map(inspect);
+        const relatedSelector = [
+            '#related .ytLockupMetadataViewModelTitle',
+            '#related #video-title',
+            'ytd-watch-next-secondary-results-renderer .ytLockupMetadataViewModelTitle',
+            'ytd-watch-next-secondary-results-renderer #video-title'
+        ].join(', ');
+        const liveChatSelector = 'ytd-live-chat-frame#chat:not([hidden]):not([aria-hidden="true"])';
+        const supportTarget = pickNode(relatedSelector) || pickNode(liveChatSelector);
+        supportTarget?.scrollIntoView({ block: 'center', behavior: 'instant' });
+        await delay(600);
+        const related = inspect(relatedSelector);
+        const liveChat = inspect(liveChatSelector);
+        const scrollingElement = document.scrollingElement;
         return {
             available: true,
             visible: rect.bottom > 56 && rect.top < window.innerHeight,
@@ -264,27 +542,94 @@ async function captureNormalWatchDetails(client, name) {
             premiumText: rootStyle.getPropertyValue('--ytkit-premium-text').trim(),
             authorProbeMatches: document.querySelectorAll(authorProbeSelector).length,
             featureStyles,
+            supportSurface: related
+                ? { type: 'related', ...related }
+                : (liveChat ? { type: 'live-chat', ...liveChat } : null),
+            scroll: {
+                top: scrollingElement?.scrollTop || 0,
+                height: scrollingElement?.scrollHeight || 0,
+                clientHeight: scrollingElement?.clientHeight || innerHeight
+            },
             surfaces: [
-                'ytd-watch-metadata',
-                'ytd-watch-metadata #owner',
-                'ytd-comments#comments',
-                'ytd-comments-header-renderer #count',
-                'ytd-comments-header-renderer #sort-menu',
-                'ytd-comment-view-model #author-text, ytd-comment-renderer #author-text',
-                'ytd-comment-view-model #content-text, ytd-comment-renderer #content-text',
-                'ytd-comment-view-model ytd-comment-engagement-bar button, ytd-comment-renderer ytd-comment-engagement-bar button',
-                'ytd-watch-metadata #actions button, ytd-watch-metadata #owner button'
-            ].map(inspect)
+                ...metadataSurfaces,
+                ...commentSurfaces,
+                related,
+                liveChat
+            ]
         };
     })()`);
+    details.modeState = modeState;
     await capture(client, name);
     return details;
+}
+
+function nativeTheaterFailures(details, label, expectedColorScheme) {
+    const failures = watchModeFailures(details?.modeState, 'native-theater')
+        .map(failure => `${label}: ${failure}`);
+    if (!details?.available || !details.visible) {
+        failures.push(`${label}: metadata cannot be reached by scrolling`);
+        return failures;
+    }
+    if (details.colorScheme !== expectedColorScheme) {
+        failures.push(`${label}: color-scheme is ${details.colorScheme || 'missing'}`);
+    }
+    const state = details.modeState;
+    const fullBleed = state.fullBleedContainers.filter(container => container.exists);
+    if (fullBleed.length < 2 || !fullBleed.some(container => container.visible)) {
+        failures.push(`${label}: full-bleed Theater containers are missing or collapsed`);
+    }
+    for (const container of fullBleed) {
+        if (!container.pageToken || !container.textToken
+            || !container.watchCanvas || !container.watchText) {
+            failures.push(`${label}: ${container.selector} is missing watch-theme tokens`);
+        }
+        if (container.pageToken !== container.watchCanvas || container.textToken !== container.watchText) {
+            failures.push(`${label}: ${container.selector} does not resolve the active watch-theme tokens`);
+        }
+    }
+    const player = state.playerRect;
+    const viewport = state.viewport;
+    if (!player || player.left < -2 || player.right > viewport.width + 2
+        || player.top < -2 || player.height > viewport.height + 2) {
+        failures.push(`${label}: native Theater player exceeds the viewport`);
+    }
+    if (state.playerMetadataOverlap > 1) {
+        failures.push(`${label}: native Theater player overlaps metadata`);
+    }
+    if (details.scroll.height <= details.scroll.clientHeight + 100 || details.scroll.top < 40) {
+        failures.push(`${label}: page scrolling cannot reach watch details`);
+    }
+    const title = details.surfaces.find(surface => surface?.selector.includes('ytd-watch-metadata h1'));
+    if (!title?.text || title.contrast < 4.5) failures.push(`${label}: metadata title is not readable`);
+    const author = details.surfaces.find(surface => surface?.selector.includes('#author-text'));
+    const content = details.surfaces.find(surface => surface?.selector.includes('#content-text'));
+    if (author || content) {
+        if (!author?.text || author.contrast < 4.5 || !content?.text || content.contrast < 4.5) {
+            failures.push(`${label}: rendered comment text is not readable`);
+        }
+    } else {
+        const count = details.surfaces.find(surface => surface?.selector.includes('#count'));
+        const sort = details.surfaces.find(surface => surface?.selector.includes('#sort-menu'));
+        if (!count?.text || count.contrast < 4.5 || !sort?.text || sort.contrast < 4.5) {
+            failures.push(`${label}: empty-comments state is not readable`);
+        }
+    }
+    const support = details.supportSurface;
+    if (!support || support.width < 120 || support.height < 24) {
+        failures.push(`${label}: related videos or live chat are unavailable`);
+    } else if (support.type === 'related' && (!support.text || support.contrast < 4.5)) {
+        failures.push(`${label}: related-video text is not readable`);
+    }
+    return failures;
 }
 
 async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     const failures = [];
 
     await setWatchTheme(client, true);
+    const initialSplitMode = await captureWatchModeState(client);
+    failures.push(...watchModeFailures(initialSplitMode, 'theater-split')
+        .map(failure => `watch themes: initial Theater Split: ${failure}`));
     await capture(client, 'watch-theater-collapsed-dark-1440x900');
 
     const playerBox = await evaluate(client, `(() => {
@@ -409,10 +754,12 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         failures.push('watch themes: Theater Split panel does not visibly change between dark and light');
     }
     const lightTextChannel = '23, 35, 53';
-    if (!splitLight.authorColor.includes(lightTextChannel) || !splitLight.authorFill.includes(lightTextChannel)) {
+    if (splitLight.authorColor
+        && (!splitLight.authorColor.includes(lightTextChannel) || !splitLight.authorFill.includes(lightTextChannel))) {
         failures.push('watch themes: light Theater Split author text is not using the light ink token');
     }
-    if (!splitLight.contentColor.includes(lightTextChannel) || !splitLight.contentFill.includes(lightTextChannel)) {
+    if (splitLight.contentColor
+        && (!splitLight.contentColor.includes(lightTextChannel) || !splitLight.contentFill.includes(lightTextChannel))) {
         failures.push('watch themes: light Theater Split comment text is not using the light ink token');
     }
     if (!splitLight.ownerBackground.includes('243, 246, 249') || splitLight.ownerBackgroundImage !== 'none') {
@@ -422,7 +769,7 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         ['dark Theater Split comment', split.contentBackground],
         ['light Theater Split comment', splitLight.contentBackground]
     ]) {
-        if (value !== 'rgba(0, 0, 0, 0)') failures.push(`watch themes: ${label} text retained a decorative background`);
+        if (value && value !== 'rgba(0, 0, 0, 0)') failures.push(`watch themes: ${label} text retained a decorative background`);
     }
     for (const [label, snapshot] of [
         ['dark Theater Split action', split],
@@ -437,20 +784,18 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     }
     await capture(client, 'watch-theater-split-light-1440x900');
 
-    await disableTheaterSplit(client, backgroundClient, timeoutMs);
-    await waitForExpression(
-        client,
-        "!document.documentElement.classList.contains('ytkit-split-active') && !document.querySelector('#ytkit-split-wrapper')",
-        timeoutMs,
-        'native watch layout after disabling Theater Split'
-    );
+    await setTheaterSplitEnabled(client, backgroundClient, false, timeoutMs);
     await evaluate(client, 'window.scrollTo(0, 0)');
     await sleep(750);
+    await revealRelatedWatchSurface(client, backgroundClient, timeoutMs);
+    const normalAfterSplit = await setNativeTheater(client, false, timeoutMs);
+    failures.push(...watchModeFailures(normalAfterSplit, 'normal')
+        .map(failure => `watch themes: Theater Split to normal: ${failure}`));
 
     await setWatchTheme(client, true);
     const normalDark = await pageSnapshot(client, 'watch-normal-dark');
     await capture(client, 'watch-normal-dark-1440x900');
-    const normalDarkDetails = await captureNormalWatchDetails(
+    const normalDarkDetails = await captureWatchDetails(
         client,
         'watch-normal-dark-details-1440x900'
     );
@@ -459,7 +804,7 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     await setWatchTheme(client, false);
     const normalLight = await pageSnapshot(client, 'watch-normal-light');
     await capture(client, 'watch-normal-light-1440x900');
-    const normalLightDetails = await captureNormalWatchDetails(
+    const normalLightDetails = await captureWatchDetails(
         client,
         'watch-normal-light-details-1440x900'
     );
@@ -485,7 +830,7 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     for (const details of [normalDarkDetails, normalLightDetails]) {
         const content = details.surfaces.find((surface) => surface?.selector.includes('#content-text'));
         const action = details.surfaces.find((surface) => surface?.selector.includes('ytd-comment-engagement-bar button'));
-        if (content?.background !== 'rgba(0, 0, 0, 0)') failures.push('watch themes: normal comment text retained a decorative background');
+        if (content && content.background !== 'rgba(0, 0, 0, 0)') failures.push('watch themes: normal comment text retained a decorative background');
         if (action?.background === 'rgb(255, 255, 255)'
             || action?.beforeBackground === 'rgb(255, 255, 255)'
             || action?.afterBackground === 'rgb(255, 255, 255)'
@@ -493,13 +838,83 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
             failures.push('watch themes: normal comment action resolved to a white block');
         }
     }
+
+    await evaluate(client, 'window.scrollTo(0, 0)');
+    await setWatchTheme(client, true);
+    const nativeDarkMode = await setNativeTheater(client, true, timeoutMs);
+    failures.push(...watchModeFailures(nativeDarkMode, 'native-theater')
+        .map(failure => `watch themes: native Theater dark: ${failure}`));
+    await capture(client, 'watch-native-theater-dark-1440x900');
+    const nativeDarkDetails = await captureWatchDetails(
+        client,
+        'watch-native-theater-dark-details-1440x900'
+    );
+
+    await evaluate(client, 'window.scrollTo(0, 0)');
+    await setWatchTheme(client, false);
+    const nativeLightMode = await captureWatchModeState(client);
+    failures.push(...watchModeFailures(nativeLightMode, 'native-theater')
+        .map(failure => `watch themes: native Theater light: ${failure}`));
+    await capture(client, 'watch-native-theater-light-1440x900');
+    const nativeLightDetails = await captureWatchDetails(
+        client,
+        'watch-native-theater-light-details-1440x900'
+    );
+    failures.push(
+        ...nativeTheaterFailures(nativeDarkDetails, 'watch themes: dark native Theater', 'dark'),
+        ...nativeTheaterFailures(nativeLightDetails, 'watch themes: light native Theater', 'light')
+    );
+    const darkFullBleed = nativeDarkMode.fullBleedContainers.find(container => container.selector === '#full-bleed-container');
+    const lightFullBleed = nativeLightMode.fullBleedContainers.find(container => container.selector === '#full-bleed-container');
+    if (!darkFullBleed?.pageToken || darkFullBleed.pageToken === lightFullBleed?.pageToken
+        || !darkFullBleed.textToken || darkFullBleed.textToken === lightFullBleed?.textToken) {
+        failures.push('watch themes: native Theater full-bleed tokens do not change between dark and light');
+    }
+
+    const transitionStates = [normalAfterSplit, nativeDarkMode];
+    await evaluate(client, 'window.scrollTo(0, 0)');
+    const normalAfterNative = await setNativeTheater(client, false, timeoutMs);
+    transitionStates.push(normalAfterNative);
+    failures.push(...watchModeFailures(normalAfterNative, 'normal')
+        .map(failure => `watch themes: native Theater to normal: ${failure}`));
+
+    await setTheaterSplitEnabled(client, backgroundClient, true, timeoutMs);
+    const splitAgain = await captureWatchModeState(client);
+    transitionStates.push(splitAgain);
+    failures.push(...watchModeFailures(splitAgain, 'theater-split')
+        .map(failure => `watch themes: normal to Theater Split: ${failure}`));
+
+    await setTheaterSplitEnabled(client, backgroundClient, false, timeoutMs);
+    const normalAfterSecondSplit = await captureWatchModeState(client);
+    transitionStates.push(normalAfterSecondSplit);
+    failures.push(...watchModeFailures(normalAfterSecondSplit, 'normal')
+        .map(failure => `watch themes: second Theater Split cleanup: ${failure}`));
+
+    const nativeAgain = await setNativeTheater(client, true, timeoutMs);
+    transitionStates.push(nativeAgain);
+    failures.push(...watchModeFailures(nativeAgain, 'native-theater')
+        .map(failure => `watch themes: second native Theater entry: ${failure}`));
+    const finalNormal = await setNativeTheater(client, false, timeoutMs);
+    transitionStates.push(finalNormal);
+    failures.push(...watchModeFailures(finalNormal, 'normal')
+        .map(failure => `watch themes: final normal cleanup: ${failure}`));
+
     const report = {
         split,
         splitLight,
         normalDark: normalDark.snapshot,
         normalLight: normalLight.snapshot,
         normalDarkDetails,
-        normalLightDetails
+        normalLightDetails,
+        nativeDarkDetails,
+        nativeLightDetails,
+        transitionModes: transitionStates.map(state => ({
+            mode: state.mode,
+            theater: state.theater,
+            splitActive: state.splitActive,
+            splitOpen: state.splitOpen,
+            staleGeometry: state.staleGeometry
+        }))
     };
     fs.writeFileSync(
         path.join(OUT_DIR, 'watch-theme-snapshot.json'),
@@ -737,7 +1152,7 @@ async function main(argv = process.argv.slice(2)) {
                 console.log(
                     `[smoke-zero-ads-live] PASS — ${result.browser} loaded ${result.extensionId}; `
                     + `${result.enabledRulesets.join(', ')} enabled; ${result.blockedRequests.length} ad request(s) blocked; `
-                    + 'home + SPA watch shells collapsed; live settings + masthead/search/player intact'
+                    + 'home + SPA watch shells collapsed; normal, native Theater, and Theater Split stayed intact'
                 );
                 console.log(`[smoke-zero-ads-live] screenshots: ${OUT_DIR}`);
                 return result;
@@ -760,4 +1175,17 @@ if (require.main === module) {
     });
 }
 
-module.exports = { AD_SELECTORS, AD_URL_RE, adEvents, main, pageSnapshot, parseArgs, verifyLiveSettings };
+module.exports = {
+    AD_SELECTORS,
+    AD_URL_RE,
+    adEvents,
+    captureWatchModeState,
+    main,
+    nativeTheaterFailures,
+    pageSnapshot,
+    parseArgs,
+    setNativeTheater,
+    setTheaterSplitEnabled,
+    verifyLiveSettings,
+    watchModeFailures
+};

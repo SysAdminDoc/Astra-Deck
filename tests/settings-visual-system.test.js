@@ -470,6 +470,12 @@ test('shared surface system covers the polished YouTube and injected UI families
         'normal watch masthead must use the shared surface hierarchy');
     assert.match(css, /html\.ytkit-watch-restyle ytd-comments#comments[\s\S]*background: var\(--ytkit-watch-panel\) !important/,
         'normal watch comments must use a bounded theme-aware panel');
+    assert.match(css, /--ytkit-watch-player-canvas:\s*#000000/,
+        'native Theater must keep the player canvas black in both page themes');
+    assert.match(css, /#full-bleed-container[\s\S]*--ytkit-native-theater-page:\s*var\(--ytkit-watch-canvas\)/,
+        'full-bleed variants must inherit the active watch-page canvas token');
+    assert.match(css, /ytd-watch-flexy:is\([\s\S]*\[theater\][\s\S]*\[full-bleed-player\][\s\S]*#player-full-bleed-container/,
+        'native Theater and full-bleed experiments must share the player-canvas rule');
     assert.match(css, /@media \(forced-colors: active\)/);
     assert.doesNotMatch(css, /(?:linear|radial)-gradient\(/,
         'premium surfaces must use flat fills');
