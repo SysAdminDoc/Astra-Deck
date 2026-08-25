@@ -2884,6 +2884,24 @@ if (typeof globalThis !== "undefined") {
     // Version 1 is intentionally the smallest cookie set yt-dlp's YouTube
     const PROTOCOL_VERSION = 1;
     const MINIMUM_COMPANION_API = 2;
+    const MINIMUM_ENDPOINT_PROOF_API = 3;
+    const ENDPOINT_PROOF = Object.freeze({
+        challengePattern: /^[a-f0-9]{32}$/,
+        proofPattern: /^[a-f0-9]{64}$/,
+        header: 'X-MDL-Endpoint-Challenge',
+        path: '/identity'
+    });
+
+    function isEndpointProofValid(challenge, nativeProof, endpointProof) {
+        if (typeof challenge !== 'string' || !ENDPOINT_PROOF.challengePattern.test(challenge)) return false;
+        if (typeof nativeProof !== 'string' || !ENDPOINT_PROOF.proofPattern.test(nativeProof)) return false;
+        if (typeof endpointProof !== 'string' || !ENDPOINT_PROOF.proofPattern.test(endpointProof)) return false;
+        let diff = 0;
+        for (let index = 0; index < nativeProof.length; index += 1) {
+            diff |= nativeProof.charCodeAt(index) ^ endpointProof.charCodeAt(index);
+        }
+        return diff === 0;
+    }
     const QUERY_DOMAIN = '.youtube.com';
     const ALLOWED_DOMAINS = Object.freeze(['.youtube.com', 'youtube.com']);
     const ALLOWED_COOKIE_NAMES = Object.freeze([
@@ -3043,6 +3061,9 @@ if (typeof globalThis !== "undefined") {
     return Object.freeze({
         PROTOCOL_VERSION,
         MINIMUM_COMPANION_API,
+        MINIMUM_ENDPOINT_PROOF_API,
+        ENDPOINT_PROOF,
+        isEndpointProofValid,
         QUERY_DOMAIN,
         ALLOWED_DOMAINS,
         ALLOWED_COOKIE_NAMES,

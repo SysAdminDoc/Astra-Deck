@@ -48,12 +48,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 117 | `true` on every entry |
-| `store-safe` | firefox | A | 117 | omitted |
-| `chromium-store` | chromium | B | 116 | `true` on every entry |
-| `chromium-store` | firefox | B | 116 | omitted |
-| `github-full` | chromium | A | 117 | `true` on every entry |
-| `github-full` | firefox | A | 117 | omitted |
+| `store-safe` | chromium | A | 118 | `true` on every entry |
+| `store-safe` | firefox | A | 118 | omitted |
+| `chromium-store` | chromium | B | 117 | `true` on every entry |
+| `chromium-store` | firefox | B | 117 | omitted |
+| `github-full` | chromium | A | 118 | `true` on every entry |
+| `github-full` | firefox | A | 118 | omitted |
 
 #### Resource set A
 
@@ -162,6 +162,7 @@ Entry 2 resource paths:
 - `core/youtube-thumbnails.js`
 - `core/feature-schedule.js`
 - `core/companion-ports.js`
+- `core/cookie-handoff.js`
 - `core/data-flow.js`
 - `core/toast.js`
 - `core/toast-dom.js`
@@ -301,6 +302,7 @@ Entry 2 resource paths:
 - `core/youtube-thumbnails.js`
 - `core/feature-schedule.js`
 - `core/companion-ports.js`
+- `core/cookie-handoff.js`
 - `core/data-flow.js`
 - `core/toast.js`
 - `core/toast-dom.js`

@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- Your YouTube sign-in cookies are no longer handed to whatever program happens
+  to be listening on the downloader's port. The extension already required proof
+  that Astra Downloader was installed, but nothing tied that to the thing it was
+  actually talking to, so another local program that grabbed the port first
+  would have received them. The downloader now has to answer a one-time question
+  only it can answer before any cookie is read. Anything that can't is refused,
+  and downloads without a signed-in session keep working as before.
+
 ### Added
 
 - The popup now shows what the saved transcripts are costing you, under the

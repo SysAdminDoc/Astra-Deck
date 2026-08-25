@@ -89,6 +89,7 @@ export const FOUNDATION_MODULES = Object.freeze(
         "core/youtube-thumbnails.js",
         "core/feature-schedule.js",
         "core/companion-ports.js",
+        "core/cookie-handoff.js",
         "core/data-flow.js",
         "core/toast.js",
         "core/toast-dom.js",
