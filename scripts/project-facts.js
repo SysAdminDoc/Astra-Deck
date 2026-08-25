@@ -188,7 +188,67 @@ function collectProjectFacts() {
         fullOnlyOrigins: Object.freeze(fullOnlyOrigins.map(entry => entry.origin)),
         colorThemes: Object.freeze(themeOptions.filter(name => name !== 'none')),
         themeControls: Object.freeze(['oledTheme', 'denseMode', 'tokenThemeBridge']),
-        compatibility: collectCompatibilityFacts(manifest, pageSource, musicSource, ytkitSource)
+        compatibility: collectCompatibilityFacts(manifest, pageSource, musicSource, ytkitSource),
+        semanticClaims: collectSemanticClaims(REPO_ROOT, packageJson, readText('extension/runtime-bootstrap.js'))
+    });
+}
+
+// The five claims documentation kept getting wrong, derived from the source
+// that decides them.
+//
+// A generated fact block was already current while the prose beside it said
+// Node 22 against an engines floor of >=24, called the popup the only settings
+// surface next to an in-page panel and a side panel, declared "Dark / OLED
+// only. Never ship a light theme." against a whole light lane with its own
+// gate and contrast probe, described feature modules as route-gated where the
+// bootstrap says route gating is deliberately absent, and promised an
+// attestation the local release path does not produce.
+//
+// Each of these is read from the thing that actually decides it, so the doc
+// check below compares prose against source rather than against another doc.
+function collectSemanticClaims(repoRoot, packageJson, bootstrapSource) {
+    const read = (relative) => {
+        const file = path.join(repoRoot, relative);
+        return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+    };
+
+    // Node floor: engines is the authority, .nvmrc has to agree with it.
+    const enginesFloor = String(packageJson.engines?.node || '').replace(/[^\d]/g, '');
+    const nvmrcFloor = String(read('.nvmrc')).trim().split('.')[0];
+    if (enginesFloor && nvmrcFloor && enginesFloor !== nvmrcFloor) {
+        throw new Error(`Node floor sources disagree: engines ${enginesFloor}, .nvmrc ${nvmrcFloor}`);
+    }
+
+    // Every surface a user can change a setting from.
+    const settingsSurfaces = [];
+    if (fs.existsSync(path.join(repoRoot, 'extension', 'popup.html'))) settingsSurfaces.push('popup');
+    if (fs.existsSync(path.join(repoRoot, 'extension', 'features', 'settings-panel', 'index.js'))) {
+        settingsSurfaces.push('in-page settings panel');
+    }
+    if (fs.existsSync(path.join(repoRoot, 'extension', 'sidepanel.html'))) settingsSurfaces.push('side panel');
+
+    // Does a light lane ship? The gate that enforces one is the evidence.
+    const shipsLightTheme = fs.existsSync(path.join(repoRoot, 'scripts', 'check-light-theme-lane.js'))
+        && /html:not\(\[dark\]\)/.test(read('extension/core/settings-visual-system.js'));
+
+    // What actually decides whether a deferred feature module is fetched.
+    const gates = [];
+    if (/shouldLoadFeature/.test(bootstrapSource)) gates.push('settings');
+    if (/routeGate|MODULE_ROUTES|shouldLoadForRoute/.test(bootstrapSource)) gates.push('route');
+
+    // What the release path really emits.
+    const manifestScript = read('scripts/generate-release-manifest.js');
+    const releaseArtifacts = [];
+    if (/SBOM_NAME/.test(manifestScript)) releaseArtifacts.push('sbom');
+    if (/signature|\.sig\b|minisign|gpg/i.test(manifestScript)) releaseArtifacts.push('signature');
+    if (/attestation|in-toto|slsa|provenance-statement/i.test(manifestScript)) releaseArtifacts.push('attestation');
+
+    return Object.freeze({
+        nodeFloorMajor: enginesFloor || nvmrcFloor || '',
+        settingsSurfaces: Object.freeze(settingsSurfaces),
+        shipsLightTheme,
+        moduleGates: Object.freeze(gates),
+        releaseArtifacts: Object.freeze(releaseArtifacts)
     });
 }
 

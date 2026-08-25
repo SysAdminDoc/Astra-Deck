@@ -22,7 +22,7 @@ Thanks for your interest in contributing to Astra Deck! This guide will help you
 
 1. **Fork** the repository
 2. **Clone** your fork locally
-3. Use **Node 22+** (`.nvmrc` is included for `nvm use`)
+3. Use **Node 24+** (`.nvmrc` is included for `nvm use`)
 4. Run `npm ci`
 5. If you are testing the userscript build, install [Tampermonkey](https://www.tampermonkey.net/) (Chrome) or [Violentmonkey](https://violentmonkey.github.io/) (Firefox). Note: Chrome 138+ moved the "Allow User Scripts" toggle to a per-extension control; fresh Tampermonkey installs default OFF and must be enabled manually under `chrome://extensions` → Tampermonkey → Details
 
