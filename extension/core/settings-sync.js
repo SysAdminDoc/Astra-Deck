@@ -602,13 +602,58 @@
                 entries[`${SYNC_CHUNK_PREFIX}${index}`] = chunk;
             });
             // Chunks first, metadata last. See the module header.
-            await setSync(entries);
-            await setSync({
-                [SYNC_META_KEY]: {
-                    ...meta,
-                    schemaVersion: SYNC_SCHEMA_VERSION
+            //
+            // Read what we are about to overwrite first. The two writes are
+            // separate operations and the second one can fail on its own: a
+            // rate limit, a quota, a dropped connection. Without this the
+            // account is left holding new chunks under old metadata, which is
+            // exactly the state every peer's integrity check rejects.
+            const previousChunkKeys = [];
+            const previousChunkCount = Number(previousMeta?.chunkCount) || 0;
+            for (let index = 0; index < previousChunkCount; index += 1) {
+                previousChunkKeys.push(`${SYNC_CHUNK_PREFIX}${index}`);
+            }
+            let restorePreviousChunks = null;
+            if (previousChunkKeys.length) {
+                try {
+                    const before = await readSync(previousChunkKeys);
+                    restorePreviousChunks = {};
+                    for (const key of previousChunkKeys) {
+                        if (typeof before?.[key] === 'string') restorePreviousChunks[key] = before[key];
+                    }
+                    if (!Object.keys(restorePreviousChunks).length) restorePreviousChunks = null;
+                } catch (_) {
+                    // reason: an unreadable previous payload cannot be restored,
+                    // and refusing to push over it would strand the account
+                    restorePreviousChunks = null;
                 }
-            });
+            }
+
+            await setSync(entries);
+            try {
+                await setSync({
+                    [SYNC_META_KEY]: {
+                        ...meta,
+                        schemaVersion: SYNC_SCHEMA_VERSION
+                    }
+                });
+            } catch (error) {
+                // Put the account back where the peers already read it. Any
+                // chunk index this push added beyond the previous count has no
+                // previous value, so it is removed rather than restored.
+                try {
+                    if (restorePreviousChunks) await setSync(restorePreviousChunks);
+                    const added = [];
+                    for (let index = previousChunkCount; index < payloadInfo.chunks.length; index += 1) {
+                        added.push(`${SYNC_CHUNK_PREFIX}${index}`);
+                    }
+                    if (added.length) await removeSync(added);
+                } catch (_) {
+                    // reason: the rollback is best effort; the original failure
+                    // is what the caller needs to see
+                }
+                throw error;
+            }
             const staleKeys = [];
             const oldCount = Number(previousMeta?.chunkCount) || 0;
             for (let index = payloadInfo.chunks.length; index < oldCount; index += 1) {
@@ -693,6 +738,9 @@
         }
 
         async function disableSync() {
+            // A queued push carries settings the user has just opted out of
+            // sharing. Drop it rather than letting it land after the wipe.
+            flushPendingLocalPush();
             await clearRemotePayload();
             lastMeta = null;
             lastError = null;
@@ -748,6 +796,10 @@
         }
 
         async function syncNow() {
+            // An explicit push supersedes whatever the debounce is holding:
+            // syncNowInternal re-reads local storage, so those changes ship
+            // with this call instead of being pushed again a beat later.
+            flushPendingLocalPush();
             return enqueue(async () => {
                 try {
                     return await syncNowInternal();
@@ -764,6 +816,49 @@
             });
         }
 
+        // chrome.storage.sync allows 120 write operations per minute and each
+        // push is two or more of them. Hiding videos one after another produced
+        // one push per video, so a burst of about 60 hit the limit mid-sequence
+        // — which is precisely when a metadata write fails on its own. Collapse
+        // a burst into one push instead.
+        const LOCAL_CHANGE_DEBOUNCE_MS = Number.isFinite(options.localChangeDebounceMs)
+            && options.localChangeDebounceMs >= 0
+            ? options.localChangeDebounceMs
+            : 1500;
+        let pendingLocalPush = null;
+
+        function scheduleLocalPush(run) {
+            if (pendingLocalPush) {
+                clearTimeout(pendingLocalPush.timer);
+            } else {
+                pendingLocalPush = { resolvers: [] };
+            }
+            const slot = pendingLocalPush;
+            const promise = new Promise((resolve) => { slot.resolvers.push(resolve); });
+            slot.timer = setTimeout(() => {
+                pendingLocalPush = null;
+                Promise.resolve()
+                    .then(run)
+                    .then(
+                        (value) => slot.resolvers.forEach((resolve) => resolve(value)),
+                        (error) => slot.resolvers.forEach((resolve) => resolve({
+                            ok: false,
+                            code: 'SYNC_FAILED',
+                            message: error?.message || String(error)
+                        }))
+                    );
+            }, LOCAL_CHANGE_DEBOUNCE_MS);
+            return promise;
+        }
+
+        function flushPendingLocalPush() {
+            if (!pendingLocalPush) return;
+            clearTimeout(pendingLocalPush.timer);
+            const slot = pendingLocalPush;
+            pendingLocalPush = null;
+            slot.resolvers.forEach((resolve) => resolve({ ok: true, ignored: true, flushed: true }));
+        }
+
         async function handleLocalChanges(changes = {}) {
             const relevant = Object.entries(changes)
                 .filter(([key, change]) => isSyncRelevantKey(key, settingsKey)
@@ -772,7 +867,7 @@
             const settingsChange = relevant.find(([key]) => key === settingsKey)?.[1];
             const oldEnabled = settingsChange?.oldValue?.[SYNC_SETTING_KEY] === true;
             let currentEnabled = oldEnabled;
-            return enqueue(async () => {
+            return scheduleLocalPush(() => enqueue(async () => {
                 try {
                     // A blocklist write does not include the settings bag in
                     // storage.onChanged. Read the current consent state so a
@@ -793,7 +888,7 @@
                     lastResult = result;
                     return result;
                 }
-            });
+            }));
         }
 
         async function handleSyncChanges(changes = {}) {

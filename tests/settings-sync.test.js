@@ -234,3 +234,175 @@ test('settings sync uploads blocklist-only changes, applies newer remote state, 
     assert.deepEqual(local.snapshot()['ytkit-hidden-videos'], ['aaaaaaaaaaa', 'bbbbbbbbbbb']);
     assert.equal((await controller.getStatus()).hasUndo, false);
 });
+
+function instrumentAccount(account) {
+    const calls = [];
+    const original = account.set.bind(account);
+    const control = { failMetaWrite: false };
+    account.set = async (entries) => {
+        calls.push(Object.keys(entries || {}));
+        if (control.failMetaWrite && Object.hasOwn(entries || {}, sync.SYNC_META_KEY)) {
+            const error = new Error('MAX_WRITE_OPERATIONS_PER_MINUTE quota exceeded');
+            error.code = 'SYNC_QUOTA';
+            throw error;
+        }
+        return original(entries);
+    };
+    return { calls, control };
+}
+
+function syncFixture(hiddenVideos, extra = {}) {
+    return makeStorage({
+        ytSuiteSettings: { syncSettings: true, privacyDataFlowPanel: true },
+        'ytkit-hidden-videos': hiddenVideos,
+        'ytkit-video-hider-allowed-videos': [],
+        'ytkit-marked-watched-videos': [],
+        'ytkit-blocked-channels': [],
+        'ytkit-allowed-channels': [],
+        ...extra
+    });
+}
+
+function videoIds(count, seed) {
+    return Array.from({ length: count }, (_, index) => (seed + String(index).padStart(6, '0')).slice(0, 11));
+}
+
+// WHEN the metadata write of a push fails after its chunks have landed, the
+// controller SHALL restore the chunk set the previous metadata describes, so a
+// peer reading the account still assembles the payload it read before.
+//
+// Metadata-last only protects a peer from a torn chunk set mid-write. It does
+// nothing when the second write is the one that fails: the account is then
+// holding the new chunk bytes under the old metadata, and every peer's
+// checksum check rejects that as a corrupt payload until some device manages a
+// clean push.
+test('a failed metadata write leaves peers reading the previous payload', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const { control } = instrumentAccount(account);
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 0,
+        ...settingsOptions
+    });
+
+    assert.equal((await controller.initialize()).ok, true);
+    const before = readRemotePayload(account);
+    assert.deepEqual(before.payload.blocklists.hiddenVideos, ['aaaaaaaaaaa']);
+
+    control.failMetaWrite = true;
+    await local.set({ 'ytkit-hidden-videos': ['aaaaaaaaaaa', 'bbbbbbbbbbb'] });
+    const failed = await controller.syncNow();
+    assert.equal(failed.ok, false);
+
+    const after = readRemotePayload(account);
+    assert.deepEqual(after.meta, before.meta);
+    assert.deepEqual(after.payload, before.payload);
+    assert.equal(JSON.stringify(account.snapshot()).includes('bbbbbbbbbbb'), false);
+
+    // And the account is not poisoned: the next push succeeds and carries the
+    // change the failed one dropped.
+    control.failMetaWrite = false;
+    const recovered = await controller.syncNow();
+    assert.equal(recovered.ok, true);
+    assert.deepEqual(readRemotePayload(account).payload.blocklists.hiddenVideos, [
+        'aaaaaaaaaaa', 'bbbbbbbbbbb'
+    ]);
+});
+
+// WHEN the failed push would have grown the payload past the previous chunk
+// count, the controller SHALL remove the chunk keys it added, because those
+// indexes have no previous value to restore and would otherwise be read as
+// part of a later, shorter payload.
+test('a failed metadata write removes the chunk keys that push added', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const { control } = instrumentAccount(account);
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 0,
+        ...settingsOptions
+    });
+
+    assert.equal((await controller.initialize()).ok, true);
+    const before = readRemotePayload(account);
+    const baseChunks = before.meta.chunkCount;
+
+    // Enough ids to spill well past the chunk count the account holds now.
+    const many = videoIds(Math.ceil((sync.SYNC_CHUNK_BYTES * (baseChunks + 2)) / 14), 'ccccc');
+    control.failMetaWrite = true;
+    await local.set({ 'ytkit-hidden-videos': many });
+    assert.equal((await controller.syncNow()).ok, false);
+
+    const state = account.snapshot();
+    assert.ok(readRemotePayload(account).meta.chunkCount === baseChunks);
+    assert.equal(Object.hasOwn(state, `${sync.SYNC_CHUNK_PREFIX}${baseChunks}`), false,
+        'the chunk indexes the failed push added must not survive it');
+    assert.deepEqual(readRemotePayload(account).payload, before.payload);
+});
+
+// WHEN local changes arrive in a burst, the controller SHALL collapse them
+// into one push. chrome.storage.sync allows 120 write operations per minute
+// and each push is two or more of them, so hiding videos one after another
+// used to reach the limit at around 60 of them.
+test('a burst of local changes produces one push, not one per change', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const { calls } = instrumentAccount(account);
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 25,
+        ...settingsOptions
+    });
+    controller.installListeners();
+    assert.equal((await controller.initialize()).ok, true);
+
+    const baseline = calls.length;
+    const hidden = ['aaaaaaaaaaa'];
+    for (const id of videoIds(12, 'ddddd')) {
+        hidden.push(id);
+        await local.set({ 'ytkit-hidden-videos': hidden.slice() });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const writes = calls.length - baseline;
+    assert.ok(writes > 0, 'the burst must still be pushed');
+    assert.ok(writes <= 3, `12 changes must not cost 12 pushes (saw ${writes} account writes)`);
+    assert.deepEqual(readRemotePayload(account).payload.blocklists.hiddenVideos, hidden);
+});
+
+// WHEN an explicit push runs while the debounce is holding a burst, the
+// controller SHALL not push again afterwards: syncNow re-reads local storage,
+// so the pending changes ship with it.
+test('an explicit syncNow supersedes the pending debounced push', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const { calls } = instrumentAccount(account);
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 300,
+        ...settingsOptions
+    });
+    controller.installListeners();
+    assert.equal((await controller.initialize()).ok, true);
+
+    // The flush is synchronous at the top of syncNow, so the pending timer is
+    // cancelled before it can fire. The wait below is longer than the debounce
+    // on purpose: without the flush the timer lands inside it.
+    await local.set({ 'ytkit-hidden-videos': ['aaaaaaaaaaa', 'eeeeeeeeeee'] });
+    const baseline = calls.length;
+    assert.equal((await controller.syncNow()).ok, true);
+    const afterExplicit = calls.length;
+    assert.deepEqual(readRemotePayload(account).payload.blocklists.hiddenVideos, [
+        'aaaaaaaaaaa', 'eeeeeeeeeee'
+    ]);
+
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    assert.equal(calls.length, afterExplicit,
+        'the superseded timer must not fire a second push');
+    assert.ok(afterExplicit > baseline);
+});
