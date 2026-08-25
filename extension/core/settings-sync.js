@@ -271,6 +271,9 @@
             values,
             resetSettings,
             skippedSettings,
+            repairedSettings: Array.isArray(validation.repairedKeys)
+                ? validation.repairedKeys.map((item) => item.key)
+                : [],
             scrubbedKeys: Array.isArray(snapshot.scrubbedKeys) ? [...snapshot.scrubbedKeys] : [],
             defaultedKeys: Array.isArray(snapshot.defaultedKeys) ? [...snapshot.defaultedKeys] : []
         };
@@ -340,6 +343,7 @@
             chunks,
             scrubbedKeys: settingsDelta.scrubbedKeys,
             defaultedKeys: settingsDelta.defaultedKeys,
+            repairedSettings: settingsDelta.repairedSettings,
             truncatedDomains: payload.truncatedDomains,
             skippedSettings: payload.skippedSettings
         };
@@ -606,15 +610,17 @@
             payloadInfo.chunks.forEach((chunk, index) => {
                 entries[`${SYNC_CHUNK_PREFIX}${index}`] = chunk;
             });
-            // Chunks first, metadata last. See the module header.
-            //
-            // Read what we are about to overwrite first. The two writes are
-            // separate operations and the second one can fail on its own: a
-            // rate limit, a quota, a dropped connection. Without this the
-            // account is left holding new chunks under old metadata, which is
-            // exactly the state every peer's integrity check rejects.
+
+            // previousMeta is the account's own metadata, read by the
+            // caller. It is null when the account has no VALID metadata — a
+            // fresh account, or one whose metadata write failed earlier while
+            // a peer's chunks are still sitting there. Treating null as "zero
+            // previous chunks" made every index of this push look like one it
+            // had added, and the rollback below deleted the peer's payload.
+            const knownRemote = normalizeMeta(previousMeta);
+            const previousChunkCount = Number(knownRemote?.chunkCount) || 0;
+
             const previousChunkKeys = [];
-            const previousChunkCount = Number(previousMeta?.chunkCount) || 0;
             for (let index = 0; index < previousChunkCount; index += 1) {
                 previousChunkKeys.push(`${SYNC_CHUNK_PREFIX}${index}`);
             }
@@ -634,6 +640,7 @@
                 }
             }
 
+            // Chunks first, metadata last. See the module header.
             await setSync(entries);
             try {
                 await setSync({
@@ -643,25 +650,37 @@
                     }
                 });
             } catch (error) {
-                // Put the account back where the peers already read it. Any
-                // chunk index this push added beyond the previous count has no
-                // previous value, so it is removed rather than restored.
+                // Try to put the account back where the peers already read it.
+                //
+                // This is best effort and frequently cannot work: the reason
+                // the metadata write failed is usually that the per-minute
+                // write quota is exhausted, and every write in that minute
+                // fails, these included. So the failure is REPORTED rather than
+                // swallowed — the error carries remoteMayBeInconsistent, and
+                // the caller clears this device's last-meta record so the next
+                // push repairs the account instead of assuming it is current.
+                let repaired = false;
                 try {
                     if (restorePreviousChunks) await setSync(restorePreviousChunks);
+                    // Only indexes beyond what the ACCOUNT had. When the
+                    // account's chunk count is unknown, nothing is deleted:
+                    // orphan chunks are garbage, a deleted peer payload is not.
                     const added = [];
-                    for (let index = previousChunkCount; index < payloadInfo.chunks.length; index += 1) {
-                        added.push(`${SYNC_CHUNK_PREFIX}${index}`);
+                    if (knownRemote) {
+                        for (let index = previousChunkCount; index < payloadInfo.chunks.length; index += 1) {
+                            added.push(`${SYNC_CHUNK_PREFIX}${index}`);
+                        }
                     }
                     if (added.length) await removeSync(added);
+                    repaired = Boolean(restorePreviousChunks) || Boolean(knownRemote);
                 } catch (_) {
-                    // reason: the rollback is best effort; the original failure
-                    // is what the caller needs to see
+                    repaired = false;
                 }
+                if (!repaired) error.remoteMayBeInconsistent = true;
                 throw error;
             }
             const staleKeys = [];
-            const oldCount = Number(previousMeta?.chunkCount) || 0;
-            for (let index = payloadInfo.chunks.length; index < oldCount; index += 1) {
+            for (let index = payloadInfo.chunks.length; index < previousChunkCount; index += 1) {
                 staleKeys.push(`${SYNC_CHUNK_PREFIX}${index}`);
             }
             if (staleKeys.length) await removeSync(staleKeys);
@@ -743,9 +762,6 @@
         }
 
         async function disableSync() {
-            // A queued push carries settings the user has just opted out of
-            // sharing. Drop it rather than letting it land after the wipe.
-            flushPendingLocalPush();
             await clearRemotePayload();
             lastMeta = null;
             lastError = null;
@@ -795,7 +811,8 @@
                 meta: candidate,
                 payloadBytes: payloadInfo.payloadBytes,
                 truncatedDomains: payloadInfo.truncatedDomains,
-                skippedSettings: payloadInfo.skippedSettings
+                skippedSettings: payloadInfo.skippedSettings,
+                repairedSettings: payloadInfo.repairedSettings || []
             };
             return lastResult;
         }
@@ -803,9 +820,10 @@
         async function syncNow() {
             // An explicit push supersedes whatever the debounce is holding:
             // syncNowInternal re-reads local storage, so those changes ship
-            // with this call instead of being pushed again a beat later.
-            flushPendingLocalPush();
-            return enqueue(async () => {
+            // with this call instead of being pushed again a beat later. The
+            // waiters it displaces get THIS push's result.
+            const superseded = takePendingLocalPush();
+            const result = await enqueue(async () => {
                 try {
                     return await syncNowInternal();
                 } catch (error) {
@@ -813,12 +831,22 @@
                     const result = {
                         ok: false,
                         enabled: true,
-                        error: { code: error?.code || 'SYNC_FAILED', message: error?.message || 'Settings sync failed.' }
+                        error: {
+                            code: error?.code || 'SYNC_FAILED',
+                            message: error?.message || 'Settings sync failed.',
+                            // A push whose rollback could not run leaves the
+                            // account holding new chunks under old metadata.
+                            // Whatever decides to re-push has to tell that
+                            // apart from a clean undo.
+                            remoteMayBeInconsistent: error?.remoteMayBeInconsistent === true
+                        }
                     };
                     lastResult = result;
                     return result;
                 }
             });
+            settlePendingLocalPush(superseded, result);
+            return result;
         }
 
         // chrome.storage.sync allows 120 write operations per minute and each
@@ -826,10 +854,17 @@
         // one push per video, so a burst of about 60 hit the limit mid-sequence
         // — which is precisely when a metadata write fails on its own. Collapse
         // a burst into one push instead.
+        // 1500 ms was chosen only to coalesce hard. The controller runs in the
+        // MV3 service worker, which Chrome tears down on idle, so every
+        // millisecond of this window is a window in which a change the user
+        // made is dropped and never retried. Hiding videos one after another
+        // happens in well under half a second, so 600 ms still collapses the
+        // burst that motivated the debounce while cutting the loss window by
+        // more than half. flushLocalChanges below closes the rest of it.
         const LOCAL_CHANGE_DEBOUNCE_MS = Number.isFinite(options.localChangeDebounceMs)
             && options.localChangeDebounceMs >= 0
             ? options.localChangeDebounceMs
-            : 1500;
+            : 600;
         let pendingLocalPush = null;
 
         function scheduleLocalPush(run) {
@@ -856,12 +891,31 @@
             return promise;
         }
 
-        function flushPendingLocalPush() {
-            if (!pendingLocalPush) return;
+        // Cancel the pending push and take ownership of everyone waiting on it.
+        // The caller MUST settle them with its own result: telling a waiter
+        // "ok" for a push that never ran, and whose replacement then failed, is
+        // a lie it has no way to detect.
+        function takePendingLocalPush() {
+            if (!pendingLocalPush) return null;
             clearTimeout(pendingLocalPush.timer);
             const slot = pendingLocalPush;
             pendingLocalPush = null;
-            slot.resolvers.forEach((resolve) => resolve({ ok: true, ignored: true, flushed: true }));
+            return slot;
+        }
+
+        function settlePendingLocalPush(slot, result) {
+            slot?.resolvers.forEach((resolve) => resolve(result));
+        }
+
+        // Push whatever the debounce is still holding, now.
+        //
+        // The service worker is told before it is suspended, which is the one
+        // chance to get a pending change onto the account instead of losing it
+        // to the teardown. Returns null when there was nothing waiting, so the
+        // caller does not keep a worker alive for no reason.
+        function flushLocalChanges() {
+            if (!pendingLocalPush) return null;
+            return syncNow();
         }
 
         async function handleLocalChanges(changes = {}) {
@@ -871,7 +925,42 @@
             if (!relevant.length) return { ok: true, ignored: true };
             const settingsChange = relevant.find(([key]) => key === settingsKey)?.[1];
             const oldEnabled = settingsChange?.oldValue?.[SYNC_SETTING_KEY] === true;
+            const newEnabled = settingsChange?.newValue?.[SYNC_SETTING_KEY] === true;
             let currentEnabled = oldEnabled;
+
+            // Opting out is not a coalescable event.
+            //
+            // The debounce keeps one slot and the newest run wins, so a
+            // blocklist write arriving inside the window replaced the closure
+            // carrying this transition. The survivor read consent, found it
+            // already false, and returned "skipped" — disableSync never ran and
+            // the user's settings stayed on their account after they asked for
+            // them to be removed. Withdrawal of consent runs immediately, and
+            // it cancels the pending push rather than letting it land after the
+            // wipe.
+            if (settingsChange && oldEnabled && !newEnabled) {
+                const superseded = takePendingLocalPush();
+                const result = await enqueue(async () => {
+                    try {
+                        return await disableSync();
+                    } catch (error) {
+                        lastError = error;
+                        const failure = {
+                            ok: false,
+                            enabled: false,
+                            error: {
+                                code: error?.code || 'SYNC_DISABLE_FAILED',
+                                message: error?.message || 'Turning settings sync off failed.'
+                            }
+                        };
+                        lastResult = failure;
+                        return failure;
+                    }
+                });
+                settlePendingLocalPush(superseded, result);
+                return result;
+            }
+
             return scheduleLocalPush(() => enqueue(async () => {
                 try {
                     // A blocklist write does not include the settings bag in
@@ -880,7 +969,11 @@
                     const current = await readLocal([settingsKey]);
                     const enabled = current?.[settingsKey]?.[SYNC_SETTING_KEY] === true;
                     currentEnabled = enabled;
-                    if (settingsChange && oldEnabled && !enabled) return disableSync();
+                    // The opt-out transition is handled above, before the
+                    // debounce. This still catches consent going false between
+                    // the change landing and the timer firing — another device,
+                    // or a settings import.
+                    if (oldEnabled && !enabled) return disableSync();
                     if (!enabled) return { ok: true, enabled: false, skipped: true };
                     return await syncNowInternal();
                 } catch (error) {
@@ -888,7 +981,15 @@
                     const result = {
                         ok: false,
                         enabled: currentEnabled,
-                        error: { code: error?.code || 'SYNC_FAILED', message: error?.message || 'Settings sync failed.' }
+                        error: {
+                            code: error?.code || 'SYNC_FAILED',
+                            message: error?.message || 'Settings sync failed.',
+                            // A push whose rollback could not run leaves the
+                            // account holding new chunks under old metadata.
+                            // Whatever decides to re-push has to tell that
+                            // apart from a clean undo.
+                            remoteMayBeInconsistent: error?.remoteMayBeInconsistent === true
+                        }
                     };
                     lastResult = result;
                     return result;
@@ -913,7 +1014,15 @@
                     const result = {
                         ok: false,
                         enabled: true,
-                        error: { code: error?.code || 'SYNC_FAILED', message: error?.message || 'Settings sync failed.' }
+                        error: {
+                            code: error?.code || 'SYNC_FAILED',
+                            message: error?.message || 'Settings sync failed.',
+                            // A push whose rollback could not run leaves the
+                            // account holding new chunks under old metadata.
+                            // Whatever decides to re-push has to tell that
+                            // apart from a clean undo.
+                            remoteMayBeInconsistent: error?.remoteMayBeInconsistent === true
+                        }
                     };
                     lastResult = result;
                     return result;
@@ -970,7 +1079,12 @@
                 payloadBytes: lastResult?.payloadBytes || storedLast?.payloadBytes || 0,
                 truncatedDomains: lastResult?.truncatedDomains || [],
                 skippedSettings: lastResult?.skippedSettings || [],
-                error: lastError ? { code: lastError.code || 'SYNC_FAILED', message: lastError.message || String(lastError) } : null
+                repairedSettings: lastResult?.repairedSettings || [],
+                error: lastError ? {
+                    code: lastError.code || 'SYNC_FAILED',
+                    message: lastError.message || String(lastError),
+                    remoteMayBeInconsistent: lastError.remoteMayBeInconsistent === true
+                } : null
             };
         }
 
@@ -1009,7 +1123,15 @@
                     return {
                         ok: false,
                         enabled: true,
-                        error: { code: error?.code || 'SYNC_FAILED', message: error?.message || 'Settings sync failed.' }
+                        error: {
+                            code: error?.code || 'SYNC_FAILED',
+                            message: error?.message || 'Settings sync failed.',
+                            // A push whose rollback could not run leaves the
+                            // account holding new chunks under old metadata.
+                            // Whatever decides to re-push has to tell that
+                            // apart from a clean undo.
+                            remoteMayBeInconsistent: error?.remoteMayBeInconsistent === true
+                        }
                     };
                 }
             });
@@ -1020,6 +1142,7 @@
             getStatus,
             handleLocalChanges,
             handleSyncChanges,
+            flushLocalChanges,
             initialize,
             installListeners,
             syncNow,

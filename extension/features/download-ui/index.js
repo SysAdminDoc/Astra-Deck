@@ -1213,24 +1213,29 @@
                 statePill.textContent = label;
                 statusCopy.textContent = copy;
                 actions.hidden = !showRepair;
-                // Only when the state itself moves. The copy carries a live
-                // percentage, so keying on it would announce every poll again.
-                const nextState = tone + '|' + label;
-                if (nextState === announcedState) return;
-                announcedState = nextState;
+                // Which states count as "the same state" depends on the tone.
+                //
+                // Keying on tone|label alone collided on the two that matter
+                // most: the needs-auth poll and the terminal failure both send
+                // ('error', 'Needs Attention'). Once the first had spoken, the
+                // download could fail outright and the announcer kept saying
+                // "Waiting" while the Repair button appeared beside it.
+                //
+                // Including the copy everywhere is not the answer either: an
+                // active download's copy IS the percentage, so that reinstates
+                // the every-poll flood this dedupe exists to stop. An active
+                // state is a live counter and is keyed by its label; anything
+                // else is a distinct message and is keyed by what it says.
+                const announceKey = tone === 'active'
+                    ? tone + '|' + label
+                    : tone + '|' + label + '|' + copy;
+                if (announceKey === announcedState) return;
+                announcedState = announceKey;
                 // Politeness first: a live region announces on mutation, so
                 // raising it after the write applies it to the NEXT message.
                 progressAnnouncer.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');
                 progressAnnouncer.textContent = copy;
             };
-            setProgressState(
-                'pending',
-                t('dlProgressStatePreparing', 'Preparing'),
-                audioOnly
-                    ? t('dlProgressConnectAudio', 'Connecting to Astra Downloader.')
-                    : t('dlProgressConnectVideo', 'Connecting to Astra Downloader.')
-            );
-
             panel.appendChild(header);
             panel.appendChild(title);
             panel.appendChild(statusRow);
@@ -1240,6 +1245,17 @@
             panel.appendChild(progressAnnouncer);
             document.body.appendChild(panel);
             MediaDLManager._raiseOverlay(panel);
+
+            // After the panel is in the document, not before. A live region
+            // announces on MUTATION; text that is already present when the
+            // region is inserted is never spoken.
+            setProgressState(
+                'pending',
+                t('dlProgressStatePreparing', 'Preparing'),
+                audioOnly
+                    ? t('dlProgressConnectAudio', 'Connecting to Astra Downloader.')
+                    : t('dlProgressConnectVideo', 'Connecting to Astra Downloader.')
+            );
 
             let pollTimer = null;
             let stopped = false;

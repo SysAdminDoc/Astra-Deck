@@ -8,6 +8,21 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Turning browser sync off wipes your account again. A change made in the second
+  after you switched it off could swallow the shutdown, so your settings and
+  blocklists stayed on your Google account after you had asked for them to be
+  removed. Withdrawing consent now takes effect immediately and cancels anything
+  queued behind it. Two related repairs: a failed push can no longer delete a
+  payload another device wrote, and when a push has to reset a setting that was
+  too long or the wrong shape, the sync status now names it instead of quietly
+  sharing the default.
+
+- A download that fails after asking you to sign in is announced properly. Both
+  states shared a heading, so once the sign-in warning had been read out, the
+  actual failure never was, and the screen reader was still saying "Waiting"
+  while the Repair button sat on screen. The opening line of a download was
+  being missed for a different reason and now gets read too.
+
 - Turning off Anti-Translate Thumbnails now actually stops its network lookups.
   They had no way to be cancelled and no time limit, so switching the feature
   off left requests running to the end, and a request that hung ran forever.

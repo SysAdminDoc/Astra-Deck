@@ -5,6 +5,9 @@ const assert = require('node:assert/strict');
 
 const schemaModule = require('../extension/core/settings-schema');
 const { createPolicyProfile } = require('../extension/core/policy-profile');
+const fs = require('node:fs');
+const path = require('node:path');
+const repoRoot = path.join(__dirname, '..');
 const sync = require('../extension/core/settings-sync');
 
 const schema = schemaModule.SETTINGS_SCHEMA;
@@ -405,4 +408,273 @@ test('an explicit syncNow supersedes the pending debounced push', async () => {
     assert.equal(calls.length, afterExplicit,
         'the superseded timer must not fire a second push');
     assert.ok(afterExplicit > baseline);
+});
+
+// ── the debounce, and what it must never swallow ──
+
+// WHEN the user turns settings sync off, the account SHALL be wiped even if
+// another local change lands inside the debounce window.
+//
+// The debounce keeps one slot and the newest run wins. A blocklist write
+// arriving after the opt-out replaced the closure that carried the transition;
+// the survivor read consent, found it already false, and returned "skipped".
+// disableSync never ran, and settings the user had just asked to stop sharing
+// stayed on their account.
+test('opting out clears the account even when another change lands in the debounce window', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 200,
+        ...settingsOptions
+    });
+    controller.installListeners();
+    assert.equal((await controller.initialize()).ok, true);
+    assert.ok(readRemotePayload(account).meta, 'the account must hold a payload to start');
+
+    await local.set({ ytSuiteSettings: { syncSettings: false, privacyDataFlowPanel: true } });
+    // A list edit arriving before the timer fires. This is the write that used
+    // to replace the opt-out.
+    await local.set({ 'ytkit-hidden-videos': ['aaaaaaaaaaa', 'bbbbbbbbbbb'] });
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const state = account.snapshot();
+    assert.equal(Object.hasOwn(state, sync.SYNC_META_KEY), false,
+        'withdrawing consent must remove the payload, not be coalesced away');
+    const chunkKeys = Object.keys(state).filter((key) => key.startsWith(sync.SYNC_CHUNK_PREFIX));
+    assert.deepEqual(chunkKeys, [], 'no chunk may survive the opt-out');
+});
+
+// WHEN an explicit push supersedes a debounced one, the waiters it displaces
+// SHALL receive that push's real result. Telling a caller "ok" for a push that
+// never ran, and whose replacement then failed, is a lie it cannot detect.
+test('a superseded waiter is told the truth about the push that replaced it', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const { control } = instrumentAccount(account);
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 400,
+        ...settingsOptions
+    });
+    controller.installListeners();
+    assert.equal((await controller.initialize()).ok, true);
+
+    const waiter = controller.handleLocalChanges({
+        'ytkit-hidden-videos': { oldValue: ['aaaaaaaaaaa'], newValue: ['aaaaaaaaaaa', 'bbbbbbbbbbb'] }
+    });
+    control.failMetaWrite = true;
+    const explicit = await controller.syncNow();
+    assert.equal(explicit.ok, false, 'the superseding push must actually fail here');
+
+    const settled = await waiter;
+    assert.equal(settled.ok, false,
+        'the displaced waiter must carry the failure of the push that replaced it');
+});
+
+// ── the rollback ──
+
+// WHEN this device has no record of the account's payload, a failed push SHALL
+// NOT delete the chunk keys a peer wrote. previousMeta is read from LOCAL
+// storage — what this device last recorded — so on a fresh device, or after an
+// opt-out removed that key, it is null while the account still holds a peer's
+// payload. Counting that as "zero previous chunks" made every index look like
+// one this push had added, and the rollback deleted the peer's data.
+test('a failed push does not delete a peer payload this device has no record of', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const { control } = instrumentAccount(account);
+
+    // A peer's chunks, with no metadata this device could have recorded.
+    account.setSilently({
+        [`${sync.SYNC_CHUNK_PREFIX}0`]: 'PEER-CHUNK-0',
+        [`${sync.SYNC_CHUNK_PREFIX}1`]: 'PEER-CHUNK-1',
+        [`${sync.SYNC_CHUNK_PREFIX}2`]: 'PEER-CHUNK-2'
+    });
+
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 0,
+        ...settingsOptions
+    });
+    control.failMetaWrite = true;
+    const failed = await controller.syncNow();
+    assert.equal(failed.ok, false);
+
+    const state = account.snapshot();
+    const survivors = [0, 1, 2].filter((index) =>
+        Object.hasOwn(state, `${sync.SYNC_CHUNK_PREFIX}${index}`));
+    assert.deepEqual(survivors, [0, 1, 2],
+        'the rollback must not remove chunk keys whose owner it cannot identify');
+});
+
+// WHEN the rollback itself cannot run — which is the normal case, because the
+// write quota that killed the metadata write kills the restore too — the error
+// SHALL say the account may be inconsistent rather than reporting a clean undo.
+test('a rollback that could not run says so', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const original = account.set.bind(account);
+    let ceilingReached = false;
+    account.set = async (entries) => {
+        if (ceilingReached || Object.hasOwn(entries || {}, sync.SYNC_META_KEY)) {
+            ceilingReached = true;
+            const error = new Error('MAX_WRITE_OPERATIONS_PER_MINUTE quota exceeded');
+            error.code = 'SYNC_QUOTA';
+            throw error;
+        }
+        return original(entries);
+    };
+
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 0,
+        ...settingsOptions
+    });
+
+    let thrown = null;
+    try {
+        await controller.handleSyncChanges({});
+    } catch (_) { /* not the path under test */ }
+    const result = await controller.syncNow();
+    assert.equal(result.ok, false);
+    // The controller wraps the error; the flag has to survive to the surface
+    // that decides whether to re-push.
+    thrown = result.error;
+    assert.ok(thrown, 'the failure must be reported');
+    assert.equal(result.error?.remoteMayBeInconsistent, true,
+    'a rollback that could not run must not be reported as a clean undo');
+});
+
+// WHEN a locally-stored value fails the schema and the push repairs it, the
+// user SHALL be told which setting is not being shared as they wrote it.
+test('the push reports the settings it had to repair', async () => {
+    const local = syncFixture(['aaaaaaaaaaa'], {
+        ytSuiteSettings: {
+            syncSettings: true,
+            privacyDataFlowPanel: true,
+            chatKeywordFilter: 'x'.repeat(20050)
+        }
+    });
+    const account = makeStorage({}, 'sync');
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 0,
+        ...settingsOptions
+    });
+
+    const result = await controller.syncNow();
+    assert.equal(result.ok, true, 'an over-long value must not stop the push');
+    assert.deepEqual(result.repairedSettings, ['chatKeywordFilter'],
+        'the user has to be told the value they typed is not the one being shared');
+    assert.equal((await controller.getStatus()).repairedSettings.includes('chatKeywordFilter'), true,
+        'and the status surface has to carry it too');
+});
+
+// WHEN the service worker is about to be suspended, a pending debounced push
+// SHALL be forced out. The timer lives in the worker and dies with it, so
+// without this a change made in the last moments before teardown is written
+// locally and never reaches the account.
+test('a pending push can be forced out before the worker is torn down', async () => {
+    const local = syncFixture(['aaaaaaaaaaa']);
+    const account = makeStorage({}, 'sync');
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 60000,
+        ...settingsOptions
+    });
+    controller.installListeners();
+    assert.equal((await controller.initialize()).ok, true);
+
+    assert.equal(controller.flushLocalChanges(), null,
+        'with nothing pending it must not start a push, or the worker is kept alive for nothing');
+
+    await local.set({ 'ytkit-hidden-videos': ['aaaaaaaaaaa', 'bbbbbbbbbbb'] });
+    const flushed = controller.flushLocalChanges();
+    assert.ok(flushed, 'a pending push must be forceable');
+    assert.equal((await flushed).ok, true);
+    assert.deepEqual(readRemotePayload(account).payload.blocklists.hiddenVideos,
+        ['aaaaaaaaaaa', 'bbbbbbbbbbb']);
+});
+
+// WHEN the default debounce is chosen, it SHALL stay short enough that the MV3
+// teardown window is small. This is a judgement pinned deliberately: a burst of
+// hides lands in well under half a second, so anything past a second buys no
+// extra coalescing and only widens the window where a change is lost.
+test('the default debounce window stays under a second', () => {
+    const source = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'core', 'settings-sync.js'), 'utf8');
+    const match = source.match(/:\s*(\d+);\s*\n\s*let pendingLocalPush/);
+    assert.ok(match, 'the default debounce must still be a literal here');
+    assert.ok(Number(match[1]) <= 1000,
+        `the default debounce is ${match[1]} ms; every millisecond is a window the worker can die in`);
+});
+
+// WHEN the worker is told it is about to be suspended, the background script
+// SHALL use that notice.
+test('the service worker flushes settings sync on suspend', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'background.js'), 'utf8');
+    assert.match(source, /ext\.runtime\?\.onSuspend\?\.addListener/,
+        'onSuspend is the only notice the worker gets before its timers die');
+    assert.match(source, /_settingsSync\?\.flushLocalChanges\?\.\(\)/);
+});
+
+// WHEN this device's local record of the account disagrees with what the
+// account actually holds, the rollback SHALL follow the ACCOUNT. previousMeta
+// is SYNC_LAST_META_KEY from local storage, so on a fresh device or after an
+// opt-out cleared it, it is null or stale while a peer's payload is live.
+// Restoring from the stale record put back the wrong number of chunks and left
+// the rest of this push's bytes sitting under the peer's metadata.
+test('the rollback restores what the account holds, not what this device remembered', async () => {
+    // A peer's payload, complete and valid, that this device has no record of.
+    const peerInfo = sync.buildSyncPayload(
+        { syncSettings: true, privacyDataFlowPanel: true },
+        {
+            'ytkit-hidden-videos': videoIds(400, 'peeee'),
+            'ytkit-video-hider-allowed-videos': [],
+            'ytkit-marked-watched-videos': [],
+            'ytkit-blocked-channels': [],
+            'ytkit-allowed-channels': []
+        },
+        settingsOptions
+    );
+    const peerMeta = makeMeta(peerInfo, { deviceId: 'peer-device' });
+    const account = makeStorage({}, 'sync');
+    const seeded = { [sync.SYNC_META_KEY]: peerMeta };
+    peerInfo.chunks.forEach((chunk, index) => {
+        seeded[`${sync.SYNC_CHUNK_PREFIX}${index}`] = chunk;
+    });
+    account.setSilently(seeded);
+
+    // This device pushes something strictly larger, and has no local record of
+    // the account at all.
+    const local = syncFixture(videoIds(3000, 'mineee'));
+    const { control } = instrumentAccount(account);
+    const controller = sync.createSettingsSyncController({
+        localStorage: local,
+        syncStorage: account,
+        localChangeDebounceMs: 0,
+        ...settingsOptions
+    });
+
+    control.failMetaWrite = true;
+    const failed = await controller.syncNow();
+    assert.equal(failed.ok, false);
+
+    const after = account.snapshot();
+    assert.deepEqual(after[sync.SYNC_META_KEY], peerMeta, 'the metadata write failed, so it must be unchanged');
+    const restored = Array.from({ length: peerMeta.chunkCount },
+        (_, index) => after[`${sync.SYNC_CHUNK_PREFIX}${index}`]).join('');
+    assert.equal(restored, peerInfo.payloadText,
+        'a peer reading this account must still assemble the payload it read before');
+    const strays = Object.keys(after)
+        .filter((key) => key.startsWith(sync.SYNC_CHUNK_PREFIX))
+        .filter((key) => Number(key.slice(sync.SYNC_CHUNK_PREFIX.length)) >= peerMeta.chunkCount);
+    assert.deepEqual(strays, [], 'the chunk indexes this push added must not outlive it');
 });
