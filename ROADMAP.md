@@ -77,3 +77,97 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
   Touches: `package.json`, `package-lock.json`, lint configuration only if new diagnostics require a justified code fix
   Acceptance: install ESLint 10.9.0, review its release changes, run the full lint target and `npm test`, add no blanket disables or new warning suppressions, and keep the production dependency tree unchanged.
   Complexity: S
+
+## Audit follow-ups (2026-08-25)
+
+Found during a full audit pass, verified, and deliberately not fixed in it.
+
+### P1
+
+- [ ] P1: Relight the light-theme children of the surfaces the design system paints white
+  Why: `settings-visual-system.js` forces `background: var(--ytkit-premium-panel) !important` on ~35 surfaces, and that token is `#ffffff` under `html:not([dark])`. Several of those surfaces have children written as dark-lane literals with no light override, so the panel goes white and the text stays near-white. The Digital Wellbeing card is the worst case because it pauses playback: `.ytkit-wellbeing-title` is `rgba(248,250,252,0.96)`, about 1.05:1 on white. The Transcript Search panel's input is `color:#fff` on the same white ground, so you cannot see what you type.
+  Where: `extension/features/digital-wellbeing/index.js` (~441, 459, 466, 473), `extension/ytkit.js` transcript-search block (~36622-36638), `extension/features/download-ui/index.js` `.ytkit-stream-links-panel` (~2883-2890), `extension/ytkit.js` `.ytkit-ai-qa-status--busy` (~34981), `.ytkit-aisum-head h3` / `.ytkit-aisum-close` (~30365-30369), `.ytkit-vvf-val` (~28668), `.ytkit-rc-head` (~29312), `extension/features/video-hider/index.js` `.ytkit-blocked-watch-dialog` (~2745, 2772)
+  Acceptance: each surface gets a light lane for its own descendants, verified against computed foreground and background in a real browser capture rather than from source. `scripts/check-light-theme-lane.js` exempts anything under an "opaquely grounded" family root, computed from the base rule only, so it cannot see the `!important` override that removes that ground; the gate needs to model that before it can be trusted here.
+  Complexity: M
+
+- [ ] P1: Give the four dead surface selectors the premium treatment they were listed for
+  Why: `.ytkit-stats-overlay`, `.ytkit-ql-menu`, `.ytkit-mediadl-install-prompt` and `.ytkit-reaction-spammer-panel` were named in the surface system as classes but only ever exist as ids, so they silently received none of the shared theming, radius, font or focus treatment. They were removed from the lists rather than converted, because activating a white ground under children that have never been relit would create the P1 above on four more surfaces.
+  Where: `extension/core/settings-visual-system.js`, plus each surface's own stylesheet
+  Acceptance: convert each to its id selector, relight its children for the light lane first, and confirm in a browser capture. The new gate in `tests/settings-visual-system.test.js` ("names no selector the extension never renders") will pass either way; it only forbids naming something that does not exist.
+  Complexity: M
+
+### P2
+
+- [ ] P2: Bind the companion's HTTP identity to its native-messaging identity
+  Why: the cookie handoff is well guarded (crypto token, one use, 20s TTL, bound to tab/frame/document, requires a fresh `connectNative` proof) but that proof only shows *a* native host is registered. The cookies then go in cleartext to `http://127.0.0.1:<port>/download`, chosen from whoever answers `/health` with `{"service":"astra-downloader"}`, with no shared secret. A local process that binds the port first receives `LOGIN_INFO` and the `SAPISID` family. It needs prior local code execution, which also reaches the cookie DB, so the impact is bounded, but the capability gate advertises a binding it does not enforce.
+  Where: `extension/features/download-ui/index.js` (~501-512, 620-660, 1703-1740), `extension/background.js` (~446-506)
+  Acceptance: the pairing exchanges a secret over native messaging that the HTTP endpoint must then present, and a squatter that cannot produce it is refused before any cookie leaves the browser.
+  Complexity: M
+
+- [ ] P2: Constrain string settings by format and length at the trust boundary
+  Why: `clampSettingValue` clamps numbers and coerces enums but returns strings unchanged, and `sanitizeSettingsObject` only filters prototype keys and retired ids. A crafted backup can therefore put arbitrary content in any `type: "string"` setting. Two consequences were fixed individually this pass (the keyword-filter ReDoS and the alternative-frontend open redirect); the class remains. `customCssCode` reaches `style.textContent` verbatim, which is CSS-only but still allows attribute-selector and `background:url()` exfiltration against youtube.com.
+  Where: `extension/core/policy-profile.js` `validateSettingsSnapshot` / `isSettingValueValid` / `clampSettingValue`, `extension/core/settings-schema.js`
+  Acceptance: the schema carries an optional `pattern` and `maxLength` per string entry, the import path enforces them, and a test feeds a hostile backup at every string key and asserts each one is rejected or clamped rather than stored.
+  Complexity: M
+
+- [ ] P2: Make the sync push atomic across its chunk and metadata writes
+  Why: `writeRemotePayload` does `setSync(entries)` then `setSync({[SYNC_META_KEY]: ...})` as two calls. Metadata last protects against a torn chunk set, not against the metadata write failing on its own. When it does, the account holds new chunk bytes under old metadata and every other device fails the integrity check with "Browser sync payload is incomplete or corrupt" until some device pushes successfully. `handleLocalChanges` pushes on every relevant local change with no debounce and each push is two or more `setSync` calls, so `MAX_WRITE_OPERATIONS_PER_MINUTE` (120) is reachable by hiding around 60 videos in a minute.
+  Where: `extension/core/settings-sync.js` (~555-574, 691, 723)
+  Acceptance: a failed metadata write restores the previous chunk set or writes chunks under a staged key that only becomes current with the metadata; `handleLocalChanges` debounces; a test injects a mid-sequence `setSync` failure and asserts peers still read the previous payload.
+  Complexity: M
+
+- [ ] P2: Count what the transcript index actually stores, and report its search recall
+  Why: `estimateRecordBytes` counts `text` and `title` only. `prepareTranscriptRecord` also stores `searchTerms` (up to 5000 strings of 3 to 80 chars) and `ytkit.js` builds a `multiEntry` index over it, so each term is an index row too. `MAX_TOTAL_BYTES` (64 MB) therefore underestimates the real footprint, which weakens the module's stated purpose of evicting "long before a write can fail". Separately, `buildSearchTerms` fills a Set in document order and breaks at `MAX_SEARCH_TERMS`, so the terms dropped are the ones at the END of a long transcript, and `_search` looks up through `byTerm` only. A query that would match the tail of a 200,000-character transcript silently returns nothing, with no signal to the user.
+  Where: `extension/core/transcript-index.js` (~58-67, 86-93, 101-103), `extension/ytkit.js` (~36248, 36302, 36339, 36388)
+  Acceptance: the estimate includes the deduped term set and its index rows; the search either falls back to a full-text scan for records whose term set was truncated, or the UI says the index is partial for that video.
+  Complexity: M
+
+- [ ] P2: Give the pointer-only controls a keyboard path
+  Why: three interactions cannot be performed without a mouse. Element Zapper's picker is `mousemove` plus `click` with Escape as the only key handler, so choosing an element to hide is pointer-gated. The settings sidebar reorder is `draggable` with no `keydown` path, and `sidebarOrder` is a persisted preference a keyboard user simply cannot set. The floating-chat drag handle is a focusable button whose only listener is `pointerdown`, so it announces "Move floating chat, button" and does nothing on Enter or Space.
+  Where: `extension/features/element-zapper/index.js` (~256-347), `extension/features/settings-panel/index.js` `addDragReorder` (~582-607), `extension/features/sticky-chat/index.js` (~140-146)
+  Acceptance: the zapper can target the focused element and walk the DOM with arrow keys; the sidebar exposes move-up/move-down (a menu or Alt+Arrow) that writes the same `sidebarOrder`; the drag handle moves the panel on arrow keys. `scripts/audit-overlays-a11y.js` covers none of these three modules, so extend it alongside.
+  Complexity: M
+
+- [ ] P2: Label Element Zapper's rule rows
+  Why: each rule row builds a bare `<input type="checkbox">` with no `aria-label`, no `id` plus `<label for>` and no wrapping `<label>`, inside a plain `<div>`. It announces as "checkbox, not checked" with no indication of which rule it toggles, and the sibling Remove button is just "Remove". Every other checkbox in the extension is either wrapped in a label or carries an explicit `aria-label`; this is the only one that is not.
+  Where: `extension/features/element-zapper/index.js` (~422-425)
+  Acceptance: the toggle and the remove button both name their rule, and `scripts/audit-overlays-a11y.js` gains element-zapper as a named source.
+  Complexity: S
+
+- [ ] P2: Stop the download progress panel talking over everything else
+  Why: the panel is `role="status"` with `aria-live="polite"` and `aria-atomic="true"` on the whole panel, and the poll rewrites percent, speed, ETA and status copy every 750 ms. Each poll re-announces the badge, title, state pill, all three numbers and the buttons inside the region, so a five-minute download queues roughly 400 full-panel announcements and the speech queue never drains. Errors such as "needs-auth" also stay polite, so a stalled download never interrupts.
+  Where: `extension/features/download-ui/index.js` (~1119-1125, 1259-1283, 1378-1381)
+  Acceptance: the live region is a single status line, not the panel; it updates on meaningful transitions rather than every poll; error states are assertive.
+  Complexity: S
+
+- [ ] P2: Give the speed popup, context menu, AI Summary panel and persistent queue a real dialog contract
+  Why: four overlays declare a role they do not implement. The playback-speed popup is `role="menu"` with 18 `menuitemradio` children, appended to `<body>`, with no `.focus()`, no arrow-key roving tabindex and no focus restore. The Astra context menu is `role="menu"` with no accessible name, no focus entry, no keydown handler at all and no restore, and its `preventDefault()` suppresses the native right-click that its own description says it never blocks. The AI Summary panel and the persistent queue are both `role="dialog"` appended to `<body>` with no Escape, no focus entry and no restore; the queue's `aria-label` is a hardcoded English string.
+  Where: `extension/ytkit.js` `showSpeedPopup` (~3200-3323), context menu (~37797-37850), AI Summary panel (~29956-29998), persistent queue (~22366-22409)
+  Acceptance: each moves focus in on open, traps it, closes on Escape and restores focus to its trigger; the menus implement the arrow-key model their role promises; the queue label is localized. The Transcript Q&A modal in the same file is the working reference.
+  Complexity: M
+
+### P3
+
+- [ ] P3: Normalize the remaining copy inconsistencies in the settings catalog
+  Why: the dash and AI-vocabulary sweep is done and gated, but the catalog still disagrees with itself in ways a reader notices. Thirteen `feature_*_name` values are sentence case among 399 Title Case ones; 295 `feature_*_desc` end without a period and 137 with one; the popup and the sidepanel label the same two numbers four different ways ("Keys"/"Storage" against "Customized"/"Size"); playback speed is written `1×` in two strings and `1x` everywhere else; `bisectIntro` hardcodes "291" features when the catalog now defines 432; and seven strings use the `(s)` plural hack while the catalog elsewhere ships proper singular/plural key pairs.
+  Where: `extension/_locales/en/messages.json`, `extension/popup.html` (`bisectIntro` is inlined there too)
+  Acceptance: one pass over the `feature_*` block, the stat labels aligned across both surfaces, the count derived from the live registry rather than baked in, and the `(s)` strings given real plural pairs. Changing shipped English means re-running `generate-locales.js` and ratcheting both i18n baselines.
+  Complexity: S
+
+- [ ] P3: Replace the popup's five em-dash stat cards with a real empty state
+  Why: `popup.html` seeds Keys, Storage, Hidden, Blocked and Bookmarks with a bare `—`, and `popup.js` writes the same `—` back whenever storage is unavailable. So the first thing a user sees is five dashes, and when storage genuinely fails they see five dashes and no explanation. The catalog already contains `spStatUnavailable` ("Unavailable") for exactly this and it is unused on the popup surface.
+  Where: `extension/popup.html` (~137-153), `extension/popup.js` (~2385-2389)
+  Acceptance: the cards seed at `0`, and the failure path shows the unavailable state plus the existing recovery copy rather than a placeholder glyph.
+  Complexity: S
+
+- [ ] P3: Fix the two remaining unactionable error messages
+  Why: `selectorHealthCopyFail` tells a non-developer to "Open DevTools and call window.__ytkitDiagnostics.download()", and leaks the retired `ytkit` brand; the very next key, `selectorHealthCopySaveFallback`, already handles the identical situation properly. `statusMediadlReenableFail` says "Open chrome://extensions and reload" in an extension that ships a Firefox sidebar.
+  Where: `extension/_locales/en/messages.json`
+  Acceptance: the first reuses its working sibling's wording, the second names the browser's extensions page without hardcoding a Chrome URL.
+  Complexity: S
+
+- [ ] P3: Abort in-flight oEmbed lookups on teardown
+  Why: the thumbnail lookups no longer throw or restyle after `destroy()`, but the `fetch` still has no `AbortController` and no timeout, so a feature that has been switched off leaves requests running to completion. `enableHandleRevealer` in the same file already keeps a `_requestControllers` set for this.
+  Where: `extension/ytkit.js` `antiTranslateThumbnails._lookupOEmbed` (~34082-34112)
+  Acceptance: each lookup carries a signal, destroy aborts them all, and an aborted lookup is not cached as a miss.
+  Complexity: S
