@@ -11525,6 +11525,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _THUMBNAIL_SELECTOR: 'ytd-thumbnail img[src], ytd-playlist-thumbnail img[src], yt-image img[src]',
             _oEmbedCache: null,
             _inFlight: null,
+            _oEmbedControllers: null,
+            _OEMBED_TIMEOUT_MS: 8000,
             _MAX_IN_FLIGHT: 4,
             _MAX_CACHE: 400,
             _restore: null,
@@ -11542,25 +11544,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const url = buildOEmbedUrl?.(videoId);
                 if (!url) return null;
                 this._inFlight.add(videoId);
+                const controller = new AbortController();
+                this._oEmbedControllers?.add(controller);
+                const timeoutId = setTimeout(() => controller.abort(), this._OEMBED_TIMEOUT_MS);
                 try {
-                    const response = await fetch(url, { credentials: 'omit', cache: 'force-cache' });
+                    const response = await fetch(url, {
+                        credentials: 'omit',
+                        cache: 'force-cache',
+                        signal: controller.signal
+                    });
                     if (!response.ok) {
-                        this._oEmbedCache.set(videoId, null);
+                        this._oEmbedCache?.set(videoId, null);
                         return null;
                     }
                     const meta = parseOEmbedMetadata?.(await response.text()) || null;
-                    if (this._oEmbedCache.size >= this._MAX_CACHE) {
+                    if (this._oEmbedCache && this._oEmbedCache.size >= this._MAX_CACHE) {
                         const oldest = this._oEmbedCache.keys().next().value;
                         if (oldest != null) this._oEmbedCache.delete(oldest);
                     }
-                    this._oEmbedCache.set(videoId, meta);
+                    this._oEmbedCache?.set(videoId, meta);
                     return meta;
                 } catch (error) {
-                    this._oEmbedCache.set(videoId, null);
-                    DebugManager.log('AntiTranslate', `oEmbed lookup failed for ${videoId}: ${error?.message || error}`);
+                    if (error?.name !== 'AbortError') {
+                        this._oEmbedCache?.set(videoId, null);
+                        DebugManager.log('AntiTranslate', `oEmbed lookup failed for ${videoId}: ${error?.message || error}`);
+                    }
                     return null;
                 } finally {
-                    this._inFlight.delete(videoId);
+                    clearTimeout(timeoutId);
+                    this._oEmbedControllers?.delete(controller);
+                    this._inFlight?.delete(videoId);
                 }
             },
 
@@ -11620,6 +11633,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._oEmbedCache = new Map();
                 this._inFlight = new Set();
+                this._oEmbedControllers = new Set();
                 this._restore = new WeakMap();
                 this._navRule = () => this._schedule(1200);
                 addNavigateRule(this.id, this._navRule);
@@ -11638,6 +11652,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (previous) img.setAttribute('src', previous);
                     delete img.dataset.ytkitOriginalThumbnail;
                 });
+                this._oEmbedControllers?.forEach((controller) => controller.abort());
+                this._oEmbedControllers?.clear();
+                this._oEmbedControllers = null;
                 this._oEmbedCache = null;
                 this._inFlight = null;
                 this._restore = null;
