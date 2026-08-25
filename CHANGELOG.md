@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The download progress panel no longer reads itself aloud every 750 ms. The
+  whole panel was a live region while the poll rewrote percent, speed and ETA on
+  every tick, so a five-minute download queued hundreds of full-panel
+  announcements and nothing else could be heard over it. One off-screen status
+  line now speaks, only when the download actually changes state, and a stalled
+  or blocked download interrupts instead of waiting its turn.
+
 - Element Zapper's rule rows say which rule they belong to. The toggle and the
   Remove button sat in a plain row beside the selector text with nothing tying
   them to it, so a screen reader announced "checkbox, not checked" and "Remove"

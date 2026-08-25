@@ -642,6 +642,21 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         && elementZapper.includes("t('zapRuleRemoveAriaTpl', 'Remove the rule for {selector}')"),
         'The rule toggle and its remove button must each name their selector');
 
+    // The panel used to be role="status" + aria-live + aria-atomic on the
+    // WHOLE panel while the poll rewrote percent, speed, ETA and copy every
+    // 750 ms. Each tick re-announced the badge, title, state pill, all three
+    // numbers and the buttons inside it, so a five-minute download queued
+    // roughly 400 full-panel announcements and the speech queue never drained.
+    add('Download progress announces state changes, not every poll',
+        downloadUi.includes("progressAnnouncer.setAttribute('aria-live', 'polite')")
+        && downloadUi.includes('const nextState = tone + \'|\' + label;')
+        && downloadUi.includes('if (nextState === announcedState) return;')
+        && !/panel\.setAttribute\('aria-live'/.test(downloadUi),
+        'One off-screen status line must carry the announcements, keyed on the state');
+    add('A stalled download interrupts rather than waiting its turn',
+        downloadUi.includes("progressAnnouncer.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');"),
+        'Error states must be assertive, and set before the text that triggers the announcement');
+
     add('Screen-reader smoke checklist references the overlay audit gate',
         smoke.includes('npm run audit:overlays') &&
         smoke.includes('Download options') &&

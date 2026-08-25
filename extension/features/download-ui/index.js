@@ -1117,9 +1117,7 @@
             const panel = document.createElement('div');
             panel.id = panelId;
             panel.className = 'ytkit-dl-progress';
-            panel.setAttribute('role', 'status');
-            panel.setAttribute('aria-live', 'polite');
-            panel.setAttribute('aria-atomic', 'true');
+            panel.setAttribute('role', 'group');
             panel.setAttribute('aria-label', audioOnly
                 ? t('dlProgressAriaAudio', 'Audio download progress')
                 : t('dlProgressAriaVideo', 'Video download progress'));
@@ -1187,6 +1185,17 @@
             meta.appendChild(spd);
             meta.appendChild(eta);
 
+            // A single status line, off-screen, is the only thing that speaks.
+            // The visible percent and ETA keep updating every poll without
+            // being announced, which is what a sighted user gets too: a number
+            // they can glance at rather than one read aloud six times a minute.
+            const progressAnnouncer = document.createElement('span');
+            progressAnnouncer.className = 'ytkit-dl-progress__announcer';
+            progressAnnouncer.setAttribute('aria-live', 'polite');
+            progressAnnouncer.setAttribute('aria-atomic', 'true');
+            progressAnnouncer.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;'
+                + 'padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;';
+
             const actions = document.createElement('div');
             actions.className = 'ytkit-dl-progress__actions';
             actions.hidden = true;
@@ -1198,11 +1207,21 @@
             repairBtn.addEventListener('click', () => MediaDLManager.showInstallPrompt('retry'));
             actions.appendChild(repairBtn);
 
+            let announcedState = '';
             const setProgressState = (tone, label, copy, showRepair = false) => {
                 panel.dataset.state = tone;
                 statePill.textContent = label;
                 statusCopy.textContent = copy;
                 actions.hidden = !showRepair;
+                // Only when the state itself moves. The copy carries a live
+                // percentage, so keying on it would announce every poll again.
+                const nextState = tone + '|' + label;
+                if (nextState === announcedState) return;
+                announcedState = nextState;
+                // Politeness first: a live region announces on mutation, so
+                // raising it after the write applies it to the NEXT message.
+                progressAnnouncer.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');
+                progressAnnouncer.textContent = copy;
             };
             setProgressState(
                 'pending',
@@ -1218,6 +1237,7 @@
             panel.appendChild(bar);
             panel.appendChild(meta);
             panel.appendChild(actions);
+            panel.appendChild(progressAnnouncer);
             document.body.appendChild(panel);
             MediaDLManager._raiseOverlay(panel);
 
