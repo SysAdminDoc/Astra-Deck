@@ -254,3 +254,212 @@ test('the feature is opt-in and adds no new install-time host permission', () =>
         'oEmbed must not introduce a host pattern of its own'
     );
 });
+
+// ── teardown of in-flight lookups ──
+
+// The feature object is a literal inside the monolith's feature array, so it is
+// lifted out and evaluated against stubs. Asserting on its SOURCE would only
+// prove the words are present; what matters here is whether an abort actually
+// reaches the fetch and what the cache remembers afterwards.
+function loadAntiTranslateThumbnails(deps) {
+    const source = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
+    const start = source.lastIndexOf('{', source.indexOf("id: 'antiTranslateThumbnails'"));
+    assert.ok(start > -1, 'antiTranslateThumbnails must exist');
+
+    // Balanced-brace extraction, string- and comment-aware. A fixed window
+    // would break the first time the feature grows.
+    let depth = 0;
+    let index = start;
+    let quote = '';
+    let inLine = false;
+    let inBlock = false;
+    for (; index < source.length; index += 1) {
+        const ch = source[index];
+        const next = source[index + 1];
+        if (inLine) { if (ch === '\n') inLine = false; continue; }
+        if (inBlock) { if (ch === '*' && next === '/') { inBlock = false; index += 1; } continue; }
+        if (quote) {
+            if (ch === '\\') { index += 1; continue; }
+            if (ch === quote) quote = '';
+            continue;
+        }
+        if (ch === '/' && next === '/') { inLine = true; index += 1; continue; }
+        if (ch === '/' && next === '*') { inBlock = true; index += 1; continue; }
+        if (ch === '"' || ch === "'" || ch === '`') { quote = ch; continue; }
+        if (ch === '{') depth += 1;
+        else if (ch === '}') { depth -= 1; if (depth === 0) break; }
+    }
+    const literal = source.slice(start, index + 1);
+    assert.ok(literal.includes('_lookupOEmbed'), 'the extraction must have caught the lookup');
+
+    const names = Object.keys(deps);
+    // eslint-disable-next-line no-new-func
+    const make = new Function(...names, 'return (' + literal + ');');
+    return make(...names.map((name) => deps[name]));
+}
+
+// init() arms the feed scheduler on a real timer. These tests are about the
+// lookup, and letting that timer fire drags the whole processing path in.
+function startFeature(feature) {
+    feature.init();
+    if (feature._timer) clearTimeout(feature._timer);
+    feature._timer = null;
+    return feature;
+}
+
+function stubDeps(overrides = {}) {
+    return {
+        parseThumbnailUrl: () => null,
+        buildOEmbedUrl: (videoId) => 'https://www.youtube.com/oembed?id=' + videoId,
+        parseOEmbedMetadata: () => ({ title: 'x' }),
+        resolveOriginalThumbnail: () => null,
+        DebugManager: { log() {} },
+        addNavigateRule() {},
+        removeNavigateRule() {},
+        addScopedMutationRule() {},
+        removeScopedMutationRule() {},
+        PageTypes: {},
+        document: { querySelectorAll: () => [] },
+        fetch: async () => { throw new Error('unstubbed fetch'); },
+        isWatchPagePath: () => false,
+        getPlayerResponse: () => null,
+        parseOEmbedThumbnailUrl: () => null,
+        ...overrides
+    };
+}
+
+// WHEN the feature is torn down while a thumbnail lookup is outstanding, that
+// request SHALL be aborted rather than left running to completion.
+test('destroy aborts the oEmbed lookups still in flight', async () => {
+    let seenSignal = null;
+    const feature = loadAntiTranslateThumbnails(stubDeps({
+        fetch: (url, options) => {
+            seenSignal = options.signal;
+            return new Promise((resolve, reject) => {
+                options.signal.addEventListener('abort', () => {
+                    const error = new Error('aborted');
+                    error.name = 'AbortError';
+                    reject(error);
+                });
+            });
+        }
+    }));
+
+    startFeature(feature);
+    const pending = feature._lookupOEmbed('aaaaaaaaaaa');
+    await Promise.resolve();
+    assert.ok(seenSignal, 'the lookup must carry a signal at all');
+    assert.equal(seenSignal.aborted, false);
+
+    feature.destroy();
+    assert.equal(seenSignal.aborted, true, 'destroy must abort the outstanding request');
+    assert.equal(await pending, null, 'the aborted lookup resolves to no metadata');
+});
+
+// WHEN a lookup is aborted, the videoId SHALL NOT be remembered as a miss.
+// Caching an abort would poison the entry for the rest of the page session, so
+// toggling the feature off and on would permanently stop restoring that
+// thumbnail — a failure caused entirely by the teardown.
+test('an aborted lookup is not cached as a miss', async () => {
+    let abortNow = null;
+    const feature = loadAntiTranslateThumbnails(stubDeps({
+        fetch: (url, options) => new Promise((resolve, reject) => {
+            abortNow = () => {
+                const error = new Error('aborted');
+                error.name = 'AbortError';
+                reject(error);
+            };
+            options.signal.addEventListener('abort', abortNow);
+        })
+    }));
+
+    startFeature(feature);
+    const cache = feature._oEmbedCache;
+    const pending = feature._lookupOEmbed('bbbbbbbbbbb');
+    await Promise.resolve();
+    abortNow();
+    assert.equal(await pending, null);
+    assert.equal(cache.has('bbbbbbbbbbb'), false,
+        'an abort says nothing about the video and must not be remembered as a miss');
+    assert.equal(feature._inFlight.size, 0, 'the in-flight slot must be released');
+});
+
+// WHEN a lookup fails for a real reason, it SHALL still be cached as a miss, or
+// every feed tick retries a video whose oEmbed is genuinely unavailable.
+test('a real failure is still cached as a miss', async () => {
+    const feature = loadAntiTranslateThumbnails(stubDeps({
+        fetch: async () => { throw new Error('network down'); }
+    }));
+    startFeature(feature);
+    assert.equal(await feature._lookupOEmbed('ccccccccccc'), null);
+    assert.equal(feature._oEmbedCache.get('ccccccccccc'), null);
+    assert.ok(feature._oEmbedCache.has('ccccccccccc'),
+        'a genuine failure must be remembered so the feed does not retry it every tick');
+});
+
+// WHEN a lookup hangs, it SHALL abort on its own rather than running forever.
+test('a hung lookup times out without waiting for teardown', async () => {
+    const timers = [];
+    const feature = loadAntiTranslateThumbnails(stubDeps({
+        fetch: (url, options) => new Promise((resolve, reject) => {
+            options.signal.addEventListener('abort', () => {
+                const error = new Error('aborted');
+                error.name = 'AbortError';
+                reject(error);
+            });
+        })
+    }));
+    startFeature(feature);
+    assert.equal(typeof feature._OEMBED_TIMEOUT_MS, 'number');
+    assert.ok(feature._OEMBED_TIMEOUT_MS > 0 && feature._OEMBED_TIMEOUT_MS <= 30000,
+        'the timeout must be a real bound, not effectively infinite');
+
+    // Drive the real timer rather than trusting the constant.
+    const realSetTimeout = globalThis.setTimeout;
+    globalThis.setTimeout = (fn, ms) => { timers.push({ fn, ms }); return realSetTimeout(() => {}, 0); };
+    let pending;
+    try {
+        pending = feature._lookupOEmbed('ddddddddddd');
+        await Promise.resolve();
+    } finally {
+        globalThis.setTimeout = realSetTimeout;
+    }
+    const armed = timers.find((entry) => entry.ms === feature._OEMBED_TIMEOUT_MS);
+    assert.ok(armed, 'the lookup must arm its own abort timer');
+    armed.fn();
+    assert.equal(await pending, null);
+    assert.equal(feature._oEmbedCache.has('ddddddddddd'), false,
+        'a timeout is an abort, so it must not be cached as a miss either');
+    feature.destroy();
+});
+
+// WHEN the extension fixes a leak in a feature the userscript also ships, the
+// userscript's own copy SHALL get the same fix. YTKit.user.js is
+// hand-maintained rather than generated from the monolith, so nothing carries
+// a change across on its own — its copy of this feature still had both the
+// missing abort AND the older post-teardown TypeError the extension had
+// already fixed.
+test('the hand-maintained userscript aborts its oEmbed lookups too', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
+    const start = source.indexOf("id: 'antiTranslateThumbnails'");
+    assert.ok(start > -1, 'the userscript must still ship this feature');
+    const end = source.indexOf("id: 'thumbnailQualityUpgrade'", start);
+    assert.ok(end > start, 'the feature must still be followed by its neighbour');
+    const body = source.slice(start, end);
+
+    assert.match(body, /signal: controller\.signal/,
+        'the lookup must carry an abort signal');
+    assert.match(body, /setTimeout\(\(\) => controller\.abort\(\), this\._OEMBED_TIMEOUT_MS\)/,
+        'a hung lookup must abort on its own');
+    assert.match(body, /this\._oEmbedControllers\?\.forEach\(\(controller\) => controller\.abort\(\)\)/,
+        'destroy must abort what is still outstanding');
+    assert.match(body, /if \(error\?\.name !== 'AbortError'\)/,
+        'an abort must not be cached as a miss');
+    // The older teardown fix never reached this copy either: destroy() nulls
+    // the cache while lookups are still awaiting, so every touch after an
+    // await has to tolerate it being gone.
+    assert.ok(!/this\._oEmbedCache\.set\(/.test(body),
+        'writes after an await must tolerate teardown having nulled the cache');
+    assert.ok(!/this\._inFlight\.delete\(/.test(body),
+        'the in-flight release runs in a finally that can outlive destroy');
+});

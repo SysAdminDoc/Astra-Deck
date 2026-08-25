@@ -34046,6 +34046,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // card per tick would be a self-inflicted rate limit.
             _oEmbedCache: null,
             _inFlight: null,
+            // A lookup that outlives the feature is a request nobody is going
+            // to read. Switching the feature off left them running to
+            // completion, and a hung one ran forever: there was no timeout
+            // either. enableHandleRevealer keeps the same set for the same
+            // reason.
+            _oEmbedControllers: null,
+            _OEMBED_TIMEOUT_MS: 8000,
             // Bound concurrent lookups: an infinite-scroll feed can surface
             // dozens of unseen ids in a single tick.
             _MAX_IN_FLIGHT: 4,
@@ -34065,10 +34072,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const url = buildOEmbedUrl?.(videoId);
                 if (!url) return null;
                 this._inFlight.add(videoId);
+                const controller = new AbortController();
+                this._oEmbedControllers?.add(controller);
+                const timeoutId = setTimeout(() => controller.abort(), this._OEMBED_TIMEOUT_MS);
                 try {
                     // Same origin as the page and explicitly credential-free:
                     // this must never become an identified request.
-                    const response = await fetch(url, { credentials: 'omit', cache: 'force-cache' });
+                    const response = await fetch(url, {
+                        credentials: 'omit',
+                        cache: 'force-cache',
+                        signal: controller.signal
+                    });
                     if (!response.ok) {
                         this._oEmbedCache.set(videoId, null);
                         return null;
@@ -34088,12 +34102,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._oEmbedCache?.set(videoId, meta);
                     return meta;
                 } catch (error) {
-                    // A failed lookup is cached as a miss so a video whose
-                    // oEmbed is unavailable is not retried on every feed tick.
-                    this._oEmbedCache?.set(videoId, null);
-                    DebugManager.log('AntiTranslate', `oEmbed lookup failed for ${videoId}: ${error?.message || error}`);
+                    // An abort says nothing about the video. Caching it as a
+                    // miss would poison the entry for the rest of the page
+                    // session, so a feature toggled off and on again, or one
+                    // slow request, would permanently stop restoring that
+                    // thumbnail. Only a real failure is remembered.
+                    if (error?.name !== 'AbortError') {
+                        // A failed lookup is cached as a miss so a video whose
+                        // oEmbed is unavailable is not retried on every feed tick.
+                        this._oEmbedCache?.set(videoId, null);
+                        DebugManager.log('AntiTranslate', `oEmbed lookup failed for ${videoId}: ${error?.message || error}`);
+                    }
                     return null;
                 } finally {
+                    clearTimeout(timeoutId);
+                    this._oEmbedControllers?.delete(controller);
                     this._inFlight?.delete(videoId);
                 }
             },
@@ -34166,6 +34189,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._oEmbedCache = new Map();
                 this._inFlight = new Set();
+                this._oEmbedControllers = new Set();
                 this._restore = new WeakMap();
                 this._navRule = () => this._schedule(1200);
                 addNavigateRule(this.id, this._navRule);
@@ -34189,6 +34213,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (previous) img.setAttribute('src', previous);
                     delete img.dataset.ytkitOriginalThumbnail;
                 });
+                // Before the state is nulled: the abort makes each pending
+                // fetch reject, and those handlers read _oEmbedControllers.
+                this._oEmbedControllers?.forEach((controller) => controller.abort());
+                this._oEmbedControllers?.clear();
+                this._oEmbedControllers = null;
                 this._oEmbedCache = null;
                 this._inFlight = null;
                 this._restore = null;

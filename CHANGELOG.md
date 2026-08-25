@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Turning off Anti-Translate Thumbnails now actually stops its network lookups.
+  They had no way to be cancelled and no time limit, so switching the feature
+  off left requests running to the end, and a request that hung ran forever.
+  Each lookup can be cancelled now and gives up after eight seconds, and a
+  cancelled one is no longer remembered as a failure, which used to stop that
+  thumbnail being restored for the rest of the page visit. The userscript build
+  had the same problem and got the same fix.
+
 - Two error messages stopped telling you to do things you can't do. Copying a
   selector-health report used to fail with "Open DevTools and call
   window.__ytkitDiagnostics.download()", which is not an instruction for anyone
