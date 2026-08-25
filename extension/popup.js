@@ -1656,10 +1656,13 @@ function showStatus(message = '', type = 'info', durationMs = 2800) {
         statusBanner.className = 'status';
         return;
     }
-    statusBanner.textContent = message;
-    statusBanner.className = `status ${normalizedType}`;
     // Errors must interrupt the screen reader; routine successes/info stay
     // polite. (The #status region is aria-live="polite" by default.)
+    // The politeness has to be in place BEFORE the text changes: the mutation
+    // is what queues the announcement, so setting role="alert" afterwards
+    // applied it to the NEXT message and left this error polite. In the other
+    // direction a routine message that followed an error inherited assertive
+    // and interrupted whatever the reader was on.
     if (normalizedType === 'error') {
         statusBanner.setAttribute('role', 'alert');
         statusBanner.setAttribute('aria-live', 'assertive');
@@ -1667,6 +1670,8 @@ function showStatus(message = '', type = 'info', durationMs = 2800) {
         statusBanner.removeAttribute('role');
         statusBanner.setAttribute('aria-live', 'polite');
     }
+    statusBanner.textContent = message;
+    statusBanner.className = `status ${normalizedType}`;
     if (durationMs > 0) {
         popupState.statusTimer = setTimeout(() => {
             statusBanner.textContent = '';

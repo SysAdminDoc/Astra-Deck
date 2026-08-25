@@ -19779,9 +19779,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const line = document.createElement('button');
                         line.type = 'button';
                         line.className = 'ytkit-transcript-line';
-                        line.title = `Jump to ${stamp}`;
-                        line.setAttribute('aria-label', t('transcriptJumpAriaTpl', 'Jump to {time} in the transcript')
-                            .replace('{time}', stamp));
+                        // No aria-label here. It would win the accessible-name
+                        // computation over the button's own contents, and a
+                        // button is a leaf in browse mode, so a screen reader
+                        // read the whole transcript back as "Jump to 0:05,
+                        // Jump to 0:12, Jump to 0:19" and the words themselves
+                        // were unreachable. The timestamp and text spans below
+                        // are the name; the jump hint is the description.
+                        line.title = t('transcriptJumpAriaTpl', 'Jump to {time} in the transcript')
+                            .replace('{time}', stamp);
 
                         const ts = document.createElement('span');
                         ts.className = 'ytkit-transcript-line__ts';
@@ -38856,7 +38862,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const searchMeta = document.createElement('span');
         searchMeta.className = 'ytkit-search-meta';
         searchMeta.id = 'ytkit-search-count';
-        searchMeta.textContent = 'All';
+        // The count is the only feedback that filtering happened. Without a
+        // live region a screen-reader user types and hears nothing while the
+        // list visibly shrinks. The comment search already does this; the
+        // settings search was the outlier. The initial label was also the one
+        // untranslated string here, so it shipped as English in every locale.
+        searchMeta.setAttribute('aria-live', 'polite');
+        searchMeta.setAttribute('aria-atomic', 'true');
+        searchMeta.textContent = t('commonAll', 'All');
         searchContainer.appendChild(searchIcon);
         searchContainer.appendChild(searchInput);
         searchActions.appendChild(searchClearBtn);
