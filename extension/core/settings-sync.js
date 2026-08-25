@@ -466,58 +466,69 @@
             try { return JSON.stringify(value); } catch (_) { return String(value); }
         }
 
-        // A suppression token is consumed by the matching storage.onChanged.
-        // But `storage.local.set` omits keys whose value did not actually
-        // change, so a token written for an already-equal key never fires and
-        // never gets consumed. With no reaper it lived for the life of the
-        // worker, holding a full serialized blocklist, and the next genuine
-        // change that happened to produce that same serialized value was
-        // filtered out and silently never uploaded. storage-manager.js solves
-        // the identical problem with `setTimeout(..., echoTtlMs)`.
+        // A suppression mark is consumed by the matching storage.onChanged. But
+        // `storage.local.set` omits keys whose value did not actually change, so
+        // a mark written for an already-equal key never fires and never gets
+        // consumed. With no reaper it lived for the life of the worker, holding
+        // a full serialized blocklist, and the next genuine change that happened
+        // to produce that same serialized value was filtered out and silently
+        // never uploaded.
+        //
+        // Marks carry identity rather than a count, which is the shape
+        // storage-manager.js uses for the same problem. A plain counter cannot
+        // tell one mark from another, so a reaper armed for an earlier mark
+        // would release a later one that reused the same serialized value.
         const SUPPRESSION_TTL_MS = 15000;
 
-        function releaseSuppressed(key, token) {
+        function suppressionMarks(key, create = false) {
+            let values = suppressedLocalChanges.get(key);
+            if (!values && create) {
+                values = new Map();
+                suppressedLocalChanges.set(key, values);
+            }
+            return values || null;
+        }
+
+        function dropSuppressionMark(key, token, mark) {
             const values = suppressedLocalChanges.get(key);
-            const count = values?.get(token) || 0;
-            if (!count) return;
-            if (count <= 1) values.delete(token);
-            else values.set(token, count - 1);
+            const marks = values?.get(token);
+            if (!marks?.delete(mark)) return false;
+            if (marks.size === 0) values.delete(token);
             if (values.size === 0) suppressedLocalChanges.delete(key);
+            return true;
+        }
+
+        function takeSuppressionMark(key, token) {
+            const values = suppressedLocalChanges.get(key);
+            const marks = values?.get(token);
+            if (!marks?.size) return false;
+            const mark = marks.values().next().value;
+            return dropSuppressionMark(key, token, mark);
         }
 
         function markSuppressed(entries) {
             for (const [key, value] of Object.entries(entries)) {
-                let values = suppressedLocalChanges.get(key);
-                if (!values) {
-                    values = new Map();
-                    suppressedLocalChanges.set(key, values);
-                }
+                const values = suppressionMarks(key, true);
                 const token = serialized(value);
-                values.set(token, (values.get(token) || 0) + 1);
-                setTimeout(() => releaseSuppressed(key, token), SUPPRESSION_TTL_MS);
+                let marks = values.get(token);
+                if (!marks) {
+                    marks = new Set();
+                    values.set(token, marks);
+                }
+                const mark = {};
+                marks.add(mark);
+                setTimeout(() => dropSuppressionMark(key, token, mark), SUPPRESSION_TTL_MS);
             }
         }
 
         function clearSuppressed(entries) {
             for (const [key, value] of Object.entries(entries)) {
-                const values = suppressedLocalChanges.get(key);
-                const token = serialized(value);
-                const count = values?.get(token) || 0;
-                if (count <= 1) values?.delete(token);
-                else values.set(token, count - 1);
-                if (values && values.size === 0) suppressedLocalChanges.delete(key);
+                takeSuppressionMark(key, serialized(value));
             }
         }
 
         function consumeSuppressed(key, value) {
-            const values = suppressedLocalChanges.get(key);
-            const token = serialized(value);
-            const count = values?.get(token) || 0;
-            if (!count) return false;
-            if (count === 1) values.delete(token);
-            else values.set(token, count - 1);
-            if (values.size === 0) suppressedLocalChanges.delete(key);
-            return true;
+            return takeSuppressionMark(key, serialized(value));
         }
 
         function localStateFromItems(items) {
