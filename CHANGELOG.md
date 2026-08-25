@@ -8,6 +8,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- "Copying isn't available" now tells you to select the text and copy it
+  yourself, rather than to check the browser console. Two more messages that had
+  been fixed in English were still showing the old wording in every other
+  language, including one that named an internal function nobody outside the
+  project can call.
+
+- Typing a dollar sign into the settings search no longer garbles the "no
+  results" message, and the same fix covers channel names in the subscriptions
+  panel.
+
 - The AI Summary panel and the queue panel give focus back when they close, on
   every route out of them rather than just the close button. Clearing the queue,
   or navigating to another video with the summary open, used to drop you at the

@@ -2188,6 +2188,47 @@ const UNACTIONABLE_ERROR_COPY_TRANSLATIONS = {
   }
 };
 for (const [locale, messages] of Object.entries(UNACTIONABLE_ERROR_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
+// Two strings whose English was rewritten while the translations kept
+// describing the old behaviour. The generator prefers an existing locale
+// string when no table entry matches the CURRENT English, so a rewrite
+// silently strands every non-English reader on the previous wording — the
+// transcript-index description still named window.__ytkitSearchTranscripts
+// and the retired brand in ten locales, and the clipboard failure sent every
+// locale to the browser console. Entries here are keyed on the new English,
+// which is what makes them win over the stale preserved string.
+const STALE_AFTER_ENGLISH_REWRITE_TRANSLATIONS = {
+  ar: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': 'النسخ غير متاح هنا. حدّد النص وانسخه بنفسك بدلاً من ذلك.'
+  },
+  de: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': 'Kopieren ist hier nicht möglich. Markieren Sie den Text und kopieren Sie ihn selbst.'
+  },
+  es: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': 'Copiar no está disponible aquí. Selecciona el texto y cópialo tú mismo.'
+  },
+  fr: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': 'La copie n’est pas disponible ici. Sélectionnez le texte et copiez-le vous-même.'
+  },
+  it: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': 'La copia non è disponibile qui. Seleziona il testo e copialo manualmente.'
+  },
+  ja: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': 'ここではコピーを利用できません。テキストを選択してご自身でコピーしてください。'
+  },
+  ko: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': '여기서는 복사를 사용할 수 없습니다. 텍스트를 선택해 직접 복사하세요.'
+  },
+  pt_BR: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': 'Copiar não está disponível aqui. Selecione o texto e copie manualmente.'
+  },
+  ru: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': 'Копирование здесь недоступно. Выделите текст и скопируйте его вручную.'
+  },
+  zh_CN: {
+    'Copying isn’t available here. Select the text and copy it yourself instead.': '此处无法复制。请选中文本并自行复制。'
+  }
+};
+for (const [locale, messages] of Object.entries(STALE_AFTER_ENGLISH_REWRITE_TRANSLATIONS)) Object.assign(T[locale], messages);
 const STORAGE_WRITE_FAILURE_TRANSLATIONS = {
   ar: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة.' },
   de: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck kann in diesem Browserprofil nicht speichern. Aktuelle Änderungen gehen möglicherweise verloren.' },

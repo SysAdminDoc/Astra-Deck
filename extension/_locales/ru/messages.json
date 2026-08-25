@@ -3270,7 +3270,7 @@
     "message": "Экспорт учёбы / работы"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Индексирует транскрипт каждого открытого видео в локальную IndexedDB. Добавляет глобальную панель «Поиск по транскриптам» из всплывающего окна или через window.__ytkitSearchTranscripts(query). Индекс можно очистить в настройках; без телеметрии."
+    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "Индекс поиска по транскриптам"
@@ -4961,9 +4961,6 @@
   "selectorHealthCopyDone": {
     "message": "Скопировано — вставьте в задачу на GitHub."
   },
-  "selectorHealthCopyFail": {
-    "message": "Не удалось скопировать в буфер обмена. Повторите попытку или нажмите кнопку «Сохранить» в диагностике, чтобы скачать отчёт."
-  },
   "selectorHealthCopyNeedYt": {
     "message": "Откройте вкладку YouTube для создания отчёта."
   },
@@ -5938,7 +5935,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "Буфер обмена недоступен — см. консоль браузера."
+    "message": "Копирование здесь недоступно. Выделите текст и скопируйте его вручную."
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."

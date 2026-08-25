@@ -3270,7 +3270,7 @@
     "message": "Exportação de Estudo / Trabalho"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indexa a transcrição de cada vídeo que você abre em um IndexedDB local. Adiciona um painel global \"Pesquisar Transcrições\" acessível pelo popup ou via window.__ytkitSearchTranscripts(query). O índice pode ser limpo nas configurações; sem telemetria."
+    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "Índice de Pesquisa de Transcrições"
@@ -4961,9 +4961,6 @@
   "selectorHealthCopyDone": {
     "message": "Copiado — cole em uma issue do GitHub."
   },
-  "selectorHealthCopyFail": {
-    "message": "Não foi possível copiar para a área de transferência. Tente novamente ou use o botão Salvar do diagnóstico para baixar o relatório."
-  },
   "selectorHealthCopyNeedYt": {
     "message": "Abra uma aba do YouTube para gerar o relatório."
   },
@@ -5938,7 +5935,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "Área de transferência indisponível — veja o console do navegador."
+    "message": "Copiar não está disponível aqui. Selecione o texto e copie manualmente."
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."

@@ -3270,7 +3270,7 @@
     "message": "Lern- / Arbeit-Export"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indiziert das Transkript jedes geöffneten Videos in einer lokalen IndexedDB. Fügt ein globales \"Transkripte durchsuchen\"-Panel hinzu, erreichbar über das Popup oder window.__ytkitSearchTranscripts(query). Index kann in den Einstellungen gelöscht werden; keine Telemetrie."
+    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "Transkript-Suchindex"
@@ -4961,9 +4961,6 @@
   "selectorHealthCopyDone": {
     "message": "Kopiert — in ein GitHub-Issue einfügen."
   },
-  "selectorHealthCopyFail": {
-    "message": "Kopieren in die Zwischenablage fehlgeschlagen. Versuchen Sie es erneut oder laden Sie den Bericht über die Schaltfläche „Speichern“ in der Diagnose herunter."
-  },
   "selectorHealthCopyNeedYt": {
     "message": "Einen YouTube-Tab öffnen, um den Bericht zu erstellen."
   },
@@ -5938,7 +5935,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "Zwischenablage nicht verfügbar — siehe Browser-Konsole."
+    "message": "Kopieren ist hier nicht möglich. Markieren Sie den Text und kopieren Sie ihn selbst."
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."

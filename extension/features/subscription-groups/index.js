@@ -979,7 +979,10 @@
                             if (staged[candidate.channelId]) {
                                 action.textContent = t('subscriptionHealthUndoStage', 'Undo stage');
                                 action.setAttribute('aria-label', t('subscriptionHealthUndoStageAriaTpl', 'Undo staged unsubscribe for {channel}')
-                                    .replace('{channel}', name.textContent));
+                                    // A function replacement: a channel display
+                                    // name is remote text, and a dollar-ampersand
+                                    // in one would rewrite the label around it.
+                                    .replace('{channel}', () => name.textContent));
                                 action.addEventListener('click', () => {
                                     this._undoStagedUnsubscribes([candidate.channelId]);
                                     this._renderHealthPanel();
@@ -987,7 +990,10 @@
                             } else {
                                 action.textContent = t('subscriptionHealthStage', 'Stage');
                                 action.setAttribute('aria-label', t('subscriptionHealthStageAriaTpl', 'Stage {channel} for unsubscribe review')
-                                    .replace('{channel}', name.textContent));
+                                    // A function replacement: a channel display
+                                    // name is remote text, and a dollar-ampersand
+                                    // in one would rewrite the label around it.
+                                    .replace('{channel}', () => name.textContent));
                                 action.addEventListener('click', () => {
                                     const now = Date.now();
                                     const next = { ...this._readUnsubscribeStaging() };

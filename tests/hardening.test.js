@@ -10566,7 +10566,12 @@ test('v4.47.0 popup ships selector-health "Copy report" wiring end-to-end', () =
         'selectorHealthCopyAria',
         'selectorHealthCopyPending',
         'selectorHealthCopyDone',
-        'selectorHealthCopyFail',
+        // selectorHealthCopyFail was here. It had no call site anywhere in the
+        // extension — the code uses selectorHealthCopySaveFallback at both — so
+        // it shipped in eleven catalogs describing a recovery nobody was ever
+        // shown. Deleted rather than reworded; the key the code renders is
+        // listed below in its place.
+        'selectorHealthCopySaveFallback',
         'selectorHealthCopyNeedYt',
         'selectorHealthCopyNoSnap',
     ]) {

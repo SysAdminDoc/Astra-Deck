@@ -186,14 +186,11 @@ test('the two error messages name an action a user can actually take', () => {
         const messages = JSON.parse(fs.readFileSync(
             path.join(localesDir, locale, 'messages.json'), 'utf8'));
 
-        const fail = messages.selectorHealthCopyFail?.message || '';
-        const sibling = messages.selectorHealthCopySaveFallback?.message || '';
-        assert.ok(fail, `${locale}: selectorHealthCopyFail must exist`);
-        // The working sibling is what the code actually uses at both call
-        // sites, so the stale key says the same thing rather than a second,
-        // worse version of it.
-        assert.equal(fail, sibling,
-            `${locale}: selectorHealthCopyFail must reuse its working sibling's wording`);
+        // The key the code actually renders, at both call sites. Its sibling
+        // selectorHealthCopyFail had no call site at all and was deleted rather
+        // than reworded, which is checked separately below.
+        const fail = messages.selectorHealthCopySaveFallback?.message || '';
+        assert.ok(fail, `${locale}: selectorHealthCopySaveFallback must exist`);
         assert.ok(!/DevTools/i.test(fail),
             `${locale}: a non-developer cannot open DevTools to recover from a failed copy`);
         assert.ok(!/__ytkitDiagnostics|window\./.test(fail),
@@ -206,4 +203,134 @@ test('the two error messages name an action a user can actually take', () => {
         assert.ok(!/about:addons/.test(reenable),
             `${locale}: naming the Firefox URL instead is the same mistake in reverse`);
     }
+});
+
+// WHEN user-facing copy names a developer tool or an internal API, it SHALL be
+// caught in EVERY locale, not only in English.
+//
+// The guard above bans English substrings — "DevTools", "chrome://" — on three
+// hand-picked keys. Rewriting an Italian string to send the reader to the
+// browser's developer console passed it, which is the exact failure mode it
+// exists to prevent: generate-locales prefers an existing locale string when no
+// table entry matches the CURRENT English, so a rewritten English message
+// leaves every translation describing the old behaviour.
+//
+// These tokens are language-independent. An API name, a browser URL scheme and
+// a retired brand look the same in every locale, so a stale translation carrying
+// one is detectable without knowing the language.
+const DEVELOPER_TOKENS = [
+    ['window.__ytkit', 'an internal API is not something a user can call'],
+    ['__ytkitDiagnostics', 'an internal API is not something a user can call'],
+    ['__ytkitSearchTranscripts', 'an internal API is not something a user can call'],
+    ['chrome://', 'this build also ships a Firefox sidebar'],
+    ['about:addons', 'and naming the Firefox URL instead is the same mistake in reverse'],
+    ['DevTools', 'a non-developer cannot open DevTools to recover from anything']
+];
+
+test('no locale sends a user to a developer tool or an internal API', () => {
+    const localesDir = path.join(repoRoot, 'extension', '_locales');
+    const locales = fs.readdirSync(localesDir).filter((name) =>
+        fs.existsSync(path.join(localesDir, name, 'messages.json')));
+    assert.ok(locales.length >= 10, 'every shipped locale must be checked');
+
+    const offenders = [];
+    for (const locale of locales) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(localesDir, locale, 'messages.json'), 'utf8'));
+        for (const [key, entry] of Object.entries(messages)) {
+            const message = String(entry?.message || '');
+            for (const [token, why] of DEVELOPER_TOKENS) {
+                if (message.includes(token)) offenders.push(`${locale}/${key}: ${token} — ${why}`);
+            }
+        }
+    }
+    assert.deepEqual(offenders, []);
+});
+
+// WHEN English copy is rewritten, the translations SHALL NOT be left describing
+// the old behaviour. A translation identical to the PREVIOUS English is the
+// visible signature; a translation that is byte-identical to the CURRENT
+// English is a legitimate fall-through and not a defect.
+test('the two rewritten messages reach every locale', () => {
+    const localesDir = path.join(repoRoot, 'extension', '_locales');
+    const en = JSON.parse(fs.readFileSync(path.join(localesDir, 'en', 'messages.json'), 'utf8'));
+    const locales = fs.readdirSync(localesDir).filter((name) => name !== 'en');
+
+    // The clipboard message was translated rather than left to fall through,
+    // because it is short and the instruction matters.
+    for (const locale of locales) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(localesDir, locale, 'messages.json'), 'utf8'));
+        const clipboard = messages.statusClipboardUnavailable?.message || '';
+        assert.ok(clipboard, `${locale}: statusClipboardUnavailable must exist`);
+        assert.notEqual(clipboard, 'Clipboard unavailable. Check the browser console for details.',
+            `${locale}: still carries the superseded English`);
+    }
+
+    // The transcript-index description falls through to the current English in
+    // every locale: its translations described a feature that no longer exists
+    // and named a retired API, and an accurate English sentence beats an
+    // inaccurate translated one.
+    const desc = en.feature_researchTranscriptIndex_desc.message;
+    for (const locale of locales) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(localesDir, locale, 'messages.json'), 'utf8'));
+        assert.equal(messages.feature_researchTranscriptIndex_desc?.message, desc,
+            `${locale}: must carry the current description, not a translation of the old one`);
+    }
+});
+
+// The orphan key is gone rather than reworded.
+test('the catalog ships no selector-health copy nothing renders', () => {
+    const localesDir = path.join(repoRoot, 'extension', '_locales');
+    for (const locale of fs.readdirSync(localesDir)) {
+        const file = path.join(localesDir, locale, 'messages.json');
+        if (!fs.existsSync(file)) continue;
+        const messages = JSON.parse(fs.readFileSync(file, 'utf8'));
+        assert.equal(messages.selectorHealthCopyFail, undefined,
+            `${locale}: selectorHealthCopyFail has no call site; the code uses its sibling at both`);
+        assert.ok(messages.selectorHealthCopySaveFallback?.message,
+            `${locale}: the key the code actually renders must exist`);
+    }
+    const popup = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
+    assert.ok(!popup.includes('selectorHealthCopyFail'),
+        'and nothing may start using it again without adding it back deliberately');
+});
+
+// WHEN a template substitution carries text a user or a remote page controls,
+// it SHALL use a function replacement.
+//
+// String.replace expands $&, $` , $' and $$ inside the REPLACEMENT, so a
+// selector, a search query or a channel name containing one rewrites the very
+// message meant to quote it back. Measured before the fix: typing $` into the
+// settings search produced "No settings found for “No settings found for “ X”",
+// and a channel display name would do the same to an aria-label.
+//
+// This is not every .replace('{x}', y) in the tree — most substitute a number
+// or a value this code produced. It is the ones fed by text from outside.
+const DOLLAR_EXPANSION_SITES = [
+    ['extension/features/element-zapper/index.js', "\\.replace\\('\\{selector\\}', \\(\\) => rule\\.selector\\)",
+        "the user's own CSS selector"],
+    ['extension/features/settings-panel/index.js', "\\.replace\\('\\{query\\}', \\(\\) => rawLabel\\)",
+        'the raw text from the settings search box'],
+    ['extension/features/subscription-groups/index.js', "\\.replace\\('\\{channel\\}', \\(\\) => name\\.textContent\\)",
+        "a channel display name, which is remote text"]
+];
+
+test('substitutions fed by outside text use a function replacement', () => {
+    for (const [rel, pattern, what] of DOLLAR_EXPANSION_SITES) {
+        const source = fs.readFileSync(path.join(repoRoot, rel), 'utf8');
+        assert.match(source, new RegExp(pattern),
+            `${rel}: this substitutes ${what}, so it cannot be a string replacement`);
+    }
+});
+
+// And the expansion itself, so the reason is pinned rather than described.
+test('a string replacement really does expand a dollar pattern', () => {
+    const template = 'No settings found for {query}';
+    const hostile = '$` X';
+    assert.notEqual(template.replace('{query}', hostile), 'No settings found for $` X',
+        'if this ever stops expanding, the guards above can be relaxed');
+    assert.equal(template.replace('{query}', () => hostile), 'No settings found for $` X',
+        'a function replacement is the form that does not expand');
 });

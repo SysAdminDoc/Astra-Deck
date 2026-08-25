@@ -4961,9 +4961,6 @@
   "selectorHealthCopyDone": {
     "message": "Copied. Paste it into a GitHub issue."
   },
-  "selectorHealthCopyFail": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
-  },
   "selectorHealthCopyNeedYt": {
     "message": "Open a YouTube tab to build the report."
   },
@@ -5926,7 +5923,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "Clipboard unavailable. Check the browser console for details."
+    "message": "Copying isn\u2019t available here. Select the text and copy it yourself instead."
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."

@@ -3270,7 +3270,7 @@
     "message": "تصدير الدراسة / العمل"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "يفهرس نص كل فيديو تفتحه في IndexedDB محلي. يضيف لوحة \"البحث في النصوص\" عالمية تظهر من النافذة المنبثقة أو عبر window.__ytkitSearchTranscripts(query). يمكن مسح الفهرس من الإعدادات؛ بدون قياس عن بُعد."
+    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "فهرس البحث في النصوص"
@@ -4961,9 +4961,6 @@
   "selectorHealthCopyDone": {
     "message": "تم النسخ — الصقه في مشكلة GitHub."
   },
-  "selectorHealthCopyFail": {
-    "message": "تعذّر النسخ إلى الحافظة. أعد المحاولة أو استخدم زر الحفظ في التشخيص لتنزيل التقرير."
-  },
   "selectorHealthCopyNeedYt": {
     "message": "افتح تبويبة YouTube لإنشاء التقرير."
   },
@@ -5938,7 +5935,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "الحافظة غير متاحة — انظر وحدة تحكم المتصفح."
+    "message": "النسخ غير متاح هنا. حدّد النص وانسخه بنفسك بدلاً من ذلك."
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."
