@@ -10,6 +10,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
+const fs = require('node:fs');
+const path = require('node:path');
+const repoRoot = path.join(__dirname, '..');
 const { sources } = require('./helpers/source');
 
 // The smallest DOM these helpers touch: querySelectorAll, contains, focus,
@@ -266,9 +269,9 @@ test('a dialog with nothing focusable still receives focus itself', () => {
 });
 
 // WHEN Tab reaches either end of a dialog, focus SHALL wrap inside it.
-test('Tab wraps at both ends of a dialog', () => {
+test('Tab wraps at both ends of a dialog that asked to trap it', () => {
     const { doc, dialog, controls, helpers } = dialogFixture();
-    helpers.installDialogFocusContract(dialog, {});
+    helpers.installDialogFocusContract(dialog, { trapFocus: true });
 
     controls[2].focus();
     assert.ok(dialog.press('Tab'), 'the last control wraps to the first');
@@ -305,4 +308,122 @@ test('disposing a dialog stops it handling keys', () => {
     dispose();
     dialog.press('Escape');
     assert.equal(closed, 0, 'a removed overlay must not keep answering keys');
+});
+
+// ── every path that removes a panel has to dispose its focus contract ──
+
+// WHEN a panel is removed by ANY path, the dialog contract SHALL be disposed,
+// so focus goes back to whatever opened it rather than being stranded on
+// <body>. The AI Summary panel had four removal paths and only one of them
+// disposed: the toggle, the navigate rule and destroy each called .remove()
+// directly. The navigate rule fires on every YouTube navigation, so that was
+// the common case. The queue had two: emptying the queue removed the panel from
+// under the user — open it from the keyboard, press Clear — and destroy.
+function panelTeardownPaths(source, featureId, nextId) {
+    const start = source.indexOf(`id: '${featureId}'`);
+    assert.ok(start > -1, `${featureId} must exist`);
+    const end = source.indexOf(`id: '${nextId}'`, start);
+    assert.ok(end > start, `${featureId} must still be followed by ${nextId}`);
+    return source.slice(start, end);
+}
+
+test('every AI Summary removal path goes through one teardown', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const block = panelTeardownPaths(source, 'aiVideoSummary', 'copyChapterMarkdown');
+
+    assert.match(block, /_closeSummaryPanel\(\) \{/, 'the single teardown must exist');
+    assert.match(block, /this\._aisumDialogDispose\?\.\(\);/,
+        'and it is the thing that disposes the contract');
+
+    // Nothing else may remove the panel behind its back.
+    const strays = [...block.matchAll(/this\._panel\??\.remove\(\)/g)];
+    assert.equal(strays.length, 1,
+        `${strays.length} direct panel removals; only _closeSummaryPanel may remove it`);
+    const teardownAt = block.indexOf('_closeSummaryPanel() {');
+    const strayAt = block.indexOf('this._panel?.remove()');
+    assert.ok(strayAt > teardownAt && strayAt < teardownAt + 700,
+        'the one removal must be the one inside the teardown');
+
+    for (const caller of ['_navRule', 'destroy()', 'if (this._panel) {']) {
+        assert.ok(block.includes(caller), `${caller} must still be here`);
+    }
+    const disposeCalls = [...block.matchAll(/this\._closeSummaryPanel\(\)/g)].length;
+    assert.ok(disposeCalls >= 4,
+        `only ${disposeCalls} paths route through the teardown; the toggle, the navigate rule, destroy and the close button all must`);
+});
+
+test('every persistent queue removal path goes through one teardown', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const block = panelTeardownPaths(source, 'persistentQueue', 'playlistEnhancer');
+
+    assert.match(block, /_closeQueuePanel\(\) \{/);
+    assert.match(block, /this\._queueDialogDispose\?\.\(\);/);
+
+    const strays = [...block.matchAll(/this\._panel\??\.remove\(\)/g)];
+    assert.equal(strays.length, 1,
+        `${strays.length} direct panel removals; only _closeQueuePanel may remove it`);
+
+    const closes = [...block.matchAll(/this\._closeQueuePanel\(\)/g)].length;
+    assert.ok(closes >= 3,
+        `only ${closes} paths route through the teardown; the toggle, the empty-queue render and destroy all must`);
+});
+
+// WHEN a dialog is not modal, it SHALL NOT trap Tab and SHALL NOT claim to be
+// modal. Both of these are corner and side panels with no backdrop, the video
+// keeps playing behind them, and nothing outside is inert — so a trap means a
+// keyboard user who opens the queue cannot reach the player again, and
+// aria-modal tells assistive technology something untrue.
+test('the two non-modal panels neither trap nor claim modality', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    for (const className of ['ytkit-queue-panel', 'ytkit-aisum-panel']) {
+        const at = source.indexOf(`panel.className = '${className}'`);
+        assert.ok(at > -1, `${className} must still be built here`);
+        const build = source.slice(at, at + 900);
+        assert.ok(!/aria-modal/.test(build), `${className} must not claim modality`);
+    }
+    // And neither install asks for the trap.
+    const installs = [...source.matchAll(/installDialogFocusContract\(panel, \{[\s\S]{0,300}?\}\);/g)]
+        .map((match) => match[0]);
+    assert.ok(installs.length >= 2, 'both panels must still install the contract');
+    for (const install of installs) {
+        assert.ok(!/trapFocus:\s*true/.test(install),
+            'neither of these panels is modal, so neither may trap Tab');
+    }
+});
+
+// The trap itself still works where it is asked for, or the option is a way to
+// silently lose it.
+test('the trap is opt-in and still traps when asked', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    assert.match(source, /trapFocus = false \} = \{\}\) \{/,
+        'trapping must be the thing a caller asks for, not the default');
+    assert.match(source, /if \(event\.key !== 'Tab' \|\| !trapFocus\) return;/,
+        'and the guard has to be on the Tab branch');
+});
+
+// WHEN a dialog does not ask to trap focus, Tab SHALL leave it. Trapping is
+// only correct for something genuinely modal; in a corner widget or a side
+// panel it means a keyboard user cannot get back to the page behind it.
+test('Tab leaves a dialog that did not ask to trap it', () => {
+    const { doc, dialog, controls, helpers } = dialogFixture();
+    helpers.installDialogFocusContract(dialog, {});
+
+    controls[2].focus();
+    assert.equal(dialog.press('Tab'), false,
+        'the last control must let the browser move focus out of a non-modal dialog');
+    assert.equal(doc.activeElement, controls[2], 'and the trap must not have moved it');
+
+    controls[0].focus();
+    assert.equal(dialog.press('Tab', true), false);
+
+    // Everything else the contract promises still holds without the trap.
+    let closed = 0;
+    const second = dialogFixture();
+    second.helpers.installDialogFocusContract(second.dialog, {
+        onClose: () => { closed += 1; },
+        returnFocus: second.trigger
+    });
+    assert.equal(second.doc.activeElement, second.controls[0], 'focus still goes in');
+    assert.ok(second.dialog.press('Escape'));
+    assert.equal(closed, 1, 'Escape still closes');
 });

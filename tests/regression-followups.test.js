@@ -113,9 +113,16 @@ test('the popup storage cards seed at zero and name the failure', () => {
     }
 
     // The dash is gone from the failure path entirely.
-    const start = popupJs.indexOf('async function renderStorageInfo()');
-    assert.ok(start > 0, 'renderStorageInfo must still exist');
+    //
+    // Sliced from the SETTERS, not from renderStorageInfo. setStatCardsUnavailable
+    // is defined above renderStorageInfo, so the old window left the failure
+    // path — the one these em-dash bans exist to protect — outside it, and an
+    // em dash written there passed unnoticed.
+    const start = popupJs.indexOf('function setStatCards(values)');
+    assert.ok(start > 0, 'the stat-card setters must still exist');
     const body = popupJs.slice(start, popupJs.indexOf('\nasync function renderSettingsSyncStatus', start));
+    assert.ok(body.includes('function setStatCardsUnavailable()'),
+        'the unavailable setter has to be inside the window these assertions read');
     // Only what it writes, not what it says: there is a prose em dash in a
     // comment in here and matching that would make this assertion about
     // punctuation rather than about behaviour.
@@ -138,9 +145,32 @@ test('the popup storage cards seed at zero and name the failure', () => {
 
     // Recovering from the unavailable state has to clear it, or the cards keep
     // the muted styling and the title after the numbers come back.
+    // Scoped to the per-element loop, not to the first 500 characters of the
+    // function: hoisting the clears out of the loop leaves them as dead code
+    // that still reads exactly like a clear.
     const setter = popupJs.slice(popupJs.indexOf('function setStatCards(values)'));
-    assert.match(setter.slice(0, 500), /delete element\.dataset\.state/);
-    assert.match(setter.slice(0, 500), /element\.removeAttribute\('title'\)/);
+    // Bounded at the loop's own closing brace. Slicing to the next function
+    // declaration lets anything declared in between count as "inside the loop",
+    // which is exactly what hoisting the clears out of it would produce.
+    const loopStart = setter.indexOf('for (let index');
+    const loopEnd = setter.indexOf('\n    }', loopStart);
+    assert.ok(loopStart > -1 && loopEnd > loopStart, 'the setter must still loop over the elements');
+    const loop = setter.slice(loopStart, loopEnd);
+    assert.match(loop, /delete element\.dataset\.state/,
+        'the state clear has to run per element, inside the loop');
+    assert.match(loop, /element\.removeAttribute\('title'\)/,
+        'and so does the title clear');
+
+    // The unavailable state has its own treatment, or it renders as a number.
+    const popupCss = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.css'), 'utf8');
+    const rule = popupCss.slice(popupCss.indexOf('.stat-card-value[data-state="unavailable"]'));
+    assert.ok(rule.startsWith('.stat-card-value[data-state="unavailable"]'),
+        'the unavailable state must carry its own rule');
+    const declarations = rule.slice(0, rule.indexOf('}'));
+    assert.match(declarations, /font-variant-numeric:\s*normal/,
+        'a word must not be rendered with the tabular figures a count uses');
+    assert.match(declarations, /color:\s*var\(--text-muted\)/,
+        'and it must not read with the weight of a real number');
 });
 
 // WHEN an error message tells the user what to do, that instruction SHALL be

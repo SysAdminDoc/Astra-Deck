@@ -684,7 +684,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     // real helpers against a fake DOM: a gate cannot press a key.
     add('The overlay keyboard contracts exist as one shared implementation',
         /function installMenuKeyboardModel\(menu, \{ onClose, returnFocus \} = \{\}\)/.test(ytkit)
-        && /function installDialogFocusContract\(dialog, \{ onClose, initialFocus, returnFocus \} = \{\}\)/.test(ytkit),
+        && /function installDialogFocusContract\(dialog, \{ onClose, initialFocus, returnFocus, trapFocus = false \} = \{\}\)/.test(ytkit),
         'Copying the contract per overlay is how four of them ended up with none of it');
 
     add('The speed popup implements the menu role it declares',
@@ -700,10 +700,41 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     add('The persistent queue takes focus and gives it back',
         /this\._queueDialogDispose = installDialogFocusContract\(panel, \{/.test(ytkit),
         'role="dialog" promises focus goes in on open and returns to the trigger on close');
-    add('A trapped overlay says it is modal',
-        !/setAttribute\('role', 'dialog'\)[\s\S]{0,400}?installDialogFocusContract/.test(ytkit)
-        || /setAttribute\('aria-modal', 'true'\)/.test(ytkit),
+    // This check used to be two ways vacuous. Its first disjunct looked for
+    // role="dialog" within 400 characters of the install call — the real
+    // distances are 1959 and 2238 — so it matched nowhere and !false satisfied
+    // the OR before the second disjunct was consulted; and that second disjunct
+    // was a bare file-wide search for aria-modal that six unrelated overlays
+    // already satisfied. Stripping aria-modal from both new dialogs left it
+    // green.
+    //
+    // It asks the real question now: every trapFocus caller declares modality,
+    // and every caller that does not trap does not claim it.
+    const dialogInstalls = [...ytkit.matchAll(/installDialogFocusContract\(([\s\S]{0,400}?)\}\);/g)]
+        .map((match) => match[1]);
+    add('Every overlay that traps Tab is one the page calls modal',
+        dialogInstalls.length >= 2
+        && dialogInstalls.every((call) => {
+            const traps = /trapFocus:\s*true/.test(call);
+            const target = /installDialogFocusContract\((\w+)/.exec('installDialogFocusContract(' + call);
+            const name = target ? target[1] : '';
+            if (!traps) return true;
+            // A trapping overlay has to declare aria-modal on the same element.
+            const declares = new RegExp(name + "\\.setAttribute\\('aria-modal', 'true'\\)").test(ytkit);
+            return declares;
+        }),
         'Trapping Tab inside something the page declares NOT modal is a bug, not a fix');
+    // Scoped to the two it applies to. The settings panel IS modal — a
+    // full-screen overlay with a real trap — and has to keep saying so.
+    const nonModalPanels = ['ytkit-queue-panel', 'ytkit-aisum-panel'];
+    add('The two non-modal panels do not claim modality',
+        nonModalPanels.every((className) => {
+            const at = ytkit.indexOf("panel.className = '" + className + "'");
+            if (at < 0) return false;
+            return !/aria-modal/.test(ytkit.slice(at, at + 900));
+        }),
+        'The queue is a corner widget and the AI summary is a side panel; the video plays behind both '
+        + 'and nothing outside them is inert, so aria-modal would be a false claim');
     add('The persistent queue panel label is localized',
         !/setAttribute\('aria-label', 'Astra persistent queue'\)/.test(ytkit),
         'A hardcoded English label is not a label for most of the people reading it');

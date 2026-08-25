@@ -8,6 +8,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The AI Summary panel and the queue panel give focus back when they close, on
+  every route out of them rather than just the close button. Clearing the queue,
+  or navigating to another video with the summary open, used to drop you at the
+  top of the page. Neither panel traps the Tab key any more either: they sit
+  beside the video rather than over it, so trapping meant a keyboard user who
+  opened one couldn't get back to the player.
+
 - Counts read properly instead of saying "3 video(s)". Eight messages used that
   shorthand, which isn't a plural in English and can't become one in any other
   language; each is now written both ways and the right one is picked. The

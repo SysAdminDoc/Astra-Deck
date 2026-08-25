@@ -679,11 +679,27 @@
                 if (!repaired) error.remoteMayBeInconsistent = true;
                 throw error;
             }
+            // Past this point the push HAS landed: the chunks are written and
+            // the metadata that names them is current, which is everything a
+            // peer reads. Tidying the chunk keys a shorter payload no longer
+            // uses is housekeeping, and it runs against the same per-minute
+            // write quota that is the usual reason anything here fails — so
+            // letting it throw reported a successful sync as a failure, left
+            // this device's last-meta record stale, and told the user their
+            // settings had not synced when they had.
             const staleKeys = [];
             for (let index = payloadInfo.chunks.length; index < previousChunkCount; index += 1) {
                 staleKeys.push(`${SYNC_CHUNK_PREFIX}${index}`);
             }
-            if (staleKeys.length) await removeSync(staleKeys);
+            if (!staleKeys.length) return { staleRemovalFailed: false };
+            try {
+                await removeSync(staleKeys);
+                return { staleRemovalFailed: false };
+            } catch (_) {
+                // reason: orphan chunk keys are ignored by every reader, which
+                // uses meta.chunkCount; the next successful push clears them
+                return { staleRemovalFailed: true };
+            }
         }
 
         async function clearRemotePayload() {
@@ -866,6 +882,7 @@
             ? options.localChangeDebounceMs
             : 600;
         let pendingLocalPush = null;
+        let inFlightLocalPush = null;
 
         function scheduleLocalPush(run) {
             if (pendingLocalPush) {
@@ -877,8 +894,13 @@
             const promise = new Promise((resolve) => { slot.resolvers.push(resolve); });
             slot.timer = setTimeout(() => {
                 pendingLocalPush = null;
-                Promise.resolve()
-                    .then(run)
+                const running = Promise.resolve().then(run);
+                inFlightLocalPush = running;
+                const settled = () => { if (inFlightLocalPush === running) inFlightLocalPush = null; };
+                running
+                    .then(settled, settled)
+                    .catch(() => { /* reason: settled never throws */ });
+                running
                     .then(
                         (value) => slot.resolvers.forEach((resolve) => resolve(value)),
                         (error) => slot.resolvers.forEach((resolve) => resolve({
@@ -914,7 +936,13 @@
         // to the teardown. Returns null when there was nothing waiting, so the
         // caller does not keep a worker alive for no reason.
         function flushLocalChanges() {
-            if (!pendingLocalPush) return null;
+            // A push that is already running counts as pending work.
+            //
+            // The debounce clears pendingLocalPush BEFORE it runs the push, so
+            // guarding on that alone returned null while chunks were being
+            // written and the metadata write had not happened yet — exactly the
+            // moment a teardown is worst. inFlightLocalPush covers that window.
+            if (!pendingLocalPush && !inFlightLocalPush) return null;
             return syncNow();
         }
 
