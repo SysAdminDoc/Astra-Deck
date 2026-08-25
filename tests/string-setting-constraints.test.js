@@ -136,3 +136,104 @@ test('ordinary values a user really sets still import', () => {
         assert.equal(result.settings[key], value, `${key}: the value must survive unchanged`);
     }
 });
+
+// WHEN a value already in local storage violates its schema constraint, the
+// export path SHALL default that key and name it, and SHALL still produce a
+// backup — while the import path SHALL still refuse the same value.
+//
+// The constraints landed on the export and sync paths only. The write path
+// kept a flat 256 KiB cap, so a settings-panel textarea with no maxlength
+// could store 5,000 characters into a 4,000-character setting and the next
+// backup threw "Settings export rejected" instead of producing a file. A
+// backup is what you want most at exactly that moment.
+test('a locally-stored value that breaks its constraint is repaired on the way out, not refused', () => {
+    const policy = loadPolicy();
+    const entry = SETTINGS_SCHEMA.find((item) => item.key === 'quickLinkItems');
+    const oversized = 'x'.repeat(entry.maxLength + 1);
+
+    const repaired = policy.validateSettingsSnapshot(
+        { quickLinkItems: oversized }, { repairInvalid: true });
+    assert.equal(repaired.ok, true, 'a backup must remain possible');
+    assert.equal(repaired.settings.quickLinkItems, entry.defaultValue);
+    assert.deepEqual(repaired.repairedKeys.map((item) => item.key), ['quickLinkItems']);
+    assert.match(repaired.repairedKeys[0].reason, /too long/);
+
+    // Import is the other direction and keeps the hard rejection.
+    const imported = policy.validateSettingsSnapshot({ quickLinkItems: oversized });
+    assert.equal(imported.ok, false);
+    assert.equal(imported.repairedKeys.length, 0);
+});
+
+// WHEN a value is refused, the error SHALL say why it was refused.
+test('a length or shape refusal is not reported as a type error', () => {
+    const policy = loadPolicy();
+    const long = policy.validateSettingsSnapshot({ customCssCode: 'a'.repeat(20001) });
+    assert.equal(long.ok, false);
+    assert.match(long.errors[0], /customCssCode/);
+    assert.match(long.errors[0], /too long: 20001 characters, limit 20000/);
+    assert.doesNotMatch(long.errors[0], /expected string/);
+
+    const shaped = policy.validateSettingsSnapshot({ aiSummaryEndpoint: 'ftp://example.test/x' });
+    assert.equal(shaped.ok, false);
+    assert.match(shaped.errors[0], /does not match the accepted format/);
+
+    // A genuine type error still reads as one.
+    const typed = policy.validateSettingsSnapshot({ customCssCode: 42 });
+    assert.equal(typed.ok, false);
+    assert.match(typed.errors[0], /invalid type: expected string/);
+});
+
+// WHEN the user names a profile the way people actually name things, the name
+// SHALL survive a backup round trip.
+test('profile names people actually type are accepted', () => {
+    const policy = loadPolicy();
+    // ytkit.js accepts any trimmed non-empty name, and imported JSON can carry
+    // one too. The first pattern here was ^[A-Za-z0-9_-]{1,64}$, which refused
+    // every one of these and took backup export down with it.
+    for (const name of ['default', 'Work laptop', 'Musik & Video', '日常', 'kid-safe.v2']) {
+        const result = policy.validateSettingsSnapshot({ _activeProfile: name });
+        assert.equal(result.ok, true, `profile name rejected: ${name}`);
+        assert.equal(result.settings._activeProfile, name);
+    }
+    // A name is a label, not a payload: control characters still go.
+    for (const bad of ['line\nbreak', 'tab\tstop', 'x'.repeat(65)]) {
+        assert.equal(policy.validateSettingsSnapshot({ _activeProfile: bad }).ok, false);
+    }
+});
+
+// WHEN a language preference is cleared, the empty value SHALL be accepted.
+test('clearing a language field is a legal state', () => {
+    const policy = loadPolicy();
+    for (const key of ['autoSubtitleLang', 'preferredAudioLang', 'transcriptPreferredLanguage']) {
+        assert.equal(policy.validateSettingsSnapshot({ [key]: '' }).ok, true,
+            `${key} must accept "no preference"`);
+        assert.equal(policy.validateSettingsSnapshot({ [key]: 'pt-BR' }).ok, true);
+        assert.equal(policy.validateSettingsSnapshot({ [key]: 'not a tag' }).ok, false);
+    }
+});
+
+// WHEN a setting is written through the cross-context controller, the schema's
+// own bound SHALL apply there too, so a value that the export path would
+// refuse can never reach storage in the first place.
+test('the write path enforces the same bounds the export path does', () => {
+    const source = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'core', 'settings-controller.js'), 'utf8');
+    const start = source.indexOf('function isValueValid(');
+    assert.ok(start > 0, 'the write-path validator must still be here');
+    const body = source.slice(start, source.indexOf('\n    function clampValue(', start));
+    assert.match(body, /entry\.maxLength/,
+        'the write path must honour the schema length bound, not only the flat cap');
+    assert.match(body, /entry\.pattern/,
+        'the write path must honour the schema pattern');
+    assert.match(body, /MAX_SETTING_STRING_LENGTH/,
+        'the flat cap still guards settings with no schema bound');
+});
+
+// WHEN the settings panel renders a free-text field, the browser SHALL stop the
+// user at the schema bound rather than letting an unstorable value be typed.
+test('the settings panel caps its textareas at the schema bound', () => {
+    const source = fs.readFileSync(
+        path.join(repoRoot, 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
+    assert.match(source, /textarea\.maxLength = textareaEntry\.maxLength/,
+        'the textarea had no cap at all, which is how a 5,000-character value reached a 4,000-character setting');
+});

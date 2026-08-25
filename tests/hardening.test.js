@@ -6242,8 +6242,13 @@ test('policy-profile validates schema-shaped settings backup payloads', () => {
         '{"sponsorBlock":"true","videosPerRow":"4","unknownFutureSetting":true,"__proto__":true}'
     ));
     assert.equal(invalid.ok, false, 'shape drift and unknown keys must be rejected');
-    assert.ok(invalid.errors.some((msg) => msg.includes('invalid type for "sponsorBlock"')));
-    assert.ok(invalid.errors.some((msg) => msg.includes('invalid type for "videosPerRow"')));
+    // The wording changed with the reason-aware refusal: every rejection
+    // used to read 'invalid type', including a well-typed string that simply
+    // ran past maxLength or missed its pattern. What this test is actually
+    // asserting is that the message names the key and the reason, and both of
+    // these ARE type errors, so both parts are still pinned.
+    assert.ok(invalid.errors.some((msg) => msg.includes('"sponsorBlock" invalid type: expected boolean')));
+    assert.ok(invalid.errors.some((msg) => msg.includes('"videosPerRow" invalid type: expected number')));
     assert.ok(invalid.errors.some((msg) => msg.includes('unknown setting "unknownFutureSetting"')));
     assert.ok(invalid.errors.some((msg) => msg.includes('unsafe setting key "__proto__"')));
 });

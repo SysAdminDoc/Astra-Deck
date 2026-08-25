@@ -991,11 +991,22 @@ function buildSchemaValidatedExportSettings(settings) {
     }
     const snapshot = policy.buildExportSnapshot(source, { schemaOnly: true });
     if (typeof policy.validateSettingsSnapshot === 'function') {
-        const validation = policy.validateSettingsSnapshot(snapshot.settings);
+        // A backup must never be impossible to take. This snapshot came out of
+        // this browser's own storage, so a value that fails the schema is a local
+        // state to record and repair, not an attack to refuse. It is defaulted and
+        // named in defaultedKeys, which the export summary already reports. Import
+        // keeps the hard rejection: that data comes from somewhere else.
+        const validation = policy.validateSettingsSnapshot(snapshot.settings, { repairInvalid: true });
         if (!validation.ok) {
             throw new Error(formatSchemaValidationError('Settings export rejected', validation));
         }
         snapshot.settings = sanitizeSettingsObject(validation.settings);
+        if (Array.isArray(validation.repairedKeys) && validation.repairedKeys.length) {
+            snapshot.defaultedKeys = [
+                ...(Array.isArray(snapshot.defaultedKeys) ? snapshot.defaultedKeys : []),
+                ...validation.repairedKeys.map((item) => item.key)
+            ];
+        }
     }
     return {
         settings: snapshot.settings,

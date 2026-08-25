@@ -100,11 +100,37 @@
         }
     }
 
+    // The schema's own bound for a string setting, not just the global cap.
+    //
+    // This path enforced a flat 256 KiB while the export and sync paths
+    // enforced the schema's maxLength and pattern. A value could therefore be
+    // stored here and then refused on the way out, which turned a reachable UI
+    // state into a broken backup.
+    const entryPatternCache = new Map();
+    function matchesEntryPattern(value, pattern) {
+        if (!entryPatternCache.has(pattern)) {
+            let compiled = null;
+            try { compiled = new RegExp(pattern); } catch (_) {
+                // reason: a broken schema pattern must reject, not open the gate
+            }
+            entryPatternCache.set(pattern, compiled);
+        }
+        const compiled = entryPatternCache.get(pattern);
+        return compiled ? compiled.test(value) : false;
+    }
+
     function isValueValid(value, entry) {
         if (!entry) return false;
         switch (entry.type) {
         case 'boolean': return typeof value === 'boolean';
-        case 'string': return typeof value === 'string' && value.length <= MAX_SETTING_STRING_LENGTH;
+        case 'string': {
+            if (typeof value !== 'string') return false;
+            if (value.length > MAX_SETTING_STRING_LENGTH) return false;
+            if (typeof entry.maxLength === 'number' && value.length > entry.maxLength) return false;
+            if (typeof entry.pattern === 'string' && entry.pattern
+                && !matchesEntryPattern(value, entry.pattern)) return false;
+            return true;
+        }
         case 'number': return typeof value === 'number' && Number.isFinite(value);
         case 'array': return Array.isArray(value)
             && value.length <= MAX_SETTING_ITEMS

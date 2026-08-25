@@ -211,6 +211,27 @@
             return compiled ? compiled.test(value) : false;
         }
 
+        // Why a value was refused, not just that it was.
+        //
+        // Every rejection used to be reported as `invalid type for "x":
+        // expected string`, including a perfectly good string that ran past
+        // maxLength or missed a pattern. The key was named and the reason was
+        // wrong, which sends the reader looking for a type problem that is not
+        // there.
+        function describeSettingValueRejection(value, entry) {
+            if (!entry || typeof entry.type !== 'string') return 'unknown setting shape';
+            if (entry.type === 'string' && typeof value === 'string') {
+                if (typeof entry.maxLength === 'number' && value.length > entry.maxLength) {
+                    return `too long: ${value.length} characters, limit ${entry.maxLength}`;
+                }
+                if (typeof entry.pattern === 'string' && entry.pattern
+                    && !matchesSettingPattern(value, entry.pattern)) {
+                    return 'does not match the accepted format';
+                }
+            }
+            return `invalid type: expected ${entry.type}`;
+        }
+
         function isSettingValueValid(value, entry) {
             if (!entry || typeof entry.type !== 'string') return false;
             switch (entry.type) {
@@ -267,9 +288,13 @@
         function validateSettingsSnapshot(settings = {}, options = {}) {
             const allowUnknown = options.allowUnknown === true;
             const dropUnknown = options.dropUnknown === true;
+            // Only for snapshots this browser produced from its own storage.
+            // Never for anything arriving from outside.
+            const repairInvalid = options.repairInvalid === true;
             const errors = [];
             const out = {};
             const skippedKeys = [];
+            const repairedKeys = [];
 
             if (!isPlainObject(settings)) {
                 return {
@@ -298,7 +323,20 @@
                 }
 
                 if (!isSettingValueValid(value, entry)) {
-                    errors.push(`invalid type for "${key}": expected ${entry.type}`);
+                    // Repair mode, for data this browser wrote itself.
+                    //
+                    // Export used to validate its own output and throw on any
+                    // failure, so one over-long textarea or one profile named
+                    // "Work laptop" made a backup impossible — at exactly the
+                    // moment a backup is most wanted, which is before fixing
+                    // anything. Import still refuses outright: that is data
+                    // from somewhere else, and the whole point of the check.
+                    if (repairInvalid) {
+                        out[key] = entry.defaultValue;
+                        repairedKeys.push({ key, reason: describeSettingValueRejection(value, entry) });
+                        continue;
+                    }
+                    errors.push(`"${key}" ${describeSettingValueRejection(value, entry)}`);
                     continue;
                 }
 
@@ -309,7 +347,8 @@
                 ok: errors.length === 0,
                 errors,
                 settings: out,
-                skippedKeys
+                skippedKeys,
+                repairedKeys
             };
         }
 

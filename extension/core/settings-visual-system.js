@@ -2656,7 +2656,16 @@
             --ytkit-premium-shadow: 0 18px 48px rgba(20,35,54,0.18);
         }
 
-        :is(
+        /* The leading html is load-bearing. Every feature stylesheet is
+           injected AFTER this one: core/settings-visual-system.js is runtime
+           module 5 and injects at evaluation, while the feature modules and
+           ytkit.js come later. Where a feature sets a ground with !important
+           at plain class specificity, the feature sheet wins on order and the
+           panel keeps its own dark ground while the light lane below still
+           repaints the text. That is how the speed popup ended up at 1.02:1
+           and the transcript batch panel at 1.88:1 in light theme. One
+           element of specificity is enough to settle it either way. */
+        html :is(
             .ytkit-ai-qa-modal__body,
             .ytkit-local-ai-modal__body,
             .ytkit-aisum-panel,
@@ -2724,7 +2733,7 @@
             color-scheme: light !important;
         }
 
-        :is(
+        html :is(
             .ytkit-dl-progress,
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
@@ -2892,7 +2901,10 @@
             .ytkit-wha-card, .ytkit-wha-head h2, .ytkit-stream-links-panel,
             .ytkit-blocked-watch-dialog, .ytkit-blocked-watch-channel, .ytkit-wellbeing-card,
             .ytkit-wellbeing-title, .ytkit-wellbeing-badge, .ytkit-install-prompt__title,
-            .ytkit-install-prompt__btn, #ytkit-mediadl-install-prompt
+            .ytkit-install-prompt__btn, #ytkit-mediadl-install-prompt,
+            .ytkit-ql-item, .ytkit-ql-empty-title, .ytkit-ql-input, .ytkit-ql-add-btn,
+            .ytkit-ql-bottom-btn, .ytkit-context-menu-item, .ytkit-bookmarks-empty-title,
+            .ytkit-subs-load-banner__btn
         ) { color: var(--ytkit-premium-text) !important; }
         html:not([dark]) :is(
             .ytkit-aisum-close, .ytkit-bookmarks-eyebrow, .ytkit-bookmarks-count,
@@ -2901,14 +2913,16 @@
             .ytkit-subs-load-banner__subtitle, .ytkit-transcript-search-panel .meta,
             .ytkit-transcript-search-panel__footer, .ytkit-wellbeing-msg,
             .ytkit-wellbeing-eyebrow, .ytkit-wha-close, .ytkit-install-prompt__close,
-            .ytkit-install-prompt__note
+            .ytkit-install-prompt__note, .ytkit-ql-empty-copy,
+            .ytkit-mediadl-banner__status
         ) { color: var(--ytkit-premium-muted) !important; }
         html:not([dark]) :is(
             .ytkit-bookmarks-status, .ytkit-bookmark-note-label, .ytkit-bookmark-delete,
             .ytkit-dl-progress__status-copy, .ytkit-playlist-enhance__status,
             .ytkit-speed-popup__sub, .ytkit-subs-load-banner__eyebrow,
             .ytkit-transcript-batch-meta, .ytkit-wha-lbl, .ytkit-wellbeing-hint,
-            .ytkit-install-prompt__desc, .ytkit-install-prompt__steps
+            .ytkit-install-prompt__desc, .ytkit-install-prompt__steps,
+            .ytkit-ql-form-note, .ytkit-search-hint
         ) { color: var(--ytkit-premium-subtle) !important; }
         html:not([dark]) :is(
             .ytkit-rc-head, .ytkit-stream-links-panel__warn
@@ -2926,14 +2940,28 @@
             .ytkit-wellbeing-icon-wrap, .ytkit-transcript-search-panel__footer button,
             .ytkit-stream-links-panel button, .ytkit-wha-close,
             .ytkit-install-prompt__btn, .ytkit-install-prompt__close,
-            .ytkit-install-prompt__note, .ytkit-install-prompt__eyebrow
+            .ytkit-install-prompt__note, .ytkit-install-prompt__eyebrow,
+            .ytkit-ql-input, .ytkit-ql-add-btn, .ytkit-ql-bottom-btn,
+            .ytkit-subs-load-banner__btn
         ) {
-            background: var(--ytkit-premium-raised);
-            border-color: var(--ytkit-premium-border);
+            /* !important, unlike the block this grew out of. Feature
+               sheets load after this one, so a plain declaration here
+               loses to any !important ground they set: the speed popup
+               chip was invisible at rest for exactly that reason while
+               its hover and active rules, which do carry !important,
+               worked. */
+            background: var(--ytkit-premium-raised) !important;
+            border-color: var(--ytkit-premium-border) !important;
         }
 
         /* Branded pill: takes the accent fill the panel palette relights. */
         html:not([dark]) .ytkit-install-prompt__eyebrow { color: var(--ytkit-premium-accent-fill) !important; }
+        /* The quick-link menu's "editing" affordance is #86c6ff, which reads
+           on the dark drop and washes out on the white panel. */
+        html:not([dark]) :is(
+            .ytkit-ql-editing .ytkit-ql-bottom-btn[aria-pressed="true"],
+            .ytkit-ql-bottom-btn[aria-pressed="true"]
+        ) { color: var(--ytkit-premium-accent-fill) !important; }
         html:not([dark]) .ytkit-speed-popup__item:hover {
             background: var(--ytkit-premium-hover) !important;
             color: var(--ytkit-premium-text) !important;
