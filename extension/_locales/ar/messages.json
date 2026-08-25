@@ -1979,6 +1979,42 @@
   "feature_daShowOriginalTitle_name": {
     "message": "إظهار العنوان الأصلي"
   },
+  "feature_daSurfaceHome_desc": {
+    "message": "استخدام DeArrow في خلاصة YouTube الرئيسية"
+  },
+  "feature_daSurfaceHome_name": {
+    "message": "خلاصة الصفحة الرئيسية"
+  },
+  "feature_daSurfacePlaylist_desc": {
+    "message": "استخدام DeArrow في صفحات قوائم التشغيل ولوحة قائمة التشغيل في صفحة المشاهدة"
+  },
+  "feature_daSurfacePlaylist_name": {
+    "message": "قوائم التشغيل"
+  },
+  "feature_daSurfaceRelated_desc": {
+    "message": "استخدام DeArrow في التوصيات بجانب الفيديو"
+  },
+  "feature_daSurfaceRelated_name": {
+    "message": "فيديوهات ذات صلة"
+  },
+  "feature_daSurfaceSearch_desc": {
+    "message": "استخدام DeArrow في نتائج بحث YouTube"
+  },
+  "feature_daSurfaceSearch_name": {
+    "message": "نتائج البحث"
+  },
+  "feature_daSurfaceSubscriptions_desc": {
+    "message": "استخدام DeArrow في خلاصة الاشتراكات"
+  },
+  "feature_daSurfaceSubscriptions_name": {
+    "message": "خلاصة الاشتراكات"
+  },
+  "feature_daSurfaceWatch_desc": {
+    "message": "استخدام DeArrow للفيديو الرئيسي وبياناته الوصفية"
+  },
+  "feature_daSurfaceWatch_name": {
+    "message": "صفحة المشاهدة"
+  },
   "feature_daTitleFormat_desc": {
     "message": "كيفية تنسيق العناوين البديلة"
   },
@@ -2355,7 +2391,7 @@
     "message": "Hide the Playlists entry"
   },
   "feature_guideHide_playlists_name": {
-    "message": "Playlists"
+    "message": "قوائم التشغيل"
   },
   "feature_guideHide_premium_desc": {
     "message": "Hide the YouTube Premium entry"

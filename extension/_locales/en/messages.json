@@ -1979,6 +1979,42 @@
   "feature_daShowOriginalTitle_name": {
     "message": "Show Original Title"
   },
+  "feature_daSurfaceHome_desc": {
+    "message": "Use DeArrow on the YouTube home feed"
+  },
+  "feature_daSurfaceHome_name": {
+    "message": "Home Feed"
+  },
+  "feature_daSurfacePlaylist_desc": {
+    "message": "Use DeArrow on playlist pages and in the watch-page playlist panel"
+  },
+  "feature_daSurfacePlaylist_name": {
+    "message": "Playlists"
+  },
+  "feature_daSurfaceRelated_desc": {
+    "message": "Use DeArrow in the recommendations beside a video"
+  },
+  "feature_daSurfaceRelated_name": {
+    "message": "Related Videos"
+  },
+  "feature_daSurfaceSearch_desc": {
+    "message": "Use DeArrow in YouTube search results"
+  },
+  "feature_daSurfaceSearch_name": {
+    "message": "Search Results"
+  },
+  "feature_daSurfaceSubscriptions_desc": {
+    "message": "Use DeArrow in the subscriptions feed"
+  },
+  "feature_daSurfaceSubscriptions_name": {
+    "message": "Subscriptions Feed"
+  },
+  "feature_daSurfaceWatch_desc": {
+    "message": "Use DeArrow on the primary video and its metadata"
+  },
+  "feature_daSurfaceWatch_name": {
+    "message": "Watch Page"
+  },
   "feature_daTitleFormat_desc": {
     "message": "How to format replacement titles"
   },

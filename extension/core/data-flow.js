@@ -359,6 +359,12 @@
         sponsorBlockBaseUrl: 'sponsorBlock',
         sponsorBlockMirrorUrl: 'sponsorBlock',
         // DeArrow shape/format sub-toggles
+        daSurfaceWatch: 'deArrow',
+        daSurfaceRelated: 'deArrow',
+        daSurfaceHome: 'deArrow',
+        daSurfaceSearch: 'deArrow',
+        daSurfaceSubscriptions: 'deArrow',
+        daSurfacePlaylist: 'deArrow',
         daReplaceTitles: 'deArrow',
         daReplaceThumbs: 'deArrow',
         deArrowVoting: 'deArrow',

@@ -23,7 +23,7 @@
 | Release | `v4.85.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
-| Settings schema | `478` entries across `18` categories |
+| Settings schema | `484` entries across `18` categories |
 | Runtime graph | `115` modules, including `27` peeled feature modules and `293` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
@@ -383,7 +383,7 @@ The toolbar popup provides the lightweight control surface: polished quick toggl
 <!-- BEGIN GENERATED SETTINGS REFERENCE -->
 ### Complete settings reference
 
-This generated knowledgebase documents all **473 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
+This generated knowledgebase documents all **479 user-facing settings** in the canonical schema. The remaining 5 schema entries are internal migration/profile metadata, not user controls. Defaults, accepted values, build availability, scope, apply behavior, capability requirements, and introduction version are source-derived; purpose copy comes from the shipped feature definition or an audited subordinate-field description.
 
 > `Extension only` settings are unavailable in the standalone userscript. `GitHub-full only` settings require a compatible GitHub-full build/profile and any permission shown in the UI. `Deferred apply` means the value is consumed on the next relevant render or navigation rather than rebuilding the current surface immediately.
 
@@ -849,11 +849,17 @@ This generated knowledgebase documents all **473 user-facing settings** in the c
 </details>
 
 <details>
-<summary><strong>SponsorBlock, DeArrow, and enrichment</strong>: 31 settings</summary>
+<summary><strong>SponsorBlock, DeArrow, and enrichment</strong>: 37 settings</summary>
 
 | Setting | Purpose | Default and accepted values | Availability and behavior |
 | --- | --- | --- | --- |
 | <a id="setting-deArrow"></a><strong>DeArrow</strong><br><code>deArrow</code> | Replace clickbait titles and thumbnails with SponsorBlock data licensed under CC BY-NC-SA 4.0 | Default: Off | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
+| <a id="setting-daSurfaceWatch"></a><strong>Watch Page</strong><br><code>daSurfaceWatch</code> | Use DeArrow on the primary video and its metadata | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |
+| <a id="setting-daSurfaceRelated"></a><strong>Related Videos</strong><br><code>daSurfaceRelated</code> | Use DeArrow in the recommendations beside a video | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |
+| <a id="setting-daSurfaceHome"></a><strong>Home Feed</strong><br><code>daSurfaceHome</code> | Use DeArrow on the YouTube home feed | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |
+| <a id="setting-daSurfaceSearch"></a><strong>Search Results</strong><br><code>daSurfaceSearch</code> | Use DeArrow in YouTube search results | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |
+| <a id="setting-daSurfaceSubscriptions"></a><strong>Subscriptions Feed</strong><br><code>daSurfaceSubscriptions</code> | Use DeArrow in the subscriptions feed | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |
+| <a id="setting-daSurfacePlaylist"></a><strong>Playlists</strong><br><code>daSurfacePlaylist</code> | Use DeArrow on playlist pages and in the watch-page playlist panel | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Global<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v4.86.0</code> |
 | <a id="setting-daReplaceTitles"></a><strong>Replace Titles</strong><br><code>daReplaceTitles</code> | Replace clickbait titles with crowdsourced alternatives | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-daReplaceThumbs"></a><strong>Replace Thumbnails</strong><br><code>daReplaceThumbs</code> | Replace clickbait thumbnails with video screenshots | Default: On | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply + reversible teardown<br>Remote API<br>Since <code>v0.1.0</code> |
 | <a id="setting-daTitleFormat"></a><strong>Title Format</strong><br><code>daTitleFormat</code> | How to format replacement titles | Default: <code>sentence</code><br>Values: <code>sentence</code>, <code>title_case</code>, <code>original</code> | Extension + userscript<br>Store-safe + GitHub-full<br>Player<br>Live apply<br>Since <code>v0.1.0</code> |

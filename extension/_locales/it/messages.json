@@ -1979,6 +1979,42 @@
   "feature_daShowOriginalTitle_name": {
     "message": "Mostra il titolo originale"
   },
+  "feature_daSurfaceHome_desc": {
+    "message": "Usa DeArrow nel feed Home di YouTube"
+  },
+  "feature_daSurfaceHome_name": {
+    "message": "Feed Home"
+  },
+  "feature_daSurfacePlaylist_desc": {
+    "message": "Usa DeArrow nelle pagine delle playlist e nel pannello della playlist della pagina di visualizzazione"
+  },
+  "feature_daSurfacePlaylist_name": {
+    "message": "Playlist"
+  },
+  "feature_daSurfaceRelated_desc": {
+    "message": "Usa DeArrow nei consigli accanto a un video"
+  },
+  "feature_daSurfaceRelated_name": {
+    "message": "Video correlati"
+  },
+  "feature_daSurfaceSearch_desc": {
+    "message": "Usa DeArrow nei risultati di ricerca di YouTube"
+  },
+  "feature_daSurfaceSearch_name": {
+    "message": "Risultati di ricerca"
+  },
+  "feature_daSurfaceSubscriptions_desc": {
+    "message": "Usa DeArrow nel feed Iscrizioni"
+  },
+  "feature_daSurfaceSubscriptions_name": {
+    "message": "Feed Iscrizioni"
+  },
+  "feature_daSurfaceWatch_desc": {
+    "message": "Usa DeArrow sul video principale e sui relativi metadati"
+  },
+  "feature_daSurfaceWatch_name": {
+    "message": "Pagina di visualizzazione"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Come formattare i titoli sostitutivi"
   },
@@ -2355,7 +2391,7 @@
     "message": "Hide the Playlists entry"
   },
   "feature_guideHide_playlists_name": {
-    "message": "Playlists"
+    "message": "Playlist"
   },
   "feature_guideHide_premium_desc": {
     "message": "Hide the YouTube Premium entry"

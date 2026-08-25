@@ -1979,6 +1979,42 @@
   "feature_daShowOriginalTitle_name": {
     "message": "显示原始标题"
   },
+  "feature_daSurfaceHome_desc": {
+    "message": "在 YouTube 首页信息流中使用 DeArrow"
+  },
+  "feature_daSurfaceHome_name": {
+    "message": "首页信息流"
+  },
+  "feature_daSurfacePlaylist_desc": {
+    "message": "在播放列表页面和观看页面的播放列表面板中使用 DeArrow"
+  },
+  "feature_daSurfacePlaylist_name": {
+    "message": "播放列表"
+  },
+  "feature_daSurfaceRelated_desc": {
+    "message": "在视频旁的推荐内容中使用 DeArrow"
+  },
+  "feature_daSurfaceRelated_name": {
+    "message": "相关视频"
+  },
+  "feature_daSurfaceSearch_desc": {
+    "message": "在 YouTube 搜索结果中使用 DeArrow"
+  },
+  "feature_daSurfaceSearch_name": {
+    "message": "搜索结果"
+  },
+  "feature_daSurfaceSubscriptions_desc": {
+    "message": "在订阅信息流中使用 DeArrow"
+  },
+  "feature_daSurfaceSubscriptions_name": {
+    "message": "订阅信息流"
+  },
+  "feature_daSurfaceWatch_desc": {
+    "message": "在主视频及其元数据中使用 DeArrow"
+  },
+  "feature_daSurfaceWatch_name": {
+    "message": "观看页面"
+  },
   "feature_daTitleFormat_desc": {
     "message": "如何格式化替换标题"
   },
@@ -2355,7 +2391,7 @@
     "message": "Hide the Playlists entry"
   },
   "feature_guideHide_playlists_name": {
-    "message": "Playlists"
+    "message": "播放列表"
   },
   "feature_guideHide_premium_desc": {
     "message": "Hide the YouTube Premium entry"

@@ -162,6 +162,7 @@
                         el.classList.remove('daOriginalTitle');
                         el.removeAttribute('data-da-original-title');
                         delete el.dataset.daProcessed;
+                        delete el.dataset.daSurfaceSkipped;
                     });
                     document.querySelectorAll('.da-replaced-thumb').forEach(el => {
                         if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
@@ -183,6 +184,10 @@
                 };
                 this._observer = new MutationObserver(() => {
                     if (isWatchPagePath()) return;
+                    if (!self._anySurfaceEnabledHere()) {
+                        self._disconnectObserver();
+                        return;
+                    }
                     clearTimeout(self._processTimer);
                     self._processTimer = setTimeout(() => self._processPage(), 300);
                 });
@@ -196,7 +201,12 @@
                 if (!isWatchPagePath()) this._connectObserver();
             },
             _connectObserver() {
-                if (this._observing || !this._observer) return;
+                if (!this._observer) return;
+                if (!this._anySurfaceEnabledHere()) {
+                    this._disconnectObserver();
+                    return;
+                }
+                if (this._observing) return;
                 this._observer.observe(document.body, { childList: true, subtree: true });
                 this._observing = true;
             },
@@ -425,7 +435,84 @@
                 const entry = overrides[channelId];
                 return entry && typeof entry === 'object' ? entry.mode || null : null;
             },
+            // Which surface a card is on, and whether DeArrow is wanted there.
+            //
+            // DeArrow processed every renderer in the document, so a user who
+            // only wanted it on the home feed still paid for a fetch per card
+            // on playlists, search and the watch sidebar. The upstream project
+            // has been asked for exactly this twice (DeArrow #92 and #423).
+            //
+            // Attribution is structural: YouTube marks a browse page with
+            // page-subtype and gives each surface its own container element.
+            // Nothing here matches a generated class.
+            _SURFACE_MASKS: Object.freeze({
+                watch: 'daSurfaceWatch',
+                related: 'daSurfaceRelated',
+                home: 'daSurfaceHome',
+                search: 'daSurfaceSearch',
+                subscriptions: 'daSurfaceSubscriptions',
+                playlist: 'daSurfacePlaylist'
+            }),
+
+            _surfaceOf(element) {
+                if (!element?.closest) return '';
+                // The watch sidebar and the playlist panel beside the player
+                // are checked first: both live inside a watch page, so a
+                // page-level test would call them "watch".
+                if (element.closest('ytd-watch-next-secondary-results-renderer')) return 'related';
+                if (element.closest('ytd-playlist-panel-renderer, ytd-playlist-video-list-renderer')) return 'playlist';
+                if (element.closest('ytd-search')) return 'search';
+                const browse = element.closest('ytd-browse');
+                if (browse?.getAttribute) {
+                    const subtype = browse.getAttribute('page-subtype') || '';
+                    if (subtype === 'home') return 'home';
+                    if (subtype === 'subscriptions') return 'subscriptions';
+                    if (subtype === 'playlist') return 'playlist';
+                }
+                if (typeof isWatchPagePath === 'function' && isWatchPagePath()) return 'watch';
+                return '';
+            },
+
+            // An unrecognised surface stays enabled. A mask is a way to switch
+            // something off deliberately, not a way for a YouTube redesign to
+            // switch DeArrow off silently.
+            _surfaceEnabled(surface) {
+                const key = this._SURFACE_MASKS[surface];
+                if (!key) return true;
+                return appState.settings?.[key] !== false;
+            },
+
+            _currentPageSurfaces() {
+                if (isWatchPagePath()) return ['watch', 'related', 'playlist'];
+                if (document.querySelector?.('ytd-search')) return ['search'];
+
+                const browse = document.querySelector?.('ytd-browse[page-subtype], ytd-browse');
+                const subtype = browse?.getAttribute?.('page-subtype') || '';
+                if (subtype === 'home') return ['home'];
+                if (subtype === 'subscriptions') return ['subscriptions'];
+                if (subtype === 'playlist') return ['playlist'];
+
+                // The pathname closes the short gap before Polymer stamps the
+                // page host. Unknown routes stay enabled so a YouTube redesign
+                // cannot silently disable DeArrow everywhere.
+                const pathname = globalThis.location?.pathname || '';
+                if (pathname === '/') return ['home'];
+                if (pathname.startsWith('/results')) return ['search'];
+                if (pathname.startsWith('/feed/subscriptions')) return ['subscriptions'];
+                if (pathname.startsWith('/playlist')) return ['playlist'];
+                return Object.keys(this._SURFACE_MASKS);
+            },
+
+            // Is any surface DeArrow could act on here still switched on? When
+            // none is, the observer is never attached: an excluded surface must
+            // cost nothing, not merely skip its fetches.
+            _anySurfaceEnabledHere() {
+                return this._currentPageSurfaces()
+                    .some((surface) => this._surfaceEnabled(surface));
+            },
+
             async _processPage() {
+                if (!this._anySurfaceEnabledHere()) return;
                 const gen = this._generation;
                 const route = this._routeToken;
                 const replaceTitles = appState.settings.daReplaceTitles;
@@ -445,6 +532,13 @@
                     // 'off'      → skip title + thumb replacement entirely for this card
                     // 'original' → also skip (channel author wants original metadata)
                     // 'dearrow'  → fall through to normal DeArrow path
+                    // Before the fetch, not after: an excluded surface must
+                    // cost no request, which is the whole reason to exclude one.
+                    const surface = this._surfaceOf(el);
+                    if (!this._surfaceEnabled(surface)) {
+                        el.dataset.daSurfaceSkipped = surface;
+                        continue;
+                    }
                     const overrideMode = this._channelOverrideMode(el);
                     if (overrideMode === 'off' || overrideMode === 'original') {
                         el.dataset.daOverride = overrideMode;
@@ -498,7 +592,7 @@
                         }
                     }
                 }
-                if (isWatchPagePath() && replaceTitles) {
+                if (isWatchPagePath() && this._surfaceEnabled('watch') && replaceTitles) {
                     const titleEl = document.querySelector(this._WATCH_TITLE_SELECTORS);
                     const videoId = getVideoId();
                     if (titleEl && videoId && VIDEO_ID_PATTERN.test(videoId) && !titleEl.dataset.daProcessed) {
@@ -544,6 +638,7 @@
                     el.classList.remove('daOriginalTitle');
                     el.removeAttribute('data-da-original-title');
                     delete el.dataset.daProcessed;
+                    delete el.dataset.daSurfaceSkipped;
                 });
                 document.querySelectorAll('.da-replaced-thumb').forEach(el => {
                     if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }

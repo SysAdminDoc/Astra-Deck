@@ -48,6 +48,18 @@ T.zh_CN = {};
 
 // ── German (de) ──
 T.de = {
+  'Watch Page': 'Wiedergabeseite',
+  'Use DeArrow on the primary video and its metadata': 'DeArrow für das Hauptvideo und seine Metadaten verwenden',
+  'Related Videos': 'Ähnliche Videos',
+  'Use DeArrow in the recommendations beside a video': 'DeArrow in den Empfehlungen neben einem Video verwenden',
+  'Home Feed': 'Startseiten-Feed',
+  'Use DeArrow on the YouTube home feed': 'DeArrow im YouTube-Startseiten-Feed verwenden',
+  'Search Results': 'Suchergebnisse',
+  'Use DeArrow in YouTube search results': 'DeArrow in den YouTube-Suchergebnissen verwenden',
+  'Subscriptions Feed': 'Abonnement-Feed',
+  'Use DeArrow in the subscriptions feed': 'DeArrow im Abonnement-Feed verwenden',
+  'Playlists': 'Wiedergabelisten',
+  'Use DeArrow on playlist pages and in the watch-page playlist panel': 'DeArrow auf Wiedergabelistenseiten und im Wiedergabelistenbereich der Wiedergabeseite verwenden',
   'Resize Theater Split panels': 'Größe der Theater-Split-Bereiche ändern',
   "Transcript batch cancelled after navigation": "Transkript-Stapel nach Navigation abgebrochen",
   "Exported transcript study pack ({done}/{total} succeeded)": "Transkript-Lernpaket exportiert ({done}/{total} erfolgreich)",
@@ -280,6 +292,18 @@ T.de = {
 
 // ── Spanish (es) ──
 T.es = {
+  'Watch Page': 'Página de reproducción',
+  'Use DeArrow on the primary video and its metadata': 'Usar DeArrow en el vídeo principal y sus metadatos',
+  'Related Videos': 'Vídeos relacionados',
+  'Use DeArrow in the recommendations beside a video': 'Usar DeArrow en las recomendaciones junto a un vídeo',
+  'Home Feed': 'Feed de inicio',
+  'Use DeArrow on the YouTube home feed': 'Usar DeArrow en el feed de inicio de YouTube',
+  'Search Results': 'Resultados de búsqueda',
+  'Use DeArrow in YouTube search results': 'Usar DeArrow en los resultados de búsqueda de YouTube',
+  'Subscriptions Feed': 'Feed de suscripciones',
+  'Use DeArrow in the subscriptions feed': 'Usar DeArrow en el feed de suscripciones',
+  'Playlists': 'Listas de reproducción',
+  'Use DeArrow on playlist pages and in the watch-page playlist panel': 'Usar DeArrow en las páginas de listas de reproducción y en el panel de listas de la página de reproducción',
   'Resize Theater Split panels': 'Cambiar el tamaño de los paneles de Theater Split',
   "Transcript batch cancelled after navigation": "Lote de transcripciones cancelado tras la navegación",
   "Exported transcript study pack ({done}/{total} succeeded)": "Paquete de estudio de transcripciones exportado ({done}/{total} correctos)",
@@ -500,6 +524,18 @@ T.es = {
 
 // ── Russian (ru) ──
 T.ru = {
+  'Watch Page': 'Страница просмотра',
+  'Use DeArrow on the primary video and its metadata': 'Использовать DeArrow для основного видео и его метаданных',
+  'Related Videos': 'Похожие видео',
+  'Use DeArrow in the recommendations beside a video': 'Использовать DeArrow в рекомендациях рядом с видео',
+  'Home Feed': 'Главная лента',
+  'Use DeArrow on the YouTube home feed': 'Использовать DeArrow в главной ленте YouTube',
+  'Search Results': 'Результаты поиска',
+  'Use DeArrow in YouTube search results': 'Использовать DeArrow в результатах поиска YouTube',
+  'Subscriptions Feed': 'Лента подписок',
+  'Use DeArrow in the subscriptions feed': 'Использовать DeArrow в ленте подписок',
+  'Playlists': 'Плейлисты',
+  'Use DeArrow on playlist pages and in the watch-page playlist panel': 'Использовать DeArrow на страницах плейлистов и в панели плейлиста на странице просмотра',
   'Resize Theater Split panels': 'Изменить размер панелей Theater Split',
   "Transcript batch cancelled after navigation": "Пакет расшифровок отменён после перехода",
   "Exported transcript study pack ({done}/{total} succeeded)": "Учебный пакет расшифровок экспортирован ({done}/{total} успешно)",
@@ -720,6 +756,18 @@ T.ru = {
 
 // ── French (fr) ──
 T.fr = {
+  'Watch Page': 'Page de lecture',
+  'Use DeArrow on the primary video and its metadata': 'Utiliser DeArrow sur la vidéo principale et ses métadonnées',
+  'Related Videos': 'Vidéos associées',
+  'Use DeArrow in the recommendations beside a video': 'Utiliser DeArrow dans les recommandations à côté d’une vidéo',
+  'Home Feed': 'Fil d’accueil',
+  'Use DeArrow on the YouTube home feed': 'Utiliser DeArrow dans le fil d’accueil YouTube',
+  'Search Results': 'Résultats de recherche',
+  'Use DeArrow in YouTube search results': 'Utiliser DeArrow dans les résultats de recherche YouTube',
+  'Subscriptions Feed': 'Fil des abonnements',
+  'Use DeArrow in the subscriptions feed': 'Utiliser DeArrow dans le fil des abonnements',
+  'Playlists': 'Playlists',
+  'Use DeArrow on playlist pages and in the watch-page playlist panel': 'Utiliser DeArrow sur les pages de playlists et dans le panneau de playlist de la page de lecture',
   'Resize Theater Split panels': 'Redimensionner les panneaux Theater Split',
   "Transcript batch cancelled after navigation": "Lot de transcriptions annulé après la navigation",
   "Exported transcript study pack ({done}/{total} succeeded)": "Pack d'étude de transcriptions exporté ({done}/{total} réussis)",
@@ -938,6 +986,18 @@ T.fr = {
 
 // ── Italian (it) ──
 T.it = {
+  'Watch Page': 'Pagina di visualizzazione',
+  'Use DeArrow on the primary video and its metadata': 'Usa DeArrow sul video principale e sui relativi metadati',
+  'Related Videos': 'Video correlati',
+  'Use DeArrow in the recommendations beside a video': 'Usa DeArrow nei consigli accanto a un video',
+  'Home Feed': 'Feed Home',
+  'Use DeArrow on the YouTube home feed': 'Usa DeArrow nel feed Home di YouTube',
+  'Search Results': 'Risultati di ricerca',
+  'Use DeArrow in YouTube search results': 'Usa DeArrow nei risultati di ricerca di YouTube',
+  'Subscriptions Feed': 'Feed Iscrizioni',
+  'Use DeArrow in the subscriptions feed': 'Usa DeArrow nel feed Iscrizioni',
+  'Playlists': 'Playlist',
+  'Use DeArrow on playlist pages and in the watch-page playlist panel': 'Usa DeArrow nelle pagine delle playlist e nel pannello della playlist della pagina di visualizzazione',
   'Resize Theater Split panels': 'Ridimensiona i pannelli Theater Split',
   "Transcript batch cancelled after navigation": "Lotto di trascrizioni annullato dopo la navigazione",
   "Exported transcript study pack ({done}/{total} succeeded)": "Pacchetto di studio delle trascrizioni esportato ({done}/{total} riusciti)",
@@ -1149,6 +1209,18 @@ T.it = {
 
 // ── Brazilian Portuguese (pt_BR) ──
 T.pt_BR = {
+  'Watch Page': 'Página de exibição',
+  'Use DeArrow on the primary video and its metadata': 'Usar o DeArrow no vídeo principal e nos metadados dele',
+  'Related Videos': 'Vídeos relacionados',
+  'Use DeArrow in the recommendations beside a video': 'Usar o DeArrow nas recomendações ao lado de um vídeo',
+  'Home Feed': 'Feed da página inicial',
+  'Use DeArrow on the YouTube home feed': 'Usar o DeArrow no feed da página inicial do YouTube',
+  'Search Results': 'Resultados da pesquisa',
+  'Use DeArrow in YouTube search results': 'Usar o DeArrow nos resultados da pesquisa do YouTube',
+  'Subscriptions Feed': 'Feed de inscrições',
+  'Use DeArrow in the subscriptions feed': 'Usar o DeArrow no feed de inscrições',
+  'Playlists': 'Playlists',
+  'Use DeArrow on playlist pages and in the watch-page playlist panel': 'Usar o DeArrow nas páginas de playlists e no painel da playlist da página de exibição',
   'Resize Theater Split panels': 'Redimensionar painéis do Theater Split',
   "Transcript batch cancelled after navigation": "Lote de transcrições cancelado após a navegação",
   "Exported transcript study pack ({done}/{total} succeeded)": "Pacote de estudo de transcrições exportado ({done}/{total} com sucesso)",
@@ -1360,6 +1432,18 @@ T.pt_BR = {
 
 // ── Japanese (ja) ──
 T.ja = {
+  'Watch Page': '視聴ページ',
+  'Use DeArrow on the primary video and its metadata': 'メイン動画とそのメタデータで DeArrow を使用する',
+  'Related Videos': '関連動画',
+  'Use DeArrow in the recommendations beside a video': '動画の横にあるおすすめで DeArrow を使用する',
+  'Home Feed': 'ホームフィード',
+  'Use DeArrow on the YouTube home feed': 'YouTube のホームフィードで DeArrow を使用する',
+  'Search Results': '検索結果',
+  'Use DeArrow in YouTube search results': 'YouTube の検索結果で DeArrow を使用する',
+  'Subscriptions Feed': '登録チャンネルフィード',
+  'Use DeArrow in the subscriptions feed': '登録チャンネルフィードで DeArrow を使用する',
+  'Playlists': '再生リスト',
+  'Use DeArrow on playlist pages and in the watch-page playlist panel': '再生リストページと視聴ページの再生リストパネルで DeArrow を使用する',
   'Resize Theater Split panels': 'シアター分割パネルのサイズを変更',
   "Transcript batch cancelled after navigation": "ページ移動により文字起こしの一括処理を中止しました",
   "Exported transcript study pack ({done}/{total} succeeded)": "文字起こし学習パックを書き出しました（{done}/{total} 件成功）",
@@ -1574,6 +1658,18 @@ T.ja = {
 
 // ── Korean (ko) ──
 T.ko = {
+  'Watch Page': '시청 페이지',
+  'Use DeArrow on the primary video and its metadata': '기본 동영상과 메타데이터에 DeArrow 사용',
+  'Related Videos': '관련 동영상',
+  'Use DeArrow in the recommendations beside a video': '동영상 옆 추천 목록에 DeArrow 사용',
+  'Home Feed': '홈 피드',
+  'Use DeArrow on the YouTube home feed': 'YouTube 홈 피드에 DeArrow 사용',
+  'Search Results': '검색 결과',
+  'Use DeArrow in YouTube search results': 'YouTube 검색 결과에 DeArrow 사용',
+  'Subscriptions Feed': '구독 피드',
+  'Use DeArrow in the subscriptions feed': '구독 피드에 DeArrow 사용',
+  'Playlists': '재생목록',
+  'Use DeArrow on playlist pages and in the watch-page playlist panel': '재생목록 페이지와 시청 페이지의 재생목록 패널에 DeArrow 사용',
   'Resize Theater Split panels': '시어터 분할 패널 크기 조절',
   "Transcript batch cancelled after navigation": "페이지 이동으로 스크립트 일괄 작업이 취소되었습니다",
   "Exported transcript study pack ({done}/{total} succeeded)": "스크립트 학습 팩을 내보냈습니다({done}/{total}개 성공)",

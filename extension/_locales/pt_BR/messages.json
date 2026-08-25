@@ -1979,6 +1979,42 @@
   "feature_daShowOriginalTitle_name": {
     "message": "Mostrar o título original"
   },
+  "feature_daSurfaceHome_desc": {
+    "message": "Usar o DeArrow no feed da página inicial do YouTube"
+  },
+  "feature_daSurfaceHome_name": {
+    "message": "Feed da página inicial"
+  },
+  "feature_daSurfacePlaylist_desc": {
+    "message": "Usar o DeArrow nas páginas de playlists e no painel da playlist da página de exibição"
+  },
+  "feature_daSurfacePlaylist_name": {
+    "message": "Playlists"
+  },
+  "feature_daSurfaceRelated_desc": {
+    "message": "Usar o DeArrow nas recomendações ao lado de um vídeo"
+  },
+  "feature_daSurfaceRelated_name": {
+    "message": "Vídeos relacionados"
+  },
+  "feature_daSurfaceSearch_desc": {
+    "message": "Usar o DeArrow nos resultados da pesquisa do YouTube"
+  },
+  "feature_daSurfaceSearch_name": {
+    "message": "Resultados da pesquisa"
+  },
+  "feature_daSurfaceSubscriptions_desc": {
+    "message": "Usar o DeArrow no feed de inscrições"
+  },
+  "feature_daSurfaceSubscriptions_name": {
+    "message": "Feed de inscrições"
+  },
+  "feature_daSurfaceWatch_desc": {
+    "message": "Usar o DeArrow no vídeo principal e nos metadados dele"
+  },
+  "feature_daSurfaceWatch_name": {
+    "message": "Página de exibição"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Como formatar os títulos substituídos"
   },

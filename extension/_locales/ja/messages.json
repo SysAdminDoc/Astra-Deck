@@ -1979,6 +1979,42 @@
   "feature_daShowOriginalTitle_name": {
     "message": "元のタイトルを表示"
   },
+  "feature_daSurfaceHome_desc": {
+    "message": "YouTube のホームフィードで DeArrow を使用する"
+  },
+  "feature_daSurfaceHome_name": {
+    "message": "ホームフィード"
+  },
+  "feature_daSurfacePlaylist_desc": {
+    "message": "再生リストページと視聴ページの再生リストパネルで DeArrow を使用する"
+  },
+  "feature_daSurfacePlaylist_name": {
+    "message": "再生リスト"
+  },
+  "feature_daSurfaceRelated_desc": {
+    "message": "動画の横にあるおすすめで DeArrow を使用する"
+  },
+  "feature_daSurfaceRelated_name": {
+    "message": "関連動画"
+  },
+  "feature_daSurfaceSearch_desc": {
+    "message": "YouTube の検索結果で DeArrow を使用する"
+  },
+  "feature_daSurfaceSearch_name": {
+    "message": "検索結果"
+  },
+  "feature_daSurfaceSubscriptions_desc": {
+    "message": "登録チャンネルフィードで DeArrow を使用する"
+  },
+  "feature_daSurfaceSubscriptions_name": {
+    "message": "登録チャンネルフィード"
+  },
+  "feature_daSurfaceWatch_desc": {
+    "message": "メイン動画とそのメタデータで DeArrow を使用する"
+  },
+  "feature_daSurfaceWatch_name": {
+    "message": "視聴ページ"
+  },
   "feature_daTitleFormat_desc": {
     "message": "置換タイトルのフォーマット方法"
   },
@@ -2355,7 +2391,7 @@
     "message": "Hide the Playlists entry"
   },
   "feature_guideHide_playlists_name": {
-    "message": "Playlists"
+    "message": "再生リスト"
   },
   "feature_guideHide_premium_desc": {
     "message": "Hide the YouTube Premium entry"
