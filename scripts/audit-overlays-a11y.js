@@ -668,6 +668,45 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         downloadUi.includes("progressAnnouncer.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');"),
         'Error states must be assertive, and set before the text that triggers the announcement');
 
+    // Four overlays declared a role and implemented none of it.
+    //
+    // The speed popup was role="menu" with 18 menuitemradio children, every one
+    // its own tab stop, no arrow keys, no focus on open and no restore. The
+    // context menu was role="menu" with no accessible name and no keydown
+    // handler at all — not even Escape, which makes a right-click menu a trap
+    // for anyone who opened it with the context-menu key. The AI Summary panel
+    // and the persistent queue were both role="dialog" appended to <body> with
+    // no way in and no way back.
+    //
+    // These check the wiring, one call site each. The keyboard behaviour itself
+    // is exercised in tests/overlay-keyboard-contract.test.js, which runs the
+    // real helpers against a fake DOM: a gate cannot press a key.
+    add('The overlay keyboard contracts exist as one shared implementation',
+        /function installMenuKeyboardModel\(menu, \{ onClose, returnFocus \} = \{\}\)/.test(ytkit)
+        && /function installDialogFocusContract\(dialog, \{ onClose, initialFocus, returnFocus \} = \{\}\)/.test(ytkit),
+        'Copying the contract per overlay is how four of them ended up with none of it');
+
+    add('The speed popup implements the menu role it declares',
+        /installMenuKeyboardModel\(popup, \{/.test(ytkit),
+        'role="menu" promises arrow keys and one tab stop');
+    add('The Astra context menu is named, and can be left with Escape',
+        /menu\.setAttribute\('aria-label', t\('astraContextMenuAria'/.test(ytkit)
+        && /this\._menuDispose = installMenuKeyboardModel\(menu, \{/.test(ytkit),
+        'An unnamed menu with no keydown handler tells the listener nothing and traps them');
+    add('The AI Summary panel takes focus and gives it back',
+        /this\._aisumDialogDispose = installDialogFocusContract\(panel, \{/.test(ytkit),
+        'role="dialog" promises focus goes in on open and returns to the trigger on close');
+    add('The persistent queue takes focus and gives it back',
+        /this\._queueDialogDispose = installDialogFocusContract\(panel, \{/.test(ytkit),
+        'role="dialog" promises focus goes in on open and returns to the trigger on close');
+    add('A trapped overlay says it is modal',
+        !/setAttribute\('role', 'dialog'\)[\s\S]{0,400}?installDialogFocusContract/.test(ytkit)
+        || /setAttribute\('aria-modal', 'true'\)/.test(ytkit),
+        'Trapping Tab inside something the page declares NOT modal is a bug, not a fix');
+    add('The persistent queue panel label is localized',
+        !/setAttribute\('aria-label', 'Astra persistent queue'\)/.test(ytkit),
+        'A hardcoded English label is not a label for most of the people reading it');
+
     add('Screen-reader smoke checklist references the overlay audit gate',
         smoke.includes('npm run audit:overlays') &&
         smoke.includes('Download options') &&

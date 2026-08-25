@@ -8,6 +8,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Four overlays can be used from the keyboard. The playback speed popup, the
+  Astra right-click menu, the AI Summary panel and the persistent queue all
+  announced themselves as menus or dialogs and then behaved like neither: none
+  of them took focus when they opened, the menus ignored the arrow keys, the
+  right-click menu had no Escape at all, and closing any of them left you back
+  at the top of the page. They now take focus on open, move through their items
+  with the arrow keys, close on Escape and hand focus back to whatever you used
+  to open them. The queue panel's label is translated instead of English-only,
+  and the right-click menu has a name. Its description also stopped claiming it
+  never replaces YouTube's own menu, which on the player and on feed cards is
+  exactly what it does.
+
 - Fourteen more light-theme surfaces are readable: the subscription banner's
   stat rows and buttons, the context menu heading, the download history panel's
   empty state and buttons, the speed presets title and status, and the

@@ -3220,6 +3220,143 @@ const STORAGE_KEYS = Object.freeze({
         }
     }
 
+    // ── Keyboard contracts for the overlays that declare a role ──
+    //
+    // Four overlays declared a role they did not implement. A role is a promise
+    // about how the thing behaves: role="menu" promises arrow keys and one tab
+    // stop, role="dialog" promises focus goes in and comes back out. Declaring
+    // one and implementing none of it is worse than declaring nothing, because
+    // assistive tech announces the promise.
+    //
+    // The Transcript Q&A modal already had a working version of the dialog
+    // half. These are that, factored out, so the next overlay gets it by
+    // calling one function instead of by copying forty lines.
+
+    const MENU_ITEM_SELECTOR = '[role="menuitem"],[role="menuitemradio"],[role="menuitemcheckbox"]';
+    const DIALOG_FOCUSABLE_SELECTOR = 'a[href],button:not([disabled]),input:not([disabled]),'
+        + 'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+    // Restore focus only if it is still ours to move. If the user has clicked
+    // into something else, yanking focus back to the trigger is its own bug.
+    function _restoreOverlayFocus(container, returnFocus) {
+        if (!returnFocus || returnFocus.isConnected === false) return;
+        const active = document.activeElement;
+        const ours = !active || active === document.body || container.contains(active);
+        if (ours) returnFocus.focus?.({ preventScroll: true });
+    }
+
+    // A menu is ONE tab stop with a roving tabindex, arrow keys to move, Home
+    // and End to jump, Escape to leave. Tab leaves the menu entirely, which is
+    // the pattern's own answer and also stops focus landing behind an overlay
+    // that is still on screen.
+    function installMenuKeyboardModel(menu, { onClose, returnFocus } = {}) {
+        const itemsOf = () => Array.from(menu.querySelectorAll(MENU_ITEM_SELECTOR))
+            .filter((item) => !item.disabled && item.getAttribute('aria-hidden') !== 'true');
+        const initial = itemsOf();
+        if (!initial.length) return () => {};
+
+        const focusAt = (index) => {
+            const list = itemsOf();
+            if (!list.length) return;
+            const next = ((index % list.length) + list.length) % list.length;
+            list.forEach((item, position) => { item.tabIndex = position === next ? 0 : -1; });
+            list[next].focus({ preventScroll: true });
+        };
+
+        const onKeydown = (event) => {
+            const list = itemsOf();
+            const current = list.indexOf(document.activeElement);
+            switch (event.key) {
+            case 'ArrowDown':
+            case 'ArrowRight':
+                event.preventDefault();
+                focusAt(current + 1);
+                return;
+            case 'ArrowUp':
+            case 'ArrowLeft':
+                event.preventDefault();
+                focusAt(current - 1);
+                return;
+            case 'Home':
+                event.preventDefault();
+                focusAt(0);
+                return;
+            case 'End':
+                event.preventDefault();
+                focusAt(list.length - 1);
+                return;
+            case 'Escape':
+                event.preventDefault();
+                event.stopPropagation();
+                onClose?.();
+                return;
+            case 'Tab':
+                onClose?.();
+                return;
+            default:
+            }
+        };
+
+        menu.addEventListener('keydown', onKeydown);
+        // Open on the checked item where there is one: a radio menu that opens
+        // on its first entry hides which option is currently in force.
+        const checked = initial.findIndex((item) => item.getAttribute('aria-checked') === 'true');
+        focusAt(checked === -1 ? 0 : checked);
+
+        return () => {
+            menu.removeEventListener('keydown', onKeydown);
+            _restoreOverlayFocus(menu, returnFocus);
+        };
+    }
+
+    // A dialog takes focus, keeps it while it is open, gives it back on close.
+    // Callers that use this must also declare aria-modal, because trapping Tab
+    // inside something the page says is NOT modal is a bug rather than a fix.
+    function installDialogFocusContract(dialog, { onClose, initialFocus, returnFocus } = {}) {
+        const controlsOf = () => Array.from(dialog.querySelectorAll(DIALOG_FOCUSABLE_SELECTOR))
+            .filter((control) => control.getAttribute('aria-hidden') !== 'true');
+
+        const onKeydown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                onClose?.();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const list = controlsOf();
+            if (!list.length) return;
+            const current = list.indexOf(document.activeElement);
+            const last = list.length - 1;
+            if (current === -1) {
+                event.preventDefault();
+                list[0].focus({ preventScroll: true });
+                return;
+            }
+            if (event.shiftKey && current === 0) {
+                event.preventDefault();
+                list[last].focus({ preventScroll: true });
+                return;
+            }
+            if (!event.shiftKey && current === last) {
+                event.preventDefault();
+                list[0].focus({ preventScroll: true });
+            }
+        };
+
+        dialog.addEventListener('keydown', onKeydown);
+        const target = initialFocus || controlsOf()[0] || dialog;
+        // A dialog with nothing focusable in it still has to receive focus, or
+        // the screen reader never enters it.
+        if (target === dialog && !dialog.hasAttribute('tabindex')) dialog.tabIndex = -1;
+        target.focus?.({ preventScroll: true });
+
+        return () => {
+            dialog.removeEventListener('keydown', onKeydown);
+            _restoreOverlayFocus(dialog, returnFocus);
+        };
+    }
+
     function showSpeedPopup(anchorEl, onChange) {
         _closeSpeedPopup();
         const current = parseFloat(appState?.settings?.persistentSpeedValue) || 1;
@@ -3319,6 +3456,14 @@ const STORAGE_KEYS = Object.freeze({
 
         anchorEl?.setAttribute?.('aria-expanded', 'true');
 
+        // role="menu" with 18 menuitemradio children and no keyboard model at
+        // all: no focus on open, every item its own tab stop, no arrow keys,
+        // and focus left wherever it was when the popup was removed.
+        const _speedMenuDispose = installMenuKeyboardModel(popup, {
+            onClose: () => _closeSpeedPopup(),
+            returnFocus: typeof anchorEl?.focus === 'function' ? anchorEl : null
+        });
+
         if (!_usePopover) {
             const outsideClick = (e) => {
                 if (!popup.contains(e.target) && e.target !== anchorEl) _closeSpeedPopup();
@@ -3337,10 +3482,12 @@ const STORAGE_KEYS = Object.freeze({
             _speedPopupCleanup = () => {
                 document.removeEventListener('click', outsideClick, true);
                 document.removeEventListener('keydown', escHandler);
+                _speedMenuDispose();
                 anchorEl?.setAttribute?.('aria-expanded', 'false');
             };
         } else {
             _speedPopupCleanup = () => {
+                _speedMenuDispose();
                 anchorEl?.setAttribute?.('aria-expanded', 'false');
             };
         }
@@ -22194,6 +22341,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _panel: null,
             _pillCornerCleanup: null,
             _panelCornerCleanup: null,
+            _queueDialogDispose: null,
+            _queueReturnFocus: null,
             _addButtonsTimer: null,
             _videoRef: null,
             _endedHandler: null,
@@ -22379,21 +22528,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 _refreshCornerStack();
             },
 
+            _closeQueuePanel() {
+                if (!this._panel) return;
+                this._panelCornerCleanup?.();
+                this._panelCornerCleanup = null;
+                // Dispose before removal, so the restore can tell whether focus
+                // is still ours to move.
+                this._queueDialogDispose?.();
+                this._queueDialogDispose = null;
+                this._queueReturnFocus = null;
+                this._panel.remove();
+                this._panel = null;
+            },
+
             _togglePanel() {
                 if (this._panel) {
-                    this._panelCornerCleanup?.();
-                    this._panelCornerCleanup = null;
-                    this._panel.remove(); this._panel = null;
+                    this._closeQueuePanel();
                     return;
                 }
+                this._queueReturnFocus = typeof document.activeElement?.focus === 'function'
+                    ? document.activeElement
+                    : null;
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-queue-panel';
                 panel.setAttribute('role', 'dialog');
-                panel.setAttribute('aria-label', 'Astra persistent queue');
+                // aria-modal, because the contract below traps Tab.
+                panel.setAttribute('aria-modal', 'true');
+                panel.setAttribute('aria-label', t('queuePanelAria', 'Astra persistent queue'));
                 const header = document.createElement('div');
                 header.className = 'ytkit-queue-header';
                 const heading = document.createElement('span');
-                heading.textContent = 'Persistent Queue';
+                heading.textContent = t('queuePanelTitle', 'Persistent Queue');
                 header.appendChild(heading);
                 const actions = document.createElement('div');
                 actions.className = 'ytkit-queue-actions';
@@ -22404,10 +22569,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     b.addEventListener('click', onClick);
                     actions.appendChild(b);
                 };
-                mk('Play next', () => this._playNext());
-                mk('Export', () => this._exportJson());
-                mk('Import', () => this._importJson());
-                mk('Clear', () => { this._write({ v: 1, items: [] }); showToast('Queue cleared', '#22c55e', { duration: 2 }); });
+                mk(t('queuePlayNext', 'Play next'), () => this._playNext());
+                mk(t('queueExport', 'Export'), () => this._exportJson());
+                mk(t('queueImport', 'Import'), () => this._importJson());
+                mk(t('queueClear', 'Clear'), () => {
+                    this._write({ v: 1, items: [] });
+                    showToast(t('queueCleared', 'Queue cleared'), '#22c55e', { duration: 2 });
+                });
                 header.appendChild(actions);
                 const list = document.createElement('div');
                 list.className = 'ytkit-queue-list';
@@ -22417,6 +22585,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._panel = panel;
                 this._panelCornerCleanup = registerCornerStackElement('queuePanel', panel, 160);
                 this._renderPanelRows();
+                this._queueDialogDispose = installDialogFocusContract(panel, {
+                    onClose: () => this._closeQueuePanel(),
+                    returnFocus: this._queueReturnFocus
+                });
             },
 
             _attachEnded() {
@@ -29919,6 +30091,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'sparkles',
             pages: [PageTypes.WATCH],
             _btn: null, _panel: null, _navRule: null, _styleEl: null, _injectTimer: null, _activeArtifact: null, _runToken: 0,
+            _aisumDialogDispose: null,
+            _aisumReturnFocus: null,
             _runController: null,
             _scheduleInject(delay = 2000) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
@@ -29977,9 +30151,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _ensurePanel() {
                 if (this._panel?.isConnected) return this._panel;
+                this._aisumReturnFocus = typeof document.activeElement?.focus === 'function'
+                    ? document.activeElement
+                    : null;
                 const panel = document.createElement('section');
                 panel.className = 'ytkit-aisum-panel';
                 panel.setAttribute('role', 'dialog');
+                // aria-modal, because the contract below traps Tab. Trapping
+                // focus inside something the page declares NOT modal is a bug,
+                // not an improvement.
+                panel.setAttribute('aria-modal', 'true');
                 panel.setAttribute('aria-label', t('aiSummaryDialogLabel', 'AI video summary'));
                 const head = document.createElement('div');
                 head.className = 'ytkit-aisum-head';
@@ -29990,20 +30171,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 close.className = 'ytkit-aisum-close';
                 close.textContent = '×';
                 close.setAttribute('aria-label', t('aiSummaryClose', 'Close AI summary'));
-                close.addEventListener('click', () => {
+                const closePanel = () => {
                     this._runToken += 1;
                     this._runController?.abort();
                     this._runController = null;
+                    // Dispose before removal: the focus restore checks whether
+                    // focus is still inside the panel.
+                    this._aisumDialogDispose?.();
+                    this._aisumDialogDispose = null;
+                    this._aisumReturnFocus = null;
                     panel.remove();
                     this._panel = null;
                     this._activeArtifact = null;
-                });
+                };
+                close.addEventListener('click', closePanel);
                 const content = document.createElement('div');
                 content.className = 'ytkit-aisum-content';
                 head.append(heading, close);
                 panel.append(head, content);
                 document.body.appendChild(panel);
                 this._panel = panel;
+                // role="dialog" with no Escape, no focus entry and no restore:
+                // a keyboard user could open this and never reach it, and a
+                // screen-reader user was told a dialog had appeared somewhere
+                // off in the page with no way to get to it.
+                this._aisumDialogDispose = installDialogFocusContract(panel, {
+                    onClose: closePanel,
+                    initialFocus: close,
+                    returnFocus: this._aisumReturnFocus
+                });
                 return panel;
             },
             _showStatus(message, tone = 'normal') {
@@ -37886,10 +38082,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'astraContextMenu',
             name: 'Astra Context Menu',
-            description: 'Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off. It adds a contextmenu listener and never blocks the native YouTube right-click.',
+            description: 'Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off. On those two surfaces it replaces the native right-click menu; everywhere else on the page the browser menu is untouched.',
             group: 'Integrations',
             icon: 'menu',
             _menuEl: null,
+            _menuDispose: null,
+            _menuReturnFocus: null,
             _styleElement: null,
             _contextHandler: null,
             _docClickHandler: null,
@@ -37904,17 +38102,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _hideMenu() {
+                // Dispose before removal: the focus restore checks whether
+                // focus is still inside the menu, and a detached menu contains
+                // nothing.
+                this._menuDispose?.();
+                this._menuDispose = null;
+                this._menuReturnFocus = null;
                 this._menuEl?.remove();
                 this._menuEl = null;
             },
 
             _showMenu(x, y, items) {
                 this._hideMenu();
+                this._menuReturnFocus = typeof document.activeElement?.focus === 'function'
+                    ? document.activeElement
+                    : null;
                 const menu = document.createElement('div');
                 menu.className = 'ytkit-context-menu';
                 menu.style.left = `${x}px`;
                 menu.style.top = `${y}px`;
                 menu.setAttribute('role', 'menu');
+                // role="menu" with no accessible name announces as an unnamed
+                // menu, which tells the listener nothing about what it opened.
+                menu.setAttribute('aria-label', t('astraContextMenuAria', 'Astra actions'));
                 items.forEach(({ label, action }) => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
@@ -37929,6 +38139,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const rect = menu.getBoundingClientRect();
                 if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 8}px`;
                 if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 8}px`;
+                // There was no keydown handler on this menu at all: not even
+                // Escape. A right-click menu you cannot dismiss from the
+                // keyboard is a trap for anyone who opened it with the
+                // context-menu key.
+                this._menuDispose = installMenuKeyboardModel(menu, {
+                    onClose: () => this._hideMenu(),
+                    returnFocus: this._menuReturnFocus
+                });
             },
 
             _onContext(e) {
