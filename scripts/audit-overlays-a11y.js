@@ -399,10 +399,16 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         ytkit.includes("b.setAttribute('aria-label', title)") &&
         ytkit.includes("body.setAttribute('aria-live', 'polite')"),
         'Transcript viewer must expose polite state updates and named export actions');
+    // This used to require an aria-label ON the line, which is what broke it:
+    // the label won the accessible-name computation over the button's own
+    // timestamp and text spans, and a button is a leaf in browse mode, so the
+    // transcript read back as a list of "Jump to 0:05" with no words in it.
+    // The words are the name now; the jump hint is the title/description.
     add('Transcript lines and toggle are labelled',
         ytkit.includes("closeBtn.setAttribute('aria-label', t('transcriptCollapseAria', 'Collapse transcript'))") &&
-        ytkit.includes("line.setAttribute('aria-label', t('transcriptJumpAriaTpl', 'Jump to {time} in the transcript')"),
-        'Transcript toggle and lines must have accessible names');
+        ytkit.includes("line.title = t('transcriptJumpAriaTpl', 'Jump to {time} in the transcript')") &&
+        !ytkit.includes("line.setAttribute('aria-label'"),
+        'Transcript lines must keep their own words as the accessible name');
     add('Transcript viewer controls have focus-visible and target size',
         ytkit.includes('.ytkit-transcript-toggle:focus-visible') &&
         ytkit.includes('.ytkit-transcript-export__btn:focus-visible') &&

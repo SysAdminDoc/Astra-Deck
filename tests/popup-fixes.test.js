@@ -1154,3 +1154,22 @@ test('an install carrying only diagnostic keys is treated as fresh, not upgraded
         assert.deepEqual(calls.whatsNew, []);
     });
 });
+
+test('showStatus sets politeness before the text that triggers the announcement', () => {
+    // A live region announces on MUTATION. Upgrading to role="alert" after
+    // writing textContent applied the upgrade to the next message and left
+    // this error polite; coming back down, a routine message inherited
+    // assertive from the error before it and interrupted the reader.
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8');
+    const start = source.indexOf('function showStatus(');
+    assert.ok(start > -1, 'showStatus must still exist');
+    const body = source.slice(start, source.indexOf('\n}', start));
+    const roleAt = body.indexOf("statusBanner.setAttribute('role', 'alert')");
+    const liveAt = body.indexOf("statusBanner.setAttribute('aria-live', 'assertive')");
+    const textAt = body.indexOf('statusBanner.textContent = message');
+    assert.ok(roleAt > -1 && liveAt > -1 && textAt > -1, 'showStatus must still set all three');
+    assert.ok(roleAt < textAt,
+        'role="alert" must be set before the text mutation that queues the announcement');
+    assert.ok(liveAt < textAt,
+        'aria-live must be set before the text mutation that queues the announcement');
+});

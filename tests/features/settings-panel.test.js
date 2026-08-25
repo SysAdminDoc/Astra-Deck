@@ -474,3 +474,22 @@ test('the health badge states the classified cause, not the thrown text', () => 
         else globalThis.YTKitCore = previousCore;
     }
 });
+
+test('the settings search count announces itself', () => {
+    // The count is the only feedback that filtering happened. Without a live
+    // region a screen-reader user types and hears nothing while the list
+    // visibly shrinks. The comment search already did this correctly.
+    const module = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
+    const monolith = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
+    for (const [label, source] of [['settings-panel module', module], ['ytkit.js', monolith]]) {
+        const start = source.indexOf("searchMeta.id = 'ytkit-search-count'");
+        assert.ok(start > -1, `${label} must still build the search count`);
+        const block = source.slice(start, start + 600);
+        assert.match(block, /searchMeta\.setAttribute\('aria-live', 'polite'\)/,
+            `${label} search count must be a polite live region`);
+        assert.match(block, /searchMeta\.setAttribute\('aria-atomic', 'true'\)/,
+            `${label} search count must announce as one string`);
+        assert.match(block, /searchMeta\.textContent = t\('commonAll', 'All'\)/,
+            `${label} initial search count must be localized`);
+    }
+});

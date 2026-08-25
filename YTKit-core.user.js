@@ -26213,6 +26213,12 @@ function buildSettingsPanel() {
         const searchMeta = document.createElement('span');
         searchMeta.className = 'ytkit-search-meta';
         searchMeta.id = 'ytkit-search-count';
+        // The count is the only feedback that filtering happened. Without a
+        // live region a screen-reader user types and hears nothing while the
+        // list visibly shrinks. The comment search already does this; the
+        // settings search was the outlier.
+        searchMeta.setAttribute('aria-live', 'polite');
+        searchMeta.setAttribute('aria-atomic', 'true');
         searchMeta.textContent = t('commonAll', 'All');
         searchContainer.appendChild(searchIcon);
         searchContainer.appendChild(searchInput);
