@@ -280,7 +280,7 @@ curl -fsSL https://deno.land/install.sh | sh
 ```
 
 (Or grab the installer from `https://deno.com/`. To use Node instead, install
-Node 22 or newer and select **Node 22+** in companion Settings.)
+Node 24 or newer and select **Node 24+** in companion Settings.)
 
 Astra Downloader's `/health` endpoint surfaces `javascriptRuntime: { runtime, version, supported, ejsReady, reason }` while retaining `denoRuntime` as a compatibility alias. The download health panel names the selected runtime and offers one-click Deno provisioning only when Deno is an eligible choice. Unknown versions, probe failures, and unsupported runtimes stop with actionable errors; older pre-runtime yt-dlp builds remain allowed.
 
@@ -1021,13 +1021,13 @@ document_start
 document_idle
   runtime-bootstrap.js  ISOLATED world, reads settings and starts the guarded loader (<150 KB)
   runtime-core-loader.mjs  dynamic module graph, core + download bootstrap + ytkit
-  features/*           dynamic, settings- and route-gated feature modules
+  features/*           dynamic, settings-gated feature modules
   background.js      Service worker, fetch proxy, downloads, gated cookie handoff
 ```
 
 - **Split-context model**, MAIN world for page API interception, ISOLATED world for extension APIs and DOM
 - **Lazy runtime graph**, normal YouTube pages inject only the small bootstrap; the module catalogue is exposed through a per-session dynamic URL and loaded idempotently after the bootstrap turn
-- **Settings and route gates**, persisted settings and existing selector-pack route boundaries decide which deferred feature modules are fetched; inline fallbacks preserve startup and userscript parity
+- **Settings gate**, a deferred feature module is skipped only when every feature it owns is switched off. Route gating is deliberately absent: a module is not withheld because of the page you happen to be on, since an SPA navigation would then have to fetch it mid-flight. Inline fallbacks preserve startup and userscript parity
 - **SPA-aware**, hooks `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, and `video-id` attribute changes
 - **Tiered feature init**, critical features load synchronously, normal features in `requestAnimationFrame`, lazy features in `requestIdleCallback`
 - **Crash recovery**, features that crash 3 times auto-disable with console warning
@@ -1087,7 +1087,7 @@ as unsigned and prefer the source tree.
 
 - **Fully open-source**, every line of extension, companion, and build tooling is auditable
 - **No telemetry, no analytics, no tracking**, zero data leaves the browser except to APIs you explicitly enable
-- **SBOM + attestation** on every release build, verifiable software bill of materials
+- **SBOM + signed manifest** on every release build: a CycloneDX bill of materials for the npm tree, and a signed release manifest over the built artifacts
 - **External CRX signing key**, maintainer-only, never in the repo or CI
 - **Credential scrub** on settings export, API keys, tokens, and secrets are automatically stripped
 - **Profile-split permissions**, store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and user-selected remote origins; GitHub-full keeps those capabilities behind runtime prompts, with Cobalt limited to an authorized self-hosted instance
@@ -1302,7 +1302,7 @@ build output. Only a companion release/staging pass should add
 published release attaches the companion asset pair yet; verify the live
 release asset list before promising the one-click setup path.
 
-Requires Node 22+ (the `crx3` packager dependency needs it).
+Requires Node 24+ (`package.json` engines and `.nvmrc` both pin it).
 
 ---
 
