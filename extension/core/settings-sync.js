@@ -310,7 +310,13 @@
             const id = trimCandidates[0];
             const list = payload.blocklists[id];
             const nextLength = Math.max(0, list.length - Math.max(1, Math.ceil(list.length * 0.1)));
-            payload.blocklists[id] = list.slice(0, nextLength);
+            // Keep the tail, like every other cap in this module. Trimming the
+            // end here dropped the most recently hidden entries, and this is
+            // the path a heavy user actually hits: the caps alone serialize
+            // past SYNC_MAX_PAYLOAD_BYTES before the settings delta is added,
+            // so the loop runs on every sync.
+            // `slice(-0)` returns the WHOLE array, so zero needs its own case.
+            payload.blocklists[id] = nextLength === 0 ? [] : list.slice(-nextLength);
             if (!payload.truncatedDomains.includes(id)) payload.truncatedDomains.push(id);
             if (nextLength === 0) trimCandidates.shift();
         }

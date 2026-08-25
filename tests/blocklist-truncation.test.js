@@ -50,19 +50,62 @@ test('a duplicate id collapses to one entry without shrinking the kept window', 
 });
 
 test('every blocklist cap in settings-sync keeps the tail', () => {
-    // The first version of this pin forbade the single literal
-    // `sanitized.slice(0, domain.cap)` and missed three more head-truncations
-    // spelled `.slice(0, domain.cap)` on a continuation line: the payload
-    // validator, the undo-state normalizer, and localStateFromItems, which
-    // builds the Undo snapshot. So undoing a sync restored the OLDEST entries
-    // and permanently lost everything hidden since. Count every cap instead of
-    // naming one.
+    // Three rounds on this one, each because the assertion was narrower than
+    // its own message. First it forbade the single literal
+    // `sanitized.slice(0, domain.cap)` and missed three spelled across a line
+    // break. Then it matched only the two `domain.cap` spellings and missed
+    // the quota trim loop, which is spelled `.slice(0, nextLength)` and is the
+    // path a heavy user actually hits: the caps alone serialize past
+    // SYNC_MAX_PAYLOAD_BYTES before the settings delta is added, so it runs on
+    // every sync and dropped the most recently hidden entries.
+    //
+    // So: find every slice applied to a blocklist in this file, whatever the
+    // bound is called, and require all of them to take the tail.
     const source = fs.readFileSync(path.join(repoRoot, 'extension', 'core', 'settings-sync.js'), 'utf8');
-    const head = source.match(/\.slice\(0,\s*domain\.cap\)/g) || [];
-    const tail = source.match(/\.slice\(-domain\.cap\)/g) || [];
-    assert.deepEqual(head, [], 'no blocklist cap may cut from the front');
-    assert.ok(tail.length >= 4,
-        'the payload builder, the validator, the undo normalizer and the local-state reader must all keep the tail');
+
+    const slices = [...source.matchAll(/\.slice\(\s*([^)]*?)\s*\)/g)]
+        .map((match) => ({
+            args: match[1],
+            line: source.slice(0, match.index).split('\n').length,
+            text: source.slice(source.lastIndexOf('\n', match.index) + 1,
+                source.indexOf('\n', match.index)).trim()
+        }))
+        // Only the ones operating on a blocklist. `splitUtf8` and the chunk
+        // helpers slice strings and are not in scope.
+        .filter((entry) => /blocklist|domain\.cap|nextLength|\blist\b|sanitized/i.test(entry.text));
+
+    assert.ok(slices.length >= 5,
+        'the blocklist slices must still be findable; got ' + slices.length);
+
+    const headKeeping = slices.filter((entry) => /^0\s*,/.test(entry.args));
+    assert.deepEqual(headKeeping.map((entry) => entry.line + ': ' + entry.text), [],
+        'no blocklist cap may cut from the front');
+});
+
+test('the quota trim loop drops the oldest entries and can reach empty', () => {
+    // `slice(-0)` returns the WHOLE array, so the zero case needs its own
+    // branch or the loop never terminates on a list it cannot shrink.
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'core', 'settings-sync.js'), 'utf8');
+    assert.ok(source.includes('nextLength === 0 ? [] : list.slice(-nextLength)'),
+        'the trim must special-case zero, because slice(-0) is slice(0)');
+
+    // Run the shrink step exactly as written.
+    const shrink = (list) => {
+        const nextLength = Math.max(0, list.length - Math.max(1, Math.ceil(list.length * 0.1)));
+        return nextLength === 0 ? [] : list.slice(-nextLength);
+    };
+    let list = Array.from({ length: 100 }, (_, index) => index);
+    list = shrink(list);
+    assert.equal(list.length, 90);
+    assert.equal(list[list.length - 1], 99, 'the newest entry must survive a trim pass');
+    assert.equal(list[0], 10, 'the oldest ten are the ones dropped');
+
+    // And it terminates rather than looping forever at length 1.
+    let guard = 0;
+    let small = [1];
+    while (small.length > 0 && guard < 10) { small = shrink(small); guard += 1; }
+    assert.equal(small.length, 0, 'a one-entry list must reach empty');
+    assert.ok(guard < 10, 'and must not spin');
 });
 
 test('the runtime writers keep the channel the user just blocked', () => {
