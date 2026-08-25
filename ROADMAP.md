@@ -6,13 +6,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### P2
 
-- [ ] P2: Replace source-shape UI tests with rendered assertions across remaining feature modules
-  Why: source pins can pass while a feature appends to the wrong node, keeps duplicate children, or never renders; the shared DOM harness now supports real tree assertions.
-  Evidence: `tests/features/watch-later-workbench.test.js`, `tests/helpers/`, `tests/features/feature-render-surfaces.test.js`, and the existing render-assertion conversions
-  Touches: UI-building tests under `tests/features/`, shared DOM test helpers, obsolete source-pin tests
-  Acceptance: inventory every feature test that exercises a UI builder, convert each remaining render half to assertions on nodes, copy, state, and teardown, delete the superseded source pins, and bait-verify each conversion by directing one render into the wrong node.
-  Complexity: M
-
 - [ ] P2: Add native YouTube Theater to watch-theme conformance
   Why: live theme coverage verifies normal watch and Astra Theater Split in dark and light, but never toggles YouTube's distinct native Theater or full-bleed layout, where current experiments change scrolling, comments access, and player geometry.
   Evidence: `scripts/smoke-zero-ads-live.js`; `README.md`; [YouTube player sizing](https://support.google.com/youtube/answer/6052392); [full-bleed report](https://www.reddit.com/r/youtube/comments/1nb5pcc); [Theater experiment report](https://www.reddit.com/r/youtube/comments/1oidrvv)

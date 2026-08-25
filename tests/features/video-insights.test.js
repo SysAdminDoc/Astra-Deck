@@ -15,6 +15,7 @@ const {
     isGithubFullArtifactManifest,
     mergeVideoInsights
 } = require(modulePath);
+const { fakeTreeDocument } = require('../helpers/monolith');
 
 const VIDEO_ID = 'dQw4w9WgXcQ';
 const CHANNEL_ID = 'UC38IQsAvIsxxjztdMZQtwHA';
@@ -163,28 +164,89 @@ test('video insights module is loaded before ytkit and registered in data-flow p
 
     const source = fs.readFileSync(modulePath, 'utf8');
     assert.doesNotMatch(source, /innerHTML\s*=/);
-    assert.match(source, /aria-labelledby/);
     assert.match(source, /forced-colors:active/);
 });
 
-test('a degraded InnerTube lookup is not rendered as "not published"', () => {
-    // A rate-limited, blocked, or failed lookup rendered exactly like a video
-    // that never published a category or tags.
-    const source = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'video-insights', 'index.js'), 'utf8');
-    for (const reason of ['rate-limited', 'retry-wait', 'unavailable', 'failed']) {
-        assert.ok(source.includes(`degraded: '${reason}'`),
-            `the ${reason} path must report why the lookup did not run`);
+async function withRenderedInsights(overrides, verify) {
+    const originalSetTimeout = globalThis.setTimeout;
+    const originalClearTimeout = globalThis.clearTimeout;
+    const timers = [];
+    globalThis.setTimeout = (fn, delay) => {
+        const timer = { fn, delay, cancelled: false };
+        timers.push(timer);
+        return timer;
+    };
+    globalThis.clearTimeout = (timer) => { if (timer) timer.cancelled = true; };
+    const documentRef = fakeTreeDocument();
+    const target = documentRef.createElement('div');
+    documentRef.body.appendChild(target);
+    const feature = createVideoInsightsFeature({
+        documentRef,
+        getVideoId: () => VIDEO_ID,
+        isWatchPagePath: () => true,
+        getPlayerResponse: () => playerResponse(),
+        formatAbsoluteDate: () => 'July 14, 2026',
+        injectStyle: () => ({ remove() {} }),
+        ...overrides
+    });
+    const originalQuery = documentRef.querySelector.bind(documentRef);
+    documentRef.querySelector = (selector) => selector === 'ytd-watch-metadata #above-the-fold, ytd-watch-metadata'
+        ? target
+        : originalQuery(selector);
+    try {
+        feature.init();
+        const attachTimer = timers.find((timer) => timer.delay === 700);
+        assert.ok(attachTimer, 'init schedules the first watch-page render');
+        attachTimer.fn();
+        await new Promise((resolve) => setImmediate(resolve));
+        await verify({ documentRef, feature, target });
+    } finally {
+        feature.destroy();
+        globalThis.setTimeout = originalSetTimeout;
+        globalThis.clearTimeout = originalClearTimeout;
     }
-    const renderStart = source.indexOf("const degraded = String(result.degraded");
-    assert.ok(renderStart > -1, 'the panel must read the degraded reason');
-    const render = source.slice(renderStart, renderStart + 1400);
-    assert.match(render, /videoInsightsSourceThrottled/,
-        'a paused lookup must say so in the source line');
-    assert.match(render, /videoInsightsSourceDegraded/,
-        'an unavailable lookup must say so in the source line');
-    assert.match(render, /videoInsightsUnchecked/,
-        'fields must read "not checked" rather than "not provided" after a degraded lookup');
-    assert.match(source, /degraded \? 'degraded' : 'unavailable'/,
-        'the panel tone must distinguish degraded from genuinely empty');
+}
+
+test('video insights renders complete page metadata into one labelled region', async () => {
+    await withRenderedInsights({}, async ({ feature, target }) => {
+        const panel = target.querySelector('.ytkit-video-insights');
+        assert.ok(panel, 'the panel attaches to watch metadata, not a detached node');
+        assert.equal(panel.getAttribute('role'), 'region');
+        assert.equal(panel.getAttribute('aria-labelledby'), 'ytkit-video-insights-title');
+        assert.equal(panel.hasAttribute('aria-busy'), false);
+        assert.equal(panel.dataset.tone, 'ready');
+        assert.equal(panel.querySelector('.ytkit-video-insights__title').textContent, 'Video insights');
+        assert.equal(panel.querySelector('.ytkit-video-insights__source').textContent, 'From this page');
+
+        const facts = panel.querySelectorAll('.ytkit-video-insights__fact');
+        assert.equal(facts.length, 4);
+        assert.deepEqual(facts.map((row) => row.children[0].textContent),
+            ['Category', 'Uploaded', 'Channel ID', 'Tags']);
+        assert.equal(facts[0].children[1].textContent, 'Science & Technology');
+        assert.equal(facts[1].children[1].textContent, 'July 14, 2026');
+        const channelLink = facts[2].children[1].children[0];
+        assert.match(channelLink.href, new RegExp(`/channel/${CHANNEL_ID}$`));
+        assert.equal(channelLink.rel, 'noopener noreferrer');
+        assert.deepEqual(facts[3].children[1].children.map((chip) => chip.textContent),
+            ['engineering', 'YouTube']);
+
+        feature.destroy();
+        assert.equal(target.querySelector('.ytkit-video-insights'), null);
+    });
+});
+
+test('a degraded lookup renders "Not checked" instead of claiming metadata was not published', async () => {
+    await withRenderedInsights({
+        getPlayerResponse: () => ({ videoDetails: { videoId: VIDEO_ID } }),
+        isGithubFullArtifact: () => false,
+        isGithubFullProfile: () => false
+    }, async ({ target }) => {
+        const panel = target.querySelector('.ytkit-video-insights');
+        assert.equal(panel.dataset.tone, 'degraded');
+        assert.match(panel.querySelector('.ytkit-video-insights__source').textContent, /lookup unavailable/i);
+        const values = panel.querySelectorAll('.ytkit-video-insights__fact')
+            .map((row) => row.children[1].textContent);
+        assert.deepEqual(values, ['Not checked', 'Not checked', 'Not checked', 'Not checked']);
+        assert.equal(panel.textContent.includes('Not provided'), false);
+    });
 });

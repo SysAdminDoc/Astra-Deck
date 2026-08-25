@@ -357,7 +357,7 @@ test('Video Hider toggle rolls back the optimistic state after a rejected save',
 // nothing happened on the page, which is exactly the silent-failure shape the
 // feed exists to remove. Rendered from the built tree, not from source text.
 
-const { fakeNode, fakeDocument } = require('../helpers/monolith');
+const { fakeNode, fakeDocument, fakeTreeDocument } = require('../helpers/monolith');
 
 function buildCardWith(notice, health = []) {
     const originalDocument = globalThis.document;
@@ -479,17 +479,28 @@ test('the settings search count announces itself', () => {
     // The count is the only feedback that filtering happened. Without a live
     // region a screen-reader user types and hears nothing while the list
     // visibly shrinks. The comment search already did this correctly.
-    const module = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'features', 'settings-panel', 'index.js'), 'utf8');
-    const monolith = fs.readFileSync(path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
-    for (const [label, source] of [['settings-panel module', module], ['ytkit.js', monolith]]) {
-        const start = source.indexOf("searchMeta.id = 'ytkit-search-count'");
-        assert.ok(start > -1, `${label} must still build the search count`);
-        const block = source.slice(start, start + 600);
-        assert.match(block, /searchMeta\.setAttribute\('aria-live', 'polite'\)/,
-            `${label} search count must be a polite live region`);
-        assert.match(block, /searchMeta\.setAttribute\('aria-atomic', 'true'\)/,
-            `${label} search count must announce as one string`);
-        assert.match(block, /searchMeta\.textContent = t\('commonAll', 'All'\)/,
-            `${label} initial search count must be localized`);
-    }
+    const documentRef = fakeTreeDocument();
+    const expectedHost = documentRef.createElement('div');
+    const wrongTarget = documentRef.createElement('div');
+    documentRef.body.append(expectedHost, wrongTarget);
+    const searchActions = documentRef.createElement('div');
+    expectedHost.appendChild(searchActions);
+
+    const searchMeta = loadModule().appendSettingsSearchStatus(
+        documentRef,
+        searchActions,
+        (key, fallback) => key === 'commonAll' ? 'Everything' : fallback
+    );
+
+    assert.equal(searchActions.children.length, 1);
+    assert.equal(searchActions.children[0], searchMeta,
+        'the live count must attach to the search action group that owns it');
+    assert.equal(wrongTarget.children.length, 0,
+        'the placement oracle must reject a count redirected to a sibling');
+    assert.equal(searchMeta.id, 'ytkit-search-count');
+    assert.equal(searchMeta.className, 'ytkit-search-meta');
+    assert.equal(searchMeta.getAttribute('aria-live'), 'polite');
+    assert.equal(searchMeta.getAttribute('aria-atomic'), 'true');
+    assert.equal(searchMeta.textContent, 'Everything',
+        'the initial count must use the active locale function');
 });

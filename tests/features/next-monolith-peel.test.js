@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { sources, config } = require('../helpers/source');
-const { fakeNode, fakeDocument } = require('../helpers/monolith');
+const { fakeNode, fakeDocument, fakeTreeDocument } = require('../helpers/monolith');
 
 function loadFeatureModule(modulePath, namespaceKey) {
     const originalFeatures = globalThis.YTKitFeatures;
@@ -683,7 +683,7 @@ test('downloadUI sends reviewed clip and playlist selections without exposing yt
     assert.equal(Object.hasOwn(payload, 'playlistRange'), false);
 });
 
-test('downloadUI playlist chooser uses preview endpoint and canonical subset request', () => {
+test('downloadUI playlist chooser uses the preview endpoint and canonical subset request', () => {
     const source = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'download-ui', 'index.js'),
         'utf8'
@@ -699,8 +699,64 @@ test('downloadUI playlist chooser uses preview endpoint and canonical subset req
     assert.match(source, /if \(playlistSelection\.size\) \{/);
     assert.doesNotMatch(source, /Select at least one playlist item/);
     assert.match(source, /if \(clip\.section\)/);
-    assert.match(source, /playlistList\.setAttribute\('aria-label'/);
-    assert.match(source, /checkbox\.type = 'checkbox'/);
+});
+
+test('downloadUI renders the playlist chooser into its row with real checkbox controls', () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const documentRef = fakeTreeDocument();
+    const expectedHost = documentRef.createElement('section');
+    const wrongTarget = documentRef.createElement('aside');
+    const playlistRow = documentRef.createElement('div');
+    expectedHost.appendChild(playlistRow);
+    documentRef.body.append(expectedHost, wrongTarget);
+
+    const playlistList = mod.appendDownloadPlaylistList(
+        documentRef,
+        playlistRow,
+        (key, fallback) => key === 'dlPopupPlaylistListAria' ? 'Choose playlist videos' : fallback
+    );
+    let changedSelection = null;
+    const selection = mod.renderDownloadPlaylistItems({
+        documentRef,
+        playlistList,
+        currentVideoId: 'video-b',
+        items: [
+            { index: 1, id: 'video-a', title: 'First video' },
+            { index: 2, id: 'video-b', title: '' }
+        ],
+        translate: (key, fallback) => key === 'commonUntitled' ? 'No title' : fallback,
+        onSelectionChange: (next) => { changedSelection = [...next]; }
+    });
+
+    assert.equal(playlistRow.children[0], playlistList,
+        'the chooser must attach to the playlist row that labels it');
+    assert.equal(wrongTarget.children.length, 0,
+        'the placement oracle must reject a chooser redirected to a sibling');
+    assert.equal(playlistList.getAttribute('role'), 'group');
+    assert.equal(playlistList.getAttribute('aria-label'), 'Choose playlist videos');
+    assert.equal(playlistList.hidden, true, 'the list stays hidden until preview data is ready');
+    assert.equal(playlistList.children.length, 2);
+    assert.deepEqual(playlistList.children.map((row) => row.children[1].textContent),
+        ['1. First video', '2. No title']);
+    const checkboxes = playlistList.children.map((row) => row.children[0]);
+    assert.equal(checkboxes.length, 2);
+    assert.equal(checkboxes.every((checkbox) => checkbox.type === 'checkbox'), true);
+    assert.equal(checkboxes[0].checked, false);
+    assert.equal(checkboxes[1].checked, true,
+        'the current video must be selected when the preview first renders');
+    assert.deepEqual([...selection], [2]);
+
+    checkboxes[0].checked = true;
+    checkboxes[0].dispatchEvent({ type: 'change' });
+    assert.deepEqual(changedSelection, [2, 1],
+        'the rendered checkbox must update the live subset selection');
+
+    playlistList.remove();
+    assert.equal(playlistRow.children.length, 0,
+        'the chooser must leave no owned list behind when the popup closes');
 });
 
 test('downloadUI factory returns all four feature objects', () => {
@@ -1960,33 +2016,13 @@ test('subscriptionGroups import merges by default and only replaces on request',
     assert.equal(replaceResult.removedGroups, 1);
 });
 
-test('the watch-time dashboard renders an empty state instead of 30 zero-height bars', () => {
+test('the rendered watch-time empty state keeps its theme lane and locale copy', () => {
     const ytkitSource = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8'
     );
-    const start = ytkitSource.indexOf("id: 'watchHistoryAnalytics'");
-    assert.ok(start > -1, 'watchHistoryAnalytics feature must exist');
-    const block = ytkitSource.slice(start, start + 9000);
 
-    // With nothing tracked, max clamps to 1 and every bar computes 0% height,
-    // so the modal rendered a flat axis and four zeroes — indistinguishable
-    // from a broken chart.
-    assert.match(block, /if \(total <= 0 && !\(stats\.total > 0\)\)/,
-        'the renderer must branch on having no tracked data at all');
-    assert.match(block, /ytkit-wha-empty/, 'the zero-data branch must render an empty state');
-    assert.match(block, /whaEmptyTitle/, 'the empty state must use a localised title');
-    assert.match(block, /whaEmptyCopy/, 'the empty state must use localised copy');
-    assert.match(block, /\} else \{\s*card\.append\(head, statsRow, chart\);/,
-        'the populated path must still render stats and the chart');
-
-    // The empty state shares the modal tail, so focus/Escape/teardown cannot
-    // diverge between the two branches.
-    const emptyBranch = block.slice(block.indexOf('if (total <= 0'), block.indexOf('overlay.appendChild(card)'));
-    assert.doesNotMatch(emptyBranch, /document\.body\.appendChild/,
-        'the empty branch must not mount its own overlay — it shares the tail below');
-
-    // Both surfaces must carry a light-theme lane; the audit ratchets on this.
-    // The stylesheet lives outside the feature block, so match the full source.
+    // Rendering and placement are exercised in feature-render-surfaces.test.js.
+    // These remaining checks cover stylesheet and translation artifacts only.
     assert.match(ytkitSource, /html:not\(\[dark\]\) \.ytkit-wha-empty-title/,
         'the empty state needs a light-theme lane like every other injected surface');
     assert.match(ytkitSource, /\.ytkit-wha-empty \{/,

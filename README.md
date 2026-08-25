@@ -1229,6 +1229,10 @@ node build-extension.js --bump patch      # Bump and build
 node build-extension.js --bump minor --with-userscript
 ```
 
+The UI test inventory drives 44 live builders against connected DOM fixtures.
+It catches wrong-parent mounts, duplicate children, missing state, and teardown
+that leaves controls behind.
+
 The live browser gates are desktop-only and require network access, Firefox,
 and `geckodriver` on `PATH` (or `FIREFOX_PATH` / `GECKODRIVER_PATH`). They use
 throwaway Firefox profiles and never touch the normal browser profile. The

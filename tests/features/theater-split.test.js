@@ -12,6 +12,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { sources, config, extractFeatureBlock } = require('../helpers/source');
+const { fakeTreeDocument } = require('../helpers/monolith');
 
 const MODULE_PATH = '../../extension/features/sticky-video/index.js';
 
@@ -83,7 +84,67 @@ test('stickyVideo module exports the Theater Split style builders', () => {
     assert.equal(typeof exported.createStickyVideoFeature, 'function');
 });
 
-test('Theater Split keeps the premium theme and accessible divider in both builds', () => {
+test('Theater Split renders its divider and close action into the overlay it owns', () => {
+    const { mod } = loadModule();
+    const documentRef = fakeTreeDocument();
+    const expectedHost = documentRef.createElement('main');
+    const wrongTarget = documentRef.createElement('aside');
+    documentRef.body.append(expectedHost, wrongTarget);
+    const writes = [];
+    const originalDocument = globalThis.document;
+    globalThis.document = documentRef;
+    try {
+        const feature = mod.createStickyVideoFeature({
+            storageWrite: (key, value) => writes.push([key, value])
+        });
+        feature._triggerPlayerResize = () => {};
+        const overlay = feature._buildOverlay();
+        expectedHost.appendChild(overlay);
+        feature._splitWrapper = overlay;
+
+        assert.equal(expectedHost.children.length, 1,
+            'the overlay must attach to its requested host');
+        assert.equal(wrongTarget.children.length, 0,
+            'the placement oracle must reject a render redirected to a sibling');
+        assert.deepEqual(overlay.children.map((child) => child.id), [
+            'ytkit-split-left', 'ytkit-split-divider', 'ytkit-split-right'
+        ]);
+
+        const divider = overlay.querySelector('#ytkit-split-divider');
+        assert.equal(divider.getAttribute('role'), 'separator');
+        assert.equal(divider.getAttribute('aria-orientation'), 'vertical');
+        assert.equal(divider.getAttribute('aria-valuemin'), '25');
+        assert.equal(divider.getAttribute('aria-valuemax'), '85');
+        assert.equal(divider.getAttribute('aria-valuenow'), '68');
+        assert.equal(divider.tabIndex, 0);
+        assert.equal(divider.querySelector('.ytkit-divider-pip').children.length, 3);
+
+        feature._isSplit = true;
+        divider.dispatchEvent({ type: 'keydown', key: 'ArrowLeft', preventDefault() {} });
+        assert.equal(divider.getAttribute('aria-valuenow'), '66',
+            'ArrowLeft must shrink the left pane through the live divider handler');
+        assert.deepEqual(writes.at(-1), ['ytkit_split_ratio', 66]);
+        divider.dispatchEvent({ type: 'dblclick', preventDefault() {} });
+        assert.equal(divider.getAttribute('aria-valuenow'), '68',
+            'double-click must restore the balanced 68/32 layout');
+
+        const close = overlay.querySelector('#ytkit-split-close');
+        assert.equal(close.tagName, 'BUTTON');
+        assert.equal(close.getAttribute('aria-label'), 'Close side panel');
+        let dismissed = null;
+        feature._collapseSplit = (value) => { dismissed = value; };
+        close.onclick();
+        assert.equal(dismissed, true, 'the rendered close button must dismiss the split');
+
+        overlay.remove();
+        assert.equal(expectedHost.children.length, 0,
+            'the owned overlay must leave no chrome behind on teardown');
+    } finally {
+        globalThis.document = originalDocument;
+    }
+});
+
+test('Theater Split keeps the premium theme and standalone divider contract', () => {
     const { mod } = loadModule();
     const commentsCss = mod.buildSplitCommentsCss();
     const standalone = fs.readFileSync(
@@ -91,23 +152,13 @@ test('Theater Split keeps the premium theme and accessible divider in both build
         'utf8'
     );
 
-    for (const [source, label] of [
-        [MODULE_SOURCE, 'extension module'],
-        [standalone, 'standalone userscript'],
-    ]) {
-        assert.match(source, /setAttribute\('role', 'separator'\)/,
-            `${label} must expose the resize divider as a separator`);
-        assert.match(source, /setAttribute\('aria-orientation', 'vertical'\)/,
-            `${label} must expose the divider orientation`);
-        assert.match(source, /setAttribute\('aria-valuenow'/,
-            `${label} must keep the divider value current`);
-        assert.match(source, /e\.key === 'ArrowLeft'/,
-            `${label} must support keyboard resizing`);
-        assert.match(source, /e\.detail >= 2/,
-            `${label} must reset on the second divider press`);
-        assert.match(source, /68/,
-            `${label} must retain the balanced 68\/32 default`);
-    }
+    assert.match(standalone, /setAttribute\('role', 'separator'\)/,
+        'the standalone userscript must expose the resize divider as a separator');
+    assert.match(standalone, /setAttribute\('aria-orientation', 'vertical'\)/);
+    assert.match(standalone, /setAttribute\('aria-valuenow'/);
+    assert.match(standalone, /e\.key === 'ArrowLeft'/);
+    assert.match(standalone, /e\.detail >= 2/);
+    assert.match(standalone, /68/);
 
     assert.match(commentsCss, /--ytkit-split-panel: var\(--ytkit-premium-panel\)/);
     assert.match(commentsCss, /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)/,
@@ -124,16 +175,14 @@ test('Theater Split keeps the premium theme and accessible divider in both build
     assert.match(standalone, /#ts-divider:focus-visible/);
 });
 
-test('Theater Split theme chrome is tokenized and exposes its close action', () => {
+test('Theater Split theme chrome is tokenized in both artifacts', () => {
     const { mod } = loadModule();
     const commentsCss = mod.buildSplitCommentsCss();
     const standalone = fs.readFileSync(
         path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
 
-    for (const [source, label] of [[MODULE_SOURCE, 'extension module'], [standalone, 'standalone userscript']]) {
-        assert.match(source, /setAttribute\('aria-label', (?:closeBtn\.title|'Close side panel')\)/,
-            `${label} close button must have an accessible name`);
-    }
+    assert.match(standalone, /setAttribute\('aria-label', 'Close side panel'\)/,
+        'the standalone userscript close button must keep its accessible name');
     assert.match(commentsCss, /--ytkit-split-scrollbar: var\(--ytkit-premium-scrollbar\)/);
     assert.match(MODULE_SOURCE, /background:'var\(--ytkit-split-panel\)'/);
     assert.doesNotMatch(MODULE_SOURCE, /background:'#0b1624'/,
