@@ -32,7 +32,7 @@ test('the probe covers a child of every family the surface system repaints', () 
 
     // A family is covered when the probe renders something inside it. Not every
     // forced surface has relit children, so the floor is the families that do.
-    const probed = new Set(probe.CASES.map(([panel]) => panel));
+    const probed = new Set(probe.allCases().map(([panel]) => panel));
     const covered = [...probed].filter((panel) => forced.has(panel));
     assert.ok(covered.length >= 10,
         `the probe must reach at least ten forced families, reaches ${covered.length}`);
@@ -49,7 +49,7 @@ test('every probed child is a real class the extension renders', () => {
     }(path.join(repoRoot, 'extension')));
     const authored = files.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 
-    for (const [, child, label] of probe.CASES) {
+    for (const [, child, label] of probe.allCases()) {
         assert.ok(authored.includes(child),
             `${label}: .${child} must exist in the extension, or the probe measures nothing`);
     }
@@ -79,4 +79,53 @@ test('the release smoke chain runs the probe', () => {
     assert.equal(pkg.scripts['smoke:light-surfaces'], 'node scripts/probe-light-surfaces.js');
     assert.match(pkg.scripts['release:browser-smokes'], /npm run smoke:light-surfaces/,
         'a release must not ship without the computed-contrast proof');
+});
+
+// WHEN a class under a repainted surface sets its own text colour, the probe
+// SHALL measure it without anyone remembering to add it.
+//
+// The hand-written list was picked twice and missed siblings both times: the
+// subs banner got its button relit and not its stat rows, the context menu got
+// its items and not its header. Enumerating from the source found seven more
+// on the first run.
+test('the probe derives its cases instead of relying on the hand-written list', () => {
+    const visual = require('../extension/core/settings-visual-system.js');
+    const styleSources = [
+        'extension/ytkit.js',
+        'extension/features/download-ui/index.js',
+        'extension/features/video-hider/index.js'
+    ]
+        .map((rel) => path.join(repoRoot, rel))
+        .filter((abs) => fs.existsSync(abs))
+        .map((abs) => fs.readFileSync(abs, 'utf8'));
+
+    const derived = probe.derivedCases(visual.SURFACE_VISUAL_SYSTEM_CSS, styleSources);
+    assert.ok(derived.length >= 20,
+        `derivation found only ${derived.length} descendants; it is meant to be the coverage, not a garnish`);
+
+    // And the full set is strictly larger than the list somebody typed.
+    assert.ok(probe.allCases().length > probe.CASES.length,
+        'allCases must fold the derived set in, or the derivation is decorative');
+
+    // Every derived pair is prefix-contained: the root's own name, then a BEM
+    // separator. A pair that fails this is measuring an unrelated element.
+    for (const [root, child] of derived) {
+        assert.ok(child.startsWith(root + '-') || child.startsWith(root + '__'),
+            `${child} is not a descendant of ${root}`);
+    }
+});
+
+test('the derived cases reach the families the hand-written list kept missing', () => {
+    const covered = new Set(probe.allCases().map(([panel, child]) => panel + '>' + child));
+    // Each of these shipped below AA in light theme while the probe was green,
+    // because nobody had listed it.
+    for (const pair of [
+        'ytkit-subs-load-banner>ytkit-subs-load-banner__stat-value',
+        'ytkit-context-menu>ytkit-context-menu-header',
+        'ytkit-dl-history-panel>ytkit-dl-history-panel__empty',
+        'ytkit-speed-presets>ytkit-speed-presets__status',
+        'ytkit-mediadl-banner>ytkit-mediadl-banner__title'
+    ]) {
+        assert.ok(covered.has(pair), `${pair} must be in the probe's coverage`);
+    }
 });

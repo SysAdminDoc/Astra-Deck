@@ -71,6 +71,17 @@ const CASES = [
     ['ytkit-search-container', 'ytkit-search-hint', 'Search hint', false],
     ['ytkit-subs-load-banner', 'ytkit-subs-load-banner__btn', 'Subs banner button', false],
     ['ytkit-mediadl-banner', 'ytkit-mediadl-banner__status', 'Media banner status', false],
+    // Siblings of surfaces the previous pass fixed. It relit
+    // .ytkit-subs-load-banner__btn and left the three beside it white on white;
+    // it relit .ytkit-context-menu-item and left the header above it at 3.5:1.
+    // Picking ten cases is not the same as covering the acceptance.
+    ['ytkit-subs-load-banner', 'ytkit-subs-load-banner__stat-value', 'Subs banner stat value', false],
+    ['ytkit-subs-load-banner', 'ytkit-subs-load-banner__stat-label', 'Subs banner stat label', false],
+    ['ytkit-subs-load-banner', 'ytkit-subs-load-banner__btn--quiet', 'Subs banner quiet button', false],
+    ['ytkit-context-menu', 'ytkit-context-menu-header', 'Context menu header', false],
+    ['ytkit-dl-history-panel', 'ytkit-dl-history-panel__empty', 'DL history empty', false],
+    ['ytkit-dl-history-panel', 'ytkit-dl-history-panel__count', 'DL history count', false],
+    ['ytkit-speed-presets', 'ytkit-speed-presets__status', 'Speed presets status', false],
     // Activated this pass: they were named as classes in the surface system
     // but only ever exist as ids, so they received none of its treatment.
     ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__title', 'Install prompt title', false],
@@ -80,6 +91,74 @@ const CASES = [
     ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__eyebrow', 'Install prompt eyebrow', false],
     ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__close', 'Install prompt close', false]
 ];
+
+// Every descendant that sets its own colour, discovered rather than listed.
+//
+// The list above was hand-picked, twice, and both times the pass that wrote it
+// relit some children of a panel and left their siblings white on white: the
+// subs banner got its button and not its stat rows, the context menu got its
+// items and not its header. Picking ten cases is not the same as covering the
+// stated acceptance, which is that EVERY surface the system repaints gets a
+// light lane for its own descendants.
+//
+// So the roots come from the surface system's own chrome blocks, and the
+// children come from any rule in extension/ that sets a colour on a class
+// starting with that root's name. Naming here is consistently BEM-ish, so the
+// prefix is a usable stand-in for containment — the same assumption
+// scripts/check-light-theme-lane.js already makes.
+const NOT_RENDERED_INSIDE = new Set([
+    // Trigger buttons that live in the page chrome, not in the panel they open.
+    'ytkit-dl-history-btn',
+    'ytkit-queue-pill',
+    'ytkit-aisum-btn',
+    // The panel roots themselves; they are the ground, not a descendant.
+    'ytkit-dl-progress__announcer'
+]);
+
+function derivedCases(css, sources) {
+    const roots = new Set();
+    for (const block of css.matchAll(/html :is\(([^)]*)\)\s*\{[^}]*background:\s*var\(--ytkit-premium-panel\)\s*!important/g)) {
+        for (const raw of block[1].split(',')) {
+            const selector = raw.trim();
+            if (/^[.#]ytkit-[\w-]+$/.test(selector)) roots.add(selector.slice(1));
+        }
+    }
+    if (!roots.size) return [];
+
+    // Which classes set a colour anywhere under extension/.
+    const coloured = new Map();
+    for (const text of sources) {
+        const withoutComments = text.replace(/\/\*[\s\S]*?\*\//g, '');
+        const RULE = /([^{}`;]{3,2000})\{([^{}`]{0,4000})\}/g;
+        let match;
+        while ((match = RULE.exec(withoutComments)) !== null) {
+            const selector = match[1].trim().replace(/\s+/g, ' ');
+            const body = match[2];
+            if (!/(^|[^-])color\s*:/.test(body)) continue;
+            if (/=>|function|return |if \(|for \(|catch|typeof |await /.test(selector)) continue;
+            // Only a bare class chain; a descendant or state selector is a
+            // variation of something we already cover.
+            for (const name of selector.matchAll(/(?:^|[\s,])\.(ytkit-[\w-]+)(?=[\s,:{]|$)/g)) {
+                if (!coloured.has(name[1])) coloured.set(name[1], true);
+            }
+        }
+    }
+
+    const cases = [];
+    const seen = new Set();
+    for (const root of [...roots].sort()) {
+        for (const child of [...coloured.keys()].sort()) {
+            if (child === root) continue;
+            if (NOT_RENDERED_INSIDE.has(child)) continue;
+            if (!child.startsWith(root + '-') && !child.startsWith(root + '__')) continue;
+            const key = root + '>' + child;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            cases.push([root, child, child.replace(/^ytkit-/, ''), false]);
+        }
+    }
+    return cases;
+}
 
 // Every stylesheet that contributes to these surfaces, in the order the
 // extension actually loads them.
@@ -209,13 +288,27 @@ function extractCss(relative, exportName) {
     return batches;
 }
 
+function allCases() {
+    const surfaceCss = String(require(path.join(REPO_ROOT, 'extension/core/settings-visual-system.js'))
+        .SURFACE_VISUAL_SYSTEM_CSS || '');
+    const sources = STYLE_SOURCES
+        .filter(([, name]) => !name)
+        .map(([rel]) => path.join(REPO_ROOT, rel))
+        .filter((abs) => fs.existsSync(abs))
+        .map((abs) => fs.readFileSync(abs, 'utf8'));
+    const listed = new Set(CASES.map(([panel, child]) => panel + '>' + child));
+    const extra = derivedCases(surfaceCss, sources)
+        .filter(([panel, child]) => !listed.has(panel + '>' + child));
+    return [...CASES, ...extra];
+}
+
 function buildPage(stageDir) {
     fs.mkdirSync(stageDir, { recursive: true });
     const sheets = STYLE_SOURCES
         .flatMap(([rel, name]) => extractCss(rel, name))
         .map((chunk) => `<style>${chunk}</style>`)
         .join('\n');
-    const markup = CASES.map(([panel, child], index) =>
+    const markup = allCases().map(([panel, child], index) =>
         `<div ${panel.startsWith('ytkit-mediadl-install-prompt') || panel.startsWith('ytkit-reaction-spammer-panel')
             ? `id="${panel}"` : `class="${panel}"`} data-probe-panel="${index}">`
         + `<div class="${child}" data-probe="${index}">Sample text 123</div>`
@@ -402,8 +495,9 @@ async function main() {
     }
 
     const lines = [];
-    for (let index = 0; index < CASES.length; index += 1) {
-        const [, , label, large] = CASES[index];
+    const cases = allCases();
+    for (let index = 0; index < cases.length; index += 1) {
+        const [, , label, large] = cases[index];
         const floor = large ? AA_LARGE : AA_NORMAL;
         for (const theme of ['dark', 'light']) {
             const row = report[theme].find((entry) => entry.index === index);
@@ -428,7 +522,7 @@ async function main() {
         failures.forEach((entry) => console.error('  ' + entry));
         process.exit(1);
     }
-    console.log(`\n[light-surface-probe] PASS — ${CASES.length} surface(s) clear AA in dark and light`);
+    console.log(`\n[light-surface-probe] PASS — ${allCases().length} surface(s) clear AA in dark and light`);
 }
 
 if (require.main === module) {
@@ -438,4 +532,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { CASES, extractCss, buildPage };
+module.exports = { CASES, allCases, derivedCases, extractCss, buildPage };
