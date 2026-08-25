@@ -194,6 +194,77 @@ function compactStandaloneLineComments(source, relativePath) {
     return source.replace(/^[ \t]*\/\/[^\r\n]*(?:\r?\n|$)/gm, '');
 }
 
+// Whole-line comments carry the reasoning a maintainer needs and nothing a
+// Greasy Fork reviewer reads, and the core record is against a hard 2 MiB host
+// cap that routine work now runs into. The source keeps every comment; only
+// the bundled copy loses them.
+//
+// A line-anchored regex cannot do this alone: a `//` line inside a template
+// literal is data, and deleting it changes what the module renders. So the
+// scanner tracks quotes, comments and template depth, and only drops a line
+// that begins a comment while genuinely at top level.
+//
+// Regex literals are the one construct this does not model. That is why every
+// stripped module is re-parsed below and reverted on failure: a mangled module
+// cannot reach the bundle, it can only fail to shrink.
+function stripSafeLineComments(source) {
+    const lines = source.split(/\r?\n/);
+    const keep = [];
+    let inBlockComment = false;
+    let quote = null;          // ' or " when inside a plain string
+    let templateDepth = 0;     // backtick nesting
+    for (const line of lines) {
+        const atTopLevel = !inBlockComment && quote === null && templateDepth === 0;
+        const trimmed = line.trim();
+        const dropped = atTopLevel && trimmed.startsWith('//');
+
+        // Advance the scanner across this line whether or not it is kept, so
+        // state stays correct for the lines that follow.
+        for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            const next2 = line.slice(i, i + 2);
+            if (inBlockComment) {
+                if (next2 === '*/') { inBlockComment = false; i += 1; }
+                continue;
+            }
+            if (quote !== null) {
+                if (ch === '\\') { i += 1; continue; }
+                if (ch === quote) quote = null;
+                continue;
+            }
+            if (templateDepth > 0) {
+                if (ch === '\\') { i += 1; continue; }
+                if (ch === '`') { templateDepth -= 1; }
+                continue;
+            }
+            if (next2 === '//') break;            // rest of the line is a comment
+            if (next2 === '/*') { inBlockComment = true; i += 1; continue; }
+            if (ch === '\'' || ch === '"') { quote = ch; continue; }
+            if (ch === '`') { templateDepth += 1; continue; }
+        }
+        // An unterminated plain string means the line ended mid-quote, which
+        // only happens if the scanner misread something. Reset rather than
+        // carry a wrong state into the rest of the file.
+        if (quote !== null) quote = null;
+        if (!dropped) keep.push(line);
+    }
+    return keep.join('\n');
+}
+
+// Shrink a module only if the result still parses as the same kind of source.
+function shrinkModuleBody(body, relativePath) {
+    const stripped = stripSafeLineComments(body);
+    if (stripped.length >= body.length) return body;
+    try {
+        // eslint-disable-next-line no-new-func
+        new Function(stripped);
+    } catch (_) {
+        console.warn('[sync-userscript] kept comments in ' + relativePath + ': stripping did not re-parse');
+        return body;
+    }
+    return stripped;
+}
+
 function bundledModuleHeader(rel) {
     return '    // ── bundled module: ' + rel + ' ──';
 }
@@ -263,13 +334,13 @@ function buildCoreLibrarySource(repoRoot = REPO_ROOT, version = null) {
             error.modulePath = rel;
             throw error;
         }
-        const moduleBody = compactStandaloneLineComments(
+        const moduleBody = shrinkModuleBody(compactStandaloneLineComments(
             compactBundledCssTemplates(
                 fs.readFileSync(full, 'utf8').replace(/\s+$/, ''),
                 rel
             ),
             rel
-        );
+        ), rel);
         // A module containing either bundle marker would truncate the region
         // the next sync run's regex matches, silently corrupting the
         // userscript. Refuse to bundle rather than write a poisoned bundle.
@@ -387,6 +458,8 @@ module.exports = {
     buildCoreLibrarySource,
     compactBundledCssTemplates,
     compactStandaloneLineComments,
+    stripSafeLineComments,
+    shrinkModuleBody,
     bundledModuleHeader,
     coreModuleHeader,
     BUNDLE_BEGIN_RE,

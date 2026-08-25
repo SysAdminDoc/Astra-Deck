@@ -136,7 +136,9 @@ test('the guard reaches every surface that compiles a filter regex', () => {
     const core = fs.readFileSync(path.join(repoRoot, 'YTKit-core.user.js'), 'utf8');
     assert.ok(core.includes('function hasUnsafeRegexQuantifiers(pattern) {'),
         'the built userscript library must contain the guard body, not just its callers');
-    assert.ok(core.includes('features/video-hider/index.js'),
+    // Identified by code, not by the bundled-module comment header: the
+    // generator strips comments from module bodies now.
+    assert.ok(core.includes('_hiddenReasonPlaceholders'),
         'the built library ships Video Hider, which is why the guard has to be there');
 });
 

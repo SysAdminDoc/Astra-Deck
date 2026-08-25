@@ -7981,8 +7981,34 @@ test('v4.20.0 userscript bundle matches the generated v5.0.0 module output', () 
         'userscript must contain exactly one metadata header');
     assert.equal((bundle.match(/^\/\/ ==UserScript==$/gm) || []).length, 0,
         'bundle must not contain a second userscript metadata header');
-    assert.ok(core.includes('matched the *suffix* `apiKey$` / `token$` plus the exact'),
-        'core-library generation must preserve literal $` policy-profile text');
+    // The old witness for this was a comment in policy-profile.js. Bundled
+    // modules no longer carry comments, so a dollar-backtick inside one cannot
+    // reach the library at all; the hazard only remains for CODE. Exercise the
+    // stripper on a controlled input rather than an incidental line that moves.
+    const backtick = String.fromCharCode(96);
+    const backslash = String.fromCharCode(92);
+    const escaped = backslash + backtick;
+    const hazard = [
+        'const a = 1;',
+        '// a top-level comment, which goes',
+        'const t = ' + backtick + 'holds a $' + escaped + ' escape and stays' + backtick + ';',
+        'const u = ' + backtick + 'a template',
+        '// this line is DATA, not a comment',
+        'spanning lines' + backtick + ';',
+        '// a second top-level comment, which also goes'
+    ].join('\n');
+    // The fixture has to be valid on its own, or it tests the fixture.
+    // eslint-disable-next-line no-new-func
+    assert.doesNotThrow(() => new Function(hazard), 'the hazard fixture must be valid JavaScript');
+    const stripped = sync.stripSafeLineComments(hazard);
+    assert.ok(!stripped.includes('a top-level comment, which goes'),
+        'a top-level comment line must be removed');
+    assert.ok(!stripped.includes('a second top-level comment'),
+        'and so must one after a multi-line template closes');
+    assert.ok(stripped.includes('holds a $' + escaped + ' escape and stays'),
+        'generation must preserve a dollar-backtick sequence in code');
+    assert.ok(stripped.includes('// this line is DATA, not a comment'),
+        'a comment-looking line inside a template literal must survive');
     const fingerprints = {
         'core/styles.js':                    'function createCssLifecycleSpec(options',
         'core/settings-schema.js':              'const SETTINGS_SCHEMA = Object.freeze(',

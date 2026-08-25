@@ -21,31 +21,18 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.hasUnsafeRegexQuantifiers) return;
 
-    // The single ReDoS guard for every pattern compiled out of user or remote
-    // text: Video Hider's keyword filters, the comment filter, the predicate
-    // sandbox. Its own module because those three do not share a surface:
-    // predicate-sandbox.js is deliberately extension-only, while the other two
-    // also ship in the userscript bundle. Private per-caller copies are what
-    // this replaces; they caught `(a|b+)+` and missed `.*.*.*.*.*.*z`.
 
     const MAX_REGEX_SOURCE = 200;
 
     function hasUnsafeRegexQuantifiers(pattern) {
         if (typeof pattern !== 'string') return true;
-        // Bounded source length bounds worst-case backtracking work.
         if (pattern.length > MAX_REGEX_SOURCE) return true;
 
         const adjacent = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pattern);
         const groupInner = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pattern);
-        // Overlapping alternation: (a|a|a)+, (a|aa)+. Exponential on its own.
         const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pattern);
         if (adjacent || groupInner || altGroupQuantified) return true;
 
-        // Polynomial backtracking: `.*.*.*.*`, or sequential quantified
-        // groups like `(a+)(a+)(a+)(a+)(a+)b`, backtrack in O(n^k) where k is
-        // the open-ended quantifier count. The nesting scan below only sees
-        // groups quantified THEMSELVES, so count across the whole pattern.
-        // Four yields ~O(n^4), tolerable under the 200-char cap.
         let openEndedQuantifiers = 0;
         for (let qi = 0; qi < pattern.length; qi += 1) {
             const qc = pattern[qi];
@@ -66,11 +53,6 @@
         }
         if (openEndedQuantifiers > 4) return true;
 
-        // Nesting-aware scan for the exponential forms ((a+)+, ((ab)*)*,
-        // ((a|b)+)+): a group followed by + * {n,} whose contents hold a
-        // quantifier or alternation at ANY depth. The flat `[^()]` heuristics
-        // above cannot see those, since a nested paren breaks their character
-        // classes. `?` cannot drive repetition, so it is inner risk only.
         const stack = [];
         for (let i = 0; i < pattern.length; i += 1) {
             const ch = pattern[i];
@@ -131,10 +113,6 @@
         if (!text || /@(?:font-face|(?:-webkit-)?keyframes|property|import|namespace|counter-style)\b/i.test(text)) {
             return false;
         }
-        // Document-root selectors must stay global. Wrapping one of these in
-        // a body-owned scope would silently turn a page-wide rule into a
-        // descendant rule, so the compatibility path keeps that stylesheet
-        // unwrapped instead.
         return !/(?:^|[,{])\s*(?:html|body|:root)\b/i.test(text);
     }
 
@@ -163,12 +141,9 @@
             globalThis.CSS.highlights.set(String(name), highlight);
             return true;
         } catch (_) {
-            // reason: a host may expose the registry but reject a Range from a
-            // detached or cross-document node; callers keep their DOM fallback.
             try {
                 globalThis.CSS.highlights.delete(String(name));
             } catch (_) {
-                // reason: cleanup of a failed highlight registration is best effort.
             }
             return false;
         }
@@ -278,10 +253,6 @@
                     ? isRawCss
                     : String(css).includes('{');
                 if (!record) {
-                    // init() skips creating a record when the initial CSS is
-                    // falsy (e.g. a default color that yields no override). If
-                    // the user later picks a non-default value, apply() must be
-                    // able to inject it — otherwise the style is never applied.
                     if (!css) return;
                     const className = ctx.bodyClass || bodyClass;
                     if (className && document.body) document.body.classList.add(className);
@@ -414,7 +385,6 @@
                 });
                 return policy;
             } catch (_) {
-                // reason: reuse the fallback below when another context owns the policy name.
             }
         }
         policy = {
@@ -435,16 +405,7 @@
         'base', 'embed', 'iframe', 'link', 'meta', 'object', 'script', 'style'
     ]);
 
-    // Defense-in-depth for the DOMParser fallback (used on engines lacking the
-    // Sanitizer API `setHTML`, which is most stable browsers today). Parsing
-    // via text/html already prevents inline <script> from executing on
-    // adoption, but it does NOT neutralize `onerror=`/`onclick=` handlers or
-    // `javascript:` URLs. Today every caller passes static SVG literals, but
-    // this guarantees any future untrusted input can't smuggle an XSS sink.
     function _isDangerousUrl(value) {
-        // Browsers strip ASCII control characters (incl. \t\n\r) inside the
-        // scheme when navigating, so `jav\nascript:` bypasses a plain regex.
-        // Test against the control-char-stripped form.
         return _DANGEROUS_URL.test(String(value || '').replace(/[\u0000-\u0020]+/g, ''));
     }
 
@@ -457,8 +418,6 @@
             const name = attr.name || '';
             if (/^on/i.test(name)) { el.removeAttribute(name); continue; }
             if (name.toLowerCase() === 'style') { el.removeAttribute(name); continue; }
-            // srcdoc is an inline document — script inside it executes when
-            // the iframe is adopted, regardless of URL filtering.
             if (name.toLowerCase() === 'srcdoc') { el.removeAttribute(name); continue; }
             if (_URL_ATTRS.includes(name.toLowerCase()) && _isDangerousUrl(attr.value)) {
                 el.removeAttribute(name);
@@ -471,9 +430,6 @@
         const nodes = Array.from(root.querySelectorAll('*'));
         for (const node of nodes) {
             _sanitizeParsedElement(node);
-            // <template> content lives in a separate DocumentFragment that
-            // querySelectorAll('*') never visits — recurse or payloads
-            // survive sanitization and fire when the template is stamped.
             if (node.content && typeof node.content.querySelectorAll === 'function') {
                 _sanitizeParsedTree(node.content);
             }
@@ -491,14 +447,10 @@
                 _sanitizeParsedTree(body);
                 return typeof body.innerHTML === 'string' ? body.innerHTML : '';
             } catch (_) {
-                // reason: fail closed when a parser rejects malformed input.
                 return '';
             }
         }
 
-        // Sanitizer API is the only safe parser available on a few engines
-        // without DOMParser. Use it when present, then apply the same
-        // defense-in-depth attribute/tag pass.
         try {
             const template = typeof document !== 'undefined'
                 ? document.createElement?.('template')
@@ -509,7 +461,6 @@
                 return typeof template.innerHTML === 'string' ? template.innerHTML : '';
             }
         } catch (_) {
-            // reason: fall through to the fail-closed return below.
         }
         return '';
     }
@@ -543,8 +494,6 @@
                 element.setHTML(safeValue);
                 return element;
             } catch (_) {
-                // reason: setHTML may throw on malformed input in early
-                // implementations; fall through to the DOMParser path.
             }
         }
         const fragment = parseTrustedHTML(safeValue);
@@ -557,8 +506,6 @@
             try {
                 element.appendChild(fragment);
             } catch (_) {
-                // reason: appendChild may reject a foreign-document fragment
-                // in extremely old engines; nothing actionable left.
             }
         }
         return element;
@@ -579,8 +526,6 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     const STYLE_ID = 'ytkit-settings-visual-v5';
 
-    // Presentation-only index shared by the in-page panel, popup-search tests,
-    // and the generated README. Canonical schema categories stay untouched.
     const SHORTS_SETTING_KEYS = Object.freeze([
         'removeAllShorts',
         'redirectShorts',
@@ -686,11 +631,6 @@
         'Watch Page': [
             { labelKey: 'settingsSectionTranscriptAi', fallback: 'Transcript & AI', match: /^(transcriptAiHandoff|transcriptViewer|aiVideoSummary|keyMoments|copyChapterMarkdown)$/ },
             { labelKey: 'settingsSectionPlayerChrome', fallback: 'Player chrome', match: /^(removeScrubber|softBottomGradient|alwaysShowProgressBar|autoSkipChapters|chapterNavButtons|hideAutoplayToggle|floatingLogoOnWatch|stickyVideo|scrollToPlayer|playlistEnhancer|playlistSearch|watchPageTabs|focusedMode|zenMode)$/ },
-            // YouTube's own AI surfaces, kept together so the whole answer to
-            // "turn this off" is visible at once. These sit ahead of Page
-            // elements deliberately: that section's alternates are unanchored
-            // and would otherwise absorb hideAskAi/hideGeminiButtons/
-            // hideAiSummary by prefix.
             { labelKey: 'settingsSectionAiContent', fallback: 'AI content', match: /^(hideAskAi|hideGeminiButtons|hideAiSummary)$/ },
             { labelKey: 'settingsSectionPageElements', fallback: 'Page elements', match: /^(hiddenWatchElementsManager|hidePaidContentOverlay|hideInfoPanels|hideRelatedVideos|hideDescription|hideMerch|hideAsk|hideGemini|hideAi|hideHashtags|hideComment|condenseComments|hidePaidPromotionWatch|hideChannelJoinButton|hideFundraiser|hiddenActionButtonsManager|hideInfoCards)/ },
             { labelKey: 'settingsSectionInsightsNotes', fallback: 'Insights & notes', match: /^(preciseViewCounts|videoInsights|showChannelVideoCount|timestampBookmarks|videoNotes|watchTimeTracker|likeViewRatio|channelAgeDisplay|channelSubCount|redditComments|watchHistoryAnalytics)$/ },
@@ -1682,9 +1622,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // Shared across the isolated and MAIN worlds independently. A content
-    // script update can execute classic scripts again in a document that still
-    // contains the prior runtime, so a module-local boolean is not enough.
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createInjectionGuard) return;
 
@@ -1720,7 +1657,6 @@ if (typeof globalThis !== "undefined") {
             try {
                 console.warn(`[YTKit] Duplicate ${owner} injection ignored.`, detail);
             } catch (_) {
-                // reason: a page may replace console methods with throwing stubs
             }
             return Object.freeze({
                 claimed: false,
@@ -1792,32 +1728,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/feature-lifecycle.js
-    //
-    // v5.0.0 contract module for features that want the full lifecycle
-    // discipline laid out in ROADMAP.md:
-    //
-    //   init(ctx)    — wire observers/listeners, apply current state
-    //   apply(ctx, value) — hot-apply a new setting value without
-    //                       tearing the feature down
-    //   destroy(ctx) — fully reverse init: DOM, observers, listeners,
-    //                  timers, async work, body/html classes, injected
-    //                  styles, storage listeners.
-    //
-    // Each feature instance carries:
-    //   - id (string, must match a settings-schema key)
-    //   - category (must match a CATEGORIES entry)
-    //   - dependencies (other feature ids; resolved at start())
-    //   - AbortController-backed signal so async work in init/apply can
-    //     cancel cleanly on destroy or on SPA route change
-    //   - a monotonic route token incremented on every SPA navigation;
-    //     stale tokens drop their results
-    //
-    // The lifecycle does NOT subsume the existing core/registry.js —
-    // registry handles cleanup buckets + health snapshots and stays the
-    // low-level primitive. Features built on the new contract can keep
-    // registering cleanups via registry; the lifecycle wraps the contract
-    // so feature authors don't hand-roll the same boilerplate.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createLifecycle) return;
@@ -1861,10 +1771,6 @@ if (typeof globalThis !== "undefined") {
 
         function bumpRouteToken() {
             routeToken += 1;
-            // Bumping the token signals to in-flight async work that
-            // route-scoped results should be discarded. Features should
-            // capture the token at the start of an async operation and
-            // compare on completion.
             return routeToken;
         }
 
@@ -1916,7 +1822,6 @@ if (typeof globalThis !== "undefined") {
             } catch (e) {
                 record.lastError = e;
                 logger.warn?.(`[lifecycle] init failed for ${id}: ${e?.message || e}`);
-                // Abort to free any partially-attached async work.
                 try { record.controller.abort(); } catch (_) { /* reason: controller may be torn down */ }
                 throw e;
             }
@@ -1925,8 +1830,6 @@ if (typeof globalThis !== "undefined") {
         function apply(id, value, ctxExtra) {
             const record = getRecord(id);
             if (!record.started) {
-                // apply() on a not-yet-started feature is a no-op; the
-                // value is captured so a subsequent start() can pick it up.
                 record.lastValue = value;
                 return;
             }
@@ -1945,8 +1848,6 @@ if (typeof globalThis !== "undefined") {
         function destroy(id, ctxExtra) {
             const record = getRecord(id);
             if (!record.started) return;
-            // Abort first so any in-flight async observes the cancellation
-            // before destroy() runs synchronous teardown.
             try { record.controller && record.controller.abort(); }
             catch (_) { /* reason: controller may already be torn down */ }
             const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
@@ -1956,16 +1857,12 @@ if (typeof globalThis !== "undefined") {
             } catch (e) {
                 record.lastError = e;
                 logger.warn?.(`[lifecycle] destroy failed for ${id}: ${e?.message || e}`);
-                // Do not rethrow — destroy must be best-effort so callers
-                // can always tear a feature down even if a sub-step fails.
             }
             record.destroyMs = typeof performance !== 'undefined' ? Math.round((performance.now() - t0) * 100) / 100 : 0;
             record.started = false;
             record.controller = null;
         }
 
-        // Convenience for the SPA navigation observer: bump the token and
-        // give callers a chance to re-evaluate their route-scoped state.
         function notifyRouteChange() {
             return bumpRouteToken();
         }
@@ -1990,16 +1887,10 @@ if (typeof globalThis !== "undefined") {
         return {
             defineFeature, start, apply, destroy,
             getRouteToken, notifyRouteChange, snapshot,
-            // Expose for tests that need to introspect the registry.
             _features: features
         };
     }
 
-    // Lazy singleton — first caller seeds it, every later caller in the
-    // same world gets the same instance. This is the path consumer code
-    // (feature modules + navigation bridge + popup diagnostics) should
-    // use; the createLifecycle factory remains exposed for tests and
-    // for callers that need an isolated instance.
     let sharedInstance = null;
     function getLifecycle(options) {
         if (!sharedInstance) sharedInstance = createLifecycle(options);
@@ -2021,34 +1912,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/policy-profile.js
-    //
-    // v5.0.0 store-safe vs github-full profile resolver. Drives:
-    //   - Which schema entries are allowed to apply in the current profile.
-    //   - The popup gate that hides github-full-only toggles behind the
-    //     `githubFullProfile` opt-in.
-    //   - The data-flow panel's per-entry "available here" badge.
-    //   - The export scrubber, which masks API keys + github-full-only
-    //     keys when exporting under the store-safe profile.
-    //
-    // Profile resolution rules:
-    //   - safeStoreProfile=true (default) AND githubFullProfile=false
-    //       → effective profile = 'store-safe'
-    //   - safeStoreProfile=false OR githubFullProfile=true
-    //       → effective profile = 'github-full'
-    //   - Both true is a contradictory user state — we resolve to
-    //     'github-full' (most permissive) so the user's opt-in wins
-    //     over the safer default; the popup is expected to surface a
-    //     warning chip when both are set so the contradiction is visible.
-    //
-    // Entry visibility rules (given an effective profile):
-    //   - profile === 'both'            → always visible
-    //   - profile === 'store-safe'      → always visible (subset)
-    //   - profile === 'github-full'     → visible only when effective is 'github-full'
-    //
-    // The resolver intentionally does NOT decide whether an API origin is
-    // dialled; that lives in the data-flow panel. Policy-profile only
-    // gates schema entries.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createPolicyProfile) return;
@@ -2060,9 +1923,6 @@ if (typeof globalThis !== "undefined") {
 
     const VALID_ARTIFACT_PROFILES = new Set(['store-safe', 'chromium-store', 'github-full']);
     const DOWNLOAD_FREE_ARTIFACT_PROFILE = 'chromium-store';
-    // Browser-account sync consent is installation-local. A backup may be
-    // copied to another machine, but importing it must never silently opt that
-    // machine into account storage.
     const ALWAYS_LOCAL_ONLY_KEYS = new Set(['syncSettings']);
 
     function readRuntimeManifest() {
@@ -2076,7 +1936,6 @@ if (typeof globalThis !== "undefined") {
                 const manifest = runtime?.getManifest?.();
                 if (manifest && typeof manifest === 'object') return manifest;
             } catch (_) {
-                // reason: userscript and test runtimes may not expose a manifest API
             }
         }
         return null;
@@ -2136,9 +1995,6 @@ if (typeof globalThis !== "undefined") {
             if (!entry) return false;
             effective = normalizeEffectiveProfile(effective);
             if (isDownloadFreeArtifact() && isDownloadEntry(entry)) return false;
-            // Internal storage-only keys are always permitted — they
-            // travel through import/export but are never surfaced as
-            // user-visible toggles.
             if (entry.internal) return true;
             if (entry.profile === 'both') return true;
             if (entry.profile === 'store-safe') return true;
@@ -2150,9 +2006,6 @@ if (typeof globalThis !== "undefined") {
             return isEntryAllowedInProfile(findEntry(key), effective);
         }
 
-        // Filter a {key: value} settings bag to the keys allowed under the
-        // current profile. Used by the popup's visible-toggle list and by
-        // the export scrubber when generating a store-safe snapshot.
         function filterSettingsForProfile(settings = {}, effective) {
             const eff = normalizeEffectiveProfile(effective, settings);
             const out = {};
@@ -2162,34 +2015,10 @@ if (typeof globalThis !== "undefined") {
             return out;
         }
 
-        // Identify keys whose VALUES should never be persisted in a
-        // shared/sync export under any profile. Anything carrying a
-        // secret (BYO API key) lands here regardless of the user's
-        // sync allowlist.
-        //
-        // v4.47.0 R6: regex set broadened. Previous coverage only
-        // matched the *suffix* `apiKey$` / `token$` plus the exact
-        // `aiSummaryApiKey`. A user-supplied key named `apikey_v2`
-        // or `bearerToken` would have slipped through because the
-        // anchored suffix didn't fire on the underscore-separator or
-        // the `bearer` prefix. New patterns:
-        //
-        //   api[_-]?key anywhere      — catches apikey_v2 / apiKey1 / api_key
-        //   bearer anywhere           — catches bearerToken / bearer_secret
-        //   secret anywhere           — catches webhookSecret etc.
-        //   password/credential       — catches conventional auth stores
-        //   private/access/etc. Key   — catches common keypair/token aliases
-        //   cookies?/cookieJar        — catches accidental cookie snapshots
-        //   ^auth / _auth / Auth$     — catches authToken / apiAuth / userAuth
-        //
-        // The negative-lookahead on `api[_-]?key(?![_-]?id$)` prevents matching
-        // benign keys that store an ID-of-API-key rather than the key
-        // itself (none today, but a defensive carve-out).
         const ALWAYS_SCRUB_KEY_PATTERNS = Object.freeze([
             /apiKey$/i,
             /^aiSummaryApiKey$/,
             /token$/i,
-            // Broader patterns added in v4.47.0 R6.
             /api[_-]?key(?![_-]?id$)/i,
             /bearer/i,
             /secret/i,
@@ -2198,12 +2027,6 @@ if (typeof globalThis !== "undefined") {
             /(?:^|[a-z])(?:private|access|refresh|session|signing)Key$/i,
             /cookies?$/i,
             /cookieJar$/i,
-            // Two patterns for camelCase "auth" coverage:
-            //   /^auth/i        — settings starting with "auth" (authToken)
-            //   /[a-z]Auth/     — camelCase "Auth" mid-word (userAuth)
-            // Combined with the no-current-conflicting-keys check
-            // (no schema key today contains "author" or similar) so
-            // the broad coverage doesn't cause false positives.
             /^auth/i,
             /[a-z]Auth/,
             /^ytkit-da-user-id$/,
@@ -2214,16 +2037,11 @@ if (typeof globalThis !== "undefined") {
             return ALWAYS_SCRUB_KEY_PATTERNS.some((re) => re.test(key));
         }
 
-        // Schema patterns are authored in this repo, never user input, so they
-        // are compiled once and cached. A malformed one fails closed: refusing
-        // the value is the safe direction for a constraint whose whole job is
-        // to refuse.
         const patternCache = new Map();
         function matchesSettingPattern(value, pattern) {
             if (!patternCache.has(pattern)) {
                 let compiled = null;
                 try { compiled = new RegExp(pattern); } catch (_) {
-                    // reason: a broken schema pattern must reject, not open the gate
                 }
                 patternCache.set(pattern, compiled);
             }
@@ -2238,11 +2056,6 @@ if (typeof globalThis !== "undefined") {
                 return typeof value === 'boolean';
             case 'string':
                 if (typeof value !== 'string') return false;
-                // A free-form string setting used to accept anything a backup
-                // put in it, which is how a catastrophic regex reached the
-                // keyword filter and an arbitrary origin reached the
-                // alternative-frontend link. Those two were fixed at their own
-                // call sites; the constraint belongs here, at the boundary.
                 if (typeof entry.maxLength === 'number' && value.length > entry.maxLength) return false;
                 if (typeof entry.pattern === 'string' && entry.pattern && !matchesSettingPattern(value, entry.pattern)) {
                     return false;
@@ -2255,22 +2068,12 @@ if (typeof globalThis !== "undefined") {
             case 'object':
                 return isPlainObject(value);
             case 'null':
-                // Nullable-complex settings (currently `sidebarOrder`) default to
-                // null but are populated with an array/object once customized. The
-                // schema models them as `type: "null"` because the default IS null,
-                // so the validator must accept the populated runtime shapes.
                 return value === null || Array.isArray(value) || isPlainObject(value);
             default:
                 return false;
             }
         }
 
-        // Narrow an already-type-valid value to its schema constraints. We
-        // CLAMP numbers into [min, max] and COERCE an unrecognized enum value
-        // back to the schema default rather than rejecting — a corrupted or
-        // hostile import (e.g. videosPerRow: 9999, videoRotationAngle: 47)
-        // is sanitized into a safe value instead of breaking the whole import
-        // (validateSettingsSnapshot rejects the entire snapshot on any error).
         function clampSettingValue(value, entry) {
             if (Array.isArray(entry.enum) && entry.enum.length) {
                 return entry.enum.includes(value) ? value : entry.defaultValue;
@@ -2333,9 +2136,6 @@ if (typeof globalThis !== "undefined") {
             };
         }
 
-        // Build a scrubbed snapshot suitable for export. Removes
-        // always-scrub keys and replaces github-full-only entries with
-        // their schema default when exporting under store-safe.
         function buildExportSnapshot(settings = {}, options = {}) {
             const effective = normalizeEffectiveProfile(options.effective, settings);
             const schemaOnly = options.schemaOnly === true;
@@ -2357,9 +2157,6 @@ if (typeof globalThis !== "undefined") {
                 }
                 const entry = findEntry(key);
                 if (!entry) {
-                    // Unknown non-secret keys travel through opaquely
-                    // (forward-compat with newer schema versions). Unknown
-                    // secret-shaped keys were already removed by the scrubber.
                     if (schemaOnly) continue;
                     out[key] = settings[key];
                     continue;
@@ -2388,8 +2185,6 @@ if (typeof globalThis !== "undefined") {
             return { settings: out, effective, scrubbedKeys, defaultedKeys };
         }
 
-        // Compute counts for the data-flow panel: how many keys are
-        // visible vs hidden under the current profile.
         function countByProfile(effective) {
             effective = normalizeEffectiveProfile(effective);
             const visible = [];
@@ -2512,10 +2307,6 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
-    // This is the validation choke point for every cross-context settings
-    // write, but it bounded numbers and enums only: a single oversized string,
-    // array or object went straight into storage and left the quota failure to
-    // be discovered later, by which point every write was in backoff.
     const MAX_SETTING_STRING_LENGTH = 256 * 1024;
     const MAX_SETTING_ITEMS = 20000;
     const MAX_SETTING_SERIALISED_BYTES = 1024 * 1024;
@@ -2878,9 +2669,6 @@ if (typeof globalThis !== "undefined") {
             const createdAt = now();
             const generation = ++operationGeneration;
             const finalize = (value) => {
-                // Only the newest operation owns the checkpoint. Without this,
-                // an undo still settling from the previous import could clear
-                // the checkpoint this import just wrote.
                 if (generation === operationGeneration) {
                     checkpoint = {
                         snapshot,
@@ -2900,12 +2688,7 @@ if (typeof globalThis !== "undefined") {
                 };
             };
             const rollback = (error) => {
-                // Retain a retryable checkpoint when rollback fails. A later
-                // Undo attempt can still restore the exact pre-import snapshot
-                // instead of losing the recovery path.
                 const keepCheckpoint = (rollbackError) => {
-                    // Same ownership rule as finalize: a newer operation's
-                    // checkpoint must not be replaced by a straggler.
                     if (generation !== operationGeneration) {
                         return {
                             ok: false,
@@ -2913,11 +2696,6 @@ if (typeof globalThis !== "undefined") {
                             rolledBack: false,
                             error,
                             rollbackError,
-                            // Report what is actually true. This straggler did
-                            // not write a checkpoint, so an undo is available
-                            // only if the newer operation left one. Claiming
-                            // canUndo unconditionally made the field disagree
-                            // with hasUndo() and with what undo() would do.
                             canUndo: checkpoint !== null
                         };
                     }
@@ -2938,13 +2716,6 @@ if (typeof globalThis !== "undefined") {
                     };
                 };
                 const settle = () => {
-                    // Clear only a checkpoint this operation owns. An import
-                    // that failed and rolled back cleanly leaves the PREVIOUS
-                    // import's undo point valid, because the state on disk
-                    // after the rollback is exactly the state that import
-                    // produced. Nulling unconditionally destroyed it, so one
-                    // failed import silently took away the undo for the one
-                    // before it.
                     if (checkpoint?.generation === generation) checkpoint = null;
                     return { ok: false, phase: 'apply', rolledBack: true, error };
                 };
@@ -2954,9 +2725,6 @@ if (typeof globalThis !== "undefined") {
                 } catch (rollbackError) {
                     return keepCheckpoint(rollbackError);
                 }
-                // restore() may surface its persistence promise. Reporting
-                // rolledBack on the synchronous return would claim recovery
-                // from the very storage failure that forced the rollback.
                 if (restored && typeof restored.then === 'function') {
                     return Promise.resolve(restored).then(settle, keepCheckpoint);
                 }
@@ -2965,9 +2733,6 @@ if (typeof globalThis !== "undefined") {
             try {
                 const value = operation.apply(snapshot);
                 if (value && typeof value.then === 'function') {
-                    // apply() surfaced its persistence promise — commit only
-                    // once the writes confirm, and roll back on rejection so a
-                    // real IO failure cannot report a successful import.
                     return Promise.resolve(value).then(finalize, rollback);
                 }
                 return finalize(value);
@@ -2979,12 +2744,7 @@ if (typeof globalThis !== "undefined") {
         function undo() {
             if (!checkpoint) return { ok: false, phase: 'undo', message: 'No import undo is available.' };
             const active = checkpoint;
-            // The checkpoint is only cleared once the restore writes confirm;
-            // a failed undo must stay retryable.
             const settle = () => {
-                // Clear only the checkpoint this undo was started for: a new
-                // import may have written its own while the restore was in
-                // flight, and wiping that one would strand it with no recovery.
                 if (checkpoint === active) checkpoint = null;
                 return {
                     ok: true,
@@ -3034,11 +2794,6 @@ if (typeof globalThis !== "undefined") {
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     'use strict';
 
-    // Version 1 is intentionally the smallest cookie set yt-dlp's YouTube
-    // extractor uses to decide whether a browser session is authenticated:
-    // LOGIN_INFO plus at least one SAPISID variant. Any future expansion must
-    // bump this protocol version so the browser and companion can review the
-    // larger credential surface independently.
     const PROTOCOL_VERSION = 1;
     const MINIMUM_COMPANION_API = 2;
     const QUERY_DOMAIN = '.youtube.com';
@@ -3065,9 +2820,6 @@ if (typeof globalThis !== "undefined") {
         const text = String(value);
         if (typeof TextEncoder === 'function') return new TextEncoder().encode(text).byteLength;
 
-        // All supported browsers expose TextEncoder. Keep a deterministic
-        // fallback for direct tooling and reject no valid Unicode merely
-        // because an older JS host is inspecting the contract.
         let bytes = 0;
         for (const character of text) {
             const codePoint = character.codePointAt(0);
@@ -3218,22 +2970,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // TranscriptService moved out of the
-    // 44k-line ytkit.js monolith into a focused core module.
-    //
-    // Owns YouTube transcript retrieval via 5-method failover:
-    //   1) ytInitialPlayerResponse window-variable read
-    //   2) Innertube API POST
-    //   3) HTML page fetch + regex extract
-    //   4) captionTracks direct regex
-    //   5) DOM transcript-renderer scrape
-    //
-    // The service couples to a handful of ytkit.js externals — getVideoId(),
-    // showToast(), the MAIN-world _rw.ytInitialPlayerResponse bridge, and
-    // the extensionFetchJson/extensionFetchText proxy helpers. We pass them
-    // through as accessor callbacks at instantiation time so the module
-    // itself stays free of feature-monolith coupling and works in unit tests
-    // with plain object mocks.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createTranscriptService) return;
@@ -3268,10 +3004,6 @@ if (typeof globalThis !== "undefined") {
             : `${minutes}:${String(secs).padStart(2, '0')}`;
     }
 
-    // Consumers that combine transcripts with bookmarks or citations need a
-    // bounded, deterministic shape rather than provider-specific raw
-    // segments. Keep this helper side-effect free so exports and tests can
-    // use it without opening YouTube's transcript panel.
     function normalizeTranscriptSegments(segments, options = {}) {
         const maxSegments = Math.max(1, Math.min(5000, Math.floor(Number(options.maxSegments) || 2500)));
         const maxTextChars = Math.max(100, Math.min(5000, Math.floor(Number(options.maxTextChars) || 1600)));
@@ -3346,7 +3078,6 @@ if (typeof globalThis !== "undefined") {
 
     function createAbortError() {
         return core.transcriptIndex?.createAbortError?.() || Object.assign(new Error('Operation cancelled'), {
-            // i18n-static: standard DOMException-style error name.
             name: 'AbortError'
         });
     }
@@ -3373,7 +3104,6 @@ if (typeof globalThis !== "undefined") {
                 return new URL(baseUrl, 'https://www.youtube.com').searchParams.get('v') || '';
             }
         } catch (_) {
-            // reason: fall through to a narrow query parser for test/legacy contexts
         }
         const match = baseUrl.match(/[?&]v=([^&#]+)/);
         try { return match?.[1] ? decodeURIComponent(match[1]) : ''; }
@@ -3393,12 +3123,6 @@ if (typeof globalThis !== "undefined") {
     }
 
     function sanitizeTranscriptProvenance(rawValue) {
-        // A default parameter only fires on `undefined`. Every caller passes
-        // `row.provenance` / `raw?.provenance`, which is null whenever the
-        // property exists and holds null, and `null.source` threw. Two of those
-        // call sites run inside an IndexedDB onsuccess handler, where the throw
-        // leaves the wrapping promise unsettled, so the read hangs rather than
-        // rejecting. Normalise anything that is not an object to an empty one.
         const value = rawValue && typeof rawValue === 'object' ? rawValue : {};
         const source = TRANSCRIPT_SOURCES.has(value.source) ? value.source : 'none';
         const fetchedAt = Number(value.fetchedAt);
@@ -3448,7 +3172,6 @@ if (typeof globalThis !== "undefined") {
         const service = {
             config: { ...DEFAULT_CONFIG, ...(options.config || {}) },
 
-            // Main entry point — downloads transcript with automatic failover
             async downloadTranscript() {
                 const videoId = getVideoId();
                 if (!videoId) {
@@ -3501,11 +3224,6 @@ if (typeof globalThis !== "undefined") {
                 }
             },
 
-            // Shared retrieval path for indexing, study exports, panels, and
-            // downloads. A signed timedtext URL can expire while a tab stays
-            // open, so one 403/404/expired URL is allowed exactly one fresh
-            // discovery pass. Any rendered-panel fallback is bound to the
-            // same current video before its text can leave this service.
             async fetchTranscript(videoId, options = {}) {
                 if (!/^[A-Za-z0-9_-]{11}$/.test(String(videoId || ''))) throw new Error('Invalid video ID');
                 const signal = options.signal;
@@ -3607,9 +3325,6 @@ if (typeof globalThis !== "undefined") {
                     || staleReason === 'http-403'
                     || staleReason === 'http-404';
                 if ((!segments || segments.length === 0) && refreshable) {
-                    // One forced-fresh pass only. It skips the page-global
-                    // player response because that is the stale object that
-                    // commonly supplied the expired URL in the first place.
                     let freshData = null;
                     try {
                         freshData = await this._getCaptionTracks(videoId, {
@@ -3668,13 +3383,6 @@ if (typeof globalThis !== "undefined") {
                             fetchedAt: nowFn(),
                             expiresAt,
                             staleReason,
-                            // Keep whatever the refresh attempt recorded
-                            // ('refresh-discovery-failed', 'refresh-fetch-failed',
-                            // 'refresh-expired-url'). Hardcoding the panel
-                            // reason here overwrote exactly the case this
-                            // provenance exists to explain — "we tried a
-                            // refresh and it failed" never reached
-                            // getDiagnostics() or DiagnosticLog.
                             fallbackReason: fallbackReason || (allowDomFallback ? 'panel-unavailable' : 'dom-disabled')
                         });
                         throw fetchError;
@@ -3711,25 +3419,19 @@ if (typeof globalThis !== "undefined") {
                 });
             },
 
-            // Multi-method caption track retrieval with automatic failover
             async _getCaptionTracks(videoId, options = {}) {
                 const signal = options.signal;
                 const allowOffPage = options.allowOffPage === true;
                 const methods = [
                     ...(options.forceFresh === true || allowOffPage ? [] : [{
-                        // i18n-static: diagnostic method identifier, not rendered copy.
                         name: 'ytInitialPlayerResponse',
                         source: 'player-global',
                         fn: () => this._method1_WindowVariable(videoId)
                     }]),
-                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'Innertube API', source: 'innertube-player', fn: () => this._method2_InnertubeAPI(videoId, { signal }) },
-                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'HTML Page Fetch', source: 'watch-page-player', fn: () => this._method3_HTMLPageFetch(videoId, { signal }) },
-                    // i18n-static: diagnostic method identifier, not rendered copy.
                     { name: 'captionTracks Regex', source: 'watch-page-regex', fn: () => this._method4_CaptionTracksRegex(videoId, { signal }) },
                     ...(allowOffPage ? [] : [{
-                        // i18n-static: diagnostic method identifier, not rendered copy.
                         name: 'DOM Panel Scrape', source: 'dom-panel-track', fn: () => this._method5_DOMPanelScrape(videoId, { signal })
                     }])
                 ];
@@ -3828,17 +3530,9 @@ if (typeof globalThis !== "undefined") {
                     const row = segment.closest?.('ytd-transcript-segment-renderer');
                     const stamp = row?.querySelector?.('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]')
                         ?.textContent?.trim() || '';
-                    // YouTube renders this timestamp with the viewer's own
-                    // numerals, and `Number('٠:٠٧')` is NaN, so every cue in an
-                    // ar/fa/hi/th session landed at 00:00. The same table
-                    // core/text-metrics.js uses for view counts fixes it.
                     const normalizeDigits = globalThis.YTKitCore?.normalizeDigits;
                     const stampDigits = typeof normalizeDigits === 'function' ? normalizeDigits(stamp) : stamp;
                     const parts = stampDigits.split(':').map((part) => Number(part.trim()));
-                    // `filter(Number.isFinite)` was worse than dropping the
-                    // cue: it changed the array LENGTH, so a 3-part stamp with
-                    // one unreadable component became a 2-part one and the
-                    // hours field was read as minutes. Require every component.
                     let startSeconds = 0;
                     if (parts.every(Number.isFinite)) {
                         if (parts.length === 2) startSeconds = parts[0] * 60 + parts[1];
@@ -3853,7 +3547,6 @@ if (typeof globalThis !== "undefined") {
                 const detail = { videoId, status, provenance: sanitizeTranscriptProvenance(provenance) };
                 this.lastResultMetadata = detail;
                 try { recordDiagnostic(detail); } catch (_) {
-                    // reason: diagnostics are best effort and must never fail transcript retrieval
                 }
             },
 
@@ -3878,7 +3571,6 @@ if (typeof globalThis !== "undefined") {
 
             lastResultMetadata: null,
 
-            // Method 1: window.ytInitialPlayerResponse (fastest for fresh page loads)
             _method1_WindowVariable(videoId) {
                 const playerResponse = getPlayerResponseGlobal();
 
@@ -3893,14 +3585,11 @@ if (typeof globalThis !== "undefined") {
                 return this._extractFromPlayerResponse(playerResponse);
             },
 
-            // Method 2: Innertube API (most reliable for SPA navigation)
             async _method2_InnertubeAPI(videoId, options = {}) {
                 const apiKey = this._getInnertubeApiKey();
                 if (!apiKey) {
                     throw new Error('Innertube API key unavailable');
                 }
-                // Fallback version is only used if script-tag parsing fails.
-                // YouTube rotates client versions roughly weekly.
                 const clientVersion = this._getClientVersion() || INNERTUBE_CLIENT_VERSION_FALLBACK;
 
                 if (!/^[a-zA-Z0-9_-]{10,}$/.test(apiKey)) {
@@ -3932,7 +3621,6 @@ if (typeof globalThis !== "undefined") {
                 return this._extractFromPlayerResponse(data);
             },
 
-            // Method 3: Fetch HTML and extract ytInitialPlayerResponse
             async _method3_HTMLPageFetch(videoId, options = {}) {
                 const { text: html } = await extensionFetchText({
                     url: `https://www.youtube.com/watch?v=${videoId}`,
@@ -3964,7 +3652,6 @@ if (typeof globalThis !== "undefined") {
                 throw new Error('Could not extract ytInitialPlayerResponse from HTML');
             },
 
-            // Method 4: Direct captionTracks regex extraction
             async _method4_CaptionTracksRegex(videoId, options = {}) {
                 const { text: html } = await extensionFetchText({
                     url: `https://www.youtube.com/watch?v=${videoId}`,
@@ -3991,9 +3678,6 @@ if (typeof globalThis !== "undefined") {
                 const tracks = JSON.parse(captionJson);
 
                 let videoTitle = videoId;
-                // Anchor on videoDetails: the first "title" key in a watch
-                // page is usually an unrelated config or accessibility field,
-                // so the bare match named the download after the wrong string.
                 const detailsAt = html.indexOf('"videoDetails"');
                 const detailsText = detailsAt === -1 ? html : html.slice(detailsAt);
                 const pageVideoId = detailsText.match(/"videoId":"([A-Za-z0-9_-]{11})"/)?.[1] || '';
@@ -4028,7 +3712,6 @@ if (typeof globalThis !== "undefined") {
                 };
             },
 
-            // Method 5: DOM panel scraping (final fallback)
             async _method5_DOMPanelScrape(videoId, options = {}) {
                 throwIfAborted(options.signal);
                 if (typeof document === 'undefined') {
@@ -4060,15 +3743,6 @@ if (typeof globalThis !== "undefined") {
                     throw new Error('No language menu found in panel data');
                 }
 
-                // The language menu carries Innertube continuation TOKENS, not
-                // timedtext URLs — a token can never be fetched as a transcript
-                // (token + '&fmt=json3' always fails), which used to convert
-                // "no transcript" into a misleading network error. Only surface
-                // a track when the scraped item genuinely holds a fetchable
-                // timedtext URL; otherwise report no tracks so _getCaptionTracks
-                // falls through honestly. The panel is also never validated
-                // against the current video id, so a stale SPA panel must not
-                // fabricate tracks for the wrong video.
                 const tracks = languageMenu
                     .filter(item => typeof item.baseUrl === 'string' && item.baseUrl.includes('/api/timedtext'))
                     .filter(item => {
@@ -4145,11 +3819,6 @@ if (typeof globalThis !== "undefined") {
 
                 const formats = ['json3', 'xml'];
 
-                // A format can parse successfully yet yield zero segments
-                // (e.g. a valid-but-empty json3 body). Only short-circuit on a
-                // non-empty result; otherwise keep trying the remaining
-                // formats and only hand back the empty parse after every
-                // format has had its chance.
                 let emptyResult = null;
                 let terminalHttpError = null;
                 for (const fmt of formats) {
@@ -4174,11 +3843,6 @@ if (typeof globalThis !== "undefined") {
                         const status = getTranscriptHttpStatus(e);
                         if (status === 403 || status === 404) {
                             terminalHttpError = e;
-                            // Every format hits the same base URL with a
-                            // different fmt param, so a 403/404 is the URL
-                            // being revoked rather than the format being
-                            // unsupported. Trying the next one is a second
-                            // wasted round trip before the same throw.
                             this._log(`Format ${fmt} rejected with ${status}; track URL is dead, skipping remaining formats`);
                             break;
                         }
@@ -4212,7 +3876,6 @@ if (typeof globalThis !== "undefined") {
                             endMs: (event.tStartMs || 0) + (event.dDurationMs || 0),
                             text: text
                         };
-                        // Preserve word-level timing from tOffsetMs
                         if (event.segs.length > 1 && event.segs.some(s => s.tOffsetMs !== undefined)) {
                             const evtStart = (event.tStartMs || 0) / 1000;
                             const evtEnd = ((event.tStartMs || 0) + (event.dDurationMs || 0)) / 1000;
@@ -4334,7 +3997,6 @@ if (typeof globalThis !== "undefined") {
                         if (m) { this._cachedClientVersion = m[1]; this._cachedClientVersionAt = now; return m[1]; }
                     }
                 } catch (_) {
-                    // reason: script may be CSP-protected or not yet loaded; caller falls back to default
                 }
                 return this._cachedClientVersion || null;
             },
@@ -4411,17 +4073,6 @@ if (typeof globalThis !== "undefined") {
 
     const SCHEMA_VERSION = 3;
     const MAX_RECORDS = 1000;
-    // A record cap alone is not a budget. 1000 records x 200,000 chars x 2 bytes
-    // is ~400 MB in the worst case, and this store lives in IndexedDB under the
-    // page origin, which storageQuotaLRU does not prune and the popup's
-    // chrome.storage.local measurement never sees. So the largest thing Astra
-    // Deck writes to disk was the one thing with no visible ceiling and no
-    // recovery path short of a browser-level "clear site data".
-    //
-    // 64 MB is deliberately far below any browser quota: the point is to evict
-    // predictably long before a write can fail, not to discover the quota by
-    // hitting it. At the observed median transcript size that is several
-    // thousand videos, so the record cap still binds first for normal use.
     const MAX_TOTAL_BYTES = 64 * 1024 * 1024;
     const MAX_TEXT_CHARS = 200000;
     const MAX_SEARCH_TERMS = 5000;
@@ -4507,10 +4158,6 @@ if (typeof globalThis !== "undefined") {
         return (String(record?.text || '').length * 2) + (String(record?.title || '').length * 2) + 384;
     }
 
-    // Pure eviction planner. Takes {videoId, indexedAt, bytes} descriptors in any
-    // order and returns the videoIds to delete, oldest first, so BOTH the record
-    // cap and the byte budget are satisfied. Kept pure and separate from the
-    // IndexedDB cursor work so the policy is testable without a database.
     function planTranscriptEviction(entries, options = {}) {
         const maxRecords = Math.max(1, Number(options.maxRecords) || MAX_RECORDS);
         const maxBytes = Math.max(1, Number(options.maxBytes) || MAX_TOTAL_BYTES);
@@ -4521,9 +4168,6 @@ if (typeof globalThis !== "undefined") {
                 indexedAt: Number.isFinite(Number(entry.indexedAt)) ? Number(entry.indexedAt) : 0,
                 bytes: Math.max(0, Number(entry.bytes) || 0)
             }))
-            // Oldest first, then by id so the plan is deterministic when two
-            // records share a timestamp (which the millisecond clock makes
-            // routine for a batch import).
             .sort((a, b) => (a.indexedAt - b.indexedAt) || (a.videoId < b.videoId ? -1 : 1));
 
         const startingBytes = sorted.reduce((sum, entry) => sum + entry.bytes, 0);
@@ -4532,11 +4176,6 @@ if (typeof globalThis !== "undefined") {
         const evict = [];
         for (const entry of sorted) {
             if (totalRecords <= maxRecords && totalBytes <= maxBytes) break;
-            // Never evict down to nothing. A single transcript larger than the
-            // whole budget would otherwise be deleted immediately after being
-            // written, leaving the index permanently empty and re-indexing the
-            // same video on every visit. Report the overflow instead and let the
-            // record stand — one oversized entry is bounded by MAX_TEXT_CHARS.
             if (totalRecords <= 1) break;
             evict.push(entry.videoId);
             totalRecords -= 1;
@@ -4551,8 +4190,6 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // Reporting shape for the storage-health surfaces. Separate from the planner
-    // so a surface can show the budget without triggering eviction.
     function summarizeTranscriptIndex(entries, options = {}) {
         const maxRecords = Math.max(1, Number(options.maxRecords) || MAX_RECORDS);
         const maxBytes = Math.max(1, Number(options.maxBytes) || MAX_TOTAL_BYTES);
@@ -5749,8 +5386,6 @@ if (typeof globalThis !== "undefined") {
                 throw new Error('Credential must be 1-4096 characters without control characters.');
             }
             if (setOptions.remember === true) {
-                // Persistent write first: a failed remember operation must not
-                // delete or supersede the legacy durable copy during migration.
                 await persistentStore.set(normalized, value);
             } else {
                 await persistentStore.delete(normalized);
@@ -5885,10 +5520,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // Shared adapter for Chrome's built-in AI task APIs. Keep feature code
-    // independent from the legacy window.ai names so a browser rollout or a
-    // userscript host can expose either API generation without changing the
-    // lane-selection contract.
     const root = globalThis;
     const core = root.YTKitCore || (root.YTKitCore = {});
     if (core.localAi) return;
@@ -6048,10 +5679,6 @@ if (typeof globalThis !== "undefined") {
                 : settings.aiSummaryEndpoint;
             let validated = core.validateAiProviderEndpoint(provider, configuredEndpoint);
             if (provider === 'gemini') {
-                // Gemini's model lives in the URL path, not the payload — honor
-                // aiSummaryModel by substituting a validated model segment so the
-                // setting isn't silently ignored. Invalid names fall back to the
-                // endpoint's model unchanged.
                 const model = String(settings.aiSummaryModel || '').trim();
                 if (model && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$/.test(model)) {
                     const rewritten = validated.url.replace(
@@ -6146,15 +5773,9 @@ if (typeof globalThis !== "undefined") {
             };
         }
 
-        // Identity-memoized clean copy: the library search calls
-        // readArtifacts() per keystroke, and re-sanitizing (+ byte-measuring)
-        // the full store each time was the hot path this cache removes.
         let artifactsClean = null;
         let artifactsCleanSource = null;
 
-        // Hosts may supply dedicated store accessors (options.readArtifactStore
-        // / options.writeArtifactStore) so artifacts live outside the settings
-        // bag; the userscript's settings-bag path remains the default.
         const readArtifactStore = typeof options.readArtifactStore === 'function'
             ? options.readArtifactStore
             : () => getSettings()?.aiSummaryArtifactsData;
@@ -6186,8 +5807,6 @@ if (typeof globalThis !== "undefined") {
                 if (!settings) return {};
                 settings.aiSummaryArtifactsData = clean;
                 const write = saveSettings(settings);
-                // An async save rejection is otherwise unobserved while the
-                // UI already shows the artifact as saved.
                 if (write?.catch) write.catch(onWriteFailure);
             } catch (_) { /* reason: caller surfaces synchronous persistence failures */ }
             return clean;
@@ -6283,10 +5902,6 @@ if (typeof globalThis !== "undefined") {
             render();
         }
 
-        // Rendered inside a closed shadow root: the password input lives on
-        // youtube.com, so an open DOM would let page scripts read
-        // input.value or observe keystrokes while the dialog is up —
-        // contradicting the "stored outside Astra Deck" isolation promise.
         const CREDENTIAL_DIALOG_CSS = ':host{all:initial}'
             + '.ytkit-us-ai-credential-shell{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.7);font:14px/1.5 Roboto,system-ui}'
             + '.ytkit-us-ai-credential-card{width:min(420px,calc(100vw - 40px));box-sizing:border-box;padding:20px;border:1px solid #45475a;border-radius:12px;background:#1e1e2e;color:#cdd6f4;box-shadow:0 16px 56px rgba(0,0,0,.65);font:14px/1.5 Roboto,system-ui}'
@@ -6680,7 +6295,6 @@ if (typeof globalThis !== "undefined") {
             localFallback: 'keep the original YouTube title and thumbnail'
         },
         videoInsights: {
-            // i18n-static: stable provider diagnostic identity
             label: 'YouTube video insights',
             origin: 'https://www.youtube.com',
             feature: 'videoInsights',
@@ -6719,11 +6333,6 @@ if (typeof globalThis !== "undefined") {
         const status = getStatus(error, detail);
         if (status === 429) return 'rate-limited';
         if (status >= 500) return 'server-error';
-        // A 404 from an enrichment API means "we have nothing for this video",
-        // which is the normal case for most videos on most of these services.
-        // It is not an outage, and telling a user their extension is broken
-        // because SponsorBlock has no segments for a two-view upload would be
-        // the exact false alarm this classification exists to avoid.
         if (status === 404) return 'no-data';
         if (status >= 400) return 'client-error';
         if (/invalid|json|payload|schema/.test(message)) return 'invalid-payload';
@@ -6772,8 +6381,6 @@ if (typeof globalThis !== "undefined") {
             requestBudget: null,
             cooldownUntilTs: 0,
             cooldownReason: '',
-            // Consecutive failures since the last success. A single failure is
-            // a transient; this is what lets a caller wait for a pattern.
             consecutiveFailures: 0
         };
     }
@@ -6797,14 +6404,8 @@ if (typeof globalThis !== "undefined") {
         'unknown-error': 'unavailable'
     });
 
-    // How many consecutive failures make an outage worth putting on the page.
-    // One is a transient — a dropped packet, a cold cache, a single 500 — and
-    // interrupting someone's video for it is how an enrichment tool teaches
-    // people to distrust it.
     const OUTAGE_MIN_CONSECUTIVE_FAILURES = 2;
 
-    // Error classes that mean the SERVICE is not answering, as opposed to
-    // answering and having nothing to say about this video.
     const OUTAGE_ERROR_CLASSES = new Set([
         'network-error', 'server-error', 'rate-limited', 'unknown-error',
         'invalid-payload', 'permission-denied', 'client-error'
@@ -6827,7 +6428,6 @@ if (typeof globalThis !== "undefined") {
             : OUTAGE_MIN_CONSECUTIVE_FAILURES;
         const failures = Number(record.consecutiveFailures) || 0;
         if (failures < minFailures) return null;
-        // "Nothing for this video" is a successful answer with an empty body.
         if (!OUTAGE_ERROR_CLASSES.has(record.lastErrorClass)) return null;
         return {
             id: record.id,
@@ -6835,15 +6435,10 @@ if (typeof globalThis !== "undefined") {
             feature: record.feature,
             errorClass: record.lastErrorClass,
             failures,
-            // Two different sentences for the user. A revoked host permission
-            // is theirs to fix; an upstream that is down is not, and the only
-            // useful thing to say is that it is the service and not Astra Deck.
             kind: record.lastErrorClass === 'permission-denied' ? 'permission' : 'unreachable'
         };
     }
 
-    // Pure helper for compact in-page degraded-state copy. Returns null when
-    // the record is NOT actionably degraded (ok/unknown states stay silent).
     function describeDegradation(record, nowTs) {
         if (!record || record.state === 'unknown') return null;
         const effectiveNow = Number.isFinite(Number(nowTs))
@@ -6878,12 +6473,6 @@ if (typeof globalThis !== "undefined") {
             label: record.label,
             feature: record.feature,
             state: record.state,
-            // Whether the user can DO anything about it. A revoked host
-            // permission is fixed in Settings; a third-party API being rate
-            // limited, briefly 5xx-ing, or serving a stale cache is not
-            // something the reader can act on, and putting it on screen over
-            // their video is noise. Callers decide what to render; the health
-            // record and the diagnostic log keep every state either way.
             actionable: record.lastErrorClass === 'permission-denied',
             text: `${record.label}: ${parts.join(' · ')}`
         };
@@ -6939,7 +6528,6 @@ if (typeof globalThis !== "undefined") {
                 try {
                     listener({ ...rec });
                 } catch (_) {
-                    // reason: a broken indicator subscriber must never poison feature fetch paths
                 }
             }
         }
@@ -6991,15 +6579,12 @@ if (typeof globalThis !== "undefined") {
             const cooldownMs = normalizeDuration(detail.cooldownMs) || budgetResetMs;
             rec.cooldownUntilTs = cooldownMs > 0 ? observedTs + cooldownMs : 0;
             rec.cooldownReason = cleanText(detail.cooldownReason || (errorClass === 'rate-limited' ? 'rate-limited' : ''));
-            // A service that answers "nothing for this video" is working, so
-            // it must not accumulate toward an outage.
             rec.consecutiveFailures = errorClass === 'no-data'
                 ? 0
                 : (Number(rec.consecutiveFailures) || 0) + 1;
             try {
                 diagnosticLog?.record?.('external-api-health', `${rec.id} ${errorClass}: ${message}`);
             } catch (_) {
-                // reason: diagnostics must never break a feature fetch path
             }
             const snapshot = decorate(rec);
             if (!options.skipNotify) notify(snapshot);
@@ -7007,9 +6592,6 @@ if (typeof globalThis !== "undefined") {
         }
 
         function recordCacheFallback(id, error, detail = {}) {
-            // Single notification with the FINAL degraded state — notifying
-            // from recordFailure first flashed 'error' at every subscriber
-            // (in-page pills, popup health center) on each stale-cache serve.
             recordFailure(id, error, {
                 ...detail,
                 cacheState: detail.cacheState || 'stale',
@@ -7070,28 +6652,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/selector-health.js
-    //
-    // v5.1.0 selector-health surface. Layers on top of the existing
-    // per-selector telemetry in core/selectors.js (getSelectorHealthSnapshot
-    // and exportSelectorHealth) to give the popup diagnostics panel +
-    // future bug-filing flows three things the raw snapshot doesn't:
-    //
-    //   1. summarize(snapshot) — high-level rollup (counts, top problem
-    //      surfaces, fresh-capture flags) suitable for at-a-glance UI.
-    //   2. rankProblemSurfaces(snapshot, limit) — worst-N by miss/error
-    //      rate plus shape drift, filtering out surfaces with zero attempts
-    //      and no drift so untested entries do not crowd out actual
-    //      regressions.
-    //   3. formatCopyReport(snapshot, options) — multi-line plain-text
-    //      report ready for the popup "Copy selector report" button. The
-    //      output is line-oriented, ASCII-safe, and always begins with a
-    //      version line so bug filers can pin which snapshot version a
-    //      report came from.
-    //
-    // The module does NOT mutate any selectors.js state. It only reads.
-    // Tests should be able to feed in synthetic snapshots without
-    // touching the global YTKitCore.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createSelectorHealth) return;
@@ -7179,9 +6739,6 @@ if (typeof globalThis !== "undefined") {
             const errors = safeNumber(s.errorCount);
             const attempts = hits + misses + errors;
             const shapeDrifts = getSurfaceShapeDrifts(s);
-            // Skip untested surfaces (zero attempts). They are not problems —
-            // they have nothing to report unless shape drift was recorded by
-            // an external snapshot provider.
             if (attempts === 0 && shapeDrifts === 0) continue;
             const failures = misses + errors;
             if (failures === 0 && shapeDrifts === 0) continue;
@@ -7204,13 +6761,9 @@ if (typeof globalThis !== "undefined") {
             });
         }
         scored.sort((a, b) => {
-            // Primary key: combined failure + shape-drift score descending.
             if (b.problemScore !== a.problemScore) return b.problemScore - a.problemScore;
-            // Tie-break: more raw failures first.
             if (b.failures !== a.failures) return b.failures - a.failures;
-            // Then more observed shape drift.
             if (b.shapeDrifts !== a.shapeDrifts) return b.shapeDrifts - a.shapeDrifts;
-            // Stable: alphabetic by surface.
             return a.surface < b.surface ? -1 : a.surface > b.surface ? 1 : 0;
         });
         const cap = Math.max(0, Number.isFinite(limit) ? Math.floor(limit) : 5);
@@ -7317,8 +6870,6 @@ if (typeof globalThis !== "undefined") {
     }
 
     function createSelectorHealth(options = {}) {
-        // Pluggable provider for tests; production callers fall back to the
-        // global selectors.js exports if available.
         const snapshotProvider = options.snapshotProvider
             || (() => (core.getSelectorHealthSnapshot ? core.getSelectorHealthSnapshot() : []));
         const exporter = options.exporter
@@ -7362,7 +6913,6 @@ if (typeof globalThis !== "undefined") {
     }
 
     core.createSelectorHealth = createSelectorHealth;
-    // Stand-alone surface for direct callers that don't need the closure.
     core.summarizeSelectorHealth = summarize;
     core.rankSelectorProblems = rankProblemSurfaces;
     core.formatSelectorCopyReport = formatCopyReport;
@@ -7380,40 +6930,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/feature-health.js
-    //
-    // v4.68.0 — one answer to "which of my features are working right now?".
-    //
-    // Astra Deck already collects four independent health signals, none of
-    // which is keyed by the thing the user cares about:
-    //
-    //   registry.js          per-feature lifecycle status (init-error, …)
-    //   selectors.js         per-SURFACE selector hit/miss telemetry
-    //   navigation.js        per-rule mutation budget circuit breakers
-    //   external-api-health  per-SERVICE availability
-    //
-    // The join is the whole point of this module. It is pure: every input is
-    // passed in, nothing is read from globals, and the output is a plain
-    // array the popup, the side panel, and the diagnostics bundle all render
-    // from the same way.
-    //
-    // Status ladder, worst wins:
-    //
-    //   failed    the feature's own lifecycle threw (init-error /
-    //             destroy-error / cleanup-error), or its mutation rule's
-    //             circuit is open. It is not doing its job at all.
-    //   degraded  the feature initialised, but something it depends on is
-    //             not answering: a selector surface whose entire chain now
-    //             misses, or an external service reporting unavailable.
-    //             This is the silent-failure case that makes breakage
-    //             unbearable in competitor reviews — it is the reason this
-    //             module exists.
-    //   healthy   enabled, initialised, and nothing it touched is failing.
-    //   idle      enabled but not active here — page-scoped features off
-    //             their page, or nothing sampled yet this navigation.
-    //
-    // Disabled features are not reported at all. "Off" is not a health state
-    // and listing 400 of them would bury the four that matter.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.buildFeatureHealthReport) return;
@@ -7423,7 +6939,6 @@ if (typeof globalThis !== "undefined") {
     const STATUS_HEALTHY = 'healthy';
     const STATUS_IDLE = 'idle';
 
-    // Worst-first so a single comparison resolves the row status.
     const STATUS_RANK = Object.freeze({
         [STATUS_FAILED]: 3,
         [STATUS_DEGRADED]: 2,
@@ -7431,10 +6946,8 @@ if (typeof globalThis !== "undefined") {
         [STATUS_IDLE]: 0
     });
 
-    // Registry statuses that mean the feature's own code threw.
     const FAILED_LIFECYCLE_STATUSES = new Set(['init-error', 'destroy-error', 'cleanup-error']);
 
-    // external-api-health availability values that stop a feature working.
     const UNAVAILABLE_API_STATES = new Set(['unavailable', 'cooldown']);
 
     const MAX_REASONS_PER_FEATURE = 5;
@@ -7446,9 +6959,6 @@ if (typeof globalThis !== "undefined") {
         return str.length > max ? str.slice(0, max) : str;
     }
 
-    // Timestamps arrive as epoch ms from selectors.js and the registry, and
-    // as an ISO string from navigation.js. Normalise to epoch ms or null so
-    // the reason list can be sorted newest-first across all of them.
     function parseTimestamp(value) {
         if (Number.isFinite(value)) return value > 0 ? value : null;
         if (typeof value !== 'string' || !value) return null;
@@ -7470,9 +6980,6 @@ if (typeof globalThis !== "undefined") {
         return map;
     }
 
-    // A surface counts as broken only when its most recent resolution missed.
-    // A surface that missed an hour ago and has hit since is not a problem,
-    // and reporting it would train users to ignore this screen.
     function isSurfaceBroken(row) {
         return row?.lastOutcome === 'miss';
     }
@@ -7485,10 +6992,6 @@ if (typeof globalThis !== "undefined") {
         const mutationRules = toMap(input.mutationRules, 'featureId');
         const externalApis = Array.isArray(input.externalApis) ? input.externalApis : [];
 
-        // external-api-health records already declare their driving feature
-        // (SERVICE_META[x].feature), so the join is a lookup, not a guess. A
-        // record whose feature is unknown to the registry is dropped rather
-        // than attached to whichever feature has a similar-looking id.
         const apisByFeature = new Map();
         for (const service of externalApis) {
             const featureId = text(service?.feature, 120);
@@ -7540,7 +7043,6 @@ if (typeof globalThis !== "undefined") {
                 reasons.push({
                     kind: 'budget',
                     detail: text(rule.reason) || 'Suspended after exceeding its work budget',
-                    // navigation.js stamps openedAt as an ISO string.
                     at: parseTimestamp(rule.openedAt)
                 });
             }
@@ -7560,10 +7062,6 @@ if (typeof globalThis !== "undefined") {
             }
 
             for (const service of apisByFeature.get(id) || []) {
-                // `stale` means a cached answer is still being served, which
-                // is the fallback working as designed — not a degradation the
-                // user needs to see. Only a service that cannot answer at all
-                // (or is sitting out a rate-limit cooldown) counts.
                 if (!UNAVAILABLE_API_STATES.has(service.availability)) continue;
                 status = worse(status, STATUS_DEGRADED);
                 reasons.push({
@@ -7577,15 +7075,8 @@ if (typeof globalThis !== "undefined") {
                 });
             }
 
-            // A feature can only be idle when nothing is wrong with it; the
-            // reason loops above never downgrade, so this only catches the
-            // uninitialised-and-clean case.
             if (reasons.length === 0 && !initialized) status = STATUS_IDLE;
 
-            // Newest evidence first — the report is read top-down when
-            // something just broke — then capped. A feature that touches
-            // thirty broken surfaces is diagnosed by the first few; carrying
-            // all of them only bloats the message payload.
             reasons.sort((a, b) => (b.at || 0) - (a.at || 0));
             const reasonCount = reasons.length;
             if (reasons.length > MAX_REASONS_PER_FEATURE) reasons.length = MAX_REASONS_PER_FEATURE;
@@ -7603,8 +7094,6 @@ if (typeof globalThis !== "undefined") {
             });
         }
 
-        // Worst first, then alphabetically by display name so the ordering is
-        // stable across refreshes and the broken rows never move.
         rows.sort((a, b) => {
             const rank = (STATUS_RANK[b.status] || 0) - (STATUS_RANK[a.status] || 0);
             if (rank !== 0) return rank;
@@ -7615,7 +7104,6 @@ if (typeof globalThis !== "undefined") {
             generatedAt: now,
             counts,
             total: rows.length,
-            // The single line the surface leads with.
             worstStatus: rows.length
                 ? rows[0].status
                 : STATUS_HEALTHY,
@@ -7668,51 +7156,17 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/chapters.js
-    //
-    // v4.70.0 — recovering ORIGINAL chapter titles.
-    //
-    // Astra Deck already restores original titles, descriptions, thumbnails,
-    // transcripts and audio tracks. Chapters were the hole in that matrix: the
-    // chapter rail, the player's hover label and the three features that read
-    // chapter text (autoSkipChapters, chapterJumpButtons, copyChapterMarkdown)
-    // all take whatever YouTube rendered, which is the TRANSLATED string.
-    //
-    // Where the original lives, and why it is this and not a payload field:
-    // description chapters ARE the description. YouTube builds them by parsing
-    // timestamp lines out of the video description, so the original chapter
-    // titles are already sitting in `videoDetails.shortDescription` — the same
-    // locale-independent source the description un-translate has used since
-    // v3.23.0. Parsing them back out needs no new network call, no new payload
-    // shape to guess at, and no permission.
-    //
-    // The validation below is YouTube's own published rule set for description
-    // chapters (first chapter at 0:00, at least three of them, each at least
-    // ten seconds, ascending). Those rules are what make this safe: a
-    // description that merely MENTIONS some timestamps does not satisfy them,
-    // so a shopping list of "3:40 my favourite bit" links cannot be mistaken
-    // for a chapter list and painted over the real one.
-    //
-    // Pure: text in, plain data out. No DOM, no player, no settings.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.parseDescriptionChapters) return;
 
-    // A description is user text and can be enormous. Chapter lists are not.
     const MAX_LINES_SCANNED = 400;
     const MAX_CHAPTERS = 120;
     const MAX_TITLE_LENGTH = 300;
 
-    // YouTube's published requirements for description chapters.
     const MIN_CHAPTERS = 3;
     const MIN_CHAPTER_SECONDS = 10;
 
-    // `1:23`, `01:23`, `1:02:03`, `01:02:03`, and `120:00` — a long video's
-    // description often keeps counting minutes past 99 instead of switching to
-    // hours, and dropping those would silently truncate the tail of a real
-    // chapter list. Anchored to the start of the line (after optional list
-    // punctuation) because a timestamp in the middle of a sentence is a
-    // reference, not a chapter heading.
     const CHAPTER_LINE = /^[\s\-–—•*]*\(?((?:\d{1,2}:)?\d{1,3}:\d{2})\)?[\s\-–—:|)\]]*(.*)$/;
 
     function parseTimestamp(text) {
@@ -7723,18 +7177,11 @@ if (typeof globalThis !== "undefined") {
         const minutes = Number(match[2]);
         const seconds = Number(match[3]);
         if (!Number.isFinite(hours) || !Number.isFinite(minutes) || !Number.isFinite(seconds)) return null;
-        // Seconds past 59 are always malformed. Minutes past 59 are malformed
-        // only when an hour part is already carrying that magnitude — on its
-        // own, "90:00" is simply how a 1h30m mark gets written.
         if (seconds > 59) return null;
         if (match[1] && minutes > 59) return null;
         return (hours * 3600) + (minutes * 60) + seconds;
     }
 
-    // Parse the chapter list out of a description. Returns [] whenever the
-    // text does not satisfy YouTube's rules for a real chapter list — an empty
-    // result means "this description has no chapters", which callers must
-    // treat as "leave the rendered chapters alone".
     function parseDescriptionChapters(description) {
         const text = String(description || '');
         if (!text) return [];
@@ -7747,15 +7194,12 @@ if (typeof globalThis !== "undefined") {
             const startSeconds = parseTimestamp(match[1]);
             if (startSeconds === null) continue;
             const title = String(match[2] || '').trim().slice(0, MAX_TITLE_LENGTH);
-            // A stamp with no text beside it labels nothing.
             if (!title) continue;
             found.push({ startSeconds, title });
             if (found.length > MAX_CHAPTERS) return [];
         }
 
         if (found.length < MIN_CHAPTERS) return [];
-        // Description chapters must open at 0:00. This is the single most
-        // useful rule: it rejects descriptions that merely cite timestamps.
         if (found[0].startSeconds !== 0) return [];
         for (let index = 1; index < found.length; index += 1) {
             const gap = found[index].startSeconds - found[index - 1].startSeconds;
@@ -7764,10 +7208,6 @@ if (typeof globalThis !== "undefined") {
         return found;
     }
 
-    // Find the original title for a chapter that RENDERS at `startSeconds`.
-    // Exact match first; then a small tolerance, because the rail rounds a
-    // stamp to the second it displays and the player can report a chapter
-    // boundary a hair off the parsed value.
     function findChapterTitle(chapters, startSeconds, options) {
         if (!Array.isArray(chapters) || !chapters.length) return null;
         if (!Number.isFinite(startSeconds)) return null;
@@ -7786,11 +7226,6 @@ if (typeof globalThis !== "undefined") {
         return best ? best.title : null;
     }
 
-    // Given the chapter rows YouTube rendered (each carrying the timestamp
-    // text it displays and the title it displays), work out which titles were
-    // translated and what they should say instead. Rows whose displayed title
-    // already matches the original are left out of the result entirely, so a
-    // caller can treat a non-empty plan as "there is work to do".
     function planChapterRestore(renderedRows, chapters, options) {
         const plan = [];
         if (!Array.isArray(renderedRows) || !Array.isArray(chapters) || !chapters.length) return plan;
@@ -7818,31 +7253,10 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/csv.js
-    //
-    // v4.70.0 — one CSV writer for every export in the extension.
-    //
-    // Three exporters each had their own escaper and NONE of them neutralized
-    // spreadsheet formula injection: download history (`_csvCell`), Watch Later
-    // (`_csvEscape`) and Subscription Groups (`_csvEscape`). The last one even
-    // DETECTED a leading `=`/`+`/`-`/`@` — but only to decide whether to wrap
-    // the cell in quotes, and quoting does not stop Excel, LibreOffice or
-    // Sheets from evaluating `"=cmd|..."` when the file is opened.
-    //
-    // Exported cells include video titles, filenames and channel names, all of
-    // which are arbitrary uploader-controlled text, so a title beginning with
-    // `=` is a live formula in the user's spreadsheet.
-    //
-    // The neutralizer is the one already used by scripts/export-i18n-proofing.js:
-    // prefix a single quote, which every major spreadsheet treats as "the rest
-    // of this cell is literal text".
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.csvCell) return;
 
-    // Leading characters a spreadsheet will treat as the start of a formula.
-    // \t and \r are included because they can shift a value into an adjacent
-    // cell where it becomes the leading character.
     const FORMULA_LEAD = /^[=+\-@\t\r]/;
     const NEEDS_QUOTING = /[",\r\n]/;
 
@@ -7851,8 +7265,6 @@ if (typeof globalThis !== "undefined") {
         return FORMULA_LEAD.test(text) ? `'${text}` : text;
     }
 
-    // A complete CSV cell: formula-neutralized, then quoted only when the
-    // content requires it.
     function csvCell(value) {
         const text = csvSafeValue(value);
         if (!NEEDS_QUOTING.test(text)) return text;
@@ -7871,55 +7283,14 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/dialog-guard.js
-    //
-    // v4.70.0 — the one rule every programmatic click on YouTube's own dialogs
-    // has to obey: never click inside a dialog that exists to verify who the
-    // user is.
-    //
-    // YouTube's AI age/identity-verification interstitials are COMPLIANCE
-    // dialogs. Auto-answering one is not a UX shortcut, it is an account
-    // action taken on the user's behalf without their knowledge, and the 2026
-    // rollout produced documented account restrictions for exactly that. The
-    // same applies to consent bumps and captcha/challenge surfaces.
-    //
-    // Why this is a denylist of SELF-DESCRIBING STRUCTURE and not a list of
-    // renderer names: this repository will not ship selectors it could not
-    // verify against a live DOM, and the verification surfaces cannot be
-    // captured offline. So instead of guessing which renderer YouTube uses
-    // this month, the guard matches non-localized structural tokens that
-    // appear in element names, ids, and a small set of attributes — consent,
-    // verify, identity, age gates, captcha, challenge, sign-in. Element names
-    // and ids do not translate, so this holds in every locale, unlike a text
-    // match.
-    //
-    // The asymmetry that makes this safe: a FALSE POSITIVE costs one skipped
-    // auto-click, and every caller in this repository already handles "the
-    // click did not happen" (they fall back to positive evidence, or simply
-    // leave the dialog alone for the user). A FALSE NEGATIVE costs the user's
-    // account standing. So the guard is deliberately eager, and callers must
-    // treat a refusal as normal, never as an error.
-    //
-    // Pure and DOM-shaped only: it reads names/ids/attributes off nodes it is
-    // handed. No settings, no network, no YouTube knowledge beyond the tokens
-    // below.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.isComplianceDialog) return;
 
-    // Structural tokens, matched against tag names, ids, and the attributes
-    // listed below. All are English-rooted DOM identifiers, not UI copy —
-    // YouTube ships the same element names to every locale.
     const COMPLIANCE_TOKENS = /(?:consent|captcha|challenge|verif|identity|ident-|age[-_]?(?:gate|check|verif|restrict)|birthday|date[-_]?of[-_]?birth|sign[-_]?in|signin|login|passkey|credential|payment|purchase|billing)/i;
 
-    // Attributes worth reading. `is` and `class` catch view-model hosts (the
-    // camelCase `...ViewModel` shells YouTube increasingly renders), the rest
-    // are the stable hooks a dialog describes itself with.
     const SCANNED_ATTRIBUTES = ['id', 'class', 'is', 'role', 'aria-labelledby', 'aria-describedby', 'data-purpose', 'data-testid'];
 
-    // How far up from a clicked node to look for a dialog host. Deep enough to
-    // escape a button's own wrapper chain, bounded so a hostile or unusual
-    // tree cannot turn this into a long walk on every click.
     const MAX_ANCESTOR_DEPTH = 24;
 
     function describesCompliance(element) {
@@ -7931,9 +7302,6 @@ if (typeof globalThis !== "undefined") {
             try {
                 value = typeof element.getAttribute === 'function' ? element.getAttribute(name) : null;
             } catch {
-                // reason: a detached or exotic node can throw on attribute
-                // access; treat it as carrying no evidence rather than
-                // failing the whole guard.
                 value = null;
             }
             if (value && COMPLIANCE_TOKENS.test(String(value))) return true;
@@ -7941,8 +7309,6 @@ if (typeof globalThis !== "undefined") {
         return false;
     }
 
-    // True when `element` is, or sits inside, something that self-describes as
-    // a verification/consent/challenge surface.
     function isComplianceDialog(element) {
         let node = element;
         let depth = 0;
@@ -7954,10 +7320,6 @@ if (typeof globalThis !== "undefined") {
         return false;
     }
 
-    // Scan a subtree (default: the document) for an OPEN compliance surface.
-    // Used by features that click a well-known control elsewhere on the page
-    // and need to know that a verification dialog is currently up at all —
-    // clicking anything while one is open can dismiss or answer it.
     function findComplianceDialog(root) {
         const scope = root || (typeof document !== 'undefined' ? document : null);
         if (!scope || typeof scope.querySelectorAll !== 'function') return null;
@@ -7965,9 +7327,6 @@ if (typeof globalThis !== "undefined") {
         try {
             candidates = scope.querySelectorAll('tp-yt-paper-dialog, tp-yt-iron-overlay-backdrop, [role="dialog"], [role="alertdialog"], ytd-popup-container > *, [aria-modal="true"]');
         } catch {
-            // reason: a scope without full selector support (a test double, a
-            // detached fragment) yields no evidence; fail open on detection
-            // but the per-click guard still applies.
             return null;
         }
         for (const candidate of candidates) {
@@ -7979,13 +7338,9 @@ if (typeof globalThis !== "undefined") {
                     ? candidate.querySelector('[id],[class],[is]')
                     : null;
             } catch {
-                // reason: same as above — no evidence, not an error.
                 descendant = null;
             }
             if (descendant && describesCompliance(descendant)) return candidate;
-            // A dialog whose own host is unremarkable can still contain a
-            // verification shell; check the immediate children rather than
-            // walking the whole subtree on every scan.
             const children = candidate.children || [];
             for (let index = 0; index < children.length && index < 16; index += 1) {
                 if (describesCompliance(children[index])) return candidate;
@@ -7994,10 +7349,6 @@ if (typeof globalThis !== "undefined") {
         return null;
     }
 
-    // The call every auto-click site should make. Refuses when the target
-    // itself sits in a compliance surface, and when one is open anywhere in
-    // the document — because a click that lands elsewhere can still dismiss a
-    // modal that is currently demanding an answer.
     function isSafeToAutoClick(element, options) {
         if (!element) return false;
         if (isComplianceDialog(element)) return false;
@@ -8014,78 +7365,24 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/element-zapper.js
-    //
-    // v4.72.0 — the pure decision half of the YouTube-semantic element zapper.
-    //
-    // Users who want a shelf gone today hand-write uBO cosmetic filters, and
-    // the Chromium host for those dies with the MV2 purge. Every existing
-    // picker (uBOL's included) emits whatever selector reproduces the click,
-    // which on YouTube means a string full of Polymer-generated classes that
-    // stops matching on the next deploy.
-    //
-    // This module does the opposite. It never emits a class, never emits a
-    // localized attribute, and never emits an id that looks generated. What it
-    // emits is a path of custom-element tag names, stable Polymer ids, and a
-    // small curated set of structural attributes — the parts of YouTube's DOM
-    // that survive a redeploy because Polymer's own code depends on them.
-    //
-    // WHAT THIS DELIBERATELY REFUSES
-    //
-    //   The player. Same reasoning as core/feed-prefilter.js: a hidden player
-    //   subtree is a broken player, not a cleaner page.
-    //
-    //   Playlist item lists. Positional indices drive "N of M", next/previous
-    //   and shuffle; hiding one renumbers the list from the user's point of
-    //   view while the player still counts it.
-    //
-    //   Individual video cards. This is the interesting refusal. A card's
-    //   nearest structural ancestor is `ytd-rich-item-renderer`, and a rule on
-    //   that tag hides the ENTIRE feed — a fail-open guard would then catch it
-    //   every single pass, which is a guard doing the work a refusal should
-    //   have done. Per-video and per-channel hiding is Video Hider's job and it
-    //   is metadata-based, so the click snaps UP to the enclosing shelf or
-    //   section instead, and a click with no section above it is refused with a
-    //   reason the UI can point at Video Hider.
-    //
-    //   Page containers. `ytd-app`, `ytd-browse`, `ytd-watch-flexy` and friends
-    //   are scope roots, not targets.
-    //
-    //   Astra Deck's own UI. A picker that can zap the settings panel it was
-    //   launched from is a picker that can lock the user out of turning it off.
-    //
-    // Pure functions over a minimal DOM surface (tagName, id, getAttribute,
-    // parentElement, className, querySelectorAll). No settings reads, no i18n,
-    // no storage — so the whole grammar is exercisable headless.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.deriveStructuralSelector) return;
 
     const FEATURE_ID = 'elementZapper';
 
-    // ── Bounds ──────────────────────────────────────────────────────────────
     const MAX_ANCESTOR_WALK = 32;
     const MAX_SELECTOR_STEPS = 4;
     const MAX_SELECTOR_LENGTH = 240;
     const MAX_RULES = 200;
     const MAX_LABEL_LENGTH = 120;
-    // A section-level rule matching more than this many nodes in one pass is
-    // misfiring, not thorough. Refused for the pass and reported, never
-    // silently applied — the same posture feed-prefilter takes on a list.
     const MAX_MATCHES_PER_RULE = 50;
 
-    // ── Grammar ─────────────────────────────────────────────────────────────
     const TAG_PATTERN = /^[a-z][a-z0-9-]{1,63}$/;
-    // Polymer's own ids are short lowercase words. Anything with uppercase, a
-    // long digit run, or unusual length is a generated id and is dropped rather
-    // than baked into a rule that will stop matching.
     const STABLE_ID_PATTERN = /^[a-z][a-z0-9-]{2,39}$/;
     const GENERATED_ID_HINT = /\d{3,}/;
     const ATTR_VALUE_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
 
-    // Structural only. Nothing here is user-visible text, so nothing here
-    // changes when the interface language does — the reason `aria-label`,
-    // `title` and `alt` are absent and must stay absent.
     const ALLOWED_ATTRIBUTES = Object.freeze([
         'page-subtype',
         'role',
@@ -8103,7 +7400,6 @@ if (typeof globalThis !== "undefined") {
     ]);
     const ALLOWED_ATTRIBUTE_SET = new Set(ALLOWED_ATTRIBUTES);
 
-    // ── Refusals ────────────────────────────────────────────────────────────
     const PLAYER_TAGS = new Set([
         'video', 'ytd-player', 'ytd-miniplayer', 'yt-playability-error-supported-renderers'
     ]);
@@ -8119,7 +7415,6 @@ if (typeof globalThis !== "undefined") {
         'yt-playlist-manager'
     ]);
 
-    // Scope roots. Legal to appear as a SCOPE step, never as the target.
     const PAGE_CONTAINER_TAGS = new Set([
         'html', 'body', 'head',
         'ytd-app',
@@ -8134,8 +7429,6 @@ if (typeof globalThis !== "undefined") {
         'ytd-masthead'
     ]);
 
-    // Per-item renderers. A rule on one of these hides every card of that kind,
-    // which is Video Hider's territory and metadata-based there for a reason.
     const ITEM_RENDERER_TAGS = new Set([
         'ytd-rich-item-renderer',
         'ytd-video-renderer',
@@ -8149,8 +7442,6 @@ if (typeof globalThis !== "undefined") {
         'ytd-grid-playlist-renderer'
     ]);
 
-    // Preferred anchors: the section, shelf, panel and promo renderers a zapper
-    // exists to remove. Ordered by nothing — nearest ancestor wins.
     const SECTION_ANCHOR_TAGS = new Set([
         'ytd-rich-section-renderer',
         'ytd-rich-shelf-renderer',
@@ -8217,8 +7508,6 @@ if (typeof globalThis !== "undefined") {
         return String(raw).split(/\s+/).filter(Boolean);
     }
 
-    // Astra Deck's own surfaces are prefixed. This is the one place a class is
-    // read at all, and only to refuse — never to build a selector from.
     function isOwnUi(element) {
         const tag = tagOf(element);
         if (tag.startsWith('ytkit-')) return true;
@@ -8233,10 +7522,6 @@ if (typeof globalThis !== "undefined") {
         return classTokens(element).some((token) => PLAYER_CLASSES.has(token));
     }
 
-    // Walks self-and-ancestors once and returns the first refusal found, or
-    // null. Used at derive time AND at apply time: a stored selector could have
-    // been hand-edited in a backup, and a rule that reaches the player must
-    // fail at the moment it would hide something, not only when it was made.
     function refusalFor(element) {
         if (!isElement(element)) return REFUSAL_REASONS.NOT_AN_ELEMENT;
         let node = element;
@@ -8251,16 +7536,12 @@ if (typeof globalThis !== "undefined") {
         return null;
     }
 
-    // ── Anchor selection ────────────────────────────────────────────────────
 
     function isCustomElement(element) {
         const tag = tagOf(element);
         return TAG_PATTERN.test(tag) && tag.includes('-');
     }
 
-    // Snap the click to the nearest thing worth naming. Section anchors win
-    // outright; a generic custom element is the fallback; an item renderer is
-    // recorded so the refusal can name it rather than saying "no anchor".
     function findAnchor(element) {
         let node = element;
         let steps = 0;
@@ -8270,13 +7551,6 @@ if (typeof globalThis !== "undefined") {
             const tag = tagOf(node);
             if (SECTION_ANCHOR_TAGS.has(tag)) return { anchor: node, kind: 'section', sawItemRenderer };
             if (ITEM_RENDERER_TAGS.has(tag)) {
-                // A card is a hard boundary. Everything at or below it is
-                // per-card content, so the generic fallback collected on the
-                // way up is thrown away — anchoring on `ytd-rich-grid-media`
-                // or `ytd-thumbnail` would blank every thumbnail in the feed,
-                // which is the same over-match the card refusal exists to
-                // prevent, one tag lower. Above a card, only a shelf or
-                // section will do.
                 sawItemRenderer = true;
                 fallback = null;
             } else if (!sawItemRenderer
@@ -8292,7 +7566,6 @@ if (typeof globalThis !== "undefined") {
         return { anchor: null, kind: 'none', sawItemRenderer };
     }
 
-    // ── Step encoding ───────────────────────────────────────────────────────
 
     function stableIdOf(element) {
         const id = String(element.id || '').trim();
@@ -8333,15 +7606,6 @@ if (typeof globalThis !== "undefined") {
         return { tag, id: stableIdOf(element), attributes: structuralAttributes(element) };
     }
 
-    // A scope root makes the same shelf tag mean different things on different
-    // pages — `ytd-browse[page-subtype="home"] ytd-rich-shelf-renderer` will not
-    // touch the subscriptions feed. Without one the rule is still valid, just
-    // broader, and the confidence label says so.
-    //
-    // These four are worth naming even bare, because each one IS a page. The
-    // other page containers are not: `ytd-app` and `ytd-page-manager` wrap
-    // every page there is, so scoping to them narrows nothing while making the
-    // rule longer and more fragile.
     const SCOPE_ROOT_TAGS = new Set(['ytd-browse', 'ytd-watch-flexy', 'ytd-search', 'ytd-masthead']);
 
     function findScopeStep(anchor) {
@@ -8351,7 +7615,6 @@ if (typeof globalThis !== "undefined") {
         while (isElement(node) && steps < MAX_ANCESTOR_WALK) {
             const step = describeStep(node);
             if (step) {
-                // The nearest ancestor carrying real structure wins outright.
                 if (step.attributes.length || step.id) return step;
                 if (!bareRoot && SCOPE_ROOT_TAGS.has(step.tag)) bareRoot = step;
             }
@@ -8386,9 +7649,6 @@ if (typeof globalThis !== "undefined") {
             return { ok: false, reason: REFUSAL_REASONS.UNDERIVABLE };
         }
 
-        // `section` + a scope is the shape that survives redeploys; the other
-        // combinations still work, they just carry more risk of over-matching,
-        // and the UI shows this rather than hiding it.
         let confidence = 'low';
         if (kind === 'section') confidence = scope ? 'high' : 'medium';
         else if (scope) confidence = 'medium';
@@ -8405,13 +7665,6 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // ── Selector validation ─────────────────────────────────────────────────
-    //
-    // Rules travel in backups. A stored selector is untrusted input by the time
-    // it reaches querySelectorAll, so it is re-parsed against the same grammar
-    // that produced it rather than merely length-checked. Anything the grammar
-    // does not cover — a class, a pseudo-class, `*`, a combinator other than
-    // descendant — is rejected whole.
 
     const STEP_PATTERN = /^([a-z][a-z0-9-]{1,63})(#[a-z][a-z0-9-]{2,39})?((?:\[[a-z-]{1,32}(?:="[A-Za-z0-9_-]{1,40}")?\])*)$/;
     const ATTR_PATTERN = /\[([a-z-]{1,32})(?:="([A-Za-z0-9_-]{1,40})")?\]/g;
@@ -8438,8 +7691,6 @@ if (typeof globalThis !== "undefined") {
                     consumed += attrMatch[0].length;
                     if (attributes.length > 3) return null;
                 }
-                // A partially-consumed attribute run means the grammar matched
-                // a prefix of something it does not understand.
                 if (consumed !== rawAttrs.length) return null;
             }
             parsed.push({ tag, id: rawId ? rawId.slice(1) : '', attributes });
@@ -8459,7 +7710,6 @@ if (typeof globalThis !== "undefined") {
         return parseStructuralSelector(selector) !== null;
     }
 
-    // ── Rules ───────────────────────────────────────────────────────────────
 
     function normalizeLabel(value) {
         return String(value === undefined || value === null ? '' : value)
@@ -8508,11 +7758,6 @@ if (typeof globalThis !== "undefined") {
         });
     }
 
-    // ── Apply ───────────────────────────────────────────────────────────────
-    //
-    // Returns the nodes to hide plus a report. Never touches the DOM itself:
-    // the feature module owns hiding and attribution so this stays exercisable
-    // against a fake root.
 
     function collectZapTargets(root, rules, options = {}) {
         const report = {
@@ -8545,9 +7790,6 @@ if (typeof globalThis !== "undefined") {
             try {
                 matches = Array.from(root.querySelectorAll(rule.selector));
             } catch (_) {
-                // reason: a selector that parses under our grammar but that the
-                // engine rejects is a bug in the grammar, not a reason to stop
-                // applying the other rules.
                 report.invalidRules += 1;
                 continue;
             }
@@ -8601,30 +7843,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/element-zapper/index.js
-    //
-    // v4.72.0 — the apply path and picker for the YouTube-semantic zapper.
-    //
-    // core/element-zapper.js decides what a click means and what a stored rule
-    // is allowed to be. This module is everything around that: reading rules,
-    // hiding what they match, explaining the hides through the shared
-    // attribution marker, and the click-to-pick overlay that creates them.
-    //
-    // Three things are deliberate here.
-    //
-    // Hides go through core/hide-attribution.js, not a private CSS class. That
-    // is the v4.58.1 lesson: a feature that hides cards without stamping the
-    // marker is a feature nobody can debug, and "turn it off and see" is not a
-    // diagnostic. Every zapped element carries `data-ytkit-hidden-by` and shows
-    // up in the per-navigation counts and the diagnostics bundle for free.
-    //
-    // The picker refuses on hover, not on click. A picker that lets you frame a
-    // selection and only then says "no" has already wasted the interaction; the
-    // outline turns red and names the reason while the pointer is still moving.
-    //
-    // Removing a rule un-hides immediately. `unmarkCardHidden` only clears a
-    // marker the caller owns, so a card this feature hid is restored while a
-    // card Video Hider hid is left alone.
 
     const ns = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     if (ns.createElementZapperFeature) return;
@@ -8762,7 +7980,6 @@ if (typeof globalThis !== "undefined") {
                 }
             },
 
-            // ── Apply ───────────────────────────────────────────────────────
 
             _apply() {
                 const core = zapperCore();
@@ -8793,7 +8010,6 @@ if (typeof globalThis !== "undefined") {
                 return report;
             },
 
-            // Restores everything this feature hid, and only what it hid.
             _restoreAll() {
                 if (!documentRef) return 0;
                 const core = zapperCore();
@@ -8806,7 +8022,6 @@ if (typeof globalThis !== "undefined") {
                 return nodes.length;
             },
 
-            // ── Rules ───────────────────────────────────────────────────────
 
             getRules() {
                 return this._rules.map((rule) => ({ ...rule }));
@@ -8828,8 +8043,6 @@ if (typeof globalThis !== "undefined") {
                 const before = this._rules.length;
                 this._rules = writeRules(this._rules.filter((rule) => rule.selector !== selector));
                 if (this._rules.length === before) return false;
-                // Un-hide first, then re-apply: a node matched by two rules
-                // must stay hidden when only one of them is deleted.
                 this._restoreAll();
                 this._apply();
                 return true;
@@ -8848,7 +8061,6 @@ if (typeof globalThis !== "undefined") {
                 return true;
             },
 
-            // ── Picker ──────────────────────────────────────────────────────
 
             isPicking() {
                 return !!this._picker;
@@ -8899,8 +8111,6 @@ if (typeof globalThis !== "undefined") {
                 };
 
                 const onMove = (event) => {
-                    // The overlay swallows pointer events by design, so the
-                    // element under the cursor has to be asked for directly.
                     overlay.style.pointerEvents = 'none';
                     const under = documentRef.elementFromPoint?.(event.clientX, event.clientY);
                     overlay.style.pointerEvents = '';
@@ -8962,7 +8172,6 @@ if (typeof globalThis !== "undefined") {
                 return true;
             },
 
-            // ── Lifecycle ───────────────────────────────────────────────────
 
             init() {
                 this._rules = readRules();
@@ -8979,9 +8188,6 @@ if (typeof globalThis !== "undefined") {
             }
         };
 
-        // The settings pane. Rendered from the Content category so the rules a
-        // click created are listed, countable, and individually removable in
-        // the place every other content filter already lives.
         function buildPane() {
             if (!documentRef) return null;
             injectStyle?.(PANEL_CSS, PANEL_STYLE_ID);
@@ -9022,6 +8228,9 @@ if (typeof globalThis !== "undefined") {
                     const toggle = documentRef.createElement('input');
                     toggle.type = 'checkbox';
                     toggle.checked = rule.enabled !== false;
+                    toggle.setAttribute('aria-label',
+                        t('zapRuleToggleAriaTpl', 'Apply the rule for {selector}')
+                            .replace('{selector}', rule.selector));
                     toggle.addEventListener('change', () => {
                         feature.setRuleEnabled(rule.selector, toggle.checked);
                     });
@@ -9042,6 +8251,9 @@ if (typeof globalThis !== "undefined") {
                     remove.type = 'button';
                     remove.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
                     remove.textContent = t('zapRuleRemove', 'Remove');
+                    remove.setAttribute('aria-label',
+                        t('zapRuleRemoveAriaTpl', 'Remove the rule for {selector}')
+                            .replace('{selector}', rule.selector));
                     remove.addEventListener('click', () => {
                         feature.removeRule(rule.selector);
                         renderList();
@@ -9062,9 +8274,6 @@ if (typeof globalThis !== "undefined") {
             return pane;
         }
 
-        // Published so the settings panel can reach the live instance without
-        // the monolith and the peeled panel having to agree on a config field.
-        // Both copies of the panel read the same global.
         const instance = { elementZapperFeature: feature, buildElementZapperPane: buildPane };
         ns.elementZapperInstance = instance;
         return instance;
@@ -9086,30 +8295,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/hide-attribution.js
-    //
-    // v4.68.0 — one marker for every card Astra Deck hides.
-    //
-    // Video Hider has explained its own hides since v4.57.0. Nothing else
-    // did. `hideCollaborations`, `hidePlannedLivestreams` and
-    // `removeAllShorts` each hide feed cards through their own private CSS
-    // class or inline style, with no trace of which feature did it — which
-    // is why, during the v4.58.1 incident, turning Video Hider off cleared
-    // nothing: the cards were being hidden by a different feature entirely
-    // and there was no way for anyone, user or maintainer, to tell.
-    //
-    // Every hider now stamps the same two data attributes:
-    //
-    //   data-ytkit-hidden-by    the feature id that hid it
-    //   data-ytkit-hidden-rule  the rule inside that feature which matched
-    //
-    // and increments a per-navigation counter. The marker is the contract:
-    // the note beside the card, the "which feature hid these?" answer, and
-    // the diagnostics-bundle counts all read from it, so a feature that
-    // stamps it gets all three for free.
-    //
-    // Pure DOM + counters. No settings reads, no i18n — callers pass in the
-    // already-translated note text so this module stays testable headless.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.markCardHidden) return;
@@ -9118,16 +8303,10 @@ if (typeof globalThis !== "undefined") {
     const HIDDEN_RULE_ATTR = 'data-ytkit-hidden-rule';
     const NOTE_CLASS = 'ytkit-hidden-note';
 
-    // Counters are per navigation, not per session: "42 cards hidden" is only
-    // meaningful against one feed. Bounded so a pathological page cannot grow
-    // the map without limit.
     const MAX_TRACKED_FEATURES = 64;
     const MAX_TRACKED_RULES = 32;
     let counts = new Map();
 
-    // Notes are keyed by the card so a re-judged card updates its own note
-    // instead of accumulating siblings. WeakMap: a card removed from the DOM
-    // must not be retained by this module.
     const notes = new WeakMap();
 
     function normalizeId(value) {
@@ -9150,8 +8329,6 @@ if (typeof globalThis !== "undefined") {
         return entry;
     }
 
-    // Returns true when this call is the one that hid the card, so callers can
-    // avoid re-doing work on every mutation tick.
     function markCardHidden(element, options = {}) {
         if (!element || element.nodeType !== 1) return false;
         const featureId = normalizeId(options.featureId);
@@ -9162,9 +8339,6 @@ if (typeof globalThis !== "undefined") {
         if (previousFeature === featureId && previousRule === rule) return false;
         element.setAttribute(HIDDEN_BY_ATTR, featureId);
         element.setAttribute(HIDDEN_RULE_ATTR, rule);
-        // Only count a genuine transition. A card re-judged by the SAME
-        // feature under a different rule is one card, not two, so the count
-        // moves between rules rather than inflating the feature total.
         if (previousFeature !== featureId) bump(featureId, options.featureName, rule);
         else {
             const entry = counts.get(featureId);
@@ -9179,9 +8353,6 @@ if (typeof globalThis !== "undefined") {
         return true;
     }
 
-    // A feature may only clear a marker it owns. Without that check, two
-    // hiders judging the same card would clear each other's attribution and
-    // the note would flicker between them.
     function unmarkCardHidden(element, featureId) {
         if (!element || element.nodeType !== 1) return false;
         const id = normalizeId(featureId);
@@ -9210,10 +8381,6 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
-    // The note is a SIBLING, not a child: the card itself is display:none, so
-    // anything inside it is invisible too. role="status" rather than a live
-    // region — a feed pass can hide dozens of cards at once and announcing
-    // each one would flood a screen reader.
     function syncHiddenNote(element, options = {}) {
         if (!element || element.nodeType !== 1) return null;
         const doc = element.ownerDocument;
@@ -9292,42 +8459,11 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/heatmap.js
-    //
-    // v4.68.0 — YouTube's "most replayed" heatmap, which the player response
-    // already carries and Astra Deck was throwing away.
-    //
-    // Two shapes exist in the wild and both are handled, because which one
-    // arrives depends on the page and on whichever A/B bucket the session
-    // landed in:
-    //
-    //   1. Player response, entity batch:
-    //      frameworkUpdates.entityBatchUpdate.mutations[]
-    //        .payload.macroMarkersListEntity.markersList
-    //        { markerType: 'MARKER_TYPE_HEATMAP',
-    //          markers: [{ startMillis, durationMillis,
-    //                      intensityScoreNormalized }] }
-    //
-    //   2. Initial data, decorated player bar:
-    //      playerOverlays.decoratedPlayerBarRenderer.playerBar
-    //        .multiMarkersPlayerBarRenderer.markersMap[]
-    //        .value.heatmap.heatmapRenderer.heatMarkers[]
-    //        { heatMarkerRenderer: { timeRangeStartMillis,
-    //                                markerDurationMillis,
-    //                                heatMarkerIntensityScoreNormalized } }
-    //
-    // Everything here is pure: given a parsed object it returns plain data.
-    // No DOM, no player, no settings — the features in ytkit.js own all of
-    // that, and this module can be exercised against captured JSON.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.parseHeatmapMarkers) return;
 
-    // A heatmap is ~100 markers. Anything far beyond that is a malformed or
-    // hostile payload, not a video, and must not be walked.
     const MAX_MARKERS = 512;
-    // Below this many markers the curve is too coarse to steer playback with,
-    // and "most replayed" would just mean "the first third of the video".
     const MIN_USEFUL_MARKERS = 4;
 
     function finiteNumber(value) {
@@ -9345,8 +8481,6 @@ if (typeof globalThis !== "undefined") {
         return {
             startSeconds: start / 1000,
             durationSeconds: duration / 1000,
-            // YouTube emits 0..1 but has shipped out-of-range values before;
-            // clamping here keeps every consumer from having to.
             intensity: Math.min(1, Math.max(0, score))
         };
     }
@@ -9394,9 +8528,6 @@ if (typeof globalThis !== "undefined") {
         return [];
     }
 
-    // `source` may be a player response, an initial-data object, or both
-    // merged — callers hand over whatever they have and this picks the shape
-    // that is actually present.
     function parseHeatmapMarkers(source) {
         if (!source || typeof source !== 'object') return [];
         const markers = fromEntityBatch(source);
@@ -9405,9 +8536,6 @@ if (typeof globalThis !== "undefined") {
         return resolved.sort((a, b) => a.startSeconds - b.startSeconds);
     }
 
-    // The peak of the curve. Ties resolve to the EARLIER marker: when a video
-    // has two equally-replayed moments, sending the viewer to the first one is
-    // the answer that does not skip content.
     function findMostReplayed(markers) {
         if (!Array.isArray(markers) || markers.length === 0) return null;
         let best = null;
@@ -9425,18 +8553,11 @@ if (typeof globalThis !== "undefined") {
                 return marker;
             }
         }
-        // Past the last marker (rounding, or a live edge) the tail still counts
-        // as the last region rather than as "no data" — otherwise speed would
-        // snap back to base for the final second of every video.
         const last = markers[markers.length - 1];
         if (last && seconds >= last.startSeconds) return last;
         return null;
     }
 
-    // Resolve the playback rate for a position. Returns null when there is no
-    // heatmap or the position is not covered, which the caller must read as
-    // "don't touch the rate" — never as "reset to 1x". A feature that cannot
-    // tell must leave the user's speed alone.
     function resolveHeatmapRate(markers, seconds, options = {}) {
         const baseRate = finiteNumber(options.baseRate) || 1;
         const coldRate = finiteNumber(options.coldRate) || baseRate;
@@ -9444,10 +8565,6 @@ if (typeof globalThis !== "undefined") {
         const threshold = hotThreshold === null ? 0.4 : Math.min(1, Math.max(0, hotThreshold));
         const marker = markerAt(markers, seconds);
         if (!marker) return null;
-        // Hot regions play at exactly the user's rate — the point is not to
-        // slow anything down, it is to not make them sit through the cold
-        // parts. Speeding UP a rewatched moment would be the opposite of what
-        // the heatmap says.
         return marker.intensity >= threshold ? baseRate : Math.max(baseRate, coldRate);
     }
 
@@ -9489,46 +8606,15 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/youtube-thumbnails.js
-    //
-    // v4.69.0 — original-language thumbnails.
-    //
-    // `antiTranslate` restores the original title while the thumbnail beside
-    // it still shows text baked in the viewer's locale, which is a visible
-    // half-fix: the card reads in two languages at once.
-    //
-    // The tempting implementation is to pattern-match the localised URL and
-    // rewrite it. That is a guess about a mechanism YouTube can change without
-    // notice, and a guess that silently stops matching looks exactly like a
-    // feature that works. So the original is taken from a source that is
-    // authoritative and locale-independent, in this order:
-    //
-    //   1. PLAYER RESPONSE — `videoDetails.thumbnail.thumbnails[]`. Watch page
-    //      only, already parsed for four other features, costs nothing.
-    //   2. oEMBED — `https://www.youtube.com/oembed?...`. Same origin as the
-    //      page, so it needs NO new host permission, returns no cookies, and
-    //      its `thumbnail_url` does not vary by locale. This is the feed-card
-    //      path, where no player response exists.
-    //   3. CANONICAL URL — drop the signed variant query (`?sqp=…&rs=…`) from
-    //      whatever was rendered. No network at all. This recovers the
-    //      uncropped original image but cannot undo a localisation that lives
-    //      in a different asset, so it is the last resort, not the strategy.
-    //
-    // Everything here is pure: URL and JSON in, plain data out. The fetching,
-    // caching and DOM swapping belong to the feature in ytkit.js.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.canonicalThumbnailUrl) return;
 
-    // i.ytimg.com is the canonical host; YouTube also serves the same paths
-    // from numbered mirrors (i1..i9) and from ytimg.googleusercontent.com.
     const THUMBNAIL_HOST_PATTERN = /^(?:i\d*\.ytimg\.com|img\.youtube\.com)$/i;
     const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
-    // /vi/<id>/<quality>.<ext> or /vi_webp/<id>/<quality>.webp
     const THUMBNAIL_PATH_PATTERN = /^\/(vi|vi_webp)\/([A-Za-z0-9_-]{11})\/([A-Za-z0-9_]+)\.(jpg|jpeg|webp|png)$/;
 
     const OEMBED_ENDPOINT = 'https://www.youtube.com/oembed';
-    // oEmbed answers are small; anything larger is not an oEmbed document.
     const OEMBED_MAX_BYTES = 8 * 1024;
 
     function parseThumbnailUrl(rawUrl) {
@@ -9550,18 +8636,11 @@ if (typeof globalThis !== "undefined") {
             quality,
             extension,
             webp: prefix === 'vi_webp',
-            // A signed `sqp` crop/resize variant. This is what makes a rendered
-            // feed thumbnail differ from the uploader's asset.
             variant: url.searchParams.has('sqp') || url.searchParams.has('rs'),
-            // The uploader's own custom thumbnail for a Short. NOT a variant to
-            // be stripped: dropping `_custom_N` falls back to an auto-generated
-            // video frame, which is a worse image than the one we started with.
             custom: /_custom_\d+$/.test(quality)
         };
     }
 
-    // Returns the variant-free form of a rendered thumbnail URL, or null when
-    // the input is not a YouTube thumbnail or is already canonical.
     function canonicalThumbnailUrl(rawUrl) {
         const parsed = parseThumbnailUrl(rawUrl);
         if (!parsed || !parsed.variant) return null;
@@ -9573,9 +8652,6 @@ if (typeof globalThis !== "undefined") {
         const a = parseThumbnailUrl(left);
         const b = parseThumbnailUrl(right);
         if (!a || !b) return false;
-        // Quality and container differ constantly between what a feed renders
-        // and what the player response reports; only the video identity and
-        // the uploader-custom flag decide whether these are the same picture.
         return a.videoId === b.videoId && a.custom === b.custom;
     }
 
@@ -9585,9 +8661,6 @@ if (typeof globalThis !== "undefined") {
         return `${OEMBED_ENDPOINT}?url=${encodeURIComponent(watchUrl)}&format=json`;
     }
 
-    // oEmbed is an untrusted response even though it is same-origin: validate
-    // shape and reject a thumbnail that is not a YouTube thumbnail URL, so a
-    // compromised or changed endpoint cannot point an <img> anywhere it likes.
     function parseOEmbedMetadata(payload) {
         let json = payload;
         if (typeof payload === 'string') {
@@ -9612,7 +8685,6 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // The tallest entry in a player response's thumbnail ladder.
     function pickPlayerResponseThumbnail(playerResponse) {
         const list = playerResponse?.videoDetails?.thumbnail?.thumbnails;
         if (!Array.isArray(list) || !list.length) return null;
@@ -9626,9 +8698,6 @@ if (typeof globalThis !== "undefined") {
         return best ? best.url : null;
     }
 
-    // The documented fallback order, in one place so the feature and the tests
-    // agree on it. Returns { url, source } or null when nothing beats what is
-    // already rendered.
     function resolveOriginalThumbnail(rendered, sources = {}) {
         const fromPlayer = pickPlayerResponseThumbnail(sources.playerResponse);
         if (fromPlayer && fromPlayer !== rendered) {
@@ -9675,40 +8744,12 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/feature-schedule.js
-    //
-    // v4.69.0 — "focus hours": let any boolean feature carry an optional
-    // active window.
-    //
-    // Three constraints shape this module, and all three are why it is pure:
-    //
-    //   NO ALARMS. `chrome.alarms` would be a new permission for something the
-    //   page can work out itself. The runtime asks this module when the next
-    //   boundary is and sets one local timer; nothing is scheduled with the
-    //   browser.
-    //
-    //   LOCAL TIME, NOT UTC. "22:00" means the viewer's 22:00. Every
-    //   comparison is against the local-clock fields of a Date, never its
-    //   epoch value, so a schedule keeps meaning the same thing across DST and
-    //   across travel.
-    //
-    //   RESTORE, DON'T DEFAULT. Leaving a window must put back the value the
-    //   user had before the window opened — not the schema default. The caller
-    //   owns that saved value; this module only says what should happen and
-    //   never invents a value to write.
-    //
-    // Windows may cross midnight (22:00–06:00). Such a window is evaluated
-    // against the day its START falls on, so "weekdays 22:00–06:00" still
-    // covers Friday 23:00 and Saturday 02:00, and does not accidentally open
-    // on Sunday evening.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.normalizeFeatureSchedule) return;
 
     const MINUTES_PER_DAY = 24 * 60;
     const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
-    // Bound the map: this is user-authored config, but it round-trips through
-    // settings import, where the file is not trusted.
     const MAX_SCHEDULES = 64;
     const FEATURE_ID_PATTERN = /^[A-Za-z][A-Za-z0-9_]{0,79}$/;
 
@@ -9728,9 +8769,6 @@ if (typeof globalThis !== "undefined") {
     }
 
     function normalizeDays(value) {
-        // Absent means every day. An explicit empty list is a schedule that can
-        // never open, which is almost certainly a mistake — treat it the same
-        // as "every day" rather than silently disabling the feature forever.
         if (!Array.isArray(value) || value.length === 0) return [0, 1, 2, 3, 4, 5, 6];
         const days = new Set();
         for (const entry of value) {
@@ -9745,20 +8783,15 @@ if (typeof globalThis !== "undefined") {
         const start = parseTimeOfDay(raw.start);
         const end = parseTimeOfDay(raw.end);
         if (start === null || end === null) return null;
-        // A zero-length window is not a window.
         if (start === end) return null;
         return Object.freeze({
             start: formatTimeOfDay(start),
             end: formatTimeOfDay(end),
             days: Object.freeze(normalizeDays(raw.days)),
-            // A schedule can be parked without losing its times.
             enabled: raw.enabled !== false
         });
     }
 
-    // Accepts the raw settings value and returns only well-formed entries.
-    // A malformed entry is dropped, never repaired into something that would
-    // silently switch a feature on at a time the user never chose.
     function normalizeFeatureSchedules(raw) {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
         const out = {};
@@ -9778,9 +8811,6 @@ if (typeof globalThis !== "undefined") {
         return date.getHours() * 60 + date.getMinutes();
     }
 
-    // Does `date` fall inside the window? Overnight windows belong to the day
-    // their START falls on, so the previous day's window is what covers the
-    // small hours.
     function isWithinWindow(schedule, date = new Date()) {
         const entry = normalizeScheduleEntry(schedule);
         if (!entry || !entry.enabled) return false;
@@ -9792,16 +8822,11 @@ if (typeof globalThis !== "undefined") {
         if (start < end) {
             return days.includes(today) && now >= start && now < end;
         }
-        // Overnight. Either we are after the start on a scheduled day, or
-        // before the end on the day AFTER a scheduled day.
         if (days.includes(today) && now >= start) return true;
         const yesterday = (today + 6) % 7;
         return days.includes(yesterday) && now < end;
     }
 
-    // Milliseconds until this schedule's state could next change. The runtime
-    // uses the smallest across all schedules to set ONE local timer, which is
-    // how this works without an alarms permission.
     function msUntilNextBoundary(schedule, date = new Date()) {
         const entry = normalizeScheduleEntry(schedule);
         if (!entry) return null;
@@ -9819,12 +8844,6 @@ if (typeof globalThis !== "undefined") {
         return best;
     }
 
-    // What should be true right now.
-    //
-    // `saved` maps featureId -> the value the user had before its window last
-    // opened. Returning `restore: true` with no value would let the caller
-    // invent a default, so a feature with no saved value is restored to false —
-    // the only value we can be sure was not chosen by the schedule itself.
     function planScheduleTransitions(input = {}) {
         const schedules = normalizeFeatureSchedules(input.schedules);
         const settings = input.settings && typeof input.settings === 'object' ? input.settings : {};
@@ -9847,23 +8866,17 @@ if (typeof globalThis !== "undefined") {
 
             if (inside) {
                 if (!held) {
-                    // Opening: remember what the user had, then switch on.
                     activate.push({ featureId, previous: current });
                     stillSaved[featureId] = current;
                 } else {
                     stillSaved[featureId] = saved[featureId] === true;
-                    // Already inside; only act if something switched it back off.
                     if (!current) activate.push({ featureId, previous: stillSaved[featureId] });
                 }
             } else if (held) {
-                // Closing: put back exactly what was there before.
                 restore.push({ featureId, value: saved[featureId] === true });
             }
         }
 
-        // A saved value whose schedule was deleted mid-window must still be
-        // handed back, or the feature would be stuck at the schedule's value
-        // with nothing left to restore it.
         for (const featureId of Object.keys(saved)) {
             if (Object.prototype.hasOwnProperty.call(schedules, featureId)) continue;
             restore.push({ featureId, value: saved[featureId] === true, orphaned: true });
@@ -9912,51 +8925,12 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/feed-prefilter.js
-    //
-    // v4.69.0 — filter before render instead of hiding after it.
-    //
-    // Post-render CSS hiding is why `hideCollaborations` could hide 32 of 102
-    // cards for months with no symptom: the cards were still there, still
-    // counted, still in the layout, just invisible. The v4.58.1 ">25% of a
-    // feed must fail open" invariant catches that class of misfire, but it is
-    // a symptom guard on the wrong layer.
-    //
-    // This drops blocked entries out of the browse response before Polymer
-    // ever builds a card from it. The interception itself lives in
-    // ytkit-main.js, reusing the JSON.parse hook the forceDvr feature already
-    // ships; this module is the pure decision half — response in, filtered
-    // response plus a report out — so the rules can be exercised against
-    // captured payloads with no page involved.
-    //
-    // WHAT THIS DELIBERATELY WILL NOT TOUCH
-    //
-    //   The player response. Autoplay, the "up next" target and the resume
-    //   position are computed from it, and a removed entry there is a broken
-    //   player rather than a cleaner feed.
-    //
-    //   Playlist item lists. `playlistVideoRenderer` / `playlistPanelVideoRenderer`
-    //   entries carry positional indices that YouTube uses for "N of M",
-    //   next/previous, and shuffle. Removing one silently renumbers the
-    //   playlist. Blocked channels inside a playlist stay in the response and
-    //   are handled by the post-render path, which can hide a card without
-    //   lying to the player about what is in the list.
-    //
-    //   Anything when the blocklist is empty. No blocklist, no walk.
-    //
-    // The post-render path REMAINS as the fallback: this runs on the shapes it
-    // recognises, and everything it does not recognise still reaches the DOM
-    // filter exactly as before. The two together are belt and braces, not a
-    // replacement.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.filterBrowseResponse) return;
 
-    // Item-list containers YouTube uses for feeds. Anything not on this list is
-    // walked but never spliced.
     const LIST_KEYS = Object.freeze(['contents', 'items', 'continuationItems', 'results']);
 
-    // Renderers that represent one feed card we may remove.
     const REMOVABLE_RENDERERS = Object.freeze([
         'richItemRenderer',
         'videoRenderer',
@@ -9966,23 +8940,14 @@ if (typeof globalThis !== "undefined") {
         'videoWithContextRenderer'
     ]);
 
-    // Renderers that must survive even when their channel is blocked, because
-    // something positional depends on them.
     const PROTECTED_RENDERERS = Object.freeze([
         'playlistVideoRenderer',
         'playlistPanelVideoRenderer'
     ]);
 
-    // Bound the walk: a browse response is deep but not unbounded, and a
-    // hostile or pathological payload must not be able to spin the parser hook
-    // that every JSON.parse on the page now goes through.
     const MAX_DEPTH = 24;
     const MAX_NODES = 20000;
 
-    // Same shape of guard as the post-render path, for the same reason: a rule
-    // that suddenly matches most of a feed is misfiring, and the safe direction
-    // is always to show everything. It is kept here as well as post-render
-    // because being at the right layer does not make a bad verdict good.
     const MAX_REMOVED_RATIO = 0.5;
     const RATIO_GUARD_MIN_ITEMS = 8;
 
@@ -9990,8 +8955,6 @@ if (typeof globalThis !== "undefined") {
         if (typeof value !== 'string') return null;
         const trimmed = value.trim();
         if (!trimmed) return null;
-        // UC… channel id, @handle, or /c/vanity — normalised to a comparable
-        // lower-case token so a blocklist entry written either way matches.
         const channelMatch = /(UC[A-Za-z0-9_-]{22})/.exec(trimmed);
         if (channelMatch) return channelMatch[1].toLowerCase();
         const handleMatch = /@([A-Za-z0-9._-]{1,60})/.exec(trimmed);
@@ -10013,9 +8976,6 @@ if (typeof globalThis !== "undefined") {
         return set;
     }
 
-    // Pull every channel identity a card exposes. Cards carry the channel in
-    // several places depending on surface, and a card whose identity cannot be
-    // read is never removed — an unidentified card is not a match.
     function collectRendererChannelIds(renderer, out, depth = 0) {
         if (!renderer || typeof renderer !== 'object' || depth > 8) return out;
         const browseId = renderer.browseId;
@@ -10049,7 +9009,6 @@ if (typeof globalThis !== "undefined") {
         return null;
     }
 
-    // Decide a single item. Returns true when it should be dropped.
     function shouldRemoveItem(item, blocklist) {
         if (isProtectedItem(item)) return false;
         const renderer = itemRenderer(item);
@@ -10072,8 +9031,6 @@ if (typeof globalThis !== "undefined") {
         if (candidates.length === 0) return null;
         if (list.length >= RATIO_GUARD_MIN_ITEMS
             && candidates.length / list.length > MAX_REMOVED_RATIO) {
-            // Refuse rather than empty a feed. Recorded so the refusal is
-            // visible instead of looking like the filter simply did nothing.
             report.refusedLists += 1;
             report.refusedItems += candidates.length;
             return null;
@@ -10107,8 +9064,6 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
-    // A player response is identified the same way ytkit-main.js already does
-    // it, so the two agree on what must never be touched.
     function isPlayerResponse(value) {
         if (!value || typeof value !== 'object') return false;
         if (value.videoDetails && typeof value.videoDetails === 'object') return true;
@@ -10117,10 +9072,6 @@ if (typeof globalThis !== "undefined") {
             && value.playerResponse.videoDetails);
     }
 
-    // Mutates `response` in place — the JSON.parse hook hands us the object the
-    // page is about to use, and returning a copy would leave the original
-    // rendering. Returns a report, always; `removed: 0` means it ran and found
-    // nothing, which is different from not running.
     function filterBrowseResponse(response, options = {}) {
         const report = {
             applied: false,
@@ -10136,8 +9087,6 @@ if (typeof globalThis !== "undefined") {
             return report;
         }
         if (isPlayerResponse(response)) {
-            // Autoplay and the resume position are computed from this. A
-            // removed entry here is a broken player, not a cleaner feed.
             report.skipped = 'player-response';
             return report;
         }
@@ -10172,7 +9121,6 @@ if (typeof globalThis !== "undefined") {
     }
 })();
 //m:u
-// Generated from scripts/companion-port-catalogue.json. Do not edit this file directly.
 (() => {
     'use strict';
 
@@ -10198,33 +9146,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/data-flow.js
-    //
-    // v4.10.0 data backing for the v5.0.0 data-flow panel (ROADMAP.md
-    // v5.0.0 + v5.8.0). Enumerates every external origin Astra Deck can
-    // contact, why each origin matters, which feature toggles drive
-    // requests to it, what credentials policy the proxy applies, and
-    // which profiles the origin is available in.
-    //
-    // The panel reads from `getOrigins()`. Each entry shape:
-    //   {
-    //     origin:               string,                       // 'https://sponsor.ajay.app'
-    //     purpose:              string,                       // human-readable one-liner
-    //     requiredByFeatures:   string[],                     // schema keys
-    //     credentialsPolicy:    'no-cookies' | 'byo-key' | 'local-loopback' | 'none',
-    //     profile:              'store-safe' | 'github-full', // resolved gate
-    //     excludedProfiles:     string[],                    // artifact-specific exclusions
-    //     hostGrant:            'required' | 'runtime-optional',
-    //     manifestPermission:   string | null,                // matching host_permission, if present
-    //     optionalManifestPermission: string | null,           // matching optional_host_permissions, if present
-    //     currentlyActive:      boolean,                      // true iff any driving feature is enabled
-    //     firefoxDataCollection: { required: string[], optional: string[] },
-    //     riskBand:             'safe' | 'api' | 'local-companion' | 'experimental' | 'store-risk'
-    //   }
-    //
-    // The module is pure data. Tests inject the schema, host permissions,
-    // and a settings bag; production callers default to the live schema +
-    // a manifest snapshot.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createDataFlow) return;
@@ -10239,16 +9160,6 @@ if (typeof globalThis !== "undefined") {
     }
 
     const SPONSORBLOCK_CANONICAL_ORIGIN = 'https://sponsor.ajay.app';
-    // The maintained TeamPiped mirror implements the hash-prefix endpoint
-    // Astra uses, so it is a safe bounded failover for segment lookups. Keep
-    // this list explicit: a user-supplied origin must never become a STATIC
-    // host permission or a silently-proxied target. The user-chosen
-    // destinations in the catalogue — Video Hider lists and self-hosted
-    // Cobalt — are instead
-    // gated on a github-full-only optional permission, the browser's own
-    // per-origin prompt, and the public-host denylist in
-    // core/remote-list-scope.js. Nothing else may follow that pattern without
-    // the same three gates.
     const SPONSORBLOCK_MIRROR_ORIGIN = 'https://sponsorblock.kavin.rocks';
     const SPONSORBLOCK_ALLOWED_ORIGINS = Object.freeze([
         SPONSORBLOCK_CANONICAL_ORIGIN,
@@ -10284,8 +9195,6 @@ if (typeof globalThis !== "undefined") {
         try {
             companionPorts = require('./companion-ports');
         } catch (_) {
-            // reason: direct Node consumers may load this module without the
-            // manifest's companion-port bootstrap script.
         }
     }
 
@@ -10298,19 +9207,9 @@ if (typeof globalThis !== "undefined") {
             'autoDownloadOnVisit', 'vlcMpvHandoff'
         ],
         credentialsPolicy: 'local-loopback',
-        // The companion remains available in store-safe builds. The profile
-        // ceiling blocks AI/Cobalt/Ollama, not the authenticated local handoff.
         profile: 'store-safe',
-        // Chromium public-store artifacts deliberately remove the downloader
-        // module and all loopback grants. Keep the catalogue entry visible for
-        // diagnostics, but make the build-time exclusion explicit and shared.
         excludedProfiles: Object.freeze(['chromium-store']),
         hostGrant: 'required',
-        // The companion can receive YouTube cookies and explicit download
-        // choices (format/quality) outside the browser. Firefox forbids
-        // technicalAndInteraction in the required list, so keep that category
-        // optional while authentication information remains required for a
-        // profile that exposes the authenticated handoff at all.
         firefoxDataCollection: firefoxDataCollection(
             ['authenticationInfo'],
             [FIREFOX_TECHNICAL_AND_INTERACTION]
@@ -10318,11 +9217,6 @@ if (typeof globalThis !== "undefined") {
         riskBand: 'local-companion'
     }) : null;
 
-    // Origin catalogue. Each entry maps a stable origin to its purpose,
-    // the schema keys that drive requests to it, and the credentials
-    // policy applied by background.js. This is the source of truth the
-    // popup data-flow panel reads — keep it sorted so the panel renders
-    // a stable order across builds.
     const ORIGIN_CATALOGUE = Object.freeze([
         Object.freeze({
             origin: 'https://*.youtube.com',
@@ -10331,9 +9225,6 @@ if (typeof globalThis !== "undefined") {
             credentialsPolicy: 'no-cookies',
             profile: 'store-safe',
             hostGrant: 'required',
-            // These categories describe the core YouTube workflow shared by
-            // every artifact. Profile-specific categories belong on the
-            // origin that introduces them (for example, the companion above).
             firefoxDataCollection: firefoxDataCollection([
                 'browsingActivity',
                 'websiteContent',
@@ -10380,18 +9271,6 @@ if (typeof globalThis !== "undefined") {
         Object.freeze({
             origin: 'https://raw.githubusercontent.com',
             purpose: 'Repair paths, both anonymous and data-only: refreshing the YouTube selector packs when a layout change breaks a feature (only when you run a selector refresh), and reading the list of features the project has confirmed broken by a YouTube change (at most once every six hours, and only while Known-Breakage Notices is on).',
-            // The selector refresh is driven by an explicit user action from
-            // the selector-health dashboard rather than a feature toggle. It is
-            // catalogued because the extension does fetch it: the dev manifest
-            // declared the permission while the catalogue did not, so every
-            // BUILT artifact dropped it and the request survived only because
-            // GitHub raw sends Access-Control-Allow-Origin: *. Disclosure
-            // should not rest on another host's CORS policy.
-            //
-            // The disable feed IS automatic, which is why it is named in the
-            // purpose above and listed below: a user reading this panel must
-            // not have to infer a recurring request from a line that says
-            // "never automatically".
             requiredByFeatures: ['featureDisableFeed'],
             credentialsPolicy: 'no-cookies',
             profile: 'store-safe',
@@ -10447,11 +9326,6 @@ if (typeof globalThis !== "undefined") {
             riskBand: 'local-companion'
         }),
         ...(COMPANION_ORIGIN_ENTRY ? [COMPANION_ORIGIN_ENTRY] : []),
-        // Dynamic destinations are patterns, not install-time host grants: the
-        // github-full build declares `https://*/*` as optional so the browser
-        // can prompt for one specific origin at a time. Generic feature-to-host
-        // helpers skip `specificOriginRequired` entries to prevent an all-sites
-        // prompt; the owning UI derives the exact origin from its setting.
         Object.freeze({
             origin: 'https://*',
             purpose: 'User-configured self-hosted Cobalt API, contacted only after an exact per-origin grant.',
@@ -10463,8 +9337,6 @@ if (typeof globalThis !== "undefined") {
             specificOriginRequired: true,
             riskBand: 'api'
         }),
-        // core/remote-list-scope.js rejects private, loopback, link-local and
-        // non-public hosts before a grant is even requested.
         Object.freeze({
             origin: 'https://*',
             purpose: 'User-configured Video Hider filter list, fetched anonymously from one granted HTTPS origin.',
@@ -10535,13 +9407,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // Sub-toggle inheritance map. Some schema entries are pure sub-knobs
-    // of a parent feature — turning the sub-toggle on never makes a new
-    // network request, it only modulates the parent's behaviour. The
-    // cross-check treats these as covered when the parent appears in
-    // some origin's requiredByFeatures.
     const PARENT_FEATURE = Object.freeze({
-        // SponsorBlock per-category sub-toggles
         sbCat_sponsor: 'sponsorBlock',
         sbCat_intro: 'sponsorBlock',
         sbCat_outro: 'sponsorBlock',
@@ -10555,36 +9421,21 @@ if (typeof globalThis !== "undefined") {
         sbPerChannelProfilesData: 'sponsorBlock',
         sponsorBlockBaseUrl: 'sponsorBlock',
         sponsorBlockMirrorUrl: 'sponsorBlock',
-        // DeArrow shape/format sub-toggles
         daReplaceTitles: 'deArrow',
         daReplaceThumbs: 'deArrow',
         deArrowVoting: 'deArrow',
-        // Astra Downloader sub-knobs
         downloadQuality: 'showLocalDownloadButton',
         downloadVideoFormat: 'showLocalDownloadButton',
         downloadAudioFormat: 'showLocalDownloadButton',
-        // Cobalt fallback sub-knobs
         downloadCobaltInstance: 'downloadCobaltFallback',
-        // AI summary sub-knobs. Credentials are background-owned and never
-        // appear in the content-script settings schema.
         aiSummaryEndpoint: 'aiVideoSummary',
         aiSummaryModel: 'aiVideoSummary',
         aiSummaryProvider: 'aiVideoSummary',
         transcriptQaLane: 'localAiTranscriptQa',
-        // subscriptionAiTags is intentionally NOT mapped: per the schema
-        // description it uses Chrome's built-in Summarizer (no remote
-        // origin), so it correctly stays absent from the catalogue.
     });
 
     function originMatchesManifest(origin, hostPermissions) {
         if (!Array.isArray(hostPermissions)) return null;
-        // The companion origin is a port-RANGE pseudo-origin
-        // (http://127.0.0.1:9751-9851), which `new URL()` rejects. Matching it
-        // used to fall through to the catch below and succeed only because the
-        // range string happens to start with the primary port — a check that
-        // worked by coincidence and would silently stop matching if the
-        // catalogue's primary port or formatting ever changed. Resolve it
-        // through the alias map that already enumerates its real permissions.
         const aliased = ORIGIN_HOST_PERMISSION_ALIASES[origin];
         if (Array.isArray(aliased)) {
             const matched = aliased.find((perm) => hostPermissions.includes(perm));
@@ -10643,9 +9494,6 @@ if (typeof globalThis !== "undefined") {
         return true;
     }
 
-    // Build a set of every key that is "covered" — either directly listed
-    // in some origin's requiredByFeatures, or covered through the parent
-    // feature inheritance map above.
     function buildCoveredKeySet(catalogue, parentMap) {
         const directly = new Set();
         for (const o of catalogue) {
@@ -10658,10 +9506,6 @@ if (typeof globalThis !== "undefined") {
         return covered;
     }
 
-    // Public helper for hardening tests: report keys that should be
-    // covered (risk = 'api' or 'local-companion', non-internal) but
-    // aren't, after applying the parent-feature inheritance map. An
-    // empty list means schema and catalogue are in sync.
     function findCoverageGaps(schema, catalogue = ORIGIN_CATALOGUE, parentMap = PARENT_FEATURE) {
         const covered = buildCoveredKeySet(catalogue, parentMap);
         const gaps = [];
@@ -10669,8 +9513,6 @@ if (typeof globalThis !== "undefined") {
             if (e.internal) continue;
             if (e.risk !== 'api' && e.risk !== 'local-companion') continue;
             if (covered.has(e.key)) continue;
-            // subscriptionAiTags is an intentional exemption: uses the
-            // Chrome built-in Summarizer, no remote origin.
             if (e.key === 'subscriptionAiTags') continue;
             gaps.push({ key: e.key, risk: e.risk });
         }
@@ -10771,29 +9613,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/toast.js
-    //
-    // v4.14.0 toast-tone helpers peeled from extension/ytkit.js. The
-    // pure utility surface (tone classification, RGB tuple, badge label)
-    // lives here so the popup, the in-monolith showToast/dismissToast,
-    // and any future feature module can share one semantic-color
-    // contract instead of each carrying its own copy.
-    //
-    // DOM-touching code (showToast/dismissToast, focus restoration,
-    // dismiss timer) stays in ytkit.js for now — moving the dom layer
-    // is a deeper refactor that needs a real live-region overlay
-    // primitive in the popup too. The v5.0.0 roadmap's "single live
-    // region" contract will land alongside the categorised settings
-    // panel; this slice gets the pure helpers extractable first.
-    //
-    // Brand palette anchors (kept identical to extension/popup.css +
-    // ytkit.js inline definitions):
-    //
-    //   success  → #35c77f   (--success)
-    //   error    → #ff7480   (--error)
-    //   warning  → #ffbe7a   (--warning)
-    //   info     → #6aa9ff   (--info)
-    //   neutral  → #8b97ab   (--text-muted)
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.toast) return;
@@ -10824,8 +9643,6 @@ if (typeof globalThis !== "undefined") {
             : fallback;
     }
 
-    // Legacy colour input → tone bucket. Unknown accent colours are neutral:
-    // an arbitrary hex must never announce an operation as successful.
     function inferToastTone(color) {
         const normalised = String(color || '').toLowerCase();
         if (normalised === '#ef4444') return 'error';
@@ -10846,10 +9663,6 @@ if (typeof globalThis !== "undefined") {
         return TONE_BADGE[key];
     }
 
-    // ARIA defaults. role=alert for error so screen-readers announce
-    // immediately; role=status for everything else so the assertive
-    // channel isn't flooded by routine confirmations. Returned as a
-    // small bag so callers can spread it onto an element in one line.
     function getToastAriaDefaults(tone) {
         if (normalizeToastTone(tone) === 'error') return { role: 'alert', ariaLive: 'assertive' };
         return { role: 'status', ariaLive: 'polite' };
@@ -10869,7 +9682,6 @@ if (typeof globalThis !== "undefined") {
             watcher.addEventListener('close', onClose);
             return watcher;
         } catch (_) {
-            // reason: CloseWatcher can reject construction outside a user activation.
             return null;
         }
     }
@@ -10879,20 +9691,9 @@ if (typeof globalThis !== "undefined") {
         try {
             watcher.destroy?.();
         } catch (_) {
-            // reason: the browser may have already destroyed the watcher.
         }
     }
 
-    // The top layer stacks by SHOW ORDER, not z-index. The settings panel
-    // became a popover in d4bebef5, which silently undid the v4.50.1 fix that
-    // put panel-fired Undo toasts above it — a toast shown before the panel
-    // opens now paints underneath it for the rest of its life (undo toasts run
-    // for seconds). Re-showing an open toast moves it back to the top.
-    //
-    // `_restackDepth` is read by the toast systems' popover `toggle` handlers:
-    // the close half of this cycle must not be mistaken for a dismissal. It is
-    // a counter rather than a boolean because `toggle` is queued, so the event
-    // can arrive after a boolean would already have been reset.
     function raiseActiveToasts() {
         if (typeof document === 'undefined') return 0;
         let raised = 0;
@@ -10905,8 +9706,6 @@ if (typeof globalThis !== "undefined") {
                 toast.showPopover();
                 raised += 1;
             } catch (_) {
-                // reason: the toast may have closed natively mid-restack; clear
-                // the debt so a genuine later close still dismisses it.
                 toast._restackDepth = 0;
             }
         });
@@ -10940,27 +9739,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/toast-dom.js
-    //
-    // v4.42.0 DOM-layer toast peel. The v4.14.0 toast.js peel extracted
-    // the *pure* helpers (inferToastTone / getToastRgb /
-    // getToastBadgeLabel / getToastAriaDefaults / TONE_RGB / TONE_BADGE);
-    // the DOM-touching showToast / dismissToast functions stayed in the
-    // monolith. This module ships canonical DOM builders that the
-    // monolith now delegates to. ytkit.js keeps a byte-identical inline
-    // fallback so the userscript path (which does not load this module)
-    // continues to work exactly as before.
-    //
-    // Public surface (under globalThis.YTKitCore.toastDom):
-    //   createToastSystem({ zIndex, inferToastTone, getToastRgb,
-    //                       getToastBadgeLabel })
-    //     → { showToast, dismissToast }
-    //
-    // The factory takes its dependencies as inputs rather than pulling
-    // them off the global so the module is unit-testable in isolation
-    // (no need to seed a YTKitCore.toast stub before requiring this
-    // file). The monolith calls the factory once at init and caches
-    // the returned pair.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.toastDom && core.toastDom.createToastSystem) return;
@@ -11009,23 +9787,16 @@ if (typeof globalThis !== "undefined") {
                 toast.removeEventListener('toggle', toast._popoverToggleHandler);
                 toast._popoverToggleHandler = null;
             }
-            // Closing the popover FIRST made the exit animation unreachable:
-            // `[popover]:not(:popover-open)` is display:none, so the toast
-            // vanished instantly and the fade below never painted. Hide it as
-            // part of the removal instead.
             const finishRemoval = () => {
                 if (typeof toast.hidePopover === 'function') {
                     try {
                         toast.hidePopover();
                     } catch (_) {
-                        // reason: the toast may already have closed natively.
                     }
                 }
                 toast.remove();
             };
             toast.classList.remove('is-visible');
-            // The reduced-motion branch matches ytkit.js's inline
-            // fallback byte-for-byte so the parity test holds.
             const reduce = typeof window !== 'undefined'
                 && window.matchMedia
                 && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -11122,7 +9893,6 @@ if (typeof globalThis !== "undefined") {
             try {
                 usePopover = supportsPopover() === true;
             } catch (_) {
-                // reason: host feature detection must not prevent a toast.
             }
             if (usePopover) toast.setAttribute('popover', 'manual');
             document.body.appendChild(toast);
@@ -11130,10 +9900,6 @@ if (typeof globalThis !== "undefined") {
             if (usePopover) {
                 const toggleHandler = (event) => {
                     if (event.newState !== 'closed') return;
-                    // A programmatic re-stack (see raiseActiveToasts) closes and
-                    // reopens the popover; that must not read as a dismissal.
-                    // Counted rather than flagged because `toggle` is queued, so
-                    // the event can arrive after a boolean would have reset.
                     if (toast._restackDepth > 0) {
                         toast._restackDepth -= 1;
                         return;
@@ -11148,7 +9914,6 @@ if (typeof globalThis !== "undefined") {
                     toast.showPopover();
                     toast._closeWatcher = createCloseWatcher(() => dismissToast(toast));
                 } catch (_) {
-                    // reason: a browser can expose the Popover API but reject a particular show call.
                     toast.removeEventListener('toggle', toggleHandler);
                     toast._popoverToggleHandler = null;
                     toast.removeAttribute('popover');
@@ -11231,9 +9996,6 @@ if (typeof globalThis !== "undefined") {
     let watchFlexyObservedNode = null;
     let navigateDebounceTimer = null;
     let mutationScheduled = false;
-    // Pending mutation records collected between observer fires, drained in
-    // the rAF dispatch. Scoped rules inspect these to early-exit when no
-    // newly-added node matches their selector.
     let pendingMutationRecords = [];
 
     function configureNavigationRuntime(options = {}) {
@@ -11388,18 +10150,9 @@ if (typeof globalThis !== "undefined") {
         lastNavHref = href;
         if (urlChanged || pendingMutationRouteReset) {
             resetMutationRuleHealthForRoute();
-            // Hidden-card counts are per navigation: "42 cards hidden" only
-            // means something against one feed. This is the same boundary the
-            // mutation-rule budgets reset on, so the two always agree.
             core.resetHideAttribution?.();
         }
         pendingMutationRouteReset = false;
-        // Only pay for a full-page view-transition snapshot on a real URL
-        // change. `yt-page-data-updated` also fires as the feed appends items
-        // during infinite scroll (same URL) — wrapping those in
-        // startViewTransition froze rendering and cross-faded the whole
-        // document mid-scroll. The navigate rules themselves still run every
-        // time; only the (cosmetic) cross-fade is gated to genuine navigations.
         const reducedMotion = typeof window.matchMedia === 'function'
             && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!urlChanged || reducedMotion || typeof document.startViewTransition !== 'function') {
@@ -11414,9 +10167,6 @@ if (typeof globalThis !== "undefined") {
                 _executeNavigateRules();
             });
         } catch (_) {
-            // A transition can be rejected while another document transition
-            // is active. Navigation rules are functional, so never let a
-            // cosmetic API prevent them from running.
             if (!executed) _executeNavigateRules();
         }
     }
@@ -11429,13 +10179,6 @@ if (typeof globalThis !== "undefined") {
         navigateDebounceTimer = setTimeout(runNavigateRules, runtime.navDebounce);
     }
 
-    // v3.23.0 (L1): Navigation API self-detection for platform-owned SPA
-    // route dispatch. YouTube's events remain the compatibility path for
-    // browsers without `window.navigation` or for implementations that
-    // expose the object but reject listener registration.
-    // Refs:
-    //   https://github.com/tampermonkey/tampermonkey/issues/2673
-    //   https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API
     let navigationApiHandler = null;
 
     function attachNavigationApi() {
@@ -11446,26 +10189,9 @@ if (typeof globalThis !== "undefined") {
             debouncedRunNavigateRules({ type: 'navigate' });
         };
         try {
-            // `navigatesuccess` — NOT `navigate`. The navigate event fires
-            // BEFORE the navigation commits, so rules ran against the outgoing
-            // page's DOM, and it also fires for things yt-navigate-finish never
-            // signalled: downloads, cancelled navigations, replaceState and
-            // cross-document link clicks, each of which forced a route-health
-            // reset for a route change that never happened. navigatesuccess is
-            // the platform's post-commit signal and the true analogue of the
-            // yt-navigate-finish this path replaces.
-            //
-            // (The previous code tried to await `event.committed`, but that
-            // property does not exist on NavigateEvent — {committed, finished}
-            // is the RESULT of navigation.navigate(). The branch was dead in
-            // every browser and only the test fake, which fabricated the
-            // property, could enter it.)
             window.navigation.addEventListener('navigatesuccess', navigationApiHandler);
             return true;
         } catch (_) {
-            // reason: Navigation API surface is experimental; some
-            // browsers expose `navigation` but reject addEventListener.
-            // Fall back to the existing yt-*/popstate chain silently.
             navigationApiHandler = null;
             return false;
         }
@@ -11476,8 +10202,6 @@ if (typeof globalThis !== "undefined") {
         try {
             window.navigation.removeEventListener('navigatesuccess', navigationApiHandler);
         } catch (_) {
-            // reason: removeEventListener mismatch is harmless; the
-            // listener will be GC'd when the page unloads.
         }
         navigationApiHandler = null;
     }
@@ -11490,8 +10214,6 @@ if (typeof globalThis !== "undefined") {
             document.addEventListener('yt-navigate-finish', debouncedRunNavigateRules);
             window.addEventListener('popstate', debouncedRunNavigateRules);
         }
-        // This is a same-URL content refresh signal, not the primary route
-        // detector; keep it active for feed/page-data re-renders.
         document.addEventListener('yt-page-data-updated', debouncedRunNavigateRules);
 
         ensureWatchFlexyObserver();
@@ -11535,8 +10257,6 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
-    // Collect newly-added Element nodes from a mutation record batch so scoped
-    // rules can selector-match once without each rule walking the tree again.
     function collectAddedElements(records) {
         const added = [];
         for (const record of records) {
@@ -11632,10 +10352,6 @@ if (typeof globalThis !== "undefined") {
             openMutationRuleCircuit(health, 'window-duration');
             return;
         }
-        // Scoped rules are invoked only for their own selector. Broad rules
-        // share every observer batch, so an invocation-only breaker would
-        // disable innocent peers during a DOM storm. For broad rules, require
-        // direct synchronous mutation evidence captured via takeRecords().
         if (health.windowInvocations >= runtime.mutationRuleMaxInvocations
             && (health.kind === 'scoped' || health.windowOwnedMutations > 0)) {
             openMutationRuleCircuit(health, 'window-invocations');
@@ -11654,11 +10370,6 @@ if (typeof globalThis !== "undefined") {
         }
         let error = null;
         try {
-            // Mutation-rule ids ARE feature ids (addMutationRule(this.id, …)),
-            // so this is the widest window in which selector resolutions can
-            // be credited to the feature that depends on them. Guarded because
-            // navigation.js and selectors.js are loaded concurrently and
-            // either can be absent in a unit-test harness.
             const attribute = core.withSelectorAttribution;
             if (typeof attribute === 'function') attribute(id, () => ruleFn(...args));
             else ruleFn(...args);
@@ -11696,8 +10407,6 @@ if (typeof globalThis !== "undefined") {
         const addedElements = collectAddedElements(records);
         for (const [id, entry] of scopedMutationRules) {
             try {
-                // Fast path: empty batch (observer fired from attribute-only
-                // mutation) — skip the rule entirely.
                 if (!addedElements.length) continue;
                 if (!anyAddedMatchesSelector(addedElements, entry.selector)) continue;
                 executeMutationRule(id, 'scoped', entry.ruleFn, [targetNode, addedElements]);
@@ -11707,8 +10416,6 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
-    // Cap pending records so a hidden tab (where rAF never fires) doesn't
-    // grow the array indefinitely, pinning detached subtrees for hours.
     var PENDING_MUTATION_CAP = 2000;
     var mutationFallbackTimer = null;
 
@@ -11723,9 +10430,6 @@ if (typeof globalThis !== "undefined") {
     function observerCallback(records) {
         if (records && records.length) {
             for (const record of records) pendingMutationRecords.push(record);
-            // Drop oldest records when the cap is exceeded — the alternative
-            // (unbounded growth) pins detached DOM subtrees for the entire
-            // background-tab lifetime and drains in one giant pass on refocus.
             if (pendingMutationRecords.length > PENDING_MUTATION_CAP) {
                 pendingMutationRecords = pendingMutationRecords.slice(-PENDING_MUTATION_CAP);
             }
@@ -11733,8 +10437,6 @@ if (typeof globalThis !== "undefined") {
         if (mutationScheduled) return;
         mutationScheduled = true;
         requestAnimationFrame(drainMutationRecords);
-        // Fallback drain for hidden tabs where rAF doesn't fire: setTimeout
-        // still runs (throttled to ~1 Hz) so records don't accumulate forever.
         if (!mutationFallbackTimer) {
             mutationFallbackTimer = setTimeout(() => {
                 mutationFallbackTimer = null;
@@ -11759,9 +10461,6 @@ if (typeof globalThis !== "undefined") {
         mutationObserver.disconnect();
         mutationObserver = null;
         pendingMutationRecords = [];
-        // Reset scheduling state or an orphaned rAF/fallback drain fires
-        // against rules registered later, and a stale-true flag suppresses
-        // fresh drains until the old fallback timer lapses.
         mutationScheduled = false;
         if (mutationFallbackTimer) { clearTimeout(mutationFallbackTimer); mutationFallbackTimer = null; }
     }
@@ -11790,14 +10489,6 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
-    // Scoped mutation rule — only runs when a node matching `selector` is
-    // added anywhere in the observed subtree. Massively cuts per-frame work
-    // for feed-driven features that previously did `document.querySelectorAll`
-    // on every mutation tick.
-    //
-    // `ruleFn` receives `(targetNode, addedElements)` where `addedElements`
-    // is the array of Element nodes inserted in this batch. The rule can
-    // scope its own work to that array instead of the whole document.
     function addScopedMutationRule(id, selector, ruleFn) {
         if (!id || typeof selector !== 'string' || typeof ruleFn !== 'function') return;
         if (!hasAnyMutationRule()) {
@@ -11924,14 +10615,9 @@ if (typeof globalThis !== "undefined") {
             const chunkStartedAt = nowMs();
             let processedInChunk = 0;
             while (index < list.length && processedInChunk < chunkSize) {
-                // A throwing callback must not abandon the whole batch: that
-                // would leave `promise` forever unsettled and strand callers
-                // that gate cleanup on it. Skip the bad item and keep going.
                 try {
                     callback(list[index], index, list);
                 } catch (e) {
-                    // reason: per-item batch failures are isolated so one bad
-                    // element cannot stall the scan or leak the pending promise.
                 }
                 index += 1;
                 processedInChunk += 1;
@@ -12026,15 +10712,8 @@ if (typeof globalThis !== "undefined") {
         return paddedBar || root.querySelector('.ytp-progress-bar') || null;
     }
 
-    // The native YouTube volume slider is linear in amplitude, which makes
-    // most of its travel feel compressed near the quiet end. Keep the curve
-    // in the shared player core so the extension and userscript use the same
-    // mapping and the persisted value remains the user-facing slider position.
     const VOLUME_CURVE_MIN_DB = -40;
     const VOLUME_CURVE_DB_RANGE = 0 - VOLUME_CURVE_MIN_DB;
-    // YouTube's player API reports integer percentages. This tolerance lets
-    // the controller recognise the rounded echo of its own write without
-    // swallowing a nearby user slider movement.
     const VOLUME_CURVE_INTERNAL_EPSILON = 0.012;
 
     function clampVolumeUnit(value, fallback = 0) {
@@ -12099,12 +10778,10 @@ if (typeof globalThis !== "undefined") {
                     player.setVolume(Math.round(gain * 100));
                 }
             } catch (_) {
-                // reason: the optional player API may not be available yet
             }
             try {
                 video.volume = gain;
             } catch (_) {
-                // reason: a replaced media element can reject a late write
             }
             if (writeOptions.unmute && logical > 0) {
                 try { player?.unMute?.(); } catch (_) { /* reason: optional player API can reject before initialization */ }
@@ -12132,9 +10809,6 @@ if (typeof globalThis !== "undefined") {
                 return { ok: true, internal: true, logical: state.logical, gain: observedGain };
             }
 
-            // A native slider change is a logical position. Re-map that raw
-            // position once; never pass the already-remapped gain back through
-            // volumeBoost, which lives in the separate Web Audio graph.
             const logical = observedGain;
             if (!enabled) {
                 const nextState = getState(video);
@@ -12172,9 +10846,6 @@ if (typeof globalThis !== "undefined") {
                 if (isOwnWrite(video, observedGain)) {
                     logical = state.logical;
                 } else {
-                    // Enabling interprets the existing linear slider position
-                    // as logical. Disabling converts the current curved gain
-                    // back to the equivalent linear slider position.
                     logical = nextEnabled ? observedGain : volumeGainToSlider(observedGain);
                 }
             }
@@ -12544,9 +11215,6 @@ if (typeof globalThis !== "undefined") {
             notify('visibility');
         }
 
-        // Named handlers (not inline arrows) so destroy() can actually remove
-        // them — otherwise each manager instance leaks these four window
-        // listeners and a destroy/install cycle stacks duplicate notify pumps.
         function onNavigateFinish() { bumpRoute('navigate'); }
         function onPageDataUpdated() { notify('page-data'); }
         function onPlayerUpdated() { notify('player-state'); }
@@ -12685,7 +11353,6 @@ if (typeof globalThis !== "undefined") {
 
         function report() {
             try { onStatus(snapshot()); } catch (_) {
-                // reason: status reporting must never break resource release
             }
         }
 
@@ -12748,11 +11415,6 @@ if (typeof globalThis !== "undefined") {
 
         function queueLock(args) {
             if (queuedLocks.length >= MAX_QUEUED_LOCKS) {
-                // Replace the oldest queued request instead of silently
-                // swallowing the newest: later lock requests reflect the
-                // page's current state, and the displaced caller still gets
-                // the same completed-without-running resolution it would have
-                // received under the old drop-newest policy.
                 const oldest = queuedLocks.shift();
                 droppedLocks += 1;
                 oldest.resolve(undefined);
@@ -12779,7 +11441,6 @@ if (typeof globalThis !== "undefined") {
                 db.close();
                 closedDatabases += 1;
             } catch (_) {
-                // reason: a database may close itself between tracking and release
             }
             report();
         }
@@ -12798,7 +11459,6 @@ if (typeof globalThis !== "undefined") {
                     report();
                 }, { once: true });
             } catch (_) {
-                // reason: legacy IDBDatabase implementations may reject options
             }
             report();
             if (enabled && hidden) schedule(() => closeDatabase(db), 0);
@@ -12876,9 +11536,6 @@ if (typeof globalThis !== "undefined") {
             if (indexedDbPatched && idbPrototype?.open) idbPrototype.open = originalIdbOpen;
             lockPatched = false;
             indexedDbPatched = false;
-            // Do not release or discard foreground callbacks during teardown.
-            // Their native lock requests must settle exactly as they would have
-            // without Astra; each callback's finally handler removes its entry.
             databases.clear();
             installed = false;
             report();
@@ -12900,10 +11557,6 @@ if (typeof globalThis !== "undefined") {
         return value.toString(16).padStart(width, '0');
     }
 
-    // RegExp.escape() is the platform path. The fallback follows the
-    // standard's important edge cases: a leading ASCII letter/digit is
-    // hex-escaped so it cannot merge with a preceding escape, and punctuators
-    // such as '-' use \x escapes because `\\-` is invalid in a Unicode regex.
     function escapeRegExp(value) {
         const text = String(value ?? '');
         const nativeEscape = globalThis.RegExp?.escape;
@@ -12950,10 +11603,6 @@ if (typeof globalThis !== "undefined") {
         return output;
     }
 
-    // YouTube localizes the words around a count, and may also localize the
-    // compact suffix (for example "1,2 Mio. Aufrufe" or "12.3万 回視聴").
-    // Keep the parser structural: find a numeric token adjacent to a known
-    // count label, then normalize its locale-specific separators/suffix.
     const VIEW_COUNT_LABELS = /(?:views?|watching|aufrufe?|ansichten?|visualizaciones?|vues?|visualizações?|visualizzazioni?|просмотр(?:а|ов|ы)?|回視聴|視聴回数|조회수|观看次数?|播放次数?|المشاهدات?|مشاهدة)/i;
     const DEFAULT_NO_COUNT = /(?:\bno\s+views?\b|\bkeine[nr]?\s+aufrufe?\b|\bkeine\s+ansichten?\b|\bkeine\s+visualisierungen\b|нет\s+просмотров|視聴回数\s*(?:なし|ありません)|조회수\s*없음|(?:没有|暂无)观看次数|(?:لا\s+)?مشاهدات)/i;
     const SUFFIX_SOURCE = '(k|m|b|tsd\\.?|mio\\.?|mrd\\.?|md|mln\\.?|mld\\.?|tys\\.?|rb|jt|тыс\\.?|млн\\.?|млрд\\.?|mil|mille|million(?:s|en)?|milliard(?:s|en)?|千|万|億|亿|천|만|억|ألف|مليون|مليار)';
@@ -13070,21 +11719,10 @@ if (typeof globalThis !== "undefined") {
             if (after) return after;
         }
 
-        // A bare numeric token is accepted only when the caller explicitly
-        // opts in and the whole candidate is the token. This keeps a title
-        // such as "Top 5 videos" from becoming a view count.
         if (allowBare) return readToken(raw.trim(), true);
         return null;
     }
 
-    // Canonical parser for YouTube compact view / watcher counts.
-    //
-    // Handles comma-grouped integers ("1,234 views" -> 1234), K/M/B and
-    // localized suffixes ("1,2 Mio. Aufrufe", "12.3万 回視聴"), "No views"
-    // and live "watching" counts. Returns `missingValue` (default null) when
-    // the text carries no parseable count, so callers can distinguish "no
-    // data" from "0 views". `options.labels` can be supplied for another
-    // count type, such as localized subscriber metadata.
     function parseCompactCount(text, missingValue = null, options = {}) {
         const raw = normalizeDigits(String(text || '')
             .replace(/[\u00a0\u202f]/g, ' ')
@@ -13093,10 +11731,6 @@ if (typeof globalThis !== "undefined") {
             .replace(/\s+/g, ' ')
             .trim()
             .toLowerCase());
-        // Empty/whitespace input is "no data", not "0 views". A card read
-        // before Polymer hydrates renders no metadata text at all, and the
-        // consumers guard on `!== null` precisely so a pre-hydration card is
-        // not mistaken for a zero-view one.
         if (!raw) return missingValue;
 
         const labels = options.labels || VIEW_COUNT_LABELS;
@@ -13108,9 +11742,6 @@ if (typeof globalThis !== "undefined") {
         return Math.round(token.number * parseSuffix(token.suffix));
     }
 
-    // normalizeDigits is shared: the transcript scraper needs the same
-    // Arabic-Indic / Devanagari / Thai / fullwidth table when it reads a
-    // rendered timestamp out of YouTube's own DOM.
     Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits });
 })();
 //m:12
@@ -13256,11 +11887,6 @@ if (typeof globalThis !== "undefined") {
     function formatDurationFallback(seconds, options = {}) {
         const { hours, minutes, seconds: remainder } = durationParts(seconds);
         if (options.style === 'digital') {
-            // With an hours field in front, minutes have to be two digits or
-            // the clock reads "1:2:03". Chrome 120 to 128 takes this path
-            // (Intl.DurationFormat landed in 129) and the manifest floor is
-            // 120, so the platform path never covered it. Leading minutes stay
-            // unpadded, which is how YouTube renders its own durations.
             const clock = hours > 0
                 ? `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
                 : `${minutes}:${String(remainder).padStart(2, '0')}`;
@@ -13303,8 +11929,6 @@ if (typeof globalThis !== "undefined") {
                 }
                 return formatted;
             } catch (_) {
-                // reason: older engines or an invalid locale fall back to the
-                // compact, deterministic formatter below.
             }
         }
         return formatDurationFallback(seconds, options);
@@ -13327,11 +11951,6 @@ if (typeof globalThis !== "undefined") {
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.describeFailure) return;
 
-    // User-facing failure copy. Surfaces used to append `error.message` or a
-    // raw HTTP status to their own label, which is unactionable, untranslatable
-    // (the appended half is always English) and on the AI paths can leak a
-    // provider response body into the UI. Every surface now maps the failure
-    // into this closed set of causes; the raw text goes to the diagnostic log.
     const FAILURE_CAUSES = Object.freeze({
         offline: { key: 'failureCauseOffline', fallback: 'Your device looks offline. Reconnect, then try again.' },
         network: { key: 'failureCauseNetwork', fallback: 'The service could not be reached. Check your connection, then try again.' },
@@ -13351,9 +11970,6 @@ if (typeof globalThis !== "undefined") {
 
     const FAILURE_CAUSE_CODES = Object.freeze(Object.keys(FAILURE_CAUSES));
 
-    // Codes already produced elsewhere in the codebase (the filter-list
-    // classifier, companion download failures) map straight onto a cause so a
-    // caller that already has a code never has to re-derive one from prose.
     const CODE_ALIASES = Object.freeze({
         'too-large': 'tooLarge',
         'bad-format': 'badData',
@@ -13367,9 +11983,6 @@ if (typeof globalThis !== "undefined") {
         aborted: 'cancelled',
         'permission-denied': 'permission',
         'quota-exceeded': 'storage',
-        // The external API health classes (core/external-api-health.js). A
-        // caller holding one of these already knows the cause structurally, so
-        // it must never fall through to prose matching on the raw throw.
         'rate-limited': 'rateLimit',
         'server-error': 'server',
         'client-error': 'badData',
@@ -13421,7 +12034,6 @@ if (typeof globalThis !== "undefined") {
         try {
             return typeof navigator !== 'undefined' && navigator.onLine === false;
         } catch (_) {
-            // reason: navigator is absent in the worker test harness.
             return false;
         }
     }
@@ -13444,9 +12056,6 @@ if (typeof globalThis !== "undefined") {
         return '';
     }
 
-    // Reduce any thrown value to one of FAILURE_CAUSE_CODES. Explicit codes win
-    // over an HTTP status, which wins over the error name, which wins over
-    // prose matching — the earlier signals are structured, the last one is not.
     function classifyFailureCause(error) {
         const code = typeof error?.code === 'string' ? error.code : '';
         if (code && Object.prototype.hasOwnProperty.call(CODE_ALIASES, code)) return CODE_ALIASES[code];
@@ -13470,8 +12079,6 @@ if (typeof globalThis !== "undefined") {
         return (_key, fallback) => fallback;
     }
 
-    // The localized cause sentence on its own, for surfaces that already carry
-    // their own label.
     function describeFailure(error, translate) {
         const cause = classifyFailureCause(error);
         const entry = FAILURE_CAUSES[cause] || FAILURE_CAUSES.unknown;
@@ -13480,7 +12087,6 @@ if (typeof globalThis !== "undefined") {
         return copy || entry.fallback;
     }
 
-    // `<label>: <cause sentence>` for the common "Import failed: …" shape.
     function describeFailureWithLabel(label, error, translate) {
         const sentence = describeFailure(error, translate);
         const prefix = String(label || '').trim();
@@ -13488,24 +12094,15 @@ if (typeof globalThis !== "undefined") {
         return `${prefix.replace(/[.:]\s*$/, '')}: ${sentence}`;
     }
 
-    // A status badge needs two strings for the same failure: the tooltip, and
-    // an accessible name that still leads with the badge's own visible label.
-    // Composing them at the call site put the joiners in front of the
-    // hardcoded-copy gate, so the composition lives here beside the one in
-    // describeFailureWithLabel that it reuses.
     function describeFailureBadge(badgeLabel, subject, error, translate) {
         const detail = describeFailureWithLabel(subject, error, translate);
         const label = String(badgeLabel || '').trim();
         return {
             detail,
-            // WCAG 2.5.3: the visible label has to survive into the accessible
-            // name, so it leads and the cause follows as its own sentence.
             announcement: label ? `${label.replace(/[.:]\s*$/, '')}. ${detail}` : detail
         };
     }
 
-    // Everything the surface must not show. Callers hand this to their own
-    // diagnostic channel so the raw text stays out of the UI.
     function failureDiagnosticText(error) {
         const cause = classifyFailureCause(error);
         const status = readStatus(error);
@@ -13528,35 +12125,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/runtime-flags.js
-    //
-    // v4.47.0 NF12 — typed accessors for the three internal
-    // window.__ytkit_* coordination primitives. These flags govern
-    // cross-feature behavior:
-    //
-    //   __ytkit_videoPopped — popOutPlayer sets it on Document-PiP /
-    //     standard-PiP enter; clears on pagehide / leavepictureinpicture.
-    //     pipButton and fullscreenOnDoubleClick read it to skip work
-    //     when the video has been popped to a separate window.
-    //
-    //   __ytkit_cpu_tamer — CPU Tamer init re-entry guard + destroy
-    //     state. Set true when init patches the native timer functions;
-    //     cleared on destroy after the originals are restored.
-    //
-    //   __ytkit_debug — Debug Mode on/off marker. Read by any feature
-    //     that wants to gate verbose logging.
-    //
-    // Why a module? Until now these were untyped global assignments. A
-    // misspelled flag at a write site (e.g. `__ytkit_video_popped`)
-    // would silently break cooperation without firing any test or
-    // lint. The wrapper gives every flag a single typed accessor and
-    // lets the hardening test pin that no new internal flag gets
-    // smuggled in through bare window.__ytkit_* writes.
-    //
-    // Back-compat: the storage is still window.__ytkit_*, so console
-    // power users and the userscript build's globalThis-bound code
-    // continue to see the same values. The module just owns the typed
-    // read/write contract.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.runtimeFlags) return;
@@ -13564,7 +12132,6 @@ if (typeof globalThis !== "undefined") {
     const win = typeof window !== 'undefined' ? window : globalThis;
 
     const flags = Object.freeze({
-        // popOutPlayer / pipButton / fullscreenOnDoubleClick coordination.
         getVideoPopped() {
             return Boolean(win.__ytkit_videoPopped);
         },
@@ -13572,7 +12139,6 @@ if (typeof globalThis !== "undefined") {
             win.__ytkit_videoPopped = Boolean(value);
         },
 
-        // CPU Tamer init guard + destroy marker.
         getCpuTamerActive() {
             return Boolean(win.__ytkit_cpu_tamer);
         },
@@ -13580,7 +12146,6 @@ if (typeof globalThis !== "undefined") {
             win.__ytkit_cpu_tamer = Boolean(value);
         },
 
-        // Debug Mode on/off.
         getDebugActive() {
             return Boolean(win.__ytkit_debug);
         },
@@ -13595,27 +12160,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/core/capability-probe.js
-    //
-    // v4.47.0 NF10 — runtime capability detection. Pairs with the
-    // optional `requires:` field on settings-schema entries (NF17).
-    // Follow-up — the capability matrix below is the executable contract for
-    // every probe: where the affordance exists, what permission it needs, and
-    // what the feature promises when it is absent. Keep it in this module so
-    // the MV3 pages and the userscript share one source of truth.
-    //
-    // For every well-known capability name in
-    // settings-schema.CAPABILITIES, this module exposes a probe that
-    // returns a boolean. Probes are intentionally synchronous + cheap
-    // where possible (window-API existence checks); the companion-port
-    // probe (mediaDL) is async because it makes an HTTP request, and
-    // the ollama probe is async for the same reason. Callers can
-    // await `runAll()` once at popup boot and cache the result.
-    //
-    // None of the probes mutate global state. None of them attempt to
-    // INVOKE the API — they only confirm whether it is reachable.
-    // That keeps the probe surface store-policy-safe: a passive
-    // capability check doesn't constitute "using" the API.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.capabilityProbe) return;
@@ -13626,18 +12170,13 @@ if (typeof globalThis !== "undefined") {
         try {
             companionPorts = require('./companion-ports');
         } catch (_) {
-            // reason: direct Node consumers may omit the manifest bootstrap.
         }
     }
 
-    // The Astra Downloader companion uses the declared fallback ports; we only
-    // need to know whether ANY of them responds. The probe stops on
-    // the first success.
     const MEDIA_DL_PORTS = Object.freeze(
         Array.isArray(companionPorts?.ports) ? companionPorts.ports.slice() : []
     );
     const OLLAMA_PORT = 11434;
-    // Strict timeout so a hung probe never blocks the popup boot.
     const PROBE_TIMEOUT_MS = 1500;
 
     function deepFreeze(value) {
@@ -13646,48 +12185,23 @@ if (typeof globalThis !== "undefined") {
         return Object.freeze(value);
     }
 
-    // Browser capability matrix and fallback contract. The browser labels are
-    // deliberately descriptive instead of promises of availability: built-in
-    // AI APIs can be absent behind rollout, model, device, policy, or flag
-    // gates even on a browser version that exposes the global.
     const CAPABILITY_MATRIX = deepFreeze({
         schemaVersion: 1,
         browsers: {
             chromium: {
-                // i18n-static: capability-matrix contract label
                 label: 'Chrome / Edge / Brave',
                 vehicle: 'MV3 extension or userscript',
                 baseline: 'Chrome 120+ / equivalent Chromium release',
-                // Declared in the manifest as `minimum_chrome_version`, so a
-                // Chrome below it is told the extension is unsupported instead
-                // of installing and then behaving oddly.
-                //
-                // What actually forces a floor, audited 2026-08-21 rather than
-                // carried forward: the `side_panel` manifest key and the
-                // `sidePanel` permission (Chrome 114), `sidePanel.open()`
-                // (116), and `text-wrap` (114). Everything the codebase uses
-                // above that is behind a capability probe and degrades on its
-                // own: CloseWatcher (120), CSS `@scope` (118), CSS anchor
-                // positioning (125), `CSS.highlights` (105), popover (114),
-                // and the built-in AI APIs. So 114 is the hard requirement and
-                // 120 is the floor the project actually documents, builds
-                // against, and tests. The gap is deliberate and conservative:
-                // claiming 114 would be a compatibility promise nobody has
-                // exercised on a Chrome 114 build, which is a worse failure
-                // than asking a handful of users on a two-year-old browser to
-                // update. Lower it only alongside a real run on that version.
                 minimumChromeVersion: '120',
                 note: 'Optional built-in AI APIs remain conditional on browser rollout, model readiness, device policy, and flags.'
             },
             firefox: {
-                // i18n-static: capability-matrix contract label
                 label: 'Firefox 142+',
                 vehicle: 'MV3 extension',
                 baseline: 'Firefox 142+',
                 note: 'A standards-compatible fallback is required for every optional Chromium API in this matrix.'
             },
             userscript: {
-                // i18n-static: capability-matrix contract label
                 label: 'Tampermonkey / Violentmonkey',
                 vehicle: 'Userscript on a supported desktop browser',
                 baseline: 'The host browser decides which web APIs are exposed',
@@ -13851,12 +12365,6 @@ if (typeof globalThis !== "undefined") {
     });
 
     function hasSummarizerApi() {
-        // Match the shapes the FEATURES actually detect. Chrome stable ships a
-        // global Summarizer; the retired origin-trial shape was a lowercase
-        // ai.summarizer. The probe previously required ai.Summarizer, which is
-        // neither, so it could never agree with the code it gates and both
-        // summarizer-backed features rendered a permanent "unavailable" chip on
-        // browsers where they worked.
         if (typeof globalThis === 'undefined') return false;
         return typeof globalThis.Summarizer !== 'undefined'
             || typeof globalThis.ai?.summarizer !== 'undefined';
@@ -13868,10 +12376,6 @@ if (typeof globalThis !== "undefined") {
             || typeof globalThis.ai?.translator !== 'undefined';
     }
 
-    // Detect whether we're in an extension popup/sidepanel context where
-    // the meta CSP blocks direct loopback fetches (connect-src 'self' does
-    // not cover 127.0.0.1). In that case, route through the background
-    // service worker via chrome.runtime.sendMessage.
     function isExtensionPopupContext() {
         try {
             return typeof chrome !== 'undefined'
@@ -13891,10 +12395,6 @@ if (typeof globalThis !== "undefined") {
                 }, (resp) => {
                     clearTimeout(timer);
                     if (chrome.runtime.lastError) { resolve(false); return; }
-                    // A response is not a healthy response: an unrelated server
-                    // squatting the port answers 404/500 and used to count as
-                    // "companion available", which is the same false positive a
-                    // legacy server on 9751 caused in the field.
                     const status = Number(resp && resp.status);
                     const ok = Boolean(resp)
                         && !resp.error
@@ -13910,8 +12410,6 @@ if (typeof globalThis !== "undefined") {
     }
 
     function fetchWithTimeout(url, ms) {
-        // In extension popup/sidepanel, direct fetch to 127.0.0.1 is
-        // blocked by the meta CSP. Route through the background SW.
         if (isExtensionPopupContext()) return fetchViaBackground(url, ms);
         return new Promise((resolve) => {
             const ctrl = new AbortController();
@@ -13934,10 +12432,6 @@ if (typeof globalThis !== "undefined") {
         });
     }
 
-    // A /health response only proves SOMETHING answered. Astra Downloader
-    // identifies itself in the payload, and a co-installed legacy server on the
-    // same port has already been mistaken for it in the field, so require the
-    // identity before reporting the capability as available.
     function looksLikeAstraCompanion(body) {
         if (typeof body !== 'string' || !body) return false;
         let payload;
@@ -13950,8 +12444,6 @@ if (typeof globalThis !== "undefined") {
     }
 
     async function hasMediaDL() {
-        // Astra Downloader exposes /health on each fallback port.
-        // Probe in declared order; first identified companion wins.
         for (const port of MEDIA_DL_PORTS) {
             const host = companionPorts?.host || '127.0.0.1';
             const result = await fetchWithTimeout(`http://${host}:${port}/health`, PROBE_TIMEOUT_MS);
@@ -13961,12 +12453,8 @@ if (typeof globalThis !== "undefined") {
     }
 
     async function hasOllama() {
-        // Ollama exposes /api/version on its default port. /api/tags
-        // would also work but version is the smaller payload.
         const result = await fetchWithTimeout(`http://127.0.0.1:${OLLAMA_PORT}/api/version`, PROBE_TIMEOUT_MS);
         if (!result || !result.ok) return false;
-        // /api/version answers {"version":"..."} — anything else on this port
-        // is not Ollama.
         try {
             const payload = JSON.parse(result.body);
             return !!payload && typeof payload.version === 'string';
@@ -14052,8 +12540,6 @@ if (typeof globalThis !== "undefined") {
         return getAiLaneStatus(options);
     }
 
-    // Probe table — keys MUST match the CAPABILITIES enum exported
-    // by settings-schema.js. The hardening test pins that.
     const PROBES = Object.freeze({
         summarizerApi:    { async: false, run: hasSummarizerApi },
         translatorApi:    { async: false, run: hasTranslatorApi },
@@ -14067,39 +12553,25 @@ if (typeof globalThis !== "undefined") {
         ollama:           { async: true,  run: hasOllama },
     });
 
-    // Always returns Promise<boolean>. Async probes (mediaDL, ollama) resolve
-    // a real boolean rather than handing back a raw fetch promise — a bare
-    // Promise is always truthy, so `if (await probe('mediaDL'))` is required to
-    // read the actual capability. Sync probes are wrapped for a uniform
-    // await-me contract; unknown names resolve false.
     async function probe(name) {
         const entry = PROBES[name];
         if (!entry) {
-            // Unknown capability — be defensive, return false rather
-            // than throw, so a stale UI element doesn't crash the
-            // popup on an unknown name.
             return false;
         }
         try {
             return Boolean(entry.async ? await entry.run() : entry.run());
         } catch (_) {
-            // reason: probe should never crash the caller; treat any
-            // error as "capability not available".
             return false;
         }
     }
 
     async function runAll() {
-        // Returns { capabilityName: boolean } for every known
-        // capability. Async probes run in parallel.
         const names = Object.keys(PROBES);
         const results = await Promise.all(names.map(async (name) => {
             try {
                 const value = PROBES[name].async ? await PROBES[name].run() : PROBES[name].run();
                 return [name, Boolean(value)];
             } catch (_) {
-                // reason: probe should never crash the caller; treat
-                // any error as "capability not available".
                 return [name, false];
             }
         }));
@@ -14108,9 +12580,6 @@ if (typeof globalThis !== "undefined") {
         return Object.freeze(out);
     }
 
-    // Convenience: take a settings-schema entry and the resolved
-    // capability map, return true iff every required capability is
-    // available. Entries with no `requires:` always return true.
     function isEntryAvailable(entry, capabilityMap) {
         if (!entry || !Array.isArray(entry.requires) || entry.requires.length === 0) return true;
         if (!capabilityMap) return true;
@@ -14125,7 +12594,6 @@ if (typeof globalThis !== "undefined") {
         resolveAiLaneStatus,
         runAll,
         isEntryAvailable,
-        // Exposed for tests that need to monkey-patch a probe.
         _MEDIA_DL_PORTS: MEDIA_DL_PORTS,
         _OLLAMA_PORT: OLLAMA_PORT,
     });
@@ -14140,27 +12608,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/subtitles/index.js
-    //
-    // v4.13.0 first feature peel from the 43k-line ytkit.js monolith.
-    // Owns the YouTube caption-styling override layer and the optional
-    // second-track renderer driven by these settings-schema keys (category
-    // `subtitles` in the v4.6.0 schema):
-    //
-    //   subtitleStyling          (boolean)  master toggle
-    //   subStyleFontSize         (number)   50-300 %
-    //   subStyleFontFamily       (string)   default | sans | serif | mono | YouTube Sans
-    //   subStyleColor            (string)   #rrggbb foreground
-    //   subStyleBgOpacity        (number)   0-100 %
-    //   subStyleBgColor          (string)   #rrggbb background
-    //   subStyleBottomOffset     (number)   % from viewport bottom
-    //   subStyleTextShadow       (boolean)  drop shadow on/off
-    //   dualLanguageSubtitles    (boolean)  second caption track toggle
-    //   dualSubtitleLanguage     (string)   second caption language
-    //
-    // The styling helper remains byte-identical to the existing inline
-    // implementation, while the dual-language runtime owns timed-text
-    // fetching, cue timing, and player overlay cleanup for both vehicles.
 
     const FONT_FAMILY_MAP = Object.freeze({
         default: '',
@@ -14179,9 +12626,6 @@ if (typeof globalThis !== "undefined") {
     function normaliseHex(input, fallback) {
         if (typeof input !== 'string') return fallback;
         const trimmed = input.trim();
-        // Accept #RGB / #RRGGBB; reject anything else (defensive — the
-        // popup picker only emits #RRGGBB but a corrupted import could
-        // ship a malformed value through chrome.storage).
         if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase();
         if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
             const r = trimmed[1];
@@ -14201,9 +12645,6 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // Pure: same input → same CSS string. The CSS shape is preserved
-    // byte-for-byte against the previous inline ytkit.js implementation
-    // so existing visual regressions stay quiet.
     function buildSubtitleCss(settings) {
         const s = settings || {};
         const sizePct = clamp(s.subStyleFontSize || 100, 50, 300);
@@ -14394,7 +12835,6 @@ if (typeof globalThis !== "undefined") {
                 const translated = translate?.(key, fallback);
                 return translated || fallback || key;
             } catch (_) {
-                // reason: accessibility copy must never prevent subtitle render
                 return fallback || key;
             }
         };
@@ -14427,10 +12867,6 @@ if (typeof globalThis !== "undefined") {
                     : {};
             },
 
-            // The language the viewer is ALREADY reading on screen. "Auto"
-            // secondary selection has to avoid that track, and comparing the
-            // browser locale instead let the overlay duplicate the native
-            // captions whenever the two differed.
             _activeCaptionLanguage() {
                 try {
                     const player = doc?.querySelector?.('#movie_player');
@@ -14438,7 +12874,6 @@ if (typeof globalThis !== "undefined") {
                     const code = option?.languageCode || option?.vss_id || '';
                     if (code) return String(code).replace(/^\.?a?\./, '');
                 } catch (_) {
-                    // reason: the captions module is absent until the player loads
                 }
                 return '';
             },
@@ -14452,10 +12887,6 @@ if (typeof globalThis !== "undefined") {
             },
 
             _playerResponse() {
-                // Off a watch route there is no current video id, so the
-                // id-mismatch guard below could not fire and the PREVIOUS watch
-                // page's response was accepted — one wasted timed-text fetch and
-                // an invisible overlay mount per navigation.
                 if (!String(getVideoId?.() || '')) return null;
                 const pageData = doc?.querySelector?.('ytd-watch-flexy');
                 const pageResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
@@ -14614,8 +13045,6 @@ if (typeof globalThis !== "undefined") {
                 try {
                     result = await fetchCaptionTrack(track, tracks, { signal: controller.signal });
                 } catch (_) {
-                    // reason: a missing/expired timed-text track is a normal
-                    // unavailable-caption state, not a feature crash.
                     result = null;
                 }
                 if (!this._started || token !== this._loadToken || controller.signal.aborted
@@ -14633,10 +13062,6 @@ if (typeof globalThis !== "undefined") {
                 }
 
                 this._cues = cues;
-                // Mount/attach failures used to re-schedule WITHOUT incrementing
-                // the retry count, so a page that resolved tracks but never
-                // produced a player node looped every 700ms forever. Only a
-                // fully successful render clears the budget.
                 if (!this._mountOverlay(result?.track || track) || !this._attachVideo()) {
                     if (this._loadController === controller) this._loadController = null;
                     this._removeOverlay();
@@ -14711,9 +13136,6 @@ if (typeof globalThis !== "undefined") {
                 this._ensureStyles();
                 this._navRule = () => this._resetForNavigation();
                 addNavigateRule(this.id, this._navRule);
-                // Core navigation invokes a newly registered rule once. The
-                // guard also keeps the factory usable with a minimal test or
-                // userscript navigation shim that only stores the callback.
                 if (!this._loadTimer) this._resetForNavigation();
             },
 
@@ -14735,20 +13157,11 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // Lifecycle-ready spec. The buildSubtitleCss helper lives in this
-    // peel module; the actual DOM mount/teardown still runs in the
-    // monolith's inline subtitleStyling block. v4.47.0 NF5 wave 1
-    // registers the spec with the v4.7.0 lifecycle module so the
-    // contract is exercised + the future adoption wave can flip to
-    // delegating init/destroy here without changing the surface.
     const featureSpec = Object.freeze({
         id: 'subtitleStyling',
         category: 'subtitles',
         pageScopes: Object.freeze(['watch', 'shorts', 'embed']),
         buildCss: buildSubtitleCss,
-        // The subtitle-styling CSS remains on the existing monolith
-        // lifecycle; the dual-language runtime above owns its own
-        // timed-text fetch, cue clock, and player overlay lifecycle.
         init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
         destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
     });
@@ -14768,18 +13181,11 @@ if (typeof globalThis !== "undefined") {
         createDualLanguageSubtitlesRuntime
     });
 
-    // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module so
-    // snapshot() can see this feature. Defensive — the lifecycle module
-    // is loaded before the peels in manifest content_scripts, but the
-    // userscript build path may inline things differently, so we check
-    // for the global first and silently skip if absent.
     try {
         if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
             globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
         }
     } catch (_) {
-        // reason: defineFeature throws on duplicate id; multiple loads of this
-        // IIFE (extension + userscript context) must not break boot.
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -14802,26 +13208,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/video-filters/index.js
-    //
-    // v4.17.0 second feature peel from extension/ytkit.js. Owns the
-    // CSS-`filter` chain applied to .html5-main-video, driven by these
-    // seven settings-schema keys (category `playback-audio` in the
-    // v4.6.0 schema; sub-toggles inherit from videoVisualFilters):
-    //
-    //   videoVisualFilters  (boolean) master toggle
-    //   vvfBrightness       (number)  0-200%   default 100
-    //   vvfContrast         (number)  0-200%   default 100
-    //   vvfSaturation       (number)  0-200%   default 100
-    //   vvfHue              (number)  -180-180 deg, default 0
-    //   vvfGrayscale        (number)  0-100%   default 0
-    //   vvfSepia            (number)  0-100%   default 0
-    //
-    // Like v4.13.0's subtitles peel, this slice exports a single pure
-    // helper buildVideoFilterCss(settings) that ytkit.js's existing
-    // _apply() delegates to. The byte-stable inline fallback in ytkit.js
-    // is exercised by parity tests so the userscript path keeps working
-    // unchanged while the extension path delegates.
 
     function clamp(value, min, max) {
         const n = Number(value);
@@ -14853,9 +13239,6 @@ if (typeof globalThis !== "undefined") {
         return clamp(raw, bounds.min, bounds.max);
     }
 
-    // Pure: same input → same CSS. The CSS shape is preserved
-    // byte-for-byte against the previous inline ytkit.js implementation
-    // so existing visual regressions stay quiet.
     function buildVideoFilterCss(settings) {
         const s = settings || {};
         const filterChain = [
@@ -14869,8 +13252,6 @@ if (typeof globalThis !== "undefined") {
         return '.html5-main-video { filter: ' + filterChain + ' !important; }';
     }
 
-    // Detect whether the current settings render an effective no-op (all
-    // defaults). Callers can short-circuit injection in that case.
     function isVideoFilterIdentity(settings) {
         const s = settings || {};
         for (const key of Object.keys(FIELD_BOUNDS)) {
@@ -14961,7 +13342,6 @@ if (typeof globalThis !== "undefined") {
         pageScopes: Object.freeze(['watch', 'shorts', 'embed']),
         buildCss: buildVideoFilterCss,
         isIdentity: isVideoFilterIdentity,
-        // v4.47.0 NF5 wave 1: register-only.
         init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
         destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
     });
@@ -14983,13 +13363,11 @@ if (typeof globalThis !== "undefined") {
         FIELD_BOUNDS
     });
 
-    // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module.
     try {
         if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
             globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
         }
     } catch (_) {
-        // reason: defineFeature throws on duplicate id; ignore re-registers
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -15007,26 +13385,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/blue-light-filter/index.js
-    //
-    // v4.18.0 third feature peel from extension/ytkit.js. Owns the warm-
-    // tint RGBA computation that drives the blueLightFilter overlay,
-    // driven by two settings-schema keys (category `playback-audio`):
-    //
-    //   blueLightFilter      (boolean) master toggle
-    //   blueLightIntensity   (number)  10-80 (% sliders surface 10..80)
-    //
-    // Like the v4.13.0 and v4.17.0 peels, this slice exports a pure
-    // helper that ytkit.js's existing _apply() delegates to. The DOM
-    // overlay element + lifecycle (init/destroy) stay in the monolith.
-    //
-    // Tint curve (preserved byte-for-byte against the prior inline
-    // implementation):
-    //   intensity = clampedIntensity / 100         // 0.10 .. 0.80
-    //   r = 255
-    //   g = 180 - intensity * 80
-    //   b = 60  - intensity * 60
-    //   a = intensity * 0.35
 
     function clamp(value, min, max) {
         const n = Number(value);
@@ -15040,10 +13398,6 @@ if (typeof globalThis !== "undefined") {
         return clamp(raw, 10, 80);
     }
 
-    // Pure: same intensity → same rgba string. The arithmetic mirrors
-    // ytkit.js's prior inline expression (intensity / 100, then the
-    // 180-80i / 60-60i / 0.35i triple), with `Math.round` on the
-    // integer channels to preserve the original behaviour.
     function buildBlueLightRgba(settings) {
         const intensityPct = readIntensity(settings);
         const intensity = intensityPct / 100;
@@ -15054,9 +13408,6 @@ if (typeof globalThis !== "undefined") {
         return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + a + ')';
     }
 
-    // Convenience: the fixed inline CSS the monolith applies to the
-    // overlay element. Exposed so a future popup-side preview can
-    // render a swatch without duplicating the rules.
     const OVERLAY_FIXED_CSS = Object.freeze({
         position: 'fixed',
         top: '0',
@@ -15075,8 +13426,6 @@ if (typeof globalThis !== "undefined") {
         pageScopes: Object.freeze(['all']),
         buildRgba: buildBlueLightRgba,
         OVERLAY_FIXED_CSS,
-        // v4.47.0 NF5 wave 1: register-only; inline ytkit.js owns
-        // mount/remove of the warm-tint overlay element.
         init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
         destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
     });
@@ -15088,13 +13437,11 @@ if (typeof globalThis !== "undefined") {
         featureSpec
     });
 
-    // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module.
     try {
         if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
             globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
         }
     } catch (_) {
-        // reason: defineFeature throws on duplicate id; ignore re-registers
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -15105,28 +13452,11 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/theme-css/index.js
-    //
-    // v4.19.0 bundled peel for three small CSS-only theme features that
-    // share a single pattern: read one or two schema settings, return a
-    // pure CSS string. Each helper has its own monolith consumer; this
-    // module just centralises the strings so they're testable in
-    // isolation and reusable from the popup preview surfaces.
-    //
-    // Schema keys touched (category `shell`):
-    //   customProgressBarColor (string)  — progress-bar swatch override
-    //   customSelectionColor   (boolean) — gates the selection override
-    //   selectionColor         (string)  — ::selection background
-    //   grayscaleThumbnails    (boolean) — grayscale-on-rest thumbnails
 
     function isHexLike(value) {
         return typeof value === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(value);
     }
 
-    // customProgressBarColor: the prior inline implementation returned
-    // *nothing* when the color matched the default '#ff0000' so the
-    // monolith would skip the style-tag insertion entirely. Mirror that:
-    // return `null` for the default, the CSS string otherwise.
     function buildProgressBarCss(settings) {
         const colour = (settings && settings.customProgressBarColor) || '#ff0000';
         if (!isHexLike(colour)) return null;
@@ -15135,11 +13465,6 @@ if (typeof globalThis !== "undefined") {
             + ' .ytp-volume-slider-foreground::after { background: ' + colour + ' !important; }';
     }
 
-    // customSelectionColor: the monolith block always emits the rules
-    // when the master toggle is on. The pure helper is symmetric — it
-    // emits the CSS unconditionally and lets the caller decide whether
-    // to inject. Default selection color is the v0.1 schema fallback
-    // '#2dd36f'.
     function buildSelectionColorCss(settings) {
         const colour = (settings && settings.selectionColor) || '#2dd36f';
         const safe = isHexLike(colour) ? colour : '#2dd36f';
@@ -15147,11 +13472,6 @@ if (typeof globalThis !== "undefined") {
             + '                    ::-moz-selection { background: ' + safe + ' !important; color: #000 !important; }\n                ';
     }
 
-    // forceDarkEverywhere: parameter-less rules to drag YouTube's
-    // non-standard pages (settings, about, embedded) into the same dark
-    // surface tokens the main UI uses. Caller is responsible for the
-    // `dark` attribute + `color-scheme: dark` documentElement bits —
-    // those touch the DOM and stay in the monolith.
     function buildForceDarkEverywhereCss() {
         return '\n                    html[dark] { --yt-spec-base-background: #0f0f0f !important; --yt-spec-brand-background-solid: #0f0f0f !important; }\n'
             + '                    ytd-app, ytd-browse, ytd-page-manager, #content { background-color: #0f0f0f !important; }\n'
@@ -15160,10 +13480,6 @@ if (typeof globalThis !== "undefined") {
             + '                    .page-container, .yt-core-attributed-string, [light] { background: #0f0f0f !important; color: #f1f1f1 !important; }\n                ';
     }
 
-    // themeAccentColor: only emits CSS when the accent is a valid hex
-    // (#RGB / #RRGGBB / #RGBA / #RRGGBBAA, matching the prior inline
-    // validation). Returns `null` otherwise so the monolith can skip the
-    // style-tag insertion.
     const ACCENT_HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
     function accentRgbTuple(accent) {
         const raw = accent.slice(1);
@@ -15189,8 +13505,6 @@ if (typeof globalThis !== "undefined") {
             + '                    }\n                ';
     }
 
-    // compactUnfixedHeader: parameter-less rules that shrink the
-    // masthead and let it scroll away. v4.22.0 peel.
     function buildCompactUnfixedHeaderCss() {
         return '\n                    ytd-masthead { position: absolute !important; height: 40px !important; min-height: 40px !important; }\n'
             + '                    ytd-masthead #container.ytd-masthead { height: 40px !important; }\n'
@@ -15200,9 +13514,6 @@ if (typeof globalThis !== "undefined") {
             + '                    html[dark] #cinematics { top: 40px !important; }\n                ';
     }
 
-    // hideVideoEndContent: parameter-less rules that suppress every
-    // YouTube end-screen / end-card surface plus the fullscreen video
-    // grid that shows after a video ends. v4.22.0 peel.
     function buildHideVideoEndContentCss() {
         return '\n                    .ytp-ce-element, .ytp-ce-covering-overlay, .ytp-ce-element-shadow,\n'
             + '                    .ytp-ce-covering-image, .ytp-ce-expanding-image,\n'
@@ -15212,9 +13523,6 @@ if (typeof globalThis !== "undefined") {
             + '                    div.ytp-fullscreen-grid-stills-container { display: none !important; }\n                ';
     }
 
-    // grayscaleThumbnails: pure constant — no parameters. Returned as a
-    // function for symmetry with the other builders so the test surface
-    // can call them uniformly.
     function buildGrayscaleThumbnailsCss() {
         return '\n                    ytd-rich-item-renderer ytd-thumbnail img,\n'
             + '                    ytd-video-renderer ytd-thumbnail img,\n'
@@ -15246,12 +13554,6 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // v4.47.0 NF5 wave 3: lifecycle specs for the seven theme-css
-    // feature ids this module owns. The specs now carry the style
-    // injection/teardown implementation via core/styles.js; manual
-    // feature blocks can delegate once their non-CSS side effects move.
-    // The categories below match the settings-schema entries — schema
-    // parity is pinned by the hardening test.
     const LIFECYCLE_SPECS = Object.freeze([
         createLifecycleSpec('customProgressBarColor', 'shell',        buildProgressBarCss,          ['watch', 'shorts', 'embed']),
         createLifecycleSpec('customSelectionColor',   'shell',        buildSelectionColorCss,       ['all']),
@@ -15281,12 +13583,10 @@ if (typeof globalThis !== "undefined") {
                 try {
                     lc.defineFeature(spec);
                 } catch (_) {
-                    // reason: duplicate id from a prior load — safe to skip
                 }
             }
         }
     } catch (_) {
-        // reason: lifecycle unavailable in this context (e.g. test harness)
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -15306,33 +13606,12 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/wave-8-css/index.js
-    //
-    // v4.38.0 bundled peel for five wave-8 CSS-only features that share
-    // a single pattern: zero parameters, one static CSS string each.
-    // The monolith block (cssFeature helper at ytkit.js:~4328) passes
-    // the CSS through `injectStyle`. Centralising the strings here
-    // gives them a single point of test coverage + makes them
-    // reusable from any preview surface (future settings overlay,
-    // popup live preview, etc.).
-    //
-    // Schema keys touched (all default off):
-    //   hideNotificationButton (boolean)
-    //   noFrostedGlass         (boolean)
-    //   hideLatestPosts        (boolean)
-    //   disableMiniPlayer      (boolean)
-    //   nyanCatProgressBar     (boolean)
 
     function buildHideNotificationButtonCss() {
         return 'ytd-notification-topbar-button-renderer, ytd-topbar-menu-button-renderer:has(a[href="/notifications"]) { display: none !important; }';
     }
 
     function buildNoFrostedGlassCss() {
-        // Scoped to the surfaces YouTube actually applies backdrop-filter to
-        // (masthead, chip bar, dropdowns/dialogs, popup container, player
-        // chrome, and the backdrop-filter experiment button class) instead of
-        // a universal `*` selector, which forced the style engine to re-match
-        // the rule against every element on every DOM mutation.
         return 'ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, '
             + 'ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, '
             + 'tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, '
@@ -15349,9 +13628,6 @@ if (typeof globalThis !== "undefined") {
         return 'ytd-miniplayer[active] { display: none !important; } .ytp-miniplayer-button { display: none !important; }';
     }
 
-    // Multi-rule CSS with a keyframes block. The interior whitespace
-    // matches the monolith's template-literal indentation exactly so a
-    // byte-stable parity check holds.
     function buildNyanCatProgressBarCss() {
         return `.ytp-play-progress {
                 background: linear-gradient(180deg, #ff0000 0%, #ff9900 16.6%, #ffff00 33.3%, #33ff00 50%, #0099ff 66.6%, #6633ff 83.3%, #ff0000 100%) !important;
@@ -15383,10 +13659,6 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // v4.47.0 NF5 wave 3: lifecycle specs for the five wave-8 CSS-only
-    // feature ids this module owns. These specs now own style injection
-    // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
-    // is only the compatibility wrapper/fallback.
     const LIFECYCLE_SPECS = Object.freeze([
         createLifecycleSpec('hideNotificationButton', 'comments',     buildHideNotificationButtonCss, ['all']),
         createLifecycleSpec('noFrostedGlass',         'shell',        buildNoFrostedGlassCss,         ['all']),
@@ -15412,12 +13684,10 @@ if (typeof globalThis !== "undefined") {
                 try {
                     lc.defineFeature(spec);
                 } catch (_) {
-                    // reason: duplicate id from a prior load — safe to skip
                 }
             }
         }
     } catch (_) {
-        // reason: lifecycle unavailable in this context (e.g. test harness)
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -15435,26 +13705,11 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/home-subs-css/index.js
-    //
-    // v4.43.0 bundled peel for CSS-only "Home / Subscriptions"
-    // features that share the cssFeature() helper's static-CSS
-    // pattern. Each builder is parameter-less; the value of the peel
-    // is centralising the CSS strings + their parity guards so a
-    // future redesign (Premium-only thumbnail hover preview, etc.)
-    // is a one-file edit instead of an inline literal hunt.
-    //
-    // Schema keys touched (all default off):
-    //   hideCreateButton, hideVoiceSearch, widenSearchBar,
-    //   disablePlayOnHover, fullWidthSubscriptions,
-    //   hideSubscriptionOptions, listFeedLayout
 
     function buildHideCreateButtonCss() {
         const core = globalThis.YTKitCore;
         const chain = core?.getSurfaceHookSelectorChain?.('nav', 'createButton');
         if (Array.isArray(chain) && chain.length) return chain.join(', ');
-        // The leading "+" glyph is stable across locales and is more
-        // specific than the masthead button row, which also holds Sign in.
         return 'ytd-masthead #buttons ytd-button-renderer:has(path[d^="M12 3a1 1 0 00-1 1v7H4"])';
     }
 
@@ -15605,10 +13860,6 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
-    // v4.47.0 NF5 wave 3: lifecycle specs for the home-subs CSS-only
-    // feature ids this module owns. These specs now own style injection
-    // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
-    // is only the compatibility wrapper/fallback.
     const LIFECYCLE_SPECS = Object.freeze([
         createLifecycleSpec('hideCreateButton',        'nav',          buildHideCreateButtonCss,        ['all']),
         createLifecycleSpec('hideVoiceSearch',         'nav',          buildHideVoiceSearchCss,         ['all']),
@@ -15638,12 +13889,10 @@ if (typeof globalThis !== "undefined") {
                 try {
                     lc.defineFeature(spec);
                 } catch (_) {
-                    // reason: duplicate id from a prior load — safe to skip
                 }
             }
         }
     } catch (_) {
-        // reason: lifecycle unavailable in this context (e.g. test harness)
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -15663,12 +13912,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/chat-style-comments/index.js
-    //
-    // Top-3 monolith peel seed for the Studio Comments feature. The monolith
-    // still owns DOM observers and event listeners; this module owns the
-    // style payload builders so tests can pin them independently and ytkit.js
-    // can delegate to a feature namespace when the module is loaded.
 
     const STYLE_IDS = Object.freeze({
         base: 'chatStyleComments',
@@ -15733,12 +13976,6 @@ if (typeof globalThis !== "undefined") {
         else delete comment.dataset[flagName];
     }
 
-    // The restyle hides YouTube's own #like-button and #vote-count-middle, so
-    // without a replacement a comment shows neither its like count nor any way
-    // to like it. The badge is that replacement. It was lost when this feature
-    // was peeled out of the monolith: the CSS and all three removal paths came
-    // across, the constructor did not, so the extension styled and removed an
-    // element it never built while the userscript kept rendering it.
     const THUMB_ICON_PATH = 'M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z';
     const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -15765,7 +14002,6 @@ if (typeof globalThis !== "undefined") {
         svg.appendChild(path);
         badge.appendChild(svg);
 
-        // Never innerHTML: the count is YouTube-supplied text.
         const count = doc.createElement('span');
         count.textContent = voteText && voteText !== '0' ? voteText : '';
         badge.appendChild(count);
@@ -15800,9 +14036,6 @@ if (typeof globalThis !== "undefined") {
         return badge;
     }
 
-    // Inline styles written by the normalize passes are recorded on the element
-    // so destroy() can remove exactly the properties it set. A hand-maintained
-    // list would drift the moment a normalize pass grows a property.
     const MANAGED_STYLE_ATTR = 'data-ytkit-chat-styled';
 
     function setManagedStyle(node, key, value) {
@@ -15918,11 +14151,6 @@ if (typeof globalThis !== "undefined") {
         });
     }
 
-    // The layout/interaction normalization below writes ~30 inline styles across
-    // a comment's subtree. Every mutation batch re-ran it for the whole thread,
-    // so adding 20 comments restyled all 500. A host-only marker is not enough
-    // evidence — Polymer re-renders replace children while keeping the host —
-    // so sample a child stamp too.
     function isCommentSurfaceNormalized(comment) {
         if (comment.style.getPropertyValue('--ytd-comment-thumb-dimension') !== '24px') return false;
         const main = comment.querySelector(':scope > #body > #main');
@@ -15940,9 +14168,6 @@ if (typeof globalThis !== "undefined") {
         setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
         setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted]:not([hidden])'));
         setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
-        // Rebuild rather than leave the old one: YouTube recycles comment hosts,
-        // so a stale badge would keep the previous comment's count and liked
-        // state. Dropping the old node also drops its listeners with it.
         comment.querySelector('.ytkit-vote-badge')?.remove();
         buildVoteBadge(comment, translate);
         if (wasStyled && isCommentSurfaceNormalized(comment)) return;
@@ -16071,9 +14296,6 @@ if (typeof globalThis !== "undefined") {
                     processScheduled = true;
                     raf(() => {
                         processScheduled = false;
-                        // A rAF queued just before destroy() fires after it —
-                        // without this guard it would re-tag the DOM that
-                        // cleanupRuntimeDom() just stripped.
                         if (destroyed) return;
                         processAllComments(doc, { t });
                     });
@@ -16128,12 +14350,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/sticky-video/index.js
-    //
-    // Top-3 monolith peel seed for Theater Split. The monolith still owns
-    // layout state, scrolling, observers, and event lifecycles; this module
-    // owns the three style payload builders so the large CSS surfaces can be
-    // tested and bundled independently.
 
     const STYLE_IDS = Object.freeze({
         shell: 'stickyVideo',
@@ -16185,7 +14401,6 @@ if (typeof globalThis !== "undefined") {
             icon: 'picture-in-picture-2',
             pages: [PageTypes.WATCH],
 
-            // ── state ──
             _styleEl: null,
             _splitMetaStyleEl: null,
             _splitCommentsStyleEl: null,
@@ -16269,9 +14484,6 @@ if (typeof globalThis !== "undefined") {
                 const chatCollapsed = hasChat && typeof chatEl.hasAttribute === 'function' && chatEl.hasAttribute('collapsed');
 
                 if (type === 'live') {
-                    // Chat disabled/members-only: no frame exists, so the
-                    // transparent live pane would be empty. Fall back to the
-                    // standard comments panel when we have one.
                     if (hasChat && !chatCollapsed) return 'live';
                     return below ? 'standard' : 'live';
                 }
@@ -16286,7 +14498,6 @@ if (typeof globalThis !== "undefined") {
                 return 'standard';
             },
 
-            // Nudge YouTube's player to recalculate control bar layout.
             _triggerPlayerResize() {
                 clearTimeout(this._resizeTimer);
                 this._resizeTimer = setTimeout(() => {
@@ -16319,7 +14530,6 @@ if (typeof globalThis !== "undefined") {
                     'visibility','pointer-events','display','scrollbar-width','scrollbar-color','border-radius']);
             },
 
-            // Clean up all positioned elements
             _unpositionAll() {
                 (this._positionedEls || []).forEach(el => this._unpositionEl(el));
                 this._positionedEls = [];
@@ -17356,7 +15566,6 @@ if (typeof globalThis !== "undefined") {
                 this._splitActionDock = null;
             },
 
-            // Bulk set/remove style properties with !important
             _setStyles(el, props) {
                 if (!el) return;
                 for (const [k, v] of Object.entries(props)) el.style.setProperty(k, v, 'important');
@@ -17366,7 +15575,6 @@ if (typeof globalThis !== "undefined") {
                 props.forEach(p => el.style.removeProperty(p));
             },
 
-            // Force/restore chat frame internals
             _forceChatFill(chatEl) {
                 if (!chatEl) return;
                 const fill = {width:'100%',height:'100%'};
@@ -17381,7 +15589,6 @@ if (typeof globalThis !== "undefined") {
                 this._removeStyles(chatEl.querySelector('iframe'), ['width','height','min-height','border','border-radius']);
             },
 
-            // Position chat element over the right split panel
             _setupChat(chatEl, rightPct, top, height) {
                 if (!chatEl) { this._waitForChat(rightPct, top, height); return; }
                 this._positionChat(chatEl, rightPct, top, height);
@@ -17463,7 +15670,6 @@ if (typeof globalThis !== "undefined") {
                 this._chatObserverTimer = setTimeout(() => this._stopChatObserver(), options.timeoutMs || 10000);
             },
 
-            // Wait for chat frame via MutationObserver (replaces 10s polling loop)
             _waitForChat(rightPct, topOffset, heightStr) {
                 this._watchForChat({
                     position: true,
@@ -17474,20 +15680,15 @@ if (typeof globalThis !== "undefined") {
                 });
             },
 
-            // ── Build the fixed overlay (video full-width, right panel hidden) ──
             _buildOverlay() {
                 const wrapper = document.createElement('div');
                 wrapper.id = 'ytkit-split-wrapper';
                 wrapper.style.cssText = `display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:transparent;overflow:hidden;pointer-events:none;`;
 
-                // LEFT — full width initially
                 const left = document.createElement('div');
                 left.id = 'ytkit-split-left';
-                // flex:1 — left fills whatever space the right panel doesn't take.
-                // No fixed width, no transition needed — it reacts automatically.
                 left.style.cssText = `flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;background:transparent;position:relative;pointer-events:none;`;
 
-                // DIVIDER — hidden until split
                 const divider = document.createElement('div');
                 divider.id = 'ytkit-split-divider';
                 divider.tabIndex = 0;
@@ -17501,7 +15702,6 @@ if (typeof globalThis !== "undefined") {
                 const pip = document.createElement('div');
                 pip.className = 'ytkit-divider-pip';
                 pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:46px;border-radius:0;background:var(--ytkit-split-muted);pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ytkit-split-muted);`;
-                // Three-dot grip pattern — universal drag indicator
                 for (let i = 0; i < 3; i++) {
                     const dot = document.createElement('div');
                     dot.style.cssText = 'width:3px;height:3px;border-radius:0;background:currentColor;flex-shrink:0;';
@@ -17511,16 +15711,11 @@ if (typeof globalThis !== "undefined") {
                 divider.addEventListener('mouseenter', () => { divider.style.background='rgba(var(--ytkit-split-accent-rgb),0.08)'; pip.style.background='rgba(var(--ytkit-split-accent-rgb),0.82)'; pip.style.color='var(--ytkit-split-text)'; });
                 divider.addEventListener('mouseleave', () => { divider.style.background='var(--ytkit-split-canvas)'; pip.style.background='var(--ytkit-split-muted)'; pip.style.color='var(--ytkit-split-muted)'; });
 
-                // RIGHT — collapsed initially
                 const right = document.createElement('div');
                 right.id = 'ytkit-split-right';
-                // flex:0 0 0 — right starts at zero width, grows to a fixed size.
-                // Left (flex:1) automatically shrinks as right expands.
                 right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--ytkit-split-panel);border-left:1px solid var(--ytkit-split-border);scrollbar-width:thin;scrollbar-color:var(--ytkit-split-scrollbar) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;pointer-events:auto;`;
-                // wire divider to right panel now that it exists
                 this._initDividerDrag(divider, left, right);
 
-                // CLOSE button — low opacity, top-right of left panel
                 const closeBtn = document.createElement('button');
                 closeBtn.id = 'ytkit-split-close';
                 closeBtn.title = t('stickyVideoCloseSidePanelTitle', 'Close side panel');
@@ -17579,7 +15774,6 @@ if (typeof globalThis !== "undefined") {
                     this._triggerPlayerResize();
                 });
 
-                // Double-click to reset ratio to the default 68/32 layout
                 divider.addEventListener('dblclick', (e) => {
                     if (!this._isSplit) return;
                     e.preventDefault();
@@ -17589,7 +15783,6 @@ if (typeof globalThis !== "undefined") {
                     this._triggerPlayerResize();
                 });
 
-                // Shared drag logic for mouse and touch
                 const startDrag = (startX) => {
                     if (!this._isSplit) return null;
                     const wrapper = this._splitWrapper;
@@ -17623,7 +15816,6 @@ if (typeof globalThis !== "undefined") {
                     return { onDrag, cleanup, totalW, startLeftPct };
                 };
 
-                // Mouse drag
                 divider.addEventListener('mousedown', (e) => {
                     if (e.detail >= 2) {
                         e.preventDefault();
@@ -17650,7 +15842,6 @@ if (typeof globalThis !== "undefined") {
                     document.addEventListener('mouseleave', onUp);
                 });
 
-                // Touch drag
                 divider.addEventListener('touchstart', (e) => {
                     const t = e.touches[0];
                     if (!t) return;
@@ -17673,16 +15864,13 @@ if (typeof globalThis !== "undefined") {
                 });
             },
 
-            // ── Mount overlay (video fullscreen, comments hidden) ──
             _mountOverlay() {
                 if (this._isActive) return;
                 const player = this._getPlayer();
                 const below  = this._getBelow();
                 if (!player) return;
-                // For live streams, #below may not exist yet — that's OK
                 if (!below && !VideoTypeDetector.hasChat()) return;
 
-                // Video type already set by _activate
                 this._positionedEls = [];
                 this._scrollTarget = null;
 
@@ -17692,7 +15880,6 @@ if (typeof globalThis !== "undefined") {
                 this._splitWrapper = wrapper;
                 wrapper.style.opacity = '0';
                 document.body.appendChild(wrapper);
-                // Smooth fade-in on first mount
                 requestAnimationFrame(() => {
                     wrapper.style.transition = 'opacity 0.3s ease';
                     wrapper.style.opacity = '1';
@@ -17701,9 +15888,6 @@ if (typeof globalThis !== "undefined") {
                 const left  = wrapper.querySelector('#ytkit-split-left');
                 const right = wrapper.querySelector('#ytkit-split-right');
 
-                // Fix player in place — NO reparenting. Avoids Chrome losing the video
-                // GPU compositor surface when the window moves between monitors.
-                // The overlay's left panel is transparent, so the player shows through.
                 this._setStyles(player, {
                     position: 'fixed', top: '0', left: '0',
                     width: '100%', height: '100vh',
@@ -17712,8 +15896,6 @@ if (typeof globalThis !== "undefined") {
                     'max-width': 'none', overflow: 'hidden'
                 });
 
-                // Force #movie_player to fill parent — clear YT's inline px dimensions
-                // Batched: runs at most once per frame, and stops after layout stabilizes
                 let _fpsPending = false;
                 let _fpsCount = 0;
                 const forcePlayerSize = () => {
@@ -17738,8 +15920,6 @@ if (typeof globalThis !== "undefined") {
                 };
                 forcePlayerSize();
 
-                // Single ResizeObserver on left panel — debounced to avoid fight with YT's player
-                // Also syncs player width with left panel since player is positioned separately
                 this._playerResizeObs = new ResizeObserver(() => {
                     clearTimeout(this._playerResizeDebounceTimer);
                     this._playerResizeDebounceTimer = setTimeout(() => {
@@ -17752,26 +15932,18 @@ if (typeof globalThis !== "undefined") {
                 });
                 this._playerResizeObs.observe(left);
 
-                // Delayed resize trigger — wait for layout to settle before telling YT to recalculate
                 this._initResizeTimer = setTimeout(() => this._triggerPlayerResize(), 600);
 
-                // #below stays in original DOM — overlay at z-index:9999 hides it visually.
-                // DO NOT set visibility:hidden — it can prevent IntersectionObserver from firing.
-                // Just block interaction until split expands.
                 if (below) {
                     below.style.setProperty('pointer-events', 'none', 'important');
                 }
 
-                // For live/VOD: also hide the chat frame behind overlay
                 const chatEl = this._getChatEl();
                 if (chatEl) {
                     chatEl.style.setProperty('pointer-events', 'none', 'important');
-                    // Ensure chat iframe isn't collapsed (YT collapses it sometimes)
                     chatEl.removeAttribute('collapsed');
                 }
 
-                // Pre-scroll to comments so YT's IO fires (behind the overlay, invisible).
-                // Deferred heavily to avoid interfering with video load. Only for standard/VOD.
                 if (this._videoType !== 'live' && below) {
                     const scrollToComments = () => {
                         this._scrollToCommentsTimer = null;
@@ -17793,14 +15965,9 @@ if (typeof globalThis !== "undefined") {
                     }
                 }
 
-                // Hide related videos sidebar — but NOT the chat frame container.
-                // On live/VOD pages, ytd-live-chat-frame is inside #secondary.
-                // Hiding #secondary with display:none kills the chat completely.
                 const sec = document.querySelector('#secondary');
                 if (sec) {
                     if (this._videoType === 'live' || this._videoType === 'vod') {
-                        // Only hide #related, keep #secondary visible for chat.
-                        // Force display:block to override hideRelatedVideos CSS !important
                         const related = sec.querySelector('#related');
                         if (related) { related.dataset.ytkitSplitHidden='1'; related.style.display='none'; }
                         sec.style.setProperty('display', 'block', 'important');
@@ -17811,40 +15978,27 @@ if (typeof globalThis !== "undefined") {
                     }
                 }
 
-                // Watch for late chat frame insertion — if we mounted as 'standard'
-                // but a chat frame appears later (SPA race), reclassify and un-hide #secondary.
-                // The same lifecycle also handles split-open positioning from _waitForChat().
                 if (this._videoType === 'standard' && !this._getChatEl()) {
                     this._watchForChat({ position: false, timeoutMs: 15000 });
                 }
 
-                // Masthead hidden via CSS class added in _activate()
                 const mast = document.querySelector('ytd-masthead, #masthead');
                 if (mast) this._mastheadDisplay = mast.style.display;
 
-                // Cache right panel ref for wheel handler (avoid querySelector in hot path)
                 const rightRef = right;
 
-                // Check if event target is in any positioned content element
                 const isInRightContent = (target) => {
                     if (rightRef.contains(target)) return true;
                     return (this._positionedEls || []).some(el => el.contains(target));
                 };
 
-                // Wheel/touch on document capture — the overlay has pointer-events:none
-                // so events target the player directly. Use capture on document to intercept
-                // before YouTube's player can stopPropagation (volume control).
                 const isOverPlayer = (target) => {
                     const mp = document.getElementById('movie_player');
                     return mp && mp.contains(target);
                 };
-                // Scroll-up-over-video collapse: require 3 consecutive scroll-up
-                // ticks within 600ms to prevent accidental collapse from a single
-                // inertial gesture (mirrors the right-panel collapse guard).
                 this._wheelHandler = (e) => {
                     if (!this._isActive) return;
 
-                    // Before split opens: scroll-down over player → expand
                     if (!this._isSplit) {
                         if (e.deltaY > 0 && isOverPlayer(e.target)) {
                             e.stopPropagation();
@@ -17853,29 +16007,9 @@ if (typeof globalThis !== "undefined") {
                         return;
                     }
 
-                    // ── Split is open ──
-                    // The entire viewport is either the player (left) or the
-                    // right panel content.  No isInRightContent gate needed —
-                    // any wheel event the user can physically generate is on
-                    // one of these two surfaces.
-                    //
-                    // Scrolling over the VIDEO never collapses. It used to, on a
-                    // 3-tick guard, which meant nudging the wheel while the
-                    // pointer happened to rest over the player threw the split
-                    // away mid-read. Collapse is now owned solely by the
-                    // comments pane reaching its top — see _rightWheelHandler.
-                    // Wheel over the player still proxies to that pane, in both
-                    // directions, because the page scroller is disabled here.
 
-                    // The positioned comments panel is a real overflow scroller.
-                    // Let wheel events that originate inside it take the native
-                    // compositor path; manually changing scrollTop as well made
-                    // every tick scroll twice and forced extra main-thread work.
                     if (isInRightContent(e.target)) return;
 
-                    // Forward wheel to the right panel scroll target.
-                    // This only proxies gestures made over the fixed player,
-                    // whose page scroller is intentionally disabled in split mode.
                     const scrollEl = this._scrollTarget;
                     if (scrollEl) {
                         e.stopPropagation();
@@ -17893,15 +16027,8 @@ if (typeof globalThis !== "undefined") {
                         return;
                     }
                     if (this._isSplit) {
-                        // Preserve native touch scrolling and the target-level
-                        // pull-to-collapse handler inside the comments panel.
                         if (isInRightContent(e.target)) return;
                         const delta = this._touchStartY - t.clientY;
-                        // Same rule as the wheel path: a gesture over the video
-                        // scrolls the comments pane and nothing else. The pull-
-                        // to-collapse gesture lives on the pane itself
-                        // (_rightTouchMoveHandler), so it still works — it just
-                        // cannot be triggered from the player any more.
                         const scrollEl = this._scrollTarget;
                         if (scrollEl) {
                             e.stopPropagation();
@@ -17922,7 +16049,6 @@ if (typeof globalThis !== "undefined") {
                 };
                 window.addEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
 
-                // Re-layout on window resize
                 this._windowResizeHandler = () => {
                     if (!this._isActive) return;
                     this._triggerPlayerResize();
@@ -17930,10 +16056,8 @@ if (typeof globalThis !== "undefined") {
                 };
                 window.addEventListener('resize', this._windowResizeHandler);
 
-                // Escape key collapses split panel (or unmounts if already collapsed)
                 this._keyHandler = (e) => {
                     if (e.key !== 'Escape' || !this._isActive) return;
-                    // Don't intercept escape when user is typing in an input/textarea
                     const tag = document.activeElement?.tagName;
                     if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
                     if (this._isSplit) {
@@ -17942,8 +16066,6 @@ if (typeof globalThis !== "undefined") {
                 };
                 document.addEventListener('keydown', this._keyHandler, true);
 
-                // Hide overlay during native fullscreen — overlay at z-index:9999
-                // would block player controls and conflict with browser fullscreen
                 this._fullscreenHandler = () => {
                     const isFS = !!document.fullscreenElement;
                     const wrapper = this._splitWrapper;
@@ -17953,16 +16075,12 @@ if (typeof globalThis !== "undefined") {
                         wrapper.style.display = 'none';
                         if (this._splitLiveHeader) this._splitLiveHeader.style.display = 'none';
                         this._setSplitLiveHeaderActionPinsHidden(true);
-                        // Hide positioned overlays (chat frame, #below) — they carry
-                        // position:fixed z-index:10001 and would paint over the
-                        // fullscreen player on live / previously-live videos.
                         this._fullscreenOverlayStash = [];
                         (this._positionedEls || []).forEach(el => {
                             if (!el) return;
                             this._fullscreenOverlayStash.push({ el, visibility: el.style.visibility });
                             el.style.setProperty('visibility', 'hidden', 'important');
                         });
-                        // Restore player to natural sizing so fullscreen works
                         const player = this._getPlayer();
                         if (player) {
                             this._removeStyles(player, ['position', 'top', 'left', 'width', 'height',
@@ -17981,13 +16099,8 @@ if (typeof globalThis !== "undefined") {
                         });
                         this._fullscreenOverlayStash = null;
                         this._layoutSplitLiveHeaderActions();
-                        // Re-fix player in place
                         const player = this._getPlayer();
                         if (player) {
-                            // Collapsed state has no resize observer attached, so a
-                            // px snapshot taken here would survive every later window
-                            // resize until the next expand. Only the split state —
-                            // where the observer keeps the width in sync — gets px.
                             const leftW = this._isSplit
                                 ? (wrapper.querySelector('#ytkit-split-left')?.getBoundingClientRect().width || 0)
                                 : 0;
@@ -18008,7 +16121,6 @@ if (typeof globalThis !== "undefined") {
                 DebugManager.log('Theater', 'Overlay mounted');
             },
 
-            // ── Expand right panel (show comments/chat) ──
             _expandSplit() {
                 if (this._isSplit || !this._isActive || this._dismissed) return;
                 this._isSplit = true;
@@ -18018,7 +16130,6 @@ if (typeof globalThis !== "undefined") {
                 const wrapper = this._splitWrapper;
                 const left    = wrapper.querySelector('#ytkit-split-left');
 
-                // Reconnect resize observer
                 if (this._playerResizeObs && left) this._playerResizeObs.observe(left);
                 const right   = wrapper.querySelector('#ytkit-split-right');
                 const divider = wrapper.querySelector('#ytkit-split-divider');
@@ -18039,18 +16150,15 @@ if (typeof globalThis !== "undefined") {
                 document.documentElement.classList.add('ytkit-split-open');
                 document.documentElement.style.setProperty('--ytkit-split-right-width', `calc(${rightPct}vw - 6px)`);
 
-                // Expand overlay's right panel placeholder
                 right.style.flexBasis = rightPct + '%';
                 right.style.width     = rightPct + '%';
                 divider.style.flexBasis = '8px';
                 divider.style.width     = '8px';
                 divider.setAttribute('aria-valuenow', String(Math.round(leftPct)));
 
-                // Sync player width — player is fixed-positioned separately
                 const player = this._getPlayer();
                 if (player) player.style.setProperty('width', leftPct + '%', 'important');
                 if (type === 'live' || type === 'vod') {
-                    // Right panel is just a spacer — chat overlays it via CSS fixed
                     right.style.opacity = '0';
                     right.style.background = 'transparent';
                     right.style.borderLeft = 'none';
@@ -18058,7 +16166,6 @@ if (typeof globalThis !== "undefined") {
                     right.style.opacity = '1';
                 }
 
-                // Elements stay in original DOM (no reparenting) so YT's IO works.
                 if (type === 'live') {
                     if (chatEl) this._prepareSecondaryForChat();
                     const liveHeaderTop = this._ensureSplitLiveHeader(rightPct);
@@ -18089,12 +16196,9 @@ if (typeof globalThis !== "undefined") {
                     this._expandFallbackTimer = null;
                     this._entering = false;
                     this._triggerPlayerResize();
-                    // For standard/VOD: scroll to top to show video title
                     if (type !== 'live' && below) {
                         below.scrollTop = 0;
                     }
-                    // Re-inject download/action buttons — Polymer may have re-rendered
-                    // #top-level-buttons-computed when the player was reparented
                     if (typeof checkAllButtons === 'function') {
                         checkAllButtons();
                         this._scheduleSplitActionDock(0);
@@ -18117,12 +16221,6 @@ if (typeof globalThis !== "undefined") {
                     if (this._entering) onExpanded();
                 }, 500);
 
-                // Collapse is owned entirely by this pane. The split stays up
-                // until the reader scrolls the comments column all the way back
-                // to the top — past the title card that sits above the comments
-                // — and keeps pulling up. The tick count is what makes "past
-                // the title" mean something: landing on the top edge does not
-                // collapse, continuing to scroll against it does.
                 const scrollEl = this._scrollTarget;
                 let _collapseScrollCount = 0;
                 let _collapseScrollTimer = null;
@@ -18154,8 +16252,6 @@ if (typeof globalThis !== "undefined") {
                     scrollEl.addEventListener('touchmove', this._rightTouchMoveHandler, { passive: true });
                 }
 
-                // For live/VOD: chat iframe swallows wheel events (cross-origin).
-                // Add a collapse trigger strip at top of right panel above the iframe z-index.
                 if (type === 'live' || type === 'vod') {
                     const strip = document.createElement('div');
                     strip.id = 'ytkit-split-collapse-strip';
@@ -18177,16 +16273,10 @@ if (typeof globalThis !== "undefined") {
                 DebugManager.log('Theater', `Split expanded (${type})`);
             },
 
-            // ── Collapse right panel (back to fullscreen video) ──
             _collapseSplit(dismissed) {
                 if (!this._isSplit) return;
                 this._isSplit = false;
                 if (dismissed) this._dismissed = true;
-                // Clear `_entering` in case we collapse before the expand
-                // transition completed. Otherwise the 500 ms fallback timer in
-                // `_expandSplit` would still see `_entering === true` and call
-                // `onExpanded()` on an already-collapsed panel, re-triggering
-                // `_triggerPlayerResize()` and `checkAllButtons()`.
                 this._entering = false;
                 clearTimeout(this._expandFallbackTimer);
                 this._expandFallbackTimer = null;
@@ -18205,7 +16295,6 @@ if (typeof globalThis !== "undefined") {
                 const divider = wrapper.querySelector('#ytkit-split-divider');
                 const closeBtn = wrapper.querySelector('#ytkit-split-close');
 
-                // Remove scroll handlers from scroll target
                 const scrollEl = this._scrollTarget;
                 if (this._rightWheelHandler && scrollEl) {
                     scrollEl.removeEventListener('wheel', this._rightWheelHandler);
@@ -18216,7 +16305,6 @@ if (typeof globalThis !== "undefined") {
                     this._rightTouchMoveHandler = null;
                 }
 
-                // Collapse overlay placeholder
                 right.style.flexBasis = '0';
                 right.style.width     = '0';
                 divider.style.flexBasis = '0';
@@ -18224,17 +16312,12 @@ if (typeof globalThis !== "undefined") {
                 right.style.padding = '0';
                 right.style.opacity = '0';
 
-                // Restore player to full width
                 const player = this._getPlayer();
                 if (player) player.style.setProperty('width', '100%', 'important');
 
-                // Unposition all elements and hide behind overlay
                 this._unpositionAll();
                 const below = this._getBelow();
                 if (below) below.style.setProperty('pointer-events', 'none', 'important');
-                // Clean the RAW frame: after SPA reuse YouTube may have flipped
-                // it to a hidden placeholder, and the candidate-filtered
-                // _getChatEl() would skip cleanup of styles set on it earlier.
                 const chatEl = VideoTypeDetector.getChatEl();
                 if (chatEl) {
                     chatEl.style.setProperty('pointer-events', 'none', 'important');
@@ -18244,17 +16327,14 @@ if (typeof globalThis !== "undefined") {
 
                 if (closeBtn) { closeBtn.style.display = 'none'; closeBtn.style.opacity = '0'; }
 
-                // Remove collapse trigger strip
                 wrapper.querySelector('#ytkit-split-collapse-strip')?.remove();
 
-                // Pause resize observer while collapsed
                 this._playerResizeObs?.disconnect();
 
                 this._triggerPlayerResize();
                 DebugManager.log('Theater', 'Split collapsed');
             },
 
-            // ── Unmount overlay entirely (navigate away / feature disabled) ──
             _unmount(keepClass) {
                 if (!this._isActive) return;
                 this._entering = false;
@@ -18278,7 +16358,6 @@ if (typeof globalThis !== "undefined") {
                 this._restoreSplitActionDock();
                 this._stopSplitAutoscroll();
 
-                // Remove scroll handlers from scroll target
                 const scrollEl = this._scrollTarget;
                 if (this._rightWheelHandler && scrollEl) {
                     scrollEl.removeEventListener('wheel', this._rightWheelHandler);
@@ -18328,23 +16407,18 @@ if (typeof globalThis !== "undefined") {
                 this._playerResizeObs?.disconnect();
                 this._playerResizeObs = null;
 
-                // Clear fixed positioning — player never left its original DOM location
                 const player = this._getPlayer();
                 if (player) {
                     this._removeStyles(player, ['position', 'top', 'left', 'width', 'height',
                         'z-index', 'background', 'min-height', 'margin', 'padding', 'max-width', 'overflow']);
                 }
 
-                // Restore all positioned elements — remove fixed positioning styles
                 this._unpositionAll();
                 const below = this._getBelow();
                 if (below) {
                     below.style.removeProperty('pointer-events');
                     below.style.removeProperty('border-bottom');
                 }
-                // Raw lookup on purpose: a hidden placeholder frame must still
-                // have our inline pointer-events/chat-fill styles removed or the
-                // next live stream reusing the frame gets an unclickable chat.
                 const chatEl = VideoTypeDetector.getChatEl();
                 if (chatEl) {
                     chatEl.style.removeProperty('pointer-events');
@@ -18370,7 +16444,6 @@ if (typeof globalThis !== "undefined") {
                 document.documentElement.style.removeProperty('--ytkit-split-right-width');
                 if (!keepClass) document.documentElement.classList.remove('ytkit-split-active');
                 if (!keepClass) document.documentElement.style.removeProperty('--ytd-masthead-height');
-                // Restore page scroll — we left it scrolled to comments for IO during mount
                 window.scrollTo(0, 0);
                 DebugManager.log('Theater', 'Overlay unmounted');
             },
@@ -18383,7 +16456,6 @@ if (typeof globalThis !== "undefined") {
                     this._lastVideoId = vid;
                     this._dismissed = false;  // reset dismiss on video change
                     if (this._isActive) {
-                        // Same overlay, new video — collapse + refresh type (no unmount/remount)
                         if (this._isSplit) this._collapseSplit(false);
                         this._scrollTarget = null;
                         this._videoType = VideoTypeDetector.refresh();
@@ -18393,16 +16465,10 @@ if (typeof globalThis !== "undefined") {
                 }
                 if (this._isActive) return;
 
-                // First mount — detect video type
                 this._videoType = VideoTypeDetector.refresh();
 
                 const doMount = () => {
-                    // _destroyed guard: the waitForElement chains below can
-                    // fire several seconds later — after teardown they must
-                    // not resurrect an overlay with no styles and no teardown.
                     if (this._destroyed || this._isActive) return;
-                    // Apply class right before mount — prevents broken half-state
-                    // where masthead is hidden but overlay hasn’t mounted yet
                     document.documentElement.classList.add('ytkit-split-active');
                     document.documentElement.style.setProperty('--ytd-masthead-height', '0px');
                     this._mountOverlay();
@@ -18581,16 +16647,9 @@ if (typeof globalThis !== "undefined") {
             _beginDrag(event) {
                 if (!this._frame || event?.button > 0) return;
                 event?.preventDefault?.();
-                // A second pointerdown while a drag is live must not overwrite
-                // this._drag — that would permanently leak the previous
-                // capture-phase move listener.
                 this._removeDragListeners();
                 this._clampLayout();
                 const pointerId = event?.pointerId;
-                // Capture the pointer so move/up events keep flowing when the
-                // cursor outruns the frame into the cross-origin chat iframe
-                // (or leaves the window); otherwise the drag strands with
-                // listeners attached and the layout is never persisted.
                 if (pointerId != null) {
                     try { event.currentTarget?.setPointerCapture?.(pointerId); }
                     catch { /* reason: capture is best-effort; drag still works inside the frame */ }
@@ -18779,10 +16838,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/video-hider/index.js
-    //
-    // Video Hider runtime. ytkit.js keeps only a descriptor stub after the
-    // module factory, so this is the one extension implementation that runs.
 
     function createFallbackSvg(viewBox, shapes = [], options = {}) {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -18799,10 +16854,6 @@ if (typeof globalThis !== "undefined") {
 
     const SUBSCRIBER_COUNT_LABELS = /(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
     const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
-    // These markers are deliberately explicit rather than a general-purpose
-    // "AI detector": a false positive is more harmful than leaving a card
-    // visible, and card-local text is too sparse to support a probabilistic
-    // classifier. The channel pattern is kept narrow for the same reason.
     const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
     const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
     const FILTER_REASON_MESSAGES = Object.freeze({
@@ -18942,7 +16993,6 @@ if (typeof globalThis !== "undefined") {
                 return {
                     cancel() {},
                     promise: Promise.resolve({
-                        // i18n-static: internal batch diagnostic label.
                         label: 'video-hider:fallback',
                         total: list.length,
                         processed: list.length,
@@ -18957,9 +17007,6 @@ if (typeof globalThis !== "undefined") {
         const sanitizeAllowedChannels = typeof sanitizeImportedAllowedChannels === 'function'
             ? sanitizeImportedAllowedChannels
             : sanitizeImportedBlockedChannels;
-        // The manifest and generated userscript core own this codec. A missing
-        // core is a fail-closed remote-list state, not a reason to retain a
-        // second parser that can drift from the storage/import boundary.
         const codec = filterListCodec || globalThis.YTKitCore?.persistedDomains || null;
 
         return {
@@ -18995,11 +17042,6 @@ if (typeof globalThis !== "undefined") {
             _allowedChannelKeyCache: null,
             _filterListSubscription: null,
             _filterListRefreshTimer: null,
-            // destroy() clears the refresh timer, but a refresh already in
-            // flight re-armed it from its own .then(), installing a timer
-            // nothing would ever cancel. That zombie kept fetching on the daily
-            // cadence and, on success, re-hid videos with the feature switched
-            // off. Nothing else in this module tracked teardown.
             _destroyed: false,
             _filterListRefreshInFlight: false,
             _directWatchRouteKey: null,
@@ -19011,13 +17053,6 @@ if (typeof globalThis !== "undefined") {
             _directWatchPlayHandler: null,
             _directWatchResumeAfterDecision: false,
             _removedVideoNodes: [],
-            // WeakMap, not Map: the key is a feed card, and an infinite-scroll
-            // session discards thousands of them. A strong Map pinned every
-            // hidden card and its placeholder for the life of the page, which
-            // is the same subtree-pinning risk `_removedVideoNodes` uses a
-            // WeakRef and a 200-entry cap to avoid twelve lines below.
-            // Teardown sweeps the DOM by class instead of iterating the map;
-            // a placeholder that is no longer in the document needs no removal.
             _hiddenReasonPlaceholders: new WeakMap(),
             _subsBannerCollapsed: false,
             _subsLoadState: {
@@ -19260,16 +17295,6 @@ if (typeof globalThis !== "undefined") {
                 this._subsLoadState.totalVideosHidden += hiddenCount;
                 this._subsLoadState.lastBatchSize = batchSize;
                 this._subsLoadState.lastBatchHidden = hiddenCount;
-                // v4.47.0 NF33: the prior "100% hidden" gate (allHidden =
-                // hiddenCount === batchSize) over-fired in practice — any
-                // 3-batch streak where every single card was hidden halted
-                // pagination, even when 20% non-hidden content would have
-                // loaded normally afterwards. The new gate is configurable
-                // via hideVideosSubsLoadHiddenRatio (default 0.8 = 80%).
-                // A batch qualifies as "mostly hidden" when its hidden
-                // ratio is >= the threshold; the streak still uses the
-                // existing hideVideosSubsLoadThreshold (default 3) so the
-                // sliding-window semantics are preserved.
                 const hiddenRatio = hiddenCount / batchSize;
                 const ratioCutoff = (() => {
                     const raw = Number(appState.settings.hideVideosSubsLoadHiddenRatio);
@@ -19322,9 +17347,6 @@ if (typeof globalThis !== "undefined") {
                 if (!resolved.rulesActive || !resolved.subscription.lastKnownGood) return null;
                 return {
                     ...resolved.subscription.lastKnownGood.rules,
-                    // Remote lists are data-only. Predicate code is exported
-                    // for local backups, but a fetched list must never turn
-                    // into executable code in a YouTube page.
                     predicateEnabled: false,
                     predicateCode: ''
                 };
@@ -19585,7 +17607,6 @@ if (typeof globalThis !== "undefined") {
                     try {
                         if (JSON.stringify(stored) !== JSON.stringify(sanitized)) storageWrite(this._MARKED_WATCHED_KEY, sanitized);
                     } catch (_) {
-                        // reason: malformed storage must not break feed filtering
                     }
                 }
                 return this._markedWatchedList;
@@ -19865,9 +17886,6 @@ if (typeof globalThis !== "undefined") {
                 const watchRoot = documentRef.querySelector('ytd-watch-flexy');
                 const rootVideoId = watchRoot?.getAttribute?.('video-id') || '';
                 if (rootVideoId && rootVideoId !== routeKey) return null;
-                // During SPA navigation YouTube briefly leaves the previous
-                // owner DOM mounted. Give the new route a short settle window
-                // when the watch root does not expose its current video ID.
                 if (!rootVideoId && attempt < 4) return null;
                 const root = watchRoot || documentRef;
                 const link = root.querySelector?.([
@@ -19953,12 +17971,6 @@ if (typeof globalThis !== "undefined") {
                     this._removeBlockedChannel(channelInfo);
                     this._closeDirectWatchInterstitial();
                     this._resumeDirectWatchPlayback();
-                    // Cards already processed for this channel (the watch-page
-                    // related rail) keep their hidden marker until something
-                    // re-runs the pass. The toast undo path does this; this one
-                    // did not, so unblocking left the rail hidden all pageview.
-                    // Debounced like the feature's other refresh triggers, so
-                    // the authoritative unblock above never waits on a DOM walk.
                     this._processAllVideosDebounced(0);
                     return;
                 }
@@ -20147,10 +18159,6 @@ if (typeof globalThis !== "undefined") {
                     videoId,
                     element,
                     parent: element.parentNode,
-                    // WeakRef: the ex-sibling is only an ordering anchor for
-                    // restore. A strong ref would pin the whole sibling subtree
-                    // in memory if it is later detached itself; when the anchor
-                    // is gone, restore falls back to appendChild.
                     nextSibling: element.nextSibling ? new WeakRef(element.nextSibling) : null
                 });
                 if (this._removedVideoNodes.length > 200) {
@@ -20396,14 +18404,6 @@ if (typeof globalThis !== "undefined") {
                 const rowsText = Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
                     .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
                     .join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
-                // NFD splits Latin letters from their accents so the patterns
-                // below can be written unaccented — but it ALSO decomposes each
-                // Hangul syllable into conjoining Jamo, which are letters, not
-                // marks, so \p{M} leaves them decomposed. A precomposed Korean
-                // literal then never matches, which silently made every one of
-                // the six type predicates below dead on Korean. Re-composing
-                // restores the syllables; the accents cannot come back because
-                // their marks are already gone.
                 const normalizedRowsText = rowsText.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
                 const metadataText = `${title} ${rowsText}`.replace(/\s+/g, ' ').trim();
                 const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
@@ -20431,20 +18431,11 @@ if (typeof globalThis !== "undefined") {
                         || /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
                     isUpcoming: hasUpcomingMarker
                         || /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i.test(normalizedRowsText),
-                    // Type detection reads ONLY badge/metadata rows — matching
-                    // against the title hid videos titled "How to mix audio",
-                    // "movie review", or "top 5 videos".
                     isMix: hasMixMarker
                         || /(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)/i.test(normalizedRowsText)
                         || /(?:start_radio=1|list=rd)/i.test(hrefText),
                     isPlaylist: hasPlaylistMarker
                         || /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
-                    // Localised like their four siblings above: Latin terms are
-                    // written WITHOUT diacritics because normalizedRowsText has
-                    // already stripped combining marks, and non-Latin scripts sit
-                    // outside \b, which only anchors on ASCII word characters.
-                    // French bare "double" (from "doublé") is deliberately absent
-                    // — it normalises onto a very common word.
                     isMovie: /(?:\b(?:movie|free with ads|buy or rent|rent or buy|pelicula|gratis con anuncios|comprar o alquilar|alquilar o comprar|film|kostenlos mit werbung|kaufen oder leihen|leihen oder kaufen|gratuit avec publicites|acheter ou louer|louer ou acheter|gratis con annunci|acquista o noleggia|noleggia o acquista|filme|gratis com anuncios|comprar ou alugar|alugar ou comprar)\b|фильм|бесплатно с рекламой|купить или взять напрокат|напрокат|映画|広告付きで無料|購入またはレンタル|レンタル|영화|광고 포함 무료|구매 또는 대여|대여|电影|含广告免费|购买或租借|租借|فيلم|مجاني مع الاعلانات|شراء او استئجار)/i.test(normalizedRowsText),
                     isAutoDubbed: /(?:\b(?:auto[-\s]?dubbed|dubbed|audio track|doblado automaticamente|doblado|pista de audio|automatisch synchronisiert|synchronisiert|tonspur|audiospur|doublage|double automatiquement|piste audio|doppiato automaticamente|doppiato|traccia audio|dublado automaticamente|dublado|faixa de audio)\b|автоматический дубляж|дубляж|аудиодорожка|自動吹き替え|吹き替え|音声トラック|자동 더빙|더빙|오디오 트랙|自动配音|配音|音轨|مدبلج تلقائيا|مدبلج|المسار الصوتي)/i.test(normalizedRowsText),
                     isShort,
@@ -20586,11 +18577,6 @@ if (typeof globalThis !== "undefined") {
                 btn.addEventListener('click', e => {
                     e.preventDefault();
                     e.stopPropagation();
-                    // Read the CURRENT id: YouTube re-binds new video data into
-                    // recycled card elements (chip clicks), and the closure's
-                    // videoId from button-creation time would hide the wrong
-                    // video. dataset.ytkitVideoId is refreshed on every
-                    // reprocess.
                     const id = element.dataset.ytkitVideoId || this._extractVideoId(element) || videoId;
                     if (id) this._hideVideo(id, element);
                 });
@@ -20713,9 +18699,6 @@ if (typeof globalThis !== "undefined") {
                     if (this._lastHidden.removedAllowed?.length) this._addAllowedVideos(this._lastHidden.removedAllowed, { force: true });
                     this._restoreRemovedVideoNodes(new Set([this._lastHidden.id]));
                     this._lastHidden.element?.classList.remove('ytkit-video-hidden');
-                    // The captured element may have been recycled between hide
-                    // and Undo — strip the class wherever the id landed and
-                    // reprocess, mirroring _unhideVideo.
                     document.querySelectorAll(`[data-ytkit-video-id="${this._lastHidden.id}"]`)?.forEach(el => {
                         el.classList.remove('ytkit-video-hidden');
                     });
@@ -20774,9 +18757,6 @@ if (typeof globalThis !== "undefined") {
                 const channelInfos = this._extractChannelInfos(element);
                 const channelInfo = channelInfos[0] || null;
                 if (this._isChannelAllowlistMode()) {
-                    // Empty or unresolved allowlists are fail-open: an empty
-                    // list must never hide every feed card, and cards whose
-                    // channel cannot be identified must remain recoverable.
                     if (channelInfos.length
                         && this._getAllowedChannelKeys().size > 0
                         && !this._isChannelAllowed(channelInfos)) return hideForReason('channelNotAllowed');
@@ -20790,8 +18770,6 @@ if (typeof globalThis !== "undefined") {
                     const channelName = channelInfos.map(info => info?.name || '').filter(Boolean).join(' ').toLowerCase();
                     const searchText = (title + ' ' + channelName).toLowerCase();
 
-                    // Negative keywords are exclusions across both local and
-                    // remote lists, so evaluate them before any positive rule.
                     for (const filterStr of filterStrings) {
                         if (filterStr.startsWith('/')) continue;
                         const negativeKw = filterStr.toLowerCase().split(',')
@@ -20807,26 +18785,11 @@ if (typeof globalThis !== "undefined") {
                             try {
                                 const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
                                 if (regexMatch) {
-                                    // One shared ReDoS guard, from core/predicate-sandbox.js. The local copy
-                                    // that used to live here carried only the three flat heuristics and missed
-                                    // the polynomial shapes: `.*.*.*.*.*.*z` and `(a+)(a+)(a+)(a+)(a+)(a+)b`
-                                    // both passed it and each burned hundreds of milliseconds of main thread
-                                    // per test, on a pattern that can arrive from a remote filter list or a
-                                    // crafted settings import. The shared guard adds the length cap, the
-                                    // open-ended-quantifier count and the nesting-aware scan.
                                     const pat = regexMatch[1];
-                                    // Fail closed. A second, weaker copy of the guard is the defect being
-                                    // fixed here: without the full nesting scan it cannot see `((ab)*)*`,
-                                    // and any copy drifts again. predicate-sandbox.js loads before this
-                                    // file in both the manifest and the userscript bundle, so its absence
-                                    // means the runtime is broken, not that a pattern is safe. Plain
-                                    // keyword filters keep working either way.
                                     const unsafeRegex = globalThis.YTKitCore?.hasUnsafeRegexQuantifiers;
                                     if (typeof unsafeRegex !== 'function' || unsafeRegex(pat)) {
                                         DebugManager.log('VideoHider', 'Regex rejected: unsafe quantifiers (ReDoS risk)');
                                     } else {
-                                        // Filtering is boolean and must not carry lastIndex
-                                        // across title/channel tests or repeated scans.
                                         const regexFlags = regexMatch[2].replace(/[gy]/g, '');
                                         const regex = new RegExp(regexMatch[1], regexFlags);
                                         if (regex.test(title) || regex.test(channelName)) return hideForReason('keyword');
@@ -20881,13 +18844,6 @@ if (typeof globalThis !== "undefined") {
                 return compiled.evaluator;
             },
 
-            // v4.47.0 NF16: best-effort sub-count parser for predicate
-            // ctx. YouTube occasionally renders "1.2M subscribers" in
-            // card hover metadata; when present we parse it so power
-            // users can write `subsCount < 1000` style rules
-            // (BlockTube + PocketTube parity). Returns null when no
-            // such metadata is rendered so predicates can distinguish
-            // "no data" from "0 subscribers".
             _extractSubsCount(metadataText) {
                 return this._parseCompactCount(metadataText, {
                     labels: SUBSCRIBER_COUNT_LABELS,
@@ -20895,21 +18851,11 @@ if (typeof globalThis !== "undefined") {
                 });
             },
 
-            // v4.47.0 NF16: like-count lookup from the RYD cache. Cached
-            // by videoId in chrome.storage.local under 'ytkit-ryd-cache'
-            // when the returnDislike feature has hit the API. Returns
-            // null when no entry exists so predicates can distinguish
-            // "no RYD data" from "0 likes". Cached per call inside
-            // _rydCacheForPredicates to avoid re-reading storage on
-            // every card during a feed scan.
             _rydCacheForPredicates: null,
             _rydCacheLoadedAt: 0,
             _readRydLikes(videoId) {
                 if (!videoId) return null;
                 const now = Date.now();
-                // Refresh in-memory cache no more than every 5s; aligns
-                // with the RYD feature's own caching cadence so a fresh
-                // fetch surfaces quickly without thrashing storage.
                 if (!this._rydCacheForPredicates || now - this._rydCacheLoadedAt > 5000) {
                     try { this._rydCacheForPredicates = storageReadJSON('ytkit-ryd-cache', null) || {}; }
                     catch (_) { /* reason: predicate ctx must not throw on cache read failure */ this._rydCacheForPredicates = {}; }
@@ -20941,13 +18887,6 @@ if (typeof globalThis !== "undefined") {
                     uploadCadencePerDay: metadata?.uploadCadencePerDay ?? null,
                     durationSec: this._extractDuration(element) || 0,
                     viewCount: metadata?.views || 0,
-                    // v4.47.0 NF16: BlockTube/PocketTube parity additions.
-                    // `likes` is null when RYD data is unavailable;
-                    // `subsCount` is null when the card does not render
-                    // subscriber metadata. Predicates can write
-                    // `likes != null && likes > 100000` for explicit-
-                    // data checks, or rely on the null-as-falsy
-                    // semantics of the existing comparison operators.
                     likes: this._readRydLikes(videoId),
                     subsCount: this._extractSubsCount(metadata?.metadataText),
                     ageDays: metadata?.ageDays ?? null,
@@ -20963,11 +18902,6 @@ if (typeof globalThis !== "undefined") {
             },
 
             _isNestedCardHost(element) {
-                // Current feeds render ytd-rich-item-renderer > yt-lockup-view-model
-                // (older layouts, > ytd-rich-grid-media). All of those tags are in
-                // _VIDEO_SELECTORS so a card matches twice per pass; the outer host
-                // owns the verdict, so the inner one is skipped rather than
-                // re-running extraction and predicate evaluation on the same card.
                 return !!element?.parentElement?.closest?.(this._VIDEO_SELECTORS);
             },
 
@@ -21034,23 +18968,10 @@ if (typeof globalThis !== "undefined") {
                     DebugManager.log('VideoHider', `Budgeted scan ${this._lastScanDiagnostics.label}: ${this._lastScanDiagnostics.processed}/${this._lastScanDiagnostics.total} cards in ${this._lastScanDiagnostics.chunks} chunks (${this._lastScanDiagnostics.durationMs}ms)`);
                 }
             },
-            // v4.58.1 invariant, extended to the rule-driven filters: a feed
-            // filter that would hide more than a quarter of a reasonably sized
-            // feed is misfiring, so it must fail OPEN, reveal what it hid and
-            // say so. Only the HEURISTIC reasons are guarded - keyword,
-            // duration and predicate rules are the ones that silently empty a
-            // feed when a rule over-matches. Deliberate choices are exempt:
-            // manual hides, blocked channels, marked-watched, and allowlist
-            // mode, where hiding everything unlisted is the entire point.
             _RULE_HIDE_REASONS: Object.freeze(['keyword', 'duration', 'predicate', 'synthetic-narration', 'low-signal', 'upload-cadence']),
             _MAX_RULE_HIDDEN_RATIO: 0.25,
             _RATIO_GUARD_MIN_CARDS: 8,
             _lastRuleHideGuard: null,
-            // The page-wide card set for a ratio check. Cards detached by
-            // remove-mode are no longer matched by a DOM query, so they have to
-            // be added back in or the numerator silently shrinks to zero and
-            // the guard can never fire in exactly the mode where an emptied
-            // feed is most alarming.
             _guardCardSet() {
                 const live = Array.from(document.querySelectorAll(this._VIDEO_SELECTORS));
                 const detached = this._removedVideoNodes
@@ -21071,12 +18992,6 @@ if (typeof globalThis !== "undefined") {
                     this._lastRuleHideGuard = null;
                     return false;
                 }
-                // Revealing means clearing the hide state AND putting back any
-                // card that remove-mode detached. Without the second half the
-                // guard cleared classes on orphaned nodes and toasted "left
-                // visible" while the feed stayed empty until the next
-                // navigation. Read the marker before _applyVideoHiddenState
-                // deletes it.
                 const removedIds = [];
                 for (const el of overreaching) {
                     if (el?.dataset?.ytkitRemoved === 'true') {
@@ -21099,7 +19014,6 @@ if (typeof globalThis !== "undefined") {
                 return true;
             },
             _processAllVideos() {
-                // Clear pending batch to prevent race with MutationObserver
                 this._clearBatchBuffer?.();
                 this._cancelBudgetedScans();
                 this._restoreRemovedVideoNodes();
@@ -21112,7 +19026,6 @@ if (typeof globalThis !== "undefined") {
                     }
                     : (el) => this._processVideoElement(el);
                 const handle = runBudgetedElementBatch(videos, processOne, {
-                    // i18n-static: internal batch diagnostic label.
                     label: 'video-hider:process-all',
                     chunkSize: 60,
                     budgetMs: 8,
@@ -21123,11 +19036,6 @@ if (typeof globalThis !== "undefined") {
                     if (this._processAllBudgetHandle !== handle) return;
                     this._processAllBudgetHandle = null;
                     this._recordScanDiagnostics(result);
-                    // The guard runs even on a cancelled scan: under heavy
-                    // mutation churn the full scan can be cancelled every time,
-                    // which used to starve the invariant completely. A partial
-                    // scan has hidden FEWER cards, so the ratio under-triggers
-                    // rather than over-triggers.
                     this._enforceRuleHideRatioGuard(videos);
                     if (!result?.cancelled) {
                         this._updatePageActionButtons();
@@ -21641,30 +19549,17 @@ if (typeof globalThis !== "undefined") {
                     this._updatePageActionButtons();
                 };
 
-                // Accumulate mutation-discovered cards between batch runs so
-                // cancelling a prior batch for a new mutation flush does not
-                // drop unprocessed items.
                 let pendingMutationCards = [];
                 const scheduleMutationBatch = () => {
                     if (!pendingMutationCards.length) return;
-                    // Dedupe: a card that matches the selector AND sits inside
-                    // another added node is pushed twice by the observer,
-                    // double-counting in the subs-load statistics.
                     const cards = [...new Set(pendingMutationCards)];
                     pendingMutationCards = [];
                     const handle = runBudgetedElementBatch(cards, (el) => {
                         const wasHidden = this._processVideoElementWithResult(el);
-                        // processBatch only drains the buffer while subs
-                        // auto-loading is UNBLOCKED, but the push site was
-                        // unguarded — so a blocked feed accumulated DOM
-                        // references without bound until Resume or a
-                        // navigation. The statistics these feed are only
-                        // meaningful while loading is running anyway.
                         if (!this._subsLoadState.loadingBlocked) {
                             batchBuffer.push({ element: el, hidden: wasHidden });
                         }
                     }, {
-                        // i18n-static: internal batch diagnostic label.
                         label: 'video-hider:mutation-batch',
                         chunkSize: 80,
                         budgetMs: 8,
@@ -21673,22 +19568,11 @@ if (typeof globalThis !== "undefined") {
                     this._mutationBudgetHandle = handle;
                     Promise.resolve(handle.promise).then((result) => {
                         if (result?.cancelled && result.processed < cards.length) {
-                            // Requeue the cancelled tail ahead of newly
-                            // discovered cards — cancelling at index N used to
-                            // silently drop every card past N, leaving
-                            // hidden/blocked videos visible until the next
-                            // full navigation rescan.
                             pendingMutationCards = cards.slice(result.processed).concat(pendingMutationCards);
                         }
                         if (this._mutationBudgetHandle !== handle) return;
                         this._mutationBudgetHandle = null;
                         this._recordScanDiagnostics(result);
-                        // Continuation batches hide cards too. Without this the
-                        // >25% fail-open invariant only ever covered the
-                        // navigation scan, so an over-matching rule emptied
-                        // every batch loaded by scrolling — silently, until the
-                        // next navigation. The guard is page-wide and
-                        // idempotent, so running it per batch is safe.
                         this._enforceRuleHideRatioGuard(this._guardCardSet());
                         if (pendingMutationCards.length) scheduleMutationBatch();
                         if (batchTimeout) clearTimeout(batchTimeout);
@@ -21707,16 +19591,10 @@ if (typeof globalThis !== "undefined") {
                             });
                         }
                     }
-                    // Insert the Astra group in the same mutation turn that
-                    // creates/replaces YouTube's masthead controls. Waiting a
-                    // second painted the native buttons first, then shifted
-                    // them when the group arrived.
                     if (this._mutationTouchesMastheadControls(mutations)) {
                         this._syncMastheadPageActions();
                     }
                     if (!pendingMutationCards.length) return;
-                    // Cancel the in-flight batch and re-schedule with ALL
-                    // pending cards (the accumulated ones plus the new ones).
                     this._mutationBudgetHandle?.cancel?.();
                     scheduleMutationBatch();
                 });
@@ -21738,11 +19616,6 @@ if (typeof globalThis !== "undefined") {
                 };
 
                 addNavigateRule('hideVideosFromHomeNav', () => {
-                    // Audit pass: reset the predicate-sandbox circuit at every
-                    // SPA route boundary so a transient eval failure on one
-                    // page doesn't permanently disable filters across the
-                    // session (the design doc promises route-level recovery,
-                    // not session-wide auto-disable).
                     try { this._predicateCache?.evaluator?.reset?.(); } catch (_) { /* reason: route-level predicate reset is best-effort */ }
                     this._processAllVideosDebounced(500);
                     checkPages();
@@ -21750,13 +19623,10 @@ if (typeof globalThis !== "undefined") {
                 });
                 checkPages();
 
-                // Filter chip clicks (e.g. "Recently uploaded") replace grid content
-                // without firing yt-navigate-finish. Detect and reprocess after DOM settles.
                 this._chipClickHandler = (e) => {
                     const chip = e.target.closest('yt-chip-cloud-chip-renderer, ytd-feed-filter-chip-bar-renderer yt-formatted-string');
                     if (chip) {
                         this._processAllVideosDebounced(800);
-                        // Second pass for late-rendering thumbnails
                         if (this._chipSecondPassTimer) clearTimeout(this._chipSecondPassTimer);
                         this._chipSecondPassTimer = setTimeout(() => {
                             this._chipSecondPassTimer = null;
@@ -21819,12 +19689,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/video-notes/index.js
-    //
-    // Monolith peel for the per-video notes runtime. The module owns local
-    // note storage, export, LRU cap enforcement, panel rendering, and SPA
-    // reattachment; ytkit.js keeps the inline object as a compatibility
-    // fallback.
 
     function createVideoNotesFeature(deps = {}) {
         const {
@@ -21953,15 +19817,9 @@ if (typeof globalThis !== "undefined") {
 
             _updateCount(value) {
                 const countEl = this._container?.querySelector('.ytkit-video-notes-count');
-                // i18n-static: numeric character-count display, not translatable copy.
                 if (countEl) countEl.textContent = `${String(value || '').length}/${this._MAX_NOTE_CHARS}`;
             },
 
-            // videoId/title are captured at SCHEDULE time and passed through:
-            // resolving getVideoId() when the debounce fires races SPA
-            // navigation — typing on video A then clicking video B within the
-            // 450ms window would save A's text under B (or, when the textarea
-            // was just cleared, delete B's note).
             _saveCurrentNote(value, videoId = getVideoId(), title = this._currentTitle()) {
                 if (!videoId) return;
                 const now = Date.now();
@@ -21988,8 +19846,6 @@ if (typeof globalThis !== "undefined") {
                 };
                 this._writeNotes(notes);
                 this._setEmptyState(false);
-                // Notes are user-authored data — never claim success when the
-                // storage write failed.
                 this._updateStatus(this._lastWriteOk !== false
                     ? t('videoNotesSaved', 'Saved locally.')
                     : t('videoNotesSaveFailed', 'Couldn\u2019t save. Storage is full or unavailable.'));
@@ -22149,7 +20005,6 @@ if (typeof globalThis !== "undefined") {
                 scope.setAttribute('translate', 'no');
                 const count = document.createElement('span');
                 count.className = 'ytkit-video-notes-count';
-                // i18n-static: numeric character-count display, not translatable copy.
                 count.textContent = `${textarea.value.length}/${this._MAX_NOTE_CHARS}`;
                 footer.append(scope, count);
 
@@ -22182,8 +20037,6 @@ if (typeof globalThis !== "undefined") {
             init() {
                 this._ensureStyles();
                 this._navRule = () => {
-                    // Persist any debounced edit under the video it was typed
-                    // on BEFORE tearing the panel down for the next video.
                     this._flushPendingSave();
                     document.querySelectorAll('.ytkit-video-notes-container').forEach(el => el.remove());
                     this._container = null;
@@ -22228,11 +20081,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/subscription-groups/index.js
-    //
-    // Subscription Groups has one runtime owner. ytkit.js keeps only the
-    // settings descriptor and injects monolith-scoped helpers through
-    // createSubscriptionGroupsFeature(deps).
 
     function createSubscriptionGroupsFeature(deps = {}) {
         const {
@@ -22275,9 +20123,6 @@ if (typeof globalThis !== "undefined") {
             t = (_key, fallback) => fallback
         } = deps;
 
-        // Failure copy: name one of the localized causes in
-        // extension/core/failure-copy.js and the next action it implies. The
-        // thrown text never reaches the reader; it goes to DebugManager.
         const describeFailureCause = (error) => {
             const describe = globalThis.YTKitCore?.describeFailure;
             if (typeof describe === 'function') return describe(error, t);
@@ -22311,9 +20156,6 @@ if (typeof globalThis !== "undefined") {
             _LAST_VISIT_KEY: 'subscriptionLastVisitData',
             _UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData',
             _UNSUB_STAGE_TTL_MS: 30 * 24 * 60 * 60 * 1000,
-            // Import already enforced this ceiling; membership edits
-            // sliced past it instead, which is how adding channel 1001
-            // reported success and changed nothing.
             _MAX_GROUP_CHANNELS: 1000,
             _UNSUBSCRIBE_BATCH_CAP: 25,
             _UNSUBSCRIBE_PACE_MS: 400,
@@ -22373,7 +20215,6 @@ if (typeof globalThis !== "undefined") {
                 const safeLabel = String(label || 'cards').slice(0, 64);
                 this._cancelBudgetedScan(safeLabel);
                 const handle = runBudgetedElementBatch(list, callback, {
-                    // i18n-static: internal scan label, not rendered copy.
                     label: `subscription-groups:${safeLabel}`,
                     chunkSize: 80,
                     budgetMs: 8,
@@ -22547,9 +20388,6 @@ if (typeof globalThis !== "undefined") {
             _readUnsubscribeStaging() {
                 const data = appState?.settings?.[this._UNSUB_STAGE_KEY];
                 const staged = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
-                // Enforce the 30-day undo deadline that is stored/displayed but
-                // was never enforced: drop expired records so the staging map
-                // can't grow forever and the badge/toolbar reflect reality.
                 const now = Date.now();
                 const pruned = {};
                 let dropped = 0;
@@ -23047,9 +20885,6 @@ if (typeof globalThis !== "undefined") {
                 const summaries = this._collectRenderedCardSummaries();
                 const next = { ...this._readLastVisit() };
                 const now = Date.now();
-                // Count distinct CHANNELS (the toast says "channels") — the
-                // summaries list has one entry per rendered VIDEO, so a plain
-                // counter over-reports when a channel has several cards.
                 const markedChannels = new Set();
                 for (const item of summaries) {
                     if (allowed && !allowed.has(item.channelId)) continue;
@@ -23107,10 +20942,6 @@ if (typeof globalThis !== "undefined") {
                 this._renderHealthPanel();
             },
 
-            // One coherent subscriptions health/action center: stale-channel
-            // candidates, staged-unsubscribe recovery, new-since-last-visit
-            // counts, bounded unsubscribe actions, and export actions — all
-            // read from the same local data the toolbar actions maintain.
             _renderHealthPanel() {
                 if (!this._toolbar?.isConnected) this._renderToolbar();
                 if (!this._toolbar?.isConnected) return;
@@ -23177,7 +21008,6 @@ if (typeof globalThis !== "undefined") {
                     addStat(t('subscriptionHealthStatNewChannels', 'new channels'), new Set(newVideos.map(item => item.channelId)).size);
                     panel.appendChild(stats);
 
-                    // ── Stale / dead-channel candidates ──
                     const staleHeading = document.createElement('div');
                     staleHeading.className = 'ytkit-sub-health-section';
                     staleHeading.textContent = t('subscriptionHealthStaleHeadingTpl', 'Stale channels (≥{days} days, rendered feed)')
@@ -23245,7 +21075,6 @@ if (typeof globalThis !== "undefined") {
                     }
                     panel.appendChild(staleList);
 
-                    // ── Staged unsubscribe recovery ──
                     const stagedHeading = document.createElement('div');
                     stagedHeading.className = 'ytkit-sub-health-section';
                     stagedHeading.textContent = t('subscriptionHealthStagedHeading', 'Staged unsubscribes (review before applying, 30-day recovery window)');
@@ -23313,7 +21142,6 @@ if (typeof globalThis !== "undefined") {
                     }
                     panel.appendChild(stagedList);
 
-                    // ── New since last visit ──
                     const newHeading = document.createElement('div');
                     newHeading.className = 'ytkit-sub-health-section';
                     newHeading.textContent = t('subscriptionHealthNewHeading', 'New since last visit');
@@ -23336,7 +21164,6 @@ if (typeof globalThis !== "undefined") {
                     markRead.type = 'button';
                     markRead.textContent = t('subscriptionDigestMarkAllRead', 'Mark all read');
                     markRead.disabled = newVideos.length === 0;
-                    // A disabled control with no explanation reads as broken.
                     markRead.title = markRead.disabled
                         ? t('subscriptionDigestMarkAllReadEmpty', 'Nothing new since your last visit')
                         : '';
@@ -23353,7 +21180,6 @@ if (typeof globalThis !== "undefined") {
                     newActions.append(openDigest, markRead);
                     panel.append(newSummary, newActions);
 
-                    // ── Export actions ──
                     const exportHeading = document.createElement('div');
                     exportHeading.className = 'ytkit-sub-health-section';
                     exportHeading.textContent = t('commonExport', 'Export');
@@ -23719,11 +21545,6 @@ if (typeof globalThis !== "undefined") {
                 });
             },
 
-            // `#confirm-button` is YouTube's GENERIC confirm id — clearing watch
-            // history, deleting a playlist and discarding a comment all use it.
-            // A staged session paces 25 removals over ~40s while the user can
-            // still interact, so the dialog is only ever confirmed when the
-            // dialog itself is about unsubscribing.
             _dialogConfirmsUnsubscribe(dialog) {
                 if (!dialog) return false;
                 const localizedLabel = String(t('subscriptionMenuUnsubscribe', 'Unsubscribe') || '').toLowerCase();
@@ -23736,27 +21557,11 @@ if (typeof globalThis !== "undefined") {
                 for (let attempt = 0; attempt < 3; attempt++) {
                     const dialog = document.querySelector('ytd-confirm-dialog-renderer');
                     if (this._dialogConfirmsUnsubscribe(dialog)) {
-                        // Only YouTube's own confirm id, and never a bare
-                        // [role="button"]. querySelector returns the FIRST
-                        // document-order match, and in dialog variants without
-                        // #confirm-button that is typically Cancel — so the
-                        // helper clicked Cancel, returned true, and the caller
-                        // deleted the 30-day staging record for a channel that
-                        // was still subscribed. Matching on the visible label
-                        // is not an option either: it is translated.
                         const confirmRoot = dialog.querySelector('#confirm-button');
                         const button = confirmRoot
                             ? (confirmRoot.querySelector?.('button') || confirmRoot)
                             : null;
-                        // Belt and braces: if YouTube ever nests the confirm id
-                        // inside the dismiss control, refuse rather than guess.
                         if (button && button.closest?.('#cancel-button')) return false;
-                        // A verification or consent surface can be open over
-                        // the same popup container; answering one on the
-                        // user's behalf is an account action, never a
-                        // convenience. Refusing here costs one unconfirmed
-                        // removal, which the caller already handles by
-                        // checking the card's own subscribe control.
                         const safeToClick = globalThis.YTKitCore && globalThis.YTKitCore.isSafeToAutoClick;
                         if (button && (typeof safeToClick !== 'function' || safeToClick(button))) {
                             button.click?.();
@@ -23768,12 +21573,6 @@ if (typeof globalThis !== "undefined") {
                 return false;
             },
 
-            // The control was SELECTED because its label was unsubscribe-ish, so
-            // that same element losing that label is genuine positive evidence
-            // the unsubscribe landed. Tested by absence rather than by matching a
-            // localized "Subscribe" so it holds in every locale — note fr's
-            // "S'abonner" / "Se désabonner" share a stem, which is why the
-            // unsubscribe label is what gets excluded, never the subscribe one.
             _labelIndicatesUnsubscribed(label) {
                 const value = String(label || '').replace(/\s+/g, ' ').trim();
                 if (!value) return false;
@@ -23818,14 +21617,9 @@ if (typeof globalThis !== "undefined") {
                 });
                 if (control) {
                     control.click?.();
-                    // Clicking the menu item is not evidence: YouTube still shows
-                    // a confirm dialog afterwards. Reporting success here deleted
-                    // the 30-day recovery record for a subscription that survived.
                     const menuClicked = await this._clickUnsubscribeMenuItem();
                     const confirmed = menuClicked ? await this._confirmUnsubscribeDialog() : false;
                     if (confirmed) return true;
-                    // No dialog in this flow (or it was missed) — the only other
-                    // acceptable evidence is the control flipping to "Subscribe".
                     return await this._awaitUnsubscribedControl(control);
                 }
 
@@ -23840,8 +21634,6 @@ if (typeof globalThis !== "undefined") {
                 if (!menuClicked) return false;
                 const confirmed = await this._confirmUnsubscribeDialog();
                 if (confirmed) return true;
-                // Fall back to positive evidence on the card's own subscribe
-                // control rather than assuming the confirm landed.
                 const stateControl = card.querySelector?.([
                     'ytd-subscribe-button-renderer button',
                     'ytd-subscribe-button-renderer tp-yt-paper-button',
@@ -23938,15 +21730,10 @@ if (typeof globalThis !== "undefined") {
             },
 
             _parseCompactViewCount(text) {
-                // Canonical implementation lives in core/text-metrics.js.
                 const fn = globalThis.YTKitCore && globalThis.YTKitCore.parseCompactCount;
                 return fn ? fn(text, 0) : 0;
             },
 
-            // The stamp below describes ONE video. Cards are recycled by
-            // continuations, so the stamp has to name what it was made for or
-            // "restore YouTube's order" restores an order that no longer
-            // corresponds to anything.
             _cardVideoId(card) {
                 const href = card.querySelector('a#thumbnail[href], a[href*="/watch?v="]')?.getAttribute?.('href') || '';
                 const match = /[?&]v=([A-Za-z0-9_-]{11})/.exec(href);
@@ -23960,10 +21747,6 @@ if (typeof globalThis !== "undefined") {
                 const cards = Array.from(container.querySelectorAll(':scope > ytd-rich-item-renderer, :scope > ytd-video-renderer'));
                 if (!cards.length) return;
                 if (mode === 'default') {
-                    // Restore YouTube's native order. Cards carry an original
-                    // index stamped before the first re-append; without this,
-                    // switching back to 'default' kept the previous mode's DOM
-                    // order until the next navigation.
                     const stamped = cards.filter(card => card.dataset.ytkitOrigIdx !== undefined);
                     if (!stamped.length) return;
                     cards.sort((a, b) =>
@@ -23973,9 +21756,6 @@ if (typeof globalThis !== "undefined") {
                     container.appendChild(frag);
                     return;
                 }
-                // Stamp original DOM order once per card so 'default' can be
-                // restored later. Cards rendered after a sort get appended
-                // after the highest existing stamp (their native position).
                 let nextOrigIdx = cards.reduce((max, card) => {
                     const idx = Number(card.dataset.ytkitOrigIdx);
                     return Number.isFinite(idx) && idx >= max ? idx + 1 : max;
@@ -23983,9 +21763,6 @@ if (typeof globalThis !== "undefined") {
                 cards.forEach(card => {
                     const videoId = this._cardVideoId(card);
                     if (card.dataset.ytkitOrigIdx !== undefined && card.dataset.ytkitOrigId === videoId) return;
-                    // Either never stamped, or recycled into a different
-                    // video. A recycled card arrived with a continuation, so
-                    // the end of the native order is where it belongs.
                     card.dataset.ytkitOrigIdx = String(nextOrigIdx++);
                     card.dataset.ytkitOrigId = videoId;
                 });
@@ -23997,20 +21774,13 @@ if (typeof globalThis !== "undefined") {
                         return age == null ? Number.POSITIVE_INFINITY : age;
                     }
                     if (mode === 'duration-asc') {
-                        // Prefer the duration badge (classic renderer + newer
-                        // lockup badge-shape surfaces) so a title timestamp
-                        // ("10:30") can't be mistaken for runtime.
                         const badge = card.querySelector('ytd-thumbnail-overlay-time-status-renderer #text, ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model, .badge-shape__text, .yt-badge-shape__text');
                         const source = badge?.textContent || text;
-                        // Whole-card text fallback: take the LAST duration-shaped
-                        // match — titles precede the badge in text order.
                         const matches = badge?.textContent
                             ? [source.match(/(\d+):(\d+)(?::(\d+))?/)].filter(Boolean)
                             : Array.from(source.matchAll(/(\d+):(\d+)(?::(\d+))?/g));
                         const m = matches.length ? matches[matches.length - 1] : null;
                         if (!m) return Number.POSITIVE_INFINITY;
-                        // Score in SECONDS for both MM:SS and HH:MM:SS — the old
-                        // formula mixed units and sorted long videos wrong.
                         return m[3] !== undefined
                             ? (Number(m[1]) || 0) * 3600 + (Number(m[2]) || 0) * 60 + (Number(m[3]) || 0)
                             : (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0);
@@ -24019,7 +21789,6 @@ if (typeof globalThis !== "undefined") {
                         return card.querySelector('ytd-thumbnail-overlay-resume-playback-renderer') ? 1 : 0;
                     }
                     if (mode === 'date-desc') {
-                        // Keep YouTube's native order; this is the upstream sort.
                         return 0;
                     }
                     if (mode === 'new-since-last-visit') {
@@ -24027,9 +21796,6 @@ if (typeof globalThis !== "undefined") {
                         return this._isCardNewSinceLastVisit(card, channelId, lastVisit) ? 0 : 1;
                     }
                     if (mode === 'popular') {
-                        // v3.29 deferred: heuristic popularity = view count desc.
-                        // Reads the card's metadata-line text; falls back to 0
-                        // when YouTube hasn't hydrated the count yet.
                         const meta = card.querySelector('#metadata-line, ytd-video-meta-block, [aria-label*="view"]');
                         const views = this._parseCompactViewCount(`${meta?.textContent || ''} ${meta?.getAttribute?.('aria-label') || ''}`);
                         return -views;  // higher view count → lower score → earlier in DOM
@@ -24129,8 +21895,6 @@ if (typeof globalThis !== "undefined") {
                 const groups = this._readGroups();
                 const group = groups[groupId];
                 if (!group) return;
-                // Reuse Chrome's built-in Summarizer when available — same
-                // never-fall-through-to-remote contract as localAiSummary.
                 const factory = window.Summarizer || window.ai?.summarizer;
                 if (!factory?.create) {
                     if (typeof showToast === 'function') showToast(t(
@@ -24143,8 +21907,6 @@ if (typeof globalThis !== "undefined") {
                     'subscriptionAiTagsGeneratingTpl',
                     'Generating tags for "{group}"…'
                 ).replace('{group}', group.name || groupId), '#7c3aed', { duration: 6 });
-                // Gather titles from the rendered subscription feed cards for
-                // channels in this group. Title-only — never transcripts here.
                 const allowed = this._getGroupChannelIdSet(groupId, groups);
                 const titles = [];
                 document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
@@ -24197,10 +21959,6 @@ if (typeof globalThis !== "undefined") {
             },
 
             _showNewGroupDialog(anchorEl, parentId = '') {
-                // Audit-pass replacement for window.prompt — modal blocks the
-                // page, ships unstyled, and is deprecated in some contexts.
-                // This inline dialog reuses Astra surface CSS, focus-traps to
-                // the input, and dismisses on Esc / outside click.
                 const groups = this._readGroups();
                 const safeParentId = this._normalizeNewGroupParentId(parentId, groups);
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
@@ -24513,8 +22271,6 @@ if (typeof globalThis !== "undefined") {
                     'Import subscription groups (merges with your groups; Shift+click replaces them)'
                 );
                 importBtn.addEventListener('click', (event) => {
-                    // Import merges by default. Replacing every group is the
-                    // destructive path, so it takes a deliberate Shift+click.
                     const mode = event.shiftKey ? 'replace' : 'merge';
                     const inp = document.createElement('input');
                     inp.type = 'file';
@@ -24609,12 +22365,6 @@ if (typeof globalThis !== "undefined") {
             },
 
             init() {
-                // No init-level pathname guard: the settings-panel 'toggle'
-                // path calls initFeatureLifecycle from ANY page and marks
-                // _initialized unconditionally, so an early return here left
-                // the feature permanently inert (the page tracker skips init
-                // because _initialized is already true). The navigate rule and
-                // every deferred callback below re-check the path themselves.
                 this._lifecycleToken += 1;
                 this._unsubscribeRunning = false;
                 this._unsubscribeSessionToken = null;
@@ -24626,10 +22376,6 @@ if (typeof globalThis !== "undefined") {
                         return;
                     }
                     this._lifecycleToken += 1;
-                    // Track + clear these so a navigation away within the delay
-                    // can't fire them on the wrong page. The 8s _stampLastVisit
-                    // in particular would otherwise stamp lastVisit for whatever
-                    // cards are showing (e.g. Home), corrupting NEW-badge state.
                     if (this._renderTimer) clearTimeout(this._renderTimer);
                     if (this._stampTimer) clearTimeout(this._stampTimer);
                     this._renderTimer = setTimeout(() => {
@@ -24642,9 +22388,6 @@ if (typeof globalThis !== "undefined") {
                         this._renderDeadChannelMarkers();
                         this._applySort();
                     }, 1200);
-                    // Freeze the pre-stamp map for this pageview: markers and
-                    // digest re-renders keep using it after the 8s stamp so
-                    // badges survive the whole visit.
                     this._sessionLastVisit = this._readLastVisit();
                     this._stampTimer = setTimeout(() => {
                         this._stampTimer = null;
@@ -24656,8 +22399,6 @@ if (typeof globalThis !== "undefined") {
                 addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer', () => {
                     if (window.location.pathname !== '/feed/subscriptions') return;
                     this._applyGroupFilter();
-                    // Infinite-scroll cards were group-filtered but never
-                    // live/streamed-filtered until the next navigation.
                     this._applyContentTypeFilter();
                     this._applyNewSinceMarkers();
                     this._renderDeadChannelMarkers();
@@ -24694,17 +22435,12 @@ if (typeof globalThis !== "undefined") {
                     delete el.dataset.ytkitStagedUnsubscribe;
                 });
                 document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; delete el.dataset.ytkitOrigId; });
-                // Audit pass: kill any orphan new-group dialog so it can't outlive the feature.
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._activeGroupId = '';
             },
 
-            // ── Group membership editor (NF: Edit Channels) ──
-            // Kept below the lifecycle methods: the hardening suite pins
-            // toolbar/digest/lifecycle behavior inside a fixed-size slice
-            // of this feature block.
             _renderGroupsEmptyState(bar, groups) {
                 if (!bar || Object.keys(groups || {}).length > 0) return;
                 const notice = document.createElement('div');
@@ -24722,9 +22458,6 @@ if (typeof globalThis !== "undefined") {
 
             _renderGroupEmptyState(allowed) {
                 document.querySelectorAll('.ytkit-sub-group-empty').forEach(el => el.remove());
-                // Only an EMPTY group warrants the notice — it hides the whole
-                // feed with no visible reason. A populated group whose channels
-                // simply aren't rendered yet fills in as the feed loads.
                 if (!allowed || allowed.size > 0) return;
                 if (!this._toolbar?.isConnected) return;
                 const notice = document.createElement('div');
@@ -24758,11 +22491,6 @@ if (typeof globalThis !== "undefined") {
                 const group = groups[groupId];
                 if (!group || !this._toolbar?.isConnected) return;
                 const own = new Set(Array.isArray(group.channelIds) ? group.channelIds : []);
-                // List the channels currently rendered in the feed, using the
-                // same identity key the filter uses (_extractChannelIdFromCard
-                // via _collectRenderedCardSummaries), deduped per channel.
-                // Existing members that are not rendered right now still get a
-                // row so they can be removed.
                 const channels = new Map();
                 for (const item of this._collectRenderedCardSummaries()) {
                     if (!channels.has(item.channelId)) channels.set(item.channelId, item.channelName || item.channelId);
@@ -24806,9 +22534,6 @@ if (typeof globalThis !== "undefined") {
                     this._applyGroupFilter();
                 });
 
-                // Rename and delete. Until now the only way to get rid of a
-                // group was a Shift+click replace-import, which takes every
-                // other group with it.
                 const rename = document.createElement('button');
                 rename.type = 'button';
                 rename.className = 'ytkit-sub-members-action';
@@ -24881,8 +22606,6 @@ if (typeof globalThis !== "undefined") {
                     ? prompt(t('subscriptionGroupRenamePrompt', 'New name for this group'), current)
                     : null;
                 if (raw === null) return;
-                // Same shape the import path enforces, so a rename cannot
-                // produce a group an import would have rejected.
                 const name = String(raw).trim().slice(0, 64);
                 if (!name || name === current) return;
                 this._writeGroups({
@@ -24902,19 +22625,6 @@ if (typeof globalThis !== "undefined") {
                 if (!group) return;
                 const label = group.name || groupId;
                 const count = Array.isArray(group.channelIds) ? group.channelIds.length : 0;
-                // Deleting a group discards a membership list nothing else can
-                // rebuild, which is why this used to be the one place left
-                // asking `confirm()`. The project's answer to destructive
-                // actions everywhere else is immediate-apply plus undo, and a
-                // native confirm was inconsistent in both directions: it was
-                // the only modal left, and it was the only destructive action
-                // with no way back once you had answered it.
-                //
-                // Restoring the record is enough to restore the nesting too.
-                // A child's `parentId` is untouched by the delete —
-                // `_getGroupParentId` simply stops resolving it while the
-                // parent is missing — so putting the parent back re-adopts
-                // every child exactly as it was.
                 const removed = JSON.parse(JSON.stringify(group));
                 const next = { ...groups };
                 delete next[groupId];
@@ -24935,12 +22645,6 @@ if (typeof globalThis !== "undefined") {
                             action: {
                                 text: t('toastActionUndo', 'Undo'),
                                 onClick: () => {
-                                    // Merge into the CURRENT groups, not the
-                                    // snapshot: anything the user changed
-                                    // while the toast was up is theirs to
-                                    // keep. And if the id is live again, a
-                                    // restore would overwrite whatever now
-                                    // holds it.
                                     const current = this._readGroups();
                                     if (current[groupId]) {
                                         showToast(t('subscriptionGroupRestoreConflict',
@@ -24963,10 +22667,6 @@ if (typeof globalThis !== "undefined") {
                 const group = groups[groupId];
                 if (!group || !channelId) return;
                 const ids = new Set(Array.isArray(group.channelIds) ? group.channelIds : []);
-                // Refuse at the cap instead of appending and slicing. The old
-                // form added the channel, cut it straight back off, and still
-                // toasted "added" — a silent drop reported as a success. A
-                // removal is always allowed: it moves away from the limit.
                 if (included && !ids.has(channelId) && ids.size >= this._MAX_GROUP_CHANNELS) {
                     if (typeof showToast === 'function') {
                         showToast(
@@ -25111,7 +22811,6 @@ if (typeof globalThis !== "undefined") {
                     const safeId = this._xmlEscape(channelId);
                     const label = safeId;
                     const pad = '  '.repeat(depth);
-                    // i18n-static: OPML export mirrors the channel identifier as its title.
                     lines.push(`${pad}<outline type="rss" text="${label}" title="${label}" astra:channelId="${safeId}" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=${safeId}" htmlUrl="https://www.youtube.com/channel/${safeId}" />`);
                 };
                 const renderGroup = (id, depth) => {
@@ -25121,7 +22820,6 @@ if (typeof globalThis !== "undefined") {
                     const name = this._xmlEscape(group.name || id);
                     const color = this._xmlEscape(group.color || '#7c3aed');
                     const sortMode = this._xmlEscape(this._normalizeSubscriptionSortMode(group.sortMode));
-                    // i18n-static: OPML export mirrors the user-entered group name as its title.
                     lines.push(`${pad}<outline text="${name}" title="${name}" astra:type="group" astra:id="${this._xmlEscape(id)}" astra:color="${color}" astra:sortMode="${sortMode}">`);
                     const seen = new Set();
                     for (const channelId of Array.isArray(group.channelIds) ? group.channelIds : []) {
@@ -25184,11 +22882,6 @@ if (typeof globalThis !== "undefined") {
                     if (Object.keys(groups).length >= GROUP_LIMIT) return;
                     const attrs = node.attrs || {};
                     const channelId = this._extractOpmlChannelId(attrs);
-                    // A node with children is always a group (its subtree must
-                    // be visited). If it also has a channel ID (some RSS readers
-                    // emit folder outlines with an xmlUrl), add the channel to
-                    // the group after creating it — don't silently drop the
-                    // entire subtree.
                     const hasChildren = node.children?.length > 0;
                     const explicitGroup = attrs['astra:type'] === 'group' || hasChildren;
                     if (channelId && !explicitGroup) {
@@ -25219,9 +22912,6 @@ if (typeof globalThis !== "undefined") {
                 return result;
             },
 
-            // Merge imported groups into the existing set. Replacing was the
-            // old behavior: importing any file deleted every group missing from
-            // it, recoverable only through a six second toast.
             _mergeImportedGroups(previous, incoming) {
                 const GROUP_LIMIT = 500;
                 const CHANNEL_LIMIT = 1000;
@@ -25236,8 +22926,6 @@ if (typeof globalThis !== "undefined") {
                         merged[id] = { ...group, channelIds: [...(group.channelIds || [])] };
                         continue;
                     }
-                    // The imported record wins on presentation, but a channel
-                    // already in the group is never dropped by an import.
                     const channelIds = [...existing.channelIds];
                     const seen = new Set(channelIds);
                     for (const channelId of (group.channelIds || [])) {
@@ -25339,12 +23027,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/digital-wellbeing/index.js
-    //
-    // Monolith peel for Digital Wellbeing. The module owns the active
-    // playback timer, break-reminder overlay, daily-cap overlay, Shorts
-    // budget overlay, and local day rollover handling; ytkit.js keeps the
-    // legacy inline object as a compatibility fallback for the base timer.
 
     function createDigitalWellbeingFeature(deps = {}) {
         const {
@@ -25365,20 +23047,9 @@ if (typeof globalThis !== "undefined") {
             icon: 'clock',
             _timer: null,
             _overlay: null,
-            // Entry focus, the Tab trap and Escape were all here; only the
-            // restore was missing. Dismissing a break reminder mid-video left
-            // focus on <body>, so the reader lost their place on the watch page
-            // and the next Tab started again from the top of YouTube.
             _overlayReturnFocus: null,
             _overlayKeyHandler: null,
             _sessionStart: 0,
-            // v4.47.0 NF34: track the day key across tick calls so we can
-            // detect midnight / DST boundaries and reset _sessionStart.
-            // Without this, after midnight `today.seconds` flips to 0
-            // (because _loadToday returns a fresh bucket) but _sessionStart
-            // still holds yesterday's value, so `sessionElapsed` goes
-            // negative and the "take a break" reminder never fires for the
-            // rest of the day.
             _lastTodayKey: null,
             _capDismissKey: 'ytkit_dw_cap_dismissed_date',
 
@@ -25406,9 +23077,6 @@ if (typeof globalThis !== "undefined") {
                 StorageManager.set(this._capDismissKey, value);
             },
 
-            // Seconds this tab has counted but not yet merged into the shared
-            // total. Two tabs each writing an absolute total meant the last
-            // writer won and the daily cap undercounted every parallel session.
             _pendingSeconds: 0,
             _persistedToday() {
                 const raw = appState.settings.dwWatchTimeToday || { date: '', seconds: 0 };
@@ -25422,16 +23090,11 @@ if (typeof globalThis !== "undefined") {
             },
             _flushToday() {
                 if (!this._pendingSeconds) return;
-                // Re-read before writing: another tab's flush may have landed
-                // since this tab last looked, and its seconds must survive.
                 const merged = this._loadToday();
                 this._pendingSeconds = 0;
                 this._saveToday(merged);
             },
 
-            // Shorts watch time is tracked separately from the all-video
-            // ledger so a user can budget the high-churn Shorts route without
-            // changing the existing daily cap semantics.
             _pendingShortsSeconds: 0,
             _persistedShortsToday() {
                 const raw = appState.settings.shortsWatchTimeToday || {};
@@ -25479,9 +23142,6 @@ if (typeof globalThis !== "undefined") {
                 this._overlay = null;
                 const returnTo = this._overlayReturnFocus;
                 this._overlayReturnFocus = null;
-                // Only pull focus back if the overlay was holding it, and only
-                // to a node still in the document: a route change can clear the
-                // overlay long after the trigger has gone.
                 if (overlayHadFocus && returnTo?.isConnected) {
                     try { returnTo.focus({ preventScroll: true }); } catch (_) { /* reason: focus restore is best effort */ }
                 }
@@ -25607,9 +23267,6 @@ if (typeof globalThis !== "undefined") {
                 card.append(topRow, iconWrap, title, body, hint, button);
                 o.appendChild(card);
                 const previouslyFocused = document.activeElement;
-                // Duck-typed rather than `instanceof HTMLElement`: this module
-                // is exercised in a DOM harness that has no such global, and what
-                // matters here is only whether the node can take focus back.
                 this._overlayReturnFocus = typeof previouslyFocused?.focus === 'function' ? previouslyFocused : null;
                 document.body.appendChild(o);
                 this._overlay = o;
@@ -25666,13 +23323,6 @@ if (typeof globalThis !== "undefined") {
                 }
                 const video = document.querySelector('video');
                 if (!video || document.hidden) return;
-                // v4.47.0 NF34: midnight / DST boundary detection. When
-                // the local day key changes between two ticks we must
-                // reset _sessionStart so the next break-reminder window
-                // is anchored to the new day's accumulator. Without
-                // this, sessionElapsed = today.seconds - _sessionStart
-                // becomes negative across midnight, suppressing every
-                // break reminder for the rest of the day.
                 const currentTodayKey = this._todayKey();
                 if (this._lastTodayKey && this._lastTodayKey !== currentTodayKey) {
                     DebugManager.log('DigitalWellbeing',
@@ -25698,12 +23348,8 @@ if (typeof globalThis !== "undefined") {
                 if (shortsActive) this._pendingShortsSeconds += 1;
                 const today = this._loadToday();
                 const shortsToday = shortsActive ? this._loadShortsToday() : null;
-                // Batch storage writes to every 30 counted seconds.
                 if (this._pendingSeconds >= 30) this._flushToday();
                 if (this._pendingShortsSeconds >= 30) this._flushShortsToday();
-                // NF34: use `??` so today.seconds === 0 (first tick of a
-                // new day) correctly initializes _sessionStart instead of
-                // letting the OR fall through to the next tick.
                 if (!this._sessionStart) this._sessionStart = today.seconds ?? 0;
                 const sessionElapsed = today.seconds - this._sessionStart;
                 const breakEvery = (parseInt(appState.settings.dwBreakIntervalMin) || 0) * 60;
@@ -25890,8 +23536,6 @@ if (typeof globalThis !== "undefined") {
                     }
                 `, this.id, true);
                 this._timer = setInterval(() => this._tick(), 1000);
-                // A closed or backgrounded tab used to drop up to 29 counted
-                // seconds. pagehide is the last reliable moment to merge them.
                 this._flushHandler = () => {
                     this._flushToday();
                     this._flushShortsToday();
@@ -25905,7 +23549,6 @@ if (typeof globalThis !== "undefined") {
             destroy() {
                 if (this._timer) clearInterval(this._timer);
                 this._timer = null;
-                // Flush any counted but unsaved watch time
                 this._flushToday();
                 this._flushShortsToday();
                 if (this._flushHandler) {
@@ -25946,12 +23589,6 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
-    // extension/features/settings-panel/index.js
-    //
-    // Monolith peel for the in-page settings panel. The module owns the
-    // active panel open/close controller, renderer, search/filter state,
-    // delegated UI listeners, and toggle state refresh path; ytkit.js keeps
-    // the inline functions as a compatibility fallback.
 
     function resolveSettingsPresentationCategory(feature, shortsSettingKeys = globalThis.YTKitCore?.SHORTS_PANEL_SETTING_KEYS || []) {
         if (shortsSettingKeys.includes(feature?.id)) return 'Content';
@@ -26040,15 +23677,9 @@ if (typeof globalThis !== "undefined") {
                     .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
                     .replace(/-/g, '\\x2d');
 
-        // A thrown value becomes one of the closed, localized cause sentences
-        // in core/failure-copy.js. Raw exception text never reaches a panel
-        // surface, and the badge's accessible name keeps its visible label.
         function describeHealthBadgeCopy(badgeLabel, subject, error) {
             const compose = globalThis.YTKitCore?.describeFailureBadge;
             if (typeof compose === 'function') return compose(badgeLabel, subject, error, t);
-            // Degraded path only: core/failure-copy.js ships with every
-            // surface. It still has to compose both strings the same way, or
-            // the badge loses its subject and its visible label.
             const cause = t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
             const subjectText = String(subject || '').trim();
             const detail = subjectText ? `${subjectText.replace(/[.:]\s*$/, '')}: ${cause}` : cause;
@@ -26084,12 +23715,9 @@ function setSettingsPanelOpen(open) {
             if (!wasOpen && panel?.getAttribute('popover') === 'manual') {
                 try {
                     panel.showPopover();
-                    // The top layer stacks by show-order: a toast shown before the
-                    // panel would now sit UNDER it for the rest of its life.
                     globalThis.YTKitCore?.toast?.raiseActiveToasts?.();
                     _panelCloseWatcher = createCloseWatcher(() => setSettingsPanelOpen(false));
                 } catch (_) {
-                    // reason: a browser can expose Popover but reject this show call.
                     panel.removeAttribute('popover');
                 }
             }
@@ -26102,9 +23730,6 @@ function setSettingsPanelOpen(open) {
             };
             requestAnimationFrame(() => {
                 focusInitialControl();
-                // On the first open, the lazily-injected stylesheet and dialog
-                // layout can settle after this frame in slower engines. Retry
-                // once so focus never falls back to <body> during the entrance.
                 if (!panel?.contains(document.activeElement)) {
                     setTimeout(focusInitialControl, 50);
                 }
@@ -26119,7 +23744,6 @@ function setSettingsPanelOpen(open) {
                 try {
                     panel.hidePopover();
                 } catch (_) {
-                    // reason: the panel may already have been closed natively.
                 }
             }
             const restoreTarget = _settingsPanelLastFocus && document.contains(_settingsPanelLastFocus)
@@ -26208,7 +23832,6 @@ function updatePanelInsightState() {
         const profileValue = document.getElementById('ytkit-insight-profile-name');
         const savedValue = document.getElementById('ytkit-insight-saved-state');
 
-        // i18n-static: numeric enabled/total summary, not user-facing copy.
         if (enabledValue) enabledValue.textContent = t(
             'settingsCategoryFractionTpl',
             '{enabled}/{total}'
@@ -26220,30 +23843,14 @@ function updatePanelInsightState() {
     }
 
 function buildSettingsPanel() {
-        // The module runtime can open the panel directly (without going
-        // through ytkit.js's inline wrapper), so it must trigger the lazy
-        // stylesheet itself. Otherwise the dialog renders at document origin
-        // with no positioning shell in the normal module path.
         ensurePanelStyles?.();
         globalThis.YTKitCore?.ensureSettingsVisualSystem?.();
         if (!shouldBuildPrimaryUI()) return;
         if (document.getElementById('ytkit-settings-panel')) return;
 
-        // No per-open cleanup registry here on purpose. This panel's document
-        // listeners are attached once for the page lifetime and guarded by
-        // isSettingsPanelOpen(), which is why _panelUIListenersAttached must not
-        // be reset on close: resetting it stacks duplicates on every open. There
-        // is therefore nothing to drain when the panel closes, and the registry
-        // that used to sit here had zero registrations against three drain
-        // sites — a MutationObserver waking on every document.body class change
-        // to iterate an empty array, and a promise of centralized teardown that
-        // the next widget author would have trusted.
 
         const categoryOrder = ['Video Player', 'Playback', 'Comments', 'Watch Page', 'Content', 'Home / Subscriptions', 'Theme', 'Live Chat', 'Downloads', 'Advanced'];
 
-        // Group labels: maps first category of each group → label text.
-        // These make the dense category list scan like a deliberate control
-        // center while preserving the existing tab order and drag contract.
         const categoryGroupLabels = {
             'Video Player': t('panelNavGroupPlayer', 'Player'),
             'Comments': t('panelNavGroupInteraction', 'Interaction'),
@@ -26264,19 +23871,12 @@ function buildSettingsPanel() {
             categoryOrder,
             shortsPanelSettingKeys
         );
-        // v3.17.0: the sidebar "Workspace / Home controls" summary card was
-        // removed to reclaim vertical space for feature toggles. The four
-        // stats (enabled count, total features, populated sections,
-        // current-page label) that it displayed were only consumed by that
-        // card — computing them here is now dead weight.
 
-        // Create overlay
         const overlay = document.createElement('div');
         overlay.id = 'ytkit-overlay';
         overlay.setAttribute('aria-hidden', 'true');
         overlay.onclick = () => setSettingsPanelOpen(false);
 
-        // Create panel
         const panel = document.createElement('div');
         panel.id = 'ytkit-settings-panel';
         panel.setAttribute('role', 'dialog');
@@ -26287,7 +23887,6 @@ function buildSettingsPanel() {
         try {
             panelUsesPopover = supportsPopover() === true;
         } catch (_) {
-            // reason: host feature detection must not prevent the panel from building.
         }
         if (panelUsesPopover) {
             panel.setAttribute('popover', 'manual');
@@ -26301,7 +23900,6 @@ function buildSettingsPanel() {
         const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();
         panel.dir = _rtlLocales.has(_panelLocale) ? 'rtl' : 'ltr';
 
-        // Header
         const header = document.createElement('header');
         header.className = 'ytkit-header';
 
@@ -26384,11 +23982,9 @@ function buildSettingsPanel() {
         header.appendChild(brand);
         header.appendChild(headerActions);
 
-        // Body
         const body = document.createElement('div');
         body.className = 'ytkit-body';
 
-        // Sidebar
         const sidebar = document.createElement('nav');
         sidebar.className = 'ytkit-sidebar';
         sidebar.setAttribute('aria-label', t('panelSidebarAria', 'Settings categories'));
@@ -26396,12 +23992,7 @@ function buildSettingsPanel() {
         const sidebarTop = document.createElement('div');
         sidebarTop.className = 'ytkit-sidebar-top';
 
-        // v3.17.0: removed the "Workspace / Home controls" summary card
-        // from the sidebar — the kicker, title, copy, 3 stat counters,
-        // and "Live apply" footnote were wasting vertical space that's
-        // better spent on the feature toggle list.
 
-        // Search box
         const searchContainer = document.createElement('div');
         searchContainer.className = 'ytkit-search-container';
         const searchInput = document.createElement('input');
@@ -26430,10 +24021,6 @@ function buildSettingsPanel() {
         const searchMeta = document.createElement('span');
         searchMeta.className = 'ytkit-search-meta';
         searchMeta.id = 'ytkit-search-count';
-        // The count is the only feedback that filtering happened. Without a
-        // live region a screen-reader user types and hears nothing while the
-        // list visibly shrinks. The comment search already does this; the
-        // settings search was the outlier.
         searchMeta.setAttribute('aria-live', 'polite');
         searchMeta.setAttribute('aria-atomic', 'true');
         searchMeta.textContent = t('commonAll', 'All');
@@ -26474,7 +24061,6 @@ function buildSettingsPanel() {
         });
         sidebar.appendChild(navList);
 
-        // Helper: create a sidebar nav button
         function makeNavBtn(cat, config, iconNode, countText, countTitle, extraClass) {
             const catId = cat.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+$/, '');
             const btn = document.createElement('button');
@@ -26529,7 +24115,6 @@ function buildSettingsPanel() {
             return { btn, countSpan, catId };
         }
 
-        // Helper: add drag-reorder support to a nav button
         function addDragReorder(btn, catId) {
             btn.draggable = true;
             btn.addEventListener('dragstart', (e) => {
@@ -26565,12 +24150,6 @@ function buildSettingsPanel() {
             });
         }
 
-        // Video Hider owns three stores that live outside the settings bag —
-        // hidden videos, allowed videos, blocked channels. No feature card in
-        // the Content grid can remove an entry that was hidden earlier, so the
-        // dedicated pane below is the only surface that can. It has existed
-        // since v3.0.0 but was never mounted, which is why the Manage action on
-        // the hide/block toasts landed on a tab that did not exist.
         const VIDEO_HIDER_PANE_CATEGORY = 'Video Hider';
 
         function getVideoHiderListCounts() {
@@ -26582,9 +24161,6 @@ function buildSettingsPanel() {
             };
         }
 
-        // Every other nav count is derived from the feature cards inside its
-        // pane. This one has no cards, so it carries its own refresher and the
-        // generic count pass skips it.
         function applyVideoHiderNavCopy(btn, countSpan) {
             const feature = getFeatureById('hideVideosFromHome');
             const label = getFeatureName(feature) || VIDEO_HIDER_PANE_CATEGORY;
@@ -26594,9 +24170,6 @@ function buildSettingsPanel() {
             const metaSpan = btn.querySelector('.ytkit-nav-meta');
             if (metaSpan) metaSpan.textContent = summary;
             btn.title = summary;
-            // Joined rather than interpolated at the sink: the UI-copy gate
-            // reads any template literal assigned to an `ariaLabel` binding as
-            // new hardcoded copy, and both halves here are already localized.
             const navAria = [label, summary].filter(Boolean).join('. ');
             btn.setAttribute('aria-label', navAria);
             const stateSpan = btn.querySelector('.ytkit-nav-state');
@@ -26613,7 +24186,6 @@ function buildSettingsPanel() {
         }
 
         categoryOrder.forEach((cat, index) => {
-            // Insert group label before first category of each group
             if (categoryGroupLabels[cat]) {
                 const groupLabel = document.createElement('div');
                 groupLabel.className = 'ytkit-nav-group-label';
@@ -26646,10 +24218,6 @@ function buildSettingsPanel() {
             navList.appendChild(btn);
 
             if (cat === 'Content') {
-                // Passing the English category name keeps the tab id stable at
-                // "Video-Hider" in every locale — the hide/block toasts and
-                // _showManager() target that id directly. The visible label is
-                // localized by applyVideoHiderNavCopy.
                 const videoHiderNav = makeNavBtn(
                     VIDEO_HIDER_PANE_CATEGORY,
                     config,
@@ -26664,28 +24232,23 @@ function buildSettingsPanel() {
             }
         });
 
-        // Apply saved sidebar order
         const savedOrder = Array.isArray(appState.settings.sidebarOrder) && appState.settings.sidebarOrder.length > 0
             ? appState.settings.sidebarOrder
             : storageReadJSON(LEGACY_STORAGE_KEYS.sidebarOrder, null);
         if (savedOrder && Array.isArray(savedOrder)) {
             const navBtns = Array.from(navList.querySelectorAll('.ytkit-nav-btn'));
             const groupLabels = Array.from(navList.querySelectorAll('.ytkit-nav-group-label'));
-            // Remove group labels (order is now user-controlled)
             groupLabels.forEach(gl => gl.remove());
-            // Reorder buttons
             const btnMap = {};
             navBtns.forEach(b => { btnMap[b.dataset.tab] = b; });
             savedOrder.forEach(catId => {
                 if (btnMap[catId]) navList.appendChild(btnMap[catId]);
             });
-            // Append any new categories not in saved order
             navBtns.forEach(b => {
                 if (!savedOrder.includes(b.dataset.tab)) navList.appendChild(b);
             });
         }
 
-        // Content
         const content = document.createElement('div');
         content.className = 'ytkit-content';
 
@@ -26724,7 +24287,6 @@ function buildSettingsPanel() {
         searchState.appendChild(searchStateActions);
         content.appendChild(searchState);
 
-        //  Video Hider Custom Pane
         function buildVideoHiderPane(config) {
             const videoHiderFeature = getFeatureById('hideVideosFromHome');
             const countLabel = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
@@ -26733,7 +24295,6 @@ function buildSettingsPanel() {
             pane.id = 'ytkit-pane-Video-Hider';
             pane.className = 'ytkit-pane ytkit-vh-pane';
 
-            // Pane header
             const paneHeader = document.createElement('div');
             paneHeader.className = 'ytkit-pane-header';
             const paneLead = document.createElement('div');
@@ -26817,7 +24378,6 @@ function buildSettingsPanel() {
                 paneChannelsChip
             );
 
-            // Enable toggle
             const toggleLabel = document.createElement('label');
             toggleLabel.className = 'ytkit-toggle-all';
             const toggleText = document.createElement('span');
@@ -26826,8 +24386,6 @@ function buildSettingsPanel() {
             toggleSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosFromHome ? ' active' : '');
             const toggleInput = document.createElement('input');
             toggleInput.type = 'checkbox';
-            // Keep this pane control distinct from the generic feature card
-            // toggle, which uses the setting-derived id.
             toggleInput.id = 'ytkit-video-hider-enabled';
             toggleInput.name = 'hideVideosFromHome';
             toggleInput.setAttribute('aria-label', t('videoHiderEnableAria', 'Enable Video Hider'));
@@ -26855,8 +24413,6 @@ function buildSettingsPanel() {
                 };
                 try {
                     const saveResult = settingsManager.save(nextSettings);
-                    // Replace the settings object before the async storage
-                    // echo arrives so feature lifecycle and UI use one path.
                     reconcileVideoHiderSetting(nextSettings, 'video-hider-pane');
                     const result = await saveResult;
                     if (result?.ok === false) {
@@ -26886,7 +24442,6 @@ function buildSettingsPanel() {
             pane.appendChild(paneHeader);
             pane.appendChild(paneSummary);
 
-            // Tab navigation
             const tabNav = document.createElement('div');
             tabNav.className = 'ytkit-vh-tabs';
             tabNav.style.setProperty('--ytkit-vh-accent', config.color);
@@ -27302,10 +24857,6 @@ function buildSettingsPanel() {
                                     showToast(t('videoHiderMissingHiddenVideoToast', 'Video was not in the hidden list'), '#6b7280');
                                     return;
                                 }
-                                // Same undo contract as "Clear Hidden List Only" and
-                                // "Restore & Allow All" below. A single-entry delete is
-                                // no less destructive than the bulk ones, and it is the
-                                // easiest of the three to hit by accident.
                                 showToast(t('videoHiderRemovedHiddenVideoToast', 'Video removed from hidden list'), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                     videoHiderFeature._addHiddenVideos?.(removed);
                                     videoHiderFeature._processAllVideos?.();
@@ -27572,9 +25123,6 @@ function buildSettingsPanel() {
                             const icon = document.createElement('div');
                             icon.className = 'ytkit-vh-avatar';
                             icon.setAttribute('aria-hidden', 'true');
-                            // Use Array.from() so multi-code-unit characters
-                            // (emoji, CJK surrogates) aren't split into a
-                            // dangling half-pair when we grab the first glyph.
                             icon.textContent = (Array.from(ch.name || ch.id || '?')[0] || '?').toUpperCase();
                             const info = document.createElement('div');
                             info.className = 'ytkit-vh-item-main';
@@ -27705,7 +25253,6 @@ function buildSettingsPanel() {
                     const container = document.createElement('div');
                     container.className = 'ytkit-vh-settings';
 
-                    // Hidden card behavior
                     const behaviorSection = createVideoHiderSection(
                         'Hidden Card Behavior',
                         'Choose whether hidden matches stay collapsed or are removed from the current feed DOM.'
@@ -27739,7 +25286,6 @@ function buildSettingsPanel() {
                     behaviorSection.appendChild(removeCurrentPageBtn);
                     container.appendChild(behaviorSection);
 
-                    // Thumbnail controls
                     const controlsSection = createVideoHiderSection(
                         'Thumbnail Controls',
                         'Tune the quick-hide affordances that appear on video thumbnails.'
@@ -27776,7 +25322,6 @@ function buildSettingsPanel() {
                     }));
                     container.appendChild(controlsSection);
 
-                    // Surface scope
                     const scopeSection = createVideoHiderSection(
                         'Run On',
                         'Limit where Video Hider evaluates videos and shows quick actions.'
@@ -27817,7 +25362,6 @@ function buildSettingsPanel() {
                     });
                     container.appendChild(scopeSection);
 
-                    // Content type filters
                     const typeSection = createVideoHiderSection(
                         'Content Type Filters',
                         'Opt into precise feed triage for low-view videos, live/upcoming items, mixes, playlists, movies, auto-dubbed videos, and mostly watched cards.'
@@ -27953,7 +25497,6 @@ function buildSettingsPanel() {
                     typeSection.appendChild(watchedField);
                     container.appendChild(typeSection);
 
-                    // Duration filter
                     const durSection = createVideoHiderSection(
                         'Duration Filter',
                         'Automatically hide videos shorter than your chosen minimum length.'
@@ -28001,7 +25544,6 @@ function buildSettingsPanel() {
                     durSection.appendChild(durField);
                     container.appendChild(durSection);
 
-                    // Subscription Load Limiter
                     const limiterSection = createVideoHiderSection(
                         'Subscription Load Limiter',
                         'Stop endless loading on Subscriptions when too many consecutive batches are fully hidden.'
@@ -28104,7 +25646,6 @@ function buildSettingsPanel() {
                     syncLimiterState();
                     container.appendChild(limiterSection);
 
-                    // Stats
                     const statsSection = createVideoHiderSection(
                         t('settingsInsightsStatus', 'Status'),
                         t('videoHiderPaneDescription', 'Review hidden videos, manage channel lists, and tune automatic filters without leaving the page.')
@@ -28136,9 +25677,6 @@ function buildSettingsPanel() {
 
             updateVideoHiderMeta();
             renderTabContent(activeTabId);
-            // The panel is built once and reused, so the lists rendered here go
-            // stale the moment anything is hidden on the page. The nav handler
-            // re-renders the open tab whenever the pane is selected.
             pane._ytkitRefresh = () => renderTabContent(activeTabId);
             pane._ytkitSyncVideoHiderToggle = syncVideoHiderToggle;
             return pane;
@@ -28156,8 +25694,6 @@ function buildSettingsPanel() {
             const promotedSubFeatures = subFeatures.filter((feature) =>
                 resolveSettingsPresentationCategory(feature, shortsPanelSettingKeys) !== feature.group
             );
-            // Keep the established preference-first ordering, then use the
-            // first three select controls as a compact category snapshot.
             const sortedParentFeatures = [...parentFeatures].sort((a, b) => {
                 const aIsDropdown = a.type === 'select';
                 const bIsDropdown = b.type === 'select';
@@ -28172,7 +25708,6 @@ function buildSettingsPanel() {
             pane.dataset.category = catId;
             pane.style.setProperty('--cat-color', config.color);
 
-            // Pane header
             const paneHeader = document.createElement('div');
             paneHeader.className = 'ytkit-pane-header';
 
@@ -28301,16 +25836,11 @@ function buildSettingsPanel() {
             const paneActions = document.createElement('div');
             paneActions.className = 'ytkit-pane-actions';
 
-            // Reset group button
             const resetBtn = document.createElement('button');
             resetBtn.type = 'button';
             resetBtn.className = 'ytkit-reset-group-btn';
             resetBtn.title = t('settingsResetGroupTitle', 'Reset this group to defaults');
             resetBtn.textContent = t('commonReset', 'Reset');
-            // Reset/Undo must follow the key a feature actually stores
-            // under: ~23 features (uiStyle, colorTheme, customCssCode, …) use
-            // a settingKey that differs from their id, and keying on the id
-            // silently skipped every one of them.
             const settingKeyOf = (feature) => feature.settingKey || feature.id;
             const syncFeatureControl = (feature) => {
                 const value = appState.settings[settingKeyOf(feature)];
@@ -28384,7 +25914,6 @@ function buildSettingsPanel() {
             paneHeader.appendChild(paneActions);
             pane.appendChild(paneHeader);
 
-            // MediaDL status banner for Downloads pane
             if (cat === 'Downloads') {
                 const banner = document.createElement('div');
                 banner.id = 'ytkit-mediadl-banner';
@@ -28431,7 +25960,6 @@ function buildSettingsPanel() {
 
                 pane.appendChild(banner);
 
-                // Check MediaDL status and update banner
                 (async () => {
                     const result = await MediaDLManager.check();
                     if (!banner.isConnected) return;
@@ -28450,7 +25978,6 @@ function buildSettingsPanel() {
                         banner.dataset.state = 'ready';
                         text.textContent = t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                             .replace('{version}', result.version ? ` (v${result.version})` : '');
-                        // Add a "Check" refresh button
                         const refreshBtn = makeBannerButton(t('commonRefresh', 'Refresh'));
                         refreshBtn.onclick = async () => {
                             refreshBtn.textContent = t('commonChecking', 'Checking…');
@@ -28470,7 +25997,6 @@ function buildSettingsPanel() {
                         banner.dataset.state = 'missing';
                         text.textContent = t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');
 
-                        // "Try Start" button — attempts auto-start via mediadl:// protocol
                         const startBtn = makeBannerButton(t('dlInstallStartService', 'Start service'));
                         startBtn.title = t('settingsDlStartTitle', 'Try to start the Astra Downloader service');
                         startBtn.onclick = async () => {
@@ -28479,10 +26005,6 @@ function buildSettingsPanel() {
                             banner.dataset.state = 'checking';
                             text.textContent = t('settingsDlTryingStart', 'Trying to start the Astra Downloader service…');
                             MediaDLManager.resetAutoStart();
-                            // Omitting the argument uses the manager's own
-                            // documented cold-start budget (8). Passing 5 here
-                            // reinstated the ~7.5s timeout the budget bump
-                            // exists to avoid — a cold one-file exe needs ~12s.
                             const r = await MediaDLManager.tryAutoStart();
                             if (r.ok) {
                                 banner.dataset.state = 'ready';
@@ -28500,7 +26022,6 @@ function buildSettingsPanel() {
                         };
                         actions.appendChild(startBtn);
 
-                        // "Install" button — downloads the setup file and copies the fallback command
                         const installBtn = makeBannerButton(t('dlInstallDownloadSetup', 'Download setup'), 'accent');
                         installBtn.title = t('settingsDlDownloadTitle', 'Download the Astra Downloader setup file and reveal it in Downloads');
                         installBtn.onclick = async () => {
@@ -28525,7 +26046,6 @@ function buildSettingsPanel() {
                         };
                         actions.appendChild(installBtn);
 
-                        // "Copy command" button
                         const dlBtn = makeBannerButton(t('settingsDlCopyCommand', 'Copy command'));
                         dlBtn.title = t('settingsDlCopyCommandTitle', 'Copy the fallback PowerShell install command');
                         dlBtn.onclick = async () => {
@@ -28544,7 +26064,6 @@ function buildSettingsPanel() {
                 })();
             }
 
-            // Features grid
             const grid = document.createElement('div');
             grid.className = 'ytkit-features-grid';
             const sectionDefinitions = categorySections[cat] || [{
@@ -28645,7 +26164,6 @@ function buildSettingsPanel() {
             pane.appendChild(grid);
             content.appendChild(pane);
 
-            // Mounted next to its category so the sidebar order matches.
             if (cat === 'Content') content.appendChild(buildVideoHiderPane(config));
             if (cat === 'Content') {
                 const zapperPane = globalThis.YTKitFeatures?.elementZapperInstance?.buildElementZapperPane?.();
@@ -28669,9 +26187,6 @@ function buildSettingsPanel() {
         function makeInsightSection(title, insightKey = '') {
             const section = document.createElement('section');
             section.className = 'ytkit-insight-section';
-            // Stable curation hook: the visual system shows/hides sections and
-            // rows by these keys instead of nth-child position, so inserting a
-            // section or row cannot silently swap which stats are visible.
             if (insightKey) section.dataset.ytkitInsightSection = insightKey;
             const heading = document.createElement('h2');
             heading.className = 'ytkit-insight-heading';
@@ -28788,7 +26303,6 @@ function buildSettingsPanel() {
         body.appendChild(content);
         body.appendChild(insights);
 
-        // Footer
         const footer = document.createElement('footer');
         footer.className = 'ytkit-footer';
 
@@ -28803,7 +26317,6 @@ function buildSettingsPanel() {
         githubLink.title = t('settingsGitHubTitle', 'View on GitHub');
         githubLink.appendChild(ICONS.github());
 
-        // Local downloader installer button
         const ytToolsBtn = document.createElement('button');
         ytToolsBtn.type = 'button';
         ytToolsBtn.className = 'ytkit-github';
@@ -28933,13 +26446,11 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
         card.setAttribute('aria-label', featureName);
         if (accentColor) card.style.setProperty('--cat-color', accentColor);
 
-        // Apply enabled accent stripe for boolean features
         const _cardIsEnabled = f._arrayKey
             ? (appState.settings[f._arrayKey] || []).includes(f._arrayValue)
             : (f.type !== 'select' && f.type !== 'color' && f.type !== 'range' && appState.settings[f.id]);
         if (_cardIsEnabled && !isSubFeature) card.classList.add('ytkit-card-enabled');
 
-        // Info cards span the document without reintroducing a one-off boxed surface.
         if (f.type === 'info') {
             card.style.gridColumn = '1 / -1';
         }
@@ -28980,12 +26491,6 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             healthBadge.className = 'ytkit-feature-badge';
             healthBadge.dataset.tone = 'warning';
             const healthLabel = t('settingsHealthNeedsAttention', 'Needs attention');
-            // `featureHealth.lastError` is `String(error.message)` from the
-            // registry, so it used to put an untranslated exception in the
-            // tooltip and, because aria-label overrode the visible text, that
-            // exception was the ONLY thing a screen reader announced. The
-            // localized cause sentence goes in the tooltip, and the accessible
-            // name keeps the visible label in front of it.
             const healthCopy = describeHealthBadgeCopy(healthLabel, featureName, featureHealth.lastError);
             healthBadge.textContent = healthLabel;
             healthBadge.title = healthCopy.detail;
@@ -29009,11 +26514,6 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             description.textContent = descriptionText;
             info.appendChild(description);
         }
-        // Known-breakage notice. The feature's own toggle is untouched — the
-        // user's choice is still their choice — so without this the row would
-        // read as ON while nothing happened on the page. The copy is localized
-        // here and the link is built from the entry's issue NUMBER, so nothing
-        // the feed says reaches the user verbatim.
         const disableNotice = getFeatureDisableNotice(f.id);
         if (disableNotice) {
             card.classList.add('ytkit-feature-known-broken');
@@ -29038,8 +26538,6 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
         featureMain.appendChild(glyph);
         featureMain.appendChild(info);
 
-        // Feature preview tooltip — also mirrored into aria-description so
-        // assistive tech hears what sighted users see on hover/focus-within.
         const previewText = FEATURE_PREVIEWS[f.id];
         if (previewText) {
             card.dataset.preview = previewText;
@@ -29058,7 +26556,6 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
         }
 
         if (f.type === 'info') {
-            // info-type features have no interactive control
         } else if (f.type === 'textarea') {
             const fieldShell = document.createElement('div');
             fieldShell.className = 'ytkit-field-shell ytkit-textarea-shell';
@@ -29068,7 +26565,6 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             textarea.setAttribute('aria-label', featureName);
             textarea.placeholder = f.placeholder || 'word1, word2, phrase';
             textarea.value = appState.settings[f.settingKey || f.id] ?? '';
-            // Auto-save on blur for textarea features
             textarea.addEventListener('blur', () => {
                 const key = f.settingKey || f.id;
                 const nextValue = textarea.value;
@@ -29152,7 +26648,6 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             wrapper.appendChild(clearBtn);
             card.appendChild(wrapper);
         } else {
-            // For array-toggle sub-features, check array membership instead of boolean
             const isEnabled = f._arrayKey
                 ? (appState.settings[f._arrayKey] || []).includes(f._arrayValue)
                 : appState.settings[f.id];
@@ -29197,7 +26692,6 @@ function updateAllToggleStates() {
             const allChecked = featureToggles.length > 0 && Array.from(featureToggles).every(t => t.checked);
             cb.checked = allChecked;
 
-            // Update switch visual state
             const switchEl = cb.closest('.ytkit-switch');
             if (switchEl) {
                 switchEl.classList.toggle('active', allChecked);
@@ -29206,13 +26700,10 @@ function updateAllToggleStates() {
 
         document.getElementById('ytkit-pane-Video-Hider')?._ytkitSyncVideoHiderToggle?.();
 
-        // Update nav counts
         document.querySelectorAll('.ytkit-nav-btn').forEach(btn => {
             const catId = btn.dataset.tab;
             const pane = document.getElementById(`ytkit-pane-${catId}`);
             if (!pane) return;
-            // Panes without feature cards (Video Hider) count stored list
-            // entries instead; the generic enabled/total pass would zero them.
             if (typeof btn._ytkitRefreshCount === 'function') {
                 btn._ytkitRefreshCount();
                 return;
@@ -29272,12 +26763,10 @@ function attachUIEventListeners() {
         };
 
         if (!_globalUIListenersAttached) {
-            // Auto-close panel on SPA navigation — prevents overlay persisting on home/other pages
             doc.addEventListener('yt-navigate-start', () => {
                 setSettingsPanelOpen(false);
             });
 
-            // Keyboard shortcuts
             doc.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && isSettingsPanelOpen()) {
                     setSettingsPanelOpen(false);
@@ -29293,9 +26782,6 @@ function attachUIEventListeners() {
                     );
                     trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : []);
                 }
-                // v4.5.3: Ctrl+Alt+Y in-page toggle retired with the rest of
-                // the shortcut surface per the "no keyboard shortcuts" rule.
-                // Activators: toolbar action button, in-page gear icon, popup.
             });
 
             _globalUIListenersAttached = true;
@@ -29304,7 +26790,6 @@ function attachUIEventListeners() {
         if (_panelUIListenersAttached || !document.getElementById('ytkit-settings-panel')) return;
         _panelUIListenersAttached = true;
 
-        // Close panel + Tab navigation (single delegated handler)
         doc.addEventListener('click', (e) => {
             if (!isSettingsPanelOpen()) return;
             if (e.target.closest('.ytkit-close') || e.target.closest('#ytkit-close-footer') || e.target.matches('#ytkit-overlay')) {
@@ -29320,8 +26805,6 @@ function attachUIEventListeners() {
                 syncPanelCategorySelection(navBtn);
                 const pane = doc.querySelector(`#ytkit-pane-${navBtn.dataset.tab}`);
                 if (pane) {
-                    // Stored-list panes re-read storage on selection so they
-                    // never show a snapshot from when the panel was built.
                     if (typeof pane._ytkitRefresh === 'function') pane._ytkitRefresh();
                     pane.scrollTop = 0;
                 }
@@ -29329,7 +26812,6 @@ function attachUIEventListeners() {
                 const contentArea = doc.querySelector('.ytkit-content');
                 if (contentArea) contentArea.scrollTop = 0;
                 updatePanelInsightState();
-                // Clear search on tab click
                 const searchInput = doc.getElementById('ytkit-search');
                 if (searchInput && searchInput.value) {
                     searchInput.value = '';
@@ -29337,7 +26819,6 @@ function attachUIEventListeners() {
                 }
                 return;
             }
-            // Export/Import
             if (e.target.closest('#ytkit-export')) {
                 const configString = settingsManager.exportAllSettings();
                 handleFileExport('astra_deck_settings.json', configString);
@@ -29421,12 +26902,6 @@ function attachUIEventListeners() {
                                 [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
                             }, 'takeout-import', { forceApplyLocal: true });
                         }
-                        // One undo contract, not two. A first-ever import used to
-                        // get no undo at all, purely because there was no prior
-                        // watch-time record to snapshot — which is exactly the case
-                        // where the user is least sure the import was a good idea.
-                        // Restoring the empty shape is the correct inverse of
-                        // "there was nothing here before".
                         const undoTarget = preImportStats !== null ? preImportStats : { days: {}, total: 0 };
                         showToast(result.message, '#22c55e', {
                             duration: 8,
@@ -29453,7 +26928,6 @@ function attachUIEventListeners() {
             }
         });
 
-        // Search functionality (debounced)
         let _searchDebounce = null;
         function updateSearchState(rawLabel, query, matchCount, visibleSectionCount) {
             const searchMeta = doc.getElementById('ytkit-search-count');
@@ -29516,7 +26990,6 @@ function attachUIEventListeners() {
 
             _panelSearchUpdater = _handleSearch;
 
-            // Clear all previous highlights
             doc.querySelectorAll('.ytkit-feature-name, .ytkit-feature-desc').forEach(el => {
                 if (el._originalText !== undefined) el.textContent = el._originalText;
             });
@@ -29532,14 +27005,12 @@ function attachUIEventListeners() {
             allNavBtns.forEach(btn => btn.classList.remove('ytkit-search-empty-nav'));
 
             if (!query) {
-                // Reset to normal view
                 doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
                     sub.style.display = '';
                     const parentId = sub.dataset.parentId;
                     const enabled = appState.settings[parentId];
                     setSubFeatureAvailability(sub, !!enabled);
                 });
-                // Restore normal tab behavior
                 if (!doc.querySelector('.ytkit-pane.active')) {
                     allPanes[0]?.classList.add('active');
                     allNavBtns[0]?.classList.add('active');
@@ -29550,21 +27021,14 @@ function attachUIEventListeners() {
                 return;
             }
 
-            // Show all panes for searching
             allPanes.forEach(pane => {
                 pane.classList.add('ytkit-search-active');
                 pane.setAttribute('aria-hidden', 'false');
             });
-            // Search must not fake availability: clearing only the opacity and
-            // pointer-events left `inert`, `aria-disabled` and the per-control
-            // disabled flags in place, so a matching sub-feature of a disabled
-            // parent looked enabled and ignored every click. Re-assert the real
-            // parent state instead.
             doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
                 setSubFeatureAvailability(sub, !!appState.settings[sub.dataset.parentId]);
             });
 
-            // Helper to highlight text matches
             const highlightText = (el, q) => {
                 if (!el) return;
                 if (el._originalText === undefined) el._originalText = el.textContent;
@@ -29581,7 +27045,6 @@ function attachUIEventListeners() {
                 el.appendChild(document.createTextNode(text.substring(idx + match[0].length)));
             };
 
-            // Filter cards and highlight
             let matchCount = 0;
             allCards.forEach(card => {
                 const nameEl = card.querySelector('.ytkit-feature-name');
@@ -29617,14 +27080,11 @@ function attachUIEventListeners() {
                 section.style.display = visibleCards ? '' : 'none';
             });
 
-            // Update nav buttons with match counts
             let visibleSectionCount = 0;
             allNavBtns.forEach(btn => {
                 const catId = btn.dataset.tab;
                 const pane = doc.getElementById(`ytkit-pane-${catId}`);
                 if (pane) {
-                    // A pane with no feature cards can never match a feature
-                    // search — mark it empty and leave its own count alone.
                     if (typeof btn._ytkitRefreshCount === 'function') {
                         pane.classList.add('ytkit-search-empty-pane');
                         btn.classList.add('ytkit-search-empty-nav');
@@ -29648,7 +27108,6 @@ function attachUIEventListeners() {
         }
         _panelSearchUpdater = _handleSearch;
 
-        // Feature toggles
         doc.addEventListener('change', async (e) => {
             if (!isSettingsPanelOpen()) return;
             if (e.target.matches('.ytkit-feature-cb')) {
@@ -29674,8 +27133,6 @@ function attachUIEventListeners() {
                             deniedCard.classList.remove('ytkit-card-enabled');
                         }
                         const featureName = getFeatureName(feature) || featureId;
-                        // raw-error-copy: the COBALT_INSTANCE_INVALID message is Astra's own
-                        // localized copy carried on an Error, not text from a service.
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
                             : `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
@@ -29690,11 +27147,9 @@ function attachUIEventListeners() {
                     }
                 }
 
-                // Update switch visual
                 const switchEl = input.closest('.ytkit-switch');
                 if (switchEl) switchEl.classList.toggle('active', isEnabled);
 
-                // Update card enabled accent stripe
                 const cardEl = input.closest('.ytkit-feature-card');
                 if (cardEl && !cardEl.classList.contains('ytkit-sub-card')) {
                     cardEl.classList.toggle('ytkit-card-enabled', isEnabled);
@@ -29708,7 +27163,6 @@ function attachUIEventListeners() {
                 }
 
                 let finalEnabled = isEnabled;
-                // Array-toggle sub-features: modify parent array instead of boolean
                 if (feature?._arrayKey) {
                     let arr = appState.settings[feature._arrayKey] || [];
                     if (!Array.isArray(arr)) arr = [];
@@ -29719,7 +27173,6 @@ function attachUIEventListeners() {
                     }
                     appState.settings[feature._arrayKey] = arr;
                     settingsManager.save(appState.settings);
-                    // Re-init parent feature to apply changes
                     const parentFeature = getFeatureById(feature.parentId);
                     if (parentFeature) {
                         try { destroyFeatureLifecycle(parentFeature, 'array-toggle'); } catch(err) {
@@ -29765,7 +27218,6 @@ function attachUIEventListeners() {
                         settingsManager.save(appState.settings);
                     }
 
-                    // Conflict enforcement — auto-disable conflicting features
                     if (isEnabled && CONFLICT_MAP[featureId]) {
                         const conflicts = CONFLICT_MAP[featureId].conflicts || [];
                         const activeConflicts = conflicts.filter(cid => appState.settings[cid]);
@@ -29779,7 +27231,6 @@ function attachUIEventListeners() {
                                         DebugManager.log('Conflict', `Destroy failed for "${cid}": ${err.message}`);
                                     }
                                 }
-                                // Update toggle UI in settings panel
                                 const toggle = document.querySelector(`[data-feature-id="${cid}"] input[type="checkbox"]`);
                                 if (toggle) {
                                     toggle.checked = false;
@@ -29804,7 +27255,6 @@ function attachUIEventListeners() {
 
                     if (feature && !useSharedVideoHiderReconciliation) {
                         if (isEnabled) {
-                            // Reset crash counter on manual toggle-on
                             delete getFeatureCrashCounts()[featureId]; persistCrashCounts();
                             try { initFeatureLifecycle(feature, 'toggle'); } catch(err) {
                                 console.error(`[YTKit] Error initializing "${featureId}":`, err);
@@ -29818,7 +27268,6 @@ function attachUIEventListeners() {
                         }
                     }
 
-                    // If this is a sub-feature, reinit the parent to pick up the change
                     if (feature?.isSubFeature && feature.parentId) {
                         const parentFeature = getFeatureById(feature.parentId);
                         if (parentFeature && appState.settings[parentFeature.id] !== false) {
@@ -29832,7 +27281,6 @@ function attachUIEventListeners() {
                     }
                 }
 
-                // Toggle sub-features visibility (greyed out, not hidden)
                 const subContainer = doc.querySelector(`.ytkit-sub-features[data-parent-id="${featureId}"]`);
                 if (subContainer) {
                     setSubFeatureAvailability(subContainer, isEnabled);
@@ -29842,7 +27290,6 @@ function attachUIEventListeners() {
                 setPanelStatus(`${getFeatureName(feature) || featureId} ${finalEnabled ? 'enabled' : 'disabled'}.`, 'success');
             }
 
-            // Toggle all
             if (e.target.matches('.ytkit-toggle-all-cb')) {
                 const isEnabled = e.target.checked;
                 const catId = e.target.dataset.category;
@@ -29862,8 +27309,6 @@ function attachUIEventListeners() {
                         e.target.checked = false;
                         const deniedSwitch = e.target.closest('.ytkit-switch');
                         if (deniedSwitch) deniedSwitch.classList.remove('active');
-                        // raw-error-copy: the COBALT_INSTANCE_INVALID message is Astra's own
-                        // localized copy carried on an Error, not text from a service.
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
                             : 'Some settings need host access. Try again and approve the browser prompt.';
@@ -29874,7 +27319,6 @@ function attachUIEventListeners() {
                     }
                 }
 
-                // Update the switch visual state
                 const switchEl = e.target.closest('.ytkit-switch');
                 if (switchEl) {
                     switchEl.classList.toggle('active', isEnabled);
@@ -29890,11 +27334,6 @@ function attachUIEventListeners() {
             }
         });
 
-        // Textarea input — debounce reinit to avoid destroy/init churn per keystroke
-        // Per-feature reinit debounce. A single shared timer let a color
-        // input within 300ms of a range drag (or a second control) cancel the
-        // FIRST feature's pending destroy/init — its value was saved but
-        // never applied until an unrelated reinit or navigation.
         const _reinitTimers = new Map();
         doc.addEventListener('input', (e) => {
             if (!isSettingsPanelOpen()) return;
@@ -29908,11 +27347,6 @@ function attachUIEventListeners() {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Text setting'} saved.`, 'success');
                 if (feature) {
-                    // Per-feature, like the range and colour handlers below.
-                    // The shared `_textareaReinitTimer` meant editing feature
-                    // A's text setting and then feature B's within the debounce
-                    // cancelled A's pending destroy/init: A's value was saved
-                    // and the panel said so, but it was never applied.
                     if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
                     _reinitTimers.set(featureId, setTimeout(() => {
                         _reinitTimers.delete(featureId);
@@ -29925,21 +27359,18 @@ function attachUIEventListeners() {
                     }, 600));
                 }
             }
-            // Select dropdown
             if (e.target.matches('.ytkit-select')) {
                 const card = e.target.closest('[data-feature-id]');
                 if (!card) return;
                 const featureId = card.dataset.featureId;
                 const feature = getFeatureById(featureId);
 
-                // Use settingKey if specified, otherwise use featureId
                 const settingKey = feature?.settingKey || featureId;
                 const newValue = e.target.value;
 
                 appState.settings[settingKey] = newValue;
                 settingsManager.save(appState.settings);
 
-                // Reinitialize the feature to apply changes immediately
                 if (feature) {
                     if (typeof feature.destroy === 'function') {
                         try { destroyFeatureLifecycle(feature, 'select'); } catch (e) { /* reason: select reinit should continue even if destroy fails */ }
@@ -29960,7 +27391,6 @@ function attachUIEventListeners() {
                 createToast(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}`, 'success');
                 setPanelStatus(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}.`, 'success');
             }
-            // Range slider — debounce reinit to avoid destroy/init churn during drag
             if (e.target.matches('.ytkit-range')) {
                 const card = e.target.closest('[data-feature-id]');
                 if (!card) return;
@@ -29984,7 +27414,6 @@ function attachUIEventListeners() {
                     }, 300));
                 }
             }
-            // Color picker
             if (e.target.matches('[id^="ytkit-color-"]')) {
                 const card = e.target.closest('[data-feature-id]');
                 if (!card) return;
@@ -29995,9 +27424,6 @@ function attachUIEventListeners() {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Color setting'} updated.`, 'success');
                 if (feature) {
-                    // Native color dialogs fire `input` continuously while
-                    // dragging — debounce the full destroy/init cycle like the
-                    // range handler does.
                     if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
                     _reinitTimers.set(featureId, setTimeout(() => {
                         _reinitTimers.delete(featureId);
@@ -30044,12 +27470,6 @@ function attachUIEventListeners() {
 (() => {
     'use strict';
 
-    // extension/features/player-dock/index.js
-    //
-    // Next-2 monolith peel for Astra Player Dock. The module owns the
-    // primary floatingLogoOnWatch runtime/state object; ytkit.js keeps the
-    // inline object only as a compatibility fallback and injects monolith
-    // helpers through createFloatingLogoOnWatchFeature(deps).
 
     function createEmptySvg() {
         if (typeof document !== 'undefined' && document.createElementNS) {
@@ -30099,11 +27519,6 @@ function attachUIEventListeners() {
             _ccButton: null,
             _getNativeCcButton() {
                 if (typeof document === 'undefined') return null;
-                // Two queries, not a selector list: a list resolves in DOCUMENT
-                // order, so the unscoped fallback would win whenever the inline
-                // hover-preview player (which precedes ytd-page-manager) has an
-                // instantiated subtitles button — mirroring and toggling
-                // captions on a hidden player instead of the watch player.
                 return document.querySelector('#movie_player .ytp-subtitles-button')
                     || document.querySelector('.ytp-subtitles-button');
             },
@@ -30126,19 +27541,12 @@ function attachUIEventListeners() {
             _watchCcState() {
                 this._ccObserver?.disconnect();
                 this._ccObserver = null;
-                // Nothing to mirror without our own button: the navigate rule
-                // runs on every route, and the home feed's inline preview player
-                // also owns a .ytp-right-controls, so without this guard every
-                // non-watch navigation re-attached a subtree observer whose
-                // callback had no button to sync.
                 if (!this._ccButton) return;
                 const rightControls = typeof document !== 'undefined'
                     ? document.querySelector('.ytp-right-controls')
                     : null;
                 if (!rightControls || typeof MutationObserver !== 'function') return;
                 this._ccObserver = new MutationObserver((records) => {
-                    // Ignore attribute changes made to our mirror button so
-                    // syncing its state cannot create an observer loop.
                     if (records.length > 0 && records.every(record => this._ccButton?.contains(record.target))) return;
                     this._syncCcButton();
                 });
@@ -30185,7 +27593,6 @@ function attachUIEventListeners() {
                 const wrap = document.createElement('div');
                 wrap.id = 'ytkit-player-controls';
 
-                // Compact launcher with quick links dropdown
                 const logoWrap = document.createElement('div');
                 logoWrap.id = 'ytkit-po-logo-wrap';
 
@@ -30205,23 +27612,17 @@ function attachUIEventListeners() {
                 logoLink.appendChild(glyph);
                 logoWrap.appendChild(logoLink);
 
-                // Build quick links dropdown
                 const qlFeature = getFeatureById('quickLinkMenu');
                 if (qlFeature && qlFeature._buildMenu) {
                     qlFeature._buildMenu(logoWrap, 'ytkit-po-drop');
                 }
 
-                // Download buttons
                 if (appState.settings.showLocalDownloadButton) {
                     const dlBtn = document.createElement('button');
                     dlBtn.type = 'button';
                     dlBtn.className = 'ytp-button ytkit-player-btn ytkit-po-dl';
                     dlBtn.title = t('playerDownloadTitle', 'Download Video');
                     dlBtn.setAttribute('aria-label', t('playerDownloadAria', 'Download video'));
-                    // Declared at creation, like the speed button beside it.
-                    // Without these aria-expanded only appears once the popup
-                    // has been opened, so the trigger has no disclosure state
-                    // for the whole first visit.
                     dlBtn.setAttribute('aria-haspopup', 'dialog');
                     dlBtn.setAttribute('aria-expanded', 'false');
                     const dlIcon = ICONS.download();
@@ -30231,12 +27632,9 @@ function attachUIEventListeners() {
                     wrap.appendChild(dlBtn);
                 }
 
-                // Mirror YouTube's native subtitles control, which may be
-                // hidden by the consolidated player-control preferences.
                 const ccBtn = document.createElement('button');
                 ccBtn.type = 'button';
                 ccBtn.className = 'ytp-button ytkit-player-btn ytkit-po-cc';
-                // i18n-static: closed-caption technical abbreviation
                 ccBtn.textContent = 'CC';
                 ccBtn.setAttribute('aria-pressed', 'false');
                 ccBtn.title = t('playerCcTitle', 'Closed captions');
@@ -30252,10 +27650,6 @@ function attachUIEventListeners() {
                 this._ccButton = ccBtn;
                 wrap.appendChild(ccBtn);
 
-                // Speed control — sits between Download and Settings.
-                // Drives the existing persistentSpeed feature so the chosen
-                // value auto-applies to every subsequent video without the
-                // user having to open Settings.
                 const speedBtn = document.createElement('button');
                 speedBtn.type = 'button';
                 speedBtn.className = 'ytp-button ytkit-player-btn ytkit-po-speed';
@@ -30280,7 +27674,6 @@ function attachUIEventListeners() {
                 });
                 wrap.appendChild(speedBtn);
 
-                // Settings gear
                 const gearBtn = document.createElement('button');
                 gearBtn.type = 'button';
                 gearBtn.className = 'ytp-button ytkit-player-btn ytkit-po-gear';
@@ -30768,11 +28161,6 @@ function attachUIEventListeners() {
 (() => {
     'use strict';
 
-    // extension/features/youtube-music-compat/index.js
-    //
-    // Next-2 monolith peel for YouTube Music compatibility. The module owns
-    // the primary youtubeMusicCompat feature object; ytkit.js keeps the inline
-    // object only as a compatibility fallback.
 
     function createYoutubeMusicCompatFeature(deps = {}) {
         const {
@@ -30788,15 +28176,6 @@ function attachUIEventListeners() {
             icon: 'music',
             _styleElement: null,
             init() {
-                // v4.47.0 EI-NEW2: exact hostname match. The previous
-                // .includes('music.youtube.com') substring would match
-                // a hypothetical music.youtube.com.phishing.io and
-                // inject CSS there. Browser DNS resolution would not
-                // route to such a domain in practice, but the smell is
-                // real — project policy elsewhere prefers strict
-                // equality. The www.music.youtube.com variant doesn't
-                // exist (YouTube Music canonicalizes to the apex), so
-                // exact comparison is sufficient.
                 if (location.hostname !== 'music.youtube.com') return;
                 this._styleElement = injectStyle(`
                     ytmusic-app, ytmusic-app-layout {
@@ -30831,11 +28210,6 @@ function attachUIEventListeners() {
 (() => {
     'use strict';
 
-    // extension/features/return-dislike/index.js
-    //
-    // Monolith peel for Return YouTube Dislike. The module owns the primary
-    // returnDislike runtime/state object; ytkit.js keeps the inline object
-    // as a compatibility fallback and delegates to the factory when present.
 
     function createReturnDislikeFeature(deps = {}) {
         const {
@@ -30911,9 +28285,6 @@ function attachUIEventListeners() {
 
         function _writeCache(videoId, data) {
             if (!_cache) {
-                // Load the persisted cache first — starting from {} here let a
-                // post-destroy fetch resolution overwrite the stored 500-entry
-                // cache with a single entry.
                 try { _cache = storageReadJSON('ytkit-ryd-cache', {}) || {}; }
                 catch { _cache = {}; }
             }
@@ -30950,7 +28321,6 @@ function attachUIEventListeners() {
             };
         }
 
-        // Bounded re-arm budget for a late-hydrating actions row.
         const _RENDER_RETRIES = 3;
 
         function _isPlayerPage() {
@@ -30965,8 +28335,6 @@ function attachUIEventListeners() {
                     const matches = findSurfaceHookElements(surface, 'action.dislike');
                     if (Array.isArray(matches) && matches[0]) return matches[0];
                 } catch (_) {
-                    // reason: selector-health is diagnostic; the direct
-                    // compatibility chain below must remain usable.
                 }
             }
 
@@ -31029,12 +28397,6 @@ function attachUIEventListeners() {
                     DiagnosticLog?.record?.('returnDislike', `votes payload invalid for ${videoId}`);
                     return null;
                 }
-                // `rawDislikes` is the number of votes the extension actually
-                // observed; `dislikes` is that sample extrapolated to the whole
-                // audience. Keeping the sample is what lets the pill say how
-                // much evidence is behind the estimate instead of only that it
-                // is one. Absent on entries cached before this shipped, so
-                // every consumer treats undefined as "sample unknown".
                 const rawDislikes = Number(data.rawDislikes);
                 const record = {
                     likes: Number(data.likes) || 0,
@@ -31089,10 +28451,6 @@ function attachUIEventListeners() {
             const generation = _rydGeneration;
             const dislikeButton = _findDislikeButton();
             if (!dislikeButton) {
-                // The actions row can hydrate after the single post-navigation
-                // timer fires — on a cold load it usually does. Without a
-                // bounded retry the pill simply never appeared until the next
-                // navigation.
                 if (attempt < _RENDER_RETRIES) {
                     clearTimeout(_renderTimer);
                     _renderTimer = setTimeout(() => {
@@ -31103,10 +28461,6 @@ function attachUIEventListeners() {
                 return;
             }
             const data = await _fetchOnce(videoId);
-            // The user can navigate during the fetch await. Bail if the active
-            // video changed (or we left the watch page) so we don't append the
-            // previous video's dislike count onto the current video's button —
-            // matches the route-token guards in dearrow/sponsorblock.
             if (generation !== _rydGeneration) return;
             if (!_isPlayerPage() || getVideoId?.() !== videoId) return;
             _pillEl?.remove();
@@ -31148,7 +28502,6 @@ function attachUIEventListeners() {
                 : t('ui_rydSampleTpl', 'Estimated from {sample} recorded votes.')
                     .replace('{sample}', _formatCount(data.rawDislikes));
             const estimateCopy = sampleCopy
-                // i18n-static: both fragments are already localized.
                 ? `${_estimateDisclosureText()} ${sampleCopy}`
                 : _estimateDisclosureText();
             if (data.fromCache) {
@@ -31158,7 +28511,6 @@ function attachUIEventListeners() {
                     ? t('ui_rydCachedTitleHoursTpl', 'Cached dislike count from Return YouTube Dislike ({hours}h old).')
                         .replace('{hours}', String(ageH))
                     : t('ui_rydCachedTitleRecent', 'Cached dislike count from Return YouTube Dislike (<1h old).');
-                // i18n-static: both title fragments are already localized.
                 pill.title = `${cacheTitle} ${estimateCopy}`;
             } else {
                 pill.title = t('ui_rydLiveTitleTpl', 'Live dislike count from Return YouTube Dislike ({used}/{limit}/min used). {estimate}')
@@ -31215,9 +28567,6 @@ function attachUIEventListeners() {
                 };
                 window.addEventListener('pagehide', this._pagehideFlush);
                 _navRule = () => {
-                    // Track the pending timer so destroy() can cancel it —
-                    // otherwise a navigation right before disable fires a
-                    // zombie _render() ~1.5s later that re-injects a pill.
                     clearTimeout(_renderTimer);
                     _renderTimer = setTimeout(() => { _renderTimer = null; _render(0); }, 1500);
                 };
@@ -31255,7 +28604,6 @@ function attachUIEventListeners() {
                 _budgetWindow.count = 0;
             },
 
-            // Exposed for cross-feature queries (e.g. card badges).
             _fetch,
             _formatCount,
             _readCache,
@@ -31272,23 +28620,12 @@ function attachUIEventListeners() {
         return Math.max(0, Math.min(100, Math.round((likes / total) * 100)));
     }
 
-    // How many observed votes an estimate rests on. This is a sample size, not
-    // a statistical confidence interval, and the copy says so: a 6,267,301
-    // dislike estimate extrapolated from 10,831 observed votes is a ~578x
-    // multiplier that the pill gave the reader no way to see. Bands are coarse
-    // and named rather than numeric in the UI, because the honest claim is
-    // "small sample", not a percentage. Entries cached before this shipped
-    // carry no sample at all, which is 'unknown' rather than a bad grade.
     const SAMPLE_BANDS = Object.freeze([
         Object.freeze({ minSample: 500, confidence: 'high' }),
         Object.freeze({ minSample: 50, confidence: 'medium' })
     ]);
 
     function sampleConfidence(rawDislikes) {
-        // Deliberately `typeof`, not `Number()`: `Number(null)` is 0, which
-        // would grade a record that carries no sample at all as though the
-        // API had observed zero votes. The stored field is always a number
-        // when it is present, so anything else means "no sample".
         if (typeof rawDislikes !== 'number'
             || !Number.isFinite(rawDislikes)
             || rawDislikes < 0) return 'unknown';
@@ -31619,10 +28956,6 @@ function attachUIEventListeners() {
                     if (!_visibleCards.has(card)) _forgetCard(card);
                 }
             }
-            // _results / _negativeUntil accumulate one entry per videoId ever
-            // resolved; without eviction an hours-long feed session retains
-            // thousands of dead records. Keep results only for videos still
-            // tracked by a card, and sweep expired negative-cache entries.
             if (_results.size > _MAX_TRACKED_CARDS) {
                 for (const videoId of Array.from(_results.keys())) {
                     if (!_cardsByVideo.has(videoId)) _results.delete(videoId);
@@ -31769,11 +29102,6 @@ function attachUIEventListeners() {
 (() => {
     'use strict';
 
-    // extension/features/sponsorblock/index.js
-    //
-    // Monolith peel for SponsorBlock. The module owns the primary
-    // sponsorBlock runtime/state object; ytkit.js keeps the inline object
-    // as a compatibility fallback and delegates to the factory when present.
 
     const SPONSORBLOCK_API_FALLBACK_ORIGINS = Object.freeze([
         'https://sponsor.ajay.app',
@@ -31839,8 +29167,6 @@ function attachUIEventListeners() {
             _attributionEl: null,
             _barObserver: null,
             _reloadTimer: null,
-            // Bumped on destroy() so any in-flight _fetchSegments cannot
-            // repopulate _segments/DOM after the feature was torn down.
             _generation: 0,
 
             _CATEGORY_MAP: {
@@ -31873,11 +29199,6 @@ function attachUIEventListeners() {
             _cachePersistTimer: null,
 
             _getChannelId() {
-                // One canonical key, shared with the chip that WRITES these
-                // profiles. Returning the raw handle href here meant a
-                // suffixed owner link (/featured, ?si=…) produced a key the
-                // stored profile could never match, so per-channel overrides
-                // were silently ignored while the chip showed them active.
                 const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
                 const byId = globalThis.YTKitCore?.channelSettingsKey?.(link?.getAttribute('href'));
                 if (byId) return byId;
@@ -31886,12 +29207,10 @@ function attachUIEventListeners() {
             },
 
             _getEnabledCategories() {
-                // Global defaults
                 const globalCats = [];
                 for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
                     if (appState.settings[key]) globalCats.push(apiName);
                 }
-                // Per-channel override check
                 if (!appState.settings.sbPerChannelProfiles) return globalCats;
                 const channelId = this._getChannelId();
                 if (!channelId) return globalCats;
@@ -31899,15 +29218,12 @@ function attachUIEventListeners() {
                 if (!profiles || typeof profiles !== 'object') return globalCats;
                 const profile = profiles[channelId];
                 if (!profile || typeof profile.categories !== 'object') return globalCats;
-                // Apply per-channel overrides: if a category is explicitly set,
-                // use that value; otherwise fall through to global default.
                 const cats = [];
                 for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
                     const channelOverride = profile.categories[apiName];
                     if (typeof channelOverride === 'boolean') {
                         if (channelOverride) cats.push(apiName);
                     } else {
-                        // No per-channel override for this category; use global
                         if (appState.settings[key]) cats.push(apiName);
                     }
                 }
@@ -31925,10 +29241,6 @@ function attachUIEventListeners() {
                 return this._cache;
             },
 
-            // poi_highlight is a POINT marker: the API returns it as [t, t], so
-            // a strict end > start filter silently dropped every highlight
-            // before it reached the cache or the progress bar — the feature's
-            // own "render it on the bar" contract could never be met.
             _isPointSegment(s) {
                 return s?.actionType === 'poi' || s?.category === 'poi_highlight';
             },
@@ -32052,9 +29364,6 @@ function attachUIEventListeners() {
                 }
                 const apiOrigins = resolveSponsorBlockApiOrigins(appState.settings);
                 try {
-                    // Privacy-preserving hash-prefix lookup: only send the first
-                    // 4 chars of the SHA-256 hash so the server never sees the
-                    // full video ID.  Client-side filter for the exact match.
                     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(videoId));
                     const hashArray = Array.from(new Uint8Array(hashBuffer));
                     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -32069,13 +29378,10 @@ function attachUIEventListeners() {
                                 timeout: 8000,
                             });
                             if (!Array.isArray(data)) throw new Error('invalid SponsorBlock skipSegments payload');
-                            // Filter for exact video ID match from hash-prefix results
                             const match = data.find(entry => entry.videoID === videoId);
                             const segments = match && Array.isArray(match.segments)
                                 ? this._normalizeSegments(match.segments)
                                 : [];
-                            // Don't resurrect the destroy()-nulled cache or arm a persist
-                            // timer if the feature was torn down while this was in flight.
                             if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
                             ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
                                 source: 'network',
@@ -32087,13 +29393,6 @@ function attachUIEventListeners() {
                             });
                             return segments;
                         } catch (error) {
-                            // A 404 from the hash-prefix endpoint is the API
-                            // saying "nothing submitted for this prefix" — the
-                            // normal answer for most videos, not a failure.
-                            // Treating it as one failed over to the mirror,
-                            // burned a second request, and surfaced the mirror
-                            // reply as a degraded-state pill on every ordinary
-                            // video. Answer it as an empty result and stop.
                             if (Number(error?.response?.status ?? error?.status ?? 0) === 404) {
                                 if (gen === this._generation) this._rememberSegments(videoId, cats, []);
                                 ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
@@ -32144,19 +29443,12 @@ function attachUIEventListeners() {
                 this._clearBarSegments();
                 const gen = this._generation;
                 const fetched = await this._fetchSegments(videoId);
-                // Guard: bail if destroy() fired while awaiting (generation
-                // bumped) OR the user navigated to a different video — otherwise
-                // we paint this video's segment bars onto the new one and
-                // _scheduleNextSkip auto-skips it using the wrong timestamps.
                 if (gen !== this._generation || getVideoId() !== videoId) return;
                 this._segments = fetched;
                 if (this._segments.length) {
                     DebugManager.log('SponsorBlock', `Loaded ${this._segments.length} segments for ${videoId}`);
                     this._renderBarSegments();
                 } else {
-                    // No segments for this video: nothing will ever paint, so
-                    // stop the churn-heavy player observer until the next
-                    // navigation re-arms it.
                     this._disarmBarObserver();
                 }
             },
@@ -32169,21 +29461,11 @@ function attachUIEventListeners() {
                 const enabledCats = this._getEnabledCategories();
                 for (const seg of this._segments) {
                     if (!enabledCats.includes(seg.category)) continue;
-                    // v3.20.1: poi_highlight is a jump-to marker per the
-                    // SponsorBlock API spec, not a skip segment. Render it
-                    // on the progress bar (handled by _renderBarSegments),
-                    // but never auto-advance past it.
                     if (seg.category === 'poi_highlight') continue;
                     const [start, end] = seg.segment;
                     if (currentTime >= start && currentTime < end - 0.3) {
                         video.currentTime = end;
                         DebugManager.log('SponsorBlock', `Skipped ${seg.category}: ${start.toFixed(1)}s -> ${end.toFixed(1)}s`);
-                        // Skip notification removed — toasts over the video are distracting.
-                        // v3.23.0 (NX5): announce via aria-live so screen-reader
-                        // users know a skip happened without a visible toast.
-                        // The polite live region queues the message; categories
-                        // are human-friendly via the SB label map but fall back
-                        // to the raw category id.
                         try {
                             const labels = {
                                 sponsor: 'sponsor',
@@ -32198,18 +29480,13 @@ function attachUIEventListeners() {
                             const label = labels[seg.category] || seg.category.replace(/_/g, ' ');
                             announceA11y(`Skipped ${label} segment.`);
                         } catch (_) {
-                            // reason: announcement is best-effort
                         }
-                        // Reschedule after skip to handle next segment
                         this._scheduleNextSkip();
                         return;
                     }
                 }
             },
 
-            // Scheduled skip: instead of 500ms polling, compute the delay to the
-            // next segment boundary and schedule a precise setTimeout.  Falls back
-            // to a 2s ceiling so we never wait forever if currentTime drifts.
             _scheduleNextSkip() {
                 this._clearSchedule();
                 const video = getMainVideoElement();
@@ -32220,13 +29497,9 @@ function attachUIEventListeners() {
                 let minDelay = Infinity;
                 for (const seg of this._segments) {
                     if (!enabledCats.includes(seg.category)) continue;
-                    // v3.20.1: poi_highlight is a marker, never an auto-skip
-                    // target. Excluding here mirrors _checkSkip so we don't
-                    // schedule timers that get immediately rejected.
                     if (seg.category === 'poi_highlight') continue;
                     const [start, end] = seg.segment;
                     if (currentTime >= start && currentTime < end - 0.3) {
-                        // Already inside a segment — skip immediately
                         minDelay = 0;
                         break;
                     }
@@ -32236,14 +29509,10 @@ function attachUIEventListeners() {
                     }
                 }
                 if (minDelay === Infinity) return; // No upcoming segments
-                // Fire 100ms early for precision, cap at 2s to stay responsive.
-                // Add 50-200ms random jitter so skip timing is not frame-exact
-                // — reduces detection fingerprint (SponsorBlock #2290).
                 const jitter = 50 + Math.floor(Math.random() * 150);
                 const delay = Math.max(0, Math.min(minDelay - 100 + jitter, 2000 + jitter));
                 this._skipTimer = setTimeout(() => {
                     this._checkSkip();
-                    // If checkSkip didn't skip (edge of segment), reschedule
                     if (!video.paused) this._scheduleNextSkip();
                 }, delay);
             },
@@ -32295,9 +29564,6 @@ function attachUIEventListeners() {
                     if (!enabledCats.includes(seg.category)) continue;
                     const [start, end] = seg.segment;
                     const left = (start / duration) * 100;
-                    // A point marker has zero duration, so a proportional width
-                    // renders nothing. Give it a fixed minimum so the highlight
-                    // is actually visible on the bar.
                     const isPoint = this._isPointSegment(seg) || end <= start;
                     const width = isPoint ? 0 : ((end - start) / duration) * 100;
                     const bar = document.createElement('div');
@@ -32334,9 +29600,6 @@ function attachUIEventListeners() {
                     + 'ytd-popup-container [class*="adblock"]'
                 );
                 if (warning && DiagnosticLog) {
-                    // record() coerces the message with String(msg); passing an
-                    // object would log the literal "[object Object]" and lose the
-                    // selector detail this diagnostic exists to capture.
                     const selector = warning.tagName.toLowerCase()
                         + (warning.className ? '.' + warning.className.split(/\s+/)[0] : '');
                     DiagnosticLog.record('sb-anti-adblock', `detected: ${selector}`);
@@ -32390,7 +29653,6 @@ function attachUIEventListeners() {
                 `, this.id, true);
                 this._antiAdblockTimer = setInterval(() => self._checkAntiAdblock(), 30000);
                 this._checkAntiAdblock();
-                // Event-driven skip scheduling: reschedule on play/seek/rate changes
                 this._playHandler = () => self._scheduleNextSkip();
                 this._seekHandler = () => self._scheduleNextSkip();
                 this._pauseHandler = () => self._clearSchedule();
@@ -32411,16 +29673,10 @@ function attachUIEventListeners() {
                     }, 800);
                 };
                 addNavigateRule(this._navRuleId, reloadSegments);
-                // Re-render bar segments when video duration changes (live streams, late loadedmetadata)
                 this._durationHandler = () => {
                     if (this._segments.length) this._renderBarSegments();
                 };
                 document.addEventListener('durationchange', this._durationHandler, true);
-                // Also watch for video duration becoming available (for bar
-                // rendering). The observer disarms itself once the bars are
-                // painted so it stops reacting to #movie_player's constant
-                // playback churn (progress ticks, buffered ranges, caption
-                // windows); the navigate rule re-arms it for the next video.
                 this._barObserver = new MutationObserver(() => {
                     const video = getMainVideoElement();
                     const barsLive = this._barSegments.length > 0
@@ -32448,9 +29704,6 @@ function attachUIEventListeners() {
             },
 
             destroy() {
-                // Invalidate any in-flight _loadForVideo so late fetches
-                // cannot re-render segments onto the progress bar after the
-                // feature has been disabled.
                 this._generation = (this._generation + 1) | 0;
                 clearInterval(this._antiAdblockTimer);
                 this._antiAdblockTimer = null;
@@ -32487,11 +29740,6 @@ function attachUIEventListeners() {
 (() => {
     'use strict';
 
-    // extension/features/dearrow/index.js
-    //
-    // Monolith peel for DeArrow. The module owns the primary
-    // deArrow runtime/state object; ytkit.js keeps the inline object
-    // as a compatibility fallback and delegates to the factory when present.
 
     const SPONSORBLOCK_API_FALLBACK_ORIGINS = Object.freeze([
         'https://sponsor.ajay.app',
@@ -32560,7 +29808,6 @@ function attachUIEventListeners() {
             _persistTimer: null,
             init() {
                 const self = this;
-                // Load persistent cache
                 const cached = storageReadJSON('da_branding_cache', null);
                 if (cached) {
                     const ttl = parseInt(appState.settings.daCacheTTL || '4', 10) * 3600000;
@@ -32573,10 +29820,6 @@ function attachUIEventListeners() {
                         }
                     }
                 }
-                // v4.47.0 EI-NEW4: warn power users when the cache is
-                // disabled (daCacheTTL=0). With no cache, every visible
-                // card hits the DeArrow API. The 100k+ subs.ajay.app
-                // call cap is real; expect rate limits.
                 const _ttlRaw = parseInt(appState.settings.daCacheTTL || '4', 10);
                 if (_ttlRaw === 0) {
                     DebugManager.log('DeArrow',
@@ -32653,17 +29896,10 @@ function attachUIEventListeners() {
                         if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
                         el.classList.remove('da-replaced-thumb');
                     });
-                    // Run one pass on every page, including watch pages: the
-                    // related rail (ytd-compact-video-renderer) is the most
-                    // clickbait-heavy surface DeArrow targets. The churning
-                    // MutationObserver stays gated off watch pages below to
-                    // avoid reprocessing on player/comment DOM noise, so this
-                    // navigate-triggered pass is what covers the watch sidebar.
                     self._resetTimer = setTimeout(() => {
                         self._resetTimer = null;
                         self._processPage();
                     }, 1000);
-                    // Keep the churning observer attached only off watch pages.
                     if (isWatchPagePath()) self._disconnectObserver();
                     else self._connectObserver();
                 };
@@ -32672,12 +29908,6 @@ function attachUIEventListeners() {
                     clearTimeout(self._processTimer);
                     self._processTimer = setTimeout(() => self._processPage(), 300);
                 });
-                // Previously the observer stayed attached to document.body on
-                // every page including watch pages, where it woke on each
-                // player/comment mutation just to bail in the callback. Now the
-                // navigate rule connects it only off watch pages and disconnects
-                // it on entry; the watch-sidebar rail is still covered by
-                // resetAndProcess's one-shot pass.
                 addNavigateRule(this._navRuleId, resetAndProcess);
                 if (!isWatchPagePath()) this._connectObserver();
             },
@@ -32692,7 +29922,6 @@ function attachUIEventListeners() {
                 this._observing = false;
             },
             async _fetchBranding(videoId) {
-                // Check cache with TTL enforcement
                 if (this._cache[videoId]) {
                     const ttl = parseInt(appState.settings.daCacheTTL || '4', 10) * 3600000;
                     if (ttl > 0 && (Date.now() - (this._cache[videoId]._ts || 0)) < ttl) {
@@ -32704,7 +29933,6 @@ function attachUIEventListeners() {
                         });
                         return this._cache[videoId];
                     } else if (ttl === 0) {
-                        // TTL=0 means no cache — evict stale entry
                         delete this._cache[videoId];
                         delete this._cacheMeta[videoId];
                     } else if ((Date.now() - (this._cache[videoId]._ts || 0)) >= ttl) {
@@ -32712,7 +29940,6 @@ function attachUIEventListeners() {
                         delete this._cacheMeta[videoId];
                     }
                 }
-                // Deduplicate in-flight fetches for the same videoId
                 if (this._pending[videoId]) return this._pending[videoId];
                 const promise = this._doFetch(videoId);
                 this._pending[videoId] = promise;
@@ -32736,10 +29963,6 @@ function attachUIEventListeners() {
                         }));
                         answeredHost = host;
                     } catch (error) {
-                        // DeArrow uses HTTP 404 for a valid video with no submitted
-                        // title or thumbnail. It still returns an empty branding
-                        // object, so this is a normal negative lookup rather than
-                        // a rejected request or service outage.
                         if (Number(error?.response?.status) === 404) {
                             expectedMiss = true;
                             answeredHost = host;
@@ -32777,9 +30000,6 @@ function attachUIEventListeners() {
                     DiagnosticLog?.record?.('deArrow', `branding fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
                     return null;
                 }
-                // Feature was torn down while this request was in flight —
-                // do not resurrect the freshly-cleared cache or arm a persist
-                // timer that would write after destroy().
                 if (gen !== this._generation) return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
                 if (!data || typeof data !== 'object' || Array.isArray(data)) {
                     const payloadError = new Error('invalid DeArrow branding payload');
@@ -32793,13 +30013,10 @@ function attachUIEventListeners() {
                     return null;
                 }
                 data._ts = Date.now();
-                // A slow in-flight response must never clobber a fresher entry
-                // written while it was outstanding.
                 const existing = this._cache[videoId];
                 if (existing && existing._ts && existing._ts > data._ts) return existing;
                 this._cache[videoId] = data;
                 this._cacheMeta[videoId] = data._ts;
-                // Evict oldest entries if in-memory cache exceeds 2000
                 const cacheKeys = Object.keys(this._cache);
                 if (cacheKeys.length > 2000) {
                     cacheKeys.sort((a, b) => (this._cacheMeta[a] || 0) - (this._cacheMeta[b] || 0))
@@ -32827,7 +30044,6 @@ function attachUIEventListeners() {
                 if (!title) return title;
                 title = title.replace(/^>\s*/, '');
                 if (format === 'sentence') {
-                    // Lowercase everything, then capitalize only the first character
                     return title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
                 }
                 if (format === 'title_case') {
@@ -32927,10 +30143,6 @@ function attachUIEventListeners() {
                     const url = new URL(link.href, location.origin);
                     const videoId = url.searchParams.get('v');
                     if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
-                    // v3.28 deferred → v4.0+: honor per-channel override.
-                    // 'off'      → skip title + thumb replacement entirely for this card
-                    // 'original' → also skip (channel author wants original metadata)
-                    // 'dearrow'  → fall through to normal DeArrow path
                     const overrideMode = this._channelOverrideMode(el);
                     if (overrideMode === 'off' || overrideMode === 'original') {
                         el.dataset.daOverride = overrideMode;
@@ -32960,16 +30172,10 @@ function attachUIEventListeners() {
                     }
                     if (replaceThumbs) {
                         const thumb = branding.thumbnails?.[0];
-                        // The timestamp is remote data going straight into a URL:
-                        // a non-numeric value injected extra query parameters or
-                        // stringified to "[object Object]".
                         const stamp = Number(thumb?.timestamp);
                         if (Number.isFinite(stamp) && stamp >= 0) {
                             const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
                             if (img && !img.src) {
-                                // Lazy img not hydrated yet — let the next
-                                // pass replace it once the original src
-                                // exists so error/destroy restores work.
                                 delete el.dataset.daProcessed;
                             } else if (img && !img.classList.contains('da-replaced-thumb')) {
                                 img.dataset.daOrigSrc = img.src;
@@ -33050,25 +30256,6 @@ function attachUIEventListeners() {
 (() => {
     'use strict';
 
-    // extension/core/lifecycle-route-bridge.js
-    //
-    // v4.9.0 SPA-navigation bridge. Hooks YouTube's navigation event
-    // stream (driven by core/navigation.js's addNavigateRule) into the
-    // v4.7.0 feature-lifecycle singleton so every yt-navigate-finish /
-    // yt-page-data-updated / popstate / watch-flexy[video-id] change
-    // increments the lifecycle route token exactly once.
-    //
-    // Why bridging matters: any future feature that adopts the lifecycle
-    // contract can capture lc.getRouteToken() at the start of an async
-    // op (transcript fetch, DeArrow branding lookup, RYD ratio call) and
-    // compare on completion to drop stale results from the previous
-    // route. Without this bridge each feature would have to subscribe to
-    // navigation directly and remember to call notifyRouteChange().
-    //
-    // The bridge is idempotent and degrades gracefully — if either
-    // dependency is missing (because the module hasn't loaded yet, or
-    // because the bridge is required from Node tests in isolation) it
-    // becomes a no-op rather than throwing.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.__lifecycleRouteBridgeInstalled) return;
@@ -33085,8 +30272,6 @@ function attachUIEventListeners() {
             try {
                 getLifecycle().notifyRouteChange();
             } catch (e) {
-                // reason: route-token bump must never propagate — feature
-                // teardown observes the stale token instead.
                 logger.warn?.('[Astra Deck] lifecycle route-bridge: ' + (e?.message || e));
             }
         });
@@ -33095,18 +30280,6 @@ function attachUIEventListeners() {
         return true;
     }
 
-    // Deliberately NOT auto-installed here. This used to call
-    // installLifecycleRouteBridge() at evaluation time, relying on manifest
-    // order to guarantee navigation.js and feature-lifecycle.js had already
-    // registered. That made it the ONE module in the 75-module foundation graph
-    // whose behaviour depended on load order — and it failed silently, because
-    // a missing dependency makes the installer return false rather than throw,
-    // which would have left SPA route-token invalidation permanently off.
-    //
-    // runtime-bootstrap now installs it once the whole graph has loaded, and
-    // checks the return value. Removing this call is what lets the loader
-    // import the graph concurrently; tests/runtime-graph-order.test.js holds
-    // the order-independence property in place.
     core.installLifecycleRouteBridge = installLifecycleRouteBridge;
 
     if (typeof module !== 'undefined' && module.exports) {

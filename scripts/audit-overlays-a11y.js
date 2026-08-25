@@ -25,6 +25,7 @@ function readSources(overrides = {}) {
         liveChat: overrides.liveChat ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'live-chat', 'index.js'), 'utf8'),
         videoNotes: overrides.videoNotes ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'video-notes', 'index.js'), 'utf8'),
         digitalWellbeing: overrides.digitalWellbeing ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8'),
+        elementZapper: overrides.elementZapper ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'element-zapper', 'index.js'), 'utf8'),
         smoke: overrides.smoke ?? fs.readFileSync(path.join(ROOT, 'docs', 'screen-reader-smoke.md'), 'utf8'),
         // Every feature module, globbed. The named entries above are the ones
         // individual checks reach for by hand; this is the safety net that keeps
@@ -280,7 +281,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     const checks = [];
     const add = (name, ok, failure) => checks.push({ name, ok: Boolean(ok), failure });
 
-    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, digitalWellbeing, smoke } = sources;
+    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, digitalWellbeing, elementZapper, smoke } = sources;
     const featureModuleCount = Object.keys(sources.allFeatureModules || {}).length;
     add('Overlay audit still covers the feature modules',
         featureModuleCount >= MIN_FEATURE_MODULES,
@@ -629,6 +630,17 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         && digitalWellbeing.includes('trapFocusWithin')
         && digitalWellbeing.includes("'Escape'"),
         'The break overlay must move focus in, trap it, and close on Escape');
+
+    // Each rule row is a bare checkbox and a "Remove" button in a plain div
+    // beside the selector text. Nothing associated either control with the rule
+    // it belongs to, so a reader heard "checkbox, not checked" and "Remove"
+    // with no way to tell which of their rules was meant.
+    add('Element Zapper rule rows name the rule they belong to',
+        elementZapper.includes("toggle.setAttribute('aria-label',")
+        && elementZapper.includes("t('zapRuleToggleAriaTpl', 'Apply the rule for {selector}')")
+        && elementZapper.includes("remove.setAttribute('aria-label',")
+        && elementZapper.includes("t('zapRuleRemoveAriaTpl', 'Remove the rule for {selector}')"),
+        'The rule toggle and its remove button must each name their selector');
 
     add('Screen-reader smoke checklist references the overlay audit gate',
         smoke.includes('npm run audit:overlays') &&

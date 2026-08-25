@@ -8,6 +8,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Element Zapper's rule rows say which rule they belong to. The toggle and the
+  Remove button sat in a plain row beside the selector text with nothing tying
+  them to it, so a screen reader announced "checkbox, not checked" and "Remove"
+  with no way to tell which of your rules was meant.
+
+- The userscript core library has room to grow again. It was against Greasy
+  Fork's 2 MiB limit, close enough that adding one theme lane pushed it over and
+  the only way back under was deleting code comments. Whole-line comments are
+  stripped from the bundled copy now, which recovered about 193 KB. The source
+  keeps every comment, and any module that would not re-parse after stripping
+  keeps its own.
+
 - Free-form text settings are checked for shape and length when a backup is
   imported. Numbers were clamped and dropdowns coerced, but a string setting
   accepted whatever the file carried, which is how a catastrophic regex reached

@@ -8275,6 +8275,12 @@
   "zapRefuseVideoCard": {
     "message": "That is a single video. Use Video Hider to hide videos and channels."
   },
+  "zapRuleToggleAriaTpl": {
+    "message": "Applica la regola per {selector}"
+  },
+  "zapRuleRemoveAriaTpl": {
+    "message": "Rimuovi la regola per {selector}"
+  },
   "zapRuleAdded": {
     "message": "Element hidden. The rule is saved."
   },
