@@ -1356,9 +1356,13 @@ const STORAGE_KEYS = Object.freeze({
             if (!VIDEO_ID_PATTERN.test(videoId) || seen.has(videoId)) continue;
             seen.add(videoId);
             sanitized.push(videoId);
-            if (sanitized.length >= maxItems) break;
         }
-        return sanitized;
+        // Keep the NEWEST ids. These lists are appended to and trimmed from the
+        // front by their writers, so cutting the head here threw away whatever
+        // the user had just hidden. Callers that already pre-slice with
+        // `slice(-limit)` are unaffected; the ones that forgot are now correct
+        // too, which is the point of doing it here rather than at each caller.
+        return sanitized.slice(-maxItems);
     }
 
     function sanitizeImportedHiddenVideos(value) {
@@ -1508,9 +1512,12 @@ const STORAGE_KEYS = Object.freeze({
             if (!record || !key || seen.has(key)) continue;
             seen.add(key);
             sanitized.push(record);
-            if (sanitized.length >= IMPORT_LIMITS.blockedChannels) break;
         }
-        return sanitized;
+        // Keep the NEWEST blocks, for the same reason. `_addBlockedChannel`
+        // does `[...channels, record]` and hands the result straight back
+        // through here with no pre-slice, so a full list dropped the channel
+        // the user had just blocked and kept the oldest one instead.
+        return sanitized.slice(-IMPORT_LIMITS.blockedChannels);
     }
 
     function sanitizeImportedAllowedChannels(value) {
@@ -16369,48 +16376,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
-            _languageDetector: null,
-            _languageDetectorPromise: null,
-            async _initLanguageDetector() {
-                if (this._languageDetector) return this._languageDetector;
-                // The in-flight promise is stored BEFORE the first await.
-                // `_process()` used to call this unguarded, and it runs as a
-                // broad mutation rule (up to 120 invocations per 5s window), so
-                // every call during the model download sailed past the null
-                // check and built its own session. All but the last were
-                // orphaned with no reference and no way to release them.
-                if (!this._languageDetectorPromise) {
-                    this._languageDetectorPromise = (async () => {
-                        const factory = globalThis.LanguageDetector || globalThis.ai?.languageDetector;
-                        if (!factory || typeof factory.create !== 'function') return null;
-                        return factory.create();
-                    })().then(
-                        (detector) => { this._languageDetector = detector; return detector; },
-                        () => null   // reason: LanguageDetector is a progressive enhancement
-                    );
-                }
-                return this._languageDetectorPromise;
-            },
+            // No on-device language model here on purpose. This feature
+            // compares the rendered title against the `title` attribute and
+            // against ytInitialPlayerResponse, which is a string comparison.
+            // A detector session used to be created from `_process()`, a broad
+            // mutation rule allowing 120 invocations per 5s window, so
+            // concurrent creates orphaned sessions that destroy() never
+            // released. Its only consumer had no callers anywhere in the tree,
+            // so the model was downloaded for a comparison nothing performed.
+            // Both are gone; see tests/teardown-and-leaks.test.js.
 
-            async _isTranslated(text, originalText) {
-                if (!text || !originalText) return text !== originalText;
-                if (text === originalText) return false;
-                // Created here, on first real use, rather than on every
-                // mutation tick. Nothing downloads a language model for a
-                // comparison that never happens.
-                await this._initLanguageDetector();
-                if (!this._languageDetector) return text !== originalText;
-                try {
-                    const [detectedDisplay, detectedOriginal] = await Promise.all([
-                        this._languageDetector.detect(text),
-                        this._languageDetector.detect(originalText)
-                    ]);
-                    const displayLang = detectedDisplay?.[0]?.detectedLanguage;
-                    const originalLang = detectedOriginal?.[0]?.detectedLanguage;
-                    if (displayLang && originalLang) return displayLang !== originalLang;
-                } catch { /* reason: LanguageDetector fallback to text comparison */ }
-                return text !== originalText;
-            },
 
             _process() {
                 document.querySelectorAll('#video-title[title]:not([ytkit-antitranslate])').forEach(el => {
@@ -16485,12 +16460,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._processTimer = null;
                 removeMutationRule(this.id);
                 removeNavigateRule('antiTranslate');
-                // The detector holds an on-device model session. Teardown never
-                // released it, so every disable/enable cycle leaked one.
-                const detector = this._languageDetector;
-                this._languageDetector = null;
-                this._languageDetectorPromise = null;
-                try { detector?.destroy?.(); } catch (_) { /* reason: releasing the detector must not block teardown */ }
                 document.querySelectorAll('[ytkit-antitranslate]').forEach(el => el.removeAttribute('ytkit-antitranslate'));
             }
         },
@@ -31607,7 +31576,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 const remaining = matched.length - batch.length;
                 const remainingNote = remaining > 0
-                    ? ` ${t('wlwbRemovedRemainingTpl', `— ${remaining} still match, run again`).replace('{count}', String(remaining))}`
+                    ? ` ${t('wlwbRemovedRemainingTpl', `${remaining} still match, so run it again`).replace('{count}', String(remaining))}`
                     : '';
                 const toastOptions = { duration: 8 };
                 if (sessionId) {

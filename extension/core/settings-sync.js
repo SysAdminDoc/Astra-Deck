@@ -370,7 +370,7 @@
         const blocklists = {};
         for (const domain of BLOCKLIST_DOMAINS) {
             blocklists[domain.id] = sanitizeDomain(domain.id, rawBlocklists[domain.id], options)
-                .slice(0, domain.cap);
+                .slice(-domain.cap);
         }
         const truncatedDomains = Array.isArray(rawPayload.truncatedDomains)
             ? [...new Set(rawPayload.truncatedDomains.filter((id) => BLOCKLIST_DOMAINS.some((domain) => domain.id === id)))]
@@ -400,7 +400,7 @@
         const blocklists = {};
         for (const domain of BLOCKLIST_DOMAINS) {
             blocklists[domain.id] = sanitizeDomain(domain.id, state.blocklists[domain.id], options)
-                .slice(0, domain.cap);
+                .slice(-domain.cap);
         }
         return { settings, blocklists };
     }
@@ -532,10 +532,13 @@
         }
 
         function localStateFromItems(items) {
+            // Every cap in this module keeps the TAIL. This one feeds the Undo
+            // snapshot, so head-truncating here meant undoing a sync restored
+            // the oldest entries and permanently lost everything hidden since.
             const blocklists = {};
             for (const domain of BLOCKLIST_DOMAINS) {
                 blocklists[domain.id] = sanitizeDomain(domain.id, items?.[domain.key], settingsOptions)
-                    .slice(0, domain.cap);
+                    .slice(-domain.cap);
             }
             return {
                 settings: copyPlainObject(items?.[settingsKey]),
