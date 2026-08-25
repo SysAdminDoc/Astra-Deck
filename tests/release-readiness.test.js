@@ -11,6 +11,7 @@ const { execFileSync } = require('child_process');
 
 const { expectedReleaseNames } = require('../scripts/generate-release-manifest');
 const { signChecksums } = require('../scripts/release-signature');
+const screenReaderEvidence = require('../scripts/screen-reader-evidence.js');
 const {
     buildReadinessReport,
     buildBundleParityCheck,
@@ -101,14 +102,49 @@ function signFixture(root, buildDir) {
     signChecksums({ buildDir, keyPath });
 }
 
+// A release that is genuinely complete also carries screen-reader evidence.
+// Without this the "everything passes" test would assert that a release nobody
+// has listened to is ready to ship, which is the state the check exists to
+// refuse. The fixture supplies its own git answer so the staleness rule is
+// exercised without depending on the fixture tree being a repository.
+function writeFixtureEvidence(root, date) {
+    const surfaces = screenReaderEvidence.COVERED_SURFACES;
+    const records = [];
+    for (const surface of surfaces) {
+        for (const browser of screenReaderEvidence.REQUIRED_BROWSERS) {
+            records.push({
+                date,
+                astraVersion: '4.85.0',
+                browser,
+                browserVersion: '141.0',
+                assistiveTech: 'NVDA',
+                assistiveTechVersion: '2025.2',
+                surface: surface.id,
+                expected: 'named, in order, focus returns to the invoker',
+                observed: 'named, in order, focus returned to the invoker',
+                result: 'pass',
+                notes: 'fixture'
+            });
+        }
+    }
+    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+    fs.writeFileSync(
+        path.join(root, 'docs', 'screen-reader-evidence.json'),
+        JSON.stringify({ records }, null, 2)
+    );
+}
+
 test('release readiness passes for a complete manifest, checksum, SBOM, and version fixture', () => {
     const { root, buildDir, version } = writeFixtureRepo();
     fs.writeFileSync(path.join(buildDir, 'release-health.json'), JSON.stringify({ status: 'pass' }) + '\n');
     signFixture(root, buildDir);
+    writeFixtureEvidence(root, '2026-06-05');
     const report = buildReadinessReport({
         repoRoot: root,
         buildDir,
-        now: new Date('2026-06-06T12:00:00.000Z')
+        now: new Date('2026-06-06T12:00:00.000Z'),
+        // No covered surface changed since the record.
+        runGit: () => ''
     });
 
     assert.equal(report.version, version);

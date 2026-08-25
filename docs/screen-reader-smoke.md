@@ -11,6 +11,30 @@ the minimum required test target. JAWS + VoiceOver are nice-to-have.
 
 ---
 
+## 0. Recording the result
+
+A pass here is not a note in a chat log. Write it into
+`docs/screen-reader-evidence.json`, which `npm run a11y:evidence` validates and
+release readiness refuses to skip:
+
+```
+npm run a11y:evidence:template > docs/screen-reader-evidence.json   # blank rows
+npm run a11y:evidence                                               # validate
+```
+
+Each row records the date, the Astra version, the browser and its version, the
+assistive technology and its version, the surface, what you expected to hear,
+what you actually heard, and pass or fail. Nothing in this repository can write
+that file: an observation nobody made is not evidence.
+
+JAWS and VoiceOver may be recorded as `not-applicable` with a reason. NVDA may
+not: it is the minimum target, at roughly two thirds of screen-reader share.
+
+Evidence goes stale on its own. When a covered surface changes after the newest
+record for it, readiness fails until that surface is re-run.
+
+---
+
 ## 1. Setup
 
 | Tool | Version target | Notes |

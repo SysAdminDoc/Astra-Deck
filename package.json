@@ -24,6 +24,8 @@
     "release:manifest": "node scripts/generate-release-manifest.js",
     "release:sign": "node scripts/release-signature.js",
     "release:verify-signature": "node scripts/release-signature.js --verify",
+    "a11y:evidence": "node scripts/screen-reader-evidence.js",
+    "a11y:evidence:template": "node scripts/screen-reader-evidence.js --template",
     "release:readiness": "node scripts/generate-release-readiness.js",
     "release:health": "node scripts/release-health.js",
     "release:promote": "node scripts/release-channels.js promote",
