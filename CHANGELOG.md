@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Free-form text settings are checked for shape and length when a backup is
+  imported. Numbers were clamped and dropdowns coerced, but a string setting
+  accepted whatever the file carried, which is how a catastrophic regex reached
+  the Video Hider keyword filter and an arbitrary origin reached the "Open
+  externally" link. Both were fixed where they were used; the check now lives at
+  the boundary, so a backup that violates a setting's format or size is refused
+  instead of stored. All 22 free-form settings carry a bound, and the ones that
+  hold a URL, a colour, a language tag or a model id also carry a format.
+
 - Three surfaces that were named in the shared design system but never actually
   received it now do: the Astra Downloader install prompt, the reaction sender
   panel, and the quick-link dropdown. All three were listed by a class name they

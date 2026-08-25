@@ -182,7 +182,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── nav ───
     Object.freeze({ key: "quickLinkMenu", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "quickLinkItems", category: "nav", type: "string", defaultValue: "History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "quickLinkItems", category: "nav", type: "string", maxLength: 4000, defaultValue: "History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── quality-codec ───
     Object.freeze({ key: "autoMaxResolution", category: "quality-codec", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -232,7 +232,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // the JSON path. The array MUST be a superset of the default value
     // so a fresh install can deselect any element.
     Object.freeze({ key: "hiddenChatElements", category: "live-chat", type: "array", defaultValue: ["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots","modeNotices"], knownValues: Object.freeze(["header","menu","popout","reactions","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots","modeNotices"]), risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "chatKeywordFilter", category: "live-chat", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "chatKeywordFilter", category: "live-chat", type: "string", maxLength: 20000, defaultValue: "", risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── watch-player ───
     Object.freeze({ key: "hiddenActionButtonsManager", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -251,8 +251,8 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── content-filter ───
     Object.freeze({ key: "hideVideosFromHome", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "hideVideosKeywordFilter", category: "content-filter", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "hideVideosFilterListUrl", category: "content-filter", type: "string", defaultValue: "", risk: "experimental", profile: "both", scope: "feed", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
+    Object.freeze({ key: "hideVideosKeywordFilter", category: "content-filter", type: "string", maxLength: 20000, defaultValue: "", risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "hideVideosFilterListUrl", category: "content-filter", type: "string", maxLength: 2048, pattern: "^(?:|https://[^\\s<>]{1,2040})$", defaultValue: "", risk: "experimental", profile: "both", scope: "feed", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.59.1" }),
     Object.freeze({ key: "hideVideosDurationFilter", category: "content-filter", type: "number", defaultValue: 0, min: 0, max: 60, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosSubsLoadLimit", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosSubsLoadThreshold", category: "content-filter", type: "number", defaultValue: 3, min: 1, max: 20, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
@@ -343,7 +343,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "showTimeInTabTitle", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── shell ───
-    Object.freeze({ key: "customProgressBarColor", category: "shell", type: "string", defaultValue: "#ff0000", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "customProgressBarColor", category: "shell", type: "string", maxLength: 64, pattern: "^(?:|#[0-9A-Fa-f]{3,8}|rgba?\\([^)]{1,64}\\)|hsla?\\([^)]{1,64}\\)|[A-Za-z]{1,24})$", defaultValue: "#ff0000", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "compactUnfixedHeader", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── playback-audio ───
@@ -395,7 +395,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── playback-audio ───
     Object.freeze({ key: "autoSkipChapters", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "autoSkipChapterPatterns", category: "playback-audio", type: "string", defaultValue: "intro,outro,recap,sponsor", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "autoSkipChapterPatterns", category: "playback-audio", type: "string", maxLength: 2000, defaultValue: "intro,outro,recap,sponsor", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── watch-player ───
     Object.freeze({ key: "chapterNavButtons", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -430,7 +430,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     //   2. exact languageCode match for navigator.language base
     //   3. exact 'en' (the v4.46.0 hardcoded fallback)
     //   4. first available track
-    Object.freeze({ key: "transcriptPreferredLanguage", category: "watch-player", type: "string", defaultValue: "auto", risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+    Object.freeze({ key: "transcriptPreferredLanguage", category: "watch-player", type: "string", maxLength: 35, pattern: "^[A-Za-z0-9-]{1,35}$", defaultValue: "auto", risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
 
     // ─── playback-audio ───
     Object.freeze({ key: "searchFilterDefaults", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -479,7 +479,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "logarithmicVolume", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
     Object.freeze({ key: "pipButton", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "autoSubtitles", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "autoSubtitleLang", category: "playback-audio", type: "string", defaultValue: "en", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "autoSubtitleLang", category: "playback-audio", type: "string", maxLength: 35, pattern: "^[A-Za-z0-9-]{1,35}$", defaultValue: "en", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── watch-player ───
     Object.freeze({ key: "focusedMode", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -503,7 +503,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // ─── shell ───
     Object.freeze({ key: "forceDarkEverywhere", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "customCssInjection", category: "shell", type: "boolean", defaultValue: false, risk: "store-risk", profile: "github-full", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "customCssCode", category: "shell", type: "string", defaultValue: "", risk: "store-risk", profile: "github-full", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "customCssCode", category: "shell", type: "string", maxLength: 20000, defaultValue: "", risk: "store-risk", profile: "github-full", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── nav ───
     Object.freeze({ key: "shareMenuCleaner", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -567,7 +567,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "shortsAsRegularVideo", category: "shorts", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── shell ───
-    Object.freeze({ key: "themeAccentColor", category: "shell", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "themeAccentColor", category: "shell", type: "string", maxLength: 64, pattern: "^(?:|#[0-9A-Fa-f]{3,8}|rgba?\\([^)]{1,64}\\)|hsla?\\([^)]{1,64}\\)|[A-Za-z]{1,24})$", defaultValue: "", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── watch-player ───
     Object.freeze({ key: "theaterAutoScroll", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -668,7 +668,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "featureSchedules", category: "privacy-profiles", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.69.0" }),
     Object.freeze({ key: "_scheduleRestore", category: "privacy-profiles", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "4.69.0" }),
     Object.freeze({ key: "_profiles", category: "privacy-profiles", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
-    Object.freeze({ key: "_activeProfile", category: "privacy-profiles", type: "string", defaultValue: "default", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
+    Object.freeze({ key: "_activeProfile", category: "privacy-profiles", type: "string", maxLength: 64, pattern: "^[A-Za-z0-9_-]{1,64}$", defaultValue: "default", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
     Object.freeze({ key: "privacyDataFlowPanel", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "syncSettings", category: "privacy-profiles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
     Object.freeze({ key: "safeStoreProfile", category: "privacy-profiles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -678,14 +678,14 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── content-filter ───
     Object.freeze({ key: "advancedLocalPredicate", category: "content-filter", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "advancedLocalPredicateCode", category: "content-filter", type: "string", defaultValue: "", risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "advancedLocalPredicateCode", category: "content-filter", type: "string", maxLength: 2000, defaultValue: "", risk: "experimental", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── comments ───
     Object.freeze({ key: "commentTranslate", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.54.0" }),
     Object.freeze({ key: "commentTranslateTarget", category: "comments", type: "string", defaultValue: "auto", enum: COMMENT_TRANSLATE_LANGUAGES, risk: "safe", profile: "both", scope: "comments", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.54.0" }),
     Object.freeze({ key: "commentFilterManager", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "commentFilterRules", category: "comments", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "commentLanguageAllowlist", category: "comments", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.51.1" }),
+    Object.freeze({ key: "commentFilterRules", category: "comments", type: "string", maxLength: 20000, defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "commentLanguageAllowlist", category: "comments", type: "string", maxLength: 200, pattern: "^[A-Za-z0-9,\\s-]*$", defaultValue: "", risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.51.1" }),
     Object.freeze({ key: "commentDuplicateCollapse", category: "comments", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "comments", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.51.1" }),
     Object.freeze({ key: "sponsoredContentFilter", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.59.1" }),
 
@@ -712,7 +712,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "downloadHealthPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["mediaDL"]) }),
     Object.freeze({ key: "downloadStreamLinksPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "downloadCobaltFallback", category: "downloads", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "downloads", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", labelKey: "Self-hosted Cobalt fallback", descriptionKey: "When Astra Downloader is unreachable, use a self-hosted Cobalt instance after granting access to that one HTTPS origin." }),
-    Object.freeze({ key: "downloadCobaltInstance", category: "downloads", type: "string", defaultValue: "", risk: "api", profile: "github-full", scope: "downloads", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "Self-hosted Cobalt origin", descriptionKey: "Required. Enter the root HTTPS origin of a Cobalt instance you operate or are authorized to use; public api.cobalt.tools is not permitted." }),
+    Object.freeze({ key: "downloadCobaltInstance", category: "downloads", type: "string", maxLength: 2048, pattern: "^(?:|https://[^\\s<>]{1,2040})$", defaultValue: "", risk: "api", profile: "github-full", scope: "downloads", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "Self-hosted Cobalt origin", descriptionKey: "Required. Enter the root HTTPS origin of a Cobalt instance you operate or are authorized to use; public api.cobalt.tools is not permitted." }),
 
     // ─── enrichment ───
     Object.freeze({ key: "returnDislike", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -783,7 +783,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── nav ───
     Object.freeze({ key: "openInAlternativeFrontend", category: "nav", type: "boolean", defaultValue: false, risk: "store-risk", profile: "github-full", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "alternativeFrontendInstance", category: "nav", type: "string", defaultValue: "https://yewtu.be", risk: "store-risk", profile: "github-full", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "alternativeFrontendInstance", category: "nav", type: "string", maxLength: 2048, pattern: "^(?:|https://[^\\s<>]{1,2040})$", defaultValue: "https://yewtu.be", risk: "store-risk", profile: "github-full", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── downloads ───
     Object.freeze({ key: "vlcMpvHandoff", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -842,9 +842,9 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "subtitleStyling", category: "subtitles", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "subStyleFontSize", category: "subtitles", type: "number", defaultValue: 100, min: 50, max: 300, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "subStyleFontFamily", category: "subtitles", type: "string", defaultValue: "default", enum: Object.freeze(["default","sans","serif","mono","YouTube Sans"]), risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "subStyleColor", category: "subtitles", type: "string", defaultValue: "#ffffff", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "subStyleColor", category: "subtitles", type: "string", maxLength: 64, pattern: "^(?:|#[0-9A-Fa-f]{3,8}|rgba?\\([^)]{1,64}\\)|hsla?\\([^)]{1,64}\\)|[A-Za-z]{1,24})$", defaultValue: "#ffffff", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "subStyleBgOpacity", category: "subtitles", type: "number", defaultValue: 75, min: 0, max: 100, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "subStyleBgColor", category: "subtitles", type: "string", defaultValue: "#000000", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "subStyleBgColor", category: "subtitles", type: "string", maxLength: 64, pattern: "^(?:|#[0-9A-Fa-f]{3,8}|rgba?\\([^)]{1,64}\\)|hsla?\\([^)]{1,64}\\)|[A-Za-z]{1,24})$", defaultValue: "#000000", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "subStyleBottomOffset", category: "subtitles", type: "number", defaultValue: 10, min: 0, max: 90, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "subStyleTextShadow", category: "subtitles", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
@@ -852,8 +852,8 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "aiVideoSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     // aiSummaryArtifactsData retired in v4.49.7 — summary artifacts live in
     // the top-level ytkit-ai-summaries storage key, not the settings bag.
-    Object.freeze({ key: "aiSummaryEndpoint", category: "research-ai", type: "string", defaultValue: "https://api.openai.com/v1/chat/completions", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary endpoint URL", descriptionKey: "Chat-completions endpoint for OpenAI, Anthropic, Gemini, or a local Ollama." }),
-    Object.freeze({ key: "aiSummaryModel", category: "research-ai", type: "string", defaultValue: "gpt-4o-mini", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "aiSummaryEndpoint", category: "research-ai", type: "string", maxLength: 2048, pattern: "^(?:|https?://[^\\s<>]{1,2040})$", defaultValue: "https://api.openai.com/v1/chat/completions", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary endpoint URL", descriptionKey: "Chat-completions endpoint for OpenAI, Anthropic, Gemini, or a local Ollama." }),
+    Object.freeze({ key: "aiSummaryModel", category: "research-ai", type: "string", maxLength: 120, pattern: "^[A-Za-z0-9._:/-]{0,120}$", defaultValue: "gpt-4o-mini", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "aiSummaryProvider", category: "research-ai", type: "string", defaultValue: "openai", enum: Object.freeze(["openai","anthropic","gemini","ollama"]), risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary provider", descriptionKey: "Provider id: openai, anthropic, gemini, or ollama (local)." }),
 
     // ─── watch-player ───
@@ -867,7 +867,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "titleCaseTransform", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "titleCaseMode", category: "shell", type: "string", defaultValue: "none", enum: Object.freeze(["none","uppercase","lowercase","capitalize"]), risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "customSelectionColor", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "selectionColor", category: "shell", type: "string", defaultValue: "#2dd36f", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "selectionColor", category: "shell", type: "string", maxLength: 64, pattern: "^(?:|#[0-9A-Fa-f]{3,8}|rgba?\\([^)]{1,64}\\)|hsla?\\([^)]{1,64}\\)|[A-Za-z]{1,24})$", defaultValue: "#2dd36f", risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── nav ───
     Object.freeze({ key: "bypassPlaylistMode", category: "nav", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -884,7 +884,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── playback-audio ───
     Object.freeze({ key: "audioTrackLanguage", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "preferredAudioLang", category: "playback-audio", type: "string", defaultValue: "en", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "preferredAudioLang", category: "playback-audio", type: "string", maxLength: 35, pattern: "^[A-Za-z0-9-]{1,35}$", defaultValue: "en", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "preferDescriptiveAudio", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.50.8" }),
     Object.freeze({ key: "notifyAutoDubbedAudio", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "sleepTimer", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
