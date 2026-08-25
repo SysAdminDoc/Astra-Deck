@@ -13,11 +13,244 @@ const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { sources, extractFeatureBlock } = require('../helpers/source');
+const { createDeArrowFeature } = require('../../extension/features/dearrow');
+const {
+    findSettingEntry,
+    getStoreSafeKeys,
+    getGithubFullKeys
+} = require('../../extension/core/settings-schema');
+const defaultSettings = require('../../extension/default-settings.json');
+const englishMessages = require('../../extension/_locales/en/messages.json');
 
 const dearrowModulePath = path.join(
     __dirname, '..', '..', 'extension', 'features', 'dearrow', 'index.js'
 );
 const dearrowModuleSource = fs.readFileSync(dearrowModulePath, 'utf8');
+const userscriptSource = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'YTKit.user.js'), 'utf8'
+);
+
+const SURFACE_KEYS = Object.freeze([
+    'daSurfaceWatch',
+    'daSurfaceRelated',
+    'daSurfaceHome',
+    'daSurfaceSearch',
+    'daSurfaceSubscriptions',
+    'daSurfacePlaylist'
+]);
+
+function withGlobals(values, callback) {
+    const prior = new Map();
+    for (const [key, value] of Object.entries(values)) {
+        prior.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+        Object.defineProperty(globalThis, key, {
+            configurable: true,
+            writable: true,
+            value
+        });
+    }
+    return Promise.resolve()
+        .then(callback)
+        .finally(() => {
+            for (const [key, descriptor] of prior) {
+                if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+                else delete globalThis[key];
+            }
+        });
+}
+
+function surfaceSettings(overrides = {}) {
+    return {
+        daSurfaceWatch: true,
+        daSurfaceRelated: true,
+        daSurfaceHome: true,
+        daSurfaceSearch: true,
+        daSurfaceSubscriptions: true,
+        daSurfacePlaylist: true,
+        daReplaceTitles: true,
+        daReplaceThumbs: true,
+        daTitleFormat: 'sentence',
+        daFallbackFormat: false,
+        daCacheTTL: '4',
+        ...overrides
+    };
+}
+
+function pageDocument({ surface = '', renderers = [], watchTitle = null } = {}) {
+    const browse = ['home', 'subscriptions', 'playlist'].includes(surface)
+        ? { getAttribute: (name) => name === 'page-subtype' ? surface : null }
+        : null;
+    return {
+        body: {},
+        querySelector(selector) {
+            if (selector === 'ytd-search') return surface === 'search' ? {} : null;
+            if (selector === 'ytd-browse[page-subtype], ytd-browse') return browse;
+            return watchTitle;
+        },
+        querySelectorAll(selector) {
+            return selector.startsWith('ytd-rich-item-renderer') ? renderers : [];
+        }
+    };
+}
+
+test('DeArrow surface masks are visible, portable settings in both vehicles', () => {
+    const storeSafeKeys = new Set(getStoreSafeKeys());
+    for (const key of SURFACE_KEYS) {
+        const entry = findSettingEntry(key);
+        assert.ok(entry, `${key} must be part of the settings schema`);
+        assert.equal(entry.defaultValue, true, `${key} must preserve existing behaviour by default`);
+        assert.equal(entry.risk, 'api', `${key} controls network-backed work`);
+        assert.equal(entry.profile, 'both', `${key} must import and export in both build profiles`);
+        assert.equal(entry.vehicle, 'both', `${key} must be classified for extension and userscript`);
+        assert.equal(entry.internal, false, `${key} must remain visible in the settings panel`);
+        assert.equal(defaultSettings[key], true, `${key} must round-trip through default settings`);
+        assert.ok(storeSafeKeys.has(key), `${key} must survive store-safe import and export`);
+        assert.match(sources.ytkit, new RegExp(`id: '${key}'[\\s\\S]{0,320}parentId: 'deArrow'`),
+            `${key} must render under DeArrow in the extension settings panel`);
+        assert.match(userscriptSource, new RegExp(`id: '${key}'[\\s\\S]{0,320}parentId: 'deArrow'`),
+            `${key} must render under DeArrow in the userscript settings panel`);
+        assert.ok(englishMessages[`feature_${key}_name`]?.message,
+            `${key} must have a user-facing name`);
+        assert.ok(englishMessages[`feature_${key}_desc`]?.message,
+            `${key} must explain what the mask excludes`);
+    }
+});
+
+test('DeArrow attributes all six supported surfaces structurally', () => {
+    const cases = [
+        ['related', false, (selector) => selector === 'ytd-watch-next-secondary-results-renderer' ? {} : null],
+        ['playlist', true, (selector) => selector.includes('ytd-playlist-panel-renderer') ? {} : null],
+        ['search', false, (selector) => selector === 'ytd-search' ? {} : null],
+        ['home', false, (selector) => selector === 'ytd-browse'
+            ? { getAttribute: () => 'home' } : null],
+        ['subscriptions', false, (selector) => selector === 'ytd-browse'
+            ? { getAttribute: () => 'subscriptions' } : null],
+        ['watch', true, () => null]
+    ];
+    for (const [expected, watch, closest] of cases) {
+        const feature = createDeArrowFeature({
+            appState: { settings: surfaceSettings() },
+            isWatchPagePath: () => watch
+        });
+        assert.equal(feature._surfaceOf({ closest }), expected);
+    }
+});
+
+test('an excluded feed surface attaches no observer', async () => {
+    const cases = [
+        ['home', '/', 'daSurfaceHome'],
+        ['search', '/results', 'daSurfaceSearch'],
+        ['subscriptions', '/feed/subscriptions', 'daSurfaceSubscriptions'],
+        ['playlist', '/playlist', 'daSurfacePlaylist']
+    ];
+    for (const [surface, pathname, key] of cases) {
+        let observeCalls = 0;
+        class FakeMutationObserver {
+            constructor(callback) { this.callback = callback; }
+            observe() { observeCalls++; }
+            disconnect() {}
+        }
+        await withGlobals({
+            document: pageDocument({ surface }),
+            location: { origin: 'https://www.youtube.com', pathname },
+            MutationObserver: FakeMutationObserver
+        }, () => {
+            const makeFeature = (enabled) => createDeArrowFeature({
+                appState: { settings: surfaceSettings({ [key]: enabled }) },
+                storageReadJSON: (_storageKey, fallback) => fallback,
+                injectStyle: () => ({ remove() {} }),
+                isWatchPagePath: () => false
+            });
+
+            const excluded = makeFeature(false);
+            excluded.init();
+            assert.equal(observeCalls, 0, `${surface} must not register an observer when excluded`);
+            excluded.destroy();
+
+            const included = makeFeature(true);
+            included.init();
+            assert.equal(observeCalls, 1, `${surface} must register one observer when included`);
+            included.destroy();
+        });
+    }
+});
+
+test('surface masks stop fetches before per-channel overrides compose', async () => {
+    const videoLink = { href: 'https://www.youtube.com/watch?v=abc123DEF45' };
+    const channelLink = { getAttribute: () => '/@creator' };
+    const card = {
+        dataset: {},
+        closest(selector) {
+            return selector === 'ytd-watch-next-secondary-results-renderer' ? {} : null;
+        },
+        querySelector(selector) {
+            if (selector.includes('/watch')) return videoLink;
+            if (selector.includes('/channel/')) return channelLink;
+            return null;
+        }
+    };
+    const settings = surfaceSettings({
+        daSurfaceRelated: false,
+        deArrowChannelOverrides: { creator: { mode: 'off' } }
+    });
+    let fetchCalls = 0;
+    const feature = createDeArrowFeature({
+        appState: { settings },
+        isWatchPagePath: () => true
+    });
+    feature._fetchBranding = async () => {
+        fetchCalls++;
+        return null;
+    };
+
+    await withGlobals({
+        document: pageDocument({ renderers: [card] }),
+        location: { origin: 'https://www.youtube.com', pathname: '/watch' },
+        YTKitCore: { channelSettingsKey: () => 'creator' }
+    }, async () => {
+        await feature._processPage();
+        assert.equal(fetchCalls, 0, 'the disabled related surface must stop before any request');
+        assert.equal(card.dataset.daSurfaceSkipped, 'related');
+
+        settings.daSurfaceRelated = true;
+        card.dataset = {};
+        await feature._processPage();
+        assert.equal(fetchCalls, 0, 'an off channel override must still win on an enabled surface');
+        assert.equal(card.dataset.daOverride, 'off');
+
+        settings.deArrowChannelOverrides.creator.mode = 'dearrow';
+        card.dataset = {};
+        await feature._processPage();
+        assert.equal(fetchCalls, 1, 'an enabled surface plus DeArrow channel mode may fetch');
+    });
+});
+
+test('the watch mask blocks primary-title requests without blocking related cards', async () => {
+    const settings = surfaceSettings({ daSurfaceWatch: false, daSurfaceRelated: true });
+    const watchTitle = { dataset: {} };
+    let fetchCalls = 0;
+    const feature = createDeArrowFeature({
+        appState: { settings },
+        isWatchPagePath: () => true,
+        getVideoId: () => 'abc123DEF45'
+    });
+    feature._fetchBranding = async () => {
+        fetchCalls++;
+        return null;
+    };
+
+    await withGlobals({
+        document: pageDocument({ watchTitle }),
+        location: { origin: 'https://www.youtube.com', pathname: '/watch' }
+    }, async () => {
+        await feature._processPage();
+        assert.equal(fetchCalls, 0, 'the disabled watch surface must not request primary-title branding');
+
+        settings.daSurfaceWatch = true;
+        await feature._processPage();
+        assert.equal(fetchCalls, 1, 're-enabling watch must restore the primary-title lookup');
+    });
+});
 
 // The ytkit.js `|| { … }` object used to be a full second copy of the feature,
 // reached only when the module content script failed to load. It drifted from
@@ -79,7 +312,7 @@ test('DeArrow paired-title mode covers cards, the watch title, and teardown', ()
             `paired-title mode must read daShowOriginalTitle (${label})`);
         assert.match(source, /_WATCH_TITLE_SELECTORS:[\s\S]*?not\(\.daCustomTitle\)/,
             `watch title lookup must ignore an already-rendered DeArrow clone (${label})`);
-        assert.match(source, /if \(isWatchPagePath\(\) && replaceTitles\)/,
+        assert.match(source, /if \(isWatchPagePath\(\) && this\._surfaceEnabled\('watch'\) && replaceTitles\)/,
             `paired-title mode must process the primary watch title (${label})`);
         assert.match(source, /data-da-original-display/,
             `paired-title mode must remember original display state for teardown (${label})`);

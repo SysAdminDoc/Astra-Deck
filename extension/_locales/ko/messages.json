@@ -1979,6 +1979,42 @@
   "feature_daShowOriginalTitle_name": {
     "message": "원래 제목 표시"
   },
+  "feature_daSurfaceHome_desc": {
+    "message": "YouTube 홈 피드에 DeArrow 사용"
+  },
+  "feature_daSurfaceHome_name": {
+    "message": "홈 피드"
+  },
+  "feature_daSurfacePlaylist_desc": {
+    "message": "재생목록 페이지와 시청 페이지의 재생목록 패널에 DeArrow 사용"
+  },
+  "feature_daSurfacePlaylist_name": {
+    "message": "재생목록"
+  },
+  "feature_daSurfaceRelated_desc": {
+    "message": "동영상 옆 추천 목록에 DeArrow 사용"
+  },
+  "feature_daSurfaceRelated_name": {
+    "message": "관련 동영상"
+  },
+  "feature_daSurfaceSearch_desc": {
+    "message": "YouTube 검색 결과에 DeArrow 사용"
+  },
+  "feature_daSurfaceSearch_name": {
+    "message": "검색 결과"
+  },
+  "feature_daSurfaceSubscriptions_desc": {
+    "message": "구독 피드에 DeArrow 사용"
+  },
+  "feature_daSurfaceSubscriptions_name": {
+    "message": "구독 피드"
+  },
+  "feature_daSurfaceWatch_desc": {
+    "message": "기본 동영상과 메타데이터에 DeArrow 사용"
+  },
+  "feature_daSurfaceWatch_name": {
+    "message": "시청 페이지"
+  },
   "feature_daTitleFormat_desc": {
     "message": "교체 제목의 형식 지정 방법"
   },
@@ -2355,7 +2391,7 @@
     "message": "Hide the Playlists entry"
   },
   "feature_guideHide_playlists_name": {
-    "message": "Playlists"
+    "message": "재생목록"
   },
   "feature_guideHide_premium_desc": {
     "message": "Hide the YouTube Premium entry"

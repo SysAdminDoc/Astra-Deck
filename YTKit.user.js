@@ -3051,6 +3051,12 @@
             sbCat_filler: true,
             sbCat_poi_highlight: false,
             deArrow: false,
+            daSurfaceWatch: true,
+            daSurfaceRelated: true,
+            daSurfaceHome: true,
+            daSurfaceSearch: true,
+            daSurfaceSubscriptions: true,
+            daSurfacePlaylist: true,
             daReplaceTitles: true,
             daReplaceThumbs: true,
             daTitleFormat: 'sentence',
@@ -15216,9 +15222,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _cache: {},
             _cacheMeta: {},
             _observer: null,
+            _observing: false,
             _navHandler: null,
             _generation: 0,
             _processTimer: null,
+            _resetTimer: null,
             _TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
             _WATCH_TITLE_SELECTORS: 'ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string:not(.daCustomTitle), ytd-watch-metadata h1 yt-formatted-string:not(.daCustomTitle)',
             _persistTimer: null,
@@ -15259,6 +15267,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._navHandler = () => {
                     self._generation++;
                     clearTimeout(self._processTimer);
+                    clearTimeout(self._resetTimer);
                     document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
                     document.querySelectorAll('[data-da-processed]').forEach(el => {
                         const originalDisplay = el.getAttribute('data-da-original-display');
@@ -15267,25 +15276,49 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         el.classList.remove('daOriginalTitle');
                         el.removeAttribute('data-da-original-title');
                         delete el.dataset.daProcessed;
+                        delete el.dataset.daSurfaceSkipped;
                     });
                     document.querySelectorAll('.da-replaced-thumb').forEach(el => {
                         if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
                         el.classList.remove('da-replaced-thumb');
                     });
-                    if (!window.location.pathname.startsWith('/watch')) {
-                        setTimeout(() => self._processPage(), 1000);
-                    }
+                    self._resetTimer = setTimeout(() => {
+                        self._resetTimer = null;
+                        self._processPage();
+                    }, 1000);
+                    if (isWatchPagePath()) self._disconnectObserver();
+                    else self._connectObserver();
                 };
                 window.addEventListener('yt-navigate-finish', this._navHandler);
-                if (!window.location.pathname.startsWith('/watch')) {
-                    setTimeout(() => self._processPage(), 800);
-                }
                 this._observer = new MutationObserver(() => {
-                    if (window.location.pathname.startsWith('/watch')) return;
+                    if (isWatchPagePath()) return;
+                    if (!self._anySurfaceEnabledHere()) {
+                        self._disconnectObserver();
+                        return;
+                    }
                     clearTimeout(self._processTimer);
                     self._processTimer = setTimeout(() => self._processPage(), 300);
                 });
+                if (!isWatchPagePath()) this._connectObserver();
+                this._resetTimer = setTimeout(() => {
+                    self._resetTimer = null;
+                    self._processPage();
+                }, 800);
+            },
+            _connectObserver() {
+                if (!this._observer) return;
+                if (!this._anySurfaceEnabledHere()) {
+                    this._disconnectObserver();
+                    return;
+                }
+                if (this._observing) return;
                 this._observer.observe(document.body, { childList: true, subtree: true });
+                this._observing = true;
+            },
+            _disconnectObserver() {
+                if (!this._observing || !this._observer) return;
+                this._observer.disconnect();
+                this._observing = false;
             },
             async _fetchBranding(videoId) {
                 if (this._cache[videoId]) return this._cache[videoId];
@@ -15384,7 +15417,66 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 return true;
             },
+            _channelOverrideMode(el) {
+                const overrides = appState?.settings?.deArrowChannelOverrides;
+                if (!overrides || typeof overrides !== 'object') return null;
+                const link = el?.querySelector?.('a[href*="/channel/"], a[href*="/@"]');
+                if (!link) return null;
+                const href = link.getAttribute('href') || '';
+                const channelId = globalThis.YTKitCore?.channelSettingsKey?.(href) || '';
+                if (!channelId) return null;
+                const entry = overrides[channelId];
+                return entry && typeof entry === 'object' ? entry.mode || null : null;
+            },
+            _SURFACE_MASKS: Object.freeze({
+                watch: 'daSurfaceWatch',
+                related: 'daSurfaceRelated',
+                home: 'daSurfaceHome',
+                search: 'daSurfaceSearch',
+                subscriptions: 'daSurfaceSubscriptions',
+                playlist: 'daSurfacePlaylist'
+            }),
+            _surfaceOf(element) {
+                if (!element?.closest) return '';
+                if (element.closest('ytd-watch-next-secondary-results-renderer')) return 'related';
+                if (element.closest('ytd-playlist-panel-renderer, ytd-playlist-video-list-renderer')) return 'playlist';
+                if (element.closest('ytd-search')) return 'search';
+                const browse = element.closest('ytd-browse');
+                if (browse?.getAttribute) {
+                    const subtype = browse.getAttribute('page-subtype') || '';
+                    if (subtype === 'home') return 'home';
+                    if (subtype === 'subscriptions') return 'subscriptions';
+                    if (subtype === 'playlist') return 'playlist';
+                }
+                if (isWatchPagePath()) return 'watch';
+                return '';
+            },
+            _surfaceEnabled(surface) {
+                const key = this._SURFACE_MASKS[surface];
+                if (!key) return true;
+                return appState.settings?.[key] !== false;
+            },
+            _currentPageSurfaces() {
+                if (isWatchPagePath()) return ['watch', 'related', 'playlist'];
+                if (document.querySelector?.('ytd-search')) return ['search'];
+                const browse = document.querySelector?.('ytd-browse[page-subtype], ytd-browse');
+                const subtype = browse?.getAttribute?.('page-subtype') || '';
+                if (subtype === 'home') return ['home'];
+                if (subtype === 'subscriptions') return ['subscriptions'];
+                if (subtype === 'playlist') return ['playlist'];
+                const pathname = globalThis.location?.pathname || '';
+                if (pathname === '/') return ['home'];
+                if (pathname.startsWith('/results')) return ['search'];
+                if (pathname.startsWith('/feed/subscriptions')) return ['subscriptions'];
+                if (pathname.startsWith('/playlist')) return ['playlist'];
+                return Object.keys(this._SURFACE_MASKS);
+            },
+            _anySurfaceEnabledHere() {
+                return this._currentPageSurfaces()
+                    .some((surface) => this._surfaceEnabled(surface));
+            },
             async _processPage() {
+                if (!this._anySurfaceEnabledHere()) return;
                 const gen = this._generation;
                 const replaceTitles = appState.settings.daReplaceTitles;
                 const replaceThumbs = appState.settings.daReplaceThumbs;
@@ -15398,7 +15490,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!link) continue;
                     const url = new URL(link.href, location.origin);
                     const videoId = url.searchParams.get('v');
-                    if (!videoId) continue;
+                    if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
+                    const surface = this._surfaceOf(el);
+                    if (!this._surfaceEnabled(surface)) {
+                        el.dataset.daSurfaceSkipped = surface;
+                        continue;
+                    }
+                    const overrideMode = this._channelOverrideMode(el);
+                    if (overrideMode === 'off' || overrideMode === 'original') {
+                        el.dataset.daOverride = overrideMode;
+                        continue;
+                    }
                     const branding = await this._fetchBranding(videoId);
                     if (!branding || gen !== this._generation) continue;
                     if (replaceTitles) {
@@ -15434,7 +15536,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                     }
                 }
-                if (window.location.pathname.startsWith('/watch') && replaceTitles) {
+                if (isWatchPagePath() && this._surfaceEnabled('watch') && replaceTitles) {
                     const titleEl = document.querySelector(this._WATCH_TITLE_SELECTORS);
                     const videoId = getVideoId();
                     if (titleEl && videoId && VIDEO_ID_PATTERN.test(videoId) && !titleEl.dataset.daProcessed) {
@@ -15458,9 +15560,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._generation++;
                 clearTimeout(this._processTimer);
+                clearTimeout(this._resetTimer);
+                this._resetTimer = null;
                 clearTimeout(this._persistTimer);
                 if (this._navHandler) window.removeEventListener('yt-navigate-finish', this._navHandler);
                 this._observer?.disconnect();
+                this._observing = false;
                 this._styleEl?.remove();
                 document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
                 document.querySelectorAll('[data-da-processed]').forEach(el => {
@@ -15470,6 +15575,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     el.classList.remove('daOriginalTitle');
                     el.removeAttribute('data-da-original-title');
                     delete el.dataset.daProcessed;
+                    delete el.dataset.daSurfaceSkipped;
                 });
                 document.querySelectorAll('.da-replaced-thumb').forEach(el => {
                     if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
@@ -15481,6 +15587,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         { id: 'sponsorBlockBaseUrl', name: 'SponsorBlock API Host', description: 'Primary HTTPS host used by SponsorBlock and DeArrow', group: 'Content', icon: 'globe', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsor.ajay.app',label:'Canonical host'},{value:'https://sponsorblock.kavin.rocks',label:'TeamPiped mirror'}], init(){}, destroy(){} },
         { id: 'sponsorBlockMirrorUrl', name: 'SponsorBlock Fallback Host', description: 'Approved HTTPS mirror tried once when the primary host fails', group: 'Content', icon: 'globe', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsorblock.kavin.rocks',label:'TeamPiped mirror'},{value:'https://sponsor.ajay.app',label:'Canonical host'},{value:'',label:'Disabled'}], init(){}, destroy(){} },
         // DeArrow sub-features
+        { id: 'daSurfaceWatch', name: 'Watch Page', description: 'Use DeArrow on the primary video and its metadata', group: 'Content', icon: 'play-circle', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
+        { id: 'daSurfaceRelated', name: 'Related Videos', description: 'Use DeArrow in the recommendations beside a video', group: 'Content', icon: 'list-video', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
+        { id: 'daSurfaceHome', name: 'Home Feed', description: 'Use DeArrow on the YouTube home feed', group: 'Content', icon: 'home', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
+        { id: 'daSurfaceSearch', name: 'Search Results', description: 'Use DeArrow in YouTube search results', group: 'Content', icon: 'search', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
+        { id: 'daSurfaceSubscriptions', name: 'Subscriptions Feed', description: 'Use DeArrow in the subscriptions feed', group: 'Content', icon: 'bell', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
+        { id: 'daSurfacePlaylist', name: 'Playlists', description: 'Use DeArrow on playlist pages and in the watch-page playlist panel', group: 'Content', icon: 'list', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceTitles', name: 'Replace Titles', description: 'Replace clickbait titles with crowdsourced alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceThumbs', name: 'Replace Thumbnails', description: 'Replace clickbait thumbnails with video screenshots', group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daTitleFormat', name: 'Title Format', description: 'How to format replacement titles', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'sentence',label:'Sentence case'},{value:'title_case',label:'Title Case'},{value:'original',label:'Original'}], init(){}, destroy(){} },

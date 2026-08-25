@@ -1979,6 +1979,42 @@
   "feature_daShowOriginalTitle_name": {
     "message": "Показывать исходный заголовок"
   },
+  "feature_daSurfaceHome_desc": {
+    "message": "Использовать DeArrow в главной ленте YouTube"
+  },
+  "feature_daSurfaceHome_name": {
+    "message": "Главная лента"
+  },
+  "feature_daSurfacePlaylist_desc": {
+    "message": "Использовать DeArrow на страницах плейлистов и в панели плейлиста на странице просмотра"
+  },
+  "feature_daSurfacePlaylist_name": {
+    "message": "Плейлисты"
+  },
+  "feature_daSurfaceRelated_desc": {
+    "message": "Использовать DeArrow в рекомендациях рядом с видео"
+  },
+  "feature_daSurfaceRelated_name": {
+    "message": "Похожие видео"
+  },
+  "feature_daSurfaceSearch_desc": {
+    "message": "Использовать DeArrow в результатах поиска YouTube"
+  },
+  "feature_daSurfaceSearch_name": {
+    "message": "Результаты поиска"
+  },
+  "feature_daSurfaceSubscriptions_desc": {
+    "message": "Использовать DeArrow в ленте подписок"
+  },
+  "feature_daSurfaceSubscriptions_name": {
+    "message": "Лента подписок"
+  },
+  "feature_daSurfaceWatch_desc": {
+    "message": "Использовать DeArrow для основного видео и его метаданных"
+  },
+  "feature_daSurfaceWatch_name": {
+    "message": "Страница просмотра"
+  },
   "feature_daTitleFormat_desc": {
     "message": "Как форматировать заменённые заголовки"
   },
@@ -2355,7 +2391,7 @@
     "message": "Hide the Playlists entry"
   },
   "feature_guideHide_playlists_name": {
-    "message": "Playlists"
+    "message": "Плейлисты"
   },
   "feature_guideHide_premium_desc": {
     "message": "Hide the YouTube Premium entry"

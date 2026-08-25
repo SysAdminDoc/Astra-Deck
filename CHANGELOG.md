@@ -18,6 +18,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- DeArrow can now be switched on or off separately for the watch page, related
+  videos, Home, Search, Subscriptions and playlists. All six stay on after an
+  upgrade, preserving the old behaviour. An excluded feed no longer attaches
+  DeArrow's page observer or makes branding requests, and channel overrides
+  still take precedence when that feed is enabled.
+
 - The popup now shows what the saved transcripts are costing you, under the
   storage numbers. That store lives with YouTube's own data rather than the
   extension's, so the figures above it could never see it, and a store with
@@ -26,6 +32,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   over, and nothing is deleted unless that file actually gets written.
 
 ### Fixed
+
+- The quick-link helper under the player stays readable when YouTube is light.
+  The player keeps its own dark surface in that mode, but a broad light-theme
+  rule was giving its popup text a color intended for white panels.
 
 - "Copying isn't available" now tells you to select the text and copy it
   yourself, rather than to check the browser console. Two more messages that had

@@ -21,7 +21,7 @@ const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
 test('settings reference covers every user-facing schema entry with audited purpose copy', () => {
     const entries = collectReferenceEntries();
     const expectedKeys = schema.SETTINGS_SCHEMA.filter((entry) => !entry.internal).map((entry) => entry.key);
-    assert.equal(entries.length, 473);
+    assert.equal(entries.length, 479);
     assert.deepEqual(entries.map((entry) => entry.key), expectedKeys);
     for (const entry of entries) {
         assert.ok(entry.title.length >= 2, `${entry.key} needs a readable title`);

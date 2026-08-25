@@ -2933,6 +2933,12 @@
         html:not([dark]) :is(
             .ytkit-rc-head, .ytkit-stream-links-panel__warn
         ) { color: var(--ytkit-premium-warning) !important; }
+        /* The player remains a dark-owned surface when the surrounding YouTube
+           page is light. Do not pour the light-page subtle token into its
+           quick-link popup. */
+        html:not([dark]) #movie_player .ytkit-ql-form-note {
+            color: rgba(255,255,255,0.72) !important;
+        }
         html:not([dark]) :is(
             .ytkit-aisum-status--error, .ytkit-dl-progress__action
         ) { color: var(--ytkit-premium-danger) !important; }
