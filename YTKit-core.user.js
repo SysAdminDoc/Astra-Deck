@@ -4215,15 +4215,25 @@ if (typeof globalThis !== "undefined") {
         return normalizeTranscriptText(value, 500).toLocaleLowerCase();
     }
 
-    function buildSearchTerms(text, maxTerms = MAX_SEARCH_TERMS) {
+    function buildSearchTermIndex(text, maxTerms = MAX_SEARCH_TERMS) {
+        const cap = Math.max(1, Number(maxTerms) || MAX_SEARCH_TERMS);
         const terms = new Set();
+        let truncated = false;
         for (const match of String(text || '').toLocaleLowerCase().matchAll(SEARCH_TERM_PATTERN)) {
             const term = match[0].replace(/^[\s'’_-]+|[\s'’_-]+$/g, '');
             if (term.length < 3 || term.length > 80) continue;
+            if (terms.size >= cap && !terms.has(term)) {
+                // difference between "exactly at the cap" and "over it".
+                truncated = true;
+                break;
+            }
             terms.add(term);
-            if (terms.size >= maxTerms) break;
         }
-        return [...terms].sort();
+        return { terms: [...terms].sort(), truncated };
+    }
+
+    function buildSearchTerms(text, maxTerms = MAX_SEARCH_TERMS) {
+        return buildSearchTermIndex(text, maxTerms).terms;
     }
 
     function selectLookupTerm(query) {
@@ -4243,11 +4253,13 @@ if (typeof globalThis !== "undefined") {
                 source: 'none', language: '', fetchedAt: 0, expiresAt: 0,
                 staleReason: '', fallbackReason: ''
             };
+        const termIndex = buildSearchTermIndex(text);
         return {
             videoId,
             title: normalizeTranscriptText(raw?.title || '', 200),
             text,
-            searchTerms: buildSearchTerms(text),
+            searchTerms: termIndex.terms,
+            searchTermsTruncated: termIndex.truncated,
             indexedAt: Number.isFinite(Number(raw?.indexedAt)) ? Number(raw.indexedAt) : Date.now(),
             provenance
         };
@@ -4258,8 +4270,26 @@ if (typeof globalThis !== "undefined") {
         return String(record.text).toLocaleLowerCase().includes(normalizedQuery);
     }
 
+    // A record's search terms are stored TWICE and neither copy was counted.
+    // so the budget whose stated purpose is to evict "long before a write can
+    // fail" was reading low, by the most on exactly the records that cost most.
+    const PRIMARY_KEY_BYTES = 22;   // an 11-character video id, UTF-16
+    const INDEX_ROW_OVERHEAD = 32;  // key, primary key reference, and structure
+
+    function estimateSearchTermBytes(terms) {
+        const list = Array.isArray(terms) ? terms : [];
+        let characters = 0;
+        for (const term of list) characters += String(term || '').length;
+        const stored = characters * 2;
+        const indexed = stored + (list.length * (PRIMARY_KEY_BYTES + INDEX_ROW_OVERHEAD));
+        return stored + indexed;
+    }
+
     function estimateRecordBytes(record) {
-        return (String(record?.text || '').length * 2) + (String(record?.title || '').length * 2) + 384;
+        return (String(record?.text || '').length * 2)
+            + (String(record?.title || '').length * 2)
+            + estimateSearchTermBytes(record?.searchTerms)
+            + 384;
     }
 
     function planTranscriptEviction(entries, options = {}) {
@@ -4359,6 +4389,8 @@ if (typeof globalThis !== "undefined") {
         normalizeTranscriptText,
         normalizeSearchQuery,
         buildSearchTerms,
+        buildSearchTermIndex,
+        estimateSearchTermBytes,
         selectLookupTerm,
         prepareTranscriptRecord,
         matchesSearch,

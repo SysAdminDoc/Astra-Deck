@@ -55,15 +55,31 @@
         return normalizeTranscriptText(value, 500).toLocaleLowerCase();
     }
 
-    function buildSearchTerms(text, maxTerms = MAX_SEARCH_TERMS) {
+    // The Set fills in document order and stops at the cap, so the terms it
+    // drops are the ones at the END of a long transcript. A query matching only
+    // the tail of a 200,000-character transcript found nothing, and nothing said
+    // so. This reports whether that happened; buildSearchTerms keeps returning
+    // the plain array its other callers expect.
+    function buildSearchTermIndex(text, maxTerms = MAX_SEARCH_TERMS) {
+        const cap = Math.max(1, Number(maxTerms) || MAX_SEARCH_TERMS);
         const terms = new Set();
+        let truncated = false;
         for (const match of String(text || '').toLocaleLowerCase().matchAll(SEARCH_TERM_PATTERN)) {
             const term = match[0].replace(/^[\s'’_-]+|[\s'’_-]+$/g, '');
             if (term.length < 3 || term.length > 80) continue;
+            if (terms.size >= cap && !terms.has(term)) {
+                // A term we cannot store, and there is text left. That is the
+                // difference between "exactly at the cap" and "over it".
+                truncated = true;
+                break;
+            }
             terms.add(term);
-            if (terms.size >= maxTerms) break;
         }
-        return [...terms].sort();
+        return { terms: [...terms].sort(), truncated };
+    }
+
+    function buildSearchTerms(text, maxTerms = MAX_SEARCH_TERMS) {
+        return buildSearchTermIndex(text, maxTerms).terms;
     }
 
     function selectLookupTerm(query) {
@@ -83,11 +99,15 @@
                 source: 'none', language: '', fetchedAt: 0, expiresAt: 0,
                 staleReason: '', fallbackReason: ''
             };
+        const termIndex = buildSearchTermIndex(text);
         return {
             videoId,
             title: normalizeTranscriptText(raw?.title || '', 200),
             text,
-            searchTerms: buildSearchTerms(text),
+            searchTerms: termIndex.terms,
+            // Stored on the record so a search can tell which transcripts the
+            // term index cannot answer for, and fall back to reading their text.
+            searchTermsTruncated: termIndex.truncated,
             indexedAt: Number.isFinite(Number(raw?.indexedAt)) ? Number(raw.indexedAt) : Date.now(),
             provenance
         };
@@ -98,8 +118,31 @@
         return String(record.text).toLocaleLowerCase().includes(normalizedQuery);
     }
 
+    // A record's search terms are stored TWICE and neither copy was counted.
+    //
+    // prepareTranscriptRecord puts up to 5000 terms of 3 to 80 characters on the
+    // record, and ytkit.js builds a multiEntry index over that array, so every
+    // term is also an index row carrying the primary key. The estimate counted
+    // text and title only, which is what MAX_TOTAL_BYTES is compared against —
+    // so the budget whose stated purpose is to evict "long before a write can
+    // fail" was reading low, by the most on exactly the records that cost most.
+    const PRIMARY_KEY_BYTES = 22;   // an 11-character video id, UTF-16
+    const INDEX_ROW_OVERHEAD = 32;  // key, primary key reference, and structure
+
+    function estimateSearchTermBytes(terms) {
+        const list = Array.isArray(terms) ? terms : [];
+        let characters = 0;
+        for (const term of list) characters += String(term || '').length;
+        const stored = characters * 2;
+        const indexed = stored + (list.length * (PRIMARY_KEY_BYTES + INDEX_ROW_OVERHEAD));
+        return stored + indexed;
+    }
+
     function estimateRecordBytes(record) {
-        return (String(record?.text || '').length * 2) + (String(record?.title || '').length * 2) + 384;
+        return (String(record?.text || '').length * 2)
+            + (String(record?.title || '').length * 2)
+            + estimateSearchTermBytes(record?.searchTerms)
+            + 384;
     }
 
     // Pure eviction planner. Takes {videoId, indexedAt, bytes} descriptors in any
@@ -213,6 +256,8 @@
         normalizeTranscriptText,
         normalizeSearchQuery,
         buildSearchTerms,
+        buildSearchTermIndex,
+        estimateSearchTermBytes,
         selectLookupTerm,
         prepareTranscriptRecord,
         matchesSearch,
