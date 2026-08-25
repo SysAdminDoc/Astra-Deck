@@ -362,10 +362,15 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 
 <p align="center">
   <img src="outputs/astra-deck-youtube-normal-dark.png" alt="Astra Deck normal YouTube watch page in dark mode" width="440">
+  <img src="outputs/astra-deck-youtube-native-theater-dark.png" alt="Astra Deck native YouTube Theater page with comments and related videos in dark mode" width="440">
+</p>
+
+<p align="center">
+  <img src="outputs/astra-deck-youtube-native-theater-light.png" alt="Astra Deck native YouTube Theater page with comments and related videos in light mode" width="440">
   <img src="outputs/astra-deck-youtube-theater-split-light.png" alt="Astra Deck Theater Split with video and comments in light mode" width="440">
 </p>
 
-<p align="center"><sub>Normal watch page in dark mode and Theater Split in light mode. Both layouts are also verified in the opposite theme.</sub></p>
+<p align="center"><sub>Normal YouTube, native Theater, and Theater Split share the same dark and light page themes while the video canvas stays black.</sub></p>
 
 - Command Deck workspace with a mission card and three live preference summaries on every category
 - Searchable sidebar spanning eleven destinations, including the dedicated Video Hider workflow
@@ -375,7 +380,7 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 - Textarea editors for keyword filters, quick links, custom CSS
 - Schema-validated Export / Import / Reset with credential scrub
 - Conflict detection (auto-disables conflicting features with toast notification)
-- Verified dark/light and RTL layouts at supported desktop viewports, including normal YouTube pages, Theater Split, and a rendered light-theme contrast lane for page surfaces and dark YouTube player chrome. The mobile light state is exercised in the settings fixture; mobile browser support remains host-dependent.
+- Verified dark/light and RTL layouts at supported desktop viewports, including normal YouTube, native Theater, and Theater Split. The live browser check measures metadata, comments, related videos or chat, scrolling, and player geometry across repeated mode changes. The mobile light state is exercised in the settings fixture; mobile browser support remains host-dependent.
 
 The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, schema-validated backups, diagnostics, and language selection.
 

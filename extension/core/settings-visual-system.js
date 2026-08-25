@@ -3309,6 +3309,7 @@
             --ytkit-watch-border-strong: var(--ytkit-premium-border-strong);
             --ytkit-watch-text: var(--ytkit-premium-text);
             --ytkit-watch-muted: var(--ytkit-premium-muted);
+            --ytkit-watch-player-canvas: #000000;
             --yt-spec-base-background: var(--ytkit-watch-canvas) !important;
             --yt-spec-general-background-a: var(--ytkit-watch-panel) !important;
             --yt-spec-general-background-b: var(--ytkit-watch-raised) !important;
@@ -3333,6 +3334,28 @@
         html.ytkit-watch-restyle ytd-watch-flexy {
             background: var(--ytkit-watch-canvas) !important;
             color: var(--ytkit-watch-text) !important;
+        }
+
+        html.ytkit-watch-restyle :is(
+            #full-bleed-container,
+            #player-full-bleed-container,
+            #player-theater-container
+        ) {
+            --ytkit-native-theater-page: var(--ytkit-watch-canvas);
+            --ytkit-native-theater-text: var(--ytkit-watch-text);
+            color: var(--ytkit-native-theater-text) !important;
+        }
+
+        html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-flexy:is(
+            [theater],
+            [full-bleed-player]
+        ) :is(
+            #full-bleed-container,
+            #player-full-bleed-container,
+            #player-theater-container
+        ),
+        html.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) #movie_player.ytp-full-bleed-player {
+            background: var(--ytkit-watch-player-canvas) !important;
         }
 
         html.ytkit-watch-restyle ytd-masthead,

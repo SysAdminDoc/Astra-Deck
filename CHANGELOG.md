@@ -33,6 +33,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- YouTube's own Theater button now has the same dark and light watch-page
+  treatment as the normal page and Theater Split. Full-bleed player containers
+  keep a black video canvas while metadata, comments, and current related-card
+  layouts follow the page theme. The isolated live check now toggles all three
+  modes repeatedly and measures scrolling, readable surfaces, player overlap,
+  and cleanup after each transition.
+
 - UI tests now build the controls they inspect instead of searching the source
   for code that looks right. The connected fixtures cover 44 UI builders and
   fail when a renderer uses the wrong parent, stacks children, loses state, or
@@ -40,6 +47,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   replacement cannot quietly remove that coverage later.
 
 ### Fixed
+
+- Leaving Theater Split restores the inline player sizes that YouTube owned
+  before Astra changed them. Its fixed-width video and inner-container styles
+  no longer leak into normal or native Theater mode.
 
 - The quick-link helper under the player stays readable when YouTube is light.
   The player keeps its own dark surface in that mode, but a broad light-theme

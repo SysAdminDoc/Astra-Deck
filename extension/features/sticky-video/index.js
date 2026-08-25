@@ -3247,6 +3247,7 @@
             _liveHeaderHeight: 154,
             _videoType: 'standard',        // 'live' | 'vod' | 'standard'
             _positionedEls: [],            // elements we CSS-positioned over right panel
+            _playerGeometryStash: [],      // original inline geometry restored after unmount
             _scrollTarget: null,           // which element receives scroll/wheel handlers
             _pendingWaits: [],             // cancel fns for in-flight waitForElement chains
             _destroyed: false,             // blocks zombie mounts after teardown
@@ -4380,6 +4381,28 @@
                 props.forEach(p => el.style.removeProperty(p));
             },
 
+            _stashPlayerGeometry(el, properties) {
+                if (!el || this._playerGeometryStash.some(entry => entry.el === el)) return;
+                this._playerGeometryStash.push({
+                    el,
+                    properties: properties.map(property => ({
+                        property,
+                        value: el.style.getPropertyValue(property),
+                        priority: el.style.getPropertyPriority(property)
+                    }))
+                });
+            },
+
+            _restorePlayerGeometry() {
+                for (const { el, properties } of this._playerGeometryStash.splice(0)) {
+                    if (!el?.style) continue;
+                    for (const { property, value, priority } of properties) {
+                        if (value) el.style.setProperty(property, value, priority);
+                        else el.style.removeProperty(property);
+                    }
+                }
+            },
+
             // Force/restore chat frame internals
             _forceChatFill(chatEl) {
                 if (!chatEl) return;
@@ -4718,6 +4741,10 @@
                 // Fix player in place — NO reparenting. Avoids Chrome losing the video
                 // GPU compositor surface when the window moves between monitors.
                 // The overlay's left panel is transparent, so the player shows through.
+                this._stashPlayerGeometry(player, [
+                    'position', 'top', 'left', 'width', 'height', 'z-index',
+                    'background', 'min-height', 'margin', 'padding', 'max-width', 'overflow'
+                ]);
                 this._setStyles(player, {
                     position: 'fixed', top: '0', left: '0',
                     width: '100%', height: '100vh',
@@ -4739,14 +4766,18 @@
                         if (!this._isActive) return;
                         const mp = document.getElementById('movie_player');
                         if (!mp) return;
+                        this._stashPlayerGeometry(mp, ['width', 'height']);
                         mp.style.setProperty('width',  '100%', 'important');
                         mp.style.setProperty('height', '100%', 'important');
                         const vc = mp.querySelector('.html5-video-container');
                         const vid = mp.querySelector('video.html5-main-video');
+                        this._stashPlayerGeometry(vc, ['width', 'height']);
+                        this._stashPlayerGeometry(vid, ['width', 'height', 'object-fit']);
                         if (vc)  { vc.style.setProperty('width','100%','important'); vc.style.setProperty('height','100%','important'); }
                         if (vid) { vid.style.setProperty('width','100%','important'); vid.style.setProperty('height','100%','important'); vid.style.setProperty('object-fit','contain','important'); }
                         const ytdP = mp.closest('ytd-player');
                         const innerCont = ytdP?.querySelector('#container');
+                        this._stashPlayerGeometry(innerCont, ['width', 'height', 'padding-bottom']);
                         if (innerCont) { innerCont.style.setProperty('width','100%','important'); innerCont.style.setProperty('height','100%','important'); innerCont.style.setProperty('padding-bottom','0','important'); }
                     });
                 };
@@ -5342,12 +5373,9 @@
                 this._playerResizeObs?.disconnect();
                 this._playerResizeObs = null;
 
-                // Clear fixed positioning — player never left its original DOM location
-                const player = this._getPlayer();
-                if (player) {
-                    this._removeStyles(player, ['position', 'top', 'left', 'width', 'height',
-                        'z-index', 'background', 'min-height', 'margin', 'padding', 'max-width', 'overflow']);
-                }
+                // Restore the exact inline geometry that YouTube owned before
+                // Theater Split touched the player and its descendants.
+                this._restorePlayerGeometry();
 
                 // Restore all positioned elements — remove fixed positioning styles
                 this._unpositionAll();
@@ -5365,9 +5393,6 @@
                     chatEl.style.removeProperty('border-bottom');
                     this._restoreChatFill(chatEl);
                 }
-
-                const mp = document.getElementById('movie_player');
-                if (mp) { mp.style.width=''; mp.style.height=''; }
 
                 document.querySelectorAll('[data-ytkit-split-hidden]').forEach(el => {
                     el.style.display=''; el.style.removeProperty('pointer-events');

@@ -6,13 +6,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### P2
 
-- [ ] P2: Add native YouTube Theater to watch-theme conformance
-  Why: live theme coverage verifies normal watch and Astra Theater Split in dark and light, but never toggles YouTube's distinct native Theater or full-bleed layout, where current experiments change scrolling, comments access, and player geometry.
-  Evidence: `scripts/smoke-zero-ads-live.js`; `README.md`; [YouTube player sizing](https://support.google.com/youtube/answer/6052392); [full-bleed report](https://www.reddit.com/r/youtube/comments/1nb5pcc); [Theater experiment report](https://www.reddit.com/r/youtube/comments/1oidrvv)
-  Touches: watch-theme CSS in `extension/ytkit.js` and `extension/features/chat-style-comments/index.js`, Theater Split coexistence rules, `scripts/smoke-zero-ads-live.js`, theme tests, README screenshots
-  Acceptance: the smoke toggles the native size control independently of Theater Split and captures native Theater in dark and light; it asserts readable metadata, comments, related rail or live chat, usable scrolling, non-overlapping player geometry, and theme tokens on `#full-bleed-container` variants; switching normal, native Theater, and Theater Split repeatedly leaves no stale classes or inline geometry.
-  Complexity: M
-
 - [ ] P2: Key selector health to YouTube builds and add a critical-surface canary
   Why: per-selector telemetry exists, but failures are not correlated to `INNERTUBE_CLIENT_VERSION` and users receive no single warning when a YouTube deployment breaks several critical surfaces together.
   Evidence: `extension/core/selector-health.js`, `extension/core/transcript-service.js`, `extension/core/selector-packs/**`, 2026 view-model and template migrations in [ImprovedTube](https://github.com/code-charity/youtube), [DeArrow](https://github.com/ajayyy/DeArrow), and [Invidious](https://github.com/iv-org/invidious)
