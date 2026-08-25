@@ -256,7 +256,6 @@ function shrinkModuleBody(body, relativePath) {
     const stripped = stripSafeLineComments(body);
     if (stripped.length >= body.length) return body;
     try {
-        // eslint-disable-next-line no-new-func
         new Function(stripped);
     } catch (_) {
         console.warn('[sync-userscript] kept comments in ' + relativePath + ': stripping did not re-parse');

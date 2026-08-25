@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Browser sync no longer leaves your account holding a payload no device can
+  read. A push writes the settings in pieces and the index for those pieces
+  last, and if that final write was the one that failed, every other device
+  reported the sync data as corrupt until something managed a clean push. A
+  failed push now puts the account back the way the other devices already read
+  it. Local changes are also collapsed into one push instead of one per change,
+  so hiding a run of videos no longer runs into the browser's write limit.
+
 - The download progress panel no longer reads itself aloud every 750 ms. The
   whole panel was a live region while the poll rewrote percent, speed and ETA on
   every tick, so a five-minute download queued hundreds of full-panel
