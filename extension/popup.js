@@ -624,6 +624,8 @@ let healthCopyPayload = '';
 
 // storage-quota proactive warning banner.
 const storageBanner = $('#storage-banner');
+const transcriptIndexDetail = $('#transcript-index-detail');
+const transcriptIndexRecover = $('#transcript-index-recover');
 const storageBannerDetail = $('#storage-banner-detail');
 const storageBannerResetBtn = $('#storage-banner-reset-btn');
 
@@ -2439,6 +2441,133 @@ function setStatCardsUnavailable() {
         element.textContent = copy;
         element.dataset.state = 'unavailable';
         element.title = copy;
+    }
+}
+
+// The transcript store, which the storage cards above cannot see.
+//
+// Those numbers come from extension-local storage. The transcript index is in
+// an IndexedDB under the YouTube origin, so the largest thing Astra Deck writes
+// to disk had no readout on the one surface a user goes to for storage — and a
+// store with unreadable records in it looked exactly like a large one.
+//
+// It has to be asked for through a YouTube tab, because that is where the
+// database is. When there is not one, say so rather than showing nothing.
+let transcriptRecoveryBusy = false;
+
+function setTranscriptIndexDetail(text) {
+    if (transcriptIndexDetail) transcriptIndexDetail.textContent = text;
+}
+
+async function renderTranscriptIndexUsage() {
+    if (!transcriptIndexDetail) return;
+    if (transcriptIndexRecover) transcriptIndexRecover.hidden = true;
+    let stats;
+    try {
+        const { response } = await sendPersistedDataMessage({ action: 'stats' });
+        stats = response;
+    } catch (error) {
+        setTranscriptIndexDetail(isPersistedDataUnavailable(error)
+            ? t('transcriptStoreNoTab', 'Transcript store: open a YouTube tab to measure it.')
+            : t('transcriptStoreFailed', 'Transcript store: could not be measured.'));
+        return;
+    }
+
+    const records = Number(stats?.records) || 0;
+    const corrupt = Number(stats?.corrupt) || 0;
+    const bytes = Number(stats?.bytes) || 0;
+    if (!records) {
+        setTranscriptIndexDetail(t('transcriptStoreEmpty', 'Transcript store: empty.'));
+        return;
+    }
+
+    const size = formatBytes(bytes);
+    if (corrupt > 0) {
+        setTranscriptIndexDetail(tCount(corrupt, 'transcriptStoreDamagedTpl',
+            'Transcript store: {size} across {count} video, {corrupt} of them unreadable.',
+            'Transcript store: {size} across {count} videos, {corrupt} of them unreadable.')
+            .replace('{size}', size)
+            .replace('{count}', formatCount(records))
+            .replace('{corrupt}', formatCount(corrupt)));
+        if (transcriptIndexRecover) transcriptIndexRecover.hidden = false;
+        return;
+    }
+    setTranscriptIndexDetail(tCount(records, 'transcriptStoreOkTpl',
+        'Transcript store: {size} across {count} video.',
+        'Transcript store: {size} across {count} videos.')
+        .replace('{size}', size)
+        .replace('{count}', formatCount(records)));
+}
+
+// Export first, clear second, and never the second without the first.
+//
+// A damaged store is the one case where clearing is the only way out, and it
+// is also the case where whatever is still readable is the only copy. So the
+// readable records are written to a file the user has, and the clear only runs
+// once that has actually happened.
+async function recoverTranscriptIndex() {
+    if (transcriptRecoveryBusy) return;
+    transcriptRecoveryBusy = true;
+    if (transcriptIndexRecover) transcriptIndexRecover.disabled = true;
+    try {
+        let exported;
+        try {
+            exported = await readAllTranscriptRecords({ allowUnavailable: true });
+        } catch (error) {
+            showStatus(failureText('transcript-recovery-export', error,
+                'transcriptStoreExportFailed',
+                'Could not export the transcript store. Nothing was cleared.'), 'error', 5000);
+            return;
+        }
+        if (!exported.available) {
+            showStatus(t('transcriptStoreNoTab', 'Transcript store: open a YouTube tab to measure it.'), 'info', 4000);
+            return;
+        }
+
+        const records = Array.isArray(exported.records) ? exported.records : [];
+        try {
+            downloadTranscriptRecovery(records);
+        } catch (error) {
+            showStatus(failureText('transcript-recovery-download', error,
+                'transcriptStoreExportFailed',
+                'Could not export the transcript store. Nothing was cleared.'), 'error', 5000);
+            return;
+        }
+
+        try {
+            await sendPersistedDataMessage({ action: 'clear' }, exported.origin);
+        } catch (error) {
+            showStatus(failureText('transcript-recovery-clear', error,
+                'transcriptStoreClearFailed',
+                'The export was saved, but the store could not be cleared.'), 'error', 5000);
+            return;
+        }
+        showStatus(tCount(records.length, 'transcriptStoreRecoveredTpl',
+            'Exported {count} readable transcript and cleared the store.',
+            'Exported {count} readable transcripts and cleared the store.')
+            .replace('{count}', formatCount(records.length)), 'success', 4200);
+        await renderTranscriptIndexUsage();
+    } finally {
+        transcriptRecoveryBusy = false;
+        if (transcriptIndexRecover) transcriptIndexRecover.disabled = false;
+    }
+}
+
+function downloadTranscriptRecovery(records) {
+    const payload = JSON.stringify({
+        kind: 'astra-deck-transcript-recovery',
+        exportedAt: new Date().toISOString(),
+        records
+    }, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    try {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'astra-deck-transcripts-recovery.json';
+        link.click();
+    } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
 }
 
@@ -7104,6 +7233,10 @@ function installWheelScrolling() {
     }
 
     void renderStorageInfo();
+    // The transcript store lives in a YouTube-origin IndexedDB, so it needs a
+    // tab rather than a storage read. Kept off the storage path so a missing
+    // tab never delays the cards above it.
+    void renderTranscriptIndexUsage();
     void renderSettingsSyncStatus();
     // best-effort selector-health snapshot from the active tab.
     // Hides the section if the user isn't on a YouTube page or if the
@@ -7413,4 +7546,7 @@ function installWheelScrolling() {
     // reachable only from the banner. (There is no PIN in this surface; the
     // comment that claimed one never matched the code.)
     if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', () => { void resetAllData(); });
+    if (transcriptIndexRecover) {
+        transcriptIndexRecover.addEventListener('click', () => { void recoverTranscriptIndex(); });
+    }
 })();

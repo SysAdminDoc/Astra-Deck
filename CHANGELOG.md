@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- The popup now shows what the saved transcripts are costing you, under the
+  storage numbers. That store lives with YouTube's own data rather than the
+  extension's, so the figures above it could never see it, and a store with
+  damaged entries in it looked exactly like a large one. If any entries are
+  unreadable it says how many and offers to save the rest to a file and start
+  over, and nothing is deleted unless that file actually gets written.
+
 ### Fixed
 
 - "Copying isn't available" now tells you to select the text and copy it

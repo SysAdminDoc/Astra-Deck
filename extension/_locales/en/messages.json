@@ -7053,6 +7053,48 @@
   "transcriptSourceWatchPage": {
     "message": "a fresh YouTube watch page"
   },
+  "transcriptStoreChecking": {
+    "message": "Checking the transcript store…"
+  },
+  "transcriptStoreClearFailed": {
+    "message": "The export was saved, but the store could not be cleared."
+  },
+  "transcriptStoreDamagedTplOne": {
+    "message": "Transcript store: {size} across {count} video, {corrupt} of them unreadable."
+  },
+  "transcriptStoreDamagedTplOther": {
+    "message": "Transcript store: {size} across {count} videos, {corrupt} of them unreadable."
+  },
+  "transcriptStoreEmpty": {
+    "message": "Transcript store: empty."
+  },
+  "transcriptStoreExportFailed": {
+    "message": "Could not export the transcript store. Nothing was cleared."
+  },
+  "transcriptStoreFailed": {
+    "message": "Transcript store: could not be measured."
+  },
+  "transcriptStoreNoTab": {
+    "message": "Transcript store: open a YouTube tab to measure it."
+  },
+  "transcriptStoreOkTplOne": {
+    "message": "Transcript store: {size} across {count} video."
+  },
+  "transcriptStoreOkTplOther": {
+    "message": "Transcript store: {size} across {count} videos."
+  },
+  "transcriptStoreRecover": {
+    "message": "Export and clear"
+  },
+  "transcriptStoreRecoverAria": {
+    "message": "Export the readable transcripts, then clear the damaged store"
+  },
+  "transcriptStoreRecoveredTplOne": {
+    "message": "Exported {count} readable transcript and cleared the store."
+  },
+  "transcriptStoreRecoveredTplOther": {
+    "message": "Exported {count} readable transcripts and cleared the store."
+  },
   "transcriptTimeUnknown": {
     "message": "at an unknown time"
   },
