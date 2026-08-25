@@ -56,11 +56,24 @@
                 // Undo attempt can still restore the exact pre-import snapshot
                 // instead of losing the recovery path.
                 const keepCheckpoint = (rollbackError) => {
+                    // Same ownership rule as finalize: a newer operation's
+                    // checkpoint must not be replaced by a straggler.
+                    if (generation !== operationGeneration) {
+                        return {
+                            ok: false,
+                            phase: 'rollback',
+                            rolledBack: false,
+                            error,
+                            rollbackError,
+                            canUndo: true
+                        };
+                    }
                     checkpoint = {
                         snapshot,
                         summary: operation.summary || null,
                         restore: operation.restore,
-                        createdAt
+                        createdAt,
+                        generation
                     };
                     return {
                         ok: false,
@@ -72,7 +85,14 @@
                     };
                 };
                 const settle = () => {
-                    checkpoint = null;
+                    // Clear only a checkpoint this operation owns. An import
+                    // that failed and rolled back cleanly leaves the PREVIOUS
+                    // import's undo point valid, because the state on disk
+                    // after the rollback is exactly the state that import
+                    // produced. Nulling unconditionally destroyed it, so one
+                    // failed import silently took away the undo for the one
+                    // before it.
+                    if (checkpoint?.generation === generation) checkpoint = null;
                     return { ok: false, phase: 'apply', rolledBack: true, error };
                 };
                 let restored;

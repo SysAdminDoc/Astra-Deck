@@ -2783,11 +2783,24 @@ if (typeof globalThis !== "undefined") {
                 // Undo attempt can still restore the exact pre-import snapshot
                 // instead of losing the recovery path.
                 const keepCheckpoint = (rollbackError) => {
+                    // Same ownership rule as finalize: a newer operation's
+                    // checkpoint must not be replaced by a straggler.
+                    if (generation !== operationGeneration) {
+                        return {
+                            ok: false,
+                            phase: 'rollback',
+                            rolledBack: false,
+                            error,
+                            rollbackError,
+                            canUndo: true
+                        };
+                    }
                     checkpoint = {
                         snapshot,
                         summary: operation.summary || null,
                         restore: operation.restore,
-                        createdAt
+                        createdAt,
+                        generation
                     };
                     return {
                         ok: false,
@@ -2799,7 +2812,14 @@ if (typeof globalThis !== "undefined") {
                     };
                 };
                 const settle = () => {
-                    checkpoint = null;
+                    // Clear only a checkpoint this operation owns. An import
+                    // that failed and rolled back cleanly leaves the PREVIOUS
+                    // import's undo point valid, because the state on disk
+                    // after the rollback is exactly the state that import
+                    // produced. Nulling unconditionally destroyed it, so one
+                    // failed import silently took away the undo for the one
+                    // before it.
+                    if (checkpoint?.generation === generation) checkpoint = null;
                     return { ok: false, phase: 'apply', rolledBack: true, error };
                 };
                 let restored;
@@ -3246,7 +3266,14 @@ if (typeof globalThis !== "undefined") {
         return 'fetch-failed';
     }
 
-    function sanitizeTranscriptProvenance(value = {}) {
+    function sanitizeTranscriptProvenance(rawValue) {
+        // A default parameter only fires on `undefined`. Every caller passes
+        // `row.provenance` / `raw?.provenance`, which is null whenever the
+        // property exists and holds null, and `null.source` threw. Two of those
+        // call sites run inside an IndexedDB onsuccess handler, where the throw
+        // leaves the wrapping promise unsettled, so the read hangs rather than
+        // rejecting. Normalise anything that is not an object to an empty one.
+        const value = rawValue && typeof rawValue === 'object' ? rawValue : {};
         const source = TRANSCRIPT_SOURCES.has(value.source) ? value.source : 'none';
         const fetchedAt = Number(value.fetchedAt);
         const expiresAt = Number(value.expiresAt);
@@ -3675,10 +3702,22 @@ if (typeof globalThis !== "undefined") {
                     const row = segment.closest?.('ytd-transcript-segment-renderer');
                     const stamp = row?.querySelector?.('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]')
                         ?.textContent?.trim() || '';
-                    const parts = stamp.split(':').map(Number).filter(Number.isFinite);
+                    // YouTube renders this timestamp with the viewer's own
+                    // numerals, and `Number('٠:٠٧')` is NaN, so every cue in an
+                    // ar/fa/hi/th session landed at 00:00. The same table
+                    // core/text-metrics.js uses for view counts fixes it.
+                    const normalizeDigits = globalThis.YTKitCore?.normalizeDigits;
+                    const stampDigits = typeof normalizeDigits === 'function' ? normalizeDigits(stamp) : stamp;
+                    const parts = stampDigits.split(':').map((part) => Number(part.trim()));
+                    // `filter(Number.isFinite)` was worse than dropping the
+                    // cue: it changed the array LENGTH, so a 3-part stamp with
+                    // one unreadable component became a 2-part one and the
+                    // hours field was read as minutes. Require every component.
                     let startSeconds = 0;
-                    if (parts.length === 2) startSeconds = parts[0] * 60 + parts[1];
-                    else if (parts.length === 3) startSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                    if (parts.every(Number.isFinite)) {
+                        if (parts.length === 2) startSeconds = parts[0] * 60 + parts[1];
+                        else if (parts.length === 3) startSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                    }
                     cues.push({ startMs: startSeconds * 1000, endMs: startSeconds * 1000, text });
                 }
                 return cues.length ? cues : null;
@@ -12943,7 +12982,10 @@ if (typeof globalThis !== "undefined") {
         return Math.round(token.number * parseSuffix(token.suffix));
     }
 
-    Object.assign(core, { escapeRegExp, parseCompactCount });
+    // normalizeDigits is shared: the transcript scraper needs the same
+    // Arabic-Indic / Devanagari / Thai / fullwidth table when it reads a
+    // rendered timestamp out of YouTube's own DOM.
+    Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits });
 })();
 //m:11
 (() => {
@@ -13088,7 +13130,14 @@ if (typeof globalThis !== "undefined") {
     function formatDurationFallback(seconds, options = {}) {
         const { hours, minutes, seconds: remainder } = durationParts(seconds);
         if (options.style === 'digital') {
-            const clock = `${minutes}:${String(remainder).padStart(2, '0')}`;
+            // With an hours field in front, minutes have to be two digits or
+            // the clock reads "1:2:03". Chrome 120 to 128 takes this path
+            // (Intl.DurationFormat landed in 129) and the manifest floor is
+            // 120, so the platform path never covered it. Leading minutes stay
+            // unpadded, which is how YouTube renders its own durations.
+            const clock = hours > 0
+                ? `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
+                : `${minutes}:${String(remainder).padStart(2, '0')}`;
             return hours > 0 ? `${hours}:${clock}` : clock;
         }
         const includeSeconds = options.includeSeconds !== false;

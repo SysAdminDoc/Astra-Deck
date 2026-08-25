@@ -173,12 +173,18 @@
         return out;
     }
 
+    // Every one of these lists is appended to: Video Hider does
+    // `hidden.push(id)` and `[...channels, record]`, and trims with
+    // `splice(0, overflow)` so the OLDEST entry is the one that goes. Truncating
+    // from the front here did the opposite and threw away what the user had just
+    // hidden. `markedWatchedVideos` already pre-sliced with `slice(-5000)` for
+    // exactly this reason; the other two missed it.
     function sanitizeVideoIds(value, max = 5000) {
         if (!Array.isArray(value)) return [];
-        return [...new Set(value.filter((id) => typeof id === 'string').map((id) => id.trim()).filter((id) => VIDEO_ID_PATTERN.test(id)))].slice(0, max);
+        return [...new Set(value.filter((id) => typeof id === 'string').map((id) => id.trim()).filter((id) => VIDEO_ID_PATTERN.test(id)))].slice(-max);
     }
 
-    function sanitizeBlockedChannels(value) {
+    function sanitizeBlockedChannels(value, max = 2000) {
         if (!Array.isArray(value)) return [];
         const seen = new Set();
         const out = [];
@@ -189,9 +195,10 @@
             seen.add(id);
             const name = typeof row.name === 'string' ? row.name.trim().slice(0, 200) : id;
             out.push({ id, name: name || id });
-            if (out.length >= 2000) break;
         }
-        return out;
+        // Dedupe keeps the first occurrence so the order never shuffles, then
+        // the cap takes the tail. Same shape as sanitizeVideoIds.
+        return out.slice(-max);
     }
 
     // Single source of truth for "may Astra Deck fetch this?" — core/remote-list-scope.js.

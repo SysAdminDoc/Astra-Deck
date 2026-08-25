@@ -237,3 +237,55 @@ test('undo keeps its checkpoint when the restore writes reject', async () => {
     assert.equal(secondUndo.ok, true);
     assert.deepEqual(state, original);
 });
+
+test('a failed import does not take away the previous undo', () => {
+    // `finalize` has an ownership guard so a straggler cannot clobber a
+    // newer checkpoint. `settle` had none and nulled unconditionally, so a
+    // clean rollback of import B destroyed the undo point for import A,
+    // even though the state on disk after that rollback is exactly what A
+    // produced. Two sequential imports, no concurrency needed.
+    let state = { n: 0 };
+    const transaction = createSettingsImportTransaction();
+
+    const good = transaction.run({
+        validate: () => {},
+        snapshot: () => ({ ...state }),
+        apply: () => { state = { n: 'A' }; },
+        restore: (snap) => { state = { ...snap }; },
+        summary: { tag: 'A' }
+    });
+    assert.equal(good.ok, true);
+    assert.equal(transaction.hasUndo(), true, 'a successful import offers undo');
+
+    const bad = transaction.run({
+        validate: () => {},
+        snapshot: () => ({ ...state }),
+        apply: () => { state = { n: 'partial' }; throw new Error('storage full'); },
+        restore: (snap) => { state = { ...snap }; }
+    });
+    assert.equal(bad.ok, false);
+    assert.equal(bad.rolledBack, true, 'the failed import must roll itself back');
+    assert.deepEqual(state, { n: 'A' }, 'rollback restores the state import A produced');
+
+    assert.equal(transaction.hasUndo(), true, 'the earlier undo must survive a later import failing');
+    assert.equal(transaction.inspect()?.summary?.tag, 'A',
+        'and it must still be the first checkpoint');
+    const undone = transaction.undo();
+    assert.equal(undone.ok, true);
+    assert.deepEqual(state, { n: 0 }, 'undo returns to the state before import A');
+});
+
+test('a failed import with no prior import still exposes no undo', () => {
+    // The ownership guard must not resurrect an undo for the operation that
+    // just failed. This is the case the original test covered.
+    let state = { n: 0 };
+    const transaction = createSettingsImportTransaction();
+    const bad = transaction.run({
+        validate: () => {},
+        snapshot: () => ({ ...state }),
+        apply: () => { throw new Error('nope'); },
+        restore: (snap) => { state = { ...snap }; }
+    });
+    assert.equal(bad.ok, false);
+    assert.equal(transaction.hasUndo(), false, 'a failed import offers no undo of its own');
+});
