@@ -152,6 +152,9 @@
   "altFrontendOpenAriaTpl": {
     "message": "{host}에서 외부로 열기"
   },
+  "astraContextMenuAria": {
+    "message": "Astra actions"
+  },
   "audioOnlyActive": {
     "message": "오디오 전용"
   },
@@ -4660,6 +4663,27 @@
   },
   "qt_transcriptViewer_name": {
     "message": "대본 사이드바"
+  },
+  "queueClear": {
+    "message": "지우기"
+  },
+  "queueCleared": {
+    "message": "Queue cleared"
+  },
+  "queueExport": {
+    "message": "내보내기"
+  },
+  "queueImport": {
+    "message": "가져오기"
+  },
+  "queuePanelAria": {
+    "message": "Astra persistent queue"
+  },
+  "queuePanelTitle": {
+    "message": "Persistent Queue"
+  },
+  "queuePlayNext": {
+    "message": "Play next"
   },
   "quickGroupCountTpl": {
     "message": "{enabled}/{total}"

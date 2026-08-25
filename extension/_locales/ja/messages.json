@@ -152,6 +152,9 @@
   "altFrontendOpenAriaTpl": {
     "message": "{host} で外部として開く"
   },
+  "astraContextMenuAria": {
+    "message": "Astra actions"
+  },
   "audioOnlyActive": {
     "message": "音声のみ"
   },
@@ -4660,6 +4663,27 @@
   },
   "qt_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"
+  },
+  "queueClear": {
+    "message": "クリア"
+  },
+  "queueCleared": {
+    "message": "Queue cleared"
+  },
+  "queueExport": {
+    "message": "エクスポート"
+  },
+  "queueImport": {
+    "message": "インポート"
+  },
+  "queuePanelAria": {
+    "message": "Astra persistent queue"
+  },
+  "queuePanelTitle": {
+    "message": "Persistent Queue"
+  },
+  "queuePlayNext": {
+    "message": "Play next"
   },
   "quickGroupCountTpl": {
     "message": "{enabled}/{total}"

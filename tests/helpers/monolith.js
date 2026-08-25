@@ -55,6 +55,27 @@ function fallbackFeatureSource(id) {
 }
 
 /** Evaluate a monolith feature literal with a caller-supplied environment. */
+// The real overlay keyboard helpers, lifted out of the monolith.
+//
+// Four features call installMenuKeyboardModel / installDialogFocusContract when
+// they open. Stubbing them here would let the wiring rot while the feature
+// tests stayed green — the same reason markCardHidden records rather than
+// no-ops. They depend on nothing but `document`, which every sandbox already
+// supplies.
+let _overlayHelpersCache = null;
+function overlayKeyboardHelpersSource() {
+    if (_overlayHelpersCache) return _overlayHelpersCache;
+    const source = sources.ytkit;
+    const start = source.indexOf('    const MENU_ITEM_SELECTOR =');
+    const marker = '    function showSpeedPopup(anchorEl, onChange) {';
+    const end = source.indexOf(marker, start);
+    if (start < 0 || end < 0) {
+        throw new Error('monolith helper: overlay keyboard helpers not found');
+    }
+    _overlayHelpersCache = source.slice(start, end);
+    return _overlayHelpersCache;
+}
+
 function loadFeature(id, extraGlobals = {}) {
     const sandbox = {
         console,
@@ -100,6 +121,15 @@ function loadFeature(id, extraGlobals = {}) {
         };
     }
     sandbox.globalThis = sandbox;
+    if (!sandbox.installMenuKeyboardModel || !sandbox.installDialogFocusContract) {
+        vm.runInNewContext(
+            '(() => {' + overlayKeyboardHelpersSource()
+            + 'globalThis.installMenuKeyboardModel = installMenuKeyboardModel;'
+            + 'globalThis.installDialogFocusContract = installDialogFocusContract;'
+            + '})()',
+            sandbox
+        );
+    }
     const feature = vm.runInNewContext(`(${featureSource(id)})`, sandbox);
     feature._testHideAttributionCalls = sandbox.hideAttributionCalls;
     return feature;

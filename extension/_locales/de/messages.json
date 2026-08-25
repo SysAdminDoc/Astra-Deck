@@ -152,6 +152,9 @@
   "altFrontendOpenAriaTpl": {
     "message": "Extern auf {host} öffnen"
   },
+  "astraContextMenuAria": {
+    "message": "Astra actions"
+  },
   "audioOnlyActive": {
     "message": "Nur Audio"
   },
@@ -4660,6 +4663,27 @@
   },
   "qt_transcriptViewer_name": {
     "message": "Transkript-Seitenleiste"
+  },
+  "queueClear": {
+    "message": "Löschen"
+  },
+  "queueCleared": {
+    "message": "Queue cleared"
+  },
+  "queueExport": {
+    "message": "Exportieren"
+  },
+  "queueImport": {
+    "message": "Importieren"
+  },
+  "queuePanelAria": {
+    "message": "Astra persistent queue"
+  },
+  "queuePanelTitle": {
+    "message": "Persistent Queue"
+  },
+  "queuePlayNext": {
+    "message": "Play next"
   },
   "quickGroupCountTpl": {
     "message": "{enabled}/{total}"
