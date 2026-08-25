@@ -17,6 +17,7 @@ const {
     verifyChecksums: verifyReleaseSignature
 } = require('./release-signature');
 
+const screenReaderEvidence = require('./screen-reader-evidence.js');
 const REPO_ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const DEFAULT_OUTPUT_DIR = path.join(BUILD_DIR, 'release-readiness');
@@ -267,6 +268,17 @@ function buildReadinessReport(options = {}) {
     // release check and shipped a stale bundle to Tampermonkey installs
     // through @updateURL - exactly what happened across v4.51.2-v4.51.4.
     checks.push(buildBundleParityCheck(repoRoot));
+
+    // Static a11y gates read source and press keys against a fake DOM. Neither
+    // can tell you what NVDA actually said, so a release that changes one of
+    // the covered surfaces has to carry a dated record of somebody listening.
+    const evidence = screenReaderEvidence.evaluateEvidence({ now, repoRoot, runGit: options.runGit });
+    checks.push(check(
+        'screen-reader-evidence',
+        'Screen-reader evidence covers the surfaces that changed',
+        evidence.status,
+        evidence.details
+    ));
 
     const buildFiles = listBuildFiles(buildDir);
     checks.push(check(

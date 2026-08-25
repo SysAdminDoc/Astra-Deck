@@ -20,6 +20,19 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: requires a private key the maintainer must generate and own. No code change can substitute for it.
 
+## P2 — Needs a human at a screen reader (2026-08-25)
+
+- [ ] P2: Require dated screen-reader evidence for UI-changing releases
+  Why: static a11y gates cannot prove announcement order, focus restoration, or Blink-versus-Gecko behavior, and the current NVDA, JAWS, and VoiceOver checklist has no completed evidence record.
+  Evidence: `docs/screen-reader-smoke.md`, `scripts/audit-overlays-a11y.js`, `scripts/generate-release-readiness.js`, [NVDA](https://www.nvaccess.org/download/)
+  Touches: screen-reader checklist, a structured evidence schema and validator under `scripts/`, release-readiness report, tests
+  Acceptance: a dated record captures Astra version, browser version, assistive technology version, surface, expected announcement, observed announcement, and pass/fail; the first record covers popup, settings, Theater Split, Transcript Q&A, and one provider degradation in Chrome and Firefox with NVDA; release readiness rejects missing or stale evidence when those surfaces change, while allowing an explicit documented not-applicable result for JAWS or VoiceOver.
+  Complexity: M
+  Blocker (found 2026-08-25 while implementing it): everything except the evidence itself is done and on main. `scripts/screen-reader-evidence.js` defines the record schema, validates it, and computes the verdict; `scripts/generate-release-readiness.js` carries a `screen-reader-evidence` check that fails on a missing, unparseable, incomplete, failing, or stale record; `docs/screen-reader-smoke.md` gained a section 0 explaining how to produce one; `npm run a11y:evidence` and `npm run a11y:evidence:template` are wired; and `tests/screen-reader-evidence.test.js` covers the shape and every refusal, with eight baits confirming each one fires. Running it today reports FAIL, correctly, because no record exists.
+  What is left is the one thing this repository cannot produce: somebody running NVDA against Chrome and Firefox, opening the popup, the settings panel, Theater Split, the Transcript Q&A modal and one provider-degradation path, and writing down what they heard. An observation nobody made is not evidence, and generating a plausible-looking record would defeat the entire point of the item — the record exists precisely because static gates and fake-DOM key presses cannot tell you what a screen reader said.
+  To finish: `npm run a11y:evidence:template > docs/screen-reader-evidence.json`, fill in the rows during a real NVDA session on both browsers, then `npm run a11y:evidence` to validate. Staleness is automatic from there — readiness re-fails for any covered surface whose source is touched after the newest record for it.
+  JAWS and VoiceOver are already handled: either may be recorded as `not-applicable` with a stated reason. NVDA may not, since it is the minimum target.
+
 ## P2 — Needs a live YouTube session (2026-08-21)
 
 - [ ] P2 — Replace the hand-rolled focus traps with `<dialog>` + `showModal()`
