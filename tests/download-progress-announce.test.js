@@ -114,9 +114,23 @@ test('distinct non-active states are each announced', () => {
 // already present when it was inserted, so the opening line was silently
 // dropped — and marked as announced, which swallowed the next identical state.
 test('nothing is announced into the region before it is in the document', () => {
-    const insertion = source.indexOf('document.body.appendChild(panel);');
-    const firstAnnounce = source.indexOf("setProgressState(\n                'pending'");
-    assert.ok(insertion > -1 && firstAnnounce > -1, 'both landmarks must still exist');
-    assert.ok(firstAnnounce > insertion,
-        'the opening state must be set after the panel is appended, not before');
+    // NO announcement may precede the insertion, not merely the one that was
+    // moved. Matching a single formatting of the opening call let a second
+    // setProgressState be added above it without this noticing.
+    const setterAt = source.indexOf('const setProgressState = (tone, label, copy');
+    const insertion = source.indexOf('document.body.appendChild(panel);', setterAt);
+    assert.ok(setterAt > -1 && insertion > setterAt, 'both landmarks must still exist');
+
+    const before = source.slice(setterAt, insertion);
+    // The definition reads `setProgressState = (`, so it is not a call and does
+    // not count here. Any match at all is an announcement made into a region
+    // that is not in the document yet.
+    const calls = [...before.matchAll(/(?<![.\w])setProgressState\(/g)];
+    assert.equal(calls.length, 0,
+        'nothing may be announced before the panel is appended: '
+        + 'a live region does not speak text that was already there when it was inserted');
+
+    const after = source.slice(insertion, insertion + 900);
+    assert.match(after, /setProgressState\(\s*\n?\s*'pending'/,
+        'and the opening state has to be set once the panel is in the document');
 });

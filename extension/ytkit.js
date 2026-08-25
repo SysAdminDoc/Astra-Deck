@@ -3310,9 +3310,17 @@ const STORAGE_KEYS = Object.freeze({
     }
 
     // A dialog takes focus, keeps it while it is open, gives it back on close.
-    // Callers that use this must also declare aria-modal, because trapping Tab
-    // inside something the page says is NOT modal is a bug rather than a fix.
-    function installDialogFocusContract(dialog, { onClose, initialFocus, returnFocus } = {}) {
+    //
+    // Trapping Tab is OPT-IN and only correct for a dialog that is genuinely
+    // modal: one with a backdrop, where nothing behind it is reachable. The
+    // queue and the AI summary are neither — they are a corner widget and a
+    // side panel, the video keeps playing behind both, and nothing outside is
+    // inert. Trapping Tab there means a keyboard user who opens the queue
+    // cannot reach the player again without dismissing it, and declaring
+    // aria-modal to justify the trap tells assistive technology something
+    // untrue. They take focus, answer Escape and give focus back; Tab leaves,
+    // which is what a non-modal dialog is supposed to do.
+    function installDialogFocusContract(dialog, { onClose, initialFocus, returnFocus, trapFocus = false } = {}) {
         const controlsOf = () => Array.from(dialog.querySelectorAll(DIALOG_FOCUSABLE_SELECTOR))
             .filter((control) => control.getAttribute('aria-hidden') !== 'true');
 
@@ -3323,7 +3331,7 @@ const STORAGE_KEYS = Object.freeze({
                 onClose?.();
                 return;
             }
-            if (event.key !== 'Tab') return;
+            if (event.key !== 'Tab' || !trapFocus) return;
             const list = controlsOf();
             if (!list.length) return;
             const current = list.indexOf(document.activeElement);
@@ -22492,7 +22500,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._panelCornerCleanup?.();
                     this._panelCornerCleanup = null;
                     this._pill?.remove(); this._pill = null;
-                    if (this._panel) { this._panel.remove(); this._panel = null; }
+                    // Emptying the queue removes the panel from under the user,
+                    // and this is the reachable case: open it from the keyboard,
+                    // press Clear, and focus was left on <body>.
+                    this._closeQueuePanel();
                     return;
                 }
                 if (!this._pill || !this._pill.isConnected) {
@@ -22567,8 +22578,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-queue-panel';
                 panel.setAttribute('role', 'dialog');
-                // aria-modal, because the contract below traps Tab.
-                panel.setAttribute('aria-modal', 'true');
                 panel.setAttribute('aria-label', t('queuePanelAria', 'Astra persistent queue'));
                 const header = document.createElement('div');
                 header.className = 'ytkit-queue-header';
@@ -22719,7 +22728,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._panelCornerCleanup?.();
                 this._panelCornerCleanup = null;
                 this._pill?.remove(); this._pill = null;
-                this._panel?.remove(); this._panel = null;
+                this._closeQueuePanel();
                 document.querySelectorAll('.ytkit-queue-btn').forEach(b => b.remove());
             }
         },
@@ -30164,6 +30173,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch (error) { DiagnosticLog?.record('aiVideoSummary.store', error.message); }
                 return clean;
             },
+            // One teardown, because there were four ways to remove this panel and
+            // only one of them disposed the focus contract. The other three —
+            // the toggle, the navigate rule, and destroy — called .remove()
+            // directly, so focus was left on <body> and the dispose was kept
+            // pointing at a detached node. The navigate rule fires on every
+            // YouTube navigation, so that was the common case, not the corner.
+            _closeSummaryPanel() {
+                this._runToken += 1;
+                this._runController?.abort();
+                this._runController = null;
+                // Dispose before removal: the focus restore checks whether
+                // focus is still inside the panel.
+                this._aisumDialogDispose?.();
+                this._aisumDialogDispose = null;
+                this._aisumReturnFocus = null;
+                this._panel?.remove();
+                this._panel = null;
+                this._activeArtifact = null;
+            },
+
             _ensurePanel() {
                 if (this._panel?.isConnected) return this._panel;
                 this._aisumReturnFocus = typeof document.activeElement?.focus === 'function'
@@ -30172,10 +30201,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('section');
                 panel.className = 'ytkit-aisum-panel';
                 panel.setAttribute('role', 'dialog');
-                // aria-modal, because the contract below traps Tab. Trapping
-                // focus inside something the page declares NOT modal is a bug,
-                // not an improvement.
-                panel.setAttribute('aria-modal', 'true');
                 panel.setAttribute('aria-label', t('aiSummaryDialogLabel', 'AI video summary'));
                 const head = document.createElement('div');
                 head.className = 'ytkit-aisum-head';
@@ -30186,20 +30211,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 close.className = 'ytkit-aisum-close';
                 close.textContent = '×';
                 close.setAttribute('aria-label', t('aiSummaryClose', 'Close AI summary'));
-                const closePanel = () => {
-                    this._runToken += 1;
-                    this._runController?.abort();
-                    this._runController = null;
-                    // Dispose before removal: the focus restore checks whether
-                    // focus is still inside the panel.
-                    this._aisumDialogDispose?.();
-                    this._aisumDialogDispose = null;
-                    this._aisumReturnFocus = null;
-                    panel.remove();
-                    this._panel = null;
-                    this._activeArtifact = null;
-                };
-                close.addEventListener('click', closePanel);
+                close.addEventListener('click', () => this._closeSummaryPanel());
                 const content = document.createElement('div');
                 content.className = 'ytkit-aisum-content';
                 head.append(heading, close);
@@ -30211,7 +30223,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // screen-reader user was told a dialog had appeared somewhere
                 // off in the page with no way to get to it.
                 this._aisumDialogDispose = installDialogFocusContract(panel, {
-                    onClose: closePanel,
+                    onClose: () => this._closeSummaryPanel(),
                     initialFocus: close,
                     returnFocus: this._aisumReturnFocus
                 });
@@ -30516,12 +30528,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             async _run(options = {}) {
                 if (this._panel) {
-                    this._runToken += 1;
-                    this._runController?.abort();
-                    this._runController = null;
-                    this._panel.remove();
-                    this._panel = null;
-                    this._activeArtifact = null;
+                    this._closeSummaryPanel();
                     return;
                 }
                 const runToken = ++this._runToken;
@@ -30606,12 +30613,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `, this.id, true);
                 this._scheduleInject(2000);
                 this._navRule = () => {
-                    this._runToken += 1;
-                    this._runController?.abort();
-                    this._runController = null;
-                    this._panel?.remove();
-                    this._panel = null;
-                    this._activeArtifact = null;
+                    this._closeSummaryPanel();
                     this._btn = null;
                     this._scheduleInject(2000);
                 };
@@ -30625,8 +30627,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._injectTimer = null;
                 removeNavigateRule('aiVideoSummary');
                 this._btn?.remove(); this._btn = null;
-                this._panel?.remove(); this._panel = null;
-                this._activeArtifact = null;
+                this._closeSummaryPanel();
                 this._styleEl?.remove(); this._styleEl = null;
             }
         },
@@ -34305,7 +34306,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         signal: controller.signal
                     });
                     if (!response.ok) {
-                        this._oEmbedCache.set(videoId, null);
+                        this._oEmbedCache?.set(videoId, null);
                         return null;
                     }
                     const meta = parseOEmbedMetadata?.(await response.text()) || null;

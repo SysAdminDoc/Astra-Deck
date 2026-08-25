@@ -233,7 +233,13 @@ test('the oEmbed lookup is credential-free, cached, and bounded', () => {
     assert.match(body, /_MAX_IN_FLIGHT/);
     assert.match(body, /_MAX_CACHE/);
     // A failed lookup must be remembered as a miss, or every feed tick retries.
-    assert.match(body, /this\._oEmbedCache\.set\(videoId, null\)/);
+    // Asserted through the OPTIONAL form: this write happens after an await, so
+    // it has to survive destroy() having nulled the cache under it. Pinning the
+    // bare form here is what kept the extension and the userscript apart on
+    // this exact line, and turned the fix red.
+    assert.match(body, /this\._oEmbedCache\?\.set\(videoId, null\)/);
+    assert.ok(!/this\._oEmbedCache\.set\(/.test(body),
+        'a write after an await must tolerate teardown having nulled the cache');
 });
 
 test('the feature is opt-in and adds no new install-time host permission', () => {
@@ -458,8 +464,20 @@ test('the hand-maintained userscript aborts its oEmbed lookups too', () => {
     // The older teardown fix never reached this copy either: destroy() nulls
     // the cache while lookups are still awaiting, so every touch after an
     // await has to tolerate it being gone.
-    assert.ok(!/this\._oEmbedCache\.set\(/.test(body),
-        'writes after an await must tolerate teardown having nulled the cache');
-    assert.ok(!/this\._inFlight\.delete\(/.test(body),
-        'the in-flight release runs in a finally that can outlive destroy');
+    //
+    // Asserted against BOTH bodies. Checking only the userscript pinned that
+    // build's shape and called it parity, and the two drifted on exactly this
+    // line: the extension kept a bare .set() on the 404 path, which throws a
+    // TypeError into an uncaught promise when a 404 resolves across a destroy.
+    const extension = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
+    const extStart = extension.indexOf("id: 'antiTranslateThumbnails'");
+    const extEnd = extension.indexOf("id: 'antiTranslateTranscript'", extStart);
+    const extensionBody = extension.slice(extStart, extEnd);
+
+    for (const [label, text] of [['userscript', body], ['extension', extensionBody]]) {
+        assert.ok(!/this\._oEmbedCache\.set\(/.test(text),
+            `${label}: writes after an await must tolerate teardown having nulled the cache`);
+        assert.ok(!/this\._inFlight\.delete\(/.test(text),
+            `${label}: the in-flight release runs in a finally that can outlive destroy`);
+    }
 });
