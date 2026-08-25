@@ -109,7 +109,15 @@ test('a surface that paints its own ground is not flagged', () => {
 });
 
 test('surface grounding includes ytkit ids as well as classes', () => {
-    const { needsLane, hasLane } = gate.scan(['extension/ytkit.js']);
+    // Scans the surface system too, the way the gate itself does. The lanes for
+    // surfaces whose ground that file overrides now live beside the override
+    // rather than in ytkit.js, so reading ytkit.js alone reports a missing lane
+    // that is not missing. The assertion below is unchanged; only the input is,
+    // and it now matches the sibling test underneath.
+    const { needsLane, hasLane } = gate.scan([
+        'extension/ytkit.js',
+        'extension/core/settings-visual-system.js'
+    ]);
     for (const token of ['ytkit-comment-nav-label', 'ytkit-install-prompt__title', 'ytkit-subs-load-banner__title']) {
         assert.ok(hasLane.has(token) || !needsLane.has(token), `${token} must inherit its id shell ground`);
     }

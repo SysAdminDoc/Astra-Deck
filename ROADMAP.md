@@ -84,12 +84,6 @@ Found during a full audit pass, verified, and deliberately not fixed in it.
 
 ### P1
 
-- [ ] P1: Relight the light-theme children of the surfaces the design system paints white
-  Why: `settings-visual-system.js` forces `background: var(--ytkit-premium-panel) !important` on ~35 surfaces, and that token is `#ffffff` under `html:not([dark])`. Several of those surfaces have children written as dark-lane literals with no light override, so the panel goes white and the text stays near-white. The Digital Wellbeing card is the worst case because it pauses playback: `.ytkit-wellbeing-title` is `rgba(248,250,252,0.96)`, about 1.05:1 on white. The Transcript Search panel's input is `color:#fff` on the same white ground, so you cannot see what you type.
-  Where: `extension/features/digital-wellbeing/index.js` (~441, 459, 466, 473), `extension/ytkit.js` transcript-search block (~36622-36638), `extension/features/download-ui/index.js` `.ytkit-stream-links-panel` (~2883-2890), `extension/ytkit.js` `.ytkit-ai-qa-status--busy` (~34981), `.ytkit-aisum-head h3` / `.ytkit-aisum-close` (~30365-30369), `.ytkit-vvf-val` (~28668), `.ytkit-rc-head` (~29312), `extension/features/video-hider/index.js` `.ytkit-blocked-watch-dialog` (~2745, 2772)
-  Acceptance: each surface gets a light lane for its own descendants, verified against computed foreground and background in a real browser capture rather than from source. `scripts/check-light-theme-lane.js` exempts anything under an "opaquely grounded" family root, computed from the base rule only, so it cannot see the `!important` override that removes that ground; the gate needs to model that before it can be trusted here.
-  Complexity: M
-
 - [ ] P1: Give the four dead surface selectors the premium treatment they were listed for
   Why: `.ytkit-stats-overlay`, `.ytkit-ql-menu`, `.ytkit-mediadl-install-prompt` and `.ytkit-reaction-spammer-panel` were named in the surface system as classes but only ever exist as ids, so they silently received none of the shared theming, radius, font or focus treatment. They were removed from the lists rather than converted, because activating a white ground under children that have never been relit would create the P1 above on four more surfaces.
   Where: `extension/core/settings-visual-system.js`, plus each surface's own stylesheet
@@ -97,6 +91,12 @@ Found during a full audit pass, verified, and deliberately not fixed in it.
   Complexity: M
 
 ### P2
+
+- [ ] P2: Give the core userscript bundle real headroom
+  Why: `YTKit-core.user.js` is against Greasy Fork's hard 2 MiB cap. Adding one light-theme lane consumed the entire remaining 3.2 KB and the work had to stop and reclaim space before it could finish. Stripping CSS comments from the two already-compacted templates bought 4,434 B back, which is a reprieve rather than a fix: the bundle still carries roughly 269 KB of comments overall (91 block, 2,904 line), and the next feature hits the wall again.
+  Where: `sync-userscript.js` (`COMPACT_CSS_TEMPLATES`, `COMPACT_RETURN_CSS_FUNCTIONS`, `COMPACT_LINE_COMMENT_MODULES`), `scripts/check-userscript-size.js`
+  Acceptance: decide and implement a durable strategy, then document the headroom it buys. Candidates: extend `COMPACT_LINE_COMMENT_MODULES` beyond `settings-schema.js` now that the CSS precedent exists; move a large rarely-changed module to its own `@require` record; or split the core library in two. Whichever is chosen, `npm run check` must report at least 50 KB of core headroom afterwards, and a test must pin that floor so the next feature fails loudly rather than silently shaving prose.
+  Complexity: M
 
 - [ ] P2: Bind the companion's HTTP identity to its native-messaging identity
   Why: the cookie handoff is well guarded (crypto token, one use, 20s TTL, bound to tab/frame/document, requires a fresh `connectNative` proof) but that proof only shows *a* native host is registered. The cookies then go in cleartext to `http://127.0.0.1:<port>/download`, chosen from whoever answers `/health` with `{"service":"astra-downloader"}`, with no shared secret. A local process that binds the port first receives `LOGIN_INFO` and the `SAPISID` family. It needs prior local code execution, which also reaches the cookie DB, so the impact is bounded, but the capability gate advertises a binding it does not enforce.

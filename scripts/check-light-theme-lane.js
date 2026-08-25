@@ -133,6 +133,38 @@ function readPalette() {
 
 const PALETTE = readPalette();
 
+// Surfaces whose own background the shared surface system overrides with
+// `background: var(--ytkit-premium-panel) !important`. That token is #ffffff
+// under `html:not([dark])`, so in light theme these surfaces do NOT sit on the
+// dark ground their base rule paints: the ground is white and any dark-lane
+// text on them is unreadable.
+//
+// This is the blind spot that let the Digital Wellbeing card ship at ~1.05:1.
+// The grounding pass below reads each rule's own body, sees `background:
+// #12151c`, and marks the surface opaquely grounded, which then exempts it and
+// every prefix-descendant. It cannot see an !important override living in a
+// different file, and the override always wins.
+function readLightGroundOverrides() {
+    const overridden = new Set();
+    const visual = path.join(REPO_ROOT, 'extension', 'core', 'settings-visual-system.js');
+    if (!fs.existsSync(visual)) return overridden;
+    const source = fs.readFileSync(visual, 'utf8');
+    // Only the blocks that force the premium panel background. The
+    // color-scheme resets and the descendant control rules leave the ground
+    // alone and must not be read as an override.
+    const FORCED = /:is\(([^)]*)\)\s*\{[^}]*background:\s*var\(--ytkit-premium-panel\)\s*!important/g;
+    let match;
+    while ((match = FORCED.exec(source))) {
+        for (const raw of match[1].split(',')) {
+            const selector = raw.trim();
+            if (selector.startsWith('.ytkit-')) overridden.add(selector.slice(1));
+        }
+    }
+    return overridden;
+}
+
+const LIGHT_GROUND_OVERRIDDEN = readLightGroundOverrides();
+
 // Resolve var() references down to literals for one theme lane. A token with
 // no light-lane entry deliberately resolves to its dark value: that is not a
 // lookup failure, it is the defect being looked for.
@@ -165,8 +197,13 @@ function ruleBlocks(source) {
     // Deliberately simple: match `<prelude>{<body>}` pairs with no nested
     // braces. Parentheses have to be allowed in the prelude — `html:not([dark])`
     // is the whole point — so JS constructs are excluded by shape instead.
+    //
+    // The prelude cap was 400, which silently skipped any grouped `:is(...)`
+    // list longer than that — and a grouped list is exactly how the shared
+    // surface system names a family. A relight written that way was invisible
+    // to this scanner, so the surfaces it fixed still read as unlaned.
     const blocks = [];
-    const re = /([^{};]{3,400})\{([^{}]{0,4000})\}/g;
+    const re = /([^{};]{3,2000})\{([^{}]{0,4000})\}/g;
     let match;
     while ((match = re.exec(source)) !== null) {
         const selector = match[1].trim();
@@ -338,8 +375,14 @@ function scan(files) {
     for (const { selector, body } of parsed) {
         const tokens = tokensIn(selector);
         if (!tokens.size) continue;
-        if (providesOwnGround(body)) for (const token of tokens) grounded.add(token);
-        if (providesOpaqueGround(body)) for (const token of tokens) opaquelyGrounded.add(token);
+        // A surface the shared system repaints white in light theme is not
+        // grounded there, whatever its own base rule says.
+        if (providesOwnGround(body)) {
+            for (const token of tokens) if (!LIGHT_GROUND_OVERRIDDEN.has(token)) grounded.add(token);
+        }
+        if (providesOpaqueGround(body)) {
+            for (const token of tokens) if (!LIGHT_GROUND_OVERRIDDEN.has(token)) opaquelyGrounded.add(token);
+        }
         // `color: inherit` and `currentColor` hand the decision to an ancestor,
         // so the surface cannot be independently wrong about the theme. The
         // panel uses this for nav labels, which the ancestor then relights.

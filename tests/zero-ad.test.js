@@ -204,9 +204,14 @@ test('userscript-manager smoke closes its fixture when Firefox startup fails', a
 
 test('release preparation gates the Chromium, live-chat, Firefox, and real-manager desktop contracts', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    // smoke:light-surfaces joined the chain: it is the only check that reads
+    // computed foreground against composited background in a real engine, and
+    // the source-level light-theme gate was green while the Digital Wellbeing
+    // card rendered at about 1.05:1.
     assert.equal(
         pkg.scripts['release:browser-smokes'],
-        'npm run smoke:a11y && npm run smoke:zero-ads:live && npm run smoke:live-chat && npm run smoke:firefox && npm run smoke:userscript-managers'
+        'npm run smoke:a11y && npm run smoke:light-surfaces && npm run smoke:zero-ads:live'
+        + ' && npm run smoke:live-chat && npm run smoke:firefox && npm run smoke:userscript-managers'
     );
     assert.match(pkg.scripts['release:prepare'], /npm run release:browser-smokes/);
     assert.match(pkg.scripts['release:prepare:no-crx'], /npm run release:browser-smokes/);
