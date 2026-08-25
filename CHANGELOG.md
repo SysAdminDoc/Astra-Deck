@@ -6,7 +6,82 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.85.0] (2026-08-25)
+
+### Fixed
+
+- Raw exception text no longer reaches four user-facing surfaces. The settings
+  feature-card health badge put the registry's `lastError` in its tooltip and
+  used it as the entire aria-label, so a screen reader announced an untranslated
+  exception and never announced the badge's own visible label. The external API
+  health pill showed the same raw text, and the popup's selector-asset row
+  appended it to the status line. All four route through the shared failure copy
+  now, and the external API error classes map onto causes explicitly instead of
+  falling through prose matching, where `server-error` resolved to "unknown".
+
+- Opening the AI Q&A modal, the local AI modal, the watch-history overlay, the
+  subscription group dialog or the page quick-controls overlay no longer paints
+  the whole viewport opaque. All five are backdrops, not panels, and they sat in
+  the rule list that forces a solid background, a border and a 12px radius, in
+  both themes. Seven more surfaces were painted white in light theme while
+  keeping a dark `color-scheme`, so they rendered dark scrollbars and dark
+  native form controls on white.
+
+- The transcript viewer is readable by screen readers again. Each cue was a
+  button whose aria-label replaced its contents, so the whole transcript
+  announced as "Jump to 0:05, Jump to 0:12" with none of the words in it.
+
+- Popup errors interrupt the screen reader as intended. The politeness was
+  raised after the text was written, so every error announced politely and the
+  upgrade landed on the following message instead.
+
+- The settings search count announces when filtering happens. It had no live
+  region at all, so typing filtered the list in silence.
+
+- Blocklists no longer lose their newest entries. Video Hider appends and trims
+  from the front, but the sanitizers and the sync payload builder kept the front
+  and discarded the tail. On an account with more than 2500 hidden videos, sync
+  uploaded the oldest 2500 and every device replaced its list with them, so
+  recently hidden videos came back and stayed back.
+
+- A failed settings import no longer destroys the previous import's undo point.
+
+- `formatDuration` pads minutes once an hours field is present. Chrome 120 to
+  128 takes the fallback path, where an hour-long video read "1:2:03".
+
+- Transcript timestamps parse under Arabic-Indic, Devanagari, Thai and fullwidth
+  numerals; every cue used to land at 00:00 in those sessions. A stamp with one
+  unreadable component no longer has its hours silently read as minutes.
+
+- Six teardown leaks closed: hidden-card placeholders are held weakly instead of
+  pinning every discarded feed card, Video Hider's filter-list refresh stops
+  re-arming itself after the feature is switched off, the language detector is
+  built once on real use and released on destroy, a thumbnail lookup landing
+  after teardown no longer throws an uncaught rejection, each feature's settings
+  reinit is debounced separately, and sync suppression tokens expire.
+
+- Dismissing a Digital Wellbeing break reminder returns focus to whatever opened
+  it, instead of dropping it on the page body.
+
+### Security
+
+- Every filter regex goes through one ReDoS guard. Video Hider and the comment
+  filter each carried a private copy with three flat heuristics, which let the
+  polynomial shapes through. `.*.*.*.*.*.*z` measured 851 ms per test on an
+  ordinary title, run once per feed card against the title and again against the
+  channel name. The pattern reaches those keys through a settings backup or
+  browser sync, neither of which needs a host permission.
+
+- The alternative frontend instance is parsed and required to be https before it
+  reaches a link. It was the only user-configurable URL setting with no
+  validator, so a restored backup could repoint the "Open externally" button at
+  any host. The control now names the host it will open.
+
 ### Changed
+
+- English copy no longer uses em or en dashes, and two wrong-key reuses that
+  put a feature description where an explanation belonged are fixed. A gate
+  keeps both from coming back.
 
 - Subscription Groups now has one runtime owner in
   `features/subscription-groups/index.js`. The monolith keeps a descriptor-only

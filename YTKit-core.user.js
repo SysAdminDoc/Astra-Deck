@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.84.3
+// @version      4.85.0
 // @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -25239,6 +25239,11 @@ if (typeof globalThis !== "undefined") {
             icon: 'clock',
             _timer: null,
             _overlay: null,
+            // Entry focus, the Tab trap and Escape were all here; only the
+            // restore was missing. Dismissing a break reminder mid-video left
+            // focus on <body>, so the reader lost their place on the watch page
+            // and the next Tab started again from the top of YouTube.
+            _overlayReturnFocus: null,
             _overlayKeyHandler: null,
             _sessionStart: 0,
             // v4.47.0 NF34: track the day key across tick calls so we can
@@ -25343,8 +25348,17 @@ if (typeof globalThis !== "undefined") {
                     document.removeEventListener('keydown', this._overlayKeyHandler, true);
                     this._overlayKeyHandler = null;
                 }
+                const overlayHadFocus = this._overlay?.contains?.(document.activeElement);
                 this._overlay?.remove();
                 this._overlay = null;
+                const returnTo = this._overlayReturnFocus;
+                this._overlayReturnFocus = null;
+                // Only pull focus back if the overlay was holding it, and only
+                // to a node still in the document: a route change can clear the
+                // overlay long after the trigger has gone.
+                if (overlayHadFocus && returnTo?.isConnected) {
+                    try { returnTo.focus({ preventScroll: true }); } catch (_) { /* reason: focus restore is best effort */ }
+                }
             },
 
             _showShortsLimitOverlay(shortsToday, shortsLimit) {
@@ -25466,6 +25480,11 @@ if (typeof globalThis !== "undefined") {
                 o.setAttribute('aria-describedby', body.id);
                 card.append(topRow, iconWrap, title, body, hint, button);
                 o.appendChild(card);
+                const previouslyFocused = document.activeElement;
+                // Duck-typed rather than `instanceof HTMLElement`: this module
+                // is exercised in a DOM harness that has no such global, and what
+                // matters here is only whether the node can take focus back.
+                this._overlayReturnFocus = typeof previouslyFocused?.focus === 'function' ? previouslyFocused : null;
                 document.body.appendChild(o);
                 this._overlay = o;
 
@@ -25773,6 +25792,7 @@ if (typeof globalThis !== "undefined") {
                     this._overlayKeyHandler = null;
                 }
                 this._overlay?.remove(); this._overlay = null;
+                this._overlayReturnFocus = null;
                 this._styleEl?.remove(); this._styleEl = null;
                 this._sessionStart = 0;
                 this._pendingSeconds = 0;

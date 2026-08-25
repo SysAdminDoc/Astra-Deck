@@ -24,6 +24,7 @@ function readSources(overrides = {}) {
         downloadUi: overrides.downloadUi ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'download-ui', 'index.js'), 'utf8'),
         liveChat: overrides.liveChat ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'live-chat', 'index.js'), 'utf8'),
         videoNotes: overrides.videoNotes ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'video-notes', 'index.js'), 'utf8'),
+        digitalWellbeing: overrides.digitalWellbeing ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8'),
         smoke: overrides.smoke ?? fs.readFileSync(path.join(ROOT, 'docs', 'screen-reader-smoke.md'), 'utf8'),
         // Every feature module, globbed. The named entries above are the ones
         // individual checks reach for by hand; this is the safety net that keeps
@@ -279,7 +280,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     const checks = [];
     const add = (name, ok, failure) => checks.push({ name, ok: Boolean(ok), failure });
 
-    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, smoke } = sources;
+    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, digitalWellbeing, smoke } = sources;
     const featureModuleCount = Object.keys(sources.allFeatureModules || {}).length;
     add('Overlay audit still covers the feature modules',
         featureModuleCount >= MIN_FEATURE_MODULES,
@@ -614,6 +615,21 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         'Subscription overlay controls must declare focus-visible and at least 24px target size');
 
     // Manual checklist must document the boundary left after static audit.
+    // The break reminder pauses playback and takes focus. Entry focus, the Tab
+    // trap and Escape were all present; only the restore was missing, so
+    // dismissing it dropped focus to <body> and the reader lost their place on
+    // the watch page. This module was outside the gate's named sources.
+    add('Digital Wellbeing overlay returns focus to whatever opened it',
+        digitalWellbeing.includes('_overlayReturnFocus')
+        && digitalWellbeing.includes("this._overlayReturnFocus = typeof previouslyFocused?.focus === 'function' ? previouslyFocused : null;")
+        && digitalWellbeing.includes('returnTo.focus({ preventScroll: true })'),
+        'The break overlay must restore focus to its trigger when it closes');
+    add('Digital Wellbeing overlay keeps its focus entry, trap and Escape',
+        digitalWellbeing.includes('button.focus({ preventScroll: true })')
+        && digitalWellbeing.includes('trapFocusWithin')
+        && digitalWellbeing.includes("'Escape'"),
+        'The break overlay must move focus in, trap it, and close on Escape');
+
     add('Screen-reader smoke checklist references the overlay audit gate',
         smoke.includes('npm run audit:overlays') &&
         smoke.includes('Download options') &&
