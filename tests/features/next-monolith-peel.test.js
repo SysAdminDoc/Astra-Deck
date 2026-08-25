@@ -298,6 +298,11 @@ test('downloadUI never requests cookies for a legacy-health token', async () => 
             }
         },
         extensionFetchJson: async (details) => {
+            // The identity probe is not a download; keep it out of the request
+            // log the assertions below count.
+            if (String(details.url).includes('/identity')) {
+                return { response: { status: 200, responseText: '{}' }, data: { challengeProof: ENDPOINT_PROOF } };
+            }
             requests.push(details);
             return {
                 response: { status: 202, responseText: '{}' },
@@ -338,13 +343,22 @@ test('downloadUI uses a fresh native capability and discloses the first cookie-b
     const storage = new Map();
     const storageWrites = [];
     const proofOptions = [];
+    const ENDPOINT_CHALLENGE = 'a'.repeat(32);
+    const ENDPOINT_PROOF = 'b'.repeat(64);
     const result = mod.createDownloadUIFeature({
+        cookieHandoff: require('../../extension/core/cookie-handoff.js'),
         requestNativeDownloaderToken: async (options) => {
             proofOptions.push(options);
             return {
                 token: 'native-download-token',
                 service: 'astra-downloader',
                 api: 2,
+                // The native host's answer to this attempt's challenge. The
+                // endpoint has to return the same value before any cookie is
+                // read, which is what distinguishes the paired companion from
+                // anything else that can bind the port.
+                endpointChallenge: ENDPOINT_CHALLENGE,
+                endpointProof: ENDPOINT_PROOF,
                 cookieCapability: {
                     token: cookieCapabilitySecret,
                     protocolVersion: 1,
@@ -370,6 +384,11 @@ test('downloadUI uses a fresh native capability and discloses the first cookie-b
             }
         },
         extensionFetchJson: async (details) => {
+            // The identity probe is not a download; keep it out of the request
+            // log the assertions below count.
+            if (String(details.url).includes('/identity')) {
+                return { response: { status: 200, responseText: '{}' }, data: { challengeProof: ENDPOINT_PROOF } };
+            }
             requests.push(details);
             return {
                 response: { status: 202, responseText: '{}' },

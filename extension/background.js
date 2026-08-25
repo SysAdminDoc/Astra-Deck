@@ -457,6 +457,16 @@ function randomCookieHandoffToken() {
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+// A fresh challenge per attempt. The native host answers it; the HTTP endpoint
+// then has to return the same answer, which is the only thing distinguishing the
+// companion from anything else that can bind a companion port.
+function randomEndpointChallenge() {
+    if (typeof globalThis.crypto?.getRandomValues !== 'function') return '';
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 function issueCookieHandoffCapability(sender) {
     const binding = cookieHandoffSenderBinding(sender);
     if (!binding || !COOKIE_HANDOFF?.sanitizeCookieHandoff) return null;
@@ -2286,6 +2296,12 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     respond({ token: null, error: 'Native messaging unavailable' });
                     return;
                 }
+                // Only for the cookie purpose. A plain token request keeps the
+                // old message shape, so a companion that does not know about
+                // challenges is not sent one.
+                const endpointChallenge = msg.purpose === COOKIE_HANDOFF_PURPOSE
+                    ? randomEndpointChallenge()
+                    : '';
                 const port = ext.runtime.connectNative('com.astra.deck.downloader');
                 const timeout = setTimeout(() => {
                     try { port.disconnect(); } catch (_) { /* reason: already disconnected */ }
@@ -2313,7 +2329,21 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                             && api >= minimumApi
                             ? issueCookieHandoffCapability(sender)
                             : null;
-                        respond({ token, service, api, cookieCapability, error: null });
+                        const proofPattern = COOKIE_HANDOFF?.ENDPOINT_PROOF?.proofPattern;
+                        const endpointProof = endpointChallenge
+                            && typeof response?.challengeProof === 'string'
+                            && proofPattern?.test(response.challengeProof)
+                            ? response.challengeProof
+                            : null;
+                        respond({
+                            token,
+                            service,
+                            api,
+                            cookieCapability,
+                            endpointChallenge: endpointProof ? endpointChallenge : '',
+                            endpointProof,
+                            error: null
+                        });
                     } else {
                         respond({ token: null, error: response?.error || 'Token not available' });
                     }
@@ -2327,7 +2357,9 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                         || '';
                     respond({ token: null, error: lastError || 'Native host disconnected' });
                 });
-                port.postMessage({ type: 'get-token' });
+                port.postMessage(endpointChallenge
+                    ? { type: 'get-token', challenge: endpointChallenge }
+                    : { type: 'get-token' });
             } catch (err) {
                 respond({ token: null, error: err?.message || 'Native messaging failed' });
             }

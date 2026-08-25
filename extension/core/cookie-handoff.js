@@ -13,6 +13,44 @@
     // larger credential surface independently.
     const PROTOCOL_VERSION = 1;
     const MINIMUM_COMPANION_API = 2;
+    // The companion API that answers the endpoint-identity challenge below.
+    // Anything older simply never proves itself, so it never receives cookies.
+    const MINIMUM_ENDPOINT_PROOF_API = 3;
+    const ENDPOINT_PROOF = Object.freeze({
+        // 32 hex characters, generated per download attempt by the background.
+        challengePattern: /^[a-f0-9]{32}$/,
+        // 64 hex characters: what the companion returns for that challenge.
+        proofPattern: /^[a-f0-9]{64}$/,
+        header: 'X-MDL-Endpoint-Challenge',
+        path: '/identity'
+    });
+
+    // A squatter that binds a companion port first can answer /health and, until
+    // now, would then receive the native-issued token AND the cookies attached
+    // to the download it forwards. The native proof shows that A native host is
+    // registered; it says nothing about which program is listening on the port.
+    //
+    // So the extension asks the NATIVE host to answer a fresh random challenge,
+    // and requires the HTTP endpoint to return the same answer for the same
+    // challenge before any cookie is attached. Only the program on both ends of
+    // the pairing can do that. A squatter never saw the challenge go out over
+    // the native channel and cannot produce the answer.
+    //
+    // Fails closed for cookies and only for cookies: an endpoint that cannot
+    // answer is treated exactly like a legacy health token, so downloads keep
+    // working without a signed-in session.
+    function isEndpointProofValid(challenge, nativeProof, endpointProof) {
+        if (typeof challenge !== 'string' || !ENDPOINT_PROOF.challengePattern.test(challenge)) return false;
+        if (typeof nativeProof !== 'string' || !ENDPOINT_PROOF.proofPattern.test(nativeProof)) return false;
+        if (typeof endpointProof !== 'string' || !ENDPOINT_PROOF.proofPattern.test(endpointProof)) return false;
+        // Length-independent comparison. Both sides are fixed-length hex by the
+        // patterns above, so this is constant-time over the compared bytes.
+        let diff = 0;
+        for (let index = 0; index < nativeProof.length; index += 1) {
+            diff |= nativeProof.charCodeAt(index) ^ endpointProof.charCodeAt(index);
+        }
+        return diff === 0;
+    }
     const QUERY_DOMAIN = '.youtube.com';
     const ALLOWED_DOMAINS = Object.freeze(['.youtube.com', 'youtube.com']);
     const ALLOWED_COOKIE_NAMES = Object.freeze([
@@ -175,6 +213,9 @@
     return Object.freeze({
         PROTOCOL_VERSION,
         MINIMUM_COMPANION_API,
+        MINIMUM_ENDPOINT_PROOF_API,
+        ENDPOINT_PROOF,
+        isEndpointProofValid,
         QUERY_DOMAIN,
         ALLOWED_DOMAINS,
         ALLOWED_COOKIE_NAMES,

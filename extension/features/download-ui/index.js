@@ -403,6 +403,11 @@
         const {
             appState = { settings: {} },
             extensionFetchJson = async () => ({ data: null }),
+            // Injected like every other dependency rather than read off a
+            // global inside the method. The global is only present where the
+            // module happens to be loaded, and a missing contract withholds
+            // cookies — so a silent absence would look exactly like a squatter.
+            cookieHandoff = globalThis.YTKitCore?.cookieHandoff,
             extensionFetchText = async () => '',
             showToast = () => {},
             DebugManager = { log() {} },
@@ -511,6 +516,42 @@
                 return data.token_required === true && Number.isInteger(data.port);
             },
 
+            // Ask the endpoint on this port to answer the challenge the native
+            // host already answered.
+            //
+            // The cookie handoff was gated on the token coming from the native
+            // host, which proves a native host is REGISTERED and says nothing
+            // about which program is listening on the port we are about to post
+            // to. A local process that binds a companion port first answers
+            // /health, receives the native-issued token in X-Auth-Token, and
+            // with it the cookies attached to the download it forwards.
+            //
+            // Only the program on both ends of the pairing can return the
+            // native host's answer to a challenge it never saw over the native
+            // channel. Anything else is refused before a cookie is read.
+            async _proveEndpointIdentity(challenge, nativeProof) {
+                const contract = cookieHandoff || globalThis.YTKitCore?.cookieHandoff;
+                if (typeof contract?.isEndpointProofValid !== 'function') return 'contract-unavailable';
+                if (!challenge || !nativeProof) return 'native-proof-missing';
+                const shape = contract.ENDPOINT_PROOF;
+                try {
+                    const { data } = await extensionFetchJson({
+                        method: 'GET',
+                        url: this.baseUrl() + shape.path + '?challenge=' + encodeURIComponent(challenge),
+                        headers: this._headers({ [shape.header]: challenge }),
+                        timeout: 1500
+                    });
+                    if (!contract.isEndpointProofValid(challenge, nativeProof, data?.challengeProof)) {
+                        return 'endpoint-proof-mismatch';
+                    }
+                    return null;
+                } catch (_) {
+                    // reason: an endpoint that cannot answer is treated exactly
+                    // like a legacy token — no cookies, downloads unaffected
+                    return 'endpoint-proof-unanswered';
+                }
+            },
+
             _headers(extra = {}) {
                 const headers = {
                     'X-MDL-Api': String(DOWNLOAD_HEALTH_SCHEMA_VERSION),
@@ -529,6 +570,14 @@
                             service: result.service || null,
                             api: Number.isInteger(result.api) ? result.api : null,
                             cookieCapability: result.cookieCapability || null,
+                            // The challenge the background sent to the native
+                            // host and the answer it came back with. This
+                            // wrapper rebuilds the object field by field, so a
+                            // field it does not know about is silently dropped
+                            // — which is how the endpoint proof arrived empty
+                            // and every cookie handoff read as unproven.
+                            endpointChallenge: typeof result.endpointChallenge === 'string' ? result.endpointChallenge : '',
+                            endpointProof: typeof result.endpointProof === 'string' ? result.endpointProof : '',
                             error: null
                         };
                     }
@@ -1749,9 +1798,20 @@
                         && proof.api >= COOKIE_HANDOFF_MINIMUM_API
                         && typeof capability?.token === 'string'
                         && capability.protocolVersion === COOKIE_HANDOFF_PROTOCOL_VERSION;
+                    // The endpoint has to prove it is the same program the
+                    // native host is, BEFORE any cookie is read. A refusal here
+                    // costs a signed-in download; not refusing costs the
+                    // cookies to whatever squatted the port.
+                    const endpointFailure = proofIsCurrent
+                        ? await MediaDLManager._proveEndpointIdentity(proof.endpointChallenge, proof.endpointProof)
+                        : null;
                     if (!proofIsCurrent) {
                         recordCookieHandoffDiagnostic('native-proof-incomplete');
                         DebugManager.log('MediaDL', 'Cookies withheld: fresh native proof did not match the active download session');
+                    } else if (endpointFailure) {
+                        recordCookieHandoffDiagnostic(endpointFailure);
+                        DebugManager.log('MediaDL',
+                            `Cookies withheld: the endpoint on port ${MediaDLManager._port} did not prove it is the paired companion (${endpointFailure})`);
                     } else {
                         const handoff = await browserCookies.getDownloadHandoff(capability);
                         const cookies = Array.isArray(handoff?.cookies) ? handoff.cookies : [];
