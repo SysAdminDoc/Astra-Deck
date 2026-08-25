@@ -37683,8 +37683,39 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btn: null,
             _navRule: null,
 
+            _DEFAULT_INSTANCE: 'https://yewtu.be',
+
+            // Every other user-configurable URL setting (downloadCobaltInstance,
+            // hideVideosFilterListUrl, sponsorBlockBaseUrl, aiSummaryEndpoint)
+            // goes through a real validator. This one was a bare `type: "string"`
+            // concatenated straight onto `a.href`, and clampSettingValue does not
+            // constrain strings, so a hand-edited backup could point the button
+            // at any scheme or host. Parse it, require https, and rebuild the
+            // origin from the parsed parts rather than trusting the raw text.
             _instance() {
-                return String(appState?.settings?.alternativeFrontendInstance || 'https://yewtu.be').replace(/\/$/, '');
+                const configured = String(appState?.settings?.alternativeFrontendInstance || '').trim();
+                for (const candidate of [configured, this._DEFAULT_INSTANCE]) {
+                    if (!candidate) continue;
+                    try {
+                        const parsed = new URL(candidate);
+                        if (parsed.protocol !== 'https:' || !parsed.hostname) continue;
+                        // Keep a path prefix so a self-hosted instance can live
+                        // under a subdirectory, but take it from the parse.
+                        return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+                    } catch (_) {
+                        // reason: a hand-edited backup can put anything in here
+                    }
+                }
+                return this._DEFAULT_INSTANCE;
+            },
+
+            _instanceHost() {
+                try {
+                    return new URL(this._instance()).hostname;
+                } catch (_) {
+                    // reason: _instance() already guarantees a parseable https URL
+                    return '';
+                }
             },
 
             _alternativeUrl() {
@@ -37701,7 +37732,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn.className = 'ytkit-alt-frontend-btn ytkit-stream-links-btn';
                 this._btn.rel = 'noopener noreferrer';
                 this._btn.target = '_blank';
-                this._btn.textContent = 'Open externally';
+                this._btn.textContent = t('altFrontendOpenBtn', 'Open externally');
+                // The destination is whatever the user configured, so name it.
+                // A button that says only "Open externally" gives no clue that
+                // a restored backup has repointed it somewhere else.
+                const host = this._instanceHost();
+                if (host) {
+                    this._btn.title = host;
+                    this._btn.setAttribute('aria-label',
+                        t('altFrontendOpenAriaTpl', 'Open externally at {host}').replace('{host}', host));
+                }
                 this._btn.addEventListener('click', (e) => {
                     const url = this._alternativeUrl();
                     if (!url) { e.preventDefault(); return; }

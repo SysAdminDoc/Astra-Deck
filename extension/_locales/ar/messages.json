@@ -143,6 +143,12 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "ملخص بالذكاء الاصطناعي (انقر بزر الماوس الأيمن لإدارة بيانات اعتماد الموفر)"
   },
+  "altFrontendOpenBtn": {
+    "message": "فتح خارجيًا"
+  },
+  "altFrontendOpenAriaTpl": {
+    "message": "فتح خارجيًا على {host}"
+  },
   "audioOnlyActive": {
     "message": "الصوت فقط"
   },

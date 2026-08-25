@@ -143,6 +143,12 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI 摘要（右键管理提供商凭据）"
   },
+  "altFrontendOpenBtn": {
+    "message": "在外部打开"
+  },
+  "altFrontendOpenAriaTpl": {
+    "message": "在 {host} 上于外部打开"
+  },
   "audioOnlyActive": {
     "message": "仅音频"
   },
