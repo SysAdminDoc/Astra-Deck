@@ -527,6 +527,111 @@ function buildSettingsPanel() {
             tabs[nextIndex].focus();
             tabs[nextIndex].click();
         });
+        // Reordering, for everyone. Sits above the list and moves whichever
+        // category is currently selected.
+        // Injected here rather than in the shared surface system: this control
+        // belongs to the settings panel and nothing else renders it. It carries
+        // its own light lane, because the sidebar is one of the surfaces the
+        // surface system repaints white.
+        injectStyle(`
+            #ytkit-settings-panel .ytkit-nav-reorder {
+                display: flex;
+                gap: 4px;
+                padding: 4px 0 6px;
+                justify-content: flex-end;
+            }
+            #ytkit-settings-panel .ytkit-nav-reorder-btn {
+                min-width: 28px;
+                min-height: 28px;
+                padding: 0 6px;
+                border-radius: 7px;
+                border: 1px solid var(--ytkit-premium-border, rgba(255,255,255,0.14));
+                background: var(--ytkit-premium-raised, rgba(255,255,255,0.06));
+                color: var(--ytkit-premium-text, #e8ecf4);
+                font: 600 13px/1 Inter, system-ui, sans-serif;
+                cursor: pointer;
+            }
+            #ytkit-settings-panel .ytkit-nav-reorder-btn:hover:not(:disabled) {
+                background: var(--ytkit-premium-hover, rgba(255,255,255,0.12));
+            }
+            #ytkit-settings-panel .ytkit-nav-reorder-btn:disabled {
+                opacity: 0.45;
+                cursor: default;
+            }
+            #ytkit-settings-panel .ytkit-nav-reorder-btn:focus-visible {
+                box-shadow: var(--ytkit-premium-focus, 0 0 0 2px #0f0f0f, 0 0 0 4px #7c3aed);
+                outline: none;
+            }
+            html:not([dark]) #ytkit-settings-panel .ytkit-nav-reorder-btn {
+                color: var(--ytkit-premium-text, #172335);
+                background: var(--ytkit-premium-raised, #f3f6f9);
+                border-color: var(--ytkit-premium-border, rgba(30,53,78,0.18));
+            }
+            @media (forced-colors: active) {
+                #ytkit-settings-panel .ytkit-nav-reorder-btn {
+                    background: Canvas;
+                    color: CanvasText;
+                    border: 1px solid CanvasText;
+                }
+            }
+        `, 'ytkit-nav-reorder-styles', true);
+
+        const reorderBar = document.createElement('div');
+        reorderBar.className = 'ytkit-nav-reorder';
+        reorderBar.setAttribute('role', 'group');
+        reorderBar.setAttribute('aria-label', t('panelReorderAria', 'Reorder categories'));
+
+        const makeReorderBtn = (direction, labelKey, fallback) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'ytkit-nav-reorder-btn';
+            button.dataset.direction = String(direction);
+            button.textContent = direction < 0 ? '↑' : '↓';
+            button.setAttribute('aria-label', t(labelKey, fallback));
+            button.title = t(labelKey, fallback);
+            button.addEventListener('click', () => moveSelectedCategory(direction));
+            reorderBar.appendChild(button);
+            return button;
+        };
+        const moveUpBtn = makeReorderBtn(-1, 'panelReorderUp', 'Move the selected category up');
+        const moveDownBtn = makeReorderBtn(1, 'panelReorderDown', 'Move the selected category down');
+
+        function selectedNavBtn() {
+            return navList.querySelector('.ytkit-nav-btn.active') || navList.querySelector('.ytkit-nav-btn');
+        }
+
+        function syncReorderButtons() {
+            const tabs = Array.from(navList.querySelectorAll('.ytkit-nav-btn'));
+            const index = tabs.indexOf(selectedNavBtn());
+            moveUpBtn.disabled = index <= 0;
+            moveDownBtn.disabled = index < 0 || index >= tabs.length - 1;
+        }
+
+        function moveSelectedCategory(direction) {
+            const tabs = Array.from(navList.querySelectorAll('.ytkit-nav-btn'));
+            const current = selectedNavBtn();
+            const index = tabs.indexOf(current);
+            const target = index + direction;
+            if (index < 0 || target < 0 || target >= tabs.length) return false;
+            if (direction < 0) tabs[target].before(current);
+            else tabs[target].after(current);
+            // The same write the drop handler makes, so the two paths cannot
+            // disagree about what the order is.
+            appState.settings.sidebarOrder = Array.from(navList.querySelectorAll('.ytkit-nav-btn'))
+                .map((tab) => tab.dataset.tab);
+            settingsManager.save(appState.settings);
+            syncReorderButtons();
+            // Keep the moved category under the cursor AND under focus, or the
+            // next press moves whatever happens to be there now.
+            current.focus();
+            showToast?.(t('panelReorderMoved', 'Category moved.'), '#22c55e', { duration: 2 });
+            return true;
+        }
+
+        navList.addEventListener('click', () => syncReorderButtons());
+        navList.addEventListener('focusin', () => syncReorderButtons());
+
+        sidebar.appendChild(reorderBar);
         sidebar.appendChild(navList);
 
         // Helper: create a sidebar nav button
@@ -617,6 +722,7 @@ function buildSettingsPanel() {
                 const newOrder = Array.from(navList.querySelectorAll('.ytkit-nav-btn')).map(b => b.dataset.tab);
                 appState.settings.sidebarOrder = newOrder;
                 settingsManager.save(appState.settings);
+                syncReorderButtons();
             });
         }
 

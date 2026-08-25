@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Three things that needed a mouse don't any more. The Element Zapper's picker
+  can be aimed with the arrow keys and confirmed with Enter, so choosing what to
+  hide no longer depends on hovering it. The settings sidebar has move-up and
+  move-down buttons, which means the category order is something everyone can
+  change rather than only people who can drag. And the floating chat's move
+  handle finally does something when you press it: arrow keys nudge the panel,
+  Shift moves it further.
+
 - Four overlays can be used from the keyboard. The playback speed popup, the
   Astra right-click menu, the AI Summary panel and the persistent queue all
   announced themselves as menus or dialogs and then behaved like neither: none

@@ -129,6 +129,38 @@
                 documentRef?.addEventListener?.('pointercancel', end, true);
             },
 
+            // One step per press, ten with Shift, and the same clamp and persist
+            // the pointer drag goes through so the two paths cannot disagree
+            // about where the panel is allowed to sit.
+            _NUDGE_STEP: 16,
+            _NUDGE_STEP_LARGE: 96,
+
+            _nudgeLayout(dx, dy) {
+                if (!this._frame) return false;
+                this._layout.x = (Number(this._layout.x) || 0) + dx;
+                this._layout.y = (Number(this._layout.y) || 0) + dy;
+                // _applyLayout clamps before it writes, so the nudge cannot
+                // walk the panel off screen where the pointer drag cannot.
+                this._applyLayout();
+                this._persistLayout();
+                return true;
+            },
+
+            _onDragHandleKey(event) {
+                const step = event?.shiftKey ? this._NUDGE_STEP_LARGE : this._NUDGE_STEP;
+                let dx = 0;
+                let dy = 0;
+                if (event?.key === 'ArrowLeft') dx = -step;
+                else if (event?.key === 'ArrowRight') dx = step;
+                else if (event?.key === 'ArrowUp') dy = -step;
+                else if (event?.key === 'ArrowDown') dy = step;
+                else return false;
+                if (!this._nudgeLayout(dx, dy)) return false;
+                event.preventDefault?.();
+                event.stopPropagation?.();
+                return true;
+            },
+
             _mountControls(frame) {
                 if (this._controls?.isConnected && this._controls.parentNode === frame) return;
                 this._controls?.remove?.();
@@ -143,7 +175,18 @@
                 dragHandle.textContent = '⋮⋮';
                 dragHandle.setAttribute('aria-label', t('floatingChatDragAria', 'Move floating chat'));
                 dragHandle.setAttribute('title', t('floatingChatDragTitle', 'Drag to move'));
+                // The label promised a control. Say how it works, and mean it.
+                dragHandle.setAttribute('aria-describedby', 'ytkit-floating-chat-drag-hint');
                 dragHandle.addEventListener('pointerdown', event => this._beginDrag(event));
+                dragHandle.addEventListener('keydown', event => this._onDragHandleKey(event));
+
+                const dragHint = documentRef.createElement('span');
+                dragHint.id = 'ytkit-floating-chat-drag-hint';
+                dragHint.className = 'ytkit-floating-chat-drag-hint';
+                dragHint.textContent = t('floatingChatDragKeysAria',
+                    'Use the arrow keys to move the panel, or hold Shift to move it further.');
+                dragHint.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;'
+                    + 'overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;';
 
                 const opacity = documentRef.createElement('input');
                 opacity.type = 'range';
@@ -159,6 +202,7 @@
                 opacity.addEventListener('change', () => this._persistLayout());
 
                 controls.appendChild(dragHandle);
+                controls.appendChild(dragHint);
                 controls.appendChild(opacity);
                 frame.appendChild(controls);
                 this._controls = controls;

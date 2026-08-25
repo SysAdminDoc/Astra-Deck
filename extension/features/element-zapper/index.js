@@ -35,6 +35,9 @@
     const OVERLAY_CLASS = 'ytkit-zap-overlay';
     const HIGHLIGHT_CLASS = 'ytkit-zap-highlight';
     const HINT_CLASS = 'ytkit-zap-hint';
+    // Up to the parent, down to the first child, left and right along the
+    // siblings: the same moves the mouse makes, spelled out.
+    const KEYBOARD_WALK_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
     const PANEL_STYLE_ID = 'ytkit-element-zapper-style';
     const PANEL_CSS = `
@@ -269,13 +272,18 @@
 
                 const label = documentRef.createElement('span');
                 label.textContent = t('zapPickHint', 'Click a shelf, panel, or promo to hide it. Press Escape to cancel.');
+                const keyHint = documentRef.createElement('span');
+                keyHint.className = 'ytkit-zap-hint-keys';
+                keyHint.textContent = t('zapPickHintKeys',
+                    'Or press the arrow keys to move through the page and Enter to choose.');
                 const cancel = documentRef.createElement('button');
                 cancel.type = 'button';
                 cancel.className = 'ytkit-zap-cancel';
                 cancel.textContent = t('zapPickCancel', 'Cancel');
-                hint.append(label, cancel);
+                hint.append(label, keyHint, cancel);
 
                 let current = null;
+                let keyboardTarget = null;
 
                 const describe = (element) => {
                     const derivation = core.deriveStructuralSelector(element);
@@ -307,12 +315,11 @@
                     if (!under || under === highlight || under === hint || hint.contains?.(under)) return;
                     const derivation = describe(under);
                     current = derivation;
+                    keyboardTarget = under;
                     place(derivation?.anchor || under);
                 };
 
-                const onClick = (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
+                const commitSelection = () => {
                     if (!current) {
                         showToast?.(label.textContent, 'error');
                         return;
@@ -330,10 +337,72 @@
                     }
                 };
 
+                const onClick = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    commitSelection();
+                };
+
+                // Choosing an element to hide was pointer-gated: mousemove to
+                // aim, click to confirm, and Escape as the only key the picker
+                // understood. Everything the mouse could do here, the arrow
+                // keys do now — up to the parent, down to the first child, left
+                // and right along the siblings.
+                const selectElement = (element) => {
+                    if (!element || element === overlay || element === highlight || element === hint) return false;
+                    if (hint.contains?.(element) || overlay.contains?.(element)) return false;
+                    if (element === documentRef.documentElement) return false;
+                    keyboardTarget = element;
+                    const derivation = describe(element);
+                    current = derivation;
+                    place(derivation?.anchor || element);
+                    return true;
+                };
+
+                const firstKeyboardTarget = () => {
+                    const focused = documentRef.activeElement;
+                    if (focused && focused !== documentRef.body
+                        && !hint.contains?.(focused) && !overlay.contains?.(focused)) {
+                        return focused;
+                    }
+                    // Somewhere with page content in it, rather than <body>,
+                    // whose derived selector would be refused anyway.
+                    return documentRef.querySelector?.('ytd-browse, ytd-watch-flexy, #contents, #content, main')
+                        || documentRef.body?.firstElementChild
+                        || documentRef.body;
+                };
+
+                const walkFromKeyboard = (key) => {
+                    const from = keyboardTarget || current?.anchor;
+                    if (!from) return selectElement(firstKeyboardTarget());
+                    if (key === 'ArrowUp') return selectElement(from.parentElement);
+                    if (key === 'ArrowDown') return selectElement(from.firstElementChild);
+                    if (key === 'ArrowLeft') return selectElement(from.previousElementSibling);
+                    if (key === 'ArrowRight') return selectElement(from.nextElementSibling);
+                    return false;
+                };
+
                 const onKey = (event) => {
                     if (event.key === 'Escape') {
                         event.preventDefault();
                         this.stopPicking();
+                        return;
+                    }
+                    // Cancel is a real button; let it answer its own keys.
+                    if (hint.contains?.(documentRef.activeElement)) return;
+                    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        commitSelection();
+                        return;
+                    }
+                    if (KEYBOARD_WALK_KEYS.has(event.key)) {
+                        // preventDefault only when the walk went somewhere, so a
+                        // dead end still scrolls rather than swallowing the key.
+                        if (walkFromKeyboard(event.key)) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
                     }
                 };
 
