@@ -956,6 +956,72 @@
         return typeof prepare === 'function' ? prepare(record) : record;
     }
 
+    // What the transcript store is actually costing, and how much of it is
+    // unreadable.
+    //
+    // The popup's storage figures come from chrome.storage.local, which does
+    // not include a page-origin IndexedDB — so the largest thing Astra Deck
+    // writes to disk had no readout on the surface where a user goes to look at
+    // storage. Counting the malformed records in the same pass is what makes an
+    // export-before-clear recovery offerable: without it there is no way to
+    // tell a big index from a broken one.
+    async function readTranscriptIndexStats(options = {}) {
+        const helpers = globalThis.YTKitCore?.transcriptIndex;
+        const db = await openPageDb(options.indexedDB);
+        let records = 0;
+        let corrupt = 0;
+        let bytes = 0;
+        let oldestAt = 0;
+        let newestAt = 0;
+        try {
+            const tx = db.transaction(PAGE_DB.records, 'readonly');
+            const completion = transactionPromise(tx);
+            const store = tx.objectStore(PAGE_DB.records);
+            await new Promise((resolve, reject) => {
+                const request = store.openCursor();
+                request.onerror = () => reject(request.error || new Error('Transcript stats cursor failed'));
+                request.onsuccess = () => {
+                    const cursor = request.result;
+                    if (!cursor) { resolve(); return; }
+                    const raw = cursor.value;
+                    const clean = sanitizeTranscriptRecords([raw])[0];
+                    if (!clean) {
+                        // Present on disk, unreadable by every consumer. It
+                        // still occupies the quota, so it is counted twice: as
+                        // a record and as damage.
+                        corrupt += 1;
+                        records += 1;
+                        bytes += estimateJsonBytes(raw) + 1;
+                        cursor.continue();
+                        return;
+                    }
+                    records += 1;
+                    bytes += typeof helpers?.estimateRecordBytes === 'function'
+                        ? helpers.estimateRecordBytes(clean)
+                        : estimateJsonBytes(clean) + 1;
+                    const at = Number(clean.indexedAt) || 0;
+                    if (at > 0) {
+                        if (!oldestAt || at < oldestAt) oldestAt = at;
+                        if (at > newestAt) newestAt = at;
+                    }
+                    cursor.continue();
+                };
+            });
+            await completion;
+            return {
+                records,
+                corrupt,
+                bytes,
+                oldestAt,
+                newestAt,
+                maxRecords: Number(helpers?.MAX_RECORDS) || 0,
+                maxBytes: Number(helpers?.MAX_TOTAL_BYTES) || 0
+            };
+        } finally {
+            db.close();
+        }
+    }
+
     async function readTranscriptChunk(options = {}) {
         const db = await openPageDb(options.indexedDB);
         const afterKey = typeof options.afterKey === 'string' ? options.afterKey : '';
@@ -1204,6 +1270,7 @@
         formatImportPreview,
         countItems,
         estimateJsonBytes,
+        readTranscriptIndexStats,
         readTranscriptChunk,
         replaceTranscriptRecords,
         clearTranscriptRecords,

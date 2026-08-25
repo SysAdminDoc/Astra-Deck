@@ -6926,6 +6926,8 @@ const STORAGE_KEYS = Object.freeze({
                     }
                     const run = async () => {
                         switch (message.action) {
+                        case 'stats':
+                            return persisted.readTranscriptIndexStats();
                         case 'export-chunk':
                             return persisted.readTranscriptChunk({
                                 afterKey: message.afterKey || '',
