@@ -2679,6 +2679,7 @@
             .ytkit-rc-panel,
             .ytkit-speed-popup,
             .ytkit-sleep-popover,
+            .ytkit-ql-drop,
             .ytkit-context-menu,
             .ytkit-wellbeing-card,
             .ytkit-blocked-watch-dialog
@@ -2715,6 +2716,7 @@
             .ytkit-rc-panel,
             .ytkit-speed-popup,
             .ytkit-sleep-popover,
+            .ytkit-ql-drop,
             .ytkit-context-menu,
             .ytkit-wellbeing-card,
             .ytkit-blocked-watch-dialog
@@ -2727,6 +2729,8 @@
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
             .ytkit-search-container,
+            #ytkit-mediadl-install-prompt,
+            #ytkit-reaction-spammer-panel,
             .ytkit-mediadl-banner,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
@@ -2746,6 +2750,8 @@
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
             .ytkit-search-container,
+            #ytkit-mediadl-install-prompt,
+            #ytkit-reaction-spammer-panel,
             .ytkit-mediadl-banner,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
@@ -2759,6 +2765,8 @@
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
             .ytkit-search-container,
+            #ytkit-mediadl-install-prompt,
+            #ytkit-reaction-spammer-panel,
             .ytkit-mediadl-banner,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
@@ -2774,6 +2782,8 @@
             .ytkit-subs-load-banner,
             .ytkit-sub-toolbar,
             .ytkit-search-container,
+            #ytkit-mediadl-install-prompt,
+            #ytkit-reaction-spammer-panel,
             .ytkit-mediadl-banner,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
@@ -2806,6 +2816,7 @@
             .ytkit-rc-panel,
             .ytkit-speed-popup,
             .ytkit-sleep-popover,
+            .ytkit-ql-drop,
             .ytkit-context-menu,
             .ytkit-wellbeing-card,
             .ytkit-blocked-watch-dialog
@@ -2838,6 +2849,7 @@
             .ytkit-rc-panel,
             .ytkit-speed-popup,
             .ytkit-sleep-popover,
+            .ytkit-ql-drop,
             .ytkit-context-menu,
             .ytkit-wellbeing-card,
             .ytkit-blocked-watch-dialog
@@ -2879,7 +2891,8 @@
             .ytkit-transcript-search-panel h4, .ytkit-vvf-panel, .ytkit-vvf-val,
             .ytkit-wha-card, .ytkit-wha-head h2, .ytkit-stream-links-panel,
             .ytkit-blocked-watch-dialog, .ytkit-blocked-watch-channel, .ytkit-wellbeing-card,
-            .ytkit-wellbeing-title, .ytkit-wellbeing-badge
+            .ytkit-wellbeing-title, .ytkit-wellbeing-badge, .ytkit-install-prompt__title,
+            .ytkit-install-prompt__btn, #ytkit-mediadl-install-prompt
         ) { color: var(--ytkit-premium-text) !important; }
         html:not([dark]) :is(
             .ytkit-aisum-close, .ytkit-bookmarks-eyebrow, .ytkit-bookmarks-count,
@@ -2887,13 +2900,15 @@
             .ytkit-dl-progress__close, .ytkit-mini-player-btn, .ytkit-speed-popup__item,
             .ytkit-subs-load-banner__subtitle, .ytkit-transcript-search-panel .meta,
             .ytkit-transcript-search-panel__footer, .ytkit-wellbeing-msg,
-            .ytkit-wellbeing-eyebrow, .ytkit-wha-close
+            .ytkit-wellbeing-eyebrow, .ytkit-wha-close, .ytkit-install-prompt__close,
+            .ytkit-install-prompt__note
         ) { color: var(--ytkit-premium-muted) !important; }
         html:not([dark]) :is(
             .ytkit-bookmarks-status, .ytkit-bookmark-note-label, .ytkit-bookmark-delete,
             .ytkit-dl-progress__status-copy, .ytkit-playlist-enhance__status,
             .ytkit-speed-popup__sub, .ytkit-subs-load-banner__eyebrow,
-            .ytkit-transcript-batch-meta, .ytkit-wha-lbl, .ytkit-wellbeing-hint
+            .ytkit-transcript-batch-meta, .ytkit-wha-lbl, .ytkit-wellbeing-hint,
+            .ytkit-install-prompt__desc, .ytkit-install-prompt__steps
         ) { color: var(--ytkit-premium-subtle) !important; }
         html:not([dark]) :is(
             .ytkit-rc-head, .ytkit-stream-links-panel__warn
@@ -2909,12 +2924,16 @@
             .ytkit-dl-progress__close, .ytkit-mini-player-btn, .ytkit-playlist-enhance__status,
             .ytkit-speed-popup__item, .ytkit-wellbeing-eyebrow, .ytkit-wellbeing-badge,
             .ytkit-wellbeing-icon-wrap, .ytkit-transcript-search-panel__footer button,
-            .ytkit-stream-links-panel button, .ytkit-wha-close
+            .ytkit-stream-links-panel button, .ytkit-wha-close,
+            .ytkit-install-prompt__btn, .ytkit-install-prompt__close,
+            .ytkit-install-prompt__note, .ytkit-install-prompt__eyebrow
         ) {
             background: var(--ytkit-premium-raised);
             border-color: var(--ytkit-premium-border);
         }
 
+        /* Branded pill: takes the accent fill the panel palette relights. */
+        html:not([dark]) .ytkit-install-prompt__eyebrow { color: var(--ytkit-premium-accent-fill) !important; }
         html:not([dark]) .ytkit-speed-popup__item:hover {
             background: var(--ytkit-premium-hover) !important;
             color: var(--ytkit-premium-text) !important;
@@ -3540,7 +3559,8 @@
                 .ytkit-bookmarks-container,
                 .ytkit-queue-panel,
                 .ytkit-wlwb-panel,
-                .ytkit-context-menu,
+                .ytkit-ql-drop,
+            .ytkit-context-menu,
                 .ytkit-global-toast
             ) {
                 border-color: CanvasText !important;

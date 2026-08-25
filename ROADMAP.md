@@ -82,14 +82,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Found during a full audit pass, verified, and deliberately not fixed in it.
 
-### P1
-
-- [ ] P1: Give the four dead surface selectors the premium treatment they were listed for
-  Why: `.ytkit-stats-overlay`, `.ytkit-ql-menu`, `.ytkit-mediadl-install-prompt` and `.ytkit-reaction-spammer-panel` were named in the surface system as classes but only ever exist as ids, so they silently received none of the shared theming, radius, font or focus treatment. They were removed from the lists rather than converted, because activating a white ground under children that have never been relit would create the P1 above on four more surfaces.
-  Where: `extension/core/settings-visual-system.js`, plus each surface's own stylesheet
-  Acceptance: convert each to its id selector, relight its children for the light lane first, and confirm in a browser capture. The new gate in `tests/settings-visual-system.test.js` ("names no selector the extension never renders") will pass either way; it only forbids naming something that does not exist.
-  Complexity: M
-
 ### P2
 
 - [ ] P2: Give the core userscript bundle real headroom

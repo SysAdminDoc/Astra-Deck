@@ -157,7 +157,10 @@ function readLightGroundOverrides() {
     while ((match = FORCED.exec(source))) {
         for (const raw of match[1].split(',')) {
             const selector = raw.trim();
-            if (selector.startsWith('.ytkit-')) overridden.add(selector.slice(1));
+            // Ids as well as classes: two of the forced surfaces are named
+            // `#ytkit-...` because that is what the extension renders, and a
+            // class-only reader left them counted as grounded.
+            if (/^[.#]ytkit-/.test(selector)) overridden.add(selector.slice(1));
         }
     }
     return overridden;
