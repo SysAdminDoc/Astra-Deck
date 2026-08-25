@@ -3270,7 +3270,7 @@
     "message": "학습 / 작업 내보내기"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "열어본 모든 동영상의 대본을 로컬 IndexedDB에 인덱싱합니다. 팝업 또는 window.__ytkitSearchTranscripts(query)에서 표시되는 전역 \"대본 검색\" 패널을 추가합니다. 인덱스는 설정에서 삭제 가능하며, 원격 전송 없음."
+    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "대본 검색 인덱스"
@@ -4961,9 +4961,6 @@
   "selectorHealthCopyDone": {
     "message": "복사됨 — GitHub 이슈에 붙여넣기하세요."
   },
-  "selectorHealthCopyFail": {
-    "message": "클립보드에 복사하지 못했습니다. 다시 시도하거나 진단의 저장 버튼으로 보고서를 내려받으세요."
-  },
   "selectorHealthCopyNeedYt": {
     "message": "보고서를 생성하려면 YouTube 탭을 여세요."
   },
@@ -5938,7 +5935,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "클립보드 사용 불가 — 브라우저 콘솔을 확인하세요."
+    "message": "여기서는 복사를 사용할 수 없습니다. 텍스트를 선택해 직접 복사하세요."
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."

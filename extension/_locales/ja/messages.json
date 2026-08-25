@@ -3270,7 +3270,7 @@
     "message": "学習/仕事エクスポート"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "開いた動画の文字起こしをローカル IndexedDB にインデックス。ポップアップまたは window.__ytkitSearchTranscripts(query) からアクセスできるグローバル「文字起こし検索」パネルを追加。インデックスは設定からクリア可能。テレメトリなし。"
+    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "文字起こし検索インデックス"
@@ -4961,9 +4961,6 @@
   "selectorHealthCopyDone": {
     "message": "コピーしました — GitHub Issue に貼り付けてください。"
   },
-  "selectorHealthCopyFail": {
-    "message": "クリップボードにコピーできませんでした。もう一度試すか、診断の保存ボタンでレポートをダウンロードしてください。"
-  },
   "selectorHealthCopyNeedYt": {
     "message": "レポートを作成するには YouTube タブを開いてください。"
   },
@@ -5938,7 +5935,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "クリップボードが利用できません — ブラウザコンソールを参照。"
+    "message": "ここではコピーを利用できません。テキストを選択してご自身でコピーしてください。"
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."

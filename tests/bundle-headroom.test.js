@@ -188,3 +188,66 @@ test('the stripper is applied through a guard that can hand back the original', 
     const inert = 'const x = 1;\nmodule.exports = x;';
     assert.equal(sync.shrinkModuleBody(inert, 'test/fixture.js'), inert);
 });
+
+// WHEN a division follows a word that is only a keyword in some positions, the
+// scanner SHALL read it as a division. `of`, `in` and `new` are all ordinary
+// property names and `of` is an ordinary variable name; reading the `/` after
+// one as a regex walked the scan into the rest of the line and swallowed the
+// backtick that opened the next template, deleting a comment-shaped line out of
+// template DATA. All four of these changed meaning before this.
+test('a division after a contextual keyword is not read as a regex', () => {
+    const backtick = String.fromCharCode(96);
+    const HEADS = [
+        ['a variable named of', 'const g = 2, of = 4; const q = of / g, t = ' + backtick + 'a/b'],
+        ['a property named of', 'const g = 2, box = { of: 4 }; const q = box.of / g, t = ' + backtick + 'a/b'],
+        ['a property named new', 'const g = 2, q = { new: 4 }; const z = q.new / g, t = ' + backtick + 'a/b'],
+        ['a property named in', 'const g = 2, o = { in: 4 }; const z = o.in / g, t = ' + backtick + 'a/b']
+    ];
+
+    for (const [label, head] of HEADS) {
+        const source = [
+            head,
+            '// THIS LINE IS TEMPLATE DATA',
+            'tail' + backtick + ';',
+            'module.exports = t;'
+        ].join('\n');
+        assert.doesNotThrow(() => evaluateModule(source), `${label}: the fixture itself must be valid`);
+        const stripped = sync.stripSafeLineComments(source);
+        assert.equal(evaluateModule(stripped), evaluateModule(source),
+            `${label}: stripping must not change what the module produces`);
+    }
+});
+
+// WHEN a `/` is in a genuine keyword position, it SHALL still be read as a
+// regex — the fix must not buy safety by giving up on regexes.
+test('a regex after a real keyword is still a regex', () => {
+    const backtick = String.fromCharCode(96);
+    const source = [
+        'function f() { return /a\\/b/.source; }',
+        'const t = ' + backtick + 'a/b',
+        '// THIS LINE IS TEMPLATE DATA',
+        'tail' + backtick + ';',
+        'module.exports = { f: f(), t };'
+    ].join('\n');
+    assert.doesNotThrow(() => evaluateModule(source));
+    assert.equal(evaluateModule(sync.stripSafeLineComments(source)), evaluateModule(source));
+});
+
+// WHEN a candidate regex would swallow a backtick or quote that is NOT inside a
+// character class, the scanner SHALL prefer the division reading. That is the
+// signature of a misread division, and preferring division costs at most a
+// surviving comment where the other way costs a line of shipped data.
+test('a character class may contain a backtick without tripping the guard', () => {
+    const backtick = String.fromCharCode(96);
+    const source = [
+        'const re = /[' + backtick + ']/;',
+        'const s = ' + backtick + 'head',
+        '// data line inside a real template literal',
+        'tail' + backtick + ';',
+        'module.exports = { re: re.source, s };'
+    ].join('\n');
+    assert.doesNotThrow(() => evaluateModule(source));
+    const stripped = sync.stripSafeLineComments(source);
+    assert.equal(evaluateModule(stripped), evaluateModule(source),
+        'a backtick inside [] is an ordinary pattern, not a misread division');
+});

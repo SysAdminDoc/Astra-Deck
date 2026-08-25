@@ -3658,10 +3658,18 @@ function attachUIEventListeners() {
                     .replace('{count}', String(matchCount));
                 searchStateCopy.textContent = t('settingsSearchShowingTpl', 'Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result.')
                     .replace('{sections}', String(visibleSectionCount))
-                    .replace('{query}', rawLabel);
+                    // A function replacement: rawLabel is the raw search box
+                    // text, and String.replace expands dollar-ampersand and
+                    // friends inside a STRING replacement — a user typing one
+                    // rewrites the message meant to quote them back.
+                    .replace('{query}', () => rawLabel);
             } else {
                 searchStateTitle.textContent = t('settingsSearchNoneTpl', 'No settings found for “{query}”')
-                    .replace('{query}', rawLabel);
+                    // A function replacement: rawLabel is the raw search box
+                    // text, and String.replace expands dollar-ampersand and
+                    // friends inside a STRING replacement — a user typing one
+                    // rewrites the message meant to quote them back.
+                    .replace('{query}', () => rawLabel);
                 searchStateCopy.textContent = t('settingsSearchHint', 'Try a feature name, page, or words like comments, transcript, download, or theme.');
             }
         }

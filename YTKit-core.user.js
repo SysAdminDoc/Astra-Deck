@@ -21553,7 +21553,7 @@ if (typeof globalThis !== "undefined") {
                             if (staged[candidate.channelId]) {
                                 action.textContent = t('subscriptionHealthUndoStage', 'Undo stage');
                                 action.setAttribute('aria-label', t('subscriptionHealthUndoStageAriaTpl', 'Undo staged unsubscribe for {channel}')
-                                    .replace('{channel}', name.textContent));
+                                    .replace('{channel}', () => name.textContent));
                                 action.addEventListener('click', () => {
                                     this._undoStagedUnsubscribes([candidate.channelId]);
                                     this._renderHealthPanel();
@@ -21561,7 +21561,7 @@ if (typeof globalThis !== "undefined") {
                             } else {
                                 action.textContent = t('subscriptionHealthStage', 'Stage');
                                 action.setAttribute('aria-label', t('subscriptionHealthStageAriaTpl', 'Stage {channel} for unsubscribe review')
-                                    .replace('{channel}', name.textContent));
+                                    .replace('{channel}', () => name.textContent));
                                 action.addEventListener('click', () => {
                                     const now = Date.now();
                                     const next = { ...this._readUnsubscribeStaging() };
@@ -27638,10 +27638,10 @@ function attachUIEventListeners() {
                     .replace('{count}', String(matchCount));
                 searchStateCopy.textContent = t('settingsSearchShowingTpl', 'Showing results across {sections} sections for “{query}”. Changes save automatically as you toggle or edit a result.')
                     .replace('{sections}', String(visibleSectionCount))
-                    .replace('{query}', rawLabel);
+                    .replace('{query}', () => rawLabel);
             } else {
                 searchStateTitle.textContent = t('settingsSearchNoneTpl', 'No settings found for “{query}”')
-                    .replace('{query}', rawLabel);
+                    .replace('{query}', () => rawLabel);
                 searchStateCopy.textContent = t('settingsSearchHint', 'Try a feature name, page, or words like comments, transcript, download, or theme.');
             }
         }

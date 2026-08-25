@@ -3270,7 +3270,7 @@
     "message": "学习/工作导出"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "将你打开的每个视频的字幕索引到本地 IndexedDB 中。通过弹窗或 window.__ytkitSearchTranscripts(query) 提供全局「搜索字幕」面板。索引可从设置中清除；无遥测。"
+    "message": "Indexes captions for eligible videos you visit through the shared transcript service, without opening YouTube’s transcript panel. Search stays local in IndexedDB; no telemetry."
   },
   "feature_researchTranscriptIndex_name": {
     "message": "字幕搜索索引"
@@ -4961,9 +4961,6 @@
   "selectorHealthCopyDone": {
     "message": "已复制 — 粘贴到 GitHub issue 中。"
   },
-  "selectorHealthCopyFail": {
-    "message": "无法复制到剪贴板。请重试，或使用诊断中的保存按钮下载报告。"
-  },
   "selectorHealthCopyNeedYt": {
     "message": "打开 YouTube 标签页以生成报告。"
   },
@@ -5938,7 +5935,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "剪贴板不可用 — 请查看浏览器控制台。"
+    "message": "此处无法复制。请选中文本并自行复制。"
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."
