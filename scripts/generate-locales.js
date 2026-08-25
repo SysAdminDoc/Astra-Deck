@@ -2134,6 +2134,60 @@ for (const [locale, messages] of Object.entries(SUBSCRIPTION_GROUP_CRUD_TRANSLAT
 // The auxiliary-write failure toast. It fires when the store has rejected
 // several flushes in a row, which is the one moment the user needs to know
 // their changes are not being kept.
+// Two error messages that told the user to do something they cannot do.
+// selectorHealthCopyFail sent a non-developer to DevTools to call
+// window.__ytkitDiagnostics.download(), naming a retired brand and an API
+// nobody outside this repo knows; its sibling selectorHealthCopySaveFallback
+// already said the same thing in terms of a button on screen, and the code
+// uses the sibling at both call sites. statusMediadlReenableFail named
+// chrome://extensions in a build that also ships a Firefox sidebar.
+//
+// The English for the first key is now identical to its sibling, so this
+// table translates BOTH of them: the sibling had no translation in any
+// locale and fell through to English everywhere.
+const UNACTIONABLE_ERROR_COPY_TRANSLATIONS = {
+  ar: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': 'تعذّر النسخ إلى الحافظة. أعد المحاولة أو استخدم زر الحفظ في التشخيص لتنزيل التقرير.',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'تعذّرت إعادة تفعيل إشعارات Astra Downloader. افتح صفحة الإضافات في متصفحك وأعد التحميل.'
+  },
+  de: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': 'Kopieren in die Zwischenablage fehlgeschlagen. Versuchen Sie es erneut oder laden Sie den Bericht über die Schaltfläche „Speichern“ in der Diagnose herunter.',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'Astra Downloader Aufforderungen konnten nicht erneut aktiviert werden. Öffnen Sie die Erweiterungsseite Ihres Browsers und laden Sie neu.'
+  },
+  es: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': 'No se pudo copiar al portapapeles. Inténtalo de nuevo o usa el botón Guardar del diagnóstico para descargar el informe.',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'No se pudieron reactivar los avisos de Astra Downloader. Abre la página de extensiones de tu navegador y vuelve a cargarla.'
+  },
+  fr: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': 'Impossible de copier dans le presse-papiers. Réessayez ou utilisez le bouton Enregistrer du diagnostic pour télécharger le rapport.',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'Impossible de réactiver les invites d’Astra Downloader. Ouvrez la page des extensions de votre navigateur et rechargez.'
+  },
+  it: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': 'Impossibile copiare negli appunti. Riprova oppure usa il pulsante Salva della diagnostica per scaricare il rapporto.',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'Impossibile riattivare gli avvisi di Astra Downloader. Apri la pagina delle estensioni del browser e ricarica.'
+  },
+  ja: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': 'クリップボードにコピーできませんでした。もう一度試すか、診断の保存ボタンでレポートをダウンロードしてください。',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'Astra Downloader のプロンプトを再有効化できませんでした。ブラウザーの拡張機能ページを開いて再読み込みしてください。'
+  },
+  ko: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': '클립보드에 복사하지 못했습니다. 다시 시도하거나 진단의 저장 버튼으로 보고서를 내려받으세요.',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'Astra Downloader 알림을 다시 활성화하지 못했습니다. 브라우저의 확장 프로그램 페이지를 열고 새로 고치세요.'
+  },
+  pt_BR: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': 'Não foi possível copiar para a área de transferência. Tente novamente ou use o botão Salvar do diagnóstico para baixar o relatório.',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'Não foi possível reativar os avisos do Astra Downloader. Abra a página de extensões do navegador e recarregue.'
+  },
+  ru: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': 'Не удалось скопировать в буфер обмена. Повторите попытку или нажмите кнопку «Сохранить» в диагностике, чтобы скачать отчёт.',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': 'Не удалось снова включить запросы Astra Downloader. Откройте страницу расширений браузера и перезагрузите её.'
+  },
+  zh_CN: {
+    'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.': '无法复制到剪贴板。请重试，或使用诊断中的保存按钮下载报告。',
+    'Could not re-enable Astra Downloader prompts. Open your browser\'s extensions page and reload.': '无法重新启用 Astra Downloader 提示。请打开浏览器的扩展页面并重新加载。'
+  }
+};
+for (const [locale, messages] of Object.entries(UNACTIONABLE_ERROR_COPY_TRANSLATIONS)) Object.assign(T[locale], messages);
 const STORAGE_WRITE_FAILURE_TRANSLATIONS = {
   ar: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'تعذر على Astra Deck الحفظ في ملف المتصفح هذا. قد تفقد التغييرات الأخيرة.' },
   de: { 'Astra Deck cannot save to this browser profile. Recent changes may be lost.': 'Astra Deck kann in diesem Browserprofil nicht speichern. Aktuelle Änderungen gehen möglicherweise verloren.' },

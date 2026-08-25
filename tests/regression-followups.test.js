@@ -142,3 +142,38 @@ test('the popup storage cards seed at zero and name the failure', () => {
     assert.match(setter.slice(0, 500), /delete element\.dataset\.state/);
     assert.match(setter.slice(0, 500), /element\.removeAttribute\('title'\)/);
 });
+
+// WHEN an error message tells the user what to do, that instruction SHALL be
+// something they can carry out from the UI they are looking at, in every
+// locale — not a DevTools console call and not a browser-specific URL.
+test('the two error messages name an action a user can actually take', () => {
+    const localesDir = path.join(repoRoot, 'extension', '_locales');
+    const locales = fs.readdirSync(localesDir).filter((name) =>
+        fs.existsSync(path.join(localesDir, name, 'messages.json')));
+    assert.ok(locales.length >= 10, 'every shipped locale must be checked, not just EN');
+
+    for (const locale of locales) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(localesDir, locale, 'messages.json'), 'utf8'));
+
+        const fail = messages.selectorHealthCopyFail?.message || '';
+        const sibling = messages.selectorHealthCopySaveFallback?.message || '';
+        assert.ok(fail, `${locale}: selectorHealthCopyFail must exist`);
+        // The working sibling is what the code actually uses at both call
+        // sites, so the stale key says the same thing rather than a second,
+        // worse version of it.
+        assert.equal(fail, sibling,
+            `${locale}: selectorHealthCopyFail must reuse its working sibling's wording`);
+        assert.ok(!/DevTools/i.test(fail),
+            `${locale}: a non-developer cannot open DevTools to recover from a failed copy`);
+        assert.ok(!/__ytkitDiagnostics|window\./.test(fail),
+            `${locale}: the message must not name an internal API, or the retired ytkit brand`);
+
+        const reenable = messages.statusMediadlReenableFail?.message || '';
+        assert.ok(reenable, `${locale}: statusMediadlReenableFail must exist`);
+        assert.ok(!/chrome:\/\//.test(reenable),
+            `${locale}: this build also ships a Firefox sidebar, so a chrome:// URL is wrong there`);
+        assert.ok(!/about:addons/.test(reenable),
+            `${locale}: naming the Firefox URL instead is the same mistake in reverse`);
+    }
+});

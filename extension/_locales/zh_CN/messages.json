@@ -4917,7 +4917,7 @@
     "message": "已复制 — 粘贴到 GitHub issue 中。"
   },
   "selectorHealthCopyFail": {
-    "message": "剪贴板写入被阻止。打开开发者工具并调用 window.__ytkitDiagnostics.download()。"
+    "message": "无法复制到剪贴板。请重试，或使用诊断中的保存按钮下载报告。"
   },
   "selectorHealthCopyNeedYt": {
     "message": "打开 YouTube 标签页以生成报告。"
@@ -4929,7 +4929,7 @@
     "message": "正在生成报告…"
   },
   "selectorHealthCopySaveFallback": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+    "message": "无法复制到剪贴板。请重试，或使用诊断中的保存按钮下载报告。"
   },
   "selectorHealthCtxCountTpl": {
     "message": "{ctx}：{count}"
@@ -5950,7 +5950,7 @@
     "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
-    "message": "无法重新启用 Astra Downloader 提示。请打开 chrome://extensions 并重新加载。"
+    "message": "无法重新启用 Astra Downloader 提示。请打开浏览器的扩展页面并重新加载。"
   },
   "statusMediadlReenabled": {
     "message": "Astra Downloader 安装提示已重新启用 — 重新加载 YouTube 标签页即可看到。"

@@ -4917,7 +4917,7 @@
     "message": "복사됨 — GitHub 이슈에 붙여넣기하세요."
   },
   "selectorHealthCopyFail": {
-    "message": "클립보드 쓰기가 차단되었습니다. DevTools를 열고 window.__ytkitDiagnostics.download()를 호출하세요."
+    "message": "클립보드에 복사하지 못했습니다. 다시 시도하거나 진단의 저장 버튼으로 보고서를 내려받으세요."
   },
   "selectorHealthCopyNeedYt": {
     "message": "보고서를 생성하려면 YouTube 탭을 여세요."
@@ -4929,7 +4929,7 @@
     "message": "보고서 작성 중…"
   },
   "selectorHealthCopySaveFallback": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+    "message": "클립보드에 복사하지 못했습니다. 다시 시도하거나 진단의 저장 버튼으로 보고서를 내려받으세요."
   },
   "selectorHealthCtxCountTpl": {
     "message": "{ctx}: {count}"
@@ -5950,7 +5950,7 @@
     "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
-    "message": "Astra Downloader 프롬프트를 다시 활성화할 수 없습니다. chrome://extensions를 열고 새로고침하세요."
+    "message": "Astra Downloader 알림을 다시 활성화하지 못했습니다. 브라우저의 확장 프로그램 페이지를 열고 새로 고치세요."
   },
   "statusMediadlReenabled": {
     "message": "Astra Downloader 설치 프롬프트가 다시 활성화되었습니다 — YouTube 탭을 새로고침하면 표시됩니다."

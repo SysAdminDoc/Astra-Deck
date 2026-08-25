@@ -4917,7 +4917,7 @@
     "message": "Copié — collez dans un ticket GitHub."
   },
   "selectorHealthCopyFail": {
-    "message": "Écriture dans le presse-papiers bloquée. Ouvrez les DevTools et appelez window.__ytkitDiagnostics.download() à la place."
+    "message": "Impossible de copier dans le presse-papiers. Réessayez ou utilisez le bouton Enregistrer du diagnostic pour télécharger le rapport."
   },
   "selectorHealthCopyNeedYt": {
     "message": "Ouvrez un onglet YouTube pour construire le rapport."
@@ -4929,7 +4929,7 @@
     "message": "Construction du rapport..."
   },
   "selectorHealthCopySaveFallback": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+    "message": "Impossible de copier dans le presse-papiers. Réessayez ou utilisez le bouton Enregistrer du diagnostic pour télécharger le rapport."
   },
   "selectorHealthCtxCountTpl": {
     "message": "{ctx} : {count}"
@@ -5950,7 +5950,7 @@
     "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
-    "message": "Impossible de réactiver les invites d'Astra Downloader. Ouvrez chrome://extensions et rechargez."
+    "message": "Impossible de réactiver les invites d’Astra Downloader. Ouvrez la page des extensions de votre navigateur et rechargez."
   },
   "statusMediadlReenabled": {
     "message": "Invites d'installation d'Astra Downloader réactivées — rechargez un onglet YouTube pour les voir."

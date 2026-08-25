@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Two error messages stopped telling you to do things you can't do. Copying a
+  selector-health report used to fail with "Open DevTools and call
+  window.__ytkitDiagnostics.download()", which is not an instruction for anyone
+  who isn't working on the extension. It now points at the Save button that's
+  already on screen. And re-enabling downloader prompts said "Open
+  chrome://extensions", which is wrong in Firefox, so it names your browser's
+  extensions page instead. Both are translated in all ten languages now, along
+  with a related message that had never been translated at all.
+
 - The popup's five storage cards start at zero instead of five dashes, and when
   extension storage genuinely isn't there they say "Unavailable" next to the
   message explaining what to do about it. Before, the empty state and the broken

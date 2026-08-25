@@ -4917,7 +4917,7 @@
     "message": "Copiado — cole em uma issue do GitHub."
   },
   "selectorHealthCopyFail": {
-    "message": "Escrita na área de transferência bloqueada. Abra o DevTools e chame window.__ytkitDiagnostics.download()."
+    "message": "Não foi possível copiar para a área de transferência. Tente novamente ou use o botão Salvar do diagnóstico para baixar o relatório."
   },
   "selectorHealthCopyNeedYt": {
     "message": "Abra uma aba do YouTube para gerar o relatório."
@@ -4929,7 +4929,7 @@
     "message": "Gerando relatório…"
   },
   "selectorHealthCopySaveFallback": {
-    "message": "Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead."
+    "message": "Não foi possível copiar para a área de transferência. Tente novamente ou use o botão Salvar do diagnóstico para baixar o relatório."
   },
   "selectorHealthCtxCountTpl": {
     "message": "{ctx}: {count}"
@@ -5950,7 +5950,7 @@
     "message": "Undo Import failed"
   },
   "statusMediadlReenableFail": {
-    "message": "Não foi possível reativar os prompts do Astra Downloader. Abra chrome://extensions e recarregue."
+    "message": "Não foi possível reativar os avisos do Astra Downloader. Abra a página de extensões do navegador e recarregue."
   },
   "statusMediadlReenabled": {
     "message": "Prompts de instalação do Astra Downloader reativados — recarregue uma aba do YouTube para vê-los."
