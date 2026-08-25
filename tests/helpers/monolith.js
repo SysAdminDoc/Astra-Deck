@@ -63,6 +63,23 @@ function fallbackFeatureSource(id) {
 // no-ops. They depend on nothing but `document`, which every sandbox already
 // supplies.
 let _overlayHelpersCache = null;
+// The real plural chooser, lifted out of the monolith. Seven features call it
+// when they render a count. It depends on nothing but the sandbox's own `t`,
+// so there is no reason to stub it and every reason not to: a stub would hide
+// a call site that stopped choosing between singular and plural.
+let _pluralChooserCache = null;
+function pluralChooserSource() {
+    if (_pluralChooserCache) return _pluralChooserCache;
+    const source = sources.ytkit;
+    const marker = '    function tCount(count, key, singular, plural) {';
+    const start = source.indexOf(marker);
+    if (start < 0) throw new Error('monolith helper: tCount not found');
+    const closer = '\n    }';
+    const end = source.indexOf(closer, start) + closer.length;
+    _pluralChooserCache = source.slice(start, end);
+    return _pluralChooserCache;
+}
+
 function overlayKeyboardHelpersSource() {
     if (_overlayHelpersCache) return _overlayHelpersCache;
     const source = sources.ytkit;
@@ -121,6 +138,12 @@ function loadFeature(id, extraGlobals = {}) {
         };
     }
     sandbox.globalThis = sandbox;
+    if (!sandbox.tCount) {
+        vm.runInNewContext(
+            '(() => {' + pluralChooserSource() + 'globalThis.tCount = tCount;})()',
+            sandbox
+        );
+    }
     if (!sandbox.installMenuKeyboardModel || !sandbox.installDialogFocusContract) {
         vm.runInNewContext(
             '(() => {' + overlayKeyboardHelpersSource()

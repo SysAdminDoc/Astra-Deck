@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Counts read properly instead of saying "3 video(s)". Eight messages used that
+  shorthand, which isn't a plural in English and can't become one in any other
+  language; each is now written both ways and the right one is picked. The
+  feature bisect also stopped claiming it can narrow down 291 features when
+  there are far more than that, twelve feature names picked up the capitalization
+  the other 420 use, and the storage total is called the same thing in the popup
+  and the side panel instead of "Storage" in one and "Size" in the other.
+
 - Searching your saved transcripts finds text in long ones again. Only the
   first several thousand distinct words of a transcript go into the search
   index, so a phrase that appeared only near the end of a very long video came

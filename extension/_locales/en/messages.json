@@ -1590,7 +1590,7 @@
     "message": "Bypass Playlist Mode on Clicks"
   },
   "feature_channelAgeDisplay_desc": {
-    "message": "Shows how old a video is (e.g. \"2 years, 3 months ago\") next to the upload date"
+    "message": "Shows how old a video is (e.g. \"2 years, 3 months ago\") next to the upload date."
   },
   "feature_channelAgeDisplay_name": {
     "message": "Video Age Display"
@@ -2085,7 +2085,7 @@
     "message": "When Astra Downloader is unreachable, use a self-hosted Cobalt HTTPS instance after setting its origin in the toolbar popup and granting access to that one site. No public Cobalt instance is included."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Self-hosted Cobalt fallback"
+    "message": "Self-Hosted Cobalt Fallback"
   },
   "feature_downloadHealthPanel_desc": {
     "message": "Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage."
@@ -2649,7 +2649,7 @@
     "message": "On the Subscriptions page, hide scheduled livestreams and premieres that only show a \"Notify me\" button. They reappear automatically once they go live."
   },
   "feature_hidePlannedLivestreams_name": {
-    "message": "Hide planned livestreams"
+    "message": "Hide Planned Livestreams"
   },
   "feature_hidePlayables_desc": {
     "message": "Hide YouTube Playables gaming content from feeds"
@@ -2709,37 +2709,37 @@
     "message": "Hide videos that remain below the view threshold after the age threshold. Missing card metadata fails open."
   },
   "feature_hideVideosLowSignalFilter_name": {
-    "message": "Hide low-signal videos"
+    "message": "Hide Low-Signal Videos"
   },
   "feature_hideVideosLowSignalMinAgeDays_desc": {
     "message": "Only treat a low-view card as low-signal after this many days. Missing age metadata fails open."
   },
   "feature_hideVideosLowSignalMinAgeDays_name": {
-    "message": "Low-signal age threshold"
+    "message": "Low-Signal Age Threshold"
   },
   "feature_hideVideosLowSignalMinViews_desc": {
     "message": "Minimum views used by the low-signal heuristic. Set to 0 to disable its view side."
   },
   "feature_hideVideosLowSignalMinViews_name": {
-    "message": "Low-signal view threshold"
+    "message": "Low-Signal View Threshold"
   },
   "feature_hideVideosSyntheticNarrationFilter_desc": {
     "message": "Hide cards whose title, description, or channel text contains explicit synthetic-narration markers. Runs locally with no network or crowd database."
   },
   "feature_hideVideosSyntheticNarrationFilter_name": {
-    "message": "Synthetic narration markers"
+    "message": "Synthetic Narration Markers"
   },
   "feature_hideVideosUploadCadenceFilter_desc": {
     "message": "Hide cards exposing an upload cadence above the local per-day threshold. Cards without cadence text remain visible."
   },
   "feature_hideVideosUploadCadenceFilter_name": {
-    "message": "Upload cadence filter"
+    "message": "Upload Cadence Filter"
   },
   "feature_hideVideosUploadCadencePerDay_desc": {
     "message": "Maximum uploads per day accepted by the upload-cadence heuristic."
   },
   "feature_hideVideosUploadCadencePerDay_name": {
-    "message": "Upload cadence threshold"
+    "message": "Upload Cadence Threshold"
   },
   "feature_hideVoiceSearch_desc": {
     "message": "Remove the microphone icon from the search bar"
@@ -2823,7 +2823,7 @@
     "message": "Use Chrome’s built-in Summarizer API when available; use the configured BYO-key lane when it is unavailable."
   },
   "feature_localAiSummary_name": {
-    "message": "Local AI Summary (browser built-in)"
+    "message": "Local AI Summary (Browser Built-In)"
   },
   "feature_localAiTranscriptQa_desc": {
     "message": "Ask citation-backed questions with Chrome on-device AI or an explicitly selected configured provider."
@@ -2868,10 +2868,10 @@
     "message": "Mono to Stereo"
   },
   "feature_musicVideoSpeedLock_desc": {
-    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren’t sped up"
+    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1x so songs aren’t sped up"
   },
   "feature_musicVideoSpeedLock_name": {
-    "message": "Lock 1× Speed on Music Videos"
+    "message": "Lock 1x Speed on Music Videos"
   },
   "feature_newPlayerUiRestore_desc": {
     "message": "Hides YouTube’s new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls."
@@ -2913,7 +2913,7 @@
     "message": "Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings."
   },
   "feature_notifyAutoDubbedAudio_name": {
-    "message": "Notify on AI-dubbed audio"
+    "message": "Notify on AI-Dubbed Audio"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "Replace the video progress bar with a Nyan Cat animation"
@@ -3081,7 +3081,7 @@
     "message": "When a playlist entry reaches at least 90% watched, continue to the next entry below that threshold. This stays off until enabled."
   },
   "feature_playlistAutoSkipWatched_name": {
-    "message": "Auto-skip watched playlist items"
+    "message": "Auto-Skip Watched Playlist Items"
   },
   "feature_playlistEnhancer_desc": {
     "message": "Adds shuffle, copy, duration sorting, per-playlist resume, and watched-item controls to playlist panels."
@@ -3168,7 +3168,7 @@
     "message": "Per-Context Quality"
   },
   "feature_quickLinkEditor_desc": {
-    "message": "Customize the Astra launcher menu. One link per line: Label | URL"
+    "message": "Customize the Astra launcher menu. One link per line: Label | URL."
   },
   "feature_quickLinkEditor_name": {
     "message": "Edit Launcher Links"
@@ -3222,7 +3222,7 @@
     "message": "Reduced Motion (strong)"
   },
   "feature_remainingTimeCompact_desc": {
-    "message": "Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss"
+    "message": "Show remaining time as minutes (e.g. -1h24m) instead of full h:mm:ss."
   },
   "feature_remainingTimeCompact_name": {
     "message": "Compact Remaining Time"
@@ -3690,7 +3690,7 @@
     "message": "Keep questions on-device or use the configured provider with its existing permission, privacy, and request-budget controls."
   },
   "feature_transcriptQaLane_name": {
-    "message": "Transcript Q&A provider"
+    "message": "Transcript Q&A Provider"
   },
   "feature_transcriptAiHandoff_desc": {
     "message": "Adds a player-button that copies the transcript and opens your chosen AI tool with a summarization prompt pre-filled"
@@ -4751,8 +4751,11 @@
   "reactionSenderRiskToast": {
     "message": "Reaction Spammer: YouTube may rate-limit or flag rapid reactions. Use at your own risk."
   },
-  "reactionSenderRunningTpl": {
-    "message": "Running with {count} reaction(s)."
+  "reactionSenderRunningTplOne": {
+    "message": "Running with {count} reaction."
+  },
+  "reactionSenderRunningTplOther": {
+    "message": "Running with {count} reactions."
   },
   "reactionSenderRunningWaiting": {
     "message": "Running, waiting for selected reactions."
@@ -4760,8 +4763,11 @@
   "reactionSenderSelectOne": {
     "message": "Select at least one reaction."
   },
-  "reactionSenderSelectedTpl": {
-    "message": "{count} reaction(s) selected."
+  "reactionSenderSelectedTplOne": {
+    "message": "{count} reaction selected."
+  },
+  "reactionSenderSelectedTplOther": {
+    "message": "{count} reactions selected."
   },
   "reactionSenderSentTpl": {
     "message": "Sent {emoji}"
@@ -5720,7 +5726,7 @@
     "message": "Skip to settings"
   },
   "spStatSize": {
-    "message": "Size"
+    "message": "Storage"
   },
   "spStatStoredSettings": {
     "message": "Customized"
@@ -5961,8 +5967,11 @@
   "statusImportPreviewSummaryTpl": {
     "message": "Preview: {preview}."
   },
-  "statusImportSkippedKeysTpl": {
-    "message": "{count} setting(s) from a newer version were skipped: {keys}"
+  "statusImportSkippedKeysTplOne": {
+    "message": "{count} setting from a newer version was skipped: {keys}"
+  },
+  "statusImportSkippedKeysTplOther": {
+    "message": "{count} settings from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
     "message": "Import stopped. Astra Deck could not save an undo point to extension storage, so export a backup first."
@@ -7938,8 +7947,11 @@
   "watchLaterNothingToRemove": {
     "message": "Nothing to remove"
   },
-  "watchLaterRemoveFailed": {
-    "message": "Couldn’t remove {count} video(s). YouTube’s menu item wasn’t found."
+  "watchLaterRemoveFailedOne": {
+    "message": "Couldn’t remove {count} video. YouTube’s menu item wasn’t found."
+  },
+  "watchLaterRemoveFailedOther": {
+    "message": "Couldn’t remove {count} videos. YouTube’s menu item wasn’t found."
   },
   "watchLaterRemoveWatched": {
     "message": "Remove Watched"
@@ -8089,8 +8101,11 @@
   "wlwbAgePlaceholder": {
     "message": "Older than days…"
   },
-  "wlwbAgeUnavailableTpl": {
-    "message": "{count} loaded row(s) have no readable upload age and are excluded from age filtering."
+  "wlwbAgeUnavailableTplOne": {
+    "message": "{count} loaded row has no readable upload age and is excluded from age filtering."
+  },
+  "wlwbAgeUnavailableTplOther": {
+    "message": "{count} loaded rows have no readable upload age and are excluded from age filtering."
   },
   "wlwbChannelAria": {
     "message": "Channel name filter"
@@ -8149,8 +8164,11 @@
   "wlwbRecoveryEmpty": {
     "message": "No removed videos are waiting for recovery."
   },
-  "wlwbRecoveryStatusTpl": {
-    "message": "{count} removed video(s) are available to restore."
+  "wlwbRecoveryStatusTplOne": {
+    "message": "{count} removed video is available to restore."
+  },
+  "wlwbRecoveryStatusTplOther": {
+    "message": "{count} removed videos are available to restore."
   },
   "wlwbRecoveryTitle": {
     "message": "Undo recovery"
@@ -8164,8 +8182,11 @@
   "wlwbRemovedRemainingTpl": {
     "message": "{count} still match, so run it again"
   },
-  "wlwbRemovedToastTpl": {
-    "message": "Removed {count} video(s){remaining}. Recovery list is in the removal log."
+  "wlwbRemovedToastTplOne": {
+    "message": "Removed {count} video{remaining}. Recovery list is in the removal log."
+  },
+  "wlwbRemovedToastTplOther": {
+    "message": "Removed {count} videos{remaining}. Recovery list is in the removal log."
   },
   "wlwbRemovingTpl": {
     "message": "Removing {current} / {total}…"
@@ -8173,8 +8194,11 @@
   "wlwbRestoreFailedTpl": {
     "message": "Could not restore {title}: {error}"
   },
-  "wlwbRestoredBatchTpl": {
-    "message": "Restored {restored} of {total} removed video(s) to Watch Later."
+  "wlwbRestoredBatchTplOne": {
+    "message": "Restored {restored} of {total} removed video to Watch Later."
+  },
+  "wlwbRestoredBatchTplOther": {
+    "message": "Restored {restored} of {total} removed videos to Watch Later."
   },
   "wlwbRestoredItemTpl": {
     "message": "Restored {title} to Watch Later"
@@ -8411,7 +8435,10 @@
     "message": "An unfinished bisect expired. Your features are back on."
   },
   "bisectIntro": {
-    "message": "Switches your features off and back on in halves so you can narrow 291 of them down to one in about ten reloads. Your settings are restored when it finishes, when you stop it, and automatically if you walk away."
+    "message": "Switches your features off and back on in halves so you can narrow {count} of them down to one in about ten reloads. Your settings are restored when it finishes, when you stop it, and automatically if you walk away."
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
   },
   "bisectNo": {
     "message": "Gone"

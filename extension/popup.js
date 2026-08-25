@@ -331,6 +331,30 @@ function initLanguageDropdown() {
     });
 }
 
+// The bisect copy said "291 of them" while the catalog defined 432, because
+// the number was typed into the sentence. It comes from the registry now, so it
+// cannot be wrong again, and the string carries {count} in every locale.
+function bisectFeatureCount() {
+    const schema = globalThis.__YTKIT_SETTINGS_SCHEMA__;
+    const entries = Array.isArray(schema?.SETTINGS_SCHEMA) ? schema.SETTINGS_SCHEMA : [];
+    // What the bisect can actually switch: user-facing booleans. Internal keys
+    // and numeric or string settings are not features it halves.
+    const count = entries.filter((entry) => entry
+        && entry.internal !== true
+        && entry.type === 'boolean').length;
+    return count > 0 ? count : null;
+}
+
+function applyBisectFeatureCount(root = document) {
+    const count = bisectFeatureCount();
+    root.querySelectorAll('[data-i18n="bisectIntro"]').forEach((el) => {
+        // No registry, no number: say "your features" rather than a wrong count
+        // or a raw placeholder.
+        el.textContent = String(el.textContent || '')
+            .replace('{count}', count === null ? t('bisectIntroCountUnknown', 'your features') : formatCount(count));
+    });
+}
+
 function applyI18n(root = document) {
     // Walk every element with data-i18n* attributes and populate text /
     // title / aria-label / placeholder. Falls back to the existing inline
@@ -342,6 +366,7 @@ function applyI18n(root = document) {
         const v = t(key, fallback);
         if (v !== fallback) el.textContent = v;
     });
+    applyBisectFeatureCount(root);
     const ATTR_KEYS = ['title', 'placeholder', 'aria-label'];
     ATTR_KEYS.forEach((attr) => {
         const dataAttr = `data-i18n-attr-${attr}`;
@@ -768,6 +793,13 @@ function isExtensionStorageUnavailable(error) {
     return /Extension storage is unavailable|Extension API unavailable|Cannot read properties of (?:undefined|null) \(reading 'local'\)/i.test(message);
 }
 
+// Chrome's i18n has no plural support, so a string that has to say either
+// "1 setting" or "3 settings" is a key pair chosen between here.
+function tCount(count, key, singular, plural) {
+    const n = Number(count);
+    return Math.abs(n) === 1 ? t(key + 'One', singular) : t(key + 'Other', plural);
+}
+
 function getStorageUnavailableMessage() {
     return 'Preview mode: extension storage is unavailable here. Reload the installed extension to use saved controls.';
 }
@@ -931,8 +963,9 @@ function reportImportSkippedKeys(keys) {
     const MAX_NAMED = 6;
     const named = keys.slice(0, MAX_NAMED).join(', ');
     const extra = keys.length > MAX_NAMED ? ` (+${keys.length - MAX_NAMED} more)` : '';
-    const message = t('statusImportSkippedKeysTpl',
-        `${keys.length} setting(s) from a newer version were skipped: ${named}${extra}`)
+    const message = tCount(keys.length, 'statusImportSkippedKeysTpl',
+        '{count} setting from a newer version was skipped: {keys}',
+        '{count} settings from a newer version were skipped: {keys}')
         .replace('{count}', String(keys.length))
         .replace('{keys}', named + extra);
     // Held longer than a routine status: the user needs time to read a list.

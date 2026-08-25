@@ -140,7 +140,11 @@ test('watchLaterWorkbench routes its user-facing copy through locale keys', () =
     for (const key of [
         'wlwbPanelAria', 'wlwbStatusTpl', 'wlwbRemoveMatchedTpl', 'wlwbOpenBtn',
         'wlwbAgePlaceholder', 'wlwbDurationMinPlaceholder', 'wlwbWatchedStateAria',
-        'wlwbRecoveryTitle', 'wlwbUndoAll', 'wlwbRestoredBatchTpl'
+        'wlwbRecoveryTitle', 'wlwbUndoAll',
+        // Was one key carrying "video(s)". Chrome's i18n has no plural support,
+        // so a count string is a pair chosen between at the call site; both
+        // halves have to exist or one of them renders as the raw key.
+        'wlwbRestoredBatchTplOne', 'wlwbRestoredBatchTplOther'
     ]) {
         assert.ok(en[key]?.message, `en messages must define ${key}`);
     }

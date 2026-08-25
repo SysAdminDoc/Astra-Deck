@@ -4751,8 +4751,11 @@
   "reactionSenderRiskToast": {
     "message": "表情反应发送器：YouTube 可能会限制或标记快速反应。使用风险自负。"
   },
-  "reactionSenderRunningTpl": {
-    "message": "正在使用 {count} 个表情反应运行。"
+  "reactionSenderRunningTplOne": {
+    "message": "Running with {count} reaction."
+  },
+  "reactionSenderRunningTplOther": {
+    "message": "Running with {count} reactions."
   },
   "reactionSenderRunningWaiting": {
     "message": "正在运行，等待所选表情反应。"
@@ -4760,8 +4763,11 @@
   "reactionSenderSelectOne": {
     "message": "请至少选择一个表情反应。"
   },
-  "reactionSenderSelectedTpl": {
-    "message": "已选择 {count} 个表情反应。"
+  "reactionSenderSelectedTplOne": {
+    "message": "{count} reaction selected."
+  },
+  "reactionSenderSelectedTplOther": {
+    "message": "{count} reactions selected."
   },
   "reactionSenderSentTpl": {
     "message": "已发送 {emoji}"
@@ -5973,8 +5979,11 @@
   "statusImportPreviewSummaryTpl": {
     "message": "预览:{preview}。"
   },
-  "statusImportSkippedKeysTpl": {
-    "message": "{count} setting(s) from a newer version were skipped: {keys}"
+  "statusImportSkippedKeysTplOne": {
+    "message": "{count} setting from a newer version was skipped: {keys}"
+  },
+  "statusImportSkippedKeysTplOther": {
+    "message": "{count} settings from a newer version were skipped: {keys}"
   },
   "statusImportSnapshotFail": {
     "message": "已停止导入。Astra Deck 无法在扩展程序存储中保存撤销点。请先导出备份。"
@@ -7950,8 +7959,11 @@
   "watchLaterNothingToRemove": {
     "message": "没有可移除的内容"
   },
-  "watchLaterRemoveFailed": {
-    "message": "无法移除 {count} 个视频 — 找不到 YouTube 菜单项。"
+  "watchLaterRemoveFailedOne": {
+    "message": "Couldn’t remove {count} video. YouTube’s menu item wasn’t found."
+  },
+  "watchLaterRemoveFailedOther": {
+    "message": "Couldn’t remove {count} videos. YouTube’s menu item wasn’t found."
   },
   "watchLaterRemoveWatched": {
     "message": "移除已观看"
@@ -8101,8 +8113,11 @@
   "wlwbAgePlaceholder": {
     "message": "早于指定天数…"
   },
-  "wlwbAgeUnavailableTpl": {
-    "message": "已加载的 {count} 行无法读取上传年龄，已从年龄筛选中排除。"
+  "wlwbAgeUnavailableTplOne": {
+    "message": "{count} loaded row has no readable upload age and is excluded from age filtering."
+  },
+  "wlwbAgeUnavailableTplOther": {
+    "message": "{count} loaded rows have no readable upload age and are excluded from age filtering."
   },
   "wlwbChannelAria": {
     "message": "频道名称筛选"
@@ -8161,8 +8176,11 @@
   "wlwbRecoveryEmpty": {
     "message": "没有等待恢复的已删除视频。"
   },
-  "wlwbRecoveryStatusTpl": {
-    "message": "有 {count} 个已删除视频可恢复。"
+  "wlwbRecoveryStatusTplOne": {
+    "message": "{count} removed video is available to restore."
+  },
+  "wlwbRecoveryStatusTplOther": {
+    "message": "{count} removed videos are available to restore."
   },
   "wlwbRecoveryTitle": {
     "message": "恢复删除"
@@ -8176,8 +8194,11 @@
   "wlwbRemovedRemainingTpl": {
     "message": "— 仍有 {count} 个匹配，请再次运行"
   },
-  "wlwbRemovedToastTpl": {
-    "message": "已移除 {count} 个视频{remaining}。恢复列表在移除日志中。"
+  "wlwbRemovedToastTplOne": {
+    "message": "Removed {count} video{remaining}. Recovery list is in the removal log."
+  },
+  "wlwbRemovedToastTplOther": {
+    "message": "Removed {count} videos{remaining}. Recovery list is in the removal log."
   },
   "wlwbRemovingTpl": {
     "message": "正在移除 {current} / {total}…"
@@ -8185,8 +8206,11 @@
   "wlwbRestoreFailedTpl": {
     "message": "无法恢复 {title}：{error}"
   },
-  "wlwbRestoredBatchTpl": {
-    "message": "已将 {total} 个已删除视频中的 {restored} 个恢复到“稍后观看”。"
+  "wlwbRestoredBatchTplOne": {
+    "message": "Restored {restored} of {total} removed video to Watch Later."
+  },
+  "wlwbRestoredBatchTplOther": {
+    "message": "Restored {restored} of {total} removed videos to Watch Later."
   },
   "wlwbRestoredItemTpl": {
     "message": "已将 {title} 恢复到“稍后观看”"
@@ -8424,6 +8448,9 @@
   },
   "bisectIntro": {
     "message": "按一半一半地关闭并重新开启你的功能，让你在大约十次刷新内把 291 个功能缩小到一个。设置会在结束时、你停止时以及你离开后自动恢复。"
+  },
+  "bisectIntroCountUnknown": {
+    "message": "your features"
   },
   "bisectNo": {
     "message": "不再发生"

@@ -70,10 +70,16 @@ test('the reporter reads a real status type', () => {
 });
 
 test('the template exists in EN and carries both tokens', () => {
-    const entry = enMessages.statusImportSkippedKeysTpl;
-    assert.ok(entry, 'statusImportSkippedKeysTpl must exist');
-    assert.match(entry.message, /\{count\}/);
-    assert.match(entry.message, /\{keys\}/);
+    // Was one key carrying "setting(s)". Chrome's i18n has no plural support,
+    // so a count string is a pair chosen between at the call site, and BOTH
+    // halves have to carry both tokens: a half that drops one renders a raw
+    // placeholder, or loses the list of skipped keys entirely.
+    for (const key of ['statusImportSkippedKeysTplOne', 'statusImportSkippedKeysTplOther']) {
+        const entry = enMessages[key];
+        assert.ok(entry, `${key} must exist`);
+        assert.match(entry.message, /\{count\}/);
+        assert.match(entry.message, /\{keys\}/);
+    }
 });
 
 test('the skipped list is cleared between imports', () => {
