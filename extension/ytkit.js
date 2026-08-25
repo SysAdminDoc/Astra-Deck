@@ -36544,6 +36544,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _put(record, options = {}) {
                 const prepared = Array.isArray(record?.searchTerms) ? record : this._helpers().prepareTranscriptRecord(record);
                 this._helpers().throwIfAborted(options.signal);
+                // Writing or evicting changes which records the term index
+                // cannot answer for, so the cached list stops being true here.
+                this._truncatedIds = null;
                 const db = await this._openDb();
                 return new Promise((resolve, reject) => {
                     const tx = db.transaction(this._DB_STORE, 'readwrite');
@@ -36594,6 +36597,90 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
             },
 
+            // Transcripts whose term index was cut short.
+            //
+            // buildSearchTermIndex fills in document order and stops at 5000
+            // terms, so what it drops is the END of a long transcript. A query
+            // matching only the tail found nothing through byTerm and said
+            // nothing about it. These records are read in full instead.
+            //
+            // The list is derived once per session rather than per search: it
+            // only changes when a transcript is indexed, and _indexTranscript
+            // clears it. Most accounts have none at all, in which case the
+            // fallback costs one cursor pass and then nothing.
+            _truncatedIds: null,
+
+            async _truncatedRecordIds() {
+                if (this._truncatedIds) return this._truncatedIds;
+                const db = await this._openDb();
+                const ids = await new Promise((resolve, reject) => {
+                    const tx = db.transaction(this._DB_STORE, 'readonly');
+                    const store = tx.objectStore(this._DB_STORE);
+                    const found = [];
+                    const req = store.openCursor();
+                    req.onsuccess = () => {
+                        const cursor = req.result;
+                        if (!cursor) return;
+                        if (cursor.value?.searchTermsTruncated === true) found.push(cursor.value.videoId);
+                        cursor.continue();
+                    };
+                    tx.oncomplete = () => { db.close(); resolve(found); };
+                    tx.onerror = () => { db.close(); reject(tx.error || new Error('Transcript index scan failed')); };
+                });
+                this._truncatedIds = ids;
+                return ids;
+            },
+
+            async _searchTruncatedRecords(normalizedQuery, seen, options = {}) {
+                const helpers = this._helpers();
+                let ids;
+                try {
+                    ids = await this._truncatedRecordIds();
+                } catch (_) {
+                    // reason: the term-index hits are still worth returning
+                    return [];
+                }
+                const pending = ids.filter((videoId) => !seen.has(videoId));
+                if (!pending.length) return [];
+                helpers.throwIfAborted(options.signal);
+
+                const db = await this._openDb();
+                const records = await new Promise((resolve, reject) => {
+                    const tx = db.transaction(this._DB_STORE, 'readonly');
+                    const store = tx.objectStore(this._DB_STORE);
+                    const collected = [];
+                    let index = 0;
+                    const next = () => {
+                        if (index >= pending.length) return;
+                        const req = store.get(pending[index]);
+                        index += 1;
+                        req.onsuccess = () => {
+                            if (req.result) collected.push(req.result);
+                            next();
+                        };
+                    };
+                    next();
+                    tx.oncomplete = () => { db.close(); resolve(collected); };
+                    tx.onerror = () => { db.close(); reject(tx.error || new Error('Transcript fallback read failed')); };
+                });
+
+                // Chunked, so reading a handful of 200,000-character
+                // transcripts does not hold the main thread.
+                const hits = await helpers.scanTranscriptRecordsChunked(records, normalizedQuery, {
+                    signal: options.signal,
+                    maxHits: 200
+                });
+                return hits.map((hit) => ({
+                    videoId: hit.videoId,
+                    title: hit.title,
+                    text: hit.text,
+                    provenance: hit.provenance || null,
+                    // The term index could not answer for this one. Anything
+                    // rendering these can say so.
+                    partialIndex: true
+                }));
+            },
+
             async _search(query, options = {}) {
                 if (!query || query.length < 3) return [];
                 await this._ensureIndexReady();
@@ -36603,7 +36690,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const lookupTerm = helpers.selectLookupTerm(normalizedQuery);
                 if (!lookupTerm) return [];
                 const db = await this._openDb();
-                return new Promise((resolve, reject) => {
+                const indexed = await new Promise((resolve, reject) => {
                     const tx = db.transaction(this._DB_STORE, 'readonly');
                     const store = tx.objectStore(this._DB_STORE);
                     const range = IDBKeyRange.bound(lookupTerm, `${lookupTerm}\uffff`);
@@ -36628,10 +36715,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         cursor.continue();
                     };
                     const finish = () => { options.signal?.removeEventListener('abort', abort); db.close(); };
-                    tx.oncomplete = () => { finish(); resolve(hits); };
+                    tx.oncomplete = () => { finish(); resolve({ hits, seen }); };
                     tx.onerror = () => { finish(); reject(tx.error || new Error('Transcript search failed')); };
                     tx.onabort = () => { finish(); reject(options.signal?.aborted ? helpers.createAbortError() : (tx.error || new Error('Transcript search aborted'))); };
                 });
+
+                if (indexed.hits.length >= 200) return indexed.hits;
+                const extra = await this._searchTruncatedRecords(normalizedQuery, indexed.seen, options);
+                return extra.length ? indexed.hits.concat(extra).slice(0, 200) : indexed.hits;
             },
 
             // Reports what the index is actually costing: record count, estimated
@@ -36683,6 +36774,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             async _clear() {
+                this._truncatedIds = null;
                 try {
                     const db = await this._openDb();
                     await new Promise((resolve, reject) => {
@@ -36776,6 +36868,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const db = await this._openDb();
                 try {
                     if (await this._readSchemaMarker(db) >= helpers.SCHEMA_VERSION) return;
+                    // The migration rewrites records, so which ones the term
+                    // index cannot answer for is about to change.
+                    this._truncatedIds = null;
                     let afterKey = '';
                     let done = false;
                     while (!done) {

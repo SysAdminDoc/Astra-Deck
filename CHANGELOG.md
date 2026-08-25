@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Searching your saved transcripts finds text in long ones again. Only the
+  first several thousand distinct words of a transcript go into the search
+  index, so a phrase that appeared only near the end of a very long video came
+  back with no results and no explanation. Those transcripts are now read in
+  full when the index has nothing, and results found that way are marked. The
+  transcript store also measures itself honestly: it was ignoring the search
+  index when deciding how much disk it was using, which meant it cleaned up
+  later than it was supposed to.
+
 - Three things that needed a mouse don't any more. The Element Zapper's picker
   can be aimed with the arrow keys and confirmed with Enter, so choosing what to
   hide no longer depends on hovering it. The settings sidebar has move-up and

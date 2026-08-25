@@ -267,3 +267,150 @@ test('the monolith write path enforces both caps and can report the index size',
     assert.match(block, /if \(videoId === prepared\.videoId\) continue;/,
         'eviction must never delete the record the write just added');
 });
+
+// ── what a record actually costs ──
+
+// WHEN a record's byte estimate is taken, it SHALL include the search terms it
+// stores and the multiEntry index rows built over them. estimateRecordBytes
+// counted text and title only, and that estimate is what MAX_TOTAL_BYTES is
+// compared against — so the budget whose stated purpose is to evict "long
+// before a write can fail" read low, by the most on the records costing most.
+test('the byte estimate counts the search terms and their index rows', () => {
+    const index = loadHelpers();
+    const text = 'alpha bravo charlie delta echo foxtrot golf hotel india juliett';
+    const record = index.prepareTranscriptRecord({ videoId: 'aaaaaaaaaaa', text, title: 'A title' });
+
+    assert.ok(record.searchTerms.length >= 10, 'the fixture must actually produce terms');
+    const bytes = index.estimateRecordBytes(record);
+    const withoutTerms = (record.text.length * 2) + (record.title.length * 2) + 384;
+    assert.ok(bytes > withoutTerms,
+        `the estimate (${bytes}) must exceed text + title + overhead (${withoutTerms})`);
+
+    // Exactly the term cost, not merely more than nothing.
+    assert.equal(bytes - withoutTerms, index.estimateSearchTermBytes(record.searchTerms));
+    // And that cost is BOTH copies: the array on the record, and one multiEntry
+    // index row per term carrying the 11-character primary key.
+    assert.equal(index.estimateSearchTermBytes(['abcd']), (4 * 2) + ((4 * 2) + 22 + 32),
+        'dropping either copy halves the estimate for the records that cost most');
+    assert.equal(index.estimateSearchTermBytes([]), 0);
+});
+
+test('the same text with more distinct terms estimates larger', () => {
+    const index = loadHelpers();
+    const repeated = new Array(200).fill('alpha').join(' ');
+    const varied = Array.from({ length: 200 }, (_, i) => `word${i}zzz`).join(' ');
+    const dull = index.prepareTranscriptRecord({ videoId: 'aaaaaaaaaaa', text: repeated });
+    const rich = index.prepareTranscriptRecord({ videoId: 'bbbbbbbbbbb', text: varied });
+
+    assert.ok(rich.searchTerms.length > dull.searchTerms.length);
+    assert.ok(index.estimateRecordBytes(rich) > index.estimateRecordBytes(dull),
+        'a transcript with 200 distinct terms costs more index than one with 1, and the estimate must say so');
+});
+
+test('a record with no terms still estimates its text', () => {
+    const index = loadHelpers();
+    const bytes = index.estimateRecordBytes({ text: 'hello there', title: '', searchTerms: undefined });
+    assert.equal(bytes, ('hello there'.length * 2) + 384);
+});
+
+// ── which transcripts the term index cannot answer for ──
+
+// WHEN a transcript has more distinct terms than the cap, the record SHALL say
+// so. buildSearchTermIndex fills in document order and stops at the cap, so
+// what it drops is the END of a long transcript: a query matching only the tail
+// found nothing through byTerm, and nothing said why.
+test('a transcript past the term cap is marked as partially indexed', () => {
+    const index = loadHelpers();
+    const many = Array.from({ length: 40 }, (_, i) => `term${i}xx`).join(' ');
+    const truncated = index.buildSearchTermIndex(many, 10);
+    assert.equal(truncated.terms.length, 10);
+    assert.equal(truncated.truncated, true);
+
+    const complete = index.buildSearchTermIndex('alpha bravo charlie', 10);
+    assert.equal(complete.truncated, false, 'a transcript that fits is not partial');
+
+    // Exactly at the cap with nothing left over is not truncation either.
+    const exact = index.buildSearchTermIndex('alpha bravo charlie', 3);
+    assert.equal(exact.terms.length, 3);
+    assert.equal(exact.truncated, false,
+        'stopping because the text ran out is not the same as stopping because the cap did');
+
+    // A repeat past the cap is already stored, so it is not a dropped term.
+    const repeatsPastCap = index.buildSearchTermIndex('alpha bravo charlie alpha alpha', 3);
+    assert.equal(repeatsPastCap.truncated, false);
+});
+
+test('the truncation flag reaches the stored record', () => {
+    const index = loadHelpers();
+    const small = index.prepareTranscriptRecord({ videoId: 'aaaaaaaaaaa', text: 'alpha bravo charlie' });
+    assert.equal(small.searchTermsTruncated, false);
+    assert.ok(Array.isArray(small.searchTerms));
+
+    // Past the real cap, through the real entry point. A fixture that only
+    // exercises the false case cannot tell the flag from a hardcoded false.
+    const overCap = Array.from({ length: index.MAX_SEARCH_TERMS + 50 }, (_, i) => 'w' + i + 'zz').join(' ');
+    const big = index.prepareTranscriptRecord({ videoId: 'bbbbbbbbbbb', text: overCap });
+    assert.equal(big.searchTerms.length, index.MAX_SEARCH_TERMS);
+    assert.equal(big.searchTermsTruncated, true,
+        'the tail of this transcript is not in the term index and the record has to say so');
+});
+
+test('buildSearchTerms still returns the plain array its callers expect', () => {
+    const index = loadHelpers();
+    const terms = index.buildSearchTerms('charlie alpha bravo');
+    assert.ok(Array.isArray(terms));
+    assert.deepEqual(terms, ['alpha', 'bravo', 'charlie'], 'sorted, deduped, unchanged');
+});
+
+// ── the search path, for the transcripts the term index cannot answer for ──
+
+// WHEN a transcript's term set was cut short, a search SHALL still find text in
+// its tail. `_search` looked up through the byTerm index only, so a query
+// matching only the end of a 200,000-character transcript returned nothing and
+// said nothing about why.
+test('the transcript search falls back to reading truncated records', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const start = source.indexOf('            async _searchTruncatedRecords(');
+    assert.ok(start > -1, 'the fallback must exist');
+    const end = source.indexOf('\n            async _search(query, options = {})', start);
+    assert.ok(end > start);
+    const block = source.slice(start, end);
+
+    assert.match(block, /scanTranscriptRecordsChunked/,
+        'reading several 200,000-character transcripts must not hold the main thread');
+    assert.match(block, /partialIndex: true/,
+        'a hit found this way has to be distinguishable from one the index answered');
+    assert.match(block, /ids\.filter\(\(videoId\) => !seen\.has\(videoId\)\)/,
+        'a record the term index already matched must not be read again');
+
+    // The term-index pass still runs first, and its result feeds the fallback.
+    const searchStart = source.indexOf('            async _search(query, options = {})');
+    const searchEnd = source.indexOf('\n            // Reports what the index is actually costing', searchStart);
+    const searchBlock = source.slice(searchStart, searchEnd);
+    assert.match(searchBlock, /const indexed = await new Promise/);
+    assert.match(searchBlock, /resolve\(\{ hits, seen \}\)/);
+    assert.match(searchBlock, /this\._searchTruncatedRecords\(normalizedQuery, indexed\.seen, options\)/);
+    assert.match(searchBlock, /if \(indexed\.hits\.length >= 200\) return indexed\.hits;/,
+        'a full page of hits does not need the fallback at all');
+});
+
+// WHEN the store is written to, cleared, or migrated, the cached list of
+// truncated records SHALL be dropped. It is derived once per session because it
+// only changes on those three paths — and if it is not dropped there, the
+// fallback searches a list that is no longer true.
+test('every path that changes the store invalidates the truncated-record cache', () => {
+    const source = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+
+    const put = source.slice(source.indexOf('            async _put(record, options = {})'));
+    assert.match(put.slice(0, 900), /this\._truncatedIds = null;/,
+        'indexing a transcript can create or remove a truncated record');
+
+    const clear = source.slice(source.indexOf('            async _clear() {'));
+    assert.match(clear.slice(0, 400), /this\._truncatedIds = null;/,
+        'clearing the store leaves nothing to fall back to');
+
+    const migrateAt = source.indexOf('if (await this._readSchemaMarker(db) >= helpers.SCHEMA_VERSION) return;');
+    assert.ok(migrateAt > -1, 'the schema migration must still be here');
+    assert.match(source.slice(migrateAt, migrateAt + 400), /this\._truncatedIds = null;/,
+        'the migration rewrites records, so the derived list stops being true');
+});
