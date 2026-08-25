@@ -9909,6 +9909,54 @@ const WRONG_KEY_REPAIR_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(WRONG_KEY_REPAIR_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// Element Zapper rule rows. The checkbox and the remove button both sit in a
+// plain div beside the selector text, so without these a reader hears only
+// "checkbox, not checked" and "Remove" with no idea which rule is meant.
+const ZAP_RULE_ARIA_TRANSLATIONS = {
+  ar: {
+    'Apply the rule for {selector}': "تطبيق القاعدة الخاصة بـ {selector}",
+    'Remove the rule for {selector}': "إزالة القاعدة الخاصة بـ {selector}"
+  },
+  de: {
+    'Apply the rule for {selector}': "Regel für {selector} anwenden",
+    'Remove the rule for {selector}': "Regel für {selector} entfernen"
+  },
+  es: {
+    'Apply the rule for {selector}': "Aplicar la regla de {selector}",
+    'Remove the rule for {selector}': "Quitar la regla de {selector}"
+  },
+  fr: {
+    'Apply the rule for {selector}': "Appliquer la règle pour {selector}",
+    'Remove the rule for {selector}': "Supprimer la règle pour {selector}"
+  },
+  it: {
+    'Apply the rule for {selector}': "Applica la regola per {selector}",
+    'Remove the rule for {selector}': "Rimuovi la regola per {selector}"
+  },
+  ja: {
+    'Apply the rule for {selector}': "{selector} のルールを適用",
+    'Remove the rule for {selector}': "{selector} のルールを削除"
+  },
+  ko: {
+    'Apply the rule for {selector}': "{selector} 규칙 적용",
+    'Remove the rule for {selector}': "{selector} 규칙 제거"
+  },
+  pt_BR: {
+    'Apply the rule for {selector}': "Aplicar a regra de {selector}",
+    'Remove the rule for {selector}': "Remover a regra de {selector}"
+  },
+  ru: {
+    'Apply the rule for {selector}': "Применить правило для {selector}",
+    'Remove the rule for {selector}': "Удалить правило для {selector}"
+  },
+  zh_CN: {
+    'Apply the rule for {selector}': "应用 {selector} 的规则",
+    'Remove the rule for {selector}': "移除 {selector} 的规则"
+  }
+};
+for (const [locale, messages] of Object.entries(ZAP_RULE_ARIA_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+
 
 
 

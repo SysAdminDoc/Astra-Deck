@@ -422,6 +422,13 @@
                     const toggle = documentRef.createElement('input');
                     toggle.type = 'checkbox';
                     toggle.checked = rule.enabled !== false;
+                    // The row is a plain div, so nothing associates this control
+                    // with the selector text beside it. Without a name a reader
+                    // hears "checkbox, not checked" and has no way to tell which
+                    // of their rules it belongs to.
+                    toggle.setAttribute('aria-label',
+                        t('zapRuleToggleAriaTpl', 'Apply the rule for {selector}')
+                            .replace('{selector}', rule.selector));
                     toggle.addEventListener('change', () => {
                         feature.setRuleEnabled(rule.selector, toggle.checked);
                     });
@@ -442,6 +449,9 @@
                     remove.type = 'button';
                     remove.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
                     remove.textContent = t('zapRuleRemove', 'Remove');
+                    remove.setAttribute('aria-label',
+                        t('zapRuleRemoveAriaTpl', 'Remove the rule for {selector}')
+                            .replace('{selector}', rule.selector));
                     remove.addEventListener('click', () => {
                         feature.removeRule(rule.selector);
                         renderList();

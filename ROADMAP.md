@@ -84,12 +84,6 @@ Found during a full audit pass, verified, and deliberately not fixed in it.
 
 ### P2
 
-- [ ] P2: Give the core userscript bundle real headroom
-  Why: `YTKit-core.user.js` is against Greasy Fork's hard 2 MiB cap. Adding one light-theme lane consumed the entire remaining 3.2 KB and the work had to stop and reclaim space before it could finish. Stripping CSS comments from the two already-compacted templates bought 4,434 B back, which is a reprieve rather than a fix: the bundle still carries roughly 269 KB of comments overall (91 block, 2,904 line), and the next feature hits the wall again.
-  Where: `sync-userscript.js` (`COMPACT_CSS_TEMPLATES`, `COMPACT_RETURN_CSS_FUNCTIONS`, `COMPACT_LINE_COMMENT_MODULES`), `scripts/check-userscript-size.js`
-  Acceptance: decide and implement a durable strategy, then document the headroom it buys. Candidates: extend `COMPACT_LINE_COMMENT_MODULES` beyond `settings-schema.js` now that the CSS precedent exists; move a large rarely-changed module to its own `@require` record; or split the core library in two. Whichever is chosen, `npm run check` must report at least 50 KB of core headroom afterwards, and a test must pin that floor so the next feature fails loudly rather than silently shaving prose.
-  Complexity: M
-
 - [ ] P2: Bind the companion's HTTP identity to its native-messaging identity
   Why: the cookie handoff is well guarded (crypto token, one use, 20s TTL, bound to tab/frame/document, requires a fresh `connectNative` proof) but that proof only shows *a* native host is registered. The cookies then go in cleartext to `http://127.0.0.1:<port>/download`, chosen from whoever answers `/health` with `{"service":"astra-downloader"}`, with no shared secret. A local process that binds the port first receives `LOGIN_INFO` and the `SAPISID` family. It needs prior local code execution, which also reaches the cookie DB, so the impact is bounded, but the capability gate advertises a binding it does not enforce.
   Where: `extension/features/download-ui/index.js` (~501-512, 620-660, 1703-1740), `extension/background.js` (~446-506)
@@ -113,12 +107,6 @@ Found during a full audit pass, verified, and deliberately not fixed in it.
   Where: `extension/features/element-zapper/index.js` (~256-347), `extension/features/settings-panel/index.js` `addDragReorder` (~582-607), `extension/features/sticky-chat/index.js` (~140-146)
   Acceptance: the zapper can target the focused element and walk the DOM with arrow keys; the sidebar exposes move-up/move-down (a menu or Alt+Arrow) that writes the same `sidebarOrder`; the drag handle moves the panel on arrow keys. `scripts/audit-overlays-a11y.js` covers none of these three modules, so extend it alongside.
   Complexity: M
-
-- [ ] P2: Label Element Zapper's rule rows
-  Why: each rule row builds a bare `<input type="checkbox">` with no `aria-label`, no `id` plus `<label for>` and no wrapping `<label>`, inside a plain `<div>`. It announces as "checkbox, not checked" with no indication of which rule it toggles, and the sibling Remove button is just "Remove". Every other checkbox in the extension is either wrapped in a label or carries an explicit `aria-label`; this is the only one that is not.
-  Where: `extension/features/element-zapper/index.js` (~422-425)
-  Acceptance: the toggle and the remove button both name their rule, and `scripts/audit-overlays-a11y.js` gains element-zapper as a named source.
-  Complexity: S
 
 - [ ] P2: Stop the download progress panel talking over everything else
   Why: the panel is `role="status"` with `aria-live="polite"` and `aria-atomic="true"` on the whole panel, and the poll rewrites percent, speed, ETA and status copy every 750 ms. Each poll re-announces the badge, title, state pill, all three numbers and the buttons inside the region, so a five-minute download queues roughly 400 full-panel announcements and the speech queue never drains. Errors such as "needs-auth" also stay polite, so a stalled download never interrupts.
