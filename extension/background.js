@@ -132,6 +132,20 @@ const _settingsSync = globalThis.YTKitCore?.createSettingsSyncController?.({
     callApi: callExtensionApi
 }) || null;
 _settingsSync?.installListeners();
+// A debounced push lives on a timer inside this worker. Chrome suspends the
+// worker on idle and the timer dies with it, so a change made in the last
+// moments before teardown was written locally and never reached the account.
+// onSuspend is the one notice we get.
+if (ext.runtime?.onSuspend?.addListener) {
+    ext.runtime.onSuspend.addListener(() => {
+        try {
+            const pending = _settingsSync?.flushLocalChanges?.();
+            if (pending?.catch) pending.catch(() => { /* reason: teardown is not a place to report */ });
+        } catch (_) {
+            // reason: never throw out of a suspend handler
+        }
+    });
+}
 void _credentialMigrationReady
     .then(() => _settingsSync?.initialize())
     .catch((error) => {

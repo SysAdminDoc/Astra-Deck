@@ -649,10 +649,21 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     // roughly 400 full-panel announcements and the speech queue never drained.
     add('Download progress announces state changes, not every poll',
         downloadUi.includes("progressAnnouncer.setAttribute('aria-live', 'polite')")
-        && downloadUi.includes('const nextState = tone + \'|\' + label;')
-        && downloadUi.includes('if (nextState === announcedState) return;')
+        && downloadUi.includes('const announceKey = tone === \'active\'')
+        && downloadUi.includes('if (announceKey === announcedState) return;')
         && !/panel\.setAttribute\('aria-live'/.test(downloadUi),
         'One off-screen status line must carry the announcements, keyed on the state');
+    // This gate used to pin the literal expression `tone + '|' + label`, which
+    // is the bug: needs-auth and terminal failure both send ('error', 'Needs
+    // Attention'), so the failure never announced. Pinning an expression pins
+    // whatever that expression happens to do. These two ask for the property.
+    add('A terminal failure is not deduped against the state that preceded it',
+        /announceKey = tone === 'active'\s*\n\s*\? tone \+ '\|' \+ label\s*\n\s*: tone \+ '\|' \+ label \+ '\|' \+ copy;/.test(downloadUi),
+        'Only an active download may be keyed without its copy; its copy is the live percentage');
+    add('The announcer is in the document before anything is announced into it',
+        downloadUi.indexOf('document.body.appendChild(panel);') < downloadUi.indexOf("setProgressState(\n                'pending'"),
+        'A live region does not speak text that was already present when it was inserted');
+
     add('A stalled download interrupts rather than waiting its turn',
         downloadUi.includes("progressAnnouncer.setAttribute('aria-live', tone === 'error' ? 'assertive' : 'polite');"),
         'Error states must be assertive, and set before the text that triggers the announcement');
