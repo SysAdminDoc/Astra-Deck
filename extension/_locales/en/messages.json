@@ -4103,6 +4103,9 @@
   "floatingChatDragAria": {
     "message": "Move floating chat"
   },
+  "floatingChatDragKeysAria": {
+    "message": "Use the arrow keys to move the panel, or hold Shift to move it further."
+  },
   "floatingChatDragTitle": {
     "message": "Drag to move"
   },
@@ -4313,6 +4316,18 @@
   },
   "panelPaneContextAriaTpl": {
     "message": "{category} current preferences"
+  },
+  "panelReorderAria": {
+    "message": "Reorder categories"
+  },
+  "panelReorderDown": {
+    "message": "Move the selected category down"
+  },
+  "panelReorderMoved": {
+    "message": "Category moved."
+  },
+  "panelReorderUp": {
+    "message": "Move the selected category up"
   },
   "panelSearchAria": {
     "message": "Search settings by name, page, category, or control type"
@@ -8265,6 +8280,9 @@
   },
   "zapPickHint": {
     "message": "Click a shelf, panel, or promo to hide it. Press Escape to cancel."
+  },
+  "zapPickHintKeys": {
+    "message": "Or press the arrow keys to move through the page and Enter to choose."
   },
   "zapPickStart": {
     "message": "Pick an element to hide"

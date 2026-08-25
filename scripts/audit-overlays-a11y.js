@@ -26,6 +26,7 @@ function readSources(overrides = {}) {
         videoNotes: overrides.videoNotes ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'video-notes', 'index.js'), 'utf8'),
         digitalWellbeing: overrides.digitalWellbeing ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'digital-wellbeing', 'index.js'), 'utf8'),
         elementZapper: overrides.elementZapper ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'element-zapper', 'index.js'), 'utf8'),
+        stickyChat: overrides.stickyChat ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'sticky-chat', 'index.js'), 'utf8'),
         smoke: overrides.smoke ?? fs.readFileSync(path.join(ROOT, 'docs', 'screen-reader-smoke.md'), 'utf8'),
         // Every feature module, globbed. The named entries above are the ones
         // individual checks reach for by hand; this is the safety net that keeps
@@ -281,7 +282,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     const checks = [];
     const add = (name, ok, failure) => checks.push({ name, ok: Boolean(ok), failure });
 
-    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, digitalWellbeing, elementZapper, smoke } = sources;
+    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, digitalWellbeing, elementZapper, stickyChat, smoke } = sources;
     const featureModuleCount = Object.keys(sources.allFeatureModules || {}).length;
     add('Overlay audit still covers the feature modules',
         featureModuleCount >= MIN_FEATURE_MODULES,
@@ -706,6 +707,41 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     add('The persistent queue panel label is localized',
         !/setAttribute\('aria-label', 'Astra persistent queue'\)/.test(ytkit),
         'A hardcoded English label is not a label for most of the people reading it');
+
+    // Three interactions that could not be performed without a mouse.
+    //
+    // The Element Zapper picker was mousemove plus click with Escape as the
+    // only key it understood, so choosing an element to hide was pointer-gated.
+    // The sidebar reorder was draggable with no keyboard path at all, and
+    // sidebarOrder is a persisted preference a keyboard user simply could not
+    // set. The floating-chat drag handle is a focusable button whose only
+    // listener was pointerdown: it announced "Move floating chat, button" and
+    // did nothing when pressed.
+    //
+    // These check the wiring. The behaviour is exercised in the per-feature
+    // tests, which can press a key.
+    add('The Element Zapper picker can be aimed from the keyboard',
+        /KEYBOARD_WALK_KEYS = new Set\(\['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'\]\)/.test(elementZapper)
+        && /if \(KEYBOARD_WALK_KEYS\.has\(event\.key\)\)/.test(elementZapper)
+        && /commitSelection\(\);/.test(elementZapper),
+        'Choosing an element to hide must not require a pointer');
+    add('The Element Zapper picker says it can be driven from the keyboard',
+        /t\('zapPickHintKeys'/.test(elementZapper),
+        'A keyboard path nobody is told about is a keyboard path nobody uses');
+    add('The sidebar order can be changed without dragging',
+        /function moveSelectedCategory\(direction\)/.test(settingsPanel)
+        && /makeReorderBtn\(-1, 'panelReorderUp'/.test(settingsPanel)
+        && /makeReorderBtn\(1, 'panelReorderDown'/.test(settingsPanel),
+        'sidebarOrder is a persisted preference and drag was its only writer');
+    add('The reorder controls are named, and sit outside the tablist',
+        /reorderBar\.setAttribute\('role', 'group'\)/.test(settingsPanel)
+        && /sidebar\.appendChild\(reorderBar\);\s*\n\s*sidebar\.appendChild\(navList\);/.test(settingsPanel),
+        'A tablist may only contain tabs, and an arrow glyph is not a name');
+    add('The floating chat handle answers the keys its label promises',
+        /_onDragHandleKey\(event\)/.test(stickyChat)
+        && /dragHandle\.addEventListener\('keydown'/.test(stickyChat)
+        && /aria-describedby/.test(stickyChat),
+        'A button that announces itself and does nothing on Enter is worse than no button');
 
     add('Screen-reader smoke checklist references the overlay audit gate',
         smoke.includes('npm run audit:overlays') &&

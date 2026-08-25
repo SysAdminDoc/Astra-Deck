@@ -8032,6 +8032,7 @@ if (typeof globalThis !== "undefined") {
     const OVERLAY_CLASS = 'ytkit-zap-overlay';
     const HIGHLIGHT_CLASS = 'ytkit-zap-highlight';
     const HINT_CLASS = 'ytkit-zap-hint';
+    const KEYBOARD_WALK_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
     const PANEL_STYLE_ID = 'ytkit-element-zapper-style';
     const PANEL_CSS = `
@@ -8260,13 +8261,18 @@ if (typeof globalThis !== "undefined") {
 
                 const label = documentRef.createElement('span');
                 label.textContent = t('zapPickHint', 'Click a shelf, panel, or promo to hide it. Press Escape to cancel.');
+                const keyHint = documentRef.createElement('span');
+                keyHint.className = 'ytkit-zap-hint-keys';
+                keyHint.textContent = t('zapPickHintKeys',
+                    'Or press the arrow keys to move through the page and Enter to choose.');
                 const cancel = documentRef.createElement('button');
                 cancel.type = 'button';
                 cancel.className = 'ytkit-zap-cancel';
                 cancel.textContent = t('zapPickCancel', 'Cancel');
-                hint.append(label, cancel);
+                hint.append(label, keyHint, cancel);
 
                 let current = null;
+                let keyboardTarget = null;
 
                 const describe = (element) => {
                     const derivation = core.deriveStructuralSelector(element);
@@ -8296,12 +8302,11 @@ if (typeof globalThis !== "undefined") {
                     if (!under || under === highlight || under === hint || hint.contains?.(under)) return;
                     const derivation = describe(under);
                     current = derivation;
+                    keyboardTarget = under;
                     place(derivation?.anchor || under);
                 };
 
-                const onClick = (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
+                const commitSelection = () => {
                     if (!current) {
                         showToast?.(label.textContent, 'error');
                         return;
@@ -8319,10 +8324,62 @@ if (typeof globalThis !== "undefined") {
                     }
                 };
 
+                const onClick = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    commitSelection();
+                };
+
+                const selectElement = (element) => {
+                    if (!element || element === overlay || element === highlight || element === hint) return false;
+                    if (hint.contains?.(element) || overlay.contains?.(element)) return false;
+                    if (element === documentRef.documentElement) return false;
+                    keyboardTarget = element;
+                    const derivation = describe(element);
+                    current = derivation;
+                    place(derivation?.anchor || element);
+                    return true;
+                };
+
+                const firstKeyboardTarget = () => {
+                    const focused = documentRef.activeElement;
+                    if (focused && focused !== documentRef.body
+                        && !hint.contains?.(focused) && !overlay.contains?.(focused)) {
+                        return focused;
+                    }
+                    return documentRef.querySelector?.('ytd-browse, ytd-watch-flexy, #contents, #content, main')
+                        || documentRef.body?.firstElementChild
+                        || documentRef.body;
+                };
+
+                const walkFromKeyboard = (key) => {
+                    const from = keyboardTarget || current?.anchor;
+                    if (!from) return selectElement(firstKeyboardTarget());
+                    if (key === 'ArrowUp') return selectElement(from.parentElement);
+                    if (key === 'ArrowDown') return selectElement(from.firstElementChild);
+                    if (key === 'ArrowLeft') return selectElement(from.previousElementSibling);
+                    if (key === 'ArrowRight') return selectElement(from.nextElementSibling);
+                    return false;
+                };
+
                 const onKey = (event) => {
                     if (event.key === 'Escape') {
                         event.preventDefault();
                         this.stopPicking();
+                        return;
+                    }
+                    if (hint.contains?.(documentRef.activeElement)) return;
+                    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        commitSelection();
+                        return;
+                    }
+                    if (KEYBOARD_WALK_KEYS.has(event.key)) {
+                        if (walkFromKeyboard(event.key)) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
                     }
                 };
 
@@ -17038,6 +17095,33 @@ if (typeof globalThis !== "undefined") {
                 documentRef?.addEventListener?.('pointercancel', end, true);
             },
 
+            _NUDGE_STEP: 16,
+            _NUDGE_STEP_LARGE: 96,
+
+            _nudgeLayout(dx, dy) {
+                if (!this._frame) return false;
+                this._layout.x = (Number(this._layout.x) || 0) + dx;
+                this._layout.y = (Number(this._layout.y) || 0) + dy;
+                this._applyLayout();
+                this._persistLayout();
+                return true;
+            },
+
+            _onDragHandleKey(event) {
+                const step = event?.shiftKey ? this._NUDGE_STEP_LARGE : this._NUDGE_STEP;
+                let dx = 0;
+                let dy = 0;
+                if (event?.key === 'ArrowLeft') dx = -step;
+                else if (event?.key === 'ArrowRight') dx = step;
+                else if (event?.key === 'ArrowUp') dy = -step;
+                else if (event?.key === 'ArrowDown') dy = step;
+                else return false;
+                if (!this._nudgeLayout(dx, dy)) return false;
+                event.preventDefault?.();
+                event.stopPropagation?.();
+                return true;
+            },
+
             _mountControls(frame) {
                 if (this._controls?.isConnected && this._controls.parentNode === frame) return;
                 this._controls?.remove?.();
@@ -17052,7 +17136,17 @@ if (typeof globalThis !== "undefined") {
                 dragHandle.textContent = '⋮⋮';
                 dragHandle.setAttribute('aria-label', t('floatingChatDragAria', 'Move floating chat'));
                 dragHandle.setAttribute('title', t('floatingChatDragTitle', 'Drag to move'));
+                dragHandle.setAttribute('aria-describedby', 'ytkit-floating-chat-drag-hint');
                 dragHandle.addEventListener('pointerdown', event => this._beginDrag(event));
+                dragHandle.addEventListener('keydown', event => this._onDragHandleKey(event));
+
+                const dragHint = documentRef.createElement('span');
+                dragHint.id = 'ytkit-floating-chat-drag-hint';
+                dragHint.className = 'ytkit-floating-chat-drag-hint';
+                dragHint.textContent = t('floatingChatDragKeysAria',
+                    'Use the arrow keys to move the panel, or hold Shift to move it further.');
+                dragHint.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;'
+                    + 'overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;';
 
                 const opacity = documentRef.createElement('input');
                 opacity.type = 'range';
@@ -17068,6 +17162,7 @@ if (typeof globalThis !== "undefined") {
                 opacity.addEventListener('change', () => this._persistLayout());
 
                 controls.appendChild(dragHandle);
+                controls.appendChild(dragHint);
                 controls.appendChild(opacity);
                 frame.appendChild(controls);
                 this._controls = controls;
@@ -24489,6 +24584,101 @@ function buildSettingsPanel() {
             tabs[nextIndex].focus();
             tabs[nextIndex].click();
         });
+        injectStyle(`
+            #ytkit-settings-panel .ytkit-nav-reorder {
+                display: flex;
+                gap: 4px;
+                padding: 4px 0 6px;
+                justify-content: flex-end;
+            }
+            #ytkit-settings-panel .ytkit-nav-reorder-btn {
+                min-width: 28px;
+                min-height: 28px;
+                padding: 0 6px;
+                border-radius: 7px;
+                border: 1px solid var(--ytkit-premium-border, rgba(255,255,255,0.14));
+                background: var(--ytkit-premium-raised, rgba(255,255,255,0.06));
+                color: var(--ytkit-premium-text, #e8ecf4);
+                font: 600 13px/1 Inter, system-ui, sans-serif;
+                cursor: pointer;
+            }
+            #ytkit-settings-panel .ytkit-nav-reorder-btn:hover:not(:disabled) {
+                background: var(--ytkit-premium-hover, rgba(255,255,255,0.12));
+            }
+            #ytkit-settings-panel .ytkit-nav-reorder-btn:disabled {
+                opacity: 0.45;
+                cursor: default;
+            }
+            #ytkit-settings-panel .ytkit-nav-reorder-btn:focus-visible {
+                box-shadow: var(--ytkit-premium-focus, 0 0 0 2px #0f0f0f, 0 0 0 4px #7c3aed);
+                outline: none;
+            }
+            html:not([dark]) #ytkit-settings-panel .ytkit-nav-reorder-btn {
+                color: var(--ytkit-premium-text, #172335);
+                background: var(--ytkit-premium-raised, #f3f6f9);
+                border-color: var(--ytkit-premium-border, rgba(30,53,78,0.18));
+            }
+            @media (forced-colors: active) {
+                #ytkit-settings-panel .ytkit-nav-reorder-btn {
+                    background: Canvas;
+                    color: CanvasText;
+                    border: 1px solid CanvasText;
+                }
+            }
+        `, 'ytkit-nav-reorder-styles', true);
+
+        const reorderBar = document.createElement('div');
+        reorderBar.className = 'ytkit-nav-reorder';
+        reorderBar.setAttribute('role', 'group');
+        reorderBar.setAttribute('aria-label', t('panelReorderAria', 'Reorder categories'));
+
+        const makeReorderBtn = (direction, labelKey, fallback) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'ytkit-nav-reorder-btn';
+            button.dataset.direction = String(direction);
+            button.textContent = direction < 0 ? '↑' : '↓';
+            button.setAttribute('aria-label', t(labelKey, fallback));
+            button.title = t(labelKey, fallback);
+            button.addEventListener('click', () => moveSelectedCategory(direction));
+            reorderBar.appendChild(button);
+            return button;
+        };
+        const moveUpBtn = makeReorderBtn(-1, 'panelReorderUp', 'Move the selected category up');
+        const moveDownBtn = makeReorderBtn(1, 'panelReorderDown', 'Move the selected category down');
+
+        function selectedNavBtn() {
+            return navList.querySelector('.ytkit-nav-btn.active') || navList.querySelector('.ytkit-nav-btn');
+        }
+
+        function syncReorderButtons() {
+            const tabs = Array.from(navList.querySelectorAll('.ytkit-nav-btn'));
+            const index = tabs.indexOf(selectedNavBtn());
+            moveUpBtn.disabled = index <= 0;
+            moveDownBtn.disabled = index < 0 || index >= tabs.length - 1;
+        }
+
+        function moveSelectedCategory(direction) {
+            const tabs = Array.from(navList.querySelectorAll('.ytkit-nav-btn'));
+            const current = selectedNavBtn();
+            const index = tabs.indexOf(current);
+            const target = index + direction;
+            if (index < 0 || target < 0 || target >= tabs.length) return false;
+            if (direction < 0) tabs[target].before(current);
+            else tabs[target].after(current);
+            appState.settings.sidebarOrder = Array.from(navList.querySelectorAll('.ytkit-nav-btn'))
+                .map((tab) => tab.dataset.tab);
+            settingsManager.save(appState.settings);
+            syncReorderButtons();
+            current.focus();
+            showToast?.(t('panelReorderMoved', 'Category moved.'), '#22c55e', { duration: 2 });
+            return true;
+        }
+
+        navList.addEventListener('click', () => syncReorderButtons());
+        navList.addEventListener('focusin', () => syncReorderButtons());
+
+        sidebar.appendChild(reorderBar);
         sidebar.appendChild(navList);
 
         function makeNavBtn(cat, config, iconNode, countText, countTitle, extraClass) {
@@ -24577,6 +24767,7 @@ function buildSettingsPanel() {
                 const newOrder = Array.from(navList.querySelectorAll('.ytkit-nav-btn')).map(b => b.dataset.tab);
                 appState.settings.sidebarOrder = newOrder;
                 settingsManager.save(appState.settings);
+                syncReorderButtons();
             });
         }
 

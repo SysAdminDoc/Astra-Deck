@@ -123,8 +123,12 @@ test('fullscreen sticky chat mounts accessible drag and opacity controls', () =>
     assert.ok(harness.frame.classList.contains('ytkit-floating-chat'));
     assert.equal(harness.feature._controls.getAttribute('role'), 'toolbar');
     assert.equal(harness.feature._controls.getAttribute('aria-label'), 'Floating chat controls');
-    assert.equal(harness.feature._controls.children[0].getAttribute('aria-label'), 'Move floating chat');
-    assert.equal(harness.feature._controls.children[1].getAttribute('aria-label'), 'Chat opacity');
+    // By label, not by index: an off-screen description of the arrow keys now
+    // sits between the handle and the slider, and a positional pin fails on
+    // that without anything being wrong.
+    const labels = harness.feature._controls.children.map((child) => child.getAttribute('aria-label'));
+    assert.ok(labels.includes('Move floating chat'), JSON.stringify(labels));
+    assert.ok(labels.includes('Chat opacity'), JSON.stringify(labels));
     assert.equal(harness.frame.styleValues.get('--ytkit-floating-chat-opacity'), '0.8');
     assert.equal(typeof harness.getNavigateRule(), 'function');
 });
@@ -133,7 +137,9 @@ test('opacity and drag changes persist a viewport-clamped layout', () => {
     const harness = createHarness({ x: 700, y: 20, opacity: 0.8 });
     harness.documentRef.fullscreenElement = harness.documentRef.documentElement;
     harness.feature.init();
-    const [drag, opacity] = harness.feature._controls.children;
+    const controls = harness.feature._controls.children;
+    const drag = controls.find((child) => child.getAttribute('aria-label') === 'Move floating chat');
+    const opacity = controls.find((child) => child.getAttribute('aria-label') === 'Chat opacity');
 
     opacity.value = '55';
     opacity.dispatch('input');
@@ -183,4 +189,80 @@ test('sticky chat module is canonical in extension and generated userscript vehi
     assert.match(ytkit, /YTKitFeatures\?\.stickyChat\?\.createStickyChatFeature/);
     assert.match(userscript, /bundled module: extension\/features\/sticky-chat\/index\.js/);
     assert.doesNotMatch(ytkit, /ytd-live-chat-frame \{ position: sticky/);
+});
+
+// WHEN the floating chat's drag handle has focus, the arrow keys SHALL move the
+// panel. It is a focusable button whose only listener was pointerdown, so it
+// announced "Move floating chat, button" and then did nothing when pressed —
+// the panel could be moved with a mouse and by no other means.
+test('the drag handle moves the panel with the arrow keys', () => {
+    const harness = createHarness({ x: 400, y: 200, opacity: 0.8 });
+    harness.documentRef.fullscreenElement = harness.documentRef.documentElement;
+    harness.feature.init();
+
+    const drag = harness.feature._controls.children
+        .find((child) => child.getAttribute('aria-label') === 'Move floating chat');
+    assert.ok(drag, 'the handle must still be there');
+
+    const press = (key, shiftKey = false) => {
+        let prevented = false;
+        drag.dispatch('keydown', {
+            key,
+            shiftKey,
+            preventDefault() { prevented = true; },
+            stopPropagation() {}
+        });
+        return prevented;
+    };
+
+    const startX = harness.feature._layout.x;
+    const startY = harness.feature._layout.y;
+
+    assert.equal(press('ArrowLeft'), true, 'the handle answers the key rather than scrolling the page');
+    assert.equal(harness.feature._layout.x, startX - harness.feature._NUDGE_STEP);
+    press('ArrowRight');
+    assert.equal(harness.feature._layout.x, startX);
+    press('ArrowUp');
+    assert.equal(harness.feature._layout.y, startY - harness.feature._NUDGE_STEP);
+    press('ArrowDown');
+    assert.equal(harness.feature._layout.y, startY);
+
+    press('ArrowRight', true);
+    assert.equal(harness.feature._layout.x, startX + harness.feature._NUDGE_STEP_LARGE,
+        'Shift moves further, so crossing the screen is not fifty presses');
+
+    assert.equal(press('KeyQ'), false, 'an unrelated key is left alone');
+});
+
+// WHEN the panel is nudged to the edge, it SHALL be clamped by the same rule
+// the pointer drag uses, and the new position SHALL be persisted.
+test('a nudged panel is clamped and saved like a dragged one', () => {
+    const harness = createHarness({ x: 10, y: 10, opacity: 0.8 });
+    harness.documentRef.fullscreenElement = harness.documentRef.documentElement;
+    harness.feature.init();
+    const drag = harness.feature._controls.children
+        .find((child) => child.getAttribute('aria-label') === 'Move floating chat');
+
+    for (let press = 0; press < 20; press += 1) {
+        drag.dispatch('keydown', { key: 'ArrowLeft', preventDefault() {}, stopPropagation() {} });
+    }
+    assert.ok(harness.feature._layout.x >= 0,
+        'the keyboard path must not walk the panel off the screen where the pointer path cannot');
+    const saved = harness.writes[harness.writes.length - 1]?.value;
+    assert.ok(saved, 'a nudge must reach storage');
+    assert.equal(saved.x, harness.feature._layout.x, 'and every nudge is persisted');
+});
+
+// The handle says how it works, rather than leaving it to be discovered.
+test('the drag handle describes its keys', () => {
+    const harness = createHarness({ x: 400, y: 200, opacity: 0.8 });
+    harness.documentRef.fullscreenElement = harness.documentRef.documentElement;
+    harness.feature.init();
+    const drag = harness.feature._controls.children
+        .find((child) => child.getAttribute('aria-label') === 'Move floating chat');
+    const hintId = drag.getAttribute('aria-describedby');
+    assert.ok(hintId, 'the handle must point at a description');
+    const hint = harness.feature._controls.children.find((child) => child.id === hintId);
+    assert.ok(hint, 'and that description must exist in the same toolbar');
+    assert.match(hint.textContent, /arrow keys/);
 });

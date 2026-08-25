@@ -360,6 +360,22 @@ function fakeNode(options = {}) {
         closest(selector) {
             return this.matches(selector) ? this : (this.parentElement?.closest?.(selector) ?? null);
         },
+        // Tree traversal. A feature that walks the DOM — the Element Zapper
+        // picker does, to let the arrow keys choose a target — got undefined
+        // from every one of these and looked like it had hit a dead end.
+        get firstElementChild() { return this.children[0] || null; },
+        get lastElementChild() { return this.children[this.children.length - 1] || null; },
+        get nextElementSibling() {
+            const siblings = this.parentElement?.children;
+            if (!siblings) return null;
+            return siblings[siblings.indexOf(this) + 1] || null;
+        },
+        get previousElementSibling() {
+            const siblings = this.parentElement?.children;
+            if (!siblings) return null;
+            const index = siblings.indexOf(this);
+            return index > 0 ? siblings[index - 1] : null;
+        },
         querySelector: () => null,
         querySelectorAll: () => [],
         addEventListener() {},
