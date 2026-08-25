@@ -46,6 +46,7 @@
             formatPageLabel,
             getFeatureById,
             getFeatureDescription,
+            getFeatureHealthSnapshot = () => [],
             getFeatureName,
             getFeatureDisableNotice = () => null,
             getFocusableUiElements,
@@ -93,6 +94,22 @@
                 : value => String(value ?? '')
                     .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
                     .replace(/-/g, '\\x2d');
+
+        // A thrown value becomes one of the closed, localized cause sentences
+        // in core/failure-copy.js. Raw exception text never reaches a panel
+        // surface, and the badge's accessible name keeps its visible label.
+        function describeHealthBadgeCopy(badgeLabel, subject, error) {
+            const compose = globalThis.YTKitCore?.describeFailureBadge;
+            if (typeof compose === 'function') return compose(badgeLabel, subject, error, t);
+            // Degraded path only: core/failure-copy.js ships with every
+            // surface. It still has to compose both strings the same way, or
+            // the badge loses its subject and its visible label.
+            const cause = t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
+            const subjectText = String(subject || '').trim();
+            const detail = subjectText ? `${subjectText.replace(/[.:]\s*$/, '')}: ${cause}` : cause;
+            const labelText = String(badgeLabel || '').trim();
+            return { detail, announcement: labelText ? `${labelText.replace(/[.:]\s*$/, '')}. ${detail}` : detail };
+        }
 
         let _settingsPanelLastFocus = null;
         let _globalUIListenersAttached = false;
@@ -3003,6 +3020,26 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             pageBadge.className = 'ytkit-feature-badge ytkit-feature-badge-muted';
             pageBadge.textContent = formatPageLabel(f.pages[0]);
             meta.appendChild(pageBadge);
+            hasMeta = true;
+        }
+        const featureHealth = getFeatureHealthSnapshot().find((entry) => entry.id === f.id);
+        if (featureHealth && (featureHealth.status === 'degraded' || featureHealth.status?.endsWith('-error'))) {
+            card.classList.add('ytkit-feature-card--degraded');
+            const healthBadge = document.createElement('span');
+            healthBadge.className = 'ytkit-feature-badge';
+            healthBadge.dataset.tone = 'warning';
+            const healthLabel = t('settingsHealthNeedsAttention', 'Needs attention');
+            // `featureHealth.lastError` is `String(error.message)` from the
+            // registry, so it used to put an untranslated exception in the
+            // tooltip and, because aria-label overrode the visible text, that
+            // exception was the ONLY thing a screen reader announced. The
+            // localized cause sentence goes in the tooltip, and the accessible
+            // name keeps the visible label in front of it.
+            const healthCopy = describeHealthBadgeCopy(healthLabel, featureName, featureHealth.lastError);
+            healthBadge.textContent = healthLabel;
+            healthBadge.title = healthCopy.detail;
+            healthBadge.setAttribute('aria-label', healthCopy.announcement);
+            meta.appendChild(healthBadge);
             hasMeta = true;
         }
 

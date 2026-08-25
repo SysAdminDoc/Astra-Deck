@@ -13191,7 +13191,17 @@ if (typeof globalThis !== "undefined") {
         timeout: 'timeout',
         aborted: 'cancelled',
         'permission-denied': 'permission',
-        'quota-exceeded': 'storage'
+        'quota-exceeded': 'storage',
+        // The external API health classes (core/external-api-health.js). A
+        // caller holding one of these already knows the cause structurally, so
+        // it must never fall through to prose matching on the raw throw.
+        'rate-limited': 'rateLimit',
+        'server-error': 'server',
+        'client-error': 'badData',
+        'invalid-payload': 'badData',
+        'network-error': 'network',
+        'no-data': 'notFound',
+        'unknown-error': 'unknown'
     });
 
     const NAME_MAP = Object.freeze({
@@ -13303,6 +13313,22 @@ if (typeof globalThis !== "undefined") {
         return `${prefix.replace(/[.:]\s*$/, '')}: ${sentence}`;
     }
 
+    // A status badge needs two strings for the same failure: the tooltip, and
+    // an accessible name that still leads with the badge's own visible label.
+    // Composing them at the call site put the joiners in front of the
+    // hardcoded-copy gate, so the composition lives here beside the one in
+    // describeFailureWithLabel that it reuses.
+    function describeFailureBadge(badgeLabel, subject, error, translate) {
+        const detail = describeFailureWithLabel(subject, error, translate);
+        const label = String(badgeLabel || '').trim();
+        return {
+            detail,
+            // WCAG 2.5.3: the visible label has to survive into the accessible
+            // name, so it leads and the cause follows as its own sentence.
+            announcement: label ? `${label.replace(/[.:]\s*$/, '')}. ${detail}` : detail
+        };
+    }
+
     // Everything the surface must not show. Callers hand this to their own
     // diagnostic channel so the raw text stays out of the UI.
     function failureDiagnosticText(error) {
@@ -13319,6 +13345,7 @@ if (typeof globalThis !== "undefined") {
         classifyFailureCause,
         describeFailure,
         describeFailureWithLabel,
+        describeFailureBadge,
         failureDiagnosticText
     });
 })();
@@ -25747,6 +25774,7 @@ if (typeof globalThis !== "undefined") {
             formatPageLabel,
             getFeatureById,
             getFeatureDescription,
+            getFeatureHealthSnapshot = () => [],
             getFeatureName,
             getFeatureDisableNotice = () => null,
             getFocusableUiElements,
@@ -25794,6 +25822,22 @@ if (typeof globalThis !== "undefined") {
                 : value => String(value ?? '')
                     .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
                     .replace(/-/g, '\\x2d');
+
+        // A thrown value becomes one of the closed, localized cause sentences
+        // in core/failure-copy.js. Raw exception text never reaches a panel
+        // surface, and the badge's accessible name keeps its visible label.
+        function describeHealthBadgeCopy(badgeLabel, subject, error) {
+            const compose = globalThis.YTKitCore?.describeFailureBadge;
+            if (typeof compose === 'function') return compose(badgeLabel, subject, error, t);
+            // Degraded path only: core/failure-copy.js ships with every
+            // surface. It still has to compose both strings the same way, or
+            // the badge loses its subject and its visible label.
+            const cause = t('failureCauseUnknown', 'Something unexpected went wrong. The diagnostic log has the details.');
+            const subjectText = String(subject || '').trim();
+            const detail = subjectText ? `${subjectText.replace(/[.:]\s*$/, '')}: ${cause}` : cause;
+            const labelText = String(badgeLabel || '').trim();
+            return { detail, announcement: labelText ? `${labelText.replace(/[.:]\s*$/, '')}. ${detail}` : detail };
+        }
 
         let _settingsPanelLastFocus = null;
         let _globalUIListenersAttached = false;
@@ -28704,6 +28748,26 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             pageBadge.className = 'ytkit-feature-badge ytkit-feature-badge-muted';
             pageBadge.textContent = formatPageLabel(f.pages[0]);
             meta.appendChild(pageBadge);
+            hasMeta = true;
+        }
+        const featureHealth = getFeatureHealthSnapshot().find((entry) => entry.id === f.id);
+        if (featureHealth && (featureHealth.status === 'degraded' || featureHealth.status?.endsWith('-error'))) {
+            card.classList.add('ytkit-feature-card--degraded');
+            const healthBadge = document.createElement('span');
+            healthBadge.className = 'ytkit-feature-badge';
+            healthBadge.dataset.tone = 'warning';
+            const healthLabel = t('settingsHealthNeedsAttention', 'Needs attention');
+            // `featureHealth.lastError` is `String(error.message)` from the
+            // registry, so it used to put an untranslated exception in the
+            // tooltip and, because aria-label overrode the visible text, that
+            // exception was the ONLY thing a screen reader announced. The
+            // localized cause sentence goes in the tooltip, and the accessible
+            // name keeps the visible label in front of it.
+            const healthCopy = describeHealthBadgeCopy(healthLabel, featureName, featureHealth.lastError);
+            healthBadge.textContent = healthLabel;
+            healthBadge.title = healthCopy.detail;
+            healthBadge.setAttribute('aria-label', healthCopy.announcement);
+            meta.appendChild(healthBadge);
             hasMeta = true;
         }
 
