@@ -39,13 +39,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   region at all, so typing filtered the list in silence.
 
 - Blocklists no longer lose their newest entries. Every one of these lists is
-  appended to and trimmed from the front by its writer, but six truncations
+  appended to and trimmed from the front by its writer, but eight truncations
   elsewhere kept the front and discarded the tail: both runtime sanitizers, so
   blocking a channel on a full list dropped the channel just blocked; the
-  export sanitizers; the sync upload payload; and the sync Undo snapshot, which
+  export sanitizers; the sync upload payload; the sync Undo snapshot, which
   meant undoing a sync restored the oldest entries and permanently lost
-  everything hidden since. On an account over 2500 hidden videos the loss also
-  propagated: every device replaced its list with the oldest 2500.
+  everything hidden since; and the quota trim loop, which shrinks the largest
+  list by ten percent per pass and runs on every sync once the payload passes
+  92 KB, which the caps alone do. On an account over 2500 hidden videos the
+  loss also propagated: every device replaced its list with the oldest 2500.
 
 - A failed settings import no longer destroys the previous import's undo point.
 
