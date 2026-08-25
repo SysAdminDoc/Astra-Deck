@@ -24188,6 +24188,17 @@ if (typeof globalThis !== "undefined") {
         return grouped;
     }
 
+    function appendSettingsSearchStatus(documentRef, searchActions, translate = (_key, fallback) => fallback) {
+        const searchMeta = documentRef.createElement('span');
+        searchMeta.className = 'ytkit-search-meta';
+        searchMeta.id = 'ytkit-search-count';
+        searchMeta.setAttribute('aria-live', 'polite');
+        searchMeta.setAttribute('aria-atomic', 'true');
+        searchMeta.textContent = translate('commonAll', 'All');
+        searchActions.appendChild(searchMeta);
+        return searchMeta;
+    }
+
     function createSettingsPanelRuntime(deps = {}) {
         const {
             BRAND,
@@ -24608,16 +24619,10 @@ function buildSettingsPanel() {
         searchClearBtn.title = t('panelSearchClearTitle', 'Clear search');
         searchClearBtn.setAttribute('aria-label', t('panelSearchClearAria', 'Clear settings search'));
         searchClearBtn.appendChild(ICONS.close());
-        const searchMeta = document.createElement('span');
-        searchMeta.className = 'ytkit-search-meta';
-        searchMeta.id = 'ytkit-search-count';
-        searchMeta.setAttribute('aria-live', 'polite');
-        searchMeta.setAttribute('aria-atomic', 'true');
-        searchMeta.textContent = t('commonAll', 'All');
         searchContainer.appendChild(searchIcon);
         searchContainer.appendChild(searchInput);
         searchActions.appendChild(searchClearBtn);
-        searchActions.appendChild(searchMeta);
+        appendSettingsSearchStatus(document, searchActions, t);
         searchContainer.appendChild(searchActions);
         searchContainer.classList.add('ytkit-command-search');
         header.insertBefore(searchContainer, headerActions);
@@ -28171,14 +28176,16 @@ function attachUIEventListeners() {
     features.settingsPanel = Object.freeze({
         createSettingsPanelRuntime,
         resolveSettingsPresentationCategory,
-        groupFeaturesBySettingsPresentation
+        groupFeaturesBySettingsPresentation,
+        appendSettingsSearchStatus
     });
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             createSettingsPanelRuntime,
             resolveSettingsPresentationCategory,
-            groupFeaturesBySettingsPresentation
+            groupFeaturesBySettingsPresentation,
+            appendSettingsSearchStatus
         };
     }
 })();

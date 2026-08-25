@@ -31,6 +31,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   unreadable it says how many and offers to save the rest to a file and start
   over, and nothing is deleted unless that file actually gets written.
 
+### Changed
+
+- UI tests now build the controls they inspect instead of searching the source
+  for code that looks right. The connected fixtures cover 44 UI builders and
+  fail when a renderer uses the wrong parent, stacks children, loses state, or
+  leaves owned nodes behind. The inventory is executable, so a source-only
+  replacement cannot quietly remove that coverage later.
+
 ### Fixed
 
 - The quick-link helper under the player stays readable when YouTube is light.

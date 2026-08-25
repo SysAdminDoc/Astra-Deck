@@ -91,6 +91,50 @@
         return `${scaled.toFixed(digits)} ${units[unitIndex]}`;
     }
 
+    function appendDownloadPlaylistList(documentRef, playlistRow, translate = (_key, fallback) => fallback) {
+        const playlistList = documentRef.createElement('div');
+        playlistList.className = 'ytkit-dl-popup__playlist-list';
+        playlistList.setAttribute('role', 'group');
+        playlistList.setAttribute('aria-label', translate('dlPopupPlaylistListAria', 'Playlist item selection'));
+        playlistList.hidden = true;
+        playlistRow.appendChild(playlistList);
+        return playlistList;
+    }
+
+    function renderDownloadPlaylistItems({
+        documentRef,
+        playlistList,
+        items,
+        currentVideoId = '',
+        translate = (_key, fallback) => fallback,
+        onSelectionChange = () => {}
+    }) {
+        playlistList.replaceChildren();
+        const selection = new Set();
+        for (const item of items || []) {
+            const option = documentRef.createElement('label');
+            option.className = 'ytkit-dl-popup__playlist-item';
+            const checkbox = documentRef.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = String(item.index);
+            checkbox.checked = Boolean(currentVideoId && item.id === currentVideoId);
+            if (checkbox.checked) selection.add(Number(item.index));
+            checkbox.addEventListener('change', () => {
+                const index = Number(checkbox.value);
+                if (checkbox.checked) selection.add(index);
+                else selection.delete(index);
+                onSelectionChange(selection, checkbox);
+            });
+            const copy = documentRef.createElement('span');
+            copy.className = 'ytkit-dl-popup__playlist-item-copy';
+            // i18n-static: dynamic ordinal/title composition; both values are already localized or user-authored.
+            copy.textContent = `${item.index}. ${item.title || translate('commonUntitled', 'Untitled')}`;
+            option.append(checkbox, copy);
+            playlistList.appendChild(option);
+        }
+        return selection;
+    }
+
     function formatSizeCandidate(format) {
         if (!format || typeof format !== 'object') return null;
         const exact = normalizeFormatSize(format.filesize);
@@ -2391,12 +2435,7 @@
                     'Preview to choose a bounded subset. Without a selection, this video downloads normally.'
                 );
                 playlistRow.appendChild(playlistMeta);
-                const playlistList = document.createElement('div');
-                playlistList.className = 'ytkit-dl-popup__playlist-list';
-                playlistList.setAttribute('role', 'group');
-                playlistList.setAttribute('aria-label', t('dlPopupPlaylistListAria', 'Playlist item selection'));
-                playlistList.hidden = true;
-                playlistRow.appendChild(playlistList);
+                const playlistList = appendDownloadPlaylistList(document, playlistRow, t);
 
                 const syncPlaylistMeta = (preview) => {
                     const selected = playlistSelection?.size || 0;
@@ -2442,31 +2481,17 @@
                         if (!response || response.status < 200 || response.status >= 300 || !Array.isArray(data?.items)) {
                             throw new Error(data?.error || t('dlPopupPlaylistUnavailable', 'Playlist preview unavailable.'));
                         }
-                        playlistList.replaceChildren();
-                        playlistSelection = new Set();
                         const currentVideoId = getVideoId();
-                        data.items.forEach((item) => {
-                            const option = document.createElement('label');
-                            option.className = 'ytkit-dl-popup__playlist-item';
-                            const checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            checkbox.value = String(item.index);
-                            checkbox.checked = Boolean(currentVideoId && item.id === currentVideoId);
-                            if (checkbox.checked) playlistSelection.add(Number(item.index));
-                            checkbox.addEventListener('change', () => {
-                                const index = Number(checkbox.value);
-                                if (checkbox.checked) playlistSelection.add(index);
-                                else playlistSelection.delete(index);
+                        playlistSelection = renderDownloadPlaylistItems({
+                            documentRef: document,
+                            playlistList,
+                            items: data.items,
+                            currentVideoId,
+                            translate: t,
+                            onSelectionChange: () => {
                                 selectAllBtn.textContent = t('dlPopupPlaylistSelectAll', 'Select all');
                                 syncPlaylistMeta(data);
-                            });
-                            const copy = document.createElement('span');
-                            copy.className = 'ytkit-dl-popup__playlist-item-copy';
-                            // i18n-static: dynamic ordinal/title composition; both values are already localized or user-authored.
-                            copy.textContent = `${item.index}. ${item.title || t('commonUntitled', 'Untitled')}`;
-                            option.appendChild(checkbox);
-                            option.appendChild(copy);
-                            playlistList.appendChild(option);
+                            }
                         });
                         playlistList._preview = data;
                         playlistList.hidden = false;
@@ -3637,6 +3662,8 @@
     ns.createDownloadUIFeature = createDownloadUIFeature;
     ns.normalizeDownloadHealthSnapshot = normalizeDownloadHealthSnapshot;
     ns.companionApiMismatchFromError = companionApiMismatchFromError;
+    ns.appendDownloadPlaylistList = appendDownloadPlaylistList;
+    ns.renderDownloadPlaylistItems = renderDownloadPlaylistItems;
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
@@ -3647,6 +3674,8 @@
             estimateFormatSize,
             formatByteSize,
             createFormatEstimateStore,
+            appendDownloadPlaylistList,
+            renderDownloadPlaylistItems,
             DOWNLOAD_HEALTH_SCHEMA_VERSION,
             AUTO_START_RETRY_BUDGET
         };

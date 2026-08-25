@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
+const { loadFeature, fakeNode, fakeDocument, fakeTreeDocument } = require('../helpers/monolith');
 
 const ytkitSource = fs.readFileSync(
     path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
@@ -151,9 +151,34 @@ test('watchLaterWorkbench routes its user-facing copy through locale keys', () =
 });
 
 test('watchLaterWorkbench cleans up its UI on destroy', () => {
-    const block = featureSlice('watchLaterWorkbench');
-    assert.match(block, /removeNavigateRule\('watchLaterWorkbench'\)/);
-    assert.match(block, /this\._panel\?\.remove\(\)/);
+    const documentRef = fakeTreeDocument();
+    const expectedHost = documentRef.createElement('main');
+    const wrongTarget = documentRef.createElement('aside');
+    documentRef.body.append(expectedHost, wrongTarget);
+    const panel = documentRef.createElement('section');
+    const button = documentRef.createElement('button');
+    const style = documentRef.createElement('style');
+    expectedHost.append(panel, button, style);
+    const removedRules = [];
+    const feature = loadFeature('watchLaterWorkbench', {
+        document: documentRef,
+        removeNavigateRule: (id) => removedRules.push(id)
+    });
+    feature._panel = panel;
+    feature._btn = button;
+    feature._styleEl = style;
+
+    feature.destroy();
+
+    assert.deepEqual(removedRules, ['watchLaterWorkbench']);
+    assert.equal(expectedHost.children.length, 0,
+        'destroy must remove every owned node from its rendered host');
+    assert.equal(wrongTarget.children.length, 0,
+        'the placement oracle must stay empty when teardown targets the real host');
+    assert.equal(feature._panel, null);
+    assert.equal(feature._btn, null);
+    assert.equal(feature._styleEl, null);
+    assert.equal(feature._navRule, null);
 });
 
 test('watchLaterWorkbench verifies the open menu belongs to the row it is removing', () => {

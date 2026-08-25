@@ -10,6 +10,7 @@ const {
     createReturnDislikeFeature,
     createReturnDislikeCardsFeature
 } = require('../../extension/features/return-dislike/index.js');
+const { fakeTreeDocument } = require('../helpers/monolith');
 
 function makeCard(videoId) {
     const link = {
@@ -170,14 +171,18 @@ test('Return Dislike renders the estimated count on the Shorts action bar across
                 hookCalls.push({ surface, hook });
                 return [activeHost];
             },
-            extensionFetchJson: async () => ({
-                data: {
-                    likes: 9,
-                    dislikes: networkCalls++ === 0 ? 12345 : 42,
-                    viewCount: 100,
-                    rating: 4.5
-                }
-            }),
+            extensionFetchJson: async () => {
+                const call = networkCalls++;
+                return {
+                    data: {
+                        likes: 9,
+                        dislikes: call === 0 ? 12345 : 42,
+                        rawDislikes: call === 0 ? 12 : 800,
+                        viewCount: 100,
+                        rating: 4.5
+                    }
+                };
+            },
             addNavigateRule(_id, callback) { navigationRule = callback; },
             removeNavigateRule() {},
             injectStyle: () => ({ remove() {} }),
@@ -189,6 +194,12 @@ test('Return Dislike renders the estimated count on the Shorts action bar across
         assert.equal(networkCalls, 1);
         assert.equal(activeHost.children.some((child) => child.textContent === '12.3K'), true);
         assert.equal(activeHost.children.some((child) => child.textContent === 'est.'), true);
+        let pill = activeHost.children.find((child) => child.className === 'ytkit-ryd-pill');
+        let estimate = activeHost.children.find((child) => child.className === 'ytkit-ryd-estimate');
+        assert.equal(pill.dataset.confidence, 'low');
+        assert.equal(estimate.dataset.confidence, 'low');
+        assert.match(estimate.title, /12 recorded votes/);
+        assert.equal(estimate.attributes['aria-label'], estimate.title);
         assert.equal(hookCalls[0].surface, 'shortsShelf');
         assert.equal(hookCalls[0].hook, 'action.dislike');
 
@@ -199,7 +210,14 @@ test('Return Dislike renders the estimated count on the Shorts action bar across
         assert.equal(networkCalls, 2, 'each newly navigated Short should fetch its own estimate');
         assert.equal(activeHost.children.some((child) => child.textContent === '42'), true);
         assert.equal(activeHost.children.some((child) => child.textContent === 'est.'), true);
+        pill = activeHost.children.find((child) => child.className === 'ytkit-ryd-pill');
+        estimate = activeHost.children.find((child) => child.className === 'ytkit-ryd-estimate');
+        assert.equal(pill.dataset.confidence, 'high');
+        assert.equal(estimate.dataset.confidence, 'high');
+        assert.match(estimate.title, /800 recorded votes/);
         feature.destroy();
+        assert.equal(timers.every((timer) => timer.cancelled), true,
+            'teardown cancels every pending render so no pill can return later');
     } finally {
         global.setTimeout = originalSetTimeout;
         global.clearTimeout = originalClearTimeout;
@@ -331,11 +349,51 @@ test('thumbnail ratio queue drops cards that leave the viewport before a request
     feature.destroy();
 });
 
-test('thumbnail ratio bars expose text equivalents and reduced-motion styling', () => {
+test('thumbnail ratio bars render on the thumbnail with a text equivalent and clean teardown', () => {
+    const documentRef = fakeTreeDocument();
+    const card = documentRef.createElement('ytd-rich-item-renderer');
+    const thumbnail = documentRef.createElement('ytd-thumbnail');
+    const link = documentRef.createElement('a');
+    link.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    card.append(thumbnail, link);
+    documentRef.body.appendChild(card);
+    class FakeIntersectionObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    }
+    const feature = createReturnDislikeCardsFeature({
+        getProvider: () => ({
+            _readCache: () => ({ likes: 9, dislikes: 1 }),
+            _fetch: async () => { throw new Error('the cached result must render without a request'); }
+        }),
+        extractVideoIdFromUrl: (value) => new URL(value).searchParams.get('v'),
+        documentRef,
+        IntersectionObserverCtor: FakeIntersectionObserver,
+        injectStyle: () => ({ remove() {} })
+    });
+    feature.init();
+
+    feature._handleIntersections([{ target: card, isIntersecting: true }]);
+
+    const bar = thumbnail.querySelector('.ytkit-ryd-card-bar');
+    assert.ok(bar, 'the bar must attach inside the thumbnail it describes');
+    assert.equal(bar.getAttribute('role'), 'img');
+    assert.match(bar.getAttribute('aria-label'), /90% liked/);
+    assert.equal(bar.title, bar.getAttribute('aria-label'));
+    assert.equal(bar.querySelector('.ytkit-ryd-card-bar-fill').style.width, '90%');
+    assert.equal(thumbnail.hasAttribute('data-ytkit-ryd-card-host'), true);
+    assert.equal(card.dataset.ytkitRydCardState, 'cached');
+
+    feature.destroy();
+    assert.equal(thumbnail.querySelector('.ytkit-ryd-card-bar'), null);
+    assert.equal(thumbnail.hasAttribute('data-ytkit-ryd-card-host'), false);
+    assert.equal(card.dataset.ytkitRydCardState, undefined);
+});
+
+test('thumbnail ratio bar styling covers reduced motion and forced colors', () => {
     const modSrc = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
-    assert.match(modSrc, /setAttribute\('role', 'img'\)/);
-    assert.match(modSrc, /setAttribute\('aria-label', label\)/);
     assert.match(modSrc, /prefers-reduced-motion:reduce/);
     assert.match(modSrc, /forced-colors:active/);
 });
@@ -347,23 +405,6 @@ test('Return Dislike uses the RYD API with rate-limit budget', () => {
         'returnDislike must query the RYD API');
     assert.match(block, /_budgetWindow|_BUDGET_PER_MIN/,
         'returnDislike must enforce a per-minute request budget');
-});
-
-test('Return Dislike renders the est. caveat disclosure', () => {
-    const [block] = extractFeatureBlock(sources.ytkit, 'returnDislike');
-    assert.match(block, /est\.|estimate/i,
-        'returnDislike must surface the estimate caveat');
-});
-
-test('Return Dislike cancels the pending render timer on teardown', () => {
-    const modSrc = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
-    for (const [label, src] of [['module', modSrc]]) {
-        assert.match(src, /_renderTimer/,
-            `${label} must track the nav-render timer so it can be cancelled`);
-        assert.match(src, /clearTimeout\(\s*(?:this\.)?_renderTimer\s*\)/,
-            `${label} destroy must clearTimeout the pending render so no zombie pill is injected after disable`);
-    }
 });
 
 test('Return Dislike guards against a stale video after the fetch await', () => {
@@ -409,20 +450,6 @@ test('a missing sample is unknown rather than a bad grade', () => {
     assert.equal(sampleConfidence(null), 'unknown');
     assert.equal(sampleConfidence('nonsense'), 'unknown');
     assert.equal(sampleConfidence(-5), 'unknown', 'a negative sample is not a real one');
-});
-
-test('the fetch keeps rawDislikes and the pill spends it', () => {
-    const modSrc = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'return-dislike', 'index.js'), 'utf8');
-
-    assert.match(modSrc, /rawDislikes\s*=\s*Number\(data\.rawDislikes\)/,
-        'the normalized record must read the observed sample off the payload');
-    assert.match(modSrc, /sampleConfidence\(data\.rawDislikes\)/,
-        'the pill must grade the sample it was given');
-    assert.match(modSrc, /ui_rydSampleTpl/,
-        'the sample size must reach the user through a locale key');
-    assert.match(modSrc, /dataset\.confidence\s*=\s*confidence/,
-        'the confidence must reach the DOM so CSS can treat a thin sample');
 });
 
 test('a thin sample is marked by shape, not colour alone', () => {
