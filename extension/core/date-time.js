@@ -140,7 +140,14 @@
     function formatDurationFallback(seconds, options = {}) {
         const { hours, minutes, seconds: remainder } = durationParts(seconds);
         if (options.style === 'digital') {
-            const clock = `${minutes}:${String(remainder).padStart(2, '0')}`;
+            // With an hours field in front, minutes have to be two digits or
+            // the clock reads "1:2:03". Chrome 120 to 128 takes this path
+            // (Intl.DurationFormat landed in 129) and the manifest floor is
+            // 120, so the platform path never covered it. Leading minutes stay
+            // unpadded, which is how YouTube renders its own durations.
+            const clock = hours > 0
+                ? `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
+                : `${minutes}:${String(remainder).padStart(2, '0')}`;
             return hours > 0 ? `${hours}:${clock}` : clock;
         }
         const includeSeconds = options.includeSeconds !== false;

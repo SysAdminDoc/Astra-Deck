@@ -277,7 +277,11 @@
         for (const domain of BLOCKLIST_DOMAINS) {
             const raw = items?.[domain.key];
             const sanitized = sanitizeDomain(domain.id, raw, options);
-            const capped = Array.isArray(sanitized) ? sanitized.slice(0, domain.cap) : [];
+            // Keep the NEWEST entries. These lists are appended to, and
+            // applyRemotePayload replaces the peer's list wholesale, so cutting
+            // from the front uploaded the oldest 2500 hides and made everything
+            // the user had hidden since then reappear on every device.
+            const capped = Array.isArray(sanitized) ? sanitized.slice(-domain.cap) : [];
             if (Array.isArray(sanitized) && sanitized.length > capped.length) truncatedDomains.push(domain.id);
             blocklists[domain.id] = capped;
         }

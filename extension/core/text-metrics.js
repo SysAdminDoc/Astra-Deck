@@ -216,5 +216,8 @@
         return Math.round(token.number * parseSuffix(token.suffix));
     }
 
-    Object.assign(core, { escapeRegExp, parseCompactCount });
+    // normalizeDigits is shared: the transcript scraper needs the same
+    // Arabic-Indic / Devanagari / Thai / fullwidth table when it reads a
+    // rendered timestamp out of YouTube's own DOM.
+    Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits });
 })();

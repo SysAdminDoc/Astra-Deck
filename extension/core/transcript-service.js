@@ -175,7 +175,14 @@
         return 'fetch-failed';
     }
 
-    function sanitizeTranscriptProvenance(value = {}) {
+    function sanitizeTranscriptProvenance(rawValue) {
+        // A default parameter only fires on `undefined`. Every caller passes
+        // `row.provenance` / `raw?.provenance`, which is null whenever the
+        // property exists and holds null, and `null.source` threw. Two of those
+        // call sites run inside an IndexedDB onsuccess handler, where the throw
+        // leaves the wrapping promise unsettled, so the read hangs rather than
+        // rejecting. Normalise anything that is not an object to an empty one.
+        const value = rawValue && typeof rawValue === 'object' ? rawValue : {};
         const source = TRANSCRIPT_SOURCES.has(value.source) ? value.source : 'none';
         const fetchedAt = Number(value.fetchedAt);
         const expiresAt = Number(value.expiresAt);
@@ -604,10 +611,22 @@
                     const row = segment.closest?.('ytd-transcript-segment-renderer');
                     const stamp = row?.querySelector?.('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]')
                         ?.textContent?.trim() || '';
-                    const parts = stamp.split(':').map(Number).filter(Number.isFinite);
+                    // YouTube renders this timestamp with the viewer's own
+                    // numerals, and `Number('٠:٠٧')` is NaN, so every cue in an
+                    // ar/fa/hi/th session landed at 00:00. The same table
+                    // core/text-metrics.js uses for view counts fixes it.
+                    const normalizeDigits = globalThis.YTKitCore?.normalizeDigits;
+                    const stampDigits = typeof normalizeDigits === 'function' ? normalizeDigits(stamp) : stamp;
+                    const parts = stampDigits.split(':').map((part) => Number(part.trim()));
+                    // `filter(Number.isFinite)` was worse than dropping the
+                    // cue: it changed the array LENGTH, so a 3-part stamp with
+                    // one unreadable component became a 2-part one and the
+                    // hours field was read as minutes. Require every component.
                     let startSeconds = 0;
-                    if (parts.length === 2) startSeconds = parts[0] * 60 + parts[1];
-                    else if (parts.length === 3) startSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                    if (parts.every(Number.isFinite)) {
+                        if (parts.length === 2) startSeconds = parts[0] * 60 + parts[1];
+                        else if (parts.length === 3) startSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                    }
                     cues.push({ startMs: startSeconds * 1000, endMs: startSeconds * 1000, text });
                 }
                 return cues.length ? cues : null;
