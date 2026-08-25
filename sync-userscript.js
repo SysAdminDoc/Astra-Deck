@@ -132,6 +132,12 @@ const COMPACT_LINE_COMMENT_MODULES = new Set([
 
 function compactCssWhitespace(body) {
     return body
+        // CSS comments explain the rules to whoever edits this file; they are
+        // not part of what a Greasy Fork reviewer reads, and the source keeps
+        // them in full. The core record is against a hard 2 MiB host cap, and
+        // these two templates alone carried 4,434 B of them, so relighting a
+        // surface was costing prose rather than bytes.
+        .replace(/\/\*[\s\S]*?\*\//g, '')
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean)

@@ -553,13 +553,24 @@ test('the surface system never forces an opaque box onto a full-viewport scrim',
     assert.ok(forced.size > 20, 'the surface families must still be populated');
 
     for (const name of forced) {
-        const rule = new RegExp('\.' + name.replace(/[-_]/g, '[-_]') + '\s*\{([^}]*)\}');
+        // Escaped properly: written through a shell heredoc the first time,
+        // this read `'\.' + … + '\s*\{'`, which JS resolves to `.` (any char)
+        // and a literal `s*{`. It therefore matched only MINIFIED rules, where
+        // no space separates the selector from its brace. That is why it caught
+        // the scrims in ytkit.js and missed the photosensitivity dim, whose
+        // stylesheet is formatted.
+        const rule = new RegExp('\\.' + name.replace(/[-_]/g, '[-_]') + '(?![\\w-])\\s*\\{([^}]*)\\}');
         const match = rule.exec(authored);
         if (!match) continue;
         const body = match[1].replace(/\s+/g, ' ');
-        const isScrim = /position\s*:\s*fixed/.test(body) && /inset\s*:\s*0\s*[;}]/.test(body);
+        // `absolute` covers its containing block as completely as `fixed`
+        // covers the viewport. The photosensitivity dim is drawn that way, and
+        // the first version of this check only looked for `fixed`, so the
+        // surface system was painting an opaque panel over the video that the
+        // dim exists to soften.
+        const isScrim = /position\s*:\s*(?:fixed|absolute)/.test(body) && /inset\s*:\s*0\s*[;}]/.test(body);
         assert.equal(isScrim, false,
-            `.${name} is a full-viewport backdrop; force the box onto the card it centres, not the scrim`);
+            `.${name} covers everything beneath it; force the box onto the card it contains, not the scrim`);
     }
 });
 

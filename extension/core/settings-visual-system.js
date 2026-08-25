@@ -2643,7 +2643,14 @@
             --ytkit-premium-border-strong: rgba(30,53,78,0.30);
             --ytkit-premium-text: #172335;
             --ytkit-premium-muted: #536278;
-            --ytkit-premium-subtle: #6d7c91;
+            /* Was #6d7c91, which measures 4.25:1 on white: under the AA floor
+               for body text. Every "subtle" row in the probe failed on it. */
+            --ytkit-premium-subtle: #5f6b78;
+            /* Warning and danger previously had no light value at all, so they
+               kept their dark-background hues: amber measured 1.76:1 on a white
+               panel. These clear AA on #ffffff at 6.39:1 and 6.54:1. */
+            --ytkit-premium-warning: #8a5200;
+            --ytkit-premium-danger: #b3261e;
             --ytkit-premium-scrollbar: rgba(30,53,78,0.30);
             --ytkit-premium-focus: 0 0 0 2px #ffffff, 0 0 0 4px rgba(207,53,47,0.55);
             --ytkit-premium-shadow: 0 18px 48px rgba(20,35,54,0.18);
@@ -2723,8 +2730,7 @@
             .ytkit-mediadl-banner,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
-            .ytkit-mini-player-bar,
-            .ytkit-photosensitive-alert
+            .ytkit-mini-player-bar
         ) {
             border: 1px solid var(--ytkit-premium-border-strong) !important;
             border-radius: 10px !important;
@@ -2743,8 +2749,7 @@
             .ytkit-mediadl-banner,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
-            .ytkit-mini-player-bar,
-            .ytkit-photosensitive-alert
+            .ytkit-mini-player-bar
         ) {
             color-scheme: light !important;
         }
@@ -2757,8 +2762,7 @@
             .ytkit-mediadl-banner,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
-            .ytkit-mini-player-bar,
-            .ytkit-photosensitive-alert
+            .ytkit-mini-player-bar
         ) :is(button, input, select, textarea) {
             border-radius: 6px !important;
             box-shadow: none !important;
@@ -2773,8 +2777,7 @@
             .ytkit-mediadl-banner,
             .ytkit-playlist-enhance,
             .ytkit-speed-presets,
-            .ytkit-mini-player-bar,
-            .ytkit-photosensitive-alert
+            .ytkit-mini-player-bar
         ) :is(button, input, select, textarea, a):focus-visible {
             outline: 0 !important;
             border-color: var(--ytkit-premium-accent) !important;
@@ -2843,6 +2846,88 @@
             border-color: var(--ytkit-premium-accent) !important;
             box-shadow: var(--ytkit-premium-focus) !important;
         }
+
+
+        /* ── LIGHT-LANE RELIGHT ──────────────────────────────────────────
+           The blocks above force background: var(--ytkit-premium-panel) on
+           ~35 injected surfaces, and that token is #ffffff under
+           html:not([dark]). Each of those surfaces paints its own dark ground
+           in its own stylesheet and writes its children against that ground,
+           so in light theme the ground is white and the children were
+           near-white on white. The Digital Wellbeing card, which pauses
+           playback to show a break reminder, measured about 1.05:1 that way.
+
+           The relight lives here rather than in fifteen feature stylesheets
+           because this file is what removed the ground, this file loads last,
+           and the premium tokens are defined a few hundred lines up. Roles are
+           read off the dark value: near-white is primary text, a mid alpha is
+           muted, a low alpha is subtle, and an amber or red literal keeps its
+           semantic token.
+
+           Verified by scripts/probe-light-surfaces.js, which renders these
+           surfaces in Chromium and reads computed foreground against composited
+           background in both themes. The source gate beside it cannot resolve a
+           cascade and was green while the card was unreadable.
+           ──────────────────────────────────────────────────────────── */
+        html:not([dark]) :is(
+            .ytkit-aisum-head h3, .ytkit-bookmarks-title, .ytkit-bookmarks-add,
+            .ytkit-bookmark-jump, .ytkit-bookmark-note, .ytkit-bookmark-ts, .ytkit-dl-progress,
+            .ytkit-dl-progress__title, .ytkit-mini-player-title, .ytkit-playlist-enhance__title,
+            .ytkit-rc-panel, .ytkit-speed-popup, .ytkit-speed-popup__header,
+            .ytkit-subs-load-banner__title, .ytkit-transcript-batch-panel,
+            .ytkit-transcript-batch-name, .ytkit-transcript-search-panel,
+            .ytkit-transcript-search-panel h4, .ytkit-vvf-panel, .ytkit-vvf-val,
+            .ytkit-wha-card, .ytkit-wha-head h2, .ytkit-stream-links-panel,
+            .ytkit-blocked-watch-dialog, .ytkit-blocked-watch-channel, .ytkit-wellbeing-card,
+            .ytkit-wellbeing-title, .ytkit-wellbeing-badge
+        ) { color: var(--ytkit-premium-text) !important; }
+        html:not([dark]) :is(
+            .ytkit-aisum-close, .ytkit-bookmarks-eyebrow, .ytkit-bookmarks-count,
+            .ytkit-dl-progress__badge, .ytkit-dl-progress__state, .ytkit-dl-progress__stat,
+            .ytkit-dl-progress__close, .ytkit-mini-player-btn, .ytkit-speed-popup__item,
+            .ytkit-subs-load-banner__subtitle, .ytkit-transcript-search-panel .meta,
+            .ytkit-transcript-search-panel__footer, .ytkit-wellbeing-msg,
+            .ytkit-wellbeing-eyebrow, .ytkit-wha-close
+        ) { color: var(--ytkit-premium-muted) !important; }
+        html:not([dark]) :is(
+            .ytkit-bookmarks-status, .ytkit-bookmark-note-label, .ytkit-bookmark-delete,
+            .ytkit-dl-progress__status-copy, .ytkit-playlist-enhance__status,
+            .ytkit-speed-popup__sub, .ytkit-subs-load-banner__eyebrow,
+            .ytkit-transcript-batch-meta, .ytkit-wha-lbl, .ytkit-wellbeing-hint
+        ) { color: var(--ytkit-premium-subtle) !important; }
+        html:not([dark]) :is(
+            .ytkit-rc-head, .ytkit-stream-links-panel__warn
+        ) { color: var(--ytkit-premium-warning) !important; }
+        html:not([dark]) :is(
+            .ytkit-aisum-status--error, .ytkit-dl-progress__action
+        ) { color: var(--ytkit-premium-danger) !important; }
+
+        html:not([dark]) :is(
+            .ytkit-bookmarks-add, .ytkit-bookmarks-count, .ytkit-bookmarks-eyebrow,
+            .ytkit-bookmark-jump, .ytkit-bookmark-delete, .ytkit-bookmark-ts,
+            .ytkit-dl-progress__badge, .ytkit-dl-progress__state, .ytkit-dl-progress__stat,
+            .ytkit-dl-progress__close, .ytkit-mini-player-btn, .ytkit-playlist-enhance__status,
+            .ytkit-speed-popup__item, .ytkit-wellbeing-eyebrow, .ytkit-wellbeing-badge,
+            .ytkit-wellbeing-icon-wrap, .ytkit-transcript-search-panel__footer button,
+            .ytkit-stream-links-panel button, .ytkit-wha-close
+        ) {
+            background: var(--ytkit-premium-raised);
+            border-color: var(--ytkit-premium-border);
+        }
+
+        html:not([dark]) .ytkit-speed-popup__item:hover {
+            background: var(--ytkit-premium-hover) !important;
+            color: var(--ytkit-premium-text) !important;
+            border-color: var(--ytkit-premium-border-strong) !important;
+        }
+        html:not([dark]) .ytkit-speed-popup__item.is-active {
+            background: var(--ytkit-premium-raised) !important;
+            color: var(--ytkit-premium-accent-fill) !important;
+            border-color: var(--ytkit-premium-accent) !important;
+        }
+        html:not([dark]) :is(
+            .ytkit-transcript-search-panel__footer button, .ytkit-stream-links-panel button
+        ):focus-visible { box-shadow: var(--ytkit-premium-focus) !important; }
 
         :is(
             .ytkit-service-state-pill,

@@ -6,6 +6,34 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- Injected panels are readable on light YouTube again. The shared surface system
+  repaints ~35 surfaces with a token that is white in light theme, but each of
+  those surfaces writes its own children against the dark ground it paints
+  elsewhere, so in light theme the children sat near-white on white. The Digital
+  Wellbeing card, which pauses playback to show a break reminder, measured about
+  1.05:1. Fifty-odd descendants across sixteen families are relit from the same
+  premium tokens the override paints with.
+
+- Two palette tokens were wrong rather than missing. The light value for subtle
+  text measured 4.25:1 on white, just under the AA floor, and warning and danger
+  had no light value at all, so an amber pill on a white panel measured 1.76:1.
+
+- The photosensitivity dim no longer has an opaque panel painted over it. It is
+  a scrim across the player, drawn with position: absolute, and the surface
+  system was forcing a solid background onto it: in dark theme that hid the
+  video entirely, in light theme it covered it in white. The scrim check only
+  looked for position: fixed, so it never saw this one.
+
+### Changed
+
+- New release gate: `npm run smoke:light-surfaces` renders these surfaces in
+  Chromium and reads computed foreground against composited background in both
+  themes. The source-level light-theme gate cannot resolve a cascade, which is
+  why it stayed green while the card was unreadable; it now also models the
+  !important override that removes a surface's ground.
+
 ## [4.85.0] (2026-08-25)
 
 ### Fixed

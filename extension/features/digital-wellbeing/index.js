@@ -492,7 +492,10 @@
                     }
                     .ytkit-wellbeing-hint {
                         margin: -4px 0 0;
-                        color: rgba(226,232,240,0.48);
+                        /* 0.48 measured 4.20:1 on this card's own dark ground,
+                           under the AA floor for body text. 0.62 clears it at
+                           6.17:1 and still reads as the quietest line here. */
+                        color: rgba(226,232,240,0.62);
                         font-size: 12px;
                         line-height: 1.55;
                         text-wrap: pretty;
