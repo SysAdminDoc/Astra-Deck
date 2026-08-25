@@ -338,6 +338,15 @@ function fakeNode(options = {}) {
         // These used to be no-ops, so a feature could "build and attach" its
         // whole UI invisibly and any assertion on the result was impossible.
         appendChild(child) {
+            if (child?.tagName === '#FRAGMENT') {
+                for (const nested of [...child.children]) this.appendChild(nested);
+                return child;
+            }
+            const previousSiblings = child?.parentElement?.children;
+            if (Array.isArray(previousSiblings)) {
+                const previousIndex = previousSiblings.indexOf(child);
+                if (previousIndex !== -1) previousSiblings.splice(previousIndex, 1);
+            }
             this.children.push(child);
             if (child) {
                 child.parentElement = this;
@@ -359,12 +368,12 @@ function fakeNode(options = {}) {
             });
         },
         replaceChildren(...next) {
-            this.children.splice(0, this.children.length, ...next);
-            next.forEach((child) => {
-                if (!child) return;
-                child.parentElement = this;
-                child.isConnected = true;
-            });
+            for (const child of this.children) {
+                if (child?.parentElement === this) child.parentElement = null;
+                if (child) child.isConnected = false;
+            }
+            this.children.splice(0, this.children.length);
+            next.flat().forEach((child) => this.appendChild(child));
         },
         insertBefore(child, reference) {
             const at = reference ? this.children.indexOf(reference) : -1;
@@ -412,6 +421,10 @@ function fakeNode(options = {}) {
         get() { return this.children[0] || null; },
         configurable: true
     });
+    Object.defineProperty(node, 'childElementCount', {
+        get() { return this.children.filter((child) => child?.tagName && child.tagName !== '#TEXT').length; },
+        configurable: true
+    });
     // `el.textContent = ''` is the idiomatic "empty this node" and a real DOM
     // drops every child when you write it. A plain string property let a
     // feature clear and re-render while the fake kept the old subtree, so a
@@ -434,6 +447,10 @@ function fakeNode(options = {}) {
         set(value) {
             const next = value == null ? '' : String(value);
             this._text = next;
+            for (const child of this.children) {
+                if (child?.parentElement === this) child.parentElement = null;
+                if (child) child.isConnected = false;
+            }
             this.children.splice(0, this.children.length);
         },
         configurable: true,
@@ -514,11 +531,97 @@ function fakeDocument(resolve) {
     };
 }
 
+function simpleSelectorMatch(node, selector) {
+    const candidate = String(selector || '').trim().split(/[\s>+~]+/).at(-1);
+    if (!candidate || candidate === ':scope') return false;
+    if (candidate === '*') return true;
+    try { return node.matches(candidate); } catch { return false; }
+}
+
+function collectFakeTree(root, selector) {
+    const found = [];
+    (function walk(node) {
+        for (const child of node?.children || []) {
+            if (String(selector).split(',').some((part) => simpleSelectorMatch(child, part))) found.push(child);
+            walk(child);
+        }
+    })(root);
+    return found;
+}
+
+/**
+ * A connected fake document for renderer tests. Unlike `fakeDocument`, this
+ * answers queries from the tree that a renderer actually attached and records
+ * event listeners so a test can drive the resulting controls.
+ */
+function fakeTreeDocument(resolve = () => null) {
+    const listeners = new Map();
+    const documentRef = {
+        activeElement: null,
+        listeners,
+        createElement(tag) {
+            const node = fakeNode({ tag });
+            node.listeners = new Map();
+            node.addEventListener = (type, handler) => {
+                if (!node.listeners.has(type)) node.listeners.set(type, new Set());
+                node.listeners.get(type).add(handler);
+            };
+            node.removeEventListener = (type, handler) => node.listeners.get(type)?.delete(handler);
+            node.dispatchEvent = (event) => {
+                if (event && !event.target) event.target = node;
+                for (const handler of node.listeners.get(event?.type) || []) handler.call(node, event);
+                return !event?.defaultPrevented;
+            };
+            node.querySelectorAll = (selector) => collectFakeTree(node, selector);
+            node.querySelector = (selector) => node.querySelectorAll(selector)[0] || null;
+            node.contains = (candidate) => candidate === node || collectFakeTree(node, '*').includes(candidate);
+            node.focus = () => { documentRef.activeElement = node; };
+            node.blur = () => { if (documentRef.activeElement === node) documentRef.activeElement = null; };
+            node.toggleAttribute = (name, force) => {
+                const next = force === undefined ? !node.hasAttribute(name) : !!force;
+                if (next) node.setAttribute(name, '');
+                else node.removeAttribute(name);
+                return next;
+            };
+            Object.defineProperty(node, 'parentNode', {
+                get() { return this.parentElement || null; },
+                set(value) { this.parentElement = value; },
+                configurable: true
+            });
+            return node;
+        },
+        createTextNode: (text) => fakeNode({ tag: '#text', text }),
+        createElementNS(_namespace, tag) { return this.createElement(tag); },
+        createDocumentFragment() { return this.createElement('#fragment'); },
+        addEventListener(type, handler) {
+            if (!listeners.has(type)) listeners.set(type, new Set());
+            listeners.get(type).add(handler);
+        },
+        removeEventListener(type, handler) { listeners.get(type)?.delete(handler); }
+    };
+    documentRef.documentElement = documentRef.createElement('html');
+    documentRef.head = documentRef.createElement('head');
+    documentRef.body = documentRef.createElement('body');
+    documentRef.documentElement.append(documentRef.head, documentRef.body);
+    documentRef.querySelectorAll = (selector) => {
+        const supplied = resolve(selector);
+        if (supplied) return Array.isArray(supplied) ? supplied : [supplied];
+        return collectFakeTree(documentRef.documentElement, selector);
+    };
+    documentRef.querySelector = (selector) => documentRef.querySelectorAll(selector)[0] || null;
+    documentRef.getElementById = (id) => documentRef.querySelector(`#${id}`);
+    documentRef.contains = (node) => node === documentRef.documentElement
+        || collectFakeTree(documentRef.documentElement, '*').includes(node);
+    return documentRef;
+}
+
 module.exports = {
     featureSource,
     fallbackFeatureSource,
     loadFeature,
     loadFallbackFeature,
     fakeNode,
-    fakeDocument
+    fakeDocument,
+    fakeTreeDocument,
+    collectFakeTree
 };

@@ -6984,13 +6984,13 @@ const STORAGE_KEYS = Object.freeze({
         // forceH264 silently overrides codecSelector via _syncMainWorldCodec() —
         // user sets codecSelector=AV1 but gets H.264 with no UI feedback. Declared
         // as a hard conflict so the popup toast surfaces the silent override.
-        forceH264: { conflicts: ['codecSelector'], reason: 'forceH264 silently overrides codecSelector — disabled for predictability' },
+        forceH264: { conflicts: ['codecSelector'], reason: 'forceH264 silently overrides codecSelector, so it is disabled for predictability' },
         codecSelector: { conflicts: ['forceH264'], reason: 'codecSelector and forceH264 fight for the MAIN-world canPlayType bridge' },
         fitPlayerToWindow: { conflicts: ['stickyVideo'], reason: 'Both control player positioning on watch pages' },
         // Audio-only pins the CHEAPEST stream; every quality-raising
         // feature pins the opposite through the same MAIN-world call, so
         // whichever ran last silently won.
-        audioOnlyPlayback: { conflicts: ['autoMaxResolution', 'qualityProfileMatrix'], reason: 'Audio-only pins the lowest quality — a best-quality or per-context target would fight it through the same player API' },
+        audioOnlyPlayback: { conflicts: ['autoMaxResolution', 'qualityProfileMatrix'], reason: 'Audio-only pins the lowest quality, and a best-quality or per-context target would fight it through the same player API' },
         autoMaxResolution: { conflicts: ['audioOnlyPlayback'], reason: 'Best quality and audio-only pin opposite ends of the same quality API' },
         qualityProfileMatrix: { conflicts: ['audioOnlyPlayback'], reason: 'Per-context quality targets and audio-only pin opposite ends of the same quality API' },
         stickyVideo: { conflicts: ['fitPlayerToWindow'], reason: 'Both control player positioning on watch pages' },
@@ -7030,7 +7030,7 @@ const STORAGE_KEYS = Object.freeze({
         stickyVideo: 'Full-screen player with scroll-triggered side-by-side comments',
         hideRelatedVideos: 'Secondary panel hidden, primary stretches to full width',
         expandVideoWidth: 'Primary column gets max-width:none when sidebar is hidden',
-        autoMaxResolution: 'Forces the highest available stream on every video — picks 1080p Premium when offered',
+        autoMaxResolution: 'Forces the highest available stream on every video, and picks 1080p Premium when offered',
         autoExpandComments: 'Removes comment truncation, clicks Read More automatically',
         hideCommentDislikeButton: 'Removes the no-op dislike control from comment toolbars',
         commentEnhancements: 'Highlights creator replies, shows like heat, collapse toggle',
@@ -7242,7 +7242,7 @@ const STORAGE_KEYS = Object.freeze({
         {
             id: 'uiFontSize',
             name: 'UI Font Size',
-            description: 'Override the base interface font size (0 = YouTube default, otherwise 8–20px)',
+            description: 'Override the base interface font size (0 = YouTube default, otherwise 8 to 20px)',
             group: 'Theme',
             icon: 'type',
             _styleElement: null,
@@ -7264,7 +7264,7 @@ const STORAGE_KEYS = Object.freeze({
         {
             id: 'uiFontFamily',
             name: t('feature_uiFontFamily_name', 'UI Font'),
-            description: t('feature_uiFontFamily_desc', 'Override the interface typeface. A short curated list rather than a free-text field — an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.'),
+            description: t('feature_uiFontFamily_desc', 'Override the interface typeface. A short curated list rather than a free-text field, because an arbitrary font-family string is a CSS injection surface, and Custom CSS already exists for that.'),
             group: 'Theme',
             icon: 'type',
             type: 'select',
@@ -7346,7 +7346,7 @@ const STORAGE_KEYS = Object.freeze({
         {
             id: 'homepageGridAlign',
             name: 'Homepage Grid Align',
-            description: 'Force uniform thumbnail grid on the homepage — prevents misaligned rows caused by variable title/metadata heights',
+            description: 'Force a uniform thumbnail grid on the homepage. Prevents misaligned rows caused by variable title and metadata heights.',
             group: 'Home / Subscriptions',
             icon: 'layout-grid',
             pages: [PageTypes.HOME],
@@ -11320,7 +11320,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'premiumLiveChat',
             name: 'Premium Live Chat',
-            description: 'Refine live chat with a polished header, elevated message rows, and a premium composer.',
+            description: 'Refine live chat with a polished header, raised message rows, and a better composer.',
             group: 'Live Chat',
             icon: 'livechat',
             _styleElement: null,
@@ -13328,8 +13328,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ? t('sponsoredFilterCommentLabel', 'Sponsored comment')
                     : t('sponsoredFilterDescriptionLabel', 'Sponsored description');
                 const template = revealed
-                    ? t('sponsoredFilterHideTpl', 'Hide {label} — {reason}')
-                    : t('sponsoredFilterShowTpl', 'Show {label} — {reason}');
+                    ? t('sponsoredFilterHideTpl', 'Hide {label} ({reason})')
+                    : t('sponsoredFilterShowTpl', 'Show {label} ({reason})');
                 const text = template.replace('{label}', label).replace('{reason}', reason);
                 button.textContent = text;
                 button.setAttribute('aria-label', text);
@@ -15840,7 +15840,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'videoScreenshot',
             name: 'Video Screenshot',
-            description: 'Capture the current video frame as a PNG image — copies to clipboard and downloads',
+            description: 'Capture the current video frame as a PNG image. It copies to the clipboard and downloads.',
             group: 'Video Player',
             icon: 'camera',
             pages: [PageTypes.WATCH],
@@ -16582,8 +16582,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (video && !video.paused) {
                         try { video.pause(); } catch (_) { /* reason: best-effort pause */ }
                     }
-                    announceA11y('Sleep timer elapsed — playback paused.');
-                    showToast('Sleep timer elapsed — playback paused.', '#22c55e', { duration: 4 });
+                    announceA11y('Sleep timer elapsed. Playback paused.');
+                    showToast('Sleep timer elapsed. Playback paused.', '#22c55e', { duration: 4 });
                     return;
                 }
                 this._chip.querySelector('.sleep-time').textContent = this._formatRemaining(remaining);
@@ -19456,7 +19456,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!translated) {
                         lane = 'byo-key';
                         if (typeof showToast === 'function') {
-                            showToast([t('transcriptTranslateUnavailable', 'On-device Translator unavailable'), t('feature_aiVideoSummary_desc', 'using the configured BYO-key provider')].join(' — '), '#f59e0b', { tone: 'warning' });
+                            showToast([t('transcriptTranslateUnavailable', 'On-device Translator unavailable'), t('aiSummaryByoFallbackNotice', 'Using your configured BYO-key provider instead.')].join(' '), '#f59e0b', { tone: 'warning' });
                         }
                         translated = await this._translateTranscriptByoKey(sourceLang, targetLang);
                         if (isStale()) return;
@@ -21625,7 +21625,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._priorRate == null && v.playbackRate > 1 && latency < 4) {
                     this._priorRate = v.playbackRate;
                     setProgrammaticPlaybackRate(v, 1);
-                    showToast('Caught up to live — speed reset to 1×', '#22c55e', { duration: 3 });
+                    showToast('Caught up to live. Speed reset to 1x.', '#22c55e', { duration: 3 });
                 } else if (this._priorRate != null && latency > 15) {
                     setProgrammaticPlaybackRate(v, this._priorRate);
                     this._priorRate = null;
@@ -22356,7 +22356,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     title.className = 'ytkit-queue-title';
                     title.href = `https://www.youtube.com/watch?v=${it.id}`;
                     title.textContent = it.title;
-                    title.title = it.channel ? `${it.title} — ${it.channel}` : it.title;
+                    title.title = it.channel ? `${it.title} by ${it.channel}` : it.title;
                     const actions = document.createElement('div');
                     actions.className = 'ytkit-queue-row-actions';
                     const mk = (label, aria, onClick, disabled = false) => {
@@ -24636,7 +24636,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'grayscaleThumbnails',
             name: 'Grayscale Thumbnails',
-            description: 'Shows thumbnails in grayscale to reduce visual distraction — color restores on hover',
+            description: 'Shows thumbnails in grayscale to reduce visual distraction. Color comes back on hover.',
             group: 'Content',
             icon: 'droplet',
             _styleEl: null,
@@ -26053,7 +26053,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._cornerCleanup = registerCornerStackElement('shortsSpeed', this._chip, 32);
                 }
                 this._chip.textContent = `${this._speed}×`;
-                this._chip.setAttribute('aria-label', `Shorts playback speed ${this._speed}x — click to cycle`);
+                this._chip.setAttribute('aria-label', `Shorts playback speed ${this._speed}x. Click to cycle.`);
             },
 
             init() {
@@ -26743,8 +26743,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {}
         }),
         // SponsorBlock category sub-features
-        { id: 'sponsorBlockBaseUrl', name: t('feature_sponsorBlockBaseUrl_name', 'SponsorBlock API Host'), description: t('feature_sponsorBlockBaseUrl_desc', 'Choose the primary HTTPS host used by SponsorBlock and DeArrow.'), group: 'Content', icon: 'globe', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsor.ajay.app',label:t('feature_sponsorBlockCanonicalHost_label', 'Canonical — sponsor.ajay.app')},{value:'https://sponsorblock.kavin.rocks',label:t('feature_sponsorBlockMirrorHost_label', 'Mirror — sponsorblock.kavin.rocks')}], init(){}, destroy(){} },
-        { id: 'sponsorBlockMirrorUrl', name: t('feature_sponsorBlockMirrorUrl_name', 'SponsorBlock Fallback Host'), description: t('feature_sponsorBlockMirrorUrl_desc', 'Try this approved mirror once when the primary API host fails.'), group: 'Content', icon: 'git-branch', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsorblock.kavin.rocks',label:t('feature_sponsorBlockMirrorHost_label', 'Mirror — sponsorblock.kavin.rocks')},{value:'https://sponsor.ajay.app',label:t('feature_sponsorBlockCanonicalHost_label', 'Canonical — sponsor.ajay.app')},{value:'',label:t('feature_sponsorBlockDisabled_label', 'Disabled')}], init(){}, destroy(){} },
+        { id: 'sponsorBlockBaseUrl', name: t('feature_sponsorBlockBaseUrl_name', 'SponsorBlock API Host'), description: t('feature_sponsorBlockBaseUrl_desc', 'Choose the primary HTTPS host used by SponsorBlock and DeArrow.'), group: 'Content', icon: 'globe', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsor.ajay.app',label:t('feature_sponsorBlockCanonicalHost_label', 'Canonical (sponsor.ajay.app)')},{value:'https://sponsorblock.kavin.rocks',label:t('feature_sponsorBlockMirrorHost_label', 'Mirror (sponsorblock.kavin.rocks)')}], init(){}, destroy(){} },
+        { id: 'sponsorBlockMirrorUrl', name: t('feature_sponsorBlockMirrorUrl_name', 'SponsorBlock Fallback Host'), description: t('feature_sponsorBlockMirrorUrl_desc', 'Try this approved mirror once when the primary API host fails.'), group: 'Content', icon: 'git-branch', isSubFeature: true, parentId: 'sponsorBlock', type: 'select', options: [{value:'https://sponsorblock.kavin.rocks',label:t('feature_sponsorBlockMirrorHost_label', 'Mirror (sponsorblock.kavin.rocks)')},{value:'https://sponsor.ajay.app',label:t('feature_sponsorBlockCanonicalHost_label', 'Canonical (sponsor.ajay.app)')},{value:'',label:t('feature_sponsorBlockDisabled_label', 'Disabled')}], init(){}, destroy(){} },
         { id: 'sbCat_sponsor', name: 'Skip Sponsors', description: 'Paid promotions and sponsorship segments', group: 'Content', icon: 'dollar-sign', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_intro', name: 'Skip Intros', description: 'Intro animations and branding', group: 'Content', icon: 'skip-forward', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_outro', name: 'Skip Outros', description: 'Endcards and outro sequences', group: 'Content', icon: 'skip-forward', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
@@ -27090,7 +27090,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         { id: 'daReplaceTitles', name: 'Replace Titles', description: 'Replace clickbait titles with crowdsourced alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceThumbs', name: 'Replace Thumbnails', description: 'Replace clickbait thumbnails with video screenshots', group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daTitleFormat', name: 'Title Format', description: 'How to format replacement titles', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', type: 'select', options: [{value:'sentence',label:'Sentence case'},{value:'title_case',label:'Title Case'},{value:'original',label:'Original'}], init(){}, destroy(){} },
-        { id: 'deArrowCasualMode', name: 'Casual Mode', description: 'Keep descriptive titles unchanged — only replace titles with crowd-submitted DeArrow alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
+        { id: 'deArrowCasualMode', name: 'Casual Mode', description: 'Keep descriptive titles unchanged and only replace titles that have crowd-submitted DeArrow alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daFallbackFormat', name: 'Format Original Titles', description: 'Format the original title when no crowdsourced submission exists', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daShowOriginalHover', name: 'Show Original on Hover', description: 'Hover over a replaced title to see the original', group: 'Content', icon: 'eye', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daShowOriginalTitle', name: t('feature_daShowOriginalTitle_name', 'Show Original Title'), description: t('feature_daShowOriginalTitle_desc', 'Show the original title beneath the DeArrow replacement'), group: 'Content', icon: 'layers', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
@@ -27434,7 +27434,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'videoRotation',
             name: 'Video Rotation',
-            description: 'Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings',
+            description: 'Rotate the video 90, 180, or 270 degrees via CSS transform. Useful for sideways phone recordings.',
             group: 'Video Player',
             icon: 'rotate-cw',
             type: 'select',
@@ -27473,7 +27473,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'videoFlip',
             name: 'Video Flip',
-            description: 'Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings',
+            description: 'Mirror the video horizontally or vertically. Useful for mirrored dance tutorials, text readability, or flipped recordings.',
             group: 'Video Player',
             icon: 'flip-horizontal',
             type: 'select',
@@ -27510,7 +27510,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'monoToStereo',
             name: 'Mono to Stereo',
-            description: 'Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones',
+            description: 'Center mono audio equally in both ears. Fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones.',
             group: 'Video Player',
             icon: 'headphones',
             _apply() {
@@ -28454,7 +28454,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'subtitleDownload',
             name: 'Subtitle Download (SRT)',
-            description: 'One-click SRT download of the active caption track — standalone player button, no sidebar required',
+            description: 'One-click SRT download of the active caption track. It’s a standalone player button, so no sidebar is required.',
             group: 'Downloads',
             icon: 'subtitles',
             pages: [PageTypes.WATCH],
@@ -28786,7 +28786,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     alert.setAttribute('aria-live', 'polite');
                     const label = document.createElement('span');
                     label.className = 'ytkit-photosensitive-alert__label';
-                    label.textContent = t('photosensitiveFlashDetected', 'Flashing content detected — dimmed');
+                    label.textContent = t('photosensitiveFlashDetected', 'Flashing content detected. Player dimmed.');
                     alert.appendChild(label);
                     this._alert = alert;
                 }
@@ -29047,7 +29047,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'videoAgeColors',
             name: 'Video Age Color Coding',
-            description: 'Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red)',
+            description: 'Color-coded thumbnail borders by upload age: fresh (green), week (blue), month (yellow), year (orange), ancient (red)',
             group: 'Home / Subscriptions',
             icon: 'calendar',
             _styleEl: null, _mutRule: null,
@@ -29628,7 +29628,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 head.className = 'ytkit-wha-head';
                 const title = document.createElement('h2');
                 title.id = 'ytkit-wha-title';
-                title.textContent = t('whaTitle', 'Watch Time — Last 30 Days');
+                title.textContent = t('whaTitle', 'Watch Time, Last 30 Days');
                 card.setAttribute('aria-labelledby', title.id);
                 const close = document.createElement('button');
                 close.type = 'button';
@@ -29779,7 +29779,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'subtitleStyling',
             name: 'Subtitle Styling',
-            description: 'Override YouTube caption appearance — font size/family/color, background, position, shadow',
+            description: 'Override YouTube caption appearance: font size, family, and color, plus background, position, and shadow',
             group: 'Video Player',
             icon: 'type',
             _styleEl: null,
@@ -29969,7 +29969,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (write?.then) write.then((result) => {
                         if (!result || result.ok !== false) return;
                         DiagnosticLog?.record('aiVideoSummary.store', result.error?.message || 'save failed');
-                        showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444', { tone: 'error' });
+                        showToast(t('aiSummarySaveFailed', 'Saving the summary failed. It may disappear after a reload.'), '#ef4444', { tone: 'error' });
                     });
                 } catch (error) { DiagnosticLog?.record('aiVideoSummary.store', error.message); }
                 return clean;
@@ -30423,7 +30423,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'copyChapterMarkdown',
             name: 'Copy Chapters as Markdown',
-            description: 'Copy all video chapters as a markdown timestamp list — button in player controls',
+            description: 'Copy all video chapters as a markdown timestamp list, from a button in the player controls',
             group: 'Watch Page',
             icon: 'list',
             pages: [PageTypes.WATCH],
@@ -30463,7 +30463,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const vid = getVideoId();
                 const mk = chapters.map(c => {
                     const secs = c.time.split(':').reverse().reduce((acc, v, i) => acc + (parseInt(v, 10) || 0) * ([1, 60, 3600][i] || 0), 0);
-                    return `- [${c.time}](https://youtu.be/${vid}?t=${secs}) — ${c.title}`;
+                    return `- [${c.time}](https://youtu.be/${vid}?t=${secs}) ${c.title}`;
                 }).join('\n');
                 navigator.clipboard.writeText(mk).then(
                     () => showToast(`${chapters.length} chapters copied as markdown`, '#22c55e'),
@@ -30503,7 +30503,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'chapterJumpButtons',
             name: 'Chapter Jump Buttons',
-            description: 'Prev/Next chapter buttons in the player right-controls — skip to the previous or next chapter',
+            description: 'Prev/Next chapter buttons in the player right-controls, so you can skip to the previous or next chapter',
             group: 'Video Player',
             icon: 'skip-forward',
             pages: [PageTypes.WATCH],
@@ -30935,7 +30935,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         .replace('{removed}', String(removed))
                         .replace('{total}', String(targets.length));
                 if (removed < targets.length && typeof showToast === 'function') {
-                    showToast(t('watchLaterRemoveFailed', `Couldn't remove {count} video(s) — YouTube's menu item wasn't found.`)
+                    showToast(t('watchLaterRemoveFailed', `Couldn't remove {count} video(s). YouTube's menu item wasn't found.`)
                         .replace('{count}', String(targets.length - removed)), '#f59e0b', { duration: 5 });
                 }
                 setTimeout(() => { btn.textContent = t('watchLaterRemoveWatched', 'Remove Watched'); btn.disabled = false; }, 3000);
@@ -31218,7 +31218,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     rowEl.className = 'ytkit-wlwb-row';
                     const label = document.createElement('span');
                     label.textContent = e.title;
-                    label.title = t('wlwbRowTitleTpl', `${e.title} — ${e.channel} (${e.watchedPct.toFixed(0)}% watched)`)
+                    label.title = t('wlwbRowTitleTpl', `${e.title} by ${e.channel} (${e.watchedPct.toFixed(0)}% watched)`)
                         .replace('{title}', e.title)
                         .replace('{channel}', e.channel)
                         .replace('{percent}', e.watchedPct.toFixed(0));
@@ -31365,7 +31365,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     row.className = 'ytkit-wlwb-recovery-row';
                     const label = document.createElement('span');
                     label.textContent = entry.title || entry.videoId;
-                    label.title = entry.channel ? `${entry.title || entry.videoId} — ${entry.channel}` : entry.videoId;
+                    label.title = entry.channel ? `${entry.title || entry.videoId} by ${entry.channel}` : entry.videoId;
                     const undo = document.createElement('button');
                     undo.type = 'button';
                     undo.textContent = t('wlwbUndoItem', 'Undo');
@@ -31663,7 +31663,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const sort = document.createElement('select');
                 sort.className = 'ytkit-wlwb-sort';
                 sort.setAttribute('aria-label', t('wlwbSortAria', 'Preview sort order'));
-                [['playlist', t('wlwbSortPlaylist', 'Playlist order')], ['duration-asc', t('wlwbSortShortest', 'Shortest first')], ['duration-desc', t('wlwbSortLongest', 'Longest first')], ['title', t('wlwbSortTitle', 'Title A–Z')]]
+                [['playlist', t('wlwbSortPlaylist', 'Playlist order')], ['duration-asc', t('wlwbSortShortest', 'Shortest first')], ['duration-desc', t('wlwbSortLongest', 'Longest first')], ['title', t('wlwbSortTitle', 'Title A to Z')]]
                     .forEach(([value, label]) => {
                         const opt = document.createElement('option');
                         opt.value = value; opt.textContent = label;
@@ -31890,7 +31890,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch (e) {
                     if (e?.name === 'AbortError') return;
                     DebugManager.log('TranscriptAI', `Handoff failed: ${e.message}`);
-                    showToast('Handoff failed — check diagnostics log', '#ef4444', { duration: 5 });
+                    showToast('Handoff failed. Check the diagnostics log.', '#ef4444', { duration: 5 });
                 } finally {
                     if (this._handoffController === controller) this._handoffController = null;
                 }
@@ -33101,7 +33101,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // Zero native applications is a partial failure, not a
                     // success — say so and use the warning tone.
                     showToast(appliedCount === 0
-                        ? t('bulkScrubPartialTpl', 'YouTube’s menu item wasn’t found — 0 native, {count} hidden locally only{capNote}')
+                        ? t('bulkScrubPartialTpl', 'YouTube’s menu item wasn’t found. 0 native, {count} hidden locally only{capNote}')
                             .replace('{count}', String(picked.length))
                             .replace('{capNote}', capNote)
                         : t('bulkScrubDoneTpl', 'Scrubbed {count}: {native} native, {count} hidden locally{capNote}')
@@ -33606,7 +33606,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'disableLoudnessNormalization',
             name: t('feature_disableLoudnessNormalization_name', 'Keep Volume At Full'),
-            description: t('feature_disableLoudnessNormalization_desc', 'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization — that runs in a Web Audio node an extension cannot reach — so quiet videos stay quiet; only the volume slider stops drifting.'),
+            description: t('feature_disableLoudnessNormalization_desc', 'Stop YouTube nudging the player volume back down below 100%. This does NOT disable YouTube’s loudness normalization, which runs in a Web Audio node an extension can’t reach, so quiet videos stay quiet. Only the volume slider stops drifting.'),
             group: 'Video Player',
             icon: 'volume-x',
             pages: [PageTypes.WATCH],
@@ -34306,7 +34306,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'monetizationIndicator',
             name: 'Monetization Indicator',
-            description: 'Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available.',
+            description: 'Adds a pill under the title showing whether the video is monetized (has ads or a sponsorship overlay) or not. It’s a heuristic built from the paid promotion overlay, the sponsorship card, and SponsorBlock category data when available.',
             group: 'Ratings',
             icon: 'circle-dollar-sign',
             pages: [PageTypes.WATCH],
@@ -34842,7 +34842,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             async _runByoFallback(reason) {
-                const message = t('feature_aiVideoSummary_desc', 'On-device Summarizer unavailable; using the configured BYO-key AI Summary provider.');
+                const message = t('aiSummaryByoFallbackNotice', 'Using your configured BYO-key provider instead.');
                 const remote = getFeatureById('aiVideoSummary');
                 if (remote?._run) {
                     if (typeof showToast === 'function') showToast(message, '#f59e0b', { tone: 'warning' });
@@ -34938,7 +34938,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn.textContent = 'Local Summary';
                 this._btn.title = this._hasApi()
                     ? 'Summarize this video using your browser\u2019s built-in AI model.'
-                    : 'Chrome built-in Summarizer not detected — click to learn how to enable it.';
+                    : 'Chrome built-in Summarizer not detected. Click to learn how to enable it.';
                 this._btn.addEventListener('click', () => this._summarize());
                 anchor.insertAdjacentElement('afterend', this._btn);
             },
@@ -36787,7 +36787,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return;
                 }
                 if (typeof window.__ytkitSearchTranscripts !== 'function') {
-                    this._setResultsState(ul, 'Transcript Search Index is off — enable it first.', { tone: 'error' });
+                    this._setResultsState(ul, 'Transcript Search Index is off. Enable it first.', { tone: 'error' });
                     return;
                 }
                 const controller = new AbortController();
@@ -36918,7 +36918,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clearBtn.setAttribute('aria-busy', 'true');
                     clearBtn.textContent = 'Clearing…';
                     if (typeof window.__ytkitClearTranscriptIndex !== 'function') {
-                        if (typeof showToast === 'function') showToast('Transcript Search Index is off — enable it first.', '#f59e0b');
+                        if (typeof showToast === 'function') showToast('Transcript Search Index is off. Enable it first.', '#f59e0b');
                         clearBtn.disabled = false;
                         clearBtn.removeAttribute('aria-busy');
                         clearBtn.textContent = 'Clear local index';
@@ -37408,7 +37408,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'denseMode',
             name: 'Dense Mode',
-            description: 'Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube\'s native layout — only our own panels, chips, pills, and toolbars.',
+            description: 'Tightens row spacing, padding, and font metrics across Astra-injected surfaces. It doesn\'t change YouTube\'s native layout, only our own panels, chips, pills, and toolbars.',
             group: 'Theming',
             icon: 'rows-3',
             _styleElement: null,
@@ -37770,7 +37770,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'vlcMpvHandoff',
             name: 'VLC / MPV Stream Handoff',
-            description: 'GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off.',
+            description: 'GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS. Astra Deck never runs binaries directly. Default off.',
             group: 'Integrations',
             icon: 'cast',
             pages: [PageTypes.WATCH],
@@ -37842,7 +37842,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'astraContextMenu',
             name: 'Astra Context Menu',
-            description: 'Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click.',
+            description: 'Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off. It adds a contextmenu listener and never blocks the native YouTube right-click.',
             group: 'Integrations',
             icon: 'menu',
             _menuEl: null,
@@ -40269,7 +40269,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     behaviorSection.appendChild(createVideoHiderToggle({
                         key: 'hideVideosShowFilterReason',
                         title: t('videoHiderShowFilterReasonTitle', 'Explain hidden cards'),
-                        description: t('videoHiderShowFilterReasonDesc', 'Show a small note beside every card Astra Deck hides — from Video Hider, Hide Collaborations, Hide planned livestreams, or Remove Shorts — naming the feature and the rule that matched.'),
+                        description: t('videoHiderShowFilterReasonDesc', 'Show a small note beside every card Astra Deck hides, whether it came from Video Hider, Hide Collaborations, Hide planned livestreams, or Remove Shorts. The note names the feature and the rule that matched.'),
                         defaultChecked: false
                     }));
                     const removeCurrentPageBtn = document.createElement('button');
@@ -40969,7 +40969,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     if (result.ok) {
                         banner.dataset.state = 'ready';
-                        text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                        text.textContent = t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                             .replace('{version}', result.version ? ` (v${result.version})` : '');
                         // Add a "Check" refresh button
                         const refreshBtn = makeBannerButton(t('commonRefresh', 'Refresh'));
@@ -40981,7 +40981,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const r = await MediaDLManager.check(true);
                             banner.dataset.state = r.ok ? 'ready' : 'missing';
                             text.textContent = r.ok
-                                ? t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                                ? t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                                     .replace('{version}', r.version ? ` (v${r.version})` : '')
                                 : t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');
                             refreshBtn.textContent = t('commonRefresh', 'Refresh');
@@ -41004,7 +41004,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const r = await MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
                             if (r.ok) {
                                 banner.dataset.state = 'ready';
-                                text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                                text.textContent = t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                                     .replace('{version}', r.version ? ` (v${r.version})` : '');
                                 startBtn.textContent = t('settingsDlRunning', 'Running');
                                 startBtn.classList.add('is-success');
@@ -42457,7 +42457,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             }).join(', ');
                             const conflictReason = CONFLICT_MAP[featureId].reason || t('settingsConflictWithTpl', 'conflicts with {featureName}')
                                 .replace('{featureName}', getFeatureName(feature) || featureId);
-                            showToast(t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features} — {reason}')
+                            showToast(t('settingsAutoDisabledConflictTpl', 'Auto-disabled {features}. {reason}')
                                 .replace('{features}', conflictNames)
                                 .replace('{reason}', conflictReason), '#f59e0b', { duration: 5 });
                         }
@@ -44227,7 +44227,7 @@ html:not([dark]) .ytkit-feature-card--degraded .ytkit-feature-badge[data-tone="w
         if (isLiveChatFrame()) return;
         try {
             showToast(
-                t('storagePreloadFailed', 'Astra Deck could not read your saved settings. This page is running on defaults — reload to try again.'),
+                t('storagePreloadFailed', 'Astra Deck could not read your saved settings. This page is running on defaults, so reload to try again.'),
                 '#ef4444',
                 { tone: 'error', persistent: true }
             );
@@ -51061,7 +51061,7 @@ html:not([dark]) .ytkit-sb-channel-chip {
 
         if (isSafeMode) {
             console.log('%c[YTKit] SAFE MODE — All features disabled. ytkit.unsafe() to exit.', 'color:#f97316;font-weight:bold;font-size:16px;');
-            showToast('SAFE MODE — All features disabled. Console: ytkit.unsafe() to exit.', '#f97316', { duration: 10 });
+            showToast('SAFE MODE. All features disabled. Run ytkit.unsafe() in the console to exit.', '#f97316', { duration: 10 });
         } else {
             // TIER 0: Critical — CSS-only, Theater Split.
             //         Must run synchronously before any page content paints.

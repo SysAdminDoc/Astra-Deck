@@ -36,7 +36,7 @@ const QUICK_TOGGLES = [
     { key: 'privacyDataFlowPanel',   group: 'Privacy',      nameKey: 'qt_privacyDataFlowPanel_name', nameFallback: 'Data-Flow Panel',     descKey: 'qt_privacyDataFlowPanel_desc', descFallback: 'Show every API origin Astra Deck can contact' },
     { key: 'syncSettings',           group: 'Privacy',      nameKey: 'qt_syncSettings_name',          nameFallback: 'Browser Sync',        descKey: 'qt_syncSettings_desc',          descFallback: 'Opt in to sync safe preferences and Video Hider blocklists' },
     { key: 'safeStoreProfile',       group: 'Privacy',      nameKey: 'qt_safeStoreProfile_name',      nameFallback: 'Store-Safe Profile',  descKey: 'qt_safeStoreProfile_desc',      descFallback: 'Hide github-full toggles + scrub keys on export' },
-    { key: 'githubFullProfile',      group: 'Privacy',      nameKey: 'qt_githubFullProfile_name',     nameFallback: 'GitHub-Full Profile', descKey: 'qt_githubFullProfile_desc',     descFallback: 'Unlock github-full toggles (e.g. Cobalt, AI keys)' },
+    { key: 'githubFullProfile',      group: 'Privacy',      nameKey: 'qt_githubFullProfile_name',     nameFallback: 'GitHub-Full Profile', descKey: 'qt_githubFullProfile_desc',     descFallback: 'Turn on github-full toggles such as Cobalt and AI keys' },
 ];
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -309,7 +309,7 @@ function initLanguageDropdown() {
             };
             const detected = NATIVE[ui] || NATIVE[ui.split('-')[0]] || ui || '?';
             const baseLabel = t('languageAuto', 'Auto (browser default)');
-            autoOpt.textContent = t('languageAutoDetectedTpl', '{label} — {detected}')
+            autoOpt.textContent = t('languageAutoDetectedTpl', '{label} ({detected})')
                 .replace('{label}', baseLabel)
                 .replace('{detected}', detected);
         }
@@ -1531,7 +1531,7 @@ async function reconcileCobaltGrantTransition(previousSettings, nextSettings) {
 function formatPermissionCleanupFailure(cleanup) {
     if (cleanup?.ok !== false) return '';
     return t('dataFlowGrantRemoveFailedTpl', 'Could not remove site access for {host}.')
-        .replace('{host}', cleanup.hostname || t('optionalHostUnknown', 'the previous host'));
+        .replace('{host}', cleanup.hostname || t('optionalHostPrevious', 'the previous host'));
 }
 
 async function writeSetting(key, value) {
@@ -2026,7 +2026,7 @@ async function deleteAiCredential() {
         // in this surface restores on undo; the one that cannot must say so
         // rather than reading like the reversible ones.
         showStatus(
-            t('aiCredentialDeleted', 'AI credential deleted. This cannot be undone — re-enter the key to use AI features again.'),
+            t('aiCredentialDeleted', 'AI credential deleted. This can\'t be undone, so re-enter the key to use AI features again.'),
             'success',
             5200
         );
@@ -2086,7 +2086,7 @@ function createSchemaRiskBadge(key) {
             api:               'Talks to an external API server',
             'local-companion': 'Talks to the local Astra Downloader (127.0.0.1)',
             experimental:      'Experimental feature; behaviour may change',
-            'store-risk':      'Higher review-policy sensitivity — github-full only'
+            'store-risk':      'Higher review-policy sensitivity. GitHub-full only.'
         }[entry.risk]) || ('Risk band: ' + entry.risk));
     span.setAttribute('aria-label', span.title);
     return span;
@@ -2427,8 +2427,8 @@ async function renderSettingsSyncStatus() {
             return;
         }
         settingsSyncStatus.textContent = result.enabled
-            ? t('settingsSyncOn', 'On — preferences and blocklists sync through your browser account.')
-            : t('settingsSyncOff', 'Off — this device only.');
+            ? t('settingsSyncOn', 'On. Preferences and blocklists sync through your browser account.')
+            : t('settingsSyncOff', 'Off. This device only.');
         if (settingsSyncUndoButton) settingsSyncUndoButton.hidden = result.hasUndo !== true;
     } catch (error) {
         settingsSyncCard.hidden = false;
@@ -2488,7 +2488,7 @@ function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bo
         const extra = corruption.length > 3 ? ` (+${corruption.length - 3} more)` : '';
         storageBanner.dataset.tier = 'corruption';
         storageBannerDetail.textContent =
-            t('storageBannerCorruptionTpl', 'Storage data malformed — Reset to recover.')
+            t('storageBannerCorruptionTpl', 'Storage data is malformed. Choose Reset to recover.')
             + ' ' + summary + extra;
         storageBanner.hidden = false;
         // Record to DiagnosticLog ring (per ROADMAP plan: storage-
@@ -2512,7 +2512,7 @@ function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bo
     if (Number.isFinite(hiddenVideos) && hiddenVideos > 0) parts.push(hiddenVideos + ' hidden');
     if (Number.isFinite(blockedChannels) && blockedChannels > 0) parts.push(blockedChannels + ' blocked');
     if (Number.isFinite(bookmarks) && bookmarks > 0) parts.push(bookmarks + ' bookmarks');
-    const contributors = parts.length ? ' — ' + parts.join(' · ') : '';
+    const contributors = parts.length ? ': ' + parts.join(' · ') : '';
     const baseTpl = tier === 'hard'
         // The extension declares unlimitedStorage, so there is no ceiling to
         // head toward, and steering at Reset offered a full wipe as the answer
@@ -2729,7 +2729,7 @@ async function copySelectorHealthReport() {
             { timeoutMs: 1500 }
         );
         if (!response || response.ok === false || !Array.isArray(response.surfaces)) {
-            setStatus(t('selectorHealthCopyNoSnap', 'No snapshot available — the page may still be loading.'));
+            setStatus(t('selectorHealthCopyNoSnap', 'No snapshot available. The page may still be loading.'));
             return;
         }
         // Formatter is bundled via core/selector-health.js; defensive
@@ -2784,7 +2784,7 @@ async function copySelectorHealthReport() {
         // ancient textarea-execCommand approach without a console warning
         // bubbling out of the .catch.
         setStatus(await copyTextToClipboard(payload)
-            ? t('selectorHealthCopyDone', 'Copied — paste into a GitHub issue.')
+            ? t('selectorHealthCopyDone', 'Copied. Paste it into a GitHub issue.')
             : t('selectorHealthCopySaveFallback', 'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.'));
     } catch (_) {
         // reason: any unexpected failure must not break the popup
@@ -4223,7 +4223,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     label.textContent = visibleLabel;
     const overrideDesc = typeof entry.descriptionKey === 'string' && entry.descriptionKey.trim();
     label.title = overrideDesc
-        ? `${entry.key} — ${overrideDesc}`
+        ? `${entry.key}: ${overrideDesc}`
         : entry.key;
     row.appendChild(label);
 
@@ -4874,7 +4874,7 @@ function renderHealthBanner(diagnostics) {
     const eventWord = tt.count === 1 ? t('healthEventSingular', 'event') : t('healthEventPlural', 'events');
     const countLabel = tt.count + ' ' + eventWord;
     // Message was already URL-redacted at the ytkit.js capture site.
-    healthDetail.textContent = t('healthFallbackPrefix', 'TrustedTypes fallback active') + ' — ' + countLabel + '. ' + tt.latestMessage;
+    healthDetail.textContent = t('healthFallbackPrefix', 'TrustedTypes fallback active') + ': ' + countLabel + '. ' + tt.latestMessage;
     healthBanner.hidden = false;
     const tsText = tt.latestTs ? new Date(tt.latestTs).toISOString() : 'unknown-time';
     healthCopyPayload =
@@ -4891,7 +4891,7 @@ if (healthCopyBtn) {
             await navigator.clipboard.writeText(healthCopyPayload);
             showStatus(t('statusDiagCopied', 'Diagnostic copied to clipboard.'), 'ok', 2400);
         } catch (_) {
-            showStatus(t('statusClipboardUnavailable', 'Clipboard unavailable — see browser console.'), 'error', 3600);
+            showStatus(t('statusClipboardUnavailable', 'Clipboard unavailable. Check the browser console for details.'), 'error', 3600);
             console.error('[Astra Deck popup] health-copy payload:\n' + healthCopyPayload);
         }
     });
@@ -4943,7 +4943,7 @@ function redactBugReportSettings(settings) {
         if (!BUG_REPORT_REDACTED_KEYS.includes(key) && !scrubByPolicy(key)) continue;
         const v = out[key];
         if (typeof v === 'string' && v.length > 0) {
-            out[key] = `[redacted — ${v.length} chars]`;
+            out[key] = `[redacted, ${v.length} chars]`;
         } else if (v !== undefined && v !== null && typeof v !== 'string') {
             // Non-string secret-shaped values (unexpected, but possible
             // via import) are masked outright — presence stays visible.
@@ -6029,7 +6029,7 @@ async function clearConfiguredFilterListUrl() {
         } else {
             showStatus(t('filterListStoppedTpl',
                 'Stopped following {host}. No filter-list-only site access remains.')
-                .replace('{host}', configured.ok ? configured.hostname : t('optionalHostUnknown', 'the previous host')),
+                .replace('{host}', configured.ok ? configured.hostname : t('optionalHostPrevious', 'the previous host')),
             'success', 3600);
         }
     } catch (error) {
@@ -6062,7 +6062,7 @@ async function importSettings(file) {
             // and the diagnostic bundle, and tell the user what a backup is.
             console.warn('[Astra Deck popup] Settings import parse failed:', parseError);
             throw new Error(t('statusImportNotBackup',
-                'That file is not an Astra Deck backup. Choose the .json file produced by Export — a valid backup contains an "exportVersion" field.'));
+                'That file is not an Astra Deck backup. Choose the .json file produced by Export. A valid backup contains an "exportVersion" field.'));
         }
         // Version validation happens before any snapshot or write. A backup
         // from a future Astra version must be a strict no-op, not a best-effort
@@ -6203,7 +6203,7 @@ async function undoImportSettings() {
         if (!snap || Object.keys(snap).length === 0) {
             setUndoImportVisible(false);
             showStatus(t('statusImportUndoExpired',
-                'Undo Import is no longer available - the undo point expired after 7 days.'),
+                'Undo Import is no longer available. The undo point expired after 7 days.'),
                 'error', 4200);
             return;
         }
@@ -6298,7 +6298,7 @@ async function reenableMediadlPrompts() {
         if (ok) {
             reenableMediadlButton.hidden = true;
             showStatus(t('statusMediadlReenabled',
-                'Astra Downloader install prompts re-enabled — reload a YouTube tab to see them.'),
+                'Astra Downloader install prompts re-enabled. Reload a YouTube tab to see them.'),
                 'success', 4200);
         } else {
             showStatus(t('statusMediadlReenableFail',
@@ -6395,7 +6395,7 @@ async function updateYtdlpNow() {
         const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_UPDATE_YTDLP');
         if (result?.noYouTubeTab) {
             showStatus(t('statusUpdateYtdlpNoTab',
-                'Open a YouTube tab first — the popup needs it to reach the Astra Downloader.'),
+                'Open a YouTube tab first. The popup needs one to reach Astra Downloader.'),
                 'error', 5200);
             return;
         }
@@ -6430,7 +6430,7 @@ async function updateYtdlpNow() {
                     .replace('{version}', result.version_after || result.rollback_version || '?')
                 : '';
             // Same reasoning — t() would lose the stderr appendix.
-            showStatus(t('statusYtdlpUpdateFailedTpl', 'yt-dlp update failed — {error}{recovery}')
+            showStatus(t('statusYtdlpUpdateFailedTpl', 'yt-dlp update failed. {error}{recovery}')
                 .replace('{error}', err)
                 .replace('{recovery}', recovery), 'error', 7200);
         }
@@ -6451,7 +6451,7 @@ async function updateCompanionNow() {
         const result = await sendPopupBridgeMessageToYouTubeTabs('YTKIT_UPDATE_COMPANION');
         if (result?.noYouTubeTab) {
             showStatus(t('statusUpdateYtdlpNoTab',
-                'Open a YouTube tab first — the popup needs it to reach the Astra Downloader.'),
+                'Open a YouTube tab first. The popup needs one to reach Astra Downloader.'),
                 'error', 5200);
             return;
         }
@@ -6470,7 +6470,7 @@ async function updateCompanionNow() {
             }
         } else {
             const err = (result && result.error) || t('statusUpdateFailed', 'Update failed.');
-            showStatus(t('statusCompanionUpdateFailedTpl', 'Astra Downloader update failed — {error}')
+            showStatus(t('statusCompanionUpdateFailedTpl', 'Astra Downloader update failed. {error}')
                 .replace('{error}', err), 'error', 7200);
         }
     } finally {
@@ -6942,7 +6942,7 @@ async function undoResetAllData() {
             // consumed it). Hide the button and report.
             setUndoResetVisible(false);
             showStatus(t('statusResetUndoExpired',
-                'Undo no longer available — the undo point expired after 7 days.'),
+                'Undo is no longer available. The undo point expired after 7 days.'),
                 'error', 4200);
             return;
         }
@@ -6961,7 +6961,7 @@ async function undoResetAllData() {
             void broadcastSettingsReplaced(restoredLocal[STORAGE_KEYS.settings]);
         }
         setUndoResetVisible(false);
-        showStatus(t('statusResetUndone', 'Reset undone — all data restored.'), 'success', 3200);
+        showStatus(t('statusResetUndone', 'Reset undone. All data restored.'), 'success', 3200);
     } catch (error) {
         showStatus(failureText('data-reset-undo', error, 'statusResetUndoFail', 'Undo failed'), 'error', 4200);
     } finally {

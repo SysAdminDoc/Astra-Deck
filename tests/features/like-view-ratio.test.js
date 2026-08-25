@@ -17,10 +17,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { loadFeature } = require('../helpers/monolith');
-
-const source = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'extension', 'ytkit.js'), 'utf8');
+const { fakeNode, fakeTreeDocument, loadFeature } = require('../helpers/monolith');
 
 /** The calibration note names the metric and the bands; assert on code only. */
 function stripComments(text) {
@@ -28,14 +25,6 @@ function stripComments(text) {
         .split('\n')
         .filter(line => !/^\s*(\/\/|\*|\/\*)/.test(line))
         .join('\n');
-}
-
-function featureBlock() {
-    const start = source.indexOf("id: 'likeViewRatio'");
-    assert.ok(start > -1, 'likeViewRatio block should exist');
-    const end = source.indexOf('\n        },\n', start);
-    assert.ok(end > start, 'likeViewRatio block should terminate');
-    return stripComments(source.slice(start, end));
 }
 
 test('like-rate tone bands are explicit, ordered, and frozen', () => {
@@ -86,14 +75,38 @@ test('an inflated view denominator only ever grades down, never up', () => {
         'a larger denominator must not produce a better tone');
 });
 
-test('the badge reports the counts it divided so the verdict is auditable', () => {
-    const body = featureBlock();
+test('the rendered badge reports the counts it divided and replaces itself in place', () => {
+    const view = fakeNode({ tag: 'span', text: '1.5M views' });
+    const row = fakeNode({ tag: 'div', children: [view] });
+    const like = fakeNode({ tag: 'button', attributes: { 'aria-label': '90,000 likes' } });
+    const documentRef = fakeTreeDocument((selector) => {
+        if (selector.startsWith('#info-container')) return [view];
+        if (selector.startsWith('like-button-view-model')) return like;
+        return null;
+    });
+    const feature = loadFeature('likeViewRatio', {
+        document: documentRef,
+        isWatchPagePath: () => true
+    });
 
-    assert.match(body, /badge\.title\s*=/, 'the badge should carry a tooltip');
-    assert.match(body, /_formatCount\(likes\)/, 'the tooltip should report the like count it used');
-    assert.match(body, /_formatCount\(views\)/, 'the tooltip should report the view count it used');
-    assert.match(body, /setAttribute\('aria-label'/,
-        'the same figures should reach assistive technology, not only the tooltip');
+    feature._calculate();
+    feature._calculate();
+
+    assert.equal(row.children.length, 2, 'recalculation replaces the prior badge');
+    const badge = row.children[1];
+    assert.equal(badge.className, 'ytkit-lv-ratio');
+    assert.equal(badge.dataset.state, 'strong');
+    assert.equal(badge.children[0].textContent, '6.0%');
+    assert.equal(badge.children[1].textContent, 'Like Rate');
+    assert.equal(badge.title, '90,000 likes from 1,500,000 views');
+    assert.equal(
+        badge.getAttribute('aria-label'),
+        'Like rate 6.0% based on 90,000 likes and 1,500,000 views'
+    );
+    assert.equal(badge.getAttribute('translate'), 'no');
+
+    feature.destroy();
+    assert.deepEqual(row.children, [view]);
 });
 
 test('the userscript copy sizes a compact view count instead of stripping it', () => {

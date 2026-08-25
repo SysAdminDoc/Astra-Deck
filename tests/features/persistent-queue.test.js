@@ -156,7 +156,7 @@ test('persistentQueue renders a row per entry with its move and remove controls'
     assert.equal(rows.length, 3);
     assert.deepEqual(pluck(byClass(panel, 'ytkit-queue-title'), 'textContent'), ['Alpha', 'Beta', 'Gamma']);
     assert.equal(byClass(panel, 'ytkit-queue-title')[0].href, 'https://www.youtube.com/watch?v=aaaaaaaaaaa');
-    assert.equal(byClass(panel, 'ytkit-queue-title')[0].title, 'Alpha — Chan A');
+    assert.equal(byClass(panel, 'ytkit-queue-title')[0].title, 'Alpha by Chan A');
     assert.equal(byClass(panel, 'ytkit-queue-title')[1].title, 'Beta', 'no channel means no dangling separator');
 
     // The ends of the list cannot move further, and that has to show.

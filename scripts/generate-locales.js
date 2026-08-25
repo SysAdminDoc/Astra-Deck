@@ -9860,6 +9860,56 @@ const ALT_FRONTEND_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(ALT_FRONTEND_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// Two keys that repair a wrong-key reuse. The BYO-key fallback notice used
+// to render `feature_aiVideoSummary_desc`, so a runtime toast showed the
+// feature blurb; and the host name slot rendered `optionalHostUnknown`,
+// the noun phrase "optional host access", producing "Could not remove site
+// access for optional host access."
+const WRONG_KEY_REPAIR_TRANSLATIONS = {
+  ar: {
+    'Using your configured BYO-key provider instead.': "بدلاً من ذلك يتم استخدام مزوّدك المُعدّ بمفتاحك الخاص.",
+    'the previous host': "المضيف السابق"
+  },
+  de: {
+    'Using your configured BYO-key provider instead.': "Stattdessen wird dein konfigurierter BYO-Key-Anbieter verwendet.",
+    'the previous host': "der vorherige Host"
+  },
+  es: {
+    'Using your configured BYO-key provider instead.': "Se usará el proveedor con tu propia clave que configuraste.",
+    'the previous host': "el host anterior"
+  },
+  fr: {
+    'Using your configured BYO-key provider instead.': "Le fournisseur configuré avec votre propre clé est utilisé à la place.",
+    'the previous host': "l’hôte précédent"
+  },
+  it: {
+    'Using your configured BYO-key provider instead.': "Viene invece usato il provider con la tua chiave configurata.",
+    'the previous host': "l’host precedente"
+  },
+  ja: {
+    'Using your configured BYO-key provider instead.': "代わりに、設定済みの BYO キーのプロバイダーを使用します。",
+    'the previous host': "以前のホスト"
+  },
+  ko: {
+    'Using your configured BYO-key provider instead.': "대신 설정한 BYO 키 공급자를 사용합니다.",
+    'the previous host': "이전 호스트"
+  },
+  pt_BR: {
+    'Using your configured BYO-key provider instead.': "Usando o provedor com sua própria chave que você configurou.",
+    'the previous host': "o host anterior"
+  },
+  ru: {
+    'Using your configured BYO-key provider instead.': "Вместо этого используется настроенный вами провайдер с собственным ключом.",
+    'the previous host': "предыдущий хост"
+  },
+  zh_CN: {
+    'Using your configured BYO-key provider instead.': "改用你配置的自带密钥提供方。",
+    'the previous host': "上一个主机"
+  }
+};
+for (const [locale, messages] of Object.entries(WRONG_KEY_REPAIR_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+
 
 
 

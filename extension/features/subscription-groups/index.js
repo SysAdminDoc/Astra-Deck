@@ -1011,7 +1011,7 @@
                         if (candidates.length > 12) {
                             const more = document.createElement('div');
                             more.className = 'ytkit-sub-digest-empty';
-                            more.textContent = t('subscriptionHealthMoreTpl', '+{count} more — use Stage Stale in the toolbar to stage every candidate at once.')
+                            more.textContent = t('subscriptionHealthMoreTpl', '+{count} more. Use Stage Stale in the toolbar to stage every candidate at once.')
                                 .replace('{count}', String(candidates.length - 12));
                             staleList.appendChild(more);
                         }
@@ -1929,7 +1929,7 @@
                 if (!titles.length) {
                     if (typeof showToast === 'function') showToast(t(
                         'subscriptionAiTagsNoCards',
-                        'No matching cards rendered yet — scroll the feed and try again.'
+                        'No matching cards rendered yet. Scroll the feed, then try again.'
                     ), '#f59e0b');
                     return;
                 }
@@ -2503,7 +2503,7 @@
                 const notice = document.createElement('div');
                 notice.className = 'ytkit-sub-group-empty';
                 notice.setAttribute('role', 'status');
-                notice.textContent = t('subscriptionGroupEmpty', 'No channels in this group yet — click Edit Channels to add some.');
+                notice.textContent = t('subscriptionGroupEmpty', 'No channels in this group yet. Choose Edit Channels to add some.');
                 this._toolbar.insertAdjacentElement('afterend', notice);
             },
 
@@ -2562,7 +2562,7 @@
                 const titleWrap = document.createElement('div');
                 const title = document.createElement('h3');
                 title.className = 'ytkit-sub-members-title';
-                title.textContent = t('subscriptionMembersTitleTpl', 'Edit channels — {group}')
+                title.textContent = t('subscriptionMembersTitleTpl', 'Edit channels in {group}')
                     .replace('{group}', group.name || groupId);
                 const meta = document.createElement('div');
                 meta.className = 'ytkit-sub-members-meta';
@@ -2611,7 +2611,7 @@
                 if (!channels.size) {
                     const empty = document.createElement('div');
                     empty.className = 'ytkit-sub-members-empty';
-                    empty.textContent = t('subscriptionMembersEmpty', 'No channels rendered yet — scroll the subscriptions feed, then reopen this panel.');
+                    empty.textContent = t('subscriptionMembersEmpty', 'No channels rendered yet. Scroll the subscriptions feed, then reopen this panel.');
                     list.appendChild(empty);
                 }
 

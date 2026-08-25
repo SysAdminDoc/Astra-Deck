@@ -774,7 +774,7 @@
                     }
                     if (result.nativeChannelRequired) return result;
                 }
-                DebugManager.log('MediaDL', 'Auto-start failed — server did not respond');
+                DebugManager.log('MediaDL', 'Auto-start failed. The server did not respond.');
                 return { ok: false };
             },
 
@@ -1372,7 +1372,7 @@
                     setProgressState(
                         'active',
                         t('dlProgressStateReconnecting', 'Reconnecting'),
-                        t('dlProgressReconnectingCopy', 'Momentary hiccup with Astra Downloader — retrying automatically.')
+                        t('dlProgressReconnectingCopy', 'Momentary hiccup with Astra Downloader. Retrying automatically.')
                     );
                 }
                 if (!stopped && panel.isConnected) {
@@ -2058,7 +2058,7 @@
                     chip.setAttribute('aria-disabled', String(!honored));
                     chip.title = honored
                         ? ''
-                        : t('dlPopupFormatsRungUnavailableTpl', 'Not available — this video tops out at {max}p')
+                        : t('dlPopupFormatsRungUnavailableTpl', 'Not available. This video tops out at {max}p')
                             .replace('{max}', String(maxHeight));
                     if (!honored && selectedQuality === option.value) {
                         adjusted = true;
@@ -2866,7 +2866,7 @@
         const downloadStreamLinksPanel = {
             id: 'downloadStreamLinksPanel',
             name: t('feature_downloadStreamLinksPanel_name', 'Stream Links Panel'),
-            description: t('feature_downloadStreamLinksPanel_desc', 'Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off.'),
+            description: t('feature_downloadStreamLinksPanel_desc', 'Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local only, no telemetry. Useful for yt-dlp or VLC handoff. Default off.'),
             group: 'Downloads',
             icon: 'link',
             pages: [PageTypes.WATCH],
@@ -2976,7 +2976,7 @@
 
                 if (!formats.length && !adaptive.length) {
                     const empty = document.createElement('div');
-                    empty.textContent = t('dlStreamEmpty', 'No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate.');
+                    empty.textContent = t('dlStreamEmpty', 'No stream URLs parsed. YouTube may have served SABR-only formats. Astra Downloader handles those through youtube:formats=duplicate.');
                     panel.appendChild(empty);
                 } else {
                     renderList('Combined (legacy)', formats);
@@ -3154,7 +3154,7 @@
         const downloadHistoryPanel = {
             id: 'downloadHistoryPanel',
             name: t('feature_downloadHistoryPanel_name', 'Download History Panel'),
-            description: t('feature_downloadHistoryPanel_desc', 'Adds a searchable, pageable, exportable view of download history recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session.'),
+            description: t('feature_downloadHistoryPanel_desc', 'Adds a searchable, pageable, exportable view of download history recorded by Astra Downloader. Local only, fetched from the local /history endpoint once per session.'),
             group: 'Downloads',
             icon: 'history',
             pages: [PageTypes.WATCH],
@@ -3323,7 +3323,7 @@
                 const end = data.offset + history.length;
                 count.textContent = t(
                     'dlHistoryCount',
-                    '{start}–{end} of {filtered} filtered · {total} retained'
+                    '{start}-{end} of {filtered} filtered · {total} retained'
                 )
                     .replace('{start}', String(start))
                     .replace('{end}', String(end))

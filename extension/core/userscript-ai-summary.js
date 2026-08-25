@@ -158,7 +158,7 @@
             artifactsClean = clean;
             artifactsCleanSource = null;
             const onWriteFailure = () => {
-                showToast(t('aiSummarySaveFailed', 'Saving the summary failed — it may disappear after a reload.'), '#ef4444');
+                showToast(t('aiSummarySaveFailed', 'Saving the summary failed. It may disappear after a reload.'), '#ef4444');
             };
             try {
                 if (typeof options.writeArtifactStore === 'function') {
@@ -550,7 +550,7 @@
                         this._showPanel(`On-device summary (no provider credential)\n\n${localSummary}`);
                         return;
                     }
-                    const fallbackNotice = t('feature_aiVideoSummary_desc', 'On-device Summarizer unavailable; using the configured BYO-key provider.');
+                    const fallbackNotice = t('aiSummaryByoFallbackNotice', 'Using your configured BYO-key provider instead.');
                     showToast(fallbackNotice, '#f59e0b', { tone: 'warning' });
                     this._showPanel(`${fallbackNotice}\n\n${transcript.prepared.truncated
                         ? t('aiSummaryCallingTruncated', 'Calling AI provider with the first 120,000 transcript characters…')

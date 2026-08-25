@@ -132,7 +132,7 @@
         'rate-limited': 'rate limited',
         'server-error': 'server error',
         'client-error': 'request rejected',
-        'permission-denied': 'host access needed — re-enable in Settings',
+        'permission-denied': 'host access needed, re-enable in Settings',
         'invalid-payload': 'unexpected response',
         'network-error': 'network error',
         'no-data': 'nothing for this video',
@@ -204,7 +204,7 @@
         if (record.state === 'rate-limited' || Number(record.cooldownUntilTs) > effectiveNow) {
             const resetMs = record.requestBudget?.resetMs;
             parts.push(Number.isFinite(resetMs) && resetMs > 0
-                ? `rate limited — retrying in ${formatAge(resetMs)}`
+                ? `rate limited, retrying in ${formatAge(resetMs)}`
                 : 'rate limited');
         } else if (record.state !== 'ok') {
             parts.push(reason);

@@ -881,10 +881,10 @@
         } else {
             for (const highlight of bundle.highlights) {
                 const kind = highlight.kind === 'bookmark' ? 'Bookmark' : 'Summary';
-                const source = highlight.sourceText ? ` — _Transcript:_ ${escapeMarkdown(highlight.sourceText)}` : '';
+                const source = highlight.sourceText ? ` _Transcript:_ ${escapeMarkdown(highlight.sourceText)}` : '';
                 const note = highlight.note && highlight.note !== highlight.text
-                    ? ` — _Note:_ ${escapeMarkdown(highlight.note)}` : '';
-                lines.push(`- **${kind}** [${highlight.timestamp}](${highlight.url}) — ${escapeMarkdown(highlight.text)}${source}${note}`);
+                    ? ` _Note:_ ${escapeMarkdown(highlight.note)}` : '';
+                lines.push(`- **${kind}** [${highlight.timestamp}](${highlight.url}) ${escapeMarkdown(highlight.text)}${source}${note}`);
             }
             lines.push('');
         }

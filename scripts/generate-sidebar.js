@@ -23,8 +23,8 @@ const REPO_ROOT = path.join(__dirname, '..');
 const SOURCE = path.join(REPO_ROOT, 'extension', 'sidepanel.html');
 const OUTPUT = path.join(REPO_ROOT, 'extension', 'sidebar.html');
 
-const TITLE_FROM = '<title data-i18n="sidepanelDocTitle">Astra Deck - Dashboard</title>';
-const TITLE_TO = '<title data-i18n="sidebarDocTitle">Astra Deck - Firefox Sidebar</title>';
+const TITLE_FROM = '<title data-i18n="sidepanelDocTitle">Astra Deck: Dashboard</title>';
+const TITLE_TO = '<title data-i18n="sidebarDocTitle">Astra Deck: Firefox Sidebar</title>';
 
 const BANNER = '<!-- GENERATED FROM sidepanel.html by scripts/generate-sidebar.js -- do not edit directly. -->';
 

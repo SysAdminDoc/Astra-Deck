@@ -2503,7 +2503,7 @@ function buildSettingsPanel() {
 
                     if (result.ok) {
                         banner.dataset.state = 'ready';
-                        text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                        text.textContent = t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                             .replace('{version}', result.version ? ` (v${result.version})` : '');
                         // Add a "Check" refresh button
                         const refreshBtn = makeBannerButton(t('commonRefresh', 'Refresh'));
@@ -2514,7 +2514,7 @@ function buildSettingsPanel() {
                             const r = await MediaDLManager.check(true);
                             banner.dataset.state = r.ok ? 'ready' : 'missing';
                             text.textContent = r.ok
-                                ? t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                                ? t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                                     .replace('{version}', r.version ? ` (v${r.version})` : '')
                                 : t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');
                             refreshBtn.textContent = t('commonRefresh', 'Refresh');
@@ -2541,7 +2541,7 @@ function buildSettingsPanel() {
                             const r = await MediaDLManager.tryAutoStart();
                             if (r.ok) {
                                 banner.dataset.state = 'ready';
-                                text.textContent = t('settingsDlRunningTpl', 'Running{version} — yt-dlp server ready')
+                                text.textContent = t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                                     .replace('{version}', r.version ? ` (v${r.version})` : '');
                                 startBtn.textContent = t('settingsDlRunning', 'Running');
                                 startBtn.classList.add('is-success');
@@ -3852,7 +3852,7 @@ function attachUIEventListeners() {
                             ).replace('{featureName}', getFeatureName(feature) || featureId);
                             showToast(t(
                                 'settingsAutoDisabledConflictTpl',
-                                'Auto-disabled {features} — {reason}'
+                                'Auto-disabled {features}. {reason}'
                             ).replace('{features}', conflictNames).replace('{reason}', conflictReason), '#f59e0b', { duration: 5 });
                         }
                     }

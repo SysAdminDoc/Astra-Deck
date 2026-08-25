@@ -203,7 +203,7 @@
         const entry = normalizeScheduleEntry(schedule);
         if (!entry) return null;
         const everyDay = entry.days.length === 7;
-        const window = `${entry.start}–${entry.end}`;
+        const window = `${entry.start}-${entry.end}`;
         if (everyDay) {
             return t('featureScheduleEveryDayTpl', 'Active {window} every day').replace('{window}', window);
         }

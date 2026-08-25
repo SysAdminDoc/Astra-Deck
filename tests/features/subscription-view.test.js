@@ -12,6 +12,7 @@ const {
     parseRelativeAgeMs,
     sortLoadedCards
 } = require('../../extension/features/subscription-view/index.js');
+const { collectFakeTree, fakeNode, fakeTreeDocument } = require('../helpers/monolith');
 
 class FakeCard {
     constructor(label, metadata) {
@@ -122,14 +123,77 @@ test('view and order settings fail closed to their persisted defaults', () => {
     assert.equal(normalizeOrderMode('unexpected'), 'native');
 });
 
-test('subscription layouts preserve native semantic content and actions', () => {
+function controlsHarness({ groupToolbar = null } = {}) {
+    const browse = fakeNode({ tag: 'ytd-browse' });
+    const feed = fakeNode({ tag: 'ytd-rich-grid-renderer' });
+    const host = fakeNode({ tag: 'div', children: groupToolbar ? [groupToolbar, feed] : [feed] });
+    for (const node of [host, groupToolbar].filter(Boolean)) {
+        node.querySelectorAll = (selector) => collectFakeTree(node, selector);
+        node.querySelector = (selector) => node.querySelectorAll(selector)[0] || null;
+    }
+    const documentRef = fakeTreeDocument((selector) => {
+        if (selector.includes('ytd-browse')) return browse;
+        if (selector === 'ytd-rich-grid-renderer, ytd-section-list-renderer') return feed;
+        if (selector === '.ytkit-sub-toolbar') return groupToolbar;
+        if (selector.includes('ytd-rich-grid-renderer #contents')) return [];
+        if (selector.includes('data-ytkit-sub-view-original-index')) return [];
+        return null;
+    });
+    documentRef.body.appendChild(browse);
+    browse.appendChild(host);
+    const saves = [];
+    const feature = require('../../extension/features/subscription-view/index.js').createSubscriptionViewFeature({
+        appState: { settings: { subscriptionViewMode: 'list', subscriptionOrderMode: 'newest-loaded' } },
+        settingsManager: { save: (settings) => saves.push({ ...settings }) },
+        documentRef,
+        windowRef: { location: { pathname: '/feed/subscriptions' } },
+        getSurfaceSelectorChain: () => ['ytd-browse'],
+        injectStyle: () => ({ remove() {} }),
+        schedule: () => 1,
+        cancelSchedule() {}
+    });
+    feature.init();
+    feature._mountControls();
+    return { browse, documentRef, feature, feed, groupToolbar, host, saves };
+}
+
+test('subscription layouts render one labelled toolbar with persistent view state', () => {
+    const { browse, feature, feed, host, saves } = controlsHarness();
+
+    assert.equal(host.children.length, 2);
+    const toolbar = host.children[0];
+    assert.equal(host.children[1], feed, 'the controls attach before the native feed');
+    assert.equal(toolbar.className, 'ytkit-sub-view-toolbar');
+    assert.equal(toolbar.getAttribute('role'), 'toolbar');
+    assert.equal(toolbar.getAttribute('aria-label'), 'Subscription view controls');
+    const controls = toolbar.querySelector('.ytkit-sub-view-controls');
+    assert.equal(controls.getAttribute('role'), 'group');
+    const buttons = controls.querySelectorAll('button[data-view-mode]');
+    assert.equal(buttons.length, 3);
+    assert.deepEqual(buttons.map((button) => button.textContent), ['Grid', 'List', 'Compact']);
+    assert.equal(buttons[1].getAttribute('aria-pressed'), 'true');
+    const select = controls.querySelector('#ytkit-sub-view-order');
+    assert.ok(select);
+    assert.equal(select.children.length, 2);
+    assert.equal(select.children[1].textContent, 'Newest first (loaded only)');
+
+    const compactClick = [...buttons[2].listeners.get('click')][0];
+    compactClick();
+    assert.equal(buttons[2].getAttribute('aria-pressed'), 'true');
+    assert.equal(buttons[1].getAttribute('aria-pressed'), 'false');
+    assert.equal(browse.getAttribute('data-ytkit-subscription-view'), 'compact');
+    assert.equal(saves.at(-1).subscriptionViewMode, 'compact');
+
+    feature.destroy();
+    assert.equal(host.querySelector('.ytkit-sub-view-toolbar'), null);
+    assert.equal(browse.hasAttribute('data-ytkit-subscription-view'), false);
+});
+
+test('subscription layout stylesheet preserves native lockup semantics and actions', () => {
     const source = fs.readFileSync(
         path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-view', 'index.js'),
         'utf8'
     );
-    assert.match(source, /aria-pressed/);
-    assert.match(source, /role', 'toolbar'/);
-    assert.match(source, /Newest first \(loaded only\)/);
     assert.match(source, /ytLockupMetadataViewModelDescription/);
     assert.match(source, /ytLockupViewModelMetadata/);
     assert.match(source, /forced-colors:active/);
@@ -149,23 +213,18 @@ test('subscriptions selector pack is backed by the captured modern lockup feed',
 });
 
 test('subscription order defers to the group toolbar with an on-screen explanation', () => {
-    // applyOrder() early-returned whenever the Subscription Groups toolbar was
-    // mounted, so the saved order preference stopped applying with nothing
-    // saying why.
-    const source = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'extension', 'features', 'subscription-view', 'index.js'), 'utf8');
-    const start = source.indexOf('function applyOrder()');
-    assert.ok(start > -1, 'applyOrder must exist');
-    const block = source.slice(start, start + 1400);
-    assert.match(block, /ytkit-sub-toolbar'\)\) \{/,
-        'the group toolbar must still own ordering');
-    assert.match(block, /subscriptionOrderGroupsHint/,
-        'the deferral must be explained through a localized status line');
-    assert.doesNotMatch(block, /ytkit-sub-toolbar'\)\) return;/,
-        'the silent early return must be gone');
-    // The status element only existed on the branch that renders the order
-    // select, so there was nowhere to put the explanation.
-    const controls = source.slice(source.indexOf('function buildControls'), source.indexOf('function mountControls'));
-    assert.equal((controls.match(/status = hint;/g) || []).length, 2,
-        'both toolbar shapes must expose a status line');
+    const groupToolbar = fakeNode({ tag: 'div', attributes: { class: 'ytkit-sub-toolbar' } });
+    const { feature } = controlsHarness({ groupToolbar });
+
+    const controls = groupToolbar.querySelector('.ytkit-sub-view-controls');
+    assert.ok(controls, 'view controls attach inside the group toolbar');
+    assert.equal(controls.querySelector('#ytkit-sub-view-order'), null,
+        'the group toolbar keeps ownership of ordering');
+    const status = controls.querySelector('.ytkit-sub-view-hint');
+    assert.equal(status.getAttribute('role'), 'status');
+    assert.equal(status.getAttribute('aria-live'), 'polite');
+    assert.match(status.textContent, /group toolbar orders this feed/i);
+
+    feature.destroy();
+    assert.equal(groupToolbar.querySelector('.ytkit-sub-view-controls'), null);
 });

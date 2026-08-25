@@ -3,21 +3,18 @@
 // The apply path is where a stored rule becomes a hidden element, and where
 // the v4.58.1 lesson has to hold: nothing gets hidden without the shared
 // attribution marker, and nothing gets restored that this feature did not
-// hide. The picker half is pinned from source — it is pointer-event
-// choreography that a fake document cannot honestly exercise.
+// hide. The picker half runs against a connected event-aware fake document,
+// so placement, pointer hit-testing, refusal copy, and teardown are observable.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const { fakeTreeDocument } = require('../helpers/monolith');
 
 const repoRoot = path.join(__dirname, '..', '..');
 const moduleSource = fs.readFileSync(
     path.join(repoRoot, 'extension/features/element-zapper/index.js'), 'utf8');
-
-function stripComments(text) {
-    return text.split('\n').filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line)).join('\n');
-}
 
 function loadFeatureModule() {
     globalThis.YTKitCore = {};
@@ -69,7 +66,7 @@ function fakeDocument(matchesBySelector) {
     };
 }
 
-function build(matchesBySelector, storedRules = []) {
+function build(matchesBySelector, storedRules = [], overrides = {}) {
     const createFeature = loadFeatureModule();
     let stored = storedRules;
     const rules = [];
@@ -84,7 +81,8 @@ function build(matchesBySelector, storedRules = []) {
         storageWriteJSON: (_key, value) => { stored = value; },
         injectStyle: () => {},
         showToast: () => {},
-        documentRef: fakeDocument(matchesBySelector)
+        ...overrides,
+        documentRef: overrides.documentRef || fakeDocument(matchesBySelector)
     });
     return {
         feature: instance.elementZapperFeature,
@@ -231,41 +229,78 @@ test('lifecycle registers and removes both rule hooks', () => {
     assert.equal(navigateRules.length, 0);
 });
 
-// ── Picker contract (source-pinned) ─────────────────────────────────────────
+// ── Picker contract ──────────────────────────────────────────────────────────
 
-test('the picker names the refusal while the pointer is still moving', () => {
-    const body = stripComments(moduleSource);
-    const describe = body.indexOf('const describe = (element) =>');
-    assert.ok(describe > 0);
-    const window = body.slice(describe, describe + 700);
-    assert.match(window, /derivation\.ok !== true/);
-    assert.match(window, /setAttribute\('data-refused', '1'\)/,
-        'the outline itself has to say no, not a toast after the click');
-    assert.match(window, /_describeRefusal\(derivation\.reason\)/);
+function pickerHarness() {
+    const documentRef = fakeTreeDocument();
+    const target = documentRef.createElement('ytd-rich-section-renderer');
+    target.getBoundingClientRect = () => ({ left: 12, top: 24, width: 320, height: 180 });
+    let pointerEventsDuringHitTest = '';
+    documentRef.elementFromPoint = () => {
+        const overlay = documentRef.body.querySelector('.ytkit-zap-overlay');
+        pointerEventsDuringHitTest = overlay?.style.pointerEvents;
+        return target;
+    };
+    const built = build({}, [], { documentRef });
+    return { ...built, documentRef, target, pointerEventsDuringHitTest: () => pointerEventsDuringHitTest };
+}
+
+test('the picker renders its three owned surfaces into the page body', () => {
+    const { feature, documentRef } = pickerHarness();
+
+    assert.equal(feature.startPicking(), true);
+
+    assert.deepEqual(
+        documentRef.body.children.map((child) => child.className),
+        ['ytkit-zap-overlay', 'ytkit-zap-highlight', 'ytkit-zap-hint']
+    );
+    const hint = documentRef.body.querySelector('.ytkit-zap-hint');
+    assert.match(hint.children[0].textContent, /Click a shelf/);
+    assert.equal(hint.children[1].textContent, 'Cancel');
+    assert.equal(feature.isPicking(), true);
 });
 
-test('the picker tears down every listener and node it added', () => {
-    const body = stripComments(moduleSource);
-    const stop = body.indexOf('stopPicking() {');
-    assert.ok(stop > 0);
-    const window = body.slice(stop, stop + 500);
-    assert.match(window, /removeEventListener\('keydown', picker\.onKey, true\)/);
-    for (const owned of ['overlay', 'highlight', 'hint']) {
-        assert.match(window, new RegExp(`picker\\.${owned}\\.remove\\(\\)`), `${owned} must be removed`);
-    }
-    // destroy() must stop an in-flight pick, or the overlay outlives the
-    // feature that owns it and the page keeps a crosshair cursor forever.
-    const destroy = body.indexOf('destroy() {');
-    assert.match(body.slice(destroy, destroy + 300), /this\.stopPicking\(\)/);
+test('the picker names a refused target while the pointer is still moving', () => {
+    const { feature, documentRef } = pickerHarness();
+    const refusal = globalThis.YTKitCore.ELEMENT_ZAPPER_REFUSAL_REASONS.PLAYER;
+    globalThis.YTKitCore.deriveStructuralSelector = () => ({ ok: false, reason: refusal });
+    feature.startPicking();
+    const overlay = documentRef.body.querySelector('.ytkit-zap-overlay');
+    const move = [...overlay.listeners.get('mousemove')][0];
+
+    move({ clientX: 20, clientY: 30 });
+
+    const highlight = documentRef.body.querySelector('.ytkit-zap-highlight');
+    const hint = documentRef.body.querySelector('.ytkit-zap-hint');
+    assert.equal(highlight.getAttribute('data-refused'), '1');
+    assert.match(hint.children[0].textContent, /player is off limits/i);
 });
 
-test('the overlay steps aside to read the element under the cursor', () => {
-    const body = stripComments(moduleSource);
-    const move = body.indexOf('const onMove = (event) =>');
-    assert.ok(move > 0);
-    const window = body.slice(move, move + 600);
-    // The overlay covers the page to capture the click, so elementFromPoint
-    // would otherwise only ever return the overlay itself.
-    assert.match(window, /overlay\.style\.pointerEvents = 'none';[\s\S]*elementFromPoint/);
-    assert.match(window, /elementFromPoint[\s\S]*overlay\.style\.pointerEvents = ''/);
+test('the picker hit-tests behind its overlay, positions the highlight, and tears down', () => {
+    const { feature, documentRef, target, pointerEventsDuringHitTest } = pickerHarness();
+    globalThis.YTKitCore.deriveStructuralSelector = () => ({
+        ok: true,
+        selector: 'ytd-rich-section-renderer',
+        anchor: target,
+        anchorTag: 'ytd-rich-section-renderer',
+        anchorKind: 'shelf'
+    });
+    feature.startPicking();
+    const overlay = documentRef.body.querySelector('.ytkit-zap-overlay');
+    const move = [...overlay.listeners.get('mousemove')][0];
+
+    move({ clientX: 20, clientY: 30 });
+
+    const highlight = documentRef.body.querySelector('.ytkit-zap-highlight');
+    assert.equal(pointerEventsDuringHitTest(), 'none');
+    assert.equal(overlay.style.pointerEvents, '');
+    assert.equal(highlight.style.left, '12px');
+    assert.equal(highlight.style.width, '320px');
+    assert.equal(documentRef.body.querySelector('.ytkit-zap-hint').children[0].textContent,
+        'ytd-rich-section-renderer');
+
+    feature.destroy();
+    assert.equal(documentRef.body.children.length, 0);
+    assert.equal(documentRef.listeners.get('keydown')?.size || 0, 0);
+    assert.equal(feature.isPicking(), false);
 });
