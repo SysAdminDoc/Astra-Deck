@@ -143,6 +143,12 @@
   "aiSummaryUserscriptButtonTitle": {
     "message": "AI Summary (right-click to manage the provider credential)"
   },
+  "altFrontendOpenBtn": {
+    "message": "Open externally"
+  },
+  "altFrontendOpenAriaTpl": {
+    "message": "Open externally at {host}"
+  },
   "audioOnlyActive": {
     "message": "Audio only"
   },

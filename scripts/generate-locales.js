@@ -9812,6 +9812,55 @@ const TRANSCRIPT_QA_TRANSLATIONS = {
 };
 for (const [locale, messages] of Object.entries(TRANSCRIPT_QA_TRANSLATIONS)) Object.assign(T[locale], messages);
 
+// The "open in an alternative frontend" control. The host is appended so a
+// reader can tell where the button will actually send them, which matters
+// because the instance is user-configurable and a restored backup can move
+// it.
+const ALT_FRONTEND_TRANSLATIONS = {
+  ar: {
+    'Open externally': "فتح خارجيًا",
+    'Open externally at {host}': "فتح خارجيًا على {host}"
+  },
+  de: {
+    'Open externally': "Extern öffnen",
+    'Open externally at {host}': "Extern auf {host} öffnen"
+  },
+  es: {
+    'Open externally': "Abrir fuera",
+    'Open externally at {host}': "Abrir fuera en {host}"
+  },
+  fr: {
+    'Open externally': "Ouvrir à l’extérieur",
+    'Open externally at {host}': "Ouvrir à l’extérieur sur {host}"
+  },
+  it: {
+    'Open externally': "Apri all’esterno",
+    'Open externally at {host}': "Apri all’esterno su {host}"
+  },
+  ja: {
+    'Open externally': "外部で開く",
+    'Open externally at {host}': "{host} で外部として開く"
+  },
+  ko: {
+    'Open externally': "외부에서 열기",
+    'Open externally at {host}': "{host}에서 외부로 열기"
+  },
+  pt_BR: {
+    'Open externally': "Abrir externamente",
+    'Open externally at {host}': "Abrir externamente em {host}"
+  },
+  ru: {
+    'Open externally': "Открыть во внешнем сервисе",
+    'Open externally at {host}': "Открыть во внешнем сервисе на {host}"
+  },
+  zh_CN: {
+    'Open externally': "在外部打开",
+    'Open externally at {host}': "在 {host} 上于外部打开"
+  }
+};
+for (const [locale, messages] of Object.entries(ALT_FRONTEND_TRANSLATIONS)) Object.assign(T[locale], messages);
+
+
 
 
 
