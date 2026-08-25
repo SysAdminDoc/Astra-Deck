@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Fourteen more light-theme surfaces are readable: the subscription banner's
+  stat rows and buttons, the context menu heading, the download history panel's
+  empty state and buttons, the speed presets title and status, and the
+  downloader banner's title and buttons. Most were white text on a white panel,
+  so they were not dim, they were invisible. The contrast probe used to check a
+  list somebody typed out by hand, which is why two earlier passes fixed one
+  child of a panel and left its neighbours broken. It now finds them itself.
+
 - The userscript build no longer risks deleting real content from the code it
   ships. The comment stripper misread two ordinary JavaScript constructs and
   could remove a line from inside a string, which would have changed what the

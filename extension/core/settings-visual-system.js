@@ -2904,7 +2904,11 @@
             .ytkit-install-prompt__btn, #ytkit-mediadl-install-prompt,
             .ytkit-ql-item, .ytkit-ql-empty-title, .ytkit-ql-input, .ytkit-ql-add-btn,
             .ytkit-ql-bottom-btn, .ytkit-context-menu-item, .ytkit-bookmarks-empty-title,
-            .ytkit-subs-load-banner__btn
+            .ytkit-subs-load-banner__btn, .ytkit-subs-load-banner__stat-value,
+            .ytkit-subs-load-banner__btn--quiet, .ytkit-subs-load-banner__btn--primary,
+            .ytkit-mediadl-banner__title, .ytkit-mediadl-banner__btn,
+            .ytkit-mediadl-banner__btn--accent, .ytkit-speed-presets__title,
+            .ytkit-dl-history-panel__action, .ytkit-dl-history-panel__close
         ) { color: var(--ytkit-premium-text) !important; }
         html:not([dark]) :is(
             .ytkit-aisum-close, .ytkit-bookmarks-eyebrow, .ytkit-bookmarks-count,
@@ -2914,7 +2918,8 @@
             .ytkit-transcript-search-panel__footer, .ytkit-wellbeing-msg,
             .ytkit-wellbeing-eyebrow, .ytkit-wha-close, .ytkit-install-prompt__close,
             .ytkit-install-prompt__note, .ytkit-ql-empty-copy,
-            .ytkit-mediadl-banner__status
+            .ytkit-mediadl-banner__status, .ytkit-subs-load-banner__stat-label,
+            .ytkit-dl-history-panel__count, .ytkit-speed-presets__status
         ) { color: var(--ytkit-premium-muted) !important; }
         html:not([dark]) :is(
             .ytkit-bookmarks-status, .ytkit-bookmark-note-label, .ytkit-bookmark-delete,
@@ -2922,7 +2927,8 @@
             .ytkit-speed-popup__sub, .ytkit-subs-load-banner__eyebrow,
             .ytkit-transcript-batch-meta, .ytkit-wha-lbl, .ytkit-wellbeing-hint,
             .ytkit-install-prompt__desc, .ytkit-install-prompt__steps,
-            .ytkit-ql-form-note, .ytkit-search-hint
+            .ytkit-ql-form-note, .ytkit-search-hint, .ytkit-context-menu-header,
+            .ytkit-dl-history-panel__empty
         ) { color: var(--ytkit-premium-subtle) !important; }
         html:not([dark]) :is(
             .ytkit-rc-head, .ytkit-stream-links-panel__warn
@@ -2942,7 +2948,9 @@
             .ytkit-install-prompt__btn, .ytkit-install-prompt__close,
             .ytkit-install-prompt__note, .ytkit-install-prompt__eyebrow,
             .ytkit-ql-input, .ytkit-ql-add-btn, .ytkit-ql-bottom-btn,
-            .ytkit-subs-load-banner__btn
+            .ytkit-subs-load-banner__btn, .ytkit-subs-load-banner__btn--quiet,
+            .ytkit-mediadl-banner__btn, .ytkit-dl-history-panel__action,
+            .ytkit-dl-history-panel__close
         ) {
             /* !important, unlike the block this grew out of. Feature
                sheets load after this one, so a plain declaration here
