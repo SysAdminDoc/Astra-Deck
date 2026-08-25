@@ -6464,13 +6464,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         try {
                             const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
                             if (regexMatch) {
-                                // Reject patterns with nested quantifiers (ReDoS risk).
-                                // Three branches mirror the hardened extension guard:
-                                // adjacent quantifiers (a++), a group with an inner
-                                // quantifier then an outer one ((a+)+ / (?:a+)+), and
-                                // overlapping-alternation backtracking ((a|a|a)+ / (a|aa)+).
-                                if (/([+*?]|\{\d+,?\d*\})\s*[+*?]|\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})|\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(regexMatch[1])) {
-                                    DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
+                                // One shared ReDoS guard, from core/regex-safety.js,
+                                // delivered by the @require'd core library. The three
+                                // flat branches that used to be inlined here caught
+                                // (a+)+ and (a|aa)+ but missed the polynomial shapes:
+                                // .*.*.*.*.*.*z and (a+)(a+)(a+)(a+)(a+)(a+)b both
+                                // passed, and each costs hundreds of milliseconds per
+                                // test() on an ordinary title, once per feed card
+                                // against the title and again against the channel.
+                                // Absent guard means the pattern is refused, never
+                                // compiled unchecked.
+                                const unsafeRegex = globalThis.YTKitCore?.hasUnsafeRegexQuantifiers;
+                                if (typeof unsafeRegex !== 'function' || unsafeRegex(regexMatch[1])) {
+                                    DebugManager.log('VideoHider', 'Regex rejected: unsafe quantifiers (ReDoS risk)');
                                 } else {
                                     // Filtering is boolean and must not carry lastIndex
                                     // across title/channel tests or repeated scans.

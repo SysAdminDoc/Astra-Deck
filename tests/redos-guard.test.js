@@ -139,3 +139,48 @@ test('the guard reaches every surface that compiles a filter regex', () => {
     assert.ok(core.includes('features/video-hider/index.js'),
         'the built library ships Video Hider, which is why the guard has to be there');
 });
+
+test('the guard has exactly one implementation in the whole tree', () => {
+    // Three copies existed before this release: video-hider, the monolith
+    // comment filter, and a third inlined in YTKit.user.js, the script users
+    // actually install. Each was a subset of the real guard, and the third
+    // survived the first two rounds of this fix because nothing looked
+    // outside extension/. Pin the shape, not a file list, so a fourth copy
+    // anywhere fails.
+    const GROUP_INNER = "[^()]*(?:[+*?]|";
+    const carriers = [];
+    const walk = (dir) => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            if (entry.name === "node_modules" || entry.name === ".git"
+                || entry.name === "build" || entry.name === "archive"
+                || entry.name === "_locales") continue;
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) { walk(full); continue; }
+            if (!full.endsWith(".js")) continue;
+            const rel = path.relative(repoRoot, full).replace(/\\/g, "/");
+            // The tests themselves quote the pattern in order to forbid it.
+            if (rel.startsWith("tests/")) continue;
+            if (fs.readFileSync(full, "utf8").includes(GROUP_INNER)) carriers.push(rel);
+        }
+    };
+    walk(repoRoot);
+
+    // core/regex-safety.js is the implementation; YTKit-core.user.js is its
+    // generated copy in the userscript library. Nothing else may carry it.
+    assert.deepEqual(carriers.sort(),
+        ["YTKit-core.user.js", "extension/core/regex-safety.js"],
+        "the ReDoS guard must exist in exactly one place plus its generated bundle");
+});
+
+test('the installed userscript uses the shared guard, not a private one', () => {
+    // YTKit.user.js is hand-maintained: sync-userscript.js only rewrites its
+    // metadata block, so a fix to extension/ does NOT reach it. It @requires
+    // YTKit-core.user.js, which is where the guard now lives.
+    const main = fs.readFileSync(path.join(repoRoot, "YTKit.user.js"), "utf8");
+    assert.ok(main.includes("globalThis.YTKitCore?.hasUnsafeRegexQuantifiers"),
+        "the installed userscript must read the shared guard");
+    assert.ok(main.includes("if (typeof unsafeRegex !== 'function' || unsafeRegex(regexMatch[1])) {"),
+        "and refuse the pattern when the core library did not load");
+    assert.ok(main.includes("@require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js"),
+        "which is only reachable because it requires the core library");
+});
