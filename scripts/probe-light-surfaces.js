@@ -55,6 +55,22 @@ const CASES = [
     ['ytkit-blocked-watch-dialog', 'ytkit-blocked-watch-channel', 'Blocked watch channel', false],
     ['ytkit-transcript-batch-panel', 'ytkit-transcript-batch-meta', 'Transcript batch meta', false],
     ['ytkit-sub-group-dialog__card', 'ytkit-subs-load-banner__eyebrow', 'Subs banner eyebrow', false],
+    // The quick-link menu. It joined the repainted panel list without any of
+    // its own children being relit, and it ships on by default, so a light
+    // theme user opening it saw #f1f1f1 items on a white panel.
+    ['ytkit-ql-drop', 'ytkit-ql-item', 'Quick link item', false],
+    ['ytkit-ql-drop', 'ytkit-ql-empty-title', 'Quick link empty title', false],
+    ['ytkit-ql-drop', 'ytkit-ql-empty-copy', 'Quick link empty copy', false],
+    ['ytkit-ql-drop', 'ytkit-ql-form-note', 'Quick link form note', false],
+    ['ytkit-ql-drop', 'ytkit-ql-bottom-btn', 'Quick link bottom button', false],
+    // Descendants of surfaces the system has been repainting all along. The
+    // acceptance for the relight was "each surface the system repaints gets a
+    // light lane for its own descendants", and these were missed.
+    ['ytkit-context-menu', 'ytkit-context-menu-item', 'Context menu item', false],
+    ['ytkit-bookmarks-container', 'ytkit-bookmarks-empty-title', 'Bookmarks empty title', false],
+    ['ytkit-search-container', 'ytkit-search-hint', 'Search hint', false],
+    ['ytkit-subs-load-banner', 'ytkit-subs-load-banner__btn', 'Subs banner button', false],
+    ['ytkit-mediadl-banner', 'ytkit-mediadl-banner__status', 'Media banner status', false],
     // Activated this pass: they were named as classes in the surface system
     // but only ever exist as ids, so they received none of its treatment.
     ['ytkit-mediadl-install-prompt', 'ytkit-install-prompt__title', 'Install prompt title', false],
@@ -66,15 +82,24 @@ const CASES = [
 ];
 
 // Every stylesheet that contributes to these surfaces, in the order the
-// extension loads them. Order matters: the surface system loads last and its
-// !important rules are what removed the ground in the first place.
+// extension actually loads them.
+//
+// This list used to run the other way, on the assumption that the surface
+// system loads last. It does not. RUNTIME_MODULES in extension/runtime-bootstrap.js
+// puts core/settings-visual-system.js at index 5 and it injects its <style> at
+// module evaluation, while the feature modules come later and ytkit.js is
+// awaited last of all. So every feature sheet is AFTER the surface sheet at
+// runtime, and where both sides carry !important at the same specificity the
+// feature wins. Modelling it backwards made the probe report the surface
+// system winning grounds it never wins, which is how a relight that left the
+// speed popup at 1.02:1 read as 12.75:1 here.
 const STYLE_SOURCES = [
-    ['extension/ytkit.js', null],
+    ['extension/core/settings-visual-system.js', 'SURFACE_VISUAL_SYSTEM_CSS'],
+    ['extension/features/video-filters/index.js', null],
+    ['extension/features/video-hider/index.js', null],
     ['extension/features/digital-wellbeing/index.js', null],
     ['extension/features/download-ui/index.js', null],
-    ['extension/features/video-hider/index.js', null],
-    ['extension/features/video-filters/index.js', null],
-    ['extension/core/settings-visual-system.js', 'SURFACE_VISUAL_SYSTEM_CSS']
+    ['extension/ytkit.js', null]
 ];
 
 function httpGetJson(url) {
@@ -97,6 +122,51 @@ function httpGetJson(url) {
 // here; the child simply inherits the panel colour and the row reads as a pass.
 // A rule is self-delimiting, so nesting elsewhere cannot corrupt it. Same
 // approach scripts/check-light-theme-lane.js uses.
+// Remove at-rule blocks whole, condition and body together.
+//
+// The rule matcher below takes any prelude{body} pair with no nested braces,
+// which means the INNER rules of an at-rule survive while the condition that
+// gates them is discarded. ytkit.js ships a @media (forced-colors: active)
+// block that repaints .ytkit-speed-popup, .ytkit-stream-links-panel and
+// .ytkit-dl-history-panel with Canvas/CanvasText, so hoisting it applied the
+// forced-colors palette to every render in the probe page and the measured
+// grounds were not the shipped ones at all.
+//
+// Dropping these blocks means the probe does not cover them. That is the
+// honest default: it models a normal render, and a surface whose only lane is
+// inside a media query has no lane in a normal render either.
+function stripAtRuleBlocks(source) {
+    const AT = /@(?:media|supports|keyframes|-webkit-keyframes|container|layer|scope)\b[^{;]{0,300}\{/g;
+    const cuts = [];
+    let match;
+    while ((match = AT.exec(source)) !== null) {
+        let depth = 0;
+        let index = match.index + match[0].length - 1;
+        const limit = Math.min(source.length, index + 60000);
+        for (; index < limit; index += 1) {
+            const ch = source[index];
+            if (ch === '{') depth += 1;
+            else if (ch === '}') {
+                depth -= 1;
+                if (depth === 0) break;
+            }
+        }
+        // Unbalanced inside the window means this was not an at-rule after all
+        // (a stray @ in JS, an interpolation). Leave it to the rule matcher.
+        if (depth !== 0) continue;
+        cuts.push([match.index, index + 1]);
+        AT.lastIndex = index + 1;
+    }
+    if (!cuts.length) return source;
+    let out = '';
+    let cursor = 0;
+    for (const [start, end] of cuts) {
+        out += source.slice(cursor, start);
+        cursor = end;
+    }
+    return out + source.slice(cursor);
+}
+
 function extractCss(relative, exportName) {
     const abs = path.join(REPO_ROOT, relative);
     if (!fs.existsSync(abs)) return [];
@@ -109,7 +179,7 @@ function extractCss(relative, exportName) {
     // invalid rule. CSS error recovery then skips to the next `}` and eats the
     // real rule that followed, which is how the primary-text lane went missing
     // while the muted and subtle lanes survived.
-    const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, '');
+    const withoutComments = stripAtRuleBlocks(source.replace(/\/\*[\s\S]*?\*\//g, ''));
 
     const rules = [];
     // <prelude>{<body>} with no nested braces and no backtick or semicolon in
@@ -183,25 +253,68 @@ const READ_ROWS = `(() => {
         const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
         return (hi + 0.05) / (lo + 0.05);
     };
+    // Every colour a gradient paints, so the worst one can be measured.
+    //
+    // A gradient ground reports backgroundColor as rgba(0,0,0,0). Reading only
+    // backgroundColor therefore walked straight past it to whatever opaque
+    // colour sat behind, which is how .ytkit-speed-popup measured 15.81:1 for
+    // text that actually sits on a near-black gradient at 1.02:1.
+    const stopsOf = (node) => {
+        const image = getComputedStyle(node).backgroundImage;
+        if (!image || image === 'none') return [];
+        const out = [];
+        // Escaped twice: this block is a template literal that becomes page
+        // script. A single backslash is eaten here and the regex degrades to
+        // rgba?(([^)]+)) — which captures "(20, 24, 32, 0.96" and parses the
+        // red channel as NaN.
+        const RGB = /rgba?\\(([^)]+)\\)/g;
+        let m;
+        while ((m = RGB.exec(image)) !== null) {
+            const parts = m[1].split(',').map((p) => parseFloat(p.trim()));
+            out.push({ r: parts[0], g: parts[1], b: parts[2], a: parts.length > 3 ? parts[3] : 1 });
+        }
+        return out;
+    };
     // Walk up compositing every translucent background until an opaque one is
-    // reached, which is what the browser paints against.
-    const groundOf = (el) => {
+    // reached, which is what the browser paints against. Returns every ground
+    // the element can sit on: one per gradient stop where a gradient is
+    // involved, otherwise a single colour.
+    const groundsOf = (el) => {
         let node = el;
-        let acc = null;
+        let accs = [null];
+        const layer = (paint) => {
+            accs = accs.map((acc) => (acc ? over(acc, paint) : paint));
+        };
         while (node) {
+            const stops = stopsOf(node);
             const bg = parse(getComputedStyle(node).backgroundColor);
-            if (bg && bg.a > 0) acc = acc ? over(acc, bg) : bg;
-            if (acc && acc.a >= 0.999) return acc;
+            if (bg && bg.a > 0) layer(bg);
+            if (stops.length) {
+                // The image paints over the colour. Fan out: one branch per stop.
+                const next = [];
+                for (const acc of accs) {
+                    for (const stop of stops) next.push(acc ? over(acc, stop) : stop);
+                }
+                accs = next;
+            }
+            if (accs.every((acc) => acc && acc.a >= 0.999)) return accs;
             node = node.parentElement;
         }
         const page = parse(getComputedStyle(document.body).backgroundColor) || { r: 255, g: 255, b: 255, a: 1 };
-        return acc ? over(acc, page) : page;
+        return accs.map((acc) => (acc ? over(acc, page) : page));
     };
     const rows = [];
     for (const el of document.querySelectorAll('[data-probe]')) {
         const fg = parse(getComputedStyle(el).color);
-        const ground = groundOf(el);
-        if (!fg || !ground) { rows.push({ index: Number(el.dataset.probe), error: 'unreadable' }); continue; }
+        const grounds = groundsOf(el);
+        if (!fg || !grounds.length) { rows.push({ index: Number(el.dataset.probe), error: 'unreadable' }); continue; }
+        // The worst stop is the one a reader has to cope with.
+        let ground = grounds[0];
+        let worst = ratio(over(fg, ground), ground);
+        for (const candidate of grounds) {
+            const value = ratio(over(fg, candidate), candidate);
+            if (value < worst) { worst = value; ground = candidate; }
+        }
         // Did any stylesheet actually reach this element? A probe that loads
         // no rules still computes a perfectly comfortable ratio against the
         // page defaults, which is how three separate extraction bugs in this
@@ -211,7 +324,7 @@ const READ_ROWS = `(() => {
         bare.textContent = 'x';
         document.body.appendChild(bare);
         const bareColor = getComputedStyle(bare).color;
-        const bareGround = groundOf(bare);
+        const bareGround = groundsOf(bare)[0];
         bare.remove();
         const sameColor = getComputedStyle(el).color === bareColor;
         const sameGround = Math.round(ground.r) === Math.round(bareGround.r)
@@ -221,7 +334,7 @@ const READ_ROWS = `(() => {
             index: Number(el.dataset.probe),
             color: getComputedStyle(el).color,
             ground: 'rgb(' + Math.round(ground.r) + ', ' + Math.round(ground.g) + ', ' + Math.round(ground.b) + ')',
-            ratio: Number(ratio(over(fg, ground), ground).toFixed(2)),
+            ratio: Number(worst.toFixed(2)),
             unstyled: sameColor && sameGround
         });
     }

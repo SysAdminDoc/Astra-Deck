@@ -3122,6 +3122,14 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             textarea.id = `ytkit-input-${f.id}`;
             textarea.setAttribute('aria-label', featureName);
             textarea.placeholder = f.placeholder || 'word1, word2, phrase';
+            // The schema's own bound, enforced by the browser. Without it this
+            // field happily produced a value the export and sync paths then
+            // refused, so the setting looked saved and the backup was broken.
+            const textareaEntry = globalThis.__YTKIT_SETTINGS_SCHEMA__
+                ?.findSettingEntry?.(f.settingKey || f.id);
+            if (typeof textareaEntry?.maxLength === 'number') {
+                textarea.maxLength = textareaEntry.maxLength;
+            }
             textarea.value = appState.settings[f.settingKey || f.id] ?? '';
             // Auto-save on blur for textarea features
             textarea.addEventListener('blur', () => {

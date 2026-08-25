@@ -644,3 +644,73 @@ test('the surface system names no selector the extension never renders', () => {
     assert.deepEqual(orphans, [],
         'these surface selectors match nothing the extension builds');
 });
+
+test('the surface system names no selector whose document never loads it', () => {
+    // A selector can be perfectly real and still be dead here.
+    // #ytkit-reaction-spammer-panel was named in all four chrome blocks and is
+    // genuinely created — by features/live-chat/index.js, which runs in the
+    // live_chat content script. That script's module list does not include
+    // core/settings-visual-system.js, and the main runtime script explicitly
+    // excludes live_chat, so the stylesheet is never present in the document
+    // that renders the panel. The orphan test above cannot see this: it only
+    // asks whether the name is authored SOMEWHERE under extension/.
+    const css = require(visualSystemPath).SURFACE_VISUAL_SYSTEM_CSS;
+    const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension', 'manifest.json'), 'utf8'));
+
+    // A document gets the surface sheet if its content script loads the file
+    // itself or the bootstrap that pulls in the runtime module list.
+    const loadsSurfaceSheet = (entry) => (entry.js || []).some((file) =>
+        file.endsWith('core/settings-visual-system.js') || file.endsWith('runtime-bootstrap.js'));
+    const reached = new Set();
+    const isolated = new Set();
+    for (const entry of manifest.content_scripts || []) {
+        const target = loadsSurfaceSheet(entry) ? reached : isolated;
+        for (const file of entry.js || []) target.add(file);
+    }
+    // ytkit.js is imported by the bootstrap rather than listed in the manifest.
+    reached.add('ytkit.js');
+    for (const file of reached) isolated.delete(file);
+    assert.ok(isolated.size > 0, 'the live-chat frame must still be a separate document');
+
+    // Every module the isolated documents load, plus anything they import.
+    const isolatedSources = [...isolated]
+        .map((file) => path.join(repoRoot, 'extension', file))
+        .filter((file) => fs.existsSync(file))
+        .map((file) => ({ file, text: fs.readFileSync(file, 'utf8') }));
+
+    const reachedSources = [];
+    (function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) { if (entry.name !== '_locales') walk(full); }
+            else if (/\.(js|html)$/.test(full)) reachedSources.push(full);
+        }
+    }(path.join(repoRoot, 'extension')));
+    const isolatedPaths = new Set(isolatedSources.map((item) => item.file));
+    const reachedText = reachedSources
+        .filter((file) => !isolatedPaths.has(file) && !file.endsWith('settings-visual-system.js'))
+        .map((file) => fs.readFileSync(file, 'utf8'))
+        .join('\n');
+    const isolatedText = isolatedSources.map((item) => item.text).join('\n');
+
+    // Every name the chrome blocks force a ground onto, ids included. The
+    // orphan test drops ids on the floor, which is the other half of why this
+    // one was missed.
+    const names = new Set();
+    for (const block of css.matchAll(/:is\(([^)]*)\)\s*\{[^}]*background:\s*var\(--ytkit-premium-panel\)\s*!important/g)) {
+        for (const raw of block[1].split(',')) {
+            const selector = raw.trim();
+            if (/^[.#]ytkit-[\w-]+$/.test(selector)) names.add(selector);
+        }
+    }
+    assert.ok(names.size > 20, 'the surface families must still be populated');
+
+    const unreachable = [...names].filter((selector) => {
+        const bare = selector.slice(1);
+        const authored = new RegExp('\\b' + bare.replace(/[-]/g, '-') + '\\b');
+        if (!authored.test(isolatedText)) return false;
+        return !authored.test(reachedText);
+    });
+    assert.deepEqual(unreachable, [],
+        'these surfaces are only built in a document the surface stylesheet never reaches');
+});

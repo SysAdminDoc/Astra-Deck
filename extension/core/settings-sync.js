@@ -238,7 +238,12 @@
             excludeInternal: true,
             excludeKeys: NON_SYNC_SETTING_SET
         });
-        const validation = policy.validateSettingsSnapshot(snapshot.settings);
+        // Push side: this is our own storage. A locally-authored value that
+        // fails the schema is repaired to its default rather than stopping the
+        // whole push, which used to disable sync outright for anyone who had
+        // typed a long enough textarea. The pull side below keeps its hard
+        // rejection, because that payload came off the network.
+        const validation = policy.validateSettingsSnapshot(snapshot.settings, { repairInvalid: true });
         if (!validation.ok) throw new Error(`Settings sync validation failed: ${validation.errors.slice(0, 3).join('; ')}`);
 
         const values = {};

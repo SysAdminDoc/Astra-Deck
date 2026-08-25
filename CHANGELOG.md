@@ -8,6 +8,25 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- Light theme is readable again in the speed popup, the transcript batch panel
+  and the quick-link menu. The recent relight repainted their text for a white
+  panel that those three never actually got, so the text went dark on a dark
+  ground. The quick-link menu had no light rules of its own at all, and its
+  items sat at 1.13:1. The same pass picked up five more places that had been
+  wrong all along: context menu items, the empty bookmarks message, the search
+  hint, the subscriptions banner button and the downloader banner status.
+
+- Backing up your settings works even when one of them is out of bounds. A long
+  keyword list or a profile name with a space in it used to make the export fail
+  outright, which is the worst possible moment to lose the ability to take a
+  backup. The offending setting is reset to its default and named in the export
+  summary instead, and importing a file still refuses bad values. Profile names
+  with spaces, punctuation and non-Latin characters are accepted now, and
+  clearing a language preference is allowed. Settings text boxes stop you at the
+  limit rather than letting you type past it, and when a value is refused the
+  message says whether it was too long or the wrong shape instead of always
+  saying "invalid type".
+
 - Browser sync no longer leaves your account holding a payload no device can
   read. A push writes the settings in pieces and the index for those pieces
   last, and if that final write was the one that failed, every other device

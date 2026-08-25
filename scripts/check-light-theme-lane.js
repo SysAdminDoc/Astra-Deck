@@ -413,7 +413,18 @@ function scan(files) {
         ...opaquelyGrounded,
         ...[...grounded].filter((token) => token.split('-').length >= 3)
     ])];
+    // A family is exempt only if EVERY container that renders it keeps its own
+    // ground. `ytkit-ql` is rendered by two: `#ytkit-po-drop`, which the
+    // surface system deliberately leaves dark, and `.ytkit-ql-drop`, which it
+    // repaints white. Taking the alias table as "any grounded root exempts the
+    // family" let the po-drop entry vouch for descendants that also render
+    // inside the white panel, and `.ytkit-ql-item` shipped at 1.13:1 in light
+    // theme with this gate green.
+    const overriddenFamilies = new Set(GROUND_FAMILY_ALIASES
+        .filter(({ root }) => LIGHT_GROUND_OVERRIDDEN.has(root))
+        .map(({ family }) => family));
     for (const { root, family } of GROUND_FAMILY_ALIASES) {
+        if (overriddenFamilies.has(family)) continue;
         if (opaquelyGrounded.has(root)) groundPrefixes.push(family);
     }
     const inheritsGround = (token) => groundPrefixes.some((prefix) =>
