@@ -97,11 +97,17 @@ test('a suppression token cannot outlive the change it was written for', () => {
     // the life of the worker and silently swallowed the next genuine change
     // that produced the same serialized value.
     const sync = read('extension', 'core', 'settings-sync.js');
-    assert.ok(sync.includes('SUPPRESSION_TTL_MS'), 'suppression tokens need a lifetime');
-    assert.ok(sync.includes('setTimeout(() => releaseSuppressed(key, token), SUPPRESSION_TTL_MS);'),
-        'markSuppressed must schedule the release');
-    assert.ok(sync.includes('function releaseSuppressed(key, token) {'),
-        'and the release must decrement the same counter consumeSuppressed uses');
+    assert.ok(sync.includes('SUPPRESSION_TTL_MS'), 'suppression marks need a lifetime');
+    assert.ok(sync.includes('setTimeout(() => dropSuppressionMark(key, token, mark), SUPPRESSION_TTL_MS);'),
+        'markSuppressed must schedule the release for the mark it just made');
+    // Identity, not a count. A plain counter cannot tell one mark from
+    // another, so a reaper armed for an earlier mark would release a later one
+    // that reused the same serialized value, and the genuine echo it was meant
+    // to swallow would be uploaded as a local change.
+    assert.ok(sync.includes('const mark = {};'), 'each mark must be its own object');
+    assert.ok(sync.includes('marks.add(mark);'), 'marks are held as a set, not a tally');
+    assert.ok(!sync.includes('values.set(token, (values.get(token) || 0) + 1);'),
+        'the countable form cannot distinguish two marks with the same value');
 
     // And the module still loads with the reaper wired in.
     const api = require('../extension/core/settings-sync.js');
