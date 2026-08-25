@@ -194,13 +194,40 @@
             return ALWAYS_SCRUB_KEY_PATTERNS.some((re) => re.test(key));
         }
 
+        // Schema patterns are authored in this repo, never user input, so they
+        // are compiled once and cached. A malformed one fails closed: refusing
+        // the value is the safe direction for a constraint whose whole job is
+        // to refuse.
+        const patternCache = new Map();
+        function matchesSettingPattern(value, pattern) {
+            if (!patternCache.has(pattern)) {
+                let compiled = null;
+                try { compiled = new RegExp(pattern); } catch (_) {
+                    // reason: a broken schema pattern must reject, not open the gate
+                }
+                patternCache.set(pattern, compiled);
+            }
+            const compiled = patternCache.get(pattern);
+            return compiled ? compiled.test(value) : false;
+        }
+
         function isSettingValueValid(value, entry) {
             if (!entry || typeof entry.type !== 'string') return false;
             switch (entry.type) {
             case 'boolean':
                 return typeof value === 'boolean';
             case 'string':
-                return typeof value === 'string';
+                if (typeof value !== 'string') return false;
+                // A free-form string setting used to accept anything a backup
+                // put in it, which is how a catastrophic regex reached the
+                // keyword filter and an arbitrary origin reached the
+                // alternative-frontend link. Those two were fixed at their own
+                // call sites; the constraint belongs here, at the boundary.
+                if (typeof entry.maxLength === 'number' && value.length > entry.maxLength) return false;
+                if (typeof entry.pattern === 'string' && entry.pattern && !matchesSettingPattern(value, entry.pattern)) {
+                    return false;
+                }
+                return true;
             case 'number':
                 return typeof value === 'number' && Number.isFinite(value);
             case 'array':

@@ -9941,7 +9941,11 @@ test('v4.40.0 settings-migration round-trip preserves entries that carry overrid
         path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
     // Sanity: the brand entries still freeze cleanly (Object.freeze
     // on a literal — no syntax errors that would break the module).
-    assert.match(schemaSrc, /Object\.freeze\(\{ key: "downloadCobaltInstance"[^}]*labelKey: "Self-hosted Cobalt origin"/,
+    // Spans the LINE rather than "anything but a brace". The entry now carries
+    // a `pattern:` whose value contains `{1,2040}`, and a `[^}]*` span cannot
+    // cross that. Staying on one line is the property actually being asserted:
+    // one frozen literal per entry, with the override fields embedded in it.
+    assert.match(schemaSrc, /Object\.freeze\(\{ key: "downloadCobaltInstance"[^\n]*labelKey: "Self-hosted Cobalt origin"/,
         'downloadCobaltInstance must still be a single frozen object literal with labelKey embedded');
 });
 

@@ -96,12 +96,6 @@ Found during a full audit pass, verified, and deliberately not fixed in it.
   Acceptance: the pairing exchanges a secret over native messaging that the HTTP endpoint must then present, and a squatter that cannot produce it is refused before any cookie leaves the browser.
   Complexity: M
 
-- [ ] P2: Constrain string settings by format and length at the trust boundary
-  Why: `clampSettingValue` clamps numbers and coerces enums but returns strings unchanged, and `sanitizeSettingsObject` only filters prototype keys and retired ids. A crafted backup can therefore put arbitrary content in any `type: "string"` setting. Two consequences were fixed individually this pass (the keyword-filter ReDoS and the alternative-frontend open redirect); the class remains. `customCssCode` reaches `style.textContent` verbatim, which is CSS-only but still allows attribute-selector and `background:url()` exfiltration against youtube.com.
-  Where: `extension/core/policy-profile.js` `validateSettingsSnapshot` / `isSettingValueValid` / `clampSettingValue`, `extension/core/settings-schema.js`
-  Acceptance: the schema carries an optional `pattern` and `maxLength` per string entry, the import path enforces them, and a test feeds a hostile backup at every string key and asserts each one is rejected or clamped rather than stored.
-  Complexity: M
-
 - [ ] P2: Make the sync push atomic across its chunk and metadata writes
   Why: `writeRemotePayload` does `setSync(entries)` then `setSync({[SYNC_META_KEY]: ...})` as two calls. Metadata last protects against a torn chunk set, not against the metadata write failing on its own. When it does, the account holds new chunk bytes under old metadata and every other device fails the integrity check with "Browser sync payload is incomplete or corrupt" until some device pushes successfully. `handleLocalChanges` pushes on every relevant local change with no debounce and each push is two or more `setSync` calls, so `MAX_WRITE_OPERATIONS_PER_MINUTE` (120) is reachable by hiding around 60 videos in a minute.
   Where: `extension/core/settings-sync.js` (~555-574, 691, 723)
