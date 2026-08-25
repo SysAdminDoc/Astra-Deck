@@ -428,7 +428,13 @@
                     // of their rules it belongs to.
                     toggle.setAttribute('aria-label',
                         t('zapRuleToggleAriaTpl', 'Apply the rule for {selector}')
-                            .replace('{selector}', rule.selector));
+                            // A function replacement, because the value is
+                            // the user's own selector: String.replace expands
+                            // dollar-ampersand and friends inside a STRING
+                            // replacement, so a selector containing one would be
+                            // rewritten into
+                            // the label that is supposed to identify it.
+                            .replace('{selector}', () => rule.selector));
                     toggle.addEventListener('change', () => {
                         feature.setRuleEnabled(rule.selector, toggle.checked);
                     });
@@ -451,7 +457,13 @@
                     remove.textContent = t('zapRuleRemove', 'Remove');
                     remove.setAttribute('aria-label',
                         t('zapRuleRemoveAriaTpl', 'Remove the rule for {selector}')
-                            .replace('{selector}', rule.selector));
+                            // A function replacement, because the value is
+                            // the user's own selector: String.replace expands
+                            // dollar-ampersand and friends inside a STRING
+                            // replacement, so a selector containing one would be
+                            // rewritten into
+                            // the label that is supposed to identify it.
+                            .replace('{selector}', () => rule.selector));
                     remove.addEventListener('click', () => {
                         feature.removeRule(rule.selector);
                         renderList();

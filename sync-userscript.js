@@ -207,22 +207,54 @@ function compactStandaloneLineComments(source, relativePath) {
 // Regex literals are the one construct this does not model. That is why every
 // stripped module is re-parsed below and reverted on failure: a mangled module
 // cannot reach the bundle, it can only fail to shrink.
+// Characters after which a / begins a regex literal rather than a division.
+const REGEX_CAN_FOLLOW = new Set([
+    '(', ',', '=', ':', '[', '!', '&', '|', '?', '{', '}', ';', '+', '-', '*', '%', '~', '^', '<', '>', '/'
+]);
+const REGEX_CAN_FOLLOW_KEYWORD = new Set([
+    'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'case', 'do', 'else', 'yield', 'await', 'throw'
+]);
+
 function stripSafeLineComments(source) {
     const lines = source.split(/\r?\n/);
     const keep = [];
+
+    // A STACK of lexical contexts, not a depth counter.
+    //
+    // The counter this replaces decremented on any backtick, so the backtick
+    // that OPENS a template nested inside a ${ } expression was read as the one
+    // that closes the outer template. Everything after it was scanned as code,
+    // and a comment-looking line sitting in template DATA was deleted from the
+    // shipped bundle. It also had no notion of a regex literal, so a quote or a
+    // backtick inside one desynced the scan for the rest of the file — which it
+    // measurably already did, on extension/features/subscription-groups/index.js.
+    const stack = [{ kind: 'code', braces: 0 }];
     let inBlockComment = false;
-    let quote = null;          // ' or " when inside a plain string
-    let templateDepth = 0;     // backtick nesting
+    let quote = null;
+
     for (const line of lines) {
-        const atTopLevel = !inBlockComment && quote === null && templateDepth === 0;
+        const top = stack[stack.length - 1];
+        const atTopLevel = !inBlockComment && quote === null
+            && stack.length === 1 && top.kind === 'code';
         const trimmed = line.trim();
-        const dropped = atTopLevel && trimmed.startsWith('//');
+        // Never drop a line carrying a quote, a backtick or an interpolation.
+        //
+        // Belt and braces on top of the scanner above. If the scan is ever
+        // wrong again, the worst outcome is a comment that survives into the
+        // bundle — a few bytes — rather than a line of data silently deleted
+        // from a shipped string.
+        const carriesData = /['"`]|\$\{/.test(line);
+        const dropped = atTopLevel && trimmed.startsWith('//') && !carriesData;
 
         // Advance the scanner across this line whether or not it is kept, so
         // state stays correct for the lines that follow.
+        let lastSignificant = '';
+        let lastWord = '';
         for (let i = 0; i < line.length; i += 1) {
             const ch = line[i];
             const next2 = line.slice(i, i + 2);
+            const context = stack[stack.length - 1];
+
             if (inBlockComment) {
                 if (next2 === '*/') { inBlockComment = false; i += 1; }
                 continue;
@@ -232,16 +264,46 @@ function stripSafeLineComments(source) {
                 if (ch === quote) quote = null;
                 continue;
             }
-            if (templateDepth > 0) {
+            if (context.kind === 'template') {
                 if (ch === '\\') { i += 1; continue; }
-                if (ch === '`') { templateDepth -= 1; }
+                if (ch === '`') { stack.pop(); continue; }
+                if (next2 === '${') { stack.push({ kind: 'code', braces: 0 }); i += 1; continue; }
                 continue;
             }
+
+            // code context
             if (next2 === '//') break;            // rest of the line is a comment
             if (next2 === '/*') { inBlockComment = true; i += 1; continue; }
-            if (ch === '\'' || ch === '"') { quote = ch; continue; }
-            if (ch === '`') { templateDepth += 1; continue; }
+            if (ch === '\'' || ch === '"') { quote = ch; lastSignificant = ch; lastWord = ''; continue; }
+            if (ch === '`') { stack.push({ kind: 'template' }); lastSignificant = ch; lastWord = ''; continue; }
+            if (ch === '{') { context.braces += 1; lastSignificant = ch; lastWord = ''; continue; }
+            if (ch === '}') {
+                // The } that closes a ${ } expression pops back into the
+                // template it interrupted.
+                if (context.braces === 0 && stack.length > 1) { stack.pop(); continue; }
+                context.braces -= 1;
+                lastSignificant = ch;
+                lastWord = '';
+                continue;
+            }
+            if (ch === '/') {
+                const startsRegex = lastSignificant === ''
+                    || REGEX_CAN_FOLLOW.has(lastSignificant)
+                    || REGEX_CAN_FOLLOW_KEYWORD.has(lastWord);
+                if (startsRegex) {
+                    const consumed = skipRegexLiteral(line, i);
+                    if (consumed > i) { i = consumed; lastSignificant = '/'; lastWord = ''; continue; }
+                }
+                lastSignificant = '/';
+                lastWord = '';
+                continue;
+            }
+            if (/\s/.test(ch)) continue;
+            if (/[A-Za-z0-9_$]/.test(ch)) { lastWord += ch; lastSignificant = ch; continue; }
+            lastSignificant = ch;
+            lastWord = '';
         }
+
         // An unterminated plain string means the line ended mid-quote, which
         // only happens if the scanner misread something. Reset rather than
         // carry a wrong state into the rest of the file.
@@ -249,6 +311,25 @@ function stripSafeLineComments(source) {
         if (!dropped) keep.push(line);
     }
     return keep.join('\n');
+}
+
+// Consume a regex literal starting at `from` (the opening slash). Returns the
+// index of its last character, or `from` when this is not a terminated regex on
+// this line — a regex cannot span lines, so an unterminated one was division.
+function skipRegexLiteral(line, from) {
+    let inClass = false;
+    for (let i = from + 1; i < line.length; i += 1) {
+        const ch = line[i];
+        if (ch === '\\') { i += 1; continue; }
+        if (inClass) { if (ch === ']') inClass = false; continue; }
+        if (ch === '[') { inClass = true; continue; }
+        if (ch === '/') {
+            let end = i;
+            while (end + 1 < line.length && /[a-z]/.test(line[end + 1])) end += 1;
+            return end;
+        }
+    }
+    return from;
 }
 
 // Shrink a module only if the result still parses as the same kind of source.

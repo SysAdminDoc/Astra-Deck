@@ -8,6 +8,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- The userscript build no longer risks deleting real content from the code it
+  ships. The comment stripper misread two ordinary JavaScript constructs and
+  could remove a line from inside a string, which would have changed what the
+  script does with no sign that anything was wrong. It reads them correctly now,
+  and it refuses outright to touch any line that looks like it might hold data.
+  Element Zapper rule labels also stopped mangling selectors containing a dollar
+  sign.
+
 - Turning browser sync off wipes your account again. A change made in the second
   after you switched it off could swallow the shutdown, so your settings and
   blocklists stayed on your Google account after you had asked for them to be

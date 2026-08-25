@@ -21,6 +21,8 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.hasUnsafeRegexQuantifiers) return;
 
+    // text: Video Hider's keyword filters, the comment filter, the predicate
+    // this replaces; they caught `(a|b+)+` and missed `.*.*.*.*.*.*z`.
 
     const MAX_REGEX_SOURCE = 200;
 
@@ -33,6 +35,8 @@
         const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pattern);
         if (adjacent || groupInner || altGroupQuantified) return true;
 
+        // Polynomial backtracking: `.*.*.*.*`, or sequential quantified
+        // groups like `(a+)(a+)(a+)(a+)(a+)b`, backtrack in O(n^k) where k is
         let openEndedQuantifiers = 0;
         for (let qi = 0; qi < pattern.length; qi += 1) {
             const qc = pattern[qi];
@@ -53,6 +57,8 @@
         }
         if (openEndedQuantifiers > 4) return true;
 
+        // quantifier or alternation at ANY depth. The flat `[^()]` heuristics
+        // classes. `?` cannot drive repetition, so it is inner risk only.
         const stack = [];
         for (let i = 0; i < pattern.length; i += 1) {
             const ch = pattern[i];
@@ -405,7 +411,12 @@
         'base', 'embed', 'iframe', 'link', 'meta', 'object', 'script', 'style'
     ]);
 
+    // Sanitizer API `setHTML`, which is most stable browsers today). Parsing
+    // adoption, but it does NOT neutralize `onerror=`/`onclick=` handlers or
+    // `javascript:` URLs. Today every caller passes static SVG literals, but
+    // this guarantees any future untrusted input can't smuggle an XSS sink.
     function _isDangerousUrl(value) {
+        // scheme when navigating, so `jav\nascript:` bypasses a plain regex.
         return _DANGEROUS_URL.test(String(value || '').replace(/[\u0000-\u0020]+/g, ''));
     }
 
@@ -430,6 +441,7 @@
         const nodes = Array.from(root.querySelectorAll('*'));
         for (const node of nodes) {
             _sanitizeParsedElement(node);
+            // querySelectorAll('*') never visits — recurse or payloads
             if (node.content && typeof node.content.querySelectorAll === 'function') {
                 _sanitizeParsedTree(node.content);
             }
@@ -631,6 +643,9 @@
         'Watch Page': [
             { labelKey: 'settingsSectionTranscriptAi', fallback: 'Transcript & AI', match: /^(transcriptAiHandoff|transcriptViewer|aiVideoSummary|keyMoments|copyChapterMarkdown)$/ },
             { labelKey: 'settingsSectionPlayerChrome', fallback: 'Player chrome', match: /^(removeScrubber|softBottomGradient|alwaysShowProgressBar|autoSkipChapters|chapterNavButtons|hideAutoplayToggle|floatingLogoOnWatch|stickyVideo|scrollToPlayer|playlistEnhancer|playlistSearch|watchPageTabs|focusedMode|zenMode)$/ },
+            // YouTube's own AI surfaces, kept together so the whole answer to
+            // "turn this off" is visible at once. These sit ahead of Page
+            // elements deliberately: that section's alternates are unanchored
             { labelKey: 'settingsSectionAiContent', fallback: 'AI content', match: /^(hideAskAi|hideGeminiButtons|hideAiSummary)$/ },
             { labelKey: 'settingsSectionPageElements', fallback: 'Page elements', match: /^(hiddenWatchElementsManager|hidePaidContentOverlay|hideInfoPanels|hideRelatedVideos|hideDescription|hideMerch|hideAsk|hideGemini|hideAi|hideHashtags|hideComment|condenseComments|hidePaidPromotionWatch|hideChannelJoinButton|hideFundraiser|hiddenActionButtonsManager|hideInfoCards)/ },
             { labelKey: 'settingsSectionInsightsNotes', fallback: 'Insights & notes', match: /^(preciseViewCounts|videoInsights|showChannelVideoCount|timestampBookmarks|videoNotes|watchTimeTracker|likeViewRatio|channelAgeDisplay|channelSubCount|redditComments|watchHistoryAnalytics)$/ },
@@ -1728,6 +1743,7 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // so feature authors don't hand-roll the same boilerplate.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createLifecycle) return;
@@ -1912,6 +1928,14 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    //     `githubFullProfile` opt-in.
+    //   - The data-flow panel's per-entry "available here" badge.
+    //       → effective profile = 'store-safe'
+    //       → effective profile = 'github-full'
+    //     'github-full' (most permissive) so the user's opt-in wins
+    //   - profile === 'both'            → always visible
+    //   - profile === 'store-safe'      → always visible (subset)
+    //   - profile === 'github-full'     → visible only when effective is 'github-full'
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createPolicyProfile) return;
@@ -2006,6 +2030,7 @@ if (typeof globalThis !== "undefined") {
             return isEntryAllowedInProfile(findEntry(key), effective);
         }
 
+        // current profile. Used by the popup's visible-toggle list and by
         function filterSettingsForProfile(settings = {}, effective) {
             const eff = normalizeEffectiveProfile(effective, settings);
             const out = {};
@@ -2015,6 +2040,13 @@ if (typeof globalThis !== "undefined") {
             return out;
         }
 
+        // secret (BYO API key) lands here regardless of the user's
+        // matched the *suffix* `apiKey$` / `token$` plus the exact
+        // `aiSummaryApiKey`. A user-supplied key named `apikey_v2`
+        // or `bearerToken` would have slipped through because the
+        // anchored suffix didn't fire on the underscore-separator or
+        // the `bearer` prefix. New patterns:
+        // The negative-lookahead on `api[_-]?key(?![_-]?id$)` prevents matching
         const ALWAYS_SCRUB_KEY_PATTERNS = Object.freeze([
             /apiKey$/i,
             /^aiSummaryApiKey$/,
@@ -2027,6 +2059,11 @@ if (typeof globalThis !== "undefined") {
             /(?:^|[a-z])(?:private|access|refresh|session|signing)Key$/i,
             /cookies?$/i,
             /cookieJar$/i,
+            // Two patterns for camelCase "auth" coverage:
+            //   /^auth/i        — settings starting with "auth" (authToken)
+            //   /[a-z]Auth/     — camelCase "Auth" mid-word (userAuth)
+            // (no schema key today contains "author" or similar) so
+            // the broad coverage doesn't cause false positives.
             /^auth/i,
             /[a-z]Auth/,
             /^ytkit-da-user-id$/,
@@ -2049,6 +2086,8 @@ if (typeof globalThis !== "undefined") {
             return compiled ? compiled.test(value) : false;
         }
 
+        // Every rejection used to be reported as `invalid type for "x":
+        // expected string`, including a perfectly good string that ran past
         function describeSettingValueRejection(value, entry) {
             if (!entry || typeof entry.type !== 'string') return 'unknown setting shape';
             if (entry.type === 'string' && typeof value === 'string') {
@@ -2082,6 +2121,8 @@ if (typeof globalThis !== "undefined") {
             case 'object':
                 return isPlainObject(value);
             case 'null':
+                // Nullable-complex settings (currently `sidebarOrder`) default to
+                // schema models them as `type: "null"` because the default IS null,
                 return value === null || Array.isArray(value) || isPlainObject(value);
             default:
                 return false;
@@ -2137,6 +2178,7 @@ if (typeof globalThis !== "undefined") {
                 }
 
                 if (!isSettingValueValid(value, entry)) {
+                    // "Work laptop" made a backup impossible — at exactly the
                     if (repairInvalid) {
                         out[key] = entry.defaultValue;
                         repairedKeys.push({ key, reason: describeSettingValueRejection(value, entry) });
@@ -2342,6 +2384,8 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
+    // The schema's own bound for a string setting, not just the global cap.
+    // enforced the schema's maxLength and pattern. A value could therefore be
     const entryPatternCache = new Map();
     function matchesEntryPattern(value, pattern) {
         if (!entryPatternCache.has(pattern)) {
@@ -2730,6 +2774,7 @@ if (typeof globalThis !== "undefined") {
             };
             const rollback = (error) => {
                 const keepCheckpoint = (rollbackError) => {
+                    // Same ownership rule as finalize: a newer operation's
                     if (generation !== operationGeneration) {
                         return {
                             ok: false,
@@ -2757,6 +2802,7 @@ if (typeof globalThis !== "undefined") {
                     };
                 };
                 const settle = () => {
+                    // import's undo point valid, because the state on disk
                     if (checkpoint?.generation === generation) checkpoint = null;
                     return { ok: false, phase: 'apply', rolledBack: true, error };
                 };
@@ -2835,6 +2881,7 @@ if (typeof globalThis !== "undefined") {
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     'use strict';
 
+    // Version 1 is intentionally the smallest cookie set yt-dlp's YouTube
     const PROTOCOL_VERSION = 1;
     const MINIMUM_COMPANION_API = 2;
     const QUERY_DOMAIN = '.youtube.com';
@@ -3045,6 +3092,7 @@ if (typeof globalThis !== "undefined") {
             : `${minutes}:${String(secs).padStart(2, '0')}`;
     }
 
+    // use it without opening YouTube's transcript panel.
     function normalizeTranscriptSegments(segments, options = {}) {
         const maxSegments = Math.max(1, Math.min(5000, Math.floor(Number(options.maxSegments) || 2500)));
         const maxTextChars = Math.max(100, Math.min(5000, Math.floor(Number(options.maxTextChars) || 1600)));
@@ -3164,6 +3212,9 @@ if (typeof globalThis !== "undefined") {
     }
 
     function sanitizeTranscriptProvenance(rawValue) {
+        // A default parameter only fires on `undefined`. Every caller passes
+        // `row.provenance` / `raw?.provenance`, which is null whenever the
+        // property exists and holds null, and `null.source` threw. Two of those
         const value = rawValue && typeof rawValue === 'object' ? rawValue : {};
         const source = TRANSCRIPT_SOURCES.has(value.source) ? value.source : 'none';
         const fetchedAt = Number(value.fetchedAt);
@@ -3424,6 +3475,10 @@ if (typeof globalThis !== "undefined") {
                             fetchedAt: nowFn(),
                             expiresAt,
                             staleReason,
+                            // ('refresh-discovery-failed', 'refresh-fetch-failed',
+                            // 'refresh-expired-url'). Hardcoding the panel
+                            // provenance exists to explain — "we tried a
+                            // refresh and it failed" never reached
                             fallbackReason: fallbackReason || (allowDomFallback ? 'panel-unavailable' : 'dom-disabled')
                         });
                         throw fetchError;
@@ -3571,9 +3626,12 @@ if (typeof globalThis !== "undefined") {
                     const row = segment.closest?.('ytd-transcript-segment-renderer');
                     const stamp = row?.querySelector?.('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]')
                         ?.textContent?.trim() || '';
+                    // YouTube renders this timestamp with the viewer's own
+                    // numerals, and `Number('٠:٠٧')` is NaN, so every cue in an
                     const normalizeDigits = globalThis.YTKitCore?.normalizeDigits;
                     const stampDigits = typeof normalizeDigits === 'function' ? normalizeDigits(stamp) : stamp;
                     const parts = stampDigits.split(':').map((part) => Number(part.trim()));
+                    // `filter(Number.isFinite)` was worse than dropping the
                     let startSeconds = 0;
                     if (parts.every(Number.isFinite)) {
                         if (parts.length === 2) startSeconds = parts[0] * 60 + parts[1];
@@ -3719,6 +3777,7 @@ if (typeof globalThis !== "undefined") {
                 const tracks = JSON.parse(captionJson);
 
                 let videoTitle = videoId;
+                // Anchor on videoDetails: the first "title" key in a watch
                 const detailsAt = html.indexOf('"videoDetails"');
                 const detailsText = detailsAt === -1 ? html : html.slice(detailsAt);
                 const pageVideoId = detailsText.match(/"videoId":"([A-Za-z0-9_-]{11})"/)?.[1] || '';
@@ -3784,6 +3843,8 @@ if (typeof globalThis !== "undefined") {
                     throw new Error('No language menu found in panel data');
                 }
 
+                // (token + '&fmt=json3' always fails), which used to convert
+                // "no transcript" into a misleading network error. Only surface
                 const tracks = languageMenu
                     .filter(item => typeof item.baseUrl === 'string' && item.baseUrl.includes('/api/timedtext'))
                     .filter(item => {
@@ -4114,6 +4175,8 @@ if (typeof globalThis !== "undefined") {
 
     const SCHEMA_VERSION = 3;
     const MAX_RECORDS = 1000;
+    // page origin, which storageQuotaLRU does not prune and the popup's
+    // recovery path short of a browser-level "clear site data".
     const MAX_TOTAL_BYTES = 64 * 1024 * 1024;
     const MAX_TEXT_CHARS = 200000;
     const MAX_SEARCH_TERMS = 5000;
@@ -5561,6 +5624,7 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // Shared adapter for Chrome's built-in AI task APIs. Keep feature code
     const root = globalThis;
     const core = root.YTKitCore || (root.YTKitCore = {});
     if (core.localAi) return;
@@ -5720,6 +5784,9 @@ if (typeof globalThis !== "undefined") {
                 : settings.aiSummaryEndpoint;
             let validated = core.validateAiProviderEndpoint(provider, configuredEndpoint);
             if (provider === 'gemini') {
+                // Gemini's model lives in the URL path, not the payload — honor
+                // setting isn't silently ignored. Invalid names fall back to the
+                // endpoint's model unchanged.
                 const model = String(settings.aiSummaryModel || '').trim();
                 if (model && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$/.test(model)) {
                     const rewritten = validated.url.replace(
@@ -5817,6 +5884,7 @@ if (typeof globalThis !== "undefined") {
         let artifactsClean = null;
         let artifactsCleanSource = null;
 
+        // bag; the userscript's settings-bag path remains the default.
         const readArtifactStore = typeof options.readArtifactStore === 'function'
             ? options.readArtifactStore
             : () => getSettings()?.aiSummaryArtifactsData;
@@ -5943,6 +6011,7 @@ if (typeof globalThis !== "undefined") {
             render();
         }
 
+        // contradicting the "stored outside Astra Deck" isolation promise.
         const CREDENTIAL_DIALOG_CSS = ':host{all:initial}'
             + '.ytkit-us-ai-credential-shell{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.7);font:14px/1.5 Roboto,system-ui}'
             + '.ytkit-us-ai-credential-card{width:min(420px,calc(100vw - 40px));box-sizing:border-box;padding:20px;border:1px solid #45475a;border-radius:12px;background:#1e1e2e;color:#cdd6f4;box-shadow:0 16px 56px rgba(0,0,0,.65);font:14px/1.5 Roboto,system-ui}'
@@ -6374,6 +6443,7 @@ if (typeof globalThis !== "undefined") {
         const status = getStatus(error, detail);
         if (status === 429) return 'rate-limited';
         if (status >= 500) return 'server-error';
+        // A 404 from an enrichment API means "we have nothing for this video",
         if (status === 404) return 'no-data';
         if (status >= 400) return 'client-error';
         if (/invalid|json|payload|schema/.test(message)) return 'invalid-payload';
@@ -6445,6 +6515,7 @@ if (typeof globalThis !== "undefined") {
         'unknown-error': 'unavailable'
     });
 
+    // interrupting someone's video for it is how an enrichment tool teaches
     const OUTAGE_MIN_CONSECUTIVE_FAILURES = 2;
 
     const OUTAGE_ERROR_CLASSES = new Set([
@@ -6469,6 +6540,7 @@ if (typeof globalThis !== "undefined") {
             : OUTAGE_MIN_CONSECUTIVE_FAILURES;
         const failures = Number(record.consecutiveFailures) || 0;
         if (failures < minFailures) return null;
+        // "Nothing for this video" is a successful answer with an empty body.
         if (!OUTAGE_ERROR_CLASSES.has(record.lastErrorClass)) return null;
         return {
             id: record.id,
@@ -6620,6 +6692,7 @@ if (typeof globalThis !== "undefined") {
             const cooldownMs = normalizeDuration(detail.cooldownMs) || budgetResetMs;
             rec.cooldownUntilTs = cooldownMs > 0 ? observedTs + cooldownMs : 0;
             rec.cooldownReason = cleanText(detail.cooldownReason || (errorClass === 'rate-limited' ? 'rate-limited' : ''));
+            // A service that answers "nothing for this video" is working, so
             rec.consecutiveFailures = errorClass === 'no-data'
                 ? 0
                 : (Number(rec.consecutiveFailures) || 0) + 1;
@@ -6633,6 +6706,7 @@ if (typeof globalThis !== "undefined") {
         }
 
         function recordCacheFallback(id, error, detail = {}) {
+            // from recordFailure first flashed 'error' at every subscriber
             recordFailure(id, error, {
                 ...detail,
                 cacheState: detail.cacheState || 'stale',
@@ -6693,6 +6767,8 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // future bug-filing flows three things the raw snapshot doesn't:
+    //      report ready for the popup "Copy selector report" button. The
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createSelectorHealth) return;
@@ -6954,6 +7030,7 @@ if (typeof globalThis !== "undefined") {
     }
 
     core.createSelectorHealth = createSelectorHealth;
+    // Stand-alone surface for direct callers that don't need the closure.
     core.summarizeSelectorHealth = summarize;
     core.rankSelectorProblems = rankProblemSurfaces;
     core.formatSelectorCopyReport = formatCopyReport;
@@ -6971,6 +7048,10 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // v4.68.0 — one answer to "which of my features are working right now?".
+    //   failed    the feature's own lifecycle threw (init-error /
+    //             destroy-error / cleanup-error), or its mutation rule's
+    // Disabled features are not reported at all. "Off" is not a health state
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.buildFeatureHealthReport) return;
@@ -6987,6 +7068,7 @@ if (typeof globalThis !== "undefined") {
         [STATUS_IDLE]: 0
     });
 
+    // Registry statuses that mean the feature's own code threw.
     const FAILED_LIFECYCLE_STATUSES = new Set(['init-error', 'destroy-error', 'cleanup-error']);
 
     const UNAVAILABLE_API_STATES = new Set(['unavailable', 'cooldown']);
@@ -7103,6 +7185,7 @@ if (typeof globalThis !== "undefined") {
             }
 
             for (const service of apisByFeature.get(id) || []) {
+                // `stale` means a cached answer is still being served, which
                 if (!UNAVAILABLE_API_STATES.has(service.availability)) continue;
                 status = worse(status, STATUS_DEGRADED);
                 reasons.push({
@@ -7197,6 +7280,10 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // chapter rail, the player's hover label and the three features that read
+    // titles are already sitting in `videoDetails.shortDescription` — the same
+    // The validation below is YouTube's own published rule set for description
+    // so a shopping list of "3:40 my favourite bit" links cannot be mistaken
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.parseDescriptionChapters) return;
@@ -7205,9 +7292,11 @@ if (typeof globalThis !== "undefined") {
     const MAX_CHAPTERS = 120;
     const MAX_TITLE_LENGTH = 300;
 
+    // YouTube's published requirements for description chapters.
     const MIN_CHAPTERS = 3;
     const MIN_CHAPTER_SECONDS = 10;
 
+    // `1:23`, `01:23`, `1:02:03`, `01:02:03`, and `120:00` — a long video's
     const CHAPTER_LINE = /^[\s\-–—•*]*\(?((?:\d{1,2}:)?\d{1,3}:\d{2})\)?[\s\-–—:|)\]]*(.*)$/;
 
     function parseTimestamp(text) {
@@ -7218,11 +7307,15 @@ if (typeof globalThis !== "undefined") {
         const minutes = Number(match[2]);
         const seconds = Number(match[3]);
         if (!Number.isFinite(hours) || !Number.isFinite(minutes) || !Number.isFinite(seconds)) return null;
+        // own, "90:00" is simply how a 1h30m mark gets written.
         if (seconds > 59) return null;
         if (match[1] && minutes > 59) return null;
         return (hours * 3600) + (minutes * 60) + seconds;
     }
 
+    // text does not satisfy YouTube's rules for a real chapter list — an empty
+    // result means "this description has no chapters", which callers must
+    // treat as "leave the rendered chapters alone".
     function parseDescriptionChapters(description) {
         const text = String(description || '');
         if (!text) return [];
@@ -7249,6 +7342,7 @@ if (typeof globalThis !== "undefined") {
         return found;
     }
 
+    // Find the original title for a chapter that RENDERS at `startSeconds`.
     function findChapterTitle(chapters, startSeconds, options) {
         if (!Array.isArray(chapters) || !chapters.length) return null;
         if (!Number.isFinite(startSeconds)) return null;
@@ -7267,6 +7361,7 @@ if (typeof globalThis !== "undefined") {
         return best ? best.title : null;
     }
 
+    // caller can treat a non-empty plan as "there is work to do".
     function planChapterRestore(renderedRows, chapters, options) {
         const plan = [];
         if (!Array.isArray(renderedRows) || !Array.isArray(chapters) || !chapters.length) return plan;
@@ -7294,6 +7389,13 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // spreadsheet formula injection: download history (`_csvCell`), Watch Later
+    // (`_csvEscape`) and Subscription Groups (`_csvEscape`). The last one even
+    // DETECTED a leading `=`/`+`/`-`/`@` — but only to decide whether to wrap
+    // Sheets from evaluating `"=cmd|..."` when the file is opened.
+    // `=` is a live formula in the user's spreadsheet.
+    // prefix a single quote, which every major spreadsheet treats as "the rest
+    // of this cell is literal text".
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.csvCell) return;
@@ -7324,14 +7426,23 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // v4.70.0 — the one rule every programmatic click on YouTube's own dialogs
+    // YouTube's AI age/identity-verification interstitials are COMPLIANCE
+    // action taken on the user's behalf without their knowledge, and the 2026
+    // auto-click, and every caller in this repository already handles "the
+    // click did not happen" (they fall back to positive evidence, or simply
+    // leave the dialog alone for the user). A FALSE NEGATIVE costs the user's
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.isComplianceDialog) return;
 
     const COMPLIANCE_TOKENS = /(?:consent|captcha|challenge|verif|identity|ident-|age[-_]?(?:gate|check|verif|restrict)|birthday|date[-_]?of[-_]?birth|sign[-_]?in|signin|login|passkey|credential|payment|purchase|billing)/i;
 
+    // Attributes worth reading. `is` and `class` catch view-model hosts (the
+    // camelCase `...ViewModel` shells YouTube increasingly renders), the rest
     const SCANNED_ATTRIBUTES = ['id', 'class', 'is', 'role', 'aria-labelledby', 'aria-describedby', 'data-purpose', 'data-testid'];
 
+    // escape a button's own wrapper chain, bounded so a hostile or unusual
     const MAX_ANCESTOR_DEPTH = 24;
 
     function describesCompliance(element) {
@@ -7350,6 +7461,7 @@ if (typeof globalThis !== "undefined") {
         return false;
     }
 
+    // True when `element` is, or sits inside, something that self-describes as
     function isComplianceDialog(element) {
         let node = element;
         let depth = 0;
@@ -7406,6 +7518,16 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // picker (uBOL's included) emits whatever selector reproduces the click,
+    // small curated set of structural attributes — the parts of YouTube's DOM
+    // that survive a redeploy because Polymer's own code depends on them.
+    //   Playlist item lists. Positional indices drive "N of M", next/previous
+    //   and shuffle; hiding one renumbers the list from the user's point of
+    //   Individual video cards. This is the interesting refusal. A card's
+    //   nearest structural ancestor is `ytd-rich-item-renderer`, and a rule on
+    //   have done. Per-video and per-channel hiding is Video Hider's job and it
+    //   Page containers. `ytd-app`, `ytd-browse`, `ytd-watch-flexy` and friends
+    //   Astra Deck's own UI. A picker that can zap the settings panel it was
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.deriveStructuralSelector) return;
@@ -7420,10 +7542,13 @@ if (typeof globalThis !== "undefined") {
     const MAX_MATCHES_PER_RULE = 50;
 
     const TAG_PATTERN = /^[a-z][a-z0-9-]{1,63}$/;
+    // Polymer's own ids are short lowercase words. Anything with uppercase, a
     const STABLE_ID_PATTERN = /^[a-z][a-z0-9-]{2,39}$/;
     const GENERATED_ID_HINT = /\d{3,}/;
     const ATTR_VALUE_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
 
+    // changes when the interface language does — the reason `aria-label`,
+    // `title` and `alt` are absent and must stay absent.
     const ALLOWED_ATTRIBUTES = Object.freeze([
         'page-subtype',
         'role',
@@ -7470,6 +7595,7 @@ if (typeof globalThis !== "undefined") {
         'ytd-masthead'
     ]);
 
+    // which is Video Hider's territory and metadata-based there for a reason.
     const ITEM_RENDERER_TAGS = new Set([
         'ytd-rich-item-renderer',
         'ytd-video-renderer',
@@ -7549,6 +7675,7 @@ if (typeof globalThis !== "undefined") {
         return String(raw).split(/\s+/).filter(Boolean);
     }
 
+    // Astra Deck's own surfaces are prefixed. This is the one place a class is
     function isOwnUi(element) {
         const tag = tagOf(element);
         if (tag.startsWith('ytkit-')) return true;
@@ -7583,6 +7710,7 @@ if (typeof globalThis !== "undefined") {
         return TAG_PATTERN.test(tag) && tag.includes('-');
     }
 
+    // recorded so the refusal can name it rather than saying "no anchor".
     function findAnchor(element) {
         let node = element;
         let steps = 0;
@@ -7592,6 +7720,8 @@ if (typeof globalThis !== "undefined") {
             const tag = tagOf(node);
             if (SECTION_ANCHOR_TAGS.has(tag)) return { anchor: node, kind: 'section', sawItemRenderer };
             if (ITEM_RENDERER_TAGS.has(tag)) {
+                // way up is thrown away — anchoring on `ytd-rich-grid-media`
+                // or `ytd-thumbnail` would blank every thumbnail in the feed,
                 sawItemRenderer = true;
                 fallback = null;
             } else if (!sawItemRenderer
@@ -7647,6 +7777,8 @@ if (typeof globalThis !== "undefined") {
         return { tag, id: stableIdOf(element), attributes: structuralAttributes(element) };
     }
 
+    // pages — `ytd-browse[page-subtype="home"] ytd-rich-shelf-renderer` will not
+    // other page containers are not: `ytd-app` and `ytd-page-manager` wrap
     const SCOPE_ROOT_TAGS = new Set(['ytd-browse', 'ytd-watch-flexy', 'ytd-search', 'ytd-masthead']);
 
     function findScopeStep(anchor) {
@@ -7690,6 +7822,7 @@ if (typeof globalThis !== "undefined") {
             return { ok: false, reason: REFUSAL_REASONS.UNDERIVABLE };
         }
 
+        // `section` + a scope is the shape that survives redeploys; the other
         let confidence = 'low';
         if (kind === 'section') confidence = scope ? 'high' : 'medium';
         else if (scope) confidence = 'medium';
@@ -7706,6 +7839,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
+    // does not cover — a class, a pseudo-class, `*`, a combinator other than
 
     const STEP_PATTERN = /^([a-z][a-z0-9-]{1,63})(#[a-z][a-z0-9-]{2,39})?((?:\[[a-z-]{1,32}(?:="[A-Za-z0-9_-]{1,40}")?\])*)$/;
     const ATTR_PATTERN = /\[([a-z-]{1,32})(?:="([A-Za-z0-9_-]{1,40})")?\]/g;
@@ -7884,6 +8018,10 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // marker is a feature nobody can debug, and "turn it off and see" is not a
+    // diagnostic. Every zapped element carries `data-ytkit-hidden-by` and shows
+    // selection and only then says "no" has already wasted the interaction; the
+    // Removing a rule un-hides immediately. `unmarkCardHidden` only clears a
 
     const ns = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     if (ns.createElementZapperFeature) return;
@@ -8269,9 +8407,11 @@ if (typeof globalThis !== "undefined") {
                     const toggle = documentRef.createElement('input');
                     toggle.type = 'checkbox';
                     toggle.checked = rule.enabled !== false;
+                    // hears "checkbox, not checked" and has no way to tell which
                     toggle.setAttribute('aria-label',
                         t('zapRuleToggleAriaTpl', 'Apply the rule for {selector}')
-                            .replace('{selector}', rule.selector));
+                            // the user's own selector: String.replace expands
+                            .replace('{selector}', () => rule.selector));
                     toggle.addEventListener('change', () => {
                         feature.setRuleEnabled(rule.selector, toggle.checked);
                     });
@@ -8294,7 +8434,8 @@ if (typeof globalThis !== "undefined") {
                     remove.textContent = t('zapRuleRemove', 'Remove');
                     remove.setAttribute('aria-label',
                         t('zapRuleRemoveAriaTpl', 'Remove the rule for {selector}')
-                            .replace('{selector}', rule.selector));
+                            // the user's own selector: String.replace expands
+                            .replace('{selector}', () => rule.selector));
                     remove.addEventListener('click', () => {
                         feature.removeRule(rule.selector);
                         renderList();
@@ -8336,6 +8477,9 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // did. `hideCollaborations`, `hidePlannedLivestreams` and
+    // `removeAllShorts` each hide feed cards through their own private CSS
+    // the note beside the card, the "which feature hid these?" answer, and
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.markCardHidden) return;
@@ -8344,6 +8488,7 @@ if (typeof globalThis !== "undefined") {
     const HIDDEN_RULE_ATTR = 'data-ytkit-hidden-rule';
     const NOTE_CLASS = 'ytkit-hidden-note';
 
+    // Counters are per navigation, not per session: "42 cards hidden" is only
     const MAX_TRACKED_FEATURES = 64;
     const MAX_TRACKED_RULES = 32;
     let counts = new Map();
@@ -8394,6 +8539,7 @@ if (typeof globalThis !== "undefined") {
         return true;
     }
 
+    // hiders judging the same card would clear each other's attribution and
     function unmarkCardHidden(element, featureId) {
         if (!element || element.nodeType !== 1) return false;
         const id = normalizeId(featureId);
@@ -8422,6 +8568,7 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
+    // anything inside it is invisible too. role="status" rather than a live
     function syncHiddenNote(element, options = {}) {
         if (!element || element.nodeType !== 1) return null;
         const doc = element.ownerDocument;
@@ -8500,11 +8647,14 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // v4.68.0 — YouTube's "most replayed" heatmap, which the player response
+    //        { markerType: 'MARKER_TYPE_HEATMAP',
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.parseHeatmapMarkers) return;
 
     const MAX_MARKERS = 512;
+    // and "most replayed" would just mean "the first third of the video".
     const MIN_USEFUL_MARKERS = 4;
 
     function finiteNumber(value) {
@@ -8569,6 +8719,7 @@ if (typeof globalThis !== "undefined") {
         return [];
     }
 
+    // `source` may be a player response, an initial-data object, or both
     function parseHeatmapMarkers(source) {
         if (!source || typeof source !== 'object') return [];
         const markers = fromEntityBatch(source);
@@ -8594,11 +8745,14 @@ if (typeof globalThis !== "undefined") {
                 return marker;
             }
         }
+        // as the last region rather than as "no data" — otherwise speed would
         const last = markers[markers.length - 1];
         if (last && seconds >= last.startSeconds) return last;
         return null;
     }
 
+    // "don't touch the rate" — never as "reset to 1x". A feature that cannot
+    // tell must leave the user's speed alone.
     function resolveHeatmapRate(markers, seconds, options = {}) {
         const baseRate = finiteNumber(options.baseRate) || 1;
         const coldRate = finiteNumber(options.coldRate) || baseRate;
@@ -8606,6 +8760,7 @@ if (typeof globalThis !== "undefined") {
         const threshold = hotThreshold === null ? 0.4 : Math.min(1, Math.max(0, hotThreshold));
         const marker = markerAt(markers, seconds);
         if (!marker) return null;
+        // Hot regions play at exactly the user's rate — the point is not to
         return marker.intensity >= threshold ? baseRate : Math.max(baseRate, coldRate);
     }
 
@@ -8647,6 +8802,12 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // `antiTranslate` restores the original title while the thumbnail beside
+    // it still shows text baked in the viewer's locale, which is a visible
+    //   1. PLAYER RESPONSE — `videoDetails.thumbnail.thumbnails[]`. Watch page
+    //   2. oEMBED — `https://www.youtube.com/oembed?...`. Same origin as the
+    //      its `thumbnail_url` does not vary by locale. This is the feed-card
+    //   3. CANONICAL URL — drop the signed variant query (`?sqp=…&rs=…`) from
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.canonicalThumbnailUrl) return;
@@ -8677,7 +8838,11 @@ if (typeof globalThis !== "undefined") {
             quality,
             extension,
             webp: prefix === 'vi_webp',
+            // A signed `sqp` crop/resize variant. This is what makes a rendered
+            // feed thumbnail differ from the uploader's asset.
             variant: url.searchParams.has('sqp') || url.searchParams.has('rs'),
+            // The uploader's own custom thumbnail for a Short. NOT a variant to
+            // be stripped: dropping `_custom_N` falls back to an auto-generated
             custom: /_custom_\d+$/.test(quality)
         };
     }
@@ -8726,6 +8891,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
+    // The tallest entry in a player response's thumbnail ladder.
     function pickPlayerResponseThumbnail(playerResponse) {
         const list = playerResponse?.videoDetails?.thumbnail?.thumbnails;
         if (!Array.isArray(list) || !list.length) return null;
@@ -8785,6 +8951,11 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // v4.69.0 — "focus hours": let any boolean feature carry an optional
+    //   NO ALARMS. `chrome.alarms` would be a new permission for something the
+    //   LOCAL TIME, NOT UTC. "22:00" means the viewer's 22:00. Every
+    //   RESTORE, DON'T DEFAULT. Leaving a window must put back the value the
+    // against the day its START falls on, so "weekdays 22:00–06:00" still
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.normalizeFeatureSchedule) return;
@@ -8810,6 +8981,7 @@ if (typeof globalThis !== "undefined") {
     }
 
     function normalizeDays(value) {
+        // as "every day" rather than silently disabling the feature forever.
         if (!Array.isArray(value) || value.length === 0) return [0, 1, 2, 3, 4, 5, 6];
         const days = new Set();
         for (const entry of value) {
@@ -8852,6 +9024,8 @@ if (typeof globalThis !== "undefined") {
         return date.getHours() * 60 + date.getMinutes();
     }
 
+    // Does `date` fall inside the window? Overnight windows belong to the day
+    // their START falls on, so the previous day's window is what covers the
     function isWithinWindow(schedule, date = new Date()) {
         const entry = normalizeScheduleEntry(schedule);
         if (!entry || !entry.enabled) return false;
@@ -8868,6 +9042,7 @@ if (typeof globalThis !== "undefined") {
         return days.includes(yesterday) && now < end;
     }
 
+    // Milliseconds until this schedule's state could next change. The runtime
     function msUntilNextBoundary(schedule, date = new Date()) {
         const entry = normalizeScheduleEntry(schedule);
         if (!entry) return null;
@@ -8885,6 +9060,8 @@ if (typeof globalThis !== "undefined") {
         return best;
     }
 
+    // `saved` maps featureId -> the value the user had before its window last
+    // opened. Returning `restore: true` with no value would let the caller
     function planScheduleTransitions(input = {}) {
         const schedules = normalizeFeatureSchedules(input.schedules);
         const settings = input.settings && typeof input.settings === 'object' ? input.settings : {};
@@ -8918,6 +9095,7 @@ if (typeof globalThis !== "undefined") {
             }
         }
 
+        // handed back, or the feature would be stuck at the schedule's value
         for (const featureId of Object.keys(saved)) {
             if (Object.prototype.hasOwnProperty.call(schedules, featureId)) continue;
             restore.push({ featureId, value: saved[featureId] === true, orphaned: true });
@@ -8966,6 +9144,12 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // Post-render CSS hiding is why `hideCollaborations` could hide 32 of 102
+    // counted, still in the layout, just invisible. The v4.58.1 ">25% of a
+    // feed must fail open" invariant catches that class of misfire, but it is
+    //   The player response. Autoplay, the "up next" target and the resume
+    //   Playlist item lists. `playlistVideoRenderer` / `playlistPanelVideoRenderer`
+    //   entries carry positional indices that YouTube uses for "N of M",
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.filterBrowseResponse) return;
@@ -9113,6 +9297,8 @@ if (typeof globalThis !== "undefined") {
             && value.playerResponse.videoDetails);
     }
 
+    // Mutates `response` in place — the JSON.parse hook hands us the object the
+    // rendering. Returns a report, always; `removed: 0` means it ran and found
     function filterBrowseResponse(response, options = {}) {
         const report = {
             applied: false,
@@ -9187,6 +9373,12 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // The panel reads from `getOrigins()`. Each entry shape:
+    //     origin:               string,                       // 'https://sponsor.ajay.app'
+    //     credentialsPolicy:    'no-cookies' | 'byo-key' | 'local-loopback' | 'none',
+    //     profile:              'store-safe' | 'github-full', // resolved gate
+    //     hostGrant:            'required' | 'runtime-optional',
+    //     riskBand:             'safe' | 'api' | 'local-companion' | 'experimental' | 'store-risk'
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createDataFlow) return;
@@ -9201,6 +9393,7 @@ if (typeof globalThis !== "undefined") {
     }
 
     const SPONSORBLOCK_CANONICAL_ORIGIN = 'https://sponsor.ajay.app';
+    // gated on a github-full-only optional permission, the browser's own
     const SPONSORBLOCK_MIRROR_ORIGIN = 'https://sponsorblock.kavin.rocks';
     const SPONSORBLOCK_ALLOWED_ORIGINS = Object.freeze([
         SPONSORBLOCK_CANONICAL_ORIGIN,
@@ -9236,6 +9429,7 @@ if (typeof globalThis !== "undefined") {
         try {
             companionPorts = require('./companion-ports');
         } catch (_) {
+            // manifest's companion-port bootstrap script.
         }
     }
 
@@ -9312,6 +9506,8 @@ if (typeof globalThis !== "undefined") {
         Object.freeze({
             origin: 'https://raw.githubusercontent.com',
             purpose: 'Repair paths, both anonymous and data-only: refreshing the YouTube selector packs when a layout change breaks a feature (only when you run a selector refresh), and reading the list of features the project has confirmed broken by a YouTube change (at most once every six hours, and only while Known-Breakage Notices is on).',
+            // should not rest on another host's CORS policy.
+            // "never automatically".
             requiredByFeatures: ['featureDisableFeed'],
             credentialsPolicy: 'no-cookies',
             profile: 'store-safe',
@@ -9367,6 +9563,8 @@ if (typeof globalThis !== "undefined") {
             riskBand: 'local-companion'
         }),
         ...(COMPANION_ORIGIN_ENTRY ? [COMPANION_ORIGIN_ENTRY] : []),
+        // github-full build declares `https://*/*` as optional so the browser
+        // helpers skip `specificOriginRequired` entries to prevent an all-sites
         Object.freeze({
             origin: 'https://*',
             purpose: 'User-configured self-hosted Cobalt API, contacted only after an exact per-origin grant.',
@@ -9448,6 +9646,8 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
+    // network request, it only modulates the parent's behaviour. The
+    // some origin's requiredByFeatures.
     const PARENT_FEATURE = Object.freeze({
         sbCat_sponsor: 'sponsorBlock',
         sbCat_intro: 'sponsorBlock',
@@ -9473,10 +9673,13 @@ if (typeof globalThis !== "undefined") {
         aiSummaryModel: 'aiVideoSummary',
         aiSummaryProvider: 'aiVideoSummary',
         transcriptQaLane: 'localAiTranscriptQa',
+        // description it uses Chrome's built-in Summarizer (no remote
     });
 
     function originMatchesManifest(origin, hostPermissions) {
         if (!Array.isArray(hostPermissions)) return null;
+        // (http://127.0.0.1:9751-9851), which `new URL()` rejects. Matching it
+        // catalogue's primary port or formatting ever changed. Resolve it
         const aliased = ORIGIN_HOST_PERMISSION_ALIASES[origin];
         if (Array.isArray(aliased)) {
             const matched = aliased.find((perm) => hostPermissions.includes(perm));
@@ -9535,6 +9738,8 @@ if (typeof globalThis !== "undefined") {
         return true;
     }
 
+    // Build a set of every key that is "covered" — either directly listed
+    // in some origin's requiredByFeatures, or covered through the parent
     function buildCoveredKeySet(catalogue, parentMap) {
         const directly = new Set();
         for (const o of catalogue) {
@@ -9547,6 +9752,8 @@ if (typeof globalThis !== "undefined") {
         return covered;
     }
 
+    // covered (risk = 'api' or 'local-companion', non-internal) but
+    // aren't, after applying the parent-feature inheritance map. An
     function findCoverageGaps(schema, catalogue = ORIGIN_CATALOGUE, parentMap = PARENT_FEATURE) {
         const covered = buildCoveredKeySet(catalogue, parentMap);
         const gaps = [];
@@ -9654,6 +9861,8 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // primitive in the popup too. The v5.0.0 roadmap's "single live
+    // region" contract will land alongside the categorised settings
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.toast) return;
@@ -9704,6 +9913,7 @@ if (typeof globalThis !== "undefined") {
         return TONE_BADGE[key];
     }
 
+    // channel isn't flooded by routine confirmations. Returned as a
     function getToastAriaDefaults(tone) {
         if (normalizeToastTone(tone) === 'error') return { role: 'alert', ariaLive: 'assertive' };
         return { role: 'status', ariaLive: 'polite' };
@@ -9735,6 +9945,8 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
+    // `_restackDepth` is read by the toast systems' popover `toggle` handlers:
+    // a counter rather than a boolean because `toggle` is queued, so the event
     function raiseActiveToasts() {
         if (typeof document === 'undefined') return 0;
         let raised = 0;
@@ -9828,6 +10040,7 @@ if (typeof globalThis !== "undefined") {
                 toast.removeEventListener('toggle', toast._popoverToggleHandler);
                 toast._popoverToggleHandler = null;
             }
+            // `[popover]:not(:popover-open)` is display:none, so the toast
             const finishRemoval = () => {
                 if (typeof toast.hidePopover === 'function') {
                     try {
@@ -9838,6 +10051,7 @@ if (typeof globalThis !== "undefined") {
                 toast.remove();
             };
             toast.classList.remove('is-visible');
+            // The reduced-motion branch matches ytkit.js's inline
             const reduce = typeof window !== 'undefined'
                 && window.matchMedia
                 && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -9941,6 +10155,7 @@ if (typeof globalThis !== "undefined") {
             if (usePopover) {
                 const toggleHandler = (event) => {
                     if (event.newState !== 'closed') return;
+                    // Counted rather than flagged because `toggle` is queued, so
                     if (toast._restackDepth > 0) {
                         toast._restackDepth -= 1;
                         return;
@@ -10191,9 +10406,11 @@ if (typeof globalThis !== "undefined") {
         lastNavHref = href;
         if (urlChanged || pendingMutationRouteReset) {
             resetMutationRuleHealthForRoute();
+            // Hidden-card counts are per navigation: "42 cards hidden" only
             core.resetHideAttribution?.();
         }
         pendingMutationRouteReset = false;
+        // change. `yt-page-data-updated` also fires as the feed appends items
         const reducedMotion = typeof window.matchMedia === 'function'
             && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (!urlChanged || reducedMotion || typeof document.startViewTransition !== 'function') {
@@ -10220,6 +10437,8 @@ if (typeof globalThis !== "undefined") {
         navigateDebounceTimer = setTimeout(runNavigateRules, runtime.navDebounce);
     }
 
+    // route dispatch. YouTube's events remain the compatibility path for
+    // browsers without `window.navigation` or for implementations that
     let navigationApiHandler = null;
 
     function attachNavigationApi() {
@@ -10230,9 +10449,14 @@ if (typeof globalThis !== "undefined") {
             debouncedRunNavigateRules({ type: 'navigate' });
         };
         try {
+            // `navigatesuccess` — NOT `navigate`. The navigate event fires
+            // page's DOM, and it also fires for things yt-navigate-finish never
+            // the platform's post-commit signal and the true analogue of the
+            // (The previous code tried to await `event.committed`, but that
             window.navigation.addEventListener('navigatesuccess', navigationApiHandler);
             return true;
         } catch (_) {
+            // browsers expose `navigation` but reject addEventListener.
             navigationApiHandler = null;
             return false;
         }
@@ -10243,6 +10467,7 @@ if (typeof globalThis !== "undefined") {
         try {
             window.navigation.removeEventListener('navigatesuccess', navigationApiHandler);
         } catch (_) {
+            // listener will be GC'd when the page unloads.
         }
         navigationApiHandler = null;
     }
@@ -10457,6 +10682,7 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
+    // Cap pending records so a hidden tab (where rAF never fires) doesn't
     var PENDING_MUTATION_CAP = 2000;
     var mutationFallbackTimer = null;
 
@@ -10478,6 +10704,8 @@ if (typeof globalThis !== "undefined") {
         if (mutationScheduled) return;
         mutationScheduled = true;
         requestAnimationFrame(drainMutationRecords);
+        // Fallback drain for hidden tabs where rAF doesn't fire: setTimeout
+        // still runs (throttled to ~1 Hz) so records don't accumulate forever.
         if (!mutationFallbackTimer) {
             mutationFallbackTimer = setTimeout(() => {
                 mutationFallbackTimer = null;
@@ -10530,6 +10758,9 @@ if (typeof globalThis !== "undefined") {
         }
     }
 
+    // Scoped mutation rule — only runs when a node matching `selector` is
+    // for feed-driven features that previously did `document.querySelectorAll`
+    // `ruleFn` receives `(targetNode, addedElements)` where `addedElements`
     function addScopedMutationRule(id, selector, ruleFn) {
         if (!id || typeof selector !== 'string' || typeof ruleFn !== 'function') return;
         if (!hasAnyMutationRule()) {
@@ -10656,6 +10887,7 @@ if (typeof globalThis !== "undefined") {
             const chunkStartedAt = nowMs();
             let processedInChunk = 0;
             while (index < list.length && processedInChunk < chunkSize) {
+                // would leave `promise` forever unsettled and strand callers
                 try {
                     callback(list[index], index, list);
                 } catch (e) {
@@ -10755,6 +10987,7 @@ if (typeof globalThis !== "undefined") {
 
     const VOLUME_CURVE_MIN_DB = -40;
     const VOLUME_CURVE_DB_RANGE = 0 - VOLUME_CURVE_MIN_DB;
+    // YouTube's player API reports integer percentages. This tolerance lets
     const VOLUME_CURVE_INTERNAL_EPSILON = 0.012;
 
     function clampVolumeUnit(value, fallback = 0) {
@@ -11456,6 +11689,7 @@ if (typeof globalThis !== "undefined") {
 
         function queueLock(args) {
             if (queuedLocks.length >= MAX_QUEUED_LOCKS) {
+                // page's current state, and the displaced caller still gets
                 const oldest = queuedLocks.shift();
                 droppedLocks += 1;
                 oldest.resolve(undefined);
@@ -11577,6 +11811,7 @@ if (typeof globalThis !== "undefined") {
             if (indexedDbPatched && idbPrototype?.open) idbPrototype.open = originalIdbOpen;
             lockPatched = false;
             indexedDbPatched = false;
+            // without Astra; each callback's finally handler removes its entry.
             databases.clear();
             installed = false;
             report();
@@ -11598,6 +11833,8 @@ if (typeof globalThis !== "undefined") {
         return value.toString(16).padStart(width, '0');
     }
 
+    // standard's important edge cases: a leading ASCII letter/digit is
+    // such as '-' use \x escapes because `\\-` is invalid in a Unicode regex.
     function escapeRegExp(value) {
         const text = String(value ?? '');
         const nativeEscape = globalThis.RegExp?.escape;
@@ -11644,6 +11881,7 @@ if (typeof globalThis !== "undefined") {
         return output;
     }
 
+    // compact suffix (for example "1,2 Mio. Aufrufe" or "12.3万 回視聴").
     const VIEW_COUNT_LABELS = /(?:views?|watching|aufrufe?|ansichten?|visualizaciones?|vues?|visualizações?|visualizzazioni?|просмотр(?:а|ов|ы)?|回視聴|視聴回数|조회수|观看次数?|播放次数?|المشاهدات?|مشاهدة)/i;
     const DEFAULT_NO_COUNT = /(?:\bno\s+views?\b|\bkeine[nr]?\s+aufrufe?\b|\bkeine\s+ansichten?\b|\bkeine\s+visualisierungen\b|нет\s+просмотров|視聴回数\s*(?:なし|ありません)|조회수\s*없음|(?:没有|暂无)观看次数|(?:لا\s+)?مشاهدات)/i;
     const SUFFIX_SOURCE = '(k|m|b|tsd\\.?|mio\\.?|mrd\\.?|md|mln\\.?|mld\\.?|tys\\.?|rb|jt|тыс\\.?|млн\\.?|млрд\\.?|mil|mille|million(?:s|en)?|milliard(?:s|en)?|千|万|億|亿|천|만|억|ألف|مليون|مليار)';
@@ -11760,10 +11998,16 @@ if (typeof globalThis !== "undefined") {
             if (after) return after;
         }
 
+        // such as "Top 5 videos" from becoming a view count.
         if (allowBare) return readToken(raw.trim(), true);
         return null;
     }
 
+    // Handles comma-grouped integers ("1,234 views" -> 1234), K/M/B and
+    // localized suffixes ("1,2 Mio. Aufrufe", "12.3万 回視聴"), "No views"
+    // and live "watching" counts. Returns `missingValue` (default null) when
+    // the text carries no parseable count, so callers can distinguish "no
+    // data" from "0 views". `options.labels` can be supplied for another
     function parseCompactCount(text, missingValue = null, options = {}) {
         const raw = normalizeDigits(String(text || '')
             .replace(/[\u00a0\u202f]/g, ' ')
@@ -11772,6 +12016,8 @@ if (typeof globalThis !== "undefined") {
             .replace(/\s+/g, ' ')
             .trim()
             .toLowerCase());
+        // Empty/whitespace input is "no data", not "0 views". A card read
+        // consumers guard on `!== null` precisely so a pre-hydration card is
         if (!raw) return missingValue;
 
         const labels = options.labels || VIEW_COUNT_LABELS;
@@ -11783,6 +12029,7 @@ if (typeof globalThis !== "undefined") {
         return Math.round(token.number * parseSuffix(token.suffix));
     }
 
+    // rendered timestamp out of YouTube's own DOM.
     Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits });
 })();
 //m:12
@@ -11928,6 +12175,7 @@ if (typeof globalThis !== "undefined") {
     function formatDurationFallback(seconds, options = {}) {
         const { hours, minutes, seconds: remainder } = durationParts(seconds);
         if (options.style === 'digital') {
+            // the clock reads "1:2:03". Chrome 120 to 128 takes this path
             const clock = hours > 0
                 ? `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
                 : `${minutes}:${String(remainder).padStart(2, '0')}`;
@@ -11992,6 +12240,7 @@ if (typeof globalThis !== "undefined") {
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.describeFailure) return;
 
+    // User-facing failure copy. Surfaces used to append `error.message` or a
     const FAILURE_CAUSES = Object.freeze({
         offline: { key: 'failureCauseOffline', fallback: 'Your device looks offline. Reconnect, then try again.' },
         network: { key: 'failureCauseNetwork', fallback: 'The service could not be reached. Check your connection, then try again.' },
@@ -12128,6 +12377,7 @@ if (typeof globalThis !== "undefined") {
         return copy || entry.fallback;
     }
 
+    // `<label>: <cause sentence>` for the common "Import failed: …" shape.
     function describeFailureWithLabel(label, error, translate) {
         const sentence = describeFailure(error, translate);
         const prefix = String(label || '').trim();
@@ -12135,6 +12385,7 @@ if (typeof globalThis !== "undefined") {
         return `${prefix.replace(/[.:]\s*$/, '')}: ${sentence}`;
     }
 
+    // an accessible name that still leads with the badge's own visible label.
     function describeFailureBadge(badgeLabel, subject, error, translate) {
         const detail = describeFailureWithLabel(subject, error, translate);
         const label = String(badgeLabel || '').trim();
@@ -12166,6 +12417,8 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // misspelled flag at a write site (e.g. `__ytkit_video_popped`)
+    // power users and the userscript build's globalThis-bound code
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.runtimeFlags) return;
@@ -12201,6 +12454,9 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // optional `requires:` field on settings-schema entries (NF17).
+    // await `runAll()` once at popup boot and cache the result.
+    // capability check doesn't constitute "using" the API.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.capabilityProbe) return;
@@ -12233,6 +12489,12 @@ if (typeof globalThis !== "undefined") {
                 label: 'Chrome / Edge / Brave',
                 vehicle: 'MV3 extension or userscript',
                 baseline: 'Chrome 120+ / equivalent Chromium release',
+                // Declared in the manifest as `minimum_chrome_version`, so a
+                // carried forward: the `side_panel` manifest key and the
+                // `sidePanel` permission (Chrome 114), `sidePanel.open()`
+                // (116), and `text-wrap` (114). Everything the codebase uses
+                // own: CloseWatcher (120), CSS `@scope` (118), CSS anchor
+                // positioning (125), `CSS.highlights` (105), popover (114),
                 minimumChromeVersion: '120',
                 note: 'Optional built-in AI APIs remain conditional on browser rollout, model readiness, device policy, and flags.'
             },
@@ -12406,6 +12668,7 @@ if (typeof globalThis !== "undefined") {
     });
 
     function hasSummarizerApi() {
+        // summarizer-backed features rendered a permanent "unavailable" chip on
         if (typeof globalThis === 'undefined') return false;
         return typeof globalThis.Summarizer !== 'undefined'
             || typeof globalThis.ai?.summarizer !== 'undefined';
@@ -12417,6 +12680,8 @@ if (typeof globalThis !== "undefined") {
             || typeof globalThis.ai?.translator !== 'undefined';
     }
 
+    // Detect whether we're in an extension popup/sidepanel context where
+    // the meta CSP blocks direct loopback fetches (connect-src 'self' does
     function isExtensionPopupContext() {
         try {
             return typeof chrome !== 'undefined'
@@ -12436,6 +12701,7 @@ if (typeof globalThis !== "undefined") {
                 }, (resp) => {
                     clearTimeout(timer);
                     if (chrome.runtime.lastError) { resolve(false); return; }
+                    // "companion available", which is the same false positive a
                     const status = Number(resp && resp.status);
                     const ok = Boolean(resp)
                         && !resp.error
@@ -12496,6 +12762,7 @@ if (typeof globalThis !== "undefined") {
     async function hasOllama() {
         const result = await fetchWithTimeout(`http://127.0.0.1:${OLLAMA_PORT}/api/version`, PROBE_TIMEOUT_MS);
         if (!result || !result.ok) return false;
+        // /api/version answers {"version":"..."} — anything else on this port
         try {
             const payload = JSON.parse(result.body);
             return !!payload && typeof payload.version === 'string';
@@ -12594,14 +12861,17 @@ if (typeof globalThis !== "undefined") {
         ollama:           { async: true,  run: hasOllama },
     });
 
+    // Promise is always truthy, so `if (await probe('mediaDL'))` is required to
     async function probe(name) {
         const entry = PROBES[name];
         if (!entry) {
+            // than throw, so a stale UI element doesn't crash the
             return false;
         }
         try {
             return Boolean(entry.async ? await entry.run() : entry.run());
         } catch (_) {
+            // error as "capability not available".
             return false;
         }
     }
@@ -12613,6 +12883,7 @@ if (typeof globalThis !== "undefined") {
                 const value = PROBES[name].async ? await PROBES[name].run() : PROBES[name].run();
                 return [name, Boolean(value)];
             } catch (_) {
+                // any error as "capability not available".
                 return [name, false];
             }
         }));
@@ -12621,6 +12892,7 @@ if (typeof globalThis !== "undefined") {
         return Object.freeze(out);
     }
 
+    // available. Entries with no `requires:` always return true.
     function isEntryAvailable(entry, capabilityMap) {
         if (!entry || !Array.isArray(entry.requires) || entry.requires.length === 0) return true;
         if (!capabilityMap) return true;
@@ -12649,6 +12921,7 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // `subtitles` in the v4.6.0 schema):
 
     const FONT_FAMILY_MAP = Object.freeze({
         default: '',
@@ -12908,6 +13181,7 @@ if (typeof globalThis !== "undefined") {
                     : {};
             },
 
+            // The language the viewer is ALREADY reading on screen. "Auto"
             _activeCaptionLanguage() {
                 try {
                     const player = doc?.querySelector?.('#movie_player');
@@ -12928,6 +13202,7 @@ if (typeof globalThis !== "undefined") {
             },
 
             _playerResponse() {
+                // page's response was accepted — one wasted timed-text fetch and
                 if (!String(getVideoId?.() || '')) return null;
                 const pageData = doc?.querySelector?.('ytd-watch-flexy');
                 const pageResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
@@ -13198,6 +13473,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
+    // monolith's inline subtitleStyling block. v4.47.0 NF5 wave 1
     const featureSpec = Object.freeze({
         id: 'subtitleStyling',
         category: 'subtitles',
@@ -13249,6 +13525,10 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // CSS-`filter` chain applied to .html5-main-video, driven by these
+    // seven settings-schema keys (category `playback-audio` in the
+    // Like v4.13.0's subtitles peel, this slice exports a single pure
+    // helper buildVideoFilterCss(settings) that ytkit.js's existing
 
     function clamp(value, min, max) {
         const n = Number(value);
@@ -13426,6 +13706,8 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // driven by two settings-schema keys (category `playback-audio`):
+    // helper that ytkit.js's existing _apply() delegates to. The DOM
 
     function clamp(value, min, max) {
         const n = Number(value);
@@ -13439,6 +13721,8 @@ if (typeof globalThis !== "undefined") {
         return clamp(raw, 10, 80);
     }
 
+    // ytkit.js's prior inline expression (intensity / 100, then the
+    // 180-80i / 60-60i / 0.35i triple), with `Math.round` on the
     function buildBlueLightRgba(settings) {
         const intensityPct = readIntensity(settings);
         const intensity = intensityPct / 100;
@@ -13493,11 +13777,15 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // module just centralises the strings so they're testable in
+    // Schema keys touched (category `shell`):
 
     function isHexLike(value) {
         return typeof value === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(value);
     }
 
+    // *nothing* when the color matched the default '#ff0000' so the
+    // return `null` for the default, the CSS string otherwise.
     function buildProgressBarCss(settings) {
         const colour = (settings && settings.customProgressBarColor) || '#ff0000';
         if (!isHexLike(colour)) return null;
@@ -13506,6 +13794,7 @@ if (typeof globalThis !== "undefined") {
             + ' .ytp-volume-slider-foreground::after { background: ' + colour + ' !important; }';
     }
 
+    // '#2dd36f'.
     function buildSelectionColorCss(settings) {
         const colour = (settings && settings.selectionColor) || '#2dd36f';
         const safe = isHexLike(colour) ? colour : '#2dd36f';
@@ -13513,6 +13802,8 @@ if (typeof globalThis !== "undefined") {
             + '                    ::-moz-selection { background: ' + safe + ' !important; color: #000 !important; }\n                ';
     }
 
+    // forceDarkEverywhere: parameter-less rules to drag YouTube's
+    // `dark` attribute + `color-scheme: dark` documentElement bits —
     function buildForceDarkEverywhereCss() {
         return '\n                    html[dark] { --yt-spec-base-background: #0f0f0f !important; --yt-spec-brand-background-solid: #0f0f0f !important; }\n'
             + '                    ytd-app, ytd-browse, ytd-page-manager, #content { background-color: #0f0f0f !important; }\n'
@@ -13521,6 +13812,7 @@ if (typeof globalThis !== "undefined") {
             + '                    .page-container, .yt-core-attributed-string, [light] { background: #0f0f0f !important; color: #f1f1f1 !important; }\n                ';
     }
 
+    // validation). Returns `null` otherwise so the monolith can skip the
     const ACCENT_HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
     function accentRgbTuple(accent) {
         const raw = accent.slice(1);
@@ -13647,12 +13939,14 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // the CSS through `injectStyle`. Centralising the strings here
 
     function buildHideNotificationButtonCss() {
         return 'ytd-notification-topbar-button-renderer, ytd-topbar-menu-button-renderer:has(a[href="/notifications"]) { display: none !important; }';
     }
 
     function buildNoFrostedGlassCss() {
+        // a universal `*` selector, which forced the style engine to re-match
         return 'ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, '
             + 'ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, '
             + 'tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, '
@@ -13669,6 +13963,7 @@ if (typeof globalThis !== "undefined") {
         return 'ytd-miniplayer[active] { display: none !important; } .ytp-miniplayer-button { display: none !important; }';
     }
 
+    // matches the monolith's template-literal indentation exactly so a
     function buildNyanCatProgressBarCss() {
         return `.ytp-play-progress {
                 background: linear-gradient(180deg, #ff0000 0%, #ff9900 16.6%, #ffff00 33.3%, #33ff00 50%, #0099ff 66.6%, #6633ff 83.3%, #ff0000 100%) !important;
@@ -13700,6 +13995,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
+    // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
     const LIFECYCLE_SPECS = Object.freeze([
         createLifecycleSpec('hideNotificationButton', 'comments',     buildHideNotificationButtonCss, ['all']),
         createLifecycleSpec('noFrostedGlass',         'shell',        buildNoFrostedGlassCss,         ['all']),
@@ -13746,11 +14042,14 @@ if (typeof globalThis !== "undefined") {
 (() => {
     'use strict';
 
+    // v4.43.0 bundled peel for CSS-only "Home / Subscriptions"
+    // features that share the cssFeature() helper's static-CSS
 
     function buildHideCreateButtonCss() {
         const core = globalThis.YTKitCore;
         const chain = core?.getSurfaceHookSelectorChain?.('nav', 'createButton');
         if (Array.isArray(chain) && chain.length) return chain.join(', ');
+        // The leading "+" glyph is stable across locales and is more
         return 'ytd-masthead #buttons ytd-button-renderer:has(path[d^="M12 3a1 1 0 00-1 1v7H4"])';
     }
 
@@ -13901,6 +14200,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 
+    // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
     const LIFECYCLE_SPECS = Object.freeze([
         createLifecycleSpec('hideCreateButton',        'nav',          buildHideCreateButtonCss,        ['all']),
         createLifecycleSpec('hideVoiceSearch',         'nav',          buildHideVoiceSearchCss,         ['all']),
@@ -14017,6 +14317,7 @@ if (typeof globalThis !== "undefined") {
         else delete comment.dataset[flagName];
     }
 
+    // The restyle hides YouTube's own #like-button and #vote-count-middle, so
     const THUMB_ICON_PATH = 'M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z';
     const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -14192,6 +14493,7 @@ if (typeof globalThis !== "undefined") {
         });
     }
 
+    // a comment's subtree. Every mutation batch re-ran it for the whole thread,
     function isCommentSurfaceNormalized(comment) {
         if (comment.style.getPropertyValue('--ytd-comment-thumb-dimension') !== '24px') return false;
         const main = comment.querySelector(':scope > #body > #main');
@@ -14209,6 +14511,7 @@ if (typeof globalThis !== "undefined") {
         setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
         setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted]:not([hidden])'));
         setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
+        // so a stale badge would keep the previous comment's count and liked
         comment.querySelector('.ytkit-vote-badge')?.remove();
         buildVoteBadge(comment, translate);
         if (wasStyled && isCommentSurfaceNormalized(comment)) return;
@@ -14539,6 +14842,7 @@ if (typeof globalThis !== "undefined") {
                 return 'standard';
             },
 
+            // Nudge YouTube's player to recalculate control bar layout.
             _triggerPlayerResize() {
                 clearTimeout(this._resizeTimer);
                 this._resizeTimer = setTimeout(() => {
@@ -15728,6 +16032,7 @@ if (typeof globalThis !== "undefined") {
 
                 const left = document.createElement('div');
                 left.id = 'ytkit-split-left';
+                // flex:1 — left fills whatever space the right panel doesn't take.
                 left.style.cssText = `flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;background:transparent;position:relative;pointer-events:none;`;
 
                 const divider = document.createElement('div');
@@ -15910,6 +16215,7 @@ if (typeof globalThis !== "undefined") {
                 const player = this._getPlayer();
                 const below  = this._getBelow();
                 if (!player) return;
+                // For live streams, #below may not exist yet — that's OK
                 if (!below && !VideoTypeDetector.hasChat()) return;
 
                 this._positionedEls = [];
@@ -15929,6 +16235,7 @@ if (typeof globalThis !== "undefined") {
                 const left  = wrapper.querySelector('#ytkit-split-left');
                 const right = wrapper.querySelector('#ytkit-split-right');
 
+                // The overlay's left panel is transparent, so the player shows through.
                 this._setStyles(player, {
                     position: 'fixed', top: '0', left: '0',
                     width: '100%', height: '100vh',
@@ -15937,6 +16244,7 @@ if (typeof globalThis !== "undefined") {
                     'max-width': 'none', overflow: 'hidden'
                 });
 
+                // Force #movie_player to fill parent — clear YT's inline px dimensions
                 let _fpsPending = false;
                 let _fpsCount = 0;
                 const forcePlayerSize = () => {
@@ -15961,6 +16269,7 @@ if (typeof globalThis !== "undefined") {
                 };
                 forcePlayerSize();
 
+                // Single ResizeObserver on left panel — debounced to avoid fight with YT's player
                 this._playerResizeObs = new ResizeObserver(() => {
                     clearTimeout(this._playerResizeDebounceTimer);
                     this._playerResizeDebounceTimer = setTimeout(() => {
@@ -15982,9 +16291,11 @@ if (typeof globalThis !== "undefined") {
                 const chatEl = this._getChatEl();
                 if (chatEl) {
                     chatEl.style.setProperty('pointer-events', 'none', 'important');
+                    // Ensure chat iframe isn't collapsed (YT collapses it sometimes)
                     chatEl.removeAttribute('collapsed');
                 }
 
+                // Pre-scroll to comments so YT's IO fires (behind the overlay, invisible).
                 if (this._videoType !== 'live' && below) {
                     const scrollToComments = () => {
                         this._scrollToCommentsTimer = null;
@@ -16019,6 +16330,7 @@ if (typeof globalThis !== "undefined") {
                     }
                 }
 
+                // Watch for late chat frame insertion — if we mounted as 'standard'
                 if (this._videoType === 'standard' && !this._getChatEl()) {
                     this._watchForChat({ position: false, timeoutMs: 15000 });
                 }
@@ -16033,6 +16345,7 @@ if (typeof globalThis !== "undefined") {
                     return (this._positionedEls || []).some(el => el.contains(target));
                 };
 
+                // before YouTube's player can stopPropagation (volume control).
                 const isOverPlayer = (target) => {
                     const mp = document.getElementById('movie_player');
                     return mp && mp.contains(target);
@@ -16099,6 +16412,7 @@ if (typeof globalThis !== "undefined") {
 
                 this._keyHandler = (e) => {
                     if (e.key !== 'Escape' || !this._isActive) return;
+                    // Don't intercept escape when user is typing in an input/textarea
                     const tag = document.activeElement?.tagName;
                     if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
                     if (this._isSplit) {
@@ -16191,6 +16505,7 @@ if (typeof globalThis !== "undefined") {
                 document.documentElement.classList.add('ytkit-split-open');
                 document.documentElement.style.setProperty('--ytkit-split-right-width', `calc(${rightPct}vw - 6px)`);
 
+                // Expand overlay's right panel placeholder
                 right.style.flexBasis = rightPct + '%';
                 right.style.width     = rightPct + '%';
                 divider.style.flexBasis = '8px';
@@ -16207,6 +16522,7 @@ if (typeof globalThis !== "undefined") {
                     right.style.opacity = '1';
                 }
 
+                // Elements stay in original DOM (no reparenting) so YT's IO works.
                 if (type === 'live') {
                     if (chatEl) this._prepareSecondaryForChat();
                     const liveHeaderTop = this._ensureSplitLiveHeader(rightPct);
@@ -16262,6 +16578,8 @@ if (typeof globalThis !== "undefined") {
                     if (this._entering) onExpanded();
                 }, 500);
 
+                // — and keeps pulling up. The tick count is what makes "past
+                // the title" mean something: landing on the top edge does not
                 const scrollEl = this._scrollTarget;
                 let _collapseScrollCount = 0;
                 let _collapseScrollTimer = null;
@@ -16318,6 +16636,10 @@ if (typeof globalThis !== "undefined") {
                 if (!this._isSplit) return;
                 this._isSplit = false;
                 if (dismissed) this._dismissed = true;
+                // Clear `_entering` in case we collapse before the expand
+                // `_expandSplit` would still see `_entering === true` and call
+                // `onExpanded()` on an already-collapsed panel, re-triggering
+                // `_triggerPlayerResize()` and `checkAllButtons()`.
                 this._entering = false;
                 clearTimeout(this._expandFallbackTimer);
                 this._expandFallbackTimer = null;
@@ -16895,6 +17217,7 @@ if (typeof globalThis !== "undefined") {
 
     const SUBSCRIBER_COUNT_LABELS = /(?:subscribers?|abonnenten?|abonnés?|suscriptores?|inscritos?|inscritti|подписчик(?:и|ов|а)?|チャンネル登録者|登録者|購読者|订阅者|粉丝|구독자|المشترك(?:ون|ين)?)/i;
     const NO_SUBSCRIBERS_PATTERN = /(?:\bno\s+subscribers?\b|\bkeine[nr]?\s+abonnenten?\b|нет\s+подписчик|登録者\s*(?:なし|いません)|订阅者\s*暂无|구독자\s*없음)/i;
+    // "AI detector": a false positive is more harmful than leaving a card
     const SYNTHETIC_NARRATION_PATTERN = /\b(?:ai[-\s]*(?:generated|narrat(?:ed|ion)|voice(?:[-\s]?over)?)|synthetic[-\s]+(?:voice|narration)|automated[-\s]+(?:narration|voice(?:[-\s]?over)?)|text[-\s]*to[-\s]*speech|tts(?:[-\s]+voice)?|voice[-\s]+clone|elevenlabs)\b/i;
     const SYNTHETIC_CHANNEL_PATTERN = /\b(?:ai[-\s]*(?:daily|news|facts|stories|channel)|(?:daily|news|facts|stories)[-\s]*ai)\b/i;
     const FILTER_REASON_MESSAGES = Object.freeze({
@@ -17094,6 +17417,7 @@ if (typeof globalThis !== "undefined") {
             _directWatchPlayHandler: null,
             _directWatchResumeAfterDecision: false,
             _removedVideoNodes: [],
+            // is the same subtree-pinning risk `_removedVideoNodes` uses a
             _hiddenReasonPlaceholders: new WeakMap(),
             _subsBannerCollapsed: false,
             _subsLoadState: {
@@ -17336,6 +17660,8 @@ if (typeof globalThis !== "undefined") {
                 this._subsLoadState.totalVideosHidden += hiddenCount;
                 this._subsLoadState.lastBatchSize = batchSize;
                 this._subsLoadState.lastBatchHidden = hiddenCount;
+                // v4.47.0 NF33: the prior "100% hidden" gate (allHidden =
+                // A batch qualifies as "mostly hidden" when its hidden
                 const hiddenRatio = hiddenCount / batchSize;
                 const ratioCutoff = (() => {
                     const raw = Number(appState.settings.hideVideosSubsLoadHiddenRatio);
@@ -18012,6 +18338,7 @@ if (typeof globalThis !== "undefined") {
                     this._removeBlockedChannel(channelInfo);
                     this._closeDirectWatchInterstitial();
                     this._resumeDirectWatchPlayback();
+                    // Debounced like the feature's other refresh triggers, so
                     this._processAllVideosDebounced(0);
                     return;
                 }
@@ -18472,11 +18799,14 @@ if (typeof globalThis !== "undefined") {
                         || /(?:\b(?:live|watching now|en vivo|en directo|transmitiendo|in diretta|ao vivo|en direct|regardent maintenant|jetzt live|сейчас смотрят|прямой эфир|в эфире)\b|ライブ|生配信|視聴中|라이브|생방송|시청 중|直播|正在观看|مباشر|بث مباشر|يشاهد الآن)/i.test(normalizedRowsText) && !hasDuration,
                     isUpcoming: hasUpcomingMarker
                         || /(?:\b(?:upcoming|scheduled for|premieres?|set reminder|starts in|proximamente|programado para|estreno|establecer recordatorio|comienza en|a venir|programme pour|premiere|definir un rappel|commence dans|in programma|programmato per|imposta promemoria|inizia tra|bevorstehend|geplant fur|erinnerung festlegen|beginnt in)\b|запланировано|премьера|напомнить|начнется через|近日公開|配信予定|プレミア公開|リマインダー|開始まで|예정|예약|알림 설정|시작|即将|预定|首播|设置提醒|开始于|قادم|مجدول|العرض الأول|تعيين تذكير|يبدأ خلال)/i.test(normalizedRowsText),
+                    // against the title hid videos titled "How to mix audio",
+                    // "movie review", or "top 5 videos".
                     isMix: hasMixMarker
                         || /(?:\b(?:youtube\s+mix|mix|mezcla|melange|miscela)\b|микс|ミックス|믹스|混合|混音|ميكس)/i.test(normalizedRowsText)
                         || /(?:start_radio=1|list=rd)/i.test(hrefText),
                     isPlaylist: hasPlaylistMarker
                         || /(?:\b(?:playlist|playlists|lista de reproduccion|liste de lecture|lista de lectura)\b|плейлист|再生リスト|재생목록|播放列表|قائمة تشغيل|قايمة تشغيل|\b\d+\s+videos?\b)/i.test(normalizedRowsText),
+                    // French bare "double" (from "doublé") is deliberately absent
                     isMovie: /(?:\b(?:movie|free with ads|buy or rent|rent or buy|pelicula|gratis con anuncios|comprar o alquilar|alquilar o comprar|film|kostenlos mit werbung|kaufen oder leihen|leihen oder kaufen|gratuit avec publicites|acheter ou louer|louer ou acheter|gratis con annunci|acquista o noleggia|noleggia o acquista|filme|gratis com anuncios|comprar ou alugar|alugar ou comprar)\b|фильм|бесплатно с рекламой|купить или взять напрокат|напрокат|映画|広告付きで無料|購入またはレンタル|レンタル|영화|광고 포함 무료|구매 또는 대여|대여|电影|含广告免费|购买或租借|租借|فيلم|مجاني مع الاعلانات|شراء او استئجار)/i.test(normalizedRowsText),
                     isAutoDubbed: /(?:\b(?:auto[-\s]?dubbed|dubbed|audio track|doblado automaticamente|doblado|pista de audio|automatisch synchronisiert|synchronisiert|tonspur|audiospur|doublage|double automatiquement|piste audio|doppiato automaticamente|doppiato|traccia audio|dublado automaticamente|dublado|faixa de audio)\b|автоматический дубляж|дубляж|аудиодорожка|自動吹き替え|吹き替え|音声トラック|자동 더빙|더빙|오디오 트랙|自动配音|配音|音轨|مدبلج تلقائيا|مدبلج|المسار الصوتي)/i.test(normalizedRowsText),
                     isShort,
@@ -18618,6 +18948,7 @@ if (typeof globalThis !== "undefined") {
                 btn.addEventListener('click', e => {
                     e.preventDefault();
                     e.stopPropagation();
+                    // recycled card elements (chip clicks), and the closure's
                     const id = element.dataset.ytkitVideoId || this._extractVideoId(element) || videoId;
                     if (id) this._hideVideo(id, element);
                 });
@@ -18826,7 +19157,9 @@ if (typeof globalThis !== "undefined") {
                             try {
                                 const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
                                 if (regexMatch) {
+                                    // the polynomial shapes: `.*.*.*.*.*.*z` and `(a+)(a+)(a+)(a+)(a+)(a+)b`
                                     const pat = regexMatch[1];
+                                    // fixed here: without the full nesting scan it cannot see `((ab)*)*`,
                                     const unsafeRegex = globalThis.YTKitCore?.hasUnsafeRegexQuantifiers;
                                     if (typeof unsafeRegex !== 'function' || unsafeRegex(pat)) {
                                         DebugManager.log('VideoHider', 'Regex rejected: unsafe quantifiers (ReDoS risk)');
@@ -18885,6 +19218,9 @@ if (typeof globalThis !== "undefined") {
                 return compiled.evaluator;
             },
 
+            // ctx. YouTube occasionally renders "1.2M subscribers" in
+            // users can write `subsCount < 1000` style rules
+            // "no data" from "0 subscribers".
             _extractSubsCount(metadataText) {
                 return this._parseCompactCount(metadataText, {
                     labels: SUBSCRIBER_COUNT_LABELS,
@@ -18892,11 +19228,14 @@ if (typeof globalThis !== "undefined") {
                 });
             },
 
+            // by videoId in chrome.storage.local under 'ytkit-ryd-cache'
+            // "no RYD data" from "0 likes". Cached per call inside
             _rydCacheForPredicates: null,
             _rydCacheLoadedAt: 0,
             _readRydLikes(videoId) {
                 if (!videoId) return null;
                 const now = Date.now();
+                // with the RYD feature's own caching cadence so a fresh
                 if (!this._rydCacheForPredicates || now - this._rydCacheLoadedAt > 5000) {
                     try { this._rydCacheForPredicates = storageReadJSON('ytkit-ryd-cache', null) || {}; }
                     catch (_) { /* reason: predicate ctx must not throw on cache read failure */ this._rydCacheForPredicates = {}; }
@@ -18928,6 +19267,9 @@ if (typeof globalThis !== "undefined") {
                     uploadCadencePerDay: metadata?.uploadCadencePerDay ?? null,
                     durationSec: this._extractDuration(element) || 0,
                     viewCount: metadata?.views || 0,
+                    // `likes` is null when RYD data is unavailable;
+                    // `subsCount` is null when the card does not render
+                    // `likes != null && likes > 100000` for explicit-
                     likes: this._readRydLikes(videoId),
                     subsCount: this._extractSubsCount(metadata?.metadataText),
                     ageDays: metadata?.ageDays ?? null,
@@ -19033,6 +19375,8 @@ if (typeof globalThis !== "undefined") {
                     this._lastRuleHideGuard = null;
                     return false;
                 }
+                // guard cleared classes on orphaned nodes and toasted "left
+                // visible" while the feed stayed empty until the next
                 const removedIds = [];
                 for (const el of overreaching) {
                     if (el?.dataset?.ytkitRemoved === 'true') {
@@ -19632,6 +19976,7 @@ if (typeof globalThis !== "undefined") {
                             });
                         }
                     }
+                    // creates/replaces YouTube's masthead controls. Waiting a
                     if (this._mutationTouchesMastheadControls(mutations)) {
                         this._syncMastheadPageActions();
                     }
@@ -19657,6 +20002,7 @@ if (typeof globalThis !== "undefined") {
                 };
 
                 addNavigateRule('hideVideosFromHomeNav', () => {
+                    // page doesn't permanently disable filters across the
                     try { this._predicateCache?.evaluator?.reset?.(); } catch (_) { /* reason: route-level predicate reset is best-effort */ }
                     this._processAllVideosDebounced(500);
                     checkPages();
@@ -19664,6 +20010,7 @@ if (typeof globalThis !== "undefined") {
                 });
                 checkPages();
 
+                // Filter chip clicks (e.g. "Recently uploaded") replace grid content
                 this._chipClickHandler = (e) => {
                     const chip = e.target.closest('yt-chip-cloud-chip-renderer, ytd-feed-filter-chip-bar-renderer yt-formatted-string');
                     if (chip) {
@@ -19861,6 +20208,8 @@ if (typeof globalThis !== "undefined") {
                 if (countEl) countEl.textContent = `${String(value || '').length}/${this._MAX_NOTE_CHARS}`;
             },
 
+            // 450ms window would save A's text under B (or, when the textarea
+            // was just cleared, delete B's note).
             _saveCurrentNote(value, videoId = getVideoId(), title = this._currentTitle()) {
                 if (!videoId) return;
                 const now = Date.now();
@@ -20429,6 +20778,7 @@ if (typeof globalThis !== "undefined") {
             _readUnsubscribeStaging() {
                 const data = appState?.settings?.[this._UNSUB_STAGE_KEY];
                 const staged = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+                // can't grow forever and the badge/toolbar reflect reality.
                 const now = Date.now();
                 const pruned = {};
                 let dropped = 0;
@@ -20583,8 +20933,6 @@ if (typeof globalThis !== "undefined") {
                     const name = group.name || id;
                     // Groups persist membership as `channelIds` (UC.../@handle
                     // strings), never a `channels` object array. Derive the
-                    // handle column and canonical URL from the id so exports
-                    // actually carry channel data.
                     const channelIds = Array.isArray(group.channelIds) ? group.channelIds : [];
                     if (channelIds.length === 0) {
                         rows.push(this._csvEscape(name) + ',,,');
@@ -20926,6 +21274,7 @@ if (typeof globalThis !== "undefined") {
                 const summaries = this._collectRenderedCardSummaries();
                 const next = { ...this._readLastVisit() };
                 const now = Date.now();
+                // Count distinct CHANNELS (the toast says "channels") — the
                 const markedChannels = new Set();
                 for (const item of summaries) {
                     if (allowed && !allowed.has(item.channelId)) continue;
@@ -21586,6 +21935,7 @@ if (typeof globalThis !== "undefined") {
                 });
             },
 
+            // `#confirm-button` is YouTube's GENERIC confirm id — clearing watch
             _dialogConfirmsUnsubscribe(dialog) {
                 if (!dialog) return false;
                 const localizedLabel = String(t('subscriptionMenuUnsubscribe', 'Unsubscribe') || '').toLowerCase();
@@ -21598,11 +21948,15 @@ if (typeof globalThis !== "undefined") {
                 for (let attempt = 0; attempt < 3; attempt++) {
                     const dialog = document.querySelector('ytd-confirm-dialog-renderer');
                     if (this._dialogConfirmsUnsubscribe(dialog)) {
+                        // Only YouTube's own confirm id, and never a bare
+                        // [role="button"]. querySelector returns the FIRST
                         const confirmRoot = dialog.querySelector('#confirm-button');
                         const button = confirmRoot
                             ? (confirmRoot.querySelector?.('button') || confirmRoot)
                             : null;
                         if (button && button.closest?.('#cancel-button')) return false;
+                        // user's behalf is an account action, never a
+                        // checking the card's own subscribe control.
                         const safeToClick = globalThis.YTKitCore && globalThis.YTKitCore.isSafeToAutoClick;
                         if (button && (typeof safeToClick !== 'function' || safeToClick(button))) {
                             button.click?.();
@@ -21614,6 +21968,8 @@ if (typeof globalThis !== "undefined") {
                 return false;
             },
 
+            // localized "Subscribe" so it holds in every locale — note fr's
+            // "S'abonner" / "Se désabonner" share a stem, which is why the
             _labelIndicatesUnsubscribed(label) {
                 const value = String(label || '').replace(/\s+/g, ' ').trim();
                 if (!value) return false;
@@ -21661,6 +22017,7 @@ if (typeof globalThis !== "undefined") {
                     const menuClicked = await this._clickUnsubscribeMenuItem();
                     const confirmed = menuClicked ? await this._confirmUnsubscribeDialog() : false;
                     if (confirmed) return true;
+                    // acceptable evidence is the control flipping to "Subscribe".
                     return await this._awaitUnsubscribedControl(control);
                 }
 
@@ -21675,6 +22032,7 @@ if (typeof globalThis !== "undefined") {
                 if (!menuClicked) return false;
                 const confirmed = await this._confirmUnsubscribeDialog();
                 if (confirmed) return true;
+                // Fall back to positive evidence on the card's own subscribe
                 const stateControl = card.querySelector?.([
                     'ytd-subscribe-button-renderer button',
                     'ytd-subscribe-button-renderer tp-yt-paper-button',
@@ -21775,6 +22133,7 @@ if (typeof globalThis !== "undefined") {
                 return fn ? fn(text, 0) : 0;
             },
 
+            // "restore YouTube's order" restores an order that no longer
             _cardVideoId(card) {
                 const href = card.querySelector('a#thumbnail[href], a[href*="/watch?v="]')?.getAttribute?.('href') || '';
                 const match = /[?&]v=([A-Za-z0-9_-]{11})/.exec(href);
@@ -21788,6 +22147,8 @@ if (typeof globalThis !== "undefined") {
                 const cards = Array.from(container.querySelectorAll(':scope > ytd-rich-item-renderer, :scope > ytd-video-renderer'));
                 if (!cards.length) return;
                 if (mode === 'default') {
+                    // Restore YouTube's native order. Cards carry an original
+                    // switching back to 'default' kept the previous mode's DOM
                     const stamped = cards.filter(card => card.dataset.ytkitOrigIdx !== undefined);
                     if (!stamped.length) return;
                     cards.sort((a, b) =>
@@ -21797,6 +22158,7 @@ if (typeof globalThis !== "undefined") {
                     container.appendChild(frag);
                     return;
                 }
+                // Stamp original DOM order once per card so 'default' can be
                 let nextOrigIdx = cards.reduce((max, card) => {
                     const idx = Number(card.dataset.ytkitOrigIdx);
                     return Number.isFinite(idx) && idx >= max ? idx + 1 : max;
@@ -21815,6 +22177,7 @@ if (typeof globalThis !== "undefined") {
                         return age == null ? Number.POSITIVE_INFINITY : age;
                     }
                     if (mode === 'duration-asc') {
+                        // ("10:30") can't be mistaken for runtime.
                         const badge = card.querySelector('ytd-thumbnail-overlay-time-status-renderer #text, ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model, .badge-shape__text, .yt-badge-shape__text');
                         const source = badge?.textContent || text;
                         const matches = badge?.textContent
@@ -21830,6 +22193,7 @@ if (typeof globalThis !== "undefined") {
                         return card.querySelector('ytd-thumbnail-overlay-resume-playback-renderer') ? 1 : 0;
                     }
                     if (mode === 'date-desc') {
+                        // Keep YouTube's native order; this is the upstream sort.
                         return 0;
                     }
                     if (mode === 'new-since-last-visit') {
@@ -21837,6 +22201,8 @@ if (typeof globalThis !== "undefined") {
                         return this._isCardNewSinceLastVisit(card, channelId, lastVisit) ? 0 : 1;
                     }
                     if (mode === 'popular') {
+                        // Reads the card's metadata-line text; falls back to 0
+                        // when YouTube hasn't hydrated the count yet.
                         const meta = card.querySelector('#metadata-line, ytd-video-meta-block, [aria-label*="view"]');
                         const views = this._parseCompactViewCount(`${meta?.textContent || ''} ${meta?.getAttribute?.('aria-label') || ''}`);
                         return -views;  // higher view count → lower score → earlier in DOM
@@ -21936,6 +22302,7 @@ if (typeof globalThis !== "undefined") {
                 const groups = this._readGroups();
                 const group = groups[groupId];
                 if (!group) return;
+                // Reuse Chrome's built-in Summarizer when available — same
                 const factory = window.Summarizer || window.ai?.summarizer;
                 if (!factory?.create) {
                     if (typeof showToast === 'function') showToast(t(
@@ -22406,6 +22773,7 @@ if (typeof globalThis !== "undefined") {
             },
 
             init() {
+                // No init-level pathname guard: the settings-panel 'toggle'
                 this._lifecycleToken += 1;
                 this._unsubscribeRunning = false;
                 this._unsubscribeSessionToken = null;
@@ -22417,6 +22785,7 @@ if (typeof globalThis !== "undefined") {
                         return;
                     }
                     this._lifecycleToken += 1;
+                    // can't fire them on the wrong page. The 8s _stampLastVisit
                     if (this._renderTimer) clearTimeout(this._renderTimer);
                     if (this._stampTimer) clearTimeout(this._stampTimer);
                     this._renderTimer = setTimeout(() => {
@@ -22476,6 +22845,7 @@ if (typeof globalThis !== "undefined") {
                     delete el.dataset.ytkitStagedUnsubscribe;
                 });
                 document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; delete el.dataset.ytkitOrigId; });
+                // Audit pass: kill any orphan new-group dialog so it can't outlive the feature.
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 this._styleElement?.remove();
                 this._styleElement = null;
@@ -22499,6 +22869,7 @@ if (typeof globalThis !== "undefined") {
 
             _renderGroupEmptyState(allowed) {
                 document.querySelectorAll('.ytkit-sub-group-empty').forEach(el => el.remove());
+                // simply aren't rendered yet fills in as the feed loads.
                 if (!allowed || allowed.size > 0) return;
                 if (!this._toolbar?.isConnected) return;
                 const notice = document.createElement('div');
@@ -22666,6 +23037,9 @@ if (typeof globalThis !== "undefined") {
                 if (!group) return;
                 const label = group.name || groupId;
                 const count = Array.isArray(group.channelIds) ? group.channelIds.length : 0;
+                // asking `confirm()`. The project's answer to destructive
+                // A child's `parentId` is untouched by the delete —
+                // `_getGroupParentId` simply stops resolving it while the
                 const removed = JSON.parse(JSON.stringify(group));
                 const next = { ...groups };
                 delete next[groupId];
@@ -22708,6 +23082,7 @@ if (typeof globalThis !== "undefined") {
                 const group = groups[groupId];
                 if (!group || !channelId) return;
                 const ids = new Set(Array.isArray(group.channelIds) ? group.channelIds : []);
+                // toasted "added" — a silent drop reported as a success. A
                 if (included && !ids.has(channelId) && ids.size >= this._MAX_GROUP_CHANNELS) {
                     if (typeof showToast === 'function') {
                         showToast(
@@ -22923,6 +23298,7 @@ if (typeof globalThis !== "undefined") {
                     if (Object.keys(groups).length >= GROUP_LIMIT) return;
                     const attrs = node.attrs || {};
                     const channelId = this._extractOpmlChannelId(attrs);
+                    // the group after creating it — don't silently drop the
                     const hasChildren = node.children?.length > 0;
                     const explicitGroup = attrs['astra:type'] === 'group' || hasChildren;
                     if (channelId && !explicitGroup) {
@@ -23091,6 +23467,9 @@ if (typeof globalThis !== "undefined") {
             _overlayReturnFocus: null,
             _overlayKeyHandler: null,
             _sessionStart: 0,
+            // Without this, after midnight `today.seconds` flips to 0
+            // still holds yesterday's value, so `sessionElapsed` goes
+            // negative and the "take a break" reminder never fires for the
             _lastTodayKey: null,
             _capDismissKey: 'ytkit_dw_cap_dismissed_date',
 
@@ -23131,6 +23510,7 @@ if (typeof globalThis !== "undefined") {
             },
             _flushToday() {
                 if (!this._pendingSeconds) return;
+                // Re-read before writing: another tab's flush may have landed
                 const merged = this._loadToday();
                 this._pendingSeconds = 0;
                 this._saveToday(merged);
@@ -23308,6 +23688,7 @@ if (typeof globalThis !== "undefined") {
                 card.append(topRow, iconWrap, title, body, hint, button);
                 o.appendChild(card);
                 const previouslyFocused = document.activeElement;
+                // Duck-typed rather than `instanceof HTMLElement`: this module
                 this._overlayReturnFocus = typeof previouslyFocused?.focus === 'function' ? previouslyFocused : null;
                 document.body.appendChild(o);
                 this._overlay = o;
@@ -23364,6 +23745,7 @@ if (typeof globalThis !== "undefined") {
                 }
                 const video = document.querySelector('video');
                 if (!video || document.hidden) return;
+                // is anchored to the new day's accumulator. Without
                 const currentTodayKey = this._todayKey();
                 if (this._lastTodayKey && this._lastTodayKey !== currentTodayKey) {
                     DebugManager.log('DigitalWellbeing',
@@ -23391,6 +23773,7 @@ if (typeof globalThis !== "undefined") {
                 const shortsToday = shortsActive ? this._loadShortsToday() : null;
                 if (this._pendingSeconds >= 30) this._flushToday();
                 if (this._pendingShortsSeconds >= 30) this._flushShortsToday();
+                // NF34: use `??` so today.seconds === 0 (first tick of a
                 if (!this._sessionStart) this._sessionStart = today.seconds ?? 0;
                 const sessionElapsed = today.seconds - this._sessionStart;
                 const breakEvery = (parseInt(appState.settings.dwBreakIntervalMin) || 0) * 60;
@@ -23718,6 +24101,7 @@ if (typeof globalThis !== "undefined") {
                     .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
                     .replace(/-/g, '\\x2d');
 
+        // surface, and the badge's accessible name keeps its visible label.
         function describeHealthBadgeCopy(badgeLabel, subject, error) {
             const compose = globalThis.YTKitCore?.describeFailureBadge;
             if (typeof compose === 'function') return compose(badgeLabel, subject, error, t);
@@ -23884,11 +24268,13 @@ function updatePanelInsightState() {
     }
 
 function buildSettingsPanel() {
+        // through ytkit.js's inline wrapper), so it must trigger the lazy
         ensurePanelStyles?.();
         globalThis.YTKitCore?.ensureSettingsVisualSystem?.();
         if (!shouldBuildPrimaryUI()) return;
         if (document.getElementById('ytkit-settings-panel')) return;
 
+        // No per-open cleanup registry here on purpose. This panel's document
 
         const categoryOrder = ['Video Player', 'Playback', 'Comments', 'Watch Page', 'Content', 'Home / Subscriptions', 'Theme', 'Live Chat', 'Downloads', 'Advanced'];
 
@@ -23912,6 +24298,7 @@ function buildSettingsPanel() {
             categoryOrder,
             shortsPanelSettingKeys
         );
+        // v3.17.0: the sidebar "Workspace / Home controls" summary card was
 
         const overlay = document.createElement('div');
         overlay.id = 'ytkit-overlay';
@@ -24033,6 +24420,8 @@ function buildSettingsPanel() {
         const sidebarTop = document.createElement('div');
         sidebarTop.className = 'ytkit-sidebar-top';
 
+        // v3.17.0: removed the "Workspace / Home controls" summary card
+        // and "Live apply" footnote were wasting vertical space that's
 
         const searchContainer = document.createElement('div');
         searchContainer.className = 'ytkit-search-container';
@@ -24211,6 +24600,7 @@ function buildSettingsPanel() {
             const metaSpan = btn.querySelector('.ytkit-nav-meta');
             if (metaSpan) metaSpan.textContent = summary;
             btn.title = summary;
+            // reads any template literal assigned to an `ariaLabel` binding as
             const navAria = [label, summary].filter(Boolean).join('. ');
             btn.setAttribute('aria-label', navAria);
             const stateSpan = btn.querySelector('.ytkit-nav-state');
@@ -24259,6 +24649,7 @@ function buildSettingsPanel() {
             navList.appendChild(btn);
 
             if (cat === 'Content') {
+                // "Video-Hider" in every locale — the hide/block toasts and
                 const videoHiderNav = makeNavBtn(
                     VIDEO_HIDER_PANE_CATEGORY,
                     config,
@@ -24898,6 +25289,8 @@ function buildSettingsPanel() {
                                     showToast(t('videoHiderMissingHiddenVideoToast', 'Video was not in the hidden list'), '#6b7280');
                                     return;
                                 }
+                                // Same undo contract as "Clear Hidden List Only" and
+                                // "Restore & Allow All" below. A single-entry delete is
                                 showToast(t('videoHiderRemovedHiddenVideoToast', 'Video removed from hidden list'), '#6b7280', { duration: 5, tone: 'neutral', action: { text: t('toastActionUndo', 'Undo'), onClick: () => {
                                     videoHiderFeature._addHiddenVideos?.(removed);
                                     videoHiderFeature._processAllVideos?.();
@@ -25164,6 +25557,7 @@ function buildSettingsPanel() {
                             const icon = document.createElement('div');
                             icon.className = 'ytkit-vh-avatar';
                             icon.setAttribute('aria-hidden', 'true');
+                            // (emoji, CJK surrogates) aren't split into a
                             icon.textContent = (Array.from(ch.name || ch.id || '?')[0] || '?').toUpperCase();
                             const info = document.createElement('div');
                             info.className = 'ytkit-vh-item-main';
@@ -26019,6 +26413,7 @@ function buildSettingsPanel() {
                         banner.dataset.state = 'ready';
                         text.textContent = t('settingsDlRunningTpl', 'Running{version}. yt-dlp server ready.')
                             .replace('{version}', result.version ? ` (v${result.version})` : '');
+                        // Add a "Check" refresh button
                         const refreshBtn = makeBannerButton(t('commonRefresh', 'Refresh'));
                         refreshBtn.onclick = async () => {
                             refreshBtn.textContent = t('commonChecking', 'Checking…');
@@ -26038,6 +26433,7 @@ function buildSettingsPanel() {
                         banner.dataset.state = 'missing';
                         text.textContent = t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');
 
+                        // "Try Start" button — attempts auto-start via mediadl:// protocol
                         const startBtn = makeBannerButton(t('dlInstallStartService', 'Start service'));
                         startBtn.title = t('settingsDlStartTitle', 'Try to start the Astra Downloader service');
                         startBtn.onclick = async () => {
@@ -26046,6 +26442,7 @@ function buildSettingsPanel() {
                             banner.dataset.state = 'checking';
                             text.textContent = t('settingsDlTryingStart', 'Trying to start the Astra Downloader service…');
                             MediaDLManager.resetAutoStart();
+                            // Omitting the argument uses the manager's own
                             const r = await MediaDLManager.tryAutoStart();
                             if (r.ok) {
                                 banner.dataset.state = 'ready';
@@ -26063,6 +26460,7 @@ function buildSettingsPanel() {
                         };
                         actions.appendChild(startBtn);
 
+                        // "Install" button — downloads the setup file and copies the fallback command
                         const installBtn = makeBannerButton(t('dlInstallDownloadSetup', 'Download setup'), 'accent');
                         installBtn.title = t('settingsDlDownloadTitle', 'Download the Astra Downloader setup file and reveal it in Downloads');
                         installBtn.onclick = async () => {
@@ -26087,6 +26485,7 @@ function buildSettingsPanel() {
                         };
                         actions.appendChild(installBtn);
 
+                        // "Copy command" button
                         const dlBtn = makeBannerButton(t('settingsDlCopyCommand', 'Copy command'));
                         dlBtn.title = t('settingsDlCopyCommandTitle', 'Copy the fallback PowerShell install command');
                         dlBtn.onclick = async () => {
@@ -26532,6 +26931,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             healthBadge.className = 'ytkit-feature-badge';
             healthBadge.dataset.tone = 'warning';
             const healthLabel = t('settingsHealthNeedsAttention', 'Needs attention');
+            // `featureHealth.lastError` is `String(error.message)` from the
             const healthCopy = describeHealthBadgeCopy(healthLabel, featureName, featureHealth.lastError);
             healthBadge.textContent = healthLabel;
             healthBadge.title = healthCopy.detail;
@@ -26555,6 +26955,9 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             description.textContent = descriptionText;
             info.appendChild(description);
         }
+        // Known-breakage notice. The feature's own toggle is untouched — the
+        // user's choice is still their choice — so without this the row would
+        // here and the link is built from the entry's issue NUMBER, so nothing
         const disableNotice = getFeatureDisableNotice(f.id);
         if (disableNotice) {
             card.classList.add('ytkit-feature-known-broken');
@@ -26605,6 +27008,7 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             textarea.id = `ytkit-input-${f.id}`;
             textarea.setAttribute('aria-label', featureName);
             textarea.placeholder = f.placeholder || 'word1, word2, phrase';
+            // The schema's own bound, enforced by the browser. Without it this
             const textareaEntry = globalThis.__YTKIT_SETTINGS_SCHEMA__
                 ?.findSettingEntry?.(f.settingKey || f.id);
             if (typeof textareaEntry?.maxLength === 'number') {
@@ -26828,6 +27232,7 @@ function attachUIEventListeners() {
                     );
                     trapFocusWithin(activeDialog, e, toastPortal ? [toastPortal] : []);
                 }
+                // the shortcut surface per the "no keyboard shortcuts" rule.
             });
 
             _globalUIListenersAttached = true;
@@ -26948,6 +27353,7 @@ function attachUIEventListeners() {
                                 [STORAGE_KEYS.watchTime]: { newValue: StorageManager.get(STORAGE_KEYS.watchTime, { days: {}, total: 0 }) }
                             }, 'takeout-import', { forceApplyLocal: true });
                         }
+                        // "there was nothing here before".
                         const undoTarget = preImportStats !== null ? preImportStats : { days: {}, total: 0 };
                         showToast(result.message, '#22c55e', {
                             duration: 8,
@@ -27071,6 +27477,7 @@ function attachUIEventListeners() {
                 pane.classList.add('ytkit-search-active');
                 pane.setAttribute('aria-hidden', 'false');
             });
+            // pointer-events left `inert`, `aria-disabled` and the per-control
             doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
                 setSubFeatureAvailability(sub, !!appState.settings[sub.dataset.parentId]);
             });
@@ -27179,6 +27586,7 @@ function attachUIEventListeners() {
                             deniedCard.classList.remove('ytkit-card-enabled');
                         }
                         const featureName = getFeatureName(feature) || featureId;
+                        // raw-error-copy: the COBALT_INSTANCE_INVALID message is Astra's own
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
                             : `${featureName} needs host access before it can be enabled. Try again and approve the browser prompt.`;
@@ -27355,6 +27763,7 @@ function attachUIEventListeners() {
                         e.target.checked = false;
                         const deniedSwitch = e.target.closest('.ytkit-switch');
                         if (deniedSwitch) deniedSwitch.classList.remove('active');
+                        // raw-error-copy: the COBALT_INSTANCE_INVALID message is Astra's own
                         const message = error?.code === 'COBALT_INSTANCE_INVALID' && error?.message
                             ? error.message
                             : 'Some settings need host access. Try again and approve the browser prompt.';
@@ -27380,6 +27789,7 @@ function attachUIEventListeners() {
             }
         });
 
+        // FIRST feature's pending destroy/init — its value was saved but
         const _reinitTimers = new Map();
         doc.addEventListener('input', (e) => {
             if (!isSettingsPanelOpen()) return;
@@ -27393,6 +27803,9 @@ function attachUIEventListeners() {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Text setting'} saved.`, 'success');
                 if (feature) {
+                    // The shared `_textareaReinitTimer` meant editing feature
+                    // A's text setting and then feature B's within the debounce
+                    // cancelled A's pending destroy/init: A's value was saved
                     if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
                     _reinitTimers.set(featureId, setTimeout(() => {
                         _reinitTimers.delete(featureId);
@@ -27470,6 +27883,7 @@ function attachUIEventListeners() {
                 settingsManager.save(appState.settings);
                 setPanelStatus(`${getFeatureName(feature) || 'Color setting'} updated.`, 'success');
                 if (feature) {
+                    // Native color dialogs fire `input` continuously while
                     if (_reinitTimers.has(featureId)) clearTimeout(_reinitTimers.get(featureId));
                     _reinitTimers.set(featureId, setTimeout(() => {
                         _reinitTimers.delete(featureId);
@@ -27587,6 +28001,7 @@ function attachUIEventListeners() {
             _watchCcState() {
                 this._ccObserver?.disconnect();
                 this._ccObserver = null;
+                // runs on every route, and the home feed's inline preview player
                 if (!this._ccButton) return;
                 const rightControls = typeof document !== 'undefined'
                     ? document.querySelector('.ytp-right-controls')
@@ -27678,6 +28093,7 @@ function attachUIEventListeners() {
                     wrap.appendChild(dlBtn);
                 }
 
+                // Mirror YouTube's native subtitles control, which may be
                 const ccBtn = document.createElement('button');
                 ccBtn.type = 'button';
                 ccBtn.className = 'ytp-button ytkit-player-btn ytkit-po-cc';
@@ -28222,6 +28638,8 @@ function attachUIEventListeners() {
             icon: 'music',
             _styleElement: null,
             init() {
+                // .includes('music.youtube.com') substring would match
+                // equality. The www.music.youtube.com variant doesn't
                 if (location.hostname !== 'music.youtube.com') return;
                 this._styleElement = injectStyle(`
                     ytmusic-app, ytmusic-app-layout {
@@ -28443,6 +28861,9 @@ function attachUIEventListeners() {
                     DiagnosticLog?.record?.('returnDislike', `votes payload invalid for ${videoId}`);
                     return null;
                 }
+                // `rawDislikes` is the number of votes the extension actually
+                // observed; `dislikes` is that sample extrapolated to the whole
+                // every consumer treats undefined as "sample unknown".
                 const rawDislikes = Number(data.rawDislikes);
                 const record = {
                     likes: Number(data.likes) || 0,
@@ -28507,6 +28928,8 @@ function attachUIEventListeners() {
                 return;
             }
             const data = await _fetchOnce(videoId);
+            // video changed (or we left the watch page) so we don't append the
+            // previous video's dislike count onto the current video's button —
             if (generation !== _rydGeneration) return;
             if (!_isPlayerPage() || getVideoId?.() !== videoId) return;
             _pillEl?.remove();
@@ -28666,12 +29089,16 @@ function attachUIEventListeners() {
         return Math.max(0, Math.min(100, Math.round((likes / total) * 100)));
     }
 
+    // "small sample", not a percentage. Entries cached before this shipped
+    // carry no sample at all, which is 'unknown' rather than a bad grade.
     const SAMPLE_BANDS = Object.freeze([
         Object.freeze({ minSample: 500, confidence: 'high' }),
         Object.freeze({ minSample: 50, confidence: 'medium' })
     ]);
 
     function sampleConfidence(rawDislikes) {
+        // Deliberately `typeof`, not `Number()`: `Number(null)` is 0, which
+        // when it is present, so anything else means "no sample".
         if (typeof rawDislikes !== 'number'
             || !Number.isFinite(rawDislikes)
             || rawDislikes < 0) return 'unknown';
@@ -29287,6 +29714,8 @@ function attachUIEventListeners() {
                 return this._cache;
             },
 
+            // before it reached the cache or the progress bar — the feature's
+            // own "render it on the bar" contract could never be met.
             _isPointSegment(s) {
                 return s?.actionType === 'poi' || s?.category === 'poi_highlight';
             },
@@ -29428,6 +29857,7 @@ function attachUIEventListeners() {
                             const segments = match && Array.isArray(match.segments)
                                 ? this._normalizeSegments(match.segments)
                                 : [];
+                            // Don't resurrect the destroy()-nulled cache or arm a persist
                             if (gen === this._generation) this._rememberSegments(videoId, cats, segments);
                             ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
                                 source: 'network',
@@ -29439,6 +29869,7 @@ function attachUIEventListeners() {
                             });
                             return segments;
                         } catch (error) {
+                            // saying "nothing submitted for this prefix" — the
                             if (Number(error?.response?.status ?? error?.status ?? 0) === 404) {
                                 if (gen === this._generation) this._rememberSegments(videoId, cats, []);
                                 ExternalApiHealth?.recordSuccess?.('sponsorBlock', {
@@ -29489,6 +29920,7 @@ function attachUIEventListeners() {
                 this._clearBarSegments();
                 const gen = this._generation;
                 const fetched = await this._fetchSegments(videoId);
+                // we paint this video's segment bars onto the new one and
                 if (gen !== this._generation || getVideoId() !== videoId) return;
                 this._segments = fetched;
                 if (this._segments.length) {
@@ -29543,6 +29975,7 @@ function attachUIEventListeners() {
                 let minDelay = Infinity;
                 for (const seg of this._segments) {
                     if (!enabledCats.includes(seg.category)) continue;
+                    // target. Excluding here mirrors _checkSkip so we don't
                     if (seg.category === 'poi_highlight') continue;
                     const [start, end] = seg.segment;
                     if (currentTime >= start && currentTime < end - 0.3) {
@@ -29559,6 +29992,7 @@ function attachUIEventListeners() {
                 const delay = Math.max(0, Math.min(minDelay - 100 + jitter, 2000 + jitter));
                 this._skipTimer = setTimeout(() => {
                     this._checkSkip();
+                    // If checkSkip didn't skip (edge of segment), reschedule
                     if (!video.paused) this._scheduleNextSkip();
                 }, delay);
             },
@@ -29646,6 +30080,7 @@ function attachUIEventListeners() {
                     + 'ytd-popup-container [class*="adblock"]'
                 );
                 if (warning && DiagnosticLog) {
+                    // object would log the literal "[object Object]" and lose the
                     const selector = warning.tagName.toLowerCase()
                         + (warning.className ? '.' + warning.className.split(/\s+/)[0] : '');
                     DiagnosticLog.record('sb-anti-adblock', `detected: ${selector}`);
@@ -29723,6 +30158,7 @@ function attachUIEventListeners() {
                     if (this._segments.length) this._renderBarSegments();
                 };
                 document.addEventListener('durationchange', this._durationHandler, true);
+                // painted so it stops reacting to #movie_player's constant
                 this._barObserver = new MutationObserver(() => {
                     const video = getMainVideoElement();
                     const barsLive = this._barSegments.length > 0
@@ -29954,6 +30390,7 @@ function attachUIEventListeners() {
                     clearTimeout(self._processTimer);
                     self._processTimer = setTimeout(() => self._processPage(), 300);
                 });
+                // resetAndProcess's one-shot pass.
                 addNavigateRule(this._navRuleId, resetAndProcess);
                 if (!isWatchPagePath()) this._connectObserver();
             },
@@ -30189,6 +30626,9 @@ function attachUIEventListeners() {
                     const url = new URL(link.href, location.origin);
                     const videoId = url.searchParams.get('v');
                     if (!videoId || !VIDEO_ID_PATTERN.test(videoId)) continue;
+                    // 'off'      → skip title + thumb replacement entirely for this card
+                    // 'original' → also skip (channel author wants original metadata)
+                    // 'dearrow'  → fall through to normal DeArrow path
                     const overrideMode = this._channelOverrideMode(el);
                     if (overrideMode === 'off' || overrideMode === 'original') {
                         el.dataset.daOverride = overrideMode;
@@ -30218,6 +30658,7 @@ function attachUIEventListeners() {
                     }
                     if (replaceThumbs) {
                         const thumb = branding.thumbnails?.[0];
+                        // stringified to "[object Object]".
                         const stamp = Number(thumb?.timestamp);
                         if (Number.isFinite(stamp) && stamp >= 0) {
                             const img = el.querySelector('img.yt-core-image, ytd-thumbnail img, #thumbnail img');
@@ -30302,6 +30743,9 @@ function attachUIEventListeners() {
 (() => {
     'use strict';
 
+    // v4.9.0 SPA-navigation bridge. Hooks YouTube's navigation event
+    // stream (driven by core/navigation.js's addNavigateRule) into the
+    // dependency is missing (because the module hasn't loaded yet, or
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.__lifecycleRouteBridgeInstalled) return;
