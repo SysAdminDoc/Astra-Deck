@@ -284,32 +284,21 @@ function featureMessageKey(id, suffix) {
 
 // ── v3.14.0 C1: ReDoS guard in videoHider ──
 
-test('videoHider ReDoS guard catches alternation-wrapped quantifier stacks', () => {
-    // The guard at ytkit.js:~10248 must reject patterns that wrap a
-    // quantified atom in a group and then quantify the group (e.g. `(a|b+)+`).
-    // The narrower `(a+)+`-only guard shipped before v3.14.0 allowed
-    // alternation-hidden ReDoS patterns through.
-    const guardStart = videoHiderSource.indexOf('Reject patterns with nested quantifiers');
-    assert.ok(guardStart > -1, 'Nested-quantifier guard comment should exist');
-    const guardBlock = videoHiderSource.slice(guardStart, guardStart + 1500);
-
-    assert.match(
-        guardBlock,
-        /groupWithInnerQuantifier/,
-        'Guard must include a dedicated check for alternation-wrapped quantifier stacks'
-    );
-    // The guard regex uses character-class + non-capturing alternation
-    // `[^()]*(?:[+*?]|{...})` so it matches quantifiers anywhere inside the
-    // group body, not just at the end. Assert the critical fragment is
-    // present (substring check avoids re-escaping a regex-of-a-regex).
+test('videoHider compiles filter regexes only through the shared ReDoS guard', () => {
+    // This used to pin the shape of a LOCAL guard here: three flat
+    // heuristics that catch `(a|b+)+` but not the polynomial forms.
+    // `.*.*.*.*.*.*z` and `(a+)(a+)(a+)(a+)(a+)(a+)b` both passed it, and
+    // each costs hundreds of milliseconds per test() on an ordinary video
+    // title, once per feed card, against title AND channel name. Pinning the
+    // local shape is what let it drift from the real guard in
+    // core/predicate-sandbox.js, so pin the reuse instead.
+    assert.ok(videoHiderSource.includes('globalThis.YTKitCore?.hasUnsafeRegexQuantifiers'),
+        'videoHider must use the shared guard from core/predicate-sandbox.js');
     assert.ok(
-        guardBlock.includes('[^()]*(?:[+*?]|'),
-        'groupWithInnerQuantifier must use character-class + alternation to match quantifiers anywhere in group body'
-    );
-    assert.ok(
-        guardBlock.includes(')\\s*(?:[+*?]|'),
-        'groupWithInnerQuantifier must require the group itself to be followed by a quantifier'
-    );
+        videoHiderSource.includes("if (typeof unsafeRegex !== 'function' || unsafeRegex(pat)) {"),
+        'videoHider must fail closed when the shared guard is unavailable');
+    assert.ok(!videoHiderSource.includes('const hasNestedQuantifiers ='),
+        'videoHider must not reintroduce a private, weaker guard');
 });
 
 // ── v3.14.0 infrastructure: selectorChain helper ──
@@ -3579,13 +3568,18 @@ test('videoHider integrates predicate evaluator between metadata and duration ch
 // ── v3.25.0 P1: Comment filter manager invariants ──
 
 test('commentFilterManager rejects ReDoS regex inputs at compile time', () => {
+    // Was pinned to the local `(adjacent || groupInner)` heuristics, the
+    // same weaker copy videoHider carried. Both call sites share the guard
+    // in core/predicate-sandbox.js now.
     const start = ytkitSource.indexOf("id: 'commentFilterManager'");
     assert.ok(start > -1, 'commentFilterManager feature must exist');
-    const block = ytkitSource.slice(start, start + 6000);
-    assert.match(block, /Regex rejected: nested quantifiers \(ReDoS risk\)/,
+    const block = ytkitSource.slice(start, start + 8000);
+    assert.match(block, /Regex rejected: unsafe quantifiers \(ReDoS risk\)/,
         'commentFilterManager must log the ReDoS rejection reason');
-    assert.match(block, /\(adjacent \|\| groupInner\)/,
-        'commentFilterManager must check both adjacent and group-inner nested quantifiers');
+    assert.ok(block.includes('globalThis.YTKitCore?.hasUnsafeRegexQuantifiers'),
+        'commentFilterManager must use the shared guard, not a local subset');
+    assert.ok(block.includes("if (typeof unsafeRegex !== 'function' || unsafeRegex(pat)) {"),
+        'commentFilterManager must fail closed when the shared guard is unavailable');
 });
 
 test('commentFilterManager strips stateful regex flags from cached rules', () => {
@@ -3598,23 +3592,40 @@ test('commentFilterManager strips stateful regex flags from cached rules', () =>
         'commentFilterManager must strip global/sticky flags at compile time'
     );
 
-    const manager = Function(
-        'appState', 'DebugManager', 'PageTypes', 't',
-        '"use strict"; return (' + objectLiteral + ');'
-    )({ settings: { commentFilterRules: '/spam/gi' } }, { log() {} }, { WATCH: 'watch' },
-        (_key, fallback) => fallback);
-    const body = { textContent: 'spam' };
-    const author = { textContent: 'creator' };
-    const thread = {
-        querySelector(selector) {
-            if (selector.includes('#content-text')) return body;
-            if (selector.includes('#author-text')) return author;
-            return null;
-        }
-    };
-    assert.equal(manager._shouldHideThread(thread), true);
-    assert.equal(manager._shouldHideThread(thread), true,
-        'cached regex rules must match consistently on the next thread');
+    // The compiler fails closed without the shared guard, which is the
+    // point of the fix, so the harness has to load what the runtime loads.
+    // _compileRules runs lazily inside _shouldHideThread, so the guard has
+    // to stay in place until the last assertion, not just the construction.
+    const previousCore = globalThis.YTKitCore;
+    delete globalThis.YTKitCore;
+    try {
+        // eslint-disable-next-line no-new-func
+        Function(fs.readFileSync(
+            path.join(__dirname, '..', 'extension', 'core', 'predicate-sandbox.js'), 'utf8'
+        )).call(globalThis);
+        assert.equal(typeof globalThis.YTKitCore?.hasUnsafeRegexQuantifiers, 'function',
+            'the shared guard must be loadable, or this test proves nothing');
+        const manager = Function(
+            'appState', 'DebugManager', 'PageTypes', 't',
+            '"use strict"; return (' + objectLiteral + ');'
+        )({ settings: { commentFilterRules: '/spam/gi' } }, { log() {} }, { WATCH: 'watch' },
+            (_key, fallback) => fallback);
+        const body = { textContent: 'spam' };
+        const author = { textContent: 'creator' };
+        const thread = {
+            querySelector(selector) {
+                if (selector.includes('#content-text')) return body;
+                if (selector.includes('#author-text')) return author;
+                return null;
+            }
+        };
+        assert.equal(manager._shouldHideThread(thread), true);
+        assert.equal(manager._shouldHideThread(thread), true,
+            'cached regex rules must match consistently on the next thread');
+    } finally {
+        if (previousCore === undefined) delete globalThis.YTKitCore;
+        else globalThis.YTKitCore = previousCore;
+    }
 });
 
 test('commentFilterManager processes mutation addedNodes only, never full-document scans on tick', () => {
