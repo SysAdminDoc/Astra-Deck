@@ -94,6 +94,7 @@
         "core/trusted-html.js",
         "core/diagnostic-log.js",
         "core/external-api-health.js",
+        "core/regex-safety.js",
         "core/predicate-sandbox.js",
         "core/video-type.js",
         "core/playability.js",

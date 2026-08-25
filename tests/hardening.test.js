@@ -3599,9 +3599,11 @@ test('commentFilterManager strips stateful regex flags from cached rules', () =>
     const previousCore = globalThis.YTKitCore;
     delete globalThis.YTKitCore;
     try {
+        // The guard lives in its own module so the userscript bundle can ship
+        // it too; predicate-sandbox.js is intentional-extension-only.
         // eslint-disable-next-line no-new-func
         Function(fs.readFileSync(
-            path.join(__dirname, '..', 'extension', 'core', 'predicate-sandbox.js'), 'utf8'
+            path.join(__dirname, '..', 'extension', 'core', 'regex-safety.js'), 'utf8'
         )).call(globalThis);
         assert.equal(typeof globalThis.YTKitCore?.hasUnsafeRegexQuantifiers, 'function',
             'the shared guard must be loadable, or this test proves nothing');
@@ -8039,6 +8041,11 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
     // V5_BUNDLE_MODULES. That order in turn mirrors the manifest's
     // content_scripts.js load order for these modules.
     const expectedOrder = [
+        // The shared ReDoS guard loads before anything that compiles a filter
+        // regex. It has its own module because predicate-sandbox.js, where it
+        // used to live, is intentional-extension-only while Video Hider and the
+        // comment filter also ship here.
+        'extension/core/regex-safety.js',
         'extension/core/styles.js',
         'extension/core/trusted-html.js',
         'extension/core/settings-visual-system.js',

@@ -19,6 +19,100 @@
     'use strict';
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+    if (core.hasUnsafeRegexQuantifiers) return;
+
+    // The single ReDoS guard for every pattern compiled out of user or remote
+    // text: Video Hider's keyword filters, the comment filter, the predicate
+    // sandbox. Its own module because those three do not share a surface:
+    // predicate-sandbox.js is deliberately extension-only, while the other two
+    // also ship in the userscript bundle. Private per-caller copies are what
+    // this replaces; they caught `(a|b+)+` and missed `.*.*.*.*.*.*z`.
+
+    const MAX_REGEX_SOURCE = 200;
+
+    function hasUnsafeRegexQuantifiers(pattern) {
+        if (typeof pattern !== 'string') return true;
+        // Bounded source length bounds worst-case backtracking work.
+        if (pattern.length > MAX_REGEX_SOURCE) return true;
+
+        const adjacent = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pattern);
+        const groupInner = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pattern);
+        // Overlapping alternation: (a|a|a)+, (a|aa)+. Exponential on its own.
+        const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pattern);
+        if (adjacent || groupInner || altGroupQuantified) return true;
+
+        // Polynomial backtracking: `.*.*.*.*`, or sequential quantified
+        // groups like `(a+)(a+)(a+)(a+)(a+)b`, backtrack in O(n^k) where k is
+        // the open-ended quantifier count. The nesting scan below only sees
+        // groups quantified THEMSELVES, so count across the whole pattern.
+        // Four yields ~O(n^4), tolerable under the 200-char cap.
+        let openEndedQuantifiers = 0;
+        for (let qi = 0; qi < pattern.length; qi += 1) {
+            const qc = pattern[qi];
+            if (qc === '\\') { qi += 1; continue; }
+            if (qc === '[') {
+                while (qi < pattern.length && pattern[qi] !== ']') {
+                    if (pattern[qi] === '\\') qi += 1;
+                    qi += 1;
+                }
+                continue;
+            }
+            if (qc === '(' || qc === ')') continue;
+            if (qc === '+' || qc === '*') openEndedQuantifiers += 1;
+            if (qc === '{') {
+                const brace = pattern.slice(qi).match(/^\{(\d+),(\d*)}/);
+                if (brace && (brace[2] === '' || Number(brace[2]) > Number(brace[1]))) openEndedQuantifiers += 1;
+            }
+        }
+        if (openEndedQuantifiers > 4) return true;
+
+        // Nesting-aware scan for the exponential forms ((a+)+, ((ab)*)*,
+        // ((a|b)+)+): a group followed by + * {n,} whose contents hold a
+        // quantifier or alternation at ANY depth. The flat `[^()]` heuristics
+        // above cannot see those, since a nested paren breaks their character
+        // classes. `?` cannot drive repetition, so it is inner risk only.
+        const stack = [];
+        for (let i = 0; i < pattern.length; i += 1) {
+            const ch = pattern[i];
+            if (ch === '\\') { i += 1; continue; }
+            if (ch === '[') {
+                i += 1;
+                while (i < pattern.length && pattern[i] !== ']') {
+                    if (pattern[i] === '\\') i += 1;
+                    i += 1;
+                }
+                continue;
+            }
+            if (ch === '(') { stack.push({ innerRisk: false }); continue; }
+            if (ch === ')') {
+                const group = stack.pop();
+                if (!group) continue; // unbalanced — new RegExp() will reject later
+                const next = pattern[i + 1];
+                const repeated = next === '+' || next === '*' || next === '{';
+                if (repeated && group.innerRisk) return true;
+                if (stack.length && (repeated || group.innerRisk)) {
+                    stack[stack.length - 1].innerRisk = true;
+                }
+                continue;
+            }
+            if (stack.length && (ch === '+' || ch === '*' || ch === '?' || ch === '|' || ch === '{')) {
+                stack[stack.length - 1].innerRisk = true;
+            }
+        }
+        return false;
+    }
+
+    Object.assign(core, { MAX_REGEX_SOURCE, hasUnsafeRegexQuantifiers });
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = { MAX_REGEX_SOURCE, hasUnsafeRegexQuantifiers };
+    }
+})();
+//m:1
+(() => {
+    'use strict';
+
+    const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.appendStyleSheet) return;
 
     function supportsCssScope() {
@@ -300,7 +394,7 @@
         };
     }
 })();
-//m:1
+//m:2
 (() => {
     'use strict';
 
@@ -478,7 +572,7 @@
         setTrustedHTML
     });
 })();
-//m:2
+//m:3
 (() => {
     'use strict';
 
@@ -692,7 +786,7 @@
         };
     }
 })();
-//m:3
+//m:4
 'use strict';
 
 
@@ -1584,7 +1678,7 @@ if (typeof globalThis !== "undefined") {
         isRetiredShippedId
     };
 }
-//m:4
+//m:5
 (() => {
     'use strict';
 
@@ -1694,7 +1788,7 @@ if (typeof globalThis !== "undefined") {
 
     core.createInjectionGuard = createInjectionGuard;
 })();
-//m:5
+//m:6
 (() => {
     'use strict';
 
@@ -1923,7 +2017,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { createLifecycle, getLifecycle, resetLifecycleForTests };
     }
 })();
-//m:6
+//m:7
 (() => {
     'use strict';
 
@@ -2305,7 +2399,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { createPolicyProfile };
     }
 })();
-//m:7
+//m:8
 (() => {
     'use strict';
 
@@ -2724,7 +2818,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:8
+//m:9
 (() => {
     'use strict';
 
@@ -2899,7 +2993,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { createSettingsImportTransaction };
     }
 })();
-//m:9
+//m:a
 (function (root, factory) {
     const api = factory();
     if (typeof module === 'object' && module.exports) module.exports = api;
@@ -3088,7 +3182,7 @@ if (typeof globalThis !== "undefined") {
         utf8ByteLength
     });
 });
-//m:a
+//m:b
 (() => {
     'use strict';
 
@@ -4276,7 +4370,7 @@ if (typeof globalThis !== "undefined") {
         TRANSCRIPT_PANEL_SELECTORS
     });
 })();
-//m:b
+//m:c
 (() => {
     'use strict';
 
@@ -4501,7 +4595,7 @@ if (typeof globalThis !== "undefined") {
         scanTranscriptRecordsChunked
     });
 })();
-//m:c
+//m:d
 (() => {
     'use strict';
 
@@ -5467,7 +5561,7 @@ if (typeof globalThis !== "undefined") {
 
     if (typeof module !== 'undefined' && module.exports) module.exports = core.aiSummaryArtifacts;
 })();
-//m:d
+//m:e
 (() => {
     'use strict';
 
@@ -5755,7 +5849,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:e
+//m:f
 (() => {
     'use strict';
 
@@ -5885,7 +5979,7 @@ if (typeof globalThis !== "undefined") {
 
     if (typeof module !== 'undefined' && module.exports) module.exports = surface;
 })();
-//m:f
+//m:g
 (() => {
     'use strict';
 
@@ -6529,7 +6623,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { createUserscriptAiSummaryFeature };
     }
 })();
-//m:g
+//m:h
 (() => {
     'use strict';
 
@@ -6940,7 +7034,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:h
+//m:i
 (() => {
     'use strict';
 
@@ -7250,7 +7344,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:i
+//m:j
 (() => {
     'use strict';
 
@@ -7538,7 +7632,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:j
+//m:k
 (() => {
     'use strict';
 
@@ -7688,7 +7782,7 @@ if (typeof globalThis !== "undefined") {
     core.findChapterTitle = findChapterTitle;
     core.planChapterRestore = planChapterRestore;
 })();
-//m:k
+//m:l
 (() => {
     'use strict';
 
@@ -7741,7 +7835,7 @@ if (typeof globalThis !== "undefined") {
     core.csvCell = csvCell;
     core.csvRow = csvRow;
 })();
-//m:l
+//m:m
 (() => {
     'use strict';
 
@@ -7884,7 +7978,7 @@ if (typeof globalThis !== "undefined") {
     core.findComplianceDialog = findComplianceDialog;
     core.isSafeToAutoClick = isSafeToAutoClick;
 })();
-//m:m
+//m:n
 (() => {
     'use strict';
 
@@ -8471,7 +8565,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = api;
     }
 })();
-//m:n
+//m:o
 (() => {
     'use strict';
 
@@ -8956,7 +9050,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:o
+//m:p
 (() => {
     'use strict';
 
@@ -9162,7 +9256,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:p
+//m:q
 (() => {
     'use strict';
 
@@ -9359,7 +9453,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:q
+//m:r
 (() => {
     'use strict';
 
@@ -9545,7 +9639,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:r
+//m:s
 (() => {
     'use strict';
 
@@ -9782,7 +9876,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:s
+//m:t
 (() => {
     'use strict';
 
@@ -10045,7 +10139,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:t
+//m:u
 // Generated from scripts/companion-port-catalogue.json. Do not edit this file directly.
 (() => {
     'use strict';
@@ -10068,7 +10162,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = companionPorts;
     }
 })();
-//m:u
+//m:v
 (() => {
     'use strict';
 
@@ -10641,7 +10735,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:v
+//m:w
 (() => {
     'use strict';
 
@@ -10810,7 +10904,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:w
+//m:x
 (() => {
     'use strict';
 
@@ -11074,7 +11168,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { createToastSystem };
     }
 })();
-//m:x
+//m:y
 (() => {
     'use strict';
 
@@ -11858,7 +11952,7 @@ if (typeof globalThis !== "undefined") {
         waitForPageContent
     });
 })();
-//m:y
+//m:z
 (() => {
     'use strict';
 
@@ -12504,7 +12598,7 @@ if (typeof globalThis !== "undefined") {
         })
     });
 })();
-//m:z
+//m:10
 (() => {
     'use strict';
 
@@ -12763,7 +12857,7 @@ if (typeof globalThis !== "undefined") {
 
     Object.assign(core, { createResourceUnlockBridge });
 })();
-//m:10
+//m:11
 (() => {
     'use strict';
 
@@ -12987,7 +13081,7 @@ if (typeof globalThis !== "undefined") {
     // rendered timestamp out of YouTube's own DOM.
     Object.assign(core, { escapeRegExp, parseCompactCount, normalizeDigits });
 })();
-//m:11
+//m:12
 (() => {
     'use strict';
 
@@ -13194,7 +13288,7 @@ if (typeof globalThis !== "undefined") {
         parseYouTubeDate
     });
 })();
-//m:12
+//m:13
 (() => {
     'use strict';
 
@@ -13398,7 +13492,7 @@ if (typeof globalThis !== "undefined") {
         failureDiagnosticText
     });
 })();
-//m:13
+//m:14
 (() => {
     'use strict';
 
@@ -13465,7 +13559,7 @@ if (typeof globalThis !== "undefined") {
 
     core.runtimeFlags = flags;
 })();
-//m:14
+//m:15
 (() => {
     'use strict';
 
@@ -14010,7 +14104,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = surface;
     }
 })();
-//m:15
+//m:16
 (() => {
     'use strict';
 
@@ -14672,7 +14766,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:16
+//m:17
 (() => {
     'use strict';
 
@@ -14877,7 +14971,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:17
+//m:18
 (() => {
     'use strict';
 
@@ -14975,7 +15069,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { buildBlueLightRgba, OVERLAY_FIXED_CSS, featureSpec };
     }
 })();
-//m:18
+//m:19
 (() => {
     'use strict';
 
@@ -15176,7 +15270,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:19
+//m:1a
 (() => {
     'use strict';
 
@@ -15305,7 +15399,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1a
+//m:1b
 (() => {
     'use strict';
 
@@ -15533,7 +15627,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1b
+//m:1c
 (() => {
     'use strict';
 
@@ -15998,7 +16092,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1c
+//m:1d
 (() => {
     'use strict';
 
@@ -18358,7 +18452,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1d
+//m:1e
 (() => {
     'use strict';
 
@@ -18649,7 +18743,7 @@ if (typeof globalThis !== "undefined") {
         module.exports = { createStickyChatFeature, sanitizeStickyChatLayout };
     }
 })();
-//m:1e
+//m:1f
 (() => {
     'use strict';
 
@@ -21689,7 +21783,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1f
+//m:1g
 (() => {
     'use strict';
 
@@ -22098,7 +22192,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1g
+//m:1h
 (() => {
     'use strict';
 
@@ -25209,7 +25303,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1h
+//m:1i
 (() => {
     'use strict';
 
@@ -25813,7 +25907,7 @@ if (typeof globalThis !== "undefined") {
         };
     }
 })();
-//m:1i
+//m:1j
 (() => {
     'use strict';
 
@@ -29911,7 +30005,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1j
+//m:1k
 (() => {
     'use strict';
 
@@ -30635,7 +30729,7 @@ function attachUIEventListeners() {
         module.exports = api;
     }
 })();
-//m:1k
+//m:1l
 (() => {
     'use strict';
 
@@ -30698,7 +30792,7 @@ function attachUIEventListeners() {
         module.exports = api;
     }
 })();
-//m:1l
+//m:1m
 (() => {
     'use strict';
 
@@ -31636,7 +31730,7 @@ function attachUIEventListeners() {
         };
     }
 })();
-//m:1m
+//m:1n
 (() => {
     'use strict';
 
@@ -32354,7 +32448,7 @@ function attachUIEventListeners() {
         module.exports = { createSponsorBlockFeature };
     }
 })();
-//m:1n
+//m:1o
 (() => {
     'use strict';
 
@@ -32917,7 +33011,7 @@ function attachUIEventListeners() {
         module.exports = { createDeArrowFeature };
     }
 })();
-//m:1o
+//m:1p
 (() => {
     'use strict';
 

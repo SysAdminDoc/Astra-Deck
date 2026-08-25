@@ -230,12 +230,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 116 | `true` on every entry |
-| `store-safe` | firefox | A | 116 | omitted |
-| `chromium-store` | chromium | B | 115 | `true` on every entry |
-| `chromium-store` | firefox | B | 115 | omitted |
-| `github-full` | chromium | A | 116 | `true` on every entry |
-| `github-full` | firefox | A | 116 | omitted |
+| `store-safe` | chromium | A | 117 | `true` on every entry |
+| `store-safe` | firefox | A | 117 | omitted |
+| `chromium-store` | chromium | B | 116 | `true` on every entry |
+| `chromium-store` | firefox | B | 116 | omitted |
+| `github-full` | chromium | A | 117 | `true` on every entry |
+| `github-full` | firefox | A | 117 | omitted |
 
 #### Resource set A
 
@@ -308,6 +308,7 @@ Entry 2 resource paths:
 - `core/trusted-html.js`
 - `core/diagnostic-log.js`
 - `core/external-api-health.js`
+- `core/regex-safety.js`
 - `core/predicate-sandbox.js`
 - `core/video-type.js`
 - `core/playability.js`
@@ -446,6 +447,7 @@ Entry 2 resource paths:
 - `core/trusted-html.js`
 - `core/diagnostic-log.js`
 - `core/external-api-health.js`
+- `core/regex-safety.js`
 - `core/predicate-sandbox.js`
 - `core/video-type.js`
 - `core/playability.js`

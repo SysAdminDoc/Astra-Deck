@@ -22,8 +22,8 @@ function loadGuard() {
     const context = { globalThis: null, console };
     context.globalThis = context;
     vm.createContext(context);
-    vm.runInContext(read('extension', 'core', 'predicate-sandbox.js'), context, {
-        filename: 'extension/core/predicate-sandbox.js'
+    vm.runInContext(read('extension', 'core', 'regex-safety.js'), context, {
+        filename: 'extension/core/regex-safety.js'
     });
     return context.globalThis.YTKitCore.hasUnsafeRegexQuantifiers;
 }
@@ -54,7 +54,7 @@ const LEGITIMATE = [
 test('the shared guard rejects every catastrophic pattern', () => {
     const hasUnsafeRegexQuantifiers = loadGuard();
     assert.equal(typeof hasUnsafeRegexQuantifiers, 'function',
-        'predicate-sandbox must export the guard for the other call sites');
+        'core/regex-safety.js must export the guard for every call site');
     for (const pattern of CATASTROPHIC) {
         assert.equal(hasUnsafeRegexQuantifiers(pattern), true,
             `${pattern} backtracks catastrophically and must be refused`);
@@ -110,4 +110,32 @@ test('a missing guard refuses the pattern rather than compiling it', () => {
         assert.ok(!/const unsafeRegex = [^;]*\?[\s\S]{0,400}?\|\|\s*\//.test(source),
             `${label} must not carry a second, weaker copy of the guard`);
     }
+});
+
+test('the guard reaches every surface that compiles a filter regex', () => {
+    // The first version of this fix put the guard in
+    // core/predicate-sandbox.js, which check-userscript-drift.js classifies as
+    // intentional-extension-only. Video Hider and the comment filter both ship
+    // in the userscript bundle, so the guard was simply absent there and the
+    // fail-closed branch silently disabled every userscript user's regex
+    // keyword filters. It lives in its own shipped module now.
+    const manifest = JSON.parse(read('extension', 'manifest.json'));
+    for (const contentScript of manifest.content_scripts) {
+        const js = contentScript.js || [];
+        if (!js.includes('features/video-hider/index.js')) continue;
+        assert.ok(js.includes('core/regex-safety.js'),
+            'a content script running Video Hider must also load the guard');
+        assert.ok(js.indexOf('core/regex-safety.js') < js.indexOf('features/video-hider/index.js'),
+            'and load it first');
+    }
+
+    const bundle = fs.readFileSync(path.join(repoRoot, 'sync-userscript.js'), 'utf8');
+    assert.ok(bundle.includes("'extension/core/regex-safety.js',"),
+        'the userscript bundle must ship the guard');
+
+    const core = fs.readFileSync(path.join(repoRoot, 'YTKit-core.user.js'), 'utf8');
+    assert.ok(core.includes('function hasUnsafeRegexQuantifiers(pattern) {'),
+        'the built userscript library must contain the guard body, not just its callers');
+    assert.ok(core.includes('features/video-hider/index.js'),
+        'the built library ships Video Hider, which is why the guard has to be there');
 });
