@@ -1352,7 +1352,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.85.1';
+    const YTKIT_VERSION = '4.85.2';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -24114,14 +24114,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     @media (max-width: 520px) {
                         #comments .ytkit-comment-search {
                             padding: 12px !important;
-                            gap: 10px !important;
+                            gap: 14px !important;
                         }
                         #comments .ytkit-comment-search-head {
                             flex-direction: column !important;
                             align-items: stretch !important;
+                            gap: 14px !important;
+                        }
+                        #comments .ytkit-comment-search-copy {
+                            gap: 12px !important;
                         }
                         #comments .ytkit-search-count {
                             align-self: flex-start !important;
+                            line-height: 1.8 !important;
+                        }
+                        #comments .ytkit-comment-search-eyebrow {
+                            line-height: 2.05 !important;
+                        }
+                        #comments .ytkit-comment-search-summary,
+                        #comments .ytkit-comment-search-hint {
+                            line-height: 1.95 !important;
+                        }
+                        #comments .ytkit-comment-search-field {
+                            min-height: 52px !important;
                         }
                     }
                     @media (forced-colors: active) {

@@ -63,6 +63,14 @@ test('headless accessibility smoke checks reflow, focus visibility, and obscurin
     assert.match(source, /Page\.captureScreenshot/);
     assert.match(source, /build', 'headless-a11y/);
     assert.match(source, /searchParams\.set\('theme', theme\)/);
+    assert.match(source, /settingsTypography/,
+        'the rendered lane must measure settings text rhythm, not only overflow boxes');
+    assert.match(source, /sidepanelTypography/,
+        'the rendered lane must measure owned side-panel text rhythm');
+    assert.match(source, /featureDescription:\s*1\.65/,
+        'pseudo-locale settings descriptions must retain combining-mark clearance');
+    assert.match(source, /sectionTitle:\s*1\.65/,
+        'pseudo-locale side-panel headings must retain combining-mark clearance');
 });
 
 test('headless accessibility smoke CLI parsing stays deterministic', () => {
@@ -95,6 +103,8 @@ test('rendered accessibility fixes remain pinned at their root causes', () => {
     assert.match(sidepanelCss, /html\s*\{[\s\S]*?min-width:\s*0/,
         'side panel must reflow below the old 240px floor');
     assert.match(sidepanelCss, /body\s*\{[\s\S]*?min-width:\s*0/);
+    assert.match(sidepanelCss, /@media \(max-width:\s*420px\)[\s\S]*?\.sp-title[\s\S]*?line-height:\s*1\.55/,
+        'the side panel must loosen compact heading metrics before 320px reflow');
     assert.match(
         ytkit,
         /#secondary:not\(:has\(ytd-live-chat-frame:not\(\[hidden\]\), \.ytkit-bookmarks-container, #ytkit-transcript-panel\)\)/,

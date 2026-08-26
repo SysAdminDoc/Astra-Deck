@@ -476,6 +476,16 @@ test('shared surface system covers the polished YouTube and injected UI families
         'full-bleed variants must inherit the active watch-page canvas token');
     assert.match(css, /ytd-watch-flexy:is\([\s\S]*\[theater\][\s\S]*\[full-bleed-player\][\s\S]*#player-full-bleed-container/,
         'native Theater and full-bleed experiments must share the player-canvas rule');
+    assert.match(css, /html \.ytkit-ai-qa-modal__body[\s\S]*?padding:\s*0 !important[\s\S]*?gap:\s*0 !important/,
+        'Transcript Q&A must use the shared structured dialog shell');
+    assert.match(css, /\.ytkit-transcript-state--error[\s\S]*?--ytkit-premium-danger/,
+        'transcript failures must retain a semantic error treatment');
+    assert.match(css, /html #ytkit-service-state-strip \.ytkit-service-state-pill[\s\S]*?grid-template-columns:/,
+        'service notices must render as compact structured cards');
+    assert.match(css, /html\.ytkit-split-active:not\(\[dark\]\)[\s\S]*?:is\(yt-icon, svg, path\)[\s\S]*?fill:\s*currentColor/,
+        'light Theater Split icon controls must inherit legible page ink');
+    assert.match(visualSystemSource, /--ytkit-bg-surface:\s*var\(--ytkit-v3-surface\)/,
+        'legacy userscript panes must resolve through the shared settings tokens');
     assert.match(css, /@media \(forced-colors: active\)/);
     assert.doesNotMatch(css, /(?:linear|radial)-gradient\(/,
         'premium surfaces must use flat fills');

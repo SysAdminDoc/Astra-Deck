@@ -6,6 +6,45 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.85.2] (2026-08-25)
+
+### Changed
+
+- Settings, Transcript, Transcript Q&A, downloads, service notices, the side
+  panel, Comment Search, and Video Hider now use one dark and light visual
+  system. Headings have a clearer order, statuses sit in bounded surfaces, and
+  related controls keep the same spacing and interaction treatment.
+
+- The normal watch page, YouTube's Theater mode, and Theater Split now share
+  the same metadata and action-control treatment. The player stays black while
+  the surrounding page follows Astra's selected light or dark theme.
+
+- Compact layouts now reserve enough height for translated and pseudo-localized
+  labels. The settings overlay, side panel, sidebar, and Comment Search remain
+  readable at 320 pixels instead of letting headings, summaries, and controls
+  overlap.
+
+### Fixed
+
+- Theater Split's metadata icons and action controls stay visible on the light
+  theme. Their resolved color and opacity are now checked in the live watch-page
+  smoke test.
+
+- The userscript's light download banner no longer keeps its dark surface, and
+  Video Hider now shows a clear tab strip and a bounded empty state after its
+  panel transition finishes.
+
+- Transcript errors, Q&A citations, disabled actions, download paths, and local
+  service failures now keep readable hierarchy without clipped copy or raw
+  browser-default presentation.
+
+### Tests
+
+- Browser checks now measure compact-layout typography, userscript theme-token
+  parity, Video Hider legibility, the light download banner, and Theater Split
+  icon visibility. The screenshots are captured only after animated panels have
+  settled.
+
 ## [4.85.1] (2026-08-25)
 
 ### Security

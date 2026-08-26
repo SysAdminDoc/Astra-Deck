@@ -130,11 +130,19 @@ async function auditState(client, state) {
             return true;
         })()`);
         if (!selected) throw new Error(`${state.name}: could not select ${category.label}`);
-        await sleep(50);
+        // The pane uses a 250ms entrance animation. Capturing at 50ms made a
+        // healthy empty state look almost invisible because the whole pane was
+        // still near the start of its opacity ramp.
+        await sleep(300);
         const snapshot = await evaluate(client, `(() => {
             const panel = document.querySelector('#ytkit-settings-panel');
             const pane = document.querySelector('#ytkit-pane-${category.id}');
             const panelRect = panel.getBoundingClientRect();
+            const panelStyle = getComputedStyle(panel);
+            const videoHiderEmpty = pane?.querySelector('.ytkit-vh-empty');
+            const videoHiderEmptyTitle = pane?.querySelector('.ytkit-vh-empty__title');
+            const videoHiderEmptyCopy = pane?.querySelector('.ytkit-vh-empty__copy');
+            const mediaDlBanner = pane?.querySelector('#ytkit-mediadl-banner');
             const clipped = Array.from(panel.querySelectorAll('.ytkit-nav-label, .ytkit-feature-name, .ytkit-feature-desc'))
                 .filter((node) => node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1)
                 .map((node) => node.textContent.trim());
@@ -157,6 +165,15 @@ async function auditState(client, state) {
                 clipped,
                 summaryCards: pane?.querySelectorAll('.ytkit-vh-summary-card').length || 0,
                 missionIcon: Boolean(pane?.querySelector('.ytkit-pane-lead .ytkit-pane-icon svg')),
+                legacySurfaceToken: panelStyle.getPropertyValue('--ytkit-bg-surface').trim(),
+                sharedSurfaceToken: panelStyle.getPropertyValue('--ytkit-v3-surface').trim(),
+                videoHiderEmpty: videoHiderEmpty ? {
+                    background: getComputedStyle(videoHiderEmpty).backgroundColor,
+                    copyColor: getComputedStyle(videoHiderEmptyCopy).color,
+                    copyOpacity: getComputedStyle(videoHiderEmptyCopy).opacity,
+                    titleColor: getComputedStyle(videoHiderEmptyTitle).color,
+                } : null,
+                mediaDlBannerBackground: mediaDlBanner ? getComputedStyle(mediaDlBanner).backgroundColor : '',
                 invalidSelectLabels: Array.from(pane?.querySelectorAll('option') || [])
                     .map((option) => option.textContent.trim())
                     .filter((label) => label === '[object Object]')
@@ -168,8 +185,21 @@ async function auditState(client, state) {
         }
         if (snapshot.clipped.length) throw new Error(`${state.name}/${category.label}: clipped labels: ${snapshot.clipped.join(', ')}`);
         if (snapshot.invalidSelectLabels.length) throw new Error(`${state.name}/${category.label}: a select rendered [object Object]`);
+        if (!snapshot.legacySurfaceToken || snapshot.legacySurfaceToken !== snapshot.sharedSurfaceToken) {
+            throw new Error(`${state.name}/${category.label}: legacy surface token drifted from the shared visual system`);
+        }
         if (category.id === 'Video-Hider' && (snapshot.summaryCards !== 3 || !snapshot.missionIcon)) {
             throw new Error(`${state.name}/Video Hider: mission header or summary dashboard is missing`);
+        }
+        if (category.id === 'Video-Hider' && (!snapshot.videoHiderEmpty
+            || snapshot.videoHiderEmpty.copyOpacity !== '1'
+            || snapshot.videoHiderEmpty.copyColor === snapshot.videoHiderEmpty.background
+            || snapshot.videoHiderEmpty.titleColor === snapshot.videoHiderEmpty.background)) {
+            throw new Error(`${state.name}/Video Hider: empty state is not legible (${JSON.stringify(snapshot.videoHiderEmpty)})`);
+        }
+        if (category.id === 'Downloads' && !state.dark
+            && snapshot.mediaDlBannerBackground !== 'rgb(238, 241, 245)') {
+            throw new Error(`${state.name}/Downloads: MediaDL banner retained a dark surface (${snapshot.mediaDlBannerBackground})`);
         }
         pages.push({ ...category, ...snapshot });
         const slug = category.id.toLowerCase().replace(/[^a-z0-9]+/g, '-');

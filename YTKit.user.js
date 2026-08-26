@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.85.1
+// @name         YTKit v4.85.2
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.85.1
+// @version      4.85.2
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion
@@ -267,7 +267,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.85.1';
+    const YTKIT_VERSION = '4.85.2';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -16907,12 +16907,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const videos = videoHiderFeature?._getHiddenVideos() || [];
                     if (videos.length === 0) {
                         const empty = document.createElement('div');
-                        empty.style.cssText = 'text-align:center;padding:40px 16px;color:var(--ytkit-text-muted);';
+                        empty.className = 'ytkit-vh-empty';
                         const emptyTitle = document.createElement('div');
-                        emptyTitle.style.cssText = 'font-size:14px;margin-bottom:6px;';
+                        emptyTitle.className = 'ytkit-vh-empty__title';
                         emptyTitle.textContent = 'No hidden videos yet';
                         const emptyDesc = document.createElement('div');
-                        emptyDesc.style.cssText = 'font-size:12px;opacity:0.7;';
+                        emptyDesc.className = 'ytkit-vh-empty__copy';
                         emptyDesc.textContent = 'Click the X button on video thumbnails to hide them';
                         empty.appendChild(emptyTitle);
                         empty.appendChild(emptyDesc);
@@ -16981,12 +16981,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const channels = videoHiderFeature?._getBlockedChannels() || [];
                     if (channels.length === 0) {
                         const empty = document.createElement('div');
-                        empty.style.cssText = 'text-align:center;padding:40px 16px;color:var(--ytkit-text-muted);';
+                        empty.className = 'ytkit-vh-empty';
                         const emptyTitle = document.createElement('div');
-                        emptyTitle.style.cssText = 'font-size:14px;margin-bottom:6px;';
+                        emptyTitle.className = 'ytkit-vh-empty__title';
                         emptyTitle.textContent = 'No blocked channels yet';
                         const emptyDesc = document.createElement('div');
-                        emptyDesc.style.cssText = 'font-size:12px;opacity:0.7;';
+                        emptyDesc.className = 'ytkit-vh-empty__copy';
                         emptyDesc.textContent = 'Right-click the X button on thumbnails to block channels';
                         empty.appendChild(emptyTitle);
                         empty.appendChild(emptyDesc);

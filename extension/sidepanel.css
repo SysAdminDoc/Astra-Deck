@@ -1197,3 +1197,69 @@ body[data-loading="true"] .sp-settings-list:empty::before {
     min-height: 54px;
   }
 }
+
+@media (max-width: 420px) {
+  .sp-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding-block: 14px;
+  }
+
+  .sp-brand {
+    align-items: flex-start;
+  }
+
+  .sp-brand-copy {
+    gap: 4px;
+  }
+
+  .sp-title {
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  .sp-subtitle {
+    line-height: 1.65;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .sp-header-meta {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .sp-section-head {
+    gap: 10px;
+  }
+
+  :is(
+    .sp-section-kicker,
+    .sp-section-title,
+    .sp-section-copy,
+    .sp-overview-label,
+    .sp-overview-value,
+    .sp-overview-detail,
+    .sp-stat-label,
+    .sp-stat-value,
+    .sp-setting-name,
+    .sp-setting-description,
+    .sp-setting-state,
+    .sp-empty-title,
+    .sp-empty-copy,
+    .sp-refresh-status
+  ) {
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+  }
+
+  .sp-section-kicker {
+    margin-bottom: 5px;
+  }
+
+  .sp-section-copy,
+  .sp-setting-description,
+  .sp-empty-copy {
+    margin-top: 7px;
+  }
+}
