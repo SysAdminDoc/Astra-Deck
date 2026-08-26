@@ -274,10 +274,23 @@ function datasetProxy(attrs) {
 // the reveal path could never be asserted.
 function styleProxy() {
     const declarations = new Map();
+    const priorities = new Map();
     const methods = {
-        setProperty(name, value) { declarations.set(String(name), String(value)); },
+        setProperty(name, value, priority = '') {
+            const property = String(name);
+            declarations.set(property, String(value));
+            if (priority) priorities.set(property, String(priority));
+            else priorities.delete(property);
+        },
         getPropertyValue(name) { return declarations.get(String(name)) || ''; },
-        removeProperty(name) { declarations.delete(String(name)); }
+        getPropertyPriority(name) { return priorities.get(String(name)) || ''; },
+        removeProperty(name) {
+            const property = String(name);
+            const previous = declarations.get(property) || '';
+            declarations.delete(property);
+            priorities.delete(property);
+            return previous;
+        }
     };
     return new Proxy(methods, {
         get(target, key) {
@@ -288,7 +301,9 @@ function styleProxy() {
             // then reads or flips one property off it has to see the same
             // store, or the flip is invisible.
             if (key === 'cssText') {
-                return [...declarations].map(([name, value]) => `${name}: ${value};`).join(' ');
+                return [...declarations].map(([name, value]) => (
+                    `${name}: ${value}${priorities.get(name) ? ` !${priorities.get(name)}` : ''};`
+                )).join(' ');
             }
             // A real CSSStyleDeclaration reports '' for a property that is not
             // set, which is what a feature comparing against '' expects.
@@ -297,16 +312,23 @@ function styleProxy() {
         set(target, key, value) {
             if (key === 'cssText') {
                 declarations.clear();
+                priorities.clear();
                 for (const declaration of String(value ?? '').split(';')) {
                     const at = declaration.indexOf(':');
                     if (at === -1) continue;
                     const name = declaration.slice(0, at).trim();
-                    if (name) declarations.set(name, declaration.slice(at + 1).trim());
+                    if (!name) continue;
+                    const rawValue = declaration.slice(at + 1).trim();
+                    const important = rawValue.match(/\s*!important\s*$/i);
+                    declarations.set(name, important ? rawValue.slice(0, important.index).trim() : rawValue);
+                    if (important) priorities.set(name, 'important');
                 }
                 return true;
             }
             if (typeof key === 'string' && !(key in target)) {
-                declarations.set(styleKeyToProperty(key), String(value));
+                const property = styleKeyToProperty(key);
+                declarations.set(property, String(value));
+                priorities.delete(property);
             }
             return true;
         },
@@ -314,7 +336,11 @@ function styleProxy() {
             return key in target || (typeof key === 'string' && declarations.has(styleKeyToProperty(key)));
         },
         deleteProperty(_target, key) {
-            if (typeof key === 'string') declarations.delete(styleKeyToProperty(key));
+            if (typeof key === 'string') {
+                const property = styleKeyToProperty(key);
+                declarations.delete(property);
+                priorities.delete(property);
+            }
             return true;
         }
     });

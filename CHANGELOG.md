@@ -27,6 +27,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   never dismisses YouTube's dialog, and a browser alarm restores the rules even
   if the page or background worker closes. Detection never changes policy.
 
+- Selector canaries now scan past hidden rollout copies, honor computed
+  visibility, and use the same route, dependency, artifact, and remote-disable
+  checks as feature startup. The live-chat pack no longer advertises a canary
+  that its dedicated bundle cannot run. Theater Split also restores the exact
+  inline values and priorities that YouTube owned on comments and chat
+  surfaces. Render contracts now prove the inventoried test reaches its live
+  runtime through the helper chain it actually calls.
+
 - DeArrow can now be switched on or off separately for the watch page, related
   videos, Home, Search, Subscriptions and playlists. All six stay on after an
   upgrade, preserving the old behaviour. An excluded feed no longer attaches

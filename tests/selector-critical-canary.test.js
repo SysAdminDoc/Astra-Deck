@@ -102,6 +102,67 @@ test('critical canary ignores a hidden prior route and selects stamped current c
     assert.equal(report.failedSurfaces.length, 0);
 });
 
+test('critical canary filters inactive matches before applying its bounded scan cap', () => {
+    const api = loadModule();
+    const hidden = Array.from({ length: 16 }, (_, index) => ({
+        id: `hidden-${index}`,
+        isConnected: true,
+        hidden: false,
+        inert: false,
+        style: { display: 'none' },
+        parentElement: null,
+        parentNode: null,
+        hasAttribute: () => false,
+        getAttribute: () => null
+    }));
+    const active = {
+        id: 'active-after-hidden-rollout-copies',
+        isConnected: true,
+        hidden: false,
+        inert: false,
+        style: {},
+        parentElement: null,
+        parentNode: null,
+        hasAttribute: () => false,
+        getAttribute: () => null
+    };
+    const root = { querySelectorAll: () => [...hidden, active] };
+
+    assert.equal(api.findActiveSelectorMatch(root, ['.surface'])?.node, active,
+        'sixteen hidden rollout copies must not hide the next live match');
+});
+
+test('critical canary rejects nodes hidden only by computed style', () => {
+    const api = loadModule();
+    const documentRef = {
+        defaultView: {
+            getComputedStyle: (node) => node.computedStyle
+        }
+    };
+    const computedHidden = {
+        id: 'computed-hidden',
+        isConnected: true,
+        hidden: false,
+        inert: false,
+        style: {},
+        computedStyle: { display: 'none', visibility: 'visible', contentVisibility: 'visible' },
+        ownerDocument: documentRef,
+        parentElement: null,
+        parentNode: null,
+        hasAttribute: () => false,
+        getAttribute: () => null
+    };
+    const active = {
+        ...computedHidden,
+        id: 'computed-visible',
+        computedStyle: { display: 'block', visibility: 'visible', contentVisibility: 'visible' }
+    };
+
+    assert.equal(api.findActiveSelectorMatch({
+        querySelectorAll: () => [computedHidden, active]
+    }, ['.surface'])?.node, active);
+});
+
 test('selector packs declare a bounded route-specific critical surface set', () => {
     const core = loadRuntimeSelectorCore();
     const watchRules = core.getCriticalSelectorCanaryRules('watch');
@@ -111,6 +172,8 @@ test('selector packs declare a bounded route-specific critical surface set', () 
     assert.ok(watchRules.every((rule) => rule.selectors.length > 0 && rule.selectors.length <= 8));
     assert.ok(watchRules.find((rule) => rule.surface === 'player').featureIds.includes('sponsorBlock'));
     assert.deepEqual(core.getCriticalSelectorCanaryRules('other'), []);
+    assert.deepEqual(core.getCriticalSelectorCanaryRules('live_chat'), [],
+        'the dedicated live-chat bundle has no selector-health runtime, so it must not advertise an unrun canary');
 });
 
 test('critical canary accepts a camelCase view-model host among mixed feed children', () => {
@@ -224,6 +287,10 @@ test('runtime schedules one silent aggregate canary after route settlement', () 
     assert.match(block, /report\.status === 'degraded' && attempt === 0/);
     assert.match(block, /lastFailureFingerprint === report\.fingerprint/);
     assert.match(block, /ServiceStateStrip\.updateCriticalCanary\(report\)/);
+    assert.match(block, /shouldFeatureBeActive\(feature, appState\.settings \|\| \{\}, route\)/,
+        'canary ownership must use the same route, dependency, and remote-disable predicate as feature init');
+    assert.doesNotMatch(block, /isFeatureEnabledInSettings\(feature/,
+        'settings alone are not enough to make a feature active on this route');
     assert.doesNotMatch(block, /findSurfaceElement|ytkit-selector-miss/,
         'the canary must not emit normal per-selector telemetry');
 

@@ -28,10 +28,6 @@
         lastVerified: '2026-06-04',
         highChurn: true,
         needsFreshCapture: false,
-        canary: Object.freeze({
-            routes: Object.freeze(['live_chat']),
-            featureIds: Object.freeze(['premiumLiveChat', 'hiddenChatElementsManager', 'chatKeywordFilter'])
-        }),
         notes: 'Live chat iframe document surface verified from a popout chat MHTML capture.'
     }));
 })();

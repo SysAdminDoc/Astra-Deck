@@ -63,20 +63,65 @@ function testBlock(source, title) {
     return source.slice(start, next < 0 ? source.length : next);
 }
 
+function topLevelSupportBlock(source, name) {
+    const functionStart = source.indexOf(`function ${name}(`);
+    const starts = [functionStart];
+    for (const token of [`const ${name} =`, `let ${name} =`]) {
+        const declarationStart = source.indexOf(token);
+        if (declarationStart < 0) continue;
+        const arrow = source.indexOf('=>', declarationStart);
+        const semicolon = source.indexOf(';', declarationStart);
+        const functionExpression = source.indexOf('function', declarationStart);
+        const isCallable = (arrow >= 0 && (semicolon < 0 || arrow < semicolon))
+            || (functionExpression >= 0 && (semicolon < 0 || functionExpression < semicolon));
+        if (isCallable) starts.push(declarationStart);
+    }
+    const callableStarts = starts.filter((index) => index >= 0);
+    if (!callableStarts.length) return null;
+    const start = Math.min(...callableStarts);
+    const functionEnd = source.indexOf('\n}', start);
+    const arrowEnd = source.indexOf('\n};', start);
+    const ends = [functionEnd, arrowEnd].filter((index) => index >= 0);
+    if (!ends.length) return null;
+    const end = Math.min(...ends);
+    return source.slice(start, end + (end === arrowEnd ? 3 : 2));
+}
+
+function runtimeSupportChain(source, testSource) {
+    const blocks = [testSource];
+    const seen = new Set();
+    for (let index = 0; index < blocks.length && index < 24; index += 1) {
+        for (const match of blocks[index].matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) {
+            const name = match[1];
+            if (seen.has(name)) continue;
+            seen.add(name);
+            const helper = topLevelSupportBlock(source, name);
+            if (helper) blocks.push(helper);
+        }
+    }
+    return blocks.join('\n');
+}
+
 test('every inventoried UI builder has a live renderer and tree assertion', () => {
     const ids = RENDER_ASSERTION_INVENTORY.map(([id]) => id);
     assert.equal(new Set(ids).size, ids.length, 'each UI builder must appear once');
 
     for (const [id, file, title, runtimeMarker] of RENDER_ASSERTION_INVENTORY) {
         const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
-        assert.ok(source.includes(runtimeMarker), `${id} must invoke its live runtime`);
         const block = testBlock(source, title);
+        const runtimeChain = runtimeSupportChain(source, block);
+        assert.ok(runtimeChain.includes(runtimeMarker),
+            `${id} must invoke its live runtime from the inventoried test or a helper it calls`);
         assert.match(block, /assert\.(?:equal|deepEqual|ok|match|doesNotMatch)\(/,
             `${id} must assert on the rendered result`);
         assert.match(block, /(?:children|querySelector|isConnected|getAttribute|classList|parentElement|dataset|textContent|hidden|style)/,
             `${id} must read the built tree, not only return values`);
-        assert.doesNotMatch(block, /(?:readFileSync|featureSlice|extractFeatureBlock|MODULE_SOURCE)/,
-            `${id} render evidence must not inspect implementation text`);
+        assert.doesNotMatch(runtimeChain, /(?:featureSlice|extractFeatureBlock|MODULE_SOURCE)/,
+            `${id} render evidence and its invoked helpers must not inspect implementation text`);
+        if (runtimeChain.includes('readFileSync')) {
+            assert.match(runtimeChain, /(?:\beval\b|runInNewContext)/,
+                `${id} may read implementation source only to execute the live module in its harness`);
+        }
     }
 });
 test('converted UI contracts retain explicit placement or teardown oracles', () => {

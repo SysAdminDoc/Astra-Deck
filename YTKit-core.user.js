@@ -6836,7 +6836,7 @@ if (typeof globalThis !== "undefined") {
     const MAX_CLIENT_VERSION_SCRIPTS = 80;
     const MAX_CANARY_SURFACES = 8;
     const MAX_CANARY_SELECTORS = 8;
-    const MAX_CANARY_MATCHES_PER_SELECTOR = 16;
+    const MAX_CANARY_CANDIDATES_PER_SELECTOR = 64;
     let latestCriticalCanary = null;
 
     function safeNumber(n) {
@@ -6894,21 +6894,41 @@ if (typeof globalThis !== "undefined") {
                 || String(style.visibility || '').toLowerCase() === 'hidden'
                 || String(style.contentVisibility || '').toLowerCase() === 'hidden'
             )) return true;
+            try {
+                const view = current.ownerDocument?.defaultView;
+                const readComputedStyle = view?.getComputedStyle || globalThis.getComputedStyle;
+                const computed = typeof readComputedStyle === 'function'
+                    ? readComputedStyle.call(view || globalThis, current)
+                    : null;
+                if (computed) {
+                    const display = String(computed.display || computed.getPropertyValue?.('display') || '').toLowerCase();
+                    const visibility = String(computed.visibility || computed.getPropertyValue?.('visibility') || '').toLowerCase();
+                    const contentVisibility = String(
+                        computed.contentVisibility || computed.getPropertyValue?.('content-visibility') || ''
+                    ).toLowerCase();
+                    if (display === 'none'
+                        || visibility === 'hidden'
+                        || visibility === 'collapse'
+                        || contentVisibility === 'hidden') return true;
+                }
+            } catch (_) {
+                return true;
+            }
             current = current.parentElement || current.parentNode || null;
         }
         return false;
     }
 
     function findActiveSelectorMatch(root, selectors, options = {}) {
-        const candidateLimit = Number.isFinite(options.maxMatchesPerSelector)
-            ? Math.max(1, Math.min(MAX_CANARY_MATCHES_PER_SELECTOR, Math.floor(options.maxMatchesPerSelector)))
-            : MAX_CANARY_MATCHES_PER_SELECTOR;
+        const candidateLimit = Number.isFinite(options.maxCandidatesPerSelector)
+            ? Math.max(1, Math.min(MAX_CANARY_CANDIDATES_PER_SELECTOR, Math.floor(options.maxCandidatesPerSelector)))
+            : MAX_CANARY_CANDIDATES_PER_SELECTOR;
         const isInactive = options.isInactive || nodeIsInInactiveTree;
         for (const selector of (Array.isArray(selectors) ? selectors : []).slice(0, MAX_CANARY_SELECTORS)) {
-            let matches = [];
+            let matches;
             try {
                 if (typeof root?.querySelectorAll === 'function') {
-                    matches = Array.from(root.querySelectorAll(selector) || []).slice(0, candidateLimit);
+                    matches = root.querySelectorAll(selector) || [];
                 } else {
                     const match = root?.querySelector?.(selector);
                     if (match) matches = [match];
@@ -6916,8 +6936,12 @@ if (typeof globalThis !== "undefined") {
             } catch (_) {
                 continue;
             }
-            const node = matches.find((candidate) => !isInactive(candidate));
-            if (node) return { node, selector };
+            let inspected = 0;
+            for (const candidate of matches || []) {
+                if (inspected >= candidateLimit) break;
+                inspected += 1;
+                if (!isInactive(candidate)) return { node: candidate, selector };
+            }
         }
         return null;
     }
@@ -15141,6 +15165,14 @@ if (typeof globalThis !== "undefined") {
         comments: 'stickyVideo-comments'
     });
 
+    const SPLIT_POSITIONED_STYLE_PROPERTIES = Object.freeze([
+        'position', 'top', 'right', 'width', 'max-width', 'height', 'margin',
+        'overflow-y', 'overflow-x', 'overscroll-behavior-y', 'z-index',
+        'background', 'padding', 'box-sizing', 'visibility', 'pointer-events',
+        'display', 'scrollbar-width', 'scrollbar-color', 'border-radius',
+        'border-bottom'
+    ]);
+
     function buildSplitShellCss() {
         return `html.ytkit-split-active ytd-watch-flexy{display:block!important;overflow:visible!important;} html.ytkit-split-active ytd-watch-flexy #columns{max-width:100%!important;} html.ytkit-split-active ytd-masthead,html.ytkit-split-active #masthead-container{display:none!important;} html.ytkit-split-active #page-manager{margin-top:0!important;} html.ytkit-split-active ytd-app{--ytd-masthead-height:0px;} html.ytkit-split-active,html.ytkit-split-active body{overflow:hidden!important;} html.ytkit-split-active body{padding-top:0!important;} html.ytkit-split-active #player-container,html.ytkit-split-active #player-container-inner,html.ytkit-split-active #player-theater-container,html.ytkit-split-active ytd-player{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;padding:0!important;margin:0!important;} html.ytkit-split-active #movie_player{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;position:relative!important;left:auto!important;top:auto!important;} html.ytkit-split-active .html5-video-container{width:100%!important;height:100%!important;} html.ytkit-split-active video.html5-main-video{width:100%!important;height:100%!important;object-fit:contain!important;left:0!important;top:0!important;} html.ytkit-split-active ytd-player > #container,html.ytkit-split-active #player-container-inner #player{width:100%!important;height:100%!important;padding-bottom:0!important;} html.ytkit-split-active ytd-watch-flexy[flexy-header-flipper_] #player-container,html.ytkit-split-active ytd-watch-flexy[theater] #player-container,html.ytkit-split-active ytd-watch-flexy #player-container{width:100%!important;max-width:none!important;} #ytkit-split-right::-webkit-scrollbar{width:5px;} #ytkit-split-right::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14);border-radius:3px;} #ytkit-split-right::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.28);} .ytkit-divider-pip{opacity:0.4;transition:opacity 0.2s ease;} #ytkit-split-divider:hover .ytkit-divider-pip{opacity:1;} html.ytkit-split-active #below.ytkit-split-scroll-surface,html.ytkit-split-active #below.ytkit-split-scroll-surface{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.12) transparent!important;font-size:13px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-watch-metadata{margin:-12px 0 0!important;padding:0!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-watch-metadata .item{padding:0!important;margin:0!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-watch-metadata #title{font-size:15px!important;line-height:1.3!important;margin-bottom:2px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #owner{margin:2px 0!important;padding:0!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #actions{flex-wrap:wrap!important;max-width:100%!important;margin:0!important;padding:2px 0!important;gap:4px!important;overflow:visible!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #actions ytd-menu-renderer,html.ytkit-split-active #below.ytkit-split-scroll-surface #top-level-buttons-computed{flex-wrap:wrap!important;gap:2px!important;overflow:visible!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #actions button,html.ytkit-split-active #below.ytkit-split-scroll-surface #actions ytd-button-renderer,html.ytkit-split-active #below.ytkit-split-scroll-surface #actions ytd-toggle-button-renderer{transform:scale(0.88)!important;transform-origin:center!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-text-inline-expander,html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-text-inline-expander > div{padding:0!important;margin:0!important;max-width:100%!important;word-break:break-word!important;font-size:12px!important;line-height:1.4!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #description-inline-expander{margin:4px 0!important;padding:6px 8px!important;background:rgba(255,255,255,0.04)!important;border-radius:6px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comments{margin:0!important;padding:0 0 40px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer,html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comments-header-renderer > div{padding:0!important;margin:0!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #count.ytd-comments-header-renderer{font-size:13px!important;margin:6px 0 2px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-simplebox-renderer{padding:0!important;margin:0 0 4px!important;transform:scale(0.92)!important;transform-origin:top left!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer{margin:0!important;padding:6px 4px!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-thread-renderer:last-child{border-bottom:none!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-renderer{margin:0!important;padding:0!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-renderer #author-thumbnail{width:24px!important;height:24px!important;margin-right:8px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-renderer #author-thumbnail img,html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-renderer #author-thumbnail yt-img-shadow{width:24px!important;height:24px!important;border-radius:50%!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #header-author{margin-bottom:1px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #author-text{font-size:12px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #published-time-text{font-size:11px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #content-text{font-size:13px!important;line-height:1.35!important;margin:0!important;padding:0!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #action-buttons{margin-top:2px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #action-buttons ytd-toggle-button-renderer,html.ytkit-split-active #below.ytkit-split-scroll-surface #action-buttons #reply-button-end{transform:scale(0.85)!important;transform-origin:left center!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface #action-buttons #vote-count-middle{font-size:11px!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer{margin-left:28px!important;padding:0!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-comment-replies-renderer #expander-contents{padding:0!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-item-section-renderer,html.ytkit-split-active #below.ytkit-split-scroll-surface ytd-item-section-renderer > #contents{padding:0!important;margin:0!important;max-width:100%!important;box-sizing:border-box!important;} html.ytkit-split-active #below.ytkit-split-scroll-surface yt-formatted-string{max-width:100%!important;word-break:break-word!important;} html.ytkit-split-active #ytkit-split-right{border:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.15) transparent!important;margin:0!important;max-width:none!important;border-radius:0!important;padding:0 6px 0 0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] iframe,html.ytkit-split-active #chat[style*="position"] iframe{width:100%!important;height:100%!important;min-height:0!important;border:none!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #container,html.ytkit-split-active #chat[style*="position"] #container{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #show-hide-button,html.ytkit-split-active #chat[style*="position"] #show-hide-button{display:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"],html.ytkit-split-active #chat[style*="position"]{min-height:0!important;max-height:none!important;} #ytkit-split-close{position:absolute;bottom:16px;right:16px;z-index:25;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.55);display:none;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;pointer-events:auto;} #ytkit-split-close:hover{background:rgba(220,38,38,0.75);color:#fff;opacity:1!important;} #ytkit-split-collapse-strip{position:fixed;top:0;right:0;height:32px;z-index:10002;cursor:n-resize;background:linear-gradient(180deg,rgba(255,255,255,0.03) 0%,transparent 100%);transition:background 0.2s;pointer-events:auto;} #ytkit-split-collapse-strip:hover{background:linear-gradient(180deg,rgba(255,255,255,0.1) 0%,transparent 100%);} #ytkit-split-collapse-strip::after{content:'';display:block;width:32px;height:3px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto 0;transition:opacity 0.2s,background 0.2s;} #ytkit-split-collapse-strip:hover::after{background:rgba(255,255,255,0.5);} html.ytkit-split-active #secondary,html.ytkit-split-active #below,html.ytkit-split-active #player-full-bleed-container,html.ytkit-split-active #columns,html.ytkit-split-active ytd-watch-flexy{view-transition-name:none!important;} html.ytkit-split-active ytd-live-chat-frame#chat,html.ytkit-split-active ytd-live-chat-frame{display:flex!important;flex-direction:column!important;max-height:none!important;min-height:0!important;visibility:visible!important;} html.ytkit-split-active #chat-container{display:block!important;height:auto!important;max-height:none!important;overflow:visible!important;visibility:visible!important;} html.ytkit-split-active ytd-live-chat-frame#chat>iframe,html.ytkit-split-active ytd-live-chat-frame>iframe{flex:1!important;height:100%!important;min-height:0!important;max-height:none!important;} html.ytkit-split-active ytd-watch-flexy.loading ytd-live-chat-frame#chat,html.ytkit-split-active ytd-watch-flexy:not([ghost-cards-enabled]).loading #chat{visibility:visible!important;}`;
     }
@@ -15233,6 +15265,7 @@ if (typeof globalThis !== "undefined") {
             _videoType: 'standard',        // 'live' | 'vod' | 'standard'
             _positionedEls: [],            // elements we CSS-positioned over right panel
             _playerGeometryStash: [],      // original inline geometry restored after unmount
+            _splitInlineStyleStash: new Map(), // exact YouTube-owned declarations restored after unmount
             _scrollTarget: null,           // which element receives scroll/wheel handlers
             _pendingWaits: [],             // cancel fns for in-flight waitForElement chains
             _destroyed: false,             // blocks zombie mounts after teardown
@@ -15294,6 +15327,7 @@ if (typeof globalThis !== "undefined") {
 
             _positionOverRight(el, rightPct, topOffset, heightStr) {
                 if (!el) return;
+                this._stashSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
                 if (el.id === 'below') el.classList.add('ytkit-split-scroll-surface');
                 this._setStyles(el, {
                     position:'fixed', top:topOffset||'0', right:'0',
@@ -15306,14 +15340,12 @@ if (typeof globalThis !== "undefined") {
                     'pointer-events':'auto', display:'block',
                     'scrollbar-width':'thin', 'scrollbar-color':'var(--ytkit-split-scrollbar) transparent'
                 });
-                this._positionedEls.push(el);
+                if (!this._positionedEls.includes(el)) this._positionedEls.push(el);
             },
 
             _unpositionEl(el) {
                 if (el?.id === 'below') el.classList.remove('ytkit-split-scroll-surface');
-                this._removeStyles(el, ['position','top','right','width','max-width','height','margin',
-                    'overflow-y','overflow-x','overscroll-behavior-y','z-index','background','padding','box-sizing',
-                    'visibility','pointer-events','display','scrollbar-width','scrollbar-color','border-radius']);
+                this._restoreSplitInlineStyles(el, SPLIT_POSITIONED_STYLE_PROPERTIES);
             },
 
             _unpositionAll() {
@@ -16361,6 +16393,40 @@ if (typeof globalThis !== "undefined") {
                 props.forEach(p => el.style.removeProperty(p));
             },
 
+            _stashSplitInlineStyles(el, properties) {
+                if (!el?.style) return;
+                let stash = this._splitInlineStyleStash.get(el);
+                if (!stash) {
+                    stash = new Map();
+                    this._splitInlineStyleStash.set(el, stash);
+                }
+                for (const property of properties) {
+                    if (stash.has(property)) continue;
+                    stash.set(property, {
+                        value: el.style.getPropertyValue(property),
+                        priority: el.style.getPropertyPriority(property)
+                    });
+                }
+            },
+
+            _restoreSplitInlineStyles(el, properties) {
+                const stash = this._splitInlineStyleStash.get(el);
+                if (!el?.style || !stash) return;
+                for (const property of properties) {
+                    const original = stash.get(property);
+                    if (!original) continue;
+                    if (original.value) el.style.setProperty(property, original.value, original.priority);
+                    else el.style.removeProperty(property);
+                }
+            },
+
+            _restoreAllSplitInlineStyles() {
+                for (const [el, properties] of this._splitInlineStyleStash) {
+                    this._restoreSplitInlineStyles(el, properties.keys());
+                }
+                this._splitInlineStyleStash.clear();
+            },
+
             _stashPlayerGeometry(el, properties) {
                 if (!el || this._playerGeometryStash.some(entry => entry.el === el)) return;
                 this._playerGeometryStash.push({
@@ -16386,15 +16452,21 @@ if (typeof globalThis !== "undefined") {
             _forceChatFill(chatEl) {
                 if (!chatEl) return;
                 const fill = {width:'100%',height:'100%'};
-                this._setStyles(chatEl.querySelector('#show-hide-button'), {display:'none'});
-                this._setStyles(chatEl.querySelector('#container'), {...fill,'max-height':'none','min-height':'0','border-radius':'0'});
-                this._setStyles(chatEl.querySelector('iframe'), {...fill,'min-height':'0',border:'none','border-radius':'0'});
+                const showHide = chatEl.querySelector('#show-hide-button');
+                const container = chatEl.querySelector('#container');
+                const frame = chatEl.querySelector('iframe');
+                this._stashSplitInlineStyles(showHide, ['display']);
+                this._stashSplitInlineStyles(container, ['width','height','max-height','min-height','border-radius']);
+                this._stashSplitInlineStyles(frame, ['width','height','min-height','border','border-radius']);
+                this._setStyles(showHide, {display:'none'});
+                this._setStyles(container, {...fill,'max-height':'none','min-height':'0','border-radius':'0'});
+                this._setStyles(frame, {...fill,'min-height':'0',border:'none','border-radius':'0'});
             },
             _restoreChatFill(chatEl) {
                 if (!chatEl) return;
-                this._removeStyles(chatEl.querySelector('#show-hide-button'), ['display']);
-                this._removeStyles(chatEl.querySelector('#container'), ['width','height','max-height','min-height','border-radius']);
-                this._removeStyles(chatEl.querySelector('iframe'), ['width','height','min-height','border','border-radius']);
+                this._restoreSplitInlineStyles(chatEl.querySelector('#show-hide-button'), ['display']);
+                this._restoreSplitInlineStyles(chatEl.querySelector('#container'), ['width','height','max-height','min-height','border-radius']);
+                this._restoreSplitInlineStyles(chatEl.querySelector('iframe'), ['width','height','min-height','border','border-radius']);
             },
 
             _setupChat(chatEl, rightPct, top, height) {
@@ -16412,12 +16484,16 @@ if (typeof globalThis !== "undefined") {
             _prepareSecondaryForChat() {
                 const sec = document.querySelector('#secondary');
                 if (!sec) return;
-                sec.style.display = '';
+                this._stashSplitInlineStyles(sec, ['display', 'pointer-events']);
                 sec.style.setProperty('display', 'block', 'important');
                 sec.style.setProperty('pointer-events', 'none', 'important');
                 sec.dataset.ytkitSplitHidden = '1';
                 const related = sec.querySelector('#related');
-                if (related) { related.dataset.ytkitSplitHidden = '1'; related.style.display = 'none'; }
+                if (related) {
+                    this._stashSplitInlineStyles(related, ['display']);
+                    related.dataset.ytkitSplitHidden = '1';
+                    related.style.display = 'none';
+                }
             },
 
             _stopChatObserver() {
@@ -16454,6 +16530,7 @@ if (typeof globalThis !== "undefined") {
                 this._positionChat(chatEl, options.rightPct, chatTop, chatHeight);
                 if (!this._scrollTarget) this._scrollTarget = chatEl;
                 if (this._videoType === 'vod') {
+                    this._stashSplitInlineStyles(chatEl, ['border-bottom']);
                     chatEl.style.setProperty('border-bottom', '2px solid var(--ytkit-split-border)', 'important');
                     const below = this._getBelow();
                     if (below && parseFloat(below.style.getPropertyValue('top')) === 0) {
@@ -16756,11 +16833,13 @@ if (typeof globalThis !== "undefined") {
                 this._initResizeTimer = setTimeout(() => this._triggerPlayerResize(), 600);
 
                 if (below) {
+                    this._stashSplitInlineStyles(below, ['pointer-events']);
                     below.style.setProperty('pointer-events', 'none', 'important');
                 }
 
                 const chatEl = this._getChatEl();
                 if (chatEl) {
+                    this._stashSplitInlineStyles(chatEl, ['pointer-events']);
                     chatEl.style.setProperty('pointer-events', 'none', 'important');
                     // Ensure chat iframe isn't collapsed (YT collapses it sometimes)
                     chatEl.removeAttribute('collapsed');
@@ -16792,11 +16871,17 @@ if (typeof globalThis !== "undefined") {
                 if (sec) {
                     if (this._videoType === 'live' || this._videoType === 'vod') {
                         const related = sec.querySelector('#related');
-                        if (related) { related.dataset.ytkitSplitHidden='1'; related.style.display='none'; }
+                        if (related) {
+                            this._stashSplitInlineStyles(related, ['display']);
+                            related.dataset.ytkitSplitHidden='1';
+                            related.style.display='none';
+                        }
+                        this._stashSplitInlineStyles(sec, ['display', 'pointer-events']);
                         sec.style.setProperty('display', 'block', 'important');
                         sec.style.setProperty('pointer-events', 'none', 'important');
                         sec.dataset.ytkitSplitHidden='1';
                     } else {
+                        this._stashSplitInlineStyles(sec, ['display']);
                         sec.dataset.ytkitSplitHidden='1'; sec.style.display='none';
                     }
                 }
@@ -17002,7 +17087,10 @@ if (typeof globalThis !== "undefined") {
                 } else if (type === 'vod') {
                     if (chatEl) this._prepareSecondaryForChat();
                     this._setupChat(chatEl, rightPct, '0', '45vh');
-                    if (chatEl) chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                    if (chatEl) {
+                        this._stashSplitInlineStyles(chatEl, ['border-bottom']);
+                        chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                    }
                     if (below) {
                         const hasChat = !!chatEl;
                         this._positionOverRight(below, rightPct, hasChat ? '45vh' : '0', hasChat ? '55vh' : '100vh');
@@ -17155,7 +17243,6 @@ if (typeof globalThis !== "undefined") {
                 const chatEl = VideoTypeDetector.getChatEl();
                 if (chatEl) {
                     chatEl.style.setProperty('pointer-events', 'none', 'important');
-                    chatEl.style.removeProperty('border-bottom');
                     this._restoreChatFill(chatEl);
                 }
 
@@ -17245,21 +17332,16 @@ if (typeof globalThis !== "undefined") {
 
                 this._unpositionAll();
                 const below = this._getBelow();
-                if (below) {
-                    below.style.removeProperty('pointer-events');
-                    below.style.removeProperty('border-bottom');
-                }
                 const chatEl = VideoTypeDetector.getChatEl();
                 if (chatEl) {
-                    chatEl.style.removeProperty('pointer-events');
-                    chatEl.style.removeProperty('border-bottom');
                     this._restoreChatFill(chatEl);
                 }
 
                 document.querySelectorAll('[data-ytkit-split-hidden]').forEach(el => {
-                    el.style.display=''; el.style.removeProperty('pointer-events');
+                    this._restoreSplitInlineStyles(el, ['display', 'pointer-events']);
                     delete el.dataset.ytkitSplitHidden;
                 });
+                this._restoreAllSplitInlineStyles();
 
                 this._splitWrapper?.remove();
                 this._splitWrapper = null;

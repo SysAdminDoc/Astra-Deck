@@ -143,7 +143,7 @@ are not browser extension install steps.
 | Feature | Default |
 |---------|---------|
 | Zero-Ad Desktop Surface, static MV3 request blocking plus document-start ad-shell collapse; userscript provides shell collapse only | Built in |
-| Theater Split, responsive video and comments panes with matching dark and light themes | On |
+| Theater Split, responsive video and comments panes with matching themes and exact inline-style restoration on exit | On |
 | Video Hider, hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
 | Video Context Menu, right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
 | Settings Panel, searchable, categorized, instant-apply, export/import/reset | On |
