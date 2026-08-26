@@ -6,6 +6,42 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.86.4] (2026-08-26)
+
+### Changed
+
+- Theater Split now presents Like and its count as one compact, two-segment
+  control. The 32 px icon segment and count segment share the same surface,
+  border rhythm, elevation, and interaction state.
+
+- Reply and creator-heart controls now use the same 32 px geometry. Dedicated
+  dark and light tokens keep their borders restrained even when another Astra
+  stylesheet loads later.
+
+### Fixed
+
+- Current YouTube action wrappers can no longer retain their native 44 px
+  sizing around smaller inner buttons. Theater Split constrains both the direct
+  toolbar hosts and the first native wrapper layer.
+
+- The standalone userscript CSS compactor now preserves descendant combinators
+  before functional pseudo-classes. Selectors such as `.toolbar :is(button)` no
+  longer collapse into a different selector during packaging.
+
+### Tests
+
+- The isolated YouTube run now measures the outer hosts as well as the inner
+  buttons. It rejects wrapper inflation, a detached Like count, mismatched
+  segment alignment, incorrect surfaces, and missing interaction feedback.
+
+- The live run pins its watch fixture to a long-lived public video with an
+  active comment surface. A newly uploaded zero-comment search result can no
+  longer make the toolbar check fail before it reaches Astra's controls.
+
+- In the live dark and light captures, Like is 32 by 32 px, the count is 32 px
+  tall with a zero-pixel seam, and Reply is 56.75 by 32 px. Hover and selected
+  states update both Like segments together.
+
 ## [4.86.3] (2026-08-26)
 
 ### Changed

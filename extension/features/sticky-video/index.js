@@ -2753,6 +2753,13 @@
                         --ytkit-split-control-selected-border: var(--ytkit-premium-control-selected-border, rgba(255, 93, 74, 0.52));
                         --ytkit-split-control-shadow: var(--ytkit-premium-control-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 5px 14px rgba(0, 0, 0, 0.24));
                         --ytkit-split-control-shadow-hover: var(--ytkit-premium-control-shadow-hover, inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 8px 20px rgba(0, 0, 0, 0.30));
+                        --ytkit-split-comment-control: #101f33;
+                        --ytkit-split-comment-control-hover: #192e48;
+                        --ytkit-split-comment-control-active: #1d3653;
+                        --ytkit-split-comment-border: rgba(151, 178, 208, 0.20);
+                        --ytkit-split-comment-divider: rgba(151, 178, 208, 0.16);
+                        --ytkit-split-comment-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.065), 0 3px 10px rgba(0, 0, 0, 0.20);
+                        --ytkit-split-comment-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.085), 0 6px 16px rgba(0, 0, 0, 0.26);
                         background: var(--ytkit-split-canvas) !important;
                         color-scheme: dark !important;
                     }
@@ -2773,6 +2780,13 @@
                         --ytkit-split-control-selected-border: var(--ytkit-premium-control-selected-border, rgba(207, 53, 47, 0.44));
                         --ytkit-split-control-shadow: var(--ytkit-premium-control-shadow, inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 4px 12px rgba(20, 35, 54, 0.12));
                         --ytkit-split-control-shadow-hover: var(--ytkit-premium-control-shadow-hover, inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 7px 18px rgba(20, 35, 54, 0.17));
+                        --ytkit-split-comment-control: #f7f9fb;
+                        --ytkit-split-comment-control-hover: #edf2f7;
+                        --ytkit-split-comment-control-active: #e3eaf2;
+                        --ytkit-split-comment-border: rgba(30, 53, 78, 0.18);
+                        --ytkit-split-comment-divider: rgba(30, 53, 78, 0.14);
+                        --ytkit-split-comment-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 3px 9px rgba(20, 35, 54, 0.10);
+                        --ytkit-split-comment-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.90), 0 6px 15px rgba(20, 35, 54, 0.15);
                         color-scheme: light !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) body {
@@ -3035,10 +3049,44 @@
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #toolbar {
                         align-items: center !important;
                         gap: 8px !important;
-                        min-height: 34px !important;
+                        min-height: 32px !important;
+                        height: 32px !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #toolbar > * {
                         margin: 0 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #toolbar#toolbar > :is(
+                        #like-button,
+                        #reply-button-end,
+                        #creator-heart-button
+                    ) {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        align-self: center !important;
+                        flex: 0 0 auto !important;
+                        width: auto !important;
+                        min-width: 0 !important;
+                        height: 32px !important;
+                        min-height: 32px !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        line-height: 1 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #toolbar#toolbar > :is(
+                        #like-button,
+                        #reply-button-end,
+                        #creator-heart-button
+                    ) > :is(yt-button-shape, ytd-button-renderer, yt-icon-button) {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: auto !important;
+                        min-width: 0 !important;
+                        height: 32px !important;
+                        min-height: 32px !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments :is(
                         ytd-comment-view-model,
@@ -3053,17 +3101,36 @@
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
-                        min-width: 18px !important;
-                        min-height: 34px !important;
-                        margin: 0 4px 0 0 !important;
-                        padding: 0 2px !important;
+                        align-self: center !important;
+                        flex: 0 0 auto !important;
+                        min-width: 30px !important;
+                        height: 32px !important;
+                        min-height: 32px !important;
+                        margin: 0 2px 0 -8px !important;
+                        padding: 0 8px !important;
+                        border: 1px solid var(--ytkit-split-comment-border) !important;
+                        border-inline-start: 0 !important;
+                        border-radius: 0 8px 8px 0 !important;
+                        background: var(--ytkit-split-comment-control) !important;
+                        background-image: none !important;
                         color: var(--ytkit-split-muted) !important;
                         -webkit-text-fill-color: var(--ytkit-split-muted) !important;
-                        font-size: 12px !important;
-                        font-weight: 650 !important;
+                        box-shadow: var(--ytkit-split-comment-shadow) !important;
+                        font-size: 11.5px !important;
+                        font-weight: 700 !important;
                         font-variant-numeric: tabular-nums !important;
                         line-height: 1 !important;
                         letter-spacing: 0.01em !important;
+                        cursor: default !important;
+                        pointer-events: none !important;
+                        box-sizing: border-box !important;
+                        transform: translateY(0) !important;
+                        transition:
+                            transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                            border-color 150ms ease,
+                            background-color 150ms ease,
+                            color 150ms ease,
+                            box-shadow 150ms ease !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
                         button,
@@ -3074,16 +3141,16 @@
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
-                        min-width: 34px !important;
-                        min-height: 30px !important;
-                        height: 34px !important;
-                        padding: 0 11px !important;
-                        border: 1px solid var(--ytkit-split-border) !important;
+                        min-width: 32px !important;
+                        min-height: 32px !important;
+                        height: 32px !important;
+                        padding: 0 10px !important;
+                        border: 1px solid var(--ytkit-split-comment-border) !important;
                         border-radius: 8px !important;
-                        background: var(--ytkit-split-control) !important;
+                        background: var(--ytkit-split-comment-control) !important;
                         background-image: none !important;
                         color: var(--ytkit-split-text) !important;
-                        box-shadow: var(--ytkit-split-control-shadow) !important;
+                        box-shadow: var(--ytkit-split-comment-shadow) !important;
                         font-size: 12px !important;
                         font-weight: 650 !important;
                         line-height: 1 !important;
@@ -3100,35 +3167,44 @@
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button:is(button, .yt-spec-button-shape-next),
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) {
-                        width: 34px !important;
-                        min-width: 34px !important;
+                        width: 32px !important;
+                        min-width: 32px !important;
+                        height: 32px !important;
+                        min-height: 32px !important;
                         padding: 0 !important;
                     }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button:is(button, .yt-spec-button-shape-next):has(~ #vote-count-middle:not(:empty)),
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button:has(~ #vote-count-middle:not(:empty)) :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) {
+                        border-inline-end-color: var(--ytkit-split-comment-divider) !important;
+                        border-radius: 8px 0 0 8px !important;
+                    }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #reply-button-end :is(button, .yt-spec-button-shape-next, tp-yt-paper-button) {
-                        min-width: 56px !important;
-                        padding-inline: 13px !important;
+                        min-width: 52px !important;
+                        height: 32px !important;
+                        min-height: 32px !important;
+                        padding-inline: 12px !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button :is(yt-icon, svg, .yt-icon-shape),
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #reply-button-end :is(yt-icon, svg, .yt-icon-shape) {
-                        width: 18px !important;
-                        height: 18px !important;
-                        min-width: 18px !important;
+                        width: 17px !important;
+                        height: 17px !important;
+                        min-width: 17px !important;
                         color: currentColor !important;
                         fill: currentColor !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #creator-heart-button:is(button, .yt-spec-button-shape-next, yt-icon-button),
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #creator-heart-button :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) {
-                        width: 34px !important;
-                        min-width: 34px !important;
-                        height: 34px !important;
-                        min-height: 34px !important;
+                        width: 32px !important;
+                        min-width: 32px !important;
+                        height: 32px !important;
+                        min-height: 32px !important;
                         padding: 0 !important;
                         border-color: var(--ytkit-split-control-selected-border) !important;
                         border-radius: 8px !important;
                         background: var(--ytkit-split-control-selected) !important;
                         color: var(--ytkit-split-accent-fill) !important;
                         -webkit-text-fill-color: currentColor !important;
-                        box-shadow: var(--ytkit-split-control-shadow) !important;
+                        box-shadow: var(--ytkit-split-comment-shadow) !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #creator-heart-button :is(
                         #hearted,
@@ -3179,10 +3255,18 @@
                         tp-yt-paper-button,
                         yt-icon-button
                     ):hover:not([disabled]):not([aria-disabled="true"]) {
-                        border-color: var(--ytkit-split-border-strong) !important;
-                        background: var(--ytkit-split-control-hover) !important;
+                        border-color: var(--ytkit-split-comment-border) !important;
+                        background: var(--ytkit-split-comment-control-hover) !important;
                         color: var(--ytkit-split-text) !important;
-                        box-shadow: var(--ytkit-split-control-shadow-hover) !important;
+                        box-shadow: var(--ytkit-split-comment-shadow-hover) !important;
+                        transform: translateY(-1px) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button:is(:hover, :focus-within) ~ #vote-count-middle {
+                        border-color: var(--ytkit-split-comment-border) !important;
+                        background: var(--ytkit-split-comment-control-hover) !important;
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: currentColor !important;
+                        box-shadow: var(--ytkit-split-comment-shadow-hover) !important;
                         transform: translateY(-1px) !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
@@ -3192,7 +3276,14 @@
                         yt-icon-button
                     ):active:not([disabled]):not([aria-disabled="true"]) {
                         border-color: var(--ytkit-split-control-selected-border) !important;
-                        background: var(--ytkit-split-control-active) !important;
+                        background: var(--ytkit-split-comment-control-active) !important;
+                        box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.24) !important;
+                        transform: translateY(0) scale(0.98) !important;
+                        transition-duration: 60ms !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button:active ~ #vote-count-middle {
+                        border-color: var(--ytkit-split-control-selected-border) !important;
+                        background: var(--ytkit-split-comment-control-active) !important;
                         box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.24) !important;
                         transform: translateY(0) scale(0.98) !important;
                         transition-duration: 60ms !important;
@@ -3209,7 +3300,16 @@
                         background: var(--ytkit-split-control-selected) !important;
                         color: var(--ytkit-split-accent-fill) !important;
                         -webkit-text-fill-color: currentColor !important;
-                        box-shadow: var(--ytkit-split-control-shadow) !important;
+                        box-shadow: var(--ytkit-split-comment-shadow) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button:has([aria-pressed="true"]) ~ #vote-count-middle,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button[aria-pressed="true"] ~ #vote-count-middle,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-action-buttons-renderer[is-liked] #like-button ~ #vote-count-middle {
+                        border-color: var(--ytkit-split-control-selected-border) !important;
+                        background: var(--ytkit-split-control-selected) !important;
+                        color: var(--ytkit-split-accent-fill) !important;
+                        -webkit-text-fill-color: currentColor !important;
+                        box-shadow: var(--ytkit-split-comment-shadow) !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
                         button,
@@ -3217,8 +3317,8 @@
                         tp-yt-paper-button,
                         yt-icon-button
                     ):is([disabled], [aria-disabled="true"]) {
-                        border-color: var(--ytkit-split-border) !important;
-                        background: var(--ytkit-split-panel) !important;
+                        border-color: var(--ytkit-split-comment-border) !important;
+                        background: var(--ytkit-split-comment-control) !important;
                         color: var(--ytkit-split-muted) !important;
                         -webkit-text-fill-color: currentColor !important;
                         box-shadow: none !important;
