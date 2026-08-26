@@ -169,7 +169,11 @@ function compactCssWhitespace(body) {
         .map((line) => line.trim())
         .filter(Boolean)
         .join(' ')
-        .replace(/\s*([{}:;,])\s*/g, '$1')
+        .replace(/\s*([{};,])\s*/g, '$1')
+        // Keep whitespace before pseudo-classes because it can be a descendant
+        // combinator (`.toolbar :is(button)`). Only declaration/value spacing
+        // after a colon is safe to remove without parsing selectors.
+        .replace(/:\s+/g, ':')
         .replace(/;}/g, '}');
 
     return compacted.replace(/\u0001(\d+)\u0002/g,

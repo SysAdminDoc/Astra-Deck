@@ -7937,6 +7937,9 @@ test('userscript core compacts static visual CSS without changing other modules'
         '    content: "Keep: this, exactly";',
         '    color: red;',
         '}',
+        'ytd-comment-engagement-bar :is(button, .yt-spec-button-shape-next) {',
+        '    height: 32px;',
+        '}',
         '`;',
         'const SURFACE_VISUAL_SYSTEM_CSS = `section { color: blue; }`;'
     ].join('\n');
@@ -7950,6 +7953,10 @@ test('userscript core compacts static visual CSS without changing other modules'
         'CSS compaction must preserve user-visible string contents');
     assert.match(compactedFixture, /color:red}/,
         'generated CSS should omit punctuation whitespace and final semicolons');
+    assert.match(compactedFixture, /ytd-comment-engagement-bar :is\(button,\.yt-spec-button-shape-next\)\{/,
+        'CSS compaction must preserve descendant combinators before functional pseudo-classes');
+    assert.doesNotMatch(compactedFixture, /ytd-comment-engagement-bar:is\(/,
+        'CSS compaction must not fuse descendant selectors into the host element');
 
     const stickySource = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'),

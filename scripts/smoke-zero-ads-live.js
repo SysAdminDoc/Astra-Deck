@@ -34,6 +34,7 @@ const {
 
 const REPO_ROOT = path.join(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'zero-ad-live-smoke');
+const LIVE_WATCH_FIXTURE_ID = 'jNQXAC9IVRw';
 const AD_URL_RE = /(?:^|\.)doubleclick\.net\/|(?:^|\.)(?:googlesyndication|googleadservices|googletagservices|2mdn)\.com\/|(?:^|\.)google\.com\/pagead\/|(?:^|\.)youtube\.com\/(?:api\/stats\/ads|ptracking|get_midroll_info)/i;
 const AD_SELECTORS = Object.freeze([
     '#masthead-ad',
@@ -948,6 +949,11 @@ async function splitEngagementSnapshot(client) {
                 && Number(style.opacity || 1) > 0 && rect.width > 0 && rect.height > 0;
         };
         const pick = (selector) => Array.from(document.querySelectorAll(selector)).find(visible) || null;
+        const directToolbarChild = (node, toolbar) => {
+            let current = node;
+            while (current && current.parentElement !== toolbar) current = current.parentElement;
+            return current?.parentElement === toolbar ? current : null;
+        };
         const describe = (node) => {
             if (!node) return null;
             const style = getComputedStyle(node);
@@ -958,6 +964,11 @@ async function splitEngagementSnapshot(client) {
                 tag: node.tagName.toLowerCase(),
                 id: node.id || node.closest('[id]')?.id || '',
                 text: String(node.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 80),
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                centerY: rect.top + rect.height / 2,
                 width: rect.width,
                 height: rect.height,
                 padding: style.padding,
@@ -986,25 +997,38 @@ async function splitEngagementSnapshot(client) {
         const toolbar = pick(${JSON.stringify(SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR)});
         const comment = toolbar?.closest('ytd-comment-view-model, ytd-comment-renderer') || null;
         const count = toolbar?.querySelector('#vote-count-middle') || null;
+        const like = pick(${JSON.stringify(SPLIT_ENGAGEMENT_LIKE_SELECTOR)});
+        const reply = pick(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)});
+        const heart = pick(${JSON.stringify(SPLIT_ENGAGEMENT_HEART_SELECTOR)});
+        const likeHost = directToolbarChild(like, toolbar);
+        const replyHost = directToolbarChild(reply, toolbar);
+        const heartHost = directToolbarChild(heart, toolbar);
         const toolbarStyle = toolbar ? getComputedStyle(toolbar) : null;
         const countStyle = count ? getComputedStyle(count) : null;
+        const likeRect = like?.getBoundingClientRect();
+        const countRect = count?.getBoundingClientRect();
         return {
             available: Boolean(toolbar),
             colorScheme: getComputedStyle(document.documentElement).colorScheme,
             toolbarGap: toolbarStyle?.columnGap || toolbarStyle?.gap || '',
             toolbarHeight: toolbar?.getBoundingClientRect().height || 0,
             commentBackground: comment ? getComputedStyle(comment).backgroundColor : '',
-            like: describe(pick(${JSON.stringify(SPLIT_ENGAGEMENT_LIKE_SELECTOR)})),
-            reply: describe(pick(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)})),
-            heart: describe(pick(${JSON.stringify(SPLIT_ENGAGEMENT_HEART_SELECTOR)})),
+            like: describe(like),
+            reply: describe(reply),
+            heart: describe(heart),
+            likeHost: describe(likeHost),
+            replyHost: describe(replyHost),
+            heartHost: describe(heartHost),
+            likeCountGap: likeRect && countRect ? countRect.left - likeRect.right : null,
+            likeCountCenterDelta: likeRect && countRect
+                ? Math.abs((likeRect.top + likeRect.height / 2) - (countRect.top + countRect.height / 2))
+                : null,
             count: count ? {
+                ...describe(count),
                 text: String(count.textContent || '').trim(),
-                width: count.getBoundingClientRect().width,
-                height: count.getBoundingClientRect().height,
                 margin: countStyle.margin,
-                color: countStyle.color,
-                fontWeight: countStyle.fontWeight,
-                fontVariantNumeric: countStyle.fontVariantNumeric
+                fontVariantNumeric: countStyle.fontVariantNumeric,
+                pointerEvents: countStyle.pointerEvents
             } : null
         };
     })()`);
@@ -1020,26 +1044,52 @@ function splitEngagementFailures(states, theme) {
     }
     if (base.colorScheme !== theme) failures.push(`${theme}: color-scheme is ${base.colorScheme}`);
     if (base.toolbarGap !== '8px') failures.push(`${theme}: toolbar gap is ${base.toolbarGap || 'unset'}`);
+    if (base.toolbarHeight < 31 || base.toolbarHeight > 33) {
+        failures.push(`${theme}: toolbar height is ${base.toolbarHeight}px`);
+    }
     for (const [name, control] of [['Like', base.like], ['Reply', base.reply]]) {
-        if (control.height < 33 || control.height > 35) failures.push(`${theme} ${name}: height is ${control.height}px`);
-        if (control.borderRadius !== '8px') failures.push(`${theme} ${name}: radius is ${control.borderRadius}`);
+        if (control.height < 31 || control.height > 33) failures.push(`${theme} ${name}: height is ${control.height}px`);
         if (control.background !== expectedBackground) failures.push(`${theme} ${name}: surface is ${control.background}`);
         if (control.borderStyle === 'none') failures.push(`${theme} ${name}: border is missing`);
         if (!control.boxShadow || control.boxShadow === 'none') failures.push(`${theme} ${name}: elevation is missing`);
         if (Number.parseInt(control.fontWeight, 10) < 600) failures.push(`${theme} ${name}: label weight is ${control.fontWeight}`);
     }
-    if (base.like.width < 33 || base.like.width > 35) failures.push(`${theme} Like: width is ${base.like.width}px`);
-    if (base.reply.width < 56) failures.push(`${theme} Reply: width is ${base.reply.width}px`);
-    if (base.heart && (base.heart.width < 33 || base.heart.width > 35
-        || base.heart.height < 33 || base.heart.height > 35
+    const expectedLikeRadius = base.count ? '8px 0px 0px 8px' : '8px';
+    if (base.like.borderRadius !== expectedLikeRadius) failures.push(`${theme} Like: radius is ${base.like.borderRadius}`);
+    if (base.reply.borderRadius !== '8px') failures.push(`${theme} Reply: radius is ${base.reply.borderRadius}`);
+    if (base.like.width < 31 || base.like.width > 33) failures.push(`${theme} Like: width is ${base.like.width}px`);
+    if (base.reply.width < 51 || base.reply.width > 64) failures.push(`${theme} Reply: width is ${base.reply.width}px`);
+    for (const [name, host] of [['Like host', base.likeHost], ['Reply host', base.replyHost]]) {
+        if (!host || host.height < 31 || host.height > 33) {
+            failures.push(`${theme} ${name}: wrapper height is ${host?.height ?? 'missing'}px`);
+        }
+    }
+    if (base.heartHost && (base.heartHost.height < 31 || base.heartHost.height > 33)) {
+        failures.push(`${theme} creator heart host: wrapper height is ${base.heartHost.height}px`);
+    }
+    if (base.heart && (base.heart.width < 31 || base.heart.width > 33
+        || base.heart.height < 31 || base.heart.height > 33
         || base.heart.background === 'rgba(0, 0, 0, 0)')) {
         failures.push(`${theme} creator heart: geometry or surface is incomplete`);
     }
-    if (base.like.iconWidth && (base.like.iconWidth < 17 || base.like.iconWidth > 19)) {
+    if (base.like.iconWidth && (base.like.iconWidth < 16 || base.like.iconWidth > 18)) {
         failures.push(`${theme} Like: icon width is ${base.like.iconWidth}px`);
     }
-    if (base.count && base.count.fontVariantNumeric !== 'tabular-nums') {
-        failures.push(`${theme}: like count is not tabular`);
+    if (base.count) {
+        if (base.count.height < 31 || base.count.height > 33) failures.push(`${theme}: like count height is ${base.count.height}px`);
+        if (base.count.background !== expectedBackground) failures.push(`${theme}: like count surface is ${base.count.background}`);
+        if (base.count.borderStyle === 'none') failures.push(`${theme}: like count border is missing`);
+        if (!base.count.boxShadow || base.count.boxShadow === 'none') failures.push(`${theme}: like count elevation is missing`);
+        if (base.count.borderRadius !== '0px 8px 8px 0px') failures.push(`${theme}: like count radius is ${base.count.borderRadius}`);
+        if (base.count.fontVariantNumeric !== 'tabular-nums') failures.push(`${theme}: like count is not tabular`);
+        if (base.count.pointerEvents !== 'none') failures.push(`${theme}: like count intercepts button input`);
+        if (Math.abs(base.likeCountGap) > 1) failures.push(`${theme}: Like/count seam is ${base.likeCountGap}px`);
+        if (base.likeCountCenterDelta > 1) failures.push(`${theme}: Like/count vertical delta is ${base.likeCountCenterDelta}px`);
+    }
+    if (base.count && (states.likeHover?.like?.background === base.like.background
+        || states.likeHover?.count?.background !== states.likeHover?.like?.background
+        || states.likeHover?.count?.transform !== states.likeHover?.like?.transform)) {
+        failures.push(`${theme} Like: compound hover state is not visually cohesive`);
     }
     if (states.hover?.reply?.background === base.reply.background
         || states.hover?.reply?.transform === base.reply.transform
@@ -1059,6 +1109,9 @@ function splitEngagementFailures(states, theme) {
         || states.selected.like.background === base.like.background
         || states.selected.like.borderColor === base.like.borderColor) {
         failures.push(`${theme} Like: selected state is not visually distinct`);
+    }
+    if (base.count && states.selected?.count?.background !== states.selected?.like?.background) {
+        failures.push(`${theme} Like: selected count segment does not match the button`);
     }
     if (!states.disabled?.reply?.disabled
         || states.disabled.reply.opacity > 0.65
@@ -1212,6 +1265,19 @@ async function verifySplitEngagementControls(client, theme, timeoutMs) {
 
     const states = { default: await splitEngagementSnapshot(client) };
     await captureElement(client, `watch-theater-split-actions-${theme}-default`, SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR);
+
+    const likePoint = await evaluate(client, `(() => {
+        const node = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_LIKE_SELECTOR)}))
+            .find(candidate => candidate.getBoundingClientRect().width > 0 && candidate.getBoundingClientRect().height > 0);
+        const rect = node?.getBoundingClientRect();
+        return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null;
+    })()`);
+    if (!likePoint) throw new Error(`${theme} Theater Split Like control is not measurable`);
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...likePoint });
+    await sleep(220);
+    states.likeHover = await splitEngagementSnapshot(client);
+    await captureElement(client, `watch-theater-split-actions-${theme}-like-hover`, SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR);
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
 
     const replyPoint = await evaluate(client, `(() => {
         const node = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)}))
@@ -1840,18 +1906,21 @@ async function runCandidate(candidate, stageDir, options) {
         // A logged-out fresh profile may show an intentionally empty home.
         // Search is read-only and reliably supplies a native watch link, which
         // lets the smoke exercise YouTube's real client-side route transition.
+        // Pin the result to a long-lived public video with an active comment
+        // surface so a newly uploaded zero-comment result cannot invalidate the
+        // Theater Split interaction fixture.
         await client.send('Page.navigate', {
-            url: 'https://www.youtube.com/results?search_query=open+source+browser+extensions'
+            url: `https://www.youtube.com/results?search_query=${LIVE_WATCH_FIXTURE_ID}`
         });
         await waitForExpression(
             client,
-            "Boolean(document.querySelector('a[href*=" + JSON.stringify('/watch?v=') + "]'))",
+            `Boolean(document.querySelector('a[href*="/watch?v=${LIVE_WATCH_FIXTURE_ID}"]'))`,
             options.timeoutMs,
-            'a search-result watch link'
+            'the pinned search-result watch link'
         );
         const spaStart = client.events.length;
         const clicked = await evaluate(client, `(() => {
-            const link = Array.from(document.querySelectorAll('a[href*="/watch?v="]'))
+            const link = Array.from(document.querySelectorAll('a[href*="/watch?v=${LIVE_WATCH_FIXTURE_ID}"]'))
                 .find((node) => node.getBoundingClientRect().width > 0 && node.getBoundingClientRect().height > 0);
             if (!link) return false;
             link.click();

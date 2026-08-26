@@ -242,6 +242,13 @@ test('Chromium zero-ad smoke skips candidates without the MV3 DNR API', () => {
     assert.match(source, /LOAD_EXTENSION_BLOCKED.*DNR_UNAVAILABLE/s);
 });
 
+test('Chromium zero-ad smoke pins its live watch fixture to a comment-capable video', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-zero-ads-live.js'), 'utf8');
+    assert.match(source, /const LIVE_WATCH_FIXTURE_ID = '[A-Za-z0-9_-]{11}';/);
+    assert.match(source, /search_query=\$\{LIVE_WATCH_FIXTURE_ID\}/);
+    assert.match(source, /a\[href\*="\/watch\?v=\$\{LIVE_WATCH_FIXTURE_ID\}"\]/);
+});
+
 test('Firefox WebDriver cleanup retries a locked profile before failing', async () => {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-firefox-cleanup-'));
     const originalRmSync = fs.rmSync;

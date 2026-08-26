@@ -249,7 +249,7 @@ test('Theater Split metadata uses a compact title-first vertical hierarchy', () 
     }
 });
 
-test('Theater Split comment actions use the premium control system in every state', () => {
+test('Theater Split comment actions use wrapper-proof joined controls in every state', () => {
     const { mod } = loadModule();
     const commentsCss = mod.buildSplitCommentsCss();
     const standalone = fs.readFileSync(
@@ -258,22 +258,39 @@ test('Theater Split comment actions use the premium control system in every stat
         path.join(config.repoRoot, 'extension', 'core', 'settings-visual-system.js'), 'utf8');
 
     for (const [css, label, tokenPrefix] of [
-        [commentsCss, 'extension', '--ytkit-split-control'],
-        [standalone, 'standalone userscript', '--ts-control']
+        [commentsCss, 'extension', '--ytkit-split-comment'],
+        [standalone, 'standalone userscript', '--ts-comment']
     ]) {
-        assert.match(css, new RegExp(`${tokenPrefix.replaceAll('-', '\\-')}:`),
-            `${label} must define a semantic comment-control surface`);
+        for (const token of ['control', 'control-hover', 'control-active', 'border', 'divider', 'shadow']) {
+            assert.match(css, new RegExp(`${tokenPrefix.replaceAll('-', '\\-')}-${token}:`),
+                `${label} must define the dedicated ${token} comment token`);
+        }
         assert.match(css, /ytd-comment-engagement-bar #toolbar[\s\S]{0,180}gap: 8px !important/,
             `${label} must use deliberate toolbar spacing`);
-        assert.match(css, /ytd-comment-engagement-bar[\s\S]{0,1200}height: 34px !important/,
-            `${label} must normalize compact desktop target height`);
-        assert.match(css, /ytd-comment-engagement-bar[\s\S]{0,1600}border-radius: 8px !important/,
-            `${label} must use the shared radius scale instead of raw rectangles`);
-        assert.match(css, /font-variant-numeric: tabular-nums !important/,
+        const wrapperStart = css.indexOf('#toolbar#toolbar > :is(');
+        const wrapperRules = wrapperStart >= 0 ? css.slice(wrapperStart, wrapperStart + 2600) : '';
+        assert.ok(wrapperRules.includes('#like-button,')
+            && wrapperRules.includes('#reply-button-end,')
+            && wrapperRules.includes('height: 32px !important;'),
+        `${label} must constrain YouTube's outer action wrappers to the compact row`);
+        assert.ok(wrapperRules.includes('> :is(yt-button-shape, ytd-button-renderer, yt-icon-button)')
+            && wrapperRules.lastIndexOf('height: 32px !important;') > wrapperRules.indexOf('> :is(yt-button-shape'),
+        `${label} must constrain first-level native wrapper rollouts too`);
+        assert.match(css, /#vote-count-middle[\s\S]{0,620}height: 32px !important[\s\S]{0,260}margin: 0 2px 0 -8px !important/,
+            `${label} must close the native toolbar gap between Like and its count`);
+        assert.match(css, /#vote-count-middle[\s\S]{0,900}border-radius: 0 8px 8px 0 !important[\s\S]{0,320}background: var\(--[^,;]*comment-control\) !important/,
+            `${label} must render the count as the right segment of a surfaced control`);
+        assert.match(css, /#vote-count-middle[\s\S]{0,1400}font-variant-numeric: tabular-nums !important/,
             `${label} must keep like counts visually stable`);
+        assert.match(css, /#like-button:has\(~ #vote-count-middle:not\(:empty\)\)[\s\S]{0,240}border-radius: 8px 0 0 8px !important/,
+            `${label} must shape Like as the left segment when a count is present`);
+        assert.match(css, /#reply-button-end[\s\S]{0,220}min-width: 52px !important[\s\S]{0,160}height: 32px !important/,
+            `${label} must keep Reply compact without crushing its label`);
         assert.match(css, /:is\(:hover, :focus-within\)[\s\S]{0,260}background:/,
             `${label} must keep comment-row interaction inside the active theme`);
-        assert.match(css, /#creator-heart-button[\s\S]{0,1200}height: 34px !important/,
+        assert.match(css, /#like-button:is\(:hover, :focus-within\) ~ #vote-count-middle[\s\S]{0,300}background:/,
+            `${label} must move both Like segments through hover and focus together`);
+        assert.match(css, /#creator-heart-button[\s\S]{0,1200}height: 32px !important/,
             `${label} must keep the creator-heart control in the same geometry`);
         assert.match(css, /translateY\(-1px\)/,
             `${label} must provide a hover lift`);
@@ -291,11 +308,11 @@ test('Theater Split comment actions use the premium control system in every stat
         'the shared visual system must own the dark control surface');
     assert.match(visualSystem, /html:not\(\[dark\]\)[\s\S]*--ytkit-premium-control: #f7f9fb/,
         'the shared visual system must own the light control surface');
-    assert.match(commentsCss, /--ytkit-split-control: var\(--ytkit-premium-control, #101f33\)/,
-        'the dark comment controls must survive shared stylesheet load-order races');
+    assert.match(commentsCss, /--ytkit-split-comment-control: #101f33/,
+        'dark comment controls must use a stable local surface token');
     assert.match(commentsCss,
-        /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)[\s\S]*--ytkit-split-control: var\(--ytkit-premium-control, #f7f9fb\)/,
-        'the light comment controls must survive shared stylesheet load-order races');
+        /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)[\s\S]*--ytkit-split-comment-control: #f7f9fb/,
+        'light comment controls must use a stable local surface token');
     assert.doesNotMatch(commentsCss,
         /ytd-comment-engagement-bar :is\([\s\S]{0,260}?\) \{[\s\S]{0,260}?border-radius: 4px !important/,
         'the late flat-rectangle engagement override must stay removed');
