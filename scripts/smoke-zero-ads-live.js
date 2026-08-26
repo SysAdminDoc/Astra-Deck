@@ -211,6 +211,39 @@ async function capture(client, name) {
     fs.writeFileSync(path.join(OUT_DIR, `${name}.png`), Buffer.from(shot.data, 'base64'));
 }
 
+async function captureElement(client, name, selector, padding = 12) {
+    const clip = await evaluate(client, `(() => {
+        const visible = (node) => {
+            const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            return style.display !== 'none' && style.visibility !== 'hidden'
+                && Number(style.opacity || 1) > 0 && rect.width > 0 && rect.height > 0;
+        };
+        const node = Array.from(document.querySelectorAll(${JSON.stringify(selector)})).find(visible);
+        if (!node) return null;
+        const rect = node.getBoundingClientRect();
+        const inset = ${padding};
+        const x = Math.max(0, rect.x - inset);
+        const y = Math.max(0, rect.y - inset);
+        return {
+            x,
+            y,
+            width: Math.min(innerWidth - x, rect.width + inset * 2),
+            height: Math.min(innerHeight - y, rect.height + inset * 2),
+            scale: 1
+        };
+    })()`);
+    if (!clip || clip.width <= 0 || clip.height <= 0) return null;
+    const shot = await client.send('Page.captureScreenshot', {
+        format: 'png',
+        captureBeyondViewport: false,
+        clip
+    });
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    fs.writeFileSync(path.join(OUT_DIR, `${name}.png`), Buffer.from(shot.data, 'base64'));
+    return clip;
+}
+
 async function setWatchTheme(client, dark) {
     await evaluate(client, `(() => {
         const root = document.documentElement;
@@ -889,6 +922,281 @@ function nativeTheaterFailures(details, label, expectedColorScheme) {
     return failures;
 }
 
+const SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR = '#below.ytkit-split-scroll-surface #comments ytd-comment-engagement-bar #toolbar';
+const SPLIT_ENGAGEMENT_LIKE_SELECTOR = [
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} #like-button button`,
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} #like-button .yt-spec-button-shape-next`,
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} button#like-button`
+].join(', ');
+const SPLIT_ENGAGEMENT_REPLY_SELECTOR = [
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} #reply-button-end button`,
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} #reply-button-end .yt-spec-button-shape-next`,
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} button#reply-button-end`
+].join(', ');
+const SPLIT_ENGAGEMENT_HEART_SELECTOR = [
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} #creator-heart-button button`,
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} #creator-heart-button .yt-spec-button-shape-next`,
+    `${SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR} button#creator-heart-button`
+].join(', ');
+
+async function splitEngagementSnapshot(client) {
+    return evaluate(client, `(() => {
+        const visible = (node) => {
+            const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            return style.display !== 'none' && style.visibility !== 'hidden'
+                && Number(style.opacity || 1) > 0 && rect.width > 0 && rect.height > 0;
+        };
+        const pick = (selector) => Array.from(document.querySelectorAll(selector)).find(visible) || null;
+        const describe = (node) => {
+            if (!node) return null;
+            const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            const icon = node.querySelector('yt-icon, svg, .yt-icon-shape');
+            const iconRect = icon?.getBoundingClientRect();
+            return {
+                tag: node.tagName.toLowerCase(),
+                id: node.id || node.closest('[id]')?.id || '',
+                text: String(node.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 80),
+                width: rect.width,
+                height: rect.height,
+                padding: style.padding,
+                borderRadius: style.borderRadius,
+                borderColor: style.borderColor,
+                borderStyle: style.borderStyle,
+                background: style.backgroundColor,
+                color: style.color,
+                boxShadow: style.boxShadow,
+                transform: style.transform,
+                opacity: Number.parseFloat(style.opacity || '1'),
+                outlineWidth: style.outlineWidth,
+                outlineStyle: style.outlineStyle,
+                outlineColor: style.outlineColor,
+                fontSize: style.fontSize,
+                fontWeight: style.fontWeight,
+                cursor: style.cursor,
+                ariaPressed: node.getAttribute('aria-pressed'),
+                ariaDisabled: node.getAttribute('aria-disabled'),
+                disabled: node.matches(':disabled'),
+                focusVisible: node.matches(':focus-visible'),
+                iconWidth: iconRect?.width || 0,
+                iconHeight: iconRect?.height || 0
+            };
+        };
+        const toolbar = pick(${JSON.stringify(SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR)});
+        const comment = toolbar?.closest('ytd-comment-view-model, ytd-comment-renderer') || null;
+        const count = toolbar?.querySelector('#vote-count-middle') || null;
+        const toolbarStyle = toolbar ? getComputedStyle(toolbar) : null;
+        const countStyle = count ? getComputedStyle(count) : null;
+        return {
+            available: Boolean(toolbar),
+            colorScheme: getComputedStyle(document.documentElement).colorScheme,
+            toolbarGap: toolbarStyle?.columnGap || toolbarStyle?.gap || '',
+            toolbarHeight: toolbar?.getBoundingClientRect().height || 0,
+            commentBackground: comment ? getComputedStyle(comment).backgroundColor : '',
+            like: describe(pick(${JSON.stringify(SPLIT_ENGAGEMENT_LIKE_SELECTOR)})),
+            reply: describe(pick(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)})),
+            heart: describe(pick(${JSON.stringify(SPLIT_ENGAGEMENT_HEART_SELECTOR)})),
+            count: count ? {
+                text: String(count.textContent || '').trim(),
+                width: count.getBoundingClientRect().width,
+                height: count.getBoundingClientRect().height,
+                margin: countStyle.margin,
+                color: countStyle.color,
+                fontWeight: countStyle.fontWeight,
+                fontVariantNumeric: countStyle.fontVariantNumeric
+            } : null
+        };
+    })()`);
+}
+
+function splitEngagementFailures(states, theme) {
+    const failures = [];
+    const base = states.default;
+    const expectedBackground = theme === 'dark' ? 'rgb(16, 31, 51)' : 'rgb(247, 249, 251)';
+    const expectedCommentHover = theme === 'dark' ? 'rgb(23, 42, 66)' : 'rgb(232, 237, 243)';
+    if (!base?.available || !base.like || !base.reply) {
+        return [`${theme}: native Like and Reply controls are unavailable`];
+    }
+    if (base.colorScheme !== theme) failures.push(`${theme}: color-scheme is ${base.colorScheme}`);
+    if (base.toolbarGap !== '8px') failures.push(`${theme}: toolbar gap is ${base.toolbarGap || 'unset'}`);
+    for (const [name, control] of [['Like', base.like], ['Reply', base.reply]]) {
+        if (control.height < 33 || control.height > 35) failures.push(`${theme} ${name}: height is ${control.height}px`);
+        if (control.borderRadius !== '8px') failures.push(`${theme} ${name}: radius is ${control.borderRadius}`);
+        if (control.background !== expectedBackground) failures.push(`${theme} ${name}: surface is ${control.background}`);
+        if (control.borderStyle === 'none') failures.push(`${theme} ${name}: border is missing`);
+        if (!control.boxShadow || control.boxShadow === 'none') failures.push(`${theme} ${name}: elevation is missing`);
+        if (Number.parseInt(control.fontWeight, 10) < 600) failures.push(`${theme} ${name}: label weight is ${control.fontWeight}`);
+    }
+    if (base.like.width < 33 || base.like.width > 35) failures.push(`${theme} Like: width is ${base.like.width}px`);
+    if (base.reply.width < 56) failures.push(`${theme} Reply: width is ${base.reply.width}px`);
+    if (base.heart && (base.heart.width < 33 || base.heart.width > 35
+        || base.heart.height < 33 || base.heart.height > 35
+        || base.heart.background === 'rgba(0, 0, 0, 0)')) {
+        failures.push(`${theme} creator heart: geometry or surface is incomplete`);
+    }
+    if (base.like.iconWidth && (base.like.iconWidth < 17 || base.like.iconWidth > 19)) {
+        failures.push(`${theme} Like: icon width is ${base.like.iconWidth}px`);
+    }
+    if (base.count && base.count.fontVariantNumeric !== 'tabular-nums') {
+        failures.push(`${theme}: like count is not tabular`);
+    }
+    if (states.hover?.reply?.background === base.reply.background
+        || states.hover?.reply?.transform === base.reply.transform
+        || states.hover?.reply?.boxShadow === base.reply.boxShadow) {
+        failures.push(`${theme} Reply: hover state is not visually distinct`);
+    }
+    if (states.hover?.commentBackground !== expectedCommentHover) {
+        failures.push(`${theme}: comment hover surface is ${states.hover?.commentBackground || 'unset'}`);
+    }
+    if (!states.focus?.reply?.focusVisible || Number.parseFloat(states.focus.reply.outlineWidth || '0') < 2) {
+        failures.push(`${theme} Reply: keyboard focus ring is missing`);
+    }
+    if (!states.pressed?.reply?.transform || states.pressed.reply.transform === base.reply.transform) {
+        failures.push(`${theme} Reply: pressed state is not visually distinct`);
+    }
+    if (states.selected?.like?.ariaPressed !== 'true'
+        || states.selected.like.background === base.like.background
+        || states.selected.like.borderColor === base.like.borderColor) {
+        failures.push(`${theme} Like: selected state is not visually distinct`);
+    }
+    if (!states.disabled?.reply?.disabled
+        || states.disabled.reply.opacity > 0.65
+        || states.disabled.reply.cursor !== 'not-allowed'
+        || states.disabled.reply.boxShadow !== 'none') {
+        failures.push(`${theme} Reply: disabled state is incomplete`);
+    }
+    return failures;
+}
+
+async function verifySplitEngagementControls(client, theme, timeoutMs) {
+    await evaluate(client, `(() => {
+        const toolbar = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR)}))
+            .find(node => {
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+            });
+        toolbar?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+        return Boolean(toolbar);
+    })()`);
+    await waitForExpression(
+        client,
+        `(() => {
+            const toolbar = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR)}))
+                .find(node => {
+                    const style = getComputedStyle(node);
+                    const rect = node.getBoundingClientRect();
+                    return style.display !== 'none' && style.visibility !== 'hidden'
+                        && rect.width > 0 && rect.height > 0 && rect.top >= 0 && rect.bottom <= innerHeight;
+                });
+            return Boolean(toolbar && toolbar.querySelector('#like-button') && toolbar.querySelector('#reply-button-end'));
+        })()`,
+        timeoutMs,
+        `${theme} Theater Split comment engagement controls`
+    );
+    await sleep(200);
+
+    const states = { default: await splitEngagementSnapshot(client) };
+    await captureElement(client, `watch-theater-split-actions-${theme}-default`, SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR);
+
+    const replyPoint = await evaluate(client, `(() => {
+        const node = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)}))
+            .find(candidate => candidate.getBoundingClientRect().width > 0 && candidate.getBoundingClientRect().height > 0);
+        const rect = node?.getBoundingClientRect();
+        return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null;
+    })()`);
+    if (!replyPoint) throw new Error(`${theme} Theater Split Reply control is not measurable`);
+
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...replyPoint });
+    await sleep(220);
+    states.hover = await splitEngagementSnapshot(client);
+    await captureElement(client, `watch-theater-split-actions-${theme}-hover`, SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR);
+
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
+    await client.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+    await client.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+    await evaluate(client, `Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)}))
+        .find(node => node.getBoundingClientRect().width > 0 && node.getBoundingClientRect().height > 0)?.focus()`);
+    await sleep(100);
+    states.focus = await splitEngagementSnapshot(client);
+    await captureElement(client, `watch-theater-split-actions-${theme}-focus`, SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR);
+
+    await evaluate(client, 'document.activeElement instanceof HTMLElement && document.activeElement.blur()');
+    await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...replyPoint });
+    await client.send('Input.dispatchMouseEvent', {
+        type: 'mousePressed',
+        ...replyPoint,
+        button: 'left',
+        buttons: 1,
+        clickCount: 1
+    });
+    try {
+        await sleep(90);
+        states.pressed = await splitEngagementSnapshot(client);
+        await captureElement(client, `watch-theater-split-actions-${theme}-pressed`, SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR);
+    } finally {
+        await client.send('Input.dispatchMouseEvent', {
+            type: 'mouseReleased',
+            x: 0,
+            y: 0,
+            button: 'left',
+            buttons: 0,
+            clickCount: 1
+        });
+        await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
+        await evaluate(client, 'document.activeElement instanceof HTMLElement && document.activeElement.blur()');
+    }
+
+    const selectedOriginal = await evaluate(client, `(() => {
+        const node = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_LIKE_SELECTOR)}))
+            .find(candidate => candidate.getBoundingClientRect().width > 0 && candidate.getBoundingClientRect().height > 0);
+        if (!node) return null;
+        const original = node.getAttribute('aria-pressed');
+        node.setAttribute('aria-pressed', 'true');
+        return original;
+    })()`);
+    await sleep(220);
+    states.selected = await splitEngagementSnapshot(client);
+    await captureElement(client, `watch-theater-split-actions-${theme}-selected`, SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR);
+    await evaluate(client, `(() => {
+        const node = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_LIKE_SELECTOR)}))
+            .find(candidate => candidate.getBoundingClientRect().width > 0 && candidate.getBoundingClientRect().height > 0);
+        if (!node) return;
+        const original = ${JSON.stringify(selectedOriginal)};
+        if (original === null) node.removeAttribute('aria-pressed');
+        else node.setAttribute('aria-pressed', original);
+    })()`);
+
+    const disabledOriginal = await evaluate(client, `(() => {
+        const node = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)}))
+            .find(candidate => candidate.getBoundingClientRect().width > 0 && candidate.getBoundingClientRect().height > 0);
+        if (!node) return null;
+        const original = {
+            disabled: node.hasAttribute('disabled'),
+            ariaDisabled: node.getAttribute('aria-disabled')
+        };
+        node.setAttribute('disabled', '');
+        node.setAttribute('aria-disabled', 'true');
+        return original;
+    })()`);
+    await sleep(220);
+    states.disabled = await splitEngagementSnapshot(client);
+    await captureElement(client, `watch-theater-split-actions-${theme}-disabled`, SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR);
+    await evaluate(client, `(() => {
+        const node = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_REPLY_SELECTOR)}))
+            .find(candidate => candidate.getBoundingClientRect().width > 0 && candidate.getBoundingClientRect().height > 0);
+        if (!node) return;
+        const original = ${JSON.stringify(disabledOriginal)};
+        if (!original?.disabled) node.removeAttribute('disabled');
+        if (original?.ariaDisabled === null || original?.ariaDisabled === undefined) node.removeAttribute('aria-disabled');
+        else node.setAttribute('aria-disabled', original.ariaDisabled);
+    })()`);
+
+    states.failures = splitEngagementFailures(states, theme);
+    return states;
+}
+
 async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     const failures = [];
 
@@ -972,6 +1280,8 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         failures.push('watch themes: Theater Split divider is not operable');
     }
     if (!split.commentsVisible) failures.push('watch themes: Theater Split comments surface is missing');
+    const splitEngagementDark = await verifySplitEngagementControls(client, 'dark', timeoutMs);
+    failures.push(...splitEngagementDark.failures.map(failure => `watch themes: ${failure}`));
     await capture(client, 'watch-theater-split-dark-1440x900');
 
     await setWatchTheme(client, false);
@@ -1075,6 +1385,8 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
             failures.push(`watch themes: ${label} resolved to a white block`);
         }
     }
+    const splitEngagementLight = await verifySplitEngagementControls(client, 'light', timeoutMs);
+    failures.push(...splitEngagementLight.failures.map(failure => `watch themes: ${failure}`));
     await capture(client, 'watch-theater-split-light-1440x900');
 
     await setTheaterSplitEnabled(client, backgroundClient, false, timeoutMs);
@@ -1196,6 +1508,8 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     const report = {
         split,
         splitLight,
+        splitEngagementDark,
+        splitEngagementLight,
         normalDark: normalDark.snapshot,
         normalLight: normalLight.snapshot,
         normalDarkDetails,

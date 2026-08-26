@@ -2778,6 +2778,13 @@
             --ytkit-premium-scrollbar: rgba(151,178,208,0.34);
             --ytkit-premium-focus: 0 0 0 2px #07101b, 0 0 0 4px rgba(255,93,74,0.72);
             --ytkit-premium-shadow: 0 20px 56px rgba(0,0,0,0.42);
+            --ytkit-premium-control: #101f33;
+            --ytkit-premium-control-hover: #192e48;
+            --ytkit-premium-control-active: #1d3653;
+            --ytkit-premium-control-selected: rgba(255,93,74,0.14);
+            --ytkit-premium-control-selected-border: rgba(255,93,74,0.52);
+            --ytkit-premium-control-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 5px 14px rgba(0,0,0,0.24);
+            --ytkit-premium-control-shadow-hover: inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 20px rgba(0,0,0,0.30);
         }
 
         html:not([dark]) {
@@ -2800,6 +2807,13 @@
             --ytkit-premium-scrollbar: rgba(30,53,78,0.30);
             --ytkit-premium-focus: 0 0 0 2px #ffffff, 0 0 0 4px rgba(207,53,47,0.55);
             --ytkit-premium-shadow: 0 18px 48px rgba(20,35,54,0.18);
+            --ytkit-premium-control: #f7f9fb;
+            --ytkit-premium-control-hover: #edf2f7;
+            --ytkit-premium-control-active: #e3eaf2;
+            --ytkit-premium-control-selected: rgba(207,53,47,0.10);
+            --ytkit-premium-control-selected-border: rgba(207,53,47,0.44);
+            --ytkit-premium-control-shadow: inset 0 1px 0 rgba(255,255,255,0.82), 0 4px 12px rgba(20,35,54,0.12);
+            --ytkit-premium-control-shadow-hover: inset 0 1px 0 rgba(255,255,255,0.92), 0 7px 18px rgba(20,35,54,0.17);
         }
 
         /* The leading html is load-bearing. Every feature stylesheet is

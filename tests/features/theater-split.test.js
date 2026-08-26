@@ -188,7 +188,7 @@ test('Theater Split keeps the premium theme and standalone divider contract', ()
     assert.match(standalone, /e\.detail >= 2/);
     assert.match(standalone, /68/);
 
-    assert.match(commentsCss, /--ytkit-split-panel: var\(--ytkit-premium-panel\)/);
+    assert.match(commentsCss, /--ytkit-split-panel: var\(--ytkit-premium-panel, #0d1928\)/);
     assert.match(commentsCss, /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)/,
         'the extension split must follow YouTube light mode');
     assert.match(commentsCss, /color-scheme: inherit !important/,
@@ -211,12 +211,65 @@ test('Theater Split theme chrome is tokenized in both artifacts', () => {
 
     assert.match(standalone, /setAttribute\('aria-label', 'Close side panel'\)/,
         'the standalone userscript close button must keep its accessible name');
-    assert.match(commentsCss, /--ytkit-split-scrollbar: var\(--ytkit-premium-scrollbar\)/);
+    assert.match(commentsCss,
+        /--ytkit-split-scrollbar: var\(--ytkit-premium-scrollbar, rgba\(151, 178, 208, 0\.34\)\)/);
     assert.match(MODULE_SOURCE, /background:'var\(--ytkit-split-panel\)'/);
     assert.doesNotMatch(MODULE_SOURCE, /background:'#0b1624'/,
         'positioned split surfaces must not bypass theme tokens');
     assert.doesNotMatch(standalone, /background: '#0b1624'/,
         'standalone positioned surfaces must not bypass theme tokens');
+});
+
+test('Theater Split comment actions use the premium control system in every state', () => {
+    const { mod } = loadModule();
+    const commentsCss = mod.buildSplitCommentsCss();
+    const standalone = fs.readFileSync(
+        path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
+    const visualSystem = fs.readFileSync(
+        path.join(config.repoRoot, 'extension', 'core', 'settings-visual-system.js'), 'utf8');
+
+    for (const [css, label, tokenPrefix] of [
+        [commentsCss, 'extension', '--ytkit-split-control'],
+        [standalone, 'standalone userscript', '--ts-control']
+    ]) {
+        assert.match(css, new RegExp(`${tokenPrefix.replaceAll('-', '\\-')}:`),
+            `${label} must define a semantic comment-control surface`);
+        assert.match(css, /ytd-comment-engagement-bar #toolbar[\s\S]{0,180}gap: 8px !important/,
+            `${label} must use deliberate toolbar spacing`);
+        assert.match(css, /ytd-comment-engagement-bar[\s\S]{0,1200}height: 34px !important/,
+            `${label} must normalize compact desktop target height`);
+        assert.match(css, /ytd-comment-engagement-bar[\s\S]{0,1600}border-radius: 8px !important/,
+            `${label} must use the shared radius scale instead of raw rectangles`);
+        assert.match(css, /font-variant-numeric: tabular-nums !important/,
+            `${label} must keep like counts visually stable`);
+        assert.match(css, /:is\(:hover, :focus-within\)[\s\S]{0,260}background:/,
+            `${label} must keep comment-row interaction inside the active theme`);
+        assert.match(css, /#creator-heart-button[\s\S]{0,1200}height: 34px !important/,
+            `${label} must keep the creator-heart control in the same geometry`);
+        assert.match(css, /translateY\(-1px\)/,
+            `${label} must provide a hover lift`);
+        assert.match(css, /scale\(0\.98\)/,
+            `${label} must provide pressed feedback`);
+        assert.match(css, /\[aria-pressed="true"\]/,
+            `${label} must expose a visible selected state`);
+        assert.match(css, /\[aria-disabled="true"\]/,
+            `${label} must keep disabled state parity with native disabled controls`);
+        assert.match(css, /@media \(forced-colors: active\)[\s\S]*ButtonFace/,
+            `${label} must preserve native forced-color surfaces`);
+    }
+
+    assert.match(visualSystem, /--ytkit-premium-control: #101f33/,
+        'the shared visual system must own the dark control surface');
+    assert.match(visualSystem, /html:not\(\[dark\]\)[\s\S]*--ytkit-premium-control: #f7f9fb/,
+        'the shared visual system must own the light control surface');
+    assert.match(commentsCss, /--ytkit-split-control: var\(--ytkit-premium-control, #101f33\)/,
+        'the dark comment controls must survive shared stylesheet load-order races');
+    assert.match(commentsCss,
+        /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)[\s\S]*--ytkit-split-control: var\(--ytkit-premium-control, #f7f9fb\)/,
+        'the light comment controls must survive shared stylesheet load-order races');
+    assert.doesNotMatch(commentsCss,
+        /ytd-comment-engagement-bar :is\([\s\S]{0,260}?\) \{[\s\S]{0,260}?border-radius: 4px !important/,
+        'the late flat-rectangle engagement override must stay removed');
 });
 
 test('stickyVideo factory returns the full Theater Split runtime surface', () => {

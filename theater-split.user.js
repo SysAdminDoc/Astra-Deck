@@ -1374,8 +1374,16 @@ color-scheme: inherit !important;
             --ts-border-strong: rgba(151, 178, 208, 0.36);
             --ts-text: #f5f7fb;
             --ts-muted: #aab7c8;
+            --ts-accent-fill: #cf352f;
             --ts-scrollbar: rgba(151, 178, 208, 0.34);
             --ts-player: #02060b;
+            --ts-control: #101f33;
+            --ts-control-hover: #192e48;
+            --ts-control-active: #1d3653;
+            --ts-control-selected: rgba(255, 93, 74, 0.14);
+            --ts-control-selected-border: rgba(255, 93, 74, 0.52);
+            --ts-control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 5px 14px rgba(0, 0, 0, 0.24);
+            --ts-control-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 8px 20px rgba(0, 0, 0, 0.30);
             background: var(--ts-canvas) !important;
             color: var(--ts-text) !important;
             color-scheme: dark !important;
@@ -1390,6 +1398,13 @@ color-scheme: inherit !important;
             --ts-text: #172335;
             --ts-muted: #536278;
             --ts-scrollbar: rgba(30, 53, 78, 0.30);
+            --ts-control: #f7f9fb;
+            --ts-control-hover: #edf2f7;
+            --ts-control-active: #e3eaf2;
+            --ts-control-selected: rgba(207, 53, 47, 0.10);
+            --ts-control-selected-border: rgba(207, 53, 47, 0.44);
+            --ts-control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 4px 12px rgba(20, 35, 54, 0.12);
+            --ts-control-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 7px 18px rgba(20, 35, 54, 0.17);
             color-scheme: light !important;
         }
         body.ts-active #ts-wrapper {
@@ -1644,19 +1659,119 @@ color-scheme: inherit !important;
             color: var(--ts-text) !important;
             opacity: 1 !important;
         }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #toolbar {
+            align-items: center !important;
+            gap: 8px !important;
+            min-height: 34px !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #toolbar > * {
+            margin: 0 !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments :is(
+            ytd-comment-view-model,
+            ytd-comment-renderer
+        ):is(:hover, :focus-within) {
+            border-bottom-color: var(--ts-border-strong) !important;
+            background: var(--ts-hover) !important;
+            background-image: none !important;
+            box-shadow: none !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #vote-count-middle {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 18px !important;
+            min-height: 34px !important;
+            margin: 0 4px 0 0 !important;
+            padding: 0 2px !important;
+            color: var(--ts-muted) !important;
+            -webkit-text-fill-color: var(--ts-muted) !important;
+            font-size: 12px !important;
+            font-weight: 650 !important;
+            font-variant-numeric: tabular-nums !important;
+            line-height: 1 !important;
+            letter-spacing: 0.01em !important;
+        }
         body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
             button,
             .yt-spec-button-shape-next,
             tp-yt-paper-button,
             yt-icon-button
         ) {
-            min-height: 30px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 34px !important;
+            min-height: 34px !important;
+            height: 34px !important;
+            padding: 0 11px !important;
             border: 1px solid var(--ts-border) !important;
-            border-radius: 4px !important;
-            background: transparent !important;
+            border-radius: 8px !important;
+            background: var(--ts-control) !important;
             background-image: none !important;
             color: var(--ts-text) !important;
-            box-shadow: none !important;
+            box-shadow: var(--ts-control-shadow) !important;
+            font-size: 12px !important;
+            font-weight: 650 !important;
+            line-height: 1 !important;
+            letter-spacing: 0.01em !important;
+            cursor: pointer !important;
+            isolation: isolate !important;
+            transform: translateY(0) !important;
+            transition:
+                transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                border-color 150ms ease,
+                background-color 150ms ease,
+                color 150ms ease,
+                box-shadow 150ms ease !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button:is(button, .yt-spec-button-shape-next),
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) {
+            width: 34px !important;
+            min-width: 34px !important;
+            padding: 0 !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #reply-button-end :is(button, .yt-spec-button-shape-next, tp-yt-paper-button) {
+            min-width: 56px !important;
+            padding-inline: 13px !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button :is(yt-icon, svg, .yt-icon-shape),
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #reply-button-end :is(yt-icon, svg, .yt-icon-shape) {
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            color: currentColor !important;
+            fill: currentColor !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #creator-heart-button:is(button, .yt-spec-button-shape-next, yt-icon-button),
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #creator-heart-button :is(button, .yt-spec-button-shape-next, tp-yt-paper-button, yt-icon-button) {
+            width: 34px !important;
+            min-width: 34px !important;
+            height: 34px !important;
+            min-height: 34px !important;
+            padding: 0 !important;
+            border-color: var(--ts-control-selected-border) !important;
+            border-radius: 8px !important;
+            background: var(--ts-control-selected) !important;
+            color: var(--ts-accent-fill) !important;
+            -webkit-text-fill-color: currentColor !important;
+            box-shadow: var(--ts-control-shadow) !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #creator-heart-button :is(
+            #hearted,
+            #hearted svg,
+            yt-icon,
+            svg,
+            .yt-icon-shape
+        ) {
+            width: 16px !important;
+            height: 16px !important;
+            min-width: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+            color: var(--ts-accent-fill) !important;
+            fill: currentColor !important;
+            opacity: 1 !important;
         }
         body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
             button,
@@ -1690,9 +1805,53 @@ color-scheme: inherit !important;
             .yt-spec-button-shape-next,
             tp-yt-paper-button,
             yt-icon-button
-        ):hover {
+        ):hover:not([disabled]):not([aria-disabled="true"]) {
             border-color: var(--ts-border-strong) !important;
-            background: var(--ts-hover) !important;
+            background: var(--ts-control-hover) !important;
+            color: var(--ts-text) !important;
+            box-shadow: var(--ts-control-shadow-hover) !important;
+            transform: translateY(-1px) !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        ):active:not([disabled]):not([aria-disabled="true"]) {
+            border-color: var(--ts-control-selected-border) !important;
+            background: var(--ts-control-active) !important;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.24) !important;
+            transform: translateY(0) scale(0.98) !important;
+            transition-duration: 60ms !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        )[aria-pressed="true"],
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #like-button[aria-pressed="true"] :is(button, .yt-spec-button-shape-next),
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-action-buttons-renderer[is-liked] #like-button :is(button, .yt-spec-button-shape-next) {
+            border-color: var(--ts-control-selected-border) !important;
+            background: var(--ts-control-selected) !important;
+            color: var(--ts-accent-fill) !important;
+            -webkit-text-fill-color: currentColor !important;
+            box-shadow: var(--ts-control-shadow) !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+            button,
+            .yt-spec-button-shape-next,
+            tp-yt-paper-button,
+            yt-icon-button
+        ):is([disabled], [aria-disabled="true"]) {
+            border-color: var(--ts-border) !important;
+            background: var(--ts-panel) !important;
+            color: var(--ts-muted) !important;
+            -webkit-text-fill-color: currentColor !important;
+            box-shadow: none !important;
+            opacity: 0.58 !important;
+            cursor: not-allowed !important;
+            transform: none !important;
         }
         body.ts-split #below.ytkit-split-scroll-surface #comments :is(
             #content-text,
@@ -1807,6 +1966,28 @@ color-scheme: inherit !important;
             body.ts-split :is(button, input, textarea, select, a):focus-visible {
                 outline: 2px solid Highlight !important;
                 outline-offset: 2px !important;
+            }
+            body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+                button,
+                .yt-spec-button-shape-next,
+                tp-yt-paper-button,
+                yt-icon-button
+            ) {
+                border-color: ButtonText !important;
+                background: ButtonFace !important;
+                color: ButtonText !important;
+                box-shadow: none !important;
+                forced-color-adjust: auto !important;
+            }
+            body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
+                button,
+                .yt-spec-button-shape-next,
+                tp-yt-paper-button,
+                yt-icon-button
+            )[aria-pressed="true"] {
+                border-color: Highlight !important;
+                background: Highlight !important;
+                color: HighlightText !important;
             }
         }
     `;
