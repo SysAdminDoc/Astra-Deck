@@ -8613,5 +8613,56 @@
   },
   "subscriptionGroupRestored": {
     "message": "グループを復元しました"
+  },
+  "antiAdblockTitle": {
+    "message": "YouTube 再生チェック"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "再生中"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "停止中"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "ブロック中"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "不明"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube に広告ブロッカーの警告が表示されましたが、この動画は再生を続けています。"
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube に広告ブロッカーの警告が表示され、再生が停止しています。"
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube に広告ブロッカーの警告が表示され、再生がブロックされているようです。"
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube に広告ブロッカーの警告が表示されました。Astra は再生状態をまだ確認できません。"
+  },
+  "antiAdblockEvidenceTpl": {
+    "message": "セレクター: {selector} · 再生: {state}"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Astra の広告ブロックは一時停止中です。"
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Astra の広告ブロックは {time} まで一時停止します。"
+  },
+  "antiAdblockReloadHint": {
+    "message": "この YouTube タブを再読み込みして、再生をやり直してください。"
+  },
+  "antiAdblockResumeAction": {
+    "message": "Astra の広告ブロックを再開"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Astra の広告ブロックを 15 分間一時停止"
+  },
+  "antiAdblockResumed": {
+    "message": "Astra の広告ブロックを再開しました。"
+  },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "{selector} で YouTube の警告を検出。再生状態: {state}"
   }
 }

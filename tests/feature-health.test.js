@@ -144,6 +144,28 @@ test('critical selector canary degrades each affected feature once across severa
     assert.equal(report.criticalCanary.youtubeClientVersion, '2.20260820.01.00');
 });
 
+test('a visible anti-adblock warning carries its selector and measured playback state into health', () => {
+    const core = loadFeatureHealth();
+    const report = core.buildFeatureHealthReport({
+        features: [{ id: 'sponsorBlock', name: 'SponsorBlock' }],
+        registryHealth: [{ id: 'sponsorBlock', status: 'initialized', initialized: true }],
+        antiAdblock: {
+            selector: 'ytd-enforcement-message-view-model',
+            playbackState: 'unknown',
+            observedAt: 1400,
+            signalStrength: 'strong'
+        }
+    });
+
+    const row = report.features[0];
+    assert.equal(row.status, 'degraded');
+    const reason = row.reasons.find((entry) => entry.kind === 'anti-adblock');
+    assert.equal(reason.selector, 'ytd-enforcement-message-view-model');
+    assert.equal(reason.playbackState, 'unknown');
+    assert.equal(reason.at, 1400);
+    assert.equal(report.antiAdblock.playbackState, 'unknown');
+});
+
 test('a surface that missed once but is hitting again is not reported as a problem', () => {
     const core = loadFeatureHealth();
     const report = core.buildFeatureHealthReport({

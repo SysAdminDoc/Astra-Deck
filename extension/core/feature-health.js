@@ -108,6 +108,10 @@
         const criticalCanary = input.criticalCanary && typeof input.criticalCanary === 'object'
             ? input.criticalCanary
             : null;
+        const antiAdblock = input.antiAdblock && typeof input.antiAdblock === 'object'
+            && text(input.antiAdblock.selector, 240)
+            ? input.antiAdblock
+            : null;
 
         // external-api-health records already declare their driving feature
         // (SERVICE_META[x].feature), so the join is a lookup, not a guess. A
@@ -218,6 +222,22 @@
                 });
             }
 
+            if (id === 'sponsorBlock' && antiAdblock) {
+                const selector = text(antiAdblock.selector, 240);
+                const playbackState = ['advancing', 'stalled', 'blocked', 'unknown']
+                    .includes(antiAdblock.playbackState)
+                    ? antiAdblock.playbackState
+                    : 'unknown';
+                status = worse(status, STATUS_DEGRADED);
+                reasons.push({
+                    kind: 'anti-adblock',
+                    selector,
+                    playbackState,
+                    detail: `${selector} · ${playbackState}`,
+                    at: parseTimestamp(antiAdblock.observedAt)
+                });
+            }
+
             for (const service of apisByFeature.get(id) || []) {
                 // `stale` means a cached answer is still being served, which
                 // is the fallback working as designed — not a degradation the
@@ -279,6 +299,7 @@
                 ? rows[0].status
                 : STATUS_HEALTHY,
             criticalCanary,
+            antiAdblock,
             features: rows
         };
     }

@@ -373,6 +373,166 @@ test('SponsorBlock monitors for YouTube anti-adblock DOM elements', () => {
         'destroy must clean up the anti-adblock timer');
 });
 
+test('anti-adblock detection ignores hidden templates and reports the matched structural selector', () => {
+    const { findVisibleAntiAdblockSignal } = require('../../extension/features/sponsorblock');
+    const hidden = {
+        isConnected: true,
+        hidden: true,
+        style: {},
+        closest: () => null,
+        getClientRects: () => [{ width: 100, height: 100 }]
+    };
+    const visible = {
+        isConnected: true,
+        hidden: false,
+        style: {},
+        closest: () => null,
+        getClientRects: () => [{ width: 100, height: 100 }]
+    };
+    const root = {
+        querySelectorAll(selector) {
+            return selector === 'ytd-enforcement-message-view-model'
+                ? [hidden, visible]
+                : [];
+        }
+    };
+
+    const signal = findVisibleAntiAdblockSignal(root);
+    assert.equal(signal.node, visible);
+    assert.equal(signal.selector, 'ytd-enforcement-message-view-model');
+    assert.equal(signal.strength, 'strong');
+    assert.equal(signal.blocking, true);
+});
+
+test('anti-adblock playback classification waits for evidence and preserves unknown stalls', () => {
+    const { classifyAntiAdblockPlayback } = require('../../extension/features/sponsorblock');
+    const strong = { strength: 'strong', blocking: true };
+    const weak = { strength: 'weak', blocking: false };
+    const base = {
+        observedAt: 1000,
+        videoPresent: true,
+        mediaKey: 'video-a',
+        currentTime: 10,
+        paused: false,
+        ended: false,
+        readyState: 4,
+        waiting: false,
+        error: false
+    };
+
+    assert.equal(classifyAntiAdblockPlayback(null, base, strong), 'unknown',
+        'one sample cannot prove playback movement');
+    assert.equal(classifyAntiAdblockPlayback(base, {
+        ...base,
+        observedAt: 3000,
+        currentTime: 11.2
+    }, strong), 'advancing');
+    assert.equal(classifyAntiAdblockPlayback(base, {
+        ...base,
+        observedAt: 3000,
+        paused: true
+    }, strong), 'blocked', 'a repeated no-movement sample behind a structural modal is blocked');
+    assert.equal(classifyAntiAdblockPlayback(base, {
+        ...base,
+        observedAt: 3000,
+        readyState: 2,
+        waiting: true
+    }, strong), 'stalled', 'active playback with waiting evidence is stalled');
+    assert.equal(classifyAntiAdblockPlayback(base, {
+        ...base,
+        observedAt: 3000
+    }, strong), 'unknown', 'no movement with a ready player remains uncertain');
+    assert.equal(classifyAntiAdblockPlayback(base, {
+        ...base,
+        observedAt: 3000,
+        paused: true
+    }, weak), 'unknown', 'a weak selector cannot turn a user pause into a YouTube block');
+});
+
+test('anti-adblock recovery card changes policy only through its rendered action and shows the deadline', async () => {
+    const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
+    class Element {
+        constructor(tag) {
+            this.tagName = tag.toUpperCase();
+            this.children = [];
+            this.attributes = new Map();
+            this.dataset = {};
+            this.className = '';
+            this.textContent = '';
+            this.isConnected = false;
+            this.listeners = new Map();
+        }
+        appendChild(child) {
+            child.parentNode = this;
+            child.isConnected = this.isConnected;
+            this.children.push(child);
+            return child;
+        }
+        replaceChildren(...children) {
+            this.children = [];
+            for (const child of children) this.appendChild(child);
+        }
+        setAttribute(name, value) { this.attributes.set(name, String(value)); }
+        addEventListener(type, listener) { this.listeners.set(type, listener); }
+        remove() {
+            this.isConnected = false;
+            if (this.parentNode) this.parentNode.children = this.parentNode.children.filter((child) => child !== this);
+        }
+        click() { this.listeners.get('click')?.({ currentTarget: this }); }
+    }
+    const body = new Element('body');
+    body.isConnected = true;
+    const fakeDocument = {
+        body,
+        documentElement: body,
+        createElement: (tag) => new Element(tag)
+    };
+    const priorDocument = global.document;
+    let pauseCalls = 0;
+    let resumeCalls = 0;
+    const pauseUntil = Date.now() + 15 * 60 * 1000;
+    const feature = createSponsorBlockFeature({
+        pauseZeroAdRules: async () => {
+            pauseCalls++;
+            return { ok: true, enabled: false, paused: true, pauseUntil };
+        },
+        resumeZeroAdRules: async () => {
+            resumeCalls++;
+            return { ok: true, enabled: true, paused: false, pauseUntil: null };
+        }
+    });
+    feature._antiAdblockSnapshot = {
+        selector: 'ytd-enforcement-message-view-model',
+        playbackState: 'unknown'
+    };
+    feature._zeroAdStatus = { ok: true, enabled: true, paused: false, pauseUntil: null };
+
+    try {
+        global.document = fakeDocument;
+        feature._renderAntiAdblockNotice();
+        const notice = body.children[0];
+        const actions = notice.children.find((child) => child.className === 'ytkit-anti-adblock-actions');
+        assert.ok(actions, 'the rendered card must contain an action row');
+        assert.match(actions.children[0].textContent, /15 minutes/);
+        assert.equal(pauseCalls, 0, 'rendering and detection must not change policy');
+
+        actions.children[0].click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        assert.equal(pauseCalls, 1, 'the explicit rendered action is the only pause path');
+        assert.ok(notice.children.some((child) => child.className === 'ytkit-anti-adblock-deadline'),
+            'the paused card must expose its restoration deadline');
+
+        const pausedActions = notice.children.find((child) => child.className === 'ytkit-anti-adblock-actions');
+        assert.match(pausedActions.children[0].textContent, /Resume/);
+        pausedActions.children[0].click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        assert.equal(resumeCalls, 1);
+    } finally {
+        clearTimeout(feature._antiAdblockDeadlineTimer);
+        global.document = priorDocument;
+    }
+});
+
 // ── poi_highlight is a POINT marker, not a zero-length segment to discard ──
 // The API returns highlights as [t, t]. A strict `end > start` filter dropped
 // every one of them before they reached the cache or the progress bar, so the

@@ -108,6 +108,7 @@ settings imports cannot turn a restricted artifact into a broader one.
 | Permission | Store justification |
 | --- | --- |
 | `storage` | Saves Astra Deck settings, local feature state, local caches, notes, watch-progress data, and user-created exports in the browser profile. |
+| `alarms` | Restores Astra's static ad rules at the visible deadline after a user explicitly pauses them for 15 minutes from an anti-adblock recovery card. The alarm stores only a fixed internal name and time. Detection never creates an alarm or changes blocking policy. |
 | `unlimitedStorage` | Prevents silent quota failure for local YouTube caches and long-term user data; bounded LRU cleanup still trims large stores. |
 | `declarativeNetRequest` | Enables the bundled static `astra_zero_ads` ruleset. Its five rules block known YouTube ad-serving domains and ad telemetry endpoints only when YouTube or YouTube No-Cookie initiated the request. Rules do not inspect request bodies, read browsing history, redirect traffic, or transmit data. |
 | `cookies` | After fresh native API v2 proof, reads only `LOGIN_INFO`, `SAPISID`, `__Secure-1PAPISID`, and `__Secure-3PAPISID` from the secure root `.youtube.com` scope when the user starts an authenticated local download. A 20-second, one-use, tab/document-bound capability gates the read; each value is capped at 4 KiB, incomplete sets fail closed, and the first cookie-bearing handoff is disclosed in-product. Cookies are not sent to Astra Deck servers. |
@@ -221,6 +222,11 @@ in Settings under Advanced. With it off, no request to the feed is made.
   or session rules, excludes YouTube media/CDN hosts, and pairs network
   blocking with `early.css` collapse of empty ad containers so blocked slots do
   not leave layout gaps.
+- A visible YouTube enforcement component is reported with its structural
+  selector and sampled playback state. Only the recovery card's button can
+  pause `astra_zero_ads`. The deadline is kept in `storage.session`, an alarm
+  restores the rules after 15 minutes, and worker startup restores them if an
+  expired or missing session record finds the ruleset disabled.
 <!-- BEGIN GENERATED REVIEWER RESOURCE INVENTORY -->
 ### Generated web-accessible resource inventory
 

@@ -849,7 +849,8 @@ test('sponsorBlock _loadForVideo aborts if destroy runs mid-fetch', () => {
     // that mentions destroy() in comments.
     const destroyIdx = block.search(/destroy\s*\(\s*\)\s*\{/);
     assert.ok(destroyIdx > -1, 'destroy() method must exist');
-    const destroyBody = block.slice(destroyIdx, destroyIdx + 1800);
+    const destroyBody = findBalancedObjectLiteral(block.slice(destroyIdx), 'destroy');
+    assert.ok(destroyBody, 'destroy() body must be structurally readable');
     assert.match(destroyBody, /this\._generation\s*=/, 'destroy must bump _generation');
 });
 
@@ -899,7 +900,8 @@ test('sponsorBlock caches segments before network and serves stale cache on fail
 
     const destroyIdx = block.search(/destroy\s*\(\s*\)\s*\{/);
     assert.ok(destroyIdx > -1, 'destroy() method must exist');
-    const destroyBody = block.slice(destroyIdx, destroyIdx + 1800);
+    const destroyBody = findBalancedObjectLiteral(block.slice(destroyIdx), 'destroy');
+    assert.ok(destroyBody, 'destroy() body must be structurally readable');
     assert.match(destroyBody, /this\._flushCachePersist\(\)/,
         'Destroy must synchronously flush pending SponsorBlock cache writes');
     assert.match(destroyBody, /this\._cache\s*=\s*null/,

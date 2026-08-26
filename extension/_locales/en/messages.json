@@ -8601,5 +8601,56 @@
   },
   "subscriptionGroupRestored": {
     "message": "Group restored"
+  },
+  "antiAdblockTitle": {
+    "message": "YouTube playback check"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "advancing"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "stalled"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "blocked"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "unknown"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube showed an ad-block warning, but this video is still playing."
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube showed an ad-block warning and playback is stalled."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube showed an ad-block warning and playback appears blocked."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube showed an ad-block warning. Astra cannot confirm the playback state yet."
+  },
+  "antiAdblockEvidenceTpl": {
+    "message": "Selector: {selector} · Playback: {state}"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Astra ad blocking is temporarily paused."
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Astra ad blocking is paused until {time}."
+  },
+  "antiAdblockReloadHint": {
+    "message": "Reload this YouTube tab to retry playback."
+  },
+  "antiAdblockResumeAction": {
+    "message": "Resume Astra ad blocking"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Pause Astra ad blocking for 15 minutes"
+  },
+  "antiAdblockResumed": {
+    "message": "Astra ad blocking resumed."
+  },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "YouTube warning via {selector}; playback {state}"
   }
 }

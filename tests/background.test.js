@@ -32,16 +32,22 @@ function loadBackground({
     connectNativeImpl,
     nativeResponse,
     initialSettings = {},
+    initialSession = {},
+    initialEnabledRulesets = ['astra_zero_ads'],
     apiNamespace = 'chrome'
 } = {}) {
     let messageListener = null;
     let installedListener = null;
     let settingsState = { ...initialSettings };
-    const sessionState = {};
+    const sessionState = { ...initialSession };
     // Generic key/value half of storage.local, for keys that are not the
     // settings bag (onboarding sentinels and friends).
     const localState = {};
     const badgeCalls = [];
+    const dnrCalls = [];
+    const alarmCalls = [];
+    let alarmListener = null;
+    const enabledRulesetsState = new Set(initialEnabledRulesets);
     const nativeMessages = [];
     const persistentCredentials = new Map();
     const persistentStore = {
@@ -115,9 +121,30 @@ function loadBackground({
         },
         declarativeNetRequest: {
             getEnabledRulesets(callback) {
-                const value = ['astra_zero_ads'];
+                const value = Array.from(enabledRulesetsState);
                 if (typeof callback === 'function') callback(value);
                 return Promise.resolve(value);
+            },
+            updateEnabledRulesets(details, callback) {
+                dnrCalls.push(details);
+                for (const id of details?.enableRulesetIds || []) enabledRulesetsState.add(id);
+                for (const id of details?.disableRulesetIds || []) enabledRulesetsState.delete(id);
+                if (typeof callback === 'function') callback();
+                return Promise.resolve();
+            }
+        },
+        alarms: {
+            create(name, details) {
+                alarmCalls.push({ method: 'create', name, details });
+                return Promise.resolve();
+            },
+            clear(name, callback) {
+                alarmCalls.push({ method: 'clear', name });
+                if (typeof callback === 'function') callback(true);
+                return Promise.resolve(true);
+            },
+            onAlarm: {
+                addListener(listener) { alarmListener = listener; }
             }
         },
         downloads: {
@@ -220,7 +247,12 @@ function loadBackground({
         context,
         messageListener,
         installedListener,
+        getAlarmListener: () => alarmListener,
         badgeCalls,
+        dnrCalls,
+        alarmCalls,
+        getSession: () => sessionState,
+        getEnabledRulesets: () => Array.from(enabledRulesetsState),
         getLocal: () => localState,
         getSettings: () => settingsState,
         persistentCredentials,
@@ -330,7 +362,66 @@ test('background exposes the enabled zero-ad ruleset through its internal status
     assert.equal(response.ok, true);
     assert.equal(response.rulesetId, 'astra_zero_ads');
     assert.equal(response.enabled, true);
+    assert.equal(response.paused, false);
+    assert.equal(response.pauseUntil, null);
     assert.deepEqual(Array.from(response.enabledRulesets), ['astra_zero_ads']);
+});
+
+test('zero-ad recovery pauses only after an explicit action and publishes its deadline', async () => {
+    const bg = loadBackground();
+    const before = await dispatchMessage(bg.messageListener, { type: 'YTKIT_ZERO_AD_STATUS' });
+    assert.equal(before.enabled, true, 'detection and status reads must not change policy');
+    assert.deepEqual(bg.dnrCalls, []);
+
+    const startedAt = Date.now();
+    const paused = await dispatchMessage(bg.messageListener, { type: 'YTKIT_ZERO_AD_PAUSE_SESSION' });
+    assert.equal(paused.ok, true);
+    assert.equal(paused.enabled, false);
+    assert.equal(paused.paused, true);
+    assert.ok(paused.pauseUntil >= startedAt + (14 * 60 * 1000));
+    assert.ok(paused.pauseUntil <= Date.now() + (16 * 60 * 1000));
+    assert.equal(bg.getSession().ytkit_zero_ad_pause_until, paused.pauseUntil);
+    assert.deepEqual(bg.getEnabledRulesets(), []);
+    assert.ok(bg.dnrCalls.some((call) => call.disableRulesetIds?.includes('astra_zero_ads')));
+    assert.ok(bg.alarmCalls.some((call) => call.method === 'create'
+        && call.name === 'ytkit-zero-ad-restore'
+        && call.details?.when === paused.pauseUntil));
+});
+
+test('zero-ad recovery resumes explicitly and clears the session deadline', async () => {
+    const bg = loadBackground();
+    await dispatchMessage(bg.messageListener, { type: 'YTKIT_ZERO_AD_PAUSE_SESSION' });
+    const resumed = await dispatchMessage(bg.messageListener, { type: 'YTKIT_ZERO_AD_RESUME_SESSION' });
+
+    assert.equal(resumed.ok, true);
+    assert.equal(resumed.enabled, true);
+    assert.equal(resumed.paused, false);
+    assert.equal(resumed.pauseUntil, null);
+    assert.deepEqual(bg.getEnabledRulesets(), ['astra_zero_ads']);
+    assert.equal(bg.getSession().ytkit_zero_ad_pause_until, undefined);
+    assert.ok(bg.alarmCalls.some((call) => call.method === 'clear'
+        && call.name === 'ytkit-zero-ad-restore'));
+});
+
+test('zero-ad recovery restores an expired pause on worker startup and alarm wake', async () => {
+    const bg = loadBackground({
+        initialSession: { ytkit_zero_ad_pause_until: Date.now() - 1000 },
+        initialEnabledRulesets: []
+    });
+    const status = await dispatchMessage(bg.messageListener, { type: 'YTKIT_ZERO_AD_STATUS' });
+
+    assert.equal(status.enabled, true);
+    assert.equal(status.paused, false);
+    assert.equal(bg.getSession().ytkit_zero_ad_pause_until, undefined);
+    assert.deepEqual(bg.getEnabledRulesets(), ['astra_zero_ads']);
+    assert.ok(bg.dnrCalls.some((call) => call.enableRulesetIds?.includes('astra_zero_ads')));
+
+    const alarmListener = bg.getAlarmListener();
+    assert.equal(typeof alarmListener, 'function');
+    alarmListener({ name: 'unrelated' });
+    alarmListener({ name: 'ytkit-zero-ad-restore' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.deepEqual(bg.getEnabledRulesets(), ['astra_zero_ads']);
 });
 
 test('background retires generic and forged cookie requests before touching the cookie API', async () => {

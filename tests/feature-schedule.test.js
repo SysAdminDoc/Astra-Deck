@@ -230,11 +230,7 @@ test('the plan reports the soonest boundary across every schedule', () => {
 
 // ── the runtime contract ──
 
-test('the runtime uses a local timer and never asks for the alarms permission', () => {
-    const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'extension/manifest.json'), 'utf8'));
-    assert.ok(!(manifest.permissions || []).includes('alarms'),
-        'focus hours must not buy a permission the page can compute itself');
-
+test('focus hours stay on a local timer even when zero-ad recovery uses alarms', () => {
     const ytkit = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
     const start = ytkit.indexOf('function applyFeatureSchedules');
     assert.ok(start > -1, 'the schedule runtime must exist');

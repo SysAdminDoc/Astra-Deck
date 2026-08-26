@@ -3266,6 +3266,13 @@ function renderFeatureHealthRows(report) {
             const age = formatFeatureHealthAge(reason.at, now);
             const canaryVersion = reason.youtubeClientVersion
                 || t('selectorCanaryBuildUnknown', 'current build');
+            const antiAdblockState = reason.playbackState === 'advancing'
+                ? t('antiAdblockPlaybackAdvancing', 'advancing')
+                : reason.playbackState === 'stalled'
+                    ? t('antiAdblockPlaybackStalled', 'stalled')
+                    : reason.playbackState === 'blocked'
+                        ? t('antiAdblockPlaybackBlocked', 'blocked')
+                        : t('antiAdblockPlaybackUnknown', 'unknown');
             const what = reason.kind === 'selector'
                 ? t('featureHealthReasonSelectorTpl', 'Page element “{surface}” no longer found')
                     .replace('{surface}', reason.surface || reason.detail || '')
@@ -3273,6 +3280,10 @@ function renderFeatureHealthRows(report) {
                     ? t('featureHealthReasonCanaryTpl', 'YouTube {version} changed {surface}')
                         .replace('{version}', canaryVersion)
                         .replace('{surface}', reason.surface || reason.detail || '')
+                : reason.kind === 'anti-adblock'
+                    ? t('featureHealthReasonAntiAdblockTpl', 'YouTube warning via {selector}; playback {state}')
+                        .replace('{selector}', reason.selector || '')
+                        .replace('{state}', antiAdblockState)
                 : reason.kind === 'api'
                     ? t('featureHealthReasonApiTpl', '{service}: {detail}')
                         .replace('{service}', reason.service || '')

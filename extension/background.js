@@ -193,8 +193,94 @@ const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
 const MAX_AI_REQUEST_BYTES = 512 * 1024;
 const MAX_AI_RESPONSE_BYTES = 2 * 1024 * 1024;
 const ZERO_AD_RULESET_ID = 'astra_zero_ads';
+const ZERO_AD_PAUSE_KEY = 'ytkit_zero_ad_pause_until';
+const ZERO_AD_PAUSE_ALARM = 'ytkit-zero-ad-restore';
+const ZERO_AD_PAUSE_MS = 15 * 60 * 1000;
 
-async function getZeroAdStatus() {
+async function readZeroAdPauseUntil() {
+    const stored = await callExtensionApi(ext.storage.session, 'get', ZERO_AD_PAUSE_KEY);
+    const pauseUntil = Number(stored?.[ZERO_AD_PAUSE_KEY]);
+    return Number.isFinite(pauseUntil) && pauseUntil > 0 ? pauseUntil : null;
+}
+
+async function setZeroAdRulesEnabled(enabled) {
+    const current = await callExtensionApi(
+        ext.declarativeNetRequest,
+        'getEnabledRulesets'
+    );
+    const normalized = Array.isArray(current) ? current : [];
+    const isEnabled = normalized.includes(ZERO_AD_RULESET_ID);
+    if (isEnabled === enabled) return normalized;
+    await callExtensionApi(ext.declarativeNetRequest, 'updateEnabledRulesets', enabled
+        ? { enableRulesetIds: [ZERO_AD_RULESET_ID] }
+        : { disableRulesetIds: [ZERO_AD_RULESET_ID] });
+    return enabled
+        ? Array.from(new Set([...normalized, ZERO_AD_RULESET_ID]))
+        : normalized.filter((id) => id !== ZERO_AD_RULESET_ID);
+}
+
+async function scheduleZeroAdRestore(pauseUntil) {
+    await callExtensionApi(ext.alarms, 'create', ZERO_AD_PAUSE_ALARM, { when: pauseUntil });
+}
+
+async function clearZeroAdPauseRecord() {
+    await callExtensionApi(ext.storage.session, 'remove', ZERO_AD_PAUSE_KEY);
+    try {
+        await callExtensionApi(ext.alarms, 'clear', ZERO_AD_PAUSE_ALARM);
+    } catch (_) {
+        // reason: restoration is authoritative; a missing alarm API or alarm
+        // does not make an already-enabled ruleset unsafe.
+    }
+}
+
+async function reconcileZeroAdPause(now = Date.now()) {
+    const pauseUntil = await readZeroAdPauseUntil();
+    if (pauseUntil && pauseUntil > now) {
+        await setZeroAdRulesEnabled(false);
+        await scheduleZeroAdRestore(pauseUntil);
+        return { paused: true, pauseUntil };
+    }
+    await setZeroAdRulesEnabled(true);
+    await clearZeroAdPauseRecord();
+    return { paused: false, pauseUntil: null };
+}
+
+let _zeroAdRecoveryReady = reconcileZeroAdPause().catch((error) => {
+    void error;
+    return { paused: false, pauseUntil: null };
+});
+
+async function pauseZeroAdRulesForSession() {
+    await _zeroAdRecoveryReady;
+    const pauseUntil = Date.now() + ZERO_AD_PAUSE_MS;
+    await callExtensionApi(ext.storage.session, 'set', { [ZERO_AD_PAUSE_KEY]: pauseUntil });
+    try {
+        await setZeroAdRulesEnabled(false);
+        await scheduleZeroAdRestore(pauseUntil);
+    } catch (error) {
+        // Never leave a ruleset disabled without a durable restoration path.
+        await setZeroAdRulesEnabled(true).catch(() => {});
+        await clearZeroAdPauseRecord().catch(() => {});
+        throw error;
+    }
+    return getZeroAdStatus({ reconcile: false });
+}
+
+async function resumeZeroAdRulesForSession() {
+    await _zeroAdRecoveryReady;
+    await setZeroAdRulesEnabled(true);
+    await clearZeroAdPauseRecord();
+    return getZeroAdStatus({ reconcile: false });
+}
+
+async function getZeroAdStatus({ reconcile = true } = {}) {
+    await _zeroAdRecoveryReady;
+    const pause = reconcile
+        ? await reconcileZeroAdPause()
+        : {
+            pauseUntil: await readZeroAdPauseUntil(),
+            paused: false
+        };
     const enabledRulesets = await callExtensionApi(
         ext.declarativeNetRequest,
         'getEnabledRulesets'
@@ -206,8 +292,23 @@ async function getZeroAdStatus() {
         ok: true,
         rulesetId: ZERO_AD_RULESET_ID,
         enabled: normalized.includes(ZERO_AD_RULESET_ID),
-        enabledRulesets: normalized
+        enabledRulesets: normalized,
+        paused: pause.paused === true
+            || (!!pause.pauseUntil && pause.pauseUntil > Date.now()
+                && !normalized.includes(ZERO_AD_RULESET_ID)),
+        pauseUntil: pause.pauseUntil || null,
+        pauseDurationMs: ZERO_AD_PAUSE_MS
     };
+}
+
+if (ext.alarms?.onAlarm?.addListener) {
+    ext.alarms.onAlarm.addListener((alarm) => {
+        if (alarm?.name !== ZERO_AD_PAUSE_ALARM) return;
+        _zeroAdRecoveryReady = reconcileZeroAdPause().catch((error) => {
+            void error;
+            return { paused: false, pauseUntil: null };
+        });
+    });
 }
 
 // The AI summary endpoint is reachable from the isolated content script by
@@ -1667,7 +1768,24 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 rulesetId: ZERO_AD_RULESET_ID,
                 enabled: false,
                 enabledRulesets: [],
+                paused: false,
+                pauseUntil: null,
                 error: error?.message || 'Zero-ad ruleset status is unavailable.'
+            });
+        });
+        return true;
+    }
+
+    if (msg.type === 'YTKIT_ZERO_AD_PAUSE_SESSION'
+        || msg.type === 'YTKIT_ZERO_AD_RESUME_SESSION') {
+        const operation = msg.type === 'YTKIT_ZERO_AD_PAUSE_SESSION'
+            ? pauseZeroAdRulesForSession
+            : resumeZeroAdRulesForSession;
+        operation().then(sendResponse).catch((error) => {
+            sendResponse({
+                ok: false,
+                rulesetId: ZERO_AD_RULESET_ID,
+                error: error?.message || 'Zero-ad recovery is unavailable.'
             });
         });
         return true;

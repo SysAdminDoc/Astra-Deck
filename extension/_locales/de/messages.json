@@ -8613,5 +8613,56 @@
   },
   "subscriptionGroupRestored": {
     "message": "Gruppe wiederhergestellt"
+  },
+  "antiAdblockTitle": {
+    "message": "YouTube-Wiedergabeprüfung"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "läuft weiter"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "stockt"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "blockiert"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "unbekannt"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube zeigt eine Werbeblocker-Warnung, aber dieses Video läuft weiter."
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube zeigt eine Werbeblocker-Warnung und die Wiedergabe stockt."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube zeigt eine Werbeblocker-Warnung und die Wiedergabe scheint blockiert zu sein."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube zeigt eine Werbeblocker-Warnung. Astra kann den Wiedergabestatus noch nicht bestätigen."
+  },
+  "antiAdblockEvidenceTpl": {
+    "message": "Selektor: {selector} · Wiedergabe: {state}"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Astras Werbeblockierung ist vorübergehend pausiert."
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Astras Werbeblockierung ist bis {time} pausiert."
+  },
+  "antiAdblockReloadHint": {
+    "message": "Lade diesen YouTube-Tab neu, um die Wiedergabe erneut zu versuchen."
+  },
+  "antiAdblockResumeAction": {
+    "message": "Astras Werbeblockierung fortsetzen"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Astras Werbeblockierung 15 Minuten pausieren"
+  },
+  "antiAdblockResumed": {
+    "message": "Astras Werbeblockierung wurde fortgesetzt."
+  },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "YouTube-Warnung über {selector}; Wiedergabe {state}"
   }
 }
