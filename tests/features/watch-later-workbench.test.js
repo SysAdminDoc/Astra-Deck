@@ -212,22 +212,25 @@ test('watchLaterWorkbench verifies the open menu belongs to the row it is removi
 
 function recoveryHarness(entries) {
     let log = entries;
-    const status = fakeNode({ tag: 'div', attributes: { class: 'ytkit-wlwb-recovery-status' } });
-    const list = fakeNode({ tag: 'div', attributes: { class: 'ytkit-wlwb-recovery-list' } });
+    const documentRef = fakeTreeDocument();
+    const wrongTarget = documentRef.createElement('aside');
+    const panel = documentRef.createElement('section');
+    const status = documentRef.createElement('div');
+    status.className = 'ytkit-wlwb-recovery-status';
+    const list = documentRef.createElement('div');
+    list.className = 'ytkit-wlwb-recovery-list';
+    const undoAll = documentRef.createElement('button');
+    panel.append(status, list, undoAll);
+    documentRef.body.append(wrongTarget, panel);
     const feature = loadFeature('watchLaterWorkbench', {
-        document: fakeDocument(() => []),
+        document: documentRef,
         storageReadJSON: (_key, fallback) => (log.length ? log : fallback),
         storageWriteJSON: (_key, value) => { log = value; },
         hasExtensionContext: () => true
     });
-    feature._panel = fakeNode({ tag: 'div' });
-    feature._panel.querySelector = (selector) => {
-        if (selector === '.ytkit-wlwb-recovery-status') return status;
-        if (selector === '.ytkit-wlwb-recovery-list') return list;
-        return null;
-    };
-    feature._undoAllBtn = fakeNode({ tag: 'button' });
-    return { feature, status, list };
+    feature._panel = panel;
+    feature._undoAllBtn = undoAll;
+    return { documentRef, feature, status, list, wrongTarget };
 }
 
 function recoverable(videoId, title, channel) {
@@ -240,7 +243,7 @@ function recoverable(videoId, title, channel) {
 }
 
 test('watchLaterWorkbench builds one recovery row per restorable entry', () => {
-    const { feature, status, list } = recoveryHarness([
+    const { documentRef, feature, status, list, wrongTarget } = recoveryHarness([
         recoverable('videoA123456', 'First video', 'Channel A'),
         recoverable('videoB123456', 'Second video', 'Channel B')
     ]);
@@ -255,7 +258,10 @@ test('watchLaterWorkbench builds one recovery row per restorable entry', () => {
         'the label should carry the stored title');
     assert.equal(first.children[1].tagName, 'BUTTON');
     assert.ok(first.children[1].textContent, 'the Undo control needs a label');
-    assert.equal(first.isConnected, true, 'rows must actually attach to the list');
+    assert.equal(first.parentElement, list, 'rows must attach to the recovery list');
+    assert.equal(documentRef.contains(first), true, 'rows must exist in the connected page tree');
+    assert.equal(wrongTarget.children.length, 0,
+        'the recovery renderer must not redirect rows into a sibling host');
     assert.match(status.textContent, /2/, 'the status line should count what it rendered');
     assert.equal(feature._undoAllBtn.disabled, false, 'Undo all is available when work exists');
 });

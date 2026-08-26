@@ -87,23 +87,48 @@ test('stickyVideo module exports the Theater Split style builders', () => {
 test('Theater Split renders its divider and close action into the overlay it owns', () => {
     const { mod } = loadModule();
     const documentRef = fakeTreeDocument();
-    const expectedHost = documentRef.createElement('main');
     const wrongTarget = documentRef.createElement('aside');
-    documentRef.body.append(expectedHost, wrongTarget);
+    const player = documentRef.createElement('div');
+    player.id = 'player-container';
+    const below = documentRef.createElement('div');
+    below.id = 'below';
+    documentRef.body.append(wrongTarget, player, below);
     const writes = [];
     const originalDocument = globalThis.document;
+    const originalWindow = globalThis.window;
+    const originalResizeObserver = globalThis.ResizeObserver;
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
     globalThis.document = documentRef;
+    globalThis.window = {
+        innerWidth: 1440,
+        addEventListener() {},
+        removeEventListener() {},
+        scrollTo() {}
+    };
+    globalThis.ResizeObserver = class {
+        observe() {}
+        disconnect() {}
+    };
+    globalThis.requestAnimationFrame = (callback) => {
+        callback();
+        return 1;
+    };
     try {
         const feature = mod.createStickyVideoFeature({
             storageWrite: (key, value) => writes.push([key, value])
         });
         feature._triggerPlayerResize = () => {};
-        const overlay = feature._buildOverlay();
-        expectedHost.appendChild(overlay);
-        feature._splitWrapper = overlay;
+        feature._getPlayer = () => player;
+        feature._getBelow = () => below;
+        feature._getChatEl = () => null;
+        feature._videoType = 'live';
+        feature._mountOverlay();
+        const overlay = feature._splitWrapper;
 
-        assert.equal(expectedHost.children.length, 1,
-            'the overlay must attach to its requested host');
+        assert.equal(overlay.parentElement, documentRef.body,
+            'the production mount path must attach the overlay to the page body');
+        assert.equal(documentRef.contains(overlay), true,
+            'the overlay must exist in the connected page tree');
         assert.equal(wrongTarget.children.length, 0,
             'the placement oracle must reject a render redirected to a sibling');
         assert.deepEqual(overlay.children.map((child) => child.id), [
@@ -136,11 +161,14 @@ test('Theater Split renders its divider and close action into the overlay it own
         close.onclick();
         assert.equal(dismissed, true, 'the rendered close button must dismiss the split');
 
-        overlay.remove();
-        assert.equal(expectedHost.children.length, 0,
-            'the owned overlay must leave no chrome behind on teardown');
+        feature._unmount();
+        assert.equal(documentRef.contains(overlay), false,
+            'the production teardown path must leave no overlay chrome behind');
     } finally {
         globalThis.document = originalDocument;
+        globalThis.window = originalWindow;
+        globalThis.ResizeObserver = originalResizeObserver;
+        globalThis.requestAnimationFrame = originalRequestAnimationFrame;
     }
 });
 

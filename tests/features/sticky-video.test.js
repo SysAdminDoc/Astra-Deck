@@ -239,3 +239,59 @@ test('stickyVideo restores YouTube player geometry exactly after Theater Split',
     assert.equal(video.style.getPropertyValue('left'), '-11px', 'unowned geometry stays untouched');
     assert.equal(f._playerGeometryStash.length, 0);
 });
+
+test('stickyVideo restores exact inline geometry on YouTube-owned split surfaces', () => {
+    const makeSurface = (id, styles) => {
+        const classes = new Set();
+        return {
+            id,
+            style: styleDeclaration(styles),
+            classList: {
+                add: (name) => classes.add(name),
+                remove: (name) => classes.delete(name),
+                contains: (name) => classes.has(name)
+            }
+        };
+    };
+    const f = feature();
+    const below = makeSurface('below', {
+        position: 'relative',
+        width: '640px',
+        display: { value: 'grid', priority: 'important' },
+        'pointer-events': { value: 'auto', priority: 'important' }
+    });
+    const chat = makeSurface('chat', {
+        position: { value: 'sticky', priority: 'important' },
+        width: '420px',
+        display: { value: 'grid', priority: 'important' },
+        'border-bottom': '1px solid rgb(1, 2, 3)'
+    });
+
+    f._positionOverRight(below, 32, '0', '100vh');
+    f._positionOverRight(chat, 32, '45vh', '55vh');
+    assert.equal(below.style.getPropertyValue('position'), 'fixed');
+    assert.equal(chat.style.getPropertyValue('display'), 'block');
+
+    f._unpositionAll();
+
+    assert.equal(below.style.getPropertyValue('position'), 'relative');
+    assert.equal(below.style.getPropertyValue('width'), '640px');
+    assert.equal(below.style.getPropertyValue('display'), 'grid');
+    assert.equal(below.style.getPropertyPriority('display'), 'important');
+    assert.equal(below.style.getPropertyValue('pointer-events'), 'auto');
+    assert.equal(below.style.getPropertyPriority('pointer-events'), 'important');
+    assert.equal(chat.style.getPropertyValue('position'), 'sticky');
+    assert.equal(chat.style.getPropertyPriority('position'), 'important');
+    assert.equal(chat.style.getPropertyValue('width'), '420px');
+    assert.equal(chat.style.getPropertyValue('display'), 'grid');
+    assert.equal(chat.style.getPropertyPriority('display'), 'important');
+    assert.equal(chat.style.getPropertyValue('border-bottom'), '1px solid rgb(1, 2, 3)');
+
+    // A collapsed overlay intentionally blocks interaction until unmount.
+    // Final teardown must still recover the pre-mount declaration, not erase it.
+    below.style.setProperty('pointer-events', 'none', 'important');
+    f._restoreAllSplitInlineStyles();
+    assert.equal(below.style.getPropertyValue('pointer-events'), 'auto');
+    assert.equal(below.style.getPropertyPriority('pointer-events'), 'important');
+    assert.equal(f._splitInlineStyleStash.size, 0);
+});

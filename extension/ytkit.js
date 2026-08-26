@@ -38622,12 +38622,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         let lastFailureFingerprint = null;
         let started = false;
 
-        function featureIsEnabled(featureId) {
+        function featureIsActive(featureId, route) {
             const feature = getFeatureById(featureId);
             return !!feature
                 && !feature._arrayKey
                 && !isRetiredCommentFeature(feature)
-                && isFeatureEnabledInSettings(feature, appState.settings || {});
+                && isFeatureAllowedByArtifact(feature)
+                && shouldFeatureBeActive(feature, appState.settings || {}, route);
         }
 
         function buildReport() {
@@ -38638,7 +38639,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 root: document,
                 route,
                 clientVersion: discoveredVersion,
-                includeFeature: featureIsEnabled,
+                includeFeature: (featureId) => featureIsActive(featureId, route),
                 resolveFeatureName: (featureId) => {
                     const feature = getFeatureById(featureId);
                     return feature ? getFeatureName(feature) : featureId;

@@ -31,7 +31,7 @@
     const MAX_CLIENT_VERSION_SCRIPTS = 80;
     const MAX_CANARY_SURFACES = 8;
     const MAX_CANARY_SELECTORS = 8;
-    const MAX_CANARY_MATCHES_PER_SELECTOR = 16;
+    const MAX_CANARY_CANDIDATES_PER_SELECTOR = 64;
     let latestCriticalCanary = null;
 
     function safeNumber(n) {
@@ -90,21 +90,41 @@
                 || String(style.visibility || '').toLowerCase() === 'hidden'
                 || String(style.contentVisibility || '').toLowerCase() === 'hidden'
             )) return true;
+            try {
+                const view = current.ownerDocument?.defaultView;
+                const readComputedStyle = view?.getComputedStyle || globalThis.getComputedStyle;
+                const computed = typeof readComputedStyle === 'function'
+                    ? readComputedStyle.call(view || globalThis, current)
+                    : null;
+                if (computed) {
+                    const display = String(computed.display || computed.getPropertyValue?.('display') || '').toLowerCase();
+                    const visibility = String(computed.visibility || computed.getPropertyValue?.('visibility') || '').toLowerCase();
+                    const contentVisibility = String(
+                        computed.contentVisibility || computed.getPropertyValue?.('content-visibility') || ''
+                    ).toLowerCase();
+                    if (display === 'none'
+                        || visibility === 'hidden'
+                        || visibility === 'collapse'
+                        || contentVisibility === 'hidden') return true;
+                }
+            } catch (_) {
+                return true;
+            }
             current = current.parentElement || current.parentNode || null;
         }
         return false;
     }
 
     function findActiveSelectorMatch(root, selectors, options = {}) {
-        const candidateLimit = Number.isFinite(options.maxMatchesPerSelector)
-            ? Math.max(1, Math.min(MAX_CANARY_MATCHES_PER_SELECTOR, Math.floor(options.maxMatchesPerSelector)))
-            : MAX_CANARY_MATCHES_PER_SELECTOR;
+        const candidateLimit = Number.isFinite(options.maxCandidatesPerSelector)
+            ? Math.max(1, Math.min(MAX_CANARY_CANDIDATES_PER_SELECTOR, Math.floor(options.maxCandidatesPerSelector)))
+            : MAX_CANARY_CANDIDATES_PER_SELECTOR;
         const isInactive = options.isInactive || nodeIsInInactiveTree;
         for (const selector of (Array.isArray(selectors) ? selectors : []).slice(0, MAX_CANARY_SELECTORS)) {
-            let matches = [];
+            let matches;
             try {
                 if (typeof root?.querySelectorAll === 'function') {
-                    matches = Array.from(root.querySelectorAll(selector) || []).slice(0, candidateLimit);
+                    matches = root.querySelectorAll(selector) || [];
                 } else {
                     const match = root?.querySelector?.(selector);
                     if (match) matches = [match];
@@ -112,8 +132,12 @@
             } catch (_) {
                 continue;
             }
-            const node = matches.find((candidate) => !isInactive(candidate));
-            if (node) return { node, selector };
+            let inspected = 0;
+            for (const candidate of matches || []) {
+                if (inspected >= candidateLimit) break;
+                inspected += 1;
+                if (!isInactive(candidate)) return { node: candidate, selector };
+            }
         }
         return null;
     }
