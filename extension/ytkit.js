@@ -7402,6 +7402,31 @@ const STORAGE_KEYS = Object.freeze({
         return Array.from(new Set([primary, mirror].filter(Boolean)));
     }
 
+    let antiAdblockHealth = null;
+
+    function publishAntiAdblockState(snapshot) {
+        antiAdblockHealth = snapshot && typeof snapshot === 'object'
+            ? {
+                selector: String(snapshot.selector || '').slice(0, 240),
+                playbackState: ['advancing', 'stalled', 'blocked', 'unknown'].includes(snapshot.playbackState)
+                    ? snapshot.playbackState
+                    : 'unknown',
+                observedAt: Number.isFinite(snapshot.observedAt) ? snapshot.observedAt : Date.now(),
+                signalStrength: snapshot.signalStrength === 'strong' ? 'strong' : 'weak',
+                blocking: snapshot.blocking === true,
+                playback: snapshot.playback && typeof snapshot.playback === 'object'
+                    ? { ...snapshot.playback }
+                    : null
+            }
+            : null;
+    }
+
+    async function requestZeroAdControl(type) {
+        const response = await sendRuntimeMessage({ type });
+        if (!response?.ok) throw new Error(response?.error || 'Zero-ad recovery is unavailable.');
+        return response;
+    }
+
     const features = [
         // ─── Interface ───
         // v4.43.0: six Home / Subscriptions CSS-only features peel out
@@ -27067,6 +27092,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             removeNavigateRule,
             injectStyle,
             announceA11y,
+            publishAntiAdblockState,
+            getZeroAdStatus: () => requestZeroAdControl('YTKIT_ZERO_AD_STATUS'),
+            pauseZeroAdRules: () => requestZeroAdControl('YTKIT_ZERO_AD_PAUSE_SESSION'),
+            resumeZeroAdRules: () => requestZeroAdControl('YTKIT_ZERO_AD_RESUME_SESSION'),
             VIDEO_ID_PATTERN,
             PageTypes,
             t
@@ -38569,7 +38598,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             externalApis: (typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot)
                 ? ExternalApiHealth.snapshot()
                 : [],
-            criticalCanary: globalThis.YTKitCore?.getCriticalSelectorCanarySnapshot?.() || null
+            criticalCanary: globalThis.YTKitCore?.getCriticalSelectorCanarySnapshot?.() || null,
+            antiAdblock: antiAdblockHealth
         });
         // Per-navigation hide attribution rides along: "which feature made
         // these cards disappear?" is the same question from the other side,

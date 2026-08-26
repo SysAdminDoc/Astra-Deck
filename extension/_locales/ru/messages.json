@@ -8613,5 +8613,56 @@
   },
   "subscriptionGroupRestored": {
     "message": "Группа восстановлена"
+  },
+  "antiAdblockTitle": {
+    "message": "Проверка воспроизведения YouTube"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "идёт"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "зависло"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "заблокировано"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "неизвестно"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube показал предупреждение о блокировщике рекламы, но видео продолжает воспроизводиться."
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube показал предупреждение о блокировщике рекламы, и воспроизведение зависло."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube показал предупреждение о блокировщике рекламы. Похоже, воспроизведение заблокировано."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube показал предупреждение о блокировщике рекламы. Astra пока не может подтвердить состояние воспроизведения."
+  },
+  "antiAdblockEvidenceTpl": {
+    "message": "Селектор: {selector} · Воспроизведение: {state}"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Блокировка рекламы Astra временно приостановлена."
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Блокировка рекламы Astra приостановлена до {time}."
+  },
+  "antiAdblockReloadHint": {
+    "message": "Перезагрузите эту вкладку YouTube, чтобы повторить попытку воспроизведения."
+  },
+  "antiAdblockResumeAction": {
+    "message": "Возобновить блокировку рекламы Astra"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Приостановить блокировку рекламы Astra на 15 минут"
+  },
+  "antiAdblockResumed": {
+    "message": "Блокировка рекламы Astra возобновлена."
+  },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "Предупреждение YouTube через {selector}; воспроизведение {state}"
   }
 }

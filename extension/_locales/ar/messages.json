@@ -8613,5 +8613,56 @@
   },
   "subscriptionGroupRestored": {
     "message": "تمت استعادة المجموعة"
+  },
+  "antiAdblockTitle": {
+    "message": "فحص تشغيل YouTube"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "يتقدم"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "متوقف"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "محظور"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "غير معروف"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، لكن هذا الفيديو لا يزال قيد التشغيل."
+  },
+  "antiAdblockStateStalled": {
+    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، وتوقف التشغيل."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات، ويبدو أن التشغيل محظور."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "عرض YouTube تحذيرًا بشأن حظر الإعلانات. لا يستطيع Astra تأكيد حالة التشغيل بعد."
+  },
+  "antiAdblockEvidenceTpl": {
+    "message": "المحدد: {selector} · التشغيل: {state}"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "تم إيقاف حظر الإعلانات في Astra مؤقتًا."
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "تم إيقاف حظر الإعلانات في Astra حتى {time}."
+  },
+  "antiAdblockReloadHint": {
+    "message": "أعد تحميل علامة تبويب YouTube هذه لتجربة التشغيل مجددًا."
+  },
+  "antiAdblockResumeAction": {
+    "message": "استئناف حظر الإعلانات في Astra"
+  },
+  "antiAdblockPauseAction": {
+    "message": "إيقاف حظر الإعلانات في Astra لمدة 15 دقيقة"
+  },
+  "antiAdblockResumed": {
+    "message": "تم استئناف حظر الإعلانات في Astra."
+  },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "تحذير YouTube عبر {selector}؛ التشغيل {state}"
   }
 }

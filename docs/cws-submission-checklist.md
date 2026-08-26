@@ -427,6 +427,7 @@ grants. Submit the `chromium-store` package to Chrome Web Store or Edge; use
 | Permission | Justification |
 |---|---|
 | `storage` | Settings persistence and per-feature local caches (DeArrow branding, SponsorBlock segments, video / channel hide lists, transcript cache). All local. |
+| `alarms` | Restores the static `astra_zero_ads` ruleset after the user explicitly pauses it for 15 minutes from an anti-adblock recovery card. The alarm contains only a fixed internal name and deadline. Detection itself never changes policy. |
 | `unlimitedStorage` | Long-term users accumulate DeArrow + SponsorBlock caches past Chrome's 10 MB `chrome.storage.local` default. The LRU cleanup task trims hot caches every 5 min; the cap exists only to prevent silent quota errors on a busy account. |
 | `cookies` | For a user-started authenticated download, the extension uses a 20-second, one-use, tab/document-bound capability after native API v2 proof, queries only `.youtube.com`, and forwards only `LOGIN_INFO` plus available `SAPISID`/`__Secure-1PAPISID`/`__Secure-3PAPISID` values that satisfy the secure root-path and 4 KiB limits. Incomplete sets fail closed. Sent only to Astra Downloader on the documented `127.0.0.1` ports and never off-machine. |
 | `downloads` | Triggering thumbnail + transcript exports + diagnostic-log save from the popup to the user's Downloads folder. |

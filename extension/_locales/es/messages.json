@@ -8613,5 +8613,56 @@
   },
   "subscriptionGroupRestored": {
     "message": "Grupo restaurado"
+  },
+  "antiAdblockTitle": {
+    "message": "Comprobación de reproducción de YouTube"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "avanzando"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "detenida"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "bloqueada"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "desconocida"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios, pero el video sigue reproduciéndose."
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios y la reproducción está detenida."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios y la reproducción parece bloqueada."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube mostró una advertencia sobre bloqueadores de anuncios. Astra aún no puede confirmar el estado de reproducción."
+  },
+  "antiAdblockEvidenceTpl": {
+    "message": "Selector: {selector} · Reproducción: {state}"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "El bloqueo de anuncios de Astra está pausado temporalmente."
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "El bloqueo de anuncios de Astra está pausado hasta las {time}."
+  },
+  "antiAdblockReloadHint": {
+    "message": "Recarga esta pestaña de YouTube para volver a intentar la reproducción."
+  },
+  "antiAdblockResumeAction": {
+    "message": "Reanudar el bloqueo de anuncios de Astra"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Pausar el bloqueo de anuncios de Astra durante 15 minutos"
+  },
+  "antiAdblockResumed": {
+    "message": "Se reanudó el bloqueo de anuncios de Astra."
+  },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "Advertencia de YouTube mediante {selector}; reproducción {state}"
   }
 }

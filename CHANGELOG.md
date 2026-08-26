@@ -18,6 +18,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- A visible YouTube ad-block warning now gets a plain playback check instead of
+  disappearing into the diagnostic log. Astra ignores hidden template copies,
+  waits for repeat playback samples, and reports the selector plus advancing,
+  stalled, blocked, or unknown state in the page and feature health panel. If
+  the evidence is uncertain, it stays unknown. The recovery button can pause
+  Astra's own static ad rules for 15 minutes. It shows the restoration time,
+  never dismisses YouTube's dialog, and a browser alarm restores the rules even
+  if the page or background worker closes. Detection never changes policy.
+
 - DeArrow can now be switched on or off separately for the watch page, related
   videos, Home, Search, Subscriptions and playlists. All six stay on after an
   upgrade, preserving the old behaviour. An excluded feed no longer attaches

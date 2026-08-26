@@ -8613,5 +8613,56 @@
   },
   "subscriptionGroupRestored": {
     "message": "已恢复分组"
+  },
+  "antiAdblockTitle": {
+    "message": "YouTube 播放检查"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "正在播放"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "已停滞"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "已阻止"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "未知"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube 显示了广告拦截警告，但此视频仍在播放。"
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube 显示了广告拦截警告，播放已停滞。"
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube 显示了广告拦截警告，播放似乎已被阻止。"
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube 显示了广告拦截警告。Astra 暂时无法确认播放状态。"
+  },
+  "antiAdblockEvidenceTpl": {
+    "message": "选择器：{selector} · 播放：{state}"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Astra 广告拦截已暂时暂停。"
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Astra 广告拦截已暂停至 {time}。"
+  },
+  "antiAdblockReloadHint": {
+    "message": "重新加载此 YouTube 标签页以重试播放。"
+  },
+  "antiAdblockResumeAction": {
+    "message": "恢复 Astra 广告拦截"
+  },
+  "antiAdblockPauseAction": {
+    "message": "暂停 Astra 广告拦截 15 分钟"
+  },
+  "antiAdblockResumed": {
+    "message": "Astra 广告拦截已恢复。"
+  },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "通过 {selector} 检测到 YouTube 警告；播放状态为 {state}"
   }
 }

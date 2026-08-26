@@ -122,6 +122,7 @@ const CHROME_STUB = `'use strict';
     if (requestedLocale) store._localeOverride = requestedLocale;
     const messageListeners = [];
     const changeListeners = [];
+    let zeroAdPauseUntil = null;
     const normalizeKeys = (keys) => {
         if (keys == null) return Object.keys(store);
         if (typeof keys === 'string') return [keys];
@@ -169,6 +170,42 @@ const CHROME_STUB = `'use strict';
             const next = clone(message.settings || {});
             store.ytSuiteSettings = next;
             return { ok: true, persisted: true, previous: current, value: clone(next), settings: clone(next) };
+        }
+        if (message?.type === 'YTKIT_ZERO_AD_STATUS') {
+            const paused = Number.isFinite(zeroAdPauseUntil) && zeroAdPauseUntil > Date.now();
+            return {
+                ok: true,
+                rulesetId: 'astra_zero_ads',
+                enabled: !paused,
+                enabledRulesets: paused ? [] : ['astra_zero_ads'],
+                paused,
+                pauseUntil: paused ? zeroAdPauseUntil : null,
+                pauseDurationMs: 15 * 60 * 1000
+            };
+        }
+        if (message?.type === 'YTKIT_ZERO_AD_PAUSE_SESSION') {
+            zeroAdPauseUntil = Date.now() + (15 * 60 * 1000);
+            return {
+                ok: true,
+                rulesetId: 'astra_zero_ads',
+                enabled: false,
+                enabledRulesets: [],
+                paused: true,
+                pauseUntil: zeroAdPauseUntil,
+                pauseDurationMs: 15 * 60 * 1000
+            };
+        }
+        if (message?.type === 'YTKIT_ZERO_AD_RESUME_SESSION') {
+            zeroAdPauseUntil = null;
+            return {
+                ok: true,
+                rulesetId: 'astra_zero_ads',
+                enabled: true,
+                enabledRulesets: ['astra_zero_ads'],
+                paused: false,
+                pauseUntil: null,
+                pauseDurationMs: 15 * 60 * 1000
+            };
         }
         return {};
     };
@@ -1223,6 +1260,93 @@ async function main() {
             if (!opts.healthOnly) {
                 const shot = await client.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
                 fs.writeFileSync(path.join(outDir, `${state.name}.png`), Buffer.from(shot.data, 'base64'));
+            }
+            if (['desktop-dark', 'mobile-dark'].includes(state.name) && !opts.healthOnly) {
+                const recoveryReport = await client.evaluate(`(async () => {
+                    const feature = globalThis.ytkit?.allFeatures?.find((entry) => entry?.id === 'sponsorBlock');
+                    if (!feature) return { ok: false, failures: ['SponsorBlock runtime feature is missing'] };
+                    document.querySelector('#ytkit-settings-panel .ytkit-close')?.click();
+                    await new Promise((resolve) => setTimeout(resolve, 60));
+                    const manualInit = !feature._styleEl?.isConnected;
+                    if (manualInit) feature.init();
+
+                    const video = document.createElement('video');
+                    video.className = 'html5-main-video';
+                    video.style.cssText = 'display:block;width:320px;height:180px';
+                    document.body.appendChild(video);
+                    const warning = document.createElement('ytd-enforcement-message-view-model');
+                    warning.textContent = 'YouTube enforcement fixture';
+                    warning.style.cssText = 'position:fixed;left:24px;bottom:24px;display:block;width:320px;height:80px';
+                    document.body.appendChild(warning);
+
+                    feature._antiAdblockPreviousSample = {
+                        observedAt: Date.now() - 2000,
+                        videoPresent: true,
+                        mediaKey: '',
+                        currentTime: 0,
+                        paused: true,
+                        ended: false,
+                        readyState: 0,
+                        waiting: false,
+                        error: false,
+                        _signalSelector: 'ytd-enforcement-message-view-model'
+                    };
+                    feature._checkAntiAdblock();
+                    const pauseButton = document.querySelector('#ytkit-anti-adblock-recovery button');
+                    pauseButton?.click();
+                    await new Promise((resolve) => setTimeout(resolve, 80));
+
+                    const card = document.getElementById('ytkit-anti-adblock-recovery');
+                    const rect = card?.getBoundingClientRect();
+                    const evidence = card?.querySelector('.ytkit-anti-adblock-evidence')?.textContent || '';
+                    const deadline = card?.querySelector('.ytkit-anti-adblock-deadline')?.textContent || '';
+                    const action = card?.querySelector('button')?.textContent || '';
+                    const failures = [];
+                    if (!card || !rect?.width || !rect?.height) failures.push('recovery card did not render');
+                    if (!evidence.includes('ytd-enforcement-message-view-model')) failures.push('observed selector is missing');
+                    if (!/blocked/i.test(evidence)) failures.push('measured playback state is missing');
+                    if (!deadline) failures.push('restoration deadline is missing');
+                    if (!/resume/i.test(action)) failures.push('pause action did not switch to resume');
+                    if (!warning.isConnected) failures.push('native enforcement node was dismissed');
+                    if (card && card.scrollWidth > card.clientWidth + 1) failures.push('recovery card overflows horizontally');
+                    if (rect && (rect.right > innerWidth + 1 || rect.bottom > innerHeight + 1 || rect.left < -1)) {
+                        failures.push('recovery card escaped the viewport ('
+                            + Math.round(rect.left) + ',' + Math.round(rect.top) + ' to '
+                            + Math.round(rect.right) + ',' + Math.round(rect.bottom)
+                            + ' in ' + innerWidth + 'x' + innerHeight + ')');
+                    }
+                    if (card?.getAttribute('aria-live') !== 'polite') failures.push('recovery card live region is missing');
+                    globalThis.__ytkitAntiAdblockSmoke = { feature, warning, video, manualInit };
+                    return { ok: failures.length === 0, failures, evidence, deadline, action };
+                })()`);
+                failuresByState[state.name].push(
+                    ...(recoveryReport.failures || []).map((failure) => `anti-adblock recovery: ${failure}`)
+                );
+                if (recoveryReport.ok) {
+                    const recoveryShot = await client.send('Page.captureScreenshot', {
+                        format: 'png',
+                        captureBeyondViewport: false
+                    });
+                    fs.writeFileSync(
+                        path.join(outDir, `${state.name}-anti-adblock-recovery.png`),
+                        Buffer.from(recoveryShot.data, 'base64')
+                    );
+                }
+                await client.evaluate(`(() => {
+                    const smoke = globalThis.__ytkitAntiAdblockSmoke;
+                    if (!smoke) return;
+                    smoke.warning?.remove();
+                    smoke.video?.remove();
+                    if (smoke.manualInit) smoke.feature.destroy();
+                    else {
+                        smoke.feature._antiAdblockSnapshot = null;
+                        smoke.feature._zeroAdStatus = { ok: true, enabled: true, paused: false, pauseUntil: null };
+                        smoke.feature._renderAntiAdblockNotice();
+                    }
+                    delete globalThis.__ytkitAntiAdblockSmoke;
+                    globalThis.__ytkitSmoke?.openPanel?.();
+                })()`);
+                await sleep(120);
             }
             if (['desktop-dark', 'desktop-light', 'desktop-wide'].includes(state.name)) {
                 const categoryIds = await client.evaluate(`Array.from(

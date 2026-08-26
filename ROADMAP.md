@@ -4,15 +4,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ## Research-Driven Additions
 
-### P2
-
-- [ ] P2: Turn anti-adblock detection into evidence-based, reversible recovery
-  Why: SponsorBlock currently logs a matching YouTube enforcement selector, but users get no plain-language state or safe session recovery when playback is degraded.
-  Evidence: `extension/features/sponsorblock/index.js` `sb-anti-adblock`; `extension/core/feature-health.js`; [YouTube help](https://support.google.com/youtube/answer/14129599); [Adblock Plus help](https://help.adblockplus.org/adblock-plus-help-center/what-to-do-if-you-are-seeing-youtube-s-anti-adblocking-warning)
-  Touches: SponsorBlock detection, feature health, popup or in-page recovery UI, session storage or alarms, locales, tests
-  Acceptance: structural signals identify a visible enforcement warning and confirm whether playback is advancing, stalled, or blocked without dismissing native dialogs; uncertain stalls remain labeled unknown rather than blamed on YouTube; health UI reports the observed selector and playback state; a user action can pause Astra's ad rules for the current session and auto-restore after a visible deadline; detection never changes policy automatically.
-  Complexity: M
-
 ### P3
 
 - [ ] P3: Adopt platform APIs only where capability probes delete code
@@ -25,7 +16,5 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 ## Audit follow-ups (2026-08-25)
 
 Found during a full audit pass, verified, and deliberately not fixed in it.
-
-### P2
 
 ### P3

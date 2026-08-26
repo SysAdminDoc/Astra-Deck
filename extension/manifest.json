@@ -26,6 +26,7 @@
   },
   "permissions": [
     "storage",
+    "alarms",
     "unlimitedStorage",
     "declarativeNetRequest",
     "cookies",

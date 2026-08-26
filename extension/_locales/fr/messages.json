@@ -8613,5 +8613,56 @@
   },
   "subscriptionGroupRestored": {
     "message": "Groupe restauré"
+  },
+  "antiAdblockTitle": {
+    "message": "Vérification de la lecture YouTube"
+  },
+  "antiAdblockPlaybackAdvancing": {
+    "message": "en cours"
+  },
+  "antiAdblockPlaybackStalled": {
+    "message": "bloquée en attente"
+  },
+  "antiAdblockPlaybackBlocked": {
+    "message": "bloquée"
+  },
+  "antiAdblockPlaybackUnknown": {
+    "message": "inconnue"
+  },
+  "antiAdblockStateAdvancing": {
+    "message": "YouTube a affiché un avertissement sur le bloqueur de publicités, mais cette vidéo continue."
+  },
+  "antiAdblockStateStalled": {
+    "message": "YouTube a affiché un avertissement sur le bloqueur de publicités et la lecture est en attente."
+  },
+  "antiAdblockStateBlocked": {
+    "message": "YouTube a affiché un avertissement sur le bloqueur de publicités et la lecture semble bloquée."
+  },
+  "antiAdblockStateUnknown": {
+    "message": "YouTube a affiché un avertissement sur le bloqueur de publicités. Astra ne peut pas encore confirmer l’état de la lecture."
+  },
+  "antiAdblockEvidenceTpl": {
+    "message": "Sélecteur : {selector} · Lecture : {state}"
+  },
+  "antiAdblockRulesPaused": {
+    "message": "Le blocage des publicités par Astra est temporairement en pause."
+  },
+  "antiAdblockPausedUntilTpl": {
+    "message": "Le blocage des publicités par Astra est en pause jusqu’à {time}."
+  },
+  "antiAdblockReloadHint": {
+    "message": "Rechargez cet onglet YouTube pour réessayer la lecture."
+  },
+  "antiAdblockResumeAction": {
+    "message": "Réactiver le blocage des publicités Astra"
+  },
+  "antiAdblockPauseAction": {
+    "message": "Suspendre le blocage des publicités Astra pendant 15 minutes"
+  },
+  "antiAdblockResumed": {
+    "message": "Le blocage des publicités par Astra est réactivé."
+  },
+  "featureHealthReasonAntiAdblockTpl": {
+    "message": "Avertissement YouTube via {selector} ; lecture {state}"
   }
 }

@@ -1052,6 +1052,7 @@ document_idle
 
 - Report sensitive security issues through [private vulnerability reporting](SECURITY.md), not public issues.
 - **Zero-ad request rules** use the static MV3 `declarativeNetRequest` API, are restricted to YouTube initiators and known advertising endpoints, and do not inspect or transmit request contents
+- **Reversible anti-adblock recovery** reports the visible YouTube enforcement selector and sampled playback state without touching the native dialog. Pausing Astra's own rules takes an explicit click, shows a 15-minute deadline, and restores them through a browser alarm even after the page closes
 - **EXT_FETCH proxy** uses domain allowlist, blocks SSRF to private networks
 - Request/response headers filtered (`Cookie`, `Set-Cookie`, etc. stripped globally; `Authorization` only forwarded to explicit BYO-key/local service origins such as OpenAI/Anthropic/Ollama/MediaDL)
 - Response body capped at 10 MB, fetch timeout capped at 60s
