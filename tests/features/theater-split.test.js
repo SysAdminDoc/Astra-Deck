@@ -220,6 +220,35 @@ test('Theater Split theme chrome is tokenized in both artifacts', () => {
         'standalone positioned surfaces must not bypass theme tokens');
 });
 
+test('Theater Split metadata uses a compact title-first vertical hierarchy', () => {
+    const { mod } = loadModule();
+    const commentsCss = mod.buildSplitCommentsCss();
+    const standalone = fs.readFileSync(
+        path.join(config.repoRoot, 'theater-split.user.js'), 'utf8');
+
+    for (const [css, label] of [
+        [commentsCss, 'extension'],
+        [standalone, 'standalone userscript']
+    ]) {
+        assert.match(css, /grid-template-areas:\s*"home actions date" !important/,
+            `${label} must keep title utilities on one compact row`);
+        assert.match(css, /\.ytkit-split-title-bar[\s\S]{0,900}order: 2 !important/,
+            `${label} must place utilities after the video title`);
+        assert.match(css, /#title h1[\s\S]{0,900}order: 1 !important/,
+            `${label} must keep the video title first in the reading hierarchy`);
+        assert.match(css, /padding: 10px 12px 11px !important/,
+            `${label} must use compact title-card padding`);
+        assert.match(css, /grid-template-areas:\s*"owner sub"\s*"actions actions" !important/,
+            `${label} must place channel identity and subscribe on one row`);
+        assert.match(css, /grid-template-areas:\s*"owner owner"\s*"actions actions" !important/,
+            `${label} must collapse the empty subscribe slot for subscribed channels`);
+        assert.doesNotMatch(css, /grid-template-areas:\s*"owner"\s*"sub"\s*"actions"/,
+            `${label} must not reserve three vertical owner rows`);
+        assert.match(css, /margin: 0 0 10px !important;\s*padding: 0 0 10px !important/,
+            `${label} must keep the metadata-to-comments divider compact`);
+    }
+});
+
 test('Theater Split comment actions use the premium control system in every state', () => {
     const { mod } = loadModule();
     const commentsCss = mod.buildSplitCommentsCss();

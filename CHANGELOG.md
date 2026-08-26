@@ -6,6 +6,38 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.86.3] (2026-08-26)
+
+### Changed
+
+- Theater Split now presents watch metadata in a title-first hierarchy. The
+  home control, title actions, and upload details share one compact row below
+  the heading instead of occupying separate vertical bands.
+
+- Channel identity and subscription details stay together on the first owner
+  row. The channel actions sit directly beneath them in one full-width band,
+  including narrow right panes where Download previously wrapped by itself.
+
+- Tighter card padding, metadata dividers, and Comments spacing remove the
+  large empty areas without shrinking controls below their accessible target
+  size.
+
+### Tests
+
+- The isolated live YouTube check now measures the Theater Split metadata
+  hierarchy in dark and light themes. It rejects incorrect ordering, wrapped
+  utility rows, excess card height, trailing whitespace, and horizontal
+  overflow.
+
+- On the current live fixture, the complete metadata stack measures 244 px,
+  compared with roughly 433 px in the reported layout. The owner card is 106 px
+  tall, its action gap is 8 px, and Comments begins 10 px after metadata.
+
+- Verification passes 2,797 tests with one expected Windows filesystem skip,
+  all 34 repository gates, and the final isolated Edge run with 29 ad requests
+  blocked. The live run preserves normal YouTube and native Theater mode while
+  recapturing the Theater Split metadata in both themes.
+
 ## [4.86.2] (2026-08-26)
 
 ### Changed

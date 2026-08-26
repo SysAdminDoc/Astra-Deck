@@ -14,7 +14,7 @@ const {
 test('project facts are collected from the shipped source surfaces', () => {
     const facts = collectProjectFacts();
 
-    assert.equal(facts.version, '4.86.2');
+    assert.equal(facts.version, '4.86.3');
     assert.equal(facts.nodeFloor, '>=24');
     assert.deepEqual(facts.firefoxFloor, 'Firefox 142+');
     assert.equal(facts.locales.length, 11);

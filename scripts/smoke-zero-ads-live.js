@@ -1069,6 +1069,119 @@ function splitEngagementFailures(states, theme) {
     return failures;
 }
 
+async function captureSplitMetadataLayout(client, theme) {
+    await evaluate(client, `(() => {
+        const surface = document.querySelector('#below.ytkit-split-scroll-surface');
+        if (!surface) return false;
+        surface.scrollTop = 0;
+        surface.scrollTo?.({ top: 0, left: 0, behavior: 'instant' });
+        return true;
+    })()`);
+    await sleep(350);
+
+    const snapshot = await evaluate(client, `(() => {
+        const visible = (node) => {
+            if (!node) return false;
+            const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            return style.display !== 'none' && style.visibility !== 'hidden'
+                && Number(style.opacity || 1) > 0 && rect.width > 0 && rect.height > 0;
+        };
+        const box = (node) => {
+            if (!visible(node)) return null;
+            const rect = node.getBoundingClientRect();
+            return {
+                top: rect.top,
+                right: rect.right,
+                bottom: rect.bottom,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+                centerY: rect.top + rect.height / 2
+            };
+        };
+        const firstVisible = (selector) => Array.from(document.querySelectorAll(selector)).find(visible) || null;
+        const surface = document.querySelector('#below.ytkit-split-scroll-surface');
+        const metadata = firstVisible('#below.ytkit-split-scroll-surface ytd-watch-metadata');
+        const title = metadata?.querySelector('#title') || null;
+        const heading = title?.querySelector(':scope > h1, h1') || null;
+        const utilities = title?.querySelector(':scope > .ytkit-split-title-bar') || null;
+        const utilityChildren = utilities
+            ? Array.from(utilities.children).filter(visible).map((node) => ({
+                className: node.className || node.tagName,
+                ...box(node)
+            }))
+            : [];
+        const owner = metadata?.querySelector('#owner') || null;
+        const identity = owner?.querySelector('ytd-video-owner-renderer') || null;
+        const ownerActions = owner?.querySelector(':scope > .ytkit-split-owner-actions') || null;
+        const subscribe = owner
+            ? Array.from(owner.querySelectorAll(':scope > #subscribe-button, :scope > yt-subscribe-button-view-model, :scope > ytd-subscribe-button-renderer')).find(visible) || null
+            : null;
+        const commentsHeader = firstVisible('#below.ytkit-split-scroll-surface #comments ytd-comments-header-renderer');
+        const metadataBox = box(metadata);
+        const titleBox = box(title);
+        const headingBox = box(heading);
+        const utilitiesBox = box(utilities);
+        const ownerBox = box(owner);
+        const identityBox = box(identity);
+        const actionsBox = box(ownerActions);
+        const subscribeBox = box(subscribe);
+        const commentsBox = box(commentsHeader);
+        const utilityCenters = utilityChildren.map((child) => child.centerY);
+        return {
+            available: Boolean(surface && metadataBox && titleBox && headingBox && utilitiesBox && ownerBox && identityBox && commentsBox),
+            colorScheme: getComputedStyle(document.documentElement).colorScheme,
+            surfaceScrollTop: surface?.scrollTop ?? -1,
+            surfaceWidth: surface?.getBoundingClientRect().width || 0,
+            metadata: metadataBox,
+            title: titleBox,
+            heading: headingBox,
+            utilities: utilitiesBox,
+            utilityChildren,
+            utilityRowDelta: utilityCenters.length
+                ? Math.max(...utilityCenters) - Math.min(...utilityCenters)
+                : 0,
+            titleFirst: Boolean(headingBox && utilitiesBox && headingBox.top < utilitiesBox.top),
+            owner: ownerBox,
+            identity: identityBox,
+            subscribe: subscribeBox,
+            actions: actionsBox,
+            commentsHeader: commentsBox,
+            identitySubscribeDelta: identityBox && subscribeBox
+                ? Math.abs(identityBox.centerY - subscribeBox.centerY)
+                : 0,
+            ownerActionGap: identityBox && actionsBox ? actionsBox.top - identityBox.bottom : 0,
+            metadataTail: metadataBox && ownerBox ? metadataBox.bottom - ownerBox.bottom : 0,
+            commentsGap: metadataBox && commentsBox ? commentsBox.top - metadataBox.bottom : 0,
+            titleOverflow: Boolean(title && title.scrollWidth > title.clientWidth + 1),
+            utilityOverflow: Boolean(utilities && utilities.scrollWidth > utilities.clientWidth + 1),
+            ownerOverflow: Boolean(owner && owner.scrollWidth > owner.clientWidth + 1)
+        };
+    })()`);
+
+    const failures = [];
+    if (!snapshot?.available) return { ...snapshot, failures: [`${theme}: compact metadata stack is unavailable`] };
+    if (snapshot.colorScheme !== theme) failures.push(`${theme}: metadata color-scheme is ${snapshot.colorScheme}`);
+    if (snapshot.surfaceScrollTop > 2) failures.push(`${theme}: metadata surface did not return to the top`);
+    if (!snapshot.titleFirst) failures.push(`${theme}: utility controls still precede the video title`);
+    if (snapshot.utilityRowDelta > 6) failures.push(`${theme}: title utilities span multiple rows (${snapshot.utilityRowDelta.toFixed(1)}px)`);
+    if (snapshot.title.height > 145) failures.push(`${theme}: title card is ${snapshot.title.height.toFixed(1)}px tall`);
+    if (snapshot.owner.height > 160) failures.push(`${theme}: owner card is ${snapshot.owner.height.toFixed(1)}px tall`);
+    if (snapshot.metadata.height > 320) failures.push(`${theme}: metadata stack is ${snapshot.metadata.height.toFixed(1)}px tall`);
+    if (snapshot.identitySubscribeDelta > 16) failures.push(`${theme}: subscribe control is not aligned with channel identity`);
+    if (snapshot.actions && (snapshot.ownerActionGap < 4 || snapshot.ownerActionGap > 18)) {
+        failures.push(`${theme}: channel-to-action gap is ${snapshot.ownerActionGap.toFixed(1)}px`);
+    }
+    if (snapshot.metadataTail > 24) failures.push(`${theme}: metadata retains ${snapshot.metadataTail.toFixed(1)}px below the owner card`);
+    if (snapshot.commentsGap > 36) failures.push(`${theme}: comments begin ${snapshot.commentsGap.toFixed(1)}px below metadata`);
+    if (snapshot.titleOverflow || snapshot.utilityOverflow || snapshot.ownerOverflow) {
+        failures.push(`${theme}: compact metadata stack overflows horizontally`);
+    }
+    await captureElement(client, `watch-theater-split-metadata-${theme}`, 'ytd-watch-metadata', 8);
+    return { ...snapshot, failures };
+}
+
 async function verifySplitEngagementControls(client, theme, timeoutMs) {
     await evaluate(client, `(() => {
         const toolbar = Array.from(document.querySelectorAll(${JSON.stringify(SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR)}))
@@ -1280,6 +1393,8 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         failures.push('watch themes: Theater Split divider is not operable');
     }
     if (!split.commentsVisible) failures.push('watch themes: Theater Split comments surface is missing');
+    const splitMetadataDark = await captureSplitMetadataLayout(client, 'dark');
+    failures.push(...splitMetadataDark.failures.map(failure => `watch themes: ${failure}`));
     const splitEngagementDark = await verifySplitEngagementControls(client, 'dark', timeoutMs);
     failures.push(...splitEngagementDark.failures.map(failure => `watch themes: ${failure}`));
     await capture(client, 'watch-theater-split-dark-1440x900');
@@ -1385,6 +1500,8 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
             failures.push(`watch themes: ${label} resolved to a white block`);
         }
     }
+    const splitMetadataLight = await captureSplitMetadataLayout(client, 'light');
+    failures.push(...splitMetadataLight.failures.map(failure => `watch themes: ${failure}`));
     const splitEngagementLight = await verifySplitEngagementControls(client, 'light', timeoutMs);
     failures.push(...splitEngagementLight.failures.map(failure => `watch themes: ${failure}`));
     await capture(client, 'watch-theater-split-light-1440x900');
@@ -1508,6 +1625,8 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     const report = {
         split,
         splitLight,
+        splitMetadataDark,
+        splitMetadataLight,
         splitEngagementDark,
         splitEngagementLight,
         normalDark: normalDark.snapshot,
