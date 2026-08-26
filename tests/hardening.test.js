@@ -7931,6 +7931,26 @@ test('userscript core compacts static visual CSS without changing other modules'
     assert.match(compacted, /const id = `yt-suite-style-\$\{STYLE_ID\}`;/,
         'unrelated JavaScript template literals must remain unchanged');
 
+    const literalFixture = [
+        'const SETTINGS_VISUAL_SYSTEM_CSS = `',
+        'button[data-label="Keep: this, exactly"] span {',
+        '    content: "Keep: this, exactly";',
+        '    color: red;',
+        '}',
+        '`;',
+        'const SURFACE_VISUAL_SYSTEM_CSS = `section { color: blue; }`;'
+    ].join('\n');
+    const compactedFixture = sync.compactBundledCssTemplates(
+        literalFixture,
+        'extension/core/settings-visual-system.js'
+    );
+    assert.match(compactedFixture, /button\[data-label="Keep: this, exactly"\] span\{/,
+        'selector whitespace and quoted attribute data must remain meaningful');
+    assert.match(compactedFixture, /content:"Keep: this, exactly"/,
+        'CSS compaction must preserve user-visible string contents');
+    assert.match(compactedFixture, /color:red}/,
+        'generated CSS should omit punctuation whitespace and final semicolons');
+
     const stickySource = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'),
         'utf8'

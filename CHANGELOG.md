@@ -6,6 +6,32 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.86.2] (2026-08-26)
+
+### Changed
+
+- Theater Split comment actions now use a compact premium control system. Like,
+  creator-heart, and Reply controls share 34 px geometry, 8 px corners, balanced
+  spacing, restrained depth, and stable number alignment.
+
+- Dark and light themes now include distinct hover, keyboard focus, pressed,
+  selected, and disabled treatments for the native YouTube comment controls.
+
+### Fixed
+
+- Theater Split controls no longer collapse into transparent raw outlines when
+  the shared visual stylesheet arrives late. Local dark and light fallbacks keep
+  every surface, border, shadow, and text color valid regardless of load order.
+
+- Comment-row hover feedback now follows the active Theater Split theme instead
+  of leaking a hardcoded dark surface into light mode.
+
+### Tests
+
+- The isolated live YouTube check now exercises and captures every comment-action
+  state in both themes. It also verifies geometry, color, shadow, focus, count
+  alignment, creator-heart treatment, and row-hover behavior.
+
 ## [4.86.1] (2026-08-26)
 
 ### Fixed

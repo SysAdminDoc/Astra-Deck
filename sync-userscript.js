@@ -132,7 +132,33 @@ const COMPACT_LINE_COMMENT_MODULES = new Set([
 ]);
 
 function compactCssWhitespace(body) {
-    return body
+    const literals = [];
+    let masked = '';
+    for (let index = 0; index < body.length;) {
+        const quote = body[index];
+        if (quote !== '"' && quote !== "'" && quote !== '`') {
+            masked += quote;
+            index += 1;
+            continue;
+        }
+
+        const start = index;
+        index += 1;
+        while (index < body.length) {
+            if (body[index] === '\\') {
+                index += 2;
+                continue;
+            }
+            const current = body[index];
+            index += 1;
+            if (current === quote) break;
+        }
+        const marker = `\u0001${literals.length}\u0002`;
+        literals.push(body.slice(start, index));
+        masked += marker;
+    }
+
+    const compacted = masked
         // CSS comments explain the rules to whoever edits this file; they are
         // not part of what a Greasy Fork reviewer reads, and the source keeps
         // them in full. The core record is against a hard 2 MiB host cap, and
@@ -142,7 +168,12 @@ function compactCssWhitespace(body) {
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean)
-        .join(' ');
+        .join(' ')
+        .replace(/\s*([{}:;,])\s*/g, '$1')
+        .replace(/;}/g, '}');
+
+    return compacted.replace(/\u0001(\d+)\u0002/g,
+        (_match, literalIndex) => literals[Number(literalIndex)]);
 }
 
 function compactBundledCssTemplates(source, relativePath) {
