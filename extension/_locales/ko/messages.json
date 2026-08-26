@@ -1241,6 +1241,9 @@
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
+  "featureHealthReasonCanaryTpl": {
+    "message": "YouTube {version} 변경: {surface}"
+  },
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
@@ -4985,6 +4988,15 @@
   "searchWatchTitle": {
     "message": "재생을 멈추지 않고 검색"
   },
+  "selectorCanaryBuildUnknown": {
+    "message": "현재 빌드"
+  },
+  "selectorCanaryDiagnosticsAction": {
+    "message": "진단 열기"
+  },
+  "selectorCanaryNoticeTpl": {
+    "message": "YouTube {version}에서 다음 기능이 사용하는 페이지 요소가 변경되었습니다: {features}."
+  },
   "selectorHealthAssetTpl": {
     "message": "규칙: {status} · {version} · {source}"
   },
@@ -5035,6 +5047,9 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count}개 표면 추적 중"
+  },
+  "selectorHealthYouTubeBuildTpl": {
+    "message": "YouTube 버전 {version}"
   },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"

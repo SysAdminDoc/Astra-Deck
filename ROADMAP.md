@@ -6,14 +6,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 ### P2
 
-- [ ] P2: Key selector health to YouTube builds and add a critical-surface canary
-  Why: per-selector telemetry exists, but failures are not correlated to `INNERTUBE_CLIENT_VERSION` and users receive no single warning when a YouTube deployment breaks several critical surfaces together.
-  Evidence: `extension/core/selector-health.js`, `extension/core/transcript-service.js`, `extension/core/selector-packs/**`, 2026 view-model and template migrations in [ImprovedTube](https://github.com/code-charity/youtube), [DeArrow](https://github.com/ajayyy/DeArrow), and [Invidious](https://github.com/iv-org/invidious)
-  Touches: selector health, selector packs, feature health payload, popup or in-page degradation notice, selector fixtures
-  Acceptance: selector snapshots include the active YouTube client version; startup probes a bounded set of critical surfaces after route settle; aggregate failure names affected features once, links to diagnostics, and does not spam per selector; fixtures cover a camelCase view-model host, mixed children, template-stamped content, and a hidden prior-route tree.
-  Complexity: M
-
-
 - [ ] P2: Turn anti-adblock detection into evidence-based, reversible recovery
   Why: SponsorBlock currently logs a matching YouTube enforcement selector, but users get no plain-language state or safe session recovery when playback is degraded.
   Evidence: `extension/features/sponsorblock/index.js` `sb-anti-adblock`; `extension/core/feature-health.js`; [YouTube help](https://support.google.com/youtube/answer/14129599); [Adblock Plus help](https://help.adblockplus.org/adblock-plus-help-center/what-to-do-if-you-are-seeing-youtube-s-anti-adblocking-warning)

@@ -38,6 +38,10 @@
         lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
+        canary: Object.freeze({
+            routes: Object.freeze(['shorts']),
+            featureIds: Object.freeze(['removeAllShorts', 'returnDislike'])
+        }),
         hooks,
         notes: 'URL path is more stable than shelf wrapper names; action.dislike targets the current Shorts reel action bar.'
     }));

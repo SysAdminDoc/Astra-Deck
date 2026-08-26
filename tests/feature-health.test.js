@@ -111,6 +111,39 @@ test('a surface whose whole selector chain now misses degrades its feature and n
     assert.equal(selector.at, 900);
 });
 
+test('critical selector canary degrades each affected feature once across several failed surfaces', () => {
+    const core = loadFeatureHealth();
+    const report = core.buildFeatureHealthReport({
+        features: [
+            { id: 'stickyVideo', name: 'Theater Split' },
+            { id: 'sponsorBlock', name: 'SponsorBlock' }
+        ],
+        registryHealth: [
+            { id: 'stickyVideo', status: 'initialized', initialized: true },
+            { id: 'sponsorBlock', status: 'initialized', initialized: true }
+        ],
+        criticalCanary: {
+            status: 'degraded',
+            checkedAt: 1200,
+            youtubeClientVersion: '2.20260820.01.00',
+            failedSurfaces: [
+                { surface: 'player', featureIds: ['stickyVideo', 'sponsorBlock'] },
+                { surface: 'mainVideo', featureIds: ['stickyVideo', 'sponsorBlock'] }
+            ]
+        }
+    });
+    const byId = new Map(report.features.map((row) => [row.id, row]));
+    for (const id of ['stickyVideo', 'sponsorBlock']) {
+        const row = byId.get(id);
+        assert.equal(row.status, 'degraded');
+        const canaryReasons = row.reasons.filter((reason) => reason.kind === 'selector-canary');
+        assert.equal(canaryReasons.length, 1, `${id} must receive one aggregate canary reason`);
+        assert.deepEqual(canaryReasons[0].surfaces, ['player', 'mainVideo']);
+        assert.equal(canaryReasons[0].youtubeClientVersion, '2.20260820.01.00');
+    }
+    assert.equal(report.criticalCanary.youtubeClientVersion, '2.20260820.01.00');
+});
+
 test('a surface that missed once but is hitting again is not reported as a problem', () => {
     const core = loadFeatureHealth();
     const report = core.buildFeatureHealthReport({

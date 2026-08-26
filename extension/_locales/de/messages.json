@@ -1241,6 +1241,9 @@
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
+  "featureHealthReasonCanaryTpl": {
+    "message": "YouTube {version} hat {surface} geändert"
+  },
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
@@ -4985,6 +4988,15 @@
   "searchWatchTitle": {
     "message": "Suchen, ohne die Wiedergabe anzuhalten"
   },
+  "selectorCanaryBuildUnknown": {
+    "message": "aktuelle Version"
+  },
+  "selectorCanaryDiagnosticsAction": {
+    "message": "Diagnose öffnen"
+  },
+  "selectorCanaryNoticeTpl": {
+    "message": "YouTube {version} hat Seitenelemente geändert, die von {features} verwendet werden."
+  },
   "selectorHealthAssetTpl": {
     "message": "Regeln: {status} · {version} · {source}"
   },
@@ -5035,6 +5047,9 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count} Oberflächen verfolgt"
+  },
+  "selectorHealthYouTubeBuildTpl": {
+    "message": "YouTube-Version {version}"
   },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"

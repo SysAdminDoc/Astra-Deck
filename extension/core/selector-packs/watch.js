@@ -158,6 +158,12 @@
         lastVerified: '2026-05-19',
         highChurn: true,
         needsFreshCapture: false,
+        canary: Object.freeze({
+            routes: Object.freeze(['watch']),
+            featureIds: Object.freeze([
+                'stickyVideo', 'deArrow', 'returnDislike', 'commentSearch'
+            ])
+        }),
         hooks,
         notes: 'Route state is best read from ytd-watch-flexy[video-id].'
     }));

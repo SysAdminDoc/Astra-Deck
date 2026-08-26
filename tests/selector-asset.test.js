@@ -91,6 +91,9 @@ test('selector asset promotion is atomic and malformed candidates roll back', as
 test('selector health export includes the active asset state', () => {
     const core = loadSelectorCore();
     const report = JSON.parse(core.exportSelectorHealth());
+    assert.equal(report.schemaVersion, 3);
+    assert.ok(Object.prototype.hasOwnProperty.call(report, 'youtubeClientVersion'));
+    assert.ok(Object.prototype.hasOwnProperty.call(report, 'criticalCanary'));
     assert.equal(report.selectorAsset.status, 'offline-default');
     assert.equal(report.selectorAsset.source, 'shipped');
 });

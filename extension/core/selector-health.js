@@ -27,8 +27,239 @@
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     if (core.createSelectorHealth) return;
 
+    const CLIENT_VERSION_PATTERN = /^\d{1,2}\.\d{6,10}\.\d{1,2}\.\d{1,2}$/;
+    const MAX_CLIENT_VERSION_SCRIPTS = 80;
+    const MAX_CANARY_SURFACES = 8;
+    const MAX_CANARY_SELECTORS = 8;
+    const MAX_CANARY_MATCHES_PER_SELECTOR = 16;
+    let latestCriticalCanary = null;
+
     function safeNumber(n) {
         return Number.isFinite(n) ? n : 0;
+    }
+
+    function normalizeClientVersion(value) {
+        const version = String(value || '').trim();
+        return CLIENT_VERSION_PATTERN.test(version) ? version : null;
+    }
+
+    function getActiveYouTubeClientVersion(options = {}) {
+        const config = options.ytcfg || globalThis.ytcfg;
+        try {
+            const configured = normalizeClientVersion(config?.get?.('INNERTUBE_CLIENT_VERSION'));
+            if (configured) return configured;
+        } catch (_) {
+            // reason: the isolated extension world cannot always read page globals
+        }
+
+        const documentRef = options.document || globalThis.document;
+        let scripts = [];
+        try {
+            scripts = Array.from(documentRef?.querySelectorAll?.('script') || []);
+        } catch (_) {
+            return null;
+        }
+        for (const script of scripts.slice(0, MAX_CLIENT_VERSION_SCRIPTS)) {
+            const source = String(script?.textContent || '');
+            if (!source.includes('INNERTUBE_CLIENT_VERSION')) continue;
+            const match = source.match(/["']INNERTUBE_CLIENT_VERSION["']\s*:\s*["'](\d{1,2}\.\d{6,10}\.\d{1,2}\.\d{1,2})["']/);
+            const version = normalizeClientVersion(match?.[1]);
+            if (version) return version;
+        }
+        return null;
+    }
+
+    function nodeIsInInactiveTree(node) {
+        if (!node || node.isConnected === false) return true;
+        let current = node;
+        const seen = new Set();
+        while (current && !seen.has(current)) {
+            seen.add(current);
+            const tag = String(current.tagName || current.nodeName || '').toLowerCase();
+            if (tag === 'template') return true;
+            if (current.hidden === true || current.inert === true) return true;
+            try {
+                if (current.hasAttribute?.('hidden')) return true;
+                if (String(current.getAttribute?.('aria-hidden') || '').toLowerCase() === 'true') return true;
+            } catch (_) {
+                return true;
+            }
+            const style = current.style;
+            if (style && (
+                String(style.display || '').toLowerCase() === 'none'
+                || String(style.visibility || '').toLowerCase() === 'hidden'
+                || String(style.contentVisibility || '').toLowerCase() === 'hidden'
+            )) return true;
+            current = current.parentElement || current.parentNode || null;
+        }
+        return false;
+    }
+
+    function findActiveSelectorMatch(root, selectors, options = {}) {
+        const candidateLimit = Number.isFinite(options.maxMatchesPerSelector)
+            ? Math.max(1, Math.min(MAX_CANARY_MATCHES_PER_SELECTOR, Math.floor(options.maxMatchesPerSelector)))
+            : MAX_CANARY_MATCHES_PER_SELECTOR;
+        const isInactive = options.isInactive || nodeIsInInactiveTree;
+        for (const selector of (Array.isArray(selectors) ? selectors : []).slice(0, MAX_CANARY_SELECTORS)) {
+            let matches = [];
+            try {
+                if (typeof root?.querySelectorAll === 'function') {
+                    matches = Array.from(root.querySelectorAll(selector) || []).slice(0, candidateLimit);
+                } else {
+                    const match = root?.querySelector?.(selector);
+                    if (match) matches = [match];
+                }
+            } catch (_) {
+                continue;
+            }
+            const node = matches.find((candidate) => !isInactive(candidate));
+            if (node) return { node, selector };
+        }
+        return null;
+    }
+
+    function getCriticalSelectorCanaryRules(route, options = {}) {
+        const routeName = String(route || '').trim();
+        if (!routeName) return [];
+        const registry = options.registry || core.SurfacePackRegistry;
+        const selectorProvider = options.selectorProvider
+            || ((surface) => core.getSurfaceSelectorChain?.(surface) || []);
+        const entries = registry instanceof Map
+            ? Array.from(registry.entries())
+            : Object.entries(registry || {});
+        const rules = [];
+        for (const [surface, pack] of entries) {
+            const canary = pack?.canary;
+            if (!Array.isArray(canary?.routes) || !canary.routes.includes(routeName)) continue;
+            const selectors = selectorProvider(surface).slice(0, MAX_CANARY_SELECTORS);
+            if (!selectors.length) continue;
+            rules.push({
+                surface,
+                selectors,
+                featureIds: Array.from(new Set(
+                    (Array.isArray(canary.featureIds) ? canary.featureIds : [])
+                        .map((id) => String(id || '').trim())
+                        .filter(Boolean)
+                )).slice(0, 12)
+            });
+            if (rules.length >= MAX_CANARY_SURFACES) break;
+        }
+        return rules;
+    }
+
+    function probeCriticalSelectorSurfaces(options = {}) {
+        const root = options.root || globalThis.document;
+        const route = String(options.route || 'other').slice(0, 40);
+        const rules = (Array.isArray(options.rules)
+            ? options.rules
+            : getCriticalSelectorCanaryRules(route, options)).slice(0, MAX_CANARY_SURFACES);
+        const includeFeature = typeof options.includeFeature === 'function'
+            ? options.includeFeature
+            : () => true;
+        const resolveFeatureName = typeof options.resolveFeatureName === 'function'
+            ? options.resolveFeatureName
+            : (id) => id;
+        const checked = [];
+        const failed = [];
+
+        for (const rule of rules) {
+            const selectors = (Array.isArray(rule?.selectors) ? rule.selectors : []).slice(0, MAX_CANARY_SELECTORS);
+            if (!selectors.length) continue;
+            const declaredFeatureIds = Array.from(new Set(
+                (Array.isArray(rule.featureIds) ? rule.featureIds : [])
+                    .map((id) => String(id || '').trim())
+                    .filter(Boolean)
+            ));
+            const featureIds = declaredFeatureIds.filter((id) => includeFeature(id));
+            if (declaredFeatureIds.length && !featureIds.length) continue;
+            const match = findActiveSelectorMatch(root, selectors, options);
+            const row = {
+                surface: String(rule.surface || 'unknown').slice(0, 80),
+                status: match ? 'healthy' : 'missing',
+                selector: match?.selector || null,
+                selectors: match ? undefined : selectors.slice(0, 4),
+                featureIds
+            };
+            checked.push(row);
+            if (!match) failed.push(row);
+        }
+
+        const affected = new Map();
+        for (const failure of failed) {
+            for (const id of failure.featureIds) {
+                if (affected.has(id)) continue;
+                affected.set(id, {
+                    id,
+                    name: String(resolveFeatureName(id) || id).slice(0, 120)
+                });
+            }
+        }
+        const clientVersion = normalizeClientVersion(options.clientVersion)
+            || getActiveYouTubeClientVersion(options);
+        const affectedFeatures = Array.from(affected.values());
+        const failureKey = failed.map((row) => row.surface).sort().join(',');
+        const featureKey = affectedFeatures.map((feature) => feature.id).sort().join(',');
+        return {
+            schemaVersion: 1,
+            status: failed.length ? 'degraded' : 'healthy',
+            route,
+            youtubeClientVersion: clientVersion,
+            checkedAt: Number.isFinite(options.now) ? options.now : Date.now(),
+            checked,
+            failedSurfaces: failed.map((row) => ({
+                surface: row.surface,
+                selectors: row.selectors,
+                featureIds: row.featureIds
+            })),
+            affectedFeatures,
+            fingerprint: [route, clientVersion || 'unknown', failureKey, featureKey].join('|')
+        };
+    }
+
+    function setCriticalSelectorCanarySnapshot(report) {
+        if (!report || typeof report !== 'object') {
+            latestCriticalCanary = null;
+            return null;
+        }
+        latestCriticalCanary = {
+            ...report,
+            checked: Array.isArray(report.checked)
+                ? report.checked.map((row) => ({
+                    ...row,
+                    selectors: Array.isArray(row.selectors) ? [...row.selectors] : undefined,
+                    featureIds: Array.isArray(row.featureIds) ? [...row.featureIds] : []
+                }))
+                : [],
+            failedSurfaces: Array.isArray(report.failedSurfaces)
+                ? report.failedSurfaces.map((row) => ({
+                    ...row,
+                    selectors: Array.isArray(row.selectors) ? [...row.selectors] : [],
+                    featureIds: Array.isArray(row.featureIds) ? [...row.featureIds] : []
+                }))
+                : [],
+            affectedFeatures: Array.isArray(report.affectedFeatures)
+                ? report.affectedFeatures.map((feature) => ({ ...feature }))
+                : []
+        };
+        return getCriticalSelectorCanarySnapshot();
+    }
+
+    function getCriticalSelectorCanarySnapshot() {
+        if (!latestCriticalCanary) return null;
+        return {
+            ...latestCriticalCanary,
+            checked: latestCriticalCanary.checked.map((row) => ({
+                ...row,
+                selectors: Array.isArray(row.selectors) ? [...row.selectors] : undefined,
+                featureIds: [...row.featureIds]
+            })),
+            failedSurfaces: latestCriticalCanary.failedSurfaces.map((row) => ({
+                ...row,
+                selectors: [...row.selectors],
+                featureIds: [...row.featureIds]
+            })),
+            affectedFeatures: latestCriticalCanary.affectedFeatures.map((feature) => ({ ...feature }))
+        };
     }
 
     function getSurfaceShapeDrifts(surface) {
@@ -152,6 +383,9 @@
         const exportedAt = options.exportedAt || new Date().toISOString();
         const productVersion = options.productVersion || 'unknown';
         const browserUA = options.browserUA || 'unknown';
+        const youtubeClientVersion = normalizeClientVersion(options.youtubeClientVersion)
+            || getActiveYouTubeClientVersion(options)
+            || 'unknown';
         const budgetedScans = Array.isArray(options.budgetedScans) ? options.budgetedScans : [];
         const mutationRules = Array.isArray(options.mutationRules) ? options.mutationRules : [];
         const selectorAsset = options.selectorAsset && typeof options.selectorAsset === 'object'
@@ -163,6 +397,7 @@
 
         lines.push('Astra Deck selector-health report');
         lines.push('product: ' + productVersion);
+        lines.push('youtubeClientVersion: ' + youtubeClientVersion);
         lines.push('exportedAt: ' + exportedAt);
         lines.push('browserUA: ' + browserUA);
         lines.push('');
@@ -260,6 +495,10 @@
             || (() => (core.getMutationRuleHealthSnapshot ? core.getMutationRuleHealthSnapshot() : []));
         const selectorAssetProvider = options.selectorAssetProvider
             || (() => (core.getSelectorAssetState ? core.getSelectorAssetState() : null));
+        const clientVersionProvider = options.clientVersionProvider
+            || (() => getActiveYouTubeClientVersion(options));
+        const criticalCanaryProvider = options.criticalCanaryProvider
+            || (() => getCriticalSelectorCanarySnapshot());
 
         function getReport() {
             const snap = snapshotProvider();
@@ -269,7 +508,9 @@
                 snapshot: snap,
                 budgetedScans: budgetedScanProvider(),
                 mutationRules: mutationRuleProvider(),
-                selectorAsset: selectorAssetProvider()
+                selectorAsset: selectorAssetProvider(),
+                youtubeClientVersion: clientVersionProvider(),
+                criticalCanary: criticalCanaryProvider()
             };
         }
 
@@ -282,7 +523,15 @@
                 ? extra.mutationRules
                 : mutationRuleProvider();
             const selectorAsset = extra.selectorAsset || selectorAssetProvider();
-            return formatCopyReport(snap, { ...options, ...extra, budgetedScans, mutationRules, selectorAsset });
+            const youtubeClientVersion = extra.youtubeClientVersion || clientVersionProvider();
+            return formatCopyReport(snap, {
+                ...options,
+                ...extra,
+                budgetedScans,
+                mutationRules,
+                selectorAsset,
+                youtubeClientVersion
+            });
         }
 
         function exportSnapshotJson() {
@@ -293,6 +542,13 @@
     }
 
     core.createSelectorHealth = createSelectorHealth;
+    core.findActiveSelectorMatch = findActiveSelectorMatch;
+    core.getActiveYouTubeClientVersion = getActiveYouTubeClientVersion;
+    core.getCriticalSelectorCanaryRules = getCriticalSelectorCanaryRules;
+    core.getCriticalSelectorCanarySnapshot = getCriticalSelectorCanarySnapshot;
+    core.nodeIsInInactiveSelectorTree = nodeIsInInactiveTree;
+    core.probeCriticalSelectorSurfaces = probeCriticalSelectorSurfaces;
+    core.setCriticalSelectorCanarySnapshot = setCriticalSelectorCanarySnapshot;
     // Stand-alone surface for direct callers that don't need the closure.
     core.summarizeSelectorHealth = summarize;
     core.rankSelectorProblems = rankProblemSurfaces;
@@ -301,6 +557,13 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             createSelectorHealth,
+            findActiveSelectorMatch,
+            getActiveYouTubeClientVersion,
+            getCriticalSelectorCanaryRules,
+            getCriticalSelectorCanarySnapshot,
+            nodeIsInInactiveSelectorTree: nodeIsInInactiveTree,
+            probeCriticalSelectorSurfaces,
+            setCriticalSelectorCanarySnapshot,
             summarizeSelectorHealth: summarize,
             rankSelectorProblems: rankProblemSurfaces,
             formatSelectorCopyReport: formatCopyReport

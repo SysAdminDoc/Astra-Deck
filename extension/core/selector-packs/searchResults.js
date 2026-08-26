@@ -20,6 +20,10 @@
         lastVerified: '2026-07-14',
         highChurn: true,
         needsFreshCapture: false,
+        canary: Object.freeze({
+            routes: Object.freeze(['search']),
+            featureIds: Object.freeze(['hideVideosFromHome', 'deArrow'])
+        }),
         notes: 'Scope result hygiene to the search page; preserve filters, spelling corrections, and no-results renderers.'
     }));
 })();

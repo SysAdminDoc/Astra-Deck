@@ -35,6 +35,13 @@
         lastVerified: '2026-05-19',
         highChurn: false,
         needsFreshCapture: false,
+        canary: Object.freeze({
+            routes: Object.freeze([
+                'home', 'watch', 'search', 'channel', 'subscriptions',
+                'playlist', 'shorts', 'history', 'library'
+            ]),
+            featureIds: Object.freeze(['uiStyleManager'])
+        }),
         notes: 'Primary SPA shell. Mount observers here only until target containers exist.'
     }));
 })();

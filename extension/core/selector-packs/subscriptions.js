@@ -20,6 +20,10 @@
         lastVerified: '2026-07-14',
         highChurn: true,
         needsFreshCapture: false,
+        canary: Object.freeze({
+            routes: Object.freeze(['subscriptions']),
+            featureIds: Object.freeze(['subscriptionGroups', 'hideVideosFromHome', 'deArrow'])
+        }),
         notes: 'New lockup-view-model cards and classic video renderers are both supported; never replace native card semantics or actions.'
     }));
 })();
