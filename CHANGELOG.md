@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.85.1] (2026-08-25)
+
 ### Security
 
 - Your YouTube sign-in cookies are no longer handed to whatever program happens
@@ -50,6 +52,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- The browser capability matrix now records a code-cost decision for
+  `runtime.getContexts`, the native `browser` namespace, media-state selectors,
+  `documentId`, content-script constructed stylesheets, and Firefox sandbox
+  pages. The existing `browser` and `documentId` probes stay in place. The
+  other four remain on their single Chrome 120 and Firefox 142 fallback paths
+  because adding them would not remove the old lifecycle code.
+
 - Selector diagnostics now record the active YouTube client build. After each
   route settles, one bounded canary checks the current critical page surfaces
   and groups failures by affected feature. Hidden trees from the previous route
@@ -69,6 +78,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   replacement cannot quietly remove that coverage later.
 
 ### Fixed
+
+- The Firefox 142 cookie-handoff fallback now includes the watch query string
+  in its short-lived document binding. Two different videos at `/watch` can no
+  longer look like the same document when the browser does not supply
+  `documentId`.
 
 - The popup's storage cards no longer create a hidden horizontal scroll lane
   when the Bookmarks label sits in the compact five-column row.

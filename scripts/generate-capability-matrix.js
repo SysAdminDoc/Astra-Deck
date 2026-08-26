@@ -57,6 +57,7 @@ function buildCapabilityMatrix(options = {}) {
         schemaVersion: CAPABILITY_MATRIX.schemaVersion,
         generatedBy: 'scripts/generate-capability-matrix.js',
         browsers: CAPABILITY_MATRIX.browsers,
+        platformApiPolicy: CAPABILITY_MATRIX.platformApiPolicy,
         aiLanes: CAPABILITY_MATRIX.aiLanes,
         capabilities: CAPABILITY_MATRIX.capabilities
     }));

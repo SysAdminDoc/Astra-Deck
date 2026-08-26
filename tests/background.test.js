@@ -512,6 +512,55 @@ test('background binds one-use cookie capabilities to a top-level YouTube docume
     assert.equal(cookieReads, 1, 'only the correctly bound first use may reach cookies.getAll');
 });
 
+test('background keeps URL-backed document binding when documentId is absent', async () => {
+    let cookieReads = 0;
+    const { messageListener } = loadBackground({
+        nativeResponse: {
+            ok: true,
+            service: 'astra-downloader',
+            api: 2,
+            token: 'native-download-token'
+        },
+        cookiesGetAllImpl: async () => {
+            cookieReads += 1;
+            return [];
+        }
+    });
+    const sender = youtubeSender({ tabId: 9 });
+    delete sender.documentId;
+
+    const staleProof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, sender);
+    const navigatedUrl = 'https://www.youtube.com/watch?v=anotherVideo';
+    const navigatedSender = {
+        ...sender,
+        url: navigatedUrl,
+        tab: { ...sender.tab, url: navigatedUrl }
+    };
+    const staleUse = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: staleProof.cookieCapability.token,
+        protocolVersion: 1
+    }, navigatedSender);
+
+    const validProof = await dispatchMessage(messageListener, {
+        type: 'NATIVE_MSG_GET_TOKEN',
+        purpose: 'cookie-handoff'
+    }, sender);
+    const validUse = await dispatchMessage(messageListener, {
+        type: 'YTKIT_COOKIE_HANDOFF',
+        capability: validProof.cookieCapability.token,
+        protocolVersion: 1
+    }, sender);
+
+    assert.equal(staleUse.error.code, 'COOKIE_CAPABILITY_CONTEXT_MISMATCH');
+    assert.equal(validUse.ok, true);
+    assert.equal(cookieReads, 1,
+        'Firefox 142 must reject a same-tab navigation without relying on documentId');
+});
+
 test('background releases only the complete versioned YouTube auth-cookie set with redacted diagnostics', async () => {
     const unknownSecret = 'unknown-cookie-secret';
     const badPathSecret = 'wrong-path-secret';

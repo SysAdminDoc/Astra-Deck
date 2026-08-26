@@ -16,7 +16,7 @@ function loadFreshProbe() {
 test('capability matrix is a frozen runtime contract for every probe', () => {
     const probe = loadFreshProbe();
     const matrix = probe.CAPABILITY_MATRIX;
-    assert.equal(matrix.schemaVersion, 1);
+    assert.equal(matrix.schemaVersion, 2);
     assert.ok(Object.isFrozen(matrix));
     assert.deepEqual(Object.keys(matrix.capabilities).sort(), Object.keys(probe.PROBES).sort());
 
@@ -37,6 +37,8 @@ test('capability matrix is a frozen runtime contract for every probe', () => {
     }
 
     assert.equal(Object.isFrozen(matrix.browsers), true);
+    assert.equal(Object.isFrozen(matrix.platformApiPolicy), true);
+    assert.equal(Object.isFrozen(matrix.platformApiPolicy.evaluations), true);
     assert.equal(Object.isFrozen(matrix.capabilities), true);
     assert.deepEqual(matrix.aiLanes, {
         summary: {
@@ -53,14 +55,57 @@ test('capability matrix is a frozen runtime contract for every probe', () => {
     assert.equal(matrix.capabilities.translatorApi.probe, 'hasTranslatorApi');
 });
 
+test('platform API policy evaluates every 2026 candidate against supported floors', () => {
+    const { CAPABILITY_MATRIX } = loadFreshProbe();
+    const policy = CAPABILITY_MATRIX.platformApiPolicy;
+    const entries = policy.evaluations;
+
+    assert.deepEqual(policy.browserFloors, { chrome: '120', firefox: '142' });
+    assert.deepEqual(Object.keys(entries).sort(), [
+        'contentScriptAdoptedStyleSheets',
+        'documentId',
+        'firefoxSandbox',
+        'mediaStatePseudoClasses',
+        'nativeBrowserNamespace',
+        'runtimeGetContexts'
+    ]);
+
+    for (const [name, entry] of Object.entries(entries)) {
+        assert.match(entry.decision, /^(retain|defer)$/, `${name} must record a decision`);
+        assert.equal(typeof entry.shipped, 'boolean', `${name} must record whether the path ships`);
+        assert.equal(typeof entry.probe, 'string', `${name} must document its independent probe`);
+        assert.ok(entry.probe.length > 0, `${name} must document its independent probe`);
+        assert.deepEqual(Object.keys(entry.minimumBrowser).sort(), ['chrome', 'firefox']);
+        assert.equal(typeof entry.fallback, 'string', `${name} must document the floor fallback`);
+        assert.ok(entry.fallback.length > 0, `${name} must document the floor fallback`);
+        assert.equal(typeof entry.codeEffect, 'string', `${name} must record the code-size decision`);
+        assert.ok(Array.isArray(entry.sources) && entry.sources.length > 0,
+            `${name} must cite a primary browser source`);
+        assert.ok(entry.sources.every((url) => /^https:\/\/(developer\.chrome\.com|developer\.mozilla\.org)\//.test(url)),
+            `${name} must cite only the primary Chrome or Mozilla documentation`);
+        assert.equal(entry.shipped, entry.decision === 'retain',
+            `${name} must ship only when the retained path already pays for its fallback`);
+    }
+
+    assert.deepEqual(Object.entries(entries)
+        .filter(([, entry]) => entry.shipped)
+        .map(([name]) => name), ['nativeBrowserNamespace', 'documentId']);
+});
+
 test('capability matrix generator emits the runtime contract without executable values', () => {
     const generator = require('../scripts/generate-capability-matrix.js');
     const matrix = generator.buildCapabilityMatrix();
     assert.equal(matrix.product, 'Astra Deck');
     assert.equal(matrix.generatedBy, 'scripts/generate-capability-matrix.js');
     assert.ok(matrix.browsers.chromium);
+    assert.ok(matrix.platformApiPolicy.evaluations.runtimeGetContexts);
     assert.ok(matrix.capabilities.promptApi);
-    assert.doesNotMatch(JSON.stringify(matrix), /function|=>/);
+    const pending = [matrix];
+    while (pending.length) {
+        const value = pending.pop();
+        assert.notEqual(typeof value, 'function', 'generated matrix values must be data only');
+        if (value && typeof value === 'object') pending.push(...Object.values(value));
+    }
 
     const output = path.join(repoRoot, 'build', 'browser-capability-matrix.json');
     if (fs.existsSync(output)) {
