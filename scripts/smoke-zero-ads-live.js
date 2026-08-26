@@ -718,6 +718,22 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         const owner = document.querySelector('#below ytd-watch-metadata #owner');
         const firstAction = document.querySelector('#below ytd-comment-view-model ytd-comment-engagement-bar button, #below ytd-comment-renderer ytd-comment-engagement-bar button');
         const ownerControl = document.querySelector('#below ytd-watch-metadata #owner button, #below ytd-watch-metadata #actions button');
+        const metadataIconControls = Array.from(document.querySelectorAll(
+            '#below ytd-watch-metadata #owner button, #below ytd-watch-metadata #actions button, #below ytd-watch-metadata #top-level-buttons-computed button'
+        )).filter((control) => {
+            const rect = control.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && control.querySelector('yt-icon, svg');
+        }).slice(0, 8).map((control) => {
+            const icon = control.querySelector('yt-icon, svg');
+            const controlStyle = getComputedStyle(control);
+            const iconStyle = icon ? getComputedStyle(icon) : null;
+            return {
+                color: controlStyle.color,
+                iconColor: iconStyle?.color || '',
+                iconFill: iconStyle?.fill || '',
+                opacity: Number.parseFloat(controlStyle.opacity || '1')
+            };
+        });
         const contentStyle = firstContent ? getComputedStyle(firstContent) : null;
         const authorStyle = firstAuthor ? getComputedStyle(firstAuthor) : null;
         const ownerStyle = owner ? getComputedStyle(owner) : null;
@@ -743,6 +759,7 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
             actionAfterBackground: firstAction ? getComputedStyle(firstAction, '::after').backgroundColor : '',
             ownerControlBackground: ownerControl ? getComputedStyle(ownerControl).backgroundColor : '',
             ownerControlColor: ownerControl ? getComputedStyle(ownerControl).color : '',
+            metadataIconControls,
             premiumText: getComputedStyle(document.documentElement).getPropertyValue('--ytkit-premium-text').trim()
         };
     })()`);
@@ -764,6 +781,16 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     }
     if (!splitLight.ownerBackground.includes('243, 246, 249') || splitLight.ownerBackgroundImage !== 'none') {
         failures.push('watch themes: light Theater Split owner card retained the dark decorative surface');
+    }
+    if (splitLight.metadataIconControls.length < 3) {
+        failures.push(`watch themes: light Theater Split exposes only ${splitLight.metadataIconControls.length} visible metadata icon controls`);
+    }
+    for (const [index, control] of splitLight.metadataIconControls.entries()) {
+        const hasLightInk = [control.color, control.iconColor, control.iconFill]
+            .some((value) => String(value).includes(lightTextChannel));
+        if (control.opacity < 0.75 || !hasLightInk) {
+            failures.push(`watch themes: light Theater Split metadata icon ${index + 1} is low-contrast (${JSON.stringify(control)})`);
+        }
     }
     for (const [label, value] of [
         ['dark Theater Split comment', split.contentBackground],

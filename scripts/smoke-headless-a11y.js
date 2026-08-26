@@ -972,8 +972,8 @@ async function auditLocaleReflow(client, surface, locale, stateName) {
         );
         const viewport = root.clientWidth;
         const commentSearch = document.querySelector('.ytkit-comment-search');
-        const textMetric = (selector) => {
-            const element = commentSearch?.querySelector(selector);
+        const textMetric = (selector, host = document) => {
+            const element = host?.querySelector(selector);
             if (!element) return null;
             const style = getComputedStyle(element);
             const fontSize = Number.parseFloat(style.fontSize);
@@ -1015,10 +1015,28 @@ async function auditLocaleReflow(client, surface, locale, stateName) {
             commentSearchTypography: commentSearch ? {
                 copyGap: eyebrowRect && summaryRect ? summaryRect.top - eyebrowRect.bottom : -1,
                 headGap: copyRect && countRect ? countRect.top - copyRect.bottom : -1,
-                eyebrow: textMetric('.ytkit-comment-search-eyebrow'),
-                summary: textMetric('.ytkit-comment-search-summary'),
-                hint: textMetric('.ytkit-comment-search-hint'),
-                count: textMetric('.ytkit-search-count'),
+                eyebrow: textMetric('.ytkit-comment-search-eyebrow', commentSearch),
+                summary: textMetric('.ytkit-comment-search-summary', commentSearch),
+                hint: textMetric('.ytkit-comment-search-hint', commentSearch),
+                count: textMetric('.ytkit-search-count', commentSearch),
+            } : null,
+            settingsTypography: document.querySelector('#ytkit-settings-panel') ? {
+                eyebrow: textMetric('#ytkit-settings-panel .ytkit-eyebrow'),
+                brandTitle: textMetric('#ytkit-settings-panel .ytkit-title'),
+                paneTitle: textMetric('#ytkit-settings-panel .ytkit-pane-title h2'),
+                paneDescription: textMetric('#ytkit-settings-panel .ytkit-pane-description'),
+                featureName: textMetric('#ytkit-settings-panel .ytkit-feature-name'),
+                featureDescription: textMetric('#ytkit-settings-panel .ytkit-feature-desc'),
+                status: textMetric('#ytkit-settings-panel .ytkit-panel-status'),
+            } : null,
+            sidepanelTypography: document.querySelector('.sp-header') ? {
+                title: textMetric('.sp-title'),
+                subtitle: textMetric('.sp-subtitle'),
+                sectionKicker: textMetric('.sp-section-kicker'),
+                sectionTitle: textMetric('.sp-section-title'),
+                sectionCopy: textMetric('.sp-section-copy'),
+                settingName: textMetric('.sp-setting-name'),
+                settingDescription: textMetric('.sp-setting-description'),
             } : null,
             wide
         };
@@ -1046,6 +1064,48 @@ async function auditLocaleReflow(client, surface, locale, stateName) {
             }
             if (!metrics.count || metrics.count.ratio < 1.45) {
                 failures.push(`count line-height ratio is ${metrics.count?.ratio?.toFixed(2) || 'missing'}`);
+            }
+        }
+    }
+    if (surface.name === 'settings' && locale === PSEUDO_LOCALE) {
+        const metrics = result.settingsTypography;
+        const floors = {
+            eyebrow: 1.4,
+            brandTitle: 1.4,
+            paneTitle: 1.35,
+            paneDescription: 1.65,
+            featureName: 1.55,
+            featureDescription: 1.65,
+            status: 1.55,
+        };
+        if (!metrics) {
+            failures.push('settings typography metrics are missing');
+        } else {
+            for (const [key, floor] of Object.entries(floors)) {
+                if (!metrics[key] || metrics[key].ratio < floor) {
+                    failures.push(`${key} line-height ratio is ${metrics[key]?.ratio?.toFixed(2) || 'missing'}`);
+                }
+            }
+        }
+    }
+    if ((surface.name === 'sidepanel' || surface.name === 'sidebar') && locale === PSEUDO_LOCALE) {
+        const metrics = result.sidepanelTypography;
+        const floors = {
+            title: 1.45,
+            subtitle: 1.55,
+            sectionKicker: 1.65,
+            sectionTitle: 1.65,
+            sectionCopy: 1.65,
+            settingName: 1.65,
+            settingDescription: 1.65,
+        };
+        if (!metrics) {
+            failures.push('sidepanel typography metrics are missing');
+        } else {
+            for (const [key, floor] of Object.entries(floors)) {
+                if (metrics[key] && metrics[key].ratio < floor) {
+                    failures.push(`${key} line-height ratio is ${metrics[key].ratio.toFixed(2)}`);
+                }
             }
         }
     }
