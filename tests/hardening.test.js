@@ -8116,6 +8116,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/chapters.js',
         'extension/core/csv.js',
         'extension/core/dialog-guard.js',
+        'extension/core/zero-ad-dom.js',
         'extension/core/element-zapper.js',
         'extension/features/element-zapper/index.js',
         'extension/core/hide-attribution.js',

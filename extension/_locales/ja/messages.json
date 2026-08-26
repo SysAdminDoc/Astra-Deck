@@ -8664,5 +8664,65 @@
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "{selector} で YouTube の警告を検出。再生状態: {state}"
+  },
+  "feature_customCssCode_name": {
+    "message": "カスタム CSS ルール"
+  },
+  "feature_customCssCode_desc": {
+    "message": "カスタム CSS の有効時に適用する CSS"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "字幕のフォントサイズ"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "字幕テキストを 50% から 300% まで拡大縮小"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "字幕のフォント"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "字幕に使う書体を選択"
+  },
+  "feature_subStyleColor_name": {
+    "message": "字幕テキストの色"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "字幕の文字色を選択"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "字幕背景の不透明度"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "字幕テキストの背景の不透明度を設定"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "字幕背景の色"
+  },
+  "feature_subStyleBgColor_desc": {
+    "message": "字幕テキストの背景色を選択"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "字幕の下端オフセット"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "字幕をプレーヤーの下端から上へ移動"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "字幕テキストの影"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "明るい映像でも字幕を読みやすくする暗い影を追加"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "タイトルの大文字・小文字スタイル"
+  },
+  "feature_titleCaseMode_desc": {
+    "message": "タイトル変換の有効時に使う大文字・小文字を選択"
+  },
+  "feature_selectionColor_name": {
+    "message": "選択範囲の色"
+  },
+  "feature_selectionColor_desc": {
+    "message": "カスタムテキスト選択の有効時に使う強調色を選択"
   }
 }

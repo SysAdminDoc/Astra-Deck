@@ -3137,7 +3137,6 @@
         ):focus-visible { box-shadow: var(--ytkit-premium-focus) !important; }
 
         :is(
-            .ytkit-service-state-pill,
             .ytkit-pane-chip,
             .ytkit-meta-chip,
             .ytkit-badge,
@@ -3188,8 +3187,7 @@
         }
 
         html .ytkit-ai-qa-modal {
-            background: rgba(2,7,14,0.74) !important;
-            backdrop-filter: blur(8px) !important;
+            background: rgba(2,7,14,0.88) !important;
         }
 
         html .ytkit-ai-qa-modal__body {
@@ -3645,58 +3643,6 @@
             box-shadow: var(--ytkit-premium-shadow) !important;
         }
 
-        html #ytkit-service-state-strip {
-            inset-inline: 14px auto !important;
-            bottom: 14px !important;
-            gap: 8px !important;
-            width: min(360px, calc(100vw - 28px)) !important;
-        }
-
-        html #ytkit-service-state-strip .ytkit-service-state-pill {
-            display: grid !important;
-            grid-template-columns: 8px minmax(0, 1fr) auto auto !important;
-            gap: 9px !important;
-            width: 100% !important;
-            max-width: none !important;
-            min-height: 48px !important;
-            padding: 9px 10px !important;
-            border: 1px solid var(--ytkit-premium-border-strong) !important;
-            border-radius: 8px !important;
-            background: color-mix(in srgb, var(--ytkit-premium-panel) 96%, transparent) !important;
-            color: var(--ytkit-premium-text) !important;
-            box-shadow: 0 14px 36px rgba(0,0,0,0.34) !important;
-            backdrop-filter: blur(12px) !important;
-            font: 560 12px/1.45 Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif !important;
-        }
-
-        html #ytkit-service-state-strip .ytkit-service-state-pill::before {
-            width: 8px !important;
-            height: 8px !important;
-            border-radius: 4px !important;
-            background: var(--ytkit-premium-warning) !important;
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--ytkit-premium-warning) 16%, transparent) !important;
-        }
-
-        html #ytkit-service-state-strip .ytkit-service-state-pill[data-tone="error"]::before {
-            background: var(--ytkit-premium-danger) !important;
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--ytkit-premium-danger) 16%, transparent) !important;
-        }
-
-        html #ytkit-service-state-strip .ytkit-service-state-dismiss,
-        html #ytkit-service-state-strip .ytkit-service-state-action {
-            min-width: 32px !important;
-            min-height: 32px !important;
-            border: 1px solid var(--ytkit-premium-border) !important;
-            border-radius: 6px !important;
-            background: var(--ytkit-premium-raised) !important;
-            color: var(--ytkit-premium-muted) !important;
-        }
-
-        html #ytkit-service-state-strip .ytkit-service-state-action {
-            padding: 5px 9px !important;
-            color: var(--ytkit-premium-text) !important;
-        }
-
         :is(
             .ytkit-seek-hud,
             .ytkit-volume-hud,
@@ -4064,6 +4010,29 @@
         ) :is(button, .yt-spec-button-shape-next):not([disabled]) {
             border-color: var(--ytkit-premium-border) !important;
             background: var(--ytkit-premium-raised) !important;
+        }
+
+        html.ytkit-split-active:not([dark]) :is(
+            #ytkit-split-right,
+            ytd-watch-metadata
+        ) :is(button, .yt-spec-button-shape-next):is([disabled], [aria-disabled="true"]) {
+            border-color: var(--ytkit-premium-border) !important;
+            background: var(--ytkit-premium-panel) !important;
+            color: var(--ytkit-premium-muted) !important;
+            -webkit-text-fill-color: currentColor !important;
+            opacity: 0.72 !important;
+        }
+
+        html.ytkit-split-active:not([dark]) :is(
+            #ytkit-split-right,
+            ytd-watch-metadata
+        ) :is(button, .yt-spec-button-shape-next):is([disabled], [aria-disabled="true"])
+        :is(span, yt-formatted-string, yt-icon, svg, path) {
+            color: currentColor !important;
+            -webkit-text-fill-color: currentColor !important;
+            fill: currentColor !important;
+            stroke: currentColor !important;
+            opacity: 1 !important;
         }
 
         @media (max-width: 720px) {

@@ -1030,11 +1030,10 @@
                         width: min(390px, calc(100vw - 36px)) !important;
                         padding: 18px !important;
                         border: 1px solid rgba(255, 126, 97, 0.34) !important;
-                        border-radius: 18px !important;
+                        border-radius: 12px !important;
                         background: rgba(17, 20, 27, 0.96) !important;
                         color: #f8fafc !important;
                         box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
-                        backdrop-filter: blur(18px) saturate(1.15) !important;
                         font: 400 13px/1.5 Roboto, Arial, sans-serif !important;
                     }
                     .ytkit-anti-adblock-recovery[data-playback-state="blocked"] {

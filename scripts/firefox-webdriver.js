@@ -381,50 +381,89 @@ async function waitForJson(client, context, expression, predicate, options = {})
 }
 
 async function clickElementExpression(client, context, elementExpression) {
-    const point = await evaluateJson(client, context, `(() => {
-        const node = ${elementExpression};
-        if (!node) return null;
-        node.scrollIntoView({ block: 'center', inline: 'nearest' });
-        const rect = node.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0) return null;
-        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    })()`);
-    if (!point) throw new Error('Could not find a visible element to click');
     await client.command('browsingContext.activate', { context });
-    try {
-        await client.command('input.performActions', {
-            context,
-            actions: [{
-                type: 'pointer',
-                id: 'astra-smoke-mouse',
-                parameters: { pointerType: 'mouse' },
-                actions: [
-                    { type: 'pointerMove', x: Math.round(point.x), y: Math.round(point.y), duration: 0, origin: 'viewport' },
-                    { type: 'pointerDown', button: 0 },
-                    { type: 'pointerUp', button: 0 }
-                ]
-            }]
-        });
-    } catch (error) {
-        // Firefox can lose the target during a YouTube SPA repaint between
-        // pointerMove and pointerDown. Keep the navigation proof alive with a
-        // DOM click only for that browser-owned synthetic-input failure.
-        if (!/(?:NS_ERROR_FAILURE|synthesizeMouseAtPoint|WeakMap key null)/i.test(error.message)) throw error;
-        await client.command('input.releaseActions', { context }).catch(() => undefined);
-        const clicked = await evaluateJson(client, context, `(() => {
+    const transientInputError = /(?:NS_ERROR_FAILURE|synthesizeMouseAtPoint|WeakMap key null)/i;
+    let lastInputError = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+        const point = await waitForJson(client, context, `(() => {
             const node = ${elementExpression};
-            if (!node) return false;
-            node.click();
-            return true;
-        })()`);
-        if (!clicked) throw error;
+            if (!node) return null;
+            node.scrollIntoView({ block: 'center', inline: 'nearest' });
+            const rect = node.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) return null;
+            const fractions = [[0.5, 0.5], [0.25, 0.5], [0.75, 0.5], [0.5, 0.25], [0.5, 0.75]];
+            for (const [fx, fy] of fractions) {
+                const x = Math.max(0, Math.min(innerWidth - 1, rect.left + rect.width * fx));
+                const y = Math.max(0, Math.min(innerHeight - 1, rect.top + rect.height * fy));
+                const hit = document.elementFromPoint(x, y);
+                if (hit === node || node.contains(hit)) return { x, y, owned: true };
+            }
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, owned: false };
+        })()`, (value) => value?.owned === true, {
+            timeoutMs: 5000,
+            label: 'an unobscured Firefox click target'
+        });
+        try {
+            await client.command('input.performActions', {
+                context,
+                actions: [{
+                    type: 'pointer',
+                    id: 'astra-smoke-mouse',
+                    parameters: { pointerType: 'mouse' },
+                    actions: [
+                        { type: 'pointerMove', x: Math.round(point.x), y: Math.round(point.y), duration: 100, origin: 'viewport' },
+                        { type: 'pause', duration: 50 },
+                        { type: 'pointerDown', button: 0 },
+                        { type: 'pause', duration: 50 },
+                        { type: 'pointerUp', button: 0 }
+                    ]
+                }]
+            });
+            await client.command('input.releaseActions', { context }).catch(() => undefined);
+            return { attempts: attempt, method: 'pointer' };
+        } catch (error) {
+            if (!transientInputError.test(error.message)) throw error;
+            lastInputError = error;
+            await client.command('input.releaseActions', { context }).catch(() => undefined);
+            await sleep(250);
+        }
     }
-    await client.command('input.releaseActions', { context }).catch((error) => {
-        // Install/confirmation pages may close themselves on pointer-up. The
-        // click already completed; releasing against the retired context is
-        // unnecessary and Firefox reports it as no such frame/context.
-        if (!/no such (?:frame|browsing context)/i.test(error.message)) throw error;
+    const clicked = await evaluateJson(client, context, `(() => {
+        const node = ${elementExpression};
+        if (!node) return false;
+        node.click();
+        return true;
+    })()`);
+    if (!clicked) throw lastInputError || new Error('Could not find a visible element to click');
+    return { attempts: 3, method: 'dom-fallback' };
+}
+
+async function pressEnterElementExpression(client, context, elementExpression) {
+    await client.command('browsingContext.activate', { context });
+    await waitForJson(client, context, `(() => {
+        const node = ${elementExpression};
+        if (!node) return { focused: false };
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
+        node.focus({ preventScroll: true });
+        return { focused: document.activeElement === node };
+    })()`, (value) => value?.focused === true, {
+        timeoutMs: 5000,
+        label: 'a focusable Firefox activation target'
     });
+    await client.command('input.performActions', {
+        context,
+        actions: [{
+            type: 'key',
+            id: 'astra-smoke-keyboard',
+            actions: [
+                { type: 'keyDown', value: '\uE007' },
+                { type: 'pause', duration: 50 },
+                { type: 'keyUp', value: '\uE007' }
+            ]
+        }]
+    });
+    await client.command('input.releaseActions', { context }).catch(() => undefined);
+    return { method: 'keyboard' };
 }
 
 async function waitForContext(client, predicate, options = {}) {
@@ -463,6 +502,7 @@ module.exports = {
     evaluateJson,
     executableCandidates,
     killProcessTree,
+    pressEnterElementExpression,
     remotePrimitive,
     requestJson,
     reserveLoopbackPort,

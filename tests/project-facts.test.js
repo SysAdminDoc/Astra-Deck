@@ -14,20 +14,18 @@ const {
 test('project facts are collected from the shipped source surfaces', () => {
     const facts = collectProjectFacts();
 
-    assert.equal(facts.version, '4.85.2');
+    assert.equal(facts.version, '4.86.0');
     assert.equal(facts.nodeFloor, '>=24');
     assert.deepEqual(facts.firefoxFloor, 'Firefox 142+');
     assert.equal(facts.locales.length, 11);
     assert.equal(facts.schemaEntries, 484);
     assert.equal(facts.schemaCategories, 18);
-    // 107 ISOLATED-world modules. core/feed-prefilter.js is NOT counted
-    // here: it loads into the MAIN world, where the JSON.parse hook is.
-    // core/cookie-handoff.js joined the list: the content script compares the
-    // endpoint identity proof before any cookie is read, so it needs the
-    // contract the service worker already had.
-    assert.equal(facts.runtimeModules, 115);
+    // The runtime graph includes the semantic zero-ad fallback beside the
+    // selector-backed document-start shell layer. core/feed-prefilter.js is
+    // also counted because the normal-page runtime loads its isolated module.
+    assert.equal(facts.runtimeModules, 116);
     assert.equal(facts.featureModules.length, 27);
-    assert.equal(facts.featureIds.length, 293);
+    assert.equal(facts.featureIds.length, 303);
     assert.equal(facts.selectorPackFiles.length, 33);
     assert.equal(facts.selectorSurfaces.length, 35);
     assert.deepEqual(facts.selectorAliases, ['channelProfile', 'masthead']);

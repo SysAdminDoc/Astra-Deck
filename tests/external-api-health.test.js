@@ -228,19 +228,14 @@ test('external API health keeps empty, revalidated, and timeout outcomes disting
     assert.equal(failed.availability, 'unavailable');
 });
 
-test('ytkit renders the in-page degraded-state strip with theme and motion safeguards', () => {
+test('ytkit keeps service health diagnostic-only and creates no in-page strip', () => {
     const src = sources.ytkit;
-    assert.match(src, /ServiceStateStrip/, 'ytkit must define the service-state strip');
-    assert.match(src, /ExternalApiHealth\.subscribe\(\(record\) => ServiceStateStrip\.update\(record\)\)/,
-        'the strip must subscribe to health record mutations');
-    assert.match(src, /appState\?\.settings\?\.\[desc\.feature\]/,
-        'pills must only render while the owning feature is enabled');
-    assert.match(src, /prefers-reduced-motion: reduce/,
-        'strip styling must respect reduced motion');
-    assert.match(src, /html:not\(\[dark\]\) \.ytkit-service-state-pill/,
-        'strip styling must carry a light-theme override');
-    assert.match(src, /setAttribute\('role', 'status'\)/,
-        'the strip container must be a polite live region');
+    assert.doesNotMatch(src, /ServiceStateStrip|ytkit-service-state-(?:strip|pill|action|dismiss)/,
+        'automatic health notices must not create page chrome');
+    assert.doesNotMatch(src, /ExternalApiHealth\.subscribe\(/,
+        'health mutations must not subscribe to an unsolicited page renderer');
+    assert.match(src, /externalApis:[\s\S]*ExternalApiHealth\.snapshot\(\)/,
+        'service state must remain available to the health report');
 });
 
 test('SponsorBlock reports stale-cache fallback to ExternalApiHealth', async () => {
@@ -532,21 +527,12 @@ test('describeDegradation marks only user-fixable states actionable', () => {
     }
 });
 
-test('the in-page strip suppresses non-actionable states except a sustained outage', () => {
-    // This pinned the exact suppression expression, which was right when the
-    // only two ways past it were "actionable" and debugMode. There is now a
-    // third and it is the point of the surface: a service failing repeatedly
-    // is invisible where the user is looking, so an upstream going down reads
-    // as Astra Deck breaking YouTube. The rule the test is for — a single
-    // transient must never earn a pill — is unchanged and asserted below.
+test('service health mutations have no automatic overlay subscription', () => {
     const src = sources.ytkit;
-    const start = src.indexOf('const ServiceStateStrip');
-    assert.ok(start > -1, 'the strip must exist');
-    const block = src.slice(start, src.indexOf('return { update, remove };', start));
-    assert.match(block, /!desc\.actionable && !showOutage && appState\?\.settings\?\.debugMode !== true/,
-        'non-actionable states must be suppressed unless debugMode is on or the service is sustainedly down');
-    assert.match(block, /remove\(record\.id\);/,
-        'a suppressed state must also clear any pill it had already shown');
+    assert.doesNotMatch(src, /ExternalApiHealth\.subscribe\(/);
+    assert.doesNotMatch(src, /ensureContainer\(\)[\s\S]*describeServiceOutage/);
+    assert.match(src, /DiagnosticLog/,
+        'service failures must still be recorded for manual diagnostics');
 });
 
 // ── Sustained outages on the watch page ──
@@ -617,24 +603,13 @@ test('a revoked host permission is reported as the user\'s to fix, not an outage
     assert.equal(outage.kind, 'permission');
 });
 
-test('the in-page pill shows a sustained outage, names the service, and can be dismissed', () => {
+test('service outage descriptions remain diagnostic-only without page chrome', () => {
+    const { health, record } = healthWithFailures(3);
+    assert.equal(health.describeServiceOutage(record)?.kind, 'unreachable');
+
     const source = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
-    const strip = source.slice(
-        source.indexOf('const ServiceStateStrip'),
-        source.indexOf('if (typeof ExternalApiHealth.subscribe')
-    );
-    assert.ok(strip.includes('describeServiceOutage'),
-        'the strip must consult the outage rule, not only the diagnostic one');
-    assert.ok(strip.includes('dismissed.has(record.id)'),
-        'a dismissed service must stay dismissed');
-    assert.ok(strip.includes('serviceOutageTpl'),
-        'the copy must be localized');
-    // Suppressed while the feature is off: the existing settings gate above
-    // the outage branch is what does that, so it must still be there.
-    assert.ok(strip.includes("!appState?.settings?.[desc.feature]"),
-        'a feature that is off must never produce a notice');
-    // Passive: no retry affordance, and the auto-expire timer still applies.
-    assert.equal(/addEventListener\('click'[^)]*retry/i.test(strip), false);
-    assert.ok(strip.includes('AUTO_EXPIRE_MS'));
+    assert.doesNotMatch(source,
+        /serviceOutageTpl|serviceOutageDismiss|ytkit-service-state-(?:strip|pill|action|dismiss)/,
+        'outage classification must not render an automatic overlay');
 });

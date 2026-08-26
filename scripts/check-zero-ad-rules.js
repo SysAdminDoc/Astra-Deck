@@ -33,6 +33,7 @@ const REQUIRED_SHELL_SELECTORS = Object.freeze([
     '#player-ads',
     'ytd-in-feed-ad-layout-renderer',
     'ytd-ad-slot-renderer',
+    '[data-ytkit-zero-ad-semantic]',
     '.video-ads',
     '.ytp-ad-module'
 ]);

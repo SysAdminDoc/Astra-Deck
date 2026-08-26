@@ -8664,5 +8664,65 @@
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "Предупреждение YouTube через {selector}; воспроизведение {state}"
+  },
+  "feature_customCssCode_name": {
+    "message": "Пользовательские правила CSS"
+  },
+  "feature_customCssCode_desc": {
+    "message": "CSS, применяемый при включённых пользовательских стилях"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "Размер шрифта субтитров"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "Масштабировать текст субтитров от 50% до 300%"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "Гарнитура субтитров"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "Выберите шрифт для субтитров"
+  },
+  "feature_subStyleColor_name": {
+    "message": "Цвет текста субтитров"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "Выберите цвет текста субтитров"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "Непрозрачность фона субтитров"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "Задайте непрозрачность фона за текстом субтитров"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "Цвет фона субтитров"
+  },
+  "feature_subStyleBgColor_desc": {
+    "message": "Выберите цвет за текстом субтитров"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "Отступ субтитров снизу"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "Поднимите субтитры от нижнего края проигрывателя"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "Тень текста субтитров"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "Добавьте тёмную тень, чтобы субтитры оставались читаемыми на светлом видео"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "Стиль регистра заголовка"
+  },
+  "feature_titleCaseMode_desc": {
+    "message": "Выберите регистр при включённом преобразовании заголовка"
+  },
+  "feature_selectionColor_name": {
+    "message": "Цвет выделения"
+  },
+  "feature_selectionColor_desc": {
+    "message": "Выберите цвет выделения при включённом пользовательском выборе текста"
   }
 }

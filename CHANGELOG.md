@@ -6,6 +6,73 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.86.0] (2026-08-26)
+
+### Added
+
+- The settings smoke now opens and captures every visual control in both dark
+  and light themes. Sixty controls produce 120 named screenshots, with a
+  coverage gate that rejects missing or duplicate cards.
+
+- The related-video rail has a bounded semantic fallback for sponsored cards
+  that escape YouTube's known ad renderers. It requires an exact localized
+  Sponsored label plus link, domain, or renderer evidence, and it refuses to
+  hide an ordinary recommendation or the whole rail.
+
+- Subtitle styling now exposes font size, font family, foreground and
+  background colors, background opacity, bottom offset, and text shadow. The
+  controls are available in both the extension and userscript.
+
+### Changed
+
+- Custom CSS, title case, and selection color now use a clear parent switch
+  with a dependent editor. Theme controls no longer disappear into obsolete
+  Appearance or Theming sections, and Element Zapper stays inside Content.
+
+- All twenty new control labels and descriptions have native translations in
+  the ten supported non-English catalogs.
+
+### Fixed
+
+- Selector drift and service health changes are now quiet on YouTube. They
+  remain recorded in the health panels and diagnostic exports, but no longer
+  create unsolicited overlays during playback.
+
+- Theater Split's disabled actions remain readable in YouTube's light theme.
+  Full-screen scrims no longer use expensive backdrop blur, and oversized
+  radii on chat, SponsorBlock, Video Hider, Comment Search, and Transcript Q&A
+  now follow Astra's compact surface system.
+
+- Feature crash accounting now remains available after runtime modules are
+  peeled from the monolith, preventing a settings toggle from throwing a
+  reference error.
+
+- The live settings capture waits for animated panes to finish instead of
+  recording a dim intermediate frame.
+
+- Firefox's live watch-route proof now activates the visible result title with
+  a trusted browser pointer action. YouTube can ignore a script-generated
+  click even when the link is valid, which made the release smoke time out on
+  the search page. The same lane now waits for the home runtime to settle again
+  after its blocked-request probe, instead of sampling during a YouTube repaint.
+  Probe insertion also retries a transient Firefox BiDi document handoff rather
+  than dereferencing an empty result. Trusted pointer input now retries after a
+  target handoff, refuses covered coordinates, and follows a new top-level watch
+  context if YouTube opens the result there. If Firefox accepts the pointer
+  action without activating the link, the smoke tries a trusted Enter action on
+  the same visible title before failing.
+
+### Tests
+
+- The full suite passes 2,782 tests with one expected Windows filesystem skip.
+  All 34 repository checks pass, including localization, dependency, startup,
+  userscript parity, Firefox packaging, and generated-file drift gates.
+
+- Rendered verification covers 67 accessibility states, 870 focus visits,
+  compact translated layouts, forced colors, all 120 visual-setting captures,
+  and live YouTube in normal, native Theater, and Theater Split layouts. The
+  live lane also rejects any automatic selector or service-health overlay.
+
 ## [4.85.2] (2026-08-25)
 
 ### Changed

@@ -236,12 +236,12 @@ The runtime loader and its packaged JavaScript modules are web-accessible becaus
 
 | Build profile | Browser target | Exact resource set | Paths | `use_dynamic_url` |
 | --- | --- | --- | ---: | --- |
-| `store-safe` | chromium | A | 118 | `true` on every entry |
-| `store-safe` | firefox | A | 118 | omitted |
-| `chromium-store` | chromium | B | 117 | `true` on every entry |
-| `chromium-store` | firefox | B | 117 | omitted |
-| `github-full` | chromium | A | 118 | `true` on every entry |
-| `github-full` | firefox | A | 118 | omitted |
+| `store-safe` | chromium | A | 119 | `true` on every entry |
+| `store-safe` | firefox | A | 119 | omitted |
+| `chromium-store` | chromium | B | 118 | `true` on every entry |
+| `chromium-store` | firefox | B | 118 | omitted |
+| `github-full` | chromium | A | 119 | `true` on every entry |
+| `github-full` | firefox | A | 119 | omitted |
 
 #### Resource set A
 
@@ -344,6 +344,7 @@ Entry 2 resource paths:
 - `core/chapters.js`
 - `core/csv.js`
 - `core/dialog-guard.js`
+- `core/zero-ad-dom.js`
 - `core/element-zapper.js`
 - `core/hide-attribution.js`
 - `core/heatmap.js`
@@ -484,6 +485,7 @@ Entry 2 resource paths:
 - `core/chapters.js`
 - `core/csv.js`
 - `core/dialog-guard.js`
+- `core/zero-ad-dom.js`
 - `core/element-zapper.js`
 - `core/hide-attribution.js`
 - `core/heatmap.js`

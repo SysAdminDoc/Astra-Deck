@@ -286,7 +286,12 @@ test('runtime schedules one silent aggregate canary after route settlement', () 
     assert.match(block, /addNavigateRule\(RULE_ID, schedule\)/);
     assert.match(block, /report\.status === 'degraded' && attempt === 0/);
     assert.match(block, /lastFailureFingerprint === report\.fingerprint/);
-    assert.match(block, /ServiceStateStrip\.updateCriticalCanary\(report\)/);
+    assert.match(block, /setCriticalSelectorCanarySnapshot\(report\)/,
+        'the aggregate must remain available to manual diagnostics');
+    assert.match(block, /DiagnosticLog\.record\(/,
+        'the aggregate must remain in the diagnostic log');
+    assert.doesNotMatch(block, /ServiceStateStrip|createToast|ytkit-service-state/,
+        'selector drift must never create an unsolicited page overlay');
     assert.match(block, /shouldFeatureBeActive\(feature, appState\.settings \|\| \{\}, route\)/,
         'canary ownership must use the same route, dependency, and remote-disable predicate as feature init');
     assert.doesNotMatch(block, /isFeatureEnabledInSettings\(feature/,
@@ -294,10 +299,11 @@ test('runtime schedules one silent aggregate canary after route settlement', () 
     assert.doesNotMatch(block, /findSurfaceElement|ytkit-selector-miss/,
         'the canary must not emit normal per-selector telemetry');
 
-    const noticeStart = source.indexOf('function openSelectorDiagnostics()');
-    const noticeEnd = source.indexOf('return { update, updateCriticalCanary, remove }', noticeStart);
-    const notice = source.slice(noticeStart, noticeEnd);
-    assert.match(notice, /selectorCanaryDiagnosticsAction/);
-    assert.match(notice, /toggleSettingsPanel\(true\)/);
-    assert.match(notice, /new Set\(/, 'affected feature names must be deduplicated');
+    const panelStart = source.indexOf('function createSelectorHealthPanel()');
+    const panelEnd = source.indexOf('function buildFeatureCard', panelStart);
+    const panel = source.slice(panelStart, panelEnd);
+    assert.match(panel, /criticalCanary/);
+    assert.match(panel, /selectorCanaryNoticeTpl/,
+        'the selector-health panel must retain the detailed drift message');
+    assert.match(panel, /new Set\(/, 'affected feature names must be deduplicated');
 });

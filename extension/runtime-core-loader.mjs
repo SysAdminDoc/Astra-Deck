@@ -83,6 +83,7 @@ export const FOUNDATION_MODULES = Object.freeze(
         "core/chapters.js",
         "core/csv.js",
         "core/dialog-guard.js",
+        "core/zero-ad-dom.js",
         "core/element-zapper.js",
         "core/hide-attribution.js",
         "core/heatmap.js",

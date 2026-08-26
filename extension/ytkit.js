@@ -795,239 +795,9 @@
         };
     })();
 
-    // In-page degraded-state strip: compact bottom-left pills that appear only
-    // while SponsorBlock / DeArrow / Return YouTube Dislike are actionably
-    // degraded (rate-limited, serving stale cache, or erroring) AND the owning
-    // feature is enabled. Each pill carries the retry reason / cache age from
-    // describeDegradation() and disappears on the service's next recorded
-    // success (or after a 90s quiet window so a one-off blip can't linger).
-    const ServiceStateStrip = (function () {
-        const AUTO_EXPIRE_MS = 90000;
-        const pills = new Map(); // service id -> { el, text, timer }
-        // Services the user has waved off. Per page session, deliberately: a
-        // dismissal that outlived the tab would silence the one signal that
-        // tells them an outage is still going on tomorrow.
-        const dismissed = new Set();
-        let dismissedCanaryFingerprint = null;
-        let container = null;
-        let styleEl = null;
-
-        function ensureStyles() {
-            if (styleEl && styleEl.isConnected) return;
-            styleEl = injectStyle(`
-                #ytkit-service-state-strip{position:fixed;left:12px;bottom:12px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
-                .ytkit-service-state-pill{display:inline-flex;align-items:center;gap:7px;max-width:340px;padding:5px 10px;border-radius:8px;background:rgba(15,15,15,0.92);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88);font:500 11.5px/1.35 "Roboto","Segoe UI",sans-serif;pointer-events:auto;transition:opacity .18s ease;}
-                .ytkit-service-state-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:#f59e0b;flex:none;}
-                .ytkit-service-state-pill[data-tone="error"]::before{background:#f87171;}
-                .ytkit-service-state-text{flex:1 1 auto;}
-                .ytkit-service-state-dismiss{flex:none;appearance:none;border:0;background:transparent;color:inherit;font:inherit;line-height:1;padding:0 2px;cursor:pointer;opacity:.7;}
-                .ytkit-service-state-dismiss:hover,.ytkit-service-state-dismiss:focus-visible{opacity:1;}
-                .ytkit-service-state-action{flex:none;min-height:28px;padding:4px 8px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:600 11px/1.2 "Roboto","Segoe UI",sans-serif;cursor:pointer;}
-                .ytkit-service-state-action:hover,.ytkit-service-state-action:focus-visible{background:rgba(255,255,255,0.1);outline:2px solid currentColor;outline-offset:2px;}
-                html:not([dark]) .ytkit-service-state-pill{background:rgba(255,255,255,0.97);border-color:rgba(0,0,0,0.22);color:#1f1f1f;}
-                html:not([dark]) .ytkit-service-state-action:hover,html:not([dark]) .ytkit-service-state-action:focus-visible{background:rgba(0,0,0,0.06);}
-                @media (prefers-reduced-motion: reduce){.ytkit-service-state-pill{transition:none;}}
-            `, 'service-state-strip');
-        }
-
-        function ensureContainer() {
-            ensureStyles();
-            if (container && container.isConnected) return container;
-            container = document.createElement('div');
-            container.id = 'ytkit-service-state-strip';
-            container.setAttribute('role', 'status');
-            container.setAttribute('aria-live', 'polite');
-            (document.body || document.documentElement).appendChild(container);
-            return container;
-        }
-
-        function remove(id) {
-            const pill = pills.get(id);
-            if (!pill) return;
-            clearTimeout(pill.timer);
-            pill.el.remove();
-            pills.delete(id);
-            if (container && !pills.size) {
-                container.remove();
-                container = null;
-            }
-        }
-
-        function update(record) {
-            try {
-                if (!record || !isTopLevelFrame()) return;
-                const desc = typeof ExternalApiHealth.describeDegradation === 'function'
-                    ? ExternalApiHealth.describeDegradation(record)
-                    : null;
-                if (!desc || !appState?.settings?.[desc.feature]) {
-                    remove(record.id);
-                    return;
-                }
-                // Only states the reader can act on earn a pill over their
-                // video. A third-party API that is rate limited, briefly
-                // erroring, or serving stale cache recovers on its own, and
-                // pinning that to the corner of every watch page is noise —
-                // SponsorBlock alone produced one per video whose hash prefix
-                // had nothing submitted. Everything still lands in the
-                // diagnostic log and the popup's External API Health card, and
-                // debugMode puts the full strip back for triage.
-                //
-                // v4.84.0: one exception, and it is the reason this surface
-                // exists. A SUSTAINED outage — the service failing repeatedly
-                // rather than blinking once — is invisible where the user is
-                // looking, so an upstream going down reads as "Astra Deck
-                // broke YouTube". That is the documented way enrichment tools
-                // lose trust, and the fix is one sentence saying which service
-                // is down and that it is not this extension. Dismissed once,
-                // it stays dismissed for the session.
-                const outage = typeof ExternalApiHealth.describeServiceOutage === 'function'
-                    ? ExternalApiHealth.describeServiceOutage(record)
-                    : null;
-                const showOutage = !!outage && !dismissed.has(record.id);
-                if (!desc.actionable && !showOutage && appState?.settings?.debugMode !== true) {
-                    remove(record.id);
-                    return;
-                }
-                const host = ensureContainer();
-                let pill = pills.get(desc.id);
-                if (!pill) {
-                    const el = document.createElement('div');
-                    el.className = 'ytkit-service-state-pill';
-                    const text = document.createElement('span');
-                    text.className = 'ytkit-service-state-text';
-                    el.appendChild(text);
-                    const close = document.createElement('button');
-                    close.type = 'button';
-                    close.className = 'ytkit-service-state-dismiss';
-                    close.textContent = '×';
-                    close.setAttribute('aria-label', t('serviceOutageDismiss', 'Dismiss'));
-                    close.addEventListener('click', () => {
-                        dismissed.add(desc.id);
-                        remove(desc.id);
-                    });
-                    el.appendChild(close);
-                    host.appendChild(el);
-                    pill = { el, text, timer: 0 };
-                    pills.set(desc.id, pill);
-                }
-                pill.el.dataset.tone = desc.state === 'error' ? 'error' : 'warn';
-                // The outage sentence takes precedence over the diagnostic
-                // one: a reader interrupted mid-video needs to know whose
-                // fault it is, not which error class it was.
-                const label = showOutage && outage.kind === 'unreachable'
-                    ? t('serviceOutageTpl', '{service} is not answering. That is the service, not Astra Deck.')
-                        .replace('{service}', outage.label)
-                    : desc.text;
-                pill.text.textContent = label;
-                // The tooltip used to carry `record.lastErrorMessage`, which is
-                // the raw throw — the exact "which error class it was" detail
-                // the comment above rules out, and untranslated besides. The
-                // localized cause sentence goes here; the raw text is already
-                // in the diagnostic log from recordFailure.
-                pill.el.title = describeFailureCause({ code: record.lastErrorClass }) || label;
-                clearTimeout(pill.timer);
-                pill.timer = setTimeout(() => remove(desc.id), AUTO_EXPIRE_MS);
-            } catch (_) {
-                // reason: the indicator is best-effort chrome; it must never break a fetch path
-            }
-        }
-
-        function openSelectorDiagnostics() {
-            void toggleSettingsPanel(true);
-            setTimeout(() => {
-                const search = document.getElementById('ytkit-search');
-                const label = t('selectorHealthTitle', 'Selector health');
-                if (search) {
-                    search.value = label;
-                    try {
-                        search.dispatchEvent(new Event('input', { bubbles: true }));
-                    } catch (_) {
-                        // reason: legacy userscript hosts may not construct Event
-                    }
-                    search.focus?.({ preventScroll: true });
-                }
-                document.querySelector('[data-feature-id="selectorHealthPanel"]')
-                    ?.scrollIntoView?.({ block: 'center' });
-            }, 80);
-        }
-
-        function updateCriticalCanary(report) {
-            const id = 'selector-canary';
-            try {
-                if (!report || report.status !== 'degraded' || !isTopLevelFrame()) {
-                    remove(id);
-                    return;
-                }
-                const fingerprint = String(report.fingerprint || '');
-                if (fingerprint && dismissedCanaryFingerprint === fingerprint) {
-                    remove(id);
-                    return;
-                }
-                const featureNames = Array.from(new Set(
-                    (Array.isArray(report.affectedFeatures) ? report.affectedFeatures : [])
-                        .map((feature) => String(feature?.name || feature?.id || '').trim())
-                        .filter(Boolean)
-                )).slice(0, 4);
-                const fallbackNames = (Array.isArray(report.failedSurfaces) ? report.failedSurfaces : [])
-                    .map((failure) => String(failure?.surface || '').trim())
-                    .filter(Boolean)
-                    .slice(0, 4);
-                const names = featureNames.length ? featureNames : fallbackNames;
-                const version = report.youtubeClientVersion
-                    || t('selectorCanaryBuildUnknown', 'current build');
-                const label = t(
-                    'selectorCanaryNoticeTpl',
-                    'YouTube {version} changed page elements used by {features}.'
-                )
-                    .replace('{version}', String(version))
-                    .replace('{features}', names.join(', '));
-
-                const host = ensureContainer();
-                let pill = pills.get(id);
-                if (!pill) {
-                    const el = document.createElement('div');
-                    el.className = 'ytkit-service-state-pill';
-                    el.dataset.tone = 'error';
-
-                    const text = document.createElement('span');
-                    text.className = 'ytkit-service-state-text';
-                    el.appendChild(text);
-
-                    const action = document.createElement('button');
-                    action.type = 'button';
-                    action.className = 'ytkit-service-state-action';
-                    action.textContent = t('selectorCanaryDiagnosticsAction', 'Open diagnostics');
-                    action.addEventListener('click', openSelectorDiagnostics);
-                    el.appendChild(action);
-
-                    const close = document.createElement('button');
-                    close.type = 'button';
-                    close.className = 'ytkit-service-state-dismiss';
-                    close.textContent = '×';
-                    close.setAttribute('aria-label', t('serviceOutageDismiss', 'Dismiss'));
-                    close.addEventListener('click', () => {
-                        dismissedCanaryFingerprint = pill?.fingerprint || fingerprint;
-                        remove(id);
-                    });
-                    el.appendChild(close);
-                    host.appendChild(el);
-                    pill = { el, text, action, timer: 0, fingerprint };
-                    pills.set(id, pill);
-                }
-                pill.fingerprint = fingerprint;
-                pill.text.textContent = label;
-                pill.el.title = label;
-            } catch (_) {
-                // reason: diagnostics chrome must never interrupt YouTube
-            }
-        }
-
-        return { update, updateCriticalCanary, remove };
-    })();
-
-    if (typeof ExternalApiHealth.subscribe === 'function') {
-        ExternalApiHealth.subscribe((record) => ServiceStateStrip.update(record));
-    }
+    // Service and selector failures stay in the diagnostics log, health
+    // reports, and settings panels. They never create unsolicited overlays on
+    // YouTube. User-triggered action feedback continues to use normal toasts.
 
     window.addEventListener('ytkit-selector-miss', (event) => {
         const detail = event?.detail || {};
@@ -1352,7 +1122,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.85.2';
+    const YTKIT_VERSION = '4.86.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -5662,6 +5432,8 @@ const STORAGE_KEYS = Object.freeze({
     // readback) feed the same persisted feature crash counter used by startup
     // initialization. It is assigned once main() has hydrated storage.
     let _recordFeatureRuntimeFailure = () => {};
+    let _featureCrashCounts = {};
+    let _persistCrashCounts = () => {};
 
 
     // Companion UI is extension-only and preloaded by the companion-capable
@@ -23912,7 +23684,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 12px 0 16px !important;
                         padding: 14px !important;
                         border: 1px solid var(--ytkit-comment-search-border) !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         background:
                             radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.13), transparent 44%),
                             var(--ytkit-comment-search-surface) !important;
@@ -24379,8 +24151,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Inject your own custom CSS rules into YouTube pages',
             group: 'Theme',
             icon: 'code',
-            type: 'textarea',
-            settingKey: 'customCssCode',
             _styleEl: null,
 
             _apply() {
@@ -24412,6 +24182,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._styleEl?.remove(); this._styleEl = null;
             }
+        },
+        {
+            id: 'customCssCode',
+            name: 'Custom CSS Rules',
+            description: 'CSS applied while Custom CSS is enabled',
+            group: 'Theme',
+            icon: 'code',
+            isSubFeature: true,
+            parentId: 'customCssInjection',
+            type: 'textarea',
+            settingKey: 'customCssCode',
+            placeholder: '/* Add CSS rules here */',
+            init() { getFeatureById('customCssInjection')?._apply?.(); },
+            destroy() {}
         },
         {
             id: 'shareMenuCleaner',
@@ -25376,7 +25160,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildHideNotificationButtonCss && globalThis.YTKitFeatures.wave8Css.buildHideNotificationButtonCss())
             || `ytd-notification-topbar-button-renderer, ytd-topbar-menu-button-renderer:has(a[href="/notifications"]) { display: none !important; }`),
 
-        cssFeature('noFrostedGlass', 'Disable Frosted Glass', 'Remove blur effects from UI elements', 'Appearance', 'droplet',
+        cssFeature('noFrostedGlass', 'Disable Frosted Glass', 'Remove blur effects from UI elements', 'Theme', 'droplet',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildNoFrostedGlassCss && globalThis.YTKitFeatures.wave8Css.buildNoFrostedGlassCss())
             || `ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, .ytp-chrome-bottom, .ytp-gradient-bottom, .ytp-gradient-top, .yt-spec-button-shape-next--enable-backdrop-filter-experiment { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
 
@@ -25388,7 +25172,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildDisableMiniPlayerCss && globalThis.YTKitFeatures.wave8Css.buildDisableMiniPlayerCss())
             || `ytd-miniplayer[active] { display: none !important; } .ytp-miniplayer-button { display: none !important; }`),
 
-        cssFeature('nyanCatProgressBar', 'Nyan Cat Progress Bar', 'Replace the video progress bar with a Nyan Cat animation', 'Appearance', 'cat',
+        cssFeature('nyanCatProgressBar', 'Nyan Cat Progress Bar', 'Replace the video progress bar with a Nyan Cat animation', 'Theme', 'cat',
             (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildNyanCatProgressBarCss && globalThis.YTKitFeatures.wave8Css.buildNyanCatProgressBarCss())
             || `.ytp-play-progress {
                 background: linear-gradient(180deg, #ff0000 0%, #ff9900 16.6%, #ffff00 33.3%, #33ff00 50%, #0099ff 66.6%, #6633ff 83.3%, #ff0000 100%) !important;
@@ -30230,6 +30014,108 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() { this._apply(); },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
         },
+        {
+            id: 'subStyleFontSize',
+            name: 'Caption Font Size',
+            description: 'Scale caption text from 50% to 300%',
+            group: 'Video Player',
+            icon: 'type',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'range',
+            min: 50,
+            max: 300,
+            step: 10,
+            formatValue: value => `${value}%`,
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleFontFamily',
+            name: 'Caption Font Family',
+            description: 'Choose the typeface used for captions',
+            group: 'Video Player',
+            icon: 'type',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'select',
+            options: {
+                default: 'YouTube default',
+                sans: 'Sans serif',
+                serif: 'Serif',
+                mono: 'Monospace',
+                'YouTube Sans': 'YouTube Sans'
+            },
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleColor',
+            name: 'Caption Text Color',
+            description: 'Choose the caption foreground color',
+            group: 'Video Player',
+            icon: 'palette',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'color',
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleBgOpacity',
+            name: 'Caption Background Opacity',
+            description: 'Set the opacity behind caption text',
+            group: 'Video Player',
+            icon: 'sliders-horizontal',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'range',
+            min: 0,
+            max: 100,
+            step: 5,
+            formatValue: value => `${value}%`,
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleBgColor',
+            name: 'Caption Background Color',
+            description: 'Choose the color behind caption text',
+            group: 'Video Player',
+            icon: 'palette',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'color',
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleBottomOffset',
+            name: 'Caption Bottom Offset',
+            description: 'Move captions up from the bottom edge of the player',
+            group: 'Video Player',
+            icon: 'move-vertical',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'range',
+            min: 0,
+            max: 90,
+            step: 1,
+            formatValue: value => `${value}%`,
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleTextShadow',
+            name: 'Caption Text Shadow',
+            description: 'Add a dark shadow so captions stay readable over bright video',
+            group: 'Video Player',
+            icon: 'sun',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            init() {},
+            destroy() {}
+        },
 
         // ── Dual-language subtitles ──
         {
@@ -31038,16 +30924,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Override YouTube\'s clickbait UPPERCASE titles with a casing style of your choice',
             group: 'Home / Subscriptions',
             icon: 'case-sensitive',
-            type: 'select',
-            options: {
-                'none': 'Keep original',
-                'uppercase': 'UPPERCASE',
-                'lowercase': 'lowercase',
-                'capitalize': 'Capitalize Each Word'
-            },
-            settingKey: 'titleCaseMode',
             _styleEl: null,
-            init() {
+            _apply() {
+                this._styleEl?.remove();
                 const mode = appState.settings.titleCaseMode || 'none';
                 // `none` is a valid select value but produces no transform —
                 // we still inject an empty style so destroy() has something
@@ -31066,7 +30945,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
             },
+            init() { this._apply(); },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            id: 'titleCaseMode',
+            name: 'Title Case Style',
+            description: 'Choose the casing used while title transformation is enabled',
+            group: 'Home / Subscriptions',
+            icon: 'case-sensitive',
+            isSubFeature: true,
+            parentId: 'titleCaseTransform',
+            type: 'select',
+            settingKey: 'titleCaseMode',
+            options: {
+                'none': 'Keep original',
+                'uppercase': 'UPPERCASE',
+                'lowercase': 'lowercase',
+                'capitalize': 'Capitalize Each Word'
+            },
+            init() { getFeatureById('titleCaseTransform')?._apply?.(); },
+            destroy() {}
         },
         {
             id: 'customSelectionColor',
@@ -31074,10 +30973,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Override the default text-selection background with your chosen color',
             group: 'Theme',
             icon: 'palette',
-            type: 'color',
-            settingKey: 'selectionColor',
             _styleEl: null,
-            init() {
+            _apply() {
+                this._styleEl?.remove();
                 // v4.19.0: CSS construction delegated to features/theme-css/.
                 const mod = (typeof globalThis !== 'undefined'
                     && globalThis.YTKitFeatures
@@ -31098,7 +30996,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._styleEl = injectStyle(css, this.id, true);
             },
+            init() { this._apply(); },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            id: 'selectionColor',
+            name: 'Selection Color',
+            description: 'Choose the highlight color used while custom text selection is enabled',
+            group: 'Theme',
+            icon: 'palette',
+            isSubFeature: true,
+            parentId: 'customSelectionColor',
+            type: 'color',
+            settingKey: 'selectionColor',
+            init() { getFeatureById('customSelectionColor')?._apply?.(); },
+            destroy() {}
         },
         {
             id: 'bypassPlaylistMode',
@@ -35468,7 +35380,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement = injectStyle(`
                     .ytkit-ai-qa-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:6px 10px;margin-inline-start:6px;border-radius:8px;border:1px solid rgba(96,165,250,.48);background:rgba(37,99,235,.2);color:#dbeafe;font:700 12px/1 'YouTube Sans',system-ui;cursor:pointer}.ytkit-ai-qa-btn:hover{background:rgba(37,99,235,.34)}
                     .ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;z-index:9100;background:rgba(0,0,0,.72)}
-                    .ytkit-ai-qa-modal__body{box-sizing:border-box;width:min(720px,100%);max-height:min(84vh,820px);overflow:auto;padding:18px;border-radius:14px;background:#0b1020;color:#e5edf9;border:1px solid #334155;box-shadow:0 24px 70px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:12px;font:14px/1.55 system-ui}
+                    .ytkit-ai-qa-modal__body{box-sizing:border-box;width:min(720px,100%);max-height:min(84vh,820px);overflow:auto;padding:18px;border-radius:12px;background:#0b1020;color:#e5edf9;border:1px solid #334155;box-shadow:0 24px 70px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:12px;font:14px/1.55 system-ui}
                     .ytkit-ai-qa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.ytkit-ai-qa-head h3{margin:0;color:#f8fafc;font-size:18px;line-height:1.35}.ytkit-ai-qa-description,.ytkit-ai-qa-meta,.ytkit-ai-qa-status,.ytkit-ai-qa-empty{margin:0;color:#b8c4d6}.ytkit-ai-qa-meta{font-size:12px;overflow-wrap:anywhere}
                     .ytkit-ai-qa-close{display:inline-grid;place-items:center;flex:0 0 auto;min-width:36px;min-height:36px;padding:0;border-radius:8px;border:1px solid #475569;background:#172033;color:#f8fafc;cursor:pointer;font:700 20px/1 system-ui}
                     .ytkit-ai-qa-question-label{font-weight:700;color:#f8fafc}.ytkit-ai-qa-input{box-sizing:border-box;width:100%;min-height:76px;padding:10px 12px;border-radius:9px;border:1px solid #52617a;background:#111827;color:#f8fafc;font:14px/1.5 system-ui;resize:vertical}.ytkit-ai-qa-input::placeholder{color:#94a3b8}.ytkit-ai-qa-input[readonly]{opacity:.72}
@@ -37934,7 +37846,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             id: 'oledTheme',
             name: 'OLED Theme',
             description: 'True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube\'s native theme switches because we hook the tokens themselves, not the surface classes.',
-            group: 'Theming',
+            group: 'Theme',
             icon: 'moon',
             _styleElement: null,
             init() {
@@ -37968,7 +37880,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             id: 'denseMode',
             name: 'Dense Mode',
             description: 'Tightens row spacing, padding, and font metrics across Astra-injected surfaces. It doesn\'t change YouTube\'s native layout, only our own panels, chips, pills, and toolbars.',
-            group: 'Theming',
+            group: 'Theme',
             icon: 'rows-3',
             _styleElement: null,
             init() {
@@ -38016,7 +37928,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             id: 'rectangularizeYouTube',
             name: 'Rectangularize UI',
             description: 'Strips YouTube\'s pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular.',
-            group: 'Theming',
+            group: 'Theme',
             icon: 'square',
             _styleElement: null,
             init() {
@@ -38064,7 +37976,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             id: 'classicLayoutProfile',
             name: 'Layout Profile',
             description: 'Pick a layout profile. Modern keeps YouTube\'s 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions.',
-            group: 'Theming',
+            group: 'Theme',
             icon: 'layout',
             type: 'select',
             settingKey: 'classicLayoutProfile',
@@ -38109,7 +38021,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             id: 'newPlayerUiRestore',
             name: 'Restore Classic Player Chrome',
             description: 'Hides YouTube\'s new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls.',
-            group: 'Theming',
+            group: 'Theme',
             icon: 'play',
             _styleElement: null,
             init() {
@@ -38142,7 +38054,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             id: 'classicPlayerChrome',
             name: 'Classic Player Chrome',
             description: 'One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display. CSS-only, no DOM rebuild.',
-            group: 'Theming',
+            group: 'Theme',
             icon: 'play',
             _styleElement: null,
             init() {
@@ -38210,7 +38122,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             id: 'tokenThemeBridge',
             name: 'Native Token Theme Bridge',
             description: 'Pipes the user\'s themeAccentColor into YouTube\'s native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface.',
-            group: 'Theming',
+            group: 'Theme',
             icon: 'palette',
             _styleElement: null,
             _apply() {
@@ -38666,7 +38578,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             report.attempts = attempts;
             report.settleDelayMs = SETTLE_DELAY_MS;
             setCriticalSelectorCanarySnapshot(report);
-            ServiceStateStrip.updateCriticalCanary(report);
 
             if (report.status === 'degraded') {
                 if (lastFailureFingerprint === report.fingerprint) return;
@@ -38721,7 +38632,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             timer = null;
             removeNavigateRule(RULE_ID);
             setCriticalSelectorCanarySnapshot(null);
-            ServiceStateStrip.remove('selector-canary');
         }
 
         return { start, stop, schedule };
@@ -41854,7 +41764,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             if (cat === 'Content') content.appendChild(buildVideoHiderPane(config));
             if (cat === 'Content') {
                 const zapperPane = globalThis.YTKitFeatures?.elementZapperInstance?.buildElementZapperPane?.();
-                if (zapperPane) content.appendChild(zapperPane);
+                if (zapperPane) pane.appendChild(zapperPane);
             }
         });
 
@@ -42291,10 +42201,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             + (f.type === 'color' ? ' ytkit-color-card' : '');
         card.dataset.featureId = f.id;
         card.dataset.featureType = featureType;
+        card.dataset.settingKey = f.settingKey || f.id;
         card.dataset.searchText = [
             featureName,
             featureDescription,
             f.id,
+            f.settingKey,
             f.group,
             f.type,
             f.parentId,
@@ -51766,9 +51678,9 @@ html:not([dark]) .ytkit-sb-channel-chip {
             version: YTKIT_VERSION,
         };
 
-        const _featureCrashCounts = StorageManager.get('ytkit_crash_counts', {});
+        _featureCrashCounts = StorageManager.get('ytkit_crash_counts', {});
         const MAX_FEATURE_CRASHES = 3;
-        const _persistCrashCounts = () => StorageManager.set('ytkit_crash_counts', _featureCrashCounts);
+        _persistCrashCounts = () => StorageManager.set('ytkit_crash_counts', _featureCrashCounts);
         _recordFeatureRuntimeFailure = (featureId, error) => {
             if (!featureId) return 0;
             _featureCrashCounts[featureId] = (_featureCrashCounts[featureId] || 0) + 1;

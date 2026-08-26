@@ -2765,7 +2765,7 @@
                         box-sizing: border-box;
                         padding: 28px;
                         border: 1px solid var(--ytkit-overlay-border, rgba(255, 255, 255, 0.2));
-                        border-radius: 20px;
+                        border-radius: 12px;
                         color: var(--ytkit-overlay-text, #e8ecf4);
                         background: var(--ytkit-overlay-bg, #171b23);
                         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
