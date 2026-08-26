@@ -1241,6 +1241,9 @@
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
+  "featureHealthReasonCanaryTpl": {
+    "message": "YouTube {version} 更改了 {surface}"
+  },
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
@@ -4985,6 +4988,15 @@
   "searchWatchTitle": {
     "message": "搜索时不中断播放"
   },
+  "selectorCanaryBuildUnknown": {
+    "message": "当前版本"
+  },
+  "selectorCanaryDiagnosticsAction": {
+    "message": "打开诊断"
+  },
+  "selectorCanaryNoticeTpl": {
+    "message": "YouTube {version} 更改了 {features} 使用的页面元素。"
+  },
   "selectorHealthAssetTpl": {
     "message": "规则：{status} · {version} · {source}"
   },
@@ -5035,6 +5047,9 @@
   },
   "selectorHealthTotalTpl": {
     "message": "已跟踪 {count} 个表面"
+  },
+  "selectorHealthYouTubeBuildTpl": {
+    "message": "YouTube 版本 {version}"
   },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"

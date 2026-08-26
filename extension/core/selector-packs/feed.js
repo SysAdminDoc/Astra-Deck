@@ -23,6 +23,10 @@
         lastVerified: '2026-05-19',
         highChurn: true,
         needsFreshCapture: false,
+        canary: Object.freeze({
+            routes: Object.freeze(['home']),
+            featureIds: Object.freeze(['hideVideosFromHome', 'deArrow'])
+        }),
         notes: 'Process added nodes only; filter chips can recycle grid content without route events.'
     }));
 })();

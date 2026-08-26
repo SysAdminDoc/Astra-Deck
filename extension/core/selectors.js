@@ -1067,11 +1067,12 @@
 
     function exportSelectorHealth() {
         return JSON.stringify({
-            // v4.5+: schemaVersion bumped to 2 — health snapshot rows now carry
-            // shape-drift fields (firstShape/lastShape/shapeDrifts/...).
-            // Consumers parsing schemaVersion 1 ignore the new keys safely.
-            schemaVersion: 2,
+            // schemaVersion 3 adds the active YouTube build and the bounded
+            // route canary. Surface rows retain the v2 shape-drift fields.
+            schemaVersion: 3,
             exportedAt: new Date().toISOString(),
+            youtubeClientVersion: core.getActiveYouTubeClientVersion?.() || null,
+            criticalCanary: core.getCriticalSelectorCanarySnapshot?.() || null,
             selectorAsset: getSelectorAssetState(),
             surfaces: getSelectorHealthSnapshot()
         }, null, 2);

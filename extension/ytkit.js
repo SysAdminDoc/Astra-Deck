@@ -64,6 +64,7 @@
         classifyAgeRestriction,
         cleanYouTubeShareUrl,
         getRegisteredFeature,
+        getActiveYouTubeClientVersion,
         getFeatureHealthSnapshot,
         getSelectorHealthSnapshot,
         getStoragePreloadError,
@@ -83,11 +84,13 @@
         PageTypes,
         preloadExtensionState,
         registerFeature,
+        probeCriticalSelectorSurfaces,
         removeMutationRule,
         removeNavigateRule,
         removeScopedMutationRule,
         runBudgetedElementBatch,
         setFeatureHealth,
+        setCriticalSelectorCanarySnapshot,
         shouldBuildPrimaryUI,
         storageRead,
         storageReadJSON,
@@ -182,6 +185,7 @@
         !classifyAgeRestriction ||
         !cleanYouTubeShareUrl ||
         !getRegisteredFeature ||
+        !getActiveYouTubeClientVersion ||
         !getFeatureHealthSnapshot ||
         !getSelectorHealthSnapshot ||
         !getUrlParam ||
@@ -198,12 +202,14 @@
         !isWatchPagePath ||
         !preloadExtensionState ||
         !registerFeature ||
+        !probeCriticalSelectorSurfaces ||
         !PageTypes ||
         !removeMutationRule ||
         !removeNavigateRule ||
         !removeScopedMutationRule ||
         !runBudgetedElementBatch ||
         !setFeatureHealth ||
+        !setCriticalSelectorCanarySnapshot ||
         !shouldBuildPrimaryUI ||
         !storageRead ||
         !storageReadJSON ||
@@ -802,6 +808,7 @@
         // dismissal that outlived the tab would silence the one signal that
         // tells them an outage is still going on tomorrow.
         const dismissed = new Set();
+        let dismissedCanaryFingerprint = null;
         let container = null;
         let styleEl = null;
 
@@ -815,7 +822,10 @@
                 .ytkit-service-state-text{flex:1 1 auto;}
                 .ytkit-service-state-dismiss{flex:none;appearance:none;border:0;background:transparent;color:inherit;font:inherit;line-height:1;padding:0 2px;cursor:pointer;opacity:.7;}
                 .ytkit-service-state-dismiss:hover,.ytkit-service-state-dismiss:focus-visible{opacity:1;}
+                .ytkit-service-state-action{flex:none;min-height:28px;padding:4px 8px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:600 11px/1.2 "Roboto","Segoe UI",sans-serif;cursor:pointer;}
+                .ytkit-service-state-action:hover,.ytkit-service-state-action:focus-visible{background:rgba(255,255,255,0.1);outline:2px solid currentColor;outline-offset:2px;}
                 html:not([dark]) .ytkit-service-state-pill{background:rgba(255,255,255,0.97);border-color:rgba(0,0,0,0.22);color:#1f1f1f;}
+                html:not([dark]) .ytkit-service-state-action:hover,html:not([dark]) .ytkit-service-state-action:focus-visible{background:rgba(0,0,0,0.06);}
                 @media (prefers-reduced-motion: reduce){.ytkit-service-state-pill{transition:none;}}
             `, 'service-state-strip');
         }
@@ -922,7 +932,97 @@
             }
         }
 
-        return { update, remove };
+        function openSelectorDiagnostics() {
+            void toggleSettingsPanel(true);
+            setTimeout(() => {
+                const search = document.getElementById('ytkit-search');
+                const label = t('selectorHealthTitle', 'Selector health');
+                if (search) {
+                    search.value = label;
+                    try {
+                        search.dispatchEvent(new Event('input', { bubbles: true }));
+                    } catch (_) {
+                        // reason: legacy userscript hosts may not construct Event
+                    }
+                    search.focus?.({ preventScroll: true });
+                }
+                document.querySelector('[data-feature-id="selectorHealthPanel"]')
+                    ?.scrollIntoView?.({ block: 'center' });
+            }, 80);
+        }
+
+        function updateCriticalCanary(report) {
+            const id = 'selector-canary';
+            try {
+                if (!report || report.status !== 'degraded' || !isTopLevelFrame()) {
+                    remove(id);
+                    return;
+                }
+                const fingerprint = String(report.fingerprint || '');
+                if (fingerprint && dismissedCanaryFingerprint === fingerprint) {
+                    remove(id);
+                    return;
+                }
+                const featureNames = Array.from(new Set(
+                    (Array.isArray(report.affectedFeatures) ? report.affectedFeatures : [])
+                        .map((feature) => String(feature?.name || feature?.id || '').trim())
+                        .filter(Boolean)
+                )).slice(0, 4);
+                const fallbackNames = (Array.isArray(report.failedSurfaces) ? report.failedSurfaces : [])
+                    .map((failure) => String(failure?.surface || '').trim())
+                    .filter(Boolean)
+                    .slice(0, 4);
+                const names = featureNames.length ? featureNames : fallbackNames;
+                const version = report.youtubeClientVersion
+                    || t('selectorCanaryBuildUnknown', 'current build');
+                const label = t(
+                    'selectorCanaryNoticeTpl',
+                    'YouTube {version} changed page elements used by {features}.'
+                )
+                    .replace('{version}', String(version))
+                    .replace('{features}', names.join(', '));
+
+                const host = ensureContainer();
+                let pill = pills.get(id);
+                if (!pill) {
+                    const el = document.createElement('div');
+                    el.className = 'ytkit-service-state-pill';
+                    el.dataset.tone = 'error';
+
+                    const text = document.createElement('span');
+                    text.className = 'ytkit-service-state-text';
+                    el.appendChild(text);
+
+                    const action = document.createElement('button');
+                    action.type = 'button';
+                    action.className = 'ytkit-service-state-action';
+                    action.textContent = t('selectorCanaryDiagnosticsAction', 'Open diagnostics');
+                    action.addEventListener('click', openSelectorDiagnostics);
+                    el.appendChild(action);
+
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'ytkit-service-state-dismiss';
+                    close.textContent = '×';
+                    close.setAttribute('aria-label', t('serviceOutageDismiss', 'Dismiss'));
+                    close.addEventListener('click', () => {
+                        dismissedCanaryFingerprint = pill?.fingerprint || fingerprint;
+                        remove(id);
+                    });
+                    el.appendChild(close);
+                    host.appendChild(el);
+                    pill = { el, text, action, timer: 0, fingerprint };
+                    pills.set(id, pill);
+                }
+                pill.fingerprint = fingerprint;
+                pill.text.textContent = label;
+                pill.el.title = label;
+            } catch (_) {
+                // reason: diagnostics chrome must never interrupt YouTube
+            }
+        }
+
+        return { update, updateCriticalCanary, remove };
     })();
 
     if (typeof ExternalApiHealth.subscribe === 'function') {
@@ -7005,13 +7105,17 @@ const STORAGE_KEYS = Object.freeze({
                             : {};
                         const mutationRules = globalThis.YTKitCore?.getMutationRuleHealthSnapshot?.() || [];
                         const selectorAsset = globalThis.YTKitCore?.getSelectorAssetState?.() || null;
+                        const youtubeClientVersion = getActiveYouTubeClientVersion({ document });
+                        const criticalCanary = globalThis.YTKitCore?.getCriticalSelectorCanarySnapshot?.() || null;
                         sendResponse?.({
                             ok: true,
                             surfaces: surfaces.slice(0, 12),  // bound payload — popup only shows top few
                             totalSurfaces: surfaces.length,
                             ctxCounts,
                             mutationRules,
-                            selectorAsset
+                            selectorAsset,
+                            youtubeClientVersion,
+                            criticalCanary
                         });
                     } catch (e) {
                         sendResponse?.({ ok: false, error: String(e?.message || e) });
@@ -38464,7 +38568,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             mutationRules: globalThis.YTKitCore?.getMutationRuleHealthSnapshot?.() || [],
             externalApis: (typeof ExternalApiHealth !== 'undefined' && ExternalApiHealth?.snapshot)
                 ? ExternalApiHealth.snapshot()
-                : []
+                : [],
+            criticalCanary: globalThis.YTKitCore?.getCriticalSelectorCanarySnapshot?.() || null
         });
         // Per-navigation hide attribution rides along: "which feature made
         // these cards disappear?" is the same question from the other side,
@@ -38474,6 +38579,107 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             : [];
         return report;
     }
+
+    // A separate route canary checks only the selector packs explicitly marked
+    // critical. It never calls findSurfaceElement(), so one YouTube rollout
+    // produces one aggregate diagnostic rather than one event per fallback.
+    const CriticalSelectorCanary = (function () {
+        const SETTLE_DELAY_MS = 1400;
+        const RETRY_DELAY_MS = 650;
+        const RULE_ID = '_criticalSelectorCanary';
+        let timer = null;
+        let generation = 0;
+        let lastFailureFingerprint = null;
+        let started = false;
+
+        function featureIsEnabled(featureId) {
+            const feature = getFeatureById(featureId);
+            return !!feature
+                && !feature._arrayKey
+                && !isRetiredCommentFeature(feature)
+                && isFeatureEnabledInSettings(feature, appState.settings || {});
+        }
+
+        function buildReport() {
+            const route = getCurrentPage();
+            const discoveredVersion = TranscriptService?._getClientVersion?.()
+                || getActiveYouTubeClientVersion({ document });
+            return probeCriticalSelectorSurfaces({
+                root: document,
+                route,
+                clientVersion: discoveredVersion,
+                includeFeature: featureIsEnabled,
+                resolveFeatureName: (featureId) => {
+                    const feature = getFeatureById(featureId);
+                    return feature ? getFeatureName(feature) : featureId;
+                }
+            });
+        }
+
+        function publish(report, attempts) {
+            report.attempts = attempts;
+            report.settleDelayMs = SETTLE_DELAY_MS;
+            setCriticalSelectorCanarySnapshot(report);
+            ServiceStateStrip.updateCriticalCanary(report);
+
+            if (report.status === 'degraded') {
+                if (lastFailureFingerprint === report.fingerprint) return;
+                lastFailureFingerprint = report.fingerprint;
+                const surfaces = report.failedSurfaces.map((row) => row.surface).join(',') || 'unknown';
+                const features = report.affectedFeatures.map((feature) => feature.id).join(',') || 'unknown';
+                DiagnosticLog.record(
+                    'selector-canary',
+                    `youtube=${report.youtubeClientVersion || 'unknown'}; route=${report.route}; surfaces=${surfaces}; features=${features}`
+                );
+                return;
+            }
+
+            if (lastFailureFingerprint) {
+                DiagnosticLog.record(
+                    'selector-canary',
+                    `recovered; youtube=${report.youtubeClientVersion || 'unknown'}; route=${report.route}`
+                );
+            }
+            lastFailureFingerprint = null;
+        }
+
+        function run(expectedGeneration, attempt = 0) {
+            if (expectedGeneration !== generation) return;
+            timer = null;
+            const report = buildReport();
+            if (report.status === 'degraded' && attempt === 0) {
+                timer = setTimeout(() => run(expectedGeneration, 1), RETRY_DELAY_MS);
+                return;
+            }
+            publish(report, attempt + 1);
+        }
+
+        function schedule() {
+            generation += 1;
+            const expectedGeneration = generation;
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => run(expectedGeneration), SETTLE_DELAY_MS);
+        }
+
+        function start() {
+            if (started) return;
+            started = true;
+            addNavigateRule(RULE_ID, schedule);
+        }
+
+        function stop() {
+            if (!started) return;
+            started = false;
+            generation += 1;
+            if (timer) clearTimeout(timer);
+            timer = null;
+            removeNavigateRule(RULE_ID);
+            setCriticalSelectorCanarySnapshot(null);
+            ServiceStateStrip.remove('selector-canary');
+        }
+
+        return { start, stop, schedule };
+    })();
 
     function registerRuntimeFeature(feature) {
         if (!feature?.id || feature._arrayKey || isRetiredCommentFeature(feature)) return;
@@ -41886,6 +42092,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
     function summarizeSelectorHealth() {
         const surfaces = getSelectorHealthSnapshot();
+        const criticalCanary = globalThis.YTKitCore?.getCriticalSelectorCanarySnapshot?.() || null;
         const attempted = surfaces.filter(surface => surface.selectors.some(selector => selector.attempts > 0)).length;
         const totals = surfaces.reduce((acc, surface) => {
             acc.hits += surface.hitCount;
@@ -41902,7 +42109,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 || Number(b.needsFreshCapture) - Number(a.needsFreshCapture)
                 || a.surface.localeCompare(b.surface)
             ));
-        return { surfaces, attempted, totals, issues };
+        return { surfaces, attempted, totals, issues, criticalCanary };
     }
 
     function createSelectorHealthPanel() {
@@ -41941,7 +42148,41 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             );
 
             rows.replaceChildren();
-            if (!summary.issues.length) {
+            if (summary.criticalCanary?.status === 'degraded') {
+                const canaryRow = document.createElement('div');
+                canaryRow.className = 'ytkit-selector-health__row';
+                canaryRow.dataset.state = 'bad';
+
+                const canaryName = document.createElement('strong');
+                canaryName.textContent = t('selectorHealthTitle', 'Selector health');
+
+                const canaryMeta = document.createElement('span');
+                const featureNames = Array.from(new Set(
+                    summary.criticalCanary.affectedFeatures
+                        .map((feature) => feature.name || feature.id)
+                        .filter(Boolean)
+                ));
+                const surfaceNames = summary.criticalCanary.failedSurfaces
+                    .map((failure) => failure.surface)
+                    .filter(Boolean);
+                const affected = featureNames.length ? featureNames : surfaceNames;
+                const canaryVersion = summary.criticalCanary.youtubeClientVersion
+                    || t('selectorCanaryBuildUnknown', 'current build');
+                canaryMeta.textContent = t(
+                    'selectorCanaryNoticeTpl',
+                    'YouTube {version} changed page elements used by {features}.'
+                )
+                    .replace(
+                        '{version}',
+                        canaryVersion
+                    )
+                    .replace('{features}', affected.join(', '));
+
+                canaryRow.appendChild(canaryName);
+                canaryRow.appendChild(canaryMeta);
+                rows.appendChild(canaryRow);
+            }
+            if (!summary.issues.length && summary.criticalCanary?.status !== 'degraded') {
                 const empty = document.createElement('p');
                 empty.className = 'ytkit-selector-health__empty';
                 empty.textContent = summary.attempted
@@ -51592,6 +51833,8 @@ html:not([dark]) .ytkit-sb-channel-chip {
                 setTimeout(lazyInit, 1500);
             }
         }
+
+        if (!isSafeMode) CriticalSelectorCanary.start();
 
         // Focus hours. Started AFTER the normal init pass so the first tick
         // reconciles against features that already exist, rather than racing

@@ -27,6 +27,13 @@
         lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
+        canary: Object.freeze({
+            routes: Object.freeze([
+                'home', 'search', 'subscriptions', 'channel',
+                'playlist', 'history', 'library'
+            ]),
+            featureIds: Object.freeze(['hideVideosFromHome', 'deArrow'])
+        }),
         notes: 'New lockup view-model appears in current captures.'
     }));
 })();

@@ -105,6 +105,9 @@
         const attribution = toMap(input.attribution, 'featureId');
         const mutationRules = toMap(input.mutationRules, 'featureId');
         const externalApis = Array.isArray(input.externalApis) ? input.externalApis : [];
+        const criticalCanary = input.criticalCanary && typeof input.criticalCanary === 'object'
+            ? input.criticalCanary
+            : null;
 
         // external-api-health records already declare their driving feature
         // (SERVICE_META[x].feature), so the join is a lookup, not a guess. A
@@ -117,6 +120,27 @@
             const list = apisByFeature.get(featureId) || [];
             list.push(service);
             apisByFeature.set(featureId, list);
+        }
+
+        // The route canary probes a small set of critical selector chains
+        // without emitting normal per-selector telemetry. Collapse every
+        // failed surface for a feature into one reason so a YouTube rollout
+        // cannot create duplicate feature rows or a selector-by-selector wall.
+        const canaryByFeature = new Map();
+        if (criticalCanary?.status === STATUS_DEGRADED) {
+            for (const failure of Array.isArray(criticalCanary.failedSurfaces)
+                ? criticalCanary.failedSurfaces
+                : []) {
+                const surface = text(failure?.surface, 120);
+                if (!surface) continue;
+                for (const rawId of Array.isArray(failure?.featureIds) ? failure.featureIds : []) {
+                    const featureId = text(rawId, 120);
+                    if (!featureId) continue;
+                    const surfaces = canaryByFeature.get(featureId) || new Set();
+                    surfaces.add(surface);
+                    canaryByFeature.set(featureId, surfaces);
+                }
+            }
         }
 
         const rows = [];
@@ -180,6 +204,20 @@
                 });
             }
 
+            const canarySurfaces = canaryByFeature.get(id);
+            if (canarySurfaces?.size) {
+                status = worse(status, STATUS_DEGRADED);
+                const surfaces = Array.from(canarySurfaces).slice(0, 8);
+                reasons.push({
+                    kind: 'selector-canary',
+                    surface: surfaces.join(', '),
+                    surfaces,
+                    youtubeClientVersion: text(criticalCanary.youtubeClientVersion, 40),
+                    detail: surfaces.join(', '),
+                    at: parseTimestamp(criticalCanary.checkedAt)
+                });
+            }
+
             for (const service of apisByFeature.get(id) || []) {
                 // `stale` means a cached answer is still being served, which
                 // is the fallback working as designed — not a degradation the
@@ -240,6 +278,7 @@
             worstStatus: rows.length
                 ? rows[0].status
                 : STATUS_HEALTHY,
+            criticalCanary,
             features: rows
         };
     }

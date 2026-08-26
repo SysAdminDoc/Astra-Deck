@@ -24,6 +24,10 @@
         lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
+        canary: Object.freeze({
+            routes: Object.freeze(['watch', 'shorts', 'embed']),
+            featureIds: Object.freeze(['stickyVideo', 'sponsorBlock'])
+        }),
         notes: 'Main media element; should stay scoped to the current player.'
     }));
 })();

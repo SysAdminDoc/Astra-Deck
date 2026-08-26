@@ -1,0 +1,99 @@
+{
+  "youtubeClientVersion": "2.20260820.01.00",
+  "scenarios": {
+    "watch": {
+      "route": "watch",
+      "rules": [
+        {
+          "surface": "watch",
+          "selectors": ["[data-canary-surface=\"watch\"]"],
+          "featureIds": ["stickyVideo", "returnDislike"]
+        },
+        {
+          "surface": "player",
+          "selectors": ["[data-canary-surface=\"player\"]"],
+          "featureIds": ["stickyVideo", "sponsorBlock"]
+        },
+        {
+          "surface": "mainVideo",
+          "selectors": ["[data-canary-surface=\"mainVideo\"]"],
+          "featureIds": ["stickyVideo", "sponsorBlock"]
+        }
+      ],
+      "nodes": [
+        {
+          "id": "hidden-prior-route",
+          "tagName": "YTD-WATCH-FLEXY",
+          "selectors": ["[data-canary-surface=\"watch\"]"],
+          "attributes": {"aria-hidden": "true"}
+        },
+        {
+          "id": "template-stamped-watch",
+          "tagName": "YTD-WATCH-FLEXY",
+          "selectors": ["[data-canary-surface=\"watch\"]"],
+          "attributes": {"data-template-stamped": "true"}
+        },
+        {
+          "id": "current-player",
+          "tagName": "DIV",
+          "selectors": ["[data-canary-surface=\"player\"]"],
+          "parentId": "template-stamped-watch"
+        },
+        {
+          "id": "current-video",
+          "tagName": "VIDEO",
+          "selectors": ["[data-canary-surface=\"mainVideo\"]"],
+          "parentId": "current-player"
+        }
+      ]
+    },
+    "feed": {
+      "route": "home",
+      "rules": [
+        {
+          "surface": "feed",
+          "selectors": ["[data-canary-surface=\"feed\"]"],
+          "featureIds": ["hideVideosFromHome", "deArrow"]
+        },
+        {
+          "surface": "feedCard",
+          "selectors": ["[data-canary-surface=\"feedCard\"]"],
+          "featureIds": ["hideVideosFromHome", "deArrow"]
+        }
+      ],
+      "nodes": [
+        {
+          "id": "active-feed",
+          "tagName": "YTD-RICH-GRID-RENDERER",
+          "selectors": ["[data-canary-surface=\"feed\"]"]
+        },
+        {
+          "id": "mixed-filter-chip",
+          "tagName": "YT-CHIP-CLOUD-CHIP-RENDERER",
+          "selectors": [],
+          "parentId": "active-feed"
+        },
+        {
+          "id": "unstamped-template-card",
+          "tagName": "YT-LOCKUP-VIEW-MODEL",
+          "classes": ["ytLockupViewModelHost"],
+          "selectors": ["[data-canary-surface=\"feedCard\"]"],
+          "isConnected": false
+        },
+        {
+          "id": "camel-case-view-model-card",
+          "tagName": "YT-LOCKUP-VIEW-MODEL",
+          "classes": ["ytLockupViewModelHost", "ytLockupViewModelHorizontal"],
+          "selectors": ["[data-canary-surface=\"feedCard\"]"],
+          "parentId": "active-feed"
+        },
+        {
+          "id": "mixed-continuation",
+          "tagName": "YTD-CONTINUATION-ITEM-RENDERER",
+          "selectors": [],
+          "parentId": "active-feed"
+        }
+      ]
+    }
+  }
+}

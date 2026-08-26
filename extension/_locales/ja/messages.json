@@ -1241,6 +1241,9 @@
   "featureHealthReasonApiTpl": {
     "message": "{service}: {detail}"
   },
+  "featureHealthReasonCanaryTpl": {
+    "message": "YouTube {version} が {surface} を変更しました"
+  },
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
@@ -4985,6 +4988,15 @@
   "searchWatchTitle": {
     "message": "再生を止めずに検索"
   },
+  "selectorCanaryBuildUnknown": {
+    "message": "現在のビルド"
+  },
+  "selectorCanaryDiagnosticsAction": {
+    "message": "診断を開く"
+  },
+  "selectorCanaryNoticeTpl": {
+    "message": "YouTube {version} が {features} で使うページ要素を変更しました。"
+  },
   "selectorHealthAssetTpl": {
     "message": "ルール: {status} · {version} · {source}"
   },
@@ -5035,6 +5047,9 @@
   },
   "selectorHealthTotalTpl": {
     "message": "{count} 個のサーフェスを追跡中"
+  },
+  "selectorHealthYouTubeBuildTpl": {
+    "message": "YouTube バージョン {version}"
   },
   "settingValueUnrecognized": {
     "message": "Unrecognized: {value}"

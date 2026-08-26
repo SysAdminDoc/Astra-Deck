@@ -33,6 +33,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed
 
+- Selector diagnostics now record the active YouTube client build. After each
+  route settles, one bounded canary checks the current critical page surfaces
+  and groups failures by affected feature. Hidden trees from the previous route
+  are ignored, and the single warning opens the full selector diagnostics.
+
 - YouTube's own Theater button now has the same dark and light watch-page
   treatment as the normal page and Theater Split. Full-bleed player containers
   keep a black video canvas while metadata, comments, and current related-card
@@ -47,6 +52,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   replacement cannot quietly remove that coverage later.
 
 ### Fixed
+
+- The popup's storage cards no longer create a hidden horizontal scroll lane
+  when the Bookmarks label sits in the compact five-column row.
 
 - Leaving Theater Split restores the inline player sizes that YouTube owned
   before Astra changed them. Its fixed-width video and inner-container styles

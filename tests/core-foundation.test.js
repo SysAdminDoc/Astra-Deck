@@ -331,10 +331,9 @@ test('selector health snapshot tracks hits, misses, errors, and exports JSON', (
     assert.equal(customHealth, undefined, 'custom one-off selectors should not pollute surface-map reports');
     assert.equal(events.length, 1);
     assert.equal(events[0].detail.selector, 'bad[');
-    // v4.5+: schemaVersion bumped to 2 — snapshot rows now
-    // carry shape-drift fields. Consumers parsing v1 must ignore the new
-    // keys safely; v2 callers can read them.
-    assert.equal(JSON.parse(core.exportSelectorHealth()).schemaVersion, 2);
+    // Schema v3 keeps the v2 shape-drift rows and adds YouTube build/canary
+    // metadata at the top level.
+    assert.equal(JSON.parse(core.exportSelectorHealth()).schemaVersion, 3);
 });
 
 test('recordSelectorShape silently captures the first shape, emits on drift, no-ops on repeats', () => {
@@ -373,9 +372,9 @@ test('recordSelectorShape silently captures the first shape, emits on drift, no-
     assert.equal(events[0].detail.drifts, 1);
     assert.equal(events[0].detail.firstShape, 'attr-len:11');
 
-    // Snapshot row now carries shape fields with v2 schema.
+    // Snapshot row still carries the v2 shape fields under the v3 envelope.
     const snap = JSON.parse(core.exportSelectorHealth());
-    assert.equal(snap.schemaVersion, 2);
+    assert.equal(snap.schemaVersion, 3);
     const watchRow = snap.surfaces
         .find((s) => s.surface === 'watch')
         .selectors.find((r) => r.selector === SEL);

@@ -2795,6 +2795,10 @@ async function renderSelectorHealthDashboard() {
                 .replace('{status}', String(asset.status || 'unknown'))
                 .replace('{version}', String(asset.assetVersion || 'unknown'))
                 .replace('{source}', String(asset.source || 'unknown'));
+            const youtubeBuild = response.youtubeClientVersion
+                ? t('selectorHealthYouTubeBuildTpl', 'YouTube {version}')
+                    .replace('{version}', String(response.youtubeClientVersion))
+                : '';
             // The raw asset error is a fetch/parse throw. Showing it here put
             // untranslated exception text in the popup; the localized cause
             // sentence names a next action instead, and the raw text goes to
@@ -2803,8 +2807,10 @@ async function renderSelectorHealthDashboard() {
             // raw-error-copy: the raw text only decides whether a cause line is
             // shown at all; describeFailureCause supplies every rendered character.
             const assetCause = asset.lastError ? describeFailureCause(asset.lastError) : '';
-            selectorHealthAsset.textContent = assetCause ? `${assetLabel} · ${assetCause}` : assetLabel;
-            selectorHealthAsset.dataset.state = asset.status || 'unknown';
+            selectorHealthAsset.textContent = [assetLabel, youtubeBuild, assetCause].filter(Boolean).join(' · ');
+            selectorHealthAsset.dataset.state = response.criticalCanary?.status === 'degraded'
+                ? 'rollback'
+                : (asset.status || 'unknown');
         }
         // Per-ctx diagnostic chip strip.
         if (selectorHealthCtx) {
@@ -2951,6 +2957,7 @@ async function copySelectorHealthReport() {
                 exportedAt: new Date().toISOString(),
                 productVersion: getVersion(),
                 browserUA: (navigator && navigator.userAgent) || 'unknown',
+                youtubeClientVersion: response.youtubeClientVersion,
                 mutationRules: response.mutationRules,
                 selectorAsset: response.selectorAsset,
                 topN: 10
@@ -2981,6 +2988,8 @@ async function copySelectorHealthReport() {
                 activeTab: safeTabUrlFallback,
                 surfaces: response.surfaces,
                 ctxCounts: response.ctxCounts || {},
+                youtubeClientVersion: response.youtubeClientVersion || null,
+                criticalCanary: response.criticalCanary || null,
                 selectorAsset: response.selectorAsset || null
             }, null, 2);
         }
@@ -3255,9 +3264,15 @@ function renderFeatureHealthRows(report) {
             const detail = document.createElement('span');
             detail.className = 'fh-reason';
             const age = formatFeatureHealthAge(reason.at, now);
+            const canaryVersion = reason.youtubeClientVersion
+                || t('selectorCanaryBuildUnknown', 'current build');
             const what = reason.kind === 'selector'
                 ? t('featureHealthReasonSelectorTpl', 'Page element “{surface}” no longer found')
                     .replace('{surface}', reason.surface || reason.detail || '')
+                : reason.kind === 'selector-canary'
+                    ? t('featureHealthReasonCanaryTpl', 'YouTube {version} changed {surface}')
+                        .replace('{version}', canaryVersion)
+                        .replace('{surface}', reason.surface || reason.detail || '')
                 : reason.kind === 'api'
                     ? t('featureHealthReasonApiTpl', '{service}: {detail}')
                         .replace('{service}', reason.service || '')
