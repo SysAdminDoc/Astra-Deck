@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.85.0
+// @version      4.85.1
 // @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -12947,7 +12947,7 @@ if (typeof globalThis !== "undefined") {
     }
 
     const CAPABILITY_MATRIX = deepFreeze({
-        schemaVersion: 1,
+        schemaVersion: 2,
         browsers: {
             chromium: {
                 label: 'Chrome / Edge / Brave',
@@ -12973,6 +12973,90 @@ if (typeof globalThis !== "undefined") {
                 vehicle: 'Userscript on a supported desktop browser',
                 baseline: 'The host browser decides which web APIs are exposed',
                 note: 'Extension-only permissions and companion routing are unavailable unless the host exposes an equivalent bridge.'
+            }
+        },
+        platformApiPolicy: {
+            browserFloors: { chrome: '120', firefox: '142' },
+            adoptionRule: 'Ship a probed path only when it removes more compatibility code than it adds at every supported browser floor.',
+            evaluations: {
+                runtimeGetContexts: {
+                    api: 'runtime.getContexts()',
+                    decision: 'defer',
+                    shipped: false,
+                    probe: "typeof extensionApi?.runtime?.getContexts === 'function'",
+                    minimumBrowser: { chrome: '116+', firefox: 'Feature-detected; not assumed at Firefox 142' },
+                    fallback: 'Keep the synchronous world-local injection guard on globalThis.',
+                    codeEffect: 'Context enumeration is asynchronous and cannot reject a second script execution inside the same extension context. It would add startup work without replacing the guard.',
+                    sources: [
+                        'https://developer.chrome.com/docs/extensions/reference/api/runtime#method-getContexts',
+                        'https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/getContexts'
+                    ]
+                },
+                nativeBrowserNamespace: {
+                    api: 'globalThis.browser extension namespace',
+                    decision: 'retain',
+                    shipped: true,
+                    probe: 'Boolean(scope.browser?.runtime)',
+                    minimumBrowser: { chrome: '148+', firefox: 'Firefox 142+' },
+                    fallback: 'Resolve globalThis.chrome when a browser namespace with runtime is unavailable, then normalize callback and Promise signatures.',
+                    codeEffect: 'The existing resolver removes vendor branches from call sites. The Chrome 120 floor still requires the chrome fallback, so the wrapper cannot be deleted yet.',
+                    sources: [
+                        'https://developer.chrome.com/docs/extensions/develop/concepts/browser-namespace',
+                        'https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API'
+                    ]
+                },
+                mediaStatePseudoClasses: {
+                    api: 'CSS media-state pseudo-classes such as :playing and :paused',
+                    decision: 'defer',
+                    shipped: false,
+                    probe: "globalThis.CSS?.supports?.('selector(video:playing)') === true",
+                    minimumBrowser: { chrome: 'Limited availability', firefox: 'Limited availability' },
+                    fallback: 'Keep media events plus YouTube player and navigation events in the MAIN-world player task manager.',
+                    codeEffect: 'Selectors can paint playback state but cannot replace callbacks, task scheduling, navigation recovery, or player-state payloads. The JavaScript path would remain.',
+                    sources: [
+                        'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:playing'
+                    ]
+                },
+                documentId: {
+                    api: 'runtime.MessageSender.documentId',
+                    decision: 'retain',
+                    shipped: true,
+                    probe: "typeof sender?.documentId === 'string'",
+                    minimumBrowser: { chrome: '106+', firefox: '153+' },
+                    fallback: 'Bind the cookie handoff to top-level tab, frame, normalized document URL, and cookie store when documentId is absent.',
+                    codeEffect: 'The existing optional identity leg strengthens capable browsers without changing startup. Firefox 142 still requires the URL-backed binding.',
+                    sources: [
+                        'https://developer.chrome.com/docs/extensions/reference/api/runtime#property-MessageSender-documentId',
+                        'https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Work_with_documentId',
+                        'https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/153'
+                    ]
+                },
+                contentScriptAdoptedStyleSheets: {
+                    api: 'Document.adoptedStyleSheets from a content script',
+                    decision: 'defer',
+                    shipped: false,
+                    probe: "Array.isArray(document?.adoptedStyleSheets) && typeof globalThis.CSSStyleSheet === 'function'",
+                    minimumBrowser: { chrome: 'Feature-detected', firefox: '153+ for direct content-script access' },
+                    fallback: 'Keep owned style elements with deterministic IDs, text updates, and removal.',
+                    codeEffect: 'Firefox 142 and the userscript vehicle still need style elements. A constructed-sheet branch would duplicate ownership and teardown code.',
+                    sources: [
+                        'https://developer.mozilla.org/en-US/docs/Web/API/Document/adoptedStyleSheets',
+                        'https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/153'
+                    ]
+                },
+                firefoxSandbox: {
+                    api: 'Firefox WebExtension sandbox manifest key',
+                    decision: 'defer',
+                    shipped: false,
+                    probe: "targetBrowser === 'firefox' && targetMajor >= 154",
+                    minimumBrowser: { chrome: 'Manifest support available', firefox: '154+' },
+                    fallback: 'Keep the synchronous allowlisted predicate interpreter with no eval, Function constructor, iframe, or message transport.',
+                    codeEffect: 'The Firefox 142 build and Chromium/userscript vehicles still need the interpreter. A sandbox page would add an iframe, messaging, and asynchronous lifecycle without deleting it.',
+                    sources: [
+                        'https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/sandbox',
+                        'https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/154'
+                    ]
+                }
             }
         },
         aiLanes: {

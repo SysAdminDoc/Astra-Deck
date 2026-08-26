@@ -529,7 +529,12 @@ function cookieHandoffSenderBinding(sender) {
         // top-frame navigation could satisfy a binding a different document
         // originated. The document's own URL closes that gap without
         // requiring documentId support.
-        documentUrl: parsed.origin + parsed.pathname,
+        // Keep the query string because two different watch documents share
+        // `/watch`. Without documentId (including Firefox 142), stripping the
+        // video ID let a same-tab navigation reuse the prior binding during
+        // its short lifetime. Fragments stay excluded because they don't
+        // identify a different HTTP document.
+        documentUrl: parsed.origin + parsed.pathname + parsed.search,
         cookieStoreId: typeof sender.tab.cookieStoreId === 'string'
             ? sender.tab.cookieStoreId.slice(0, 128)
             : null

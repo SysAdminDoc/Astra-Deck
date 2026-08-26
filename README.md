@@ -20,7 +20,7 @@
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.85.0` |
+| Release | `v4.85.1` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `484` entries across `18` categories |
@@ -1187,6 +1187,11 @@ Astra Deck probes optional APIs before using them. The popup diagnostics bundle
 includes the same generated matrix used by the runtime at
 `build/browser-capability-matrix.json`, so support reports identify both the
 available capability and the promised fallback.
+
+The [platform API adoption policy](docs/platform-api-adoption.md) also records
+why six newer extension and web APIs are retained or deferred at the Chrome 120
+and Firefox 142 floors. A capability doesn't get a second runtime path unless
+that path lets Astra remove more compatibility code than it adds.
 
 | Capability | Chromium | Firefox | Fallback when absent |
 |------------|----------|---------|----------------------|
