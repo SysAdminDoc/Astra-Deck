@@ -699,9 +699,9 @@ test('split title header shows upload date and docks quick links beside YouTube 
         && source.includes('videoDetails?.viewCount')
         && source.includes('new Intl.NumberFormat().format(Math.floor(count))'),
         'extension split should format the current video view count from playerResponse');
-    assert.ok(source.includes('grid-template-columns: auto minmax(0, 1fr) !important;')
-        && source.includes('"actions actions" !important;'),
-        'extension split title header should give quick controls their own row in condensed rails');
+    assert.ok(source.includes('grid-template-columns: auto minmax(0, 1fr) auto !important;')
+        && source.includes('"home actions date" !important;'),
+        'extension split title header should keep utilities on one compact row beneath the title');
     assert.ok(source.includes('-webkit-line-clamp: 3 !important;'),
         'extension split title should clamp long titles before they overlap the owner card');
     assert.ok(source.includes('overflow-wrap: anywhere !important;'),
@@ -732,9 +732,9 @@ test('split title header shows upload date and docks quick links beside YouTube 
         && theaterSplit.includes('videoDetails?.viewCount')
         && theaterSplit.includes('new Intl.NumberFormat().format(Math.floor(count))'),
         'standalone split should format the current video view count from playerResponse');
-    assert.ok(theaterSplit.includes('grid-template-columns: auto minmax(0, 1fr) !important;')
-        && theaterSplit.includes('"actions actions" !important;'),
-        'standalone split title header should give quick controls their own row in condensed rails');
+    assert.ok(theaterSplit.includes('grid-template-columns: auto minmax(0, 1fr) auto !important;')
+        && theaterSplit.includes('"home actions date" !important;'),
+        'standalone split title header should keep utilities on one compact row beneath the title');
     assert.ok(theaterSplit.includes('-webkit-line-clamp: 3 !important;'),
         'standalone split title should clamp long titles before they overlap the owner card');
     assert.ok(theaterSplit.includes('overflow-wrap: anywhere !important;'),
@@ -911,7 +911,7 @@ test('split live chat gets a video info header and premium divider treatment', (
         'standalone should restore visually pinned native controls before removing the live header');
 });
 
-test('split title and owner cards align while quick links stay above the video', () => {
+test('split title and owner cards use a compact title-first hierarchy', () => {
     const fs = require('fs');
     const path = require('path');
     const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
@@ -1004,8 +1004,8 @@ test('split title and owner cards align while quick links stay above the video',
         [extensionTopRow, 'extension top row'],
         [standaloneTopRow, 'standalone top row'],
     ]) {
-        assert.ok(block.includes('gap: 14px !important;'), `${label} should leave room between stacked split controls`);
-        assert.ok(block.includes('margin: 0 0 14px !important;'), `${label} should separate metadata from following sections`);
+        assert.ok(block.includes('gap: 8px !important;'), `${label} should use compact spacing between split controls`);
+        assert.ok(block.includes('margin: 0 !important;'), `${label} should not reserve an empty trailing band`);
     }
 
     for (const [block, label] of [
@@ -1013,8 +1013,8 @@ test('split title and owner cards align while quick links stay above the video',
         [standaloneTitleCard, 'standalone title card'],
     ]) {
         assert.ok(block.includes('display: grid !important;'), `${label} should stack header and title text predictably`);
-        assert.ok(block.includes('row-gap: 10px !important;'), `${label} should keep breathing room between controls and title`);
-        assert.ok(block.includes('margin: 0 0 10px !important;'), `${label} should keep the title card from touching the owner card`);
+        assert.ok(block.includes('row-gap: 8px !important;'), `${label} should keep a compact gap between title and utilities`);
+        assert.ok(block.includes('margin: 0 !important;'), `${label} should rely on the metadata grid instead of a trailing spacer`);
         assert.ok(block.includes('box-sizing: border-box !important;'), `${label} should include padding in its measured height`);
     }
 
@@ -1022,10 +1022,11 @@ test('split title and owner cards align while quick links stay above the video',
         [extensionTitleBar, 'extension title header'],
         [standaloneTitleBar, 'standalone title header'],
     ]) {
-        assert.ok(block.includes('grid-template-columns: auto minmax(0, 1fr) !important;'),
-            `${label} should keep the logo and date on the top row`);
-        assert.ok(block.includes('"actions actions" !important;'),
-            `${label} should move quick controls onto their own uncrowded row`);
+        assert.ok(block.includes('grid-template-columns: auto minmax(0, 1fr) auto !important;'),
+            `${label} should fit home, quick controls, and upload details in one row`);
+        assert.ok(block.includes('"home actions date" !important;'),
+            `${label} should keep every utility in the compact row below the title`);
+        assert.ok(block.includes('order: 2 !important;'), `${label} should follow the title text`);
         assert.ok(block.includes('width: 100% !important;'), `${label} should span the full title card`);
     }
 
@@ -1034,6 +1035,7 @@ test('split title and owner cards align while quick links stay above the video',
         [standaloneTitleText, 'standalone title text'],
     ]) {
         assert.ok(block.includes('-webkit-line-clamp: 3 !important;'), `${label} should clamp before it overlaps the owner card`);
+        assert.ok(block.includes('order: 1 !important;'), `${label} should lead the title card hierarchy`);
         assert.ok(block.includes('overflow: hidden !important;'), `${label} should be contained inside the title card`);
         assert.ok(block.includes('overflow-wrap: anywhere !important;'), `${label} should protect against long unbroken tokens`);
     }
@@ -1042,12 +1044,12 @@ test('split title and owner cards align while quick links stay above the video',
         [source, 'extension owner card'],
         [theaterSplit, 'standalone owner card'],
     ]) {
-        assert.match(contents, /#owner:has\(\.ytkit-split-owner-actions\)[\s\S]*?display: grid !important;[\s\S]*?grid-template-areas:[\s\S]*?"owner"[\s\S]*?"sub"[\s\S]*?"actions" !important;/,
-            `${label} should use grid rows when docked actions are present`);
-        assert.match(contents, /#owner:not\(:has\(#subscribe-button\)\):has\(\.ytkit-split-owner-actions\)[\s\S]*?grid-template-areas:[\s\S]*?"owner"[\s\S]*?"actions" !important;/,
-            `${label} should remove the empty subscribe row when the channel is already subscribed`);
+        assert.match(contents, /#owner:has\(\.ytkit-split-owner-actions\)[\s\S]*?display: grid !important;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto !important;[\s\S]*?grid-template-areas:[\s\S]*?"owner sub"[\s\S]*?"actions actions" !important;/,
+            `${label} should keep identity and subscription together above one action row`);
+        assert.match(contents, /#owner:not\(:has\(#subscribe-button\)\):has\(\.ytkit-split-owner-actions\)[\s\S]*?grid-template-areas:[\s\S]*?"owner owner"[\s\S]*?"actions actions" !important;/,
+            `${label} should let identity span the first row when the channel is already subscribed`);
         assert.match(contents, /#owner:has\(\.ytkit-split-owner-actions\) #subscribe-button,[\s\S]*?#owner:has\(\.ytkit-split-owner-actions\) yt-subscribe-button-view-model,[\s\S]*?#owner:has\(\.ytkit-split-owner-actions\) ytd-subscribe-button-renderer\s*\{[\s\S]*?grid-area: sub !important;[\s\S]*?width: auto !important;/,
-            `${label} should keep subscribe in its own grid row before docked actions`);
+            `${label} should keep subscribe beside channel identity before docked actions`);
         assert.match(contents, /\.ytkit-split-owner-actions\s*\{[\s\S]*?grid-area: actions !important;[\s\S]*?grid-column: 1 \/ -1 !important;/,
             `${label} should place docked like/download actions on the actions grid row`);
         assert.match(contents, /\.ytkit-split-owner-actions #notification-preference-button,[\s\S]*?order: 1 !important;/,

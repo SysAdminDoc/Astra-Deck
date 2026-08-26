@@ -1456,8 +1456,8 @@
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata {
-                        margin: 0 0 14px !important;
-                        padding: 0 0 14px !important;
+                        margin: 0 0 10px !important;
+                        padding: 0 0 10px !important;
                         border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
                         overflow: visible !important;
                     }
@@ -1470,8 +1470,8 @@
                         min-width: 0 !important;
                         justify-self: stretch !important;
                         box-sizing: border-box !important;
-                        gap: 14px !important;
-                        margin: 0 0 14px !important;
+                        gap: 8px !important;
+                        margin: 0 !important;
                         padding: 0 !important;
                         overflow: visible !important;
                     }
@@ -1481,10 +1481,10 @@
                         display: grid !important;
                         grid-template-columns: minmax(0, 1fr) !important;
                         align-content: start !important;
-                        row-gap: 10px !important;
+                        row-gap: 8px !important;
                         z-index: 60 !important;
-                        margin: 0 0 10px !important;
-                        padding: 12px 14px 13px !important;
+                        margin: 0 !important;
+                        padding: 10px 12px 11px !important;
                         border: 1px solid rgba(255, 255, 255, 0.075) !important;
                         border-left: 2px solid rgba(var(--ytkit-split-accent-rgb), 0.42) !important;
                         border-radius: 12px !important;
@@ -1502,17 +1502,17 @@
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-title-bar {
                         display: grid !important;
-                        grid-template-columns: auto minmax(0, 1fr) !important;
+                        grid-template-columns: auto minmax(0, 1fr) auto !important;
                         grid-template-areas:
-                            "home date"
-                            "actions actions" !important;
+                            "home actions date" !important;
                         align-items: center !important;
-                        gap: 9px 10px !important;
+                        gap: 8px !important;
                         width: 100% !important;
                         min-width: 0 !important;
                         margin: 0 !important;
                         position: relative !important;
                         z-index: 5 !important;
+                        order: 2 !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-youtube-link {
@@ -1555,11 +1555,11 @@
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-header-actions {
                         display: inline-flex !important;
                         align-items: center !important;
-                        flex-wrap: wrap !important;
+                        flex-wrap: nowrap !important;
                         grid-area: actions !important;
-                        justify-self: stretch !important;
-                        gap: 8px !important;
-                        width: 100% !important;
+                        justify-self: start !important;
+                        gap: 6px !important;
+                        width: auto !important;
                         max-width: 100% !important;
                         min-width: 0 !important;
                         position: relative !important;
@@ -1647,10 +1647,10 @@
                         flex: 0 1 auto !important;
                         grid-area: date !important;
                         justify-self: end !important;
-                        max-width: min(100%, 220px) !important;
-                        min-height: 38px !important;
+                        max-width: min(100%, 200px) !important;
+                        min-height: 34px !important;
                         margin-left: 0 !important;
-                        padding: 5px 11px 6px !important;
+                        padding: 4px 9px 5px !important;
                         border-radius: 12px !important;
                         border: 1px solid rgba(var(--ytkit-split-accent-rgb), 0.18) !important;
                         background:
@@ -1700,6 +1700,7 @@
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata h1.ytd-watch-metadata {
                         margin: 0 !important;
                         padding: 0 !important;
+                        order: 1 !important;
                         max-width: 100% !important;
                         min-width: 0 !important;
                         font-size: 16px !important;
@@ -1741,9 +1742,9 @@
                         min-width: 0 !important;
                         justify-self: stretch !important;
                         box-sizing: border-box !important;
-                        gap: 7px !important;
+                        gap: 8px !important;
                         margin: 0 !important;
-                        padding: 9px 12px 8px !important;
+                        padding: 10px 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         border-radius: 12px !important;
                         background:
@@ -1911,21 +1912,20 @@
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions),
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
                         display: grid !important;
-                        grid-template-columns: minmax(0, 1fr) !important;
+                        grid-template-columns: minmax(0, 1fr) auto !important;
                         grid-template-areas:
-                            "owner"
-                            "sub"
-                            "actions" !important;
+                            "owner sub"
+                            "actions actions" !important;
                         align-content: flex-start !important;
                         align-items: center !important;
                         justify-items: start !important;
-                        gap: 12px 8px !important;
+                        gap: 8px 10px !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #owner:not(:has(#subscribe-button)):has(.ytkit-split-owner-actions) {
                         grid-template-areas:
-                            "owner"
-                            "actions" !important;
+                            "owner owner"
+                            "actions actions" !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
@@ -1946,6 +1946,15 @@
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #owner .ytkit-split-owner-actions {
                         grid-area: actions !important;
                         grid-column: 1 / -1 !important;
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: flex-start !important;
+                        flex-wrap: wrap !important;
+                        gap: 6px !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        min-width: 0 !important;
+                        margin: 0 !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface #actions,
@@ -2016,12 +2025,12 @@
                         grid-template-areas:
                             "count sort"
                             "box box" !important;
-                        gap: 10px !important;
+                        gap: 8px !important;
                         align-content: start !important;
                         align-items: center !important;
                         min-height: 0 !important;
-                        margin: 0 0 12px !important;
-                        padding: 10px 12px 9px !important;
+                        margin: 0 0 10px !important;
+                        padding: 8px 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         border-radius: 12px !important;
                         background:
@@ -2860,7 +2869,7 @@
                         display: none !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below.ytkit-split-scroll-surface ytd-watch-metadata #owner {
-                        padding: 12px !important;
+                        padding: 10px 12px !important;
                         border: 1px solid var(--ytkit-split-border) !important;
                         border-radius: 8px !important;
                         background: var(--ytkit-split-raised) !important;

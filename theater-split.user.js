@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.12
+// @name         Theater Split v1.0.13
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.12
+// @version      1.0.13
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -27,6 +27,8 @@
 //                     let the header measure the full wrapped title height.
 //   @version 1.0.12 - Add the flat Astra surface theme, accessible keyboard
 //                     resizing, and a reliable 68/32 divider reset.
+//   @version 1.0.13 - Compact the right-pane metadata into a title-first
+//                     hierarchy with single-row utilities and channel actions.
 
 (function() {
     'use strict';
@@ -108,8 +110,8 @@ color-scheme: inherit !important;
             z-index: 2147483647 !important;
         }
         body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata {
-            margin: 0 0 14px !important;
-            padding: 0 0 14px !important;
+            margin: 0 0 10px !important;
+            padding: 0 0 10px !important;
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
             min-width: 0 !important;
@@ -131,8 +133,8 @@ color-scheme: inherit !important;
             max-inline-size: 100% !important;
             justify-self: stretch !important;
             box-sizing: border-box !important;
-            gap: 14px !important;
-            margin: 0 0 14px !important;
+            gap: 8px !important;
+            margin: 0 !important;
             padding: 0 !important;
             overflow: visible !important;
         }
@@ -141,10 +143,10 @@ color-scheme: inherit !important;
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
             align-content: start !important;
-            row-gap: 10px !important;
+            row-gap: 8px !important;
             z-index: 60 !important;
-            margin: 0 0 10px !important;
-            padding: 12px 14px 13px !important;
+            margin: 0 !important;
+            padding: 10px 12px 11px !important;
             border: 1px solid rgba(255, 255, 255, 0.075) !important;
             border-left: 2px solid rgba(var(--ts-accent-rgb), 0.42) !important;
             border-radius: 15px !important;
@@ -197,17 +199,17 @@ color-scheme: inherit !important;
         }
         body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-title-bar {
             display: grid !important;
-            grid-template-columns: auto minmax(0, 1fr) !important;
+            grid-template-columns: auto minmax(0, 1fr) auto !important;
             grid-template-areas:
-                "home date"
-                "actions actions" !important;
+                "home actions date" !important;
             align-items: center !important;
-            gap: 9px 10px !important;
+            gap: 8px !important;
             width: 100% !important;
             min-width: 0 !important;
             margin: 0 !important;
             position: relative !important;
             z-index: 5 !important;
+            order: 2 !important;
         }
         body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-youtube-link {
             display: inline-flex !important;
@@ -245,11 +247,11 @@ color-scheme: inherit !important;
         body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #title .ytkit-split-header-actions {
             display: inline-flex !important;
             align-items: center !important;
-            flex-wrap: wrap !important;
+            flex-wrap: nowrap !important;
             grid-area: actions !important;
-            justify-self: stretch !important;
-            gap: 8px !important;
-            width: 100% !important;
+            justify-self: start !important;
+            gap: 6px !important;
+            width: auto !important;
             max-width: 100% !important;
             min-width: 0 !important;
             position: relative !important;
@@ -327,10 +329,10 @@ color-scheme: inherit !important;
             flex: 0 1 auto !important;
             grid-area: date !important;
             justify-self: end !important;
-            max-width: min(100%, 220px) !important;
-            min-height: 38px !important;
+            max-width: min(100%, 200px) !important;
+            min-height: 34px !important;
             margin-left: 0 !important;
-            padding: 5px 11px 6px !important;
+            padding: 4px 9px 5px !important;
             border-radius: 16px !important;
             border: 1px solid rgba(var(--ts-accent-rgb), 0.18) !important;
             background:
@@ -376,6 +378,7 @@ color-scheme: inherit !important;
         body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata h1.ytd-watch-metadata {
             margin: 0 !important;
             padding: 0 !important;
+            order: 1 !important;
             max-width: 100% !important;
             min-width: 0 !important;
             font-size: 16px !important;
@@ -415,9 +418,9 @@ color-scheme: inherit !important;
             min-width: 0 !important;
             justify-self: stretch !important;
             box-sizing: border-box !important;
-            gap: 7px !important;
+            gap: 8px !important;
             margin: 0 !important;
-            padding: 9px 12px 8px !important;
+            padding: 10px 12px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             border-radius: 16px !important;
             background:
@@ -625,20 +628,19 @@ color-scheme: inherit !important;
         body.ts-split #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions),
         body.ts-split #below.ytkit-split-scroll-surface #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
             display: grid !important;
-            grid-template-columns: minmax(0, 1fr) !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
             grid-template-areas:
-                "owner"
-                "sub"
-                "actions" !important;
+                "owner sub"
+                "actions actions" !important;
             align-content: flex-start !important;
             align-items: center !important;
             justify-items: start !important;
-            gap: 12px 8px !important;
+            gap: 8px 10px !important;
         }
         body.ts-split #below.ytkit-split-scroll-surface #owner:not(:has(#subscribe-button)):has(.ytkit-split-owner-actions) {
             grid-template-areas:
-                "owner"
-                "actions" !important;
+                "owner owner"
+                "actions actions" !important;
         }
         body.ts-split #below.ytkit-split-scroll-surface #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
             grid-area: owner !important;
@@ -661,7 +663,7 @@ color-scheme: inherit !important;
             justify-content: flex-start !important;
             align-self: stretch !important;
             flex-wrap: wrap !important;
-            gap: 8px !important;
+            gap: 6px !important;
             flex: 1 1 100% !important;
             order: 3 !important;
             width: 100% !important;
@@ -783,12 +785,12 @@ color-scheme: inherit !important;
             grid-template-areas:
                 "count sort"
                 "box box" !important;
-            gap: 10px !important;
+            gap: 8px !important;
             align-content: start !important;
             align-items: center !important;
             min-height: 0 !important;
-            margin: 0 0 12px !important;
-            padding: 10px 12px 9px !important;
+            margin: 0 0 10px !important;
+            padding: 8px 10px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             border-radius: 16px !important;
             background:
@@ -1498,7 +1500,7 @@ color-scheme: inherit !important;
             display: none !important;
         }
         body.ts-split #below.ytkit-split-scroll-surface ytd-watch-metadata #owner {
-            padding: 12px !important;
+            padding: 10px 12px !important;
             border: 1px solid var(--ts-border) !important;
             border-radius: 8px !important;
             background: var(--ts-raised) !important;
