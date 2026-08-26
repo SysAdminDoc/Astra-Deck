@@ -6,6 +6,34 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.86.1] (2026-08-26)
+
+### Fixed
+
+- YouTube comment-sort dropdowns now stay open when the user opens them. Astra
+  recognizes YouTube's current marker-free popup state and leaves any visible
+  native dropdown alone during delayed comment updates.
+
+- Automatic newest-first sorting supports both YouTube sorter layouts: the
+  two-item Top and Newest menu and the three-item Latest, Popular, and Oldest
+  menu. Astra verifies the renderer's localized labels before selecting an
+  endpoint, counts nested menu items once, and completes its own open-and-select
+  transaction without leaving a popup on screen.
+
+- Mutation bursts no longer postpone comment sorting forever. The earliest
+  pending sorter run is preserved instead of being reset by every YouTube DOM
+  update.
+
+### Tests
+
+- Extension and userscript regression coverage exercises both sorter layouts,
+  non-English labels, unrelated same-size menus, marker-free visible popups,
+  nested option markup, and mutation timer bursts.
+
+- The isolated live YouTube check opens the native comment sorter, enables the
+  Astra feature while it is open, forces a comment mutation, waits beyond both
+  sorter delays, and captures the menu still visible.
+
 ## [4.86.0] (2026-08-26)
 
 ### Added

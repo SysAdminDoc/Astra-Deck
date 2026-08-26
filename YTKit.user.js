@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.86.0
+// @name         YTKit v4.86.1
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.86.0
+// @version      4.86.1
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion
@@ -269,7 +269,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.86.0';
+    const YTKIT_VERSION = '4.86.1';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -9614,26 +9614,105 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'arrow-down',
             pages: [PageTypes.WATCH],
 
+            _sortSubMenu() {
+                return document.querySelector('#comments yt-sort-filter-sub-menu-renderer, ytd-comments yt-sort-filter-sub-menu-renderer');
+            },
+
+            _sortMenuItems() {
+                const items = this._sortSubMenu()?.data?.subMenuItems;
+                return Array.isArray(items) ? items : null;
+            },
+
+            _newestIndex(items = this._sortMenuItems()) {
+                if (!Array.isArray(items)) return -1;
+                if (items.length === 2) return 1;
+                if (items.length === 3) return 0;
+                return -1;
+            },
+
+            _normalizeSortLabel(value) {
+                if (value && typeof value === 'object') {
+                    if (typeof value.simpleText === 'string') value = value.simpleText;
+                    else if (Array.isArray(value.runs)) value = value.runs.map(run => run?.text || '').join('');
+                }
+                return String(value || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+            },
+
+            _declaredSortLabel(item) {
+                return this._normalizeSortLabel(item?.title ?? item?.label ?? item?.text);
+            },
+
+            _openDropdown() {
+                return Array.from(document.querySelectorAll('tp-yt-iron-dropdown')).find(dropdown => {
+                    if (dropdown.getAttribute('aria-hidden') === 'true') return false;
+                    if (dropdown.getAttribute('aria-hidden') === 'false' || dropdown.hasAttribute('opened')) {
+                        return true;
+                    }
+                    const rect = dropdown.getBoundingClientRect?.();
+                    return Boolean(rect && rect.width > 0 && rect.height > 0);
+                }) || null;
+            },
+
+            _isAlreadyNewest(sortMenu) {
+                const items = this._sortMenuItems();
+                const newestIndex = this._newestIndex(items);
+                if (newestIndex >= 0) return items[newestIndex]?.selected === true;
+                const activeLabel = this._normalizeSortLabel(sortMenu?.textContent);
+                return activeLabel.includes('newest') || activeLabel.includes('latest');
+            },
+
+            _openDropdownOptions(dropdown = this._openDropdown()) {
+                if (!dropdown) return [];
+                const endpoints = Array.from(dropdown.querySelectorAll('tp-yt-paper-listbox a'));
+                if (endpoints.length > 0) return endpoints;
+                return Array.from(dropdown.querySelectorAll(
+                    'tp-yt-paper-listbox tp-yt-paper-item, ' +
+                    'ytd-menu-popup-renderer tp-yt-paper-item, ' +
+                    'ytd-menu-service-item-renderer tp-yt-paper-item'
+                ));
+            },
+
+            _sortDropdown() {
+                return document.querySelector(
+                    '#comments #sort-menu tp-yt-iron-dropdown, ' +
+                    'ytd-comments #sort-menu tp-yt-iron-dropdown'
+                );
+            },
+
+            _pickNewestOption(dropdown = this._sortDropdown()) {
+                const declared = this._sortMenuItems();
+                const newestIndex = this._newestIndex(declared);
+                const options = this._openDropdownOptions(dropdown);
+                if (newestIndex < 0 || options.length !== declared.length) return null;
+                const ownsDropdown = declared.every((item, index) => {
+                    const declaredLabel = this._declaredSortLabel(item);
+                    const optionLabel = this._normalizeSortLabel(options[index]?.textContent);
+                    return declaredLabel && optionLabel
+                        && (optionLabel === declaredLabel || optionLabel.startsWith(`${declaredLabel} `));
+                });
+                return ownsDropdown ? (options[newestIndex] || null) : null;
+            },
+
             _sort() {
                 // YouTube's sort menu: click the sort button, then select "Newest first"
-                const sortMenu = document.querySelector('#comments #sort-menu tp-yt-paper-button, #comments #sort-menu yt-sort-filter-sub-menu-renderer tp-yt-paper-button, #comments [slot="toolbar"] tp-yt-paper-button');
+                const sortMenu = document.querySelector(
+                    '#comments #sort-menu tp-yt-paper-button, ' +
+                    '#comments #sort-menu yt-sort-filter-sub-menu-renderer tp-yt-paper-button, ' +
+                    '#comments #sort-menu button, ' +
+                    '#comments [slot="toolbar"] tp-yt-paper-button, ' +
+                    '#comments [slot="toolbar"] button, ' +
+                    '#comments button[aria-label*="Sort comments"]'
+                );
                 if (!sortMenu) return;
-                // Check if already set to newest
-                const activeSort = sortMenu.textContent?.trim()?.toLowerCase();
-                if (activeSort?.includes('newest')) return;
-                sortMenu.click();
-                requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        const options = document.querySelectorAll('tp-yt-paper-listbox a, tp-yt-paper-listbox tp-yt-paper-item');
-                        for (const opt of options) {
-                            if (opt.textContent?.trim()?.toLowerCase()?.includes('newest')) {
-                                opt.click();
-                                DebugManager.log('SortComments', 'Switched to newest first');
-                                break;
-                            }
-                        }
-                    }, 200);
-                });
+                if (this._openDropdown()) return;
+                if (this._isAlreadyNewest(sortMenu)) return;
+                if (this._newestIndex() < 0) return;
+                const target = this._pickNewestOption();
+                if (target) {
+                    sortMenu.click();
+                    target.click();
+                    DebugManager.log('SortComments', 'Switched to newest first');
+                }
             },
 
             init() {

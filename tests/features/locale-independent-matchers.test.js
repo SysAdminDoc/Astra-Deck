@@ -7,13 +7,17 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
+const { loadFeature, loadUserscriptFeature, fakeNode, fakeDocument } = require('../helpers/monolith');
 
 // The real shared parser — the structural view-count gate delegates to it.
 require('../../extension/core/text-metrics.js');
 const YTKitCore = globalThis.YTKitCore;
 
 const flush = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const visibleDropdown = (node) => {
+    node.getBoundingClientRect = () => ({ width: 180, height: 120 });
+    return node;
+};
 
 // ── notInterestedButton ────────────────────────────────────────────────
 test('notInterestedButton sends native feedback on a Japanese menu', async () => {
@@ -56,7 +60,7 @@ test('notInterestedButton sends native feedback on a Japanese menu', async () =>
 
 test('notInterestedButton closes the menu it opened when no item matches', async () => {
     const menuBtn = fakeNode({ tag: 'button' });
-    const dropdown = fakeNode({ tag: 'tp-yt-iron-dropdown' });
+    const dropdown = visibleDropdown(fakeNode({ tag: 'tp-yt-iron-dropdown' }));
     const document = fakeDocument((selector) => {
         if (selector.includes('ytd-menu-renderer')) return menuBtn;
         if (selector.includes('tp-yt-iron-dropdown')) return dropdown;
@@ -101,11 +105,16 @@ test('sortCommentsNewest reads the active sort from renderer data, not English t
 test('sortCommentsNewest picks the newest option positionally on a non-English UI', () => {
     const top = fakeNode({ tag: 'tp-yt-paper-item', text: 'Top-Kommentare' });
     const newest = fakeNode({ tag: 'tp-yt-paper-item', text: 'Neueste zuerst' });
-    const dropdown = fakeNode({ tag: 'tp-yt-iron-dropdown' });
+    const dropdown = visibleDropdown(fakeNode({ tag: 'tp-yt-iron-dropdown' }));
     dropdown.querySelectorAll = () => [top, newest];
     const subMenu = fakeNode({
         tag: 'yt-sort-filter-sub-menu-renderer',
-        data: { subMenuItems: [{ selected: true }, { selected: false }] }
+        data: {
+            subMenuItems: [
+                { title: 'Top-Kommentare', selected: true },
+                { title: 'Neueste zuerst', selected: false }
+            ]
+        }
     });
 
     const feature = loadFeature('sortCommentsNewest', {
@@ -142,6 +151,170 @@ test('sortCommentsNewest refuses to click an unrelated dropdown', () => {
     assert.equal(feature._pickNewestOption(), null,
         'a dropdown that is not the sort menu must never be clicked positionally');
 });
+
+test('sortCommentsNewest keeps the earliest pending run during mutation bursts', () => {
+    let now = 1000;
+    const scheduled = [];
+    const cleared = [];
+    const feature = loadFeature('sortCommentsNewest', {
+        Date: { now: () => now },
+        setTimeout(callback, delay) {
+            scheduled.push({ callback, delay });
+            return scheduled.length;
+        },
+        clearTimeout(id) { cleared.push(id); }
+    });
+
+    feature._scheduleSort(2000);
+    now += 100;
+    feature._scheduleSort(2000);
+    assert.equal(scheduled.length, 1, 'repeated mutations must not postpone an existing run');
+    assert.deepEqual(cleared, []);
+
+    now += 100;
+    feature._scheduleSort(500);
+    assert.equal(scheduled.length, 2, 'an earlier requested run may replace the pending timer');
+    assert.deepEqual(cleared, [1]);
+});
+
+for (const [vehicle, load] of [
+    ['extension', loadFeature],
+    ['userscript', loadUserscriptFeature]
+]) {
+    test(`${vehicle} sortCommentsNewest recognizes YouTube's Latest / Popular / Oldest menu`, () => {
+        const subMenu = fakeNode({
+            tag: 'yt-sort-filter-sub-menu-renderer',
+            data: {
+                subMenuItems: [
+                    { title: 'Neueste', selected: true },
+                    { title: 'Beliebteste', selected: false },
+                    { title: 'Älteste', selected: false }
+                ]
+            }
+        });
+        const feature = load('sortCommentsNewest', {
+            document: fakeDocument(selector => (selector.includes('sub-menu-renderer') ? subMenu : []))
+        });
+
+        assert.equal(feature._isAlreadyNewest(fakeNode({ text: 'Neueste' })), true,
+            'the first item in the three-option sorter is the newest view');
+    });
+
+    test(`${vehicle} sortCommentsNewest selects Latest from the verified three-item menu`, () => {
+        const labels = ['Neueste', 'Beliebteste', 'Älteste'];
+        const options = labels.map(text => fakeNode({ tag: 'tp-yt-paper-item', text }));
+        const dropdown = visibleDropdown(fakeNode({ tag: 'tp-yt-iron-dropdown' }));
+        dropdown.querySelectorAll = () => options;
+        const subMenu = fakeNode({
+            tag: 'yt-sort-filter-sub-menu-renderer',
+            data: { subMenuItems: labels.map((title, index) => ({ title, selected: index === 1 })) }
+        });
+        const feature = load('sortCommentsNewest', {
+            document: fakeDocument((selector) => {
+                if (selector.includes('tp-yt-iron-dropdown')) return dropdown;
+                if (selector.includes('sub-menu-renderer')) return subMenu;
+                return [];
+            })
+        });
+
+        assert.equal(feature._pickNewestOption(), options[0],
+            'the first item is Latest in YouTube\'s current sorter');
+    });
+
+    test(`${vehicle} sortCommentsNewest rejects an unrelated dropdown with the same item count`, () => {
+        const labels = ['Neueste', 'Beliebteste', 'Älteste'];
+        const unrelated = ['Teilen', 'Melden', 'Transkript']
+            .map(text => fakeNode({ tag: 'tp-yt-paper-item', text }));
+        const dropdown = visibleDropdown(fakeNode({ tag: 'tp-yt-iron-dropdown' }));
+        dropdown.querySelectorAll = () => unrelated;
+        const subMenu = fakeNode({
+            tag: 'yt-sort-filter-sub-menu-renderer',
+            data: { subMenuItems: labels.map((title, index) => ({ title, selected: index === 1 })) }
+        });
+        const feature = load('sortCommentsNewest', {
+            document: fakeDocument((selector) => {
+                if (selector.includes('tp-yt-iron-dropdown')) return dropdown;
+                if (selector.includes('sub-menu-renderer')) return subMenu;
+                return [];
+            })
+        });
+
+        assert.equal(feature._pickNewestOption(), null,
+            'matching the item count alone must never authorize a dropdown click');
+    });
+
+    test(`${vehicle} sortCommentsNewest leaves a user-opened dropdown alone`, () => {
+        const sortButton = fakeNode({ tag: 'button', text: 'Top-Kommentare' });
+        const openDropdown = visibleDropdown(fakeNode({ tag: 'tp-yt-iron-dropdown' }));
+        const subMenu = fakeNode({
+            tag: 'yt-sort-filter-sub-menu-renderer',
+            data: {
+                subMenuItems: [
+                    { title: 'Top-Kommentare', selected: true },
+                    { title: 'Neueste zuerst', selected: false }
+                ]
+            }
+        });
+        const feature = load('sortCommentsNewest', {
+            document: fakeDocument((selector) => {
+                if (selector.startsWith('#comments #sort-menu')) return sortButton;
+                if (selector.includes('tp-yt-iron-dropdown')) return openDropdown;
+                if (selector.includes('sub-menu-renderer')) return subMenu;
+                return [];
+            })
+        });
+
+        feature._sort();
+        assert.equal(sortButton.clicked, 0,
+            'automation must not toggle YouTube\'s marker-free visible popup');
+    });
+
+    test(`${vehicle} sortCommentsNewest counts each nested menu option once`, () => {
+        const links = ['Top', 'Newest'].map(text => fakeNode({ tag: 'a', text }));
+        const nestedItems = ['Top', 'Newest'].map(text => fakeNode({ tag: 'tp-yt-paper-item', text }));
+        const dropdown = visibleDropdown(fakeNode({ tag: 'tp-yt-iron-dropdown' }));
+        dropdown.querySelectorAll = selector => (
+            selector === 'tp-yt-paper-listbox a' ? links : nestedItems
+        );
+        const feature = load('sortCommentsNewest', { document: fakeDocument(() => []) });
+
+        assert.deepEqual(Array.from(feature._openDropdownOptions(dropdown)), links,
+            'anchor endpoints must win over their nested paper-item children');
+    });
+
+    test(`${vehicle} sortCommentsNewest selects in one task without a delayed popup`, () => {
+        const sortButton = fakeNode({ tag: 'tp-yt-paper-button', text: 'Sort by' });
+        const options = ['Top', 'Newest'].map(text => fakeNode({ tag: 'a', text }));
+        const dropdown = fakeNode({
+            tag: 'tp-yt-iron-dropdown',
+            attributes: { 'aria-hidden': 'true' }
+        });
+        dropdown.querySelectorAll = selector => (
+            selector === 'tp-yt-paper-listbox a' ? options : []
+        );
+        const subMenu = fakeNode({
+            tag: 'yt-sort-filter-sub-menu-renderer',
+            data: {
+                subMenuItems: [
+                    { title: 'Top', selected: true },
+                    { title: 'Newest', selected: false }
+                ]
+            }
+        });
+        const feature = load('sortCommentsNewest', {
+            document: fakeDocument((selector) => {
+                if (selector.startsWith('#comments #sort-menu tp-yt-paper-button')) return sortButton;
+                if (selector.includes('tp-yt-iron-dropdown')) return dropdown;
+                if (selector.includes('sub-menu-renderer')) return subMenu;
+                return [];
+            })
+        });
+
+        feature._sort();
+        assert.equal(sortButton.clicked, 1, 'the verified native sorter must open exactly once');
+        assert.equal(options[1].clicked, 1, 'the verified Newest endpoint must be activated directly');
+    });
+}
 
 // ── autoLikeSubscribed ─────────────────────────────────────────────────
 test('autoLikeSubscribed reads subscription state structurally', () => {

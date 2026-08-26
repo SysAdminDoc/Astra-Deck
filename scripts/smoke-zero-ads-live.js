@@ -254,6 +254,166 @@ async function setWatchSettingEnabled(client, backgroundClient, key, enabled, ti
     }
 }
 
+async function setStoredWatchSetting(backgroundClient, key, enabled) {
+    return evaluate(backgroundClient, `(async () => {
+        const stored = await chrome.storage.local.get('ytSuiteSettings');
+        const settings = stored.ytSuiteSettings && typeof stored.ytSuiteSettings === 'object'
+            ? stored.ytSuiteSettings : {};
+        await chrome.storage.local.set({
+            ytSuiteSettings: { ...settings, [${JSON.stringify(key)}]: ${enabled ? 'true' : 'false'} }
+        });
+        return true;
+    })()`);
+}
+
+async function verifyCommentSortDropdown(client, backgroundClient, timeoutMs) {
+    await setStoredWatchSetting(backgroundClient, 'sortCommentsNewest', false);
+    await sleep(300);
+    await evaluate(client, `(() => {
+        const button = document.querySelector([
+            '#comments #sort-menu tp-yt-paper-button',
+            '#comments #sort-menu yt-sort-filter-sub-menu-renderer tp-yt-paper-button',
+            '#comments #sort-menu button',
+            '#comments [slot="toolbar"] tp-yt-paper-button',
+            '#comments [slot="toolbar"] button',
+            '#comments button[aria-label*="Sort comments"]'
+        ].join(', '));
+        button?.scrollIntoView({ block: 'center', behavior: 'instant' });
+        return Boolean(button);
+    })()`);
+    await waitForExpression(
+        client,
+        `(() => {
+            const button = document.querySelector([
+                '#comments #sort-menu tp-yt-paper-button',
+                '#comments #sort-menu yt-sort-filter-sub-menu-renderer tp-yt-paper-button',
+                '#comments #sort-menu button',
+                '#comments [slot="toolbar"] tp-yt-paper-button',
+                '#comments [slot="toolbar"] button',
+                '#comments button[aria-label*="Sort comments"]'
+            ].join(', '));
+            const rect = button?.getBoundingClientRect();
+            return Boolean(rect && rect.width > 20 && rect.height > 20
+                && rect.top >= 0 && rect.bottom <= innerHeight);
+        })()`,
+        timeoutMs,
+        'visible native comment-sort button'
+    );
+    const clicked = await evaluate(client, `(() => {
+        const button = document.querySelector([
+            '#comments #sort-menu tp-yt-paper-button',
+            '#comments #sort-menu yt-sort-filter-sub-menu-renderer tp-yt-paper-button',
+            '#comments #sort-menu button',
+            '#comments [slot="toolbar"] tp-yt-paper-button',
+            '#comments [slot="toolbar"] button',
+            '#comments button[aria-label*="Sort comments"]'
+        ].join(', '));
+        if (!button) return false;
+        button.click();
+        return true;
+    })()`);
+    if (!clicked) throw new Error('comment sort: native button could not be clicked');
+    try {
+        await waitForExpression(
+            client,
+            `Array.from(document.querySelectorAll('tp-yt-iron-dropdown')).some(dropdown => {
+                if (dropdown.getAttribute('aria-hidden') === 'true') return false;
+                if (dropdown.getAttribute('aria-hidden') === 'false' || dropdown.hasAttribute('opened')) return true;
+                const rect = dropdown.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
+            })`,
+            timeoutMs,
+            'open native comment-sort dropdown'
+        );
+    } catch (error) {
+        const diagnostics = await evaluate(client, `(() => {
+            const visible = node => {
+                const rect = node.getBoundingClientRect();
+                const style = getComputedStyle(node);
+                return rect.width > 0 && rect.height > 0
+                    && style.display !== 'none' && style.visibility !== 'hidden';
+            };
+            const describe = node => ({
+                tag: node.tagName.toLowerCase(),
+                id: node.id || '',
+                className: String(node.className || ''),
+                role: node.getAttribute('role') || '',
+                ariaLabel: node.getAttribute('aria-label') || '',
+                ariaHidden: node.getAttribute('aria-hidden'),
+                opened: node.hasAttribute('opened'),
+                text: String(node.textContent || '').trim().slice(0, 240),
+                html: node.outerHTML.slice(0, 800)
+            });
+            const button = document.querySelector('#comments #sort-menu button');
+            const candidates = [...document.querySelectorAll([
+                'tp-yt-iron-dropdown',
+                'ytd-menu-popup-renderer',
+                'yt-list-view-model',
+                '[role="menu"]',
+                '[role="listbox"]',
+                '[popover]'
+            ].join(', '))].filter(visible).map(describe);
+            return {
+                button: button ? describe(button) : null,
+                candidates
+            };
+        })()`);
+        fs.writeFileSync(
+            path.join(OUT_DIR, 'watch-comment-sort-click-diagnostics.json'),
+            JSON.stringify(diagnostics, null, 2) + '\n'
+        );
+        await capture(client, 'watch-comment-sort-click-diagnostics-1440x900');
+        throw new Error(`${error.message}: ${JSON.stringify(diagnostics)}`);
+    }
+    await setStoredWatchSetting(backgroundClient, 'sortCommentsNewest', true);
+    await sleep(500);
+    await evaluate(client, `(() => {
+        const comments = document.querySelector('#comments');
+        if (!comments) return false;
+        const marker = document.createElement('span');
+        marker.hidden = true;
+        marker.dataset.astraSortSmoke = '1';
+        comments.appendChild(marker);
+        marker.remove();
+        return true;
+    })()`);
+    // Hold past both the mutation delay and the initial four-second run.
+    await sleep(5200);
+    const snapshot = await evaluate(client, `(() => {
+        const dropdown = Array.from(document.querySelectorAll('tp-yt-iron-dropdown')).find(node => {
+            if (node.getAttribute('aria-hidden') === 'true') return false;
+            if (node.getAttribute('aria-hidden') === 'false' || node.hasAttribute('opened')) return true;
+            const candidateRect = node.getBoundingClientRect();
+            return candidateRect.width > 0 && candidateRect.height > 0;
+        });
+        const links = dropdown ? Array.from(dropdown.querySelectorAll('tp-yt-paper-listbox a')) : [];
+        const optionNodes = links.length > 0 ? links : (dropdown ? Array.from(dropdown.querySelectorAll([
+            'tp-yt-paper-listbox tp-yt-paper-item',
+            'ytd-menu-popup-renderer tp-yt-paper-item',
+            'ytd-menu-service-item-renderer tp-yt-paper-item'
+        ].join(', '))) : []);
+        const items = optionNodes.map(node => String(node.textContent || '').replace(/\\s+/g, ' ').trim());
+        const rect = dropdown?.getBoundingClientRect();
+        return {
+            open: Boolean(dropdown && rect && rect.width > 0 && rect.height > 0),
+            items,
+            rect: rect ? {
+                left: Math.round(rect.left),
+                top: Math.round(rect.top),
+                width: Math.round(rect.width),
+                height: Math.round(rect.height)
+            } : null
+        };
+    })()`);
+    if (!snapshot.open || snapshot.items.length < 2) {
+        throw new Error(`comment sort: dropdown closed after the user click: ${JSON.stringify(snapshot)}`);
+    }
+    await capture(client, 'watch-comment-sort-open-1440x900');
+    await evaluate(client, 'document.body.click()');
+    await setStoredWatchSetting(backgroundClient, 'sortCommentsNewest', false);
+    return snapshot;
+}
+
 async function setTheaterSplitEnabled(client, backgroundClient, enabled, timeoutMs) {
     await setWatchSettingEnabled(client, backgroundClient, 'stickyVideo', enabled, timeoutMs);
     await waitForExpression(
@@ -1275,6 +1435,11 @@ async function runCandidate(candidate, stageDir, options) {
         const watch = await pageSnapshot(client, 'watch');
         await capture(client, 'watch-1440x900');
         const watchThemes = await verifyWatchThemeSurfaces(client, backgroundClient, options.timeoutMs);
+        const commentSortDropdown = await verifyCommentSortDropdown(
+            client,
+            backgroundClient,
+            options.timeoutMs
+        );
         const spaNetwork = adEvents(client.events, spaStart);
 
         const allResponses = [...coldNetwork.responses, ...spaNetwork.responses];
@@ -1296,6 +1461,7 @@ async function runCandidate(candidate, stageDir, options) {
             home: home.snapshot,
             watch: watch.snapshot,
             watchThemes,
+            commentSortDropdown,
             liveSettings,
             blockedRequests: allBlocked,
             coldAdRequests: coldNetwork.requests.length,
