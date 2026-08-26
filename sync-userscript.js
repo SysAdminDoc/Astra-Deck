@@ -58,6 +58,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/chapters.js',
     'extension/core/csv.js',
     'extension/core/dialog-guard.js',
+    'extension/core/zero-ad-dom.js',
     'extension/core/element-zapper.js',
     'extension/features/element-zapper/index.js',
     'extension/core/hide-attribution.js',

@@ -2815,7 +2815,7 @@ function buildSettingsPanel() {
             if (cat === 'Content') content.appendChild(buildVideoHiderPane(config));
             if (cat === 'Content') {
                 const zapperPane = globalThis.YTKitFeatures?.elementZapperInstance?.buildElementZapperPane?.();
-                if (zapperPane) content.appendChild(zapperPane);
+                if (zapperPane) pane.appendChild(zapperPane);
             }
         });
 
@@ -3086,10 +3086,12 @@ function buildFeatureCard(f, accentColor, isSubFeature = false) {
             + (f.type === 'color' ? ' ytkit-color-card' : '');
         card.dataset.featureId = f.id;
         card.dataset.featureType = featureType;
+        card.dataset.settingKey = f.settingKey || f.id;
         card.dataset.searchText = [
             featureName,
             featureDescription,
             f.id,
+            f.settingKey,
             f.group,
             f.type,
             f.parentId,

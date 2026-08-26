@@ -251,7 +251,7 @@
                         z-index: 2147483000 !important;
                         opacity: var(--ytkit-floating-chat-opacity, 0.9);
                         border: 1px solid var(--ytkit-overlay-border, rgba(255,255,255,0.2)) !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         overflow: hidden !important;
                         background: var(--ytkit-overlay-bg, #171b23) !important;
                         box-shadow: 0 22px 70px rgba(0,0,0,0.52) !important;

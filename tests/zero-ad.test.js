@@ -23,6 +23,7 @@ const {
 const {
     ZERO_AD_RULESET_ID,
     assertPageSnapshot,
+    firefoxWatchLinkNodeExpression,
     firefoxWatchLinkExpression,
     networkEventsForToken,
     parseArgs: parseFirefoxSmokeArgs
@@ -114,6 +115,32 @@ test('Firefox watch navigation activates the visible title link instead of a pla
     assert.deepEqual(clicks, ['Real search result']);
 });
 
+test('Firefox smoke exposes the same visible title link for a trusted pointer click', () => {
+    const makeLink = ({ href, text, title = false, owner = '' }) => ({
+        href,
+        textContent: text,
+        closest: () => owner || null,
+        getBoundingClientRect: () => ({ width: 320, height: 180 }),
+        matches: () => title
+    });
+    const playerOverlay = makeLink({
+        href: 'https://www.youtube.com/watch?v=overlay',
+        text: '',
+        owner: 'ytd-player'
+    });
+    const title = makeLink({
+        href: 'https://www.youtube.com/watch?v=title',
+        text: 'Real search result',
+        title: true
+    });
+
+    const result = vm.runInNewContext(firefoxWatchLinkNodeExpression(), {
+        document: { querySelectorAll: () => [playerOverlay, title] }
+    });
+
+    assert.equal(result.href, title.href);
+});
+
 test('Firefox network evidence filters by the unique deterministic probe token', () => {
     const events = [
         { method: 'network.beforeRequestSent', params: { request: { url: 'https://example.test/other' } } },
@@ -122,6 +149,63 @@ test('Firefox network evidence filters by the unique deterministic probe token',
     ];
     assert.deepEqual(networkEventsForToken(events, 0, 'astra-token'), events.slice(1));
     assert.deepEqual(networkEventsForToken(events, 2, 'astra-token'), events.slice(2));
+});
+
+test('Firefox smoke resettles the home runtime after its blocked-request probe', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-firefox-webext.js'), 'utf8');
+    const probeIndex = source.indexOf('proveMatchingRequestBlocked');
+    const settledIndex = source.indexOf("label: 'post-probe Firefox home runtime'");
+    const snapshotIndex = source.indexOf("assertPageSnapshot(home, 'home')");
+
+    assert.ok(probeIndex >= 0);
+    assert.ok(settledIndex > probeIndex);
+    assert.ok(snapshotIndex > settledIndex);
+});
+
+test('Firefox probe insertion tolerates a transient BiDi document handoff', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-firefox-webext.js'), 'utf8');
+    const shellBlock = source.slice(
+        source.indexOf('async function injectDeterministicAdShell'),
+        source.indexOf('async function runAutomatedFirefoxSmoke')
+    );
+    const requestBlock = source.slice(
+        source.indexOf('async function proveMatchingRequestBlocked'),
+        source.indexOf('async function injectDeterministicAdShell')
+    );
+
+    assert.match(shellBlock, /return waitForJson\(/);
+    assert.match(shellBlock, /Firefox deterministic ad-shell probe insertion/);
+    assert.match(requestBlock, /await waitForJson\(/);
+    assert.match(requestBlock, /Firefox deterministic blocked-request probe insertion/);
+});
+
+test('Firefox watch proof follows a new top-level result context when YouTube opens one', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-firefox-webext.js'), 'utf8');
+    assert.match(source, /let watchContext;/);
+    assert.match(source, /watchContext = await waitForContext\(/);
+    assert.match(source, /new URL\(url\)\.pathname === '\/watch'/);
+    assert.match(source, /watchNavigation: context === searchContext \? 'same-context' : 'new-context'/);
+});
+
+test('Firefox trusted clicks retry transient pointer handoffs before the DOM fallback', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'firefox-webdriver.js'), 'utf8');
+    const clickBlock = source.slice(
+        source.indexOf('async function clickElementExpression'),
+        source.indexOf('async function waitForContext')
+    );
+    assert.match(clickBlock, /attempt <= 3/);
+    assert.match(clickBlock, /document\.elementFromPoint/);
+    assert.match(clickBlock, /method: 'pointer'/);
+    assert.match(clickBlock, /method: 'dom-fallback'/);
+});
+
+test('Firefox watch proof falls back to trusted Enter activation before giving up', () => {
+    const smokeSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-firefox-webext.js'), 'utf8');
+    const driverSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'firefox-webdriver.js'), 'utf8');
+    assert.match(smokeSource, /pressEnterElementExpression\(client, context, watchNodeExpression\)/);
+    assert.match(smokeSource, /method: 'keyboard-fallback'/);
+    assert.match(driverSource, /async function pressEnterElementExpression/);
+    assert.match(driverSource, /type: 'keyDown', value: '\\uE007'/);
 });
 
 test('real userscript-manager smoke pins both signed managers and keeps its shell-only contract honest', () => {

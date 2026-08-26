@@ -16,10 +16,13 @@ const { spawn, spawnSync } = require('node:child_process');
 const { createFirefoxStage } = require('./check-firefox-webext');
 const {
     captureScreenshot,
+    clickElementExpression,
     evaluateJson,
+    pressEnterElementExpression,
     resolveGeckodriverExecutable,
     sleep,
     startFirefoxSession,
+    waitForContext,
     waitForJson
 } = require('./firefox-webdriver');
 const { AD_SELECTORS, AD_URL_RE } = require('./smoke-zero-ads-live');
@@ -33,7 +36,7 @@ const FIREFOX_OPTIONAL_HOST_UUID = '2f88b30c-68f9-4f4d-8c0e-e71f33a58a01';
 const ZERO_AD_RULESET_ID = 'astra_zero_ads';
 const MANUAL_OPTIONAL_HOST_TIMEOUT_MS = 180000;
 
-function firefoxWatchLinkExpression({ activate = false } = {}) {
+function firefoxWatchLinkNodeExpression() {
     return `(() => {
         const candidates = Array.from(document.querySelectorAll('a[href*="/watch?v="]'))
             .filter((node) => {
@@ -42,9 +45,15 @@ function firefoxWatchLinkExpression({ activate = false } = {}) {
                     && rect.height > 0
                     && !node.closest('ytd-miniplayer, ytd-player, #movie_player');
             });
-        const link = candidates.find((node) => node.matches(
+        return candidates.find((node) => node.matches(
             '#video-title, .yt-lockup-metadata-view-model-wiz__title'
         )) || candidates.find((node) => node.textContent.trim()) || candidates[0];
+    })()`;
+}
+
+function firefoxWatchLinkExpression({ activate = false } = {}) {
+    return `(() => {
+        const link = ${firefoxWatchLinkNodeExpression()};
         if (!link) return { clicked: false, href: '' };
         ${activate ? 'link.click();' : ''}
         return {
@@ -330,13 +339,17 @@ function networkEventsForToken(events, startIndex, token) {
 async function proveMatchingRequestBlocked(client, context, timeoutMs) {
     const token = `astra-firefox-dnr-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const startIndex = client.events.length;
-    await evaluateJson(client, context, `(() => {
+    await waitForJson(client, context, `(() => {
+        document.querySelector('#${token}')?.remove();
         const image = new Image();
         image.id = ${JSON.stringify(token)};
         image.src = ${JSON.stringify(`https://doubleclick.net/${token}.gif`)};
         document.documentElement.append(image);
         return { url: image.src };
-    })()`);
+    })()`, (value) => value?.url?.includes(token), {
+        timeoutMs,
+        label: 'Firefox deterministic blocked-request probe insertion'
+    });
     const deadline = Date.now() + timeoutMs;
     let events = [];
     while (Date.now() < deadline) {
@@ -364,8 +377,8 @@ async function proveMatchingRequestBlocked(client, context, timeoutMs) {
     };
 }
 
-async function injectDeterministicAdShell(client, context) {
-    return evaluateJson(client, context, `(() => {
+async function injectDeterministicAdShell(client, context, timeoutMs = 15000) {
+    return waitForJson(client, context, `(() => {
         document.querySelector('#astra-firefox-ad-shell')?.remove();
         const shell = document.createElement('ytd-ad-slot-renderer');
         shell.id = 'astra-firefox-ad-shell';
@@ -375,7 +388,12 @@ async function injectDeterministicAdShell(client, context) {
         const style = getComputedStyle(shell);
         const rect = shell.getBoundingClientRect();
         return { display: style.display, visibility: style.visibility, width: rect.width, height: rect.height };
-    })()`);
+    })()`, (value) => typeof value?.display === 'string'
+        && Number.isFinite(value?.width)
+        && Number.isFinite(value?.height), {
+        timeoutMs,
+        label: 'Firefox deterministic ad-shell probe insertion'
+    });
 }
 
 async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, manifest) {
@@ -411,7 +429,7 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
             throw new Error(`Firefox installed unexpected extension id: ${installed.extension}`);
         }
         const tree = await client.command('browsingContext.getTree', {});
-        const context = tree.contexts?.[0]?.context;
+        let context = tree.contexts?.[0]?.context;
         if (!context) throw new Error('Firefox WebDriver session has no top-level browsing context');
         await client.command('browsingContext.setViewport', {
             context,
@@ -436,12 +454,25 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
             { timeoutMs: opts.timeoutMs, label: 'YouTube shell, Astra runtime, and enabled Firefox ruleset' }
         );
 
-        const deterministicShell = await injectDeterministicAdShell(client, context);
+        const deterministicShell = await injectDeterministicAdShell(
+            client,
+            context,
+            Math.min(opts.timeoutMs, 15000)
+        );
         if (deterministicShell.display !== 'none' || deterministicShell.height !== 0) {
             throw new Error(`Firefox did not collapse the deterministic ad shell: ${JSON.stringify(deterministicShell)}`);
         }
         const dnrProbe = await proveMatchingRequestBlocked(client, context, Math.min(opts.timeoutMs, 15000));
-        const home = await evaluateJson(client, context, pageSnapshotExpression());
+        const home = await waitForJson(
+            client,
+            context,
+            pageSnapshotExpression(),
+            (value) => value?.rulesetState === 'enabled'
+                && value?.astraTrigger
+                && value?.masthead
+                && value?.search,
+            { timeoutMs: opts.timeoutMs, label: 'post-probe Firefox home runtime' }
+        );
         assertPageSnapshot(home, 'home');
         await captureScreenshot(client, context, path.join(OUT_DIR, 'home-1440x900.png'));
 
@@ -460,9 +491,48 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
             (value) => value?.search && /\/watch\?v=/.test(value.link?.href || ''),
             { timeoutMs: opts.timeoutMs, label: 'a visible Firefox YouTube search-result watch link' }
         );
-        const activatedWatchLink = await evaluateJson(client, context, firefoxWatchLinkExpression({ activate: true }));
-        if (!activatedWatchLink?.clicked || !/\/watch\?v=/.test(activatedWatchLink.href || '')) {
-            throw new Error(`Could not activate a visible Firefox watch link: ${JSON.stringify(activatedWatchLink)}`);
+        const activatedWatchLink = await evaluateJson(client, context, firefoxWatchLinkExpression());
+        if (!/\/watch\?v=/.test(activatedWatchLink?.href || '')) {
+            throw new Error(`Could not resolve a visible Firefox watch link: ${JSON.stringify(activatedWatchLink)}`);
+        }
+        await captureScreenshot(client, context, path.join(OUT_DIR, 'search-1440x900.png'));
+        const searchContext = context;
+        const watchNodeExpression = firefoxWatchLinkNodeExpression();
+        const watchClick = await clickElementExpression(client, context, watchNodeExpression);
+        const watchContextPredicate = ({ url }) => {
+            try {
+                return new URL(url).pathname === '/watch';
+            } catch (_) {
+                return false;
+            }
+        };
+        let watchActivation = watchClick;
+        let watchContext;
+        try {
+            watchContext = await waitForContext(client, watchContextPredicate, {
+                timeoutMs: Math.min(opts.timeoutMs, 8000),
+                label: 'Firefox YouTube watch browsing context after pointer activation'
+            });
+        } catch (pointerError) {
+            const keyboardActivation = await pressEnterElementExpression(client, context, watchNodeExpression);
+            watchActivation = {
+                method: 'keyboard-fallback',
+                pointer: watchClick,
+                pointerResult: pointerError.message,
+                keyboard: keyboardActivation
+            };
+            watchContext = await waitForContext(client, watchContextPredicate, {
+                timeoutMs: opts.timeoutMs,
+                label: 'Firefox YouTube watch browsing context after keyboard activation'
+            });
+        }
+        context = watchContext.context;
+        if (context !== searchContext) {
+            await client.command('browsingContext.setViewport', {
+                context,
+                viewport: { width: 1440, height: 900 },
+                devicePixelRatio: 1
+            });
         }
         await waitForJson(
             client,
@@ -508,6 +578,8 @@ async function runAutomatedFirefoxSmoke(opts, firefox, stageRoot, stageDir, mani
             naturalBlockedAdRequests: naturalBlocked.length,
             profile: 'store-safe',
             startUrl: opts.startUrl,
+            watchActivation,
+            watchNavigation: context === searchContext ? 'same-context' : 'new-context',
             watch
         };
         fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -572,6 +644,7 @@ module.exports = {
     MANUAL_OPTIONAL_HOST_TIMEOUT_MS,
     ZERO_AD_RULESET_ID,
     assertPageSnapshot,
+    firefoxWatchLinkNodeExpression,
     firefoxWatchLinkExpression,
     buildWebExtRunArgs,
     firefoxCandidates,

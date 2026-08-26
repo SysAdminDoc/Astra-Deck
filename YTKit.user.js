@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.85.2
+// @name         YTKit v4.86.0
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.85.2
+// @version      4.86.0
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion
@@ -61,6 +61,7 @@
         ytd-action-companion-ad-renderer,
         ytd-companion-slot-renderer,
         ytd-player-legacy-desktop-watch-ads-renderer,
+        [data-ytkit-zero-ad-semantic],
         .video-ads,
         .ytp-ad-module,
         .ytp-ad-overlay-container,
@@ -145,6 +146,7 @@
     // ── bundled module: extension/core/chapters.js ──
     // ── bundled module: extension/core/csv.js ──
     // ── bundled module: extension/core/dialog-guard.js ──
+    // ── bundled module: extension/core/zero-ad-dom.js ──
     // ── bundled module: extension/core/element-zapper.js ──
     // ── bundled module: extension/features/element-zapper/index.js ──
     // ── bundled module: extension/core/hide-attribution.js ──
@@ -267,7 +269,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.85.2';
+    const YTKIT_VERSION = '4.86.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -11311,6 +11313,152 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() { removeNavigateRule('autoSubtitles'); }
         },
         {
+            id: 'subtitleStyling',
+            name: 'Subtitle Styling',
+            description: 'Override YouTube caption appearance: font size, family, and color, plus background, position, and shadow',
+            group: 'Video Player',
+            icon: 'type',
+            _styleEl: null,
+            _apply() {
+                const s = appState.settings;
+                const fromModule = globalThis.YTKitFeatures?.subtitles?.buildSubtitleCss;
+                let css;
+                if (typeof fromModule === 'function') {
+                    css = fromModule(s);
+                } else {
+                    const sizePct = s.subStyleFontSize || 100;
+                    const fam = ({ default: '', sans: 'Roboto, sans-serif', serif: 'Georgia, serif', mono: 'Menlo, Consolas, monospace', 'YouTube Sans': '"YouTube Sans", Roboto, sans-serif' }[s.subStyleFontFamily]) || '';
+                    const bgOp = (s.subStyleBgOpacity ?? 75) / 100;
+                    const bgHex = s.subStyleBgColor || '#000000';
+                    const br = parseInt(bgHex.slice(1, 3), 16);
+                    const bg = parseInt(bgHex.slice(3, 5), 16);
+                    const bb = parseInt(bgHex.slice(5, 7), 16);
+                    const bgRgba = `rgba(${br}, ${bg}, ${bb}, ${bgOp})`;
+                    const bot = s.subStyleBottomOffset ?? 10;
+                    const shadow = s.subStyleTextShadow !== false ? '2px 2px 4px rgba(0,0,0,0.9)' : 'none';
+                    css = `
+                    .ytp-caption-segment {
+                        font-size: ${sizePct}% !important;
+                        color: ${s.subStyleColor || '#ffffff'} !important;
+                        background: ${bgRgba} !important;
+                        ${fam ? `font-family: ${fam} !important;` : ''}
+                        text-shadow: ${shadow} !important;
+                        padding: 2px 6px !important;
+                    }
+                    .caption-window, .ytp-caption-window-container {
+                        bottom: ${bot}% !important;
+                    }
+                `;
+                }
+                if (this._styleEl) this._styleEl.textContent = css;
+                else this._styleEl = injectStyle(css, this.id, true);
+            },
+            init() { this._apply(); },
+            destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            id: 'subStyleFontSize',
+            name: 'Caption Font Size',
+            description: 'Scale caption text from 50% to 300%',
+            group: 'Video Player',
+            icon: 'type',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'range',
+            min: 50,
+            max: 300,
+            step: 10,
+            formatValue: value => `${value}%`,
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleFontFamily',
+            name: 'Caption Font Family',
+            description: 'Choose the typeface used for captions',
+            group: 'Video Player',
+            icon: 'type',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'select',
+            options: {
+                default: 'YouTube default',
+                sans: 'Sans serif',
+                serif: 'Serif',
+                mono: 'Monospace',
+                'YouTube Sans': 'YouTube Sans'
+            },
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleColor',
+            name: 'Caption Text Color',
+            description: 'Choose the caption foreground color',
+            group: 'Video Player',
+            icon: 'palette',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'color',
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleBgOpacity',
+            name: 'Caption Background Opacity',
+            description: 'Set the opacity behind caption text',
+            group: 'Video Player',
+            icon: 'sliders-horizontal',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'range',
+            min: 0,
+            max: 100,
+            step: 5,
+            formatValue: value => `${value}%`,
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleBgColor',
+            name: 'Caption Background Color',
+            description: 'Choose the color behind caption text',
+            group: 'Video Player',
+            icon: 'palette',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'color',
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleBottomOffset',
+            name: 'Caption Bottom Offset',
+            description: 'Move captions up from the bottom edge of the player',
+            group: 'Video Player',
+            icon: 'move-vertical',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            type: 'range',
+            min: 0,
+            max: 90,
+            step: 1,
+            formatValue: value => `${value}%`,
+            init() { getFeatureById('subtitleStyling')?._apply?.(); },
+            destroy() {}
+        },
+        {
+            id: 'subStyleTextShadow',
+            name: 'Caption Text Shadow',
+            description: 'Add a dark shadow so captions stay readable over bright video',
+            group: 'Video Player',
+            icon: 'sun',
+            isSubFeature: true,
+            parentId: 'subtitleStyling',
+            init() {},
+            destroy() {}
+        },
+        {
             id: 'dualLanguageSubtitles',
             name: 'Dual-language Subtitles',
             description: 'Show an independently selected second caption track below YouTube captions when available',
@@ -12354,8 +12502,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Inject your own custom CSS rules into YouTube pages',
             group: 'Theme',
             icon: 'code',
-            type: 'textarea',
-            settingKey: 'customCssCode',
             _styleEl: null,
 
             _apply() {
@@ -12367,6 +12513,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._apply();
+                this._lastCss = appState.settings.customCssCode || '';
                 // Re-apply when settings change
                 this._settingsObserver = setInterval(() => {
                     const current = appState.settings.customCssCode || '';
@@ -12380,6 +12527,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._settingsObserver) { clearInterval(this._settingsObserver); this._settingsObserver = null; }
                 this._styleEl?.remove(); this._styleEl = null;
             }
+        },
+        {
+            id: 'customCssCode',
+            name: 'Custom CSS Rules',
+            description: 'CSS applied while Custom CSS is enabled',
+            group: 'Theme',
+            icon: 'code',
+            isSubFeature: true,
+            parentId: 'customCssInjection',
+            type: 'textarea',
+            settingKey: 'customCssCode',
+            placeholder: '/* Add CSS rules here */',
+            init() { getFeatureById('customCssInjection')?._apply?.(); },
+            destroy() {}
         },
         {
             id: 'shareMenuCleaner',
@@ -12849,7 +13010,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         cssFeature('hideNotificationButton', 'Hide Notification Bell', 'Remove the notification bell icon from the header', 'Interface', 'bell-off',
             `ytd-notification-topbar-button-renderer, ytd-topbar-menu-button-renderer:has(a[href="/notifications"]) { display: none !important; }`),
 
-        cssFeature('noFrostedGlass', 'Disable Frosted Glass', 'Remove blur effects from UI elements', 'Appearance', 'droplet',
+        cssFeature('noFrostedGlass', 'Disable Frosted Glass', 'Remove blur effects from UI elements', 'Theme', 'droplet',
             `ytd-masthead, #masthead-container, #masthead, tp-yt-app-header, ytd-feed-filter-chip-bar-renderer, yt-chip-cloud-renderer, .ytChipBarViewModelHost, tp-yt-iron-dropdown, tp-yt-paper-dialog, ytd-popup-container, ytd-multi-page-menu-renderer, .ytp-chrome-bottom, .ytp-gradient-bottom, .ytp-gradient-top, .yt-spec-button-shape-next--enable-backdrop-filter-experiment { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
 
         cssFeature('hideLatestPosts', 'Hide Latest Posts', 'Hide community posts and updates sections from feeds', 'Content', 'file-x',
@@ -12858,7 +13019,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         cssFeature('disableMiniPlayer', 'Disable Mini Player', 'Prevent the mini player from appearing when navigating away', 'Video Player', 'minimize-2',
             `ytd-miniplayer[active] { display: none !important; } .ytp-miniplayer-button { display: none !important; }`),
 
-        cssFeature('nyanCatProgressBar', 'Nyan Cat Progress Bar', 'Replace the video progress bar with a Nyan Cat animation', 'Appearance', 'cat',
+        cssFeature('nyanCatProgressBar', 'Nyan Cat Progress Bar', 'Replace the video progress bar with a Nyan Cat animation', 'Theme', 'cat',
             `.ytp-play-progress {
                 background: linear-gradient(180deg, #ff0000 0%, #ff9900 16.6%, #ffff00 33.3%, #33ff00 50%, #0099ff 66.6%, #6633ff 83.3%, #ff0000 100%) !important;
                 background-size: 100% 600% !important;
@@ -15680,16 +15841,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Override clickbait uppercase titles with a casing style of your choice',
             group: 'Home / Subscriptions',
             icon: 'case-sensitive',
-            type: 'select',
-            options: {
-                'none': 'Keep original',
-                'uppercase': 'UPPERCASE',
-                'lowercase': 'lowercase',
-                'capitalize': 'Capitalize Each Word'
-            },
-            settingKey: 'titleCaseMode',
             _styleEl: null,
-            init() {
+            _apply() {
+                this._styleEl?.remove();
                 const mode = appState.settings.titleCaseMode || 'none';
                 let transform = 'none';
                 if (mode === 'uppercase') transform = 'uppercase';
@@ -15705,7 +15859,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
             },
+            init() { this._apply(); },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            id: 'titleCaseMode',
+            name: 'Title Case Style',
+            description: 'Choose the casing used while title transformation is enabled',
+            group: 'Home / Subscriptions',
+            icon: 'case-sensitive',
+            isSubFeature: true,
+            parentId: 'titleCaseTransform',
+            type: 'select',
+            settingKey: 'titleCaseMode',
+            options: {
+                'none': 'Keep original',
+                'uppercase': 'UPPERCASE',
+                'lowercase': 'lowercase',
+                'capitalize': 'Capitalize Each Word'
+            },
+            init() { getFeatureById('titleCaseTransform')?._apply?.(); },
+            destroy() {}
         },
         {
             id: 'customSelectionColor',
@@ -15713,10 +15887,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Override the default text-selection background with your chosen color',
             group: 'Theme',
             icon: 'palette',
-            type: 'color',
-            settingKey: 'selectionColor',
             _styleEl: null,
-            init() {
+            _apply() {
+                this._styleEl?.remove();
                 const mod = globalThis.YTKitFeatures?.themeCss?.buildSelectionColorCss;
                 let css;
                 if (typeof mod === 'function') {
@@ -15730,7 +15903,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._styleEl = injectStyle(css, this.id, true);
             },
+            init() { this._apply(); },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            id: 'selectionColor',
+            name: 'Selection Color',
+            description: 'Choose the highlight color used while custom text selection is enabled',
+            group: 'Theme',
+            icon: 'palette',
+            isSubFeature: true,
+            parentId: 'customSelectionColor',
+            type: 'color',
+            settingKey: 'selectionColor',
+            init() { getFeatureById('customSelectionColor')?._apply?.(); },
+            destroy() {}
         },
         {
             id: 'bypassPlaylistMode',
@@ -17586,10 +17773,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const card = document.createElement('div');
         card.className = 'ytkit-feature-card' + (isSubFeature ? ' ytkit-sub-card' : '') + (f.type === 'textarea' ? ' ytkit-textarea-card' : '') + (f.type === 'select' ? ' ytkit-select-card' : '') + (f.type === 'info' ? ' ytkit-info-card' : '');
         card.dataset.featureId = f.id;
+        card.dataset.settingKey = f.settingKey || f.id;
         card.dataset.searchText = [
             f.name,
             f.description,
             f.id,
+            f.settingKey,
             f.group,
             f.type,
             f.parentId,

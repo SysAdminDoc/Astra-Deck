@@ -8664,5 +8664,65 @@
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "通过 {selector} 检测到 YouTube 警告；播放状态为 {state}"
+  },
+  "feature_customCssCode_name": {
+    "message": "自定义 CSS 规则"
+  },
+  "feature_customCssCode_desc": {
+    "message": "启用自定义 CSS 时应用的 CSS"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "字幕字号"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "将字幕文字缩放至 50% 到 300%"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "字幕字体"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "选择字幕使用的字体"
+  },
+  "feature_subStyleColor_name": {
+    "message": "字幕文字颜色"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "选择字幕前景色"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "字幕背景不透明度"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "设置字幕文字后方背景的不透明度"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "字幕背景颜色"
+  },
+  "feature_subStyleBgColor_desc": {
+    "message": "选择字幕文字后方的颜色"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "字幕底部偏移"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "将字幕从播放器底边向上移动"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "字幕文字阴影"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "添加深色阴影，使字幕在明亮画面上仍清晰可读"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "标题大小写样式"
+  },
+  "feature_titleCaseMode_desc": {
+    "message": "启用标题转换时选择使用的大小写"
+  },
+  "feature_selectionColor_name": {
+    "message": "选择颜色"
+  },
+  "feature_selectionColor_desc": {
+    "message": "启用自定义文本选择时选择使用的突出显示颜色"
   }
 }

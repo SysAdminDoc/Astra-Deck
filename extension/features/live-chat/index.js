@@ -75,7 +75,7 @@
             position: fixed; inset-inline-end: 12px; bottom: 64px; z-index: 2147483646;
             width: min(280px, calc(100vw - 24px)); max-height: min(520px, calc(100vh - 80px));
             box-sizing: border-box; overflow: auto; padding: 12px; border: 1px solid var(--yt-spec-10-percent-layer, rgba(255,255,255,.14));
-            border-radius: 14px; background: var(--yt-spec-menu-background, #111720); color: var(--yt-spec-text-primary, #f8fafc); box-shadow: 0 20px 60px rgba(0,0,0,.5);
+            border-radius: 12px; background: var(--yt-spec-menu-background, #111720); color: var(--yt-spec-text-primary, #f8fafc); box-shadow: 0 20px 60px rgba(0,0,0,.5);
             font: 12px/1.4 Roboto,Arial,sans-serif;
         }
         #ytkit-reaction-spammer-panel header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

@@ -8652,5 +8652,65 @@
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "YouTube warning via {selector}; playback {state}"
+  },
+  "feature_customCssCode_name": {
+    "message": "Custom CSS Rules"
+  },
+  "feature_customCssCode_desc": {
+    "message": "CSS applied while Custom CSS is enabled"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "Caption Font Size"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "Scale caption text from 50% to 300%"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "Caption Font Family"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "Choose the typeface used for captions"
+  },
+  "feature_subStyleColor_name": {
+    "message": "Caption Text Color"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "Choose the caption foreground color"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "Caption Background Opacity"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "Set the opacity behind caption text"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "Caption Background Color"
+  },
+  "feature_subStyleBgColor_desc": {
+    "message": "Choose the color behind caption text"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "Caption Bottom Offset"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "Move captions up from the bottom edge of the player"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "Caption Text Shadow"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "Add a dark shadow so captions stay readable over bright video"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "Title Case Style"
+  },
+  "feature_titleCaseMode_desc": {
+    "message": "Choose the casing used while title transformation is enabled"
+  },
+  "feature_selectionColor_name": {
+    "message": "Selection Color"
+  },
+  "feature_selectionColor_desc": {
+    "message": "Choose the highlight color used while custom text selection is enabled"
   }
 }

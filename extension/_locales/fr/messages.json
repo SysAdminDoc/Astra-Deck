@@ -8664,5 +8664,65 @@
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "Avertissement YouTube via {selector} ; lecture {state}"
+  },
+  "feature_customCssCode_name": {
+    "message": "Règles CSS personnalisées"
+  },
+  "feature_customCssCode_desc": {
+    "message": "CSS appliqué lorsque le CSS personnalisé est activé"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "Taille de police des sous-titres"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "Mettre le texte des sous-titres à l’échelle de 50% à 300%"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "Police des sous-titres"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "Choisir la police utilisée pour les sous-titres"
+  },
+  "feature_subStyleColor_name": {
+    "message": "Couleur du texte des sous-titres"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "Choisir la couleur de premier plan des sous-titres"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "Opacité du fond des sous-titres"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "Régler l’opacité derrière le texte des sous-titres"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "Couleur du fond des sous-titres"
+  },
+  "feature_subStyleBgColor_desc": {
+    "message": "Choisir la couleur derrière le texte des sous-titres"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "Décalage inférieur des sous-titres"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "Remonter les sous-titres depuis le bord inférieur du lecteur"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "Ombre du texte des sous-titres"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "Ajouter une ombre sombre pour garder les sous-titres lisibles sur une vidéo claire"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "Style de casse du titre"
+  },
+  "feature_titleCaseMode_desc": {
+    "message": "Choisir la casse utilisée lorsque la transformation du titre est activée"
+  },
+  "feature_selectionColor_name": {
+    "message": "Couleur de sélection"
+  },
+  "feature_selectionColor_desc": {
+    "message": "Choisir la couleur de surbrillance utilisée lorsque la sélection de texte personnalisée est activée"
   }
 }

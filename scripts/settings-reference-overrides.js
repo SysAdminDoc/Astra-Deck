@@ -7,9 +7,6 @@
 const PURPOSE_OVERRIDES = Object.freeze({
     uiStyle: 'Selects the global corner treatment: square applies Astra\'s squaring rules, while rounded preserves rounded surfaces.',
     colorTheme: 'Applies a built-in dark-mode color palette across YouTube; none leaves the native palette unchanged.',
-    customCssCode: 'Stores the local stylesheet injected into YouTube pages while Custom CSS is enabled.',
-    titleCaseMode: 'Chooses how Transform Video Title Case rewrites visible video-title capitalization.',
-    selectionColor: 'Sets the hex color used by Custom Selection Color for selected text.',
 
     quickLinkItems: 'Defines up to ten masthead quick links, one Label and YouTube path per line; unsafe schemes and non-YouTube destinations are rejected.',
     alternativeFrontendInstance: 'Sets the HTTPS frontend origin used when Open in Alternative Frontend builds an external video link.',
@@ -97,14 +94,6 @@ const PURPOSE_OVERRIDES = Object.freeze({
     returnDislikeCacheHours: 'Sets how many hours Return YouTube Dislike data remains fresh in the local cache.',
     returnDislikeShowRatio: 'Shows the estimated like-to-dislike ratio alongside Return YouTube Dislike counts.',
     deArrowChannelOverrides: 'Stores per-channel DeArrow modes so a channel can use replacements, originals, or disable processing.',
-
-    subStyleFontSize: 'Sets custom subtitle text size as a percentage of YouTube\'s base caption size.',
-    subStyleFontFamily: 'Chooses the fixed, injection-safe font stack used by Subtitle Styling.',
-    subStyleColor: 'Sets the custom subtitle foreground color.',
-    subStyleBgOpacity: 'Sets custom subtitle background opacity as a percentage.',
-    subStyleBgColor: 'Sets the custom subtitle background color.',
-    subStyleBottomOffset: 'Sets custom subtitles\' distance from the bottom of the player as a percentage.',
-    subStyleTextShadow: 'Adds the configured readability shadow to custom subtitle text.',
 
     dwBreakIntervalMin: 'Sets the continuous-watch interval after which Digital Wellbeing prompts for a break; zero disables break prompts.',
     dwDailyCapMin: 'Sets the daily watch-time cap enforced by Digital Wellbeing; zero disables the cap.',

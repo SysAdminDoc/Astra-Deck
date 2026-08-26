@@ -8664,5 +8664,65 @@
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "{selector}에서 YouTube 경고 감지; 재생 {state}"
+  },
+  "feature_customCssCode_name": {
+    "message": "사용자 지정 CSS 규칙"
+  },
+  "feature_customCssCode_desc": {
+    "message": "사용자 지정 CSS가 활성화된 동안 적용할 CSS"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "자막 글꼴 크기"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "자막 텍스트를 50%에서 300%까지 조절"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "자막 글꼴"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "자막에 사용할 서체 선택"
+  },
+  "feature_subStyleColor_name": {
+    "message": "자막 텍스트 색상"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "자막 전경색 선택"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "자막 배경 불투명도"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "자막 텍스트 뒤 배경의 불투명도 설정"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "자막 배경 색상"
+  },
+  "feature_subStyleBgColor_desc": {
+    "message": "자막 텍스트 뒤의 색상 선택"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "자막 아래쪽 간격"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "자막을 플레이어 아래쪽 가장자리에서 위로 이동"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "자막 텍스트 그림자"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "밝은 영상에서도 자막을 읽기 쉽도록 어두운 그림자 추가"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "제목 대소문자 스타일"
+  },
+  "feature_titleCaseMode_desc": {
+    "message": "제목 변환이 활성화된 동안 사용할 대소문자 방식 선택"
+  },
+  "feature_selectionColor_name": {
+    "message": "선택 색상"
+  },
+  "feature_selectionColor_desc": {
+    "message": "사용자 지정 텍스트 선택이 활성화된 동안 사용할 강조 색상 선택"
   }
 }

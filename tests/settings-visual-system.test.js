@@ -11,6 +11,7 @@ const visualSystemSource = fs.readFileSync(visualSystemPath, 'utf8');
 const manifest = require('../extension/manifest.json');
 const { runtimeModules } = require('./helpers/source');
 const syncUserscript = fs.readFileSync(path.join(repoRoot, 'sync-userscript.js'), 'utf8');
+const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema.js');
 const settingsPanel = fs.readFileSync(
     path.join(repoRoot, 'extension', 'features', 'settings-panel', 'index.js'),
     'utf8'
@@ -79,6 +80,106 @@ test('settings visual system renders the flat command-deck hierarchy', () => {
     assert.ok(countRule, 'the nav-count rule must exist');
     assert.match(countRule[1], /display:\s*inline !important/,
         'every category must show its count, not just the active one');
+});
+
+test('Element Zapper stays inside the Content category pane', () => {
+    for (const source of [settingsPanel, shell]) {
+        assert.match(source, /if \(zapperPane\) pane\.appendChild\(zapperPane\)/);
+        assert.doesNotMatch(source, /if \(zapperPane\) content\.appendChild\(zapperPane\)/);
+    }
+});
+
+test('content-script surfaces avoid backdrop blur and radii above the project scale', () => {
+    const extensionDir = path.join(repoRoot, 'extension');
+    const violations = [];
+    (function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                if (entry.name !== '_locales') walk(full);
+                continue;
+            }
+            if (!/\.(?:css|html|js)$/.test(entry.name)) continue;
+            const source = fs.readFileSync(full, 'utf8');
+            for (const match of source.matchAll(/\b(?:-webkit-)?backdrop-filter\s*:\s*([^;]+);/g)) {
+                if (!/^none\b/.test(match[1].trim())) {
+                    violations.push(`${path.relative(repoRoot, full)}: ${match[0]}`);
+                }
+            }
+            for (const match of source.matchAll(/border-radius\s*:\s*(\d+(?:\.\d+)?)px/g)) {
+                if (Number(match[1]) > 12) violations.push(`${path.relative(repoRoot, full)}: ${match[0]}`);
+            }
+        }
+    }(extensionDir));
+    assert.deepEqual(violations, []);
+});
+
+test('Theater Split light mode keeps disabled action descendants legible', () => {
+    assert.match(
+        visualSystemSource,
+        /ytkit-split-active:not\(\[dark\]\)[\s\S]*?:is\(\[disabled\], \[aria-disabled="true"\]\)[\s\S]*?opacity:\s*0\.72 !important;/
+    );
+    assert.match(
+        visualSystemSource,
+        /:is\(button, \.yt-spec-button-shape-next\):is\(\[disabled\], \[aria-disabled="true"\]\)[\s\S]*?:is\(span, yt-formatted-string, yt-icon, svg, path\)[\s\S]*?opacity:\s*1 !important;/
+    );
+});
+
+test('every shell and subtitle setting renders a real settings card', () => {
+    const visualSettingKeys = SETTINGS_SCHEMA
+        .filter(({ category }) => category === 'shell' || category === 'subtitles')
+        .map(({ key }) => key);
+    const featureIds = new Set();
+    for (const match of shell.matchAll(/\bid:\s*'([A-Za-z][A-Za-z0-9]*)'/g)) featureIds.add(match[1]);
+    for (const match of shell.matchAll(/cssFeature\(\s*'([A-Za-z][A-Za-z0-9]*)'/g)) featureIds.add(match[1]);
+    for (const match of shell.matchAll(/\bsettingKey:\s*'([A-Za-z][A-Za-z0-9]*)'/g)) featureIds.add(match[1]);
+    assert.equal(visualSettingKeys.length, 60);
+    assert.deepEqual(visualSettingKeys.filter((key) => !featureIds.has(key)), []);
+    assert.match(settingsPanel, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
+    assert.match(shell, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
+    assert.match(userscript, /card\.dataset\.settingKey = f\.settingKey \|\| f\.id/);
+    assert.match(overlaySmoke, /visual-settings[\s\S]*?desktop-dark[\s\S]*?desktop-light/);
+});
+
+test('visual controls use live categories and master toggles own their value controls', () => {
+    for (const source of [shell, userscript]) {
+        assert.doesNotMatch(source, /cssFeature\('noFrostedGlass'[^\n]*'Appearance'/);
+        assert.doesNotMatch(source, /cssFeature\('nyanCatProgressBar'[^\n]*'Appearance'/);
+        for (const [parentId, childId] of [
+            ['customCssInjection', 'customCssCode'],
+            ['titleCaseTransform', 'titleCaseMode'],
+            ['customSelectionColor', 'selectionColor']
+        ]) {
+            assert.match(source, new RegExp(`id: '${childId}'[\\s\\S]{0,420}?parentId: '${parentId}'`));
+        }
+    }
+    assert.doesNotMatch(shell, /group:\s*'Theming'/);
+    for (const childId of [
+        'subStyleFontSize',
+        'subStyleFontFamily',
+        'subStyleColor',
+        'subStyleBgOpacity',
+        'subStyleBgColor',
+        'subStyleBottomOffset',
+        'subStyleTextShadow'
+    ]) {
+        for (const source of [shell, userscript]) {
+            assert.match(source, new RegExp(`id: '${childId}'[\\s\\S]{0,420}?parentId: 'subtitleStyling'`));
+        }
+    }
+});
+
+test('settings runtime crash accounting is declared in the shared outer scope', () => {
+    const runtimeFactoryAt = shell.indexOf('function getSettingsPanelRuntime');
+    const featureCountsAt = shell.indexOf('let _featureCrashCounts = {};');
+    const persistAt = shell.indexOf('let _persistCrashCounts = () => {};');
+    const recorderAt = shell.indexOf('let _recordFeatureRuntimeFailure = () => {};');
+    assert.ok(runtimeFactoryAt > 0);
+    assert.ok(featureCountsAt > 0 && featureCountsAt < runtimeFactoryAt);
+    assert.ok(persistAt > 0 && persistAt < runtimeFactoryAt);
+    assert.ok(recorderAt > 0 && recorderAt < runtimeFactoryAt);
+    assert.match(shell, /_featureCrashCounts = StorageManager\.get\(/);
+    assert.doesNotMatch(shell, /const _featureCrashCounts = StorageManager\.get\(/);
 });
 
 test('v6 desktop settings parity keeps labels readable and gives Video Hider a summary dashboard', () => {
@@ -480,8 +581,8 @@ test('shared surface system covers the polished YouTube and injected UI families
         'Transcript Q&A must use the shared structured dialog shell');
     assert.match(css, /\.ytkit-transcript-state--error[\s\S]*?--ytkit-premium-danger/,
         'transcript failures must retain a semantic error treatment');
-    assert.match(css, /html #ytkit-service-state-strip \.ytkit-service-state-pill[\s\S]*?grid-template-columns:/,
-        'service notices must render as compact structured cards');
+    assert.doesNotMatch(css, /ytkit-service-state-(?:strip|pill|action|dismiss)/,
+        'the visual system must not retain styles for unsolicited health overlays');
     assert.match(css, /html\.ytkit-split-active:not\(\[dark\]\)[\s\S]*?:is\(yt-icon, svg, path\)[\s\S]*?fill:\s*currentColor/,
         'light Theater Split icon controls must inherit legible page ink');
     assert.match(visualSystemSource, /--ytkit-bg-surface:\s*var\(--ytkit-v3-surface\)/,

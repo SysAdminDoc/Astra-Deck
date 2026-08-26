@@ -1,17 +1,17 @@
 # Astra Deck, Architecture Map
 
-This document orients a new contributor to the moving parts. It describes the v4.85.2 tree and does not prescribe the next direction. Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.85.2. For what comes next, see [ROADMAP.md](../ROADMAP.md) for the active backlog and [RESEARCH.md](../RESEARCH.md) for the supporting research. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions.
+This document orients a new contributor to the moving parts. It describes the v4.86.0 tree and does not prescribe the next direction. Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.86.0. For what comes next, see [ROADMAP.md](../ROADMAP.md) for the active backlog and [RESEARCH.md](../RESEARCH.md) for the supporting research. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions.
 
 <!-- BEGIN GENERATED PROJECT FACTS -->
 ### Source-derived project facts
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.85.2` |
+| Release | `v4.86.0` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `484` entries across `18` categories |
-| Runtime graph | `115` modules, including `27` peeled feature modules and `293` declared feature IDs |
+| Runtime graph | `116` modules, including `27` peeled feature modules and `303` declared feature IDs |
 | Selector surfaces | `35` shipped surfaces from `33` selector packs (`2` aliases) |
 | Build profiles | `store-safe`, `chromium-store`, `github-full`; github-full adds 6 full-only origins |
 | Themes | `7` named color themes plus `oledTheme`, `denseMode`, `tokenThemeBridge` controls |

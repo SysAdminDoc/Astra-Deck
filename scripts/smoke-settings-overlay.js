@@ -25,11 +25,16 @@ const path = require('path');
 const { execFileSync, spawn } = require('child_process');
 const WebSocket = require('ws');
 const { copyDir } = require('../build-extension.js');
+const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema.js');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const EXT_DIR = path.join(REPO_ROOT, 'extension');
 const OUT_DIR = path.join(REPO_ROOT, 'build', 'settings-overlay-smoke');
 const PANEL_SELECTOR = '#ytkit-settings-panel, [data-ytkit-surface="control-center"], .ytkit-control-center, #ytkit-panel, .ytkit-panel';
+const VISUAL_SETTING_KEYS = Object.freeze(SETTINGS_SCHEMA
+    .filter(({ category }) => category === 'shell' || category === 'subtitles')
+    .map(({ key }) => key));
+const VISUAL_SETTING_KEY_SET = new Set(VISUAL_SETTING_KEYS);
 
 const STATES = [
     { name: 'desktop-dark', width: 1440, height: 900, dark: true, dir: 'ltr', mobile: false },
@@ -418,6 +423,10 @@ const IN_PAGE_CHECKS = `(() => {
     if (blueLightIntensity && !blueLightIntensity.disabled) {
         failures.push('Blue Light Intensity must stay disabled while the master toggle is off');
     }
+    const zapperPane = panel.querySelector('.ytkit-zap-pane');
+    if (zapperPane && zapperPane.closest('#ytkit-pane-Content') === null) {
+        failures.push('Element Zapper is mounted outside the Content category pane');
+    }
     const activeTab = panel.querySelector('.ytkit-nav-btn.active');
     const activePane = activeTab ? panel.querySelector('#ytkit-pane-' + activeTab.dataset.tab) : null;
     if (!activeTab || activeTab.getAttribute('role') !== 'tab' || activeTab.getAttribute('aria-selected') !== 'true') {
@@ -499,6 +508,21 @@ const IN_PAGE_CHECKS = `(() => {
         }
         return document.documentElement.hasAttribute('dark') ? [15, 15, 15] : [255, 255, 255];
     };
+    const doneButton = panel.querySelector('#ytkit-close-footer');
+    const doneLabel = doneButton?.querySelector('span');
+    const doneLabelStyle = doneLabel ? getComputedStyle(doneLabel) : null;
+    const doneLabelRect = doneLabel?.getBoundingClientRect();
+    if (!doneLabel || (doneLabel.textContent || '').trim().length === 0) {
+        failures.push('footer Done button has no visible text node');
+    } else if (doneLabelStyle.display === 'none'
+        || doneLabelStyle.visibility === 'hidden'
+        || Number(doneLabelStyle.opacity) <= 0
+        || String(doneLabelStyle.webkitTextFillColor || '').includes('rgba(0, 0, 0, 0)')
+        || !doneLabelRect
+        || doneLabelRect.width < 8
+        || doneLabelRect.height < 8) {
+        failures.push('footer Done label is hidden or collapsed');
+    }
     const primary = panel.querySelector('h1, h2, h3, [class*="title"]') || panel.querySelector('button');
     if (primary) {
         const fg = parseRgb(getComputedStyle(primary).color);
@@ -512,7 +536,25 @@ const IN_PAGE_CHECKS = `(() => {
             }
         }
     }
-    return JSON.stringify({ failures, controls: controls.length, rect: { w: Math.round(rect.width), h: Math.round(rect.height) } });
+    return JSON.stringify({
+        failures,
+        controls: controls.length,
+        rect: { w: Math.round(rect.width), h: Math.round(rect.height) },
+        doneLabel: doneLabelStyle && doneLabelRect ? {
+            text: doneLabel.textContent,
+            color: doneLabelStyle.color,
+            textFillColor: doneLabelStyle.webkitTextFillColor,
+            display: doneLabelStyle.display,
+            visibility: doneLabelStyle.visibility,
+            opacity: doneLabelStyle.opacity,
+            rect: {
+                x: Math.round(doneLabelRect.x),
+                y: Math.round(doneLabelRect.y),
+                w: Math.round(doneLabelRect.width),
+                h: Math.round(doneLabelRect.height)
+            }
+        } : null
+    });
 })()`;
 
 // A source scanner cannot tell page-embedded text from an opaque Astra shell,
@@ -680,7 +722,8 @@ const CATEGORY_PARITY_CHECKS = `(() => {
             title: title?.textContent?.trim() || '',
             sections: tabs.map((tab) => tab.querySelector('.ytkit-vh-tab__label')?.textContent?.trim() || ''),
             contextItems: summaryCards.length,
-            parentCards: 0
+            parentCards: 0,
+            settingKeys: []
         });
     }
     const mission = pane.querySelector(':scope > .ytkit-pane-header');
@@ -729,7 +772,11 @@ const CATEGORY_PARITY_CHECKS = `(() => {
         title: title?.textContent?.trim() || '',
         sections: sections.map((section) => section.querySelector('.ytkit-feature-section-title')?.textContent?.trim() || ''),
         contextItems: contextItems.length,
-        parentCards: parentCards.length
+        parentCards: parentCards.length,
+        settingKeys: Array.from(
+            pane.querySelectorAll('.ytkit-feature-card[data-setting-key]'),
+            (card) => card.dataset.settingKey
+        )
     });
 })()`;
 
@@ -1075,6 +1122,122 @@ async function waitFor(fn, timeoutMs, label) {
     }
 }
 
+async function captureVisualSettingCards(client, outDir, stateName, categoryId, settingKeys, coverage) {
+    const failures = [];
+    const uniqueKeys = [...new Set(settingKeys)].filter((key) => VISUAL_SETTING_KEY_SET.has(key)).sort();
+    const stateSlug = stateName.replace(/^desktop-/, '');
+    const stateDir = path.join(outDir, 'visual-settings', stateSlug);
+    fs.mkdirSync(stateDir, { recursive: true });
+
+    for (const key of uniqueKeys) {
+        client.context = `${stateName} visual setting ${key}`;
+        let staged = null;
+        try {
+            staged = await client.evaluate(`(() => {
+                const key = ${JSON.stringify(key)};
+                const card = Array.from(document.querySelectorAll('.ytkit-pane.active .ytkit-feature-card[data-setting-key]'))
+                    .find((node) => node.dataset.settingKey === key);
+                if (!card) return { ok: false, reason: 'card is missing from the active category' };
+                const subFeatures = card.closest('.ytkit-sub-features[data-parent-id]');
+                const parentId = subFeatures?.dataset.parentId || '';
+                const parentToggle = parentId ? document.getElementById('ytkit-toggle-' + parentId) : null;
+                const parentWasChecked = Boolean(parentToggle?.checked);
+                let toggledParent = false;
+                if (subFeatures?.hasAttribute('inert')) {
+                    if (!parentToggle) return { ok: false, reason: 'disabled sub-feature has no parent toggle' };
+                    parentToggle.click();
+                    toggledParent = true;
+                }
+                return { ok: true, parentId, parentWasChecked, toggledParent };
+            })()`);
+            if (!staged?.ok) {
+                failures.push(`${key}: ${staged?.reason || 'could not stage card'}`);
+                continue;
+            }
+            if (staged.toggledParent) {
+                await waitFor(
+                    () => client.evaluate(`(() => {
+                        const group = document.querySelector('.ytkit-sub-features[data-parent-id=${JSON.stringify(staged.parentId)}]');
+                        return Boolean(group && !group.hasAttribute('inert') && group.getAttribute('aria-disabled') !== 'true');
+                    })()`),
+                    5000,
+                    `${key} parent feature to become available`
+                );
+            }
+            await client.evaluate(`(() => {
+                const key = ${JSON.stringify(key)};
+                const card = Array.from(document.querySelectorAll('.ytkit-pane.active .ytkit-feature-card[data-setting-key]'))
+                    .find((node) => node.dataset.settingKey === key);
+                card?.scrollIntoView({ block: 'center', inline: 'nearest' });
+                return Boolean(card);
+            })()`);
+            await sleep(140);
+
+            const geometry = await client.evaluate(`(() => {
+                const key = ${JSON.stringify(key)};
+                const card = Array.from(document.querySelectorAll('.ytkit-pane.active .ytkit-feature-card[data-setting-key]'))
+                    .find((node) => node.dataset.settingKey === key);
+                if (!card) return { ok: false, reason: 'card disappeared before capture' };
+                const rect = card.getBoundingClientRect();
+                const control = card.querySelector('input:not([type="hidden"]), select, textarea, button');
+                const controlRect = control?.getBoundingClientRect();
+                let effectiveOpacity = 1;
+                for (let node = card; node && node.id !== 'ytkit-settings-panel'; node = node.parentElement) {
+                    effectiveOpacity *= Number(getComputedStyle(node).opacity || 1);
+                }
+                const x = Math.max(0, Math.floor(rect.left - 8));
+                const y = Math.max(0, Math.floor(rect.top - 8));
+                return {
+                    ok: rect.width > 0 && rect.height > 0,
+                    reason: rect.width > 0 && rect.height > 0 ? '' : 'card has no rendered bounds',
+                    x,
+                    y,
+                    width: Math.max(1, Math.min(innerWidth - x, Math.ceil(rect.width + 16))),
+                    height: Math.max(1, Math.min(innerHeight - y, Math.ceil(rect.height + 16))),
+                    name: card.querySelector('.ytkit-feature-name')?.textContent?.trim() || '',
+                    effectiveOpacity,
+                    controlVisible: Boolean(controlRect?.width && controlRect?.height),
+                    clipped: rect.left < 0 || rect.right > innerWidth || rect.top < 0 || rect.bottom > innerHeight
+                };
+            })()`);
+            if (!geometry?.ok) failures.push(`${key}: ${geometry?.reason || 'card has no geometry'}`);
+            else {
+                if (!geometry.name) failures.push(`${key}: rendered card has no visible name`);
+                if (!geometry.controlVisible) failures.push(`${key}: rendered card has no visible control`);
+                if (geometry.effectiveOpacity < 0.9) failures.push(`${key}: rendered card remains dimmed at ${geometry.effectiveOpacity.toFixed(2)} opacity`);
+                if (geometry.clipped) failures.push(`${key}: rendered card is clipped at the capture viewport`);
+                const shot = await client.send('Page.captureScreenshot', {
+                    format: 'png',
+                    captureBeyondViewport: false,
+                    clip: {
+                        x: geometry.x,
+                        y: geometry.y,
+                        width: geometry.width,
+                        height: geometry.height,
+                        scale: 1
+                    }
+                });
+                const file = path.join(stateDir, `${key}.png`);
+                fs.writeFileSync(file, Buffer.from(shot.data, 'base64'));
+                const entry = coverage.get(key);
+                entry.states.add(stateName);
+                entry.categories.add(categoryId);
+                entry.files.push(path.relative(REPO_ROOT, file).replace(/\\/g, '/'));
+            }
+        } finally {
+            if (staged?.toggledParent && staged.parentId) {
+                await client.evaluate(`(() => {
+                    const toggle = document.getElementById(${JSON.stringify(`ytkit-toggle-${staged.parentId}`)});
+                    if (toggle && toggle.checked !== ${staged.parentWasChecked ? 'true' : 'false'}) toggle.click();
+                })()`).catch(() => undefined);
+                await sleep(100);
+            }
+        }
+    }
+    client.context = '';
+    return failures;
+}
+
 async function main() {
     const opts = parseArgs(process.argv.slice(2));
     if (opts.headedPrivate && process.env.YTKIT_VISUAL_ISOLATED !== '1') {
@@ -1122,6 +1285,12 @@ async function main() {
     });
 
     const failuresByState = {};
+    const diagnosticsByState = {};
+    const visualSettingCoverage = new Map(VISUAL_SETTING_KEYS.map((key) => [key, {
+        states: new Set(),
+        categories: new Set(),
+        files: []
+    }]));
     const progressPath = path.join(outDir, 'progress.json');
     try {
         const port = new URL(devtoolsUrl).port;
@@ -1205,6 +1374,12 @@ async function main() {
             const contextReport = state.name.endsWith('-light')
                 ? JSON.parse(await client.evaluate(LIGHT_THEME_CONTEXT_CHECKS))
                 : { failures: [] };
+            diagnosticsByState[state.name] = {
+                panel: report.rect || null,
+                controls: report.controls || 0,
+                doneLabel: report.doneLabel || null,
+                lightThemeRatios: contextReport.ratios || null
+            };
             failuresByState[state.name] = [
                 ...directionFailures,
                 ...(report.failures || []),
@@ -1367,7 +1542,56 @@ async function main() {
                         failuresByState[state.name].push(`could not stage category ${categoryId}`);
                         continue;
                     }
-                    await sleep(120);
+                    // The active pane fades for 220ms. Capturing at 120ms
+                    // produced partially composited light-theme evidence where
+                    // fixed-footer descendants had not repainted yet even
+                    // though layout and computed styles already reported them
+                    // visible. Wait through the real transition before visual
+                    // checks and screenshots.
+                    await sleep(300);
+                    const footerLabelReport = await client.evaluate(`(() => {
+                        const button = document.getElementById('ytkit-close-footer');
+                        const label = button?.querySelector('span');
+                        const icon = button?.querySelector('svg');
+                        const rectOf = (node) => {
+                            const rect = node?.getBoundingClientRect();
+                            return rect ? {
+                                x: Math.round(rect.x),
+                                y: Math.round(rect.y),
+                                w: Math.round(rect.width),
+                                h: Math.round(rect.height),
+                                right: Math.round(rect.right),
+                                bottom: Math.round(rect.bottom)
+                            } : null;
+                        };
+                        const buttonRect = rectOf(button);
+                        const labelRect = rectOf(label);
+                        const iconRect = rectOf(icon);
+                        const labelStyle = label ? getComputedStyle(label) : null;
+                        const inside = Boolean(buttonRect && labelRect
+                            && labelRect.x >= buttonRect.x
+                            && labelRect.y >= buttonRect.y
+                            && labelRect.right <= buttonRect.right
+                            && labelRect.bottom <= buttonRect.bottom);
+                        return {
+                            inside,
+                            buttonRect,
+                            labelRect,
+                            iconRect,
+                            labelText: label?.textContent || '',
+                            labelDisplay: labelStyle?.display || '',
+                            labelVisibility: labelStyle?.visibility || '',
+                            labelOpacity: labelStyle?.opacity || '',
+                            labelColor: labelStyle?.color || '',
+                            labelTransform: labelStyle?.transform || '',
+                            activeElement: document.activeElement?.id || document.activeElement?.tagName || ''
+                        };
+                    })()`);
+                    diagnosticsByState[state.name].categories ||= {};
+                    diagnosticsByState[state.name].categories[categoryId] = footerLabelReport;
+                    if (!footerLabelReport?.inside) {
+                        failuresByState[state.name].push(`${categoryId}: footer Done label escaped its button`);
+                    }
                     const categorySlug = String(categoryId).toLowerCase().replace(/[^a-z0-9]+/g, '-');
                     const parityReport = JSON.parse(await client.evaluate(CATEGORY_PARITY_CHECKS));
                     failuresByState[state.name].push(
@@ -1383,6 +1607,16 @@ async function main() {
                             path.join(outDir, `${state.name}-category-${categorySlug}.png`),
                             Buffer.from(categoryShot.data, 'base64')
                         );
+                    }
+                    if (!opts.fallbackOnly && !opts.healthOnly && ['desktop-dark', 'desktop-light'].includes(state.name)) {
+                        failuresByState[state.name].push(...await captureVisualSettingCards(
+                            client,
+                            outDir,
+                            state.name,
+                            categoryId,
+                            parityReport.settingKeys || [],
+                            visualSettingCoverage
+                        ));
                     }
 
                     const scrollState = await client.evaluate(`(() => {
@@ -1643,6 +1877,19 @@ async function main() {
             console.log(`[settings-overlay-smoke:${opts.fallbackOnly ? 'fallback' : 'module'}] ${state.name}: ${report.rect?.w}x${report.rect?.h}, ${report.controls} controls, ${failuresByState[state.name].length} failure(s)`);
             fs.writeFileSync(progressPath, `${JSON.stringify({ completedState: state.name, failuresByState }, null, 2)}\n`, 'utf8');
         }
+        if (!opts.fallbackOnly && !opts.healthOnly) {
+            const coverageFailures = [];
+            for (const key of VISUAL_SETTING_KEYS) {
+                const evidence = visualSettingCoverage.get(key);
+                for (const stateName of ['desktop-dark', 'desktop-light']) {
+                    if (!evidence.states.has(stateName)) coverageFailures.push(`${key}: no ${stateName} visual capture`);
+                }
+                if (evidence.categories.size !== 1) {
+                    coverageFailures.push(`${key}: expected one settings category, found ${evidence.categories.size}`);
+                }
+            }
+            failuresByState['visual-settings'] = coverageFailures;
+        }
         ws.close();
     } finally {
         const browserExit = browser.exitCode !== null
@@ -1681,7 +1928,17 @@ async function main() {
         captureScreenshots: !opts.healthOnly,
         browserMode: opts.headedPrivate ? 'headed-private' : 'headless',
         passed: !failed,
-        states: failuresByState
+        states: failuresByState,
+        diagnostics: diagnosticsByState,
+        visualSettings: {
+            required: VISUAL_SETTING_KEYS.length,
+            captured: [...visualSettingCoverage.values()].filter((entry) => entry.states.size > 0).length,
+            evidence: Object.fromEntries([...visualSettingCoverage].map(([key, entry]) => [key, {
+                states: [...entry.states].sort(),
+                categories: [...entry.categories].sort(),
+                files: entry.files
+            }]))
+        }
     };
     fs.writeFileSync(path.join(outDir, 'result.json'), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
     fs.rmSync(progressPath, { force: true });

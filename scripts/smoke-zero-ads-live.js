@@ -137,6 +137,39 @@ async function pageSnapshot(client, routeName) {
                 nonCollapsed: nodes.filter((node) => node.getBoundingClientRect().height > 0).length
             };
         }).filter(({ count }) => count > 0);
+        const healthOverlays = Array.from(document.querySelectorAll(
+            '#ytkit-service-state-strip, .ytkit-service-state-pill'
+        )).filter(visible).map((node) => String(node.textContent || '').replace(/\s+/g, ' ').trim());
+        const semanticSponsored = [];
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let textNode = walker.nextNode(); textNode; textNode = walker.nextNode()) {
+            const text = String(textNode.nodeValue || '').replace(/\s+/g, ' ').trim();
+            if (!/^Sponsored(?:\b|\s*[·•])/i.test(text) || text.length > 120) continue;
+            const parent = textNode.parentElement;
+            if (!parent || !visible(parent)) continue;
+            const rail = parent.closest('#secondary, #related, ytd-watch-next-secondary-results-renderer');
+            if (!rail) continue;
+            const ancestry = [];
+            for (let node = parent, depth = 0; node && depth < 12; depth += 1) {
+                const classes = Array.from(node.classList || []).slice(0, 4);
+                ancestry.push(node.tagName.toLowerCase()
+                    + (node.id ? '#' + node.id : '')
+                    + (classes.length ? '.' + classes.join('.') : ''));
+                const root = node.getRootNode?.();
+                node = node.parentElement || (root && root.host instanceof Element ? root.host : null);
+            }
+            const rect = parent.getBoundingClientRect();
+            semanticSponsored.push({
+                text,
+                ancestry,
+                rect: {
+                    x: Math.round(rect.x),
+                    y: Math.round(rect.y),
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height)
+                }
+            });
+        }
         return {
             href: location.href,
             title: document.title,
@@ -147,7 +180,9 @@ async function pageSnapshot(client, routeName) {
             feedCards: document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').length,
             player: Boolean(document.querySelector('#movie_player, ytd-player')),
             video: Boolean(document.querySelector('video.html5-main-video')),
-            shells
+            shells,
+            healthOverlays,
+            semanticSponsored
         };
     })()`);
     const failures = [];
@@ -157,6 +192,12 @@ async function pageSnapshot(client, routeName) {
         if (shell.visible || shell.nonCollapsed) {
             failures.push(`${routeName}: ${shell.selector} retained visible or non-collapsed ad space`);
         }
+    }
+    for (const hit of snapshot.semanticSponsored || []) {
+        failures.push(`${routeName}: visible Sponsored card in the related rail: ${JSON.stringify(hit)}`);
+    }
+    if (snapshot.healthOverlays.length) {
+        failures.push(`${routeName}: unsolicited health overlay is visible: ${JSON.stringify(snapshot.healthOverlays)}`);
     }
     if (routeName === 'watch' && (!snapshot.player || !snapshot.video)) {
         failures.push('watch: player/video workflow is unavailable after SPA navigation');
@@ -251,6 +292,59 @@ async function revealRelatedWatchSurface(client, backgroundClient, timeoutMs) {
     await sleep(400);
 }
 
+async function verifySemanticSponsoredFallback(client, timeoutMs) {
+    const fixtureId = 'astra-semantic-sponsored-fixture';
+    const inserted = await evaluate(client, `(() => {
+        document.getElementById(${JSON.stringify(fixtureId)})?.remove();
+        const rail = document.querySelector('#related, ytd-watch-next-secondary-results-renderer');
+        if (!rail) return false;
+        const fixture = document.createElement('section');
+        fixture.id = ${JSON.stringify(fixtureId)};
+        fixture.style.cssText = 'box-sizing:border-box;width:100%;min-height:120px;padding:16px;display:block';
+        const badge = document.createElement('span');
+        badge.textContent = 'Sponsored · example.org';
+        const destination = document.createElement('a');
+        destination.href = 'https://example.org/offer';
+        destination.textContent = 'Open site';
+        fixture.append(badge, destination);
+        rail.prepend(fixture);
+        return true;
+    })()`);
+    if (!inserted) throw new Error('semantic zero-ad: related rail fixture could not be inserted');
+    await waitForExpression(
+        client,
+        `(() => {
+            const fixture = document.getElementById(${JSON.stringify(fixtureId)});
+            if (!fixture?.hasAttribute('data-ytkit-zero-ad-semantic')) return false;
+            const style = getComputedStyle(fixture);
+            return style.display === 'none'
+                && style.visibility === 'hidden'
+                && fixture.getBoundingClientRect().height === 0;
+        })()`,
+        timeoutMs,
+        'semantic sponsored-card fallback'
+    );
+    await sleep(250);
+    const result = await evaluate(client, `(() => {
+        const fixture = document.getElementById(${JSON.stringify(fixtureId)});
+        const markedOrganicCards = document.querySelectorAll([
+            '#related ytd-compact-video-renderer[data-ytkit-zero-ad-semantic]',
+            'ytd-watch-next-secondary-results-renderer ytd-compact-video-renderer[data-ytkit-zero-ad-semantic]'
+        ].join(', ')).length;
+        const result = {
+            marked: fixture?.hasAttribute('data-ytkit-zero-ad-semantic') === true,
+            collapsed: fixture?.getBoundingClientRect().height === 0,
+            markedOrganicCards
+        };
+        fixture?.remove();
+        return result;
+    })()`);
+    if (!result.marked || !result.collapsed || result.markedOrganicCards !== 0) {
+        throw new Error(`semantic zero-ad: unsafe fallback result ${JSON.stringify(result)}`);
+    }
+    return result;
+}
+
 async function captureWatchModeState(client) {
     return evaluate(client, `(() => {
         const root = document.documentElement;
@@ -326,6 +420,14 @@ async function captureWatchModeState(client) {
         const splitActive = root.classList.contains('ytkit-split-active');
         const splitOpen = root.classList.contains('ytkit-split-open');
         const theater = Boolean(flexy?.hasAttribute('theater'));
+        const healthOverlayCount = Array.from(document.querySelectorAll(
+            '#ytkit-service-state-strip, .ytkit-service-state-pill'
+        )).filter((node) => {
+            const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            return style.display !== 'none' && style.visibility !== 'hidden'
+                && Number(style.opacity || 1) > 0 && rect.width > 0 && rect.height > 0;
+        }).length;
         return {
             mode: splitActive ? 'theater-split' : (theater ? 'native-theater' : 'normal'),
             theater,
@@ -340,6 +442,7 @@ async function captureWatchModeState(client) {
             colorScheme: getComputedStyle(root).colorScheme,
             sizeButton: Boolean(document.querySelector('button.ytp-size-button, .ytp-size-button')),
             fullscreen: Boolean(document.fullscreenElement),
+            healthOverlayCount,
             staleGeometry,
             fullBleedContainers,
             playerRect,
@@ -366,6 +469,9 @@ function watchModeFailures(snapshot, expectedMode) {
     }
     if (!snapshot.playerRect || snapshot.playerRect.width < 400 || snapshot.playerRect.height < 240) {
         failures.push('player geometry is not usable');
+    }
+    if (snapshot.healthOverlayCount) {
+        failures.push(`${snapshot.healthOverlayCount} unsolicited health overlay(s) are visible`);
     }
     if (expectedMode === 'theater-split') {
         if (!snapshot.splitActive || !snapshot.splitWrapper) failures.push('Theater Split shell is incomplete');
@@ -815,6 +921,7 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     await evaluate(client, 'window.scrollTo(0, 0)');
     await sleep(750);
     await revealRelatedWatchSurface(client, backgroundClient, timeoutMs);
+    await verifySemanticSponsoredFallback(client, timeoutMs);
     const normalAfterSplit = await setNativeTheater(client, false, timeoutMs);
     failures.push(...watchModeFailures(normalAfterSplit, 'normal')
         .map(failure => `watch themes: Theater Split to normal: ${failure}`));
@@ -979,6 +1086,12 @@ async function verifyLiveSettings(client, timeoutMs) {
         timeoutMs,
         'Video Hider settings category'
     );
+    await waitForExpression(
+        client,
+        "Number(getComputedStyle(document.querySelector('#ytkit-pane-Video-Hider')).opacity) >= 0.99",
+        timeoutMs,
+        'Video Hider category transition'
+    );
     const snapshot = await evaluate(client, `(() => {
         const panel = document.querySelector('#ytkit-settings-panel');
         const pane = document.querySelector('#ytkit-pane-Video-Hider');
@@ -991,6 +1104,29 @@ async function verifyLiveSettings(client, timeoutMs) {
             .filter((node) => node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1)
             .map((node) => node.textContent.trim());
         const summaryCards = Array.from(pane?.querySelectorAll('.ytkit-vh-summary-card') || []);
+        const visualState = [];
+        for (let node = pane; node && node !== document.body; node = node.parentElement) {
+            const style = getComputedStyle(node);
+            visualState.push({
+                tag: node.tagName,
+                id: node.id || '',
+                className: String(node.className || '').slice(0, 180),
+                opacity: style.opacity,
+                filter: style.filter,
+                visibility: style.visibility,
+                pointerEvents: style.pointerEvents,
+                inert: node.hasAttribute('inert'),
+                ariaDisabled: node.getAttribute('aria-disabled') || ''
+            });
+            if (node === panel) break;
+        }
+        const paneRect = pane?.getBoundingClientRect();
+        const centerHit = paneRect
+            ? document.elementFromPoint(
+                paneRect.left + Math.min(Math.max(paneRect.width / 2, 1), Math.max(paneRect.width - 1, 1)),
+                paneRect.top + Math.min(Math.max(paneRect.height / 2, 1), Math.max(paneRect.height - 1, 1))
+            )
+            : null;
         return {
             panelVisible: Boolean(panel && visible(panel)),
             width: panel?.getBoundingClientRect().width || 0,
@@ -1002,7 +1138,14 @@ async function verifyLiveSettings(client, timeoutMs) {
             summaryCount: summaryCards.length,
             summaryLabels: summaryCards.map((card) => card.querySelector('.ytkit-vh-summary-card__label')?.textContent.trim() || ''),
             summaryValues: summaryCards.map((card) => card.querySelector('.ytkit-vh-summary-card__value')?.textContent.trim() || ''),
-            clippedLabels
+            clippedLabels,
+            visualState,
+            centerHit: centerHit ? {
+                tag: centerHit.tagName,
+                id: centerHit.id || '',
+                className: String(centerHit.className || '').slice(0, 180),
+                insidePane: Boolean(pane?.contains(centerHit))
+            } : null
         };
     })()`);
     const failures = [];
@@ -1012,6 +1155,11 @@ async function verifyLiveSettings(client, timeoutMs) {
     if (snapshot.summaryLabels.some((label) => !label)) failures.push('live settings: a summary card has no label');
     if (snapshot.summaryValues.some((value) => !value)) failures.push('live settings: a summary card has no value');
     if (snapshot.clippedLabels.length) failures.push(`live settings: clipped labels: ${snapshot.clippedLabels.join(', ')}`);
+    const dimmed = snapshot.visualState.filter((node) => Number(node.opacity) < 0.9 || node.filter !== 'none' || node.inert);
+    if (dimmed.length) failures.push(`live settings: Video Hider pane is visually disabled: ${JSON.stringify(dimmed)}`);
+    if (snapshot.centerHit && !snapshot.centerHit.insidePane) {
+        failures.push(`live settings: another layer covers the Video Hider pane center: ${JSON.stringify(snapshot.centerHit)}`);
+    }
     if (snapshot.width > snapshot.viewportWidth || snapshot.height > snapshot.viewportHeight) {
         failures.push('live settings: command deck exceeds the desktop viewport');
     }
@@ -1213,6 +1361,7 @@ module.exports = {
     parseArgs,
     setNativeTheater,
     setTheaterSplitEnabled,
+    verifySemanticSponsoredFallback,
     verifyLiveSettings,
     watchModeFailures
 };

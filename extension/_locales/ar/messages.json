@@ -8664,5 +8664,65 @@
   },
   "featureHealthReasonAntiAdblockTpl": {
     "message": "تحذير YouTube عبر {selector}؛ التشغيل {state}"
+  },
+  "feature_customCssCode_name": {
+    "message": "قواعد CSS مخصّصة"
+  },
+  "feature_customCssCode_desc": {
+    "message": "CSS يُطبّق عند تمكين CSS المخصّص"
+  },
+  "feature_subStyleFontSize_name": {
+    "message": "حجم خط التسميات التوضيحية"
+  },
+  "feature_subStyleFontSize_desc": {
+    "message": "تغيير حجم نص التسميات التوضيحية من 50% إلى 300%"
+  },
+  "feature_subStyleFontFamily_name": {
+    "message": "عائلة خط التسميات التوضيحية"
+  },
+  "feature_subStyleFontFamily_desc": {
+    "message": "اختر نوع الخط المستخدم للتسميات التوضيحية"
+  },
+  "feature_subStyleColor_name": {
+    "message": "لون نص التسميات التوضيحية"
+  },
+  "feature_subStyleColor_desc": {
+    "message": "اختر لون مقدمة التسميات التوضيحية"
+  },
+  "feature_subStyleBgOpacity_name": {
+    "message": "شفافية خلفية التسميات التوضيحية"
+  },
+  "feature_subStyleBgOpacity_desc": {
+    "message": "اضبط شفافية الخلفية خلف نص التسميات التوضيحية"
+  },
+  "feature_subStyleBgColor_name": {
+    "message": "لون خلفية التسميات التوضيحية"
+  },
+  "feature_subStyleBgColor_desc": {
+    "message": "اختر اللون خلف نص التسميات التوضيحية"
+  },
+  "feature_subStyleBottomOffset_name": {
+    "message": "إزاحة التسميات التوضيحية عن الأسفل"
+  },
+  "feature_subStyleBottomOffset_desc": {
+    "message": "حرّك التسميات التوضيحية إلى أعلى من الحافة السفلية للمشغّل"
+  },
+  "feature_subStyleTextShadow_name": {
+    "message": "ظل نص التسميات التوضيحية"
+  },
+  "feature_subStyleTextShadow_desc": {
+    "message": "أضف ظلًا داكنًا لتبقى التسميات التوضيحية مقروءة فوق الفيديو الساطع"
+  },
+  "feature_titleCaseMode_name": {
+    "message": "نمط حالة أحرف العنوان"
+  },
+  "feature_titleCaseMode_desc": {
+    "message": "اختر حالة الأحرف المستخدمة عند تمكين تحويل العنوان"
+  },
+  "feature_selectionColor_name": {
+    "message": "لون التحديد"
+  },
+  "feature_selectionColor_desc": {
+    "message": "اختر لون التمييز المستخدم عند تمكين تحديد النص المخصّص"
   }
 }
