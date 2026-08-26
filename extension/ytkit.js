@@ -1122,7 +1122,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.86.0';
+    const YTKIT_VERSION = '4.86.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -18339,24 +18339,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'arrow-down',
             pages: [PageTypes.WATCH],
             _sortTimer: null,
-            _optionTimer: null,
+            _sortDue: 0,
 
             _scheduleSort(delay = 4000) {
+                const due = Date.now() + delay;
+                if (this._sortTimer && this._sortDue <= due) return;
                 if (this._sortTimer) clearTimeout(this._sortTimer);
+                this._sortDue = due;
                 this._sortTimer = setTimeout(() => {
                     this._sortTimer = null;
+                    this._sortDue = 0;
                     this._sort();
                 }, delay);
             },
-
-            // YouTube renders exactly two comment sort options in a fixed
-            // order — "Top comments" then "Newest first" — and marks the
-            // active one in the renderer's own Polymer data. Both signals are
-            // locale-independent; matching the English word 'newest' was not,
-            // so on the other 10 locales this opened the sort menu, matched
-            // nothing, left the dropdown hanging, and the mutation rule
-            // re-opened it every ~2 seconds for the whole session.
-            _NEWEST_INDEX: 1,
 
             _sortSubMenu() {
                 return document.querySelector('#comments yt-sort-filter-sub-menu-renderer, ytd-comments yt-sort-filter-sub-menu-renderer');
@@ -18367,31 +18362,86 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return Array.isArray(items) ? items : null;
             },
 
-            _isAlreadyNewest(sortMenu) {
-                const items = this._sortMenuItems();
-                if (items) return items.findIndex(item => item?.selected === true) === this._NEWEST_INDEX;
-                return (sortMenu.textContent || '').trim().toLowerCase().includes('newest');
+            // YouTube currently ships two sorter shapes. The legacy menu is
+            // Top / Newest, while the current menu is Latest / Popular /
+            // Oldest. Their target positions differ, so item count is part of
+            // the structural contract. Unknown shapes fail open.
+            _newestIndex(items = this._sortMenuItems()) {
+                if (!Array.isArray(items)) return -1;
+                if (items.length === 2) return 1;
+                if (items.length === 3) return 0;
+                return -1;
             },
 
-            _openDropdownOptions() {
-                const dropdown = document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]') || document;
+            _normalizeSortLabel(value) {
+                if (value && typeof value === 'object') {
+                    if (typeof value.simpleText === 'string') value = value.simpleText;
+                    else if (Array.isArray(value.runs)) value = value.runs.map(run => run?.text || '').join('');
+                }
+                return String(value || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+            },
+
+            _declaredSortLabel(item) {
+                return this._normalizeSortLabel(item?.title ?? item?.label ?? item?.text);
+            },
+
+            _openDropdown() {
+                return Array.from(document.querySelectorAll('tp-yt-iron-dropdown')).find(dropdown => {
+                    if (dropdown.getAttribute('aria-hidden') === 'true') return false;
+                    if (dropdown.getAttribute('aria-hidden') === 'false' || dropdown.hasAttribute('opened')) {
+                        return true;
+                    }
+                    // Current YouTube keeps the native popup marker-free while
+                    // it is open. Geometry is the reliable state signal there.
+                    const rect = dropdown.getBoundingClientRect?.();
+                    return Boolean(rect && rect.width > 0 && rect.height > 0);
+                }) || null;
+            },
+
+            _isAlreadyNewest(sortMenu) {
+                const items = this._sortMenuItems();
+                const newestIndex = this._newestIndex(items);
+                if (newestIndex >= 0) return items[newestIndex]?.selected === true;
+                const activeLabel = this._normalizeSortLabel(sortMenu?.textContent);
+                return activeLabel.includes('newest') || activeLabel.includes('latest');
+            },
+
+            _openDropdownOptions(dropdown = this._openDropdown()) {
+                if (!dropdown) return [];
+                const endpoints = Array.from(dropdown.querySelectorAll('tp-yt-paper-listbox a'));
+                if (endpoints.length > 0) return endpoints;
                 return Array.from(dropdown.querySelectorAll(
-                    'tp-yt-paper-listbox a, ' +
                     'tp-yt-paper-listbox tp-yt-paper-item, ' +
                     'ytd-menu-popup-renderer tp-yt-paper-item, ' +
                     'ytd-menu-service-item-renderer tp-yt-paper-item'
                 ));
             },
 
-            _pickNewestOption() {
-                const options = this._openDropdownOptions();
-                if (!options.length) return null;
-                // Positional pick only when the open dropdown demonstrably
-                // belongs to the sort menu (same item count as the renderer
-                // declares), so an unrelated dropdown can never be clicked.
+            _sortDropdown() {
+                return document.querySelector(
+                    '#comments #sort-menu tp-yt-iron-dropdown, ' +
+                    'ytd-comments #sort-menu tp-yt-iron-dropdown'
+                );
+            },
+
+            _pickNewestOption(dropdown = this._sortDropdown()) {
                 const declared = this._sortMenuItems();
-                if (declared && declared.length === options.length) return options[this._NEWEST_INDEX] || null;
-                return options.find(opt => (opt.textContent || '').trim().toLowerCase().includes('newest')) || null;
+                const newestIndex = this._newestIndex(declared);
+                const options = this._openDropdownOptions(dropdown);
+                if (newestIndex < 0 || options.length !== declared.length) return null;
+
+                // Count alone is not ownership. YouTube hosts every native
+                // popup in the same global container, and another three-item
+                // dropdown can be open when the delayed sorter runs. Match the
+                // renderer's own localized labels to the DOM in order before
+                // authorizing a click.
+                const ownsDropdown = declared.every((item, index) => {
+                    const declaredLabel = this._declaredSortLabel(item);
+                    const optionLabel = this._normalizeSortLabel(options[index]?.textContent);
+                    return declaredLabel && optionLabel
+                        && (optionLabel === declaredLabel || optionLabel.startsWith(`${declaredLabel} `));
+                });
+                return ownsDropdown ? (options[newestIndex] || null) : null;
             },
 
             _sort() {
@@ -18405,23 +18455,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     '#comments button[aria-label*="Sort comments"]'
                 );
                 if (!sortMenu) return;
+                // Never toggle or dismiss a popup the user already has open.
+                // The delayed mutation pass used to close unrelated menus.
+                if (this._openDropdown()) return;
                 if (this._isAlreadyNewest(sortMenu)) return;
-                sortMenu.click();
-                requestAnimationFrame(() => {
-                    this._optionTimer = setTimeout(() => {
-                        this._optionTimer = null;
-                        const target = this._pickNewestOption();
-                        if (target) {
-                            target.click();
-                            DebugManager.log('SortComments', 'Switched to newest first');
-                            return;
-                        }
-                        // Nothing matched: close the dropdown we opened rather
-                        // than leaving it over the comments until the user
-                        // clicks it away.
-                        if (document.querySelector('tp-yt-iron-dropdown[aria-hidden="false"]')) document.body.click();
-                    }, 200);
-                });
+                if (this._newestIndex() < 0) return;
+                const target = this._pickNewestOption();
+                if (target) {
+                    // Verify the endpoint while the menu is closed, then open
+                    // and select in one task so no intermediate frame paints.
+                    sortMenu.click();
+                    target.click();
+                    DebugManager.log('SortComments', 'Switched to newest first');
+                    return;
+                }
+                DebugManager.log('SortComments', 'Sort endpoint did not match the active renderer');
             },
 
             init() {
@@ -18431,7 +18479,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 if (this._sortTimer) { clearTimeout(this._sortTimer); this._sortTimer = null; }
-                if (this._optionTimer) { clearTimeout(this._optionTimer); this._optionTimer = null; }
+                this._sortDue = 0;
                 removeNavigateRule('sortComments');
                 removeMutationRule('sortCommentsMutation');
             }

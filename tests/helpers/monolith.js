@@ -20,18 +20,22 @@ const FEATURE_CLOSE = /\n {8}\}(?=,|\s*\]|\s*$|\n)/g;
  * runs to the NEXT feature's `id:` line and then back to the last close brace
  * before it — which is this feature's own.
  */
-function featureSource(id) {
+function featureSourceFrom(source, id) {
     const needle = `\n        {\n            id: '${id}'`;
-    const start = sources.ytkit.indexOf(needle);
+    const start = source.indexOf(needle);
     assert.ok(start > 0, `feature '${id}' must exist in ytkit.js`);
-    const nextId = sources.ytkit.indexOf("\n            id: '", start + needle.length);
+    const nextId = source.indexOf("\n            id: '", start + needle.length);
     assert.ok(nextId > start, `feature '${id}' must be followed by another feature`);
-    const region = sources.ytkit.slice(start + 1, nextId);
+    const region = source.slice(start + 1, nextId);
     FEATURE_CLOSE.lastIndex = 0;
     let close = null;
     for (let match = FEATURE_CLOSE.exec(region); match; match = FEATURE_CLOSE.exec(region)) close = match;
     assert.ok(close, `feature '${id}' must close at the features-array indent`);
     return region.slice(0, close.index + close[0].length);
+}
+
+function featureSource(id) {
+    return featureSourceFrom(sources.ytkit, id);
 }
 
 /**
@@ -93,7 +97,7 @@ function overlayKeyboardHelpersSource() {
     return _overlayHelpersCache;
 }
 
-function loadFeature(id, extraGlobals = {}) {
+function loadFeatureFromSource(source, id, extraGlobals = {}) {
     const sandbox = {
         console,
         AbortController,
@@ -153,9 +157,17 @@ function loadFeature(id, extraGlobals = {}) {
             sandbox
         );
     }
-    const feature = vm.runInNewContext(`(${featureSource(id)})`, sandbox);
+    const feature = vm.runInNewContext(`(${featureSourceFrom(source, id)})`, sandbox);
     feature._testHideAttributionCalls = sandbox.hideAttributionCalls;
     return feature;
+}
+
+function loadFeature(id, extraGlobals = {}) {
+    return loadFeatureFromSource(sources.ytkit, id, extraGlobals);
+}
+
+function loadUserscriptFeature(id, extraGlobals = {}) {
+    return loadFeatureFromSource(sources.userscript, id, extraGlobals);
 }
 
 /** Evaluate the inline fallback literal of a factory-built monolith feature. */
@@ -714,6 +726,7 @@ module.exports = {
     featureSource,
     fallbackFeatureSource,
     loadFeature,
+    loadUserscriptFeature,
     loadFallbackFeature,
     fakeNode,
     fakeDocument,
