@@ -8435,7 +8435,6 @@ if (typeof globalThis !== "undefined") {
     core.getActiveYouTubeClientVersion = getActiveYouTubeClientVersion;
     core.getCriticalSelectorCanaryRules = getCriticalSelectorCanaryRules;
     core.getCriticalSelectorCanarySnapshot = getCriticalSelectorCanarySnapshot;
-    core.nodeIsInInactiveSelectorTree = nodeIsInInactiveTree;
     core.probeCriticalSelectorSurfaces = probeCriticalSelectorSurfaces;
     core.setCriticalSelectorCanarySnapshot = setCriticalSelectorCanarySnapshot;
     // Stand-alone surface for direct callers that don't need the closure.
@@ -8450,7 +8449,6 @@ if (typeof globalThis !== "undefined") {
             getActiveYouTubeClientVersion,
             getCriticalSelectorCanaryRules,
             getCriticalSelectorCanarySnapshot,
-            nodeIsInInactiveSelectorTree: nodeIsInInactiveTree,
             probeCriticalSelectorSurfaces,
             setCriticalSelectorCanarySnapshot,
             summarizeSelectorHealth: summarize,

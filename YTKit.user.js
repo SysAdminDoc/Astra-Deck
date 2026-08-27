@@ -25,7 +25,7 @@
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
 // @connect      127.0.0.1
-// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js
+// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.2/YTKit-core.user.js
 // @homepageURL      https://github.com/SysAdminDoc/Astra-Deck
 // @supportURL      https://github.com/SysAdminDoc/Astra-Deck/issues
 // @license      MIT

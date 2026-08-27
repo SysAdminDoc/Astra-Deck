@@ -1,10 +1,12 @@
 # Astra Deck release signing keys, in OpenSSH allowed_signers format.
 #
-# Every published release carries build/SHA256SUMS plus a detached
-# build/SHA256SUMS.sig made with one of the keys below. Verifying that
-# signature is what makes the checksum file a provenance claim rather than a
-# corruption check: releases are built locally, so without it the artifacts and
-# their hashes share one origin and forging both is one step.
+# signing-claim: unverified — describes the intended end state, not today.
+# Once a key line appears below, a published release is meant to carry
+# build/SHA256SUMS plus a detached build/SHA256SUMS.sig made with one of them.
+# Verifying it is what would make the checksum file a provenance claim rather
+# than a corruption check: releases are built locally, so without it the
+# artifacts and their hashes share one origin and forging both is one step.
+# Until then, see the note below — no release is signed.
 #
 # To verify a download, from the directory holding SHA256SUMS, SHA256SUMS.sig,
 # and this file:

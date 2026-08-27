@@ -134,7 +134,15 @@
         // Hook lookups record under `surface.hook`, and hooks carry their own
         // stable/fallback chains. Without this split every hook hit reported
         // 'unknown' and hook-chain erosion was invisible.
-        const [surfaceName, hookName] = String(surface).split('.');
+        //
+        // Split ONCE: hook names are validated against [A-Za-z0-9._-] and 19 of
+        // the 25 shipped hooks contain a dot (`watch.action.like`), so a plain
+        // split() dropped everything after the first one and resolved 36 of 48
+        // hook chains to 'unknown'.
+        const key = String(surface);
+        const dot = key.indexOf('.');
+        const surfaceName = dot === -1 ? key : key.slice(0, dot);
+        const hookName = dot === -1 ? '' : key.slice(dot + 1);
         const surfaceEntry = SurfaceSelectorMap[surfaceName];
         if (!surfaceEntry) return 'unknown';
         const entry = hookName ? surfaceEntry.hooks?.[hookName] : surfaceEntry;

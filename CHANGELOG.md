@@ -36,6 +36,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- The offline notice is a top-level banner. The first cut drew it into the two
+  health sections, both of which ship hidden, and the external-health section
+  is unhidden only once a live content script answers — which is exactly what
+  a dropped connection prevents. The notice was invisible in the case it
+  exists for.
+
 - The popup and side panel now watch connectivity. Nothing in the extension
   observed it before: `navigator.onLine` was read in exactly one place, to pick
   a cause sentence after a request had already failed, and no file registered

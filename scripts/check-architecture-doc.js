@@ -66,16 +66,55 @@ function signingKeyIsPublished() {
         .some((line) => line.trim() && !line.trim().startsWith('#'));
 }
 
+// Files that make provenance promises to a reader.
+// Deliberately narrow: files where a line is a promise to a user about what a
+// release carries. docs/signing-keys.md is a maintainer procedure that is
+// supposed to describe signing at length and claims nothing about today.
+// README.md only. It is the page that makes promises to a user about what a
+// release carries. allowed-signers and docs/signing-keys.md exist to describe
+// signing and are supposed to discuss it at length; scanning them produced
+// noise on their own titles and verify instructions.
+const SIGNING_CLAIM_FILES = Object.freeze(['README.md']);
+
+// A claim is "signature-ish language near a release noun". The first cut
+// matched only `signed release manifest`, which missed "the release manifest
+// is signed with our maintainer key", "a cryptographically signed
+// SHA256SUMS", and "a signature over the release manifest".
+const SIGNING_WORD = /\bsign(?:ed|ature|s|ing)\b/i;
+const RELEASE_NOUN = /\b(?:manifest|SHA256SUMS|artifacts?|releases?|checksums?)\b/i;
+
+// Exempting on any stray "no" or "not" let "No competing extension ships a
+// signed manifest like ours" through. A line is exempt only when it carries
+// this explicit marker, which a writer has to mean.
+const CLAIM_EXEMPT_MARKER = /signing-claim:\s*unverified/i;
+
+function isSigningClaim(line) {
+    if (!SIGNING_WORD.test(line) || !RELEASE_NOUN.test(line)) return false;
+    // No free-text exemption. A negation-proximity rule let "No competing
+    // extension ships a signed manifest like ours" and "We have not stopped
+    // shipping a signed release manifest" straight through, because both put a
+    // negation next to the signature word while still making the claim. The
+    // marker is the only escape, and a writer has to mean it.
+    return !CLAIM_EXEMPT_MARKER.test(line);
+}
+
 function checkSigningClaims() {
     if (signingKeyIsPublished()) return [];
     const problems = [];
-    const readme = read('README.md');
-    for (const [index, line] of readme.split('\n').entries()) {
-        if (!/signed\s+(release\s+)?manifest/i.test(line)) continue;
-        // An explicit denial is exactly what we want to see here.
-        if (/\bnot\b|\bno\b|unverified|absent|yet/i.test(line)) continue;
-        problems.push(`README.md:${index + 1} claims a signed manifest, but allowed-signers `
-            + 'publishes no key and no SHA256SUMS.sig is produced');
+    for (const rel of SIGNING_CLAIM_FILES) {
+        let text;
+        try {
+            text = read(rel);
+        } catch (_) {
+            // reason: an absent optional doc is not a claim
+            continue;
+        }
+        for (const [index, line] of text.split(/\r?\n/).entries()) {
+            if (!isSigningClaim(line)) continue;
+            problems.push(`${rel}:${index + 1} claims a release signature, but allowed-signers `
+                + 'publishes no key and no SHA256SUMS.sig is produced. Restate it, or mark the '
+                + 'line "signing-claim: unverified" if it is deliberately aspirational.');
+        }
     }
     return problems;
 }
@@ -157,6 +196,7 @@ module.exports = {
     backgroundMessageTypes,
     check,
     checkSigningClaims,
+    isSigningClaim,
     popupCoreModules,
     signingKeyIsPublished,
     testCount

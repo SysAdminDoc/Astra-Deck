@@ -570,7 +570,6 @@
     core.getActiveYouTubeClientVersion = getActiveYouTubeClientVersion;
     core.getCriticalSelectorCanaryRules = getCriticalSelectorCanaryRules;
     core.getCriticalSelectorCanarySnapshot = getCriticalSelectorCanarySnapshot;
-    core.nodeIsInInactiveSelectorTree = nodeIsInInactiveTree;
     core.probeCriticalSelectorSurfaces = probeCriticalSelectorSurfaces;
     core.setCriticalSelectorCanarySnapshot = setCriticalSelectorCanarySnapshot;
     // Stand-alone surface for direct callers that don't need the closure.
@@ -585,7 +584,6 @@
             getActiveYouTubeClientVersion,
             getCriticalSelectorCanaryRules,
             getCriticalSelectorCanarySnapshot,
-            nodeIsInInactiveSelectorTree: nodeIsInInactiveTree,
             probeCriticalSelectorSurfaces,
             setCriticalSelectorCanarySnapshot,
             summarizeSelectorHealth: summarize,

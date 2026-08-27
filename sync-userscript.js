@@ -11,8 +11,22 @@ const USERSCRIPT_SOURCE = resolveUserscriptPath(REPO_ROOT);
 const USERSCRIPT_BASENAME = getUserscriptBasename(REPO_ROOT);
 const USERSCRIPT_RAW_URL = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
 const USERSCRIPT_CORE_SOURCE = path.join(REPO_ROOT, 'YTKit-core.user.js');
-const GREASY_FORK_CORE_URL = process.env.ASTRA_GREASY_FORK_CORE_URL
-    || 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js';
+// The @require target. Pinned to the release TAG, not to `main`.
+//
+// Until v4.88.3 this pointed at `main`, so every userscript install pulled
+// 1.9 MB of executable code from a mutable branch pointer — in a script that
+// also grants GM_xmlhttpRequest to OpenAI, Anthropic, Gemini and loopback.
+// Anything able to move `main` moved every install at once, with no version
+// to notice it by. A tag is immutable once pushed, so a given @version always
+// requires the same bytes and the release advances both together.
+//
+// ASTRA_GREASY_FORK_CORE_URL still overrides for a Greasy Fork or mirrored host.
+const CORE_URL_BASE = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck';
+
+function coreRequireUrl(version) {
+    if (process.env.ASTRA_GREASY_FORK_CORE_URL) return process.env.ASTRA_GREASY_FORK_CORE_URL;
+    return `${CORE_URL_BASE}/refs/tags/v${version}/YTKit-core.user.js`;
+}
 const CORE_BEGIN_MARKER = '// ── BEGIN v5.0.0 bundled core modules ──';
 const CORE_END_MARKER = '// ── END v5.0.0 bundled core modules ──';
 const EXTERNAL_BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^[ \t]*\/\/ ── END v5\.0\.0 bundled core modules ──/m;
@@ -544,7 +558,7 @@ function main() {
         (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
     headerText = headerText.replace(/^(\/\/ @downloadURL\s+).+$/m,
         (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
-    headerText = upsertMetadataLine(headerText, 'require', GREASY_FORK_CORE_URL);
+    headerText = upsertMetadataLine(headerText, 'require', coreRequireUrl(targetVersion));
     for (const [key, value] of [
         ['homepageURL', 'https://github.com/SysAdminDoc/Astra-Deck'],
         ['supportURL', 'https://github.com/SysAdminDoc/Astra-Deck/issues'],
@@ -618,5 +632,5 @@ module.exports = {
     BUNDLE_BEGIN_RE,
     EXTERNAL_BUNDLE_BEGIN_RE,
     USERSCRIPT_CORE_SOURCE,
-    GREASY_FORK_CORE_URL,
+    coreRequireUrl,
 };
