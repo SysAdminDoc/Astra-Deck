@@ -27,7 +27,7 @@ This document orients a new contributor to the moving parts. It describes the v4
 
 These pieces communicate exclusively through three trust boundaries:
 
-- **Content script ↔ background service worker**, `chrome.runtime.sendMessage` (typed messages: `EXT_FETCH`, `DOWNLOAD_FILE`, `EXT_COOKIE_LIST`, `OPEN_URL`, `YTKIT_GET_SELECTOR_HEALTH`, `YTKIT_OPEN_PANEL`, `YTKIT_SETTING_CHANGED`, `YTKIT_SETTINGS_REPLACED`).
+- **Content script ↔ background service worker**, `chrome.runtime.sendMessage`. The worker handles 23 typed messages, all behind a `sender.id === runtime.id` check: `DOWNLOAD_FILE`, `EXT_COOKIE_LIST`, `EXT_FETCH`, `GET_SW_LIFECYCLE`, `NATIVE_MSG_GET_TOKEN`, `OPEN_URL`, `YTKIT_AI_CREDENTIAL_DELETE`, `YTKIT_AI_CREDENTIAL_SET`, `YTKIT_AI_CREDENTIAL_STATUS`, `YTKIT_AI_SUMMARY_REQUEST`, `YTKIT_COBALT_REQUEST`, `YTKIT_COOKIE_HANDOFF`, `YTKIT_FETCH_FEATURE_DISABLE_FEED`, `YTKIT_FETCH_SELECTOR_ASSET`, `YTKIT_MUTATE_SETTING`, `YTKIT_MUTATE_SETTINGS`, `YTKIT_REPLACE_SETTINGS`, `YTKIT_REQUEST_OPTIONAL_HOSTS`, `YTKIT_SYNC_STATUS`, `YTKIT_SYNC_UNDO`, `YTKIT_ZERO_AD_PAUSE_SESSION`, `YTKIT_ZERO_AD_RESUME_SESSION`, `YTKIT_ZERO_AD_STATUS`. `npm run check` fails if this list drifts from `extension/background.js`. Messages travelling the other way (`chrome.tabs.sendMessage` to a content script, e.g. `YTKIT_GET_SELECTOR_HEALTH`, `YTKIT_OPEN_PANEL`, `YTKIT_SETTING_CHANGED`, `YTKIT_SETTINGS_REPLACED`) are listed further down; they were previously mixed into this list, which made the worker's real surface look four names smaller than it is.
 - **Extension ↔ Astra Downloader**, HTTP on `127.0.0.1:9751` (with five fallback ports 9761/9771/9781/9791/9851), bearer-token authenticated via `X-Auth-Token`, DNS-rebinding-defended via a Host header allowlist.
 - **Extension ↔ YouTube DOM**, selector packs in `extension/core/selector-packs/` (source-derived surface and alias counts below, capture-provenanced from `mhtml/*.mhtml`).
 
@@ -68,8 +68,7 @@ Toolbar popup (on demand)
     popup.html               Hero card + storage stats + data-flow panel
                              + selector-health dashboard + quick toggles
                              + schema overview (all source-derived schema keys editable).
-    Bundles                  core/settings-schema.js, core/policy-profile.js,
-                             core/data-flow.js, core/selector-health.js.
+    Bundles                  15 core modules, listed in popup.html
                              Communicates with content scripts via
                              chrome.tabs.sendMessage.
 ```
@@ -115,7 +114,8 @@ ytkit.js feature attempts findSurfaceElement('feedCard', root):
 User opens the popup:
   → renderSelectorHealthDashboard() → chrome.tabs.sendMessage(YTKIT_GET_SELECTOR_HEALTH)
   → ytkit.js content-script handler reads getSelectorHealthSnapshot()
-  → top 6 problem surfaces render in the popup
+  → problem surfaces render in the popup from `summarizeSelectorHealth`
+    (`rankSelectorProblems` is exported for report tooling, not this path)
   → user clicks "Copy report" (v4.47.0)
   → copySelectorHealthReport() runs the same round-trip + bundles
      productVersion + browserUA + activeTab + ctx counts via the
@@ -143,7 +143,7 @@ User opens the popup:
 | Runtime flags (internal) | `extension/core/runtime-flags.js` | Typed accessors for the three internal coordination primitives: `__ytkit_videoPopped` (popOutPlayer ↔ pipButton ↔ fullscreenOnDoubleClick), `__ytkit_cpu_tamer` (CPU Tamer re-entry guard), `__ytkit_debug` (Debug Mode marker). Storage stays on `window.__ytkit_*` for back-compat; the module owns the canonical read/write contract. `tests/hardening.test.js#NF12` pins that ytkit.js never writes the primitives directly. |
 | Build pipeline | `build-extension.js` + `sync-userscript.js` + `scripts/manifest-patch.js` | Emits Chrome ZIP + CRX3, Firefox ZIP + XPI, userscript copy. Release CRX3 signing requires `ASTRA_CRX_KEY_PATH` / the default local key store outside the repo; validation builds use ephemeral CRX signing without retaining key material. The XPI is a renamed ZIP and is **not** signed, there is no AMO signing step in the build, so it installs permanently only on Firefox Developer Edition / Nightly / ESR with `xpinstall.signatures.required=false`, and temporarily anywhere via `about:debugging`. Firefox manifest auto-patched. |
 | Astra Downloader companion | Separate repository: https://github.com/SysAdminDoc/AstraDownloader | Flask API + PyQt6 GUI + yt-dlp + ffmpeg. Single-file PyInstaller .exe at `%LOCALAPPDATA%\AstraDownloader\`. Reached only over the loopback HTTP contract. |
-| Test suites | `tests/*.test.js` (1330 JS tests, `node --test`) | Hardening regressions, parity gates, selector regression, settings migration round-trip. The companion's Python suite runs in its own repository. |
+| Test suites | `tests/*.test.js` + `tests/features/*.test.js` (2768 JS tests, `node --test`) | Hardening regressions, parity gates, selector regression, settings migration round-trip. The companion's Python suite runs in its own repository. |
 | Local release gates | `package.json` scripts + `build-extension.js` + release scripts | `npm test` -> `npm run check` -> `ASTRA_CRX_KEY_MODE=ephemeral node build-extension.js --bump patch --with-userscript` for validation artifacts -> optional maintainer-key rebuild for public CRX artifacts -> `npm sbom`, `npm run release:manifest`, and `npm run release:readiness`. GitHub Actions workflows are intentionally absent; public release publication stays maintainer-local per [signing-keys.md](signing-keys.md). |
 
 ## Trust boundaries (and what each is allowed to touch)
