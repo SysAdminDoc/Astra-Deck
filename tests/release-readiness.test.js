@@ -382,3 +382,41 @@ test('release SBOM generation uses production package-lock dependencies', () => 
 });
 
 
+
+test('the release chain measures captured startup evidence, not the synthetic fallback', () => {
+    // `npm run check` runs bench-startup with --allow-synthetic, which is
+    // right for a contributor without the gitignored MHTML captures. A release
+    // must not take that discount: the strong budget only exists against the
+    // real captures, and the fallback silently measures a different fixture
+    // against a different baseline.
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    assert.match(pkg.scripts['check:startup:captured'] || '', /bench-startup\.js --check$/,
+        'the captured lane must not pass --allow-synthetic');
+    for (const chain of ['release:prepare', 'release:prepare:no-crx']) {
+        const script = pkg.scripts[chain] || '';
+        assert.match(script, /npm run check:startup:captured/, `${chain} must measure real captures`);
+        assert.ok(script.indexOf('check:startup:captured') < script.indexOf('build:userscript'),
+            `${chain} must measure before it packages`);
+    }
+});
+
+test('the test suite carries a coverage ratchet', () => {
+    // 40% of assertions pinned source text rather than executing it. Fixing
+    // that file by file is slow; this stops the number sliding while it
+    // happens. The thresholds sit just under the measured value and may only
+    // be raised.
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    const test = pkg.scripts.test || '';
+    assert.match(test, /--experimental-test-coverage/, 'npm test must measure coverage');
+    for (const [flag, floor] of [
+        ['--test-coverage-lines', 60],
+        ['--test-coverage-branches', 60],
+        ['--test-coverage-functions', 60]
+    ]) {
+        const found = new RegExp(`${flag}=(\\d+)`).exec(test);
+        assert.ok(found, `${flag} must be set`);
+        assert.ok(Number(found[1]) >= floor,
+            `${flag} is ${found[1]}, below the ${floor} floor — thresholds may only be raised`);
+    }
+    assert.ok(pkg.scripts['test:fast'], 'a coverage-free lane stays available for quick local runs');
+});
