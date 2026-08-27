@@ -3907,3 +3907,18 @@ button.so-key-surface:focus-visible {
   line-height: 1.5;
   list-style: none;
 }
+
+/* Connectivity notice (v4.88.3).
+   Drawn into a health section when navigator.onLine goes false, so a network
+   drop reads as "your device is offline" rather than as every provider
+   failing at once. --warning is the same tone the storage banner uses. */
+.connectivity-notice {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-left: 3px solid var(--warning);
+  border-radius: 4px;
+  background: var(--surface-strong);
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 1.4;
+}

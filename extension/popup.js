@@ -3112,6 +3112,77 @@ function renderExternalHealthRows(services) {
     }
 }
 
+// Connectivity.
+//
+// Nothing in the extension observed it before v4.88.3: `navigator.onLine` was
+// read in exactly one place (core/failure-copy.js, to pick a cause sentence
+// after a request had already failed) and no file anywhere registered an
+// `online` or `offline` listener. So every network-backed surface showed a
+// generic failure with no cause, and nothing re-checked when the connection
+// came back — the user had to reopen the popup to find out.
+function isDeviceOffline() {
+    try {
+        return typeof navigator !== 'undefined' && navigator.onLine === false;
+    } catch (_) {
+        // reason: navigator is absent in the test harness
+        return false;
+    }
+}
+
+function offlineNoticeText() {
+    return t('failureCauseOffline', 'Your device looks offline. Reconnect, then try again.');
+}
+
+// Renders (or clears) the connectivity notice on a health section. The notice
+// element is created on demand so the markup carries no dead node.
+function setConnectivityNotice(section, offline) {
+    if (!section) return null;
+    let notice = section.querySelector('.connectivity-notice');
+    if (!offline) {
+        notice?.remove();
+        section.removeAttribute('data-offline');
+        return null;
+    }
+    if (!notice) {
+        notice = document.createElement('p');
+        notice.className = 'connectivity-notice';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        section.insertBefore(notice, section.firstChild);
+    }
+    notice.textContent = offlineNoticeText();
+    section.dataset.offline = 'true';
+    return notice;
+}
+
+function renderConnectivityState() {
+    const offline = isDeviceOffline();
+    // Resolved here rather than closed over: the feature-health binding is
+    // declared further down this file, and a call during module evaluation
+    // would hit its temporal dead zone.
+    setConnectivityNotice($('#external-health'), offline);
+    setConnectivityNotice($('#feature-health'), offline);
+    return offline;
+}
+
+// Re-check provider health the moment the connection returns, so a user who
+// reconnects with the popup open sees live state instead of a stale outage.
+function installConnectivityWatch() {
+    if (typeof globalThis.addEventListener !== 'function') return () => {};
+    const onOffline = () => { renderConnectivityState(); };
+    const onOnline = () => {
+        renderConnectivityState();
+        void renderExternalApiHealthDashboard();
+    };
+    globalThis.addEventListener('offline', onOffline);
+    globalThis.addEventListener('online', onOnline);
+    renderConnectivityState();
+    return () => {
+        globalThis.removeEventListener('offline', onOffline);
+        globalThis.removeEventListener('online', onOnline);
+    };
+}
+
 async function renderExternalApiHealthDashboard() {
     if (!externalHealthSection || !externalHealthList) return;
     try {
@@ -3121,6 +3192,7 @@ async function renderExternalApiHealthDashboard() {
             return;
         }
         renderExternalHealthRows(snapshot.services);
+        renderConnectivityState();
         if (externalHealthTotal) {
             externalHealthTotal.textContent = t('externalHealthTotalTpl', '{count} services')
                 .replace('{count}', String(snapshot.totalServices));
@@ -7275,6 +7347,10 @@ function installWheelScrolling() {
     void renderSelectorHealthDashboard();
     void renderExternalApiHealthDashboard();
     void renderFeaturePerfDashboard();
+    // Watch connectivity for the life of the popup: an offline device gets a
+    // named cause instead of a generic failure, and reconnecting re-checks
+    // provider health without the user reopening anything.
+    installConnectivityWatch();
 
     // v4.47.0 NF21: render the first-run welcome card + What's New
     // banner in parallel with the rest of boot. Both are best-effort —
