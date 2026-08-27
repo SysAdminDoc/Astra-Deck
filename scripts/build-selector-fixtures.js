@@ -334,6 +334,46 @@ function selectorMatchCount(elements, selector) {
     return count;
 }
 
+// Capture provenance for a generated fixture header.
+//
+// Until v4.88.3 a token fixture said only which MHTML it came from, so a
+// fixture regenerated from a capture taken months earlier looked identical to
+// one taken this morning. YouTube stamps its own build into
+// INNERTUBE_CLIENT_VERSION (`2.20260606.02.00` -> 2026-06-06), which dates the
+// capture far more honestly than a file timestamp. Several captures are
+// script-stripped DOM snapshots and carry no such marker; those say so and
+// fall back to the file's modification time rather than inventing a date.
+function captureProvenance(mhtmlPath) {
+    let clientVersion = null;
+    try {
+        const raw = fs.readFileSync(mhtmlPath, 'utf8');
+        const match = /INNERTUBE_CLIENT_VERSION["']?\s*[:=]\s*["']?(\d+\.\d{8}\.\d+\.\d+)/.exec(raw)
+            || /INNERTUBE_CLIENT_VERSION["']?\s*[:=]\s*["']?(\d+\.\d{8}\.\d+\.\d+)/.exec(decodeQuotedPrintable(raw));
+        if (match) clientVersion = match[1];
+    } catch (_) {
+        // reason: an unreadable capture is reported as unknown, not fatal
+    }
+
+    if (clientVersion) {
+        const parts = /^\d+\.(\d{4})(\d{2})(\d{2})\./.exec(clientVersion);
+        if (parts) {
+            return {
+                clientVersion,
+                capturedOn: `${parts[1]}-${parts[2]}-${parts[3]}`,
+                dateSource: 'INNERTUBE_CLIENT_VERSION'
+            };
+        }
+    }
+
+    let capturedOn = 'unknown';
+    try {
+        capturedOn = fs.statSync(mhtmlPath).mtime.toISOString().slice(0, 10);
+    } catch (_) {
+        // reason: keep the header honest when the file cannot be stat'd
+    }
+    return { clientVersion: 'unknown', capturedOn, dateSource: 'file mtime' };
+}
+
 function loadSurfaceSelectorMap() {
     const ctx = {
         console,
@@ -444,9 +484,12 @@ function main() {
         const fixtureText = extractTokenText(mhtmlPath);
         const tokens = extractTokens(fixtureText);
         const outPath = path.join(FIXTURE_DIR, out);
+        const provenance = captureProvenance(mhtmlPath);
         const header = [
             '# Selector-regression canary fixture.',
             `# Source: ${sourceName}`,
+            `# YouTube client: ${provenance.clientVersion}`,
+            `# Captured: ${provenance.capturedOn} (from ${provenance.dateSource})`,
             '# Regenerated via: npm run build:fixtures',
             `# Captured tokens: ${tokens.length}`,
             '# Encoding: one token per line, sorted.',
@@ -473,6 +516,7 @@ if (require.main === module) {
 
 module.exports = {
     buildSurfaceMatchFixture,
+    captureProvenance,
     decodeQuotedPrintable,
     extractTokens,
     loadSurfaceSelectorMap,

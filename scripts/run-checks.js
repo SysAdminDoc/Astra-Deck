@@ -26,6 +26,7 @@ const GATES = Object.freeze([
     { id: 'sidebar', script: 'generate-sidebar.js', args: ['--check'] },
     { id: 'selector-asset', script: 'build-selector-asset.js', args: ['--check'] },
     { id: 'feed-signatures', script: 'sign-remote-feeds.js', args: ['--check'] },
+    { id: 'selector-evidence', script: 'check-selector-evidence.js' },
     { id: 'project-facts', script: 'project-facts.js', args: ['--check'] },
     { id: 'settings-reference', script: 'generate-settings-reference.js', args: ['--check'] },
     { id: 'versions', script: 'check-versions.js' },

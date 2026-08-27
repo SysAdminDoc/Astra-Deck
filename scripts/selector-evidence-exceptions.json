@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "note": "High-churn selector surfaces whose evidence predates the freshness limit. Shrinking this file is always allowed; growing it means a surface went stale without a recapture.",
+  "staleAfterDays": 60,
+  "surfaces": {
+    "channelProfile": {
+      "lastVerified": "2026-06-05",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "commentComposer": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "comments": {
+      "lastVerified": "2026-06-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "engagementPanels": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "feed": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "feedCard": {
+      "lastVerified": "2026-06-05",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "feedExperimentChips": {
+      "lastVerified": "2026-06-29",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "feedPlayables": {
+      "lastVerified": "2026-06-29",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "feedPrompt": {
+      "lastVerified": "2026-06-29",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "feedSponsored": {
+      "lastVerified": "2026-06-29",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "leftNav": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "liveChat": {
+      "lastVerified": "2026-06-04",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "liveChatFrame": {
+      "lastVerified": "2026-06-04",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "liveChatPlaceholder": {
+      "lastVerified": "2026-06-04",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "mainVideo": {
+      "lastVerified": "2026-06-05",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "modals": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "notifications": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "player": {
+      "lastVerified": "2026-06-05",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "playerChrome": {
+      "lastVerified": "2026-06-04",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "playerSettings": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "profile": {
+      "lastVerified": "2026-06-05",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "relatedSidebar": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "search": {
+      "lastVerified": "2026-06-05",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "searchResults": {
+      "lastVerified": "2026-07-14",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "shortsShelf": {
+      "lastVerified": "2026-06-05",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "subscriptions": {
+      "lastVerified": "2026-07-14",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "thumbnail": {
+      "lastVerified": "2026-06-05",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "transcriptPanel": {
+      "lastVerified": "2026-07-14",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    },
+    "watch": {
+      "lastVerified": "2026-05-19",
+      "acceptedOn": "2026-08-27",
+      "reason": "Awaiting the browser-gated capture tracked in Roadmap_Blocked.md."
+    }
+  }
+}

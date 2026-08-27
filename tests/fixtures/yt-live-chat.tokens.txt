@@ -1,5 +1,7 @@
 # Selector-regression canary fixture.
 # Source: mhtml/LiveChat.mhtml
+# YouTube client: unknown
+# Captured: 2026-06-04 (from file mtime)
 # Regenerated via: npm run build:fixtures
 # Captured tokens: 1594
 # Encoding: one token per line, sorted.

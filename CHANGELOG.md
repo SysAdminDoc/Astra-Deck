@@ -27,7 +27,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   before the body is cached or parsed. Anything unsigned, malformed, or
   substituted is refused and the last-known-good copy is kept.
 
+### Added
+
+- Selector evidence has a freshness gate. Every pack has always declared
+  `lastVerified`, `highChurn`, and `needsFreshCapture`, but nothing read them:
+  all 35 surfaces claimed fresh evidence while carrying dates up to 100 days
+  old, and the only assertion checked the date's format. `npm run check` now
+  fails when a high-churn surface passes 60 days or predates the YouTube build
+  the canary last saw, unless it carries a dated exception. Generated token
+  fixtures also record the capture's `INNERTUBE_CLIENT_VERSION` and the date it
+  implies, so a fixture regenerated from a months-old capture no longer looks
+  identical to one taken today.
+
 ### Fixed
+
+- Selector token fixtures were rebuilt from the captures currently on disk.
+  They had drifted: regenerating produced a 2,900-line change in the watch
+  fixture alone, meaning the committed fixtures no longer matched their own
+  sources and the drift was invisible.
 
 - `npm run release:prepare` now runs the test suite. No npm script, git hook, or
   CI job ran it before, so the whole suite enforced nothing unless someone typed

@@ -1,5 +1,7 @@
 # Selector-regression canary fixture.
 # Source: mhtml/SearchResults.mhtml
+# YouTube client: unknown
+# Captured: 2026-06-05 (from file mtime)
 # Regenerated via: npm run build:fixtures
 # Captured tokens: 2090
 # Encoding: one token per line, sorted.
