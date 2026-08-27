@@ -1074,6 +1074,22 @@ async function splitEngagementSnapshot(client) {
                 iconHeight: iconRect?.height || 0
             };
         };
+        const describePseudo = (node, pseudo) => {
+            if (!node) return null;
+            const style = getComputedStyle(node, pseudo);
+            return {
+                content: style.content,
+                display: style.display,
+                width: style.width,
+                height: style.height,
+                borderTopWidth: style.borderTopWidth,
+                borderRightWidth: style.borderRightWidth,
+                borderBottomWidth: style.borderBottomWidth,
+                borderLeftWidth: style.borderLeftWidth,
+                background: style.backgroundColor,
+                boxShadow: style.boxShadow
+            };
+        };
         const toolbar = pick(${JSON.stringify(SPLIT_ENGAGEMENT_TOOLBAR_SELECTOR)});
         const comment = toolbar?.closest('ytd-comment-view-model, ytd-comment-renderer') || null;
         const count = toolbar?.querySelector('#vote-count-middle') || null;
@@ -1108,7 +1124,9 @@ async function splitEngagementSnapshot(client) {
                 text: String(count.textContent || '').trim(),
                 margin: countStyle.margin,
                 fontVariantNumeric: countStyle.fontVariantNumeric,
-                pointerEvents: countStyle.pointerEvents
+                pointerEvents: countStyle.pointerEvents,
+                before: describePseudo(count, '::before'),
+                after: describePseudo(count, '::after')
             } : null
         };
     })()`);
@@ -1168,6 +1186,11 @@ function splitEngagementFailures(states, theme) {
         if (base.count.pointerEvents !== 'none') failures.push(`${theme}: like count intercepts button input`);
         if (base.likeCountGap < 3 || base.likeCountGap > 5) failures.push(`${theme}: Like/count gap is ${base.likeCountGap}px`);
         if (base.likeCountCenterDelta > 1) failures.push(`${theme}: Like/count vertical delta is ${base.likeCountCenterDelta}px`);
+        for (const [side, pseudo] of [['before', base.count.before], ['after', base.count.after]]) {
+            if (!pseudo || pseudo.display !== 'none' || !['none', 'normal'].includes(pseudo.content)) {
+                failures.push(`${theme}: like count ${side} decoration is still painted`);
+            }
+        }
     }
     if (base.count && (states.likeHover?.like?.background === base.like.background
         || states.likeHover?.count?.background !== 'rgba(0, 0, 0, 0)'

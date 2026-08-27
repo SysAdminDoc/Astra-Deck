@@ -290,6 +290,17 @@ test('Theater Split comment actions use wrapper-proof compact controls in every 
             `${label} must render the count as readable inline metadata`);
         assert.match(css, /#vote-count-middle[\s\S]{0,1400}font-variant-numeric: tabular-nums !important/,
             `${label} must keep like counts visually stable`);
+        const countPseudoStart = css.indexOf('ytd-comment-engagement-bar #vote-count-middle::before');
+        const countPseudoRules = countPseudoStart >= 0
+            ? css.slice(countPseudoStart, countPseudoStart + 1300)
+            : '';
+        assert.ok(countPseudoStart >= 0
+            && countPseudoRules.includes('ytd-comment-engagement-bar #vote-count-middle::after'),
+        `${label} must target both native count decorations`);
+        assert.match(countPseudoRules, /content: none !important;[\s\S]{0,160}display: none !important;/,
+            `${label} must remove the native separator drawn after the like count`);
+        assert.match(countPseudoRules, /border: 0 !important;[\s\S]{0,160}background: transparent !important;/,
+            `${label} must leave no separator paint behind`);
         assert.match(css, /#like-button:has\(~ #vote-count-middle:not\(:empty\)\)[\s\S]{0,240}border-radius: 6px !important/,
             `${label} must keep Like as a complete compact control when a count is present`);
         assert.match(css, /#reply-button-end[\s\S]{0,220}min-width: 48px !important[\s\S]{0,160}height: 30px !important/,
@@ -637,6 +648,28 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
         path.join(__dirname, '..', '..', 'extension', 'features', 'player-dock', 'index.js'), 'utf8');
     const userscriptCore = fs.readFileSync(
         path.join(__dirname, '..', '..', 'YTKit-core.user.js'), 'utf8');
+    const iconLibrary = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'extension', 'core', 'icons.js'), 'utf8');
+
+    const footerBuildStart = sources.ytkit.indexOf('// Bottom row: Edit + Settings');
+    const footerBuildEnd = sources.ytkit.indexOf('menu.appendChild(bottomRow);', footerBuildStart);
+    const footerBuild = footerBuildStart >= 0
+        ? sources.ytkit.slice(footerBuildStart, footerBuildEnd + 260)
+        : '';
+    assert.match(iconLibrary, /\bedit:\s*\(\)\s*=>\s*createSVG/,
+        'the shared icon library must own the Edit glyph');
+    assert.match(iconLibrary, /function hardenOutlineIcon\(svg\)[\s\S]{0,900}style\.setProperty\('fill', 'none', 'important'\)[\s\S]{0,360}style\.setProperty\('stroke', 'currentColor', 'important'\)/,
+        'the shared icon library must offer host-proof outline paint');
+    assert.match(footerBuild, /ICONS\.edit\(\)/,
+        'the Edit control must use the shared icon library');
+    assert.match(footerBuild, /ICONS\.settings\(\)/,
+        'the Settings control must use the shared icon library');
+    assert.match(footerBuild, /style\.setProperty\([\s\S]{0,180}light-dark\(#334155, rgba\(226, 232, 240, 0\.86\)\)[\s\S]{0,180}'important'/,
+        'footer controls must pin their theme foreground above YouTube button rules');
+    assert.match(footerBuild, /hardenOutlineIcon\?\.\(icon\)/,
+        'footer glyphs must use the shared host-proof outline helper');
+    assert.doesNotMatch(footerBuild, /TrustedHTML\.setHTML\((?:editBtn|gear)/,
+        'footer controls must not carry handwritten inline SVG markup');
 
     for (const [label, source] of [['userscript core', userscriptCore], ['player-dock', playerDock]]) {
         // No footer row may still be a stretched two-column grid.
@@ -668,6 +701,22 @@ test('the Quick Links footer renders compact icon buttons, not half-width slabs'
         assert.match(poBlock, /flex:\s*0 0 auto !important/,
             `${label}: the compact override must not reintroduce the stretch`);
     }
+
+    assert.match(sources.ytkit,
+        /html body \.ytkit-ql-drop \.ytkit-ql-bottom-btn \.ytkit-ql-icon[\s\S]{0,320}fill: none !important[\s\S]{0,160}stroke: currentColor !important/,
+        'the footer icon root must resist YouTube dark-theme SVG paint rules');
+    assert.match(sources.ytkit,
+        /html body \.ytkit-ql-drop \.ytkit-ql-bottom-btn \.ytkit-ql-icon :is\(path, circle, rect, line, polyline, polygon\)[\s\S]{0,320}fill: none !important[\s\S]{0,160}stroke: currentColor !important/,
+        'every outline glyph part must inherit the visible footer foreground');
+    assert.match(sources.ytkit,
+        /:is\(#ytkit-ql-menu, #ytkit-po-drop\) \.ytkit-ql-bottom-btn \.ytkit-ql-icon[\s\S]{0,420}fill: none !important[\s\S]{0,160}stroke: currentColor !important/,
+        'real menu ids must outrank late YouTube SVG paint rules');
+    assert.match(sources.ytkit,
+        /html\[dark\] body \.ytkit-ql-drop \.ytkit-ql-bottom-btn[\s\S]{0,160}color: rgba\(226, 232, 240, 0\.86\) !important/,
+        'dark YouTube button rules must not be able to repaint footer icons black');
+    assert.match(sources.ytkit,
+        /html:not\(\[dark\]\) body \.ytkit-ql-drop \.ytkit-ql-bottom-btn[\s\S]{0,160}color: #334155 !important/,
+        'light mode must retain its own footer icon foreground');
 });
 
 test('the monolith carries only a descriptor stub for stickyVideo', () => {

@@ -1122,7 +1122,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.86.5';
+    const YTKIT_VERSION = '4.86.6';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -8510,6 +8510,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         pointer-events: none !important;
                     }
 
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar #vote-count-middle::before,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar #vote-count-middle::after {
+                        content: none !important;
+                        display: none !important;
+                        width: 0 !important;
+                        height: 0 !important;
+                        border: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                    }
+
                     html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar #reply-button-end :is(
                         button,
                         .yt-spec-button-shape-next,
@@ -14557,6 +14568,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Bottom row: Edit + Settings
                 const bottomRow = document.createElement('div');
                 bottomRow.className = 'ytkit-ql-bottom';
+                const mountBottomControl = (button, icon, label) => {
+                    button.style.setProperty(
+                        'color',
+                        'light-dark(#334155, rgba(226, 232, 240, 0.86))',
+                        'important'
+                    );
+                    globalThis.YTKitCore?.hardenOutlineIcon?.(icon);
+                    icon.classList.add('ytkit-ql-icon');
+                    icon.setAttribute('aria-hidden', 'true');
+                    const labelNode = document.createElement('span');
+                    labelNode.textContent = label;
+                    labelNode.setAttribute('aria-hidden', 'true');
+                    labelNode.style.setProperty('display', 'none', 'important');
+                    button.appendChild(icon);
+                    button.appendChild(labelNode);
+                };
 
                 // Edit toggle
                 const editBtn = document.createElement('button');
@@ -14666,7 +14693,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (addForm) addForm.style.display = 'none';
                     }
                 };
-                TrustedHTML.setHTML(editBtn, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="M16.474 5.408l2.118 2.117m-.756-3.982L12.109 9.27a2.118 2.118 0 00-.58 1.082L11 13l2.648-.53c.41-.082.786-.283 1.082-.579l5.727-5.727a1.853 1.853 0 10-2.621-2.621z"/><path d="M19 15v3a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>Edit</span>`);
+                const editIcon = ICONS.edit();
+                mountBottomControl(editBtn, editIcon, 'Edit');
                 bottomRow.appendChild(editBtn);
 
                 // Settings
@@ -14676,7 +14704,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 gear.title = 'Open settings';
                 gear.setAttribute('aria-label', `Open ${BRAND.name} settings`);
                 gear.onclick = (e) => { e.preventDefault(); toggleSettingsPanel(); };
-                TrustedHTML.setHTML(gear, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span>`);
+                const settingsIcon = ICONS.settings();
+                mountBottomControl(gear, settingsIcon, 'Settings');
                 bottomRow.appendChild(gear);
 
                 menu.appendChild(bottomRow);
@@ -14948,6 +14977,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-width: 28px;
                         min-height: 28px;
                         border-radius: 8px;
+                        color: rgba(226, 232, 240, 0.86);
                         opacity: 0.72;
                         padding: 0;
                         font-size: 0;
@@ -14959,6 +14989,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         height: 14px;
                         margin: 0;
                         display: block;
+                    }
+
+                    html body .ytkit-ql-drop .ytkit-ql-bottom-btn .ytkit-ql-icon {
+                        color: inherit !important;
+                        fill: none !important;
+                        stroke: currentColor !important;
+                        stroke-linecap: round !important;
+                        stroke-linejoin: round !important;
+                    }
+
+                    html body .ytkit-ql-drop .ytkit-ql-bottom-btn .ytkit-ql-icon :is(path, circle, rect, line, polyline, polygon) {
+                        fill: none !important;
+                        stroke: currentColor !important;
+                    }
+
+                    html body :is(#ytkit-ql-menu, #ytkit-po-drop) .ytkit-ql-bottom-btn .ytkit-ql-icon,
+                    html body :is(#ytkit-ql-menu, #ytkit-po-drop) .ytkit-ql-bottom-btn .ytkit-ql-icon :is(path, circle, rect, line, polyline, polygon) {
+                        color: inherit !important;
+                        fill: none !important;
+                        stroke: currentColor !important;
+                    }
+
+                    html[dark] body .ytkit-ql-drop .ytkit-ql-bottom-btn {
+                        color: rgba(226, 232, 240, 0.86) !important;
+                    }
+
+                    html[dark] body :is(#ytkit-ql-menu, #ytkit-po-drop) .ytkit-ql-bottom-btn {
+                        color: rgba(226, 232, 240, 0.86) !important;
+                    }
+
+                    html:not([dark]) body .ytkit-ql-drop .ytkit-ql-bottom-btn {
+                        color: #334155 !important;
+                    }
+
+                    html:not([dark]) body :is(#ytkit-ql-menu, #ytkit-po-drop) .ytkit-ql-bottom-btn {
+                        color: #334155 !important;
                     }
 
                     .ytkit-ql-bottom-btn span {

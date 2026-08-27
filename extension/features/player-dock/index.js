@@ -648,6 +648,7 @@
                         min-height: 26px !important;
                         padding: 0 !important;
                         border-radius: 8px !important;
+                        color: rgba(226, 232, 240, 0.86) !important;
                     }
 
                     #ytkit-po-drop .ytkit-ql-bottom-btn:hover {

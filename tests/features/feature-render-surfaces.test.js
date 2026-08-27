@@ -420,9 +420,6 @@ function quickLinksFixture(quickLinkItems) {
         settingsManager: { save: (next) => saved.push(next.quickLinkItems) },
         showToast: (message) => toasts.push(message),
         ICONS: new Proxy({}, { get: () => () => doc.createElement('svg') }),
-        // The bottom-row buttons stamp their glyphs through the trusted-types
-        // wrapper. It is not what these tests are about, so record the target
-        // rather than parse the markup.
         TrustedHTML: { setHTML: (node, html) => { node._trustedHtml = html; } },
         BRAND: { name: 'Astra Deck' }
     });
@@ -448,6 +445,31 @@ test('quickLinkMenu renders its own empty state when nothing is configured', () 
     const empty = collect(menu, 'ytkit-ql-empty');
     assert.equal(empty.length, 1);
     assert.equal(textOf(menu, 'ytkit-ql-empty-title')[0], 'No quick links yet');
+});
+
+test('quickLinkMenu builds visible footer controls from shared icons', () => {
+    const { feature, parent } = quickLinksFixture('History|/feed/history');
+
+    feature._buildMenu(parent, 'drop');
+
+    const menu = collect(parent, 'ytkit-ql-drop')[0];
+    const buttons = collect(menu, 'ytkit-ql-bottom-btn');
+    assert.equal(buttons.length, 2);
+    assert.deepEqual(buttons.map((button) => button.getAttribute('aria-label')), [
+        'Edit launcher links',
+        'Open Astra Deck settings'
+    ]);
+    for (const button of buttons) {
+        const icon = button.querySelector('svg');
+        assert.ok(icon, 'each footer control must render an SVG icon node');
+        assert.ok(icon.classList.contains('ytkit-ql-icon'));
+        assert.equal(icon.getAttribute('aria-hidden'), 'true');
+        const label = button.querySelector('span');
+        assert.ok(label, 'each footer control keeps a non-visual text label');
+        assert.equal(label.getAttribute('aria-hidden'), 'true');
+        assert.equal(label.style.getPropertyValue('display'), 'none');
+        assert.equal(label.style.getPropertyPriority('display'), 'important');
+    }
 });
 
 test('quickLinkMenu renders one row per valid line and drops the ones it cannot resolve', () => {
@@ -478,7 +500,9 @@ test('quickLinkMenu renders one row per valid line and drops the ones it cannot 
 
     // Every row carries an icon path, and an unknown destination falls back to
     // the default glyph rather than rendering an empty <path>.
-    const paths = collect(menu, 'ytkit-ql-icon').map((svg) => svg.children[0].getAttribute('d'));
+    const paths = collect(menu, 'ytkit-ql-row')
+        .flatMap((row) => collect(row, 'ytkit-ql-icon'))
+        .map((svg) => svg.children[0].getAttribute('d'));
     assert.equal(paths.length, 2);
     assert.ok(paths.every((d) => /^[MmZzLlHhVvCcSsQqTtAa0-9,.\-\s]+$/.test(d)));
     assert.notEqual(paths[0], paths[1], 'a known destination gets its own glyph');
