@@ -3,8 +3,12 @@
 > **This log is closed. It stopped being updated at v4.46.0 and describes a tree
 > that no longer exists.** Nothing here is a statement about current behaviour.
 >
-> Read it only as a record of how a past problem was found and closed. Two
-> things in particular have moved on:
+> For current security posture read `SECURITY.md`; for what changed and when,
+> `CHANGELOG.md`; for unresolved work, `Roadmap_Blocked.md`.
+>
+> Read this file only as a record of how a past problem was found and closed.
+> Where an entry has since been overtaken by shipped code, it carries a dated
+> **superseded** note inline. Three things in particular have moved on:
 >
 > - Every "still open" or "candidates for the next pass" list below is spent.
 >   Some of that work shipped, some was reconsidered, and the rest is tracked in
@@ -127,9 +131,13 @@ loopback range deliberately exempted from the coverage gate);
 independent lifecycles; it's the sole probe on the navigate-only path);
 `policy-profile.js` export-scrubber over-scrubbing (intentional — over-scrub
 is the safe failure for a secret redactor, test-pinned at R6);
-`trusted-html.js` pass-through policy (documented intent — sanitization
-breaks SVG/icon markup and exists only to satisfy YouTube's TT CSP, all 13
-callers static); `video-type.js` refresh-on-null and DOM-live-wins
+`trusted-html.js` pass-through policy (documented intent at the time —
+**superseded 2026-08-27: the policy is no longer a pass-through.**
+`extension/core/trusted-html.js` sanitizes through DOMParser, strips
+script/iframe/object/embed/link/meta/style/base and every `on*` handler and
+`srcdoc`, and fails closed to an empty string. Extension pages additionally
+enforce `require-trusted-types-for 'script'` from v4.88.3. Read the file, not
+this line); `video-type.js` refresh-on-null and DOM-live-wins
 precedence (both intentional, invariant-test-pinned).
 
 ## H25 — Extreme audit cut (v4.46.0)
