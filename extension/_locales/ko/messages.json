@@ -1247,6 +1247,9 @@
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
+  "featureHealthReasonSelectorFallbackTpl": {
+    "message": "페이지 요소 “{surface}”이(가) 예비 규칙에만 일치했습니다"
+  },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
   },

@@ -1247,6 +1247,9 @@
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
+  "featureHealthReasonSelectorFallbackTpl": {
+    "message": "页面元素“{surface}”仅匹配到备用规则"
+  },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
   },

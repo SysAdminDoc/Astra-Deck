@@ -3276,6 +3276,10 @@ function renderFeatureHealthRows(report) {
             const what = reason.kind === 'selector'
                 ? t('featureHealthReasonSelectorTpl', 'Page element “{surface}” no longer found')
                     .replace('{surface}', reason.surface || reason.detail || '')
+                : reason.kind === 'selector-fallback'
+                    ? t('featureHealthReasonSelectorFallbackTpl',
+                        'Page element “{surface}” only matched a backup rule')
+                        .replace('{surface}', reason.surface || reason.detail || '')
                 : reason.kind === 'selector-canary'
                     ? t('featureHealthReasonCanaryTpl', 'YouTube {version} changed {surface}')
                         .replace('{version}', canaryVersion)

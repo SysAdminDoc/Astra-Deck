@@ -122,6 +122,22 @@
         return attributionFeatureId;
     }
 
+    // Which half of a surface's chain actually matched.
+    //
+    // `SurfaceSelectors[surface]` is `[...stable, ...fallback]`, so the
+    // resolver walked the fallbacks only because every stable selector missed.
+    // Until v4.88.3 nothing recorded which half won, so a surface whose stable
+    // chain had broken reported a clean hit and stayed invisible until the
+    // fallback broke too — across 29 high-churn surfaces.
+    function selectorTier(surface, selector) {
+        if (!surface || !selector) return 'unknown';
+        const entry = SurfaceSelectorMap[surface];
+        if (!entry) return 'unknown';
+        if (Array.isArray(entry.stable) && entry.stable.includes(selector)) return 'stable';
+        if (Array.isArray(entry.fallback) && entry.fallback.includes(selector)) return 'fallback';
+        return 'unknown';
+    }
+
     function recordSurfaceOutcome(surface, selector, outcome, error = null) {
         const featureId = attributionFeatureId;
         if (!featureId || !surface) return null;
@@ -142,7 +158,10 @@
                 lastHitAt: null,
                 lastMissAt: null,
                 lastSelector: null,
-                lastError: null
+                lastError: null,
+                lastTier: null,
+                stableHits: 0,
+                fallbackHits: 0
             };
             surfaces.set(surface, row);
             _enforceMapCap(surfaces, ATTRIBUTION_SURFACE_CAP);
@@ -155,6 +174,10 @@
             row.hits += 1;
             row.lastHitAt = now;
             row.lastError = null;
+            const tier = selectorTier(surface, selector);
+            row.lastTier = tier;
+            if (tier === 'stable') row.stableHits += 1;
+            else if (tier === 'fallback') row.fallbackHits += 1;
         } else {
             row.misses += 1;
             row.lastMissAt = now;
@@ -1088,6 +1111,7 @@
         getAttributedFeatureId,
         getSelectorAssetState,
         getSelectorAttributionSnapshot,
+        selectorTier,
         getSelectorHealthSnapshot,
         resetSelectorAttribution,
         withSelectorAttribution,

@@ -1247,6 +1247,9 @@
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
+  "featureHealthReasonSelectorFallbackTpl": {
+    "message": "Элемент страницы “{surface}” совпал только с резервным правилом"
+  },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
   },

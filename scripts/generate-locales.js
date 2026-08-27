@@ -2409,6 +2409,39 @@ for (const [locale, messages] of Object.entries(FEATURE_DISABLE_FEED_TRANSLATION
 // The user-initiated feature report. Its whole point is being safe to paste in
 // public, and the sentence that says so is the one a non-English reader most
 // needs to be able to read.
+const SELECTOR_FALLBACK_TRANSLATIONS = {
+  ar: {
+    'Page element “{surface}” only matched a backup rule': 'عنصر الصفحة “{surface}” طابق قاعدة احتياطية فقط'
+  },
+  de: {
+    'Page element “{surface}” only matched a backup rule': 'Seitenelement „{surface}“ passte nur noch auf eine Ersatzregel'
+  },
+  es: {
+    'Page element “{surface}” only matched a backup rule': 'El elemento de la página “{surface}” solo coincidió con una regla de reserva'
+  },
+  fr: {
+    'Page element “{surface}” only matched a backup rule': 'L\'élément de page « {surface} » n\'a correspondu qu\'à une règle de secours'
+  },
+  it: {
+    'Page element “{surface}” only matched a backup rule': 'L’elemento di pagina “{surface}” ha trovato riscontro solo con una regola di riserva'
+  },
+  ja: {
+    'Page element “{surface}” only matched a backup rule': 'ページ要素「{surface}」は予備ルールにしか一致しませんでした'
+  },
+  ko: {
+    'Page element “{surface}” only matched a backup rule': '페이지 요소 “{surface}”이(가) 예비 규칙에만 일치했습니다'
+  },
+  pt_BR: {
+    'Page element “{surface}” only matched a backup rule': 'O elemento da página “{surface}” só correspondeu a uma regra reserva'
+  },
+  ru: {
+    'Page element “{surface}” only matched a backup rule': 'Элемент страницы “{surface}” совпал только с резервным правилом'
+  },
+  zh_CN: {
+    'Page element “{surface}” only matched a backup rule': '页面元素“{surface}”仅匹配到备用规则'
+  }
+};
+
 const FEATURE_REPORT_TRANSLATIONS = {
   ar: {
     'Copy feature list': 'نسخ قائمة الميزات',
