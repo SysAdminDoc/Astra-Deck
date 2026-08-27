@@ -428,9 +428,45 @@ async function verifyCommentSortDropdown(client, backgroundClient, timeoutMs) {
         ].join(', '))) : []);
         const items = optionNodes.map(node => String(node.textContent || '').replace(/\\s+/g, ' ').trim());
         const rect = dropdown?.getBoundingClientRect();
+        const shell = dropdown?.querySelector('#contentWrapper') || dropdown;
+        const item = optionNodes[0] || null;
+        const shellStyle = shell ? getComputedStyle(shell) : null;
+        const itemStyle = item ? getComputedStyle(item) : null;
+        const parseRgb = value => {
+            const match = String(value || '').match(/rgba?\\((\\d+(?:\\.\\d+)?),\\s*(\\d+(?:\\.\\d+)?),\\s*(\\d+(?:\\.\\d+)?)/i);
+            return match ? match.slice(1, 4).map(Number) : null;
+        };
+        const relativeLuminance = value => {
+            const rgb = parseRgb(value);
+            if (!rgb) return null;
+            const channels = rgb.map(channel => {
+                const normalized = channel / 255;
+                return normalized <= 0.04045
+                    ? normalized / 12.92
+                    : Math.pow((normalized + 0.055) / 1.055, 2.4);
+            });
+            return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+        };
+        const textLuminance = relativeLuminance(itemStyle?.color);
+        const panelLuminance = relativeLuminance(shellStyle?.backgroundColor);
+        const contrast = textLuminance == null || panelLuminance == null
+            ? null
+            : (Math.max(textLuminance, panelLuminance) + 0.05)
+                / (Math.min(textLuminance, panelLuminance) + 0.05);
         return {
             open: Boolean(dropdown && rect && rect.width > 0 && rect.height > 0),
             items,
+            panel: shellStyle ? {
+                background: shellStyle.backgroundColor,
+                borderColor: shellStyle.borderColor,
+                borderRadius: shellStyle.borderRadius
+            } : null,
+            firstItem: itemStyle ? {
+                color: itemStyle.color,
+                background: itemStyle.backgroundColor,
+                borderRadius: itemStyle.borderRadius
+            } : null,
+            contrast,
             rect: rect ? {
                 left: Math.round(rect.left),
                 top: Math.round(rect.top),
@@ -441,6 +477,12 @@ async function verifyCommentSortDropdown(client, backgroundClient, timeoutMs) {
     })()`);
     if (!snapshot.open || snapshot.items.length < 2) {
         throw new Error(`comment sort: dropdown closed after the user click: ${JSON.stringify(snapshot)}`);
+    }
+    if (!snapshot.panel || snapshot.panel.borderRadius !== '8px') {
+        throw new Error(`comment sort: popup shell is not on the 8px surface radius: ${JSON.stringify(snapshot)}`);
+    }
+    if (!Number.isFinite(snapshot.contrast) || snapshot.contrast < 4.5) {
+        throw new Error(`comment sort: option text contrast is ${snapshot.contrast}: ${JSON.stringify(snapshot)}`);
     }
     await capture(client, 'watch-comment-sort-open-1440x900');
     await evaluate(client, 'document.body.click()');
@@ -819,6 +861,38 @@ async function captureWatchDetails(client, name) {
         commentTarget?.scrollIntoView({ block: 'center', behavior: 'instant' });
         await delay(600);
         const commentSurfaces = commentSelectors.map(inspect);
+        const replyThread = pickNode('ytd-comment-thread-renderer:has(ytd-comment-replies-renderer)');
+        const connectorCandidates = replyThread
+            ? [replyThread, ...replyThread.querySelectorAll('*')].filter((node) => {
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                const before = getComputedStyle(node, '::before');
+                const after = getComputedStyle(node, '::after');
+                const narrowVertical = rect.width > 0 && rect.width <= 8 && rect.height >= 18;
+                const lineBorder = Number.parseFloat(style.borderLeftWidth || '0') > 0
+                    || Number.parseFloat(style.borderInlineStartWidth || '0') > 0
+                    || Number.parseFloat(before.borderLeftWidth || '0') > 0
+                    || Number.parseFloat(after.borderLeftWidth || '0') > 0;
+                return style.display !== 'none' && style.visibility !== 'hidden'
+                    && Number(style.opacity || 1) > 0 && (narrowVertical || lineBorder);
+            }).map((node) => {
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                const before = getComputedStyle(node, '::before');
+                const after = getComputedStyle(node, '::after');
+                return {
+                    tag: node.tagName.toLowerCase(),
+                    id: node.id || '',
+                    className: String(node.className || '').slice(0, 180),
+                    rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+                    background: style.backgroundColor,
+                    borderLeft: [style.borderLeftWidth, style.borderLeftStyle, style.borderLeftColor].join(' '),
+                    borderInlineStart: [style.borderInlineStartWidth, style.borderInlineStartStyle, style.borderInlineStartColor].join(' '),
+                    before: [before.content, before.backgroundColor, before.borderLeftWidth, before.borderLeftStyle, before.borderLeftColor].join(' '),
+                    after: [after.content, after.backgroundColor, after.borderLeftWidth, after.borderLeftStyle, after.borderLeftColor].join(' ')
+                };
+            }).slice(0, 30)
+            : [];
         const relatedSelector = [
             '#related .ytLockupMetadataViewModelTitle',
             '#related #video-title',
@@ -842,6 +916,7 @@ async function captureWatchDetails(client, name) {
             premiumText: rootStyle.getPropertyValue('--ytkit-premium-text').trim(),
             authorProbeMatches: document.querySelectorAll(authorProbeSelector).length,
             featureStyles,
+            connectorCandidates,
             supportSurface: related
                 ? { type: 'related', ...related }
                 : (liveChat ? { type: 'live-chat', ...liveChat } : null),
@@ -898,6 +973,11 @@ function nativeTheaterFailures(details, label, expectedColorScheme) {
     }
     if (details.scroll.height <= details.scroll.clientHeight + 100 || details.scroll.top < 40) {
         failures.push(`${label}: page scrolling cannot reach watch details`);
+    }
+    const legacyConnector = details.connectorCandidates?.find(candidate =>
+        String(candidate.className || '').split(/\s+/).includes('continuation'));
+    if (legacyConnector) {
+        failures.push(`${label}: native reply connector remains visible (${JSON.stringify(legacyConnector)})`);
     }
     const title = details.surfaces.find(surface => surface?.selector.includes('ytd-watch-metadata h1'));
     if (!title?.text || title.contrast < 4.5) failures.push(`${label}: metadata title is not readable`);
@@ -1037,7 +1117,9 @@ async function splitEngagementSnapshot(client) {
 function splitEngagementFailures(states, theme) {
     const failures = [];
     const base = states.default;
-    const expectedBackground = theme === 'dark' ? 'rgb(16, 31, 51)' : 'rgb(247, 249, 251)';
+    const expectedBackground = theme === 'dark'
+        ? 'rgba(151, 178, 208, 0.08)'
+        : 'rgba(30, 53, 78, 0.055)';
     const expectedCommentHover = theme === 'dark' ? 'rgb(23, 42, 66)' : 'rgb(232, 237, 243)';
     if (!base?.available || !base.like || !base.reply) {
         return [`${theme}: native Like and Reply controls are unavailable`];
@@ -1048,17 +1130,18 @@ function splitEngagementFailures(states, theme) {
         failures.push(`${theme}: toolbar height is ${base.toolbarHeight}px`);
     }
     for (const [name, control] of [['Like', base.like], ['Reply', base.reply]]) {
-        if (control.height < 31 || control.height > 33) failures.push(`${theme} ${name}: height is ${control.height}px`);
+        if (control.height < 29 || control.height > 31) failures.push(`${theme} ${name}: height is ${control.height}px`);
         if (control.background !== expectedBackground) failures.push(`${theme} ${name}: surface is ${control.background}`);
         if (control.borderStyle === 'none') failures.push(`${theme} ${name}: border is missing`);
-        if (!control.boxShadow || control.boxShadow === 'none') failures.push(`${theme} ${name}: elevation is missing`);
+        if (control.borderColor !== 'rgba(0, 0, 0, 0)') failures.push(`${theme} ${name}: default outline is ${control.borderColor}`);
+        if (control.boxShadow !== 'none') failures.push(`${theme} ${name}: default elevation is ${control.boxShadow}`);
         if (Number.parseInt(control.fontWeight, 10) < 600) failures.push(`${theme} ${name}: label weight is ${control.fontWeight}`);
     }
-    const expectedLikeRadius = base.count ? '8px 0px 0px 8px' : '8px';
+    const expectedLikeRadius = '6px';
     if (base.like.borderRadius !== expectedLikeRadius) failures.push(`${theme} Like: radius is ${base.like.borderRadius}`);
-    if (base.reply.borderRadius !== '8px') failures.push(`${theme} Reply: radius is ${base.reply.borderRadius}`);
-    if (base.like.width < 31 || base.like.width > 33) failures.push(`${theme} Like: width is ${base.like.width}px`);
-    if (base.reply.width < 51 || base.reply.width > 64) failures.push(`${theme} Reply: width is ${base.reply.width}px`);
+    if (base.reply.borderRadius !== '6px') failures.push(`${theme} Reply: radius is ${base.reply.borderRadius}`);
+    if (base.like.width < 29 || base.like.width > 31) failures.push(`${theme} Like: width is ${base.like.width}px`);
+    if (base.reply.width < 47 || base.reply.width > 62) failures.push(`${theme} Reply: width is ${base.reply.width}px`);
     for (const [name, host] of [['Like host', base.likeHost], ['Reply host', base.replyHost]]) {
         if (!host || host.height < 31 || host.height > 33) {
             failures.push(`${theme} ${name}: wrapper height is ${host?.height ?? 'missing'}px`);
@@ -1067,8 +1150,8 @@ function splitEngagementFailures(states, theme) {
     if (base.heartHost && (base.heartHost.height < 31 || base.heartHost.height > 33)) {
         failures.push(`${theme} creator heart host: wrapper height is ${base.heartHost.height}px`);
     }
-    if (base.heart && (base.heart.width < 31 || base.heart.width > 33
-        || base.heart.height < 31 || base.heart.height > 33
+    if (base.heart && (base.heart.width < 29 || base.heart.width > 31
+        || base.heart.height < 29 || base.heart.height > 31
         || base.heart.background === 'rgba(0, 0, 0, 0)')) {
         failures.push(`${theme} creator heart: geometry or surface is incomplete`);
     }
@@ -1076,20 +1159,20 @@ function splitEngagementFailures(states, theme) {
         failures.push(`${theme} Like: icon width is ${base.like.iconWidth}px`);
     }
     if (base.count) {
-        if (base.count.height < 31 || base.count.height > 33) failures.push(`${theme}: like count height is ${base.count.height}px`);
-        if (base.count.background !== expectedBackground) failures.push(`${theme}: like count surface is ${base.count.background}`);
-        if (base.count.borderStyle === 'none') failures.push(`${theme}: like count border is missing`);
-        if (!base.count.boxShadow || base.count.boxShadow === 'none') failures.push(`${theme}: like count elevation is missing`);
-        if (base.count.borderRadius !== '0px 8px 8px 0px') failures.push(`${theme}: like count radius is ${base.count.borderRadius}`);
+        if (base.count.height < 29 || base.count.height > 31) failures.push(`${theme}: like count height is ${base.count.height}px`);
+        if (base.count.background !== 'rgba(0, 0, 0, 0)') failures.push(`${theme}: like count surface is ${base.count.background}`);
+        if (base.count.borderStyle !== 'none') failures.push(`${theme}: like count should not have a box border`);
+        if (base.count.boxShadow !== 'none') failures.push(`${theme}: like count shadow is ${base.count.boxShadow}`);
+        if (base.count.borderRadius !== '0px') failures.push(`${theme}: like count radius is ${base.count.borderRadius}`);
         if (base.count.fontVariantNumeric !== 'tabular-nums') failures.push(`${theme}: like count is not tabular`);
         if (base.count.pointerEvents !== 'none') failures.push(`${theme}: like count intercepts button input`);
-        if (Math.abs(base.likeCountGap) > 1) failures.push(`${theme}: Like/count seam is ${base.likeCountGap}px`);
+        if (base.likeCountGap < 3 || base.likeCountGap > 5) failures.push(`${theme}: Like/count gap is ${base.likeCountGap}px`);
         if (base.likeCountCenterDelta > 1) failures.push(`${theme}: Like/count vertical delta is ${base.likeCountCenterDelta}px`);
     }
     if (base.count && (states.likeHover?.like?.background === base.like.background
-        || states.likeHover?.count?.background !== states.likeHover?.like?.background
-        || states.likeHover?.count?.transform !== states.likeHover?.like?.transform)) {
-        failures.push(`${theme} Like: compound hover state is not visually cohesive`);
+        || states.likeHover?.count?.background !== 'rgba(0, 0, 0, 0)'
+        || states.likeHover?.count?.color === base.count.color)) {
+        failures.push(`${theme} Like: inline-count hover state is not visually cohesive`);
     }
     if (states.hover?.reply?.background === base.reply.background
         || states.hover?.reply?.transform === base.reply.transform
@@ -1110,8 +1193,9 @@ function splitEngagementFailures(states, theme) {
         || states.selected.like.borderColor === base.like.borderColor) {
         failures.push(`${theme} Like: selected state is not visually distinct`);
     }
-    if (base.count && states.selected?.count?.background !== states.selected?.like?.background) {
-        failures.push(`${theme} Like: selected count segment does not match the button`);
+    if (base.count && (states.selected?.count?.background !== 'rgba(0, 0, 0, 0)'
+        || states.selected?.count?.color !== states.selected?.like?.color)) {
+        failures.push(`${theme} Like: selected inline count does not follow the selected text color`);
     }
     if (!states.disabled?.reply?.disabled
         || states.disabled.reply.opacity > 0.65
@@ -1182,6 +1266,70 @@ async function captureSplitMetadataLayout(client, theme) {
         const subscribeBox = box(subscribe);
         const commentsBox = box(commentsHeader);
         const utilityCenters = utilityChildren.map((child) => child.centerY);
+        const ownerActionLabels = ownerActions
+            ? Array.from(ownerActions.querySelectorAll('*')).map((node) => {
+                const ownText = Array.from(node.childNodes)
+                    .filter(child => child.nodeType === Node.TEXT_NODE)
+                    .map(child => child.textContent || '')
+                    .join(' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                if (!ownText || ownText.length > 24 || !visible(node)) return null;
+                const style = getComputedStyle(node);
+                let effectiveOpacity = 1;
+                for (let current = node; current && current !== ownerActions.parentElement; current = current.parentElement) {
+                    effectiveOpacity *= Number.parseFloat(getComputedStyle(current).opacity || '1');
+                    if (current === ownerActions) break;
+                }
+                return {
+                    text: ownText,
+                    tag: node.tagName.toLowerCase(),
+                    id: node.id || '',
+                    className: String(node.className || '').slice(0, 160),
+                    color: style.color,
+                    textFill: style.webkitTextFillColor,
+                    opacity: Number.parseFloat(style.opacity || '1'),
+                    effectiveOpacity
+                };
+            }).filter(Boolean)
+            : [];
+        const replies = firstVisible('#below.ytkit-split-scroll-surface #comments ytd-comment-replies-renderer');
+        const replyConnectorNodes = replies
+            ? [replies, ...replies.querySelectorAll('*')].filter(visible).map((node) => {
+                const style = getComputedStyle(node);
+                const before = getComputedStyle(node, '::before');
+                const after = getComputedStyle(node, '::after');
+                const carriesLine = style.borderInlineStartStyle !== 'none'
+                    || style.borderLeftStyle !== 'none'
+                    || before.borderLeftStyle !== 'none'
+                    || before.borderTopStyle !== 'none'
+                    || after.borderLeftStyle !== 'none'
+                    || after.borderTopStyle !== 'none';
+                if (!carriesLine) return null;
+                return {
+                    tag: node.tagName.toLowerCase(),
+                    id: node.id || '',
+                    className: String(node.className || '').slice(0, 160),
+                    borderLeft: [style.borderLeftWidth, style.borderLeftStyle, style.borderLeftColor].join(' '),
+                    before: [
+                        before.borderLeftWidth,
+                        before.borderLeftStyle,
+                        before.borderLeftColor + ';',
+                        before.borderTopWidth,
+                        before.borderTopStyle,
+                        before.borderTopColor
+                    ].join(' '),
+                    after: [
+                        after.borderLeftWidth,
+                        after.borderLeftStyle,
+                        after.borderLeftColor + ';',
+                        after.borderTopWidth,
+                        after.borderTopStyle,
+                        after.borderTopColor
+                    ].join(' ')
+                };
+            }).filter(Boolean).slice(0, 20)
+            : [];
         return {
             available: Boolean(surface && metadataBox && titleBox && headingBox && utilitiesBox && ownerBox && identityBox && commentsBox),
             colorScheme: getComputedStyle(document.documentElement).colorScheme,
@@ -1200,6 +1348,8 @@ async function captureSplitMetadataLayout(client, theme) {
             identity: identityBox,
             subscribe: subscribeBox,
             actions: actionsBox,
+            ownerActionLabels,
+            replyConnectorNodes,
             commentsHeader: commentsBox,
             identitySubscribeDelta: identityBox && subscribeBox
                 ? Math.abs(identityBox.centerY - subscribeBox.centerY)
@@ -1219,15 +1369,21 @@ async function captureSplitMetadataLayout(client, theme) {
     if (snapshot.surfaceScrollTop > 2) failures.push(`${theme}: metadata surface did not return to the top`);
     if (!snapshot.titleFirst) failures.push(`${theme}: utility controls still precede the video title`);
     if (snapshot.utilityRowDelta > 6) failures.push(`${theme}: title utilities span multiple rows (${snapshot.utilityRowDelta.toFixed(1)}px)`);
-    if (snapshot.title.height > 145) failures.push(`${theme}: title card is ${snapshot.title.height.toFixed(1)}px tall`);
-    if (snapshot.owner.height > 160) failures.push(`${theme}: owner card is ${snapshot.owner.height.toFixed(1)}px tall`);
-    if (snapshot.metadata.height > 320) failures.push(`${theme}: metadata stack is ${snapshot.metadata.height.toFixed(1)}px tall`);
+    if (snapshot.title.height > 110) failures.push(`${theme}: title card is ${snapshot.title.height.toFixed(1)}px tall`);
+    if (snapshot.owner.height > 110) failures.push(`${theme}: owner card is ${snapshot.owner.height.toFixed(1)}px tall`);
+    if (snapshot.metadata.height > 235) failures.push(`${theme}: metadata stack is ${snapshot.metadata.height.toFixed(1)}px tall`);
     if (snapshot.identitySubscribeDelta > 16) failures.push(`${theme}: subscribe control is not aligned with channel identity`);
     if (snapshot.actions && (snapshot.ownerActionGap < 4 || snapshot.ownerActionGap > 18)) {
         failures.push(`${theme}: channel-to-action gap is ${snapshot.ownerActionGap.toFixed(1)}px`);
     }
     if (snapshot.metadataTail > 24) failures.push(`${theme}: metadata retains ${snapshot.metadataTail.toFixed(1)}px below the owner card`);
     if (snapshot.commentsGap > 36) failures.push(`${theme}: comments begin ${snapshot.commentsGap.toFixed(1)}px below metadata`);
+    const expectedOwnerActionColor = theme === 'dark' ? 'rgb(245, 247, 251)' : 'rgb(23, 35, 53)';
+    const unreadableOwnerLabels = snapshot.ownerActionLabels.filter(label => /\d/.test(label.text)
+        && (label.color !== expectedOwnerActionColor || label.effectiveOpacity < 0.85));
+    if (unreadableOwnerLabels.length) {
+        failures.push(`${theme}: owner action labels are unreadable: ${JSON.stringify(unreadableOwnerLabels)}`);
+    }
     if (snapshot.titleOverflow || snapshot.utilityOverflow || snapshot.ownerOverflow) {
         failures.push(`${theme}: compact metadata stack overflows horizontally`);
     }

@@ -6,6 +6,52 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.86.5] (2026-08-26)
+
+### Changed
+
+- Theater Split comment actions now use compact 30 px tonal controls with 6 px
+  corners. Like counts sit beside the icon as plain metadata instead of sharing
+  a boxed segment.
+
+- The title and channel cards use a tighter vertical rhythm. The complete live
+  metadata stack is 206 px in dark and light themes, with Comments beginning
+  10 px below it.
+
+- Normal YouTube and native Theater mode now share the same flat Subscribe and
+  comment-action treatment as Theater Split.
+
+### Fixed
+
+- YouTube's nested button decoration can no longer draw bright rectangular
+  frames around dark-mode Like and Reply controls.
+
+- The native comment sort menu now has explicit dark and light surfaces, ink,
+  selected rows, and borders. Its labels remain readable when YouTube changes
+  the surrounding page theme.
+
+- Current comment view models no longer draw L-shaped reply connectors through
+  Astra's compact reply controls. The live check names the exact connector
+  element if YouTube brings it back.
+
+- Owner action counts remain readable in both Theater Split themes. The broad
+  opacity rule that faded current YouTube label wrappers has been replaced with
+  selectors for the decorative layers only.
+
+### Tests
+
+- The isolated watch verifier now captures default, hover, focus, pressed,
+  selected, and disabled comment actions in both themes. It also checks the
+  popup contrast, compact metadata budget, owner labels, and reply connectors.
+
+- Exact Google Chrome rendered all 485 settings controls in dark, light, RTL,
+  and wide layouts. The full accessibility lane also passed normal rendering,
+  200 percent reflow, narrow translated layouts, and forced colors.
+
+- Verification passes 2,798 tests with one expected Windows filesystem skip
+  and all 34 repository gates. All 12 browser packages and the userscript were
+  rebuilt as v4.86.5 validation artifacts.
+
 ## [4.86.4] (2026-08-26)
 
 ### Changed

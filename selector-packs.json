@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "assetVersion": "4.86.4.selector.1",
+  "assetVersion": "4.86.5.selector.1",
   "packs": {
     "appShell": {
       "stable": [
@@ -1019,5 +1019,5 @@
       "notes": "Route state is best read from ytd-watch-flexy[video-id]."
     }
   },
-  "digest": "sha256:498991b3051df5ac047479bc67e32a74ad6cba336f9e93b522238e119e1d9098"
+  "digest": "sha256:b54df5b54242539d7d3cafb99591dc98957d376f60b6008357ec0f590bfeec4a"
 }
