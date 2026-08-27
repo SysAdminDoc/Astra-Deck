@@ -28,6 +28,11 @@ function readSources(overrides = {}) {
         elementZapper: overrides.elementZapper ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'element-zapper', 'index.js'), 'utf8'),
         stickyChat: overrides.stickyChat ?? fs.readFileSync(path.join(ROOT, 'extension', 'features', 'sticky-chat', 'index.js'), 'utf8'),
         smoke: overrides.smoke ?? fs.readFileSync(path.join(ROOT, 'docs', 'screen-reader-smoke.md'), 'utf8'),
+        // The extension pages' own markup. Settings outcomes are announced
+        // through one polite live region per surface, and until v4.88.3
+        // nothing pinned those regions.
+        popupHtml: overrides.popupHtml ?? fs.readFileSync(path.join(ROOT, 'extension', 'popup.html'), 'utf8'),
+        sidepanelHtml: overrides.sidepanelHtml ?? fs.readFileSync(path.join(ROOT, 'extension', 'sidepanel.html'), 'utf8'),
         // Every feature module, globbed. The named entries above are the ones
         // individual checks reach for by hand; this is the safety net that keeps
         // a peeled or renamed feature from leaving the gate's scope unnoticed.
@@ -282,7 +287,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
     const checks = [];
     const add = (name, ok, failure) => checks.push({ name, ok: Boolean(ok), failure });
 
-    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, digitalWellbeing, elementZapper, stickyChat, smoke } = sources;
+    const { ytkit, toastDom, settingsPanel, subscriptionGroups, downloadUi, liveChat, videoNotes, digitalWellbeing, elementZapper, stickyChat, smoke , popupHtml, sidepanelHtml} = sources;
     const featureModuleCount = Object.keys(sources.allFeatureModules || {}).length;
     add('Overlay audit still covers the feature modules',
         featureModuleCount >= MIN_FEATURE_MODULES,
@@ -299,6 +304,28 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         toastDom.includes("toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive)") &&
         ytkit.includes("toast.setAttribute('aria-live', options.ariaLive || ariaDefaults.ariaLive)"),
         'Toast aria-live must switch errors to assertive and default to polite in both DOM builders');
+    // Settings outcomes — reset, import, export, and every failure — are
+    // announced through one polite live region per surface, not through the
+    // toast layer. Nothing pinned those regions, so removing either attribute
+    // would have silently ended announcements for screen-reader users while
+    // every visual check still passed.
+    add('Overlay settings status is a polite live region',
+        ytkit.includes("footerStatus.id = 'ytkit-panel-status'")
+        && ytkit.includes("footerStatus.setAttribute('role', 'status')")
+        && ytkit.includes("footerStatus.setAttribute('aria-live', 'polite')"),
+        'The in-page settings panel status must be role=status aria-live=polite');
+    add('Overlay settings outcomes reach that live region',
+        (ytkit.match(/setPanelStatus\(/g) || []).length >= 10
+        && ytkit.includes("const status = document.getElementById('ytkit-panel-status')"),
+        'Settings reset, import and export outcomes must route through setPanelStatus');
+    add('Popup status is a polite live region',
+        popupHtml.includes('id="status"') && /id="status"[^>]*aria-live="polite"/.test(popupHtml),
+        'The popup status banner must be aria-live=polite');
+    add('Side panel refresh status is a polite live region',
+        /id="sp-refresh-status"[^>]*aria-live="polite"/.test(sidepanelHtml)
+        || /id="sp-refresh-status"[^>]*role="status"/.test(sidepanelHtml),
+        'The side panel refresh status must be announced');
+
     add('Toast DOM uses aria-atomic',
         toastDom.includes("toast.setAttribute('aria-atomic', 'true')") &&
         ytkit.includes("toast.setAttribute('aria-atomic', 'true')"),
