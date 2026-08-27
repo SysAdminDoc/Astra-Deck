@@ -1,5 +1,7 @@
 # Selector-regression canary fixture.
 # Source: mhtml/Channel.mhtml
+# YouTube client: 2.20260603.05.00
+# Captured: 2026-06-03 (from INNERTUBE_CLIENT_VERSION)
 # Regenerated via: npm run build:fixtures
 # Captured tokens: 601
 # Encoding: one token per line, sorted.
