@@ -1932,6 +1932,16 @@ function isYouTubeSenderOrigin(sender) {
         // reason: an unparseable origin is not a YouTube origin
         return false;
     }
+    // https only: every content-script match pattern and every optional host
+    // grant is https, so an http origin here cannot be legitimate.
+    let protocol = '';
+    try {
+        protocol = new URL(raw).protocol;
+    } catch (_) {
+        // reason: already handled above, but keep this total
+        return false;
+    }
+    if (protocol !== 'https:') return false;
     return hostname === 'youtube.com'
         || hostname.endsWith('.youtube.com')
         || hostname === 'youtube-nocookie.com'

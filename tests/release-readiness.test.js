@@ -420,3 +420,15 @@ test('the test suite carries a coverage ratchet', () => {
     }
     assert.ok(pkg.scripts['test:fast'], 'a coverage-free lane stays available for quick local runs');
 });
+
+test('the coverage ratchet is scoped to shipped code', () => {
+    // Measuring every file that happened to load made the number unstable in
+    // both directions: a new untested script under scripts/ moved it by zero,
+    // while writing a test that required a large previously-unloaded script
+    // dropped line coverage by about seven points and reddened the build for
+    // adding a test. Scoping the include to extension/** makes the denominator
+    // the shipped surface, which is the thing the ratchet is about.
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    assert.match(pkg.scripts.test || '', /--test-coverage-include=extension\/\*\*/,
+        'coverage must be scoped to the shipped extension, not to whatever loaded');
+});
