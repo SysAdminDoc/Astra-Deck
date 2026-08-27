@@ -1122,7 +1122,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.86.4';
+    const YTKIT_VERSION = '4.86.5';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -8005,20 +8005,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     css
                 );
                 const popupCss = `
+                    html.ytkit-watch-restyle {
+                        --ytkit-native-menu-panel: #0d1928;
+                        --ytkit-native-menu-row: rgba(151, 178, 208, 0.06);
+                        --ytkit-native-menu-row-hover: rgba(151, 178, 208, 0.13);
+                        --ytkit-native-menu-row-selected: rgba(var(--ytkit-accent-rgb), 0.14);
+                        --ytkit-native-menu-border: rgba(151, 178, 208, 0.24);
+                        --ytkit-native-menu-text: #f5f7fb;
+                        --ytkit-native-menu-muted: #aab7c8;
+                        --ytkit-native-menu-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+                    }
+
+                    html.ytkit-watch-restyle:not([dark]) {
+                        --ytkit-native-menu-panel: #ffffff;
+                        --ytkit-native-menu-row: rgba(30, 53, 78, 0.04);
+                        --ytkit-native-menu-row-hover: rgba(30, 53, 78, 0.09);
+                        --ytkit-native-menu-row-selected: rgba(var(--ytkit-accent-rgb), 0.10);
+                        --ytkit-native-menu-border: rgba(30, 53, 78, 0.22);
+                        --ytkit-native-menu-text: #172335;
+                        --ytkit-native-menu-muted: #536278;
+                        --ytkit-native-menu-shadow: 0 18px 42px rgba(20, 35, 54, 0.18);
+                    }
+
                     :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app):has(ytd-menu-popup-renderer :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) {
                         margin-top: 8px !important;
                     }
 
                     :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) #contentWrapper:has(ytd-menu-popup-renderer :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) {
-                        border-radius: 12px !important;
-                        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                        background:
-                            radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.16), transparent 42%),
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.016)),
-                            rgba(9, 12, 18, 0.96) !important;
-                        box-shadow:
-                            0 24px 48px rgba(0, 0, 0, 0.34),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                        border-radius: 8px !important;
+                        border: 1px solid var(--ytkit-native-menu-border) !important;
+                        background: var(--ytkit-native-menu-panel) !important;
+                        box-shadow: var(--ytkit-native-menu-shadow) !important;
                         backdrop-filter: none;
                         overflow: hidden !important;
                     }
@@ -8032,7 +8049,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         border: none !important;
                         background: transparent !important;
                         box-shadow: none !important;
-                        color: rgba(255, 255, 255, 0.9) !important;
+                        color: var(--ytkit-native-menu-text) !important;
                         box-sizing: border-box !important;
                     }
 
@@ -8054,7 +8071,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0 !important;
                         padding: 0 0 0 0 !important;
                         border: 1px solid transparent !important;
-                        border-radius: 12px !important;
+                        border-radius: 6px !important;
                         background: transparent !important;
                         box-shadow: none !important;
                         overflow: hidden !important;
@@ -8082,7 +8099,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         border: none !important;
                         border-radius: inherit !important;
                         background: transparent !important;
-                        color: rgba(226, 232, 240, 0.78) !important;
+                        color: var(--ytkit-native-menu-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-native-menu-text) !important;
                         box-shadow: none !important;
                         box-sizing: border-box !important;
                         overflow: visible !important;
@@ -8091,22 +8109,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer):hover,
                     :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer):focus-within {
-                        border-color: rgba(var(--ytkit-accent-rgb), 0.18) !important;
-                        background:
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
-                            rgba(255, 255, 255, 0.03) !important;
-                        color: rgba(255, 255, 255, 0.96) !important;
+                        border-color: var(--ytkit-native-menu-border) !important;
+                        background: var(--ytkit-native-menu-row-hover) !important;
+                        color: var(--ytkit-native-menu-text) !important;
                         transform: translateY(-1px) !important;
                     }
 
                     :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer).iron-selected,
                     :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)[aria-selected="true"] {
-                        border-color: rgba(var(--ytkit-accent-rgb), 0.24) !important;
-                        background:
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)),
-                            rgba(var(--ytkit-accent-rgb), 0.13) !important;
-                        color: rgba(255, 255, 255, 0.98) !important;
-                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.42) !important;
+                        background: var(--ytkit-native-menu-row-selected) !important;
+                        color: var(--ytkit-native-menu-text) !important;
+                        box-shadow: none !important;
                     }
 
                     :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer) yt-icon,
@@ -8140,15 +8154,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     tp-yt-iron-dropdown #contentWrapper:has(tp-yt-paper-listbox.yt-dropdown-menu) {
-                        border-radius: 12px !important;
-                        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                        background:
-                            radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.16), transparent 42%),
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.016)),
-                            rgba(9, 12, 18, 0.96) !important;
-                        box-shadow:
-                            0 24px 48px rgba(0, 0, 0, 0.34),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                        border-radius: 8px !important;
+                        border: 1px solid var(--ytkit-native-menu-border) !important;
+                        background: var(--ytkit-native-menu-panel) !important;
+                        box-shadow: var(--ytkit-native-menu-shadow) !important;
                         backdrop-filter: none;
                         overflow: hidden !important;
                     }
@@ -8177,8 +8186,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         max-width: 100% !important;
                         margin: 0 !important;
                         border: 1px solid transparent !important;
-                        border-radius: 12px !important;
-                        color: rgba(226, 232, 240, 0.8) !important;
+                        border-radius: 6px !important;
+                        color: var(--ytkit-native-menu-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-native-menu-text) !important;
                         text-decoration: none !important;
                         background: transparent !important;
                         box-sizing: border-box !important;
@@ -8191,23 +8201,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu:hover,
                     tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu:focus-visible {
-                        border-color: rgba(var(--ytkit-accent-rgb), 0.18) !important;
-                        background:
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
-                            rgba(255, 255, 255, 0.03) !important;
-                        color: rgba(255, 255, 255, 0.96) !important;
+                        border-color: var(--ytkit-native-menu-border) !important;
+                        background: var(--ytkit-native-menu-row-hover) !important;
+                        color: var(--ytkit-native-menu-text) !important;
                         outline: none !important;
                         transform: translateY(-1px) !important;
                     }
 
                     tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu.iron-selected,
                     tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu[aria-selected="true"] {
-                        border-color: rgba(var(--ytkit-accent-rgb), 0.24) !important;
-                        background:
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)),
-                            rgba(var(--ytkit-accent-rgb), 0.13) !important;
-                        color: rgba(255, 255, 255, 0.98) !important;
-                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.42) !important;
+                        background: var(--ytkit-native-menu-row-selected) !important;
+                        color: var(--ytkit-native-menu-text) !important;
+                        box-shadow: none !important;
                     }
 
                     tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu tp-yt-paper-item {
@@ -8254,11 +8260,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu #subtitle.style-scope.yt-dropdown-menu {
                         margin-top: 3px !important;
-                        color: rgba(255, 255, 255, 0.58) !important;
+                        color: var(--ytkit-native-menu-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-native-menu-muted) !important;
                         font-size: 11px !important;
                         line-height: 1.35 !important;
                         font-weight: 500 !important;
                         white-space: normal !important;
+                    }
+
+                    html.ytkit-watch-restyle :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) :is(
+                        ytd-menu-popup-renderer,
+                        tp-yt-paper-listbox,
+                        tp-yt-paper-item,
+                        yt-formatted-string,
+                        .item,
+                        #label,
+                        #text
+                    ) {
+                        color: var(--ytkit-native-menu-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-native-menu-text) !important;
+                        opacity: 1 !important;
                     }
 
                     /* Normal watch shell follows the shared surface tokens in both themes. */
@@ -8399,10 +8420,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         tp-yt-paper-button,
                         yt-icon-button
                     ) {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        min-width: 30px !important;
                         min-height: 30px !important;
-                        border: 1px solid var(--ytkit-watch-border) !important;
-                        border-radius: 4px !important;
-                        background: transparent !important;
+                        height: 30px !important;
+                        padding: 0 9px !important;
+                        border: 1px solid transparent !important;
+                        border-radius: 6px !important;
+                        background: var(--ytkit-watch-raised) !important;
                         background-image: none !important;
                         color: var(--ytkit-watch-text) !important;
                         box-shadow: none !important;
@@ -8428,6 +8455,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     )::after {
                         background: transparent !important;
                         background-image: none !important;
+                        border: 0 !important;
+                        outline: 0 !important;
                         color: inherit !important;
                         box-shadow: none !important;
                     }
@@ -8445,6 +8474,162 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ):hover {
                         border-color: var(--ytkit-watch-border-strong) !important;
                         background: var(--ytkit-watch-hover) !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar #toolbar {
+                        align-items: center !important;
+                        gap: 8px !important;
+                        min-height: 32px !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar #like-button :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button,
+                        yt-icon-button
+                    ) {
+                        width: 30px !important;
+                        min-width: 30px !important;
+                        padding: 0 !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar #vote-count-middle {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        min-width: 0 !important;
+                        height: 30px !important;
+                        margin: 0 4px 0 -4px !important;
+                        padding: 0 4px !important;
+                        border: 0 !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                        color: var(--ytkit-watch-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-muted) !important;
+                        box-shadow: none !important;
+                        font-variant-numeric: tabular-nums !important;
+                        pointer-events: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comment-engagement-bar #reply-button-end :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button
+                    ) {
+                        min-width: 48px !important;
+                        padding-inline: 10px !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body #comments ytd-comment-replies-renderer {
+                        border: 0 !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body #comments :is(
+                        .ytSubThreadConnection,
+                        .ytSubThreadContinuation,
+                        .ytSubThreadShadow
+                    ) {
+                        display: none !important;
+                        border: 0 !important;
+                        background: transparent !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body #comments ytd-comment-replies-renderer :is(
+                        #replies,
+                        #expander,
+                        #expanded-threads,
+                        #collapsed-threads,
+                        #more-replies,
+                        #more-replies-sub-thread,
+                        .show-replies-button
+                    )::before,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body #comments ytd-comment-replies-renderer :is(
+                        #replies,
+                        #expander,
+                        #expanded-threads,
+                        #collapsed-threads,
+                        #more-replies,
+                        #more-replies-sub-thread,
+                        .show-replies-button
+                    )::after {
+                        content: none !important;
+                        border: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body #comments ytd-comment-replies-renderer * {
+                        border-inline-start-width: 0 !important;
+                        border-left-width: 0 !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body #comments :is(
+                        ytd-comment-view-model,
+                        ytd-comment-renderer
+                    ) .continuation {
+                        border: 0 !important;
+                        background: transparent !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body #comments ytd-comment-replies-renderer :is(
+                        .show-replies-button button,
+                        #more-replies .yt-spec-button-shape-next,
+                        #more-replies-sub-thread .yt-spec-button-shape-next,
+                        #less-replies .yt-spec-button-shape-next,
+                        #less-replies-sub-thread .yt-spec-button-shape-next,
+                        #more-replies button,
+                        #more-replies-sub-thread button,
+                        #less-replies button,
+                        #less-replies-sub-thread button
+                    ) {
+                        min-height: 30px !important;
+                        height: 30px !important;
+                        padding-inline: 10px !important;
+                        border: 1px solid var(--ytkit-watch-border) !important;
+                        border-radius: 6px !important;
+                        background: var(--ytkit-watch-raised) !important;
+                        background-image: none !important;
+                        color: var(--ytkit-watch-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-muted) !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata #subscribe-button :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button
+                    ) *,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata #subscribe-button :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button
+                    )::before,
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata #subscribe-button :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        tp-yt-paper-button
+                    )::after {
+                        border: 0 !important;
+                        outline: 0 !important;
+                        background: transparent !important;
+                        background-image: none !important;
+                        color: inherit !important;
+                        box-shadow: none !important;
+                    }
+
+                    html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) body ytd-comments-header-renderer #sort-menu :is(
+                        button,
+                        tp-yt-paper-button,
+                        .yt-spec-button-shape-next
+                    ) {
+                        min-height: 32px !important;
+                        height: 32px !important;
+                        padding-inline: 10px !important;
+                        border: 1px solid var(--ytkit-watch-border) !important;
+                        border-radius: 6px !important;
+                        background: var(--ytkit-watch-raised) !important;
+                        color: var(--ytkit-watch-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-watch-text) !important;
+                        box-shadow: none !important;
                     }
 
                     html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata :is(
@@ -8467,10 +8652,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         .yt-spec-button-shape-next,
                         tp-yt-paper-button
                     ) {
-                        border-color: var(--ytkit-premium-accent) !important;
-                        background: var(--ytkit-premium-accent) !important;
+                        min-width: 98px !important;
+                        min-height: 34px !important;
+                        height: 34px !important;
+                        padding-inline: 14px !important;
+                        border-color: transparent !important;
+                        border-radius: 6px !important;
+                        outline: 0 !important;
+                        background: var(--ytkit-premium-accent-fill) !important;
                         color: #ffffff !important;
                         -webkit-text-fill-color: #ffffff !important;
+                        box-shadow: none !important;
                     }
 
                     html.ytkit-watch-restyle.ytkit-watch-restyle:not(.ytkit-split-active):not(.ytkit-split-open) ytd-watch-metadata :is(
@@ -9814,6 +10006,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     )::after {
                         background: transparent !important;
                         background-image: none !important;
+                        border: 0 !important;
+                        outline: 0 !important;
                         color: inherit !important;
                         box-shadow: none !important;
                     }

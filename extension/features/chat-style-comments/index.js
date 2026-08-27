@@ -1265,6 +1265,8 @@
                     )::after {
                         background: transparent !important;
                         background-image: none !important;
+                        border: 0 !important;
+                        outline: 0 !important;
                         color: inherit !important;
                         box-shadow: none !important;
                     }

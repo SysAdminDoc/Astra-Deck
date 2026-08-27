@@ -917,10 +917,13 @@ test('split title and owner cards use a compact title-first hierarchy', () => {
     const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'features', 'sticky-video', 'index.js'), 'utf8');
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
 
-    const blockBetween = (contents, startNeedle, endNeedle, label, { fromStart = false } = {}) => {
-        const start = fromStart ? contents.indexOf(startNeedle) : contents.lastIndexOf(startNeedle);
+    const blockBetween = (contents, startNeedle, endNeedle, label, { fromStart = false, beforeEnd = false } = {}) => {
+        const boundary = beforeEnd ? contents.indexOf(endNeedle) : -1;
+        const start = beforeEnd
+            ? contents.lastIndexOf(startNeedle, boundary)
+            : (fromStart ? contents.indexOf(startNeedle) : contents.lastIndexOf(startNeedle));
         assert.ok(start > -1, `${label} should exist`);
-        const end = contents.indexOf(endNeedle, start);
+        const end = beforeEnd ? boundary : contents.indexOf(endNeedle, start);
         assert.ok(end > start, `${label} should end after it starts`);
         return contents.slice(start, end);
     };
@@ -954,7 +957,8 @@ test('split title and owner cards use a compact title-first hierarchy', () => {
         source,
         '#below.ytkit-split-scroll-surface ytd-watch-metadata #title {',
         '#below.ytkit-split-scroll-surface ytd-watch-metadata #title:has',
-        'extension split title card rule'
+        'extension split title card rule',
+        { beforeEnd: true }
     );
     const standaloneTitleCard = blockBetween(
         theaterSplit,
@@ -1241,8 +1245,14 @@ test('watchPageRestyle gives native service popups the premium comment-card trea
         'watchPageRestyle should target both standard and live-chat native popup hosts');
     assert.ok(block.includes('#contentWrapper:has(ytd-menu-popup-renderer :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer))'),
         'watchPageRestyle should target native YouTube service and navigation popup wrappers');
-    assert.ok(block.includes('border-radius: 12px !important;'),
+    assert.ok(block.includes('border-radius: 8px !important;'),
         'watchPageRestyle should give native service popups a refined rectangular premium surface');
+    assert.ok(block.includes('--ytkit-native-menu-panel: #0d1928;')
+        && block.includes('--ytkit-native-menu-panel: #ffffff;'),
+    'watchPageRestyle should use explicit readable popup surfaces in both page themes');
+    assert.ok(block.includes('--ytkit-native-menu-text: #f5f7fb;')
+        && block.includes('--ytkit-native-menu-text: #172335;'),
+    'watchPageRestyle should keep popup labels legible in dark and light themes');
     assert.ok(block.includes('backdrop-filter: none;'),
         'watchPageRestyle should avoid blur-heavy injected popup compositing');
     assert.ok(block.includes(':is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer).iron-selected'),
@@ -1265,8 +1275,19 @@ test('watchPageRestyle gives native service popups the premium comment-card trea
     assert.ok(block.includes('body ytd-comment-engagement-bar :is(svg, path)')
         && block.includes('background: transparent !important;'),
         'watchPageRestyle should keep nested comment action chrome flat instead of rendering white blocks');
+    assert.ok(block.includes('border: 0 !important;')
+        && block.includes('outline: 0 !important;'),
+        'watchPageRestyle should clear YouTube nested button frames in dark mode');
+    assert.ok(block.includes('.ytSubThreadConnection,')
+        && block.includes('.ytSubThreadContinuation,')
+        && block.includes('.ytSubThreadShadow')
+        && block.includes('content: none !important;')
+        && block.includes('border-inline-start-width: 0 !important;')
+        && block.includes(') .continuation {'),
+        'watchPageRestyle should remove native L-shaped reply connectors and their pseudo-elements');
     assert.ok(block.includes('ytd-watch-metadata #subscribe-button :is(')
-        && block.includes('background: var(--ytkit-premium-accent) !important;'),
+        && block.includes('background: var(--ytkit-premium-accent-fill) !important;')
+        && block.includes('border-color: transparent !important;'),
         'watchPageRestyle should preserve one flat primary subscribe action across both themes');
 });
 
