@@ -80,9 +80,13 @@ test('Firefox web-ext lint gate is pinned and wired into npm run check', () => {
     assert.equal(pkg.scripts['check:firefox'], 'node scripts/check-firefox-webext.js');
     assert.match(checkChainText(), /check-firefox-webext\.js/,
         'npm run check must include the staged Firefox web-ext lint gate');
+    // --self-hosted joined the arg list in v4.88.3. Astra Deck self-distributes
+    // its Firefox artifact rather than listing on AMO, so the hosting-specific
+    // checks do not apply; leaving them on kept permanent noise between this
+    // gate and treating warnings as failures.
     assert.deepEqual(
         lintArgsForSource('stage-dir'),
-        ['lint', '--source-dir', 'stage-dir', '--output', 'json'],
+        ['lint', '--source-dir', 'stage-dir', '--self-hosted', '--output', 'json'],
         'web-ext lint must target the generated Firefox stage via --source-dir'
     );
     assert.deepEqual(
@@ -90,6 +94,28 @@ test('Firefox web-ext lint gate is pinned and wired into npm run check', () => {
         { errors: 0, warnings: 1, notices: 2 },
         'lint JSON summary should stay parseable for concise CI output'
     );
+
+    // The gate used to read the warning count and discard it, so four findings
+    // rode through every release unread. Anything not on the dated accept list
+    // now fails.
+    const { ACCEPTED_LINT_WARNINGS, unacceptedWarnings } = require('../scripts/check-firefox-webext.js');
+    assert.ok(ACCEPTED_LINT_WARNINGS.length > 0, 'the accept list must be explicit');
+    for (const accepted of ACCEPTED_LINT_WARNINGS) {
+        assert.match(accepted.acceptedOn, /^\d{4}-\d{2}-\d{2}$/, 'every acceptance carries its date');
+        assert.ok(accepted.reason, 'and says why the finding is safe');
+    }
+    assert.equal(
+        unacceptedWarnings({ warnings: [{ code: 'UNSAFE_VAR_ASSIGNMENT', file: 'runtime-bootstrap.js' }] }).length,
+        0,
+        'an accepted finding must not fail the gate');
+    assert.equal(
+        unacceptedWarnings({ warnings: [{ code: 'MANIFEST_PERMISSIONS', file: 'manifest.json' }] }).length,
+        1,
+        'a new warning code must fail the gate');
+    assert.equal(
+        unacceptedWarnings({ warnings: [{ code: 'UNSAFE_VAR_ASSIGNMENT', file: 'popup.js' }] }).length,
+        1,
+        'the same code in a new file must fail the gate');
 });
 
 test('Firefox web-ext lint stages all profile manifests with Gecko patches', () => {

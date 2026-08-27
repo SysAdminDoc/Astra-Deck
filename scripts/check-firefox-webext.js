@@ -42,14 +42,54 @@ function stripSelfHostedUpdateUrlForLint(stageDir) {
     return true;
 }
 
+// Astra Deck self-distributes its Firefox artifact; it is not an AMO-hosted
+// listing. `--self-hosted` drops the hosting-specific checks that do not apply
+// and would otherwise be permanent noise standing between this gate and
+// treating warnings as failures.
 function lintArgsForSource(sourceDir) {
     return [
         'lint',
         '--source-dir',
         sourceDir,
+        '--self-hosted',
         '--output',
         'json',
     ];
+}
+
+// Warnings this project has read and accepted, with the date and the reason.
+// Anything NOT listed fails the gate: before v4.88.3 the gate parsed the
+// warning count and then threw it away, so four findings sat unread through
+// every release.
+//
+// `import(getURL(path))` is the module-loading architecture itself. The
+// argument is never user-controlled: `runtime-bootstrap.js` is generated from
+// a frozen module list and `getURL` only mints extension-internal URLs, so
+// the linter's "unsafe assignment" is a static-analysis limitation rather than
+// a finding. Removing it would mean abandoning dynamic module loading.
+const ACCEPTED_LINT_WARNINGS = Object.freeze([
+    Object.freeze({
+        code: 'UNSAFE_VAR_ASSIGNMENT',
+        file: 'runtime-bootstrap.js',
+        acceptedOn: '2026-08-27',
+        reason: 'dynamic import of a generated, frozen module path through runtime.getURL'
+    }),
+    Object.freeze({
+        code: 'UNSAFE_VAR_ASSIGNMENT',
+        file: 'runtime-core-loader.mjs',
+        acceptedOn: '2026-08-27',
+        reason: 'dynamic import of a generated, frozen module path through runtime.getURL'
+    })
+]);
+
+function isAcceptedWarning(warning) {
+    return ACCEPTED_LINT_WARNINGS.some((accepted) =>
+        accepted.code === warning?.code && accepted.file === warning?.file);
+}
+
+// Returns the warnings this gate refuses to ignore.
+function unacceptedWarnings(parsed) {
+    return (parsed?.warnings || []).filter((warning) => !isAcceptedWarning(warning));
 }
 
 function summarizeLintOutput(stdout) {
@@ -84,6 +124,26 @@ function runWebExtLint(sourceDir) {
         if (result.stdout) console.error(result.stdout.trim());
         if (result.stderr) console.error(result.stderr.trim());
         throw new Error(`web-ext lint failed for ${sourceDir} with exit code ${result.status}`);
+    }
+
+    let parsed = null;
+    try {
+        parsed = JSON.parse(result.stdout);
+    } catch (_) {
+        // reason: an unparseable report is reported below, not silently passed
+    }
+    if (!parsed) {
+        throw new Error(`web-ext lint produced no readable report for ${sourceDir}`);
+    }
+    const unaccepted = unacceptedWarnings(parsed);
+    if (unaccepted.length) {
+        for (const warning of unaccepted) {
+            console.error(`[check-firefox-webext] ${warning.code} ${warning.file || ''}`
+                + `${warning.line ? ':' + warning.line : ''} — ${warning.message}`);
+        }
+        throw new Error(
+            `${unaccepted.length} unaccepted web-ext warning(s) for ${sourceDir}. `
+            + 'Fix them, or add a dated entry to ACCEPTED_LINT_WARNINGS explaining why each is safe.');
     }
 
     return summary;
@@ -141,6 +201,9 @@ if (require.main === module) {
 }
 
 module.exports = {
+    ACCEPTED_LINT_WARNINGS,
+    isAcceptedWarning,
+    unacceptedWarnings,
     createFirefoxStage,
     lintArgsForSource,
     parseArgs,
