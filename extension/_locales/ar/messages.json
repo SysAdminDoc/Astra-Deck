@@ -7695,6 +7695,12 @@
   "videoHiderReasonChannelNotAllowed": {
     "message": "قائمة القنوات المسموح بها لديك"
   },
+  "videoHiderReasonBlockedChannelNamedTpl": {
+    "message": "قاعدة قناة محظورة ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowedNamedTpl": {
+    "message": "قائمة القنوات المسموح بها ({channel})"
+  },
   "videoHiderReasonDuration": {
     "message": "قاعدة الحد الأدنى للمدة"
   },

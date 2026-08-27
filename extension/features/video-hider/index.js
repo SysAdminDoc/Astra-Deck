@@ -926,6 +926,23 @@
                 if (leftKeys.size === 0) return false;
                 return this._getChannelIdentityKeys(right).some(key => leftKeys.has(key));
             },
+            // A card can name several channels: YouTube lists collaborators, and
+            // AI-content channels publish as multi-channel collabs specifically
+            // so a single-channel rule misses them. Blocking already matched any
+            // named channel, but the hide reason said only "a blocked channel
+            // rule" — with two names on the card the user could not tell which
+            // rule fired, or which one to unblock.
+            _matchedBlockedChannel(channelInfo) {
+                const infos = Array.isArray(channelInfo) ? channelInfo : [channelInfo];
+                if (!infos.length) return null;
+                const blockedKeys = this._getBlockedChannelKeys();
+                for (const info of infos) {
+                    if (!info) continue;
+                    if (this._getChannelIdentityKeys(info).some(key => blockedKeys.has(key))) return info;
+                }
+                return null;
+            },
+
             _isChannelBlocked(channelInfo) {
                 if (Array.isArray(channelInfo)) {
                     if (!channelInfo.length) return false;
@@ -1382,7 +1399,8 @@
                 element.remove();
             },
 
-            _filterReasonLabel(reason) {
+            _filterReasonLabel(reason, channelName = '') {
+                const named = String(channelName || '').trim();
                 const normalizedReason = {
                     'auto-dubbed': 'autoDubbed',
                     'low-view': 'lowView',
@@ -1390,7 +1408,17 @@
                     'marked-watched': 'markedWatched'
                 }[reason] || reason;
                 const [key, fallback] = FILTER_REASON_MESSAGES[normalizedReason] || FILTER_REASON_MESSAGES.manual;
-                return t(key, fallback);
+                const label = t(key, fallback);
+                if (!named) return label;
+                if (normalizedReason === 'blockedChannel') {
+                    return t('videoHiderReasonBlockedChannelNamedTpl', 'a blocked channel rule ({channel})')
+                        .replace('{channel}', named);
+                }
+                if (normalizedReason === 'channelNotAllowed') {
+                    return t('videoHiderReasonChannelNotAllowedNamedTpl', 'your channel allowlist ({channel})')
+                        .replace('{channel}', named);
+                }
+                return label;
             },
 
             _removeHiddenReasonPlaceholder(element) {
@@ -1416,7 +1444,7 @@
                     this._hiddenReasonPlaceholders.set(element, placeholder);
                     element.parentNode.insertBefore(placeholder, element.nextSibling);
                 }
-                const reasonLabel = this._filterReasonLabel(reason);
+                const reasonLabel = this._filterReasonLabel(reason, element?.dataset?.ytkitFilterChannel || '');
                 const label = t('videoHiderHiddenReason', 'Hidden by Video Hider: {reason}')
                     .replace('{reason}', reasonLabel);
                 placeholder.textContent = label;
@@ -1980,8 +2008,11 @@
 
             _shouldHide(element) {
                 delete element.dataset.ytkitFilterReason;
-                const hideForReason = reason => {
+                const hideForReason = (reason, channelName = '') => {
                     element.dataset.ytkitFilterReason = reason;
+                    const named = String(channelName || '').trim().slice(0, 120);
+                    if (named) element.dataset.ytkitFilterChannel = named;
+                    else delete element.dataset.ytkitFilterChannel;
                     return true;
                 };
                 const videoId = this._extractVideoId(element);
@@ -2001,9 +2032,15 @@
                     // channel cannot be identified must remain recoverable.
                     if (channelInfos.length
                         && this._getAllowedChannelKeys().size > 0
-                        && !this._isChannelAllowed(channelInfos)) return hideForReason('channelNotAllowed');
-                } else if (this._isChannelBlocked(channelInfos)) {
-                    return hideForReason('blockedChannel');
+                        && !this._isChannelAllowed(channelInfos)) {
+                        // Name what was on the card, so a collab card explains
+                        // which channels failed the allowlist.
+                        return hideForReason('channelNotAllowed',
+                            channelInfos.map(info => info?.name).filter(Boolean).join(', '));
+                    }
+                } else {
+                    const matched = this._matchedBlockedChannel(channelInfos);
+                    if (matched) return hideForReason('blockedChannel', matched.name);
                 }
 
                 const filterStrings = this._getEffectiveKeywordFilters();

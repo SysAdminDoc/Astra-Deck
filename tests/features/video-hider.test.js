@@ -1554,3 +1554,109 @@ test('the fail-open guard also covers infinite-scroll batches, not just navigati
     assert.match(sources.userscript, /if \(removedIds\.length\) this\._restoreRemovedVideoNodes\(new Set\(removedIds\)\);/,
         'the userscript runtime must restore detached cards too');
 });
+
+// --- Collaborator channels (v4.88.3) ------------------------------------
+//
+// A card can name several channels: YouTube lists collaborators, and
+// AI-content channels publish as multi-channel collabs specifically so a
+// single-channel rule misses them. Blocking already matched any named channel;
+// what was missing is which one, so a user looking at a two-name card could
+// not tell which rule fired or which channel to unblock.
+
+function channelLink(href, name) {
+    return { href, getAttribute: (attr) => (attr === 'href' ? href : null), textContent: name };
+}
+
+function collabCard(links) {
+    const isChannelSelector = (sel) => sel.includes('/@') || sel.includes('/channel/');
+    return {
+        dataset: {},
+        querySelector: (sel) => (isChannelSelector(sel) ? links[0] || null : null),
+        querySelectorAll: (sel) => (isChannelSelector(sel) ? links : [])
+    };
+}
+
+function blocked(handle, name) {
+    const url = `https://www.youtube.com/${handle}`;
+    return { id: url, url, handle, name };
+}
+
+test('every channel named on a collab card is extracted', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+    const infos = feature._extractChannelInfos(collabCard([
+        channelLink('https://www.youtube.com/@primary', 'Primary'),
+        channelLink('https://www.youtube.com/@guest', 'Guest'),
+        // A repeat of the same channel must not appear twice.
+        channelLink('https://www.youtube.com/@guest', 'Guest')
+    ]));
+
+    assert.equal(infos.length, 2, 'both distinct channels must be extracted, deduped');
+    assert.deepEqual(infos.map((info) => info.name), ['Primary', 'Guest']);
+});
+
+test('blocking any named channel hides the card and names which one matched', () => {
+    const { mod } = loadModule();
+    for (const [target, expected] of [['@primary', 'Primary'], ['@guest', 'Guest']]) {
+        const feature = mod.createHideVideosFromHomeFeature();
+        const infos = feature._extractChannelInfos(collabCard([
+            channelLink('https://www.youtube.com/@primary', 'Primary'),
+            channelLink('https://www.youtube.com/@guest', 'Guest')
+        ]));
+        feature._setBlockedChannelCache([blocked(target, expected)]);
+
+        assert.equal(feature._isChannelBlocked(infos), true,
+            `blocking ${target} must hide a card that names it`);
+        const matched = feature._matchedBlockedChannel(infos);
+        assert.ok(matched, 'the matching channel must be identifiable');
+        assert.equal(matched.name, expected, 'and it must be the one that is blocked');
+    }
+});
+
+test('a collab card with no blocked channel is left alone', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+    const infos = feature._extractChannelInfos(collabCard([
+        channelLink('https://www.youtube.com/@primary', 'Primary'),
+        channelLink('https://www.youtube.com/@guest', 'Guest')
+    ]));
+    feature._setBlockedChannelCache([blocked('@unrelated', 'Unrelated')]);
+
+    assert.equal(feature._isChannelBlocked(infos), false);
+    assert.equal(feature._matchedBlockedChannel(infos), null);
+});
+
+test('the allowlist is satisfied when any named channel is allowed', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+    const infos = feature._extractChannelInfos(collabCard([
+        channelLink('https://www.youtube.com/@primary', 'Primary'),
+        channelLink('https://www.youtube.com/@guest', 'Guest')
+    ]));
+
+    feature._setAllowedChannels([blocked('@guest', 'Guest')]);
+    assert.equal(feature._isChannelAllowed(infos), true,
+        'one allowed collaborator is enough to keep the card');
+
+    feature._setAllowedChannels([blocked('@nobody', 'Nobody')]);
+    assert.equal(feature._isChannelAllowed(infos), false);
+});
+
+test('the hidden-reason label names the channel that matched', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+
+    const plain = feature._filterReasonLabel('blockedChannel');
+    const named = feature._filterReasonLabel('blockedChannel', 'Guest');
+    assert.notEqual(named, plain, 'a named reason must differ from the bare one');
+    assert.match(named, /Guest/, 'and must carry the channel name');
+
+    const allowNamed = feature._filterReasonLabel('channelNotAllowed', 'Primary, Guest');
+    assert.match(allowNamed, /Primary, Guest/,
+        'an allowlist miss names what was on the card');
+
+    // An unrelated reason must not grow a channel suffix.
+    assert.equal(feature._filterReasonLabel('keyword', 'Guest'),
+        feature._filterReasonLabel('keyword'),
+        'only the two channel reasons take a name');
+});

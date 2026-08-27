@@ -7695,6 +7695,12 @@
   "videoHiderReasonChannelNotAllowed": {
     "message": "Ihre Kanalliste"
   },
+  "videoHiderReasonBlockedChannelNamedTpl": {
+    "message": "eine Regel für blockierte Kanäle ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowedNamedTpl": {
+    "message": "deine Kanal-Positivliste ({channel})"
+  },
   "videoHiderReasonDuration": {
     "message": "die Mindestlängenregel"
   },
