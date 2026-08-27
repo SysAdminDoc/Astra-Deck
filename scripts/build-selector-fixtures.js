@@ -347,9 +347,23 @@ function captureProvenance(mhtmlPath) {
     let clientVersion = null;
     try {
         const raw = fs.readFileSync(mhtmlPath, 'utf8');
-        const match = /INNERTUBE_CLIENT_VERSION["']?\s*[:=]\s*["']?(\d+\.\d{8}\.\d+\.\d+)/.exec(raw)
-            || /INNERTUBE_CLIENT_VERSION["']?\s*[:=]\s*["']?(\d+\.\d{8}\.\d+\.\d+)/.exec(decodeQuotedPrintable(raw));
-        if (match) clientVersion = match[1];
+        // Decode FIRST: a quoted-printable capture writes the real value with
+        // `=3D` separators, so scanning the raw bytes first let a plain-text
+        // copy from an embedded frame win.
+        const pattern = /INNERTUBE_CLIENT_VERSION["']?\s*[:=]\s*["']?(\d+\.\d{8}\.\d+\.\d+)/g;
+        const found = new Set();
+        for (const text of [decodeQuotedPrintable(raw), raw]) {
+            pattern.lastIndex = 0;
+            for (let match = pattern.exec(text); match; match = pattern.exec(text)) found.add(match[1]);
+            if (found.size) break;
+        }
+        // More than one distinct value means the capture embeds another
+        // document's config. Reporting either one would be a guess.
+        if (found.size === 1) [clientVersion] = [...found];
+        else if (found.size > 1) {
+            console.warn(`[build-selector-fixtures] ${path.basename(mhtmlPath)} carries `
+                + `${found.size} client versions (${[...found].join(', ')}); recording unknown`);
+        }
     } catch (_) {
         // reason: an unreadable capture is reported as unknown, not fatal
     }
