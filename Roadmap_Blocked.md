@@ -48,6 +48,43 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   already work would make readers compete. Retire the item or restate what it
   should deliver.
 
+## P0 — Half done; promotion needs a human at a screen reader (2026-08-27)
+
+- [ ] P0 — Make release currency a blocking gate and tag the outstanding releases
+  Why: 67 commits and 13 releases including the 4.85.1 cookie-handoff security fix are unshipped while every channel serves 4.82.0, and `npm run check` stays green.
+  Evidence: `scripts/run-checks.js:30` calls `check-versions.js` without `--require-release-current`; `release-channels.json` shows `active: 4.82.0` on all five channels; `git tag --list | sort -V | tail -1` is `v4.84.3`; `git rev-list v4.84.3..HEAD --count` is 67.
+  Touches: `scripts/run-checks.js`, `release-channels.json`, `CHANGELOG.md`.
+  Acceptance: `npm run check` fails while any channel trails the newest tag; the GitHub-full and userscript channels are promoted to the current version with digests verified by `npm run release:channels`. Store channels stay governed by the submission items in `Roadmap_Blocked.md`.
+  Complexity: M
+  Done: v4.88.3 is tagged and pushed. That half mattered on its own — the
+  userscript's `@require` is now pinned to `refs/tags/v<version>`, so the tag
+  has to exist for the core library to resolve at all.
+
+  Blocker: the channels cannot be promoted, so the gate cannot be made
+  blocking without turning `npm run check` permanently red. The chain,
+  measured 2026-08-27:
+
+      npm run release:health   -> status fail, promotionEligible false
+        └ artifact-readiness   -> fail
+            └ release:readiness -> fail
+                └ screen-reader-evidence -> FAIL, docs/screen-reader-evidence.json is missing
+
+  `scripts/screen-reader-evidence.js` refuses a release whose screen-reader
+  evidence is missing, thin, or stale, and this release changed UI (the
+  connectivity banner). Producing that record means running
+  `docs/screen-reader-smoke.md` against NVDA, which is the existing
+  "Needs a human at a screen reader" item above.
+
+  `scripts/release-channels.js promote` refuses while `promotionEligible` is
+  false, so nothing here can be forced without overriding a gate the project
+  built deliberately for this exact case.
+
+  Order once the evidence exists: `npm run release:prepare` (now runs the test
+  suite and the captured startup lane), publish the GitHub release with the
+  artifacts already in `build/`, `npm run release:promote`, then add
+  `--require-release-current` to the `versions` gate in `scripts/run-checks.js`
+  and confirm `npm run check` is green.
+
 ## P1 — Release signing, awaiting the maintainer's key (2026-08-21)
 
 - [ ] P1 — Publish the release signing key so `SHA256SUMS` carries a verifiable signature
