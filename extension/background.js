@@ -1146,7 +1146,15 @@ const COBALT_REQUEST_TIMEOUT_MS = 15000;
 // six hours into one fetch per wake.
 const FEATURE_DISABLE_FEED_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/feature-disable-feed.csv';
 const MAX_FEATURE_DISABLE_FEED_BYTES = 64 * 1024;
-const FEATURE_DISABLE_FEED_CACHE_KEY = 'ytkit-feature-disable-feed';
+// v4.88.3 bumped this key. The previous key holds entries written before
+// signature verification existed, and the cache is served for up to 30 days
+// (FEATURE_DISABLE_FEED_STALE_MS) without re-fetching. Reusing the key would
+// have let a payload cached by an older build — including one an attacker had
+// substituted while the feed was unauthenticated — keep being served past the
+// upgrade that was supposed to start verifying it. A new key means the first
+// read after upgrade is a miss, which fetches and verifies.
+const FEATURE_DISABLE_FEED_CACHE_KEY = 'ytkit-feature-disable-feed-v2';
+const FEATURE_DISABLE_FEED_LEGACY_CACHE_KEYS = Object.freeze(['ytkit-feature-disable-feed']);
 const FEATURE_DISABLE_FEED_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const FEATURE_DISABLE_FEED_STALE_MS = 30 * 24 * 60 * 60 * 1000;
 const FEATURE_DISABLE_FEED_TIMEOUT_MS = 10000;
@@ -1174,6 +1182,18 @@ async function readFeatureDisableFeedCache() {
     } catch (_) {
         // reason: a corrupt or unreadable cache is a cache miss, never an error
         return null;
+    }
+}
+
+// Removes cache entries written by builds that did not verify the feed. Best
+// effort: failing to clean up costs disk, never correctness, because nothing
+// reads the legacy key any more.
+async function purgeLegacyFeatureDisableFeedCache() {
+    if (!ext.storage?.local?.remove) return;
+    try {
+        await callExtensionApi(ext.storage.local, 'remove', FEATURE_DISABLE_FEED_LEGACY_CACHE_KEYS.slice());
+    } catch (_) {
+        // reason: an unreachable storage area is not worth failing a fetch over
     }
 }
 
@@ -1223,6 +1243,7 @@ function fetchFeatureDisableFeed() {
             const signature = await fetchFeedSignature(FEATURE_DISABLE_FEED_URL);
             if (!await verifyFeedSignature(text, signature)) return null;
             await writeFeatureDisableFeedCache(text);
+            await purgeLegacyFeatureDisableFeedCache();
             return text;
         } catch (_) {
             // reason: a feed that cannot be fetched is a silent no-op by design

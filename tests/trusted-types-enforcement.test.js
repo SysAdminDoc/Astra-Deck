@@ -2,9 +2,9 @@
 
 // Trusted Types went from convention to invariant in v4.88.3.
 //
-// `core/trusted-html.js` had always sanitized through a real policy, but the
-// browser never required it, so a raw `innerHTML =` on an extension page would
-// have bypassed the sanitizer in silence. Enforcing the directive turned up a
+// `core/trusted-html.js` sanitizes, but it is a content-script module that the
+// popup and side panel never load, so a raw `innerHTML =` on either page had
+// nothing in front of it at all. Enforcing the directive turned up a
 // second problem the same day: `require-trusted-types-for 'script'` makes
 // importScripts a TrustedScriptURL sink, and an MV3 worker that throws there
 // never registers — the extension loads with no background page at all, which
@@ -138,4 +138,46 @@ test('the HTML sink gate covers every Trusted Types sink it claims to', () => {
     const regex = new RegExp(pattern[1].slice(1, -1));
     assert.ok(regex.test('document.write(x)'), 'document.write must match');
     assert.ok(regex.test('document.writeln(x)'), 'document.writeln must match');
+});
+
+test('the sink gate covers compound assignment and the wider sink family', () => {
+    // An adversarial review of the first cut found `el.innerHTML += x` sailing
+    // through: it is as much a TrustedHTML write as a plain assignment and it
+    // is the more natural thing to type. createContextualFragment and the
+    // *Unsafe pair were missing outright.
+    const { PATTERNS } = require('../scripts/check-no-eval.js');
+    const fire = (line) => PATTERNS.some((pattern) => {
+        pattern.regex.lastIndex = 0;
+        return pattern.regex.test(line);
+    });
+
+    for (const hostile of [
+        'el.innerHTML = h;',
+        'el.innerHTML += h;',
+        'el.innerHTML ||= h;',
+        'el.innerHTML ??= h;',
+        'el.innerHTML &&= h;',
+        'el.outerHTML = h;',
+        'el.outerHTML += h;',
+        "el['innerHTML'] = h;",
+        'el["outerHTML"] += h;',
+        'el.insertAdjacentHTML("beforeend", h);',
+        'document.write(h);',
+        'document.writeln(h);',
+        'range.createContextualFragment(h);',
+        'el.setHTMLUnsafe(h);',
+        'Document.parseHTMLUnsafe(h);'
+    ]) {
+        assert.ok(fire(hostile), `${hostile} must be flagged`);
+    }
+
+    for (const safe of [
+        'if (el.innerHTML === h) return 1;',
+        'if (el.innerHTML !== h) return 1;',
+        'const current = el.innerHTML;',
+        'return typeof body.innerHTML === "string" ? body.innerHTML : "";',
+        'parser.parseFromString(html, "text/html");'
+    ]) {
+        assert.ok(!fire(safe), `${safe} must not be flagged`);
+    }
 });

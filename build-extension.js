@@ -694,10 +694,11 @@ function buildExtensionPagesCsp(profile) {
         "script-src 'self'",
         "object-src 'self'",
         'connect-src ' + connectSources.join(' '),
-        // `core/trusted-html.js` has always sanitized through a real Trusted
-        // Types policy, but nothing made the browser require it, so a raw
-        // `innerHTML =` on an extension page would have bypassed the sanitizer
-        // silently. The allowlist names only the policy this project creates.
+        // `core/trusted-html.js` sanitizes, but it is a content-script module
+        // and never loads on the popup or side panel — those pages had no
+        // sanitizer and no enforcement, so a raw `innerHTML =` there would
+        // simply have worked. Enforcement makes it throw. The allowlist names
+        // only the two policies this project creates.
         'require-trusted-types-for \'script\'',
         'trusted-types astraDeck astraDeckLoader'
     ].join('; ');

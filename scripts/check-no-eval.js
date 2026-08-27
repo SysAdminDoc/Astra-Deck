@@ -23,12 +23,15 @@
 //   - `new Function(` constructor invocations (whitespace-tolerant)
 //   - `setTimeout(string` / `setInterval(string` first-arg strings
 //     (the legacy implicit-eval interface)
-//   - HTML-parsing sinks: `.innerHTML =`, `.outerHTML =`,
-//     `insertAdjacentHTML(`, `document.write(`, `document.writeln(`
+//   - HTML-parsing sinks: `.innerHTML`/`.outerHTML` assignment (plain and
+//     compound, dotted or bracketed), `insertAdjacentHTML(`,
+//     `document.write(`, `document.writeln(`, `createContextualFragment(`,
+//     `setHTMLUnsafe(`, `parseHTMLUnsafe(`
 //
 // The HTML sinks joined this gate in v4.88.3. `core/trusted-html.js` builds a
-// real sanitizing Trusted Types policy, but nothing stopped a contributor
-// writing a raw assignment beside it — the only guards were three per-file
+// real sanitizing Trusted Types policy for content scripts, but nothing
+// stopped a contributor writing a raw assignment beside it, and the extension
+// pages never loaded that module at all — the only guards were three per-file
 // regexes buried in two test files. YouTube has enforced
 // `require-trusted-types-for 'script'` on its own pages since 2024-07-25, and
 // the userscript vehicle runs in that page context, so a raw sink there is not
@@ -97,14 +100,25 @@ const PATTERNS = [
     // at runtime is not knowable by this source-text scan.
     { name: 'setTimeout(string)',  regex: /\bsetTimeout\s*\(\s*["'`]/g, allowComment: true },
     { name: 'setInterval(string)', regex: /\bsetInterval\s*\(\s*["'`]/g, allowComment: true },
-    // HTML-parsing sinks. Assignment only: `=` not followed by another
-    // `=`, so `if (el.innerHTML === x)` and the sanitizer's own
-    // serializing reads stay clear. Route new HTML through
-    // `core/trusted-html.js`, or build the tree with DOM calls.
-    { name: '.innerHTML =', regex: /\.innerHTML\s*=(?!=)/g, allowComment: true },
-    { name: '.outerHTML =', regex: /\.outerHTML\s*=(?!=)/g, allowComment: true },
+    // HTML-parsing sinks. Route new HTML through `core/trusted-html.js`, or
+    // build the tree with DOM calls.
+    //
+    // Plain and compound assignment both reach the sink: `el.innerHTML += x`
+    // is every bit as much a TrustedHTML write as `el.innerHTML = x`, and it
+    // is the more natural thing to type. `=(?!=)` keeps comparisons
+    // (`el.innerHTML === x`) and the sanitizer's own serializing reads clear.
+    { name: '.innerHTML =', regex: /\.innerHTML\s*(?:\+|\|\||&&|\?\?)?=(?!=)/g, allowComment: true },
+    { name: '.outerHTML =', regex: /\.outerHTML\s*(?:\+|\|\||&&|\?\?)?=(?!=)/g, allowComment: true },
+    // Bracket access reaches the same setter and reads as deliberate evasion.
+    { name: "['innerHTML'] =", regex: /\[\s*(['"`])(?:inner|outer)HTML\1\s*\]\s*(?:\+|\|\||&&|\?\?)?=(?!=)/g, allowComment: true },
     { name: 'insertAdjacentHTML(', regex: /\.insertAdjacentHTML\s*\(/g, allowComment: true },
     { name: 'document.write(', regex: /\bdocument\s*\.\s*write(?:ln)?\s*\(/g, allowComment: true },
+    // The rest of the TrustedHTML sink family. createContextualFragment parses
+    // a string into nodes; the *Unsafe pair is the Sanitizer API's explicit
+    // opt-out and is named that way for a reason.
+    { name: 'createContextualFragment(', regex: /\.createContextualFragment\s*\(/g, allowComment: true },
+    { name: 'setHTMLUnsafe(', regex: /\.setHTMLUnsafe\s*\(/g, allowComment: true },
+    { name: 'parseHTMLUnsafe(', regex: /\.parseHTMLUnsafe\s*\(/g, allowComment: true },
 ];
 
 // Blank out the CONTENTS of string literals (single, double, backtick) so a
@@ -158,69 +172,77 @@ function stripStringLiteralContents(lineText) {
     return out;
 }
 
-const findings = [];
+// Wrapped so tests can require PATTERNS and exercise the real regexes
+// rather than a copy that can drift from the shipped gate.
+function main() {
+    const findings = [];
 
-const presentScanFiles = SCAN_FILES.filter((f) => fs.existsSync(path.join(REPO_ROOT, f)));
-if (presentScanFiles.length < MIN_SCAN_FILES) {
-    console.error(
-        `[check-no-eval] FAILED — scope collapsed to ${presentScanFiles.length} file(s), below the `
-        + `floor of ${MIN_SCAN_FILES}. A gate that scans almost nothing passes for the wrong reason. `
-        + 'Fix the paths, or lower the floor deliberately if the tree really did shrink.'
-    );
+    const presentScanFiles = SCAN_FILES.filter((f) => fs.existsSync(path.join(REPO_ROOT, f)));
+    if (presentScanFiles.length < MIN_SCAN_FILES) {
+        console.error(
+            `[check-no-eval] FAILED — scope collapsed to ${presentScanFiles.length} file(s), below the `
+            + `floor of ${MIN_SCAN_FILES}. A gate that scans almost nothing passes for the wrong reason. `
+            + 'Fix the paths, or lower the floor deliberately if the tree really did shrink.'
+        );
+        process.exit(1);
+    }
+
+    for (const rel of SCAN_FILES) {
+        const abs = path.join(REPO_ROOT, rel);
+        if (!fs.existsSync(abs)) continue;
+        const src = fs.readFileSync(abs, 'utf8');
+        const lines = src.split('\n');
+        for (const { name, regex, allowComment } of PATTERNS) {
+            // Reset lastIndex because we're reusing the regex across files.
+            regex.lastIndex = 0;
+            let m;
+            while ((m = regex.exec(src)) !== null) {
+                const offset = m.index;
+                const lineIdx = src.slice(0, offset).split('\n').length - 1;
+                const colIdx = offset - src.lastIndexOf('\n', offset - 1) - 1;
+                const lineText = lines[lineIdx] || '';
+                // Skip if the match sits inside a line comment. String-literal
+                // contents are stripped first so `fetch('https://x'); eval(` is
+                // NOT false-greened by the `//` inside the URL.
+                if (allowComment) {
+                    const beforeMatchOnLine = stripStringLiteralContents(lineText.slice(0, colIdx));
+                    if (beforeMatchOnLine.includes('//')) continue;
+                    // Block-comment check is structurally hard; we accept
+                    // the false-positive risk and document an // eslint-
+                    // disable-style escape hatch below.
+                }
+                // Manual opt-out: a same-line `// allow-eval` annotation
+                // suppresses the finding. Useful for the rare case where
+                // eval-shaped code is actually safe (e.g. building a
+                // sandbox + intentional metaprogramming).
+                if (lineText.includes('// allow-eval')) continue;
+                findings.push({
+                    file: rel,
+                    line: lineIdx + 1,
+                    column: colIdx + 1,
+                    pattern: name,
+                    snippet: lineText.trim().slice(0, 100),
+                });
+            }
+        }
+    }
+
+    if (findings.length === 0) {
+        console.log(`[check-no-eval] OK — scanned ${SCAN_FILES.filter((f) => fs.existsSync(path.join(REPO_ROOT, f))).length} files; no eval / Function / string-timer patterns found`);
+        process.exit(0);
+    }
+
+    console.error(`[check-no-eval] FAIL — ${findings.length} finding(s):`);
+    for (const f of findings) {
+        console.error(`  ${f.file}:${f.line}:${f.column}  ${f.pattern}`);
+        console.error(`    ${f.snippet}`);
+    }
+    console.error('');
+    console.error('If a finding is intentional + safe, add the comment `// allow-eval`');
+    console.error('on the same line. Otherwise rewrite to avoid the pattern.');
     process.exit(1);
 }
 
-for (const rel of SCAN_FILES) {
-    const abs = path.join(REPO_ROOT, rel);
-    if (!fs.existsSync(abs)) continue;
-    const src = fs.readFileSync(abs, 'utf8');
-    const lines = src.split('\n');
-    for (const { name, regex, allowComment } of PATTERNS) {
-        // Reset lastIndex because we're reusing the regex across files.
-        regex.lastIndex = 0;
-        let m;
-        while ((m = regex.exec(src)) !== null) {
-            const offset = m.index;
-            const lineIdx = src.slice(0, offset).split('\n').length - 1;
-            const colIdx = offset - src.lastIndexOf('\n', offset - 1) - 1;
-            const lineText = lines[lineIdx] || '';
-            // Skip if the match sits inside a line comment. String-literal
-            // contents are stripped first so `fetch('https://x'); eval(` is
-            // NOT false-greened by the `//` inside the URL.
-            if (allowComment) {
-                const beforeMatchOnLine = stripStringLiteralContents(lineText.slice(0, colIdx));
-                if (beforeMatchOnLine.includes('//')) continue;
-                // Block-comment check is structurally hard; we accept
-                // the false-positive risk and document an // eslint-
-                // disable-style escape hatch below.
-            }
-            // Manual opt-out: a same-line `// allow-eval` annotation
-            // suppresses the finding. Useful for the rare case where
-            // eval-shaped code is actually safe (e.g. building a
-            // sandbox + intentional metaprogramming).
-            if (lineText.includes('// allow-eval')) continue;
-            findings.push({
-                file: rel,
-                line: lineIdx + 1,
-                column: colIdx + 1,
-                pattern: name,
-                snippet: lineText.trim().slice(0, 100),
-            });
-        }
-    }
-}
+if (require.main === module) main();
 
-if (findings.length === 0) {
-    console.log(`[check-no-eval] OK — scanned ${SCAN_FILES.filter((f) => fs.existsSync(path.join(REPO_ROOT, f))).length} files; no eval / Function / string-timer patterns found`);
-    process.exit(0);
-}
-
-console.error(`[check-no-eval] FAIL — ${findings.length} finding(s):`);
-for (const f of findings) {
-    console.error(`  ${f.file}:${f.line}:${f.column}  ${f.pattern}`);
-    console.error(`    ${f.snippet}`);
-}
-console.error('');
-console.error('If a finding is intentional + safe, add the comment `// allow-eval`');
-console.error('on the same line. Otherwise rewrite to avoid the pattern.');
-process.exit(1);
+module.exports = { PATTERNS, SCAN_FILES, MIN_SCAN_FILES, stripStringLiteralContents };
