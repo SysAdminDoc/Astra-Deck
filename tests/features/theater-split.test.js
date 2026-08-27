@@ -139,19 +139,54 @@ test('Theater Split renders its divider and close action into the overlay it own
         assert.equal(divider.getAttribute('role'), 'separator');
         assert.equal(divider.getAttribute('aria-orientation'), 'vertical');
         assert.equal(divider.getAttribute('aria-valuemin'), '25');
-        assert.equal(divider.getAttribute('aria-valuemax'), '85');
-        assert.equal(divider.getAttribute('aria-valuenow'), '68');
-        assert.equal(divider.tabIndex, 0);
+        assert.equal(divider.getAttribute('aria-valuemax'), '100');
+        assert.equal(divider.getAttribute('aria-valuenow'), '100');
+        assert.equal(divider.getAttribute('aria-expanded'), 'false');
+        assert.equal(divider.getAttribute('aria-hidden'), 'true');
+        assert.equal(divider.tabIndex, -1);
         assert.equal(divider.querySelector('.ytkit-divider-pip').children.length, 3);
 
         feature._isSplit = true;
+        feature._setDividerPanelState(divider, true, 68, true);
         divider.dispatchEvent({ type: 'keydown', key: 'ArrowLeft', preventDefault() {} });
         assert.equal(divider.getAttribute('aria-valuenow'), '66',
             'ArrowLeft must shrink the left pane through the live divider handler');
         assert.deepEqual(writes.at(-1), ['ytkit_split_ratio', 66]);
-        divider.dispatchEvent({ type: 'dblclick', preventDefault() {} });
-        assert.equal(divider.getAttribute('aria-valuenow'), '68',
-            'double-click must restore the balanced 68/32 layout');
+
+        const chat = documentRef.createElement('div');
+        let resizedRightPct = null;
+        feature._splitLiveHeader = documentRef.createElement('section');
+        feature._ensureSplitLiveHeader = (rightPct) => {
+            resizedRightPct = rightPct;
+            return 196;
+        };
+        feature._getChatEl = () => chat;
+        divider.dispatchEvent({ type: 'keydown', key: 'ArrowRight', preventDefault() {} });
+        assert.equal(resizedRightPct, 32,
+            'resizing a live split must remeasure the header at the new panel width');
+        assert.equal(chat.style.getPropertyValue('top'), '196px',
+            'resizing a live split must move chat below the remeasured header');
+        assert.equal(chat.style.getPropertyValue('height'), 'calc(100vh - 196px)',
+            'resizing a live split must preserve a non-overlapping chat height');
+        feature._splitLiveHeader = null;
+        feature._getChatEl = () => null;
+
+        divider.dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault() {} });
+        assert.equal(feature._isSplit, false, 'Enter must collapse the comments pane');
+        assert.equal(divider.getAttribute('aria-expanded'), 'false');
+        assert.equal(divider.getAttribute('aria-hidden'), null);
+        assert.equal(divider.dataset.ytkitPanelState, 'closed');
+        assert.equal(divider.style.width, '8px', 'a click-collapse must keep the divider available');
+
+        let reopened = 0;
+        feature._expandSplit = () => {
+            reopened += 1;
+            feature._isSplit = true;
+            feature._setDividerPanelState(divider, true, 66, true);
+        };
+        divider.dispatchEvent({ type: 'click', detail: 0, preventDefault() {} });
+        assert.equal(reopened, 1, 'a synthetic accessible click must reopen comments');
+        assert.equal(divider.getAttribute('aria-expanded'), 'true');
 
         const close = overlay.querySelector('#ytkit-split-close');
         assert.equal(close.tagName, 'BUTTON');
@@ -172,6 +207,114 @@ test('Theater Split renders its divider and close action into the overlay it own
     }
 });
 
+test('Theater Split divider separates a click toggle from a drag resize', () => {
+    const { mod } = loadModule();
+    const documentRef = fakeTreeDocument();
+    const player = documentRef.createElement('div');
+    player.id = 'player-container';
+    const below = documentRef.createElement('div');
+    below.id = 'below';
+    documentRef.body.append(player, below);
+
+    const windowListeners = new Map();
+    const windowRef = {
+        innerWidth: 1000,
+        addEventListener(type, handler) {
+            if (!windowListeners.has(type)) windowListeners.set(type, new Set());
+            windowListeners.get(type).add(handler);
+        },
+        removeEventListener(type, handler) {
+            windowListeners.get(type)?.delete(handler);
+        },
+        dispatch(type, event = {}) {
+            for (const handler of [...(windowListeners.get(type) || [])]) handler(event);
+        },
+        scrollTo() {}
+    };
+    const originalDocument = globalThis.document;
+    const originalWindow = globalThis.window;
+    const originalResizeObserver = globalThis.ResizeObserver;
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    const originalCancelAnimationFrame = globalThis.cancelAnimationFrame;
+    globalThis.document = documentRef;
+    globalThis.window = windowRef;
+    globalThis.ResizeObserver = class {
+        observe() {}
+        disconnect() {}
+    };
+    globalThis.requestAnimationFrame = (callback) => {
+        callback();
+        return 1;
+    };
+    globalThis.cancelAnimationFrame = () => {};
+
+    try {
+        const writes = [];
+        const feature = mod.createStickyVideoFeature({
+            storageWrite: (key, value) => writes.push([key, value])
+        });
+        feature._triggerPlayerResize = () => {};
+        feature._getPlayer = () => player;
+        feature._getBelow = () => below;
+        feature._getChatEl = () => null;
+        feature._videoType = 'live';
+        feature._mountOverlay();
+
+        const wrapper = feature._splitWrapper;
+        const divider = wrapper.querySelector('#ytkit-split-divider');
+        const left = wrapper.querySelector('#ytkit-split-left');
+        wrapper.getBoundingClientRect = () => ({ width: 1000 });
+        left.getBoundingClientRect = () => ({ width: 680 });
+
+        feature._isSplit = true;
+        feature._setDividerPanelState(divider, true, 68, true);
+        let toggles = 0;
+        feature._toggleSplitFromDivider = () => { toggles += 1; };
+
+        divider.dispatchEvent({
+            type: 'mousedown', button: 0, detail: 1, clientX: 680,
+            preventDefault() {}
+        });
+        windowRef.dispatch('mouseup');
+        assert.equal(toggles, 1, 'press and release without movement must toggle the pane');
+
+        divider.dispatchEvent({
+            type: 'mousedown', button: 0, detail: 1, clientX: 680,
+            preventDefault() {}
+        });
+        windowRef.dispatch('mousemove', { clientX: 730 });
+        windowRef.dispatch('mouseup');
+        assert.equal(toggles, 1, 'a drag must not also toggle the pane on release');
+        assert.equal(Math.round(writes.at(-1)[1]), 73,
+            'dragging an open divider must persist the resized split ratio');
+
+        feature._isSplit = false;
+        let expansions = 0;
+        feature._expandSplit = () => {
+            expansions += 1;
+            feature._isSplit = true;
+        };
+        divider.dispatchEvent({
+            type: 'mousedown', button: 0, detail: 1, clientX: 992,
+            preventDefault() {}
+        });
+        windowRef.dispatch('mousemove', { clientX: 900 });
+        windowRef.dispatch('mouseup');
+        assert.equal(expansions, 1, 'dragging the closed divider must reopen comments');
+        assert.equal(Math.round(writes.at(-1)[1]), 85,
+            'a closed-panel drag must open at the bounded pointer position');
+        assert.equal(toggles, 1, 'drag-open must not fire the click toggle afterward');
+
+        feature._unmount();
+    } finally {
+        globalThis.document = originalDocument;
+        globalThis.window = originalWindow;
+        globalThis.ResizeObserver = originalResizeObserver;
+        globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+        globalThis.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
+});
+
 test('Theater Split keeps the premium theme and standalone divider contract', () => {
     const { mod } = loadModule();
     const commentsCss = mod.buildSplitCommentsCss();
@@ -185,8 +328,13 @@ test('Theater Split keeps the premium theme and standalone divider contract', ()
     assert.match(standalone, /setAttribute\('aria-orientation', 'vertical'\)/);
     assert.match(standalone, /setAttribute\('aria-valuenow'/);
     assert.match(standalone, /e\.key === 'ArrowLeft'/);
-    assert.match(standalone, /e\.detail >= 2/);
-    assert.match(standalone, /68/);
+    assert.match(standalone, /DIVIDER_DRAG_THRESHOLD_PX = 4/);
+    assert.match(standalone, /collapseSplit\(false, \{ keepDivider: true \}\)/);
+    assert.match(standalone, /setAttribute\('aria-expanded', String\(open\)\)/);
+    assert.match(standalone, /data-panel-state="closed"/);
+    assert.match(MODULE_SOURCE, /DIVIDER_DRAG_THRESHOLD_PX = 4/);
+    assert.match(MODULE_SOURCE, /_collapseSplit\(false, \{ keepDivider: true \}\)/);
+    assert.match(MODULE_SOURCE, /data-ytkit-panel-state="closed"/);
 
     assert.match(commentsCss, /--ytkit-split-panel: var\(--ytkit-premium-panel, #0d1928\)/);
     assert.match(commentsCss, /html:not\(\[dark\]\):is\(\.ytkit-split-active, \.ytkit-split-open\)/,
@@ -428,7 +576,7 @@ test('stickyVideo keeps comment scrolling native and bounds offscreen rendering'
         'split comments CSS should use the stable surface class');
 });
 
-test('stickyVideo wraps split-pane titles and grows live header height from rendered content', () => {
+test('stickyVideo clamps live titles and keeps responsive header geometry bounded', () => {
     const { mod } = loadModule();
     const css = mod.buildSplitMetaCss();
     const userscriptPath = path.join(config.repoRoot, 'theater-split.user.js');
@@ -451,35 +599,61 @@ test('stickyVideo wraps split-pane titles and grows live header height from rend
         [MODULE_SOURCE, 'extension live header'],
         [theaterSplit, 'standalone live header'],
     ]) {
-        assert.ok(contents.includes('baseHeaderHeight = compact ? 172'),
-            `${label} must reserve enough compact height for wrapped live titles`);
+        assert.ok(contents.includes('const narrow = headerWidth > 0 && headerWidth < 420')
+            && contents.includes('baseHeaderHeight = narrow ? 190 : (compact ? 164'),
+            `${label} must switch to a dedicated narrow live-header layout`);
         assert.ok(contents.includes('grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))'),
             `${label} must bound the native action column so the title cannot measure wider than the pane`);
-        assert.ok(contents.includes("'overflow:visible'"),
-            `${label} must let wrapped live-title content contribute to measured header height`);
+        assert.ok(contents.includes("card.style.gridTemplateAreas = narrow")
+            && contents.includes('\'"channel" "actions" "title" "meta"\''),
+            `${label} must give narrow headers full-width rows for actions and title metadata`);
+        assert.ok(contents.includes("'overflow:hidden'"),
+            `${label} must contain live-header content while its width changes`);
         assert.ok(contents.includes('min-width:0;width:100%;max-width:100%;contain:inline-size;overflow:hidden;'),
             `${label} must contain the action dock instead of letting native controls force hidden overflow`);
         assert.ok(contents.includes('const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));')
-            && contents.includes('width: Math.min(180, naturalWidth)')
+            && contents.includes('const controlWidth = Math.max(32, Math.floor((availableWidth - gapWidth) / naturalMetrics.length));')
+            && contents.includes('width: Math.min(item.naturalWidth, controlWidth)')
             && contents.includes("actions.style.width = '100%'")
             && contents.includes("control.style.setProperty('max-width', `${width}px`, 'important');"),
-            `${label} must cap misreported native action widths before positioning pinned controls`);
+            `${label} must fit every pinned live action inside the measured row`);
         assert.ok(contents.includes("'width:100%'"),
             `${label} must stretch the live title within the bounded card`);
-        assert.ok(contents.includes("'display:block'") && contents.includes("'-webkit-line-clamp:unset'"),
-            `${label} must render live titles as full block text instead of a clamped webkit box`);
-        assert.ok(contents.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(420, Math.round(window.innerHeight * 0.5)))'),
-            `${label} must leave enough measured height for the full wrapped live title`);
-        assert.ok(contents.includes("titleEl.style.setProperty('-webkit-line-clamp', 'unset')"),
-            `${label} must not reintroduce runtime live-title clamping`);
+        assert.ok(contents.includes("'display:-webkit-box'") && contents.includes("'-webkit-line-clamp:2'"),
+            `${label} must clamp long live titles to two readable lines`);
+        assert.ok(contents.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.42)))'),
+            `${label} must cap header growth so chat remains useful`);
+        assert.ok(contents.includes("titleEl.style.setProperty('-webkit-line-clamp', '2')"),
+            `${label} must preserve the live-title clamp after metadata refreshes`);
         assert.ok(contents.includes("titleEl.style.setProperty('white-space', 'normal')")
             && contents.includes("titleEl.style.setProperty('overflow-wrap', 'anywhere')")
-            && contents.includes("titleEl.style.setProperty('word-break', 'break-word')"),
+            && contents.includes("titleEl.style.setProperty('word-break', 'normal')"),
             `${label} must reapply live-title wrapping after each metadata refresh`);
-        assert.ok(contents.includes('const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);'),
-            `${label} must measure the wrapped title before offsetting chat`);
+        assert.ok(contents.includes('const measuredCardHeight = Math.max(card?.scrollHeight || 0, card?.getBoundingClientRect?.().height || 0);')
+            && contents.includes('const measuredHeaderHeight = Math.ceil((measuredCardHeight || baseHeaderHeight - outerVerticalPadding) + outerVerticalPadding);'),
+            `${label} must measure the clamped card with its responsive outer padding`);
+        assert.ok(contents.includes('const dateInfo = supplementalInfo || dateText;'),
+            `${label} must avoid repeating upload dates while a live start status is available`);
+        assert.ok(contents.includes("replace(/\\swatching$/i, ' watching now')")
+            && contents.includes("replace(/\\s+views$/i, ' watching now')"),
+            `${label} must label fallback live audience counts clearly`);
+        assert.ok(contents.includes('const liveHeaderTop =')
+            && contents.includes("chatEl.style.setProperty('top', `${liveHeaderTop}px`, 'important')")
+            && contents.includes("chatEl.style.setProperty('height', `calc(100vh - ${liveHeaderTop}px)`, 'important')"),
+            `${label} must remeasure and reposition chat during divider resizing`);
         assert.ok(contents.includes('return liveHeaderHeight;'),
             `${label} must return the measured height so live chat starts below the title area`);
+        assert.ok(contents.includes('.ytkit-split-live-card')
+            && contents.includes('background: var(--')
+            && contents.includes('-raised) !important;'),
+            `${label} must theme the live card through the active split palette`);
+        assert.ok(contents.includes('[data-ytkit-split-live-pinned="1"] *')
+            && contents.includes('background: var(--')
+            && contents.includes('-control) !important;')
+            && contents.includes('-webkit-text-fill-color: var(--'),
+            `${label} must keep pinned live actions legible in dark and light themes`);
+        assert.ok(!contents.includes("button.style.setProperty('border-radius', '999px', 'important')"),
+            `${label} must not turn pinned live actions into oversized pills`);
     }
 });
 
