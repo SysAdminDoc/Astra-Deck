@@ -26,7 +26,9 @@
 //   - HTML-parsing sinks: `.innerHTML`/`.outerHTML` assignment (plain and
 //     compound, dotted or bracketed), `insertAdjacentHTML(`,
 //     `document.write(`, `document.writeln(`, `createContextualFragment(`,
-//     `setHTMLUnsafe(`, `parseHTMLUnsafe(`
+//     `setHTMLUnsafe(`, `parseHTMLUnsafe(`, an `innerHTML:`/`outerHTML:`
+//     object-literal property (Object.assign reaches the same setter), and
+//     `.srcdoc =`
 //
 // The HTML sinks joined this gate in v4.88.3. `core/trusted-html.js` builds a
 // real sanitizing Trusted Types policy for content scripts, but nothing
@@ -116,6 +118,13 @@ const PATTERNS = [
     // The rest of the TrustedHTML sink family. createContextualFragment parses
     // a string into nodes; the *Unsafe pair is the Sanitizer API's explicit
     // opt-out and is named that way for a reason.
+    // An object literal reaches the same setter through Object.assign, and
+    // this repository uses Object.assign heavily — the likeliest way a sink
+    // would actually arrive.
+    { name: '{ innerHTML: }', regex: /[{,]\s*(?:inner|outer)HTML\s*:/g, allowComment: true },
+    // srcdoc parses HTML into a nested document. trusted-html.js strips it
+    // from sanitized output for exactly that reason.
+    { name: '.srcdoc =', regex: /\.srcdoc\s*(?:\+|\|\||&&|\?\?)?=(?!=)/g, allowComment: true },
     { name: 'createContextualFragment(', regex: /\.createContextualFragment\s*\(/g, allowComment: true },
     { name: 'setHTMLUnsafe(', regex: /\.setHTMLUnsafe\s*\(/g, allowComment: true },
     { name: 'parseHTMLUnsafe(', regex: /\.parseHTMLUnsafe\s*\(/g, allowComment: true },

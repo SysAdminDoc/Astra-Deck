@@ -47,13 +47,17 @@ function canaryClientVersionDate(version) {
     return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
+// Returns null only when the canary genuinely cannot be read. The caller
+// treats that as a failure rather than as "nothing is stale": an unreadable
+// canary silently removed half this gate's criterion, which is the wrong
+// direction for a freshness check.
 function readCanaryDate() {
     if (!fs.existsSync(CANARY_PATH)) return null;
     try {
         const parsed = JSON.parse(fs.readFileSync(CANARY_PATH, 'utf8'));
         return canaryClientVersionDate(parsed.youtubeClientVersion);
     } catch (_) {
-        // reason: an unreadable canary must not mask selector staleness
+        // reason: a corrupt canary is reported by the caller, not swallowed
         return null;
     }
 }
@@ -75,6 +79,9 @@ function assessSurfaces(surfaceMap, { today, canaryDate, staleAfterDays = STALE_
         const olderThanCanary = Boolean(lastVerified && canaryDate && lastVerified < canaryDate);
         const reasons = [];
         if (!lastVerified) reasons.push('no lastVerified date');
+        // A forward-dated pack used to read as fresh forever. A typo in the
+        // year is the likeliest way that happens.
+        if (age !== null && age < 0) reasons.push(`dated ${lastVerified}, which is in the future`);
         if (age !== null && age > staleAfterDays) reasons.push(`${age} days old (limit ${staleAfterDays})`);
         if (olderThanCanary) reasons.push(`predates the canary's YouTube build ${canaryDate}`);
         rows.push({
@@ -156,11 +163,19 @@ function main(argv) {
     const record = argv.includes('--record');
 
     if (record) {
+        // acceptedOn is carried forward for a surface already on the list.
+        // Re-stamping every entry on each run destroyed the one property that
+        // made this file useful: how long each piece of debt has been owed.
+        const previous = readExceptions().surfaces || {};
         const surfaces = {};
         for (const row of rows.filter((entry) => entry.stale && entry.highChurn).sort((a, b) => a.surface.localeCompare(b.surface))) {
+            const prior = previous[row.surface];
+            const carried = prior && prior.lastVerified === row.lastVerified
+                ? prior.acceptedOn
+                : null;
             surfaces[row.surface] = {
                 lastVerified: row.lastVerified,
-                acceptedOn: today,
+                acceptedOn: carried || today,
                 reason: 'Awaiting the browser-gated capture tracked in Roadmap_Blocked.md.'
             };
         }
@@ -177,7 +192,20 @@ function main(argv) {
         return;
     }
 
-    const { problems, outstanding } = evaluate(rows, readExceptions());
+    const exceptions = readExceptions();
+    const { problems, outstanding } = evaluate(rows, exceptions);
+    if (!readCanaryDate()) {
+        problems.unshift(
+            'tests/fixtures/critical-selector-canary.json is missing or carries no readable '
+            + 'youtubeClientVersion, so surfaces cannot be compared against the YouTube build '
+            + 'the canary last saw. Restore it rather than running without half this check.');
+    }
+    if (Number(exceptions.staleAfterDays) !== STALE_AFTER_DAYS) {
+        problems.push(
+            `scripts/selector-evidence-exceptions.json records staleAfterDays `
+            + `${exceptions.staleAfterDays}, but the gate uses ${STALE_AFTER_DAYS}; `
+            + 're-record the exceptions after changing the limit.');
+    }
 
     if (problems.length) {
         for (const problem of problems) console.error(`[selector-evidence] ${problem}`);

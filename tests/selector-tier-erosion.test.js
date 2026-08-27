@@ -36,7 +36,13 @@ function makeDocument(presentSelectors) {
     return { root, node };
 }
 
-function loadSelectors(presentSelectors) {
+// The narrow harness loads only the player pack, which is enough to reason
+// about one surface. The two whole-catalogue assertions below need every pack.
+function loadAllSelectors() {
+    return loadSelectors([], { allPacks: true });
+}
+
+function loadSelectors(presentSelectors, { allPacks = false } = {}) {
     const { root } = makeDocument(presentSelectors);
     const context = {
         console,
@@ -66,9 +72,15 @@ function loadSelectors(presentSelectors) {
     context.globalThis = context;
     vm.createContext(context);
 
+    const packs = allPacks
+        ? fs.readdirSync(path.join(repoRoot, 'extension/core/selector-packs'))
+            .filter((name) => name.endsWith('.js'))
+            .sort()
+            .map((name) => `extension/core/selector-packs/${name}`)
+        : ['extension/core/selector-packs/player.js'];
     for (const rel of [
         'extension/core/registry.js',
-        'extension/core/selector-packs/player.js',
+        ...packs,
         'extension/core/selectors.js'
     ]) {
         vm.runInContext(fs.readFileSync(path.join(repoRoot, rel), 'utf8'), context, { filename: rel });
@@ -157,4 +169,39 @@ test('a surface resolving on its stable chain stays healthy', () => {
     const entry = report.features.find((feature) => feature.id === 'stickyVideo');
     assert.notEqual(entry.status, 'degraded', 'a clean stable hit must not raise a warning');
     assert.equal(entry.reasons.some((candidate) => candidate.kind === 'selector-fallback'), false);
+});
+
+test('hook chains carry a tier of their own', () => {
+    // Hook lookups record under `surface.hook`, which is not a key in
+    // SurfaceSelectorMap. Before this split every hook hit reported 'unknown'
+    // and hook-chain erosion was invisible — hooks have their own stable and
+    // fallback arrays, so they erode exactly the same way surfaces do.
+    const core = loadAllSelectors();
+    const surface = Object.entries(core.SurfaceSelectorMap)
+        .find(([, entry]) => entry.hooks && Object.keys(entry.hooks).length);
+    assert.ok(surface, 'at least one surface must declare hooks');
+
+    const [name, entry] = surface;
+    const hookName = Object.keys(entry.hooks).find((hook) =>
+        entry.hooks[hook].stable?.length && entry.hooks[hook].fallback?.length);
+    assert.ok(hookName, 'a hook with both chains is needed to tell them apart');
+    const hook = entry.hooks[hookName];
+
+    assert.equal(core.selectorTier(`${name}.${hookName}`, hook.stable[0]), 'stable');
+    assert.equal(core.selectorTier(`${name}.${hookName}`, hook.fallback[0]), 'fallback');
+    assert.equal(core.selectorTier(`${name}.${hookName}`, '#nowhere'), 'unknown');
+    assert.equal(core.selectorTier(`${name}.noSuchHook`, hook.stable[0]), 'unknown',
+        'an unknown hook must not fall back to the parent surface chain');
+});
+
+test('a forward-dated or duplicated selector does not confuse the tier', () => {
+    const core = loadAllSelectors();
+    // No shipped surface may share a selector between its own chains, or the
+    // tier would be ambiguous and erosion unreportable.
+    for (const [name, entry] of Object.entries(core.SurfaceSelectorMap)) {
+        const stable = new Set(entry.stable || []);
+        const shared = (entry.fallback || []).filter((selector) => stable.has(selector));
+        assert.equal(shared.length, 0,
+            `${name} repeats stable selector(s) in its fallback chain: ${shared.join(', ')}`);
+    }
 });

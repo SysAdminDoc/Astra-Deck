@@ -131,7 +131,13 @@
     // fallback broke too — across 29 high-churn surfaces.
     function selectorTier(surface, selector) {
         if (!surface || !selector) return 'unknown';
-        const entry = SurfaceSelectorMap[surface];
+        // Hook lookups record under `surface.hook`, and hooks carry their own
+        // stable/fallback chains. Without this split every hook hit reported
+        // 'unknown' and hook-chain erosion was invisible.
+        const [surfaceName, hookName] = String(surface).split('.');
+        const surfaceEntry = SurfaceSelectorMap[surfaceName];
+        if (!surfaceEntry) return 'unknown';
+        const entry = hookName ? surfaceEntry.hooks?.[hookName] : surfaceEntry;
         if (!entry) return 'unknown';
         if (Array.isArray(entry.stable) && entry.stable.includes(selector)) return 'stable';
         if (Array.isArray(entry.fallback) && entry.fallback.includes(selector)) return 'fallback';
