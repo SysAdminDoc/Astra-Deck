@@ -70,6 +70,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Fixed
 
+- README no longer claims a signed release manifest. It promised "a signed
+  release manifest over the built artifacts" two lines after an honest
+  paragraph saying releases ship unsigned, and no signing key is published, so
+  no `SHA256SUMS.sig` exists on any release. It now describes what releases
+  actually carry — an SBOM, `release-manifest.json` and `SHA256SUMS`, which
+  prove a download is intact but not who built it — and `npm run check` fails
+  if the signed claim reappears before a key does.
+
 - Selector token fixtures were rebuilt from the captures currently on disk.
   They had drifted: regenerating produced a 2,900-line change in the watch
   fixture alone, meaning the committed fixtures no longer matched their own

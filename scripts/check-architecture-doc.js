@@ -55,9 +55,34 @@ function popupCoreModules() {
     return [...new Set([...popup.matchAll(/(core\/[a-z-]+\.js)/g)].map((m) => m[1]))].sort();
 }
 
+// A published signing key is what makes a "signed" claim true. Until
+// allowed-signers carries one, `SHA256SUMS.sig` is never produced and
+// README.md must not promise provenance it cannot deliver — it did, two lines
+// after an honest paragraph saying the opposite.
+function signingKeyIsPublished() {
+    const signers = read('allowed-signers');
+    return signers
+        .split('\n')
+        .some((line) => line.trim() && !line.trim().startsWith('#'));
+}
+
+function checkSigningClaims() {
+    if (signingKeyIsPublished()) return [];
+    const problems = [];
+    const readme = read('README.md');
+    for (const [index, line] of readme.split('\n').entries()) {
+        if (!/signed\s+(release\s+)?manifest/i.test(line)) continue;
+        // An explicit denial is exactly what we want to see here.
+        if (/\bnot\b|\bno\b|unverified|absent|yet/i.test(line)) continue;
+        problems.push(`README.md:${index + 1} claims a signed manifest, but allowed-signers `
+            + 'publishes no key and no SHA256SUMS.sig is produced');
+    }
+    return problems;
+}
+
 function check() {
     const doc = fs.readFileSync(DOC_PATH, 'utf8');
-    const problems = [];
+    const problems = [...checkSigningClaims()];
 
     // 1. Message types. Every handled type must be named, and the doc must not
     //    name a type the worker does not handle — the original defect was a
@@ -122,9 +147,17 @@ function main() {
         process.exitCode = 1;
         return;
     }
-    console.log('[architecture-doc] OK — message types, test count and popup bundle match source');
+    console.log('[architecture-doc] OK — message types, test count, popup bundle and '
+        + 'release-signing claims match source');
 }
 
 if (require.main === module) main();
 
-module.exports = { backgroundMessageTypes, check, popupCoreModules, testCount };
+module.exports = {
+    backgroundMessageTypes,
+    check,
+    checkSigningClaims,
+    popupCoreModules,
+    signingKeyIsPublished,
+    testCount
+};
