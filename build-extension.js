@@ -693,7 +693,13 @@ function buildExtensionPagesCsp(profile) {
     return [
         "script-src 'self'",
         "object-src 'self'",
-        'connect-src ' + connectSources.join(' ')
+        'connect-src ' + connectSources.join(' '),
+        // `core/trusted-html.js` has always sanitized through a real Trusted
+        // Types policy, but nothing made the browser require it, so a raw
+        // `innerHTML =` on an extension page would have bypassed the sanitizer
+        // silently. The allowlist names only the policy this project creates.
+        'require-trusted-types-for \'script\'',
+        'trusted-types astraDeck astraDeckLoader'
     ].join('; ');
 }
 

@@ -23,6 +23,17 @@
 //   - `new Function(` constructor invocations (whitespace-tolerant)
 //   - `setTimeout(string` / `setInterval(string` first-arg strings
 //     (the legacy implicit-eval interface)
+//   - HTML-parsing sinks: `.innerHTML =`, `.outerHTML =`,
+//     `insertAdjacentHTML(`, `document.write(`, `document.writeln(`
+//
+// The HTML sinks joined this gate in v4.88.3. `core/trusted-html.js` builds a
+// real sanitizing Trusted Types policy, but nothing stopped a contributor
+// writing a raw assignment beside it — the only guards were three per-file
+// regexes buried in two test files. YouTube has enforced
+// `require-trusted-types-for 'script'` on its own pages since 2024-07-25, and
+// the userscript vehicle runs in that page context, so a raw sink there is not
+// a style problem: it throws. Reads of `.innerHTML` are untouched; the
+// sanitizer itself serializes through one.
 //
 // Exit 0 on no findings; exit 1 with per-finding line/column otherwise.
 
@@ -86,6 +97,14 @@ const PATTERNS = [
     // at runtime is not knowable by this source-text scan.
     { name: 'setTimeout(string)',  regex: /\bsetTimeout\s*\(\s*["'`]/g, allowComment: true },
     { name: 'setInterval(string)', regex: /\bsetInterval\s*\(\s*["'`]/g, allowComment: true },
+    // HTML-parsing sinks. Assignment only: `=` not followed by another
+    // `=`, so `if (el.innerHTML === x)` and the sanitizer's own
+    // serializing reads stay clear. Route new HTML through
+    // `core/trusted-html.js`, or build the tree with DOM calls.
+    { name: '.innerHTML =', regex: /\.innerHTML\s*=(?!=)/g, allowComment: true },
+    { name: '.outerHTML =', regex: /\.outerHTML\s*=(?!=)/g, allowComment: true },
+    { name: 'insertAdjacentHTML(', regex: /\.insertAdjacentHTML\s*\(/g, allowComment: true },
+    { name: 'document.write(', regex: /\bdocument\s*\.\s*write(?:ln)?\s*\(/g, allowComment: true },
 ];
 
 // Blank out the CONTENTS of string literals (single, double, backtick) so a

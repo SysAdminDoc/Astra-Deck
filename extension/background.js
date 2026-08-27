@@ -69,17 +69,51 @@ function callExtensionApi(target, method, ...args) {
 // converge here so their read/validate/write cycles cannot race each other.
 // Firefox's background.scripts entry still loads background.js as a classic
 // worker script, where importScripts is available as well.
+// `require-trusted-types-for 'script'` (added to the extension-pages CSP in
+// v4.88.3) makes importScripts a TrustedScriptURL sink, and an MV3 worker that
+// throws here never registers at all — the extension loads with no background
+// page. The policy is created inline rather than imported because the module
+// that owns the HTML policy is itself one of the scripts being imported.
+//
+// It is deliberately not the `astraDeck` policy: creating a duplicate name
+// throws, and `core/trusted-html.js` needs that name later. The CSP allowlists
+// both. Only same-directory `core/*.js` paths are minted, so the policy cannot
+// be borrowed to load anything else.
+const _loaderPolicy = (() => {
+    if (typeof trustedTypes === 'undefined' || !trustedTypes.createPolicy) return null;
+    try {
+        return trustedTypes.createPolicy('astraDeckLoader', {
+            createScriptURL(value) {
+                const url = String(value);
+                if (!/^core\/[a-z0-9-]+\.js$/.test(url)) {
+                    throw new TypeError('Refused to mint a script URL outside core/');
+                }
+                return url;
+            }
+        });
+    } catch (_) {
+        // reason: an engine without Trusted Types needs no policy at all
+        return null;
+    }
+})();
+
+function _coreScriptUrl(pathname) {
+    return _loaderPolicy ? _loaderPolicy.createScriptURL(pathname) : pathname;
+}
+
 if (typeof importScripts === 'function') {
     importScripts(
-        'core/companion-ports.js',
-        'core/cookie-handoff.js',
-        'core/remote-list-scope.js',
-        'core/settings-schema.js',
-        'core/persisted-domains.js',
-        'core/policy-profile.js',
-        'core/settings-sync.js',
-        'core/settings-controller.js',
-        'core/credential-vault.js'
+        ...[
+            'core/companion-ports.js',
+            'core/cookie-handoff.js',
+            'core/remote-list-scope.js',
+            'core/settings-schema.js',
+            'core/persisted-domains.js',
+            'core/policy-profile.js',
+            'core/settings-sync.js',
+            'core/settings-controller.js',
+            'core/credential-vault.js'
+        ].map(_coreScriptUrl)
     );
 }
 
