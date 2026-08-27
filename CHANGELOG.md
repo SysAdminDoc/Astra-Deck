@@ -6,6 +6,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.88.3] (2026-08-27)
+
 ### Security
 
 - Privileged page-only messages now check the sender's origin. The background

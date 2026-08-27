@@ -8,6 +8,46 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
 > name those paths are implemented THERE, against that repo's tree; the paths
 > are kept verbatim because they still resolve inside the companion repo.
 
+## P1 — Premise disproven, needs a product decision (2026-08-27)
+
+- [ ] P1 — Give settings operations a live region
+  Why: save, import, export, and sync produce no announcement, and the toast peel is explicitly blocked on this primitive.
+  Evidence: zero `aria-live`/`role="status"` in `extension/core/settings-controller.js`, `settings-sync.js`, `settings-import-transaction.js`, and `features/subscription-groups/index.js`; `extension/core/toast.js:13-17` names the missing "live-region overlay primitive" as the reason the toast DOM layer stayed in the monolith.
+  Touches: `extension/core/toast.js`, `extension/core/toast-dom.js`, `extension/core/settings-controller.js`, `extension/core/settings-sync.js`, `extension/core/settings-import-transaction.js`, `extension/ytkit.js`.
+  Acceptance: one shared polite live region announces settings save, import, export, and sync outcomes in the overlay and the popup; `scripts/audit-overlays-a11y.js` asserts its presence; the toast DOM layer moves out of `ytkit.js` behind the same primitive.
+  Complexity: M
+  Blocker: the item's premise does not hold, so it cannot be implemented as
+  written. Measured 2026-08-27: both surfaces already have a polite live
+  region, and the named operations already reach one.
+
+  - The overlay's `#ytkit-panel-status` is created with `role="status"` and
+    `aria-live="polite"` (`extension/ytkit.js:42257-42261`) and is written by
+    22 `setPanelStatus` call sites, including category reset and its undo
+    (`:41789`, `:41798`), export (`:42966`), and import with its undo
+    (`:43001`-`:43052`).
+  - The popup's `#status` carries `aria-live="polite"`
+    (`extension/popup.html:452`) and is written by 102 `showStatus` call sites.
+  - Subscription-groups announces through 50 toast calls, and
+    `core/toast-dom.js:122-123` sets `role` and `aria-live` on every toast.
+  - The four modules the item cites as having "zero live regions" —
+    `settings-controller.js`, `settings-sync.js`,
+    `settings-import-transaction.js`, `subscription-groups` — are logic that
+    also runs in the service worker and under Node. They correctly own no DOM;
+    the UI layer announces their results.
+  - An instant-apply toggle is announced by its own `aria-checked` transition,
+    which is the standard behaviour. A second announcement would be noise.
+
+  What did ship from it: `scripts/audit-overlays-a11y.js` now pins both live
+  regions and the fact that settings outcomes route through them, so removing
+  either attribute fails the gate instead of silently ending announcements
+  (proved by mutation).
+
+  The decision this needs from a human: whether to consolidate the two
+  per-surface regions into one shared primitive anyway. That would be a
+  refactor with no user-visible gain, and adding a third region while two
+  already work would make readers compete. Retire the item or restate what it
+  should deliver.
+
 ## P1 — Release signing, awaiting the maintainer's key (2026-08-21)
 
 - [ ] P1 — Publish the release signing key so `SHA256SUMS` carries a verifiable signature
