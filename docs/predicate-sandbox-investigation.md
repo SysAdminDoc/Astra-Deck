@@ -61,7 +61,7 @@ the user's machine. The browser is already lost in that scenario.
   the body still pierces the curtain.
 - We *cannot* shadow `globalThis` or block re-entry into `Function`/`eval`
   reliably.
-- **Verdict:** workable for trusted users but not robust enough to ship default-
+- **Verdict:** workable for trusted users but not safe enough to ship default-
   off as "safe."
 
 ### Option B, `iframe[sandbox]` worker (rejected, too heavy)

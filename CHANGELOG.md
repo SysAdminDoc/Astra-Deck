@@ -6,6 +6,29 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.88.1] (2026-08-27)
+
+### Fixed
+
+- Opening the YouTube download picker no longer closes it during the navigation
+  rule's registration callback. The picker stays open while the same video is
+  active and still closes when YouTube advances to another video.
+
+- A missing Astra Downloader executable now reaches the setup panel even when
+  the native messaging callback never returns. Companion discovery has its own
+  deadline, and a confirmed missing host goes straight to the install choices
+  without attempting a protocol launch that cannot work.
+
+- Firefox packages now load the shared background dependencies before the
+  event-page entry point. The companion port catalogue and guarded fetch proxy
+  are available when `background.js` starts, so native bootstrap can continue
+  into real loopback health checks and downloads.
+
+- Firefox 152 through 154 can reach Astra Downloader despite its broken
+  port-qualified host-permission matching. Firefox packages request the
+  loopback host once, while the content security policy and background proxy
+  still restrict requests to Astra's six reviewed ports.
+
 ## [4.88.0] (2026-08-26)
 
 ### Added
