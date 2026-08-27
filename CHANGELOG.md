@@ -6,6 +6,28 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.87.0] (2026-08-26)
+
+### Fixed
+
+- The downloader panel no longer reports "Astra Downloader is not running" while
+  the companion is open and answering. The extension pairs itself with the
+  companion over loopback, and pairing is what authorizes it to read the bearer
+  token every later request needs. It just never went back to ask. After a
+  successful pair it retried only the native-messaging channel, and on a fresh
+  Chrome or Edge install that channel isn't registered yet, so the retry failed
+  and the token it had just earned went unread until the next 30 second check.
+  The panel now re-reads the companion's health right after pairing, so the
+  first download works instead of the one you try a minute later.
+
+### Changed
+
+- Companion 2.13.0 answers the endpoint challenge this extension has always
+  sent, so signed-in downloads can carry their YouTube cookies again. The check
+  proves the program holding the companion port is the one that issued the
+  token, and older companions that can't answer keep downloading without a
+  session rather than failing.
+
 ## [4.86.7] (2026-08-26)
 
 ### Changed
