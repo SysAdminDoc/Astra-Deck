@@ -180,7 +180,6 @@
             _navRuleId: 'sponsorBlockNav',
             _styleEl: null,
             _barSegments: [],
-            _attributionEl: null,
             _barObserver: null,
             _reloadTimer: null,
             _antiAdblockTimer: null,
@@ -608,37 +607,6 @@
                 if (this._skipTimer) { clearTimeout(this._skipTimer); this._skipTimer = null; }
             },
 
-            _createAttribution() {
-                const link = document.createElement('a');
-                const label = t('sponsorBlockDataAttribution', 'SponsorBlock data');
-                const title = t('sponsorBlockDataAttributionTitle', 'SponsorBlock API and database data, licensed CC BY-NC-SA 4.0');
-                link.className = 'ytkit-sb-attribution';
-                link.href = 'https://sponsor.ajay.app/';
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.textContent = label;
-                link.title = title;
-                link.setAttribute('aria-label', title);
-                link.dataset.ytkitLicense = 'CC BY-NC-SA 4.0';
-                link.addEventListener('click', event => event.stopPropagation());
-                return link;
-            },
-
-            _renderAttribution() {
-                const host = document.getElementById('ytkit-player-controls')
-                    || document.querySelector('.ytp-right-controls');
-                if (!host) return;
-                if (this._attributionEl?.isConnected && this._attributionEl.parentNode === host) return;
-                this._attributionEl?.remove();
-                this._attributionEl = this._createAttribution();
-                host.insertBefore(this._attributionEl, host.firstChild || null);
-            },
-
-            _clearAttribution() {
-                this._attributionEl?.remove();
-                this._attributionEl = null;
-            },
-
             _renderBarSegments() {
                 this._clearBarSegments();
                 const video = getMainVideoElement();
@@ -646,7 +614,6 @@
                 if (!video || !progressBar || !video.duration) return;
                 const duration = video.duration;
                 const enabledCats = this._getEnabledCategories();
-                let renderedCount = 0;
                 for (const seg of this._segments) {
                     if (!enabledCats.includes(seg.category)) continue;
                     const [start, end] = seg.segment;
@@ -671,15 +638,12 @@
                     }
                     progressBar.appendChild(bar);
                     this._barSegments.push(bar);
-                    renderedCount++;
                 }
-                if (renderedCount > 0) this._renderAttribution();
             },
 
             _clearBarSegments() {
                 this._barSegments.forEach(el => el.remove());
                 this._barSegments = [];
-                this._clearAttribution();
             },
 
             _noteAntiAdblockEvent(type) {
@@ -981,46 +945,6 @@
                 const self = this;
                 this._styleEl = injectStyle(`
                     .ytkit-sb-segment { border-radius: 1px; }
-                    .ytkit-sb-attribution {
-                        display: inline-flex !important;
-                        align-items: center !important;
-                        align-self: center !important;
-                        height: 22px !important;
-                        margin: 0 5px !important;
-                        padding: 0 7px !important;
-                        border: 1px solid rgba(255, 255, 255, 0.24) !important;
-                        border-radius: 8px !important;
-                        background: rgba(10, 14, 20, 0.78) !important;
-                        color: rgba(255, 255, 255, 0.9) !important;
-                        font: 600 10px/1.2 Roboto, Arial, sans-serif !important;
-                        letter-spacing: 0.01em !important;
-                        text-decoration: none !important;
-                        white-space: nowrap !important;
-                        pointer-events: auto !important;
-                    }
-                    .ytkit-sb-attribution:hover,
-                    .ytkit-sb-attribution:focus-visible {
-                        border-color: rgba(255, 255, 255, 0.5) !important;
-                        background: rgba(25, 31, 40, 0.96) !important;
-                        color: #fff !important;
-                        outline: 2px solid rgba(255, 107, 74, 0.72) !important;
-                        outline-offset: 1px !important;
-                    }
-                    html:not([dark]) .ytkit-sb-attribution {
-                        border-color: rgba(15, 23, 42, 0.2) !important;
-                        background: rgba(255, 255, 255, 0.94) !important;
-                        color: #334155 !important;
-                    }
-                    html:not([dark]) .ytkit-sb-attribution:hover,
-                    html:not([dark]) .ytkit-sb-attribution:focus-visible {
-                        border-color: rgba(15, 23, 42, 0.42) !important;
-                        background: #fff !important;
-                        color: #0f172a !important;
-                    }
-                    html .ytp-right-controls > .ytkit-sb-attribution,
-                    #ytkit-player-controls > .ytkit-sb-attribution {
-                        display: inline-flex !important;
-                    }
                     .ytkit-anti-adblock-recovery {
                         position: fixed !important;
                         right: max(18px, env(safe-area-inset-right)) !important;

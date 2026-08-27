@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.88.2] (2026-08-27)
+
+### Changed
+
+- The SponsorBlock "SponsorBlock data" badge no longer sits in the player
+  control row next to the captions and download buttons. Timeline segment
+  markers are unchanged, and the CC BY-NC-SA 4.0 credit for SponsorBlock's API
+  and database stays on the feature's settings entry and on the DeArrow title
+  credit.
+
 ## [4.88.1] (2026-08-27)
 
 ### Fixed

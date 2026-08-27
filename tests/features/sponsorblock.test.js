@@ -181,7 +181,7 @@ test('SponsorBlock rejects unallowlisted API settings and stays on the canonical
     }
 });
 
-test('SponsorBlock attributes rendered timeline data and removes the label with the markers', () => {
+test('SponsorBlock renders timeline markers without adding a player-bar label', () => {
     const { createSponsorBlockFeature } = require('../../extension/features/sponsorblock');
     const originalDocument = globalThis.document;
     const makeNode = (tagName) => ({
@@ -237,18 +237,12 @@ test('SponsorBlock attributes rendered timeline data and removes the label with 
         feature._renderBarSegments();
 
         assert.equal(progressBar.children.length, 1, 'the segment marker must render');
-        assert.equal(playerControls.children.length, 1, 'one attribution label must render beside player data');
-        const attribution = playerControls.children[0];
-        assert.equal(attribution.textContent, 'SponsorBlock data');
-        assert.equal(attribution.href, 'https://sponsor.ajay.app/');
-        assert.equal(attribution.target, '_blank');
-        assert.equal(attribution.rel, 'noopener noreferrer');
-        assert.equal(attribution.dataset.ytkitLicense, 'CC BY-NC-SA 4.0');
-        assert.match(attribution.attributes['aria-label'], /CC BY-NC-SA 4\.0/);
+        assert.equal(playerControls.children.length, 0,
+            'v4.88.2 removed the player-bar label; nothing may be inserted into the control row');
 
         feature._clearBarSegments();
         assert.equal(progressBar.children.length, 0, 'segment markers must be removed together');
-        assert.equal(playerControls.children.length, 0, 'attribution must not outlive the data it labels');
+        assert.equal(playerControls.children.length, 0, 'the control row must stay untouched');
     } finally {
         if (originalDocument === undefined) delete globalThis.document;
         else globalThis.document = originalDocument;
