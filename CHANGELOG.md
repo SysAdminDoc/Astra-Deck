@@ -36,6 +36,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- Feature health now reports stable-chain erosion. The resolver walks a
+  surface's stable selectors then its fallbacks and returns the first match,
+  and it only ever recorded that *something* matched — so a surface whose
+  stable chain had already broken looked perfectly healthy right up until the
+  fallback broke too. Health rows now carry which tier resolved, and a feature
+  living on a backup rule is reported as degraded with the surface named.
+
 - Selector evidence has a freshness gate. Every pack has always declared
   `lastVerified`, `highChurn`, and `needsFreshCapture`, but nothing read them:
   all 35 surfaces claimed fresh evidence while carrying dates up to 100 days

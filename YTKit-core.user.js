@@ -8522,6 +8522,11 @@ if (typeof globalThis !== "undefined") {
         return row?.lastOutcome === 'miss';
     }
 
+    // the resolver walks `[...stable, ...fallback]` and recorded only that
+    function isSurfaceOnFallback(row) {
+        return row?.lastOutcome === 'hit' && row?.lastTier === 'fallback';
+    }
+
     function buildFeatureHealthReport(input = {}) {
         const now = Number.isFinite(input.now) ? input.now : Date.now();
         const features = Array.isArray(input.features) ? input.features : [];
@@ -8611,16 +8616,28 @@ if (typeof globalThis !== "undefined") {
 
             const attributed = attribution.get(id);
             for (const surfaceRow of Array.isArray(attributed?.surfaces) ? attributed.surfaces : []) {
-                if (!isSurfaceBroken(surfaceRow)) continue;
-                status = worse(status, STATUS_DEGRADED);
-                reasons.push({
-                    kind: 'selector',
-                    surface: text(surfaceRow.surface, 120),
-                    detail: text(surfaceRow.lastError)
-                        || text(surfaceRow.lastSelector)
-                        || text(surfaceRow.surface, 120),
-                    at: parseTimestamp(surfaceRow.lastMissAt)
-                });
+                if (isSurfaceBroken(surfaceRow)) {
+                    status = worse(status, STATUS_DEGRADED);
+                    reasons.push({
+                        kind: 'selector',
+                        surface: text(surfaceRow.surface, 120),
+                        detail: text(surfaceRow.lastError)
+                            || text(surfaceRow.lastSelector)
+                            || text(surfaceRow.surface, 120),
+                        at: parseTimestamp(surfaceRow.lastMissAt)
+                    });
+                    continue;
+                }
+                if (isSurfaceOnFallback(surfaceRow)) {
+                    status = worse(status, STATUS_DEGRADED);
+                    reasons.push({
+                        kind: 'selector-fallback',
+                        surface: text(surfaceRow.surface, 120),
+                        tier: 'fallback',
+                        detail: text(surfaceRow.lastSelector) || text(surfaceRow.surface, 120),
+                        at: parseTimestamp(surfaceRow.lastHitAt)
+                    });
+                }
             }
 
             const canarySurfaces = canaryByFeature.get(id);

@@ -1247,6 +1247,9 @@
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
+  "featureHealthReasonSelectorFallbackTpl": {
+    "message": "Page element “{surface}” only matched a backup rule"
+  },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
   },

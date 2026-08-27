@@ -1247,6 +1247,9 @@
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
+  "featureHealthReasonSelectorFallbackTpl": {
+    "message": "Seitenelement „{surface}“ passte nur noch auf eine Ersatzregel"
+  },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
   },

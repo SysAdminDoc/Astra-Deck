@@ -1247,6 +1247,9 @@
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
+  "featureHealthReasonSelectorFallbackTpl": {
+    "message": "عنصر الصفحة “{surface}” طابق قاعدة احتياطية فقط"
+  },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
   },

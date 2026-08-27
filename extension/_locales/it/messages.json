@@ -1247,6 +1247,9 @@
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
+  "featureHealthReasonSelectorFallbackTpl": {
+    "message": "L’elemento di pagina “{surface}” ha trovato riscontro solo con una regola di riserva"
+  },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
   },

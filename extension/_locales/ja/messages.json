@@ -1247,6 +1247,9 @@
   "featureHealthReasonSelectorTpl": {
     "message": "Page element “{surface}” no longer found"
   },
+  "featureHealthReasonSelectorFallbackTpl": {
+    "message": "ページ要素「{surface}」は予備ルールにしか一致しませんでした"
+  },
   "featureHealthStatusDegraded": {
     "message": "Degraded"
   },
