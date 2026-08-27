@@ -8,6 +8,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- The userscript's `@require` is pinned to an immutable release tag. It pointed
+  at the `main` branch, so every install re-fetched 1.9 MB of executable code
+  from a mutable pointer — in a script that also grants `GM_xmlhttpRequest` to
+  three AI providers and loopback. Anything able to move `main` moved every
+  install at once, with no version to notice it by. The size gate now rejects a
+  branch ref outright.
+
+- `npm run check` enforces the install-script refusal that `.npmrc` only
+  documented. Deleting the file, or one `npm i --ignore-scripts=false`, was
+  invisible to every gate; the audit now fails if `ignore-scripts=true` is gone
+  or if any lockfile entry declares an install script.
+
 - Extension pages now enforce Trusted Types. `core/trusted-html.js` sanitizes,
   but it is a content-script module that the popup and side panel never load,
   so a raw `innerHTML` assignment on either page had nothing standing in front
