@@ -249,6 +249,25 @@ test('Chromium zero-ad smoke pins its live watch fixture to a comment-capable vi
     assert.match(source, /a\[href\*="\/watch\?v=\$\{LIVE_WATCH_FIXTURE_ID\}"\]/);
 });
 
+test('Chromium live smoke clicks and drags the Theater Split divider', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'smoke-zero-ads-live.js'), 'utf8');
+    const start = source.indexOf('async function verifyTheaterSplitDividerInteraction');
+    const end = source.indexOf('async function verifyWatchThemeSurfaces', start);
+    const block = source.slice(start, end);
+
+    assert.ok(start >= 0 && end > start);
+    assert.match(block, /dispatchDividerClick\(client, initial\)/,
+        'the live lane must click the open divider closed');
+    assert.match(block, /dataset\.ytkitPanelState === 'closed'/,
+        'the collapsed divider must remain visible as the reopening rail');
+    assert.match(block, /dispatchDividerClick\(client, collapsed\)/,
+        'the live lane must click the rail to restore comments');
+    assert.match(block, /type: 'mouseMoved'[\s\S]{0,160}buttons: 1/,
+        'the live lane must exercise a held pointer drag');
+    assert.match(block, /resized\.rightWidth <= reopened\.rightWidth/,
+        'the live lane must reject a drag that does not widen comments');
+});
+
 test('Firefox WebDriver cleanup retries a locked profile before failing', async () => {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-firefox-cleanup-'));
     const originalRmSync = fs.rmSync;

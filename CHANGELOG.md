@@ -6,6 +6,48 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.86.7] (2026-08-26)
+
+### Changed
+
+- Clicking the Theater Split divider now hides the comments pane while keeping
+  a slim reopening rail on the right edge. Clicking it again restores the last
+  saved split ratio.
+
+- Pressing and moving the divider more than 4 pixels keeps the resize behavior
+  and never triggers the click toggle on release. A closed rail can also be
+  dragged left to open comments directly at the chosen width.
+
+- The separator reports its open state, controls relationship, and current
+  width to assistive technology. Enter and Space mirror pointer clicks.
+
+- Live streams now use a compact header that keeps the channel and actions on
+  clear rows, limits long titles to two lines, and shows the current audience
+  with the stream start status. The same card follows the dark and light split
+  palettes.
+
+### Fixed
+
+- Resizing a live split now remeasures the header and moves chat to its new
+  lower edge. Narrow panes no longer let a wrapped title spill over chat.
+
+- Pinned Like and notification actions now keep readable icons, text, borders,
+  and surfaces in both themes. Narrow action rows fit every control instead of
+  clipping the last one.
+
+### Tests
+
+- The rendered feature test exercises click-close, click-reopen, open-pane
+  resizing, and drag-to-open behavior. The isolated live browser lane performs
+  the same pointer sequence and captures both the closed rail and resized pane.
+
+- The standalone Theater Split userscript is now v1.0.17 with matching divider
+  and live-header behavior.
+
+- The supplied live-stream page was exercised in Chrome at 1920 by 889 in
+  wide and narrow splits. Dark and light captures confirm bounded titles,
+  contained actions, zero header overflow, and chat starting below the card.
+
 ## [4.86.6] (2026-08-26)
 
 ### Changed

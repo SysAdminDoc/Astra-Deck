@@ -20,7 +20,7 @@
 
 | Fact | Current source value |
 | --- | --- |
-| Release | `v4.86.6` |
+| Release | `v4.86.7` |
 | Runtime floors | Node `>=24`; Chrome 120+ / equivalent Chromium release; Firefox 142+ |
 | Extension locales | `11`: `ar`, `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`, `zh_CN` |
 | Settings schema | `484` entries across `18` categories |
@@ -143,7 +143,7 @@ are not browser extension install steps.
 | Feature | Default |
 |---------|---------|
 | Zero-Ad Desktop Surface, static MV3 request blocking plus document-start ad-shell collapse; userscript provides shell collapse only | Built in |
-| Theater Split, responsive video and comments panes with matching themes and exact inline-style restoration on exit | On |
+| Theater Split, responsive video and comments panes with a click-or-drag divider, compact live header, matching themes, and exact inline-style restoration on exit | On |
 | Video Hider, hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
 | Video Context Menu, right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
 | Settings Panel, searchable, categorized, instant-apply, export/import/reset | On |

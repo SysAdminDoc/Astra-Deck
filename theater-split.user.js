@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.16
+// @name         Theater Split v1.0.17
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.16
+// @version      1.0.17
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -35,6 +35,10 @@
 //                     compress metadata, and remove native reply connector chrome.
 //   @version 1.0.16 - Remove native count separator pseudo-elements so Like totals
 //                     stay clean in both split themes.
+//   @version 1.0.17 - Click the divider to hide or restore comments; drag beyond
+//                     a small movement threshold to resize without toggling.
+//                     Live headers now reflow at narrow widths, clamp long
+//                     titles, keep actions visible, and move chat after resize.
 
 (function() {
     'use strict';
@@ -1455,6 +1459,17 @@ color-scheme: inherit !important;
             border-color: rgba(var(--ts-accent-rgb), 0.62) !important;
             background: rgba(var(--ts-accent-rgb), 0.08) !important;
         }
+        body.ts-active #ts-divider[data-panel-state="closed"] {
+            width: 8px !important;
+            flex-basis: 8px !important;
+            border-inline: 1px solid rgba(var(--ts-accent-rgb), 0.5) !important;
+            background: rgba(var(--ts-accent-rgb), 0.1) !important;
+            overflow: visible !important;
+        }
+        body.ts-active #ts-divider[data-panel-state="closed"] .ts-divider-pip {
+            opacity: 0.86 !important;
+            background: rgba(var(--ts-accent-rgb), 0.82) !important;
+        }
         body.ts-split #ts-divider:focus-visible {
             outline: 2px solid rgb(var(--ts-accent-rgb)) !important;
             outline-offset: -2px !important;
@@ -2213,7 +2228,67 @@ color-scheme: inherit !important;
         body.ts-split .ytkit-split-live-header {
             border-bottom: 1px solid var(--ts-border) !important;
             background: var(--ts-panel) !important;
+            color: var(--ts-text) !important;
             box-shadow: none !important;
+            overflow: hidden !important;
+        }
+        body.ts-split .ytkit-split-live-card {
+            border-color: var(--ts-border) !important;
+            background: var(--ts-raised) !important;
+            box-shadow: var(--ts-control-shadow) !important;
+            overflow: hidden !important;
+        }
+        body.ts-split :is(
+            .ytkit-split-live-channel,
+            .ytkit-split-live-title,
+            .ytkit-split-live-view-count
+        ) {
+            color: var(--ts-text) !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+        }
+        body.ts-split .ytkit-split-live-title {
+            display: -webkit-box !important;
+            max-height: 2.44em !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            -webkit-box-orient: vertical !important;
+            -webkit-line-clamp: 2 !important;
+        }
+        body.ts-split .ytkit-split-live-view-count {
+            border-color: var(--ts-border) !important;
+            background: var(--ts-comment-control) !important;
+        }
+        body.ts-split .ytkit-split-live-date {
+            color: var(--ts-muted) !important;
+            -webkit-text-fill-color: var(--ts-muted) !important;
+        }
+        body.ts-split [data-ytkit-split-live-pinned="1"],
+        body.ts-split [data-ytkit-split-live-pinned="1"] * {
+            color: var(--ts-text) !important;
+            -webkit-text-fill-color: var(--ts-text) !important;
+        }
+        body.ts-split [data-ytkit-split-live-pinned="1"] :is(
+            button,
+            .yt-spec-button-shape-next,
+            .ytSpecButtonShapeNextHost
+        ) {
+            border: 1px solid var(--ts-border) !important;
+            border-radius: 10px !important;
+            background: var(--ts-control) !important;
+            box-shadow: var(--ts-control-shadow) !important;
+        }
+        body.ts-split [data-ytkit-split-live-pinned="1"] :is(
+            button,
+            .yt-spec-button-shape-next,
+            .ytSpecButtonShapeNextHost
+        ):hover {
+            border-color: var(--ts-border-strong) !important;
+            background: var(--ts-control-hover) !important;
+            box-shadow: var(--ts-control-shadow-hover) !important;
+        }
+        body.ts-split [data-ytkit-split-live-pinned="1"] :is(svg, path) {
+            color: var(--ts-text) !important;
+            fill: currentColor !important;
         }
         body.ts-split :is(button, input, textarea, select, a):focus-visible {
             outline: 2px solid rgb(var(--ts-accent-rgb)) !important;
@@ -2271,6 +2346,8 @@ color-scheme: inherit !important;
     // ── Constants ──────────────────────────────────────────────────────────
     const SPLIT_RATIO_KEY = 'ts_split_ratio';
     const TRANSITION = '0.35s cubic-bezier(0.4,0,0.2,1)';
+    const DIVIDER_WIDTH_PX = 8;
+    const DIVIDER_DRAG_THRESHOLD_PX = 4;
     const LIVE_HEADER_HEIGHT = 154;
 
     // ── State ──────────────────────────────────────────────────────────────
@@ -2320,6 +2397,9 @@ color-scheme: inherit !important;
     let dragShield = null;
     let dragOnMove = null;
     let dragOnUp = null;
+    let dragOnCancel = null;
+    let dragRight = null;
+    let dragRightTransition = '';
 
     // ── Helpers ─────────────────────────────────────────────────────────────
     function getVideoId() {
@@ -2917,7 +2997,7 @@ color-scheme: inherit !important;
     function formatSplitLiveViewText(text) {
         const normalized = String(text || '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
         const liveMatch = normalized.match(/\b\d[\d,.]*\s*(?:K|M|B)?\s*(?:watching(?:\s+now)?|waiting)\b/i);
-        if (liveMatch) return liveMatch[0];
+        if (liveMatch) return liveMatch[0].replace(/\swatching$/i, ' watching now');
         const viewMatch = normalized.match(/\b\d[\d,.]*\s*(?:K|M|B)?\s*views?\b/i);
         return viewMatch?.[0] || '';
     }
@@ -2933,7 +3013,7 @@ color-scheme: inherit !important;
             const playerResponse = getPagePlayerResponse();
             const liveDetails = playerResponse?.microformat?.playerMicroformatRenderer?.liveBroadcastDetails;
             const isLive = playerResponse?.videoDetails?.isLive || playerResponse?.videoDetails?.isLiveContent || !!liveDetails;
-            const viewText = isLive ? formatSplitViewCount(playerResponse?.videoDetails?.viewCount).replace(/\s+views$/i, ' watching') : '';
+            const viewText = isLive ? formatSplitViewCount(playerResponse?.videoDetails?.viewCount).replace(/\s+views$/i, ' watching now') : '';
             if (viewText) return viewText;
         } catch (_) {}
         return parts.find(text => /\bviews?\b/i.test(text))
@@ -2954,21 +3034,22 @@ color-scheme: inherit !important;
             'padding:10px 12px',
             'box-sizing:border-box',
             'pointer-events:auto',
-            'color:rgba(245,247,250,0.96)',
-            'background:linear-gradient(180deg,rgba(9,12,18,0.98),rgba(8,11,17,0.94))',
-            'border-left:1px solid rgba(255,255,255,0.07)',
-            'border-bottom:1px solid rgba(255,255,255,0.08)',
-            'box-shadow:0 16px 30px rgba(0,0,0,0.32)'
+            'color:var(--ts-text)',
+            'background:var(--ts-panel)',
+            'border-left:1px solid var(--ts-border)',
+            'border-bottom:1px solid var(--ts-border)',
+            'box-shadow:none',
+            'overflow:hidden'
         ].join(';');
 
         const card = document.createElement('div');
         card.className = 'ytkit-split-live-card';
         card.style.cssText = [
-            'min-height:100%',
-            'border-radius:16px',
-            'border:1px solid rgba(255,255,255,0.10)',
-            'background:rgba(18,23,32,0.88)',
-            'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)',
+            'min-height:0',
+            'border-radius:12px',
+            'border:1px solid var(--ts-border)',
+            'background:var(--ts-raised)',
+            'box-shadow:var(--ts-control-shadow)',
             'position:relative',
             'display:grid',
             'min-width:0',
@@ -2977,19 +3058,19 @@ color-scheme: inherit !important;
             'inline-size:100%',
             'max-inline-size:100%',
             'grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))',
-            'grid-template-areas:"channel actions" "meta meta" "title title"',
+            'grid-template-areas:"channel actions" "title title" "meta meta"',
             'align-content:start',
             'align-items:stretch',
             'gap:5px',
             'padding:12px 15px 11px',
             'box-sizing:border-box',
-            'overflow:visible'
+            'overflow:hidden'
         ].join(';');
 
         const channel = document.createElement('div');
         channel.className = 'ytkit-split-live-channel';
         channel.setAttribute('translate', 'no');
-        channel.style.cssText = 'grid-area:channel;min-width:0;max-width:100%;font:800 14px/1.25 Arial,sans-serif;color:rgba(245,247,250,0.98);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        channel.style.cssText = 'grid-area:channel;min-width:0;max-width:100%;font:800 14px/1.25 Arial,sans-serif;color:var(--ts-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         card.appendChild(channel);
 
         const meta = document.createElement('div');
@@ -3005,13 +3086,13 @@ color-scheme: inherit !important;
         const viewCount = document.createElement('span');
         viewCount.className = 'ytkit-split-live-view-count';
         viewCount.setAttribute('translate', 'no');
-        viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:rgba(248,250,252,0.94);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);border-radius:6px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:var(--ts-text);background:var(--ts-comment-control);border:1px solid var(--ts-border);border-radius:6px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         meta.appendChild(viewCount);
 
         const date = document.createElement('span');
         date.className = 'ytkit-split-live-date';
         date.setAttribute('translate', 'no');
-        date.style.cssText = 'display:-webkit-box;flex:1 1 240px;min-width:150px;max-width:100%;font:650 12px/1.25 Arial,sans-serif;color:rgba(148,163,184,0.86);overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:1;-webkit-box-orient:vertical;';
+        date.style.cssText = 'display:-webkit-box;flex:1 1 240px;min-width:0;max-width:100%;font:650 12px/1.25 Arial,sans-serif;color:var(--ts-muted);overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:1;-webkit-box-orient:vertical;';
         meta.appendChild(date);
         card.appendChild(meta);
 
@@ -3027,13 +3108,13 @@ color-scheme: inherit !important;
             'box-sizing:border-box',
             'font:800 16px/1.22 Arial,sans-serif',
             'letter-spacing:0',
-            'color:rgba(245,247,250,0.98)',
-            'display:block',
-            'max-height:none',
-            '-webkit-line-clamp:unset',
-            '-webkit-box-orient:initial',
-            'overflow:visible',
-            'text-overflow:clip',
+            'color:var(--ts-text)',
+            'display:-webkit-box',
+            'max-height:2.44em',
+            '-webkit-line-clamp:2',
+            '-webkit-box-orient:vertical',
+            'overflow:hidden',
+            'text-overflow:ellipsis',
             'white-space:normal',
             'overflow-wrap:anywhere',
             'word-break:break-word'
@@ -3058,12 +3139,16 @@ color-scheme: inherit !important;
 
         const headerWidth = Math.max(0, Math.round(window.innerWidth * rightPct / 100));
         const compact = headerWidth > 0 && headerWidth < 760;
-        const baseHeaderHeight = compact ? 172 : LIVE_HEADER_HEIGHT;
-        const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(420, Math.round(window.innerHeight * 0.5)));
+        const narrow = headerWidth > 0 && headerWidth < 420;
+        const baseHeaderHeight = narrow ? 190 : (compact ? 164 : LIVE_HEADER_HEIGHT);
+        const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.42)));
         splitLiveHeader.dataset.ytkitLiveCompact = compact ? '1' : '0';
+        splitLiveHeader.dataset.ytkitLiveNarrow = narrow ? '1' : '0';
         splitLiveHeader.style.width = `calc(${rightPct}% - 2px)`;
+        splitLiveHeader.style.padding = narrow ? '8px 9px' : '10px 12px';
         splitLiveHeader.style.minHeight = `${baseHeaderHeight}px`;
         splitLiveHeader.style.height = `${baseHeaderHeight}px`;
+        const card = splitLiveHeader.querySelector('.ytkit-split-live-card');
         const titleEl = splitLiveHeader.querySelector('.ytkit-split-live-title');
         const channelEl = splitLiveHeader.querySelector('.ytkit-split-live-channel');
         const metaEl = splitLiveHeader.querySelector('.ytkit-split-live-meta');
@@ -3075,7 +3160,17 @@ color-scheme: inherit !important;
         const viewText = getSplitLiveViewCountText();
         const infoText = getSplitLiveInfoText(viewText);
         const supplementalInfo = viewText && infoText === viewText ? '' : infoText;
-        const dateInfo = [supplementalInfo, dateText].filter(Boolean).join(' | ');
+        const dateInfo = supplementalInfo || dateText;
+        const fullDateInfo = [supplementalInfo, dateText].filter(Boolean).join(' | ');
+        if (card) {
+            card.style.padding = narrow ? '10px 12px' : '12px 15px 11px';
+            card.style.gridTemplateColumns = narrow
+                ? 'minmax(0,1fr)'
+                : 'minmax(0,1fr) minmax(0,min(330px,42%))';
+            card.style.gridTemplateAreas = narrow
+                ? '"channel" "actions" "title" "meta"'
+                : '"channel actions" "title title" "meta meta"';
+        }
         if (channelEl) {
             channelEl.textContent = channel;
             channelEl.hidden = !channel;
@@ -3085,18 +3180,18 @@ color-scheme: inherit !important;
         if (titleEl) {
             titleEl.textContent = title;
             titleEl.hidden = !title;
-            titleEl.style.setProperty('display', 'block');
+            titleEl.style.setProperty('display', '-webkit-box');
             titleEl.style.setProperty('width', '100%');
             titleEl.style.setProperty('max-width', '100%');
             titleEl.style.setProperty('max-inline-size', '100%');
-            titleEl.style.setProperty('overflow', 'visible');
-            titleEl.style.setProperty('text-overflow', 'clip');
+            titleEl.style.setProperty('overflow', 'hidden');
+            titleEl.style.setProperty('text-overflow', 'ellipsis');
             titleEl.style.setProperty('white-space', 'normal');
             titleEl.style.setProperty('overflow-wrap', 'anywhere');
-            titleEl.style.setProperty('word-break', 'break-word');
-            titleEl.style.setProperty('-webkit-line-clamp', 'unset');
-            titleEl.style.setProperty('-webkit-box-orient', 'initial');
-            titleEl.style.setProperty('max-height', 'none');
+            titleEl.style.setProperty('word-break', 'normal');
+            titleEl.style.setProperty('-webkit-line-clamp', '2');
+            titleEl.style.setProperty('-webkit-box-orient', 'vertical');
+            titleEl.style.setProperty('max-height', '2.44em');
             if (title) titleEl.title = title;
             else titleEl.removeAttribute('title');
         }
@@ -3111,13 +3206,14 @@ color-scheme: inherit !important;
             dateEl.textContent = dateInfo;
             dateEl.hidden = !dateInfo;
             dateEl.style.setProperty('-webkit-line-clamp', compact ? '2' : '1');
-            if (dateInfo) dateEl.title = dateInfo;
+            if (fullDateInfo) dateEl.title = fullDateInfo;
             else dateEl.removeAttribute('title');
         }
-        splitLiveHeader.setAttribute('aria-label', ['Live video', channel, viewText, title].filter(Boolean).join(' | '));
+        splitLiveHeader.setAttribute('aria-label', ['Live video', channel, viewText, dateInfo, title].filter(Boolean).join(' | '));
         dockSplitLiveHeaderActions();
-        const card = splitLiveHeader.querySelector('.ytkit-split-live-card');
-        const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);
+        const outerVerticalPadding = narrow ? 16 : 20;
+        const measuredCardHeight = Math.max(card?.scrollHeight || 0, card?.getBoundingClientRect?.().height || 0);
+        const measuredHeaderHeight = Math.ceil((measuredCardHeight || baseHeaderHeight - outerVerticalPadding) + outerVerticalPadding);
         const liveHeaderHeight = Math.min(maxHeaderHeight, Math.max(baseHeaderHeight, measuredHeaderHeight));
         splitLiveHeader.style.height = `${liveHeaderHeight}px`;
         return liveHeaderHeight;
@@ -3306,7 +3402,7 @@ color-scheme: inherit !important;
         control.querySelectorAll('button, .yt-spec-button-shape-next, .ytSpecButtonShapeNextHost').forEach(button => {
             button.style.setProperty('height', '32px', 'important');
             button.style.setProperty('min-height', '32px', 'important');
-            button.style.setProperty('border-radius', '999px', 'important');
+            button.style.setProperty('border-radius', '10px', 'important');
             button.style.setProperty('white-space', 'nowrap', 'important');
         });
     }
@@ -3351,22 +3447,29 @@ color-scheme: inherit !important;
         }
 
         const gap = 8;
-        const metrics = controls.map(control => {
+        const naturalMetrics = controls.map(control => {
             const rect = control.getBoundingClientRect();
             const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));
             return {
                 control,
-                width: Math.min(180, naturalWidth),
+                naturalWidth: Math.min(180, naturalWidth),
                 height: Math.max(32, Math.ceil(rect.height || control.offsetHeight || 32))
             };
         });
-        const totalWidth = metrics.reduce((sum, item) => sum + item.width, 0) + gap * Math.max(0, metrics.length - 1);
         actions.hidden = false;
         actions.style.width = '100%';
         actions.style.minWidth = '0';
         actions.style.maxWidth = '100%';
 
         const box = actions.getBoundingClientRect();
+        const availableWidth = Math.max(32, box.width || actions.clientWidth || 32);
+        const gapWidth = gap * Math.max(0, naturalMetrics.length - 1);
+        const controlWidth = Math.max(32, Math.floor((availableWidth - gapWidth) / naturalMetrics.length));
+        const metrics = naturalMetrics.map(item => ({
+            ...item,
+            width: Math.min(item.naturalWidth, controlWidth)
+        }));
+        const totalWidth = metrics.reduce((sum, item) => sum + item.width, 0) + gapWidth;
         const topBase = box.top + Math.max(0, (box.height - 32) / 2);
         const clampedWidth = Math.min(totalWidth, Math.max(32, box.width || actions.clientWidth || totalWidth));
         let left = Math.max(box.left, box.right - clampedWidth);
@@ -3624,13 +3727,18 @@ color-scheme: inherit !important;
 
         const divider = document.createElement('div');
         divider.id = 'ts-divider';
-        divider.tabIndex = 0;
+        divider.tabIndex = -1;
         divider.setAttribute('role', 'separator');
         divider.setAttribute('aria-orientation', 'vertical');
         divider.setAttribute('aria-label', 'Resize Theater Split panels');
+        divider.setAttribute('aria-controls', 'ts-right');
+        divider.setAttribute('aria-expanded', 'false');
         divider.setAttribute('aria-valuemin', '25');
-        divider.setAttribute('aria-valuemax', '85');
-        divider.setAttribute('aria-valuenow', '68');
+        divider.setAttribute('aria-valuemax', '100');
+        divider.setAttribute('aria-valuenow', '100');
+        divider.setAttribute('aria-hidden', 'true');
+        divider.dataset.panelState = 'hidden';
+        divider.title = 'Resize Theater Split panels';
         divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:var(--ts-canvas);transition:flex-basis ${TRANSITION};overflow:hidden;z-index:10;color:var(--ts-muted);`;
         const pip = document.createElement('div');
         pip.className = 'ts-divider-pip';
@@ -3679,6 +3787,21 @@ color-scheme: inherit !important;
 
     // v1.0.7: idempotent drag teardown. Called from onUp on the normal
     // path AND from teardown() if a SPA navigation fires mid-drag.
+    function setDividerPanelState(divider, open, leftPct = 100, visible = true) {
+        if (!divider) return;
+        divider.tabIndex = visible ? 0 : -1;
+        divider.setAttribute('aria-expanded', String(open));
+        divider.setAttribute('aria-valuenow', String(Math.round(open ? leftPct : 100)));
+        divider.dataset.panelState = visible ? (open ? 'open' : 'closed') : 'hidden';
+        divider.toggleAttribute('aria-hidden', !visible);
+    }
+
+    function toggleDividerPanel() {
+        if (!isActive) return;
+        if (isSplit) collapseSplit(false, { keepDivider: true });
+        else expandSplit();
+    }
+
     function abortDividerDrag() {
         if (dragShield) {
             try { dragShield.remove(); } catch (_) { /* already detached */ }
@@ -3692,6 +3815,16 @@ color-scheme: inherit !important;
             window.removeEventListener('mouseup', dragOnUp);
             dragOnUp = null;
         }
+        if (dragOnCancel) {
+            window.removeEventListener('blur', dragOnCancel);
+            document.removeEventListener('mouseleave', dragOnCancel);
+            dragOnCancel = null;
+        }
+        if (dragRight) {
+            dragRight.style.transition = dragRightTransition;
+            dragRight = null;
+            dragRightTransition = '';
+        }
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
     }
@@ -3702,20 +3835,30 @@ color-scheme: inherit !important;
             const rightPct = 100 - leftPct;
             right.style.flexBasis = rightPct + '%';
             right.style.width = rightPct + '%';
-            divider.style.flexBasis = '8px';
-            divider.style.width = '8px';
-            divider.setAttribute('aria-valuenow', String(Math.round(leftPct)));
+            divider.style.flexBasis = `${DIVIDER_WIDTH_PX}px`;
+            divider.style.width = `${DIVIDER_WIDTH_PX}px`;
+            setDividerPanelState(divider, true, leftPct, true);
             positionedEls.forEach(el => {
                 el.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
             });
             if (splitLiveHeader) {
-                splitLiveHeader.style.width = `calc(${rightPct}% - 2px)`;
-                layoutLiveHeaderActions();
+                const liveHeaderTop = ensureSplitLiveHeader(rightPct);
+                const chatEl = getChatEl();
+                if (chatEl) {
+                    chatEl.style.setProperty('top', `${liveHeaderTop}px`, 'important');
+                    chatEl.style.setProperty('height', `calc(100vh - ${liveHeaderTop}px)`, 'important');
+                }
             }
             saveRatio(leftPct);
         };
 
         divider.addEventListener('keydown', (e) => {
+            if (!isActive) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleDividerPanel();
+                return;
+            }
             if (!isSplit || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
             e.preventDefault();
             const current = Number(divider.getAttribute('aria-valuenow')) || getSavedRatio();
@@ -3723,22 +3866,14 @@ color-scheme: inherit !important;
             triggerPlayerResize();
         });
 
-        divider.addEventListener('dblclick', (e) => {
-            if (!isSplit) return;
+        divider.addEventListener('click', (e) => {
+            if (e.detail !== 0) return;
             e.preventDefault();
-            applyDividerRatio(68);
-            triggerPlayerResize();
+            toggleDividerPanel();
         });
 
         divider.addEventListener('mousedown', (e) => {
-            if (!isSplit) return;
-            if (e.detail >= 2) {
-                abortDividerDrag();
-                e.preventDefault();
-                applyDividerRatio(68);
-                triggerPlayerResize();
-                return;
-            }
+            if (!isActive || e.button !== 0) return;
             // Defensive: if a previous drag was orphaned (rare — would
             // require a browser bug or extension conflict), clear it
             // before starting a new one. Also covers re-entrancy if a
@@ -3747,8 +3882,12 @@ color-scheme: inherit !important;
             e.preventDefault();
             const wrapper = splitWrapper;
             const totalW = wrapper.getBoundingClientRect().width;
+            if (!Number.isFinite(totalW) || totalW <= 0) return;
             const startX = e.clientX;
-            const startLeftPct = left.getBoundingClientRect().width / totalW * 100;
+            const measuredLeftPct = left.getBoundingClientRect().width / totalW * 100;
+            const startLeftPct = isSplit && Number.isFinite(measuredLeftPct)
+                ? measuredLeftPct
+                : 100;
             document.body.style.cursor = 'col-resize';
             document.body.style.userSelect = 'none';
 
@@ -3756,17 +3895,34 @@ color-scheme: inherit !important;
             dragShield.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;cursor:col-resize;';
             document.body.appendChild(dragShield);
 
+            let dragged = false;
+            const previousTransition = right.style.transition;
+            dragRight = right;
+            dragRightTransition = previousTransition;
             dragOnMove = (me) => {
                 const dx = me.clientX - startX;
+                if (!dragged && Math.abs(dx) < DIVIDER_DRAG_THRESHOLD_PX) return;
+                if (!dragged) {
+                    dragged = true;
+                    if (!isSplit) expandSplit();
+                    if (!isSplit) return;
+                    right.style.transition = 'none';
+                }
                 const newLeftPct = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
                 applyDividerRatio(newLeftPct);
             };
-            dragOnUp = () => {
+            const finish = (toggleOnTap) => {
+                const wasDragged = dragged;
                 abortDividerDrag();
                 triggerPlayerResize();
+                if (toggleOnTap && !wasDragged) toggleDividerPanel();
             };
+            dragOnUp = () => finish(true);
+            dragOnCancel = () => finish(false);
             window.addEventListener('mousemove', dragOnMove);
             window.addEventListener('mouseup', dragOnUp);
+            window.addEventListener('blur', dragOnCancel);
+            document.addEventListener('mouseleave', dragOnCancel);
         });
     }
 
@@ -3962,9 +4118,9 @@ color-scheme: inherit !important;
 
         right.style.flexBasis = rightPct + '%';
         right.style.width = rightPct + '%';
-        divider.style.flexBasis = '8px';
-        divider.style.width = '8px';
-        divider.setAttribute('aria-valuenow', String(Math.round(leftPct)));
+        divider.style.flexBasis = `${DIVIDER_WIDTH_PX}px`;
+        divider.style.width = `${DIVIDER_WIDTH_PX}px`;
+        setDividerPanelState(divider, true, leftPct, true);
 
         if (type === 'live' || type === 'vod') {
             right.style.opacity = '0';
@@ -4032,9 +4188,10 @@ color-scheme: inherit !important;
     }
 
     // ── Collapse Split ──────────────────────────────────────────────────────
-    function collapseSplit(full) {
+    function collapseSplit(full, options = {}) {
         if (!isActive) return;
         isSplit = false;
+        const keepDivider = !full && options.keepDivider === true;
 
         document.body.classList.remove('ts-split', 'ts-live');
         restoreActionDock();
@@ -4051,8 +4208,9 @@ color-scheme: inherit !important;
             right.style.opacity = '0';
         }
         if (divider) {
-            divider.style.flexBasis = '0';
-            divider.style.width = '0';
+            divider.style.flexBasis = keepDivider ? `${DIVIDER_WIDTH_PX}px` : '0';
+            divider.style.width = keepDivider ? `${DIVIDER_WIDTH_PX}px` : '0';
+            setDividerPanelState(divider, false, 100, keepDivider);
         }
         if (closeBtn) closeBtn.style.opacity = '0';
 

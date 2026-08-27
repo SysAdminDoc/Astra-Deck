@@ -770,12 +770,13 @@ test('split live chat gets a video info header and premium divider treatment', (
     assert.ok(source.includes('ytkit-split-live-view-count')
         && source.includes('_getSplitLiveViewCountText()')
         && source.includes('_formatSplitLiveViewText(text)')
-        && source.includes("replace(/\\s+views$/i, ' watching')"),
+        && source.includes("replace(/\\s+views$/i, ' watching now')"),
         'extension live header should extract current live viewers before falling back to total views');
     assert.ok(source.includes('_formatSplitLiveInfoText(text, viewText = \'\')')
         && source.includes('_getSplitLiveInfoText(viewText = \'\')')
-        && source.includes('const dateInfo = [supplementalInfo, dateText].filter(Boolean).join(\' | \');'),
-        'extension live header should split stream status from viewer count and preserve upload date when space allows');
+        && source.includes('const dateInfo = supplementalInfo || dateText;')
+        && source.includes('const fullDateInfo = [supplementalInfo, dateText].filter(Boolean).join(\' | \');'),
+        'extension live header should prioritize stream status while preserving the full date detail for hover');
     assert.ok(source.includes('_liveHeaderHeight: 154'),
         'extension live header should reserve space for channel, live metadata, and title');
     assert.ok(source.includes("channel.className = 'ytkit-split-live-channel';")
@@ -785,20 +786,23 @@ test('split live chat gets a video info header and premium divider treatment', (
     assert.ok(source.includes('_formatSplitLiveTitleText(title)')
         && source.includes('const title = this._formatSplitLiveTitleText(this._getSplitVideoTitleText());'),
         'extension live header should remove duplicated live markers from the visible title');
-    assert.ok(source.includes('grid-template-areas:"channel actions" "meta meta" "title title"')
+    assert.ok(source.includes('grid-template-areas:"channel actions" "title title" "meta meta"')
         && source.includes('const compact = headerWidth > 0 && headerWidth < 760')
-        && source.includes("titleEl.style.setProperty('-webkit-line-clamp', 'unset')")
-        && source.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(420, Math.round(window.innerHeight * 0.5)))')
-        && source.includes('const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);'),
-        'extension live header should adapt channel, metadata, and full wrapped title height for condensed widths');
+        && source.includes('const narrow = headerWidth > 0 && headerWidth < 420')
+        && source.includes("titleEl.style.setProperty('-webkit-line-clamp', '2')")
+        && source.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.42)))')
+        && source.includes('const measuredCardHeight = Math.max(card?.scrollHeight || 0, card?.getBoundingClientRect?.().height || 0);')
+        && source.includes('const measuredHeaderHeight = Math.ceil((measuredCardHeight || baseHeaderHeight - outerVerticalPadding) + outerVerticalPadding);'),
+        'extension live header should clamp titles and switch to a bounded narrow layout');
     assert.ok(source.includes('grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px')
         && source.includes('min-width:0;width:100%;max-width:100%;contain:inline-size;overflow:hidden;'),
         'extension live header should give pinned native actions a contained top-row grid measurement box');
     assert.ok(source.includes('const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));')
-        && source.includes('width: Math.min(180, naturalWidth)')
+        && source.includes('const controlWidth = Math.max(32, Math.floor((availableWidth - gapWidth) / naturalMetrics.length));')
+        && source.includes('width: Math.min(item.naturalWidth, controlWidth)')
         && source.includes("actions.style.width = '100%'")
         && source.includes("control.style.setProperty('max-width', `${width}px`, 'important');"),
-        'extension live header should cap misreported native action widths before pinning controls');
+        'extension live header should fit pinned controls inside the measured action row');
     assert.ok(source.includes('_findSplitSubscribeControl()'),
         'extension live header should locate the native subscribe/unsubscribe control');
     assert.ok(source.includes('_pinSplitLiveHeaderActions(controls, actions)'),
@@ -809,6 +813,10 @@ test('split live chat gets a video info header and premium divider treatment', (
         'extension live header should place native controls with fixed positioning so native menus keep working');
     assert.ok(source.includes('calc(100vh - ${liveHeaderTop}px)'),
         'extension live chat should be offset below the live header');
+    assert.ok(source.includes('const liveHeaderTop = this._ensureSplitLiveHeader(newRightPct);')
+        && source.includes("chatEl.style.setProperty('top', `${liveHeaderTop}px`, 'important');")
+        && source.includes("chatEl.style.setProperty('height', `calc(100vh - ${liveHeaderTop}px)`, 'important');"),
+        'extension divider resizing should keep the live header and chat geometry synchronized');
     assert.ok(source.includes('background: var(--ytkit-split-canvas) !important;'),
         'extension divider base should use the opaque active-theme canvas');
     assert.ok(source.includes("divider.style.background='rgba(var(--ytkit-split-accent-rgb),0.08)'"),
@@ -831,12 +839,13 @@ test('split live chat gets a video info header and premium divider treatment', (
     assert.ok(theaterSplit.includes('ytkit-split-live-view-count')
         && theaterSplit.includes('function getSplitLiveViewCountText()')
         && theaterSplit.includes('function formatSplitLiveViewText(text)')
-        && theaterSplit.includes("replace(/\\s+views$/i, ' watching')"),
+        && theaterSplit.includes("replace(/\\s+views$/i, ' watching now')"),
         'standalone live header should extract current live viewers before falling back to total views');
     assert.ok(theaterSplit.includes('function formatSplitLiveInfoText(text, viewText = \'\')')
         && theaterSplit.includes('function getSplitLiveInfoText(viewText = \'\')')
-        && theaterSplit.includes('const dateInfo = [supplementalInfo, dateText].filter(Boolean).join(\' | \');'),
-        'standalone live header should split stream status from viewer count and preserve upload date when space allows');
+        && theaterSplit.includes('const dateInfo = supplementalInfo || dateText;')
+        && theaterSplit.includes('const fullDateInfo = [supplementalInfo, dateText].filter(Boolean).join(\' | \');'),
+        'standalone live header should prioritize stream status while preserving the full date detail for hover');
     assert.ok(theaterSplit.includes('const LIVE_HEADER_HEIGHT = 154;'),
         'standalone live header should reserve space for channel, live metadata, and title');
     assert.ok(theaterSplit.includes("channel.className = 'ytkit-split-live-channel';")
@@ -846,20 +855,23 @@ test('split live chat gets a video info header and premium divider treatment', (
     assert.ok(theaterSplit.includes('function formatSplitLiveTitleText(title)')
         && theaterSplit.includes('const title = formatSplitLiveTitleText(getSplitVideoTitleText());'),
         'standalone live header should remove duplicated live markers from the visible title');
-    assert.ok(theaterSplit.includes('grid-template-areas:"channel actions" "meta meta" "title title"')
+    assert.ok(theaterSplit.includes('grid-template-areas:"channel actions" "title title" "meta meta"')
         && theaterSplit.includes('const compact = headerWidth > 0 && headerWidth < 760')
-        && theaterSplit.includes("titleEl.style.setProperty('-webkit-line-clamp', 'unset')")
-        && theaterSplit.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(420, Math.round(window.innerHeight * 0.5)))')
-        && theaterSplit.includes('const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);'),
-        'standalone live header should adapt channel, metadata, and full wrapped title height for condensed widths');
+        && theaterSplit.includes('const narrow = headerWidth > 0 && headerWidth < 420')
+        && theaterSplit.includes("titleEl.style.setProperty('-webkit-line-clamp', '2')")
+        && theaterSplit.includes('maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.42)))')
+        && theaterSplit.includes('const measuredCardHeight = Math.max(card?.scrollHeight || 0, card?.getBoundingClientRect?.().height || 0);')
+        && theaterSplit.includes('const measuredHeaderHeight = Math.ceil((measuredCardHeight || baseHeaderHeight - outerVerticalPadding) + outerVerticalPadding);'),
+        'standalone live header should clamp titles and switch to a bounded narrow layout');
     assert.ok(theaterSplit.includes('grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:42px;min-height:42px')
         && theaterSplit.includes('min-width:0;width:100%;max-width:100%;contain:inline-size;overflow:hidden;'),
         'standalone live header should give pinned native actions a contained top-row grid measurement box');
     assert.ok(theaterSplit.includes('const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));')
-        && theaterSplit.includes('width: Math.min(180, naturalWidth)')
+        && theaterSplit.includes('const controlWidth = Math.max(32, Math.floor((availableWidth - gapWidth) / naturalMetrics.length));')
+        && theaterSplit.includes('width: Math.min(item.naturalWidth, controlWidth)')
         && theaterSplit.includes("actions.style.width = '100%'")
         && theaterSplit.includes("control.style.setProperty('max-width', `${width}px`, 'important');"),
-        'standalone live header should cap misreported native action widths before pinning controls');
+        'standalone live header should fit pinned controls inside the measured action row');
     assert.ok(theaterSplit.includes('function findSubscribeControl()'),
         'standalone live header should locate the native subscribe/unsubscribe control');
     assert.ok(theaterSplit.includes('function pinLiveHeaderActions(controls, actions)'),
@@ -870,6 +882,10 @@ test('split live chat gets a video info header and premium divider treatment', (
         'standalone live header should place native controls with fixed positioning so native menus keep working');
     assert.ok(theaterSplit.includes('calc(100vh - ${liveHeaderTop}px)'),
         'standalone live chat should be offset below the live header');
+    assert.ok(theaterSplit.includes('const liveHeaderTop = ensureSplitLiveHeader(rightPct);')
+        && theaterSplit.includes("chatEl.style.setProperty('top', `${liveHeaderTop}px`, 'important');")
+        && theaterSplit.includes("chatEl.style.setProperty('height', `calc(100vh - ${liveHeaderTop}px)`, 'important');"),
+        'standalone divider resizing should keep the live header and chat geometry synchronized');
     assert.ok(theaterSplit.includes('background: var(--ts-canvas) !important;'),
         'standalone divider base should use the opaque active-theme canvas');
     assert.ok(theaterSplit.includes("divider.style.background = 'rgba(var(--ts-accent-rgb),0.08)'"),

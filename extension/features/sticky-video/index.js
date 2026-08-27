@@ -14,6 +14,9 @@
         comments: 'stickyVideo-comments'
     });
 
+    const DIVIDER_WIDTH_PX = 8;
+    const DIVIDER_DRAG_THRESHOLD_PX = 4;
+
     const SPLIT_POSITIONED_STYLE_PROPERTIES = Object.freeze([
         'position', 'top', 'right', 'width', 'max-width', 'height', 'margin',
         'overflow-y', 'overflow-x', 'overscroll-behavior-y', 'z-index',
@@ -2815,6 +2818,22 @@
                         border-color: rgba(var(--ytkit-split-accent-rgb), 0.62) !important;
                         background: rgba(var(--ytkit-split-accent-rgb), 0.08) !important;
                     }
+                    html.ytkit-split-active #ytkit-split-divider[data-ytkit-panel-state="closed"] {
+                        width: 8px !important;
+                        flex-basis: 8px !important;
+                        border-color: rgba(var(--ytkit-split-accent-rgb), 0.5) !important;
+                        background: rgba(var(--ytkit-split-accent-rgb), 0.1) !important;
+                    }
+                    html.ytkit-split-active #ytkit-split-divider[data-ytkit-panel-state="closed"] .ytkit-divider-pip {
+                        opacity: 0.86 !important;
+                        background: rgba(var(--ytkit-split-accent-rgb), 0.82) !important;
+                    }
+                    html.ytkit-split-active #ytkit-split-divider[data-ytkit-panel-state="hidden"] {
+                        width: 0 !important;
+                        flex-basis: 0 !important;
+                        border: 0 !important;
+                        overflow: hidden !important;
+                    }
                     html:is(.ytkit-split-active, .ytkit-split-open) #ytkit-split-divider:focus-visible {
                         outline: 2px solid var(--ytkit-split-accent) !important;
                         outline-offset: -2px !important;
@@ -3586,7 +3605,67 @@
                     html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-header {
                         border-bottom: 1px solid var(--ytkit-split-border) !important;
                         background: var(--ytkit-split-panel) !important;
+                        color: var(--ytkit-split-text) !important;
                         box-shadow: none !important;
+                        overflow: hidden !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-card {
+                        border-color: var(--ytkit-split-border) !important;
+                        background: var(--ytkit-split-raised) !important;
+                        box-shadow: var(--ytkit-split-control-shadow) !important;
+                        overflow: hidden !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) :is(
+                        .ytkit-split-live-channel,
+                        .ytkit-split-live-title,
+                        .ytkit-split-live-view-count
+                    ) {
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-title {
+                        display: -webkit-box !important;
+                        max-height: 2.44em !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        -webkit-box-orient: vertical !important;
+                        -webkit-line-clamp: 2 !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-view-count {
+                        border-color: var(--ytkit-split-border) !important;
+                        background: var(--ytkit-split-comment-control) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) .ytkit-split-live-date {
+                        color: var(--ytkit-split-muted) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-muted) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) [data-ytkit-split-live-pinned="1"],
+                    html:is(.ytkit-split-active, .ytkit-split-open) [data-ytkit-split-live-pinned="1"] * {
+                        color: var(--ytkit-split-text) !important;
+                        -webkit-text-fill-color: var(--ytkit-split-text) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) [data-ytkit-split-live-pinned="1"] :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        .ytSpecButtonShapeNextHost
+                    ) {
+                        border: 1px solid var(--ytkit-split-border) !important;
+                        border-radius: 10px !important;
+                        background: var(--ytkit-split-control) !important;
+                        box-shadow: var(--ytkit-split-control-shadow) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) [data-ytkit-split-live-pinned="1"] :is(
+                        button,
+                        .yt-spec-button-shape-next,
+                        .ytSpecButtonShapeNextHost
+                    ):hover {
+                        border-color: var(--ytkit-split-border-strong) !important;
+                        background: var(--ytkit-split-control-hover) !important;
+                        box-shadow: var(--ytkit-split-control-shadow-hover) !important;
+                    }
+                    html:is(.ytkit-split-active, .ytkit-split-open) [data-ytkit-split-live-pinned="1"] :is(svg, path) {
+                        color: var(--ytkit-split-text) !important;
+                        fill: currentColor !important;
                     }
                     html:is(.ytkit-split-active, .ytkit-split-open) :is(button, input, textarea, select, a):focus-visible {
                         outline: 2px solid var(--ytkit-split-accent) !important;
@@ -3697,6 +3776,7 @@
             _rightTouchHandler: null,
             _rightTouchMoveHandler: null,
             _rightTouchStartY: 0,
+            _dividerDragCleanup: null,
             _mastheadDisplay: undefined,
             _windowResizeHandler: null,
             _keyHandler: null,
@@ -4251,7 +4331,7 @@
             _formatSplitLiveViewText(text) {
                 const normalized = String(text || '').replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
                 const liveMatch = normalized.match(/\b\d[\d,.]*\s*(?:K|M|B)?\s*(?:watching(?:\s+now)?|waiting)\b/i);
-                if (liveMatch) return liveMatch[0];
+                if (liveMatch) return liveMatch[0].replace(/\swatching$/i, ' watching now');
                 const viewMatch = normalized.match(/\b\d[\d,.]*\s*(?:K|M|B)?\s*views?\b/i);
                 return viewMatch?.[0] || '';
             },
@@ -4267,7 +4347,7 @@
                     const playerResponse = _rw.ytInitialPlayerResponse;
                     const liveDetails = playerResponse?.microformat?.playerMicroformatRenderer?.liveBroadcastDetails;
                     const isLive = playerResponse?.videoDetails?.isLive || playerResponse?.videoDetails?.isLiveContent || !!liveDetails;
-                    const viewText = isLive ? this._formatSplitViewCount(playerResponse?.videoDetails?.viewCount).replace(/\s+views$/i, ' watching') : '';
+                    const viewText = isLive ? this._formatSplitViewCount(playerResponse?.videoDetails?.viewCount).replace(/\s+views$/i, ' watching now') : '';
                     if (viewText) return viewText;
                 } catch { /* reason: player response live count unavailable; fallback to visible metadata */ }
                 return parts.find(text => /\bviews?\b/i.test(text))
@@ -4288,21 +4368,22 @@
                     'padding:10px 12px',
                     'box-sizing:border-box',
                     'pointer-events:auto',
-                    'color:rgba(245,247,250,0.96)',
-                    'background:linear-gradient(180deg,rgba(9,12,18,0.98),rgba(8,11,17,0.94))',
-                    'border-left:1px solid rgba(255,255,255,0.07)',
-                    'border-bottom:1px solid rgba(255,255,255,0.08)',
-                    'box-shadow:0 16px 30px rgba(0,0,0,0.32)'
+                    'color:var(--ytkit-split-text)',
+                    'background:var(--ytkit-split-panel)',
+                    'border-left:1px solid var(--ytkit-split-border)',
+                    'border-bottom:1px solid var(--ytkit-split-border)',
+                    'box-shadow:none',
+                    'overflow:hidden'
                 ].join(';');
 
                 const card = document.createElement('div');
                 card.className = 'ytkit-split-live-card';
                 card.style.cssText = [
-                    'min-height:100%',
+                    'min-height:0',
                     'border-radius: 12px',
-                    'border:1px solid rgba(255,255,255,0.10)',
-                    'background:rgba(18,23,32,0.88)',
-                    'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)',
+                    'border:1px solid var(--ytkit-split-border)',
+                    'background:var(--ytkit-split-raised)',
+                    'box-shadow:var(--ytkit-split-control-shadow)',
                     'position:relative',
                     'display:grid',
                     'min-width:0',
@@ -4311,19 +4392,19 @@
                     'inline-size:100%',
                     'max-inline-size:100%',
                     'grid-template-columns:minmax(0,1fr) minmax(0,min(330px,42%))',
-                    'grid-template-areas:"channel actions" "meta meta" "title title"',
+                    'grid-template-areas:"channel actions" "title title" "meta meta"',
                     'align-content:start',
                     'align-items:stretch',
                     'gap:5px',
                     'padding:12px 15px 11px',
                     'box-sizing:border-box',
-                    'overflow:visible'
+                    'overflow:hidden'
                 ].join(';');
 
                 const channel = document.createElement('div');
                 channel.className = 'ytkit-split-live-channel';
                 channel.setAttribute('translate', 'no');
-                channel.style.cssText = 'grid-area:channel;min-width:0;max-width:100%;font:800 14px/1.25 Arial,sans-serif;color:rgba(245,247,250,0.98);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                channel.style.cssText = 'grid-area:channel;min-width:0;max-width:100%;font:800 14px/1.25 Arial,sans-serif;color:var(--ytkit-split-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
                 card.appendChild(channel);
 
                 const meta = document.createElement('div');
@@ -4333,19 +4414,19 @@
                 const liveBadge = document.createElement('span');
                 liveBadge.className = 'ytkit-split-live-badge';
                 liveBadge.textContent = t('stickyVideoLiveBadge', 'LIVE');
-                liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:800 11px/1.2 Arial,sans-serif;letter-spacing:0;color:#fff;background:#dc2626;border-radius: 10px;padding:5px 9px;box-shadow:0 8px 18px rgba(220,38,38,0.22);';
+                liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:800 11px/1.2 Arial,sans-serif;letter-spacing:0;color:#fff;background:#dc2626;border-radius:4px;padding:5px 9px;box-shadow:0 8px 18px rgba(220,38,38,0.22);';
                 meta.appendChild(liveBadge);
 
                 const viewCount = document.createElement('span');
                 viewCount.className = 'ytkit-split-live-view-count';
                 viewCount.setAttribute('translate', 'no');
-                viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:rgba(248,250,252,0.94);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);border-radius: 10px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:var(--ytkit-split-text);background:var(--ytkit-split-comment-control);border:1px solid var(--ytkit-split-border);border-radius:6px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
                 meta.appendChild(viewCount);
 
                 const date = document.createElement('span');
                 date.className = 'ytkit-split-live-date';
                 date.setAttribute('translate', 'no');
-                date.style.cssText = 'display:-webkit-box;flex:1 1 240px;min-width:150px;max-width:100%;font:650 12px/1.25 Arial,sans-serif;color:rgba(148,163,184,0.86);overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:1;-webkit-box-orient:vertical;';
+                date.style.cssText = 'display:-webkit-box;flex:1 1 240px;min-width:0;max-width:100%;font:650 12px/1.25 Arial,sans-serif;color:var(--ytkit-split-muted);overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:1;-webkit-box-orient:vertical;';
                 meta.appendChild(date);
                 card.appendChild(meta);
 
@@ -4361,13 +4442,13 @@
                     'box-sizing:border-box',
                     'font:800 16px/1.22 Arial,sans-serif',
                     'letter-spacing:0',
-                    'color:rgba(245,247,250,0.98)',
-                    'display:block',
-                    'max-height:none',
-                    '-webkit-line-clamp:unset',
-                    '-webkit-box-orient:initial',
-                    'overflow:visible',
-                    'text-overflow:clip',
+                    'color:var(--ytkit-split-text)',
+                    'display:-webkit-box',
+                    'max-height:2.44em',
+                    '-webkit-line-clamp:2',
+                    '-webkit-box-orient:vertical',
+                    'overflow:hidden',
+                    'text-overflow:ellipsis',
                     'white-space:normal',
                     'overflow-wrap:anywhere',
                     'word-break:break-word'
@@ -4394,12 +4475,16 @@
 
                 const headerWidth = Math.max(0, Math.round(window.innerWidth * rightPct / 100));
                 const compact = headerWidth > 0 && headerWidth < 760;
-                const baseHeaderHeight = compact ? 172 : this._liveHeaderHeight;
-                const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(420, Math.round(window.innerHeight * 0.5)));
+                const narrow = headerWidth > 0 && headerWidth < 420;
+                const baseHeaderHeight = narrow ? 190 : (compact ? 164 : this._liveHeaderHeight);
+                const maxHeaderHeight = Math.max(baseHeaderHeight, Math.min(260, Math.round(window.innerHeight * 0.42)));
                 header.dataset.ytkitLiveCompact = compact ? '1' : '0';
+                header.dataset.ytkitLiveNarrow = narrow ? '1' : '0';
                 header.style.width = `calc(${rightPct}% - 2px)`;
+                header.style.padding = narrow ? '8px 9px' : '10px 12px';
                 header.style.minHeight = `${baseHeaderHeight}px`;
                 header.style.height = `${baseHeaderHeight}px`;
+                const card = header.querySelector('.ytkit-split-live-card');
                 const titleEl = header.querySelector('.ytkit-split-live-title');
                 const channelEl = header.querySelector('.ytkit-split-live-channel');
                 const metaEl = header.querySelector('.ytkit-split-live-meta');
@@ -4411,7 +4496,17 @@
                 const viewText = this._getSplitLiveViewCountText();
                 const infoText = this._getSplitLiveInfoText(viewText);
                 const supplementalInfo = viewText && infoText === viewText ? '' : infoText;
-                const dateInfo = [supplementalInfo, dateText].filter(Boolean).join(' | ');
+                const dateInfo = supplementalInfo || dateText;
+                const fullDateInfo = [supplementalInfo, dateText].filter(Boolean).join(' | ');
+                if (card) {
+                    card.style.padding = narrow ? '10px 12px' : '12px 15px 11px';
+                    card.style.gridTemplateColumns = narrow
+                        ? 'minmax(0,1fr)'
+                        : 'minmax(0,1fr) minmax(0,min(330px,42%))';
+                    card.style.gridTemplateAreas = narrow
+                        ? '"channel" "actions" "title" "meta"'
+                        : '"channel actions" "title title" "meta meta"';
+                }
                 if (channelEl) {
                     channelEl.textContent = channel;
                     channelEl.hidden = !channel;
@@ -4421,18 +4516,18 @@
                 if (titleEl) {
                     titleEl.textContent = title;
                     titleEl.hidden = !title;
-                    titleEl.style.setProperty('display', 'block');
+                    titleEl.style.setProperty('display', '-webkit-box');
                     titleEl.style.setProperty('width', '100%');
                     titleEl.style.setProperty('max-width', '100%');
                     titleEl.style.setProperty('max-inline-size', '100%');
-                    titleEl.style.setProperty('overflow', 'visible');
-                    titleEl.style.setProperty('text-overflow', 'clip');
+                    titleEl.style.setProperty('overflow', 'hidden');
+                    titleEl.style.setProperty('text-overflow', 'ellipsis');
                     titleEl.style.setProperty('white-space', 'normal');
                     titleEl.style.setProperty('overflow-wrap', 'anywhere');
-                    titleEl.style.setProperty('word-break', 'break-word');
-                    titleEl.style.setProperty('-webkit-line-clamp', 'unset');
-                    titleEl.style.setProperty('-webkit-box-orient', 'initial');
-                    titleEl.style.setProperty('max-height', 'none');
+                    titleEl.style.setProperty('word-break', 'normal');
+                    titleEl.style.setProperty('-webkit-line-clamp', '2');
+                    titleEl.style.setProperty('-webkit-box-orient', 'vertical');
+                    titleEl.style.setProperty('max-height', '2.44em');
                     if (title) titleEl.title = title;
                     else titleEl.removeAttribute('title');
                 }
@@ -4447,13 +4542,14 @@
                     dateEl.textContent = dateInfo;
                     dateEl.hidden = !dateInfo;
                     dateEl.style.setProperty('-webkit-line-clamp', compact ? '2' : '1');
-                    if (dateInfo) dateEl.title = dateInfo;
+                    if (fullDateInfo) dateEl.title = fullDateInfo;
                     else dateEl.removeAttribute('title');
                 }
-                header.setAttribute('aria-label', [t('stickyVideoLiveVideoFallback', 'Live video'), channel, viewText, title].filter(Boolean).join(' | '));
+                header.setAttribute('aria-label', [t('stickyVideoLiveVideoFallback', 'Live video'), channel, viewText, dateInfo, title].filter(Boolean).join(' | '));
                 this._dockSplitLiveHeaderActions();
-                const card = header.querySelector('.ytkit-split-live-card');
-                const measuredHeaderHeight = Math.ceil((card?.scrollHeight || baseHeaderHeight - 20) + 20);
+                const outerVerticalPadding = narrow ? 16 : 20;
+                const measuredCardHeight = Math.max(card?.scrollHeight || 0, card?.getBoundingClientRect?.().height || 0);
+                const measuredHeaderHeight = Math.ceil((measuredCardHeight || baseHeaderHeight - outerVerticalPadding) + outerVerticalPadding);
                 const liveHeaderHeight = Math.min(maxHeaderHeight, Math.max(baseHeaderHeight, measuredHeaderHeight));
                 header.style.height = `${liveHeaderHeight}px`;
                 return liveHeaderHeight;
@@ -4691,22 +4787,29 @@
                 }
 
                 const gap = 8;
-                const metrics = controls.map(control => {
+                const naturalMetrics = controls.map(control => {
                     const rect = control.getBoundingClientRect();
                     const naturalWidth = Math.max(32, Math.ceil(rect.width || control.offsetWidth || 96));
                     return {
                         control,
-                        width: Math.min(180, naturalWidth),
+                        naturalWidth: Math.min(180, naturalWidth),
                         height: Math.max(32, Math.ceil(rect.height || control.offsetHeight || 32))
                     };
                 });
-                const totalWidth = metrics.reduce((sum, item) => sum + item.width, 0) + gap * Math.max(0, metrics.length - 1);
                 actions.hidden = false;
                 actions.style.width = '100%';
                 actions.style.minWidth = '0';
                 actions.style.maxWidth = '100%';
 
                 const box = actions.getBoundingClientRect();
+                const availableWidth = Math.max(32, box.width || actions.clientWidth || 32);
+                const gapWidth = gap * Math.max(0, naturalMetrics.length - 1);
+                const controlWidth = Math.max(32, Math.floor((availableWidth - gapWidth) / naturalMetrics.length));
+                const metrics = naturalMetrics.map(item => ({
+                    ...item,
+                    width: Math.min(item.naturalWidth, controlWidth)
+                }));
+                const totalWidth = metrics.reduce((sum, item) => sum + item.width, 0) + gapWidth;
                 const topBase = box.top + Math.max(0, (box.height - 32) / 2);
                 const clampedWidth = Math.min(totalWidth, Math.max(32, box.width || actions.clientWidth || totalWidth));
                 let left = Math.max(box.left, box.right - clampedWidth);
@@ -5046,13 +5149,18 @@
                 // DIVIDER — hidden until split
                 const divider = document.createElement('div');
                 divider.id = 'ytkit-split-divider';
-                divider.tabIndex = 0;
+                divider.tabIndex = -1;
                 divider.setAttribute('role', 'separator');
                 divider.setAttribute('aria-orientation', 'vertical');
                 divider.setAttribute('aria-label', t('stickyVideoResizePanelsLabel', 'Resize Theater Split panels'));
+                divider.setAttribute('aria-controls', 'ytkit-split-right');
+                divider.setAttribute('aria-expanded', 'false');
                 divider.setAttribute('aria-valuemin', '25');
-                divider.setAttribute('aria-valuemax', '85');
-                divider.setAttribute('aria-valuenow', '68');
+                divider.setAttribute('aria-valuemax', '100');
+                divider.setAttribute('aria-valuenow', '100');
+                divider.setAttribute('aria-hidden', 'true');
+                divider.dataset.ytkitPanelState = 'hidden';
+                divider.title = t('stickyVideoResizePanelsLabel', 'Resize Theater Split panels');
                 divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:var(--ytkit-split-canvas);transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;pointer-events:auto;scrollbar-width:none;color:var(--ytkit-split-muted);`;
                 const pip = document.createElement('div');
                 pip.className = 'ytkit-divider-pip';
@@ -5098,6 +5206,24 @@
                 return wrapper;
             },
 
+            _setDividerPanelState(divider, open, leftPct = 100, visible = true) {
+                if (!divider) return;
+                divider.tabIndex = visible ? 0 : -1;
+                divider.setAttribute('aria-expanded', String(open));
+                divider.setAttribute('aria-valuenow', String(Math.round(open ? leftPct : 100)));
+                divider.dataset.ytkitPanelState = visible ? (open ? 'open' : 'closed') : 'hidden';
+                divider.toggleAttribute('aria-hidden', !visible);
+            },
+
+            _toggleSplitFromDivider() {
+                if (!this._isActive || this._dismissed) return;
+                if (this._isSplit) {
+                    this._collapseSplit(false, { keepDivider: true });
+                } else {
+                    this._expandSplit();
+                }
+            },
+
             _applyDividerRatio(left, right, newLeftPct) {
                 const newRightPct = 100 - newLeftPct;
                 const wrapper = this._splitWrapper;
@@ -5107,15 +5233,19 @@
                 const positioned = this._positionedEls || [];
                 right.style.flexBasis = newRightPct + '%';
                 right.style.width     = newRightPct + '%';
-                divider?.setAttribute('aria-valuenow', String(Math.round(newLeftPct)));
+                this._setDividerPanelState(divider, true, newLeftPct, true);
                 document.documentElement.style.setProperty('--ytkit-split-right-width', `calc(${newRightPct}vw - 6px)`);
                 if (player) player.style.setProperty('width', newLeftPct + '%', 'important');
                 positioned.forEach(el => {
                     el.style.setProperty('width', `calc(${newRightPct}% - 2px)`, 'important');
                 });
                 if (this._splitLiveHeader) {
-                    this._splitLiveHeader.style.width = `calc(${newRightPct}% - 2px)`;
-                    this._layoutSplitLiveHeaderActions();
+                    const liveHeaderTop = this._ensureSplitLiveHeader(newRightPct);
+                    const chatEl = this._getChatEl();
+                    if (chatEl) {
+                        chatEl.style.setProperty('top', `${liveHeaderTop}px`, 'important');
+                        chatEl.style.setProperty('height', `calc(100vh - ${liveHeaderTop}px)`, 'important');
+                    }
                 }
                 if (strip) strip.style.width = `calc(${newRightPct}% - 2px)`;
                 storageWrite('ytkit_split_ratio', newLeftPct);
@@ -5125,32 +5255,41 @@
                 if (!right) return;
 
                 divider.addEventListener('keydown', (e) => {
+                    if (!this._isActive || this._dismissed) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this._toggleSplitFromDivider();
+                        return;
+                    }
                     if (!this._isSplit || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
                     e.preventDefault();
                     const current = Number(divider.getAttribute('aria-valuenow')) || 68;
                     this._applyDividerRatio(left, right, Math.max(25, Math.min(85,
                         current + (e.key === 'ArrowLeft' ? -2 : 2))));
-                    divider.style.flexBasis = '8px';
-                    divider.style.width = '8px';
+                    divider.style.flexBasis = `${DIVIDER_WIDTH_PX}px`;
+                    divider.style.width = `${DIVIDER_WIDTH_PX}px`;
                     this._triggerPlayerResize();
                 });
 
-                // Double-click to reset ratio to the default 68/32 layout
-                divider.addEventListener('dblclick', (e) => {
-                    if (!this._isSplit) return;
+                // Assistive technology can activate the separator by issuing a
+                // synthetic click without pointer events. Real pointer clicks
+                // are handled on release so the drag threshold stays reliable.
+                divider.addEventListener('click', (e) => {
+                    if (e.detail !== 0) return;
                     e.preventDefault();
-                    this._applyDividerRatio(left, right, 68);
-                    divider.style.flexBasis = '8px';
-                    divider.style.width = '8px';
-                    this._triggerPlayerResize();
+                    this._toggleSplitFromDivider();
                 });
 
                 // Shared drag logic for mouse and touch
                 const startDrag = (startX) => {
-                    if (!this._isSplit) return null;
+                    if (!this._isActive || this._dismissed) return null;
                     const wrapper = this._splitWrapper;
                     const totalW = wrapper.getBoundingClientRect().width;
-                    const startLeftPct = left.getBoundingClientRect().width / totalW * 100;
+                    if (!Number.isFinite(totalW) || totalW <= 0) return null;
+                    const measuredLeftPct = left.getBoundingClientRect().width / totalW * 100;
+                    const startLeftPct = this._isSplit && Number.isFinite(measuredLeftPct)
+                        ? measuredLeftPct
+                        : 100;
                     document.body.style.cursor = 'col-resize';
                     document.body.style.userSelect = 'none';
 
@@ -5159,73 +5298,98 @@
                     document.body.appendChild(dragShield);
 
                     let _dragRaf = null;
+                    let dragged = false;
+                    const previousTransition = right.style.transition;
                     const onDrag = (clientX) => {
+                        const dx = clientX - startX;
+                        if (!dragged && Math.abs(dx) < DIVIDER_DRAG_THRESHOLD_PX) return;
+                        if (!dragged) {
+                            dragged = true;
+                            if (!this._isSplit) this._expandSplit();
+                            if (!this._isSplit) return;
+                            right.style.transition = 'none';
+                        }
                         if (_dragRaf) cancelAnimationFrame(_dragRaf);
                         _dragRaf = requestAnimationFrame(() => {
-                            const dx = clientX - startX;
                             const newLeftPct = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
                             this._applyDividerRatio(left, right, newLeftPct);
-                            divider.style.flexBasis = '8px';
-                            divider.style.width = '8px';
+                            divider.style.flexBasis = `${DIVIDER_WIDTH_PX}px`;
+                            divider.style.width = `${DIVIDER_WIDTH_PX}px`;
                         });
                     };
                     const cleanup = () => {
                         if (_dragRaf) cancelAnimationFrame(_dragRaf);
+                        if (dragged) right.style.transition = previousTransition;
                         dragShield.remove();
                         document.body.style.cursor = '';
                         document.body.style.userSelect = '';
                         this._triggerPlayerResize();
                     };
-                    return { onDrag, cleanup, totalW, startLeftPct };
+                    return { onDrag, cleanup, didDrag: () => dragged };
                 };
 
                 // Mouse drag
                 divider.addEventListener('mousedown', (e) => {
-                    if (e.detail >= 2) {
-                        e.preventDefault();
-                        this._applyDividerRatio(left, right, 68);
-                        divider.style.flexBasis = '8px';
-                        divider.style.width = '8px';
-                        this._triggerPlayerResize();
-                        return;
-                    }
+                    if (e.button !== 0) return;
+                    this._dividerDragCleanup?.();
                     e.preventDefault();
                     const ctx = startDrag(e.clientX);
                     if (!ctx) return;
+                    let finished = false;
                     const onMove = (me) => ctx.onDrag(me.clientX);
-                    const onUp = () => {
+                    const finish = (toggleOnTap) => {
+                        if (finished) return;
+                        finished = true;
+                        this._dividerDragCleanup = null;
+                        const dragged = ctx.didDrag();
                         ctx.cleanup();
                         window.removeEventListener('mousemove', onMove);
                         window.removeEventListener('mouseup', onUp);
-                        window.removeEventListener('blur', onUp);
-                        document.removeEventListener('mouseleave', onUp);
+                        window.removeEventListener('blur', onCancel);
+                        document.removeEventListener('mouseleave', onCancel);
+                        if (toggleOnTap && !dragged) this._toggleSplitFromDivider();
                     };
+                    const onUp = () => finish(true);
+                    const onCancel = () => finish(false);
                     window.addEventListener('mousemove', onMove);
                     window.addEventListener('mouseup', onUp);
-                    window.addEventListener('blur', onUp);
-                    document.addEventListener('mouseleave', onUp);
+                    window.addEventListener('blur', onCancel);
+                    document.addEventListener('mouseleave', onCancel);
+                    this._dividerDragCleanup = onCancel;
                 });
 
                 // Touch drag
                 divider.addEventListener('touchstart', (e) => {
                     const t = e.touches[0];
                     if (!t) return;
+                    this._dividerDragCleanup?.();
                     e.preventDefault();
                     const ctx = startDrag(t.clientX);
                     if (!ctx) return;
+                    let finished = false;
                     const onTouchMove = (te) => {
                         const tt = te.touches[0];
-                        if (tt) ctx.onDrag(tt.clientX);
+                        if (!tt) return;
+                        if (te.cancelable) te.preventDefault();
+                        ctx.onDrag(tt.clientX);
                     };
-                    const onTouchEnd = () => {
+                    const finish = (toggleOnTap) => {
+                        if (finished) return;
+                        finished = true;
+                        this._dividerDragCleanup = null;
+                        const dragged = ctx.didDrag();
                         ctx.cleanup();
                         window.removeEventListener('touchmove', onTouchMove);
                         window.removeEventListener('touchend', onTouchEnd);
-                        window.removeEventListener('touchcancel', onTouchEnd);
+                        window.removeEventListener('touchcancel', onTouchCancel);
+                        if (toggleOnTap && !dragged) this._toggleSplitFromDivider();
                     };
-                    window.addEventListener('touchmove', onTouchMove, { passive: true });
+                    const onTouchEnd = () => finish(true);
+                    const onTouchCancel = () => finish(false);
+                    window.addEventListener('touchmove', onTouchMove, { passive: false });
                     window.addEventListener('touchend', onTouchEnd);
-                    window.addEventListener('touchcancel', onTouchEnd);
+                    window.addEventListener('touchcancel', onTouchCancel);
+                    this._dividerDragCleanup = onTouchCancel;
                 });
             },
 
@@ -5614,9 +5778,9 @@
                 // Expand overlay's right panel placeholder
                 right.style.flexBasis = rightPct + '%';
                 right.style.width     = rightPct + '%';
-                divider.style.flexBasis = '8px';
-                divider.style.width     = '8px';
-                divider.setAttribute('aria-valuenow', String(Math.round(leftPct)));
+                divider.style.flexBasis = `${DIVIDER_WIDTH_PX}px`;
+                divider.style.width     = `${DIVIDER_WIDTH_PX}px`;
+                this._setDividerPanelState(divider, true, leftPct, true);
 
                 // Sync player width — player is fixed-positioned separately
                 const player = this._getPlayer();
@@ -5753,10 +5917,11 @@
             },
 
             // ── Collapse right panel (back to fullscreen video) ──
-            _collapseSplit(dismissed) {
+            _collapseSplit(dismissed, options = {}) {
                 if (!this._isSplit) return;
                 this._isSplit = false;
                 if (dismissed) this._dismissed = true;
+                const keepDivider = !dismissed && options.keepDivider === true;
                 // Clear `_entering` in case we collapse before the expand
                 // transition completed. Otherwise the 500 ms fallback timer in
                 // `_expandSplit` would still see `_entering === true` and call
@@ -5794,8 +5959,9 @@
                 // Collapse overlay placeholder
                 right.style.flexBasis = '0';
                 right.style.width     = '0';
-                divider.style.flexBasis = '0';
-                divider.style.width     = '0';
+                divider.style.flexBasis = keepDivider ? `${DIVIDER_WIDTH_PX}px` : '0';
+                divider.style.width     = keepDivider ? `${DIVIDER_WIDTH_PX}px` : '0';
+                this._setDividerPanelState(divider, false, 100, keepDivider);
                 right.style.padding = '0';
                 right.style.opacity = '0';
 
@@ -5831,6 +5997,8 @@
             // ── Unmount overlay entirely (navigate away / feature disabled) ──
             _unmount(keepClass) {
                 if (!this._isActive) return;
+                this._dividerDragCleanup?.();
+                this._dividerDragCleanup = null;
                 this._entering = false;
                 clearTimeout(this._resizeTimer);
                 this._resizeTimer = null;

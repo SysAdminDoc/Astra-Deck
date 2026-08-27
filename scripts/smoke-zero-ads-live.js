@@ -1555,6 +1555,118 @@ async function verifySplitEngagementControls(client, theme, timeoutMs) {
     return states;
 }
 
+async function captureDividerState(client) {
+    return evaluate(client, `(() => {
+        const divider = document.querySelector('#ytkit-split-divider');
+        const right = document.querySelector('#ytkit-split-right');
+        const dividerRect = divider?.getBoundingClientRect();
+        const rightRect = right?.getBoundingClientRect();
+        return {
+            open: document.documentElement.classList.contains('ytkit-split-open'),
+            panelState: divider?.dataset.ytkitPanelState || '',
+            expanded: divider?.getAttribute('aria-expanded') || '',
+            hidden: divider?.getAttribute('aria-hidden') || '',
+            value: Number(divider?.getAttribute('aria-valuenow') || 0),
+            tabIndex: divider?.tabIndex ?? -1,
+            divider: dividerRect ? {
+                x: dividerRect.x,
+                y: dividerRect.y,
+                width: dividerRect.width,
+                height: dividerRect.height
+            } : null,
+            rightWidth: rightRect?.width || 0,
+            commentsVisible: Boolean(document.querySelector('#below.ytkit-split-scroll-surface'))
+        };
+    })()`);
+}
+
+async function dispatchDividerClick(client, state) {
+    if (!state?.divider || state.divider.width < 1 || state.divider.height < 1) {
+        throw new Error('Theater Split divider is not clickable');
+    }
+    const x = Math.round(state.divider.x + state.divider.width / 2);
+    const y = Math.round(state.divider.y + state.divider.height / 2);
+    await client.send('Input.dispatchMouseEvent', {
+        type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1
+    });
+    await client.send('Input.dispatchMouseEvent', {
+        type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1
+    });
+}
+
+async function verifyTheaterSplitDividerInteraction(client, timeoutMs) {
+    const failures = [];
+    const initial = await captureDividerState(client);
+    await dispatchDividerClick(client, initial);
+    await waitForExpression(
+        client,
+        `(() => {
+            const divider = document.querySelector('#ytkit-split-divider');
+            return !document.documentElement.classList.contains('ytkit-split-open')
+                && divider?.dataset.ytkitPanelState === 'closed'
+                && divider.getBoundingClientRect().width >= 6;
+        })()`,
+        timeoutMs,
+        'collapse Theater Split comments from divider click'
+    );
+    await sleep(500);
+    const collapsed = await captureDividerState(client);
+    await capture(client, 'watch-theater-split-divider-collapsed-dark-1440x900');
+    if (collapsed.open || collapsed.panelState !== 'closed' || collapsed.expanded !== 'false'
+        || collapsed.hidden || collapsed.value !== 100 || collapsed.tabIndex < 0
+        || collapsed.commentsVisible || collapsed.divider?.width < 6) {
+        failures.push(`divider click did not leave a usable closed rail (${JSON.stringify(collapsed)})`);
+    }
+
+    await dispatchDividerClick(client, collapsed);
+    await waitForExpression(
+        client,
+        `(() => {
+            const divider = document.querySelector('#ytkit-split-divider');
+            return document.documentElement.classList.contains('ytkit-split-open')
+                && divider?.dataset.ytkitPanelState === 'open'
+                && divider.getAttribute('aria-expanded') === 'true'
+                && Boolean(document.querySelector('#below.ytkit-split-scroll-surface'));
+        })()`,
+        timeoutMs,
+        'reopen Theater Split comments from divider click'
+    );
+    await sleep(600);
+    const reopened = await captureDividerState(client);
+    if (!reopened.open || reopened.panelState !== 'open' || reopened.expanded !== 'true'
+        || reopened.rightWidth < 240 || !reopened.commentsVisible) {
+        failures.push(`second divider click did not restore comments (${JSON.stringify(reopened)})`);
+        return { collapsed, failures, initial, reopened, resized: null };
+    }
+
+    const startX = Math.round(reopened.divider.x + reopened.divider.width / 2);
+    const y = Math.round(reopened.divider.y + reopened.divider.height / 2);
+    const endX = Math.max(40, startX - 72);
+    await client.send('Input.dispatchMouseEvent', {
+        type: 'mousePressed', x: startX, y, button: 'left', buttons: 1, clickCount: 1
+    });
+    await client.send('Input.dispatchMouseEvent', {
+        type: 'mouseMoved', x: endX, y, button: 'left', buttons: 1
+    });
+    await client.send('Input.dispatchMouseEvent', {
+        type: 'mouseReleased', x: endX, y, button: 'left', buttons: 0, clickCount: 1
+    });
+    await waitForExpression(
+        client,
+        `Number(document.querySelector('#ytkit-split-divider')?.getAttribute('aria-valuenow') || 0) < ${reopened.value}`,
+        timeoutMs,
+        'resize Theater Split comments by dragging the divider'
+    );
+    await sleep(350);
+    const resized = await captureDividerState(client);
+    await capture(client, 'watch-theater-split-divider-resized-dark-1440x900');
+    if (!resized.open || resized.panelState !== 'open' || !resized.commentsVisible
+        || resized.value >= reopened.value || resized.rightWidth <= reopened.rightWidth) {
+        failures.push(`divider drag toggled or failed to widen comments (${JSON.stringify({ reopened, resized })})`);
+    }
+    return { collapsed, failures, initial, reopened, resized };
+}
+
 async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     const failures = [];
 
@@ -1643,6 +1755,9 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
     const splitEngagementDark = await verifySplitEngagementControls(client, 'dark', timeoutMs);
     failures.push(...splitEngagementDark.failures.map(failure => `watch themes: ${failure}`));
     await capture(client, 'watch-theater-split-dark-1440x900');
+
+    const dividerInteraction = await verifyTheaterSplitDividerInteraction(client, timeoutMs);
+    failures.push(...dividerInteraction.failures.map(failure => `watch themes: ${failure}`));
 
     await setWatchTheme(client, false);
     const splitLight = await evaluate(client, `(() => {
@@ -1874,6 +1989,7 @@ async function verifyWatchThemeSurfaces(client, backgroundClient, timeoutMs) {
         splitMetadataLight,
         splitEngagementDark,
         splitEngagementLight,
+        dividerInteraction,
         normalDark: normalDark.snapshot,
         normalLight: normalLight.snapshot,
         normalDarkDetails,
