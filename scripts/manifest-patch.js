@@ -62,10 +62,15 @@ function patchManifestForFirefox(ffManifest, profile = FIREFOX_AUTO_UPDATE_PROFI
     }
 
     if (Array.isArray(ffManifest.host_permissions)) {
-        // Firefox 152-154 accepts port-qualified host grants but does not apply
-        // them to background fetches. Use its working host-level grant while
-        // the CSP and background proxy continue to restrict requests to the
-        // companion's explicit port catalogue.
+        // Firefox does not apply a port-qualified host grant at all — a match
+        // pattern containing a port matches nothing. That is bug 1362809, open
+        // since 2017 and never fixed; the 2026 report filed against 152-154
+        // (bug 2052000) was closed as its duplicate. This is a PERMANENT
+        // workaround, not a version-bounded one: do not revert it when a newer
+        // Firefox ships. Use the host-level grant while the CSP and background
+        // proxy keep restricting requests to the companion's explicit port
+        // catalogue.
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1362809
         const loopbackPortPattern = /^http:\/\/127\.0\.0\.1:\d+\/\*$/;
         const hasLoopbackPortGrant = ffManifest.host_permissions.some((permission) =>
             loopbackPortPattern.test(permission)

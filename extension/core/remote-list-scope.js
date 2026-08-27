@@ -230,8 +230,7 @@
             REMOTE_LIST_HOST_PATTERN,
             COBALT_PUBLIC_INSTANCE_HOST,
             describeCobaltInstanceUrl,
-            describePublicHttpsUrl,
-            describeRemoteListUrl,
+                describeRemoteListUrl,
             isRemoteListUrlAllowed,
             remoteListOriginPattern
         };
