@@ -2409,6 +2409,49 @@ for (const [locale, messages] of Object.entries(FEATURE_DISABLE_FEED_TRANSLATION
 // The user-initiated feature report. Its whole point is being safe to paste in
 // public, and the sentence that says so is the one a non-English reader most
 // needs to be able to read.
+const COLLAB_CHANNEL_REASON_TRANSLATIONS = {
+  ar: {
+    'a blocked channel rule ({channel})': 'قاعدة قناة محظورة ({channel})',
+    'your channel allowlist ({channel})': 'قائمة القنوات المسموح بها ({channel})'
+  },
+  de: {
+    'a blocked channel rule ({channel})': 'eine Regel für blockierte Kanäle ({channel})',
+    'your channel allowlist ({channel})': 'deine Kanal-Positivliste ({channel})'
+  },
+  es: {
+    'a blocked channel rule ({channel})': 'una regla de canal bloqueado ({channel})',
+    'your channel allowlist ({channel})': 'tu lista de canales permitidos ({channel})'
+  },
+  fr: {
+    'a blocked channel rule ({channel})': 'une règle de chaîne bloquée ({channel})',
+    'your channel allowlist ({channel})': 'votre liste de chaînes autorisées ({channel})'
+  },
+  it: {
+    'a blocked channel rule ({channel})': 'una regola di canale bloccato ({channel})',
+    'your channel allowlist ({channel})': 'il tuo elenco di canali consentiti ({channel})'
+  },
+  ja: {
+    'a blocked channel rule ({channel})': 'ブロックしたチャンネルのルール ({channel})',
+    'your channel allowlist ({channel})': '許可したチャンネル一覧 ({channel})'
+  },
+  ko: {
+    'a blocked channel rule ({channel})': '차단된 채널 규칙 ({channel})',
+    'your channel allowlist ({channel})': '허용된 채널 목록 ({channel})'
+  },
+  pt_BR: {
+    'a blocked channel rule ({channel})': 'uma regra de canal bloqueado ({channel})',
+    'your channel allowlist ({channel})': 'sua lista de canais permitidos ({channel})'
+  },
+  ru: {
+    'a blocked channel rule ({channel})': 'правило заблокированного канала ({channel})',
+    'your channel allowlist ({channel})': 'ваш список разрешённых каналов ({channel})'
+  },
+  zh_CN: {
+    'a blocked channel rule ({channel})': '已屏蔽频道规则（{channel}）',
+    'your channel allowlist ({channel})': '你的频道白名单（{channel}）'
+  }
+};
+
 const SELECTOR_FALLBACK_TRANSLATIONS = {
   ar: {
     'Page element “{surface}” only matched a backup rule': 'عنصر الصفحة “{surface}” طابق قاعدة احتياطية فقط'

@@ -7695,6 +7695,12 @@
   "videoHiderReasonChannelNotAllowed": {
     "message": "ваш список разрешённых каналов"
   },
+  "videoHiderReasonBlockedChannelNamedTpl": {
+    "message": "правило заблокированного канала ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowedNamedTpl": {
+    "message": "ваш список разрешённых каналов ({channel})"
+  },
   "videoHiderReasonDuration": {
     "message": "правило минимальной длительности"
   },

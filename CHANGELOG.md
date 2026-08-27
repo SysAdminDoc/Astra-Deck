@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- A card naming several channels now says which one is blocked. Blocking has
+  always matched any channel named on a card, so collaborator uploads were
+  already hidden, but the reason read only "a blocked channel rule" — with two
+  names on the card there was no way to tell which rule fired or which channel
+  to unblock. The hidden-card notice now names it, and an allowlist miss names
+  what was on the card.
+
+
 ## [4.88.3] (2026-08-27)
 
 ### Security

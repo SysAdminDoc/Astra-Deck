@@ -7695,6 +7695,12 @@
   "videoHiderReasonChannelNotAllowed": {
     "message": "チャンネル許可リスト"
   },
+  "videoHiderReasonBlockedChannelNamedTpl": {
+    "message": "ブロックしたチャンネルのルール ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowedNamedTpl": {
+    "message": "許可したチャンネル一覧 ({channel})"
+  },
   "videoHiderReasonDuration": {
     "message": "最小再生時間ルール"
   },

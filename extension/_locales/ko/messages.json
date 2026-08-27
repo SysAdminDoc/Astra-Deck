@@ -7695,6 +7695,12 @@
   "videoHiderReasonChannelNotAllowed": {
     "message": "채널 허용 목록"
   },
+  "videoHiderReasonBlockedChannelNamedTpl": {
+    "message": "차단된 채널 규칙 ({channel})"
+  },
+  "videoHiderReasonChannelNotAllowedNamedTpl": {
+    "message": "허용된 채널 목록 ({channel})"
+  },
   "videoHiderReasonDuration": {
     "message": "최소 길이 규칙"
   },

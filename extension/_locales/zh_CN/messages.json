@@ -7695,6 +7695,12 @@
   "videoHiderReasonChannelNotAllowed": {
     "message": "你的频道允许列表"
   },
+  "videoHiderReasonBlockedChannelNamedTpl": {
+    "message": "已屏蔽频道规则（{channel}）"
+  },
+  "videoHiderReasonChannelNotAllowedNamedTpl": {
+    "message": "你的频道白名单（{channel}）"
+  },
   "videoHiderReasonDuration": {
     "message": "最短时长规则"
   },
