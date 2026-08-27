@@ -1907,7 +1907,7 @@ test('feature disable feed accepts a payload carrying its real signature', async
     assert.equal(response.ok, true, 'a correctly signed feed must be delivered');
     assert.equal(response.source, 'network');
     assert.ok(response.text.length > 0);
-    assert.ok(bg.getLocal()['ytkit-feature-disable-feed'],
+    assert.ok(bg.getLocal()['ytkit-feature-disable-feed-v2'],
         'a verified feed becomes the last-known-good cache entry');
 });
 
@@ -1919,7 +1919,7 @@ test('feature disable feed refuses a tampered payload and writes no cache', asyn
     const response = await dispatchMessage(bg.messageListener, { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
 
     assert.equal(response.ok, false, 'a payload whose signature does not match must be refused');
-    assert.equal(bg.getLocal()['ytkit-feature-disable-feed'], undefined,
+    assert.equal(bg.getLocal()['ytkit-feature-disable-feed-v2'], undefined,
         'a refused payload must never become the last-known-good cache entry');
 });
 
@@ -1952,7 +1952,7 @@ test('feature disable feed keeps a stale cache when a tampered refresh is refuse
             (part, value) => (part === 'payload' ? `${value}\nastraDeck,4.0.0,4.99.0,tampered` : value))
     });
     // Old enough to be served-and-refreshed rather than used as-is.
-    bg.getLocal()['ytkit-feature-disable-feed'] = {
+    bg.getLocal()['ytkit-feature-disable-feed-v2'] = {
         text: 'astraDeck,4.0.0,4.99.0,known-good',
         cachedAt: Date.now() - (7 * 60 * 60 * 1000)
     };
@@ -1962,7 +1962,7 @@ test('feature disable feed keeps a stale cache when a tampered refresh is refuse
     assert.equal(response.source, 'stale');
     // The background refresh is fire-and-forget; give it a turn to finish.
     await new Promise((resolve) => setTimeout(resolve, 50));
-    assert.match(bg.getLocal()['ytkit-feature-disable-feed'].text, /known-good/,
+    assert.match(bg.getLocal()['ytkit-feature-disable-feed-v2'].text, /known-good/,
         'the refused refresh must leave the last-known-good entry in place');
 });
 
@@ -1985,4 +1985,27 @@ test('selector asset accepts its real signature and refuses a substituted body',
     const refused = await dispatchMessage(substituted.messageListener, { type: 'YTKIT_FETCH_SELECTOR_ASSET' });
     assert.equal(refused.ok, false, 'a substituted selector asset must be refused');
     assert.match(refused.error, /signature/i);
+});
+
+test('a feed cached before signatures existed is not served after upgrade', async () => {
+    // The pre-v4.88.3 build cached under 'ytkit-feature-disable-feed' with no
+    // verification, and a cache entry is served for up to 30 days without
+    // refetching. Reusing the key would have kept serving an unverified — or
+    // substituted — payload right through the upgrade that started verifying.
+    const bg = loadBackground({ fetchImpl: signedFeedFetch('feature-disable-feed.csv') });
+    bg.getLocal()['ytkit-feature-disable-feed'] = {
+        text: 'astraDeck,4.0.0,4.99.0,substituted-while-unauthenticated',
+        cachedAt: Date.now()
+    };
+
+    const response = await dispatchMessage(bg.messageListener, { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
+
+    assert.equal(response.source, 'network', 'the legacy entry must not answer as a fresh cache hit');
+    assert.doesNotMatch(response.text, /substituted-while-unauthenticated/,
+        'the unverified payload must never reach the caller');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(bg.getLocal()['ytkit-feature-disable-feed'], undefined,
+        'the legacy entry must be purged once a verified feed replaces it');
+    assert.ok(bg.getLocal()['ytkit-feature-disable-feed-v2'],
+        'the verified feed becomes the new cache entry');
 });
