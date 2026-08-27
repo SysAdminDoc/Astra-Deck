@@ -987,6 +987,116 @@ const WINDOWS_RESERVED_FILENAME_BASENAMES = new Set([
     'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'
 ]);
 const MAX_DOWNLOAD_FILENAME_LENGTH = 180;
+// Detached-signature verification for the two documents that can change
+// shipped behavior without a release.
+//
+// The feature-disable feed had no authenticity check of any kind, and the
+// selector asset's `sha256:` digest is parsed out of the same document it
+// vouches for — it catches truncation and corruption, never substitution.
+// Whoever can write the repository or intercept the CDN could pause features
+// or replace selectors on every install.
+//
+// ECDSA P-256 over SHA-256, raw r||s, base64, served from `<url>.sig`. Not
+// Ed25519: WebCrypto did not expose it until Chrome 137 and this project
+// supports Chrome 120. The private half never enters the repository; see
+// docs/signing-keys.md §12 and scripts/sign-remote-feeds.js.
+const FEED_SIGNING_PUBLIC_KEY = Object.freeze({
+    kty: 'EC',
+    crv: 'P-256',
+    x: 'JHadRIB-_yJUD9ROm7AclgBUER4Yo1jp5tCvijBoHqo',
+    y: 'CBJ2lKr699c_TgmBPKEJV4QhoEmLlV4a3yfC0qnCuGQ'
+});
+const FEED_SIGNATURE_SUFFIX = '.sig';
+const FEED_SIGNATURE_BYTES = 64;
+const MAX_FEED_SIGNATURE_BYTES = 256;
+const FEED_SIGNATURE_TIMEOUT_MS = 10000;
+
+let _feedSigningKeyPromise = null;
+
+function importFeedSigningKey() {
+    if (_feedSigningKeyPromise) return _feedSigningKeyPromise;
+    _feedSigningKeyPromise = (async () => {
+        const subtle = globalThis.crypto?.subtle;
+        if (!subtle?.importKey) return null;
+        return subtle.importKey(
+            'jwk',
+            { ...FEED_SIGNING_PUBLIC_KEY, ext: true, key_ops: ['verify'] },
+            // i18n-static: WebCrypto algorithm identifier, not user copy
+            { name: 'ECDSA', namedCurve: 'P-256' },
+            false,
+            ['verify']
+        );
+    })().catch(() => null);
+    return _feedSigningKeyPromise;
+}
+
+function decodeFeedSignature(text) {
+    if (typeof text !== 'string') return null;
+    const trimmed = text.trim();
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(trimmed)) return null;
+    let binary;
+    try {
+        binary = atob(trimmed);
+    } catch (_) {
+        // reason: a signature that does not decode is a failed verification
+        return null;
+    }
+    if (binary.length !== FEED_SIGNATURE_BYTES) return null;
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+}
+
+async function fetchFeedSignature(url) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+        try { controller.abort(); } catch (_) {
+            // reason: already aborted
+        }
+    }, FEED_SIGNATURE_TIMEOUT_MS);
+    try {
+        const response = await fetch(url + FEED_SIGNATURE_SUFFIX, {
+            method: 'GET',
+            headers: { Accept: 'text/plain' },
+            credentials: 'omit',
+            cache: 'no-store',
+            redirect: 'error',
+            signal: controller.signal
+        });
+        if (!response.ok) return null;
+        const { text } = await readTextBounded(
+            response, MAX_FEED_SIGNATURE_BYTES, 'Feed signature', controller);
+        return text;
+    } catch (_) {
+        // reason: an unreachable signature is an unverifiable payload
+        return null;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+// Fails closed on every path: no key, no signature, malformed signature, a
+// signature that does not match, or a runtime without WebCrypto. The caller
+// keeps whatever it already had.
+async function verifyFeedSignature(payloadText, signatureText) {
+    const key = await importFeedSigningKey();
+    if (!key) return false;
+    const signature = decodeFeedSignature(signatureText);
+    if (!signature) return false;
+    try {
+        return await globalThis.crypto.subtle.verify(
+            // i18n-static: WebCrypto algorithm identifier, not user copy
+            { name: 'ECDSA', hash: 'SHA-256' },
+            key,
+            signature,
+            new TextEncoder().encode(payloadText)
+        );
+    } catch (_) {
+        // reason: a verification that throws has not verified
+        return false;
+    }
+}
+
 const SELECTOR_ASSET_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/selector-packs.json';
 const MAX_SELECTOR_ASSET_BYTES = 256 * 1024;
 const MAX_COBALT_RESPONSE_BYTES = 512 * 1024;
@@ -1074,6 +1184,10 @@ function fetchFeatureDisableFeed() {
             if (!response.ok) return null;
             const { text } = await readTextBounded(
                 response, MAX_FEATURE_DISABLE_FEED_BYTES, 'Feature disable feed', controller);
+            // Verified BEFORE the cache write, so an unsigned or tampered body
+            // never becomes the last-known-good copy.
+            const signature = await fetchFeedSignature(FEATURE_DISABLE_FEED_URL);
+            if (!await verifyFeedSignature(text, signature)) return null;
             await writeFeatureDisableFeedCache(text);
             return text;
         } catch (_) {
@@ -1990,6 +2104,12 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (!response.ok) throw new Error(`Selector asset HTTP ${response.status}`);
             const { text, bytes } = await readTextBounded(
                 response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset', selectorAssetController);
+            // The asset's own `sha256:` digest travels inside the asset, so it
+            // cannot detect substitution. The detached signature can.
+            const signature = await fetchFeedSignature(SELECTOR_ASSET_URL);
+            if (!await verifyFeedSignature(text, signature)) {
+                throw new Error('Selector asset signature could not be verified.');
+            }
             sendResponse({
                 ok: true,
                 text,

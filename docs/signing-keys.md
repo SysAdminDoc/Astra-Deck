@@ -417,3 +417,47 @@ Every rotation lands in `HARDENING.md` with an Hn entry naming:
   forensics).
 
 The audit trail is committed to the repo. `ytkit.pem` itself is not.
+
+## 12. The remote-feed signing key (`feed-signing.pem`)
+
+Separate from `ytkit.pem` and from the release signing key. This one signs the
+two documents the extension fetches at runtime:
+
+- `selector-packs.json`
+- `feature-disable-feed.csv`
+
+Both can change shipped behavior without a release, which makes them an update
+channel. Before v4.88.3 the feed had no authenticity check at all and the
+selector asset verified a `sha256:` digest carried inside the asset it vouches
+for, so it caught truncation but not substitution.
+
+**Algorithm.** ECDSA P-256 over SHA-256, raw `r||s`, base64, written to
+`<file>.sig`. Not Ed25519: WebCrypto did not expose Ed25519 until Chrome 137
+and this project supports Chrome 120.
+
+**Where the private half lives.** Outside the repository, same policy as
+`ytkit.pem`:
+
+```
+%LOCALAPPDATA%\Astra-Deck\keyseed-signing.pem
+```
+
+Override with `ASTRA_FEED_SIGNING_KEY_PATH`.
+
+**Public half.** `FEED_SIGNING_PUBLIC_KEY` in `extension/background.js`, and
+mirrored in `scripts/sign-remote-feeds.js`. `npm run check` fails if the two
+disagree, so a half-applied rotation cannot ship.
+
+**Re-signing.** Any edit to either feed requires:
+
+```bash
+npm run sign:feeds
+```
+
+The `feed-signatures` gate fails until you do, and names the file.
+
+**Rotation.** Generate a new key, update the JWK in both files, re-sign both
+feeds, and ship all four changes in one release. Installs running the previous
+release will refuse the newly signed feeds until they update — which is the
+intended failure mode: they keep their last-known-good copy and their shipped
+selector packs.

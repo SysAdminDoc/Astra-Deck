@@ -59,6 +59,12 @@ documentation mistakes, and feature requests.
 - Extension permission, host-permission, CSP, or fetch-proxy bypass.
 - Astra Downloader loopback authentication, Host-header, DNS-rebinding, or
   request-validation bypass.
+- Remote-feed authenticity. `selector-packs.json` and
+  `feature-disable-feed.csv` are fetched at runtime and can change shipped
+  behavior without a release. Both carry a detached ECDSA P-256 signature
+  verified in the service worker against a public key inside the package,
+  and both fail closed to the last-known-good copy. Report anything that
+  gets an unsigned, mis-signed, or substituted feed accepted.
 - Dependency compromise or malicious package/update-chain behavior.
 - Release artifact, checksum, SBOM, attestation, or provenance mismatch.
 - Sensitive export, diagnostics, transcript, cookie, or BYO-key disclosure.

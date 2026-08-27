@@ -204,6 +204,13 @@ and asserted by a hostile-row battery in `tests/feature-disable-feed.test.js`:
   here from the row's issue *number*.
 - It cannot name anything outside the shipped schema. An unrecognised ID is
   dropped, resolved through the same alias table stored settings use.
+- It cannot come from anyone but the maintainer. Since v4.88.3 the feed carries
+  a detached ECDSA P-256 signature at `feature-disable-feed.csv.sig`, verified
+  in the service worker against a public key compiled into the package before
+  the body is cached or parsed. A missing, malformed, or non-matching signature
+  is refused and the previous copy is kept. `selector-packs.json` is signed and
+  verified the same way; its in-band `sha256:` digest travels inside the asset
+  and therefore proves integrity, not origin.
 
 Why it ships everywhere. The alternative to a disable feed is not "no remote
 influence", it is leaving a feature the maintainer *knows* is broken running
