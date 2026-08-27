@@ -6,6 +6,29 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.88.0] (2026-08-26)
+
+### Added
+
+- The downloader banner in Settings now keeps a **Get setup file** button even
+  while the service is healthy. The installer used to appear only when the
+  companion was missing, so anyone running an older build had nowhere in
+  Settings to fetch the current one. Cookie support needs companion 2.13.0, so
+  the setup file is one click away either way.
+
+### Fixed
+
+- Clicking download while the companion is running but cannot share its token
+  now opens the recovery panel instead of a toast you can't act on. The old
+  copy said to "verify the native host registration", which named the mechanism
+  and told the reader nothing to do. The panel explains that the installed
+  downloader is too old to hand its token to the browser, and puts Download
+  setup, Start service and Check again under that sentence.
+
+- `showInstallPrompt` no longer throws when it is reached from somewhere with
+  no document. It is pure UI, so there is nothing to render in that case, and
+  the throw used to take the caller's failure path down with it.
+
 ## [4.87.0] (2026-08-26)
 
 ### Fixed

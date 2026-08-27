@@ -220,7 +220,9 @@ test('every documented downloader error code keeps its recovery branch and copy'
         ['sign-in-required', /signed-in|Sign in/i],
         ['ffmpeg-missing-or-stale', /ffmpeg/i],
         ['network-unreachable', /network/i],
-        ['native-channel-required', /native messaging/i],
+        // Names the fix rather than the mechanism: "verify the native host
+        // registration" was accurate and useless to the reader who hit it.
+        ['native-channel-required', /private token.*Download setup/is],
     ]);
 
     for (const [code, pattern] of expected) {

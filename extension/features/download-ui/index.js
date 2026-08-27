@@ -955,6 +955,11 @@
 
             // Show install / retry prompt panel.
             showInstallPrompt(mode) {
+                // Reachable from contexts with no document (module harnesses,
+                // and any non-DOM bootstrap that surfaces a failure). This is
+                // pure UI, so there is nothing to render there and a throw
+                // would take the caller's failure path down with it.
+                if (typeof document === 'undefined' || typeof document?.createElement !== 'function') return null;
                 const existing = document.getElementById('ytkit-mediadl-install-prompt');
                 if (existing) existing.remove();
 
@@ -1023,6 +1028,19 @@
                                 ? t('dlInstallApiVersionsTpl', ' (it needs at least API {minimum})')
                                     .replace('{minimum}', String(mismatch.minimumClientApi))
                                 : '');
+                        prompt.dataset.state = 'error';
+                        return;
+                    }
+                    // The companion is running and answering /health, it just
+                    // will not part with its token. Since companion 2.13.0 a
+                    // paired extension reads the token straight from /health,
+                    // so reaching this state means the installed companion
+                    // predates that. "Verify the native host registration" was
+                    // the old advice and nobody can act on it; name the fix and
+                    // put the setup button under it.
+                    if (this._nativeChannelRequired) {
+                        desc.textContent = t('dlInstallNativeRequiredDesc',
+                            'Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again.');
                         prompt.dataset.state = 'error';
                         return;
                     }
@@ -1665,8 +1683,8 @@
                 duration: 8,
             },
             'native-channel-required': {
-                message: 'Astra Downloader needs browser native messaging to share its private token.',
-                advice: 'Reload the extension, verify the native host registration, then retry.',
+                message: 'Astra Downloader is running but cannot share its private token with this browser.',
+                advice: 'Update it with Download setup in the panel below, then choose Check again.',
                 tone: '#f59e0b',
                 duration: 12,
             },
@@ -1712,11 +1730,16 @@
             // something the reader can act on; the preset advice already says
             // what to do.
             if (status.nativeTokenError) logFailure('native-token', status.nativeTokenError);
-            return showDownloaderFailure({
+            const mapped = showDownloaderFailure({
                 error_code: 'native-channel-required',
                 error: status.nativeTokenError || '',
                 next_action: 'repair-native-host',
             });
+            // A toast on its own left the reader with nothing to press. The
+            // repair prompt carries Download setup, Start service and Check
+            // again, and its description names this exact state.
+            MediaDLManager.showInstallPrompt('retry');
+            return mapped;
         }
 
         async function ytKitDownload(videoUrl, audioOnly, opts = {}) {

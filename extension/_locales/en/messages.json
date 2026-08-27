@@ -5384,12 +5384,24 @@
   "settingsSectionVisibility": {
     "message": "Visibility"
   },
-  "settingsShortsDependencyAction": { "message": "Open Digital Wellbeing" },
-  "settingsShortsDependencyCopy": { "message": "Daily Shorts limits run through Digital Wellbeing." },
-  "settingsShortsLedgerEmpty": { "message": "No Shorts watch time recorded today." },
-  "settingsShortsLedgerName": { "message": "Shorts today" },
-  "settingsShortsLedgerSnooze": { "message": "Snoozed until {time}." },
-  "settingsShortsLedgerSummary": { "message": "{minutes} min watched today." },
+  "settingsShortsDependencyAction": {
+    "message": "Open Digital Wellbeing"
+  },
+  "settingsShortsDependencyCopy": {
+    "message": "Daily Shorts limits run through Digital Wellbeing."
+  },
+  "settingsShortsLedgerEmpty": {
+    "message": "No Shorts watch time recorded today."
+  },
+  "settingsShortsLedgerName": {
+    "message": "Shorts today"
+  },
+  "settingsShortsLedgerSnooze": {
+    "message": "Snoozed until {time}."
+  },
+  "settingsShortsLedgerSummary": {
+    "message": "{minutes} min watched today."
+  },
   "settingsSubFeatureBadge": {
     "message": "Sub"
   },
@@ -5974,7 +5986,7 @@
     "description": "Import status fragment shown when the pre-import safety backup file could not be written."
   },
   "statusClipboardUnavailable": {
-    "message": "Copying isn\u2019t available here. Select the text and copy it yourself instead."
+    "message": "Copying isn’t available here. Select the text and copy it yourself instead."
   },
   "statusCompanionCurrentTpl": {
     "message": "Astra Downloader already at v{version}."
@@ -8712,5 +8724,14 @@
   },
   "feature_selectionColor_desc": {
     "message": "Choose the highlight color used while custom text selection is enabled"
+  },
+  "dlInstallNativeRequiredDesc": {
+    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
+  },
+  "settingsDlGetSetup": {
+    "message": "Get setup file"
+  },
+  "settingsDlGetSetupTitle": {
+    "message": "Download the current Astra Downloader setup file to install or update it"
   }
 }
