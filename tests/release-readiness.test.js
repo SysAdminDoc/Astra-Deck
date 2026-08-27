@@ -347,6 +347,17 @@ test('release readiness command is wired into local package scripts', () => {
         'release artifact builds must write release-manifest.json and SHA256SUMS');
     assert.match(pkg.scripts['release:prepare'] || '', /release:readiness -- --require-pass/,
         'release preparation must finish by enforcing the readiness gate');
+    // The suite enforced nothing automatically until v4.88.3: no npm script ran
+    // it, there are no git hooks, and this repository ships no CI by policy.
+    // It must run before the slow browser lanes so a unit regression fails in
+    // seconds rather than after a full smoke pass.
+    for (const chain of ['release:prepare', 'release:prepare:no-crx']) {
+        const script = pkg.scripts[chain] || '';
+        assert.match(script, /(^|&&)\s*npm test\s*(&&|$)/,
+            `${chain} must run the test suite`);
+        assert.ok(script.indexOf('npm test') < script.indexOf('npm run release:browser-smokes'),
+            `${chain} must run the test suite before the browser smokes`);
+    }
     assert.match(pkg.scripts['release:sbom'] || '', /scripts\/generate-release-sbom\.js/,
         'package.json must expose local SBOM generation for older npm versions');
     assert.match(pkg.scripts['release:readiness'] || '', /scripts\/generate-release-readiness\.js/);

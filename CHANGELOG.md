@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Fixed
+
+- `npm run release:prepare` now runs the test suite. No npm script, git hook, or
+  CI job ran it before, so the whole suite enforced nothing unless someone typed
+  the command. It runs after the static gates and before the browser smokes, so
+  a unit regression fails in seconds rather than after a full smoke pass.
+
 ## [4.88.2] (2026-08-27)
 
 ### Changed

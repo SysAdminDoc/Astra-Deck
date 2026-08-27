@@ -105,6 +105,11 @@ npm run check
 npm run build
 ```
 
+`npm run release:prepare` runs the test suite itself, between `npm run check`
+and the browser smoke lanes, so a unit regression stops a release in seconds
+instead of after a full smoke pass. This repository ships no CI and no git
+hooks by policy, so those two commands are the only thing that runs the suite.
+
 For YouTube DOM drift or refreshed MHTML captures, follow
 `docs/selector-fixture-workflow.md` before changing selector canaries.
 
