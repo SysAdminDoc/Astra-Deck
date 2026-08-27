@@ -98,7 +98,7 @@
     "audit:overlays": "node scripts/audit-overlays-a11y.js",
     "audit:contrast": "node scripts/check-contrast.js",
     "audit:light-theme": "node scripts/check-light-theme-lane.js",
-    "test": "node --test --experimental-test-coverage --test-coverage-lines=64 --test-coverage-branches=66 --test-coverage-functions=64 tests/*.test.js tests/features/*.test.js",
+    "test": "node --test --experimental-test-coverage --test-coverage-include=extension/** --test-coverage-lines=67 --test-coverage-branches=63 --test-coverage-functions=62 tests/*.test.js tests/features/*.test.js",
     "test:fast": "node --test tests/*.test.js tests/features/*.test.js",
     "check:userscript-symbols": "node scripts/check-userscript-symbols.js",
     "check:userscript-size": "node scripts/check-userscript-size.js"

@@ -220,7 +220,6 @@
     core.REMOTE_LIST_HOST_PATTERN = REMOTE_LIST_HOST_PATTERN;
     core.COBALT_PUBLIC_INSTANCE_HOST = COBALT_PUBLIC_INSTANCE_HOST;
     core.describeCobaltInstanceUrl = describeCobaltInstanceUrl;
-    core.describePublicHttpsUrl = describePublicHttpsUrl;
     core.describeRemoteListUrl = describeRemoteListUrl;
     core.isRemoteListUrlAllowed = isRemoteListUrlAllowed;
     core.remoteListOriginPattern = remoteListOriginPattern;

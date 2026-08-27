@@ -80,13 +80,12 @@ test('Firefox web-ext lint gate is pinned and wired into npm run check', () => {
     assert.equal(pkg.scripts['check:firefox'], 'node scripts/check-firefox-webext.js');
     assert.match(checkChainText(), /check-firefox-webext\.js/,
         'npm run check must include the staged Firefox web-ext lint gate');
-    // --self-hosted joined the arg list in v4.88.3. Astra Deck self-distributes
-    // its Firefox artifact rather than listing on AMO, so the hosting-specific
-    // checks do not apply; leaving them on kept permanent noise between this
-    // gate and treating warnings as failures.
+    // No --self-hosted: measured both ways, the output is byte-identical, and
+    // the flag's only effect here is to suppress addons-linter's
+    // MANIFEST_UPDATE_URL error guard.
     assert.deepEqual(
         lintArgsForSource('stage-dir'),
-        ['lint', '--source-dir', 'stage-dir', '--self-hosted', '--output', 'json'],
+        ['lint', '--source-dir', 'stage-dir', '--output', 'json'],
         'web-ext lint must target the generated Firefox stage via --source-dir'
     );
     assert.deepEqual(

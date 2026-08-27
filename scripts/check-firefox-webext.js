@@ -42,16 +42,18 @@ function stripSelfHostedUpdateUrlForLint(stageDir) {
     return true;
 }
 
-// Astra Deck self-distributes its Firefox artifact; it is not an AMO-hosted
-// listing. `--self-hosted` drops the hosting-specific checks that do not apply
-// and would otherwise be permanent noise standing between this gate and
-// treating warnings as failures.
+// No `--self-hosted`. It was added on the assumption that AMO-hosting checks
+// were noise standing between this gate and failing on warnings; running the
+// same stage both ways produced byte-identical output, four warnings each. Its
+// only effect in addons-linter is to suppress the MANIFEST_UPDATE_URL *error*
+// on `applications.gecko.update_url` — a guard worth keeping, especially since
+// `stripSelfHostedUpdateUrlForLint()` already removes the modern
+// `browser_specific_settings` equivalent before linting.
 function lintArgsForSource(sourceDir) {
     return [
         'lint',
         '--source-dir',
         sourceDir,
-        '--self-hosted',
         '--output',
         'json',
     ];
