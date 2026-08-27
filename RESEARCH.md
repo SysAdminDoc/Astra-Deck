@@ -1,199 +1,194 @@
 # Research: Astra Deck
 
-Date: 2026-08-23. Replaces all prior research.
+Date: 2026-08-27. Replaces all prior research (previous pass: 2026-08-23, v4.84.3).
 
 ## Executive Summary
 
-Astra Deck is a local-first YouTube control suite for Chromium, Firefox, Tampermonkey, and Violentmonkey. Its strongest current shape is unusually broad control backed by serious diagnostics, reversible data handling, three build profiles, real-browser smoke tests, and focused integrations for SponsorBlock, DeArrow, Return YouTube Dislike, transcripts, on-device AI, and Astra Downloader. The market is already saturated with basic hide, resize, speed, and playback controls, so the highest-value direction is trust under change: make release and store-review claims source-derived, make the shipped Transcript Q&A as rigorous as the citation-backed summary path, and verify every first-class watch layout against YouTube experiments. Evidence: `README.md`, `package.json`, `extension/core/external-api-health.js`, `extension/core/persisted-domains.js`, `scripts/run-checks.js`, and the competitor sources below.
+Astra Deck is a local-first YouTube control suite for Chromium, Firefox, Tampermonkey, and Violentmonkey, now at v4.88.2 with 484 settings, 303 feature IDs, 116 runtime modules, 35 selector surfaces, 34 check gates, and ~2,814 tests. Every one of the eight opportunities the 2026-08-23 pass prioritized shipped in the v4.85.0–v4.88.2 window: the tag-stable shipped-identity gate (`59cb68cd`), generated reviewer-resource inventories (`0bcd67c0`), citation-backed Transcript Q&A (`f7a7f3a2`), a native-Theater conformance lane (`ad016fc7`), a screen-reader evidence gate (`67fe0630`), native-language settings copy, and the subscription-groups descriptor-stub reduction (`943c1da1`). That backlog is genuinely closed, so this pass had to find new ground.
+
+It did, and the new ground is not features. The product's verification apparatus has outgrown what actually runs, and its evidence has quietly gone stale. The highest-value direction is **making the existing rigor binding**: run the tests that currently gate nothing, date the fixtures that currently prove nothing, close the two CSP holes that void a carefully enumerated allowlist, and ship the six versions of security work sitting untagged on `main`.
 
 Top opportunities, in priority order:
 
-1. Fix the post-tag shipped-identity gate so a successful release does not make `npm run check` fail on the tag alone.
-2. Generate truthful `web_accessible_resources` reviewer copy from staged manifests. Current store documents say no JavaScript is exposed while every runtime module is intentionally exposed through a dynamic URL.
-3. Rebuild Transcript Q&A on the existing citation, persistence, provider-policy, and failure-copy foundations.
-4. Add native YouTube Theater as a third watch-theme conformance lane beside normal watch and Theater Split.
-5. Require dated NVDA evidence for UI-changing releases instead of carrying an unchecked manual checklist.
-6. Extend source-derived documentation checks to runtime floors, settings surfaces, module-loading behavior, and release provenance claims.
-7. Finish the remaining subscription-groups fallback reconciliation without duplicating the broader browser-gated canonical-implementation work.
-8. Keep selector and anti-adblock observability ahead of YouTube's rapid experiments, while avoiding another selector-count arms race.
+1. `npm test` is invoked by no npm script, no git hook, and no CI. 2,814 tests across 216 files enforce nothing automatically.
+2. 67 commits and 13 releases (v4.85.0–v4.88.2), including the 4.85.1 cookie-handoff security fix, are unreleased. All five channels still serve 4.82.0, and `npm run check` reports this as a notice rather than a failure.
+3. Neither remote feed is authenticated. The feature-disable feed has no integrity check at all, and the selector asset verifies a digest carried inside the payload it is meant to vouch for.
+4. A real Trusted Types sanitizer exists but no manifest directive enforces it, and no gate stops a new `innerHTML =` from appearing.
+5. Selector freshness metadata is entirely inert: all 35 surfaces record `lastVerified` between 2026-05-19 and 2026-07-14, 28 are flagged `highChurn`, all 35 say `needsFreshCapture: false`, and tests check only the date's *format*.
+6. Feature health cannot see stable-chain erosion — a surface that silently fell back to its fallback selector reports a clean hit.
+7. `extension/ytkit.js` still carries a ~3,240-line inline settings panel that neither shipping vehicle uses.
+8. YouTube's own altered/synthetic-content disclosure is reachable through InnerTube payload keys, which unblocks an idea the 2026-08-23 pass rejected for lack of a stable DOM selector.
+9. Offline is unimplemented: no file registers an `online`/`offline` listener.
+10. README claims a signed release manifest on every build. The signing lane is inert and `allowed-signers` holds no key.
 
 ## Product Map
 
-- Core workflows: customize playback and player chrome; restyle normal watch, Theater Split, feeds, comments, chat, and settings; filter or group content; enrich videos with community data; search, export, summarize, and question transcripts. Evidence: `extension/core/settings-schema.js`, `extension/ytkit.js`, and `extension/features/**/index.js`.
-- Recovery workflows: import/export with rollback, coordinated IndexedDB snapshots, feature bisect, selector health, external API health, staged unsubscribe, and release-channel rollback. Evidence: `extension/core/persisted-domains.js`, `extension/core/feature-bisect.js`, `extension/core/selector-health.js`, `extension/core/external-api-health.js`, and `scripts/release-channels.js`.
-- Personas: privacy-conscious power users, accessibility and focus users, transcript-based researchers, users managing large subscription sets, and users who need local download or media-player handoff. Evidence: `README.md`, `docs/privacy-policy.md`, and the feature schema.
-- Platforms and distribution: Manifest V3 builds for Chromium and Firefox plus Tampermonkey and Violentmonkey userscripts. Build profiles are `store-safe`, `chromium-store`, and `github-full`. Evidence: `extension/manifest.json`, `build-extension.js`, and `package.json`.
-- Key data flows: isolated content runtime to MAIN-world bridge, extension worker for privileged fetches, optional third-party enrichment APIs, YouTube-origin IndexedDB for transcripts, and authenticated loopback communication with Astra Downloader. Evidence: `docs/architecture.md`, `extension/background.js`, `extension/core/data-flow.js`, and `docs/native-messaging-token-bootstrap.md`.
+- **Core workflows:** control playback, player chrome, and layout on the native site; restyle normal watch, native Theater, Theater Split, feeds, comments, and chat; filter or group content; enrich videos with SponsorBlock, DeArrow, and Return YouTube Dislike; search, export, summarize, and question transcripts; hand downloads to a separately versioned companion. Evidence: `extension/core/settings-schema.js`, `extension/features/**/index.js`, `README.md:139-390`.
+- **Recovery workflows:** import/export with rollback, coordinated IndexedDB snapshots, feature bisect, selector health with a build-aware canary, external API health, staged unsubscribe, remote feature-disable feed, release-channel rollback. Evidence: `extension/core/persisted-domains.js`, `extension/core/feature-bisect.js`, `extension/core/selector-health.js`, `extension/core/feature-disable-feed.js`, `scripts/release-channels.js`.
+- **Personas:** privacy-conscious power users, accessibility and focus users, transcript-based researchers, users managing large subscription sets, users wanting local downloads or media-player handoff.
+- **Platforms and distribution:** MV3 for Chromium and Firefox plus Tampermonkey/Violentmonkey userscripts. Profiles are `store-safe`, `chromium-store`, `github-full`. Chrome 120+ / Firefox 142+ floors, Node 24 toolchain. Evidence: `extension/manifest.json`, `build-extension.js`, `package.json`.
+- **Data flows:** ISOLATED content runtime → MAIN-world bridge (`ytkit-main.js`); a single background `onMessage` listener handling **25** typed messages behind a `sender.id` check (`extension/background.js:1731-1752`); optional third-party enrichment; YouTube-origin IndexedDB for transcripts; capability-token-gated loopback to Astra Downloader.
 
 ## Competitive Landscape
 
-- [ImprovedTube](https://github.com/code-charity/youtube), [Control Panel for YouTube](https://github.com/insin/control-panel-for-youtube), and [YouTube Enhancer](https://github.com/YouTube-Enhancer/extension) validate demand for broad playback and layout control. Astra should keep its diagnostics and reversible state as the differentiator, and avoid adding another control unless it has a schema entry, teardown, test, and failure state.
-- [SponsorBlock](https://github.com/ajayyy/SponsorBlock), [DeArrow](https://github.com/ajayyy/DeArrow), and [Return YouTube Dislike](https://github.com/Anarios/return-youtube-dislike) show the value of focused community data. Astra should keep fetch suppression, cache provenance, request budgets, and visible degradation. It should not make core playback depend on any one provider.
-- [BlockTube](https://github.com/amitbl/blocktube) and [Unhook](https://chromewebstore.google.com/detail/unhook-remove-youtube-rec/khncfooichmfjbepaaaebmommgaepoid) show the appeal of narrow, understandable content controls. Astra should preserve plain-language profiles and attribution, and avoid presenting its 477 settings as one undifferentiated catalogue.
-- [FreeTube](https://github.com/FreeTubeApp/FreeTube), [NewPipe](https://github.com/TeamNewPipe/NewPipe), [Invidious](https://github.com/iv-org/invidious), and [Piped](https://github.com/TeamPiped/Piped) provide stronger frontend isolation and alternative delivery paths. Astra should learn from their extractor drift and privacy posture, but should not become an alternate YouTube client because its purpose is enhancement inside the native site.
-- [PocketTube](https://pockettube.io/) validates paid demand for groups and subscription cleanup. Astra already ships nested groups, per-group sorting, stale-channel scanning, staged unsubscribe, and import/export in `extension/features/subscription-groups/index.js`; copying another premium checklist would now add little value.
-- [Glasp](https://glasp.co/youtube-summary), [NoteGPT](https://notegpt.io/youtube-video-summarizer), and [Eightify](https://eightify.app/tl/) validate timestamped summaries, follow-up questions, saved notes, and export. Astra should match their citation and reopen flow using local storage and user-selected providers, while avoiding default transcript upload or subscription lock-in.
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp), [Cobalt](https://github.com/imputnet/cobalt), and [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) show how quickly YouTube download paths change. Astra's separate companion, identity checks, versioned health payload, PO-token state, and recovery copy are the right boundary. Bundling a second downloader copy in this repository would recreate version drift.
-- [Refined GitHub](https://github.com/refined-github/refined-github) and [Reddit Enhancement Suite](https://github.com/honestbleeps/Reddit-Enhancement-Suite) show that mature enhancement suites need disciplined feature boundaries and recovery, not just breadth. Astra should finish factory convergence and source-derived gates before expanding its catalogue.
+- **[YouTube Enhancer](https://github.com/YouTube-Enhancer/extension)** (MIT, 377★, v1.34.2 on 2026-08-21, 93 commits/60d) is the fastest mover in the field and one of only two competitors that handles Trusted Types at all. Learn: patch-release cadence measured in days after YouTube changes. Avoid: it shipped a global TT policy and needed two patch releases to stabilize it, and its single `hideArtificialIntelligence` toggle already misses the livestream-chat AI summary ([#1380](https://github.com/YouTube-Enhancer/extension/issues/1380)).
+- **[ImprovedTube](https://github.com/code-charity/youtube)** (NOASSERTION — study only, 4,552★) remains the broadest catalogue and its merged-PR stream is a free YouTube-drift feed. Its open PR [#4275](https://github.com/code-charity/youtube/pull/4275) carries the single most useful technique found this pass: detect altered/synthetic content from `ytInitialPlayerResponse` keys (`generativeAi`, `generatedWithAi`, `alteredOrSynthetic`, `madeWithAi`) rather than DOM text. Avoid: its tracker is polluted with 1,063 `help wanted` issues and a stream of cosmetic fake-fix PRs, and its Shorts-redirect fix was merged 2026-06-29 then reverted 2026-07-03 — SPA-navigation redirects regress easily.
+- **[Control Panel for YouTube](https://github.com/insin/control-panel-for-youtube)** (no license file — study only) is the closest functional peer and is now stalling: zero commits since 2026-07-06 while 11 new issues landed, including [#321](https://github.com/insin/control-panel-for-youtube/issues/321) where Hide Channel stopped working on home. Learn: its Shorts config surface is the most complete in the field. Avoid: its v1.31 opinionated defaults (hiding low-view videos by default) drew real criticism — Astra's default-off posture on filters is correct.
+- **[SponsorBlock](https://github.com/ajayyy/SponsorBlock)** (GPL-3.0, 13,703★, 4.81★ on AMO) is the benchmark for turnaround on DOM breakage. Its own tracker names two things Astra doesn't do: hide sponsored comments/descriptions ([#649](https://github.com/ajayyy/SponsorBlock/issues/649), 40👍) and community-reported AI-slop segments ([#1963](https://github.com/ajayyy/SponsorBlock/issues/1963), 22👍). Avoid: making core playback depend on any one provider.
+- **[Return YouTube Dislike](https://github.com/Anarios/return-youtube-dislike)** (13,717★) has had 1 commit in 60 days and left [#1305](https://github.com/Anarios/return-youtube-dislike/issues/1305) (2026-08-14 mobile watch page, counts gone) open. Learn: star count is not maintenance. Astra's own RYD integration needs a visible-degradation path that does not assume the provider is healthy.
+- **[BlockTube](https://github.com/amitbl/blocktube)** is dead (0 commits/60d) and has a live MV3 successor, **[ChannelSieve](https://github.com/825i/channelsieve)** (GPL-3.0, v0.5.1, 2026-08-14). BlockTube [#697](https://github.com/amitbl/blocktube/issues/697) documents a real gap Astra shares: AI channels publish as multi-channel collaborations, so single-channel block rules miss them. Avoid: BlockTube [#692](https://github.com/amitbl/blocktube/issues/692) — a build script that `rm -rf`'d a variable path.
+- **[FilterTube](https://github.com/varshneydevansh/FilterTube)** (MIT, v3.3.6 on 2026-08-24) is the other fast mover. [#62](https://github.com/varshneydevansh/FilterTube/issues/62) asks for uBlock-style subscribable filter lists. Astra already ships one remote list (`hideVideosFilterListUrl`, `extension/core/remote-list-scope.js`), so this is an extension of existing work, not new territory. Its [#75](https://github.com/varshneydevansh/FilterTube/issues/75) over-blocking regression is the argument for Astra's default-off filters.
+- **[ZeroDelay](https://github.com/joaogfc/ZeroDelay)** (GPL-3.0, 433★, created 2026-06-23) has the highest star velocity of any 2026-created in-page enhancer, solving exactly one problem (livestream latency). Learn: one sharply-defined unsolved problem out-adopts 300 toggles. Astra ships `liveLatencyCatchup`; the lesson is positioning, not features.
+- **[AiSList](https://github.com/Override92/AiSList)** (170★, 12,826 blocked channels, pushed 2026-08-27) is a data moat with a growth loop worth studying: in-player flag button, one-click submission, contributor leaderboard, public JSON API. Avoid: it is NOASSERTION and its client extension hasn't been pushed since 2025-11-04 — consume data, never depend on the client.
+- **[YCS-cont](https://github.com/pc035860/YCS-cont)** (MIT, 158★) holds a near-monopoly on comment search. MIT means it is legitimately portable, unlike most of this list.
+- **Commercial:** [PocketTube](https://pockettube.io/pricing.html) ($3.99/mo) paywalls nested groups, feed sorting, deck view, and unlimited mark-as-watched — all of which Astra gives away — and carries 4.16★ on AMO with paywall resentment dominating its 1★ reviews. [Glasp](https://glasp.co/pricing) meters free users at 3 YouTube summaries/day against a $12.50/mo tier; [NoteGPT](https://notegpt.io/pricing) and [Harpa](https://harpa.ai/pricing) meter tokens. Astra's BYO-key and Ollama lanes route around the metering that is these products' entire business model. Learn: the two monetizable things in this space are hierarchical subscription organization and metered cloud summarization, and Astra undercuts both — that is a positioning fact currently absent from the README. Avoid: [Enhancer for YouTube](https://www.mrfdev.com/enhancer-for-youtube)'s undismissable update popups, which converted 4★ reviews into 1★ ones.
 
 ## Reported Issues
 
-- The repository had zero open issues and zero open pull requests on 2026-08-23. The only issue, [#1](https://github.com/SysAdminDoc/Astra-Deck/issues/1), requested localization and is closed; the repository now ships 11 locales, so it is not roadmap work. Evidence: `extension/_locales/` and `scripts/project-facts.js`.
-- [Discussion #43](https://github.com/SysAdminDoc/Astra-Deck/discussions/43) and [discussion #44](https://github.com/SysAdminDoc/Astra-Deck/discussions/44) had no comments or reactions on 2026-08-23. Discussion #43 also describes an older feature count and companion layout. Treat both as stale copy, not demand signals.
-- No parent tracker exists because the repository is not a fork. The last 200 commits instead show repeated pressure around YouTube SPA node recycling, theme source-versus-render gaps, duplicated feature copies, and tests that asserted the wrong source. Those classes are represented by existing roadmap items and `tests/features/**`; no duplicate tracker-derived item is needed.
+The tracker is empty and carries no demand signal. Verified 2026-08-27 with `gh`:
+
+- **0 open issues.** `gh issue list --state open --limit 200` returns `[]`. The single closed issue, [#1](https://github.com/SysAdminDoc/Astra-Deck/issues/1), was authored and closed by the maintainer.
+- **0 open pull requests.** The newest closed PR is #46 (2026-08-05); everything since has landed as direct pushes to `main`.
+- **2 discussions, both dead.** [#43](https://github.com/SysAdminDoc/Astra-Deck/discussions/43) and [#44](https://github.com/SysAdminDoc/Astra-Deck/discussions/44), opened 2026-07-30, have 0 comments and 0 reactions. #44 explicitly asks users which features they use and has received nothing in four weeks.
+- Not a fork, so there is no parent tracker.
+
+With no user reports, the substitute intake is (a) competitor trackers, mined above, and (b) commit-history pressure. The last 200 commits show four repeating fix classes: theme/light-surface repair (~14 commits, where the probe was fixed as often as the CSS it guards), downloader/companion handoff (7), Theater Split geometry (5 consecutive releases 4.86.2–4.86.7), and the userscript comment stripper (3, one of which admits a tested fix was never shipped: `cf74176e`). A fifth pattern — roughly 25 `test: render …` commits plus `3ab59790`, `330def10`, `d9ee104e` — is the ongoing conversion away from source-shape assertions, which is quantified below and is nowhere near done.
+
+**Judged not actionable:** ImprovedTube's cosmetic fake-fix PRs (#4273, #4274, #4279, #4281, #4282, #4285, #4287) contain no signal. Competitor requests for a settings search box ([CPFY #209](https://github.com/insin/control-panel-for-youtube/issues/209)), settings import/export ([CPFY #192](https://github.com/insin/control-panel-for-youtube/issues/192)), subscription list view ([ImprovedTube #3593](https://github.com/code-charity/youtube/issues/3593)), anti-translation ([CPFY #93](https://github.com/insin/control-panel-for-youtube/issues/93)), hide auto-dubbed ([ImprovedTube #3150](https://github.com/code-charity/youtube/issues/3150)), and hide-watched are all already shipped in Astra (`ytkit.js:39789`, `hideVideosFilterListUrl`, `listFeedLayout`, the `antiTranslate*` keys, `hideVideosHideAutoDubbed`, `hideWatchedVideos`/`hideWatchedMode`/`hideVideosWatchedRatio`). Those are marketing gaps, not product gaps.
 
 ## Security, Privacy, and Reliability
 
-- Verified release-gate defect: `npm run check` on tagged `v4.84.3` passes every stage except `shipped-identity`. `scripts/generate-shipped-identity-baseline.js` enumerates all current tags, but the committed baseline contains only tags visible before `v4.84.3` was created. Settings and feature IDs are unchanged. This makes a tag-only release event turn the main check red and needs a tag-aware release contract.
-- Verified reviewer-truth defect: `extension/manifest.json` exposes `runtime-core-loader.mjs`, the core graph, feature modules, and `ytkit.js` through `web_accessible_resources` with `use_dynamic_url`. `docs/cws-submission-checklist.md` and `docs/store-permission-rationale.md` claim only icons and assets are exposed and no JavaScript is web-accessible. `tests/hardening.test.js` currently pins both the real manifest graph and the false prose.
-- Production dependency audit was clean on 2026-08-23. The full audit still reports the two high-severity `image-size@2.0.2` infinite-loop advisories inherited through `web-ext -> addons-linter`: [GHSA-w3rx-r6r6-pgpr](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr) and [GHSA-5p2g-fcmc-qvqq](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq). Mozilla tracks the chain in [web-ext #3806](https://github.com/mozilla/web-ext/issues/3806), and no patched `image-size` release exists. `Roadmap_Blocked.md` already owns this item.
-- Runtime trust boundaries are stronger than the comparison set: optional hosts are permission-gated, proxy requests are allowlisted and header-filtered, remote feature-disable data is bounded, transcript and settings imports are sanitized, and loopback cookie access requires a short-lived native capability. Evidence: `extension/background.js`, `extension/core/remote-list-scope.js`, `extension/core/persisted-domains.js`, `extension/core/cookie-handoff.js`, and `docs/native-messaging-token-bootstrap.md`.
-- Hosted configuration drift remains operator work: the live branch settings observed on 2026-08-23 did not match the required review and conversation-resolution claims in `docs/repo-settings.md`. Two stale CodeQL alerts also point at obsolete test-only revisions. These need GitHub administration, not duplicate code roadmap items.
+- **Verified defect — the remote feeds are unauthenticated.** Two documents can change shipped behavior without a release. `extension/core/feature-disable-feed.js` contains no digest, signature, or integrity check of any kind; the only controls are the origin allowlist and 1 MiB cap at `extension/background.js:1003`. The selector asset is better but not sufficient: `core/selectors.js:338` and `:415` verify a `sha256:` digest that is parsed **out of the same fetched document**, which detects truncation and corruption but not substitution. Whoever can write the repository or intercept the CDN can pause features or replace selectors on every install. Remote config used as an unreviewed update channel is a named 2026 abuse pattern ([737 fake VPN extensions](https://thehackernews.com/2026/08/737-chrome-vpn-extensions-caught.html)), and Chrome permits remote config only when all logic ships in the package.
+- **Checked and cleared — the `https://*` CSP lane is deliberate, not a hole.** An earlier reading of this pass flagged the bare `https://*` in `connect-src` and `https://*/*` in `optional_host_permissions` as voiding the enumerated allowlist. They are load-bearing and documented: `extension/core/data-flow.js:253-278` explains that github-full declares the pattern so the browser can prompt for **one** specific origin at a time for a user-configured Video Hider filter list or self-hosted Cobalt instance, `specificOriginRequired` blocks generic helpers from triggering an all-sites prompt, `core/remote-list-scope.js` rejects private and non-public hosts before a grant is requested, and `build-extension.js:687-696` strips the whole lane from store-safe. `docs/store-permission-rationale.md:176` already discloses this in full. No roadmap item was created; recorded so the next pass does not re-flag it.
+- **The background worker authenticates the extension but not the page.** `extension/background.js:1749-1752` checks `sender.id === ext.runtime.id`; nothing checks `sender.origin`, including on `NATIVE_MSG_GET_TOKEN`, `YTKIT_COOKIE_HANDOFF`, `YTKIT_AI_CREDENTIAL_SET`/`DELETE`, `YTKIT_REPLACE_SETTINGS`, and `YTKIT_REQUEST_OPTIONAL_HOSTS`. Content-script matches are fixed to YouTube in the manifest, so this is defense in depth rather than a live break, but it is cheap to add.
+- **The MAIN-world bridge trusts channels the page can write.** `extension/ytkit-main.js:8-10` defines a `documentElement` attribute channel read at `:569`, `:737`, and `:759`, and the bridge additionally reacts to `yt-navigate-finish`, `yt-page-data-updated`, and `loadedmetadata`, all forgeable by page script. Reachable impact is currently confined to playback quality and codec strings (`ytkit-main.js:766`).
+- **The install-script refusal is a convention with no gate.** `.npmrc` sets `ignore-scripts=true` and names the 2026-08-04 ChainDrop worm as the reason, and the lockfile is clean — `grep -c hasInstallScript package-lock.json` is 0, and none of the named ChainDrop carriers is present in a compromised range (`keyv` 4.5.4, `flat-cache` 4.0.1, `file-entry-cache` 8.0.0, `chalk` 5.6.2, `debug` 4.4.3). But no check reads `.npmrc`, so deleting it or passing `--ignore-scripts=false` once is invisible.
+- **Verified gap — Trusted Types are convention, not invariant.** `extension/core/trusted-html.js:9-29` creates a genuine `trustedTypes.createPolicy('astraDeck', …)` routing through a DOMParser sanitizer, and the codebase is already disciplined (zero raw `innerHTML =` in shipped code; `ytkit.js:1746` and `ytkit.js:32550` document why). But `extension_pages` carries no `require-trusted-types-for 'script'`, and the only guards against a new sink are three per-file regexes in `tests/hardening.test.js` and `tests/bugfix-validation.test.js`. YouTube has enforced `require-trusted-types-for 'script'` on its own pages since 2024-07-25 ([Chrome blog](https://developer.chrome.com/blog/trusted-types-on-youtube)), and the page-context userscript vehicle is the exposed one. Competitors are worse off — FilterTube has 27 `innerHTML` files and zero `trustedTypes` references — which makes this a defensible lead worth locking in.
+- **Verified defect — the test suite gates nothing.** No npm script invokes `npm test`; `release:prepare` is `check && release:browser-smokes && build:userscript && release:readiness && release:health`. There are no `.github/workflows/` (deliberate, per project policy) and `.git/hooks/` contains only samples. 2,814 tests run only when someone types the command.
+- **Verified defect — release currency is advisory.** `scripts/run-checks.js:30` invokes `check-versions.js` without `--require-release-current`, so `npm run check` is green while `release-channels.json` points all five channels at 4.82.0 and `git tag` ends at v4.84.3. 67 commits and 13 releases are unshipped, including the 4.85.1 cookie-handoff fail-closed fix and the companion identity binding (`e6e7a4e5`).
+- **Verified false claim.** `README.md:1102` states "**SBOM + signed manifest** on every release build … a signed release manifest over the built artifacts." `allowed-signers` contains no key line (`allowed-signers:22`), `release-signature.js:139-144` returns `no-published-key`, and `generate-release-readiness.js:453-456` downgrades that to a warning. No `SHA256SUMS.sig` exists on v4.82.0 or v4.84.3. `README.md:1093-1099` is honest about the same subject two lines earlier.
+- **Weakest supply-chain boundary.** `YTKit.user.js:19` is `@require https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js` — 1.9 MB pulled from a **mutable branch ref with no version or integrity pin**, in a script that also grants `GM_xmlhttpRequest` to OpenAI, Anthropic, Gemini, and loopback (`YTKit.user.js:11-27`). Anything that can move `main` moves every userscript install.
+- **`MIN_GATES = 29` against 34 gates** (`scripts/run-checks.js:62`). Five gates can be deleted without tripping the floor that exists to prevent exactly that.
+- **Trust boundaries are otherwise strong and better than the comparison set.** One `onMessage` listener with a `sender.id === ext.runtime.id` rejection (`background.js:1749-1752`), a closed 25-type allowlist, no `externally_connectable`; the `EXT_FETCH` proxy keeps a separate narrower credentialed-origin set so YouTube cookies never reach SponsorBlock or RYD (`background.js:947-956`), strips `host`/`origin`/`cookie`/`referer` outbound and `set-cookie`/`authorization` inbound, and caps redirects at 0; remote-list URLs pass an SSRF denylist covering RFC1918, loopback, CGNAT, and `169.254.169.254` (`core/remote-list-scope.js:52-106`); cookie handoff is limited to four names on `.youtube.com` behind a 20-second capability token bound to tabId, frameId, documentId, URL, and cookie store, answered over a random 32-hex native challenge (`core/cookie-handoff.js:19-60`). Zero `eval`, `new Function`, `document.write`, or string-arg `setTimeout` in shipped code.
+- **Dependencies are clean and current.** `npm audit --omit=dev --audit-level=moderate` reports 0 vulnerabilities and `npm outdated` is empty as of 2026-08-27; all four direct dependencies are at latest (`crx3` 2.0.0, `eslint` 10.9.1, `web-ext` 10.6.0, `ws` 8.21.3), so the prior "ESLint is behind" finding is retired. The only high-severity findings remain the two dev-only `image-size@2.0.2` advisories inherited through `web-ext → addons-linter`, still unpatched with [web-ext #3806](https://github.com/mozilla/web-ext/issues/3806) open, already owned by `Roadmap_Blocked.md` and pinned in shape by `scripts/audit-dependencies.js:54-74`. Node 24.19.0 on the build machine is past the 24.18.1 July 2026 security release, so no Node CVE applies. One drift: `package.json` pins `ws` at exactly `8.21.3` while `node_modules/ws` reports `8.21.2`.
+- **Two lint gates run below their own capability.** `scripts/check-firefox-webext.js:45-53` invokes `web-ext lint` and discards its warnings; a read-only run reports six, four of them `UNSAFE_VAR_ASSIGNMENT` on the dynamic imports at `extension/runtime-bootstrap.js:351`, `:380`, `:402` and `extension/runtime-core-loader.mjs:121`, plus `MANIFEST_PERMISSIONS` for `sidePanel` on Firefox. `--self-hosted` matches this repo's distribution model and would remove the AMO-hosting noise that makes `--warnings-as-errors` unadoptable. Separately, `node --test` runs with no coverage flags, so the 40.4% source-shape figure below has no ratchet holding it.
+- **`HARDENING.md` is abandoned.** It self-describes as covering v3.14.0–v4.46.0 against a shipped v4.88.2, retracts its own open items, and defers to a `ROADMAP.md` that is 165 bytes. At least one entry is now factually wrong about the current code: it records `trusted-html.js` as a pass-through policy when the file demonstrably sanitizes. `SECURITY.md` by contrast is current and honest.
 
 ## Architecture Assessment
 
-- The repository has 113 runtime modules, 27 feature modules, 292 feature IDs, 477 settings across 18 categories, 35 selector surfaces, and 33 check stages. Evidence: the generated project facts in `README.md`, `CONTRIBUTING.md`, and `docs/architecture.md`.
-- `extension/ytkit.js` retains one full `subscription-groups` fallback beside the running factory module. Its attempted removal exposed 34 tests and a11y audit assumptions. The existing monolith item remains valid, but it should be treated as a correctness reconciliation first and a small parse-time win second.
-- The userscript still carries hand-maintained SponsorBlock, DeArrow, Return YouTube Dislike, subscription-group, and retired player-handoff paths even though the current factories are bundled. Evidence: `YTKit.user.js` and `YTKit-core.user.js`. This is already represented by the browser-gated canonical-implementation item in `Roadmap_Blocked.md`, so the active roadmap does not repeat it.
-- `extension/runtime-bootstrap.js` conditionally loads by settings, not by route. `README.md` says feature modules are route-gated. The documentation gate should check this claim rather than repeating it.
-- Transcript Q&A is present but does not meet its older roadmap acceptance. `extension/ytkit.js` uses hard-coded English, a hand-rolled modal without dialog semantics or Escape/focus restoration, the first 6,000 transcript characters only, plain unvalidated output, no timestamp citations, and no saved conversation. `extension/core/ai-summary-artifacts.js` already provides 120,000-character cue preparation, citation validation, persistence, export, and seekable links that can be reused.
-- The live watch-theme smoke verifies normal watch and Theater Split in dark and light, but it never toggles YouTube's native Theater mode. Evidence: `scripts/smoke-zero-ads-live.js` and `README.md`. YouTube documents normal and Theater as distinct player sizes, and community reports show full-bleed Theater experiments can remove scrolling or comments access: [YouTube player sizing](https://support.google.com/youtube/answer/6052392), [report 1](https://www.reddit.com/r/youtube/comments/1nb5pcc), [report 2](https://www.reddit.com/r/youtube/comments/1oidrvv).
-- SponsorBlock's current anti-adblock path records a matched enforcement selector but does not provide a user-facing recovery state. YouTube documents a warning followed by possible playback blocking, while Adblock Plus documents a temporary self-pause when it detects the warning. Recovery should be driven by observed warning and playback state, not a presumed escalation ladder. Evidence: `extension/features/sponsorblock/index.js`, [YouTube help](https://support.google.com/youtube/answer/14129599), and [Adblock Plus help](https://help.adblockplus.org/adblock-plus-help-center/what-to-do-if-you-are-seeing-youtube-s-anti-adblocking-warning).
-- Automated accessibility coverage is broad, but `docs/screen-reader-smoke.md` contains an unchecked manual NVDA, JAWS, and VoiceOver checklist with no dated evidence artifact. Static source checks cannot prove announcement order, focus restoration, or Blink-versus-Gecko behavior.
-- Localization topology is complete, but `docs/i18n-coverage.md` reports only 69.6 to 70.9 percent translated content and about 155 unresolved feature name or description messages per non-English locale. `scripts/export-i18n-proofing.js` already creates a translator-ready queue. Native-language review, not another extraction tool, is the remaining dependency.
-- Documentation drift is broader than the generated project-facts block: `CONTRIBUTING.md` says Node 22 after its generated Node 24 fact, `README.md` overstates route gating and release attestation, and `docs/architecture.md` still describes only dark/OLED themes. Semantic claims need bait-verified source checks.
-- Test depth is a major strength. On 2026-08-23, `npm test` passed 2,493 tests with one intentional filesystem symlink skip and zero failures. The remaining risk is evidence quality: some UI tests still pin source shape rather than rendered behavior, which the existing render-assertion roadmap item addresses.
+- **The monolith is measurably the startup cost.** `extension/ytkit.js` is 52,182 lines / 2.56 MB. `npm run check:startup` against captured MHTML measures parse+init at ~144 ms median, of which the monolith stage is ~66 ms (46%) with only 10 feature modules loading. Evidence: `node scripts/bench-startup.js --check --allow-synthetic`.
+- **~3,240 lines of it are a duplicate that is already blocked-owned.** `buildSettingsPanel()` at `ytkit.js:39606-42325` plus `injectPanelStyles()` at `ytkit.js:43730-44247` are an inline copy of `extension/features/settings-panel/index.js` (4,255 lines). `ytkit.js:39610-39611` delegates to the module when present and `sync-userscript.js:94` bundles that module into the userscript too, so neither vehicle normally executes the inline copy. `ytkit.js:6284-6288` records that a latching bug once made every panel silently use it, "which is why panel changes had to be written twice and drifted apart." Commit `943c1da1` already reduced `subscription-groups` from the same shape to a 9-line descriptor stub (`ytkit.js:35479-35487`), and this is the largest remaining instance of the pattern — but it belongs to the existing `Roadmap_Blocked.md` item "Establish one canonical implementation per extracted extension feature", whose blocker (verify the regenerated userscript settings and import contract in a real Tampermonkey session first) applies to exactly this module. No duplicate active item was created; the line ranges and the both-vehicles-bundle-the-module finding sharpen the blocked item's evidence.
+- **Peel boundaries are nominal.** Feature factories receive closure bags from the monolith rather than importing: `settings-panel` takes **50** injected dependencies (`ytkit.js:6296-6345`), `video-hider` 28, `download-ui` 28, `subscription-groups` 22. Peeling has moved code without cutting the dependency graph.
+- **`docs/architecture.md` is stale in five places, one of them security-relevant.** Line 30, inside the **trust-boundary** section, lists 8 typed content↔background messages; `background.js` handles 25, including `NATIVE_MSG_GET_TOKEN`, `YTKIT_AI_CREDENTIAL_SET`/`DELETE`, `YTKIT_COOKIE_HANDOFF`, `YTKIT_REPLACE_SETTINGS`, and `YTKIT_REQUEST_OPTIONAL_HOSTS` (all verified present). Line 146 says 1,330 tests against ~2,814 actual. Line 132 says "6 modules, 21 ids" for CSS-only feature helpers while line 14 of the same file says 27 peeled modules. Line 71 lists 4 core modules bundled into the popup; `popup.html` loads 15. Line 118 describes a popup render path through `rankSelectorProblems`, which `popup.js` never calls.
+- **Selector evidence has expired and nothing says so.** All 35 surfaces declare `lastVerified` between 2026-05-19 and 2026-07-14; 28 declare `highChurn: true`; all 35 declare `needsFreshCapture: false`. `tests/hardening.test.js:9033-9034` asserts only that the value matches `^\d{4}-\d{2}-\d{2}$`. The token fixtures those surfaces are validated against (`tests/fixtures/yt-*.tokens.txt`) were last regenerated between 2026-06-03 and 2026-07-15, carry no capture date or client version in their headers, and derive from `mhtml/*.mhtml` files that are **gitignored** (`.gitignore:6`) — so on any machine but the maintainer's, `check:startup` silently falls back to the weaker synthetic budget (`bench-startup.js:1022-1024`). Meanwhile `tests/fixtures/critical-selector-canary.json:2` records `youtubeClientVersion: 2.20260820.01.00`, two months newer than the fixtures beside it.
+- **Selector degradation is only half-observable.** `findActiveSelectorMatch` (`core/selector-health.js:118-143`) walks a flat concatenation of `stable` then `fallback` and returns `{node, selector}` without recording which tier matched, and `isSurfaceBroken` (`core/feature-health.js:97-99`) returns true only when `lastOutcome === 'miss'`. A surface whose stable chain broke but whose fallback still hits reports healthy — across 28 `highChurn` surfaces. Only **9 of 33** selector packs declare a `canary`, and the hot-updatable remote asset replaces `SurfaceSelectorMap` only (`core/selectors.js:418-421`), never `SurfacePackRegistry`, so a hotfix can repair selectors but cannot add detection for a newly broken surface. Refresh is manual-only — no alarm, the sole trigger is the popup's Refresh button (`ytkit.js:6914`).
+- **Test evidence quality is the largest hidden debt, and it is now measured.** Of 12,602 assertions across 216 files, **5,086 (40.4% ± 1.5pp) assert on production source text rather than behavior**. Method: a JS-aware tokenizer resolving which locals hold source strings (`readFileSync`, `tests/helpers/source.js`, `featureSource()`/`extractFeatureBlock()`) versus executed bindings (`loadFeature()`, `require`, `vm`, `eval`); per-file totals reconcile exactly with `grep -ahoE '\bassert(\.\w+)?\('`. The sharpest subset is **14 files that are 100% source-shape and carry zero behavioral coverage** (217 assertions), led by `tests/userscript-parity.test.js` (55/55), `tests/userscript-fixes.test.js` (40), `tests/regression-deep-pass-3.test.js` (19), `tests/features/link-hygiene.test.js` (17), and `tests/speed-popup-placement.test.js` (17). Sixty files are ≥50% source-shape. Worst by volume: `tests/hardening.test.js` 1,947/2,767 (70%), `tests/bugfix-validation.test.js` 478/536 (89%), `tests/popup-fixes.test.js` 168/240 (70%), `tests/settings-visual-system.test.js` 124/189 (66%), `tests/ytkit-logic-fixes.test.js` 117/146 (80%). The project already knows why this is dangerous — `tests/helpers/monolith.js:3-7` records that "source pins cannot tell a working feature from a broken one — the comment-filter dispatcher bug shipped past a pin that matched the broken code exactly."
+- **Offline does not exist.** Zero `addEventListener('online'|'offline')` across `extension/`; `navigator.onLine` is read once, in `core/failure-copy.js:99`. There is no degraded banner and no re-check on reconnect.
+- **Async settings operations are silent to assistive tech.** `core/toast-dom.js:122-123` sets `role` and `aria-live` correctly, but `core/settings-controller.js`, `core/settings-sync.js`, `core/settings-import-transaction.js`, and `features/subscription-groups/index.js` contain **zero** live regions between them. Save, import, export, and sync announce nothing. `core/toast.js:13-17` names the unfinished work: the DOM layer stayed in `ytkit.js` pending "a real live-region overlay primitive."
+- **22 modal surfaces are hand-rolled and none uses `<dialog>`.** `showModal` appears 0 times in `extension/`; 26 `role="dialog"`/`alertdialog` constructions span 12 files, with four separate focus-trap implementations (`popup.js:1791`, `ytkit.js:6374`, `ytkit.js:3193`, `features/video-hider/index.js:1255`). `Roadmap_Blocked.md:38-45` already owns this item but its evidence undercounts the scope at three to five files.
+- **Settings discoverability stops at the popup.** The overlay holding all 484 settings has plain substring search (`ytkit.js:42513`) with no field filters, no non-default view, no per-setting reset (reset is category-wide, `ytkit.js:41732`), no favorites, and no deep links (`location.hash` appears 0 times in `ytkit.js`). The `risk:`/`category:`/`scope:`/`profile:` mini-DSL exists but filters only the popup's 19 curated toggles (`popup.js:105`), and its category slugs are never shown to users. A "Changed from defaults" diff view exists in the popup (`popup.html:208-232`) and nowhere else.
+- **i18n is topologically complete and semantically ~70%.** 0 missing keys in all 10 non-English locales, but 833–859 keys per locale (~29%) ship byte-identical to English with no visual marker, and the feature-copy proofing backlog is 147–150 per locale (`docs/i18n-coverage.md`). `CATEGORY_META` (`ytkit.js:39410`) is hardcoded English covering only 10 of 18 schema categories. The two copy gates are narrower than they look: `scripts/i18n-ui-copy-baseline.json` freezes 885 `ytkit.js` literals as accepted debt, and `check-raw-error-copy.js:21-28` scans a hand-listed 6 files.
+- **Small dead surface.** `core.nodeIsInInactiveSelectorTree` is exported twice (`extension/core/selector-health.js:573` and the CommonJS block) with zero call sites anywhere including `tests/`. `extension/core/csv.js:45` (`csvRow`) and `extension/core/remote-list-scope.js:223` (`describePublicHttpsUrl`) have no production callers either, which makes the modules' public surface read wider than it is.
+- **One code comment misattributes a permanent platform limitation.** `scripts/manifest-patch.js:65-68` explains the Firefox loopback host-permission workaround as "Firefox 152-154 accepts port-qualified host grants but does not apply them to background fetches," implying a version-bounded regression that will be fixed. The actual cause is [bug 1362809](https://bugzilla.mozilla.org/show_bug.cgi?id=1362809), open since 2017 and never fixed — port-qualified match patterns match nothing in Firefox at any version, and [bug 2052000](https://bugzilla.mozilla.org/show_bug.cgi?id=2052000) was closed as its duplicate. The workaround is correct and permanent; the comment invites a future revert.
+- **Migration and upgrade paths need nothing new.** `extension/core/persisted-domains.js` already declares per-domain migration strategies and credential scrubbing, `extension/settings-meta.json` pins `settingsVersion`, `core/settings-import-transaction.js` provides snapshot/rollback/undo, and `scripts/generate-shipped-identity-baseline.js` makes setting-key and feature-ID identity monotonic across 75 tags. The upgrade-side gap is not machinery but delivery, covered by the release-currency item.
+- **Genuine strengths not to disturb:** zero orphaned settings-schema entries across all 484 keys, zero feature IDs without a module, every `core/` and `features/` module covered by a test file, a well-run dependency-exception policy, real redaction in diagnostic bundles (`popup.js:5164`), and a build-aware selector canary that reruns 1,400 ms after every SPA navigation.
 
 ## Rejected Ideas
 
-- Another subscription hygiene dashboard: already shipped with stale-channel detection, a health/action center, staged unsubscribe, undo, pacing, logs, and per-group sort modes in `extension/features/subscription-groups/index.js`.
-- An original-language assistant: already shipped across titles, descriptions, thumbnails, chapters, transcripts, preferred audio tracks, original-audio selection, and auto-dub notices. Evidence: `extension/core/audio-track.js`, `extension/core/chapters.js`, `extension/core/youtube-thumbnails.js`, and the `antiTranslate*` schema keys.
-- A generic provider-status matrix: `extension/core/external-api-health.js`, popup, and side panel already expose available, stale, cooldown, rate-limited, permission-denied, fallback, last-success, host, and request-budget states. Downloader pills separately expose companion identity, auth channel, yt-dlp, ffmpeg, JavaScript runtime, and PO-token health.
-- A new transcript batch queue: `researchSpacedReview` already builds a bounded, cancellable 20-video study pack from visible videos with one recovery pass, provenance, Markdown, JSONL, and per-video failures. Crawling whole channels would add API and maintenance cost without strong enough demand.
-- A second feature-recovery tool: feature health, selector health, diagnostic bundles, remote disable data, and the feature bisect wizard already cover identification and rollback. Evidence: `extension/core/feature-health.js`, `extension/core/selector-health.js`, `extension/core/feature-disable-feed.js`, and `extension/core/feature-bisect.js`.
-- Settings favorites or recently changed rows: plausible at 477 settings, but current search, category navigation, profiles, quick toggles, import previews, and schema summaries are strong, and the research found no direct demand signal.
-- Full mobile support: the product is a desktop YouTube extension and userscript, while mobile extension support is host-dependent. A mobile client would conflict with the current architecture and duplicate FreeTube/NewPipe territory.
-- Cloud multi-user workspaces or collaborative notes: they conflict with the local-first privacy model and would add identity, moderation, synchronization, and retention obligations without tracker demand.
-- A remote plugin marketplace: dynamic executable code is incompatible with store policy and the current reviewable package boundary. The existing static feature-module graph is the safer extension point. See the [Chrome extension security guidance](https://developer.chrome.com/docs/extensions/develop/security-privacy/stay-secure).
-- Automatic no-caption transcription in this repository: it belongs behind the separately versioned Astra Downloader companion with explicit model, disk, CPU, and privacy disclosure. The extension should consume a versioned capability only after the companion implements it.
-- Immediate AI-disclosure rewriting: YouTube moved altered/synthetic-content labels below long-form players and onto Shorts overlays in 2026, but this repository has no captured labeled-video DOM or stable structural selector. Preserve the native label through theme work now; defer extraction into exports until a live fixture exists. Source: [YouTube AI label update](https://blog.youtube/news-and-events/improving-ai-labels-viewers-creators/).
-- A duplicate pixel-diff item: `Roadmap_Blocked.md` already tracks visual regression. Its browser-unavailable explanation is stale because real Chromium and Firefox smoke lanes now run, but relocating it requires editing the blocked roadmap in a separate maintenance pass.
+- **Restore "engaged views" beside the public count** (proposed from [RYD #1306](https://github.com/Anarios/return-youtube-dislike/issues/1306) and the 2026-08-24 view-metric change). Engaged views exist only in YouTube Studio → Analytics → Advanced Mode, visible to the channel owner. The data is not public, so no extension can show it for arbitrary videos. Not implementable.
+- **Hide-watched / watch-later management** (proposed from competitor demand). Already shipped: `hideWatchedVideos`, `hideWatchedMode` (dim/hide), `hideVideosWatchedRatio`, `markWatchedVideos`, `searchHideWatchedRecommended`.
+- **A settings search box** ([CPFY #209](https://github.com/insin/control-panel-for-youtube/issues/209)). Already shipped at `ytkit.js:39789-39820` with a live-region result count and a designed no-results state. The real gap is filtering and deep links, not search.
+- **Anti-translation, hide auto-dubbed, granular AI-surface hiding, subscription list view, settings import/export.** All shipped; competitor trackers requesting them are marketing evidence, not backlog.
+- **Vendor uBlock-style filter-list subscription from scratch** ([FilterTube #62](https://github.com/varshneydevansh/FilterTube/issues/62)). Astra already has a verified, SHA-256-pinned, ETag-validated single-list path in `core/remote-list-scope.js`; a from-scratch rebuild would discard that. Extending it to multiple lists is incremental work, not a new subsystem.
+- **A general aggregate-telemetry pipeline** to detect global YouTube regressions. Explicitly rejected by design (`popup.js:3707-3709`) and incompatible with the no-telemetry promise in `README.md:1101`. The selector-canary and fixture-freshness work below buys most of the same signal without collecting anything.
+- **Vision-LLM or self-healing AI selector repair** (a genuine 2026 trend in the scraping literature). It requires per-user model egress and unreviewable dynamic behavior, both incompatible with local-first and with MV3 review. Structural anchoring on attributes the site needs for its own accessibility and telemetry is the portable half of that research and is already what the selector packs do.
+- **A remote plugin marketplace.** Unchanged from 2026-08-23: dynamic executable code is incompatible with store policy and the reviewable package boundary.
+- **Full mobile support and cloud multi-user workspaces.** Unchanged from 2026-08-23: the product is a desktop site enhancer, and cloud sync conflicts with the local-first model.
+- **`chrome.userScripts` adoption** ([Chrome 138 gating](https://developer.chrome.com/blog/chrome-userscript)). Astra does not use the API and does not need it; the Chrome 138 per-extension toggle affects Tampermonkey's install funnel, which is a documentation matter already covered in `CONTRIBUTING.md`.
+- **Chrome 148 `structured_clone` messaging and the `browser` namespace polyfill removal.** Both sit above the Chrome 120 floor, and `docs/platform-api-adoption.md` already records the `browser` namespace as retained-with-fallback. Revisit when the floor moves.
 
 ## Sources
 
 ### Repository tracker
-
 - https://github.com/SysAdminDoc/Astra-Deck/issues
-- https://github.com/SysAdminDoc/Astra-Deck/issues/1
-- https://github.com/SysAdminDoc/Astra-Deck/pulls
 - https://github.com/SysAdminDoc/Astra-Deck/discussions/43
 - https://github.com/SysAdminDoc/Astra-Deck/discussions/44
 
 ### Direct OSS competitors
-
-- https://github.com/code-charity/youtube
-- https://github.com/insin/control-panel-for-youtube
-- https://github.com/YouTube-Enhancer/extension
-- https://github.com/amitbl/blocktube
-- https://github.com/ajayyy/SponsorBlock
-- https://github.com/ajayyy/DeArrow
-- https://github.com/Anarios/return-youtube-dislike
-- https://github.com/FreeTubeApp/FreeTube
-- https://github.com/gorhill/uBlock
-- https://github.com/iv-org/invidious
-- https://github.com/TeamPiped/Piped
-- https://github.com/libredirect/browser_extension
+- https://github.com/YouTube-Enhancer/extension/releases
+- https://github.com/YouTube-Enhancer/extension/issues/1380
+- https://github.com/code-charity/youtube/pull/4275
+- https://github.com/code-charity/youtube/issues/4278
+- https://github.com/code-charity/youtube/pull/4236
+- https://github.com/insin/control-panel-for-youtube/issues/321
+- https://github.com/varshneydevansh/FilterTube/issues/62
+- https://github.com/varshneydevansh/FilterTube/issues/75
+- https://github.com/ajayyy/SponsorBlock/issues/649
+- https://github.com/ajayyy/SponsorBlock/issues/1963
+- https://github.com/Anarios/return-youtube-dislike/issues/1305
+- https://github.com/amitbl/blocktube/issues/697
+- https://github.com/825i/channelsieve
+- https://github.com/joaogfc/ZeroDelay
+- https://github.com/Override92/AiSList
 - https://github.com/pc035860/YCS-cont
-- https://github.com/yt-dlp/yt-dlp
-- https://github.com/imputnet/cobalt
-- https://github.com/Brainicism/bgutil-ytdlp-pot-provider
+- https://github.com/Pelski/ytzero
+
+### Trusted Types evidence
+- https://developer.chrome.com/blog/trusted-types-on-youtube
+- https://github.com/immersive-translate/immersive-translate/issues/4015
+- https://github.com/magicoflolis/Userscript-Plus/issues/82
+- https://github.com/WicktorB/YouTube-Short-Kill/pull/6
 
 ### Commercial products
-
+- https://pockettube.io/pricing.html
+- https://glasp.co/pricing
+- https://notegpt.io/pricing
+- https://harpa.ai/pricing
 - https://www.mrfdev.com/enhancer-for-youtube
-- https://chromewebstore.google.com/detail/unhook-remove-youtube-rec/khncfooichmfjbepaaaebmommgaepoid
-- https://pockettube.io/
-- https://glasp.co/youtube-summary
-- https://notegpt.io/youtube-video-summarizer
-- https://eightify.app/tl/
-- https://harpa.ai/
-- https://help.downloadhelper.net/article/6-what-is-vdh
+- https://addons.mozilla.org/en-US/firefox/addon/youtube-subscription-groups/reviews/?score=1
+- https://addons.mozilla.org/en-US/firefox/addon/enhancer-for-youtube/reviews/?score=1
 
-### Adjacent projects
+### Standards and platform
+- https://developer.chrome.com/blog/chrome-two-week-release
+- https://developer.chrome.com/docs/extensions/whats-new
+- https://developer.chrome.com/docs/extensions/develop/migrate/mv2-deprecation-timeline
+- https://developer.chrome.com/blog/structured-clone-messaging
+- https://developer.chrome.com/blog/chrome-userscript
+- https://developer.chrome.com/docs/ai/built-in-apis
+- https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/153
+- https://bugzilla.mozilla.org/show_bug.cgi?id=1362809
+- https://bugzilla.mozilla.org/show_bug.cgi?id=2052000
+- https://www.w3.org/groups/wg/webextensions/
+- https://github.com/w3c/webextensions/tree/main/_minutes
+- https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/
 
-- https://github.com/TeamNewPipe/NewPipe
-- https://github.com/refined-github/refined-github
-- https://github.com/honestbleeps/Reddit-Enhancement-Suite
-- https://github.com/osteele/bisect-obsidian-extensions
-- https://github.com/KristjanPikhof/YouTube-Summarizer
+### Store policy
+- https://developer.chrome.com/blog/cws-policy-updates-2026
+- https://developer.chrome.com/docs/webstore/program-policies/mv3-requirements
+- https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements
+- https://learn.microsoft.com/en-us/legal/microsoft-edge/extensions/developer-policies
 
-### Awesome lists
-
-- https://github.com/digitalblossom/alternative-frontends
-- https://github.com/Myzel394/awesome-alternative-frontends
-- https://github.com/mendel5/alternative-front-ends
-- https://github.com/awesome-scripts/awesome-userscripts
-- https://github.com/pluja/awesome-privacy
+### YouTube product changes
+- https://www.socialmediatoday.com/news/youtube-is-changing-how-it-counts-views/828093/
+- https://www.mediapost.com/publications/article/417233/youtube-rolls-out-ai-chatbot-to-all-us-mobile-us.html
+- https://socialbee.com/blog/youtube-updates/
 
 ### Community signal
-
-- https://www.reddit.com/r/youtube/comments/1lepmrs
-- https://www.reddit.com/r/youtube/comments/1nq1zp8
-- https://www.reddit.com/r/youtube/comments/1lnoim0
-- https://www.reddit.com/r/youtube/comments/1nb5pcc
-- https://www.reddit.com/r/youtube/comments/1oidrvv
-- https://www.reddit.com/r/youtube/comments/1ujdgye
-- https://news.ycombinator.com/item?id=47786791
-- https://news.ycombinator.com/item?id=38602097
-- https://help.adblockplus.org/adblock-plus-help-center/what-to-do-if-you-are-seeing-youtube-s-anti-adblocking-warning
-- https://stackoverflow.com/questions/77040261/problems-getting-ondomcontentloaded-to-trigger-on-chrome-extension-manifest-v3
-- https://stackoverflow.com/questions/79739749/youtube-captions-api-from-api-explorer-returns-404-for-a-resource-id-obtained-fr
-
-### Standards and platform sources
-
-- https://developer.chrome.com/docs/extensions/whats-new
-- https://developer.chrome.com/docs/extensions/develop/concepts/browser-namespace
-- https://developer.chrome.com/blog/structured-clone-messaging
-- https://developer.chrome.com/blog/local-network-access
-- https://developer.chrome.com/blog/chrome-userscript
-- https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/153
-- https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/154
-- https://github.com/w3c/webextensions
-- https://github.com/w3c/webextensions/issues/1051
-- https://developers.google.com/youtube/v3/docs/captions/download
-- https://developers.google.com/youtube/terms/developer-policies
-- https://support.google.com/youtube/answer/13339776
-- https://support.google.com/youtube/answer/14110396
-- https://support.google.com/youtube/answer/16370674
-- https://support.google.com/youtube/answer/6052392
-- https://support.google.com/youtube/answer/14129599
-- https://blog.youtube/news-and-events/improving-ai-labels-viewers-creators/
-
-### Academic and engineering research
-
-- https://arxiv.org/abs/2406.12710
-- https://arxiv.org/abs/2404.06827
-- https://arxiv.org/abs/2404.08310
-- https://arxiv.org/abs/2503.01000
-- https://arxiv.org/abs/2307.14551
-- https://www.mozillafoundation.org/en/youtube/user-controls/
-- https://faculty.washington.edu/alexisr/youtubeAgency.pdf
-- https://learn.microsoft.com/en-us/microsoft-edge/extensions/developer-guide/minimize-page-load-time-impact
+- https://news.ycombinator.com/item?id=49303202
+- https://news.ycombinator.com/item?id=49452789
+- https://github.com/yt-dlp/yt-dlp/issues/17456
+- https://chromewebstore.google.com/detail/youtube-anti-translate/ndpmhjnlfkgfalaieeneneenijondgag
 
 ### Dependencies and security
-
 - https://github.com/advisories/GHSA-w3rx-r6r6-pgpr
 - https://github.com/advisories/GHSA-5p2g-fcmc-qvqq
 - https://github.com/mozilla/web-ext/issues/3806
-- https://github.com/mozilla/web-ext/releases
-- https://github.com/websockets/ws/releases
-- https://github.com/eslint/eslint/releases/tag/v10.9.0
-- https://www.npmjs.com/package/crx3
 - https://cheatsheetseries.owasp.org/cheatsheets/Browser_Extension_Vulnerabilities_Cheat_Sheet.html
-- https://developer.chrome.com/docs/extensions/develop/security-privacy/stay-secure
-- https://www.koi.ai/blog/trust-me-im-local-chrome-extensions-mcp-and-the-sandbox-escape
-- https://socket.dev/blog/socket-now-protects-the-chrome-extension-ecosystem
+- https://arxiv.org/pdf/2404.06827
 
 ## Open Questions
 
-- Which stable structural hooks identify YouTube's altered or synthetic-content disclosure in current long-form and Shorts DOM across locales? A live labeled-video capture is required before export provenance can be specified safely. This does not block any prioritized roadmap item.
+- Does Chrome's Local Network Access enforcement apply to an extension's background fetch to `127.0.0.1`? Two independent reads of the same primary sources disagree: one holds that [LNA](https://developer.chrome.com/blog/local-network-access) is a website-facing permission that leaves extensions with host permissions unaffected, the other that extensions count as public origins and that the `LocalNetworkAccessRestrictionsTemporaryOptOut` policy is removed after M152, which would put a prompt in front of every companion download. The answer decides whether the Astra Downloader HTTP contract needs a denied-path UX or a move to `nativeMessaging`, which LNA does not touch and which the manifest already permits. `Roadmap_Blocked.md` already owns "Validate Chrome Local Network Access exemption for companion communication", so no duplicate item was created — but it needs a live Chrome 152+ test, not more reading.
+
+- Does YouTube's `ytInitialPlayerResponse` expose altered/synthetic-content disclosure under stable key names across locales and across long-form, Shorts, and live? [ImprovedTube #4275](https://github.com/code-charity/youtube/pull/4275) asserts `generativeAi`, `generatedWithAi`, `alteredOrSynthetic`, and `madeWithAi`, but none of those is confirmed against a captured labeled video in this repository. The roadmap item below is written to fail closed and change nothing if the keys are absent, so this does not block it — but the key set must be validated against a real capture before the filter is trusted.
+- Is `Roadmap_Blocked.md:23-35` ("Require dated screen-reader evidence for UI-changing releases") still blocked? `67fe0630` shipped `scripts/screen-reader-evidence.js` and a release refusal for missing or stale evidence. If the gate now satisfies the item, it should move out of the blocked file — a maintenance pass outside this research deliverable.
