@@ -711,7 +711,7 @@
                 const order = [this._port, ...this._PORT_CANDIDATES.filter(p => p !== this._port)];
                 let nativeRequiredStatus = null;
                 for (const port of order) {
-                    const data = await tryPort(port);
+                    let data = await tryPort(port);
                     if (data) {
                         // Pair only against the STRONG identity, not the
                         // legacy `token_required + port` heuristic that
@@ -724,7 +724,26 @@
                         // server that names itself gets it.
                         if (!nativeToken.token && !data.token && data.service === this._SERVICE_ID) {
                             const paired = await this._pairWithCompanion(port);
-                            if (paired) nativeToken = await this._requestNativeToken();
+                            if (paired) {
+                                nativeToken = await this._requestNativeToken();
+                                // Pairing is what authorizes this origin, so the
+                                // companion only starts handing over the bearer
+                                // token on the NEXT /health. Re-read it here.
+                                //
+                                // Without this the freshly granted token sits
+                                // unread behind the 30s check interval and the
+                                // status the user sees right after installing is
+                                // "not installed" — on a companion that just
+                                // paired successfully. Native messaging is still
+                                // preferred; this only covers the common case
+                                // where it is unavailable (enterprise policy, an
+                                // unpacked install, or a browser that has not
+                                // picked up the host manifest yet).
+                                if (!nativeToken.token) {
+                                    const repaired = await tryPort(port);
+                                    if (repaired) data = repaired;
+                                }
+                            }
                         }
                         const token = nativeToken.token || data.token || null;
                         if (!token) {
