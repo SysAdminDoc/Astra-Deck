@@ -36,6 +36,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- `docs/architecture.md` is now gated against source. Its trust-boundary
+  section named eight content-to-background message types while the worker
+  handled twenty-three, omitting the native token, the AI credential channel
+  and the cookie handoff — in the section written for reviewers. The test count
+  and the popup's core-module count were similarly stale. All three are now
+  recomputed by `npm run check`, which fails on drift.
+
 - Feature health now reports stable-chain erosion. The resolver walks a
   surface's stable selectors then its fallbacks and returns the first match,
   and it only ever recorded that *something* matched — so a surface whose

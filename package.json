@@ -60,6 +60,7 @@
     "sign:feeds": "node scripts/sign-remote-feeds.js",
     "check:feed-signatures": "node scripts/sign-remote-feeds.js --check",
     "check:selector-evidence": "node scripts/check-selector-evidence.js",
+    "check:architecture-doc": "node scripts/check-architecture-doc.js",
     "record:selector-evidence": "node scripts/check-selector-evidence.js --record",
     "check:companion-ports": "node scripts/check-companion-port-catalogue.js",
     "check:chromium-store": "node scripts/check-chromium-store-profile.js",
