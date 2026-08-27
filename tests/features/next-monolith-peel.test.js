@@ -528,7 +528,7 @@ test('downloadUI MediaDLManager pairs its Chrome ID then retries native messagin
     assert.ok(calls.some((call) => call.method === 'POST' && String(call.url).includes('/pair-extension')));
 });
 
-test('downloadUI native-channel-required failures show recovery copy without install prompt', async () => {
+test('downloadUI native-channel-required failures name the fix and never auto-start', async () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',
         'createDownloadUIFeature'
@@ -562,9 +562,15 @@ test('downloadUI native-channel-required failures show recovery copy without ins
 
     await result.ytKitDownload('https://www.youtube.com/watch?v=abcdefghijk', false);
 
+    // Auto-start stays out of this state: the companion is already running
+    // and answering, so a mediadl:// launch would fix nothing.
     assert.equal(protocolLaunches.length, 0);
-    assert.ok(toasts.some(([message]) => /browser native messaging/i.test(message)));
-    assert.ok(toasts.some(([message]) => /native host registration/i.test(message)));
+    // The copy used to describe the mechanism ("verify the native host
+    // registration"), which no reader could act on. It now names the fix.
+    assert.ok(toasts.some(([message]) => /cannot share its private token/i.test(message)));
+    assert.ok(toasts.some(([message]) => /Download setup/i.test(message)));
+    assert.ok(!toasts.some(([message]) => /native host registration/i.test(message)),
+        'the recovery copy must not send the reader after a registry detail');
     // The native token error is a host-registration diagnostic. It used to be
     // appended to the toast, which told the reader nothing they could act on;
     // the recovery copy already says what to do. It belongs in the log.

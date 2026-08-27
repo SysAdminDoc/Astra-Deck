@@ -8724,5 +8724,14 @@
   },
   "feature_selectionColor_desc": {
     "message": "启用自定义文本选择时选择使用的突出显示颜色"
+  },
+  "dlInstallNativeRequiredDesc": {
+    "message": "Astra Downloader is running, but this version cannot hand its private token to the browser. Update it with Download setup below, then choose Check again."
+  },
+  "settingsDlGetSetup": {
+    "message": "Get setup file"
+  },
+  "settingsDlGetSetupTitle": {
+    "message": "Download the current Astra Downloader setup file to install or update it"
   }
 }

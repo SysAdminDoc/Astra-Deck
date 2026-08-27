@@ -2632,6 +2632,33 @@ function buildSettingsPanel() {
                             refreshBtn.disabled = false;
                         };
                         actions.appendChild(refreshBtn);
+
+                        // The installer was only reachable while the companion
+                        // was missing, so a reader running an older build had
+                        // nowhere in Settings to get the current one. Cookie
+                        // support needs companion 2.13.0, so keep the setup
+                        // file one click away even when the service is healthy.
+                        const updateBtn = makeBannerButton(t('settingsDlGetSetup', 'Get setup file'));
+                        updateBtn.title = t('settingsDlGetSetupTitle',
+                            'Download the current Astra Downloader setup file to install or update it');
+                        updateBtn.onclick = async () => {
+                            updateBtn.textContent = t('dlInstallDownloadingSetupShort', 'Downloading setup…');
+                            updateBtn.disabled = true;
+                            const assist = await MediaDLManager.runInstallAssist();
+                            updateBtn.textContent = assist.downloaded
+                                ? t('dlInstallSetupReady', 'Setup ready')
+                                : t('dlInstallOpenSetup', 'Open setup file');
+                            updateBtn.classList.toggle('is-success', !!assist.downloaded);
+                            text.textContent = assist.downloaded
+                                ? t('settingsDlSetupDownloaded', 'Setup downloaded. Open the file, finish installation, then refresh.')
+                                : t('settingsDlSetupOpened', 'Setup opened. Finish installation, then refresh.');
+                            setTimeout(() => {
+                                updateBtn.textContent = t('settingsDlGetSetup', 'Get setup file');
+                                updateBtn.classList.remove('is-success');
+                                updateBtn.disabled = false;
+                            }, 3500);
+                        };
+                        actions.appendChild(updateBtn);
                     } else {
                         banner.dataset.state = 'missing';
                         text.textContent = t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');

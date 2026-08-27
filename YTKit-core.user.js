@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Astra Deck YTKit Core Library
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.87.0
+// @version      4.88.0
 // @description  Shared Astra Deck userscript runtime dependency; loaded by YTKit.user.js
 // @author       Matthew Parker
 // @homepageURL  https://github.com/SysAdminDoc/Astra-Deck
@@ -28747,6 +28747,28 @@ function buildSettingsPanel() {
                             refreshBtn.disabled = false;
                         };
                         actions.appendChild(refreshBtn);
+
+                        const updateBtn = makeBannerButton(t('settingsDlGetSetup', 'Get setup file'));
+                        updateBtn.title = t('settingsDlGetSetupTitle',
+                            'Download the current Astra Downloader setup file to install or update it');
+                        updateBtn.onclick = async () => {
+                            updateBtn.textContent = t('dlInstallDownloadingSetupShort', 'Downloading setup…');
+                            updateBtn.disabled = true;
+                            const assist = await MediaDLManager.runInstallAssist();
+                            updateBtn.textContent = assist.downloaded
+                                ? t('dlInstallSetupReady', 'Setup ready')
+                                : t('dlInstallOpenSetup', 'Open setup file');
+                            updateBtn.classList.toggle('is-success', !!assist.downloaded);
+                            text.textContent = assist.downloaded
+                                ? t('settingsDlSetupDownloaded', 'Setup downloaded. Open the file, finish installation, then refresh.')
+                                : t('settingsDlSetupOpened', 'Setup opened. Finish installation, then refresh.');
+                            setTimeout(() => {
+                                updateBtn.textContent = t('settingsDlGetSetup', 'Get setup file');
+                                updateBtn.classList.remove('is-success');
+                                updateBtn.disabled = false;
+                            }, 3500);
+                        };
+                        actions.appendChild(updateBtn);
                     } else {
                         banner.dataset.state = 'missing';
                         text.textContent = t('settingsDlNotConnected', 'Not connected. Local downloads need the setup helper.');
