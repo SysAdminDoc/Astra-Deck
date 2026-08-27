@@ -8,6 +8,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- Extension pages now enforce Trusted Types. `core/trusted-html.js` has always
+  sanitized through a real policy, but nothing made the browser require it, so
+  a raw `innerHTML` assignment on the popup or side panel would have bypassed
+  the sanitizer silently. The extension-pages CSP now carries
+  `require-trusted-types-for 'script'` with an allowlist naming only the two
+  policies this project creates, and `npm run check` fails on any
+  `innerHTML`/`outerHTML`/`insertAdjacentHTML`/`document.write` sink outside the
+  sanitizer.
+
 - Both remote feeds now carry a detached signature. `selector-packs.json` and
   `feature-disable-feed.csv` are fetched at runtime and can change shipped
   behavior without a release, and neither proved where it came from: the feed
