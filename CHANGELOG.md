@@ -8,6 +8,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- Privileged page-only messages now check the sender's origin. The background
+  worker authenticated the extension (`sender.id === runtime.id`) and nothing
+  authenticated the page, while the GitHub-full profile can hold a runtime host
+  grant for an arbitrary user-typed HTTPS origin. Requests for the native
+  token, the cookie handoff, and optional host permissions are refused unless
+  they come from a YouTube page. The three other privileged handlers were
+  checked against their real senders rather than assumed: the AI credential
+  pair comes from the popup and already refuses any sender carrying a tab, and
+  `YTKIT_REPLACE_SETTINGS` legitimately arrives from both contexts.
+
 - The userscript's `@require` is pinned to an immutable release tag. It pointed
   at the `main` branch, so every install re-fetched 1.9 MB of executable code
   from a mutable pointer — in a script that also grants `GM_xmlhttpRequest` to

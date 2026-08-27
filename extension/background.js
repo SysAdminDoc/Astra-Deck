@@ -1897,6 +1897,53 @@ if (ext.downloads?.onErased?.addListener) {
     });
 }
 
+// Per-message sender-origin policy.
+//
+// The listener authenticates the EXTENSION (`sender.id === runtime.id`) but
+// until v4.88.3 nothing authenticated the PAGE. The github-full profile can
+// hold a runtime host grant for an arbitrary user-typed HTTPS origin, so
+// "our extension sent this" was doing more work than it could carry for the
+// handlers that mint a native token, hand over YouTube cookies, write AI
+// credentials, or replace the whole settings bag.
+//
+// Anything not listed keeps the previous behaviour.
+//
+// Only the three that are genuinely content-script-only are listed. The other
+// privileged handlers were checked against their real senders rather than
+// assumed:
+//   YTKIT_AI_CREDENTIAL_SET/DELETE come from popup.js and are already refused
+//     for any sender carrying a `tab`, with a specific TRUSTED_CONTEXT_REQUIRED
+//     message that is better than a generic origin rejection.
+//   YTKIT_REPLACE_SETTINGS is sent by core/settings-controller.js, which runs
+//     in BOTH the content script and the popup, so it has no single origin.
+const PRIVILEGED_SENDER_ORIGINS = Object.freeze({
+    NATIVE_MSG_GET_TOKEN: 'youtube',
+    YTKIT_COOKIE_HANDOFF: 'youtube',
+    YTKIT_REQUEST_OPTIONAL_HOSTS: 'youtube'
+});
+
+function isYouTubeSenderOrigin(sender) {
+    const raw = sender?.origin || sender?.url || sender?.tab?.url || '';
+    if (typeof raw !== 'string' || !raw) return false;
+    let hostname = '';
+    try {
+        hostname = new URL(raw).hostname.toLowerCase();
+    } catch (_) {
+        // reason: an unparseable origin is not a YouTube origin
+        return false;
+    }
+    return hostname === 'youtube.com'
+        || hostname.endsWith('.youtube.com')
+        || hostname === 'youtube-nocookie.com'
+        || hostname.endsWith('.youtube-nocookie.com')
+        || hostname === 'youtu.be';
+}
+
+function senderOriginAllowed(type, sender) {
+    if (!PRIVILEGED_SENDER_ORIGINS[type]) return true;
+    return isYouTubeSenderOrigin(sender);
+}
+
 ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // Guard: reject malformed messages up front so a missing/non-object `msg`
     // cannot throw before any handler runs.
@@ -1916,6 +1963,15 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // `id` field are rejected too: runtime.sendMessage from a
     // legitimate context always sets it. (`tab` sender means a YouTube
     // tab; `id` matching us means our own contexts.)
+    if (!senderOriginAllowed(msg.type, sender)) {
+        try {
+            sendResponse({ ok: false, error: 'Sender origin rejected.' });
+        } catch (_) {
+            // reason: sender may have disconnected before response is delivered
+        }
+        return false;
+    }
+
     try {
         const isOurExtension = sender?.id === ext.runtime.id;
         if (!isOurExtension) {
