@@ -81,6 +81,20 @@ test('the release smoke chain runs the probe', () => {
         'a release must not ship without the computed-contrast proof');
 });
 
+test('the release smoke chain visually checks the reported dark-theme controls', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+    const source = fs.readFileSync(
+        path.join(repoRoot, 'scripts', 'probe-theme-control-regressions.js'), 'utf8');
+    assert.equal(pkg.scripts['smoke:theme-controls'], 'node scripts/probe-theme-control-regressions.js');
+    assert.match(pkg.scripts['release:browser-smokes'], /npm run smoke:theme-controls/);
+    assert.match(source, /YTKitCore\.ICONS\[button\.dataset\.icon\]\(\)/,
+        'the visual fixture must render the shipped shared icons');
+    assert.match(source, /after: describePseudo\('::after'\)/,
+        'the probe must inspect the native count decoration that drew the white bar');
+    assert.match(source, /Page\.captureScreenshot/,
+        'the probe must leave visual evidence, not only computed-style output');
+});
+
 // WHEN a class under a repainted surface sets its own text colour, the probe
 // SHALL measure it without anyone remembering to add it.
 //

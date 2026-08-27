@@ -17,6 +17,18 @@
     // extraction commit a pure key-block move).
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+    function hardenOutlineIcon(svg) {
+        if (!svg) return svg;
+        svg.style.setProperty('color', 'inherit', 'important');
+        svg.style.setProperty('fill', 'none', 'important');
+        svg.style.setProperty('stroke', 'currentColor', 'important');
+        for (const part of svg.querySelectorAll('path, circle, rect, line, polyline, polygon')) {
+            part.style.setProperty('fill', 'none', 'important');
+            part.style.setProperty('stroke', 'currentColor', 'important');
+        }
+        return svg;
+    }
+    if (!core.hardenOutlineIcon) core.hardenOutlineIcon = hardenOutlineIcon;
     if (core.ICONS) return;
 
     function createSVG(viewBox, paths, options = {}) {
@@ -72,6 +84,11 @@
 
     const _S = { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' };
     const ICONS = {
+        edit: () => createSVG('0 0 24 24', [
+            { type: 'path', d: 'M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' },
+            { type: 'path', d: 'M18.4 2.6a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z' }
+        ], { strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+
         settings: () => createSVG('0 0 24 24', [
             { type: 'circle', cx: 12, cy: 12, r: 3 },
             { type: 'path', d: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' }
@@ -431,6 +448,7 @@
 
     Object.assign(core, {
         createSVG,
+        hardenOutlineIcon,
         ICONS
     });
 })();

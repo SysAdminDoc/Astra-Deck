@@ -301,7 +301,8 @@ test('release preparation gates the Chromium, live-chat, Firefox, and real-manag
     // card rendered at about 1.05:1.
     assert.equal(
         pkg.scripts['release:browser-smokes'],
-        'npm run smoke:a11y && npm run smoke:light-surfaces && npm run smoke:zero-ads:live'
+        'npm run smoke:a11y && npm run smoke:light-surfaces && npm run smoke:theme-controls'
+        + ' && npm run smoke:zero-ads:live'
         + ' && npm run smoke:live-chat && npm run smoke:firefox && npm run smoke:userscript-managers'
     );
     assert.match(pkg.scripts['release:prepare'], /npm run release:browser-smokes/);

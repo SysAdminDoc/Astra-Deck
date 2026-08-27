@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.15
+// @name         Theater Split v1.0.16
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.15
+// @version      1.0.16
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -33,6 +33,8 @@
 //                     YouTube's outer wrappers, and refine every action state.
 //   @version 1.0.15 - Replace outlined comment actions with compact tonal controls,
 //                     compress metadata, and remove native reply connector chrome.
+//   @version 1.0.16 - Remove native count separator pseudo-elements so Like totals
+//                     stay clean in both split themes.
 
 (function() {
     'use strict';
@@ -1819,6 +1821,16 @@ color-scheme: inherit !important;
                 background-color 150ms ease,
                 color 150ms ease,
                 box-shadow 150ms ease !important;
+        }
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #vote-count-middle::before,
+        body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #vote-count-middle::after {
+            content: none !important;
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
         }
         body.ts-split #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
             button,

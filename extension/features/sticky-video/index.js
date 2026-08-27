@@ -3187,6 +3187,16 @@
                             color 150ms ease,
                             box-shadow 150ms ease !important;
                     }
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #vote-count-middle::before,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar #vote-count-middle::after {
+                        content: none !important;
+                        display: none !important;
+                        width: 0 !important;
+                        height: 0 !important;
+                        border: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                    }
                     html:is(.ytkit-split-active, .ytkit-split-open) #below#below.ytkit-split-scroll-surface #comments#comments ytd-comment-engagement-bar :is(
                         button,
                         .yt-spec-button-shape-next,

@@ -6,6 +6,38 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.86.6] (2026-08-26)
+
+### Changed
+
+- Quick Links now builds its Edit and Settings controls from the shared outline
+  icon library. Their labels remain available through each button's accessible
+  name without leaking into the icon-only footer.
+
+### Fixed
+
+- Late YouTube dark-theme button and SVG rules can no longer repaint the Quick
+  Links footer glyphs black. The controls pin their foreground and outline paint
+  while retaining separate dark and light colors.
+
+- Normal watch pages, Theater Split, and the standalone Theater Split userscript
+  now remove both native pseudo-elements from the inline Like count. The white
+  separator at the count's right edge is gone.
+
+### Tests
+
+- A focused Google Chrome fixture loads the shipped CSS and shared icons beneath
+  deliberately hostile late host rules. It captures both controls in dark and
+  light mode, checks icon contrast and hidden labels, and rejects any painted
+  count pseudo-element.
+
+- The full suite passes 2,800 tests with one environment-only skip, and all 34
+  local validation gates pass.
+
+- All 12 browser packages and the userscript were rebuilt as v4.86.6 validation
+  artifacts with one-run CRX signing. The standalone Theater Split userscript is
+  v1.0.16.
+
 ## [4.86.5] (2026-08-26)
 
 ### Changed
