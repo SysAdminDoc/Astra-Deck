@@ -62,7 +62,7 @@ const GATES = Object.freeze([
 // A floor on the runner's own scope, like the list-scoped gates it drives. A
 // chain that quietly shrinks reports success for checks it never ran, which is
 // the failure this whole file exists to stop.
-const MIN_GATES = 29;
+const MIN_GATES = 37;
 
 function runGate(gate) {
     const started = process.hrtime.bigint();

@@ -981,6 +981,18 @@ function isDeviceOffline() {
 
 function renderConnectivityState() {
     const offline = isDeviceOffline();
+
+    // See popup.js: the banner is the visible surface, because a panel whose
+    // diagnostics could not load is precisely the offline case.
+    const banner = document.querySelector('#connectivity-banner');
+    const bannerDetail = document.querySelector('#connectivity-banner-detail');
+    if (banner) banner.hidden = !offline;
+    if (bannerDetail) {
+        bannerDetail.textContent = offline
+            ? t('failureCauseOffline', 'Your device looks offline. Reconnect, then try again.')
+            : '';
+    }
+
     const host = document.querySelector('.sp-main') || document.body;
     let notice = host?.querySelector?.('.connectivity-notice') || null;
     if (!offline) {

@@ -28,6 +28,16 @@
     </div>
   </header>
 
+    <!-- Connectivity banner. A dedicated top-level surface because the health
+         sections it used to draw into ship `hidden`, and the external-health
+         section is only unhidden once a live content script answers — which is
+         exactly what a dropped connection prevents. The offline notice has to
+         live somewhere that is visible without a working network. -->
+  <aside class="connectivity-banner" id="connectivity-banner" role="status" aria-live="polite" hidden>
+    <span class="connectivity-banner-icon" aria-hidden="true">⚠</span>
+    <span class="connectivity-banner-detail" id="connectivity-banner-detail"></span>
+    </aside>
+
   <main class="sp-main" role="main" aria-labelledby="sp-title">
     <section class="sp-section sp-section--hero" id="sp-overview" aria-labelledby="sp-overview-heading">
       <header class="sp-section-head">

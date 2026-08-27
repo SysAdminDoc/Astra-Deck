@@ -3157,9 +3157,21 @@ function setConnectivityNotice(section, offline) {
 
 function renderConnectivityState() {
     const offline = isDeviceOffline();
+
+    // The banner is the surface a user actually sees. Both health sections
+    // ship `hidden`, and #external-health is unhidden only after a live
+    // content script answers — which a dropped connection is what prevents —
+    // so a notice drawn only into them was invisible in exactly the case it
+    // exists for.
+    const banner = $('#connectivity-banner');
+    const detail = $('#connectivity-banner-detail');
+    if (banner) banner.hidden = !offline;
+    if (detail) detail.textContent = offline ? offlineNoticeText() : '';
+
     // Resolved here rather than closed over: the feature-health binding is
     // declared further down this file, and a call during module evaluation
-    // would hit its temporal dead zone.
+    // would hit its temporal dead zone. These mark the sections for styling
+    // and for anyone who has them open; the banner carries the message.
     setConnectivityNotice($('#external-health'), offline);
     setConnectivityNotice($('#feature-health'), offline);
     return offline;

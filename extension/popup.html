@@ -327,6 +327,16 @@
       <button type="button" class="health-clear-btn" id="health-clear-btn" data-i18n-attr-aria-label="healthClearAria" aria-label="Clear diagnostic log" data-i18n="healthClearBtn">Clear</button>
     </aside>
 
+    <!-- Connectivity banner. A dedicated top-level surface because the health
+         sections it used to draw into ship `hidden`, and the external-health
+         section is only unhidden once a live content script answers — which is
+         exactly what a dropped connection prevents. The offline notice has to
+         live somewhere that is visible without a working network. -->
+    <aside class="connectivity-banner" id="connectivity-banner" role="status" aria-live="polite" hidden>
+      <span class="connectivity-banner-icon" aria-hidden="true">⚠</span>
+      <span class="connectivity-banner-detail" id="connectivity-banner-detail"></span>
+    </aside>
+
     <!-- storage-quota proactive warning banner. Separate from
          #health-banner because the action surface (jump to Reset, copy
          storage report) is different from TT diagnostics, and the audience

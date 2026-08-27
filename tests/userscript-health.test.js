@@ -19,7 +19,6 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-    DEFAULT_CORE_URL,
     isResolvableRequireUrl,
 } = require('../scripts/check-userscript-size');
 
@@ -217,8 +216,13 @@ test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () 
         'YTKit.user.js must remain below Greasy Fork’s per-record 2 MiB limit');
     assert.ok(Buffer.byteLength(core, 'utf8') < maxBytes,
         'YTKit-core.user.js must remain below Greasy Fork’s per-record 2 MiB limit');
-    assert.match(main, /^\/\/ @require\s+(?:https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/main\/YTKit-core\.user\.js|https:\/\/update\.greasyfork\.org\/scripts\/\d+\/[^\s]+)$/m,
-        'YTKit.user.js must load its executable dependency from the published core URL or a numbered Greasy Fork record');
+    // The raw-GitHub half of this used to accept the `main` branch. A branch
+    // pointer is mutable, so the same @version could require different bytes
+    // on different days; v4.88.3 pinned it to an immutable tag ref.
+    assert.match(main, /^\/\/ @require\s+(?:https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/refs\/tags\/v\d+\.\d+\.\d+\/YTKit-core\.user\.js|https:\/\/update\.greasyfork\.org\/scripts\/\d+\/[^\s]+)$/m,
+        'YTKit.user.js must load its executable dependency from a tag-pinned core URL or a numbered Greasy Fork record');
+    assert.doesNotMatch(main, /^\/\/ @require\s+\S*Astra-Deck\/(?:main|master|refs\/heads\/)/m,
+        'and never through a mutable branch pointer');
     assert.doesNotMatch(main, /REPLACE_WITH_GREASY_FORK_CORE_ID/,
         'YTKit.user.js must not ship a placeholder @require');
     assert.match(main, /^\/\/ @homepageURL\s+https:\/\/github\.com\/SysAdminDoc\/Astra-Deck/m,
@@ -236,8 +240,26 @@ test('userscript-health: Greasy Fork records stay below the 2 MiB code cap', () 
 });
 
 test('userscript-health: core dependency gate rejects placeholders and unknown hosts', () => {
-    assert.equal(isResolvableRequireUrl(DEFAULT_CORE_URL), true,
-        'the published raw GitHub core fallback must be accepted');
+    // This used to assert that the raw `main` branch URL was acceptable. It
+    // is not: a branch pointer is mutable, so a given @version could require
+    // different bytes on different days, in a script that grants
+    // GM_xmlhttpRequest to three AI providers and loopback. Only an immutable
+    // tag ref or a numbered Greasy Fork record may resolve.
+    assert.equal(
+        isResolvableRequireUrl(
+            'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.3/YTKit-core.user.js'),
+        true,
+        'a tag-pinned raw GitHub core must be accepted');
+    assert.equal(
+        isResolvableRequireUrl(
+            'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js'),
+        false,
+        'a mutable branch pointer must fail closed');
+    assert.equal(
+        isResolvableRequireUrl(
+            'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/YTKit-core.user.js'),
+        false,
+        'and so must its explicit refs/heads form');
     assert.equal(isResolvableRequireUrl('https://update.greasyfork.org/scripts/12345/ytkit-core.js'), true,
         'a numbered Greasy Fork core record must be accepted');
     assert.equal(isResolvableRequireUrl('https://update.greasyfork.org/scripts/REPLACE_WITH_GREASY_FORK_CORE_ID/ytkit-core.js'), false,

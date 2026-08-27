@@ -183,6 +183,12 @@ test('the installed userscript uses the shared guard, not a private one', () => 
         "the installed userscript must read the shared guard");
     assert.ok(main.includes("if (typeof unsafeRegex !== 'function' || unsafeRegex(regexMatch[1])) {"),
         "and refuse the pattern when the core library did not load");
-    assert.ok(main.includes("@require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js"),
+    // The point of this assertion is that the core library is required at
+    // all, which is what makes the shared guard reachable. It used to pin the
+    // exact `main` branch URL; that ref is now version-specific (v4.88.3
+    // pinned @require to an immutable tag), so the URL itself is incidental.
+    assert.match(main, /@require\s+\S*YTKit-core\.user\.js/,
         "which is only reachable because it requires the core library");
+    assert.doesNotMatch(main, /@require\s+\S*Astra-Deck\/(?:main|master|refs\/heads\/)/,
+        "and the requirement must not resolve through a mutable branch pointer");
 });

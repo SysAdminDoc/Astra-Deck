@@ -3922,3 +3922,23 @@ button.so-key-surface:focus-visible {
   font-size: 11px;
   line-height: 1.4;
 }
+
+/* Connectivity banner (v4.88.3). Top-level and always reachable: the health
+   sections it used to draw into ship hidden, and external health is unhidden
+   only once a live content script answers — which is exactly what a dropped
+   connection prevents. Matches the storage banner's shape. */
+.connectivity-banner {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--warning);
+  border-radius: 6px;
+  background: var(--surface-strong);
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.connectivity-banner[hidden] { display: none; }
+.connectivity-banner-icon { color: var(--warning); }

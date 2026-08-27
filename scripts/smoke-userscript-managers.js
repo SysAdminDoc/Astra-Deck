@@ -158,10 +158,9 @@ function buildIsolatedUserscript(port) {
             '// @match        https://www.youtube.com/*',
             `${localMatch}\n// @match        https://www.youtube.com/*`
         )
-        .replace(
-            'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js',
-            localCore
-        )
+        // The require target is a version-pinned tag ref since v4.88.3, so
+        // match the metadata line rather than a literal URL.
+        .replace(/^(\/\/ @require\s+)\S+YTKit-core\.user\.js$/m, `$1${localCore}`)
         .replace(/^\/\/ @updateURL.*\r?\n/m, '')
         .replace(/^\/\/ @downloadURL.*\r?\n/m, '');
     if (!result.includes(localMatch) || !result.includes(`// @require      ${localCore}`)) {

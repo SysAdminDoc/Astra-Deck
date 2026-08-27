@@ -7,6 +7,7 @@ const { spawnSync } = require('child_process');
 const repoRoot = path.join(__dirname, '..');
 const exceptionPath = path.join(__dirname, 'dependency-audit-exceptions.json');
 const lockfilePath = path.join(repoRoot, 'package-lock.json');
+const npmrcPath = path.join(repoRoot, '.npmrc');
 
 function readJson(filePath) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -63,6 +64,35 @@ function advisoryShape(entry) {
             severity: item.severity,
         }))
         .sort((left, right) => left.id.localeCompare(right.id));
+}
+
+// `.npmrc` sets `ignore-scripts=true` and names the 2026-08-04 ChainDrop
+// worm as the reason, but nothing read it: deleting the file, or one
+// `npm i --ignore-scripts=false`, was invisible to every gate. The lockfile
+// invariant is the stronger half — no dependency in this tree declares an
+// install script today, so a new one appearing is a decision someone has to
+// make deliberately rather than inherit.
+function validateInstallScriptPolicy(npmrcText, lockfile) {
+    const problems = [];
+    const enabled = npmrcText
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith('#'))
+        .some((line) => /^ignore-scripts\s*=\s*true$/i.test(line));
+    if (!enabled) {
+        problems.push('.npmrc must set ignore-scripts=true — it is the only thing refusing '
+            + 'dependency lifecycle hooks, and nothing else in the chain checks for them');
+    }
+
+    const withInstallScripts = Object.entries(lockfile?.packages || {})
+        .filter(([, meta]) => meta && meta.hasInstallScript === true)
+        .map(([name]) => name || '(root)')
+        .sort();
+    if (withInstallScripts.length) {
+        problems.push('package-lock.json declares install script(s) for '
+            + `${withInstallScripts.join(', ')}; review each before allowing it`);
+    }
+    return problems;
 }
 
 function validateExceptionPolicy(report, policy, lockfile) {
@@ -232,6 +262,15 @@ function run() {
         console.log(`[audit-deps] override ${item.package}@${item.range}${advisory}, last checked ${item.lastCheckedOn}`);
     }
 
+    const installScriptProblems = validateInstallScriptPolicy(
+        fs.existsSync(npmrcPath) ? fs.readFileSync(npmrcPath, 'utf8') : '',
+        readJson(lockfilePath)
+    );
+    if (installScriptProblems.length) {
+        throw new Error(installScriptProblems.join('; '));
+    }
+    console.log('[audit-deps] install scripts refused by .npmrc; no lockfile entry declares one');
+
     if (result.status === 0 && report.metadata?.vulnerabilities?.total === 0) {
         console.log('[audit-deps] development dependency audit is clean');
         return;
@@ -256,4 +295,5 @@ module.exports = {
     advisoryShape,
     parseAuditOutput,
     validateExceptionPolicy,
+    validateInstallScriptPolicy,
 };

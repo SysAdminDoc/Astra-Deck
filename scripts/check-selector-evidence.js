@@ -97,8 +97,12 @@ function assessSurfaces(surfaceMap, { today, canaryDate, staleAfterDays = STALE_
     return rows;
 }
 
+// An absent file is the legitimate end state — every surface recaptured — so
+// it must read as "no accepted debt", not as a malformed config.
 function readExceptions() {
-    if (!fs.existsSync(EXCEPTIONS_PATH)) return { schemaVersion: 1, surfaces: {} };
+    if (!fs.existsSync(EXCEPTIONS_PATH)) {
+        return { schemaVersion: 1, staleAfterDays: STALE_AFTER_DAYS, surfaces: {} };
+    }
     return JSON.parse(fs.readFileSync(EXCEPTIONS_PATH, 'utf8'));
 }
 

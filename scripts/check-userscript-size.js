@@ -13,11 +13,17 @@ const ROOT = path.join(__dirname, '..');
 const MAX_CODE_BYTES = 2 * 1024 * 1024;
 const MAIN_PATH = path.join(ROOT, 'YTKit.user.js');
 const CORE_PATH = path.join(ROOT, 'YTKit-core.user.js');
-const DEFAULT_CORE_URL = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit-core.user.js';
+// A tag ref, never a branch ref. `main` is mutable, so an install pinned to
+// it re-fetches whatever that pointer says today — see the note in
+// sync-userscript.js.
+const TAGGED_CORE_URL_PATTERN =
+    /^https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/refs\/tags\/v\d+\.\d+\.\d+\/YTKit-core\.user\.js$/;
 const GREASY_FORK_CORE_URL_PATTERN = /^https:\/\/update\.greasyfork\.org\/scripts\/\d+\/[^/]+$/;
+const MUTABLE_REF_PATTERN = /githubusercontent\.com\/[^/]+\/[^/]+\/(?:main|master|refs\/heads\/)/;
 
 function isResolvableRequireUrl(value) {
-    return value === DEFAULT_CORE_URL || GREASY_FORK_CORE_URL_PATTERN.test(value);
+    if (MUTABLE_REF_PATTERN.test(String(value || ''))) return false;
+    return TAGGED_CORE_URL_PATTERN.test(value) || GREASY_FORK_CORE_URL_PATTERN.test(value);
 }
 
 function fail(message) {
@@ -100,14 +106,15 @@ if (mainVersion && coreVersion && mainVersion !== coreVersion) {
 if (!process.exitCode) {
     const headroom = MAX_CODE_BYTES - mainBytes;
     const coreHeadroom = MAX_CODE_BYTES - coreBytes;
-    const dependencyState = requireUrls[0] === DEFAULT_CORE_URL
-        ? 'GitHub raw fallback configured'
+    const dependencyState = TAGGED_CORE_URL_PATTERN.test(requireUrls[0])
+        ? 'tag-pinned GitHub raw core configured'
         : 'Greasy Fork core URL configured';
     console.log(`[check-userscript-size] OK — main ${mainBytes.toLocaleString()} B, core ${coreBytes.toLocaleString()} B; headroom ${headroom.toLocaleString()} B / ${coreHeadroom.toLocaleString()} B (${dependencyState})`);
 }
 
 module.exports = {
-    DEFAULT_CORE_URL,
     GREASY_FORK_CORE_URL_PATTERN,
+    TAGGED_CORE_URL_PATTERN,
+    MUTABLE_REF_PATTERN,
     isResolvableRequireUrl,
 };

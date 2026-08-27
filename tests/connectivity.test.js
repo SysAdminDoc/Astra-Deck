@@ -61,8 +61,17 @@ function makeEnvironment({ online = true } = {}) {
     const sections = {
         '#external-health': fakeElement('section'),
         '#feature-health': fakeElement('section'),
-        '.sp-main': fakeElement('main')
+        '.sp-main': fakeElement('main'),
+        // The banner is the surface a user actually sees. Both health sections
+        // ship `hidden` in the real markup, and #external-health is unhidden
+        // only after a live content script answers — which a dropped
+        // connection is what prevents.
+        '#connectivity-banner': fakeElement('aside'),
+        '#connectivity-banner-detail': fakeElement('span')
     };
+    sections['#external-health'].hidden = true;
+    sections['#feature-health'].hidden = true;
+    sections['#connectivity-banner'].hidden = true;
     const refreshed = [];
     const dashboards = [];
 
@@ -130,13 +139,13 @@ for (const [name, source, hostSelector, replayKey] of [
         assert.equal(api.__offline(), true);
         assert.equal(api.__render(), true, 'the surface must report itself offline');
 
+        const banner = env.sections['#connectivity-banner'];
+        const detail = env.sections['#connectivity-banner-detail'];
+        assert.equal(banner.hidden, false,
+            'the banner must actually be shown — a notice inside a hidden section is not a notice');
+        assert.match(detail.textContent, /offline/i, 'the banner must name connectivity');
+
         const host = env.sections[hostSelector];
-        const notice = host.querySelector('.connectivity-notice');
-        assert.ok(notice, 'an offline device must get a visible notice');
-        assert.match(notice.textContent, /offline/i, 'the notice must name connectivity');
-        assert.equal(notice.attributes['aria-live'], 'polite',
-            'the notice must be announced, not just drawn');
-        assert.equal(notice.attributes.role, 'status');
         assert.equal(host.dataset.offline, 'true', 'the surface must be styleable as offline');
     });
 
@@ -145,8 +154,9 @@ for (const [name, source, hostSelector, replayKey] of [
         const api = loadConnectivity(source, env);
 
         assert.equal(api.__render(), false);
-        assert.equal(env.sections[hostSelector].querySelector('.connectivity-notice'), null,
-            'a healthy connection must not draw a warning');
+        assert.equal(env.sections['#connectivity-banner'].hidden, true,
+            'a healthy connection must not show the banner');
+        assert.equal(env.sections['#connectivity-banner-detail'].textContent, '');
     });
 
     test(`${name}: offline then online clears the notice and re-checks`, () => {
@@ -160,13 +170,13 @@ for (const [name, source, hostSelector, replayKey] of [
         env.context.navigator.onLine = false;
         env.fire('offline');
         const host = env.sections[hostSelector];
-        assert.ok(host.querySelector('.connectivity-notice'), 'the drop must surface immediately');
+        const banner = env.sections['#connectivity-banner'];
+        assert.equal(banner.hidden, false, 'the drop must surface immediately');
         assert.equal(env[replayKey].length, 0, 'going offline must not fire a doomed request');
 
         env.context.navigator.onLine = true;
         env.fire('online');
-        assert.equal(host.querySelector('.connectivity-notice'), null,
-            'reconnecting must clear the notice');
+        assert.equal(banner.hidden, true, 'reconnecting must hide the banner');
         assert.equal(host.dataset.offline, undefined, 'and clear the offline marker');
         assert.equal(env[replayKey].length, 1,
             'reconnecting must re-check without the user reloading');
@@ -186,6 +196,8 @@ for (const [name, source, hostSelector, replayKey] of [
         const host = env.sections[hostSelector];
         const notices = host.children.filter((child) => child.className === 'connectivity-notice');
         assert.equal(notices.length, 1, 'the notice must be reused, not appended again');
+        assert.equal(env.sections['#connectivity-banner'].hidden, false,
+            'and the banner stays shown across repeated events');
     });
 }
 
