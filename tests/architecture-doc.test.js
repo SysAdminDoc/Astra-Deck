@@ -95,3 +95,28 @@ test('the architecture doc check is registered as a gate', () => {
     assert.ok(entry, 'the doc must be verified by npm run check');
     assert.equal(entry.script, 'check-architecture-doc.js');
 });
+
+test('the README does not promise provenance the release cannot deliver', () => {
+    // README.md claimed a "signed release manifest over the built artifacts"
+    // two lines after an honest paragraph saying releases are unsigned.
+    // allowed-signers carries no key, release-signature.js returns
+    // no-published-key, and readiness downgrades that to a warning — so the
+    // claim was false on every published release.
+    const gate = require('../scripts/check-architecture-doc.js');
+    assert.deepEqual(gate.checkSigningClaims(), [],
+        'README.md must not claim a signed manifest while no signing key is published');
+});
+
+test('the signing-claim check is keyed to the actual key state', () => {
+    const gate = require('../scripts/check-architecture-doc.js');
+    const signers = fs.readFileSync(path.join(repoRoot, 'allowed-signers'), 'utf8');
+    const hasKeyLine = signers.split('\n').some((line) => line.trim() && !line.trim().startsWith('#'));
+    assert.equal(gate.signingKeyIsPublished(), hasKeyLine,
+        'the check must read allowed-signers, not a hardcoded answer');
+
+    // When a key IS published the claim becomes legitimate, so the check must
+    // stop firing rather than block the release it is meant to enable.
+    if (!hasKeyLine) {
+        assert.equal(gate.checkSigningClaims().length, 0);
+    }
+});

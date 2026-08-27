@@ -1099,7 +1099,7 @@ as unsigned and prefer the source tree.
 
 - **Fully open-source**, every line of extension, companion, and build tooling is auditable
 - **No telemetry, no analytics, no tracking**, zero data leaves the browser except to APIs you explicitly enable
-- **SBOM + signed manifest** on every release build: a CycloneDX bill of materials for the npm tree, and a signed release manifest over the built artifacts
+- **SBOM + checksummed manifest** on every release build: a CycloneDX bill of materials for the npm tree, plus `release-manifest.json` and `SHA256SUMS` covering every artifact and the manifest itself. Those let you confirm a download is intact. They do **not** prove who built it: no release signing key is published yet, so `SHA256SUMS.sig` is absent and the hashes travel from the same place as the files. Treat provenance as unverified until `allowed-signers` carries a key
 - **External CRX signing key**, maintainer-only, never in the repo or CI
 - **Credential scrub** on settings export, API keys, tokens, and secrets are automatically stripped
 - **Profile-split permissions**, store-safe builds retain the authenticated companion handoff but strip AI, Ollama, and user-selected remote origins; GitHub-full keeps those capabilities behind runtime prompts, with Cobalt limited to an authorized self-hosted instance

@@ -114,8 +114,25 @@ test('the release claims match what the release path emits', () => {
         'no attestation is produced, so nothing may promise one');
     assert.ok(!/SBOM \+ attestation/.test(README),
         'the README promised an attestation the local release path does not publish');
-    assert.match(README, /SBOM \+ signed manifest/,
+    // This assertion used to require the README to say "SBOM + signed
+    // manifest". It was written to replace an older false claim about an
+    // attestation, and it substituted a second false one: no signing key is
+    // published (`allowed-signers` carries none), `release-signature.js`
+    // returns `no-published-key`, readiness downgrades that to a warning, and
+    // no `SHA256SUMS.sig` exists on any published release. The release path
+    // emits checksums, not a signature, so the claim it pinned was false on
+    // every release. It now requires the accurate wording.
+    assert.match(README, /SBOM \+ checksummed manifest/,
         'and should describe what it does publish');
+    assert.match(README, /SHA256SUMS/,
+        'the honest claim names the checksum file a user can actually verify');
+    const signers = read('allowed-signers');
+    const keyPublished = signers.split(/\r?\n/)
+        .some((line) => line.trim() && !line.trim().startsWith('#'));
+    if (!keyPublished) {
+        assert.ok(!/\*\*SBOM \+ signed manifest\*\*/.test(README),
+            'the README must not promise a signature while no key is published');
+    }
 });
 
 test('the release manifest generator is the source for that claim', () => {
