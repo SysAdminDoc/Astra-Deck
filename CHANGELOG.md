@@ -48,6 +48,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- `npm test` now measures coverage and fails below a recorded floor (64% lines,
+  66% branches, 64% functions, just under the measured 65.2/67.2/65.8). Two
+  fifths of the suite's assertions pin source text rather than executing it;
+  converting them is slow, and this stops the number sliding while that
+  happens. `npm run test:fast` keeps a coverage-free lane for quick runs.
+
+- Releases measure startup against the real page captures. `npm run check` runs
+  the benchmark with `--allow-synthetic`, which is right for a contributor
+  without the gitignored MHTML files, but it silently measures a different
+  fixture against a different baseline. `release:prepare` now runs the captured
+  lane before it packages anything.
+
 - The offline notice is a top-level banner. The first cut drew it into the two
   health sections, both of which ship hidden, and the external-health section
   is unhidden only once a live content script answers — which is exactly what
