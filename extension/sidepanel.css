@@ -1263,3 +1263,15 @@ body[data-loading="true"] .sp-settings-list:empty::before {
     margin-top: 7px;
   }
 }
+
+/* Connectivity notice (v4.88.3). See popup.css for the rationale. */
+.connectivity-notice {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-left: 3px solid var(--warning);
+  border-radius: 4px;
+  background: var(--surface-strong);
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 1.4;
+}

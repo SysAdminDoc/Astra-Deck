@@ -36,6 +36,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Added
 
+- The popup and side panel now watch connectivity. Nothing in the extension
+  observed it before: `navigator.onLine` was read in exactly one place, to pick
+  a cause sentence after a request had already failed, and no file registered
+  an `online` or `offline` listener. A dropped connection produced a generic
+  failure with no cause, and reconnecting changed nothing until you reopened
+  the surface. Going offline now names connectivity as the reason on both
+  health panels, and reconnecting re-checks provider health on its own.
+
 - `docs/architecture.md` is now gated against source. Its trust-boundary
   section named eight content-to-background message types while the worker
   handled twenty-three, omitting the native token, the AI credential channel

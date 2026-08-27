@@ -966,6 +966,58 @@ if (ext?.storage?.onChanged) {
     });
 }
 
+// Connectivity. See the matching block in popup.js: before v4.88.3 nothing in
+// the extension registered an `online` or `offline` listener, so a network
+// drop produced a generic failure with no cause and reconnecting changed
+// nothing until the user refreshed by hand.
+function isDeviceOffline() {
+    try {
+        return typeof navigator !== 'undefined' && navigator.onLine === false;
+    } catch (_) {
+        // reason: navigator is absent in the test harness
+        return false;
+    }
+}
+
+function renderConnectivityState() {
+    const offline = isDeviceOffline();
+    const host = document.querySelector('.sp-main') || document.body;
+    let notice = host?.querySelector?.('.connectivity-notice') || null;
+    if (!offline) {
+        notice?.remove();
+        if (host?.removeAttribute) host.removeAttribute('data-offline');
+        return false;
+    }
+    if (!notice && host) {
+        notice = document.createElement('p');
+        notice.className = 'connectivity-notice';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        host.insertBefore(notice, host.firstChild);
+    }
+    if (notice) {
+        notice.textContent = t('failureCauseOffline', 'Your device looks offline. Reconnect, then try again.');
+    }
+    if (host?.dataset) host.dataset.offline = 'true';
+    return true;
+}
+
+function installConnectivityWatch() {
+    if (typeof globalThis.addEventListener !== 'function') return () => {};
+    const onOffline = () => { renderConnectivityState(); };
+    const onOnline = () => {
+        renderConnectivityState();
+        void refresh();
+    };
+    globalThis.addEventListener('offline', onOffline);
+    globalThis.addEventListener('online', onOnline);
+    renderConnectivityState();
+    return () => {
+        globalThis.removeEventListener('offline', onOffline);
+        globalThis.removeEventListener('online', onOnline);
+    };
+}
+
 async function refresh() {
     setBusy(true);
     setRefreshStatus(t('spStatusRefreshing', 'Refreshing…'), 'busy');
@@ -976,6 +1028,7 @@ async function refresh() {
             tab ? t('spContextYouTubeTab', 'YouTube tab') : t('spLocalOnly', 'Local only'),
             tab ? 'ready' : 'warn'
         );
+        renderConnectivityState();
         await Promise.all([
             renderPerf(tab),
             renderSelectorHealth(tab),
@@ -1004,6 +1057,7 @@ async function refresh() {
 }
 
 if (refreshBtn) refreshBtn.addEventListener('click', () => { void refresh(); });
+installConnectivityWatch();
 
 // The panel stays open across tab switches and YouTube navigations, and its
 // copy promises "live diagnostics" — but nothing re-read anything after boot,
