@@ -269,7 +269,12 @@ function loadBackground({
 
 function dispatchMessage(listener, message, sender = {
     id: 'astra-test-extension',
-    tab: { id: 9, windowId: 1, index: 0 }
+    // A real content-script sender always carries its page origin and url.
+    // The harness omitted both, so no sender-origin check could be exercised
+    // and adding one read as a regression rather than a missing field.
+    origin: 'https://www.youtube.com',
+    url: 'https://www.youtube.com/watch?v=abc12345678',
+    tab: { id: 9, windowId: 1, index: 0, url: 'https://www.youtube.com/watch?v=abc12345678' }
 }) {
     return new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => reject(new Error('Timed out waiting for sendResponse')), 1000);
@@ -2008,4 +2013,85 @@ test('a feed cached before signatures existed is not served after upgrade', asyn
         'the legacy entry must be purged once a verified feed replaces it');
     assert.ok(bg.getLocal()['ytkit-feature-disable-feed-v2'],
         'the verified feed becomes the new cache entry');
+});
+
+// --- Sender-origin policy (v4.88.3) -------------------------------------
+//
+// The listener authenticated the EXTENSION (`sender.id === runtime.id`) and
+// nothing authenticated the PAGE. The github-full profile can hold a runtime
+// host grant for an arbitrary user-typed HTTPS origin, so "our extension sent
+// this" was carrying more weight than it could for the handlers that mint a
+// native token, hand over YouTube cookies, or request host permissions.
+
+const CONTENT_SCRIPT_ONLY_TYPES = [
+    'NATIVE_MSG_GET_TOKEN',
+    'YTKIT_COOKIE_HANDOFF',
+    'YTKIT_REQUEST_OPTIONAL_HOSTS'
+];
+
+function senderOn(url) {
+    return {
+        id: 'astra-test-extension',
+        origin: new URL(url).origin,
+        url,
+        tab: { id: 9, windowId: 1, index: 0, url }
+    };
+}
+
+test('privileged content-script messages are refused from a non-YouTube origin', async () => {
+    for (const type of CONTENT_SCRIPT_ONLY_TYPES) {
+        for (const hostile of [
+            'https://evil.example/page',
+            // The shape that made this reachable: a user-granted host origin.
+            'https://filter-lists.example.org/list.txt',
+            // Lookalikes that must not satisfy a suffix check.
+            'https://notyoutube.com/watch?v=1',
+            'https://youtube.com.evil.example/watch?v=1'
+        ]) {
+            const bg = loadBackground();
+            const response = await dispatchMessage(bg.messageListener, { type }, senderOn(hostile));
+            assert.equal(response.ok, false, `${type} from ${hostile} must be refused`);
+            assert.match(response.error, /origin/i, 'and the refusal must name the reason');
+        }
+    }
+});
+
+test('the same messages still pass from a real YouTube page', async () => {
+    // The point of the check is to narrow the door, not close it.
+    const { senderOriginAllowed } = loadBackground().context;
+    for (const type of CONTENT_SCRIPT_ONLY_TYPES) {
+        for (const good of [
+            'https://www.youtube.com/watch?v=abc12345678',
+            'https://m.youtube.com/watch?v=abc12345678',
+            'https://www.youtube-nocookie.com/embed/abc12345678',
+            'https://youtu.be/abc12345678'
+        ]) {
+            assert.equal(senderOriginAllowed(type, senderOn(good)), true,
+                `${type} must still be allowed from ${good}`);
+        }
+    }
+});
+
+test('the origin policy covers only messages that are genuinely page-only', () => {
+    // Checked against real senders rather than assumed: the AI credential
+    // handlers come from popup.js and already refuse any sender with a tab,
+    // and YTKIT_REPLACE_SETTINGS is sent by core/settings-controller.js, which
+    // runs in both the content script and the popup.
+    const { senderOriginAllowed } = loadBackground().context;
+    const extensionSender = { id: 'astra-test-extension', origin: 'chrome-extension://astra-test-extension' };
+    for (const type of ['YTKIT_AI_CREDENTIAL_SET', 'YTKIT_AI_CREDENTIAL_DELETE', 'YTKIT_REPLACE_SETTINGS']) {
+        assert.equal(senderOriginAllowed(type, extensionSender), true,
+            `${type} must remain reachable from an extension page`);
+    }
+    assert.equal(senderOriginAllowed('EXT_FETCH', { id: 'astra-test-extension' }), true,
+        'unlisted types keep their previous behaviour');
+});
+
+test('a sender with no origin at all cannot reach a page-only handler', async () => {
+    for (const type of CONTENT_SCRIPT_ONLY_TYPES) {
+        const bg = loadBackground();
+        const response = await dispatchMessage(bg.messageListener, { type },
+            { id: 'astra-test-extension', tab: { id: 9, windowId: 1, index: 0 } });
+        assert.equal(response.ok, false, `${type} must fail closed when the origin is unknown`);
+    }
 });
