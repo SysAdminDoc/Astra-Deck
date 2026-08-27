@@ -6,6 +6,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- Both remote feeds now carry a detached signature. `selector-packs.json` and
+  `feature-disable-feed.csv` are fetched at runtime and can change shipped
+  behavior without a release, and neither proved where it came from: the feed
+  had no authenticity check at all, and the selector asset verified a digest
+  carried inside the asset it vouches for, which catches truncation but not
+  substitution. Each now ships a `.sig` file signed with ECDSA P-256 and
+  verified in the service worker against a public key inside the package,
+  before the body is cached or parsed. Anything unsigned, malformed, or
+  substituted is refused and the last-known-good copy is kept.
+
 ### Fixed
 
 - `npm run release:prepare` now runs the test suite. No npm script, git hook, or

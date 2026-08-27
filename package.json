@@ -57,6 +57,8 @@
     "check:project-facts": "node scripts/project-facts.js --check",
     "check:zero-ads": "node scripts/check-zero-ad-rules.js",
     "check:selector-asset": "node scripts/build-selector-asset.js --check",
+    "sign:feeds": "node scripts/sign-remote-feeds.js",
+    "check:feed-signatures": "node scripts/sign-remote-feeds.js --check",
     "check:companion-ports": "node scripts/check-companion-port-catalogue.js",
     "check:chromium-store": "node scripts/check-chromium-store-profile.js",
     "audit:deps": "npm run audit:deps:production && node scripts/audit-dependencies.js",

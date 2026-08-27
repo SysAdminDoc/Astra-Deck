@@ -180,6 +180,11 @@ function loadBackground({
                         }
                         return out;
                     }
+                    // A string key that actually exists in the generic half
+                    // answers from there. Without this every single-key read
+                    // returned the settings bag, so no storage.local cache
+                    // (the feature-disable feed's, for one) could be tested.
+                    if (Object.hasOwn(localState, key)) return { [key]: localState[key] };
                     return { [key]: settingsState };
                 },
                 async set(entries) {
@@ -215,6 +220,8 @@ function loadBackground({
         TextEncoder,
         URL,
         URLSearchParams,
+        // Service workers expose atob; the feed-signature decoder uses it.
+        atob,
         clearTimeout,
         console,
         crypto: webcrypto,
@@ -1854,4 +1861,128 @@ test('the AI summary and selector-asset paths stream against their caps', () => 
 
     assert.match(source, /readTextBounded\(\s*\n?\s*response, MAX_SELECTOR_ASSET_BYTES, 'Selector asset', selectorAssetController\)/,
         'the selector asset must pass its controller so an oversize body aborts the fetch');
+});
+
+// --- Detached feed signatures (v4.88.3) ---------------------------------
+//
+// Both remote documents can change shipped behavior without a release. The
+// feature-disable feed had no authenticity check at all, and the selector
+// asset's `sha256:` digest travels inside the asset it vouches for, so it
+// cannot detect substitution. These drive the real message handlers with the
+// repository's real payloads and real committed signatures.
+
+const FEED_URL_BASE = 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/';
+
+function readSignedFeed(name) {
+    return {
+        text: fs.readFileSync(path.join(repoRoot, name), 'utf8'),
+        signature: fs.readFileSync(path.join(repoRoot, `${name}.sig`), 'utf8')
+    };
+}
+
+// Serves `name` and `name.sig`. `mutate` rewrites what the network returns so a
+// test can tamper with either half without touching the repository.
+function signedFeedFetch(name, mutate = (part, value) => value) {
+    const feed = readSignedFeed(name);
+    return async (url) => {
+        const href = String(url);
+        if (href === `${FEED_URL_BASE}${name}.sig`) {
+            const body = mutate('signature', feed.signature);
+            if (body === null) return new Response('', { status: 404 });
+            return new Response(body, { status: 200 });
+        }
+        if (href === `${FEED_URL_BASE}${name}`) {
+            const body = mutate('payload', feed.text);
+            if (body === null) return new Response('', { status: 404 });
+            return new Response(body, { status: 200 });
+        }
+        return new Response('', { status: 404 });
+    };
+}
+
+test('feature disable feed accepts a payload carrying its real signature', async () => {
+    const bg = loadBackground({ fetchImpl: signedFeedFetch('feature-disable-feed.csv') });
+    const response = await dispatchMessage(bg.messageListener, { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
+
+    assert.equal(response.ok, true, 'a correctly signed feed must be delivered');
+    assert.equal(response.source, 'network');
+    assert.ok(response.text.length > 0);
+    assert.ok(bg.getLocal()['ytkit-feature-disable-feed'],
+        'a verified feed becomes the last-known-good cache entry');
+});
+
+test('feature disable feed refuses a tampered payload and writes no cache', async () => {
+    const bg = loadBackground({
+        fetchImpl: signedFeedFetch('feature-disable-feed.csv',
+            (part, value) => (part === 'payload' ? `${value}\nastraDeck,4.0.0,4.99.0,tampered` : value))
+    });
+    const response = await dispatchMessage(bg.messageListener, { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
+
+    assert.equal(response.ok, false, 'a payload whose signature does not match must be refused');
+    assert.equal(bg.getLocal()['ytkit-feature-disable-feed'], undefined,
+        'a refused payload must never become the last-known-good cache entry');
+});
+
+test('feature disable feed refuses a missing or malformed signature', async () => {
+    const missing = loadBackground({
+        fetchImpl: signedFeedFetch('feature-disable-feed.csv', (part) => (part === 'signature' ? null : undefined))
+    });
+    assert.equal((await dispatchMessage(missing.messageListener,
+        { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' })).ok, false, 'an absent signature must fail closed');
+
+    const malformed = loadBackground({
+        fetchImpl: signedFeedFetch('feature-disable-feed.csv',
+            (part, value) => (part === 'signature' ? 'not base64 at all!!' : value))
+    });
+    assert.equal((await dispatchMessage(malformed.messageListener,
+        { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' })).ok, false, 'a malformed signature must fail closed');
+
+    // A well-formed base64 signature of the wrong length must not reach verify().
+    const wrongLength = loadBackground({
+        fetchImpl: signedFeedFetch('feature-disable-feed.csv',
+            (part, value) => (part === 'signature' ? Buffer.alloc(63).toString('base64') : value))
+    });
+    assert.equal((await dispatchMessage(wrongLength.messageListener,
+        { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' })).ok, false, 'a short signature must fail closed');
+});
+
+test('feature disable feed keeps a stale cache when a tampered refresh is refused', async () => {
+    const bg = loadBackground({
+        fetchImpl: signedFeedFetch('feature-disable-feed.csv',
+            (part, value) => (part === 'payload' ? `${value}\nastraDeck,4.0.0,4.99.0,tampered` : value))
+    });
+    // Old enough to be served-and-refreshed rather than used as-is.
+    bg.getLocal()['ytkit-feature-disable-feed'] = {
+        text: 'astraDeck,4.0.0,4.99.0,known-good',
+        cachedAt: Date.now() - (7 * 60 * 60 * 1000)
+    };
+
+    const response = await dispatchMessage(bg.messageListener, { type: 'YTKIT_FETCH_FEATURE_DISABLE_FEED' });
+    assert.equal(response.ok, true, 'a stale-but-usable cache still answers the caller');
+    assert.equal(response.source, 'stale');
+    // The background refresh is fire-and-forget; give it a turn to finish.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.match(bg.getLocal()['ytkit-feature-disable-feed'].text, /known-good/,
+        'the refused refresh must leave the last-known-good entry in place');
+});
+
+test('selector asset accepts its real signature and refuses a substituted body', async () => {
+    const good = loadBackground({ fetchImpl: signedFeedFetch('selector-packs.json') });
+    const accepted = await dispatchMessage(good.messageListener, { type: 'YTKIT_FETCH_SELECTOR_ASSET' });
+    assert.equal(accepted.ok, true, 'a correctly signed selector asset must be delivered');
+    assert.ok(accepted.text.includes('"schemaVersion"'));
+
+    // A substituted asset that carries a self-consistent internal digest is
+    // exactly what the digest check cannot catch. The signature can.
+    const substituted = loadBackground({
+        fetchImpl: signedFeedFetch('selector-packs.json', (part, value) => {
+            if (part !== 'payload') return value;
+            const parsed = JSON.parse(value);
+            parsed.packs.player.stable = ['#attacker-controlled'];
+            return JSON.stringify(parsed);
+        })
+    });
+    const refused = await dispatchMessage(substituted.messageListener, { type: 'YTKIT_FETCH_SELECTOR_ASSET' });
+    assert.equal(refused.ok, false, 'a substituted selector asset must be refused');
+    assert.match(refused.error, /signature/i);
 });
