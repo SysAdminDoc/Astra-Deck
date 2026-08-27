@@ -19,6 +19,10 @@
     // Eight 1.5-second polls gives the normal and recovery paths the same
     // documented window to finish unpacking, initialize Qt, and bind HTTP.
     const AUTO_START_RETRY_BUDGET = 8;
+    // The background owns a five-second native-host timeout, but a suspended
+    // or disconnected worker can strand the content-side message callback.
+    // Keep discovery bounded so the install panel can still render.
+    const NATIVE_TOKEN_REQUEST_TIMEOUT_MS = 6500;
 
     function getCompanionPortCatalogue() {
         const catalogue = globalThis.YTKitCore?.companionPorts;
@@ -489,6 +493,7 @@
             clearTimeoutFn = clearTimeout,
             setIntervalFn = setInterval,
             clearIntervalFn = clearInterval,
+            nativeTokenRequestTimeoutMs = NATIVE_TOKEN_REQUEST_TIMEOUT_MS,
         } = deps;
 
         // Failure copy: name one of the localized causes in
@@ -606,8 +611,20 @@
             },
 
             async _requestNativeToken(options = {}) {
+                let timeoutId = null;
                 try {
-                    const result = await requestNativeDownloaderToken(options);
+                    const timeoutMs = Number.isFinite(Number(nativeTokenRequestTimeoutMs))
+                        ? Math.max(1, Number(nativeTokenRequestTimeoutMs))
+                        : NATIVE_TOKEN_REQUEST_TIMEOUT_MS;
+                    const result = await Promise.race([
+                        Promise.resolve().then(() => requestNativeDownloaderToken(options)),
+                        new Promise((resolve) => {
+                            timeoutId = setTimeoutFn(() => resolve({
+                                token: null,
+                                error: 'Native messaging request timed out'
+                            }), timeoutMs);
+                        })
+                    ]);
                     if (result && result.token) {
                         return {
                             token: result.token,
@@ -628,6 +645,8 @@
                     return { token: null, error: result?.error || 'Native messaging token unavailable' };
                 } catch (e) {
                     return { token: null, error: e?.message || 'Native messaging token failed' };
+                } finally {
+                    if (timeoutId !== null) clearTimeoutFn(timeoutId);
                 }
             },
 
@@ -1767,7 +1786,9 @@
                 // installed — the mediadl:// launch is a silent no-op then, so
                 // don't hold the user under a false "Starting…" toast for 12s.
                 likelyNeverInstalled = !!MediaDLManager._nativeTokenError && !MediaDLManager._foreignServer;
-                mdl = await MediaDLManager.tryAutoStart(likelyNeverInstalled ? 2 : AUTO_START_RETRY_BUDGET);
+                if (!likelyNeverInstalled) {
+                    mdl = await MediaDLManager.tryAutoStart(AUTO_START_RETRY_BUDGET);
+                }
             }
             if (!mdl.ok) {
                 if (mdl.nativeChannelRequired) {
@@ -2625,7 +2646,14 @@
             // popover's own light-dismiss never fires. Without this the popup
             // sits over the next video still showing the previous one's
             // formats, sizes and playlist preview.
-            addNavigateRule(DL_POPUP_NAV_RULE_ID, () => { _closeDlPopup(); });
+            const openedVideoId = getVideoId(openedUrl);
+            addNavigateRule(DL_POPUP_NAV_RULE_ID, () => {
+                const currentVideoId = getVideoId(window.location.href);
+                const stayedOnOpenedVideo = openedVideoId
+                    ? currentVideoId === openedVideoId
+                    : window.location.href === openedUrl;
+                if (!stayedOnOpenedVideo) _closeDlPopup();
+            });
 
             const dialogKeydown = (event) => {
                 if (event.key === 'Escape') {

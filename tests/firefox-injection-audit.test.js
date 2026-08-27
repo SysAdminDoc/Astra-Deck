@@ -9,6 +9,10 @@ const path = require('path');
 const REPO_ROOT = path.join(__dirname, '..');
 const { scanFirefoxInjectionApis } = require('../scripts/check-firefox-injection.js');
 const { BUILD_PROFILE_IDS } = require('../build-extension.js');
+const {
+    FIREFOX_BACKGROUND_DEPENDENCIES,
+    FIREFOX_LOOPBACK_HOST_PERMISSION
+} = require('../scripts/manifest-patch.js');
 const { checkChainText } = require('./helpers/check-chain');
 const {
     createFirefoxStage,
@@ -108,8 +112,17 @@ test('Firefox web-ext lint stages all profile manifests with Gecko patches', () 
             );
             assert.deepEqual(
                 manifest.background,
-                { scripts: ['background.js'] },
-                `${profile} staged manifest must convert MV3 service_worker to Firefox scripts[]`
+                { scripts: [...FIREFOX_BACKGROUND_DEPENDENCIES, 'background.js'] },
+                `${profile} staged manifest must preload background dependencies before background.js`
+            );
+            const portQualifiedLoopback = manifest.host_permissions
+                .filter((permission) => /^http:\/\/127\.0\.0\.1:\d+\/\*$/.test(permission));
+            assert.deepEqual(portQualifiedLoopback, [],
+                `${profile} Firefox manifest must avoid ineffective port-qualified loopback grants`);
+            assert.equal(
+                manifest.host_permissions.includes(FIREFOX_LOOPBACK_HOST_PERMISSION),
+                profile !== 'chromium-store',
+                `${profile} Firefox manifest must match its companion capability boundary`
             );
             assert.deepEqual(
                 manifest.sidebar_action,

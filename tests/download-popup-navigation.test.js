@@ -44,10 +44,11 @@ test('the download CTA uses the frozen url, never a fresh location read', () => 
     const body = popupBuilder();
     assert.match(body, /let requestUrl = openedUrl;/,
         'reading location at click time is what downloaded the wrong video');
-    // The only remaining location read in the builder is the frozen capture.
-    const reads = body.match(/window\.location\.href/g) || [];
-    assert.equal(reads.length, 1,
-        `the builder should read location exactly once (at open), saw ${reads.length}`);
+    const ctaStart = body.indexOf("dlBtn.addEventListener('click'");
+    const ctaEnd = body.indexOf('footer.appendChild(dlBtn)', ctaStart);
+    const cta = body.slice(ctaStart, ctaEnd);
+    assert.doesNotMatch(cta, /window\.location\.href/,
+        'the CTA must not switch to the current page after the popup opens');
 });
 
 test('the format probe describes the same video as the CTA', () => {
@@ -61,10 +62,20 @@ test('the playlist id is derived from the frozen url', () => {
     assert.match(body, /new URL\(openedUrl\)\.searchParams\.get\('list'\)/);
 });
 
-test('a navigate rule closes the popup', () => {
+test('the navigate rule ignores its immediate registration call', () => {
     const body = popupBuilder();
-    assert.match(body, /addNavigateRule\(DL_POPUP_NAV_RULE_ID, \(\) => \{ _closeDlPopup\(\); \}\)/,
-        'autoplay navigation fires no user gesture, so light-dismiss never runs');
+    assert.match(body, /const openedVideoId = getVideoId\(openedUrl\);/,
+        'registration needs the opened video identity before addNavigateRule invokes the rule');
+    assert.match(body, /const currentVideoId = getVideoId\(window\.location\.href\);[\s\S]{0,260}?if \(!stayedOnOpenedVideo\) _closeDlPopup\(\);/,
+        'the immediate rule call must keep the popup open on the same video');
+});
+
+test('the navigate rule closes the popup after the video changes', () => {
+    const body = popupBuilder();
+    assert.match(body, /currentVideoId === openedVideoId/,
+        'autoplay must compare the new video with the popup video');
+    assert.match(body, /if \(!stayedOnOpenedVideo\) _closeDlPopup\(\);/,
+        'autoplay navigation fires no user gesture, so the rule must close the stale popup');
 });
 
 test('both cleanup branches remove the navigate rule', () => {

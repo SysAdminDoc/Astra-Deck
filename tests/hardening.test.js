@@ -1339,6 +1339,8 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
     const {
         patchManifestForFirefox,
         FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
+        FIREFOX_BACKGROUND_DEPENDENCIES,
+        FIREFOX_LOOPBACK_HOST_PERMISSION,
         FIREFOX_SIDEBAR_ACTION
     } = require('../scripts/manifest-patch');
     const {
@@ -1364,9 +1366,20 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
         getFirefoxDataCollectionPermissionsForProfile('store-safe'),
         'Firefox manifest must derive built-in data-consent categories from the store-safe data-flow profile'
     );
-    assert.ok(
-        Array.isArray(ffManifest.background?.scripts) && ffManifest.background.scripts.length > 0,
-        'Firefox background must be a scripts[] array, not a service_worker entry'
+    assert.deepEqual(
+        ffManifest.background?.scripts,
+        [...FIREFOX_BACKGROUND_DEPENDENCIES, 'background.js'],
+        'Firefox background must preload the service-worker globals in its classic scripts page'
+    );
+    assert.equal(
+        ffManifest.host_permissions.includes(FIREFOX_LOOPBACK_HOST_PERMISSION),
+        true,
+        'Firefox must use the host-level loopback grant that applies to background fetches'
+    );
+    assert.equal(
+        ffManifest.host_permissions.some((permission) => /^http:\/\/127\.0\.0\.1:\d+\/\*$/.test(permission)),
+        false,
+        'Firefox must not retain accepted-but-ineffective port-qualified loopback grants'
     );
     assert.equal(
         ffManifest.side_panel,

@@ -277,6 +277,37 @@ test('downloadUI MediaDLManager falls back to legacy /health token when native m
     assert.equal(calls[0].headers['X-MDL-Token-Source'], undefined);
 });
 
+test('downloadUI bounds a native token request that never answers', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    let requestedDelay = 0;
+    let timerCleared = false;
+    const result = mod.createDownloadUIFeature({
+        requestNativeDownloaderToken: () => new Promise(() => {}),
+        nativeTokenRequestTimeoutMs: 4321,
+        setTimeoutFn: (callback, delay) => {
+            requestedDelay = delay;
+            queueMicrotask(callback);
+            return 77;
+        },
+        clearTimeoutFn: (timerId) => {
+            assert.equal(timerId, 77);
+            timerCleared = true;
+        },
+        extensionFetchJson: async () => { throw new Error('closed'); },
+        DebugManager: { log() {} },
+    });
+
+    const status = await result.MediaDLManager.check(true);
+
+    assert.equal(status.ok, false);
+    assert.equal(result.MediaDLManager._nativeTokenError, 'Native messaging request timed out');
+    assert.equal(requestedDelay, 4321);
+    assert.equal(timerCleared, true);
+});
+
 test('downloadUI never requests cookies for a legacy-health token', async () => {
     const { mod } = loadFeatureModule(
         '../../extension/features/download-ui/index.js',
@@ -579,6 +610,33 @@ test('downloadUI native-channel-required failures name the fix and never auto-st
     assert.ok(debugLogs.some((args) => args.some((part) => /host missing/i.test(String(part)))),
         'the raw native token error must still reach the diagnostic log');
     assert.ok(diagnostics.some(([kind, detail]) => kind === 'download-failure' && /native-channel-required/.test(detail)));
+});
+
+test('downloadUI shows setup immediately when the native host is missing', async () => {
+    const { mod } = loadFeatureModule(
+        '../../extension/features/download-ui/index.js',
+        'createDownloadUIFeature'
+    );
+    const protocolLaunches = [];
+    const promptModes = [];
+    let nativeRequests = 0;
+    const result = mod.createDownloadUIFeature({
+        requestNativeDownloaderToken: async () => {
+            nativeRequests += 1;
+            return { token: null, error: 'Specified native messaging host not found.' };
+        },
+        extensionFetchJson: async () => { throw new Error('closed'); },
+        openProtocol: (url) => { protocolLaunches.push(url); },
+        showToast() {},
+        DebugManager: { log() {} },
+    });
+    result.MediaDLManager.showInstallPrompt = (mode) => { promptModes.push(mode); };
+
+    await result.ytKitDownload('https://www.youtube.com/watch?v=abcdefghijk', false);
+
+    assert.deepEqual(promptModes, ['install']);
+    assert.deepEqual(protocolLaunches, []);
+    assert.equal(nativeRequests, 1);
 });
 
 test('downloadUI classifies companion failure codes into recovery copy', () => {

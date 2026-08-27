@@ -106,7 +106,7 @@ Permitted cookies are sent to the local Astra Downloader companion on
 `127.0.0.1`, written to per-download cookie jars, used by yt-dlp for that
 download, and cleaned up afterward. Astra Deck does not send YouTube cookies to
 remote AI providers, SponsorBlock, DeArrow, RYD, Reddit, or Cobalt. The legacy
-HTTP `/health` token path can start a download but cannot unlock cookies.
+HTTP `/health` token path can start a download but cannot authorize cookie access.
 
 ## Retention, Export, And Delete
 
