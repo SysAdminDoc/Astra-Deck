@@ -1122,7 +1122,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.88.3';
+    const YTKIT_VERSION = '4.88.4';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -15390,6 +15390,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'play',
             _observer: null,
 
+            // Is this element something the user can actually see? YouTube
+            // keeps the whole player subtree in the DOM after an SPA route
+            // change off /watch, so every `.ytp-*` control a channel or search
+            // page "has" is a leftover with no box — and clicking one still
+            // dispatches a real click that bubbles to document, which is how
+            // this feature used to close popups the user had just opened.
+            //
+            // Client rects rather than offsetParent: the player is
+            // position:fixed in fullscreen and in the miniplayer, where
+            // offsetParent is null on an element the user is looking at, while
+            // anything inside a display:none subtree has no rects at all.
+            _isOnScreen(element) {
+                if (!element) return false;
+                if (typeof element.getClientRects === 'function') {
+                    const rects = element.getClientRects();
+                    return Boolean(rects && rects.length > 0);
+                }
+                if (typeof element.getBoundingClientRect === 'function') {
+                    const rect = element.getBoundingClientRect();
+                    return Boolean(rect && rect.width > 0 && rect.height > 0);
+                }
+                return false;
+            },
+
             // `#confirm-button` inside yt-confirm-dialog-renderer is YouTube's
             // GENERIC confirm control — clearing watch history, deleting a
             // playlist and discarding a comment all render it, as does the bare
@@ -15411,15 +15435,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // and answering one of those is an account action. Refuse the
                 // fallback whenever a compliance surface is open.
                 if (findComplianceDialog()) return false;
+                // Nor is a paused video enough by itself. YouTube renders
+                // yt-confirm-dialog-renderer for unsubscribe, delete playlist
+                // and clear watch history too, and the player left behind by
+                // an SPA route change is ALWAYS paused — so on any page the
+                // user reached from a watch page, every one of those dialogs
+                // satisfied the old fallback and got auto-confirmed. The
+                // inactivity prompt is the one that asks a single question:
+                // it offers a confirm and nothing to cancel. Requiring that,
+                // plus a player still on screen, costs a skipped auto-click in
+                // the locales the text test misses (the user clicks the button
+                // themselves) and refuses to answer dialogs that are not this
+                // prompt.
+                if (dialog.querySelector('#cancel-button, [id*="cancel"], [id*="Cancel"]')) return false;
                 const video = getMainVideoElement();
-                return Boolean(video && video.paused && !video.ended);
+                if (!video || !video.paused || video.ended) return false;
+                return this._isOnScreen(video);
             },
 
             _dismiss() {
-                // Unambiguous, always safe: these are the player's own controls.
+                // Gate FIRST. Every branch below dispatches a click, and a
+                // click dispatched while any other overlay is open reads to
+                // YouTube as a click outside it.
+                if (!this._isYouTherePrompt()) return;
+                // The player's own controls, but only while they are actually
+                // rendered — see _isOnScreen.
                 const playerBtn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]');
-                if (playerBtn) { playerBtn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
-                else if (this._isYouTherePrompt()) {
+                if (playerBtn && this._isOnScreen(playerBtn) && isSafeToAutoClick(playerBtn)) {
+                    playerBtn.click();
+                    DebugManager.log('StillWatching', 'Auto-dismissed prompt');
+                } else {
                     const btn = document.querySelector('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
                     // Never auto-answer a verification/consent surface, and
                     // never click while one is open elsewhere on the page.

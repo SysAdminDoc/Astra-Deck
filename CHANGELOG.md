@@ -6,15 +6,35 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+
+## [4.88.4] (2026-08-28)
+
 ### Fixed
 
+- Opening any YouTube popup no longer closes it again. With Auto-Dismiss
+  "Still Watching?" enabled, the subscribe menu, the unsubscribe confirmation
+  and the channel links dialog all appeared and vanished within about 200ms.
+  The dismisser watched `ytd-popup-container` and, on every mutation, clicked
+  the player's Play button before checking whether the inactivity prompt was
+  even on screen. YouTube keeps the player in the DOM after you navigate off a
+  watch page, so on a channel or search page that leftover control was always
+  there and always paused, and the click it received bubbled up as a click
+  outside the popup you had just opened. Dismissal is now gated on the prompt
+  actually being up, and a player control is only clicked while it is really
+  laid out.
+- An unsubscribe confirmation is no longer answered for you. The same feature's
+  locale fallback accepted any `yt-confirm-dialog-renderer` while a video was
+  paused, and unsubscribe, delete playlist and clear watch history all render
+  that element. Reached from a watch page, where the parked player is always
+  paused, every one of them qualified. The fallback now requires a dialog that
+  offers no way out and a player that is still on screen, so it recognises the
+  inactivity prompt in locales the text match misses without answering
+  anything else.
 - A card naming several channels now says which one is blocked. Blocking has
   always matched any channel named on a card, so collaborator uploads were
-  already hidden, but the reason read only "a blocked channel rule" — with two
-  names on the card there was no way to tell which rule fired or which channel
-  to unblock. The hidden-card notice now names it, and an allowlist miss names
+  already hidden, but the reason read only "a blocked channel rule". With two names on the card
+  there was no way to tell which rule fired or which channel to unblock. The hidden-card notice now names it, and an allowlist miss names
   what was on the card.
-
 
 ## [4.88.3] (2026-08-27)
 
