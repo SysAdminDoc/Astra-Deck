@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.88.3
+// @name         YTKit v4.88.4
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.88.3
+// @version      4.88.4
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  YouTube customization with filtering, playback, accessibility, and research tools; requires the Astra Deck YTKit Core Library and optionally uses the Astra Downloader companion
@@ -25,7 +25,7 @@
 // @connect      api.anthropic.com
 // @connect      generativelanguage.googleapis.com
 // @connect      127.0.0.1
-// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.3/YTKit-core.user.js
+// @require      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/tags/v4.88.4/YTKit-core.user.js
 // @homepageURL      https://github.com/SysAdminDoc/Astra-Deck
 // @supportURL      https://github.com/SysAdminDoc/Astra-Deck/issues
 // @license      MIT
@@ -269,7 +269,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.88.3';
+    const YTKIT_VERSION = '4.88.4';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -7763,10 +7763,74 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Playback',
             icon: 'play',
             _observer: null,
+            _debounceTimer: null,
+
+            // Is this element something the user can actually see? YouTube
+            // keeps the whole player subtree in the DOM after an SPA route
+            // change off /watch, so every `.ytp-*` control a channel or search
+            // page "has" is a leftover with no box — and clicking one still
+            // dispatches a real click that bubbles to document, which is how
+            // this feature used to close popups the user had just opened.
+            //
+            // Client rects rather than offsetParent: the player is
+            // position:fixed in fullscreen and in the miniplayer, where
+            // offsetParent is null on an element the user is looking at, while
+            // anything inside a display:none subtree has no rects at all.
+            _isOnScreen(element) {
+                if (!element) return false;
+                if (typeof element.getClientRects === 'function') {
+                    const rects = element.getClientRects();
+                    return Boolean(rects && rects.length > 0);
+                }
+                if (typeof element.getBoundingClientRect === 'function') {
+                    const rect = element.getBoundingClientRect();
+                    return Boolean(rect && rect.width > 0 && rect.height > 0);
+                }
+                return false;
+            },
+
+            // `#confirm-button` is YouTube's GENERIC confirm control: clearing
+            // watch history, deleting a playlist, discarding a comment and
+            // unsubscribing all render it. Auto-answering one of those is an
+            // account action taken without the user, so the prompt has to
+            // identify itself before anything is clicked.
+            _isYouTherePrompt() {
+                if (document.querySelector('ytmusic-you-there-renderer')) return true;
+                const dialog = document.querySelector('yt-confirm-dialog-renderer, .yt-confirm-dialog-renderer');
+                if (!dialog) return false;
+                const text = String(dialog.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                if (/continue watching|still watching|video paused/.test(text)) return true;
+                // An age or identity interstitial pauses playback too, and
+                // answering one of those carries an account penalty.
+                const findCompliance = globalThis.YTKitCore?.findComplianceDialog;
+                if (typeof findCompliance === 'function' && findCompliance()) return false;
+                // A paused video is not evidence on its own: the player left
+                // behind by an SPA route change is always paused. The
+                // inactivity prompt is the one that asks a single question, so
+                // require a dialog with nothing to cancel and a player still
+                // on screen. Missing a prompt in a locale the text test does
+                // not cover costs one click the user makes themselves.
+                if (dialog.querySelector('#cancel-button, [id*="cancel"], [id*="Cancel"]')) return false;
+                const video = document.querySelector('video.html5-main-video');
+                if (!video || !video.paused || video.ended) return false;
+                return this._isOnScreen(video);
+            },
 
             _dismiss() {
-                const btn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"], .yt-confirm-dialog-renderer #confirm-button, [aria-label="Yes, keep playing"], .ytd-popup-container tp-yt-paper-button#button');
-                if (btn) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
+                // Gate FIRST. Every branch below dispatches a click, and a
+                // click dispatched while any other overlay is open reads to
+                // YouTube as a click outside it.
+                if (!this._isYouTherePrompt()) return;
+                const safeToClick = globalThis.YTKitCore?.isSafeToAutoClick;
+                const canClick = (element) => typeof safeToClick !== 'function' || safeToClick(element);
+                const playerBtn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"]');
+                if (playerBtn && this._isOnScreen(playerBtn) && canClick(playerBtn)) {
+                    playerBtn.click();
+                    DebugManager.log('StillWatching', 'Auto-dismissed prompt');
+                } else {
+                    const btn = document.querySelector('ytmusic-you-there-renderer #button, yt-confirm-dialog-renderer #confirm-button, .yt-confirm-dialog-renderer #confirm-button');
+                    if (btn && canClick(btn)) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
+                }
                 const video = document.querySelector('video.html5-main-video');
                 if (video && video.paused && !video.ended && document.querySelector('.ytp-pause-overlay, .ytp-error-content-wrap-reason')) {
                     video.play().catch(() => {});
@@ -7774,12 +7838,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                this._observer = new MutationObserver(() => this._dismiss());
+                this._observer = new MutationObserver(() => {
+                    clearTimeout(this._debounceTimer);
+                    this._debounceTimer = setTimeout(() => this._dismiss(), 200);
+                });
                 const target = document.querySelector('ytd-popup-container') || document.body;
                 this._observer.observe(target, { childList: true, subtree: true });
                 addNavigateRule('stillWatching', () => this._dismiss());
             },
             destroy() {
+                clearTimeout(this._debounceTimer); this._debounceTimer = null;
                 this._observer?.disconnect(); this._observer = null;
                 removeNavigateRule('stillWatching');
             }
