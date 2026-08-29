@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added
+
+- The download popup's clip range now has a timeline. Drag the handles to mark
+  where a clip starts and ends instead of typing two timestamps, and a marker
+  shows where you are in the video so "from here" is a glance. The handles are
+  keyboard operable (arrows for a second, shift for ten, Home and End for the
+  ends), the text fields still take an exact timestamp and stay in step with
+  the handles, and a video whose length is not known yet keeps the fields on
+  their own.
+
 ### Security
 
 - The MAIN-world bridge no longer takes instructions from the page. It read
