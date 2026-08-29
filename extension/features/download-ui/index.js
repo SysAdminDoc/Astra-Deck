@@ -3184,7 +3184,7 @@
 
             _attach() {
                 if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('.ytkit-NOPE-local-dl-btn-NOPE, .ytkit-NOPE-download-btn-NOPE');
+                const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn');
                 if (!anchor) return;
                 if (anchor.parentElement?.querySelector('.ytkit-stream-links-btn')) {
                     this._btn = anchor.parentElement.querySelector('.ytkit-stream-links-btn');
@@ -3319,7 +3319,7 @@
                         this._navTimer = null;
                         if (!this._hooked) return;
                         if (!isWatchPagePath()) return;
-                        const anchor = document.querySelector('.ytkit-NOPE-local-dl-btn-NOPE, .ytkit-NOPE-download-btn-NOPE');
+                        const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn');
                         if (!anchor || anchor.parentElement?.querySelector('.ytkit-cobalt-fallback-btn')) return;
                         const btn = document.createElement('button');
                         btn.type = 'button';
@@ -3662,7 +3662,7 @@
 
             _attach() {
                 if (!isWatchPagePath()) return;
-                const anchor = document.querySelector('.ytkit-NOPE-local-dl-btn-NOPE, .ytkit-NOPE-download-btn-NOPE');
+                const anchor = document.querySelector('.ytkit-local-dl-btn, .ytkit-download-btn');
                 if (!anchor || anchor.parentElement?.querySelector('.ytkit-dl-history-btn')) return;
                 this._btn = document.createElement('button');
                 this._btn.type = 'button';

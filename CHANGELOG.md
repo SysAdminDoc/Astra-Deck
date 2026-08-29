@@ -6,6 +6,26 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed
+
+- The synthetic-content filter now reads YouTube's own altered-or-synthetic
+  disclosure from the player response instead of guessing from the title. It
+  caught nothing when a labelled video had an ordinary title, and it hid
+  ordinary videos whose titles happened to say "AI generated". The title
+  patterns stay as the fallback for anything the disclosure does not cover,
+  and hides from the new signal are reported separately so you can tell which
+  one fired. The filter is still off unless you turn it on.
+
+### Fixed
+
+- The Stream Links, Recent Downloads and Cobalt fallback buttons could not find
+  the download button they mount beside, so none of the three ever appeared.
+
+- Two strings in the popup showed different text when the translation
+  catalogue was unavailable: the "Copied." confirmation lost the line telling
+  you where to paste, and a clipboard failure sent you to the browser console
+  instead of suggesting you select the text yourself.
+
 
 ## [4.88.4] (2026-08-28)
 
