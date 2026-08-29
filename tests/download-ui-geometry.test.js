@@ -192,4 +192,61 @@ test('every authenticated companion call agrees on the header name', () => {
     }
     assert.match(source, /`\$\{MediaDLManager\.baseUrl\(\)\}\/provision-deno`/,
         'hand-concatenating the port bypasses the manager that knows which one is live');
+
+    // The header-name sweep above only sees headers that exist. The call that
+    // carried the wrong name is the one most likely to lose the header
+    // altogether in a cleanup, so pin that request specifically.
+    const at = source.indexOf('/provision-deno`');
+    assert.ok(at > 0);
+    const request = source.slice(at, at + 200);
+    assert.match(request, /'X-Auth-Token': data\.token/,
+        'an unauthenticated provision-deno request 401s exactly like the X-MDL-Token one did');
+});
+
+test('the Stream Links close button closes only its own panel', () => {
+    // This handler was copied from the History panel, which bumps an async
+    // request token and clears a debounce timer. Stream Links has neither, and
+    // a copied `this._requestToken++` would cancel a History search that
+    // happened to be in flight behind it.
+    const documentRef = fakeTreeDocument(() => null);
+    globalThis.document = documentRef;
+    globalThis.window = {
+        location: { href: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        addEventListener() {}, removeEventListener() {},
+    };
+
+    const feature = createDownloadUIFeature({
+        getVideoId: () => 'dQw4w9WgXcQ',
+        isWatchPagePath: () => true,
+        getPlayerResponseGlobal: () => ({
+            videoDetails: { videoId: 'dQw4w9WgXcQ' },
+            streamingData: {
+                formats: [{ itag: 18, mimeType: 'video/mp4; codecs="avc1"', qualityLabel: '360p', url: 'https://x/1' }],
+                adaptiveFormats: [{ itag: 140, mimeType: 'audio/mp4', audioQuality: 'AUDIO_QUALITY_MEDIUM', url: 'https://x/2' }],
+            },
+        }),
+        injectStyle: () => ({ remove() {} }),
+        setTimeoutFn: () => 0,
+        clearTimeoutFn: () => {},
+        setIntervalFn: () => 0,
+        clearIntervalFn: () => {},
+    });
+
+    const panelFeature = feature.downloadStreamLinksPanel;
+    const history = feature.downloadHistoryPanel;
+    const tokenBefore = history._requestToken;
+
+    panelFeature._renderPanel();
+    const panel = panelFeature._panel;
+    assert.ok(panel, 'the panel opens');
+
+    const close = panel.children.find((node) =>
+        String(node.className).includes('ytkit-stream-links-panel__close'));
+    assert.ok(close, 'the panel carries a close button');
+    close.listeners.get('click').forEach((handler) => handler());
+
+    assert.equal(panelFeature._panel, null, 'the close button closes the panel');
+    assert.equal(panel.isConnected, false, 'and takes the node out of the document');
+    assert.equal(history._requestToken, tokenBefore,
+        'closing Stream Links must not cancel a History search in flight');
 });
