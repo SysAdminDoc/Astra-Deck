@@ -170,33 +170,95 @@ function loadFeatureFromSource(source, id, extraGlobals = {}) {
  * brace counting would have to survive template literals and regex literals.
  */
 function declarationSourceFrom(source, name) {
+    const attempts = [];
     // Column 0 first: popup.js and the side panel declare at the top level,
     // the monolith and the userscript nest theirs one or two levels in.
     for (const indent of ['', '    ', '        ']) {
         for (const keyword of ['function', 'async function', 'const', 'let']) {
             const needle = `\n${indent}${keyword} ${name}`;
-            const start = source.indexOf(needle);
-            if (start < 0) continue;
-            const next = source[start + needle.length];
-            // `const VIDEO_ID` must not match a request for `VIDEO`.
-            if (next && /[A-Za-z0-9_$]/.test(next)) continue;
-            const body = source.slice(start + 1);
-            if (keyword.endsWith('function')) {
-                const close = body.indexOf(`\n${indent}}`);
-                assert.ok(close > 0, `declaration '${name}' must close at its own indent`);
-                return body.slice(0, close + indent.length + 2);
+            // EVERY hit, not the first: `function render` is preceded in
+            // popup.js by `renderOptionalHostBanner`, and stopping at the first
+            // hit made the real declaration unreachable.
+            for (let start = source.indexOf(needle); start >= 0; start = source.indexOf(needle, start + 1)) {
+                const next = source[start + needle.length];
+                // `const VIDEO_ID` must not answer a request for `VIDEO`.
+                if (next && /[A-Za-z0-9_$]/.test(next)) continue;
+                const body = source.slice(start + 1);
+                const candidates = keyword.endsWith('function')
+                    ? sliceFunctionBody(body, indent)
+                    : sliceBindingBody(body, indent);
+                for (const slice of candidates) {
+                    attempts.push(slice);
+                    // The indentation anchor can land on a terminator that
+                    // belongs to a LATER sibling, which both swallows unrelated
+                    // declarations and produces unparseable slices. Take the
+                    // shortest candidate that parses and holds no sibling.
+                    if (parses(slice) && !swallowsSibling(slice, indent)) return slice;
+                }
             }
-            const firstBreak = body.indexOf('\n');
-            const firstLine = body.slice(0, firstBreak);
-            if (firstLine.trimEnd().endsWith(';')) return firstLine;
-            for (const terminator of [`\n${indent}});`, `\n${indent}]);`, `\n${indent}};`, `\n${indent}];`]) {
-                const close = body.indexOf(terminator);
-                if (close > 0) return body.slice(0, close + terminator.length);
-            }
-            assert.fail(`declaration '${name}' must terminate at its own indent`);
         }
     }
+    if (attempts.length) {
+        // Loud refusal on purpose. Before this, a declaration the indentation
+        // anchor could not bound came back over-sliced — one binding swallowed
+        // 260 lines of unrelated code and still evaluated — so a caller could
+        // not tell a good slice from a bad one.
+        assert.fail(`declaration '${name}' could not be bounded at its own indent:`
+            + ` every candidate slice was unparseable or ran into the next declaration`
+            + ` (shortest attempt was ${attempts[0].split('\n').length} lines)`);
+    }
     return assert.fail(`declaration '${name}' must exist in the source`);
+}
+
+/** A function declaration closes at a `}` back at its own indent. */
+function sliceFunctionBody(body, indent) {
+    const out = [];
+    const terminator = `\n${indent}}`;
+    for (let close = body.indexOf(terminator); close > 0 && out.length < SLICE_CANDIDATE_LIMIT;
+        close = body.indexOf(terminator, close + 1)) {
+        out.push(body.slice(0, close + indent.length + 2));
+    }
+    return out;
+}
+
+/**
+ * A `const`/`let` binding ends at a statement terminator sitting at its own
+ * indent. Candidates come back SHORTEST FIRST: taking the first terminator in a
+ * fixed keyword order let `const X = {` run past its own `};` to a later `});`
+ * and swallow 260 lines of unrelated declarations.
+ */
+function sliceBindingBody(body, indent) {
+    const firstBreak = body.indexOf('\n');
+    const firstLine = firstBreak === -1 ? body : body.slice(0, firstBreak);
+    if (firstLine.trimEnd().endsWith(';')) return [firstLine];
+    const ends = [];
+    for (const terminator of [`\n${indent}});`, `\n${indent}]);`, `\n${indent}};`, `\n${indent}];`]) {
+        for (let close = body.indexOf(terminator); close > 0 && ends.length < SLICE_CANDIDATE_LIMIT * 4;
+            close = body.indexOf(terminator, close + 1)) {
+            ends.push(close + terminator.length);
+        }
+    }
+    return [...new Set(ends)].sort((a, b) => a - b)
+        .slice(0, SLICE_CANDIDATE_LIMIT)
+        .map((end) => body.slice(0, end));
+}
+
+const SLICE_CANDIDATE_LIMIT = 12;
+const TOP_LEVEL_DECLARATION = /^\s*(?:async\s+)?(?:function|const|let)\s+[A-Za-z_$]/;
+
+function parses(slice) {
+    try {
+        new vm.Script(`(() => {${slice}\n})`);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+/** Does this slice run past its own declaration into the next one? */
+function swallowsSibling(slice, indent) {
+    return slice.split('\n').slice(1).some((line) =>
+        TOP_LEVEL_DECLARATION.test(line) && /^\s*/.exec(line)[0] === indent);
 }
 
 /**
