@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { createDownloadUIFeature } = require('../extension/features/download-ui');
-const { fakeNode, fakeTreeDocument } = require('./helpers/monolith');
+const { fakeNode, fakeTreeDocument, selectorMatches } = require('./helpers/monolith');
 
 const repoRoot = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(repoRoot, 'extension/features/download-ui/index.js'), 'utf8');
@@ -116,8 +116,13 @@ test('the health container adopts the one already beside the anchor', () => {
     parent.querySelector = (selector) => (String(selector).includes('ytkit-download-health') ? existing : null);
     anchor.insertAdjacentElement = () => { throw new Error('a second container must not be created'); };
 
+    // What the anchor IS. Substring routing answered
+    // `.ytkit-NOPE-local-dl-btn-NOPE` just as happily, so the three panels that
+    // find their anchor this way could all be pointed at a class YouTube never
+    // renders with nothing going red.
+    const anchorIs = { tag: 'button', className: 'ytkit-download-btn' };
     const documentRef = fakeTreeDocument((selector) =>
-        (String(selector).includes('dl-btn') || String(selector).includes('download-btn') ? anchor : null));
+        (selectorMatches(selector, anchorIs) ? anchor : null));
     globalThis.document = documentRef;
 
     const feature = createDownloadUIFeature({
@@ -144,8 +149,13 @@ test('the health container is created when the anchor has none', () => {
     let inserted = null;
     anchor.insertAdjacentElement = (position, node) => { inserted = { position, node }; };
 
+    // What the anchor IS. Substring routing answered
+    // `.ytkit-NOPE-local-dl-btn-NOPE` just as happily, so the three panels that
+    // find their anchor this way could all be pointed at a class YouTube never
+    // renders with nothing going red.
+    const anchorIs = { tag: 'button', className: 'ytkit-download-btn' };
     const documentRef = fakeTreeDocument((selector) =>
-        (String(selector).includes('dl-btn') || String(selector).includes('download-btn') ? anchor : null));
+        (selectorMatches(selector, anchorIs) ? anchor : null));
     globalThis.document = documentRef;
 
     const feature = createDownloadUIFeature({
@@ -262,4 +272,22 @@ test('the Stream Links close button closes only its own panel', () => {
         'and neither is a debounce timer for a panel with no search box');
     assert.equal(history._requestToken, tokenBefore,
         'the History panel is left alone either way');
+});
+
+test('every panel that mounts beside the download button uses the shipped anchor selector', () => {
+    // Four panels look the anchor up independently: health, stream links,
+    // cobalt fallback and history. A narrowing that only misses three of them
+    // leaves those three silently unmounted, which is what happened.
+    const anchorIs = { tag: 'button', className: 'ytkit-download-btn' };
+    const localIs = { tag: 'button', className: 'ytkit-local-dl-btn' };
+
+    const lookups = [...source.matchAll(/document\.querySelector\('([^']*dl-btn[^']*)'\)/g)]
+        .map((match) => match[1]);
+    assert.ok(lookups.length >= 4,
+        `expected every panel's anchor lookup, found ${lookups.length}`);
+
+    for (const selector of lookups) {
+        assert.ok(selectorMatches(selector, anchorIs) || selectorMatches(selector, localIs),
+            `"${selector}" matches neither download button, so this panel never mounts`);
+    }
 });

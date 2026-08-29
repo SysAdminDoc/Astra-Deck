@@ -29,8 +29,15 @@ const FEATURE_CLOSE = /\n {8}\}(?=,|\s*\]|\s*$|\n)/g;
 // descendant combinators. A fixture node declares what it IS; the selector
 // either matches it or does not.
 
+// Every operator here must have a branch in `compoundMatches`. `~=` and `|=`
+// were accepted by the grammar and compared by nothing, so a selector narrowed
+// to `[aria-label~="NOPE"]` matched any node that merely HAD an aria-label —
+// which left the planned-livestream button list unpinned.
+const ATTR_OPERATORS = new Set(['=', '*=', '^=', '$=', '~=', '|=']);
+
 /** Parse one compound like `ytd-x#id.cls[attr="v"]:not([hidden])`. */
 function parseCompound(text) {
+    if (text === '*') return { tag: null, id: null, classes: [], attrs: [], absent: [] };
     const compound = { tag: null, id: null, classes: [], attrs: [], absent: [] };
     const token = /(^[A-Za-z][\w-]*)|#([\w-]+)|\.([\w-]+)|:not\(\[([\w-]+)\]\)|\[([\w-]+)(?:([~^$*|]?=)"([^"]*)")?\]/g;
     let consumed = 0;
@@ -41,18 +48,60 @@ function parseCompound(text) {
         else if (match[2]) compound.id = match[2];
         else if (match[3]) compound.classes.push(match[3]);
         else if (match[4]) compound.absent.push(match[4]);
-        else compound.attrs.push({ name: match[5], op: match[6] || null, value: match[7] });
+        else {
+            const op = match[6] || null;
+            if (op && !ATTR_OPERATORS.has(op)) return null;
+            compound.attrs.push({ name: match[5], op, value: match[7] });
+        }
     }
     // Anything the grammar above does not cover (a pseudo-class, `>`, `~`)
     // must not silently degrade into "matches everything".
     return consumed === text.length ? compound : null;
 }
 
+/**
+ * Split a selector into its descendant compounds.
+ *
+ * Not `split(/\s+/)`: an attribute value may contain a space, and two shipped
+ * selectors do (`button[aria-label*="Action menu"]`,
+ * `[style*="display: none"]`). Splitting inside the quotes produced two
+ * fragments that each failed to parse, and the whole selector then read as
+ * "matches nothing" — a silent false negative, the worst failure a fixture
+ * can have.
+ */
+function splitCompounds(selector) {
+    const parts = [];
+    let current = '';
+    let quote = null;
+    for (const character of selector.trim()) {
+        if (quote) {
+            current += character;
+            if (character === quote) quote = null;
+            continue;
+        }
+        if (character === '"' || character === "'") { quote = character; current += character; continue; }
+        if (/\s/.test(character)) {
+            if (current) parts.push(current);
+            current = '';
+            continue;
+        }
+        current += character;
+    }
+    if (current) parts.push(current);
+    return quote ? null : parts;
+}
+
 function compoundMatches(compound, node) {
     if (!node) return false;
+    // One normalized view. A descriptor may spell an attribute either way
+    // (`className` or `attrs.class`, `id` or `attrs.id`), and a selector may
+    // reach the same thing either way too (`.alpha` or `[class~="alpha"]`),
+    // so both spellings have to resolve to the same value.
+    const attrs = { ...(node.attrs || {}) };
+    if (attrs.class === undefined && node.className !== undefined) attrs.class = node.className;
+    if (attrs.id === undefined && node.id !== undefined) attrs.id = node.id;
     const tag = String(node.tag || node.tagName || '').toLowerCase();
-    const classes = String(node.className || '').split(/\s+/).filter(Boolean);
-    const attrs = node.attrs || {};
+    const classes = String(attrs.class ?? '').split(/\s+/).filter(Boolean);
     if (compound.tag && compound.tag !== tag) return false;
     if (compound.id && compound.id !== (node.id ?? attrs.id)) return false;
     if (!compound.classes.every((name) => classes.includes(name))) return false;
@@ -67,6 +116,8 @@ function compoundMatches(compound, node) {
         if (op === '*=' && !actual.includes(value)) return false;
         if (op === '^=' && !actual.startsWith(value)) return false;
         if (op === '$=' && !actual.endsWith(value)) return false;
+        if (op === '~=' && !actual.split(/\s+/).filter(Boolean).includes(value)) return false;
+        if (op === '|=' && actual !== value && !actual.startsWith(`${value}-`)) return false;
     }
     return true;
 }
@@ -83,8 +134,10 @@ function compoundMatches(compound, node) {
 function selectorMatches(selectorText, node) {
     const chain = [...(node.ancestors || []), node];
     return String(selectorText).split(',').some((one) => {
-        const compounds = one.trim().split(/\s+/).filter(Boolean).map(parseCompound);
-        if (!compounds.length || compounds.some((compound) => compound === null)) return false;
+        const pieces = splitCompounds(one);
+        if (!pieces || !pieces.length) return false;
+        const compounds = pieces.map(parseCompound);
+        if (compounds.some((compound) => compound === null)) return false;
         // The rightmost compound must match the node itself; the rest must
         // appear in order somewhere above it.
         if (!compoundMatches(compounds[compounds.length - 1], node)) return false;
@@ -96,20 +149,6 @@ function selectorMatches(selectorText, node) {
         }
         return true;
     });
-}
-
-/**
- * Build a resolver for `fakeTreeDocument` from a list of
- * `[descriptor, value]` pairs. The first descriptor the selector actually
- * matches wins, and a selector that matches nothing returns null — which is
- * what a real document does, and what a substring router never did.
- */
-function selectorRouter(entries, { many = () => false } = {}) {
-    return (selector) => {
-        const hits = entries.filter(([descriptor]) => selectorMatches(selector, descriptor));
-        if (many(selector)) return hits.map(([, value]) => value);
-        return hits.length ? hits[0][1] : null;
-    };
 }
 
 /**
@@ -997,7 +1036,6 @@ module.exports = {
     featureSource,
     featureSourceFrom,
     selectorMatches,
-    selectorRouter,
     fallbackFeatureSource,
     declarationSourceFrom,
     loadDeclarations,

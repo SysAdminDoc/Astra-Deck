@@ -26,41 +26,80 @@ const feature = loadFeature('hidePlannedLivestreams', {
 function card({ metadata = [], buttons = [] } = {}) {
     const node = fakeNode({ tag: 'ytd-rich-item-renderer' });
     const metaNodes = metadata.map((text) => fakeNode({ tag: 'span', text }));
-    const buttonNodes = buttons.map((text) => fakeNode({ tag: 'button', text }));
-    // Routed by matching the selector the feature actually passes against what
-    // these nodes ARE. Substring routing answered any selector merely
-    // mentioning "metadata" or "button", so the feature's whole contact
-    // surface with the DOM could be replaced with selectors that match nothing
-    // on YouTube and every test here stayed green.
-    const buttonIs = { tag: 'button', attrs: { 'aria-label': 'Notify me' },
-        ancestors: [{ tag: 'yt-flexible-actions-view-model' }] };
-    const metaIs = { tag: 'span', className: 'ytContentMetadataViewModelMetadataText' };
+    const buttonNodes = buttons.map((text) =>
+        fakeNode({ tag: 'button', text, attributes: { 'aria-label': text } }));
+    // One node per SHAPE the shipped selector lists reach for, and the
+    // selector has to actually match it.
+    //
+    // Two earlier versions of this fixture were bypassable. Substring routing
+    // answered any selector merely mentioning "metadata" or "button", so the
+    // whole list could be replaced with something YouTube never renders. A
+    // single modelled shape was no better: it pinned one branch and left the
+    // other three free to be narrowed to nothing.
+    //
+    // YouTube renders these lockups in several shapes at once, so a card
+    // carrying all of them is the realistic case as well as the strict one.
+    const BUTTON_SHAPES = [
+        (label) => ({ tag: 'button', attrs: { 'aria-label': label }, ancestors: [{ tag: 'yt-flexible-actions-view-model' }] }),
+        (label) => ({ tag: 'button', attrs: { 'aria-label': label }, ancestors: [{ tag: 'div', className: 'ytFlexibleActionsViewModelAction' }] }),
+        (label) => ({ tag: 'ytd-toggle-button-renderer', attrs: { 'aria-label': label } }),
+        (label) => ({ tag: 'button', attrs: { 'aria-label': label } }),
+    ];
+    const META_SHAPES = [
+        () => ({ tag: 'span', className: 'ytContentMetadataViewModelMetadataText' }),
+        () => ({ tag: 'yt-content-metadata-view-model' }),
+        () => ({ tag: 'div', id: 'metadata-line' }),
+        () => ({ tag: 'ytd-video-meta-block' }),
+        () => ({ tag: 'ytd-thumbnail-overlay-time-status-renderer' }),
+        () => ({ tag: 'div', className: 'ytThumbnailBadgeViewModelHost' }),
+        () => ({ tag: 'ytd-badge-supported-renderer' }),
+    ];
+
+    const buttonEntries = buttons.flatMap((text, index) =>
+        BUTTON_SHAPES.map((shape) => [shape(text), buttonNodes[index]]));
+    const metaEntries = metadata.flatMap((text, index) =>
+        META_SHAPES.map((shape) => [shape(text), metaNodes[index]]));
+    const entries = buttonEntries.concat(metaEntries);
+
     node.querySelectorAll = (selector) => {
-        if (selectorMatches(selector, buttonIs)) return buttonNodes;
-        if (selectorMatches(selector, metaIs)) return metaNodes;
-        return [];
+        const hits = [];
+        for (const [descriptor, value] of entries) {
+            if (selectorMatches(selector, descriptor) && !hits.includes(value)) hits.push(value);
+        }
+        return hits;
     };
     return node;
 }
 
-test('the card fixture answers the shipped selectors and nothing else', () => {
-    // Guarding the guard. If this goes red because a selector list changed,
-    // the fixture above has to learn the new shape rather than be loosened.
-    const probe = card({ metadata: ['UPCOMING'], buttons: ['Notify me'] });
+/** The two selector lists `_isNotifyCard` reads off a card, as shipped. */
+function shippedCardSelectorLists() {
     const block = featureSource('hidePlannedLivestreams');
-    // Only the lists _isNotifyCard reads off a card. The teardown sweep runs
-    // its own querySelectorAll against the document, not against a card.
+    // Only the lists read off a CARD. The teardown sweep runs its own
+    // querySelectorAll against the document.
     const scan = block.slice(block.indexOf('_isNotifyCard(card)'), block.indexOf('_applyTo(card)'));
     assert.ok(scan.length > 100, 'anchor: the card scan must exist');
-
     const lists = [...scan.matchAll(/querySelectorAll\(\s*'([^']+)'/g)].map((m) => m[1]);
     assert.equal(lists.length, 2, 'the feature reads a button list and a metadata list');
-    for (const list of lists) {
-        assert.ok(probe.querySelectorAll(list).length > 0,
-            `the fixture must answer the shipped selector list: ${list}`);
+    return lists;
+}
+
+test('every branch of every shipped selector list resolves against the fixture', () => {
+    // Guarding the guard, per branch. Asserting only that the LIST resolves
+    // lets three of its four branches be narrowed to tags YouTube never
+    // renders while the fourth carries the test — the feature loses most of
+    // its reach and nothing goes red. If this fails because a selector
+    // legitimately changed, the fixture above learns the new shape; it does
+    // not get loosened.
+    const probe = card({ metadata: ['UPCOMING'], buttons: ['Notify me'] });
+    for (const list of shippedCardSelectorLists()) {
+        const branches = list.split(',').map((one) => one.trim()).filter(Boolean);
+        assert.ok(branches.length >= 2, `expected a real list, got ${JSON.stringify(list)}`);
+        const dead = branches.filter((branch) => probe.querySelectorAll(branch).length === 0);
+        assert.deepEqual(dead, [],
+            'these branches match nothing the fixture models, so nothing pins them: ' + dead.join(' | '));
     }
     assert.equal(probe.querySelectorAll('.ytkit-no-such-node').length, 0,
-        'and answer nothing for a selector that matches nothing');
+        'and a selector that matches nothing gets nothing back');
 });
 
 test('a card whose metadata anchors in the future is a planned livestream', () => {

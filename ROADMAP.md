@@ -6,13 +6,6 @@ Only incomplete, directly actionable work is kept here. Blocked work stays in `R
 
 Sourced from the 2026-08-27 research pass. Evidence and reasoning: `RESEARCH.md`.
 
-- [ ] P2 — Detect altered or synthetic content from the InnerTube payload instead of title text
-  Why: the current synthetic filter is a title and description regex that misses correctly disclosed videos and false-positives on ordinary titles, while YouTube's own disclosure travels in the player response.
-  Evidence: `extension/features/video-hider/index.js:28` (`SYNTHETIC_NARRATION_PATTERN` is text-only; the module reads `playerResponse` once); the technique is demonstrated in https://github.com/code-charity/youtube/pull/4275, which tests `generativeAi|generatedWithAi|alteredOrSynthetic|madeWithAi` against the player response. The 2026-08-23 pass rejected this only for lack of a stable DOM selector, which the payload path does not need.
-  Touches: `extension/features/video-hider/index.js`, `extension/ytkit-main.js`, `extension/core/settings-schema.js`, `tests/features/video-hider.test.js`.
-  Acceptance: the filter reads disclosure keys by walking the player-response object (never `JSON.stringify` of the whole payload), falls back to the existing text heuristic when no key is present, changes nothing when the keys are absent, and reports which signal fired in the hide reason. Validate the key set against a captured labeled video before enabling by default.
-  Complexity: M
-
 - [ ] P2 — Harden the MAIN-world bridge against forged page events and attributes
   Why: the bridge takes both its commands and its data from channels any page script can write, so YouTube-origin script or an injected third party can drive it.
   Evidence: `extension/ytkit-main.js:8-10` defines the `documentElement` attribute channel read at `:569`, `:737`, `:759`; the bridge additionally reacts to `yt-navigate-finish`, `yt-page-data-updated`, and `loadedmetadata`, all of which a page script can `dispatchEvent`. Reachable impact today is limited to playback quality and codec strings (`ytkit-main.js:766`), which is why this is P2 rather than P0.
