@@ -1129,6 +1129,21 @@ return response;
         suite: 'Deck',
         badge: 'Settings'
     });
+// Bridge writes go through the sealed channel, which also writes the plain
+// attribute for CSS and for the isolated world's own reads. The MAIN-world
+// bridge stopped believing the attribute: it reads the sealed copy, so a page
+// script that overwrites one changes how the page looks and nothing about what
+// the bridge does.
+function publishBridgeAttribute(name, value) {
+    document.documentElement.setAttribute(name, String(value));
+    return globalThis.YTKitCore?.getBridgeWriter?.()?.set(name, value) ?? null;
+}
+
+function clearBridgeAttribute(name) {
+    document.documentElement.removeAttribute(name);
+    return globalThis.YTKitCore?.getBridgeWriter?.()?.clear(name) ?? null;
+}
+
 const STORAGE_KEYS = Object.freeze({
     settings: 'ytSuiteSettings',
     aiSummaries: 'ytkit-ai-summaries',
@@ -1983,7 +1998,7 @@ const STORAGE_KEYS = Object.freeze({
         const forceH264 = appState?.settings?.forceH264;
         const codec = appState?.settings?.codecSelector || 'auto';
         const effective = forceH264 ? 'h264' : codec;
-        document.documentElement.setAttribute('data-ytkit-codec', effective);
+        publishBridgeAttribute('data-ytkit-codec', effective);
     }
 
 
@@ -10988,10 +11003,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // it and calls movie_player.setPlaybackQualityRange directly. No gear-
             // menu DOM click — no popup flash. Premium-aware via getAvailableQualityData.
             init() {
-                document.documentElement.setAttribute('data-ytkit-quality', 'on');
+                publishBridgeAttribute('data-ytkit-quality', 'on');
             },
             destroy() {
-                document.documentElement.removeAttribute('data-ytkit-quality');
+                clearBridgeAttribute('data-ytkit-quality');
             }
         },
 
@@ -11697,7 +11712,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 if (isLiveChatFrame()) {
-                    document.documentElement.setAttribute('data-ytkit-livechat-premium', '1');
+                    publishBridgeAttribute('data-ytkit-livechat-premium', '1');
                 }
 
                 const css = `
@@ -12101,7 +12116,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeMutationRule(this.id);
                 this._styleElement?.remove();
                 this._styleElement = null;
-                document.documentElement.removeAttribute('data-ytkit-livechat-premium');
+                clearBridgeAttribute('data-ytkit-livechat-premium');
                 document.querySelectorAll('[data-ytkit-livechat-enhanced]').forEach(message => {
                     delete message.dataset.ytkitLivechatEnhanced;
                     delete message.dataset.ytkitLivechatAvatarFallback;
@@ -26851,7 +26866,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _resourceUnlock: null,
             _patched: false,
             init() {
-                document.documentElement.setAttribute('data-ytkit-resource-unlock', 'on');
+                publishBridgeAttribute('data-ytkit-resource-unlock', 'on');
                 // In the extension build the MAIN-world bridge (ytkit-main.js)
                 // reacts to the attribute above and patches the page's real
                 // navigator.locks/indexedDB. An ISOLATED-world twin would only
@@ -26919,7 +26934,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._patched = true;
             },
             destroy() {
-                document.documentElement.removeAttribute('data-ytkit-resource-unlock');
+                clearBridgeAttribute('data-ytkit-resource-unlock');
                 this._resourceUnlock?.setEnabled(false);
                 this._resourceUnlock?.destroy();
                 this._resourceUnlock = null;
@@ -28046,10 +28061,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Video Player',
             icon: 'headphones',
             _apply() {
-                document.documentElement.setAttribute('data-ytkit-mono-to-stereo', '1');
+                publishBridgeAttribute('data-ytkit-mono-to-stereo', '1');
             },
             _remove() {
-                document.documentElement.removeAttribute('data-ytkit-mono-to-stereo');
+                clearBridgeAttribute('data-ytkit-mono-to-stereo');
             },
             init() {
                 this._apply();
@@ -28071,10 +28086,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'volume-2',
             _apply() {
                 const level = parseFloat(appState.settings?.volumeBoostLevel) || 2;
-                document.documentElement.setAttribute('data-ytkit-volume-boost', String(Math.max(1, Math.min(10, level))));
+                publishBridgeAttribute('data-ytkit-volume-boost', String(Math.max(1, Math.min(10, level))));
             },
             _remove() {
-                document.documentElement.setAttribute('data-ytkit-volume-boost', '1');
+                publishBridgeAttribute('data-ytkit-volume-boost', '1');
             },
             init() {
                 this._apply();
@@ -28106,10 +28121,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Video Player',
             icon: 'activity',
             _apply() {
-                document.documentElement.setAttribute('data-ytkit-audio-normalize', '1');
+                publishBridgeAttribute('data-ytkit-audio-normalize', '1');
             },
             _remove() {
-                document.documentElement.removeAttribute('data-ytkit-audio-normalize');
+                clearBridgeAttribute('data-ytkit-audio-normalize');
             },
             init() {
                 this._apply();
@@ -28130,10 +28145,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Video Player',
             icon: 'gauge',
             _apply() {
-                document.documentElement.setAttribute('data-ytkit-audio-auto-gain', '1');
+                publishBridgeAttribute('data-ytkit-audio-auto-gain', '1');
             },
             _remove() {
-                document.documentElement.removeAttribute('data-ytkit-audio-auto-gain');
+                clearBridgeAttribute('data-ytkit-audio-auto-gain');
             },
             init() {
                 this._apply();
@@ -28154,10 +28169,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Video Player',
             icon: 'filter',
             _apply() {
-                document.documentElement.setAttribute('data-ytkit-audio-high-pass', '1');
+                publishBridgeAttribute('data-ytkit-audio-high-pass', '1');
             },
             _remove() {
-                document.documentElement.removeAttribute('data-ytkit-audio-high-pass');
+                clearBridgeAttribute('data-ytkit-audio-high-pass');
             },
             init() {
                 this._apply();
@@ -28178,10 +28193,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Video Player',
             icon: 'sliders',
             _apply() {
-                document.documentElement.setAttribute('data-ytkit-audio-eq', '1');
+                publishBridgeAttribute('data-ytkit-audio-eq', '1');
             },
             _remove() {
-                document.documentElement.removeAttribute('data-ytkit-audio-eq');
+                clearBridgeAttribute('data-ytkit-audio-eq');
             },
             init() {
                 this._apply();
@@ -28210,10 +28225,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _apply() {
                 const value = Number(appState.settings?.audioEqLowGainDb);
                 const gain = Number.isFinite(value) ? Math.max(-12, Math.min(12, Math.round(value))) : 0;
-                document.documentElement.setAttribute('data-ytkit-audio-eq-low', String(gain));
+                publishBridgeAttribute('data-ytkit-audio-eq-low', String(gain));
             },
             _remove() {
-                document.documentElement.setAttribute('data-ytkit-audio-eq-low', '0');
+                publishBridgeAttribute('data-ytkit-audio-eq-low', '0');
             },
             init() {
                 this._apply();
@@ -28242,10 +28257,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _apply() {
                 const value = Number(appState.settings?.audioEqMidGainDb);
                 const gain = Number.isFinite(value) ? Math.max(-12, Math.min(12, Math.round(value))) : 0;
-                document.documentElement.setAttribute('data-ytkit-audio-eq-mid', String(gain));
+                publishBridgeAttribute('data-ytkit-audio-eq-mid', String(gain));
             },
             _remove() {
-                document.documentElement.setAttribute('data-ytkit-audio-eq-mid', '0');
+                publishBridgeAttribute('data-ytkit-audio-eq-mid', '0');
             },
             init() {
                 this._apply();
@@ -28274,10 +28289,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _apply() {
                 const value = Number(appState.settings?.audioEqHighGainDb);
                 const gain = Number.isFinite(value) ? Math.max(-12, Math.min(12, Math.round(value))) : 0;
-                document.documentElement.setAttribute('data-ytkit-audio-eq-high', String(gain));
+                publishBridgeAttribute('data-ytkit-audio-eq-high', String(gain));
             },
             _remove() {
-                document.documentElement.setAttribute('data-ytkit-audio-eq-high', '0');
+                publishBridgeAttribute('data-ytkit-audio-eq-high', '0');
             },
             init() {
                 this._apply();
@@ -28304,10 +28319,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             defaultValue: 0,
             _apply() {
                 const val = parseFloat(appState.settings.audioPan) || 0;
-                document.documentElement.setAttribute('data-ytkit-audio-pan', String(Math.max(-1, Math.min(1, val))));
+                publishBridgeAttribute('data-ytkit-audio-pan', String(Math.max(-1, Math.min(1, val))));
             },
             _remove() {
-                document.documentElement.setAttribute('data-ytkit-audio-pan', '0');
+                publishBridgeAttribute('data-ytkit-audio-pan', '0');
             },
             init() {
                 this._apply();
@@ -28337,10 +28352,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const offset = Number.isFinite(value)
                     ? Math.max(-500, Math.min(500, Math.round(value)))
                     : 0;
-                document.documentElement.setAttribute('data-ytkit-audio-sync-offset', String(offset));
+                publishBridgeAttribute('data-ytkit-audio-sync-offset', String(offset));
             },
             _remove() {
-                document.documentElement.setAttribute('data-ytkit-audio-sync-offset', '0');
+                publishBridgeAttribute('data-ytkit-audio-sync-offset', '0');
             },
             init() {
                 this._apply();
@@ -28400,8 +28415,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
             _apply() {
-                document.documentElement.setAttribute('data-ytkit-buffer-seconds', String(this._targetSeconds()));
-                document.documentElement.setAttribute('data-ytkit-buffer-preload', 'on');
+                publishBridgeAttribute('data-ytkit-buffer-seconds', String(this._targetSeconds()));
+                publishBridgeAttribute('data-ytkit-buffer-preload', 'on');
                 this._syncStatus();
             },
 
@@ -28430,8 +28445,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._statusObserver?.disconnect();
                 this._statusObserver = null;
                 this._lastStatusKey = '';
-                document.documentElement.removeAttribute('data-ytkit-buffer-preload');
-                document.documentElement.removeAttribute('data-ytkit-buffer-seconds');
+                clearBridgeAttribute('data-ytkit-buffer-preload');
+                clearBridgeAttribute('data-ytkit-buffer-seconds');
             }
         },
         {
@@ -28475,7 +28490,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _pillTimer: null,
 
             _apply() {
-                document.documentElement.setAttribute('data-ytkit-audio-only', 'on');
+                publishBridgeAttribute('data-ytkit-audio-only', 'on');
                 this._syncStatus();
             },
 
@@ -28575,9 +28590,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._pill = null;
                 this._styleEl?.remove();
                 this._styleEl = null;
-                document.documentElement.removeAttribute('data-ytkit-audio-only');
-                document.documentElement.removeAttribute('data-ytkit-audio-only-status');
-                document.documentElement.removeAttribute('data-ytkit-audio-only-reason');
+                clearBridgeAttribute('data-ytkit-audio-only');
+                clearBridgeAttribute('data-ytkit-audio-only-status');
+                clearBridgeAttribute('data-ytkit-audio-only-reason');
             }
         },
 
@@ -28624,7 +28639,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _apply() {
-                document.documentElement.setAttribute('data-ytkit-force-dvr', 'on');
+                publishBridgeAttribute('data-ytkit-force-dvr', 'on');
                 this._syncStatus();
             },
 
@@ -28649,9 +28664,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._statusObserver?.disconnect();
                 this._statusObserver = null;
                 this._lastStatusKey = '';
-                document.documentElement.removeAttribute('data-ytkit-force-dvr');
-                document.documentElement.removeAttribute('data-ytkit-force-dvr-status');
-                document.documentElement.removeAttribute('data-ytkit-force-dvr-reason');
+                clearBridgeAttribute('data-ytkit-force-dvr');
+                clearBridgeAttribute('data-ytkit-force-dvr-status');
+                clearBridgeAttribute('data-ytkit-force-dvr-reason');
             }
         },
 
@@ -29374,7 +29389,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._fallbackPreviousLuminance = result.luminance;
                 if (!result.triggered) return;
                 this._showAlert('fallback:' + Date.now());
-                document.documentElement.setAttribute('data-ytkit-photosensitive-event', 'fallback:' + Date.now() + ':' + result.delta);
+                publishBridgeAttribute('data-ytkit-photosensitive-event', 'fallback:' + Date.now() + ':' + result.delta);
             },
 
             _startFallbackSampler(video) {
@@ -32821,7 +32836,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .trim()
                     .replace(/_/g, '-')
                     .toLowerCase();
-                document.documentElement.setAttribute('data-ytkit-audio-language', target);
+                publishBridgeAttribute('data-ytkit-audio-language', target);
                 document.documentElement.setAttribute(
                     'data-ytkit-audio-description',
                     getSetting('preferDescriptiveAudio', false) ? 'on' : 'off'
@@ -32835,8 +32850,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule('audioTrackLanguage');
                 this._navRule = null;
-                document.documentElement.removeAttribute('data-ytkit-audio-language');
-                document.documentElement.removeAttribute('data-ytkit-audio-description');
+                clearBridgeAttribute('data-ytkit-audio-language');
+                clearBridgeAttribute('data-ytkit-audio-description');
             }
         },
         {
@@ -32850,10 +32865,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'audio-lines',
             pages: [PageTypes.WATCH],
             init() {
-                document.documentElement.setAttribute('data-ytkit-audio-description', 'on');
+                publishBridgeAttribute('data-ytkit-audio-description', 'on');
             },
             destroy() {
-                document.documentElement.removeAttribute('data-ytkit-audio-description');
+                clearBridgeAttribute('data-ytkit-audio-description');
             }
         },
         // ═══════════════════════════════════════════════════════════════════
@@ -34621,7 +34636,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._navRule = () => {
-                    document.documentElement.setAttribute('data-ytkit-audio-original', 'on');
+                    publishBridgeAttribute('data-ytkit-audio-original', 'on');
                 };
                 addNavigateRule(this.id, this._navRule);
                 this._navRule();
@@ -34630,7 +34645,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 this._navRule = null;
-                document.documentElement.removeAttribute('data-ytkit-audio-original');
+                clearBridgeAttribute('data-ytkit-audio-original');
             }
         },
         // ═══════════════════════════════════════════════════════════════════
@@ -35171,12 +35186,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (context === this._lastContext) return;
                 this._lastContext = context;
                 const quality = this._resolvedQuality(context);
-                document.documentElement.setAttribute('data-ytkit-quality-context', context);
+                publishBridgeAttribute('data-ytkit-quality-context', context);
                 if (quality === 'inherit') {
-                    document.documentElement.removeAttribute('data-ytkit-quality-target');
+                    clearBridgeAttribute('data-ytkit-quality-target');
                     return;
                 }
-                document.documentElement.setAttribute('data-ytkit-quality-target', quality);
+                publishBridgeAttribute('data-ytkit-quality-target', quality);
                 // MAIN-world bridge (ytkit-main.js future work) listens for the
                 // attribute change and calls movie_player.setPlaybackQualityRange.
                 // For ISOLATED-world fallback, we also dispatch a CustomEvent so
@@ -35234,8 +35249,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._fsHandler = null;
                 this._visHandler = null;
                 this._navRule = null;
-                document.documentElement.removeAttribute('data-ytkit-quality-context');
-                document.documentElement.removeAttribute('data-ytkit-quality-target');
+                clearBridgeAttribute('data-ytkit-quality-context');
+                clearBridgeAttribute('data-ytkit-quality-target');
                 this._lastContext = '';
             }
         },

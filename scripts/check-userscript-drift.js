@@ -106,6 +106,12 @@ const EXTENSION_ONLY_MANIFEST_MODULES = Object.freeze({
     // monolith. Listing them explicitly is the point: a NEW core module
     // added to the manifest now fails this gate until someone decides
     // whether userscript users should get it.
+    // The sealed isolated-to-MAIN channel and the token that keys it. A
+    // userscript runs in one world: there is no MAIN-world bridge to talk to,
+    // so there is nothing to seal and no page/extension boundary to defend
+    // across. Bundling them would ship a channel with no other end.
+    'core/bridge-channel.js': 'intentional-extension-only',
+    'core/bridge-token.js': 'intentional-extension-only',
     'core/browser-api.js': 'intentional-extension-only',
     // The disable feed is fetched by the background worker through its own
     // message. A userscript has no worker and no equivalent fixed-URL channel,

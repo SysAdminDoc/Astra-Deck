@@ -171,8 +171,16 @@ test('CPU Tamer owns the MAIN-world bridge opt-in in extension and userscript bu
     ));
     const mainEntry = manifest.content_scripts.find((entry) => entry.world === 'MAIN');
     assert.deepEqual(
-        mainEntry.js.slice(0, 4),
-        ['core/injection-guard.js', 'core/resource-unlock.js', 'core/player.js', 'core/audio-track.js']
+        mainEntry.js.slice(0, 5),
+        [
+            // First, because ytkit-main.js builds its reader from it and a
+            // bridge with no channel reads nothing at all.
+            'core/bridge-channel.js',
+            'core/injection-guard.js',
+            'core/resource-unlock.js',
+            'core/player.js',
+            'core/audio-track.js',
+        ]
     );
 
     const mainSource = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit-main.js'), 'utf8');
@@ -180,7 +188,7 @@ test('CPU Tamer owns the MAIN-world bridge opt-in in extension and userscript bu
     const userscriptSource = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
     assert.match(mainSource, /data-ytkit-resource-unlock/);
     assert.match(mainSource, /data-ytkit-resource-lock-stats/);
-    assert.match(extensionSource, /setAttribute\('data-ytkit-resource-unlock', 'on'\)/);
-    assert.match(extensionSource, /removeAttribute\('data-ytkit-resource-unlock'\)/);
+    assert.match(extensionSource, /publishBridgeAttribute\('data-ytkit-resource-unlock', 'on'\)/);
+    assert.match(extensionSource, /clearBridgeAttribute\('data-ytkit-resource-unlock'\)/);
     assert.match(userscriptSource, /createResourceUnlockBridge\(\{ root: win, document \}\)/);
 });

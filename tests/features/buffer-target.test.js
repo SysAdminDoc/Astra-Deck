@@ -31,6 +31,10 @@ function mainWorldClamp() {
     `;
     let attrValue = null;
     const sandbox = {
+        // The slice reads its value through the sealed channel, not off the
+        // attribute: that is the change that stopped a page script being able
+        // to set the buffering goal. Here the channel is one value.
+        _bridgeGet: () => attrValue,
         document: { documentElement: { getAttribute: () => attrValue } },
         Math, Number, isFinite
     };

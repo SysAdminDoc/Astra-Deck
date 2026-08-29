@@ -6,6 +6,23 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- The MAIN-world bridge no longer takes instructions from the page. It read
+  playback settings off `<html data-ytkit-*>` attributes and took its timing
+  from YouTube's own navigation events, and anything running on the page could
+  write those attributes or dispatch those events. It now reads a sealed copy
+  the extension publishes under a per-page token, and listens for a navigation
+  signal only the extension can send. Writing the attribute still changes the
+  attribute; it no longer changes anything the player does.
+
+  The bridge also takes the DOM and JSON functions it depends on when the page
+  loads, before any page script has run, so replacing them later has no effect.
+
+  What was reachable through this was limited to playback quality and codec
+  selection, and no data was exposed. Nothing about how you use the extension
+  changes.
+
 ### Changed
 
 - The synthetic-content filter now reads YouTube's own altered-or-synthetic

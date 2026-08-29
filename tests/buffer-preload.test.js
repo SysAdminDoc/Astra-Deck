@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { installBridgeChannel } = require('./helpers/main-bridge');
 
 const source = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'ytkit-main.js'),
@@ -114,9 +115,13 @@ function bootstrapBufferBridge(options = {}) {
     context.removeEventListener = () => {};
     context.dispatchEvent = (event) => {
         emit(windowListeners, event.type, event);
-        const taskEvent = event.type === 'yt-navigate-finish'
-            ? 'navigate'
-            : event.type === 'yt-page-data-updated' ? 'page-data' : event.type;
+        // The sealed navigate carries its reason in the detail; the old page
+        // events carried it in the type.
+        const taskEvent = event.detail && event.detail.reason
+            ? event.detail.reason
+            : event.type === 'yt-navigate-finish'
+                ? 'navigate'
+                : event.type === 'yt-page-data-updated' ? 'page-data' : event.type;
         for (const task of schedules.values()) {
             if (task.settings.events.includes(taskEvent)) {
                 task.callback({
@@ -134,15 +139,22 @@ function bootstrapBufferBridge(options = {}) {
     context.globalThis = context;
 
     vm.createContext(context);
+    // Seed the token before the bridge builds its reader. `channel` rather
+    // than `bridge`, because the harness already returns something by that
+    // name to the tests.
+    const channel = installBridgeChannel(documentElement, context.YTKitCore);
+
     vm.runInContext(source, context, { filename: 'extension/ytkit-main.js' });
 
     return {
         context,
         calls,
         player,
+        channel,
+        documentElement,
         setEnabled(enabled) {
-            if (enabled) documentElement.setAttribute('data-ytkit-buffer-preload', 'on');
-            else documentElement.removeAttribute('data-ytkit-buffer-preload');
+            if (enabled) channel.publish('data-ytkit-buffer-preload', 'on');
+            else channel.clear('data-ytkit-buffer-preload');
         },
         status() {
             return {
@@ -152,7 +164,7 @@ function bootstrapBufferBridge(options = {}) {
         },
         navigate(video) {
             currentVideo = video;
-            context.dispatchEvent({ type: 'yt-navigate-finish' });
+            context.dispatchEvent(channel.navigate());
         }
     };
 }

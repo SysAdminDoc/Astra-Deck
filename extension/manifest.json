@@ -86,6 +86,10 @@
         "https://studio.youtube.com/*",
         "https://*.youtube.com/live_chat*"
       ],
+      "js": [
+        "core/bridge-channel.js",
+        "core/bridge-token.js"
+      ],
       "css": [
         "early.css"
       ],
@@ -103,6 +107,7 @@
         "https://*.youtube.com/live_chat*"
       ],
       "js": [
+        "core/bridge-channel.js",
         "core/injection-guard.js",
         "core/resource-unlock.js",
         "core/player.js",
@@ -130,6 +135,7 @@
       "x-ytkit-runtime-modules": [
         "core/browser-api.js",
         "core/injection-guard.js",
+        "core/bridge-channel.js",
         "core/env.js",
         "core/storage.js",
         "core/styles.js",
@@ -291,6 +297,7 @@
         "runtime-core-loader.mjs",
         "core/browser-api.js",
         "core/injection-guard.js",
+        "core/bridge-channel.js",
         "core/env.js",
         "core/storage.js",
         "core/styles.js",

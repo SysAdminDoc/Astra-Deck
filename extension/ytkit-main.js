@@ -19,6 +19,65 @@
 (function() {
     'use strict';
 
+    // ──────────────────────────────────────────────────────────────────
+    // Natives, taken at document_start
+    // ──────────────────────────────────────────────────────────────────
+    // This file shares a realm with YouTube's scripts and with anything
+    // injected beside them. Every DOM and JSON entry point it uses later can
+    // be replaced by page script — and page script cannot run before
+    // document_start, so taking references here is the one moment when what
+    // we capture is guaranteed to be the real thing.
+    var _NATIVE = (function() {
+        var docEl = document.documentElement;
+        return {
+            getAttribute: docEl && docEl.getAttribute.bind(docEl),
+            setAttribute: docEl && docEl.setAttribute.bind(docEl),
+            removeAttribute: docEl && docEl.removeAttribute.bind(docEl),
+            MutationObserver: globalThis.MutationObserver,
+            jsonParse: JSON.parse,
+            jsonStringify: JSON.stringify,
+            addEventListener: globalThis.addEventListener &&
+                globalThis.addEventListener.bind(globalThis),
+            docAddEventListener: document.addEventListener.bind(document),
+            now: Date.now
+        };
+    })();
+
+    // ──────────────────────────────────────────────────────────────────
+    // The sealed channel
+    // ──────────────────────────────────────────────────────────────────
+    // The bridge used to read `<html data-ytkit-*>` directly, which made every
+    // one of those attributes an input any page script could drive. It now
+    // reads only what the isolated world sealed with the per-page token, and
+    // the token is off the page before YouTube's first script runs.
+    //
+    // No token means no channel and no reads: the features stay off rather
+    // than run on unverified input.
+    var _bridgeReader = (globalThis.YTKitCore && globalThis.YTKitCore.createBridgeReader)
+        ? globalThis.YTKitCore.createBridgeReader({
+            documentElement: document.documentElement,
+            parse: _NATIVE.jsonParse
+        })
+        : null;
+
+    /** The isolated world's value for `name`, or null. */
+    function _bridgeGet(name) {
+        return _bridgeReader ? _bridgeReader.get(name) : null;
+    }
+
+    var STATE_ATTR = (globalThis.YTKitCore && globalThis.YTKitCore.bridgeChannel)
+        ? globalThis.YTKitCore.bridgeChannel.STATE_ATTR
+        : null;
+
+    var NAVIGATE_EVENT = (globalThis.YTKitCore && globalThis.YTKitCore.bridgeChannel)
+        ? globalThis.YTKitCore.bridgeChannel.NAVIGATE_EVENT
+        : 'ytkit-bridge-navigate';
+
+    /** True only for a navigate this channel's token sealed. */
+    function _isOwnNavigate(event) {
+        return Boolean(_bridgeReader && _bridgeReader.isOwnNavigate(event));
+    }
+
     // MAIN-world classic scripts are re-evaluated by some extension update
     // paths even though the document and its prior bridge remain alive. Claim
     // this world before installing a patch or observer; a duplicate attempt
@@ -36,7 +95,7 @@
     function _reobserve() {
         if (!document || !document.documentElement) return;
         if (_ObsInstance) _ObsInstance.disconnect();
-        _ObsInstance = new MutationObserver(function(records) {
+        _ObsInstance = new _NATIVE.MutationObserver(function(records) {
             // Dedup attribute hits across the batch so each handler fires
             // at most once per tick (matches the prior per-observer
             // single-fire semantics — each old observer's callback was
@@ -49,8 +108,26 @@
                 touched.add(rec.attributeName);
             }
             if (!touched) return;
+            // Pull the sealed payload first. A page script writing a plain
+            // `data-ytkit-*` attribute still wakes this observer — it cannot
+            // be stopped from doing that — but there is no new sealed state
+            // behind the write, so every handler below reads what the isolated
+            // world last published and the forged value is simply not there.
+            //
+            // A change to the payload itself carries no attribute name a
+            // handler is registered for, and any value in it may have moved,
+            // so that wakes all of them.
+            var stateChanged = false;
+            if (_bridgeReader) {
+                stateChanged = _bridgeReader.sync();
+                if (STATE_ATTR && touched.has(STATE_ATTR)) stateChanged = true;
+            }
             for (var j = 0; j < _ObsHandlers.length; j++) {
                 var h = _ObsHandlers[j];
+                if (stateChanged) {
+                    try { h.fn(); } catch (e) { /* reason: one handler must not poison another */ }
+                    continue;
+                }
                 for (var k = 0; k < h.attrs.length; k++) {
                     if (touched.has(h.attrs[k])) {
                         try { h.fn(); } catch (e) {
@@ -69,6 +146,9 @@
     function _obsRegister(attrs, fn) {
         if (!attrs || !attrs.length || typeof fn !== 'function') return;
         for (var i = 0; i < attrs.length; i++) _ObsAttrs.add(attrs[i]);
+        // The sealed payload is where the values actually live now, so a
+        // change to it is what a handler needs to hear about.
+        if (STATE_ATTR) _ObsAttrs.add(STATE_ATTR);
         _ObsHandlers.push({ attrs: attrs.slice(), fn: fn });
         _mainRuntimeGuard && _mainRuntimeGuard.update({
             observerHandlers: _ObsHandlers.length,
@@ -106,7 +186,7 @@
 
     function _syncResourceUnlock() {
         if (!_resourceUnlock) return;
-        var enabled = document.documentElement.getAttribute('data-ytkit-resource-unlock') === 'on';
+        var enabled = _bridgeGet('data-ytkit-resource-unlock') === 'on';
         _resourceUnlock.setEnabled(enabled);
     }
     _obsRegister(['data-ytkit-resource-unlock'], _syncResourceUnlock);
@@ -566,7 +646,7 @@
     }
 
     _obsRegister(['data-ytkit-codec'], function() {
-        var val = document.documentElement.getAttribute('data-ytkit-codec');
+        var val = _bridgeGet('data-ytkit-codec');
         if (val !== null && val !== _codec) {
             _codec = val || 'auto';
             sync();
@@ -585,7 +665,7 @@
         module.exports = { probeEfficientCodec: probeEfficientCodec, EFFICIENT_CANDIDATES: EFFICIENT_CANDIDATES };
     }
 
-    var initial = document.documentElement.getAttribute('data-ytkit-codec');
+    var initial = _bridgeGet('data-ytkit-codec');
     if (initial) { _codec = initial; sync(); }
 })();
 
@@ -728,13 +808,22 @@
             if (!ON) return;
             if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) schedule(0, 'canplay');
         }, true);
-        // YouTube SPA navigation
-        window.addEventListener('yt-navigate-finish', function() { if (ON) reset('navigate'); });
-        window.addEventListener('yt-page-data-updated', function() { if (ON) schedule(200, 'page-data'); });
+        // SPA navigation, from the isolated world.
+        //
+        // `yt-navigate-finish` and `yt-page-data-updated` are CustomEvents
+        // YouTube dispatches, which makes them indistinguishable from ones a
+        // page script dispatches — same type, same isTrusted, same everything.
+        // The isolated world re-dispatches its own carrying the token, so a
+        // forged navigate is just an event with the wrong detail on it.
+        _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+            if (!ON || !_isOwnNavigate(event)) return;
+            if (event.detail.reason === 'page-data') schedule(200, 'page-data');
+            else reset('navigate');
+        });
     }
 
     function syncFromAttr() {
-        var v = document.documentElement.getAttribute('data-ytkit-quality');
+        var v = _bridgeGet('data-ytkit-quality');
         var next = (v === 'on');
         if (next === ON) return;
         ON = next;
@@ -756,7 +845,7 @@
         if (ctx && (ctx.reason === 'loadedmetadata' || ctx.reason === 'navigate' || ctx.reason === 'page-data' || ctx.reason === 'player-state')) {
             _ctxLastApplied = '';
         }
-        var target = document.documentElement.getAttribute('data-ytkit-quality-target');
+        var target = _bridgeGet('data-ytkit-quality-target');
         if (!target) { _ctxLastApplied = ''; return true; }
         var p = getPlayer();
         if (!p || typeof p.setPlaybackQualityRange !== 'function') return false;
@@ -802,7 +891,8 @@
                 scheduleContextQuality('loadedmetadata', 0);
             }
         }, true);
-        window.addEventListener('yt-navigate-finish', function() {
+        _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+            if (!_isOwnNavigate(event)) return;
             _ctxLastApplied = '';
             scheduleContextQuality('navigate', 0);
         });
@@ -870,11 +960,11 @@
     function writeStatus(status, reason) {
         var nextStatus = String(status || 'off');
         var nextReason = reason ? String(reason).slice(0, 240) : '';
-        if (document.documentElement.getAttribute(STATUS_ATTR) !== nextStatus) {
+        if (_bridgeGet(STATUS_ATTR) !== nextStatus) {
             document.documentElement.setAttribute(STATUS_ATTR, nextStatus);
         }
         if (nextReason) {
-            if (document.documentElement.getAttribute(REASON_ATTR) !== nextReason) {
+            if (_bridgeGet(REASON_ATTR) !== nextReason) {
                 document.documentElement.setAttribute(REASON_ATTR, nextReason);
             }
         } else {
@@ -1019,13 +1109,13 @@
     }
 
     function readTargetSeconds() {
-        var raw = Number(document.documentElement.getAttribute(SECONDS_ATTR));
+        var raw = Number(_bridgeGet(SECONDS_ATTR));
         if (!isFinite(raw) || raw <= 0) return DEFAULT_TARGET_SECONDS;
         return Math.min(MAX_TARGET_SECONDS, Math.max(MIN_TARGET_SECONDS, Math.round(raw)));
     }
 
     function syncFromAttr() {
-        var next = document.documentElement.getAttribute(ENABLE_ATTR) === 'on';
+        var next = _bridgeGet(ENABLE_ATTR) === 'on';
         var nextSeconds = readTargetSeconds();
         if (nextSeconds !== targetSeconds) {
             targetSeconds = nextSeconds;
@@ -1066,14 +1156,11 @@
                 schedule(0, 'canplay');
             }
         }, true);
-        window.addEventListener('yt-navigate-finish', function() {
-            if (ON) {
-                lastAppliedVideo = null;
-                schedule(0, 'navigate');
-            }
-        });
-        window.addEventListener('yt-page-data-updated', function() {
-            if (ON) schedule(0, 'page-data');
+        _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+            if (!ON || !_isOwnNavigate(event)) return;
+            if (event.detail.reason === 'page-data') { schedule(0, 'page-data'); return; }
+            lastAppliedVideo = null;
+            schedule(0, 'navigate');
         });
     }
 
@@ -1261,7 +1348,7 @@
     }
 
     function syncFromAttr() {
-        var next = document.documentElement.getAttribute(ENABLE_ATTR) === 'on';
+        var next = _bridgeGet(ENABLE_ATTR) === 'on';
         if (next === ON) {
             if (ON) schedule(0, 'attribute');
             return;
@@ -1284,8 +1371,10 @@
                 schedule(0, 'loadstart');
             }
         }, true);
-        window.addEventListener('yt-navigate-finish', function() {
-            if (ON) { appliedKey = ''; schedule(0, 'navigate'); }
+        _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+            if (!ON || !_isOwnNavigate(event)) return;
+            appliedKey = '';
+            schedule(0, 'navigate');
         });
     }
 
@@ -1691,7 +1780,7 @@
     }
 
     _obsRegister(['data-ytkit-mono-to-stereo'], function() {
-        var val = document.documentElement.getAttribute('data-ytkit-mono-to-stereo');
+        var val = _bridgeGet('data-ytkit-mono-to-stereo');
         var next = val === '1';
         if (next === _monoEnabled) return;
         _monoEnabled = next;
@@ -1700,7 +1789,7 @@
     });
 
     _obsRegister(['data-ytkit-volume-boost'], function() {
-        var val = document.documentElement.getAttribute('data-ytkit-volume-boost');
+        var val = _bridgeGet('data-ytkit-volume-boost');
         var next = parseFloat(val) || 1.0;
         if (next < 1) next = 1;
         if (next > 10) next = 10;
@@ -1710,28 +1799,28 @@
     });
 
     _obsRegister(['data-ytkit-audio-normalize'], function() {
-        var val = document.documentElement.getAttribute('data-ytkit-audio-normalize');
+        var val = _bridgeGet('data-ytkit-audio-normalize');
         _normalizeEnabled = val === '1';
         if (isActive()) connect();
         else disconnectProcessing();
     });
 
     _obsRegister([_audioAutoGainAttr], function() {
-        var val = document.documentElement.getAttribute(_audioAutoGainAttr);
+        var val = _bridgeGet(_audioAutoGainAttr);
         _autoGainEnabled = val === '1';
         if (isActive()) connect();
         else disconnectProcessing();
     });
 
     _obsRegister([_audioHighPassAttr], function() {
-        var val = document.documentElement.getAttribute(_audioHighPassAttr);
+        var val = _bridgeGet(_audioHighPassAttr);
         _highPassEnabled = val === '1';
         if (isActive()) connect();
         else disconnectProcessing();
     });
 
     _obsRegister([_audioEqAttr], function() {
-        var val = document.documentElement.getAttribute(_audioEqAttr);
+        var val = _bridgeGet(_audioEqAttr);
         _audioEqEnabled = val === '1';
         if (isActive()) connect();
         else disconnectProcessing();
@@ -1739,7 +1828,7 @@
 
     _obsRegister([_audioEqLowAttr], function() {
         _audioEqLowDb = _normalizeAudioEqGain(
-            document.documentElement.getAttribute(_audioEqLowAttr)
+            _bridgeGet(_audioEqLowAttr)
         );
         if (isActive()) connect();
         else disconnectProcessing();
@@ -1747,7 +1836,7 @@
 
     _obsRegister([_audioEqMidAttr], function() {
         _audioEqMidDb = _normalizeAudioEqGain(
-            document.documentElement.getAttribute(_audioEqMidAttr)
+            _bridgeGet(_audioEqMidAttr)
         );
         if (isActive()) connect();
         else disconnectProcessing();
@@ -1755,14 +1844,14 @@
 
     _obsRegister([_audioEqHighAttr], function() {
         _audioEqHighDb = _normalizeAudioEqGain(
-            document.documentElement.getAttribute(_audioEqHighAttr)
+            _bridgeGet(_audioEqHighAttr)
         );
         if (isActive()) connect();
         else disconnectProcessing();
     });
 
     _obsRegister(['data-ytkit-audio-pan'], function() {
-        var val = parseFloat(document.documentElement.getAttribute('data-ytkit-audio-pan')) || 0;
+        var val = parseFloat(_bridgeGet('data-ytkit-audio-pan')) || 0;
         if (val < -1) val = -1;
         if (val > 1) val = 1;
         _panValue = val;
@@ -1771,7 +1860,7 @@
     });
 
     _obsRegister([_audioSyncAttr], function() {
-        var val = document.documentElement.getAttribute(_audioSyncAttr);
+        var val = _bridgeGet(_audioSyncAttr);
         _audioSyncOffsetMs = _normalizeAudioSyncOffset(val);
         if (isActive()) connect();
         else disconnectProcessing();
@@ -1785,8 +1874,10 @@
         }
     }, true);
 
-    window.addEventListener('yt-navigate-finish', function() {
-        if (isActive()) { _connectedVideo = null; setTimeout(connect, 500); }
+    _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+        if (!isActive() || !_isOwnNavigate(event)) return;
+        _connectedVideo = null;
+        setTimeout(connect, 500);
     });
 })();
 
@@ -1988,8 +2079,8 @@
         stopSampler();
         writeStatus('waiting');
     });
-    window.addEventListener('yt-navigate-finish', function() {
-        if (enabled) scheduleSampler('navigate');
+    _NATIVE.addEventListener(NAVIGATE_EVENT, function(event) {
+        if (enabled && _isOwnNavigate(event)) scheduleSampler('navigate');
     });
 })();
 
