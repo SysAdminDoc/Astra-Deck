@@ -209,6 +209,11 @@ function loadDeclarationsFrom(source, names, extraGlobals = {}) {
     const body = names.map((name) => declarationSourceFrom(source, name)).join('\n');
     const exported = names.map((name) => `__out.${name} = ${name};`).join('');
     vm.runInNewContext(`var __out = {};(() => {${body}\n${exported}})();__out;`, sandbox);
+    // Monolith code assigns module-level state to bare identifiers, which land
+    // on the sandbox rather than in `__out`. Hand the sandbox back so a test
+    // can read that state — a cleanup closure, a cached handle — after
+    // driving the function that set it.
+    sandbox.__out.globalThis = sandbox;
     return sandbox.__out;
 }
 
