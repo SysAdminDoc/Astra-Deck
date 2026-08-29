@@ -75,15 +75,41 @@ function splitCards(html, tag) {
     });
 }
 
+/**
+ * Match one selector against a card block the way a browser would, to the
+ * extent these three selector shapes need.
+ *
+ * The previous version fell back to a bare `cardHtml.includes(className)`,
+ * which matches the class name ANYWHERE — inside an unrelated attribute, a
+ * URL, or a longer class token. A selector narrowed to something that no
+ * longer matches would still have resolved as long as the old name appeared
+ * somewhere in the markup, which on a real capture it always does.
+ */
+function matchesSelector(cardHtml, selector) {
+    // `a.SomeClass`: an <a> whose class attribute carries that exact token.
+    if (selector.startsWith('a.')) {
+        const wanted = selector.slice(2);
+        const anchors = cardHtml.match(/<a\b[^>]*>/g) || [];
+        return anchors.some((tag) => {
+            const attr = tag.match(/\sclass="([^"]*)"/);
+            return Boolean(attr) && attr[1].split(/\s+/).includes(wanted);
+        });
+    }
+    // `#some-id`: an element whose id attribute is exactly that.
+    if (selector.startsWith('#')) {
+        const wanted = selector.slice(1);
+        const ids = cardHtml.match(/\sid="([^"]*)"/g) || [];
+        return ids.some((attr) => attr.slice(5, -1) === wanted);
+    }
+    // A bare tag name, which must be the whole tag and not a prefix of a
+    // longer custom element name.
+    return new RegExp('<' + selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=[\\s/>])', 'i')
+        .test(cardHtml);
+}
+
 /** Does a card block expose a thumbnail container the scanner can find? */
 function resolvesThumbnail(cardHtml, selectors) {
-    return selectors.some((selector) => {
-        if (selector.startsWith('a.')) return cardHtml.includes('class="' + selector.slice(2))
-            || cardHtml.includes(' ' + selector.slice(2) + '"')
-            || cardHtml.includes(selector.slice(2));
-        if (selector.startsWith('#')) return cardHtml.includes('id="' + selector.slice(1) + '"');
-        return cardHtml.includes('<' + selector);
-    });
+    return selectors.some((selector) => matchesSelector(cardHtml, selector));
 }
 
 /** Does a card block expose a video id the scanner can extract? */
@@ -123,4 +149,28 @@ test('the shipped thumbnail lookup knows the camelCase lockup anchor', () => {
         'current lockup cards carry the camelCase anchor class; dropping it blinds the sidebar');
     assert.ok(selectors.includes('a.yt-lockup-view-model__content-image'),
         'the older BEM anchor must stay for cards YouTube has not migrated');
+});
+
+test('the selector matcher does not resolve a class that is merely mentioned', () => {
+    // Guarding the guard: the fixtures are real captures, so a fuzzy matcher
+    // finds every class name somewhere and reports a 100% resolution rate for
+    // a scanner that matches nothing.
+    const mentioned = '<div data-note="ytLockupViewModelContentImage"><a class="something-else"></a></div>';
+    assert.equal(matchesSelector(mentioned, 'a.ytLockupViewModelContentImage'), false,
+        'a class named in an unrelated attribute is not an element with that class');
+
+    const longerToken = '<a class="ytLockupViewModelContentImageWide"></a>';
+    assert.equal(matchesSelector(longerToken, 'a.ytLockupViewModelContentImage'), false,
+        'and a longer class token is a different class');
+
+    const real = '<a class="foo ytLockupViewModelContentImage bar" href="/watch?v=x"></a>';
+    assert.equal(matchesSelector(real, 'a.ytLockupViewModelContentImage'), true,
+        'while the real thing still resolves');
+
+    assert.equal(matchesSelector('<yt-lockup-view-model-wide>', 'yt-lockup-view-model'), false,
+        'a tag name must be the whole tag, not a prefix of a longer custom element');
+    assert.equal(matchesSelector('<yt-lockup-view-model class="x">', 'yt-lockup-view-model'), true);
+
+    assert.equal(matchesSelector('<div id="thumbnail-wide">', '#thumbnail'), false);
+    assert.equal(matchesSelector('<div id="thumbnail">', '#thumbnail'), true);
 });
