@@ -1,89 +1,289 @@
 'use strict';
 
 // Regression guards for the post-pass-3 follow-ups (userscript download
-// port-fallback + identity check, popup byte/count formatting). Single-line
-// source patterns (CRLF-safe).
+// port-fallback + identity check, popup byte/count formatting, sort scoring,
+// Zen Mode and the sleep-timer popover).
+//
+// The behavioural half of this file used to be single-line source patterns.
+// Those now run: the companion health gate is fed real and hostile payloads,
+// the popup formatters and stat-card setters are called against a fake DOM,
+// the sort is given cards to order, and Zen Mode and the sleep timer are
+// initialised and inspected through what they render.
+//
+// The rest of the file asserts on ASSETS — popup.html seeds, popup.css rules
+// and the 11 locale catalogues. Those are data, and reading them is the only
+// form those claims have.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 
+const { createSubscriptionGroupsFeature } = require('../extension/features/subscription-groups');
+const {
+    loadFeature,
+    loadUserscriptDeclarations,
+    loadDeclarationsFrom,
+    fakeNode,
+    fakeTreeDocument,
+} = require('./helpers/monolith');
+const { sources } = require('./helpers/source');
+
 const repoRoot = path.join(__dirname, '..');
 const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
 const popup = fs.readFileSync(path.join(repoRoot, 'extension', 'popup.js'), 'utf8');
-const ytkit = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
-const subscriptionGroups = fs.readFileSync(
-    path.join(repoRoot, 'extension', 'features', 'subscription-groups', 'index.js'), 'utf8');
 
-test('userscript MediaDLManager probes fallback ports and gates on the Astra identity', () => {
-    assert.ok(/_PORT_CANDIDATES:\s*Object\.freeze\(USERSCRIPT_COMPANION_PORT_CATALOGUE\?\.ports/.test(userscript),
-        'must consume the shared companion fallback port catalogue');
-    assert.ok(/_isAstraDownloaderHealth\(data\)/.test(userscript),
-        'must validate the Astra Downloader health identity, not trust any localhost {token}');
-    assert.ok(/baseUrl\(\)\s*\{\s*return 'http:\/\/' \+ \(USERSCRIPT_COMPANION_PORT_CATALOGUE/.test(userscript),
-        'must expose baseUrl() reflecting the shared host and discovered port');
-    assert.ok(/MediaDLManager\.baseUrl\(\) \+ '\/status\//.test(userscript),
-        'status poll must use the discovered port');
-    assert.ok(/MediaDLManager\.baseUrl\(\) \+ '\/download'/.test(userscript),
-        'download must use the discovered port');
-    assert.ok(!/url:\s*'http:\/\/127\.0\.0\.1:9751\//.test(userscript),
+// The userscript reads its port catalogue off YTKitCore, which the core
+// library populates from scripts/companion-port-catalogue.json. Load the real
+// one so this proves the wiring rather than a fixture.
+const companionPorts = require('../extension/core/companion-ports.js');
+
+const loadMediaDLManager = () => loadUserscriptDeclarations(
+    ['USERSCRIPT_COMPANION_PORT_CATALOGUE', 'MediaDLManager'],
+    {
+        YTKitCore: { companionPorts },
+        fetch: () => new Promise(() => {}),
+        AbortController,
+        setTimeout: () => 0,
+        clearTimeout() {},
+        GM_xmlhttpRequest() {},
+    }
+).MediaDLManager;
+
+test('the userscript companion probes every catalogued fallback port', () => {
+    const manager = loadMediaDLManager();
+    const ports = Array.from(manager._PORT_CANDIDATES);
+    assert.ok(ports.length > 1,
+        'a single-port probe meant downloads failed silently whenever the server used a fallback');
+    assert.ok(ports.every((port) => Number.isInteger(port) && port > 0 && port < 65536),
+        'every candidate must be a real port number');
+
+    // baseUrl() has to follow the discovered port, not a compiled-in one.
+    const seen = new Set();
+    for (const port of ports) {
+        manager._port = port;
+        const base = new URL(manager.baseUrl());
+        assert.equal(Number(base.port), port, 'baseUrl() must reflect the discovered port');
+        seen.add(base.hostname);
+    }
+    assert.equal(seen.size, 1, 'the host stays fixed while the port moves');
+
+    // No endpoint may pin 9751 behind baseUrl()'s back.
+    assert.doesNotMatch(userscript, /url:\s*'http:\/\/127\.0\.0\.1:9751\//,
         'no hardcoded 9751 endpoint URLs should remain (only @connect metadata)');
 });
 
-test('popup formatBytes scales beyond MB and counts are locale-aware', () => {
-    assert.ok(/BYTE_UNITS = \['B', 'KB', 'MB', 'GB', 'TB'\]/.test(popup),
-        'formatBytes must scale through GB/TB, not cap at MB');
-    assert.ok(/function formatCount\(n\)/.test(popup),
-        'a locale-aware count formatter must exist');
-    // Pinned the assignment shape, but what it is asserting is that the counts
-    // go through formatCount. The five cards are written through one setter now
-    // so the unavailable state can clear itself, and the formatter call moved
-    // into that setter's argument list.
-    assert.ok(/setStatCards\(\[\s*formatCount\(summary\.keys\)/.test(popup),
-        'storage stat counts must use the locale-aware formatter');
+test('the userscript companion refuses any localhost server that is not Astra Downloader', () => {
+    const manager = loadMediaDLManager();
+    const accepted = [
+        [{ service: manager._SERVICE_ID, token: 'abc' }, 'the service id it publishes'],
+        [{ token: 'abc', token_required: true, port: 9751 }, 'a hardened pre-service-id build'],
+    ];
+    for (const [payload, why] of accepted) {
+        assert.equal(manager._isAstraDownloaderHealth(payload), true, `must accept ${why}`);
+    }
+
+    const refused = [
+        [null, 'no payload at all'],
+        [{}, 'an empty object'],
+        [{ service: manager._SERVICE_ID }, 'the right service with no token'],
+        [{ token: 'abc' }, 'a bare {token} from any localhost server'],
+        [{ token: 'abc', service: 'something-else' }, 'a different service claiming a token'],
+        [{ token: 'abc', token_required: true }, 'a token with no port'],
+        [{ token: 'abc', token_required: false, port: 9751 }, 'a server that does not require a token'],
+    ];
+    for (const [payload, why] of refused) {
+        assert.equal(manager._isAstraDownloaderHealth(payload), false, `must refuse ${why}`);
+    }
 });
 
-test('subscriptionGroups duration-asc sort normalizes HH:MM:SS to seconds', () => {
-    const i = subscriptionGroups.indexOf("mode === 'duration-asc'");
-    assert.ok(i > -1, 'duration-asc branch must exist');
-    const block = subscriptionGroups.slice(i, i + 1400);
-    assert.ok(/\*\s*3600/.test(block),
-        'HH:MM:SS must be scored in seconds (hours*3600), not minutes');
-    assert.ok(!/\(Number\(m\[3\]\) \|\| 0\) \/ 60/.test(block),
-        'must not use the old minutes-mixing formula (m[3]/60)');
+test('the popup byte formatter scales past MB and stays locale-aware', () => {
+    const { formatBytes, formatCount } = loadDeclarationsFrom(
+        sources.popup, ['BYTE_UNITS', 'formatCount', 'formatBytes']
+    );
+
+    assert.equal(formatBytes(0), '0 B');
+    assert.equal(formatBytes(-1), '0 B', 'a negative size is not a size');
+    assert.equal(formatBytes(NaN), '0 B');
+    assert.equal(formatBytes(512), '512 B');
+    assert.match(formatBytes(1536), /^1[.,]5 KB$/);
+    // The bug: a multi-GB payload read "2048.00 MB".
+    assert.match(formatBytes(2 * 1024 ** 3), /^2 GB$/);
+    assert.match(formatBytes(3 * 1024 ** 4), /^3 TB$/);
+    // And it stops at the largest unit rather than inventing one.
+    assert.match(formatBytes(5 * 1024 ** 5), / TB$/);
+
+    assert.equal(formatCount(0), '0');
+    assert.equal(formatCount('nonsense'), '0');
+    assert.equal(formatCount(1234567), (1234567).toLocaleString(),
+        'counts go through the locale formatter, not String()');
 });
 
-test('zenMode uses a static dim overlay instead of backdrop blur', () => {
-    const start = ytkit.indexOf("id: 'zenMode'");
-    assert.ok(start > -1, 'zenMode feature must exist');
-    const block = ytkit.slice(start, start + 1800);
-    assert.match(block, /Dims the page around the video player/,
-        'zenMode copy must not promise blur');
-    assert.match(block, /box-shadow: inset 0 0 140px/,
-        'zenMode should use a static vignette on the overlay');
-    assert.doesNotMatch(block, /backdrop-filter\s*:\s*blur/i,
-        'content-script Zen Mode must not use live backdrop blur');
+test('the popup stat cards clear the unavailable state when the numbers come back', () => {
+    const elements = ['keys', 'size', 'hidden', 'blocked', 'bookmarks'].map(() => fakeNode({ tag: 'div' }));
+    const api = loadDeclarationsFrom(sources.popup, ['setStatCards', 'setStatCardsUnavailable'], {
+        STAT_ELEMENTS: () => elements,
+        t: (_key, fallback) => fallback,
+    });
+
+    api.setStatCardsUnavailable();
+    for (const element of elements) {
+        assert.equal(element.textContent, 'Unavailable');
+        assert.equal(element.dataset.state, 'unavailable');
+        assert.equal(element.getAttribute('title'), 'Unavailable');
+    }
+
+    // Recovering must clear the state AND the title on every card, or they keep
+    // the muted styling and the tooltip after the numbers return.
+    api.setStatCards(['12', '3 KB', '4', '5', '6']);
+    for (const [index, element] of elements.entries()) {
+        assert.equal(element.textContent, ['12', '3 KB', '4', '5', '6'][index]);
+        assert.equal(element.dataset.state, undefined, `card ${index} must drop the unavailable state`);
+        assert.equal(element.getAttribute('title'), null, `card ${index} must drop the title`);
+    }
 });
 
-test('sleepTimer uses an inline popover instead of a browser prompt', () => {
-    const start = ytkit.indexOf("id: 'sleepTimer'");
-    assert.ok(start > -1, 'sleepTimer feature must exist');
-    const block = ytkit.slice(start, start + 9000);
-    assert.doesNotMatch(block, /\bprompt\s*\(/,
-        'sleepTimer must not block YouTube with a browser prompt');
-    assert.match(block, /_showTimerPopover/,
-        'sleepTimer must expose an inline timer popover');
-    assert.match(block, /setAttribute\('role', 'dialog'\)/,
-        'sleepTimer popover must declare dialog semantics');
-    assert.match(block, /input\.type = 'number'/,
-        'sleepTimer popover must use a bounded numeric input');
-    assert.match(block, /Enter a value from 1 to 180 minutes\./,
-        'sleepTimer validation must render inline feedback');
-    assert.match(block, /focusRing/,
-        'sleepTimer popover controls must keep visible keyboard focus');
-    assert.match(block, /this\._dismissPopover\(\)/,
-        'sleepTimer must clean up the popover when state changes');
+test('the duration sort scores HH:MM:SS in seconds, not minutes', () => {
+    const contents = fakeNode({ tag: 'div' });
+    const documentRef = fakeTreeDocument((selector) =>
+        (String(selector).includes('#contents') ? contents : null));
+    globalThis.document = documentRef;
+    globalThis.window = { location: { pathname: '/feed/subscriptions' }, addEventListener() {}, removeEventListener() {} };
+
+    const cards = [];
+    const card = (duration, label) => {
+        const node = fakeNode({ tag: 'ytd-rich-item-renderer', text: `${label} ${duration}` });
+        const badge = fakeNode({ tag: 'span', text: duration });
+        // Only the duration badge answers; the video-id lookup finds nothing,
+        // which is the same as a card whose link has not rendered yet.
+        node.querySelector = (selector) => (String(selector).includes('time-status') || String(selector).includes('badge')
+            ? badge
+            : null);
+        node.querySelectorAll = () => [];
+        node.dataset.label = label;
+        contents.appendChild(node);
+        cards.push(node);
+        return node;
+    };
+
+    // A 1h02m video must sort AFTER a 10m30s one. The old formula mixed
+    // hours into minutes and put the long video first.
+    card('1:02:40', 'long');
+    card('10:30', 'medium');
+    card('0:45', 'short');
+    contents.querySelectorAll = () => cards.slice();
+
+    const feature = createSubscriptionGroupsFeature({
+        addNavigateRule: () => {},
+        removeNavigateRule: () => {},
+        addScopedMutationRule: () => {},
+        removeScopedMutationRule: () => {},
+        injectStyle: () => ({ remove() {} }),
+        storageReadJSON: (_key, fallback) => fallback,
+        storageWriteJSON: () => {},
+        appState: { settings: {} },
+    });
+    feature._applySort('duration-asc');
+
+    assert.deepEqual(
+        contents.children.map((node) => node.dataset.label),
+        ['short', 'medium', 'long'],
+        'shortest first: 45s, then 10m30s, then 1h02m40s'
+    );
+});
+
+test('Zen Mode dims with a static overlay and no live blur', () => {
+    const injected = [];
+    const documentRef = fakeTreeDocument(() => null);
+    const feature = loadFeature('zenMode', {
+        document: documentRef,
+        injectStyle: (css) => { injected.push(css); return { remove() {} }; },
+    });
+
+    feature.init();
+    assert.equal(injected.length, 1, 'init injects exactly one stylesheet');
+    const css = injected[0];
+    assert.doesNotMatch(css, /backdrop-filter\s*:\s*blur/i,
+        'a content-script live blur is what this feature stopped doing');
+    assert.match(css, /box-shadow: inset 0 0 140px/, 'the dim is a static vignette');
+    assert.match(css, /background: rgba\(0, 0, 0, 0\.75\)/);
+    assert.equal(documentRef.body.classList.contains('ytkit-zen-active'), true,
+        'the page has to be marked for the overlay to apply');
+
+    // The description is user-facing copy: it must not promise blur either.
+    assert.match(feature.description, /Dims the page around the video player/);
+    assert.doesNotMatch(feature.description, /blur/i);
+
+    feature.destroy();
+    assert.equal(documentRef.body.classList.contains('ytkit-zen-active'), false,
+        'teardown must un-dim the page');
+});
+
+test('the sleep timer asks for minutes in its own popover, never a browser prompt', () => {
+    // The popover mounts into the player chrome, so the chrome has to be there.
+    const chrome = fakeNode({ tag: 'div', attributes: { class: 'ytp-chrome-bottom' } });
+    const documentRef = fakeTreeDocument((selector) =>
+        (String(selector).includes('ytp-chrome-bottom') ? chrome : null));
+    const anchor = fakeNode({ tag: 'button' });
+    anchor.getBoundingClientRect = () => ({ top: 100, bottom: 124, left: 200, width: 40 });
+    const started = [];
+    const promptCalls = [];
+
+    const feature = loadFeature('sleepTimer', {
+        document: documentRef,
+        window: { innerWidth: 1280, innerHeight: 900 },
+        appState: { settings: {} },
+        // A browser prompt blocks the whole page; if the feature reaches for
+        // one this records it instead of hanging the run.
+        prompt: (...args) => { promptCalls.push(args); return '30'; },
+        setTimeout: () => 1,
+        clearTimeout: () => {},
+        showToast: () => {},
+        getMainVideoElement: () => null,
+    });
+    feature._start = (minutes) => started.push(minutes);
+
+    feature._showTimerPopover(anchor);
+    assert.deepEqual(promptCalls, [], 'the feature must not block YouTube with a browser prompt');
+
+    const popover = chrome.children[chrome.children.length - 1];
+    assert.ok(popover, 'the popover must mount into the player chrome');
+    assert.equal(popover.getAttribute('role'), 'dialog', 'it announces itself as a dialog');
+    assert.ok(popover.getAttribute('aria-label'), 'and carries a name');
+
+    const descendants = [];
+    const collect = (node) => {
+        for (const child of node.children || []) { descendants.push(child); collect(child); }
+    };
+    collect(popover);
+    const inputs = descendants.filter((node) => node.tagName === 'INPUT');
+    assert.equal(inputs.length, 1, 'one field: the number of minutes');
+    assert.equal(inputs[0].type, 'number', 'a bounded numeric input, not free text');
+    assert.ok(inputs[0].listeners?.has('focus') && inputs[0].listeners?.has('blur'),
+        'popover controls keep a visible keyboard focus ring');
+
+    // Out-of-range input is refused with inline copy rather than silently
+    // starting a timer.
+    const errorNode = descendants.find((node) => node !== inputs[0] && node.tagName === 'DIV' && !node.children.length);
+    inputs[0].value = '999';
+    assert.equal(feature._startFromInput(inputs[0], errorNode), false,
+        'an out-of-range value must be refused');
+    assert.deepEqual(started, [], 'and must not start a timer');
+    assert.match(String(errorNode.textContent || ''), /Enter a value from 1 to 180 minutes/,
+        'and must say why, inline');
+
+    inputs[0].value = '0';
+    assert.equal(feature._startFromInput(inputs[0], errorNode), false, 'zero minutes is not a timer');
+    inputs[0].value = 'soon';
+    assert.equal(feature._startFromInput(inputs[0], errorNode), false, 'nor is free text');
+    assert.deepEqual(started, []);
+
+    inputs[0].value = '45';
+    assert.equal(feature._startFromInput(inputs[0], errorNode), true);
+    assert.deepEqual(started, [45], 'a valid value starts the timer');
+
+    feature._dismissPopover();
+    assert.equal(popover.isConnected, false, 'and the popover is cleaned up');
 });
 
 test('userscript UI surfaces avoid backdrop blur filters', () => {
