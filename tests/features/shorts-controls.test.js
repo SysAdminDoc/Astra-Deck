@@ -8,7 +8,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { loadFeature, fakeTreeDocument } = require('../helpers/monolith');
+const { loadFeature, fakeTreeDocument, selectorMatches } = require('../helpers/monolith');
 
 /**
  * A Shorts page. The reel carousel keeps several `<video>` elements mounted
@@ -33,11 +33,20 @@ function shortsPage({ pathname = '/shorts/abc12345678', settings = {}, activeRee
     const video = newVideo();
     const offscreenVideo = newVideo();
     const nextButton = scratch.createElement('button');
+    // Each node declares what it IS and where it sits, and the selector has to
+    // actually match it. Substring routing answered
+    // `ytd-reel-video-renderer[is-active] video.NO-SUCH-CLASS` too, so both
+    // Shorts lookups could be narrowed to nothing without a single failure.
+    const activeIs = {
+        tag: 'video',
+        ancestors: [{ tag: 'ytd-reel-video-renderer', attrs: { 'is-active': '' } }],
+    };
+    const offscreenIs = { tag: 'video', ancestors: [{ tag: 'div', id: 'shorts-player' }] };
+    const nextIs = { tag: 'button', ancestors: [{ tag: 'div', id: 'navigation-button-down' }] };
     const documentRef = fakeTreeDocument((selector) => {
-        const text = String(selector);
-        if (text.includes('navigation-button-down')) return nextButton;
-        if (text.includes('ytd-reel-video-renderer[is-active]')) return activeReel ? video : null;
-        if (text.includes('#shorts-player')) return offscreenVideo;
+        if (selectorMatches(selector, nextIs)) return nextButton;
+        if (activeReel && selectorMatches(selector, activeIs)) return video;
+        if (selectorMatches(selector, offscreenIs)) return offscreenVideo;
         return null;
     });
     const timers = [];

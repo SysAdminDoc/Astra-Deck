@@ -26,6 +26,7 @@ const {
     loadUserscriptFeature,
     fakeNode,
     fakeTreeDocument,
+    selectorMatches,
 } = require('./helpers/monolith');
 
 const repoRoot = path.join(__dirname, '..');
@@ -44,12 +45,18 @@ function player({ duration = 600, currentTime = 60 } = {}) {
     video.currentTime = currentTime;
     video.playbackRate = 1;
 
+    // Routed on what each node is. Substring routing answered
+    // `.ytp-time-display-NO-SUCH-CLASS`, so the one selector this feature
+    // depends on could be narrowed to nothing with every test still green.
+    const displayIs = { tag: 'div', className: 'ytp-time-display' };
+    const videoIs = { tag: 'video', className: 'video-stream html5-main-video' };
+    const readoutIs = { tag: 'span', className: 'ytkit-remaining-time' };
     const documentRef = fakeTreeDocument((selector) => {
-        if (String(selector).includes('ytp-time-display')) return timeDisplay;
+        if (selectorMatches(selector, displayIs)) return timeDisplay;
         // The userscript copy reads the video by selector rather than through
         // getMainVideoElement.
-        if (String(selector).includes('html5-main-video')) return video;
-        if (String(selector).includes('ytkit-remaining-time')) {
+        if (selectorMatches(selector, videoIs)) return video;
+        if (selectorMatches(selector, readoutIs)) {
             return timeDisplay.children.filter((node) => String(node.className).includes('ytkit-remaining-time'));
         }
         return null;

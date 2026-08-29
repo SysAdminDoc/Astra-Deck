@@ -31,9 +31,52 @@ const sidepanelJs = read('extension/sidepanel.js');
 const enMessages = JSON.parse(read('extension/_locales/en/messages.json'));
 const LOCALES = ['ar', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'];
 
+/**
+ * Every `t('key', 'fallback')` call site in the popup, with the fallback
+ * assembled the way JavaScript assembles it.
+ *
+ * The long fallbacks are written as concatenated literals across two or three
+ * lines. A single-literal regex reads only the first piece, which made four
+ * perfectly correct strings look like drift and, worse, meant a truncation of
+ * the SECOND piece was invisible. So the scan reads the whole concatenation:
+ * literals joined only by whitespace and `+`, stopping at anything else.
+ */
+function collectFallbacks(source) {
+    const literal = /'((?:[^'\\]|\\.)*)'/y;
+    const decode = (raw) => raw
+        .replace(/\\n/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/\\'/g, "'")
+        .replace(/\\\\/g, '\\');
+
+    const byKey = new Map();
+    for (const call of source.matchAll(/\bt\('([A-Za-z0-9_]+)',/g)) {
+        let at = call.index + call[0].length;
+        const parts = [];
+        for (;;) {
+            while (at < source.length && /\s/.test(source[at])) at += 1;
+            if (source[at] !== "'") break;
+            literal.lastIndex = at;
+            const piece = literal.exec(source);
+            if (!piece) break;
+            parts.push(decode(piece[1]));
+            at = literal.lastIndex;
+            const rest = at;
+            while (at < source.length && /\s/.test(source[at])) at += 1;
+            if (source[at] !== '+') { at = rest; break; }
+            at += 1;
+        }
+        if (!parts.length) continue;
+        if (!byKey.has(call[1])) byKey.set(call[1], []);
+        byKey.get(call[1]).push(parts.join(''));
+    }
+    return byKey;
+}
+
+const POPUP_FALLBACKS = collectFallbacks(popupJs);
+
 function fallbacksFor(key) {
-    const pattern = new RegExp(`t\\('${key}',\\s*\\n?\\s*'((?:[^'\\\\]|\\\\.)*)'`, 'g');
-    return [...popupJs.matchAll(pattern)].map((m) => m[1]);
+    return POPUP_FALLBACKS.get(key) || [];
 }
 
 // ── one key, one fallback ─────────────────────────────────────────────────
@@ -150,4 +193,34 @@ test('no comment in the popup claims a PIN', () => {
     assert.match(preamble, /resetAllData\(\) flow/,
         'the comment must say what routing through the primary flow actually buys');
     assert.match(preamble, /undo snapshot/);
+});
+
+test('every popup fallback says what the shipped message says', () => {
+    // This used to be checked for three hand-picked keys. There are 240-odd of
+    // them, and the fallback is what the user reads whenever the catalogue is
+    // unavailable — a drifted one is a second, unreviewed copy of the surface.
+    // Two were already wrong when this became exhaustive: a "Copied." that
+    // dropped the instruction telling the user what to do next, and a clipboard
+    // failure that sent them to the browser console.
+    assert.ok(POPUP_FALLBACKS.size > 200,
+        `expected the popup to localize most of its copy, saw ${POPUP_FALLBACKS.size} keys`);
+
+    const drifted = [];
+    const unknown = [];
+    const inconsistent = [];
+    for (const [key, values] of POPUP_FALLBACKS) {
+        const unique = [...new Set(values)];
+        if (unique.length > 1) { inconsistent.push(key); continue; }
+        if (!enMessages[key]) { unknown.push(key); continue; }
+        if (enMessages[key].message !== unique[0]) {
+            drifted.push(`${key}\n    fallback: ${JSON.stringify(unique[0])}\n    message : ${JSON.stringify(enMessages[key].message)}`);
+        }
+    }
+
+    assert.deepEqual(inconsistent, [],
+        'a key with two different fallbacks shows whichever call site ran');
+    assert.deepEqual(unknown, [],
+        'a fallback with no message behind it is a string no locale can ever translate');
+    assert.deepEqual(drifted, [],
+        `the fallback must read the same as the message it stands in for:\n  ${drifted.join('\n  ')}`);
 });

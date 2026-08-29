@@ -9,7 +9,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { loadFeature, fakeNode, fakeTreeDocument } = require('../helpers/monolith');
+const {
+    loadFeature,
+    featureSource,
+    fakeNode,
+    fakeTreeDocument,
+    selectorMatches,
+} = require('../helpers/monolith');
 
 const feature = loadFeature('hidePlannedLivestreams', {
     document: fakeTreeDocument(() => null),
@@ -21,14 +27,41 @@ function card({ metadata = [], buttons = [] } = {}) {
     const node = fakeNode({ tag: 'ytd-rich-item-renderer' });
     const metaNodes = metadata.map((text) => fakeNode({ tag: 'span', text }));
     const buttonNodes = buttons.map((text) => fakeNode({ tag: 'button', text }));
+    // Routed by matching the selector the feature actually passes against what
+    // these nodes ARE. Substring routing answered any selector merely
+    // mentioning "metadata" or "button", so the feature's whole contact
+    // surface with the DOM could be replaced with selectors that match nothing
+    // on YouTube and every test here stayed green.
+    const buttonIs = { tag: 'button', attrs: { 'aria-label': 'Notify me' },
+        ancestors: [{ tag: 'yt-flexible-actions-view-model' }] };
+    const metaIs = { tag: 'span', className: 'ytContentMetadataViewModelMetadataText' };
     node.querySelectorAll = (selector) => {
-        if (String(selector).includes('button')) return buttonNodes;
-        if (String(selector).includes('Metadata') || String(selector).includes('metadata')
-            || String(selector).includes('badge') || String(selector).includes('Badge')) return metaNodes;
+        if (selectorMatches(selector, buttonIs)) return buttonNodes;
+        if (selectorMatches(selector, metaIs)) return metaNodes;
         return [];
     };
     return node;
 }
+
+test('the card fixture answers the shipped selectors and nothing else', () => {
+    // Guarding the guard. If this goes red because a selector list changed,
+    // the fixture above has to learn the new shape rather than be loosened.
+    const probe = card({ metadata: ['UPCOMING'], buttons: ['Notify me'] });
+    const block = featureSource('hidePlannedLivestreams');
+    // Only the lists _isNotifyCard reads off a card. The teardown sweep runs
+    // its own querySelectorAll against the document, not against a card.
+    const scan = block.slice(block.indexOf('_isNotifyCard(card)'), block.indexOf('_applyTo(card)'));
+    assert.ok(scan.length > 100, 'anchor: the card scan must exist');
+
+    const lists = [...scan.matchAll(/querySelectorAll\(\s*'([^']+)'/g)].map((m) => m[1]);
+    assert.equal(lists.length, 2, 'the feature reads a button list and a metadata list');
+    for (const list of lists) {
+        assert.ok(probe.querySelectorAll(list).length > 0,
+            `the fixture must answer the shipped selector list: ${list}`);
+    }
+    assert.equal(probe.querySelectorAll('.ytkit-no-such-node').length, 0,
+        'and answer nothing for a selector that matches nothing');
+});
 
 test('a card whose metadata anchors in the future is a planned livestream', () => {
     const futureRows = [
