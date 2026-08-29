@@ -44,10 +44,29 @@ function featureSourceFrom(source, id) {
     assert.ok(nextId > start, `feature '${id}' must be followed by another feature`);
     const region = source.slice(start + 1, nextId);
     FEATURE_CLOSE.lastIndex = 0;
-    let close = null;
-    for (let match = FEATURE_CLOSE.exec(region); match; match = FEATURE_CLOSE.exec(region)) close = match;
-    assert.ok(close, `feature '${id}' must close at the features-array indent`);
-    return region.slice(0, close.index + close[0].length);
+    const closes = [];
+    for (let match = FEATURE_CLOSE.exec(region); match; match = FEATURE_CLOSE.exec(region)) closes.push(match);
+    assert.ok(closes.length, `feature '${id}' must close at the features-array indent`);
+
+    // The LAST close before the next `id:` is usually this feature's own, and
+    // has to be preferred because a CSS template literal can put a `}` at the
+    // array indent. But it is not always: a spread entry
+    // (`{ ...createXFeature({…}) || { id: 'y', … } }`) carries its id at 16
+    // spaces, so it does not end the region, and taking the last close
+    // swallowed it. The slice then parsed happily as a comma expression and
+    // `uiFontFamily` silently evaluated to `subscriptionViewControls`.
+    //
+    // So walk back from the last close and take the first candidate that is
+    // one array element: no second element opener inside it, and it parses on
+    // its own.
+    for (let i = closes.length - 1; i >= 0; i -= 1) {
+        const slice = region.slice(0, closes[i].index + closes[i][0].length);
+        if (slice.indexOf('\n        {\n', 1) >= 0) continue;
+        if (!parses(`(${slice})`)) continue;
+        return slice;
+    }
+    assert.fail(`feature '${id}' does not slice to a single array element`);
+    return null;
 }
 
 function featureSource(id) {
@@ -869,6 +888,7 @@ function fakeTreeDocument(resolve = () => null) {
 
 module.exports = {
     featureSource,
+    featureSourceFrom,
     fallbackFeatureSource,
     declarationSourceFrom,
     loadDeclarations,
