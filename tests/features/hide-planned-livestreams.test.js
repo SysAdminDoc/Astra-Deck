@@ -86,9 +86,16 @@ test('the scheduled fallback never reads the video title', () => {
     // metadata rows and badges, so a title node must not reach it.
     const titled = fakeNode({ tag: 'ytd-rich-item-renderer' });
     const title = fakeNode({ tag: 'h3', text: 'Scheduled for demolition: the 2026 premieres' });
-    titled.querySelectorAll = (selector) => (String(selector).includes('title') || String(selector).includes('h3')
-        ? [title]
-        : []);
+    // Case-insensitive on purpose. YouTube's lockup renderers name their title
+    // node `.ytLockupMetadataViewModelTitle`, and the selector lists this
+    // feature scans are already in that camelCase style
+    // (.ytContentMetadataViewModelMetadataText). A case-sensitive 'title'
+    // router would hand back nothing for the camelCase spelling, so the
+    // feature could start reading titles with this test still green.
+    titled.querySelectorAll = (selector) => {
+        const text = String(selector).toLowerCase();
+        return text.includes('title') || text.includes('h3') ? [title] : [];
+    };
     assert.equal(feature._isNotifyCard(titled), false,
         'a title that reads like a schedule must not hide the video');
 });

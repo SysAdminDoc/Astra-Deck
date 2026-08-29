@@ -31,7 +31,14 @@ function watchPage({ fullscreen = true, playlist = null, queue = null } = {}) {
             item.index = index;
             return item;
         });
-        panel.querySelectorAll = () => items;
+        // Routed on the exact selector. A panel that answered every selector
+        // with the same list would let the item selector be replaced by one
+        // that matches nothing, and the up-next check would still "work".
+        // Substring routing is not enough either: it accepts a selector that
+        // merely CONTAINS the real one, which a real querySelectorAll would
+        // find nothing for.
+        panel.querySelectorAll = (selector) =>
+            (String(selector) === 'ytd-playlist-panel-video-renderer' ? items : []);
     }
 
     const documentRef = fakeTreeDocument((selector) => {
@@ -180,6 +187,37 @@ test('the retry budget is capped and the give-up is logged', () => {
 
     assert.deepEqual(page.reloads, [], 'three reloads that did not help must not become four');
     assert.ok(page.logs.some((line) => /giving up/i.test(line)), 'and the user-visible log must say so');
+});
+
+test('the budget is three attempts, spent one at a time', () => {
+    // Only asserting that 3 gives up leaves any smaller cap passing too, and a
+    // cap of 1 turns a transient decode error into a single failed reload.
+    const spent = (attempts) => {
+        const page = erroringPlayer({
+            error: true,
+            stored: { videoId: 'dQw4w9WgXcQ', t: 0, rate: 1, attempts, at: Date.now() },
+        });
+        loadFeature('playbackErrorRecovery', page.globals)._detectError();
+        return page.reloads.length;
+    };
+
+    assert.equal(spent(0), 1, 'the first error reloads');
+    assert.equal(spent(1), 1, 'so does the second');
+    assert.equal(spent(2), 1, 'and the third, which is the last one the budget buys');
+    assert.equal(spent(3), 0, 'the fourth is refused');
+});
+
+test('the recovery toast names the budget it is spending', () => {
+    const now = 1_800_000_000_000;
+    const page = erroringPlayer({
+        error: false,
+        stored: { videoId: 'dQw4w9WgXcQ', t: 120, rate: 1, attempts: 2, at: now - 1000 },
+        now,
+    });
+    loadFeature('playbackErrorRecovery', page.globals)._maybeResume();
+    assert.equal(page.toasts.length, 1);
+    assert.match(page.toasts[0], /attempt 2\/3/,
+        'a user watching a video reload twice needs to know how many tries are left');
 });
 
 test('an attempt count belonging to another video does not spend this one budget', () => {
