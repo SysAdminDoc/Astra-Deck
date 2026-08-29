@@ -162,6 +162,66 @@ function loadFeatureFromSource(source, id, extraGlobals = {}) {
     return feature;
 }
 
+/**
+ * Slice ONE named top-level declaration out of a monolith source. Handles the
+ * `function name(` and `const NAME =` shapes at the two indents these files
+ * use, and ends each at the close that sits back at the declaration's own
+ * indent — the same indentation anchor `featureSourceFrom` relies on, because
+ * brace counting would have to survive template literals and regex literals.
+ */
+function declarationSourceFrom(source, name) {
+    for (const indent of ['    ', '        ']) {
+        for (const keyword of ['function', 'async function', 'const', 'let']) {
+            const needle = `\n${indent}${keyword} ${name}`;
+            const start = source.indexOf(needle);
+            if (start < 0) continue;
+            const next = source[start + needle.length];
+            // `const VIDEO_ID` must not match a request for `VIDEO`.
+            if (next && /[A-Za-z0-9_$]/.test(next)) continue;
+            const body = source.slice(start + 1);
+            if (keyword.endsWith('function')) {
+                const close = body.indexOf(`\n${indent}}`);
+                assert.ok(close > 0, `declaration '${name}' must close at its own indent`);
+                return body.slice(0, close + indent.length + 2);
+            }
+            const firstBreak = body.indexOf('\n');
+            const firstLine = body.slice(0, firstBreak);
+            if (firstLine.trimEnd().endsWith(';')) return firstLine;
+            for (const terminator of [`\n${indent}});`, `\n${indent}]);`, `\n${indent}};`, `\n${indent}];`]) {
+                const close = body.indexOf(terminator);
+                if (close > 0) return body.slice(0, close + terminator.length);
+            }
+            assert.fail(`declaration '${name}' must terminate at its own indent`);
+        }
+    }
+    return assert.fail(`declaration '${name}' must exist in the source`);
+}
+
+/**
+ * Evaluate named top-level declarations for real, so a test can call the
+ * shipped function instead of pinning its text. Every name is evaluated in one
+ * shared sandbox, so co-dependent helpers can be requested together and see
+ * each other.
+ */
+function loadDeclarationsFrom(source, names, extraGlobals = {}) {
+    const sandbox = { console, ...extraGlobals };
+    sandbox.globalThis = sandbox;
+    const body = names.map((name) => declarationSourceFrom(source, name)).join('\n');
+    const exported = names.map((name) => `__out.${name} = ${name};`).join('');
+    vm.runInNewContext(`var __out = {};(() => {${body}\n${exported}})();__out;`, sandbox);
+    return sandbox.__out;
+}
+
+/** `loadDeclarationsFrom` against the extension monolith. */
+function loadDeclarations(names, extraGlobals = {}) {
+    return loadDeclarationsFrom(sources.ytkit, names, extraGlobals);
+}
+
+/** `loadDeclarationsFrom` against the userscript runtime (core + main). */
+function loadUserscriptDeclarations(names, extraGlobals = {}) {
+    return loadDeclarationsFrom(sources.userscript, names, extraGlobals);
+}
+
 function loadFeature(id, extraGlobals = {}) {
     return loadFeatureFromSource(sources.ytkit, id, extraGlobals);
 }
@@ -725,6 +785,10 @@ function fakeTreeDocument(resolve = () => null) {
 module.exports = {
     featureSource,
     fallbackFeatureSource,
+    declarationSourceFrom,
+    loadDeclarations,
+    loadDeclarationsFrom,
+    loadUserscriptDeclarations,
     loadFeature,
     loadUserscriptFeature,
     loadFallbackFeature,
