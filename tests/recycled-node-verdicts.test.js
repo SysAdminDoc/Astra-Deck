@@ -12,124 +12,256 @@
 // regular video, and the precise view count went inert after one navigation.
 //
 // hideWatchedVideos was already fixed for exactly this class. These are the
-// remaining four.
+// remaining four — and each is now proved by recycling a real node and asking
+// the code again, which is the only way to catch a verdict that froze.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
-const path = require('path');
 
-const repoRoot = path.join(__dirname, '..');
-const ytkit = fs.readFileSync(path.join(repoRoot, 'extension/ytkit.js'), 'utf8');
-const userscript = fs.readFileSync(path.join(repoRoot, 'YTKit.user.js'), 'utf8');
-const subsModule = fs.readFileSync(
-    path.join(repoRoot, 'extension/features/subscription-groups/index.js'), 'utf8');
-
-function stripComments(text) {
-    return text.split('\n').filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line)).join('\n');
-}
-
-function slice(source, anchor, length) {
-    const at = source.indexOf(anchor);
-    assert.ok(at > 0, `anchor not found: ${anchor}`);
-    return stripComments(source.slice(at, at + length));
-}
-
-// A fixed-length window that runs past the end of the function it anchors on
-// is a vacuous test: the assertion can be satisfied by the NEXT function. The
-// two live-chat filters sit next to each other and call the same helper, so
-// they have to be sliced to their own closing brace.
-function topLevelFunction(source, name) {
-    const at = source.indexOf(`function ${name}() {`);
-    assert.ok(at > 0, `function not found: ${name}`);
-    const end = source.indexOf('\n    }\n', at);
-    assert.ok(end > at, `unterminated function: ${name}`);
-    return stripComments(source.slice(at, end));
-}
+const { createSubscriptionGroupsFeature } = require('../extension/features/subscription-groups');
+const {
+    loadFeature,
+    loadDeclarationsFrom,
+    fakeNode,
+    fakeTreeDocument,
+} = require('./helpers/monolith');
+const { sources } = require('./helpers/source');
 
 // ── (a) preciseViewCounts ───────────────────────────────────────────────────
 
-test('the precise-view navigate rule clears the markers off the recycled metadata element', () => {
-    const rule = slice(ytkit, "addNavigateRule('preciseViews', () => {", 1200);
-    assert.match(rule, /querySelectorAll\('\[data-ytkit-precise\]'\)/,
-        'ytd-watch-metadata is reused, so the markers survive onto the next video');
-    assert.match(rule, /delete el\.dataset\.ytkitPrecise;/);
-    assert.match(rule, /delete el\.dataset\.ytkitPreciseOriginal;/,
-        'leaving the saved original behind makes destroy() write video A’s text onto video B');
-    assert.doesNotMatch(rule, /el\.textContent = /,
+test('a navigation clears the precise-view markers off the recycled metadata element', () => {
+    // ytd-watch-metadata survives SPA navigation, so its markers survive with it.
+    const stamped = fakeNode({ tag: 'span', text: '1,234,567 views' });
+    stamped.dataset.ytkitPrecise = '1';
+    stamped.dataset.ytkitPreciseOriginal = '1.2M views';
+
+    const rules = new Map();
+    const documentRef = fakeTreeDocument((selector) =>
+        (String(selector).includes('data-ytkit-precise') ? [stamped] : null));
+
+    const feature = loadFeature('preciseViewCounts', {
+        document: documentRef,
+        appState: { settings: {} },
+        addNavigateRule: (id, rule) => rules.set(id, rule),
+        removeNavigateRule: (id) => rules.delete(id),
+        addMutationRule: () => {},
+        removeMutationRule: () => {},
+        getPlayerResponseGlobal: () => null,
+        setTimeout: () => 1,
+        clearTimeout: () => {},
+    });
+    feature.init();
+
+    const rule = rules.get('preciseViews');
+    assert.ok(rule, 'the feature must register a navigate rule');
+    rule();
+
+    assert.equal(stamped.dataset.ytkitPrecise, undefined,
+        'a marker that survives the navigation makes the element look already-done');
+    assert.equal(stamped.dataset.ytkitPreciseOriginal, undefined,
+        'leaving the saved original behind makes destroy() write video A text onto video B');
+    assert.equal(stamped.textContent, '1,234,567 views',
         'the saved text belongs to the previous video; YouTube re-renders this element itself');
 });
 
-test('the precise-view teardown still restores the text it replaced', () => {
-    const destroy = slice(ytkit, "removeNavigateRule('preciseViews');", 900);
-    assert.match(destroy, /el\.textContent = el\.dataset\.ytkitPreciseOriginal;/,
+test('teardown still restores the text the feature replaced', () => {
+    const stamped = fakeNode({ tag: 'span', text: '1,234,567 views' });
+    stamped.dataset.ytkitPrecise = '1';
+    stamped.dataset.ytkitPreciseOriginal = '1.2M views';
+
+    const documentRef = fakeTreeDocument((selector) =>
+        (String(selector).includes('data-ytkit-precise') ? [stamped] : null));
+    const feature = loadFeature('preciseViewCounts', {
+        document: documentRef,
+        appState: { settings: {} },
+        addNavigateRule: () => {},
+        removeNavigateRule: () => {},
+        addMutationRule: () => {},
+        removeMutationRule: () => {},
+        getPlayerResponseGlobal: () => null,
+        setTimeout: () => 1,
+        clearTimeout: () => {},
+    });
+
+    feature.destroy();
+    assert.equal(stamped.textContent, '1.2M views',
         'with the navigate fix the stored original always belongs to the video on screen');
 });
 
 // ── (b) live chat ───────────────────────────────────────────────────────────
 
-test('live-chat verdicts are keyed to the message they were about', () => {
-    const fingerprint = slice(ytkit, 'function liveChatMessageFingerprint(msg) {', 600);
-    assert.match(fingerprint, /#author-name/);
-    assert.match(fingerprint, /#message/,
-        'author alone is not enough: the same author posts many messages through one recycled node');
+/** A live-chat renderer whose author and message can be swapped, as YouTube does. */
+function chatMessage(author, text) {
+    const node = fakeNode({ tag: 'yt-live-chat-text-message-renderer' });
+    node.author = author;
+    node.text = text;
+    node.querySelector = (selector) => {
+        if (String(selector).includes('author-name')) return { textContent: node.author };
+        if (String(selector).includes('message')) return { textContent: node.text };
+        return null;
+    };
+    node.style = { display: '' };
+    return node;
+}
 
-    for (const name of ['applyBotFilter', 'applyKeywordFilter']) {
-        const body = topLevelFunction(ytkit, name);
-        assert.doesNotMatch(body, /:not\(\[data-ytkit-(?:bot|kw)-checked\]\)/,
-            `${name} must stop skipping nodes it has ever judged`);
-        assert.match(body, /liveChatMessageFingerprint\(/,
-            `${name} must re-judge a node whose content changed`);
-        assert.match(body, /=== fingerprint\) return;/,
-            `${name} must compare against the stored fingerprint, not merely record one`);
-    }
+function liveChat(messages, { keywords = '' } = {}) {
+    const documentRef = fakeTreeDocument((selector) => {
+        if (!String(selector).includes('yt-live-chat-text-message-renderer')) return null;
+        if (String(selector).includes('[data-ytkit-kw-checked]')) {
+            return messages.filter((node) => node.dataset.ytkitKwChecked !== undefined);
+        }
+        return messages;
+    });
+    return {
+        document: documentRef,
+        window: { location: { pathname: '/live_chat' } },
+        isLiveChatPath: () => true,
+        appState: { settings: { chatKeywordFilter: keywords } },
+    };
+}
+
+for (const [label, source] of [['extension', sources.ytkit], ['userscript', sources.userscript]]) {
+    test(`${label}: a recycled node holding a new message is judged again`, () => {
+        const message = chatMessage('SomeBot', 'buy followers');
+        const api = loadDeclarationsFrom(source,
+            ['liveChatMessageFingerprint', 'applyBotFilter'], liveChat([message]));
+
+        api.applyBotFilter();
+        assert.equal(message.style.display, 'none', 'a bot message is hidden');
+        assert.equal(message.classList.contains('yt-suite-hidden-bot'), true);
+
+        // YouTube reuses the node for someone else entirely.
+        message.author = 'RealPerson';
+        message.text = 'hello everyone';
+        api.applyBotFilter();
+
+        assert.equal(message.style.display, '',
+            'an innocent message must not inherit a bot message display:none');
+        assert.equal(message.classList.contains('yt-suite-hidden-bot'), false);
+    });
+
+    test(`${label}: a recycled node holding a bot message does not inherit an innocent pass`, () => {
+        const message = chatMessage('RealPerson', 'hello everyone');
+        const api = loadDeclarationsFrom(source,
+            ['liveChatMessageFingerprint', 'applyBotFilter'], liveChat([message]));
+
+        api.applyBotFilter();
+        assert.equal(message.style.display, '', 'an innocent message is left alone');
+
+        message.author = 'SpamBot';
+        message.text = 'buy followers';
+        api.applyBotFilter();
+        assert.equal(message.style.display, 'none',
+            'the node was judged once; the message in it is new and must be judged again');
+    });
+
+    test(`${label}: the fingerprint distinguishes two messages from the same author`, () => {
+        const api = loadDeclarationsFrom(source, ['liveChatMessageFingerprint'], {});
+        const first = chatMessage('Someone', 'first message');
+        const second = chatMessage('Someone', 'second message');
+        assert.notEqual(api.liveChatMessageFingerprint(first), api.liveChatMessageFingerprint(second),
+            'author alone is not enough: one author posts many messages through one recycled node');
+
+        const same = chatMessage('Someone', 'first message');
+        assert.equal(api.liveChatMessageFingerprint(first), api.liveChatMessageFingerprint(same),
+            'and an unchanged message must not be re-judged on every pass');
+    });
+}
+
+test('the keyword filter un-hides a recycled node whose verdict flipped', () => {
+    const message = chatMessage('Someone', 'spoiler ahead');
+    const api = loadDeclarationsFrom(sources.ytkit,
+        ['_lastKeywordHash', 'liveChatMessageFingerprint', 'applyKeywordFilter'],
+        liveChat([message], { keywords: 'spoiler' }));
+
+    api.applyKeywordFilter();
+    assert.equal(message.style.display, 'none', 'a matching message is hidden');
+    assert.equal(message.classList.contains('yt-suite-hidden-keyword'), true);
+
+    message.text = 'nothing to see here';
+    api.applyKeywordFilter();
+    assert.equal(message.style.display, '',
+        'the non-empty-keyword path also needs an un-hide, not only the cleared-keywords path');
+    assert.equal(message.classList.contains('yt-suite-hidden-keyword'), false);
 });
 
-test('both live-chat filters un-hide a recycled node whose verdict flipped', () => {
-    const bot = topLevelFunction(ytkit, 'applyBotFilter');
-    assert.match(bot, /classList\.contains\('yt-suite-hidden-bot'\)[\s\S]{0,200}classList\.remove\('yt-suite-hidden-bot'\)/,
-        'without this an innocent message inherits a bot message’s display:none and is swallowed');
+test('clearing the keyword list reveals everything it had hidden', () => {
+    const message = chatMessage('Someone', 'spoiler ahead');
+    const globals = liveChat([message], { keywords: 'spoiler' });
+    const api = loadDeclarationsFrom(sources.ytkit,
+        ['_lastKeywordHash', 'liveChatMessageFingerprint', 'applyKeywordFilter'], globals);
 
-    const keyword = topLevelFunction(ytkit, 'applyKeywordFilter');
-    const nonEmptyBranch = keyword.slice(keyword.indexOf('const keywords = keywordsRaw'));
-    assert.match(nonEmptyBranch, /classList\.remove\('yt-suite-hidden-keyword'\)/,
-        'the non-empty-keyword path also needs an un-hide, not only the cleared-keywords path');
+    api.applyKeywordFilter();
+    assert.equal(message.style.display, 'none');
+
+    globals.appState.settings.chatKeywordFilter = '';
+    api.applyKeywordFilter();
+    assert.equal(message.style.display, '', 'turning the filter off must give the messages back');
 });
 
 // ── (c) removeAllShorts ─────────────────────────────────────────────────────
 
 test('a card recycled out of Shorts is made visible again', () => {
-    const scan = slice(ytkit, 'const scanPage = () => {', 1600);
-    assert.match(scan, /querySelectorAll\('\[data-ytkit-shorts-hidden\]'\)[\s\S]{0,400}querySelector\('a\[href\^="\/shorts"\]'\)/,
-        'a hidden card must be re-checked for a Shorts link before it stays hidden');
-    const recheck = scan.slice(scan.indexOf('[data-ytkit-shorts-hidden]'));
-    assert.match(recheck, /delete el\.dataset\.ytkitShortsHidden/);
-    assert.match(recheck, /applyHideAttribution\(el, \{ featureId: this\.id, hidden: false \}\)/,
+    const card = fakeNode({ tag: 'ytd-rich-item-renderer' });
+    card.dataset.ytkitShortsHidden = '1';
+    card.style = { display: 'none' };
+    let isShorts = false;
+    card.querySelector = (selector) => (String(selector).includes('/shorts') && isShorts
+        ? fakeNode({ tag: 'a' })
+        : null);
+
+    const attributions = [];
+    const documentRef = fakeTreeDocument((selector) => {
+        if (String(selector).includes('data-ytkit-shorts-hidden')) return [card];
+        return [];
+    });
+
+    const feature = loadFeature('removeAllShorts', {
+        document: documentRef,
+        appState: { settings: { removeAllShorts: true } },
+        window: { location: { pathname: '/feed/subscriptions' } },
+        location: { pathname: '/feed/subscriptions' },
+        addMutationRule: () => {},
+        removeMutationRule: () => {},
+        addNavigateRule: () => {},
+        removeNavigateRule: () => {},
+        injectStyle: () => ({ remove() {} }),
+        applyHideAttribution: (element, options) => attributions.push({ element, ...options }),
+        setTimeout: () => 1,
+        clearTimeout: () => {},
+    });
+    feature.init();
+
+    assert.equal(card.dataset.ytkitShortsHidden, undefined,
+        'a hidden card with no Shorts link must be re-checked and released');
+    assert.ok(attributions.some((entry) => entry.element === card && entry.hidden === false),
         'un-hiding without clearing attribution leaves the card counted as hidden');
 });
 
 // ── (d) subscription groups ─────────────────────────────────────────────────
 
-test('the original-order stamp names the video it describes in the canonical module', () => {
-    const helper = slice(subsModule, '_cardVideoId(card) {', 500);
-    assert.match(helper, /\[\?&\]v=\(\[A-Za-z0-9_-\]\{11\}\)/,
-        'the id must be parsed, not guessed');
+test('the original-order stamp names the video it describes', () => {
+    const feature = createSubscriptionGroupsFeature({
+        addNavigateRule: () => {},
+        removeNavigateRule: () => {},
+        addScopedMutationRule: () => {},
+        removeScopedMutationRule: () => {},
+        injectStyle: () => ({ remove() {} }),
+        storageReadJSON: (_key, fallback) => fallback,
+        storageWriteJSON: () => {},
+        appState: { settings: {} },
+    });
 
-    const stamp = slice(subsModule, 'const videoId = this._cardVideoId(card);', 900);
-    assert.match(stamp, /card\.dataset\.ytkitOrigId === videoId/,
-        'a card recycled into a different video must be re-stamped');
-    assert.match(stamp, /card\.dataset\.ytkitOrigId = videoId;/,
-        'the pairing must be persisted');
+    const card = fakeNode({ tag: 'ytd-rich-item-renderer' });
+    let href = 'https://www.youtube.com/watch?v=AAAAAAAAAAA';
+    card.querySelector = () => ({ href, getAttribute: () => href });
 
-    assert.match(subsModule, /delete el\.dataset\.ytkitOrigIdx; delete el\.dataset\.ytkitOrigId;/,
-        'teardown must clear both halves of the stamp');
-});
+    assert.equal(feature._cardVideoId(card), 'AAAAAAAAAAA', 'the id must be parsed, not guessed');
+    href = 'https://www.youtube.com/watch?v=BBBBBBBBBBB&list=PL1';
+    assert.equal(feature._cardVideoId(card), 'BBBBBBBBBBB',
+        'a card recycled into a different video reports the new id');
 
-// ── Userscript parity ───────────────────────────────────────────────────────
-
-test('all four fixes reached the userscript bundle', () => {
-    assert.match(userscript, /querySelectorAll\('\[data-ytkit-precise\]'\)/);
-    assert.match(userscript, /function liveChatMessageFingerprint\(msg\)/);
-    assert.match(userscript, /querySelectorAll\('\[data-ytkit-shorts-hidden\]'\)/);
-    assert.match(userscript, /card\.dataset\.ytkitOrigId = videoId;/);
+    href = 'https://www.youtube.com/feed/subscriptions';
+    assert.equal(feature._cardVideoId(card) || '', '',
+        'a card with no watch link has no id to stamp');
 });
